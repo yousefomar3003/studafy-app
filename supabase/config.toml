@@ -1,0 +1,14 @@
+project_id = "studafy"
+
+[api]
+enabled = true
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+
+[auth]
+enabled = true
+site_url = "io.studafy.app://login-callback"
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"

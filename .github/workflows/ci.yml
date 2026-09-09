@@ -1,0 +1,163 @@
+name: CI (no deployment)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Read-only by default. No job receives deployment credentials or environment access.
+permissions:
+  contents: read
+
+jobs:
+  flutter:
+    name: Flutter quality and debug build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Verify Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze Flutter source
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      # SEC-001 intentionally permits only a synthetic debug artifact.
+      - name: Verify synthetic debug build
+        run: flutter build apk --debug --dart-define=APP_ENV=synthetic
+
+  edge-functions:
+    name: Edge Function quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.6
+
+      - name: Install pinned tool dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify Edge Function formatting
+        run: deno fmt --check
+
+      - name: Lint Edge Functions
+        run: deno lint
+
+      - name: Type-check Edge Functions
+        run: deno check --frozen=true supabase/functions/*/index.ts supabase/functions/_shared/*.ts
+
+      - name: Run Edge Function tests
+        run: deno test --frozen=true
+
+      - name: Audit Bun dependencies
+        run: bun audit --audit-level high
+
+  database:
+    name: Local Supabase migration and RLS validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install pinned tool dependencies
+        run: bun install --frozen-lockfile
+
+      # Every command is explicitly local. The checkout has no linked-project state.
+      - name: Start disposable local Supabase stack
+        run: bunx supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+
+      - name: Replay all migrations from zero
+        run: bunx supabase db reset --local --no-seed
+
+      - name: Lint local database
+        run: bunx supabase db lint --local --level error --fail-on error
+
+      - name: Run SEC-001 RLS containment tests
+        run: bunx supabase test db --local supabase/tests/containment.sql
+
+      - name: Stop disposable Supabase stack
+        if: always()
+        run: bunx supabase stop --no-backup
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reject tracked sensitive filenames
+        run: .github/scripts/check-sensitive-files.sh
+
+      - name: Scan history and working tree
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+
+  dependency-scan:
+    name: OSV dependency scan
+    permissions:
+      actions: read
+      contents: read
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+    with:
+      scan-args: |-
+        --recursive
+        ./
+      upload-sarif: false
+      fail-on-vuln: true

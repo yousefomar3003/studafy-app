@@ -1,0 +1,14 @@
+{
+  "fmt": {
+    "include": ["supabase/functions"]
+  },
+  "lint": {
+    "include": ["supabase/functions"],
+    "rules": {
+      "exclude": ["no-import-prefix"]
+    }
+  },
+  "test": {
+    "include": ["supabase/functions"]
+  }
+}
