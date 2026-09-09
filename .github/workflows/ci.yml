@@ -151,13 +151,18 @@ jobs:
 
   dependency-scan:
     name: OSV dependency scan
-    permissions:
-      actions: read
-      contents: read
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
-    with:
-      scan-args: |-
-        --recursive
-        ./
-      upload-sarif: false
-      fail-on-vuln: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # Run locally in the job; do not request SARIF/code-scanning write access.
+      - name: Scan Dart and Bun lockfiles for known vulnerabilities
+        uses: google/osv-scanner-action/osv-scanner-action@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+        with:
+          scan-args: |-
+            --recursive
+            ./
