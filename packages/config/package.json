@@ -1,0 +1,15 @@
+{
+  "name": "@studafy/config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@studafy/contracts": "workspace:*",
+    "zod": "4.6.1"
+  }
+}

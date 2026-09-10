@@ -33,6 +33,9 @@ owners.
 | DL-013 | 2026-09-10 | Notification/push vendors and channels | Deferred — blocks Phase 6 notifications work | Environment matrix (`docs/inventory/environment-matrix.md`) |
 | DL-014 | 2026-09-10 | Student age ranges, guardian verification authority, and school provisioning workflow | Deferred — blocks detailed Phase 3 (AUTH-030/031) design | ADR-008 |
 | DL-015 | 2026-09-10 | Final application identity (bundle ID / application ID), signing, privacy manifests, store accounts | Deferred — blocks REL-002 and any store submission | ADR-0003 |
+| DL-016 | 2026-09-10 | Phase 1A toolchain and runtime library pins: Bun workspaces at root; hono 4.13.7, zod 4.6.1, postgres 3.4.9, ioredis 6.0.0, bullmq 6.3.4, typescript 7.0.2, @types/bun 1.4.2 (exact, lockfile-frozen); minimal built-in JSON logger in @studafy/observability | Decided | ADR-0011 |
+| DL-017 | 2026-09-10 | Flutter relocation to apps/mobile deferred to its own reviewed change; Phase 1A introduces the workspace only and evidences zero Flutter impact | Decided (defers the move) | ADR-0011, instructions.md:287 |
+| DL-018 | 2026-09-10 | Dev-stack data stores: Redis via pinned Docker container (compose + CI); API Postgres = disposable Supabase stack DB (127.0.0.1:54322), no second local database | Decided | ADR-0011 |
 
 ## SLO section
 

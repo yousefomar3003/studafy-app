@@ -42,8 +42,55 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:supabase@^2.117.0"
+        "npm:@types/bun@1.4.2",
+        "npm:supabase@^2.117.0",
+        "npm:typescript@7.0.2"
       ]
+    },
+    "members": {
+      "apps/api": {
+        "packageJson": {
+          "dependencies": [
+            "npm:hono@4.13.7"
+          ]
+        }
+      },
+      "apps/worker": {
+        "packageJson": {
+          "dependencies": [
+            "npm:bullmq@6.3.4"
+          ]
+        }
+      },
+      "packages/config": {
+        "packageJson": {
+          "dependencies": [
+            "npm:zod@4.6.1"
+          ]
+        }
+      },
+      "packages/contracts": {
+        "packageJson": {
+          "dependencies": [
+            "npm:zod@4.6.1"
+          ]
+        }
+      },
+      "packages/database": {
+        "packageJson": {
+          "dependencies": [
+            "npm:postgres@3.4.9"
+          ]
+        }
+      },
+      "packages/infrastructure": {
+        "packageJson": {
+          "dependencies": [
+            "npm:bullmq@6.3.4",
+            "npm:ioredis@6.0.0"
+          ]
+        }
+      }
     }
   }
 }

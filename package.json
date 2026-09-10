@@ -1,7 +1,19 @@
 {
+  "name": "studafy",
+  "private": true,
   "packageManager": "bun@1.3.14",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "test": "bun test apps packages",
+    "typecheck": "bun run --filter='@studafy/*' typecheck",
+    "check:bounds": "bun scripts/check-bounds.ts",
+    "build": "bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build",
+    "dev:stack": "docker compose -f docker-compose.dev.yml up -d"
+  },
   "dependencies": {},
   "devDependencies": {
-    "supabase": "^2.117.0"
+    "@types/bun": "1.4.2",
+    "supabase": "^2.117.0",
+    "typescript": "7.0.2"
   }
 }

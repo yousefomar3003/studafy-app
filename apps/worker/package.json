@@ -1,0 +1,21 @@
+{
+  "name": "@studafy/worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build --target=bun --outdir=dist src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@studafy/config": "workspace:*",
+    "@studafy/contracts": "workspace:*",
+    "@studafy/infrastructure": "workspace:*",
+    "@studafy/observability": "workspace:*",
+    "bullmq": "6.3.4"
+  },
+  "devDependencies": {
+    "@studafy/test-support": "workspace:*"
+  }
+}

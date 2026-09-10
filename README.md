@@ -18,6 +18,32 @@ by the SEC-001 controls described in `docs/security/sec-001-containment.md`.
 - Phase gates: `docs/security/sec-001-containment.md`,
   `docs/security/phase-0b-gate.md`
 
+## Monorepo services (Phase 1A skeleton)
+
+The repository root is a Bun workspace (`apps/*`, `packages/*`) alongside the
+Flutter app, which stays at the root for now. Pinned toolchain and boundary
+rules: `docs/adr/ADR-0011-monorepo-workspaces-and-toolchain.md`.
+
+```sh
+bun install --frozen-lockfile          # workspace install
+bun run dev:stack                      # local Redis (Postgres = bunx supabase start, port 54322)
+bun run check:bounds                   # architecture boundary check
+bun run typecheck                      # tsc for every workspace member
+bun test apps packages                 # unit + integration tests (Redis/DB tests skip when unset)
+ENVIRONMENT=development \
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+REDIS_URL=redis://127.0.0.1:6379 \
+API_PORT=8080 bun apps/api/src/index.ts
+ENVIRONMENT=development \
+REDIS_URL=redis://127.0.0.1:6379 \
+bun apps/worker/src/index.ts
+```
+
+The API exposes only `/healthz`, `/readyz` (reason codes), `/version`, and an
+empty `/v1` router; production configuration fails closed. Containers:
+`docker build -f apps/api/Dockerfile -t studafy-api .` (same for the worker,
+non-root, pinned base).
+
 ## Run locally
 
 ```sh

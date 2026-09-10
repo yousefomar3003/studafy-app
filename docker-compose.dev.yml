@@ -1,0 +1,15 @@
+# Local development stack (ARC-010). Postgres is NOT duplicated here: the API
+# connects to the disposable Supabase stack database started with
+# `bunx supabase start` (127.0.0.1:54322). This file adds only Redis.
+#
+#   bun run dev:stack        # equals: docker compose -f docker-compose.dev.yml up -d
+services:
+  redis:
+    image: redis:7.4.4-alpine3.21
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12

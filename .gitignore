@@ -43,6 +43,9 @@ migrate_working_dir/
 supabase/.branches/
 supabase/.temp/
 
+# Bun workspace build output
+**/dist/
+
 # Local databases and generated scan reports
 *.db
 *.db-*

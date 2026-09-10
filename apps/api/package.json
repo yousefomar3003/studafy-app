@@ -1,0 +1,23 @@
+{
+  "name": "@studafy/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build --target=bun --outdir=dist src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@studafy/config": "workspace:*",
+    "@studafy/contracts": "workspace:*",
+    "@studafy/database": "workspace:*",
+    "@studafy/domain": "workspace:*",
+    "@studafy/infrastructure": "workspace:*",
+    "@studafy/observability": "workspace:*",
+    "hono": "4.13.7"
+  },
+  "devDependencies": {
+    "@studafy/test-support": "workspace:*"
+  }
+}

@@ -129,9 +129,92 @@ jobs:
       - name: Run multi-school RLS access tests
         run: bunx supabase test db --local supabase/tests/rls_access_seed.sql
 
+      # ARC-010: read-only connectivity smoke from the workspace database
+      # package against the disposable stack database.
+      - name: Run database package connectivity smoke
+        run: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres bun test packages/database
+
       - name: Stop disposable Supabase stack
         if: always()
         run: bunx supabase stop --no-backup
+
+  workspace:
+    name: Bun workspace quality and containers
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      redis:
+        image: redis:7.4.4-alpine3.21
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install pinned workspace dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Enforce architecture boundaries
+        run: bun scripts/check-bounds.ts
+
+      - name: Type-check all workspace members
+        run: bun run typecheck
+
+      - name: Run workspace tests
+        run: bun test apps packages
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+
+      - name: Build API and worker bundles
+        run: bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build
+
+      - name: Smoke API container (degraded readiness and graceful shutdown)
+        run: |
+          docker build -q -f apps/api/Dockerfile -t studafy-api .
+          docker run -d --name api-smoke --network host \
+            -e ENVIRONMENT=development -e REDIS_URL=redis://127.0.0.1:6379 studafy-api
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8080/healthz >/dev/null && break; sleep 1
+          done
+          curl -sf http://127.0.0.1:8080/healthz | grep -q '"ok"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/readyz)" = "503"
+          curl -s http://127.0.0.1:8080/readyz | grep -q 'database_unreachable'
+          curl -s http://127.0.0.1:8080/v1/me | grep -q 'NOT_IMPLEMENTED'
+          docker stop -t 10 api-smoke
+          test "$(docker inspect api-smoke --format '{{.State.ExitCode}}')" = "0"
+          docker logs api-smoke 2>&1 | grep -q '"phase":"complete"'
+          docker rm api-smoke >/dev/null
+
+      - name: Smoke worker container (queue lifecycle and graceful shutdown)
+        run: |
+          docker build -q -f apps/worker/Dockerfile -t studafy-worker .
+          docker run -d --name worker-smoke --network host \
+            -e ENVIRONMENT=development -e REDIS_URL=redis://127.0.0.1:6379 studafy-worker
+          for i in $(seq 1 20); do
+            docker logs worker-smoke 2>&1 | grep -q worker_ready && break; sleep 1
+          done
+          docker logs worker-smoke 2>&1 | grep -q worker_ready
+          REDIS_URL=redis://127.0.0.1:6379 bun -e 'const m = await import("./packages/infrastructure/src/index.ts"); const q = m.createQueue("smoke", process.env.REDIS_URL, { prefix: "studafy-development" }); await q.add("smoke-job", { value: "ci-smoke" }); await m.closeQueue(q);'
+          for i in $(seq 1 20); do
+            docker logs worker-smoke 2>&1 | grep -q job_processed && break; sleep 1
+          done
+          docker logs worker-smoke 2>&1 | grep -q job_processed
+          docker stop -t 10 worker-smoke
+          test "$(docker inspect worker-smoke --format '{{.State.ExitCode}}')" = "0"
+          docker logs worker-smoke 2>&1 | grep -q '"phase":"complete"'
+          docker rm worker-smoke >/dev/null
 
   secret-scan:
     name: Secret scan
