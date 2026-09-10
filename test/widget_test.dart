@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/features/session/presentation/splash_page.dart';
 import 'package:studafy/main.dart';
 
 void main() {

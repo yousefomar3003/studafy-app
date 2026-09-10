@@ -17,6 +17,7 @@ that references the old one.
 | [ADR-0009](ADR-0009-billing-and-entitlements.md) | Billing product and purchaser/beneficiary model | Deferred (blocks PAY-071) | DL-012 |
 | [ADR-0010](ADR-0010-strangler-refactor-and-migrations.md) | Strangler refactor; forward-only migrations | Accepted | DL-008 |
 | [ADR-0011](ADR-0011-monorepo-workspaces-and-toolchain.md) | Monorepo workspaces and pinned toolchain | Accepted | DL-016/017/018 |
+| [ADR-0012](ADR-0012-flutter-feature-boundaries.md) | Flutter feature boundaries and the first typed vertical slice | Accepted | DL-019/020/021/022 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

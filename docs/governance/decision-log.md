@@ -36,6 +36,10 @@ owners.
 | DL-016 | 2026-09-10 | Phase 1A toolchain and runtime library pins: Bun workspaces at root; hono 4.13.7, zod 4.6.1, postgres 3.4.9, ioredis 6.0.0, bullmq 6.3.4, typescript 7.0.2, @types/bun 1.4.2 (exact, lockfile-frozen); minimal built-in JSON logger in @studafy/observability | Decided | ADR-0011 |
 | DL-017 | 2026-09-10 | Flutter relocation to apps/mobile deferred to its own reviewed change; Phase 1A introduces the workspace only and evidences zero Flutter impact | Decided (defers the move) | ADR-0011, instructions.md:287 |
 | DL-018 | 2026-09-10 | Dev-stack data stores: Redis via pinned Docker container (compose + CI); API Postgres = disposable Supabase stack DB (127.0.0.1:54322), no second local database | Decided | ADR-0011 |
+| DL-019 | 2026-09-10 | Phase 1B first slice: session (login→consent→profile→membership→term→immutable context, demo denial outside synthetic) + class read (typed ClassroomRepository with preview and Supabase adapters, ClassesPage replaces DatabaseClassesPage, legacy workspace bridged) | Decided | ADR-0012 |
+| DL-020 | 2026-09-10 | Add dev-only sqflite_common_ffi so the real preview adapter runs in flutter tests against an ffi database | Decided | ADR-0012 |
+| DL-021 | 2026-09-10 | Dart architecture boundary enforcement via tools/check_dart_bounds.dart (import allowlist matrix per feature zone, legacy exemption list, CI step) — mirrors the TS check-bounds.ts approach | Decided | ADR-0012 |
+| DL-022 | 2026-09-10 | Contract drift detection: shared JSON fixture validated by both a bun test (zod schemas) and a flutter test (Dart DTOs); no OpenAPI codegen tooling yet | Decided | ADR-0012 |
 
 ## SLO section
 

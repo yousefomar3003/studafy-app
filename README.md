@@ -24,6 +24,10 @@ The repository root is a Bun workspace (`apps/*`, `packages/*`) alongside the
 Flutter app, which stays at the root for now. Pinned toolchain and boundary
 rules: `docs/adr/ADR-0011-monorepo-workspaces-and-toolchain.md`.
 
+Flutter feature boundaries and the first typed vertical slice
+(session + class read): `docs/adr/ADR-0012-flutter-feature-boundaries.md`.
+Architecture is enforced by `dart run tools/check_dart_bounds.dart`.
+
 ```sh
 bun install --frozen-lockfile          # workspace install
 bun run dev:stack                      # local Redis (Postgres = bunx supabase start, port 54322)

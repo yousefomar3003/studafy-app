@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'runtime_environment.dart';
+
 enum StudafyRole { teacher, parent, student }
 
 @immutable
@@ -67,6 +69,9 @@ class ActiveContextController extends ChangeNotifier {
   StudafyRole? get role => membership?.role;
 
   void startDemoRole(StudafyRole role) {
+    // SEC-001/ARC-011: demo identities exist only in synthetic builds. Any
+    // other environment refuses, so production can never hydrate demo data.
+    if (!StudafyRuntime.policy.isSynthetic) return;
     const schoolId = 'demo-school';
     membership = SchoolMembership(
       id: 'demo-${role.name}',
@@ -110,8 +115,9 @@ class ActiveContextController extends ChangeNotifier {
         .where((item) => item.active && item.role == target)
         .firstOrNull;
     if (next == null) {
-      // Demo login has no remote membership list yet.
-      startDemoRole(target);
+      // ARC-011: outside synthetic builds a missing membership is a denial,
+      // never a demo fallback. The role stays unchanged.
+      if (StudafyRuntime.policy.isSynthetic) startDemoRole(target);
       return;
     }
     switchMembership(next);

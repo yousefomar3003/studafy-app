@@ -4,6 +4,8 @@ import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/data/studafy_repository.dart';
 import 'package:studafy/data/study_coach_repository.dart';
 import 'package:studafy/data/supabase_repository.dart';
+import 'package:studafy/features/session/presentation/role_page.dart';
+import 'package:studafy/features/session/presentation/splash_page.dart';
 import 'package:studafy/main.dart';
 import 'package:studafy/student_features.dart';
 import 'package:studafy/teacher_features.dart';

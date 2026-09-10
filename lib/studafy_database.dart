@@ -44,7 +44,7 @@ class StudafyDatabase {
           'CREATE TABLE assessments(id INTEGER PRIMARY KEY AUTOINCREMENT, class_id INTEGER NOT NULL, type TEXT NOT NULL, title TEXT NOT NULL, max_score INTEGER NOT NULL, status TEXT NOT NULL)',
         );
         await db.execute(
-          'CREATE TABLE assignments(id INTEGER PRIMARY KEY AUTOINCREMENT, class_id INTEGER NOT NULL, title TEXT NOT NULL, due_at TEXT NOT NULL, kind TEXT NOT NULL DEFAULT "assignment")',
+          'CREATE TABLE assignments(id INTEGER PRIMARY KEY AUTOINCREMENT, class_id INTEGER NOT NULL, title TEXT NOT NULL, due_at TEXT NOT NULL, kind TEXT NOT NULL DEFAULT \'assignment\')',
         );
         await db.execute(
           'CREATE TABLE submissions(id INTEGER PRIMARY KEY AUTOINCREMENT, assignment_id INTEGER NOT NULL, student_id INTEGER NOT NULL, score REAL, submitted_at TEXT, UNIQUE(assignment_id, student_id))',
@@ -116,17 +116,17 @@ class StudafyDatabase {
     await addColumn('students', 'provisional INTEGER NOT NULL DEFAULT 0');
     await addColumn(
       'assessment_submissions',
-      'publication_state TEXT NOT NULL DEFAULT "published"',
+      'publication_state TEXT NOT NULL DEFAULT \'published\'',
     );
     await addColumn('assessment_submissions', 'reviewed_at TEXT');
     await addColumn('assessment_submissions', 'reviewed_by TEXT');
     await addColumn('notifications', 'route TEXT');
-    await addColumn('notifications', 'user_key TEXT NOT NULL DEFAULT "demo"');
+    await addColumn('notifications', 'user_key TEXT NOT NULL DEFAULT \'demo\'');
     await db.execute(
       'CREATE TABLE IF NOT EXISTS audit_events(id INTEGER PRIMARY KEY AUTOINCREMENT, actor_key TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT, before_value TEXT, after_value TEXT, created_at TEXT NOT NULL)',
     );
     await db.execute(
-      'CREATE TABLE IF NOT EXISTS account_deletion_requests(id INTEGER PRIMARY KEY AUTOINCREMENT, user_key TEXT NOT NULL, state TEXT NOT NULL DEFAULT "grace_period", requested_at TEXT NOT NULL, execute_after TEXT NOT NULL, cancelled_at TEXT)',
+      'CREATE TABLE IF NOT EXISTS account_deletion_requests(id INTEGER PRIMARY KEY AUTOINCREMENT, user_key TEXT NOT NULL, state TEXT NOT NULL DEFAULT \'grace_period\', requested_at TEXT NOT NULL, execute_after TEXT NOT NULL, cancelled_at TEXT)',
     );
     await db.execute(
       'CREATE TABLE IF NOT EXISTS subscription_entitlements(user_key TEXT PRIMARY KEY, product_id TEXT NOT NULL, source TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 0, expires_at TEXT, verified_at TEXT NOT NULL)',
@@ -152,7 +152,7 @@ class StudafyDatabase {
       } catch (_) {}
     }
 
-    await add('audience TEXT NOT NULL DEFAULT "both"');
+    await add('audience TEXT NOT NULL DEFAULT \'both\'');
     await add('meeting_url TEXT');
     await add('meeting_at TEXT');
     await add('title TEXT');
@@ -176,7 +176,7 @@ class StudafyDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS attachments_owner_idx ON attachments(owner_type, owner_id)',
     );
-    await db.execute('UPDATE assessments SET delivery="online"');
+    await db.execute('UPDATE assessments SET delivery=\'online\'');
 
     final oldSchedules = await db.rawQuery(
       'SELECT s.*, c.start_time default_start, c.end_time default_end FROM class_schedule s JOIN classes c ON c.id=s.class_id',
@@ -237,15 +237,15 @@ class StudafyDatabase {
     }
 
     await addColumn('teacher_profile', 'photo_path TEXT');
-    await addColumn('attendance', 'status TEXT NOT NULL DEFAULT "present"');
+    await addColumn('attendance', 'status TEXT NOT NULL DEFAULT \'present\'');
     await addColumn('attendance', 'reason TEXT');
     await db.execute(
-      'UPDATE attendance SET status=CASE WHEN present=1 THEN "present" ELSE "absent" END WHERE status IS NULL OR status=""',
+      'UPDATE attendance SET status=CASE WHEN present=1 THEN \'present\' ELSE \'absent\' END WHERE status IS NULL OR status=\'\'',
     );
     final accepted =
         Sqflite.firstIntValue(
           await db.rawQuery(
-            'SELECT COUNT(*) FROM connection_requests WHERE status="accepted"',
+            'SELECT COUNT(*) FROM connection_requests WHERE status=\'accepted\'',
           ),
         ) ??
         0;
@@ -269,7 +269,7 @@ class StudafyDatabase {
       } catch (_) {}
     }
 
-    await addColumn('assessments', 'delivery TEXT NOT NULL DEFAULT "online"');
+    await addColumn('assessments', 'delivery TEXT NOT NULL DEFAULT \'online\'');
     await addColumn('assessments', 'scheduled_at TEXT');
     await addColumn('students', 'studafy_id TEXT');
     await db.execute(
@@ -279,7 +279,7 @@ class StudafyDatabase {
       'CREATE TABLE IF NOT EXISTS assessment_submissions(id INTEGER PRIMARY KEY AUTOINCREMENT, assessment_id INTEGER NOT NULL, student_id INTEGER NOT NULL, answer_text TEXT, score REAL, feedback TEXT, submitted_at TEXT, UNIQUE(assessment_id,student_id))',
     );
     await db.execute(
-      'CREATE TABLE IF NOT EXISTS connection_requests(id INTEGER PRIMARY KEY AUTOINCREMENT, requester_id TEXT NOT NULL, student_id INTEGER NOT NULL, status TEXT NOT NULL DEFAULT "pending", created_at TEXT NOT NULL)',
+      'CREATE TABLE IF NOT EXISTS connection_requests(id INTEGER PRIMARY KEY AUTOINCREMENT, requester_id TEXT NOT NULL, student_id INTEGER NOT NULL, status TEXT NOT NULL DEFAULT \'pending\', created_at TEXT NOT NULL)',
     );
     final students = await db.query('students');
     for (final student in students) {
@@ -614,11 +614,11 @@ class StudafyDatabase {
     final sinceTimestamp = since?.toIso8601String();
     final attendance = await db.rawQuery(
       'SELECT '
-      'SUM(CASE WHEN status!="excused" THEN 1 ELSE 0 END) total, '
-      'SUM(CASE WHEN status="present" OR (status IS NULL AND present=1) THEN 1 ELSE 0 END) present, '
-      'SUM(CASE WHEN status="tardy" THEN 1 ELSE 0 END) tardy, '
-      'SUM(CASE WHEN status="absent" OR (status IS NULL AND present=0) THEN 1 ELSE 0 END) absent, '
-      'SUM(CASE WHEN status="excused" THEN 1 ELSE 0 END) excused '
+      'SUM(CASE WHEN status!=\'excused\' THEN 1 ELSE 0 END) total, '
+      'SUM(CASE WHEN status=\'present\' OR (status IS NULL AND present=1) THEN 1 ELSE 0 END) present, '
+      'SUM(CASE WHEN status=\'tardy\' THEN 1 ELSE 0 END) tardy, '
+      'SUM(CASE WHEN status=\'absent\' OR (status IS NULL AND present=0) THEN 1 ELSE 0 END) absent, '
+      'SUM(CASE WHEN status=\'excused\' THEN 1 ELSE 0 END) excused '
       'FROM attendance WHERE student_id=? ${sinceDay == null ? '' : 'AND day>=?'}',
       sinceDay == null ? [studentId] : [studentId, sinceDay],
     );
@@ -639,7 +639,7 @@ class StudafyDatabase {
       'SELECT COUNT(s.id) graded_count, '
       'AVG(CASE WHEN s.score IS NOT NULL AND a.max_score>0 THEN (s.score * 100.0 / a.max_score) END) grade_average '
       'FROM assessment_submissions s JOIN assessments a ON a.id=s.assessment_id '
-      'WHERE s.student_id=? AND s.score IS NOT NULL AND s.publication_state="published" '
+      'WHERE s.student_id=? AND s.score IS NOT NULL AND s.publication_state=\'published\' '
       '${sinceTimestamp == null ? '' : 'AND COALESCE(s.submitted_at,a.scheduled_at)>=?'}',
       sinceTimestamp == null ? [studentId] : [studentId, sinceTimestamp],
     );
@@ -696,7 +696,7 @@ class StudafyDatabase {
   Future<List<Map<String, Object?>>> assessmentsForStudent(
     int studentId,
   ) async => (await database).rawQuery(
-    'SELECT DISTINCT a.*, c.name class_name, c.color, s.id submission_id, s.score, s.feedback, s.submitted_at, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type="exam" AND x.owner_id=a.id) attachment_count FROM assessments a JOIN classes c ON c.id=a.class_id JOIN enrollments e ON e.class_id=c.id LEFT JOIN assessment_submissions s ON s.assessment_id=a.id AND s.student_id=e.student_id WHERE e.student_id=? ORDER BY COALESCE(a.scheduled_at, "9999")',
+    'SELECT DISTINCT a.*, c.name class_name, c.color, s.id submission_id, s.score, s.feedback, s.submitted_at, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'exam\' AND x.owner_id=a.id) attachment_count FROM assessments a JOIN classes c ON c.id=a.class_id JOIN enrollments e ON e.class_id=c.id LEFT JOIN assessment_submissions s ON s.assessment_id=a.id AND s.student_id=e.student_id WHERE e.student_id=? ORDER BY COALESCE(a.scheduled_at, \'9999\')',
     [studentId],
   );
 
@@ -741,7 +741,7 @@ class StudafyDatabase {
 
   Future<List<Map<String, Object?>>> assessments() async =>
       (await database).rawQuery(
-        'SELECT a.*, c.name class_name, c.grade, c.section, c.color, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type="exam" AND x.owner_id=a.id) attachment_count FROM assessments a JOIN classes c ON c.id=a.class_id ORDER BY a.id DESC',
+        'SELECT a.*, c.name class_name, c.grade, c.section, c.color, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'exam\' AND x.owner_id=a.id) attachment_count FROM assessments a JOIN classes c ON c.id=a.class_id ORDER BY a.id DESC',
       );
   Future<List<Map<String, Object?>>> assessmentQuestions(
     int assessmentId,
@@ -855,11 +855,11 @@ class StudafyDatabase {
 
   Future<List<Map<String, Object?>>> assignments() async =>
       (await database).rawQuery(
-        'SELECT a.*, c.name class_name, c.grade, c.section, c.color, COUNT(s.id) submitted, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type="assignment" AND x.owner_id=a.id) attachment_count FROM assignments a JOIN classes c ON c.id=a.class_id LEFT JOIN submissions s ON s.assignment_id=a.id AND s.submitted_at IS NOT NULL GROUP BY a.id ORDER BY due_at',
+        'SELECT a.*, c.name class_name, c.grade, c.section, c.color, COUNT(s.id) submitted, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'assignment\' AND x.owner_id=a.id) attachment_count FROM assignments a JOIN classes c ON c.id=a.class_id LEFT JOIN submissions s ON s.assignment_id=a.id AND s.submitted_at IS NOT NULL GROUP BY a.id ORDER BY due_at',
       );
   Future<List<Map<String, Object?>>> notices() async =>
       (await database).rawQuery(
-        'SELECT n.*, c.name class_name, c.grade, c.section, COUNT(e.student_id) reach, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type="announcement" AND x.owner_id=n.id) attachment_count FROM notices n JOIN classes c ON c.id=n.class_id LEFT JOIN enrollments e ON e.class_id=c.id GROUP BY n.id ORDER BY n.id DESC',
+        'SELECT n.*, c.name class_name, c.grade, c.section, COUNT(e.student_id) reach, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'announcement\' AND x.owner_id=n.id) attachment_count FROM notices n JOIN classes c ON c.id=n.class_id LEFT JOIN enrollments e ON e.class_id=c.id GROUP BY n.id ORDER BY n.id DESC',
       );
   Future<int> addClass(Map<String, Object?> value) async =>
       (await database).insert('classes', value);
@@ -925,7 +925,7 @@ class StudafyDatabase {
       );
   Future<List<Map<String, Object?>>> messages(int chatId) async =>
       (await database).rawQuery(
-        'SELECT m.*, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type="message" AND x.owner_id=m.id) attachment_count FROM messages m WHERE m.chat_id=? ORDER BY m.id ASC',
+        'SELECT m.*, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'message\' AND x.owner_id=m.id) attachment_count FROM messages m WHERE m.chat_id=? ORDER BY m.id ASC',
         [chatId],
       );
   Future<int> sendMessage(int chatId, String body) async {
@@ -1098,7 +1098,7 @@ class StudafyDatabase {
 
   Future<List<Map<String, Object?>>> notebooksForClass(int classId) async =>
       (await database).rawQuery(
-        'SELECT n.*, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type="notebook" AND x.owner_id=n.id) attachment_count FROM lesson_notes n WHERE n.class_id=? ORDER BY n.day DESC, n.session_number',
+        'SELECT n.*, (SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'notebook\' AND x.owner_id=n.id) attachment_count FROM lesson_notes n WHERE n.class_id=? ORDER BY n.day DESC, n.session_number',
         [classId],
       );
 
@@ -1259,7 +1259,7 @@ class StudafyDatabase {
 
   Future<List<Map<String, Object?>>> linkedChildren() async =>
       (await database).rawQuery(
-        'SELECT r.*, s.name student_name, s.studafy_id, s.provisional, s.id student_id FROM connection_requests r JOIN students s ON s.id=r.student_id WHERE r.status="accepted" ORDER BY s.name',
+        'SELECT r.*, s.name student_name, s.studafy_id, s.provisional, s.id student_id FROM connection_requests r JOIN students s ON s.id=r.student_id WHERE r.status=\'accepted\' ORDER BY s.name',
       );
   Future<Map<String, Object?>?> studentByStudafyId(String studafyId) async {
     final rows = await (await database).query(
@@ -1319,7 +1319,7 @@ class StudafyDatabase {
 
   Future<List<Map<String, Object?>>> studentNotebooks(int studentId) async =>
       (await database).rawQuery(
-        'SELECT n.*,c.name class_name,c.grade,c.section,(SELECT COUNT(*) FROM attachments x WHERE x.owner_type="notebook" AND x.owner_id=n.id) attachment_count FROM lesson_notes n JOIN classes c ON c.id=n.class_id JOIN enrollments e ON e.class_id=c.id WHERE e.student_id=? ORDER BY n.day DESC, n.session_number',
+        'SELECT n.*,c.name class_name,c.grade,c.section,(SELECT COUNT(*) FROM attachments x WHERE x.owner_type=\'notebook\' AND x.owner_id=n.id) attachment_count FROM lesson_notes n JOIN classes c ON c.id=n.class_id JOIN enrollments e ON e.class_id=c.id WHERE e.student_id=? ORDER BY n.day DESC, n.session_number',
         [studentId],
       );
   Future<int> addAssignment(Map<String, Object?> value) async =>

@@ -59,3 +59,6 @@ export const notImplementedError = (
   message: "No /v1 resources are implemented yet.",
   request_id: requestId,
 });
+
+// Versioned API contracts (ARC-011).
+export * from "./v1";

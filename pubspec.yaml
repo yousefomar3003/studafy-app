@@ -50,6 +50,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # Runs the real preview SQLite adapter in tests against an in-memory
+  # database (ARC-011 repository contract tests).
+  sqflite_common_ffi: ^2.3.5
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

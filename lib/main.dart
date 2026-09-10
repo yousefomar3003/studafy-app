@@ -1,15 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app/app_dependencies.dart';
 import 'core/studafy_design.dart';
-import 'core/studafy_domain.dart';
 import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
 import 'data/backend.dart';
-import 'data/supabase_repository.dart';
+import 'features/classes/domain/classroom.dart';
+import 'features/classes/presentation/classes_page.dart';
+import 'features/session/presentation/role_page.dart';
+import 'features/session/presentation/splash_page.dart';
 import 'studafy_database.dart';
 import 'teacher_features.dart';
 import 'parent_features.dart';
@@ -58,17 +58,23 @@ class StudafyApp extends StatelessWidget {
   const StudafyApp({
     super.key,
     this.runtimePolicy = const RuntimePolicy(StudafyEnvironment.synthetic),
+    this.dependencies,
   });
 
   final RuntimePolicy runtimePolicy;
 
+  /// Composition root output; built lazily when omitted so plain test pumps
+  /// of [StudafyApp] work without constructing adapters.
+  final AppDependencies? dependencies;
+
   @override
   Widget build(BuildContext c) {
+    final deps = dependencies ?? AppDependencies.forPolicy(runtimePolicy);
     final routes = runtimePolicy.blocksApplicationStartup
         ? <String, WidgetBuilder>{}
         : <String, WidgetBuilder>{
-            '/roles': (_) => const RolePage(),
-            '/teacher': (_) => const TeacherShell(),
+            '/roles': (_) => RolePage(session: deps.session),
+            '/teacher': (_) => TeacherShell(dependencies: deps),
             '/parent': (_) => const ParentShell(),
             '/student': (_) => const StudentShell(),
           };
@@ -258,580 +264,77 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
   );
 }
 
-class StudafyLogo extends StatelessWidget {
-  const StudafyLogo({super.key, this.size = 46});
-  final double size;
-  @override
-  Widget build(BuildContext c) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: size * .56,
-        height: size * .56,
-        margin: EdgeInsets.only(right: size * .05),
-        decoration: BoxDecoration(
-          color: cyan.withValues(alpha: .14),
-          borderRadius: BorderRadius.circular(size * .18),
-        ),
-        child: Icon(Icons.add_rounded, color: cyan, size: size * .45),
-      ),
-      Text(
-        'studafy',
-        style: TextStyle(
-          fontSize: size,
-          height: 1,
-          letterSpacing: -2,
-          fontWeight: FontWeight.w900,
-          color: navy,
-        ),
-      ),
-    ],
-  );
-}
-
-class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
-  @override
-  State<SplashPage> createState() => _SplashPageState();
-}
-
-class _SplashPageState extends State<SplashPage> {
-  Timer? timer;
-  @override
-  void initState() {
-    super.initState();
-    timer = Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const RolePage()),
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext c) => const Scaffold(
-    backgroundColor: Colors.white,
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          StudafyLogo(size: 64),
-          SizedBox(height: 18),
-          Text(
-            'School life, connected.',
-            style: TextStyle(color: muted, fontSize: 16),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-enum UserRole { teacher, student, parent }
-
-class AuthFrame extends StatelessWidget {
-  const AuthFrame({super.key, required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext c) => Scaffold(
-    body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: child,
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-class RolePage extends StatefulWidget {
-  const RolePage({super.key});
-  @override
-  State<RolePage> createState() => _RolePageState();
-}
-
-class _RolePageState extends State<RolePage> {
-  UserRole? selected;
-  @override
-  Widget build(BuildContext c) => AuthFrame(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const StudafyLogo(size: 36),
-        const SizedBox(height: 44),
-        Text(
-          'How will you use Studafy?',
-          style: Theme.of(c).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Choose your role to personalize your experience.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: muted),
-        ),
-        const SizedBox(height: 32),
-        ...UserRole.values.map(
-          (r) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: RoleTile(
-              role: r,
-              selected: selected == r,
-              onTap: () => setState(() => selected = r),
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        FilledButton(
-          onPressed: selected == null
-              ? null
-              : () => Navigator.push(
-                  c,
-                  MaterialPageRoute(builder: (_) => LoginPage(role: selected!)),
-                ),
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
-          child: const Text('Continue'),
-        ),
-      ],
-    ),
-  );
-}
-
-class RoleTile extends StatelessWidget {
-  const RoleTile({
-    super.key,
-    required this.role,
-    required this.selected,
-    required this.onTap,
-  });
-  final UserRole role;
-  final bool selected;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext c) {
-    final d = switch (role) {
-      UserRole.teacher => (
-        Icons.school_outlined,
-        'Teacher',
-        'Manage classes, attendance and learning',
-      ),
-      UserRole.student => (
-        Icons.menu_book_outlined,
-        'Student',
-        'Learn, submit work and stay updated',
-      ),
-      UserRole.parent => (
-        Icons.family_restroom_outlined,
-        'Parent',
-        'Follow progress and school updates',
-      ),
-    };
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(17),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF0EFFF) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: selected ? navy : const Color(0xFFDCE0EE),
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: selected ? navy : canvas,
-              child: Icon(d.$1, color: selected ? Colors.white : navy),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    d.$2,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: ink,
-                    ),
-                  ),
-                  Text(
-                    d.$3,
-                    style: const TextStyle(color: muted, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              selected ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: selected ? navy : muted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, required this.role});
-  final UserRole role;
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  bool accepted = false;
-  bool signingIn = false;
-  bool completingRemoteLogin = false;
-  String? error;
-  StreamSubscription<AuthState>? authSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    if (StudafyBackend.isRemote) {
-      authSubscription = StudafyBackend.client.auth.onAuthStateChange.listen((
-        state,
-      ) {
-        if (state.session != null) _completeRemoteLogin();
-      });
-      if (StudafyBackend.client.auth.currentSession != null) {
-        _completeRemoteLogin();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    authSubscription?.cancel();
-    super.dispose();
-  }
-
-  StudafyRole get selectedRole => switch (widget.role) {
-    UserRole.teacher => StudafyRole.teacher,
-    UserRole.parent => StudafyRole.parent,
-    UserRole.student => StudafyRole.student,
-  };
-
-  Future<void> login(OAuthProvider provider) async {
-    if (!accepted) return;
-    if (StudafyBackend.isRemote) {
-      setState(() {
-        signingIn = true;
-        error = null;
-      });
-      try {
-        await StudafyBackend.client.auth.signInWithOAuth(
-          provider,
-          redirectTo: 'io.studafy.app://login-callback',
-        );
-      } catch (caught) {
-        if (mounted) {
-          setState(() {
-            signingIn = false;
-            error = '$caught';
-          });
-        }
-      }
-      return;
-    }
-    ActiveContextController.instance.startDemoRole(selectedRole);
-    _openRole();
-  }
-
-  Future<void> _completeRemoteLogin() async {
-    if (!mounted || completingRemoteLogin) return;
-    completingRemoteLogin = true;
-    try {
-      if (accepted) {
-        await StudafyBackend.client.rpc(
-          'record_policy_consent',
-          params: {
-            'requested_purpose': 'terms_and_privacy',
-            'requested_version': '2026-09-09',
-            'requested_locale':
-                StudafyLocaleController.instance.locale.languageCode,
-          },
-        );
-      }
-      final profile = await SupabaseStudafyRepository().currentProfile();
-      final membership = profile?.memberships
-          .where((item) => item.active && item.role == selectedRole)
-          .firstOrNull;
-      if (profile == null || membership == null) {
-        await StudafyBackend.client.auth.signOut();
-        throw StateError(
-          'This account does not have the selected school role.',
-        );
-      }
-      ActiveContextController.instance.hydrate(
-        authenticatedProfile: profile,
-        activeMembership: membership,
-      );
-      if (mounted) _openRole();
-    } catch (caught) {
-      if (mounted) {
-        setState(() {
-          signingIn = false;
-          error = '$caught'.replaceFirst('Bad state: ', '');
-        });
-      }
-    } finally {
-      completingRemoteLogin = false;
-    }
-  }
-
-  void _openRole() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => switch (widget.role) {
-          UserRole.teacher => const TeacherShell(),
-          UserRole.parent => const ParentShell(),
-          UserRole.student => const StudentShell(),
-        },
-      ),
-      (_) => false,
-    );
-  }
-
-  @override
-  Widget build(BuildContext c) => AuthFrame(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const StudafyLogo(size: 36),
-        const SizedBox(height: 40),
-        Text(
-          'Welcome, ${widget.role.name}',
-          textAlign: TextAlign.center,
-          style: Theme.of(c).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Use your school or personal account to continue.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: muted),
-        ),
-        const SizedBox(height: 30),
-        for (final x in [
-          ('G', 'Google', OAuthProvider.google),
-          ('M', 'Microsoft', OAuthProvider.azure),
-          ('●', 'Apple', OAuthProvider.apple),
-        ])
-          SocialButton(
-            mark: x.$1,
-            label: 'Continue with ${x.$2}',
-            onTap: signingIn ? () {} : () => login(x.$3),
-          ),
-        if (signingIn)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: LinearProgressIndicator(),
-          ),
-        if (error != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              error!,
-              style: const TextStyle(color: Color(0xFFB42318)),
-            ),
-          ),
-        const SizedBox(height: 10),
-        CheckboxListTile(
-          value: accepted,
-          onChanged: (v) => setState(() => accepted = v ?? false),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          title: Wrap(
-            children: [
-              const Text('I agree to the '),
-              LinkText(
-                'Terms of Use',
-                onTap: () => showPolicy(c, 'Terms of Use'),
-              ),
-              const Text(' and '),
-              LinkText(
-                'Privacy Policy',
-                onTap: () => showPolicy(c, 'Privacy Policy'),
-              ),
-              const Text('.'),
-            ],
-          ),
-        ),
-        if (!accepted)
-          const Padding(
-            padding: EdgeInsets.only(left: 12),
-            child: Text(
-              'Please accept before signing in.',
-              style: TextStyle(color: muted, fontSize: 12),
-            ),
-          ),
-        const SizedBox(height: 20),
-        TextButton.icon(
-          onPressed: () => Navigator.pop(c),
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Change role'),
-        ),
-      ],
-    ),
-  );
-}
-
-class SocialButton extends StatelessWidget {
-  const SocialButton({
-    super.key,
-    required this.label,
-    required this.mark,
-    required this.onTap,
-  });
-  final String label, mark;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext c) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(54),
-        side: const BorderSide(color: Color(0xFFDCE0EE)),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 42,
-            child: Text(
-              mark,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: ink,
-              ),
-            ),
-          ),
-          Expanded(child: Text(label, textAlign: TextAlign.center)),
-          const SizedBox(width: 42),
-        ],
-      ),
-    ),
-  );
-}
-
-class LinkText extends StatelessWidget {
-  const LinkText(this.text, {super.key, required this.onTap});
-  final String text;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext c) => GestureDetector(
-    onTap: onTap,
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: navy,
-        fontWeight: FontWeight.w700,
-        decoration: TextDecoration.underline,
-      ),
-    ),
-  );
-}
-
-void showPolicy(BuildContext c, String title) => showModalBottomSheet(
-  context: c,
-  showDragHandle: true,
-  builder: (c) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(c).textTheme.headlineSmall),
-        const SizedBox(height: 14),
-        Text(
-          title == 'Privacy Policy'
-              ? 'Studafy uses account, school, class, attendance, and communication data only to provide and secure the service. Schools control student records. We do not sell personal data. Contact your school to access, correct, or delete eligible records.'
-              : 'Use Studafy only for authorized school communication. Keep accounts secure, respect students and staff, and do not upload harmful or unlawful content. School policies continue to apply. Misuse may lead to account suspension.',
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () => Navigator.pop(c),
-            child: const Text('Close'),
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-
 class TeacherShell extends StatefulWidget {
-  const TeacherShell({super.key});
+  const TeacherShell({super.key, required this.dependencies});
+  final AppDependencies dependencies;
   @override
   State<TeacherShell> createState() => _TeacherShellState();
 }
 
 class _TeacherShellState extends State<TeacherShell> {
   int index = 0;
-  final pages = const [
-    TeacherHome(),
-    DatabaseClassesPage(),
-    ContentPage(),
-    GradebookPage(),
-    CommsPage(),
-  ];
+
+  // ARC-011 classes slice: the typed ClassesPage replaces DatabaseClassesPage.
+  // The shell (composition layer) owns the legacy-workspace bridge; the
+  // classes feature stays free of cross-feature imports.
+  Future<void> _openClassroom(ClassroomSummary classroom) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClassWorkspacePage(classData: classroom.toLegacyMap()),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext c) => Scaffold(
-    body: IndexedStack(index: index, children: pages),
-    bottomNavigationBar: StudafyNavigationBar(
-      selectedIndex: index,
-      onSelected: (value) => setState(() => index = value),
-      items: [
-        StudafyNavItem(
-          StudafyLocalizations.of(c).text('today'),
-          Icons.home_outlined,
-          Icons.home_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(c).text('classes'),
-          Icons.diversity_3_outlined,
-          Icons.diversity_3_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(c).text('teaching'),
-          Icons.auto_stories_outlined,
-          Icons.auto_stories_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(c).text('gradebook'),
-          Icons.fact_check_outlined,
-          Icons.fact_check_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(c).text('inbox'),
-          Icons.forum_outlined,
-          Icons.forum_rounded,
-        ),
-      ],
-      accent: navy,
-    ),
-  );
+  Widget build(BuildContext c) {
+    final pages = [
+      const TeacherHome(),
+      ClassesPage(
+        classes: widget.dependencies.classes,
+        onOpenClassroom: _openClassroom,
+        header: const FeatureHeader('Classes'),
+      ),
+      const ContentPage(),
+      const GradebookPage(),
+      const CommsPage(),
+    ];
+    return Scaffold(
+      body: IndexedStack(index: index, children: pages),
+      bottomNavigationBar: StudafyNavigationBar(
+        selectedIndex: index,
+        onSelected: (value) => setState(() => index = value),
+        items: [
+          StudafyNavItem(
+            StudafyLocalizations.of(c).text('today'),
+            Icons.home_outlined,
+            Icons.home_rounded,
+          ),
+          StudafyNavItem(
+            StudafyLocalizations.of(c).text('classes'),
+            Icons.diversity_3_outlined,
+            Icons.diversity_3_rounded,
+          ),
+          StudafyNavItem(
+            StudafyLocalizations.of(c).text('teaching'),
+            Icons.auto_stories_outlined,
+            Icons.auto_stories_rounded,
+          ),
+          StudafyNavItem(
+            StudafyLocalizations.of(c).text('gradebook'),
+            Icons.fact_check_outlined,
+            Icons.fact_check_rounded,
+          ),
+          StudafyNavItem(
+            StudafyLocalizations.of(c).text('inbox'),
+            Icons.forum_outlined,
+            Icons.forum_rounded,
+          ),
+        ],
+        accent: navy,
+      ),
+    );
+  }
 }
 
 class TeacherHeader extends StatelessWidget {
@@ -1286,91 +789,6 @@ class StudentRow extends StatelessWidget {
   );
 }
 
-class ClassesPage extends StatelessWidget {
-  const ClassesPage({super.key});
-  @override
-  Widget build(BuildContext c) => Column(
-    children: [
-      const TeacherHeader(title: 'My classes'),
-      Expanded(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SectionTitle('Classes'),
-                FilledButton.icon(
-                  onPressed: () => showCreateClass(c),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create a new classroom'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            for (final x in [
-              ('Biology', 'Grade 10 · Section B', '28 students', cyan),
-              ('Biology', 'Grade 9 · Section A', '25 students', navy),
-              (
-                'Chemistry',
-                'Grade 10 · Section A',
-                '27 students',
-                Color(0xFF7737EE),
-              ),
-            ])
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: InfoCard(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: x.$4.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(Icons.science_outlined, color: x.$4),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              x.$1,
-                              style: const TextStyle(
-                                color: ink,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              '${x.$2} · ${x.$3}',
-                              style: const TextStyle(
-                                color: muted,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => showInvite(c, '${x.$1} ${x.$2}'),
-                        icon: const Icon(Icons.person_add_alt_1_outlined),
-                      ),
-                      const Icon(Icons.chevron_right, color: muted),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
 class EmptyPage extends StatelessWidget {
   const EmptyPage(this.icon, this.title, this.subtitle, {super.key});
   final IconData icon;
@@ -1399,116 +817,6 @@ class EmptyPage extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
-
-Future<void> showCreateClass(BuildContext c) =>
-    showDialog(context: c, builder: (_) => const ClassDialog());
-
-class ClassDialog extends StatefulWidget {
-  const ClassDialog({super.key});
-  @override
-  State<ClassDialog> createState() => _ClassDialogState();
-}
-
-class _ClassDialogState extends State<ClassDialog> {
-  String grade = '10', section = 'A';
-  final name = TextEditingController();
-  TimeOfDay time = const TimeOfDay(hour: 8, minute: 30);
-  @override
-  Widget build(BuildContext c) => AlertDialog(
-    title: const Text('Create a new classroom'),
-    content: SizedBox(
-      width: 420,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: name,
-              decoration: const InputDecoration(
-                labelText: 'Class name',
-                hintText: 'e.g. Biology',
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField(
-                    initialValue: grade,
-                    decoration: const InputDecoration(labelText: 'Grade'),
-                    items: List.generate(
-                      12,
-                      (i) => DropdownMenuItem(
-                        value: '${i + 1}',
-                        child: Text('Grade ${i + 1}'),
-                      ),
-                    ),
-                    onChanged: (v) => setState(() => grade = v!),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField(
-                    initialValue: section,
-                    decoration: const InputDecoration(labelText: 'Section'),
-                    items: ['A', 'B', 'C', 'D']
-                        .map((x) => DropdownMenuItem(value: x, child: Text(x)))
-                        .toList(),
-                    onChanged: (v) => setState(() => section = v!),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              tileColor: canvas,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              leading: const Icon(Icons.schedule, color: navy),
-              title: const Text('Class time'),
-              subtitle: Text(time.format(c)),
-              onTap: () async {
-                final v = await showTimePicker(context: c, initialTime: time);
-                if (v != null) setState(() => time = v);
-              },
-            ),
-          ],
-        ),
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(c),
-        child: const Text('Cancel'),
-      ),
-      FilledButton(
-        onPressed: () async {
-          if (name.text.trim().isEmpty) return;
-          await StudafyDatabase.instance.addClass({
-            'name': name.text.trim(),
-            'grade': int.parse(grade),
-            'section': section,
-            'room': 'TBD',
-            'start_time':
-                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-            'end_time':
-                '${(time.hour + 1).toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-            'color': 0xFF241D73,
-          });
-          if (!c.mounted) return;
-          Navigator.pop(c);
-          ScaffoldMessenger.of(c).showSnackBar(
-            const SnackBar(
-              content: Text('Class created. You can now invite students.'),
-            ),
-          );
-        },
-        child: const Text('Create class'),
       ),
     ],
   );
@@ -1679,55 +987,3 @@ void showNotebook(BuildContext c, String className) async {
     ),
   );
 }
-
-void showInvite(BuildContext c, String className) => showDialog(
-  context: c,
-  builder: (c) => AlertDialog(
-    title: const Text('Invite students'),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(className, style: const TextStyle(color: muted)),
-        const SizedBox(height: 16),
-        const TextField(
-          decoration: InputDecoration(
-            labelText: 'Student email',
-            prefixIcon: Icon(Icons.mail_outline),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: canvas,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.link, color: navy),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Class code: STD-10B-84',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              Icon(Icons.copy, color: muted),
-            ],
-          ),
-        ),
-      ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(c),
-        child: const Text('Cancel'),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.pop(c),
-        child: const Text('Send invite'),
-      ),
-    ],
-  ),
-);

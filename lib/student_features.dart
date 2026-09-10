@@ -12,7 +12,7 @@ import 'studafy_database.dart';
 import 'data/session_service.dart';
 import 'data/study_coach_repository.dart';
 import 'student_linking.dart';
-import 'teacher_features.dart' show DeleteAccountPage;
+import 'features/account/presentation/delete_account_page.dart';
 
 const _navy = Color(0xFF241D73);
 const _cyan = Color(0xFF20C6E8);
