@@ -1,12 +1,12 @@
 export {
   createJsonLogger,
-  newRequestId,
   type Logger,
   type LogSink,
+  newRequestId,
 } from "./logger";
-export { logStartup, logListening, logShutdownStep } from "./events";
+export { logListening, logShutdownStep, logStartup } from "./events";
 export {
+  type GracefulShutdownOptions,
   installGracefulShutdown,
   type SignalSource,
-  type GracefulShutdownOptions,
 } from "./shutdown";

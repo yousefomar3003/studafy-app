@@ -14,18 +14,18 @@ PII. Approval: decision-log DL-004.
 | `remote-synthetic-2026-09-10.sql` | Schema-only dump, remote synthetic project, 1,938 lines |
 | `local-vs-remote-diff-2026-09-10.txt` | Full diff, 46 lines |
 
-## Result: reconciled
+## Result: reconciled, with 202609090004 follow-up
 
-The replayed repository migrations and the remote synthetic project produce
-**structurally identical schemas**. The complete delta is a single
+The replayed repository migrations and the remote synthetic project align
+through all eight migrations. The structural delta remains a single
 platform-managed object:
 
-- `public.rls_auto_enable()` event-trigger function (with `GRANT ALL` to
-  `anon`, `authenticated`, `service_role`) exists on the remote project but
-  not in the local stack. This is Supabase platform-created (it auto-enables
-  RLS on newly created public tables), not part of the repository migrations.
+- `public.rls_auto_enable()` exists on the remote project but not in the local
+  stack. It is Supabase platform-created. Migration `202609090004` does not
+  drop or redefine it; it only removes direct PUBLIC/anon/authenticated
+  execution.
 
-No table, policy, function, index, enum, or grant from the seven repository
+No table, policy, function, index, enum, or grant from the eight repository
 migrations differs between local replay and the remote project. There is no
 schema drift to correct.
 
@@ -51,19 +51,13 @@ bunx supabase inspect db table-stats --linked
 
 ## Open items registered from reconciliation (input to DB-020/021)
 
-1. **`rls_auto_enable()` platform object** — the remote-only event trigger and
-   its broad EXECUTE grants are platform-created. Requires Supabase-specific
-   review before any privilege change; do not drop or re-create it in a repo
-   migration. (Also flagged by the SEC-001 advisors.)
-2. **Public/anon EXECUTE on 5 SECURITY DEFINER helpers** — `is_school_member`,
-   `is_class_teacher`, `can_access_student`, `can_access_classroom`,
-   `handle_new_auth_user` are reconciled as deployed but carry unnecessary
-   public execute privileges. Removal belongs to a Phase 2 forward migration
-   (`DB-021`), not an edit of applied migrations.
-3. **Two explicit indexes only** (`meeting_deliveries_recipient_idx`,
+1. **`rls_auto_enable()` platform object** — remains remote-only and must not
+   be dropped/re-created; direct caller execution was removed by
+   `202609090004` and remote negative probes pass.
+2. **Two explicit indexes only** (`meeting_deliveries_recipient_idx`,
    `account_deletion_due_idx`); all RLS relationship paths are unindexed.
    Query-plan evidence: `docs/evidence/baselines/query-plans.md` (DB-020).
-4. **`students.school_id` nullable and no composite same-school foreign keys**
+3. **`students.school_id` nullable and no composite same-school foreign keys**
    — confirmed present in both environments; forward migration required
    (DB-020).
 

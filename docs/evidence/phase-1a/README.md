@@ -1,6 +1,8 @@
 # Phase 1A (ARC-010) — monorepo and delivery skeleton
 
-Status: complete. Date: 2026-09-10. Decision-log: DL-016/017/018.
+Status: implementation complete and locally re-verified; the current change
+set still requires a GitHub push/CI run before the external CI acceptance
+evidence is current. Date: 2026-09-10. Decision-log: DL-016/017/018.
 Architecture record: ADR-0011.
 
 ## What was delivered
@@ -20,7 +22,8 @@ Architecture record: ADR-0011.
   zero imports), `database` (read-only postgres.js smoke), `infrastructure`
   (ioredis + BullMQ factories), `test-support` (fake clock/ids/log collector).
 - **Containers/dev stack**: non-root Dockerfiles for both apps (pinned
-  `oven/bun:1.3.14-slim`), `docker-compose.dev.yml` (pinned Redis;
+  `oven/bun:1.3.14-slim` tag and manifest digest),
+  `docker-compose.dev.yml` (Redis tag and manifest digest pinned;
   Postgres = Supabase stack, not duplicated), `.dockerignore`.
 - **Boundary enforcement**: `scripts/check-bounds.ts` allowlist matrix
   (ADR-0011), wired into CI; negative-validated.
@@ -28,6 +31,8 @@ Architecture record: ADR-0011.
   with a Redis service, bundle builds, API+worker container health/shutdown
   smoke); `database` job gained the read-only `@studafy/database`
   connectivity test. All existing jobs untouched.
+- **Workspace quality scripts**: Deno-backed deterministic formatting and
+  TypeScript linting are first-class root scripts and blocking CI steps.
 
 ## Verification summary (full outputs in this directory)
 
@@ -35,13 +40,14 @@ Architecture record: ADR-0011.
 |---|---|
 | `flutter analyze` / `flutter test --concurrency=1` | No issues / 22-22 pass — **no Flutter behaviour change** (zero Flutter files touched; move to `apps/mobile` deferred, DL-017) |
 | `deno fmt/lint/check --frozen/test --frozen` | green after one `deno.lock` regeneration mirroring the workspace manifests |
-| pgTAP (containment + multi-school RLS) | 10/10 pass |
+| pgTAP (containment + multi-school RLS) | 11 containment + 8 RLS assertions pass after clean eight-migration replay |
 | Workspace frozen install | 53 installs, no changes |
-| Boundary check | 9 members, 19 source files, 0 violations (+ negative validation) |
+| Boundary check | 9 members, 22 source files, 0 violations (+ negative validation) |
 | Typecheck | 9/9 members |
-| Workspace tests (live Redis + Postgres) | 45 pass, 0 fail |
+| Workspace format/lint | 59 files format-clean; 36 TypeScript files linted; 0 findings |
+| Workspace tests (live Redis + Postgres) | 51 pass, 0 fail |
 | Bundle builds (api, worker) | exit 0 |
-| Container smoke (degraded + full + SIGTERM) | see `container-smoke-2026-09-10.md` — all expectations met, exit 0 |
+| Container smoke (full API + worker queue + SIGTERM) | Digest-pinned images built; API health/readiness 200; worker processed smoke job; both exited 0 after graceful shutdown |
 | Production fail-closed | exit 1 with stable `ConfigError` (`fail-closed-2026-09-10.md`) |
 
 ## Acceptance criteria (instructions.md:1035) — met
@@ -61,5 +67,6 @@ Architecture record: ADR-0011.
 - ADR-0001 remains provisional: only enqueue→process→drain and graceful
   shutdown are proven; reconnect, duplicated blocking connections, and Redis
   provider under load remain Phase 1/6 proofs.
-- Phase 1B (ARC-011) may start once this phase's CI is green on GitHub:
-  Flutter typed-contract slice with repository boundaries.
+- Phase 1B (ARC-011) was implemented locally. Push authorization and a green
+  CI run for the combined closing change set are still required before Phase 1
+  receives external CI evidence.

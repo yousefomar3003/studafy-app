@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart';
-
 import '../core/studafy_domain.dart';
+export '../features/parent/domain/parent_subscription_repository.dart';
 
 abstract interface class StudafyRepository {
   Future<UserProfile?> currentProfile();
@@ -23,25 +22,6 @@ abstract interface class MeetingRepository {
 }
 
 enum MeetingAudience { students, guardians, both }
-
-abstract interface class SubscriptionRepository {
-  Future<SubscriptionEntitlement> entitlement();
-  Future<void> purchaseInsightsMonthly();
-  Future<void> restorePurchases();
-}
-
-@immutable
-class SubscriptionEntitlement {
-  const SubscriptionEntitlement({
-    required this.active,
-    required this.source,
-    this.expiresAt,
-  });
-
-  final bool active;
-  final String source;
-  final DateTime? expiresAt;
-}
 
 abstract interface class PaperGradingRepository {
   Future<AiGradingDraft> proposeGrade({

@@ -43,7 +43,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@types/bun@1.4.2",
-        "npm:supabase@^2.117.0",
+        "npm:supabase@2.117.0",
         "npm:typescript@7.0.2"
       ]
     },

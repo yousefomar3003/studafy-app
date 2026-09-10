@@ -32,7 +32,9 @@ export class LogCollector {
     this.lines.push(line);
   };
   parsed(): Record<string, unknown>[] {
-    return this.lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+    return this.lines.map((line) =>
+      JSON.parse(line) as Record<string, unknown>
+    );
   }
   events(): string[] {
     return this.parsed().map((entry) => String(entry.event));

@@ -1,0 +1,126 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Studafy API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "description": "Authenticated profile and tenant memberships",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/classrooms": {
+      "get": {
+        "operationId": "listClassrooms",
+        "responses": {
+          "200": {
+            "description": "Authorized classroom summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ClassroomListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "V1Membership": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "school_id", "school_name", "role", "active"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "school_id": { "type": "string", "minLength": 1 },
+          "school_name": { "type": "string", "minLength": 1 },
+          "role": {
+            "type": "string",
+            "enum": ["teacher", "parent", "student"]
+          },
+          "active": { "type": "boolean" }
+        }
+      },
+      "V1MeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "display_name",
+          "email",
+          "memberships",
+          "environment",
+          "active_term_id"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "display_name": { "type": "string", "minLength": 1 },
+          "email": { "type": "string", "minLength": 1 },
+          "memberships": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/V1Membership" }
+          },
+          "environment": {
+            "type": "string",
+            "enum": ["synthetic", "development", "staging", "production"]
+          },
+          "active_term_id": { "type": ["string", "null"], "minLength": 1 }
+        }
+      },
+      "V1Classroom": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "grade",
+          "section",
+          "room",
+          "student_count",
+          "weekly_sessions",
+          "term_name"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "grade": { "type": "string" },
+          "section": { "type": "string" },
+          "room": { "type": ["string", "null"] },
+          "student_count": { "type": "integer", "minimum": 0 },
+          "weekly_sessions": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "term_name": { "type": ["string", "null"] }
+        }
+      },
+      "V1ClassroomListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["classrooms"],
+        "properties": {
+          "classrooms": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/V1Classroom" }
+          }
+        }
+      }
+    }
+  }
+}

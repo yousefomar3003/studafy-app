@@ -20,7 +20,7 @@ facts:
 |---|---|---|---|---|
 | Local disposable Supabase stack (CI and developer machines) | Ephemeral, Docker | Yes | Migrations + synthetic pgTAP fixtures only | Repository owner |
 | Local synthetic Edge Function serving | Ephemeral | Yes | Synthetic values only | Repository owner |
-| Remote synthetic Supabase project `eamewgaptdfqzpmayavx` ("studafy light", ap-northeast-1) | Remote | Yes | 7 migrations applied; zero users/rows/objects; 2 functions deployed | Repository owner |
+| Remote synthetic Supabase project `eamewgaptdfqzpmayavx` ("studafy light", ap-northeast-1) | Remote | Yes | 8 migrations applied through `202609090004`; zero users/rows/objects; 2 contained functions deployed | Repository owner |
 | Development | Remote | **No** | — | — |
 | Staging | Remote | **No** | — | — |
 | Production | Remote | **No** | — | — |

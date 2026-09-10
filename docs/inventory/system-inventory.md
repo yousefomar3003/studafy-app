@@ -69,9 +69,11 @@ effective policies**, all on public tables:
 - Only 2 explicit indexes; RLS/list paths unindexed.
 - Most tables lack `updated_at`; no state-transition enforcement; multi-row
   updates non-atomic; `audit_events` not append-only-enforced.
-- Platform `rls_auto_enable()` warning needs Supabase-specific review.
+- Platform `rls_auto_enable()` remains platform-managed; direct PUBLIC/anon/
+  authenticated execution was removed by `202609090004` without altering the
+  event trigger.
 
-## Edge Functions (8, Deno, service role)
+## Edge Functions (8 in source; 2 deployed synthetic, Deno)
 
 Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 → 401) + separate service-role client for privileged writes. CORS: wildcard
@@ -82,12 +84,12 @@ Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 |---|---|---|---|---|
 | `propose-paper-grade` | SEC-001 kill-switch stub | none (deliberate) | none | Always 503 `AI_GRADING_DISABLED` |
 | `study-coach` | Grounded Q&A/quiz/flashcards; writes `practice_sessions` | `SUPABASE_URL/ANON_KEY/SERVICE_ROLE_KEY`, `STUDY_COACH_URL`, `STUDY_COACH_KEY` | Study Coach AI endpoint | Active; rejects attachments |
-| `approve-paper-grade` | Teacher review of AI draft → `reviewed` | SUPABASE trio | none | Active |
-| `publish-grade-result` | Publish reviewed grade + notification + audit | SUPABASE trio | none | Active |
-| `create-google-meet` | Calendar event + Meet + deliveries | SUPABASE trio, `GOOGLE_TOKEN_BROKER_URL/SECRET` | Token broker, googleapis Calendar | Active; 503 if broker unconfigured |
-| `cancel-google-meet` | Delete event, cancel deliveries | SUPABASE trio, broker pair | Token broker, Calendar | Active |
-| `verify-store-purchase` | Verify receipt → entitlement upsert | SUPABASE trio, `PURCHASE_VERIFIER_URL/SECRET` | Purchase verifier | Active |
-| `request-account-deletion` | 14-day grace deletion request | SUPABASE trio | none | Active; JWT `iat` recent-auth check (finding → AUTH-030) |
+| `approve-paper-grade` | Teacher review of AI draft → `reviewed` | SUPABASE trio | none | Source only; not deployed synthetic |
+| `publish-grade-result` | Publish reviewed grade + notification + audit | SUPABASE trio | none | Source only; not deployed synthetic |
+| `create-google-meet` | Calendar event + Meet + deliveries | SUPABASE trio, `GOOGLE_TOKEN_BROKER_URL/SECRET` | Token broker, googleapis Calendar | Source only; not deployed synthetic |
+| `cancel-google-meet` | Delete event, cancel deliveries | SUPABASE trio, broker pair | Token broker, Calendar | Source only; not deployed synthetic |
+| `verify-store-purchase` | Verify receipt → entitlement upsert | SUPABASE trio, `PURCHASE_VERIFIER_URL/SECRET` | Purchase verifier | Source only; not deployed synthetic |
+| `request-account-deletion` | 14-day grace deletion request | SUPABASE trio | none | Source only; not deployed synthetic; JWT `iat` recent-auth finding → AUTH-030 |
 
 `.env.example` lists all names above with placeholders (grading keys
 deliberately absent).
@@ -104,7 +106,9 @@ deliberately absent).
   joins), `guardian_links` (with students), `notifications` (count + mark
   read), `subscription_entitlements` (read only).
 - RPC: `record_policy_consent` (policy version `2026-09-09`).
-- Edge Functions invoked: the 7 active ones above.
+- Edge Function call sites exist for seven workflows, but the remote synthetic
+  project deploys only the two contained functions (`propose-paper-grade` and
+  `study-coach`). No other remote function availability is claimed.
 - Auth: Supabase PKCE OAuth (Google, Microsoft, Apple) with redirect
   `io.studafy.app://login-callback`; no Realtime, no push, no direct storage
   use in the client.

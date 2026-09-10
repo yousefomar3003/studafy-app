@@ -8,7 +8,8 @@ re-runs the checks on every push.
 
 | Scan | Runner | Result | Artifact |
 |---|---|---|---|
-| Secret scan (full bounded history, both commits) | gitleaks 8.x local + CI gitleaks-action v3 | **0 leaks** | `gitleaks-2026-09-10.txt` |
+| Secret scan (full available Git history, six commits) | gitleaks 8.x local + CI gitleaks-action v3 | **0 leaks** | `gitleaks-2026-09-10.txt`; rerun 2026-09-10 after Phase 1 gap fixes |
+| Source snapshot scan (tracked + untracked, normally ignored files excluded) | gitleaks 8.x local | **0 leaks across 323 files** | Closing verification 2026-09-10 |
 | Tracked sensitive filenames | `.github/scripts/check-sensitive-files.sh` | **PASS** | (CI; rerun locally 2026-09-10) |
 | Known vulnerabilities (Dart + Bun lockfiles, recursive) | osv-scanner local + CI v2.5.1 | **0 known vulnerabilities** | `osv-2026-09-10.txt` |
 | Bun dependency audit | `bun audit --audit-level high` | **No vulnerabilities found** | `bun-audit-2026-09-10.txt` |
@@ -39,8 +40,10 @@ re-runs the checks on every push.
 3. GPL-pattern packages detected in the Dart inventory (2 hits) need
    confirmation they are dev-only/transitive and compatible with a store
    release; flagged for the licence review.
-4. Secret-scan scope is the bounded two-commit history
-   (`docs/governance/git-history-boundary.md`); that boundary is 100% covered.
+4. Secret-scan scope begins at the two-commit imported-history boundary
+   (`docs/governance/git-history-boundary.md`); all six currently available
+   commits are covered. Pre-baseline history does not exist locally and cannot
+   be inspected.
 5. osv-scanner covers Dart/Bun lockfiles only; Deno remote imports are covered
    by `deno.lock` integrity hashes instead of an advisory scan (acceptable,
    recorded).

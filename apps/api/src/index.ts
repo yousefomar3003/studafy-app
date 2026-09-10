@@ -1,15 +1,11 @@
-import { loadApiEnv, describeApiEnv } from "./bootstrap/config";
+import { describeApiEnv, loadApiEnv } from "./bootstrap/config";
 import { createApp, type DependentCheck } from "./bootstrap/app";
 import {
   checkDatabase,
   closeDatabase,
   createDatabase,
 } from "@studafy/database";
-import {
-  checkRedis,
-  closeRedis,
-  createRedis,
-} from "@studafy/infrastructure";
+import { checkRedis, closeRedis, createRedis } from "@studafy/infrastructure";
 import {
   createJsonLogger,
   installGracefulShutdown,

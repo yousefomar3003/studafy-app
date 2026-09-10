@@ -49,6 +49,24 @@ void main() {
     );
   });
 
+  test('forward migration removes anonymous privileged-function execution', () {
+    final migration = source(
+      'supabase/migrations/202609090004_lock_down_function_execute.sql',
+    );
+    for (final function in [
+      'is_school_member',
+      'is_class_teacher',
+      'can_access_student',
+      'can_access_classroom',
+      'handle_new_auth_user',
+      'rls_auto_enable',
+    ]) {
+      expect(migration, contains(function));
+    }
+    expect(migration, contains('from public, anon'));
+    expect(migration, contains('revoke execute on functions from anon'));
+  });
+
   test('native release guards cover known prototype release risks', () {
     final android = source('android/app/build.gradle.kts');
     expect(android, contains('SEC-001: Android release builds are blocked'));
@@ -72,5 +90,12 @@ void main() {
     final mobileExample = source('config/dart-defines.synthetic.example.json');
     expect(mobileExample, contains('SUPABASE_PUBLISHABLE_KEY'));
     expect(mobileExample, isNot(contains('SERVICE_ROLE')));
+
+    final remoteExample = source(
+      'config/dart-defines.development.example.json',
+    );
+    expect(remoteExample, contains('"APP_ENV": "development"'));
+    expect(remoteExample, contains('SUPABASE_PUBLISHABLE_KEY'));
+    expect(remoteExample, isNot(contains('SERVICE_ROLE')));
   });
 }

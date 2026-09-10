@@ -1,4 +1,4 @@
-import { loadWorkerEnv, describeWorkerEnv } from "./bootstrap/config";
+import { describeWorkerEnv, loadWorkerEnv } from "./bootstrap/config";
 import { buildSmokeRuntime } from "./bootstrap/queues";
 import {
   createJsonLogger,

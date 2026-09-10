@@ -1,9 +1,9 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import {
   checkRedis,
+  closeQueue,
   closeRedis,
   createQueue,
-  closeQueue,
   createRedis,
   createWorker,
   drainQueue,

@@ -151,17 +151,23 @@ for (const member of members) {
       if (allowed.includes(pkg)) continue;
       if (pkg === "(remote)") {
         violations.push(
-          `${member.name} ${relative(root, file)}: remote import "${specifier}" — floating runtime imports are forbidden`,
+          `${member.name} ${
+            relative(root, file)
+          }: remote import "${specifier}" — floating runtime imports are forbidden`,
         );
         continue;
       }
       if (knownNames.has(pkg)) {
         violations.push(
-          `${member.name} ${relative(root, file)}: workspace import "${pkg}" is not allowed for this member`,
+          `${member.name} ${
+            relative(root, file)
+          }: workspace import "${pkg}" is not allowed for this member`,
         );
       } else {
         violations.push(
-          `${member.name} ${relative(root, file)}: external import "${pkg}" is not allowed for this member`,
+          `${member.name} ${
+            relative(root, file)
+          }: external import "${pkg}" is not allowed for this member`,
         );
       }
     }
@@ -170,16 +176,20 @@ for (const member of members) {
 
 if (violations.length > 0) {
   console.error(
-    `architecture boundary violations (${violations.length}):\n${violations.join("\n")}`,
+    `architecture boundary violations (${violations.length}):\n${
+      violations.join("\n")
+    }`,
   );
   process.exit(1);
 }
 
 const enforced = members.filter((member) =>
-  Object.prototype.hasOwnProperty.call(ALLOWED, member.name),
+  Object.prototype.hasOwnProperty.call(ALLOWED, member.name)
 );
 console.log(
-  `boundary check passed: ${enforced.length} members, ${enforced
-    .map((member) => listSourceFiles(member.dir).length)
-    .reduce((a, b) => a + b, 0)} source files, 0 violations`,
+  `boundary check passed: ${enforced.length} members, ${
+    enforced
+      .map((member) => listSourceFiles(member.dir).length)
+      .reduce((a, b) => a + b, 0)
+  } source files, 0 violations`,
 );

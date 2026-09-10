@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createApp, type AppDependencies } from "../src/bootstrap/app";
+import { type AppDependencies, createApp } from "../src/bootstrap/app";
 import { ErrorCode } from "@studafy/contracts";
 import type { LogLevel } from "@studafy/contracts";
 import { createJsonLogger } from "@studafy/observability";
@@ -107,11 +107,13 @@ describe("empty /v1 router and unmatched routes", () => {
   test("any /v1 path and method returns the NOT_IMPLEMENTED contract", async () => {
     const { deps } = buildDependencies();
     const app = createApp(deps);
-    for (const [method, path] of [
-      ["GET", "/v1/me"],
-      ["POST", "/v1/classrooms"],
-      ["DELETE", "/v1/nested/resource"],
-    ] as const) {
+    for (
+      const [method, path] of [
+        ["GET", "/v1/me"],
+        ["POST", "/v1/classrooms"],
+        ["DELETE", "/v1/nested/resource"],
+      ] as const
+    ) {
       const response = await app.request(path, { method });
       expect(response.status).toBe(404);
       const body = (await response.json()) as {
@@ -148,7 +150,9 @@ describe("error handling and request correlation", () => {
     expect(body.error.message).not.toContain("sensitive");
     expect(body.error.request_id).toBeString();
 
-    const logged = collector.parsed().find((entry) => entry.event === "http_error");
+    const logged = collector.parsed().find((entry) =>
+      entry.event === "http_error"
+    );
     expect(logged?.error_message).toBe("sensitive internal detail");
   });
 
@@ -162,7 +166,9 @@ describe("error handling and request correlation", () => {
     );
 
     const errorResponse = await app.request("/v1/x");
-    const body = (await errorResponse.json()) as { error: { request_id: string } };
+    const body = (await errorResponse.json()) as {
+      error: { request_id: string };
+    };
     expect(body.error.request_id).toBe(
       errorResponse.headers.get("X-Request-ID") ?? "",
     );

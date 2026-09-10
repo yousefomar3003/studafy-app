@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 import {
   ErrorBody,
   ErrorCode,
-  ReadinessReport,
   notImplementedError,
-  V1MeResponse,
+  ReadinessReport,
+  V1Classroom,
   V1ClassroomListResponse,
+  V1Membership,
+  V1MeResponse,
 } from "../src";
 
 describe("readiness contract", () => {
@@ -26,9 +28,8 @@ describe("readiness contract", () => {
   });
 
   test("unknown reason codes are rejected", () => {
-    expect(() =>
-      ReadinessReport.parse({ ready: false, reasons: ["meh"] }),
-    ).toThrow();
+    expect(() => ReadinessReport.parse({ ready: false, reasons: ["meh"] }))
+      .toThrow();
   });
 });
 
@@ -46,7 +47,7 @@ describe("error contract", () => {
 
   test("an error without a request id is rejected", () => {
     expect(() =>
-      ErrorBody.parse({ error: { code: "X", message: "y", request_id: "" } }),
+      ErrorBody.parse({ error: { code: "X", message: "y", request_id: "" } })
     ).toThrow();
   });
 
@@ -71,6 +72,35 @@ describe("error contract", () => {
 });
 
 describe("/v1 typed contracts (ARC-011)", () => {
+  test("OpenAPI schemas and operations stay aligned with zod contracts", async () => {
+    const specUrl = new URL("../openapi/v1.json", import.meta.url);
+    const spec = await Bun.file(specUrl).json() as {
+      paths: Record<string, { get: { operationId: string } }>;
+      components: {
+        schemas: Record<string, { properties: Record<string, unknown> }>;
+      };
+    };
+    const schemaKeys = (name: string) =>
+      Object.keys(spec.components.schemas[name]!.properties).sort();
+
+    expect(V1Membership.keyof().options.map(String).sort()).toEqual(
+      schemaKeys("V1Membership"),
+    );
+    expect(V1MeResponse.keyof().options.map(String).sort()).toEqual(
+      schemaKeys("V1MeResponse"),
+    );
+    expect(V1Classroom.keyof().options.map(String).sort()).toEqual(
+      schemaKeys("V1Classroom"),
+    );
+    expect(V1ClassroomListResponse.keyof().options.map(String).sort()).toEqual(
+      schemaKeys("V1ClassroomListResponse"),
+    );
+    expect(spec.paths["/v1/me"]!.get.operationId).toBe("getMe");
+    expect(spec.paths["/v1/classrooms"]!.get.operationId).toBe(
+      "listClassrooms",
+    );
+  });
+
   test("V1MeResponse accepts a valid authenticated profile", () => {
     const parsed = V1MeResponse.parse({
       id: "00000000-0000-4000-8000-000000000001",
@@ -109,7 +139,7 @@ describe("/v1 typed contracts (ARC-011)", () => {
         ],
         environment: "development",
         active_term_id: null,
-      }),
+      })
     ).toThrow();
   });
 
@@ -147,7 +177,7 @@ describe("/v1 typed contracts (ARC-011)", () => {
             term_name: null,
           },
         ],
-      }),
+      })
     ).toThrow();
   });
 

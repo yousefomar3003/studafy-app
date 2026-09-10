@@ -18,7 +18,7 @@ owners.
 
 | ID | Date | Decision | Status | Blocks/unblocks | Evidence |
 |---|---|---|---|---|---|
-| DL-001 | 2026-09-10 | Phase 0A evidence log: all rows owner-assigned and approved (synthetic scope) | Decided | Unblocks Phase 0B | `docs/security/sec-001-containment.md` evidence log |
+| DL-001 | 2026-09-10 | Initial Phase 0A evidence rows were owner-assigned for synthetic scope; later privilege and authenticated-smoke evidence reopened the human review items | Superseded by DL-024 | Did not close the expanded Phase 0A gate | `docs/security/sec-001-containment.md` evidence log |
 | DL-002 | 2026-09-10 | Secret/history scanning formally bounded to the two-commit baseline; original history unrecoverable | Bounded | Closes the SEC-001 history gate item | `docs/governance/git-history-boundary.md` |
 | DL-003 | 2026-09-10 | Supported platforms: Android and iOS only; generated web/desktop scaffolds are non-production | Decided | Unblocks REL-002 planning; ADR-0003 | ADR-0003 |
 | DL-004 | 2026-09-10 | Read-only remote inspection of synthetic project `eamewgaptdfqzpmayavx` permitted for 0B schema reconciliation (no writes, no data copying) | Decided | Unblocks the live-vs-repo diff deliverable | `docs/evidence/schema/reconciliation-report.md` |
@@ -40,6 +40,10 @@ owners.
 | DL-020 | 2026-09-10 | Add dev-only sqflite_common_ffi so the real preview adapter runs in flutter tests against an ffi database | Decided | ADR-0012 |
 | DL-021 | 2026-09-10 | Dart architecture boundary enforcement via tools/check_dart_bounds.dart (import allowlist matrix per feature zone, legacy exemption list, CI step) — mirrors the TS check-bounds.ts approach | Decided | ADR-0012 |
 | DL-022 | 2026-09-10 | Contract drift detection: shared JSON fixture validated by both a bun test (zod schemas) and a flutter test (Dart DTOs); no OpenAPI codegen tooling yet | Decided | ADR-0012 |
+| DL-023 | 2026-09-10 | Supersedes the no-codegen portion of DL-022: canonical OpenAPI 3.1 operations/schemas generate the checked-in Dart DTO/client; CI checks generated output, OpenAPI/Zod keys, paths, and shared fixtures | Decided | ADR-0012; closes ARC-011 client-generation gap |
+| DL-024 | 2026-09-10 | SEC-001 repository, local-stack, and synthetic technical evidence passes through migration `202609090004`; Phase 0A remains open until a human reviews fresh Supabase logs, credential/session/MFA state, and explicitly approves the evidence log | Decided | Blocks Phase 0 closure, production/real-data use, and any claim that SEC-001 is closed; does not authorize deployment | `docs/security/sec-001-containment.md` evidence log |
+| DL-025 | 2026-09-11 | Decompose Flutter hotspots without changing production authorization: keep startup/composition separate, inject parent/teacher/Study Coach ports, fail closed when remote repositories do not exist, modularize preview SQLite by responsibility, and enforce provider-symbol bans in presentation/application code | Decided | Extends ARC-011; reduces monolith and direct-persistence risk without activating an API or production path | ADR-0012; `docs/evidence/phase-1b/hotspot-refactor-2026-09-11.md` |
+| DL-026 | 2026-09-11 | Replace the 4,690-line teacher feature monolith with a 34-line compatibility library and 14 responsibility-focused modules capped below 600 lines; retain and count its 62 direct preview-database calls under an explicit legacy boundary until repository-backed slices replace them | Decided | Removes the file-size hotspot without falsely declaring the teacher persistence boundary migrated | ADR-0012; `docs/evidence/phase-1b/hotspot-refactor-2026-09-11.md` |
 
 ## SLO section
 

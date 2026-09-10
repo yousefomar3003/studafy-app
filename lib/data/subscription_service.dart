@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import 'backend.dart';
-import 'studafy_repository.dart';
+import '../features/parent/domain/parent_subscription_repository.dart';
 
-class StoreSubscriptionRepository implements SubscriptionRepository {
+class StoreSubscriptionRepository implements ParentSubscriptionRepository {
   StoreSubscriptionRepository({InAppPurchase? store})
     : _store = store ?? InAppPurchase.instance;
 

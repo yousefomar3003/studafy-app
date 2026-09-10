@@ -1,0 +1,5 @@
+{
+  "APP_ENV": "development",
+  "SUPABASE_URL": "https://YOUR_SYNTHETIC_PROJECT.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "YOUR_SYNTHETIC_PUBLISHABLE_KEY"
+}

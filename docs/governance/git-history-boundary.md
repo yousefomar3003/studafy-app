@@ -9,14 +9,16 @@ Git history".
 
 The Studafy repository was re-established from a squashed snapshot. The
 original development history is unrecoverable (owner confirmation,
-2026-09-10). The entire verifiable history is therefore exactly two commits:
+2026-09-10). The history boundary started with these two baseline commits:
 
 - `2dfffad` — Initial Studafy baseline
 - `9e134f2` — Fix read-only dependency scan workflow
 
-No claim is made about the absence of secrets in pre-baseline history. That
-history cannot be inspected, and this limitation is accepted rather than left
-as an open gate.
+Normal post-baseline commits now follow those commits and are fully available
+to Git scanning. As of the 2026-09-10 closing verification, all six commits
+then present were scanned. No claim is made about the absence of secrets in
+pre-baseline history. That history cannot be inspected, and this limitation is
+accepted rather than left as an open gate.
 
 ## Scope of scanning under this boundary
 

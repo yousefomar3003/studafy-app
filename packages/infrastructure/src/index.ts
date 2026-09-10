@@ -1,19 +1,19 @@
 export {
-  createRedis,
   checkRedis,
   closeRedis,
+  createRedis,
   type Redis,
   type RedisOptions,
 } from "./redis";
 export {
+  closeQueue,
+  closeWorker,
   createQueue,
   createWorker,
   drainQueue,
-  closeQueue,
-  closeWorker,
-  type Queue,
-  type Worker,
-  type Processor,
   type JobsOptions,
+  type Processor,
+  type Queue,
   type QueueOptions,
+  type Worker,
 } from "./queues";

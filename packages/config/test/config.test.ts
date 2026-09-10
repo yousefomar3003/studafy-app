@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
   apiEnvSchema,
+  ConfigError,
   describeApiEnv,
   describeWorkerEnv,
   enforceApiFailClosed,
   parseEnv,
   redactUrl,
   workerEnvSchema,
-  ConfigError,
 } from "../src";
 
 describe("parseEnv", () => {
@@ -22,9 +22,9 @@ describe("parseEnv", () => {
   });
 
   test("rejects an unknown environment with a stable error", () => {
-    expect(() =>
-      parseEnv(apiEnvSchema, { ENVIRONMENT: "qa" }),
-    ).toThrow(ConfigError);
+    expect(() => parseEnv(apiEnvSchema, { ENVIRONMENT: "qa" })).toThrow(
+      ConfigError,
+    );
   });
 
   test("rejects a malformed DATABASE_URL", () => {
@@ -32,7 +32,7 @@ describe("parseEnv", () => {
       parseEnv(apiEnvSchema, {
         ENVIRONMENT: "development",
         DATABASE_URL: "not-a-url",
-      }),
+      })
     ).toThrow(ConfigError);
   });
 

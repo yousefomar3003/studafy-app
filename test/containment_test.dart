@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/data/studafy_repository.dart';
-import 'package:studafy/data/study_coach_repository.dart';
 import 'package:studafy/data/supabase_repository.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
 import 'package:studafy/features/session/presentation/splash_page.dart';
+import 'package:studafy/features/study_coach/application/study_coach_interactor.dart';
+import 'package:studafy/features/study_coach/data/unavailable_study_coach_repository.dart';
 import 'package:studafy/main.dart';
 import 'package:studafy/student_features.dart';
 import 'package:studafy/teacher_features.dart';
@@ -146,7 +147,9 @@ void main() {
         ),
       );
       await expectLater(
-        StudyCoachRepository().ask(
+        const StudyCoachInteractor(
+          repository: UnavailableStudyCoachRepository(),
+        ).ask(
           question: 'Read this',
           attachmentPath: 'coach/another-user/private.pdf',
         ),

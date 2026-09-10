@@ -73,9 +73,12 @@ export function createJsonLogger(
     bound: Record<string, unknown>,
   ): Logger {
     return {
-      debug: (event, fields = {}) => emit("debug", event, { ...bound, ...fields }),
-      info: (event, fields = {}) => emit("info", event, { ...bound, ...fields }),
-      warn: (event, fields = {}) => emit("warn", event, { ...bound, ...fields }),
+      debug: (event, fields = {}) =>
+        emit("debug", event, { ...bound, ...fields }),
+      info: (event, fields = {}) =>
+        emit("info", event, { ...bound, ...fields }),
+      warn: (event, fields = {}) =>
+        emit("warn", event, { ...bound, ...fields }),
       error: (event, fields = {}) =>
         emit("error", event, { ...bound, ...fields }),
       child: (childFields) => makeLogger({ ...bound, ...childFields }),

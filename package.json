@@ -4,6 +4,11 @@
   "packageManager": "bun@1.3.14",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
+    "format": "deno fmt apps packages scripts package.json tsconfig.base.json docker-compose.dev.yml .github/workflows/ci.yml",
+    "format:check": "deno fmt --check apps packages scripts package.json tsconfig.base.json docker-compose.dev.yml .github/workflows/ci.yml",
+    "lint": "deno lint --rules-exclude=no-sloppy-imports,require-await apps packages scripts",
+    "generate:dart-client": "bun scripts/generate-dart-client.ts",
+    "generate:check": "bun scripts/generate-dart-client.ts --check",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
     "check:bounds": "bun scripts/check-bounds.ts",
@@ -13,7 +18,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/bun": "1.4.2",
-    "supabase": "^2.117.0",
+    "supabase": "2.117.0",
     "typescript": "7.0.2"
   }
 }

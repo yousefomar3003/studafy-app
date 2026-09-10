@@ -1,8 +1,8 @@
 import {
   describeWorkerEnv,
   parseEnv,
-  workerEnvSchema,
   type WorkerEnv,
+  workerEnvSchema,
 } from "@studafy/config";
 
 /** Loads and validates the worker environment exactly once at startup.

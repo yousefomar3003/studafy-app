@@ -11,7 +11,7 @@ holds the rules. The authoritative decision log is
 |---|---|---|---|---|---|
 | Local disposable Supabase stack | Docker on developer machine / CI runner | Migrations + synthetic pgTAP fixtures only; `--no-seed` | Repository owner (`@yousefomar3003`) | None (ephemeral JWT secret regenerated per stack) | Started with `bunx supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor`; stopped with `--no-backup` |
 | Local synthetic Edge Function serving | `bunx supabase functions serve` | Synthetic values from ignored `.env` | Repository owner | Local `.env` (gitignored; examples only in repo) | Never with real provider secrets |
-| Remote synthetic Supabase project | `eamewgaptdfqzpmayavx` ("studafy light"), AWS ap-northeast-1, org `tsnrgtfplfwtmnhydaof` | 7 migrations applied; zero users/schools/profiles/objects; only contained smoke traffic | Repository owner | Owner's Supabase account (MFA owner-attested); access token only on owner machine (`supabase/.temp/`, gitignored) | The only remote project in existence; **not** a production region commitment (ADR-0005) |
+| Remote synthetic Supabase project | `eamewgaptdfqzpmayavx` ("studafy light"), AWS ap-northeast-1, org `tsnrgtfplfwtmnhydaof` | 8 migrations applied; ephemeral authenticated smoke user deleted; zero remaining users/schools/profiles/objects | Repository owner | Owner's Supabase account; CLI state in `supabase/.temp/` is gitignored; fresh MFA/session review pending | The only remote project in existence; **not** a production region commitment (ADR-0005) |
 | Development | — | — | — | — | Does not exist |
 | Staging | — | — | — | — | Does not exist |
 | Production | — | — | — | — | Does not exist; creation gated on Phase 0A re-evidence + ADR-0005/0007/0008 |
@@ -26,6 +26,10 @@ holds the rules. The authoritative decision log is
 
 Permitted dart-defines are exactly `APP_ENV`, `SUPABASE_URL`,
 `SUPABASE_PUBLISHABLE_KEY` (see `docs/security/sec-001-containment.md`).
+The ignored `config/dart-defines.development.json` is locally configured with
+the synthetic public URL/publishable key and mode 0600; it contains no server
+secret. The ignored root `.env` contains only disposable local API/worker
+Postgres and Redis connection settings.
 
 ## CI (`ci.yml`, "CI (no deployment)")
 

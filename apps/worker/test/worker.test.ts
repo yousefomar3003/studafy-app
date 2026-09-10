@@ -11,7 +11,12 @@ describe("worker smoke queue lifecycle", () => {
     "enqueued smoke jobs are processed and logged, then close cleanly",
     async () => {
       const collector = new LogCollector();
-      const logger = createJsonLogger("worker", "test", "debug", collector.sink);
+      const logger = createJsonLogger(
+        "worker",
+        "test",
+        "debug",
+        collector.sink,
+      );
       const runtime = buildSmokeRuntime(redisUrl!, logger, {
         environment: "development",
         concurrency: 1,

@@ -1,7 +1,9 @@
 # SEC-001 containment record
 
-Status: repository controls implemented; synthetic deployment evidence recorded
-2026-09-09; Phase 0A human gate approved 2026-09-10 (see evidence log).
+Status: repository and synthetic technical controls verified through
+`202609090004` on 2026-09-10. The Phase 0A human gate remains open pending the
+fresh dashboard-log/credential review and explicit security-owner approval in
+the evidence log below.
 
 This record covers only immediate containment. It does not approve a production
 release and does not authorize real student, family, teacher, or school data.
@@ -10,10 +12,10 @@ release and does not authorize real student, family, teacher, or school data.
 
 | Risk | Severity | Containment | Accountable role | Exit condition | Status |
 |---|---:|---|---|---|---|
-| Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | Repository-contained; deployed verification pending |
+| Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | Repository and synthetic deployment verified; capability remains disabled |
 | Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | Contained in app; release verification pending |
-| Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Migration created; application pending |
-| Example identities and debug signing could reach a store build | High | Android release and iOS Release/archive builds fail with `SEC-001` | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Repository-contained; store credential restriction pending |
+| Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Upload containment applied and tested; safe replacement pending |
+| Example identities and debug signing could reach a store build | High | Android release and iOS Release/archive builds fail with `SEC-001` | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Release guards verified; REL-002 replacement pending |
 | Privileged workflows lack consistent validation, idempotency, transactions, and observability | High | Unsafe grading workflow disabled; other workflows remain prohibited from production release | Backend/security owner | Phase 3 service controls and negative tests pass | Broader remediation pending |
 | Historical secrets cannot be inspected without repository history | High | Treat history inspection as an explicit gate; do not claim completion | Security owner | Original Git history is restored or the limitation is formally accepted with credential rotation | Formally bounded 2026-09-10: `docs/governance/git-history-boundary.md` |
 
@@ -72,6 +74,9 @@ security system, not in this repository.
 - Verify the contained grading function version is deployed in every project.
 - Apply `202609090003_contain_unsafe_uploads.sql` and confirm authenticated
   inserts into both `papers/` and `coach/` are denied.
+- Apply `202609090004_lock_down_function_execute.sql`; confirm the five
+  application SECURITY DEFINER helpers and `rls_auto_enable` deny anonymous
+  RPC execution and future functions do not inherit an anon EXECUTE grant.
 - Search function/storage/provider audit logs for grading calls, signed-object
   creation, unexpected object reads, repeated path guesses, and unknown actors.
 - Record query range, environment, reviewer, result, evidence location, and any
@@ -159,24 +164,42 @@ application-owned `SECURITY DEFINER` helpers: `is_school_member`,
 `is_class_teacher`, `can_access_student`, `can_access_classroom`, and
 `handle_new_auth_user`. Their current implementations derive identity from
 `auth.uid()` or are trigger-only, and the project has no real data, but these
-unnecessary privileges must be removed in a new forward migration before any
-non-synthetic use. The advisor also reported RLS performance improvements that
-belong to the later indexing/query-hardening work. A separate platform-created
-`public.rls_auto_enable()` warning requires Supabase-specific review rather than
-an unreviewed privilege change.
+unnecessary privileges were removed by the forward-only
+`202609090004_lock_down_function_execute.sql` migration on 2026-09-10. The same
+migration removed direct anonymous/authenticated execution of platform-created
+`public.rls_auto_enable()` without dropping or modifying its event trigger, and
+removed the future anon/PUBLIC default function privilege. Local pgTAP and
+remote schema/RPC negative evidence are recorded in
+`docs/evidence/schema/privilege-lockdown-2026-09-10.md`. RLS performance
+improvements remain later indexing/query-hardening work.
+
+### Synthetic follow-up evidence — 2026-09-10
+
+- Dry run listed exactly `202609090004_lock_down_function_execute.sql`; it was
+  then applied to `eamewgaptdfqzpmayavx` only.
+- Remote migration history is aligned through `202609090004`.
+- Fresh schema evidence and anonymous RPC probes prove all six reviewed
+  helpers deny anonymous execution.
+- An authenticated ephemeral synthetic user tested Study Coach attachment and
+  grading path substitution. Both returned their stable 503 codes with request
+  IDs, no path echo, no signed URL/token, and no provider branch.
+- Direct private-object access failed. The ephemeral user was deleted; remote
+  auth-user and listed storage-object counts returned to zero.
+- Full redacted evidence is in
+  `docs/evidence/smoke/remote-authenticated-containment-2026-09-10.md`.
 
 ## Human evidence log
 
 | Evidence | Named owner | Private evidence location | Result/exception | Approval |
 |---|---|---|---|---|
-| Deployed grading endpoint returns stable 503 and no provider request occurs | Repository owner (GitHub `@yousefomar3003`) | CLI evidence in "Synthetic deployment evidence — 2026-09-09"; Supabase log explorer for project `eamewgaptdfqzpmayavx` | Endpoint passed on 2026-09-09 (stable 503, request ID, no path echo). No grading-provider credentials are configured in any environment, so no provider request can occur. | Approved 2026-09-10 |
-| Storage containment migration applied and direct inserts denied | Repository owner (GitHub `@yousefomar3003`) | CLI evidence above; `supabase/tests/containment.sql` re-runnable in CI from clean environments | Passed in the synthetic project on 2026-09-09 | Approved 2026-09-10 |
-| Provider/storage/function logs inspected | Repository owner (GitHub `@yousefomar3003`) | Supabase dashboard log explorer, synthetic project `eamewgaptdfqzpmayavx` only | Synthetic-project scope only: the project has zero auth users, schools, profiles, and storage objects, and observed traffic is limited to contained smoke requests. No production project exists to inspect. | Approved 2026-09-10 (synthetic scope) |
-| Deployment and store credentials restricted | Repository owner (GitHub `@yousefomar3003`) | Owner credential custody; no store integration exists yet | No App Store Connect or Google Play Console products, signing identities, or store credentials exist yet (`studafy_parent_insights_monthly` is planned only). Deployment access is limited to the owner's Supabase and GitHub accounts; MFA and unused-account review are owner-attested. | Approved 2026-09-10 |
-| Original Git history scanned or limitation formally bounded | Repository owner (GitHub `@yousefomar3003`) | `docs/governance/git-history-boundary.md` | Original history is unrecoverable (owner confirmation 2026-09-10); scanning is formally bounded to the two-commit baseline, which gitleaks scans in full | Approved 2026-09-10 |
+| Authenticated grading and attachment substitution return stable 503s and no provider request occurs | Repository owner (GitHub `@yousefomar3003`) | `docs/evidence/smoke/remote-authenticated-containment-2026-09-10.md` | Passed 2026-09-10; request IDs recorded; no provider credentials exist | Technical pass; security-owner approval pending |
+| Storage containment and function privilege migrations applied | Repository owner (GitHub `@yousefomar3003`) | `docs/evidence/schema/privilege-lockdown-2026-09-10.md`; pgTAP in CI | Eight migrations aligned; direct upload denied; all six anon RPC probes denied | Technical pass; security-owner approval pending |
+| Provider/storage/function logs inspected | Repository owner (GitHub `@yousefomar3003`) | Supabase dashboard log explorer, synthetic project `eamewgaptdfqzpmayavx` only | CLI/API evidence proves zero remaining users/objects and no configured provider; a fresh dashboard log-range review after the 2026-09-10 probes is still required | **Pending human review** |
+| Deployment and store credentials restricted | Repository owner (GitHub `@yousefomar3003`) | Owner credential custody; no store integration exists yet | Repository/GitHub contain no deployment secret; only Supabase system secret categories exist. Console sessions, MFA and unused credential revocation require owner review. No exposure requiring rotation was found. | **Pending human re-approval** |
+| Original Git history scanned or limitation formally bounded | Repository owner (GitHub `@yousefomar3003`) | `docs/governance/git-history-boundary.md` | Original pre-baseline history is unrecoverable (owner confirmation 2026-09-10); all six currently available commits and the 323-file tracked/untracked source snapshot have zero gitleaks findings | Approved boundary 2026-09-10; new commits remain continuously scanned |
 | Android release and iOS archive negative-build evidence | Repository owner (GitHub `@yousefomar3003`) | Local verification record above | Passed locally on 2026-09-09: both native Release guards fail the build as designed | Approved 2026-09-10 |
 
-Phase 0A gate disposition: all rows are assigned and approved on 2026-09-10 by
-the accountable repository owner, permitting Phase 0B to start. Rows marked
-synthetic-scope must be re-evidenced before any production or real-data
-environment is used, and re-approval is required if containment controls change.
+Phase 0A gate disposition: technical containment now passes in the repository,
+local disposable stack, and remote synthetic project. The gate remains open
+until the named security owner performs the two pending human reviews above and
+records explicit approval. No production or real-data environment is permitted.

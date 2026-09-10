@@ -53,8 +53,7 @@ export function installGracefulShutdown(
       .catch((error: unknown) => {
         clearTimeout(timeout);
         logShutdownStep(logger, "failed", {
-          error_message:
-            error instanceof Error ? error.message : String(error),
+          error_message: error instanceof Error ? error.message : String(error),
         });
         exit(1);
       });

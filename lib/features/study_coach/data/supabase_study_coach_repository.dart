@@ -1,31 +1,16 @@
-import 'backend.dart';
+import '../../../data/backend.dart';
+import '../domain/study_coach_repository.dart';
 
-class StudyQuizQuestion {
-  const StudyQuizQuestion({
-    required this.prompt,
-    required this.options,
-    required this.correctIndex,
-  });
-  final String prompt;
-  final List<String> options;
-  final int correctIndex;
-}
+final class SupabaseStudyCoachRepository implements StudyCoachRepository {
+  const SupabaseStudyCoachRepository();
 
-class StudyFlashcard {
-  const StudyFlashcard({required this.front, required this.back});
-  final String front;
-  final String back;
-}
-
-class StudyCoachRepository {
-  Future<String> ask({required String question, String? attachmentPath}) async {
-    if (attachmentPath != null) {
-      throw StateError('File attachments are temporarily unavailable.');
-    }
+  @override
+  Future<String> ask({required String question}) async {
     final data = await _invoke({'action': 'ask', 'question': question});
     return data['answer'] as String;
   }
 
+  @override
   Future<List<StudyQuizQuestion>> quiz({
     required String classroomId,
     required String topic,
@@ -47,6 +32,7 @@ class StudyCoachRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<List<StudyFlashcard>> flashcards({
     required String classroomId,
     required String topic,
@@ -69,19 +55,17 @@ class StudyCoachRepository {
 
   Future<Map<String, dynamic>> _invoke(Map<String, dynamic> body) async {
     if (!StudafyBackend.isRemote) {
-      throw StateError('Study Coach requires a connected production backend.');
+      throw StateError('Study Coach requires a connected remote backend.');
     }
     final response = await StudafyBackend.client.functions.invoke(
       'study-coach',
       body: body,
     );
     if (response.status < 200 || response.status >= 300) {
-      final message = response.data is Map
-          ? (response.data as Map)['error']
-          : null;
-      throw StateError(
-        message?.toString() ?? 'Study Coach is temporarily unavailable.',
-      );
+      throw StateError('Study Coach is temporarily unavailable.');
+    }
+    if (response.data is! Map) {
+      throw StateError('Study Coach returned an invalid response.');
     }
     return (response.data as Map).cast<String, dynamic>();
   }

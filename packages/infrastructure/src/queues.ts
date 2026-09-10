@@ -1,6 +1,6 @@
-import { Queue, Worker, type Processor, type JobsOptions } from "bullmq";
+import { type JobsOptions, type Processor, Queue, Worker } from "bullmq";
 
-export type { Queue, Worker, Processor, JobsOptions };
+export type { JobsOptions, Processor, Queue, Worker };
 
 export interface QueueOptions {
   /** Prefix for all queue keys (enables per-environment namespaces). */

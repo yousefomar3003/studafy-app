@@ -79,8 +79,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
       service: deps.info.service,
       version: deps.info.version,
       environment: deps.info.environment,
-    }),
-  );
+    }));
 
   // The versioned public API surface is intentionally empty until slices
   // migrate behind reviewed contracts (ARC-011+).
@@ -92,8 +91,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
         c.get("requestId"),
       ),
       404,
-    ),
-  );
+    ));
 
   app.notFound((c) =>
     c.json(
@@ -103,7 +101,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
         c.get("requestId"),
       ),
       404,
-    ),
+    )
   );
 
   app.onError((error, c) => {

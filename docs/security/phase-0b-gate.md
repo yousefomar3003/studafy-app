@@ -1,9 +1,12 @@
 # Phase 0B gate record (ARC-001)
 
-Status: **complete — Phase 0 exits for Phase 1 purposes.** Date: 2026-09-10.
+Status: **ARC-001 technical deliverables complete; Phase 0 human security gate
+open.** Date: 2026-09-10.
 Owner: repository owner (GitHub `@yousefomar3003`), single-owner project.
-Entry condition satisfied: Phase 0A evidence log assigned and approved
-2026-09-10 (`sec-001-containment.md`).
+Phase 0A technical entry controls are verified, including the 202609090004
+privilege lockdown and authenticated remote containment smoke. Fresh human
+log/credential review and explicit security-owner approval remain pending in
+`sec-001-containment.md`.
 
 ## ARC-001 deliverables → evidence
 
@@ -35,26 +38,27 @@ RTO/RPO (Phase 6), retention/legal (pilot), billing purchaser/beneficiary
 
 | Gate item | Status | Evidence |
 |---|---|---|
-| Critical containment verified | Passed | SEC-001 evidence log approved 2026-09-10; kill switches re-proven in the function smoke (substituted path → stable 503, no echo) |
-| Git/owners/environments known | Passed | 2-commit bounded history; owners recorded in evidence log + decision log; environment matrix |
+| Critical containment verified | Technical pass; human approval pending | SEC-001 kill switches, privilege lockdown, authenticated path substitution, direct object denial, and cleanup re-proven on 2026-09-10 |
+| Git/owners/environments known | Passed | Imported history bounded at the first two commits; all six currently available commits scanned; owners recorded in evidence log + decision log; environment matrix |
 | Historical secret scan completed or formally bounded | Passed (bounded) | `git-history-boundary.md` (DL-002); gitleaks covers 100% of bounded history — 0 leaks |
-| Live schema reconciled | Passed | `reconciliation-report.md` — remote synthetic project matches migration replay exactly (delta: platform `rls_auto_enable()` only); all tables 0 rows |
+| Live schema reconciled | Passed | Eight remote/local migrations align through `202609090004`; the platform `rls_auto_enable()` object remains remote-only but its direct grants are locked down; application data remains empty |
 | Tenant, platform, region, data, billing, SLO decisions approved | Passed with explicit deferrals | Tenant accepted (ADR-0002); platform decided Android+iOS (ADR-0003); region/data/billing/SLO recorded as deferred, each explicitly stopping a named later phase — Phase 1 entry is unaffected |
-| Reproducible Flutter checks run | Passed | `analyze-test-2026-09-10.txt`: analyze clean, 22/22 tests; synthetic debug APK builds (10.2 s) |
-| Disposable Supabase checks run | Passed | `db reset --local --no-seed` + `db lint` clean; pgTAP suite: 2 containment + 8 RLS access tests green from clean state; negative validation proved the suite fails when RLS is disabled; wired into CI |
+| Reproducible Flutter checks run | Passed | Analyze clean; 46/46 tests; synthetic debug build remains CI-enforced |
+| Disposable Supabase checks run | Passed | `db reset --local --no-seed` + `db lint` clean; pgTAP: 11 containment + 8 RLS access assertions green from clean state; wired into CI |
 
 ## Verification performed during 0B
 
 Flutter format/analyze/test; Deno fmt/lint/check (frozen)/test; `bun audit`
 (clean); tracked-filename secret check; gitleaks; osv-scanner; schema dumps +
 diff; `inspect db table-stats --linked` (read-only); local Edge Function smoke
-(23 requests, all expected outcomes) + remote read-only smoke (4 requests,
-401s); query-plan baseline; licence inventories; frozen installs verified.
+(23 requests, all expected outcomes); remote unauthenticated smoke plus the
+2026-09-10 authenticated grading/attachment containment smoke; query-plan
+baseline; licence inventories; frozen installs verified.
 
 ## Conditions and limits for Phase 1
 
-1. Phase 1 (ARC-010/011) may start: monorepo skeleton, Hono API/worker
-   scaffolding, typed contracts, first vertical slice.
+1. Phase 1 (ARC-010/011) repository work may continue, but no production or
+   real-data cutover is permitted while the Phase 0A human gate is open.
 2. Deferred decisions (DL-009…DL-015) must be resolved before their named
    phases; none are unblocked silently.
 3. Any production or real-data environment requires re-evidencing the Phase 0A

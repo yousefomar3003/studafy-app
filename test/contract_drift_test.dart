@@ -82,4 +82,33 @@ void main() {
       expect(second['term_name'], isNull);
     });
   });
+
+  test('generated client uses the declared /v1 operation paths', () async {
+    final transport = _FixtureTransport(fixture);
+    final client = V1ApiClient(transport);
+
+    final me = await client.getMe();
+    final classrooms = await client.listClassrooms();
+
+    expect(me.memberships.first.role, 'teacher');
+    expect(classrooms.classrooms, hasLength(2));
+    expect(transport.paths, ['/v1/me', '/v1/classrooms']);
+  });
+}
+
+class _FixtureTransport implements V1JsonTransport {
+  _FixtureTransport(this.fixture);
+
+  final Map<String, dynamic> fixture;
+  final List<String> paths = [];
+
+  @override
+  Future<Map<String, dynamic>> get(String path) async {
+    paths.add(path);
+    return switch (path) {
+      '/v1/me' => fixture['me'] as Map<String, dynamic>,
+      '/v1/classrooms' => fixture['classrooms'] as Map<String, dynamic>,
+      _ => throw StateError('Unexpected generated-client path'),
+    };
+  }
 }

@@ -10,9 +10,10 @@ import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
 import 'studafy_database.dart';
 import 'data/session_service.dart';
-import 'data/study_coach_repository.dart';
 import 'student_linking.dart';
 import 'features/account/presentation/delete_account_page.dart';
+import 'features/study_coach/domain/study_coach_repository.dart';
+import 'features/study_coach/presentation/study_coach_scope.dart';
 
 const _navy = Color(0xFF241D73);
 const _cyan = Color(0xFF20C6E8);
@@ -3989,7 +3990,7 @@ class _AskAiPageState extends State<AskAiPage> {
       controller.clear();
     });
     try {
-      final answer = await StudyCoachRepository().ask(question: value);
+      final answer = await StudyCoachScope.read(context).ask(question: value);
       if (mounted) {
         setState(
           () => messages[messages.length - 1] = (user: false, body: answer),
@@ -4192,12 +4193,12 @@ class _AiPracticePageState extends State<_AiPracticePage> {
           'This class is still syncing. Practice can be generated when sync completes.',
         );
       }
-      final repository = StudyCoachRepository();
+      final studyCoach = StudyCoachScope.read(context);
       final page = widget.flashcards
           ? _FlashcardSession(
               subject: selectedClass ?? 'Class',
               topic: topic,
-              cards: await repository.flashcards(
+              cards: await studyCoach.flashcards(
                 classroomId: classroomId,
                 topic: topic,
               ),
@@ -4205,7 +4206,7 @@ class _AiPracticePageState extends State<_AiPracticePage> {
           : _AiQuizSession(
               subject: selectedClass ?? 'Class',
               topic: topic,
-              questions: await repository.quiz(
+              questions: await studyCoach.quiz(
                 classroomId: classroomId,
                 topic: topic,
               ),

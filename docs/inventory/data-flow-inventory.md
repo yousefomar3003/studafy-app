@@ -72,8 +72,8 @@ idempotency, transactions, timeouts (API-040/041).
 | Sequential, non-transactional multi-row updates; duplicate-question weakness in grade approval | `approve/publish-grade-result` | API-041 |
 | Single-row entitlement table; no ledger/webhooks/reconciliation | `subscription_entitlements`, verifier | PAY-071 |
 | QR scanner returns hard-coded ID; painter is not an interoperable encoder | `lib/student_linking.dart` | post-threat-model decision; never identity proof |
-| Consent records hard-coded policy version; policy text is placeholder | `main.dart`, migration 0006 | AUTH-030 |
-| Role choice precedes authentication; demo-role fallback in context controller | `main.dart`, `studafy_domain.dart` | ARC-011 / AUTH-030 |
+| Consent records a code-owned policy version; policy text/legal approval remains pending | `features/session/data/supabase_session_repository.dart`, migration 0006 | AUTH-030 |
+| Demo-role fallback is restricted to synthetic runtime but full server role authorization remains future work | `features/session/application/session_interactor.dart`, `studafy_domain.dart` | ARC-011 / AUTH-030 |
 | Local errors swallowed; raw server causes returned as 400s | feature files, functions | API-040 |
 | No CI/CD deploy, central logging, metrics, tracing, alerting | repository-wide | INFRA-080/081, OPS-090 |
 
