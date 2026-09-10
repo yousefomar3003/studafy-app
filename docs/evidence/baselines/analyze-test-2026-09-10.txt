@@ -1,0 +1,13 @@
+# Flutter verification baseline (2026-09-10)
+Flutter 3.47.1 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision 6655482ec0 (3 weeks ago) • 2026-08-19 10:07:23 -0700
+
+## flutter analyze
+Analyzing studafy...                                            
+No issues found! (ran in 3.5s)
+
+## flutter test --concurrency=1
+00:01 +20: /Users/bstar/Desktop/my first studafy/studafy/test/containment_test.dart: repositories reject grading and attachments before network use
+00:01 +21: loading /Users/bstar/Desktop/my first studafy/studafy/test/widget_test.dart
+00:02 +21: /Users/bstar/Desktop/my first studafy/studafy/test/widget_test.dart: splash transitions to role selection
+00:02 +22: All tests passed!

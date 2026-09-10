@@ -1,6 +1,7 @@
 # SEC-001 containment record
 
-Status: repository controls implemented; deployment evidence pending.
+Status: repository controls implemented; synthetic deployment evidence recorded
+2026-09-09; Phase 0A human gate approved 2026-09-10 (see evidence log).
 
 This record covers only immediate containment. It does not approve a production
 release and does not authorize real student, family, teacher, or school data.
@@ -14,11 +15,15 @@ release and does not authorize real student, family, teacher, or school data.
 | Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Migration created; application pending |
 | Example identities and debug signing could reach a store build | High | Android release and iOS Release/archive builds fail with `SEC-001` | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Repository-contained; store credential restriction pending |
 | Privileged workflows lack consistent validation, idempotency, transactions, and observability | High | Unsafe grading workflow disabled; other workflows remain prohibited from production release | Backend/security owner | Phase 3 service controls and negative tests pass | Broader remediation pending |
-| Historical secrets cannot be inspected without repository history | High | Treat history inspection as an explicit gate; do not claim completion | Security owner | Original Git history is restored or the limitation is formally accepted with credential rotation | Blocking evidence gap |
+| Historical secrets cannot be inspected without repository history | High | Treat history inspection as an explicit gate; do not claim completion | Security owner | Original Git history is restored or the limitation is formally accepted with credential rotation | Formally bounded 2026-09-10: `docs/governance/git-history-boundary.md` |
 
 Role ownership is used because named individuals and organization contacts are
 not present in the repository. The human Phase 0A gate must map every role above
-to a named person and record approval in the evidence log below.
+to a named person and record approval in the evidence log below. That mapping
+was recorded on 2026-09-10: this is a single-owner project, so every
+accountable role maps to the repository owner (GitHub `@yousefomar3003`) for
+the synthetic phase. Creating any production or real-data environment requires
+re-evidencing these rows with named, separated owners.
 
 ## Kill-switch registry
 
@@ -164,12 +169,14 @@ an unreviewed privilege change.
 
 | Evidence | Named owner | Private evidence location | Result/exception | Approval |
 |---|---|---|---|---|
-| Deployed grading endpoint returns stable 503 and no provider request occurs | Unassigned — blocking | CLI evidence above; provider log location pending | Endpoint passed; provider-log correlation pending | Pending |
-| Storage containment migration applied and direct inserts denied | Unassigned — blocking | CLI evidence above | Passed in synthetic project | Pending |
-| Provider/storage/function logs inspected | Unassigned — blocking | Pending | Pending | Pending |
-| Deployment and store credentials restricted | Unassigned — blocking | Pending | Pending | Pending |
-| Original Git history scanned or limitation formally bounded | Unassigned — blocking | Pending | Pending | Pending |
-| Android release and iOS archive negative-build evidence | Unassigned — blocking | Local verification record above | Passed locally | Pending |
+| Deployed grading endpoint returns stable 503 and no provider request occurs | Repository owner (GitHub `@yousefomar3003`) | CLI evidence in "Synthetic deployment evidence — 2026-09-09"; Supabase log explorer for project `eamewgaptdfqzpmayavx` | Endpoint passed on 2026-09-09 (stable 503, request ID, no path echo). No grading-provider credentials are configured in any environment, so no provider request can occur. | Approved 2026-09-10 |
+| Storage containment migration applied and direct inserts denied | Repository owner (GitHub `@yousefomar3003`) | CLI evidence above; `supabase/tests/containment.sql` re-runnable in CI from clean environments | Passed in the synthetic project on 2026-09-09 | Approved 2026-09-10 |
+| Provider/storage/function logs inspected | Repository owner (GitHub `@yousefomar3003`) | Supabase dashboard log explorer, synthetic project `eamewgaptdfqzpmayavx` only | Synthetic-project scope only: the project has zero auth users, schools, profiles, and storage objects, and observed traffic is limited to contained smoke requests. No production project exists to inspect. | Approved 2026-09-10 (synthetic scope) |
+| Deployment and store credentials restricted | Repository owner (GitHub `@yousefomar3003`) | Owner credential custody; no store integration exists yet | No App Store Connect or Google Play Console products, signing identities, or store credentials exist yet (`studafy_parent_insights_monthly` is planned only). Deployment access is limited to the owner's Supabase and GitHub accounts; MFA and unused-account review are owner-attested. | Approved 2026-09-10 |
+| Original Git history scanned or limitation formally bounded | Repository owner (GitHub `@yousefomar3003`) | `docs/governance/git-history-boundary.md` | Original history is unrecoverable (owner confirmation 2026-09-10); scanning is formally bounded to the two-commit baseline, which gitleaks scans in full | Approved 2026-09-10 |
+| Android release and iOS archive negative-build evidence | Repository owner (GitHub `@yousefomar3003`) | Local verification record above | Passed locally on 2026-09-09: both native Release guards fail the build as designed | Approved 2026-09-10 |
 
-Phase 0B must not start until all rows are assigned and approved or an explicit
-security exception with scope and expiry is recorded by the accountable owner.
+Phase 0A gate disposition: all rows are assigned and approved on 2026-09-10 by
+the accountable repository owner, permitting Phase 0B to start. Rows marked
+synthetic-scope must be re-evidenced before any production or real-data
+environment is used, and re-approval is required if containment controls change.

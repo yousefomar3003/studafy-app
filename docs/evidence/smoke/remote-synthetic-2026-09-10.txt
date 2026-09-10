@@ -1,0 +1,21 @@
+# Remote synthetic project smoke (READ-ONLY) — 2026-09-10T00:15:22Z
+# Project: eamewgaptdfqzpmayavx (studafy light). Only the two deployed functions
+# are called, only with invalid/unauthenticated requests. No valid JWT exists
+# remotely (zero users), so no authenticated or write path is possible.
+
+## propose-paper-grade no-auth
+status=401
+body: {"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header"}
+
+## propose-paper-grade garbage bearer
+status=401
+body: {"code":"UNAUTHORIZED_INVALID_JWT_FORMAT","message":"Invalid JWT"}
+
+## study-coach no-auth
+status=401
+body: {"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header"}
+
+## study-coach garbage bearer
+status=401
+body: {"code":"UNAUTHORIZED_INVALID_JWT_FORMAT","message":"Invalid JWT"}
+

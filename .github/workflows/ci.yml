@@ -124,6 +124,11 @@ jobs:
       - name: Run SEC-001 RLS containment tests
         run: bunx supabase test db --local supabase/tests/containment.sql
 
+      # The seed file is the synthetic data generator (ARC-001/TEST-006): it
+      # creates the cross-school fixture and includes rls_access.sql itself.
+      - name: Run multi-school RLS access tests
+        run: bunx supabase test db --local supabase/tests/rls_access_seed.sql
+
       - name: Stop disposable Supabase stack
         if: always()
         run: bunx supabase stop --no-backup

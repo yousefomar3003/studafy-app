@@ -1,0 +1,76 @@
+BEGIN
+SET
+              set_config              
+--------------------------------------
+ cccc0000-0000-4000-8000-000000000003
+(1 row)
+
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on grade_results  (cost=11.97..19.85 rows=1 width=130) (actual rows=1 loops=1)
+   Recheck Cond: (student_id = 'abcf0000-0000-4000-8000-000000000008'::uuid)
+   Filter: ((state = 'published'::publication_state) AND can_access_student(student_id) AND (state = 'published'::publication_state))
+   Rows Removed by Filter: 1
+   Heap Blocks: exact=1
+   ->  Bitmap Index Scan on grade_results_assessment_id_student_id_key  (cost=0.00..11.97 rows=3 width=0) (actual rows=2 loops=1)
+         Index Cond: (student_id = 'abcf0000-0000-4000-8000-000000000008'::uuid)
+ Planning Time: 1.019 ms
+ Execution Time: 4.081 ms
+(9 rows)
+
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on attendance_records  (cost=12.65..20.51 rows=1 width=108) (actual rows=1 loops=1)
+   Recheck Cond: (student_id = 'abcf0000-0000-4000-8000-000000000008'::uuid)
+   Filter: can_access_student(student_id)
+   Heap Blocks: exact=1
+   ->  Bitmap Index Scan on attendance_records_session_id_student_id_key  (cost=0.00..12.65 rows=3 width=0) (actual rows=1 loops=1)
+         Index Cond: (student_id = 'abcf0000-0000-4000-8000-000000000008'::uuid)
+ Planning Time: 0.160 ms
+ Execution Time: 0.408 ms
+(8 rows)
+
+                                               QUERY PLAN                                               
+--------------------------------------------------------------------------------------------------------
+ Index Scan using students_pkey on students  (cost=0.15..8.42 rows=1 width=137) (actual rows=1 loops=1)
+   Index Cond: (id = 'abcf0000-0000-4000-8000-000000000008'::uuid)
+   Filter: can_access_student(id)
+ Planning Time: 0.015 ms
+ Execution Time: 0.244 ms
+(5 rows)
+
+                                                                                                                       QUERY PLAN                                                                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on guardian_links  (cost=12.65..20.58 rows=1 width=108) (actual rows=1 loops=1)
+   Recheck Cond: (guardian_id = 'cccc0000-0000-4000-8000-000000000003'::uuid)
+   Filter: ((guardian_id = (COALESCE(NULLIF(current_setting('request.jwt.claim.sub'::text, true), ''::text), ((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text)))::uuid) OR can_access_student(student_id))
+   Heap Blocks: exact=1
+   ->  Bitmap Index Scan on guardian_links_student_id_guardian_id_key  (cost=0.00..12.65 rows=3 width=0) (actual rows=1 loops=1)
+         Index Cond: (guardian_id = 'cccc0000-0000-4000-8000-000000000003'::uuid)
+ Planning Time: 0.044 ms
+ Execution Time: 0.015 ms
+(8 rows)
+
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on enrollments  (cost=4.21..16.10 rows=1 width=33) (actual rows=1 loops=1)
+   Recheck Cond: (classroom_id = 'abcd0000-0000-4000-8000-000000000007'::uuid)
+   Filter: (active AND can_access_classroom(classroom_id))
+   Heap Blocks: exact=1
+   ->  Bitmap Index Scan on enrollments_pkey  (cost=0.00..4.21 rows=7 width=0) (actual rows=1 loops=1)
+         Index Cond: (classroom_id = 'abcd0000-0000-4000-8000-000000000007'::uuid)
+ Planning Time: 0.058 ms
+ Execution Time: 0.793 ms
+(8 rows)
+
+                                                                                                                          QUERY PLAN                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Result  (cost=0.02..14.65 rows=1 width=192) (actual rows=0 loops=1)
+   One-Time Filter: ((COALESCE(NULLIF(current_setting('request.jwt.claim.sub'::text, true), ''::text), ((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text)))::uuid = 'cccc0000-0000-4000-8000-000000000003'::uuid)
+   ->  Seq Scan on notifications  (cost=0.02..14.65 rows=1 width=192) (actual rows=0 loops=1)
+         Filter: ((read_at IS NULL) AND (user_id = 'cccc0000-0000-4000-8000-000000000003'::uuid))
+ Planning Time: 0.348 ms
+ Execution Time: 0.032 ms
+(6 rows)
+
+ROLLBACK

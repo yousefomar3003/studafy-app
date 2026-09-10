@@ -1,0 +1,8 @@
+Scanning dir ./
+Starting filesystem walk for root: /
+Scanned /Users/bstar/Desktop/my first studafy/studafy/pubspec.lock file and found 135 packages
+Scanned /Users/bstar/Desktop/my first studafy/studafy/bun.lock file and found 15 packages
+End status: 305 dirs visited, 809 inodes visited, 2 Extract calls, 42.069917ms elapsed, 42.07ms wall time
+
+No issues found
+osv exit=0

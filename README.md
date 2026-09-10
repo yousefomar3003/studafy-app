@@ -1,8 +1,22 @@
 # Studafy
 
 Studafy is a Flutter school platform for teachers, parents, and students.
-Supabase is authoritative in production; SQLite is retained as
-a versioned offline cache and a local preview source when no backend is set.
+Supported platforms: Android and iOS. The repository is a contained
+pre-production prototype: Supabase migrations, RLS, and Edge Functions exist,
+but core feature screens still use the local synthetic SQLite preview, and the
+only remote project in existence is synthetic and empty. Production is blocked
+by the SEC-001 controls described in `docs/security/sec-001-containment.md`.
+
+## Documentation
+
+- Architecture decisions: `docs/adr/`
+- System / data-flow / environment / data-classification inventories:
+  `docs/inventory/`
+- Governance and decision log: `docs/governance/`
+- Phase 0 evidence (schema reconciliation, scans, baselines, smoke):
+  `docs/evidence/`
+- Phase gates: `docs/security/sec-001-containment.md`,
+  `docs/security/phase-0b-gate.md`
 
 ## Run locally
 
@@ -70,6 +84,17 @@ flutter analyze
 flutter test --concurrency=1
 ```
 
-Database authorization tests are in `supabase/tests/rls_access.sql`. Run them
-against a disposable project populated with synthetic cross-school fixtures;
-never run authorization tests against live student records.
+Database authorization tests are in `supabase/tests/`. Run them against a
+disposable local stack (Docker required); never run authorization tests
+against live student records:
+
+```sh
+bunx supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+bunx supabase db reset --local --no-seed
+bunx supabase test db --local supabase/tests/containment.sql
+bunx supabase test db --local supabase/tests/rls_access_seed.sql  # synthetic fixture + 8 RLS assertions
+```
+
+CI (`.github/workflows/ci.yml`) runs the same checks read-only on every push,
+including these pgTAP suites, gitleaks, and OSV scans. CI has no deployment
+credentials and deploys nothing.

@@ -1,0 +1,137 @@
+# Dart dependency licence inventory (generated 2026-09-10)
+# Format: package version <licence-pattern-from-LICENSE-or-REVIEW>
+android_file_picker 1.0.3 mit license
+app_links 7.2.1 apache license
+app_links_linux 1.0.3 apache license
+app_links_platform_interface 2.0.4 apache license
+app_links_web 1.0.4 apache license
+args 2.7.0 REVIEW
+async 2.13.1 REVIEW
+boolean_selector 2.1.2 REVIEW
+characters 1.4.1 REVIEW
+clock 1.1.2 apache license
+code_assets 1.2.1 REVIEW
+collection 1.19.1 REVIEW
+convert 3.1.2 REVIEW
+cross_file 0.3.5+5 REVIEW
+crypto 3.0.7 REVIEW
+cupertino_icons 1.0.9 mit license
+dart_jsonwebtoken 3.4.1 mit license
+dbus 0.7.15 gnu general public
+fake_async 1.3.3 apache license
+ffi 2.2.0 REVIEW
+ffi_leak_tracker 0.1.2 bsd
+file 7.0.1 REVIEW
+file_picker 12.1.2 mit license
+file_picker_darwin 1.0.4 mit license
+file_picker_linux 1.0.2 mit license
+file_picker_platform_interface 3.2.0 mit license
+file_picker_web 3.0.3 mit license
+file_selector_linux 0.9.4+1 REVIEW
+file_selector_macos 0.9.5+1 REVIEW
+file_selector_platform_interface 2.7.0 REVIEW
+file_selector_windows 0.9.3+6 REVIEW
+fixnum 1.1.1 REVIEW
+flutter 0.0.0 NO-LOCAL-SOURCE
+flutter_lints 6.0.0 REVIEW
+flutter_localizations 0.0.0 NO-LOCAL-SOURCE
+flutter_plugin_android_lifecycle 2.0.35 REVIEW
+flutter_test 0.0.0 NO-LOCAL-SOURCE
+flutter_web_plugins 0.0.0 NO-LOCAL-SOURCE
+functions_client 2.7.1 mit license
+gotrue 2.27.2 mit license
+gtk 2.2.0 gnu general public
+hooks 2.0.2 REVIEW
+http 1.6.0 REVIEW
+http_parser 4.1.2 REVIEW
+image_picker 1.2.3 apache license
+image_picker_android 0.8.13+21 apache license
+image_picker_for_web 3.1.1 REVIEW
+image_picker_ios 0.8.13+7 apache license
+image_picker_linux 0.2.2 REVIEW
+image_picker_macos 0.2.2+1 REVIEW
+image_picker_platform_interface 2.11.1 REVIEW
+image_picker_windows 0.2.2 REVIEW
+in_app_purchase 3.3.0 REVIEW
+in_app_purchase_android 0.5.3 REVIEW
+in_app_purchase_platform_interface 1.4.1 REVIEW
+in_app_purchase_storekit 0.4.12 REVIEW
+intl 0.20.3 REVIEW
+jni 1.0.3 REVIEW
+jni_flutter 1.0.2 REVIEW
+jni_util 1.0.0 REVIEW
+json_annotation 4.12.0 REVIEW
+leak_tracker 11.0.2 REVIEW
+leak_tracker_flutter_testing 3.0.10 REVIEW
+leak_tracker_testing 3.0.2 REVIEW
+lints 6.1.0 REVIEW
+logging 1.3.0 REVIEW
+matcher 0.12.20 REVIEW
+material_color_utilities 0.13.0 apache license
+meta 1.18.3 REVIEW
+mime 2.0.0 REVIEW
+objective_c 9.5.0 REVIEW
+package_config 3.0.0 REVIEW
+passkeys_platform_interface 2.9.0 REVIEW
+path 1.9.1 REVIEW
+path_provider 2.1.6 REVIEW
+path_provider_android 2.3.1 REVIEW
+path_provider_foundation 2.6.0 REVIEW
+path_provider_linux 2.2.2 REVIEW
+path_provider_platform_interface 2.1.3 REVIEW
+path_provider_windows 2.3.0 REVIEW
+petitparser 7.0.2 mit license
+platform 3.1.6 REVIEW
+plugin_platform_interface 2.1.8 REVIEW
+pointycastle 4.0.0 REVIEW
+postgrest 2.9.1 mit license
+pub_semver 2.2.0 REVIEW
+realtime_client 2.13.0 mit license
+record_use 0.6.0 REVIEW
+share_plus 13.3.0 REVIEW
+share_plus_platform_interface 7.2.0 REVIEW
+shared_preferences 2.5.5 REVIEW
+shared_preferences_android 2.4.28 REVIEW
+shared_preferences_foundation 2.5.7 REVIEW
+shared_preferences_linux 2.4.1 REVIEW
+shared_preferences_platform_interface 2.4.2 REVIEW
+shared_preferences_web 2.4.3 REVIEW
+shared_preferences_windows 2.4.1 REVIEW
+sky_engine 0.0.0 NO-LOCAL-SOURCE
+source_span 1.10.2 REVIEW
+sqflite 2.4.3 bsd
+sqflite_android 2.4.3 bsd
+sqflite_common 2.5.11 bsd
+sqflite_darwin 2.4.3+1 bsd
+sqflite_platform_interface 2.4.1 bsd
+stack_trace 1.12.1 REVIEW
+storage_client 2.8.0 mit license
+stream_channel 2.1.4 REVIEW
+string_scanner 1.4.1 REVIEW
+supabase 2.16.1 mit license
+supabase_common 0.1.2 mit license
+supabase_flutter 2.17.2 mit license
+synchronized 3.4.1+2 mit license
+term_glyph 1.2.2 REVIEW
+test_api 0.7.12 REVIEW
+typed_data 1.4.0 REVIEW
+url_launcher 6.3.2 REVIEW
+url_launcher_android 6.3.33 REVIEW
+url_launcher_ios 6.4.2 REVIEW
+url_launcher_linux 3.2.2 REVIEW
+url_launcher_macos 3.2.6 REVIEW
+url_launcher_platform_interface 2.3.2 REVIEW
+url_launcher_web 2.4.3 REVIEW
+url_launcher_windows 3.1.5 REVIEW
+uuid 4.6.0 REVIEW
+vector_math 2.4.0 REVIEW
+vm_service 15.3.0 REVIEW
+web 1.1.1 REVIEW
+web_socket 1.0.1 REVIEW
+web_socket_channel 3.0.3 REVIEW
+win32 6.4.0 bsd
+windows_file_picker 1.1.0 mit license
+xdg_directories 1.1.0 REVIEW
+xml 7.0.1 mit license
+yaml 3.1.3 REVIEW
+yet_another_json_isolate 2.1.1 mit license

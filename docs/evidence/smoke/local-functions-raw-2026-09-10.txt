@@ -1,0 +1,121 @@
+# Local Edge Function smoke — 2026-09-10T00:14:31Z
+# Synthetic users only; local disposable stack; no provider secrets configured.
+
+## propose OPTIONS
+request: -X OPTIONS http://127.0.0.1:54321/functions/v1/propose-paper-grade
+ok
+status=200 origin-header=*
+
+## propose no-auth
+request: -X POST http://127.0.0.1:54321/functions/v1/propose-paper-grade -H content-type: application/json -d {"private_scan_path":"papers/other-teacher/scan.pdf"}
+{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header","msg":"Missing authorization header"}
+status=401 origin-header=*
+
+## propose teacher + substituted path
+request: -X POST http://127.0.0.1:54321/functions/v1/propose-paper-grade -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"private_scan_path":"papers/other-teacher/scan.pdf"}
+{"error":"AI grading is temporarily unavailable.","code":"AI_GRADING_DISABLED","request_id":"0c96e820-4b5f-46c2-baad-754e466eb101"}
+status=503 origin-header=*
+
+## study-coach no-auth
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H content-type: application/json -d {"action":"ask","question":"hi"}
+{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header","msg":"Missing authorization header"}
+status=401 origin-header=*
+
+## study-coach garbage bearer
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer not-a-jwt -H content-type: application/json -d {"action":"ask"}
+{"code":"UNAUTHORIZED_INVALID_JWT_FORMAT","message":"Invalid JWT format","msg":"Invalid JWT format"}
+status=401 origin-header=*
+
+## study-coach bad action
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"other"}
+{"error":"Unsupported action"}
+status=422 origin-header=*
+
+## study-coach attachment (contained)
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"ask","attachment_path":"papers/aaaa0000-0000-4000-8000-000000000001/scan.pdf"}
+{"error":"File attachments are temporarily unavailable.","code":"FILE_UPLOADS_DISABLED","request_id":"a9f25786-8c25-4c91-ad53-f206fa82c0f9"}
+status=503 origin-header=*
+
+## study-coach unconfigured provider
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"ask","question":"photosynthesis"}
+{"error":"Study Coach is not configured"}
+status=503 origin-header=*
+
+## study-coach enrolled student, no materials
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"ask","question":"hi","classroom_id":"abcd0000-0000-4000-8000-000000000007"}
+{"error":"Study Coach is not configured"}
+status=503 origin-header=*
+
+## create-meet no-auth
+request: -X POST http://127.0.0.1:54321/functions/v1/create-google-meet -H content-type: application/json -d {}
+{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header","msg":"Missing authorization header"}
+status=401 origin-header=*
+
+## create-meet nonexistent classroom
+request: -X POST http://127.0.0.1:54321/functions/v1/create-google-meet -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"classroom_id":"99999999-9999-4999-8999-999999999999","title":"t","starts_at":"2026-09-20T09:00:00Z","ends_at":"2026-09-20T10:00:00Z","audience":"both"}
+{"error":"Teacher access required"}
+status=403 origin-header=*
+
+## create-meet fixture classroom, broker unconfigured
+request: -X POST http://127.0.0.1:54321/functions/v1/create-google-meet -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"classroom_id":"abcd0000-0000-4000-8000-000000000007","title":"t","starts_at":"2026-09-20T09:00:00Z","ends_at":"2026-09-20T10:00:00Z","audience":"both"}
+{"error":"Google Workspace is not connected for this school"}
+status=503 origin-header=*
+
+## approve nonexistent draft
+request: -X POST http://127.0.0.1:54321/functions/v1/approve-paper-grade -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"draft_id":"99999999-9999-4999-8999-999999999999","reviewer_id":"aaaa0000-0000-4000-8000-000000000001","scores":[]}
+{"error":"Review access required"}
+status=403 origin-header=*
+
+## publish nonexistent grade
+request: -X POST http://127.0.0.1:54321/functions/v1/publish-grade-result -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"grade_result_id":"99999999-9999-4999-8999-999999999999"}
+{"error":"Teacher access required"}
+status=403 origin-header=*
+
+## publish already-published grade (state machine)
+request: -X POST http://127.0.0.1:54321/functions/v1/publish-grade-result -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"grade_result_id":"4d33b4e3-c873-4d3b-a7df-7b0811b6c4c7"}
+{"error":"The result must be reviewed before publishing"}
+status=409 origin-header=*
+
+## verify-purchase no-auth
+request: -X POST http://127.0.0.1:54321/functions/v1/verify-store-purchase -H content-type: application/json -d {}
+{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header","msg":"Missing authorization header"}
+status=401 origin-header=*
+
+## verify-purchase unconfigured verifier
+request: -X POST http://127.0.0.1:54321/functions/v1/verify-store-purchase -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"product_id":"studafy_parent_insights_monthly"}
+{"error":"Purchase verification is not configured"}
+status=503 origin-header=*
+
+## deletion stale token
+request: -X POST http://127.0.0.1:54321/functions/v1/request-account-deletion -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"confirmation":"DELETE"}
+{"error":"Reauthentication required before account deletion"}
+status=401 origin-header=*
+
+## deletion wrong confirmation
+request: -X POST http://127.0.0.1:54321/functions/v1/request-account-deletion -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"confirmation":"no"}
+{"error":"Typed confirmation required"}
+status=422 origin-header=*
+
+## deletion happy path (local synthetic write)
+request: -X POST http://127.0.0.1:54321/functions/v1/request-account-deletion -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"confirmation":"DELETE"}
+{"request_id":"e686401f-6cfe-4f10-9447-11c3970c65f3","execute_after":"2026-09-24T00:14:32.610Z"}
+status=200 origin-header=*
+
+
+# Follow-up (serve restarted with synthetic STUDY_COACH_URL on dead loopback port 9)
+
+## study-coach teacher not enrolled in class (negative authz)
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"ask","question":"hi","classroom_id":"abcd0000-0000-4000-8000-000000000007"}
+{"error":"You are not enrolled in this class"}
+status=403 origin-header=*
+
+## study-coach enrolled student, no filed materials
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"ask","question":"hi","classroom_id":"abcd0000-0000-4000-8000-000000000007"}
+{"error":"No authorized lesson material is available yet"}
+status=409 origin-header=*
+
+## study-coach attachment still contained with provider configured
+request: -X POST http://127.0.0.1:54321/functions/v1/study-coach -H authorization: Bearer <redacted-synthetic-jwt> -H content-type: application/json -d {"action":"ask","question":"hi","classroom_id":"abcd0000-0000-4000-8000-000000000007","attachment_path":"coach/bbbb0000-0000-4000-8000-000000000002/x.pdf"}
+{"error":"File attachments are temporarily unavailable.","code":"FILE_UPLOADS_DISABLED","request_id":"829bdaff-c4a7-47e0-9caa-6beb667facec"}
+status=503 origin-header=*
+
