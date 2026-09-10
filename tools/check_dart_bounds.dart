@@ -27,9 +27,7 @@ const _zoneRules = <String, Map<String, List<String>>>{
 };
 
 /// Legacy feature folders that are exempt until their slice migrates.
-const _legacyExemptFeatures = <String>{
-  'account',
-};
+const _legacyExemptFeatures = <String>{'account'};
 
 /// Core modules every zone may import.
 const _coreAllowlist = <String>[
