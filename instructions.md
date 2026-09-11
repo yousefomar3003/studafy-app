@@ -1,205 +1,153 @@
-# Studafy production-readiness audit and transformation instructions
+# Studafy engineering and launch instructions
 
-> **Document purpose:** This is the execution plan for transforming the inspected Studafy prototype into a secure, scalable production service. It is not an implementation. No phase may begin until its entry conditions are satisfied and the responsible product, security, data, and operations owners approve the phase.
->
-> **Evidence boundary:** Findings labelled **Observed** come from the repository snapshot inspected on 2026-09-09. Items labelled **Proposed** are future requirements. The workspace contains no `.git` directory, so commit history, prior deletions, authorship, and historical secret exposure could not be inspected. No literal credential or private-key artifact was found by filename and source-pattern inspection; this is not proof that no secret has ever existed.
+**Goal:** take Studafy from a hardened local prototype to a **complete, secure,
+production application** published on the Apple App Store and Google Play.
 
-## 1. Executive summary
+Launchable and finished are different bars. This document targets the second:
+the target architecture and security design (§4–§19), the full implementation
+roadmap (§20), and the store-release work (§21–§25).
 
-### What the application is
+**Audit date:** 2026-09-11. Sections 1–3 and 21–26 were written from a direct
+audit of this repository — code read, database queried. Sections 4–20, 26 and 28
+carry forward the original architecture specification. The pre-merge
+launch-only revision is recoverable with `git show HEAD:instructions.md`.
 
-Studafy is a Flutter school platform for teachers, students, and parents. The prototype includes school/class membership, attendance, lesson notebooks, assignments and submissions, assessments and grades, wellbeing/behaviour records, guardian-to-student linking, announcements, messaging, Google Meet creation, AI-assisted paper grading, a grounded student study coach, notifications, account deletion, and a paid Parent Insights feature.
+## How to use this
 
-The current implementation is a functional UI prototype with a partial Supabase production foundation. Flutter static analysis passes and six existing tests pass, but most product flows remain backed by a synthetic, device-local SQLite database rather than the Supabase schema. Authentication and a small number of sensitive workflows use Supabase; core teacher, parent, and student pages still query and mutate `StudafyDatabase` directly.
+| If you are… | Read |
+|---|---|
+| Orienting | §1–§3 — verified state, blockers, critical path |
+| Designing or building a phase | §4–§19 — the design spec for that subsystem |
+| Planning work | §20 — full per-part tables with tasks, tests, risks, gates |
+| Preparing release | §21–§25 — edit list, keys, rejection registers, console |
+| Migrating or launching | §26–§28 |
+| Chasing a blocker | §29–§30 |
 
-### Maturity assessment
+> **Read before building any phase:** its design section in §4–§19 *and* its
+> part table in §20. The roadmap says what to build and in what order; the
+> design sections say how, and carry the security requirements that make the
+> result defensible rather than merely shippable.
 
-**Observed maturity: pre-alpha/prototype.** The repository demonstrates product intent and several good security instincts—PKCE authentication, a private storage bucket, RLS, service-role isolation from the client, reviewed-before-published grades, and server-side purchase verification—but does not yet form a complete, observable, deployable system.
+> **No amount of code here publishes the app.** Store accounts, legal review
+> and a named security owner are prerequisites with real lead times. Start §31
+> now, in parallel with engineering.
 
-The most important mismatch is the claim in `README.md` that Supabase is authoritative while the running feature screens primarily use SQLite. A remotely configured build creates an unseeded `studafy_cache.db`; there is no download, mutation outbox, conflict-resolution, or synchronization implementation. Therefore most authenticated screens would be empty or would write only local data that never reaches the school system of record.
+---
 
-### Major risks
+## 1. Verified current state
 
-1. **Critical private-file authorization gap:** `supabase/functions/propose-paper-grade/index.ts` signs a caller-provided storage path with a service-role client without proving that the object belongs to the selected grade result, teacher, or school. A guessed object path could be disclosed to the configured grading provider.
-2. **Critical production-data incompleteness:** core screens and mutations remain local-only. Shipping this state could create data loss, inconsistent school records, misleading confirmation messages, and authorization based on hard-coded local identities.
-3. **High tenant-integrity gaps:** database relationships do not consistently enforce that related school-owned rows share the same `school_id`; the submission update RLS policy does not re-check assignment enrollment/publication when assignment or student identifiers change.
-4. **High privileged-workflow weaknesses:** service-role Edge Functions lack strict runtime schemas, idempotency, transactions, timeouts, rate limits, structured audit/error handling, and safe retry design.
-5. **High upload risk:** there is no object metadata ownership model, quarantine, file-signature verification, malware scan, archive protection, sanitisation, quota, or publication gate.
-6. **High release blockers:** Android and iOS use example identifiers; Android release is debug-signed and its main manifest lacks the internet permission; iOS has no privacy manifest.
-7. **High operational risk:** no CI/CD, deployment definition, Redis, BullMQ, Cloudflare configuration, central logging, metrics, tracing, alerting, runbooks, or backup-restore evidence exists.
-8. **High assurance gap:** the six passing Flutter tests do not exercise repositories, authentication, RLS, tenant isolation, uploads, payments, queues, or failure handling. The SQL authorization test contains unresolved fixture placeholders.
+### 1.1 What is genuinely done
 
-### Recommended target architecture
+| Area | Status | Evidence |
+|---|---|---|
+| SEC-001 containment | Done | AI grading and uploads hard-disabled in code; release builds blocked |
+| ARC-001 baseline/ADRs | Done | ADR-0001…0009, decision log DL-001…DL-014 |
+| ARC-010 monorepo | Done | `apps/api`, `apps/worker`, 7 `packages/*`, Bun workspace |
+| ARC-011 Flutter boundaries | Done | Session slice typed; repository ports; analyzer boundary rules |
+| DB-020 tenant foundation | Done | 6 migrations, composite tenant FKs, lifecycle tables |
+| DB-021 RLS/grants | Done locally | 6 migrations, 113 pgTAP assertions, zero anon access |
 
-Use one monorepo and a **modular monolith**, not microservices:
+The database work is real and verified: `anon` holds zero privileges,
+`authenticated` has column-scoped reads plus exactly two RPCs, all 29 policied
+tables are `SELECT`-only, and 21 unactivated tables are fail-closed.
 
-- Keep Flutter for iOS and Android; migrate the existing root app gradually into `apps/mobile` only after build tooling supports the move.
-- Add a containerised Bun/Hono API in `apps/api` and long-running Bun/BullMQ workers in `apps/worker`.
-- Keep Supabase PostgreSQL, Supabase Auth, and private Supabase Storage as authoritative systems.
-- Use Redis for rate limiting, carefully selected caches, idempotency coordination, and BullMQ.
-- Put Cloudflare DNS, TLS, CDN, WAF, DDoS/bot controls, and origin protection in front of the API. Do not run BullMQ workers in Cloudflare Workers.
-- Retain SQLite only through typed repositories as an encrypted-at-rest-by-platform, user-scoped offline cache. Server state wins for authorization, grades, entitlements, memberships, and audit history.
-- Migrate each Deno Edge Function to an equivalent versioned Hono route after contract, authorization, idempotency, and rollback tests pass; keep only explicitly justified Supabase hooks/functions.
+### 1.2 What is not done
 
-Hono documents Bun as a supported runtime, and current BullMQ documentation provides `createBunRedisClient`. Phase 0 must pin exact versions and prove queue semantics, reconnect behaviour, duplicated blocking connections, graceful shutdown, and the selected Redis provider under load before this becomes a production commitment.
+| Area | Status | Consequence |
+|---|---|---|
+| REL-002 native identity | **Not started** | Cannot submit to either store |
+| AUTH-030/031 auth + authz | Not started | No session lifecycle, no server authorization |
+| API-040/041 Hono API | **Skeleton only** | Only `/healthz`, `/readyz`, `/version` exist |
+| FILE-050/051 file pipeline | Not started | Uploads disabled; no scanning |
+| OPS-060/061 Redis + queues | Skeleton only | No rate limiting; smoke queue only |
+| MOB-070 mobile migration | **Not started** | App is local SQLite; see §1.3 |
+| PAY-071 billing | **Unsafe stub** | See §1.4 |
+| INFRA-080/081 deploy | Not started | No hosting, no signed release |
+| OPS-090 observability | Not started | No SLOs, alerts or on-call |
+| SEC-091 pentest/privacy | Not started | No privacy policy URL exists |
+| LAUNCH-100/101 pilot | Not started | — |
 
-### Refactor versus rewrite
+### 1.3 The app does not currently talk to a server
 
-Use a strangler-style refactor. Preserve the Flutter interaction design and tested insight calculations. Introduce typed domain/repository boundaries around vertical slices, move authoritative logic to Hono/PostgreSQL, then replace direct SQLite calls screen by screen. Do not rewrite the whole client or edit already-applied migrations in place. Replace unsafe remote functions incrementally behind feature flags and compatible API contracts.
+`lib/student_features.dart` has **32** lines referencing `StudafyDatabase`
+(SQLite) directly. The legacy teacher modules under `lib/legacy/teacher/`
+add **62** more — **94** direct persistence call sites in total, corroborated
+by DL-026 in the decision log. Only the session slice and a thin notification path
+use the typed repository layer.
 
-### Recommended order
+The practical meaning: **the product users would see is a local, single-device
+prototype.** Data does not sync, does not survive reinstall, and is not
+shared between a teacher and a parent. Shipping this to a store would produce
+an app that appears broken to any real school — and, separately, would be
+rejected as non-functional (§23.1).
 
-1. Contain the private-file and release risks; establish repository history, owners, environments, and reproducible checks.
-2. Create monorepo boundaries, typed contracts, and a Hono API skeleton without moving all screens at once.
-3. repair tenant constraints, RLS, indexes, migrations, and test fixtures.
-4. Implement authentication/authorization and the first complete server-backed vertical slice.
-5. Move uploads and file processing behind quarantine and metadata records.
-6. Add Redis, rate limits, BullMQ, payment lifecycle processing, Cloudflare, and observability.
-7. Migrate mobile features in controlled slices, rehearse existing-data migration, pilot with synthetic and then approved school data, and scale only from measured thresholds.
+Additionally, `lib/core/runtime_environment.dart` sets
+`blocksApplicationStartup => environment == production`. **A production build
+refuses to start.** This is correct containment today and must be removed
+deliberately, as the *last* step before release, not early.
 
-### Assumptions and unresolved matters
+### 1.4 Billing is a placeholder, not an implementation
 
-- **Default:** a school is the tenant boundary; a user may hold multiple roles in multiple schools.
-- **Default:** Flutter remains the mobile client. The generated Flutter web/desktop targets are not production commitments.
-- **Default:** deploy API and worker containers in the same approved region as the primary Supabase project and Redis; exact providers are Phase 0 decisions.
-- **Default:** Supabase Storage remains primary. Consider Cloudflare R2 only after a documented cost, residency, access-control, and operational comparison.
-- **Default:** store timestamps in UTC (`timestamptz`) and render using each school's IANA time zone, initially `Asia/Riyadh` where configured.
-- **Requires decision:** Saudi hosting/data-transfer constraints, student age ranges, guardian verification authority, school provisioning, paid-product purchaser/beneficiary rules, record retention, legal bases, notification vendors, and RTO/RPO.
-- Legal and policy statements in this plan are engineering prompts, not legal conclusions. Saudi PDPL, children's data, education-record obligations, GDPR applicability, store rules, and cross-border transfers require qualified review.
+`supabase/functions/verify-store-purchase/index.ts` does **not** verify with
+Apple or Google. It forwards the receipt to a generic `PURCHASE_VERIFIER_URL`
+with a shared secret and trusts the reply's `active` field. There is:
 
-## 2. Current codebase audit
+- no Apple App Store Server API / JWS signature verification;
+- no Google Play Developer API / `purchases.subscriptionsv2` call;
+- no webhook endpoint (App Store Server Notifications V2, Play RTDN);
+- no transaction ledger, no renewal/refund/revocation handling;
+- a single mutable `subscription_entitlements` row as the source of truth.
 
-### Repository and application structure
+This will fail store review and is a revenue-integrity risk. See §23.5, §24.4.
 
-| Area | Observed responsibility | Problem or limitation | Security/scaling impact | Recommended action | Priority |
-|---|---|---|---|---|---|
-| Repository root | Flutter app plus Android, iOS, web, Linux, macOS, Windows scaffolds | No workspace/monorepo manifest, `.git`, CI, release policy, ownership, or architecture decision records | No trustworthy change history or automated gate; unclear supported platforms | Establish Git history and ownership first; introduce monorepo layout incrementally | Critical |
-| `lib/main.dart` | Bootstrap, theme, auth/role selection, navigation, teacher home and dialogs | 1,599 lines; UI, navigation, auth state, consent, and local data writes mixed | Hard to test; navigation can diverge from authenticated context | Split bootstrap, routing, auth presentation, shells, and feature modules | High |
-| `lib/*_features.dart` | Almost all teacher/student/parent screens and workflows | Three files total 14,937 lines; direct data access, state, validation, files, business calculations, and UI mixed | High regression risk; authorization assumptions live in UI | Migrate by vertical slice into presentation/application/domain/data folders | High |
-| `lib/studafy_database.dart` | SQLite schema v10, migrations, seed data, file copying, queries, commands, audit simulations | 1,333-line god object; preview database and alleged production cache share one API; many untyped maps; no sync engine | Local confirmation may not represent server state; user/tenant isolation is not modelled | Separate preview fixture, offline cache, DAOs, sync metadata, and repositories; ban direct widget access | Critical |
-| `lib/core/studafy_domain.dart` | Role/profile/context and insight/AI models | Singleton mutable context; role switching has demo fallback; model coverage is partial | Stale or incorrect tenant context can reach multiple screens | Introduce immutable authenticated context, explicit lifecycle, and typed IDs | High |
-| `lib/data/*` | Supabase bootstrap, repository interfaces, remote functions, IAP and study coach | Partial interfaces; dynamic JSON casts; errors mapped to `StateError`; most feature domains absent | Contract drift and runtime crashes; inconsistent offline/remote semantics | Generate typed DTOs from OpenAPI and define domain-specific repositories/results | High |
-| `supabase/migrations` | 29 public tables/types/functions/policies and private bucket | Sparse indexes; incomplete tenant invariants; missing admin role; inconsistent timestamps; potentially applied files cannot safely be rewritten | RLS and joins will degrade; cross-tenant relationships depend on trusted writers | Add forward-only corrective migrations with pgTAP tests and query-plan evidence | Critical |
-| `supabase/functions` | Eight Deno service-role workflows | Different runtime from target; repeated auth/bootstrap; wildcard CORS; weak validation/idempotency/transactions | Privileged defects have broad blast radius | Contain critical flaws, then migrate route-by-route to shared Hono middleware/services | Critical |
-| `supabase/tests/rls_access.sql` | Eight intended RLS assertions | Placeholder variables and no fixture/runner; first assertions occur before role/JWT setup shown in the file | Security suite is not reproducibly runnable | Build disposable synthetic multi-school fixture and automated pgTAP runner | Critical |
-| `test` | Five insight-engine unit tests and one widget test | No repository, auth, storage, payment, synchronization, or integration tests | Passing status gives little production assurance | Add layered tests and minimum coverage/change-risk gates | High |
-| `android`, `ios` | Native Flutter runners and OAuth callback | Example IDs, debug Android release signing, missing main internet permission, missing iOS privacy manifest | Store rejection, insecure signing, non-functional release networking | Create environment-specific identifiers/signing/privacy configuration | Critical |
-| `README.md` | Local/Supabase deployment notes and safety claims | Describes Supabase as authoritative before core flows use it; manual deployment steps only | Operators may overestimate readiness | Rewrite only after implemented behaviour matches operational documentation | High |
-| Generated directories | `build/` about 879 MB; `.dart_tool/` about 159 MB | Repository snapshot is about 1 GB; without Git metadata tracked status cannot be proven | Slower transfer/scanning; possible artifact leakage | Restore Git, verify ignore rules, remove generated artifacts only with approval | Low |
+---
 
-### Critical/high finding traceability register
+## 2. The five launch blockers
 
-Every item below must stay linked to its roadmap/backlog task. “Negative test” is the minimum adversarial assertion; the referenced phase part contains the complete acceptance criteria.
+Ranked. Nothing below #1 matters until #1 is resolved.
 
-| Finding and evidence | Current responsibility | Problem and impact | Required action / priority | Task / minimum negative test |
-|---|---|---|---|---|
-| `supabase/functions/propose-paper-grade/index.ts:13-33` | Authorizes grading and signs a scan for the AI provider | Service role signs caller-selected `private_scan_path` without a submission/file binding; potential cross-tenant private-file disclosure | Disable, then require clean server-owned `file_object_id` bound to grade/school/teacher / **Critical** | `SEC-001`, `FILE-050/051`; another teacher's guessed path never yields a signed URL or provider call |
-| `lib/studafy_database.dart`, all feature files | Provides almost every product read/write | Remote cache is unseeded and unsynchronized; confirmed UI actions remain local and can be lost/inconsistent / **Critical** | Gate production, add repositories and migrate complete authoritative slices / **Critical** | `ARC-011`, `API-041`, `MOB-070`; change device/account and prove committed state remains correct |
-| `supabase/migrations/202609080002_access_policies.sql:97-99` | Lets students update their submission | Resulting assignment/enrollment/publication and immutable relationship fields are not checked / **Critical** | Replace policy/column grants with command path and tenant constraints | `DB-021`; substitute another class/school assignment ID and require denial/no row change |
-| Existing schema FKs in `202609080001_production_foundation.sql` | Relates terms, students, classrooms, enrollments, results and content | Same-school consistency is not structurally enforced; a privileged bug can construct cross-tenant graphs / **Critical** | Add non-null ownership and composite tenant FKs through forward migration | `DB-020`; every cross-school relationship insert/update fails at DB boundary |
-| `supabase/functions/*` | Privileged mutations using service role | No common strict schemas, request/body limits, idempotency, transactions, timeouts or redacted error contract / **High** | Shared Hono middleware/use cases and transactional commands; restrict service role | `API-040/041`; malformed, oversized, replayed and partially failing commands produce no duplicate/partial state |
-| `create-google-meet/index.ts:31-80` | Expands recipients and creates Calendar event | N+1 DB/Auth calls and external side effect before durable idempotency; retries can duplicate/orphan events / **High** | Desired-state command plus outbox worker, set-based recipients and reconciliation | `OPS-061`; crash at every side-effect boundary still produces one logical meeting |
-| `approve-paper-grade` and `publish-grade-result` | Review/publish state transitions | Sequential updates, duplicate-question weakness, ignored write errors and duplicate publish notification risk / **High** | Transactional, versioned state machine with unique question set and idempotency | `API-041`; duplicate/omitted question and concurrent/replayed publish are rejected/idempotent |
-| `request-account-deletion/index.ts:12-15` | Enforces recent authentication | JWT issuance/refresh time is not interactive reauthentication; destructive action may bypass intended assurance / **High** | Supabase-supported recent-auth challenge/MFA evidence and deletion workflow | `AUTH-030`; refreshed but non-reauthenticated session cannot request deletion |
-| `202609090001_tighten_student_access.sql:140-146` and Flutter uploads | Allows namespaced direct storage insertion | No metadata ownership, type/signature validation, quarantine, malware/CDR, quota or clean-publication state / **High** | Upload-intent and isolated scan pipeline; deny legacy direct publication | `FILE-050/051`; malicious/mismatched/oversized/cross-binding object is never downloadable |
-| Migration index inventory | Supports RLS and list queries | Only two explicit non-unique indexes; nested policy/query paths can scan at school scale / **High** | Query-linked composite/partial indexes with plan tests and monitoring | `DB-020/021`; production-like RLS/list plans remain within approved scan/latency budget |
-| `lib/data/subscription_service.dart` and `verify-store-purchase` | Starts purchases and writes one user entitlement | No store event/transaction ledger, lifecycle webhooks, multiple products, replay ownership or reconciliation / **High** | Official Apple/Google verification, immutable ledger/events and derived entitlement | `PAY-071`; duplicate/out-of-order refund/revoke removes/grants access exactly once correctly |
-| `android/app/build.gradle.kts`, Android manifest, iOS project/Info.plist | Defines store artifacts/network/signing/privacy | Example IDs, Android debug release signing, no main internet permission, missing iOS privacy manifest / **Critical** | Final organization IDs, protected signing, permissions/declarations and CI release assertions | `REL-002`, `INFRA-081`; intentionally unsafe release configuration must fail CI/store smoke |
-| `lib/main.dart:358-463`, `studafy_domain.dart:104-116` | Selects role and maintains session context | Production navigation shares demo fallback and incomplete restore/revocation lifecycle / **High** | Production flavour exclusion, immutable server context and full session state machine | `ARC-011`, `AUTH-030/031`; user without active membership cannot enter any role, including after restart/offline |
-| `_shared/http.ts` | Supplies CORS/JSON response | Wildcard CORS and no shared security/error/request-ID policy / **High** | Exact origins and Hono middleware stack behind protected origin | `API-040`, `INFRA-080`; unapproved origin/host and spoofed proxy headers are rejected |
-| Repository-wide logging/error patterns | Handles operational failure | Raw server causes may be returned while many client errors are swallowed; no metrics/traces/alerts / **High** | Stable safe errors, structured redacted telemetry, SLOs and runbooks | `API-040`, `OPS-090`; seeded secrets/PII never appear and injected outage raises actionable alert |
-| `supabase/tests/rls_access.sql` and `test/` | Current verification | Placeholder RLS fixture; only six Flutter tests; no security/integration/payment/file/queue tests / **Critical** | Disposable fixtures and layered mandatory test gates | `TEST-006`, then every phase; cross-tenant substitution suite must run from clean environment |
-| Missing `.git`, CI/IaC/deployment files | Change and deployment governance | Cannot inspect history or reproduce/approve production changes / **Critical** | Restore history/owners and signed/scanned CI/CD/IaC | `GOV-003`, `INFRA-080/081`; clean clone and rollback rehearsal produce identical verified artifacts |
+1. **Store accounts and app identity do not exist** (REL-002 / DL-015).
+   Bundle ID is `com.example.studafy` on both platforms. `com.example.*` is
+   rejected by Apple and *cannot be uploaded* to Google Play at all.
+2. **The app is not server-backed** (MOB-070). See §1.3.
+3. **Billing is a stub** (PAY-071). See §1.4.
+4. **No hosted privacy policy** — both stores require a public URL. Studafy's
+   policy text is a hardcoded paragraph in a bottom sheet
+   (`lib/features/session/presentation/login_page.dart:266`).
+5. **Children's data + paid insights is unreviewed.** Studafy processes minors'
+   education records and sells "Parent Insights" derived from them. This is the
+   single highest rejection *and legal* risk. See §23.2, §24.2, §29.
 
-### Secondary maintainability and completeness findings
+---
 
-- No Dart import cycle was observed from the inspected imports, but parent/student modules depend laterally on teacher UI for `DeleteAccountPage`; move account UI to an account feature shared through an inward-facing contract.
-- `notebooks`/`lesson_notes`, `class_schedule`/`class_sessions`, `submissions`/`assessment_submissions`, and local/remote grade concepts overlap. Treat old local tables as migration inputs, not parallel production domain models.
-- The QR painter is not an interoperable QR encoder and the scanner returns a hard-coded ID. Replace with a vetted QR library and real camera flow only after the locator/linking threat model; the code must never imply that the locator proves identity.
-- Most English UI literals bypass the small English/Arabic localization dictionary; RTL, pluralization, date/number formatting and accessibility are incomplete.
-- Generated desktop/web platform scaffolds may be unused, but do not delete them until supported-platform decisions and a Git baseline exist. Generated plugin registrants/build artifacts are not hand-edited.
-- `pubspec.yaml` still carries template description/comments and version `1.0.0+1`; establish product metadata and version/release policy before store submission.
+## 3. Critical path
 
-### Large and overly complex files
+```
+NOW ─┬─ Register Apple Developer + Google Play accounts (§22.1)   [2–4 weeks lead]
+     ├─ Engage legal counsel: minors, consent, residency (§29)   [longest pole]
+     ├─ Name a security owner (closes DB-021)                    [blocking]
+     └─ Publish privacy policy + terms to a real domain (§21.6)
 
-| File | Approximate size | Responsibilities mixed together | Proposed separation |
-|---|---:|---|---|
-| `lib/teacher_features.dart` | 5,652 lines / 209 KB | Classroom CRUD, schedules, attendance, notebooks, files, gradebook, AI grading, content, meetings, communications, profile/settings, deletion, connections, messages | `features/classes`, `attendance`, `notebooks`, `assessments`, `grading`, `content`, `meetings`, `messages`, `account`; each with presentation/application/data boundaries |
-| `lib/student_features.dart` | 4,860 lines / 163 KB | Dashboard, grades, attendance, notebook, assignments/uploads, exams, notifications, AI coach/quiz/flashcards, profile/settings | Separate the same domain slices; share only design primitives and typed contracts |
-| `lib/parent_features.dart` | 4,425 lines / 146 KB | Child linking/switching, academics, insights/paywall, behaviour, notifications/messages, account | `family`, `academics`, `insights`, `wellbeing`, `messages`, `account` modules |
-| `lib/main.dart` | 1,599 lines / 49 KB | App bootstrap, theme, splash, role selection, OAuth/consent, shells, teacher dashboard, class/attendance/notebook dialogs | `app/bootstrap`, `app/router`, `auth`, `design_system`, and domain features |
-| `lib/studafy_database.dart` | 1,333 lines / 52 KB | Schema lifecycle, seeds, queries, commands, local files, fake audit/deletion/entitlement behaviour | versioned cache schema, typed DAOs, mutation outbox, sync coordinator, preview fixture, file cache adapter |
+THEN ─ Phase 3 auth ─ Phase 4 API ─ Phase 5 files ─ Phase 6 ops
+                               │
+                               └─ Phase 7 MOB-070 + PAY-071  ← the long build
+                                              │
+       Phase 8 deploy ─ Phase 9 pentest/privacy ─ Phase 10 pilot
+                                              │
+                      REL-002 native cutover (§21.1–§21.5)  ← LAST
+                                              │
+                      TestFlight / Play internal testing → review → launch
+```
 
-**File rule proposed for new code:** one primary responsibility per file; normally keep production source below 300 lines and functions below 50 lines. Exceeding either is not an automatic failure, but requires a review note explaining cohesion and testability. Route registration, generated contracts, migrations, and declarative mappings are exceptions.
+**REL-002 comes last, not first.** Do not remove the SEC-001 release guards
+until Phases 3–10 are complete. They are the only thing preventing a premature
+store upload of a non-functional app.
 
-### Coupling, duplication, types, and validation
+---
 
-- **Observed:** presentation widgets import `StudafyDatabase` and call SQL-facing methods directly. Teacher, parent, and student files also import shared deletion UI from the teacher feature file, creating inappropriate feature-to-feature coupling.
-- **Observed:** colours, headers, cards, role/profile assumptions, messages, and query-to-map conversion are duplicated across files.
-- **Observed:** application records use `Map<String, Object?>` and remote payloads use `Map<String, dynamic>` with unchecked casts. SQLite integer IDs and Supabase UUID string IDs coexist, connected by nullable `remote_id` values.
-- **Observed:** client forms perform uneven validation. Edge Functions parse `request.json()` directly and trust field shapes, lengths, numeric finiteness, URL/path formats, and enums inconsistently.
-- **Observed:** many asynchronous errors are swallowed (`catch (_)`) or displayed using raw exception strings. Server functions sometimes return database/provider exception messages as HTTP 400 responses.
-- **Action:** introduce branded/typed identifiers, immutable entities, command/query DTOs, schema-derived validation, `Result`/typed failure classes, a repository boundary, and a centralized error catalogue. UI code may format failures but may not decide authorization.
+---
 
-### Authentication and authorization audit
-
-- **Positive:** Supabase Auth uses PKCE and the client contains only URL/publishable-key configuration. No service-role key is embedded in Flutter.
-- **Observed:** role choice precedes authentication; after login the client requires a matching active membership. This is a UI routing convenience, not authorization; every API/RLS path must independently verify membership and relationship.
-- **Observed:** the app always opens splash/role selection and does not have a tested session restoration, revocation, multi-device, or expired-session state machine.
-- **Observed:** consent is recorded with a hard-coded policy version after OAuth callback. The displayed policy text is embedded placeholder copy rather than versioned legal content.
-- **Observed:** `ActiveContextController.switchRole` falls back to starting a demo role if no membership is found. Demo mode must be impossible in production flavours.
-- **Observed:** there is no administrator role even though the target requires administrators and trusted provisioning.
-- **Observed:** `request-account-deletion` checks JWT `iat`; token refresh is not proof of recent interactive authentication.
-- **Action:** implement server-verified sessions, explicit tenant context, RBAC plus student/guardian/class relationships, privileged MFA, recent-auth evidence, revocation-aware caches, production flavour guards, and server-owned membership/provisioning.
-
-### Database and RLS audit
-
-- `students.school_id` is nullable while nearly all authorization assumes school ownership.
-- `studafy_id` is globally unique and human-readable; it can become an enumeration/link-spam target. Treat it as a public locator, never proof of relationship, and add throttled server-mediated verification.
-- Foreign keys such as classroom-to-term, enrollment-to-student, assessment/result, and guardian relationships do not enforce same-school ownership. A service-role bug can create cross-school graphs that RLS was not designed to contain.
-- The student submission update policy checks only that the resulting `student_id` belongs to the caller; it does not re-check the assignment, active enrollment, publication state, deadline policy, or immutable fields.
-- `profiles update self` and consent update policies permit direct changes to all currently exposed mutable columns. Future privileged columns must never be added to these tables without column grants or restricted RPC/API paths.
-- `can_access_student` and `can_access_classroom` are `SECURITY DEFINER`; the later migration uses `search_path = public` rather than an empty search path with fully qualified objects. Function ownership, execute grants, leakproof assumptions, and RLS recursion need a dedicated audit.
-- RLS policies frequently traverse unindexed foreign-key/filter columns. Only `meeting_deliveries(recipient_id,state)` and a partial deletion-due index are explicitly created.
-- Most tables lack `updated_at`; soft deletion/archival rules are inconsistent; lifecycle states lack state-transition enforcement; `audit_events` is not explicitly append-only/tamper-evident.
-- Multi-row grade, notification, meeting, and audit updates are not atomic.
-
-### File, AI, payment, and third-party audit
-
-- Storage permits authenticated inserts only under `papers/{auth.uid()}` or `coach/{auth.uid()}`, but uploaded objects are not registered in a tenant/resource metadata table.
-- Flutter reads selected files entirely into memory before upload, has no size/type checks, and displays success before any security scan.
-- AI paper grading signs an arbitrary caller-provided path through the service role. The path is not checked against `papers/{teacher}/{submission}` or a file record, and the signed URL is sent to a third party.
-- AI responses are shape-cast and partially clamped, but completeness, duplicate question IDs, non-finite numbers, output size, model policy, prompt-injection handling, and retention are not robustly enforced.
-- Grade approval loops over row updates without a database transaction; duplicate input question IDs can satisfy the length check while omitting another question. Publication retries can create duplicate notifications.
-- Google Meet creation has enrollment-to-guardian and auth-admin N+1 calls, validates little input, creates the external event before durable idempotency state, and cannot compensate reliably if local persistence fails.
-- `subscription_entitlements` has one row per user, insufficient for multiple products, history, purchaser/beneficiary distinctions, transaction uniqueness, grace/hold/refund/revocation, or webhook reconciliation.
-- The client forwards store verification data to a generic verifier endpoint but the repository contains no Apple App Store Server Notifications V2 or Google RTDN receiver, signed-payload verification, transaction ledger, or reconciliation worker.
-
-### Dependencies and supply chain
-
-- The Flutter lockfile contains 130 hosted packages and five SDK packages with content hashes; there are no Git/path dependencies observed.
-- No automated vulnerability, licence, provenance, SBOM, secret, or dependency-update workflow exists.
-- Deno functions import the floating major URL `https://esm.sh/@supabase/supabase-js@2`, which is not an immutable dependency pin.
-- Bun 1.3.14 and Docker are available in the inspected environment; Supabase CLI is not. Environment availability is not a production version policy.
-- Before implementation, produce a dependency inventory, run current ecosystem-native advisory scans, pin Bun/Flutter/Dart/Java/Gradle/Xcode and package versions, verify lockfiles in CI, and require review for new runtime dependencies.
-
-### Performance and scaling bottlenecks
-
-- Client dashboards execute many independent local queries and pass large dynamic maps through widgets; no remote pagination/sync exists.
-- Remote notification count fetches every unread notification ID and counts client-side.
-- Meeting creation performs per-student guardian queries and per-recipient Auth Admin queries.
-- RLS functions and policies execute nested membership/enrollment/guardian checks with missing supporting indexes.
-- Study Coach sends up to 30 material bodies to another service without deterministic ordering, token budgets, chunking, retrieval indexing, or per-tenant cost controls.
-- No connection-pool limits, backpressure, timeouts, load shedding, queue concurrency policy, or hot-tenant protection exists.
-
-### Verification baseline
-
-- `flutter analyze`: passed with no issues on 2026-09-09.
-- `flutter test --concurrency=1`: six tests passed (five unit tests and one widget test).
-- Supabase RLS tests: not run; fixture variables and local Supabase tooling are missing.
-- Builds, native release signing, migrations, Edge Functions, IAP sandboxes, load tests, secret history, and deployment were not verified.
-
-## 3. Proposed system architecture
+## 4. Proposed system architecture
 
 ### Current architecture
 
@@ -328,7 +276,16 @@ Do not move the Flutter root in the same change that introduces the API. First m
 - Implement offline mutation outbox records with UUID operation IDs, expected resource version, retry state, and user-visible conflict handling. Never allow offline authorization, entitlement, grade publication, guardian verification, or destructive account changes.
 - Keep generated Flutter web support as non-production until audience, SEO, accessibility, session-cookie/CSRF, and deployment requirements are approved. Any future web client uses the same `/v1` contracts, not database access.
 
-## 4. PostgreSQL and Supabase database architecture
+## 5. PostgreSQL and Supabase database architecture
+
+> **Implementation status (2026-09-11).** Much of this section is now built.
+> `DB-020` delivered school-scoped composite foreign keys, lifecycle tables and
+> query-backed indexes; `DB-021` delivered least-privilege grants, complete
+> `SELECT` policies, private authorization helpers and relationship
+> immutability — verified by 113 pgTAP assertions. Read this section as the
+> target design and the rationale behind the shipped migrations, not as
+> outstanding work. Outstanding items are the tables left deliberately
+> fail-closed for later feature phases, and the Phase 2 gate (§20).
 
 ### Tenancy and identity model
 
@@ -424,7 +381,7 @@ Quarterly, review `pg_stat_statements`, unused indexes, sequential scans, bloat,
 - Add partitioning only for measured large append-only tables (audit, store events, delivery attempts), not ordinary tenant tables. Document partition pruning and retention detach/drop procedures before enabling.
 - Define data residency, subprocessor, backup-region, and cross-border transfer constraints before selecting projects/providers.
 
-## 5. Authentication and authorisation
+## 6. Authentication and authorisation
 
 ### Authentication and authorization flow
 
@@ -484,7 +441,7 @@ Every use case declares an action (`grade.review`, `attendance.write`, `resource
 
 For every protected resource, test owner/relationship success plus anonymous, inactive membership, wrong role, wrong class, wrong child, unverified/revoked guardian, cross-school ID, guessed public locator, draft/unpublished state, altered request school ID, stale cached grant, and service retry. Tests must exercise both `/v1` and direct Supabase-exposed tables/RPCs. A missing policy test blocks release.
 
-## 6. API design and security
+## 7. API design and security
 
 ### API standards
 
@@ -557,7 +514,7 @@ For every protected resource, test owner/relationship success plus anonymous, in
 - Verify webhook signature/OIDC, timestamp/environment/audience, and payload schema before state mutation; persist unique event identity before acknowledgement.
 - Redact authorization/cookie headers, tokens, secrets, signed URLs, raw store receipts, private object keys, full message/file content, and unnecessary child PII from logs.
 
-## 7. Rate limiting and abuse prevention
+## 8. Rate limiting and abuse prevention
 
 Use Redis-backed token buckets for burst-tolerant APIs and sliding-window counters for low-volume sensitive actions where an exact recent history matters. Cloudflare provides a coarse outer layer; Hono applies authenticated user/device/tenant policy after verified identity. Limits below are **initial safety values to be validated with load tests, false-positive monitoring, school-size data, and abuse exercises**, not permanent product guarantees.
 
@@ -588,7 +545,7 @@ Use Redis-backed token buckets for burst-tolerant APIs and sliding-window counte
 - Use Turnstile only where a human browser/app flow can complete it: suspicious registration, reset, invitation, or public contact flows. Validate tokens server-side with action/hostname and single-use semantics.
 - Monitor top limited routes, IP/user/tenant cardinality, reject ratios, Redis latency/errors, Turnstile outcomes, cost units, and false-positive support cases. Alert on distributed account attacks, locator enumeration, upload/AI cost spikes, and webhook signature failure bursts.
 
-## 8. Redis caching strategy
+## 9. Redis caching strategy
 
 PostgreSQL/Supabase remains the source of truth. Cache only proven hot, read-heavy, safely invalidated data. Every key begins `studafy:{environment}:v{schemaVersion}` and includes `schoolId` for tenant-owned data. Values have a schema version and are never shared across tenants merely because display data looks identical.
 
@@ -616,7 +573,7 @@ PostgreSQL/Supabase remains the source of truth. Cache only proven hot, read-hea
 - Set `maxmemory` and an eviction policy appropriate to cache keys (normally allkeys-LFU/LRU) while BullMQ Redis must not evict queue keys. Therefore prefer separate instances/clusters or a provider-supported non-evicting queue allocation.
 - Track hit/miss/stale rates, load latency saved, key/value bytes, eviction, hot keys, invalidation lag, lock contention, and database fallback load. Remove caches that do not materially improve an SLO/cost target.
 
-## 9. BullMQ and background processing
+## 10. BullMQ and background processing
 
 ### Queue inventory and contracts
 
@@ -651,7 +608,7 @@ All job payloads are versioned Zod contracts and contain opaque IDs, not full st
 
 Pin Bun, BullMQ, and Redis versions. Test `createBunRedisClient`, `duplicate()`/blocking consumers, Lua/scripts, pipelines, TLS/ACLs, retry behaviour, stalled-job recovery, delayed/repeatable jobs, QueueEvents, graceful shutdown, failover, and the exact managed Redis product. If any required behaviour fails, keep the Hono API on Bun but run workers on a supported Node LTS/ioredis runtime as an evidence-based temporary exception documented by ADR; do not silently weaken queue guarantees.
 
-## 10. File storage, upload security and deduplication
+## 11. File storage, upload security and deduplication
 
 ### Secure upload and publication flow
 
@@ -699,7 +656,7 @@ sequenceDiagram
 
 Before any real file is processed, disable AI grading or change the existing function so it accepts a `file_object_id`, loads a same-school binding to the exact grade result, verifies the caller is assigned teacher, verifies clean state and allowed purpose, and only then signs the server-owned path. Because the current metadata model does not exist, the safest immediate default is to disable the endpoint with a feature flag until the secure pipeline is available.
 
-## 11. Encryption and secrets management
+## 12. Encryption and secrets management
 
 ### Encryption decisions
 
@@ -720,7 +677,7 @@ Before any real file is processed, disable AI grading or change the existing fun
 - Prevent secrets in logs/errors/traces/job payloads/analytics, process arguments, Docker layers, crash reports, Terraform state, mobile defines, signed URLs, and test snapshots.
 - Run pre-commit and CI secret scans plus periodic full-history scans after Git is restored. A finding records filename and credential category with value redacted, blocks release, triggers immediate rotation/revocation, checks provider logs, and opens an incident.
 
-## 12. Apple and Google in-app purchases
+## 13. Apple and Google in-app purchases
 
 ### Purchase and entitlement flow
 
@@ -771,7 +728,7 @@ sequenceDiagram
 - Verify current Apple App Store Review Guidelines, StoreKit/App Store Server documentation, Google Play Payments policy, Billing Library requirements, and alternative-billing rules before implementation and every release. Approval cannot be guaranteed.
 - Digital subscriptions/content used in the app default to required platform IAP. Physical goods or real-world services may use external payment only after product/legal/store-policy review and a separate contract.
 
-## 13. Cloudflare architecture
+## 14. Cloudflare architecture
 
 ### Deployment topology
 
@@ -811,7 +768,7 @@ flowchart TB
 - Keep Supabase Storage by default. Evaluate R2 only with a threat/data-flow model, residency/DPA, signed access, scanner integration, lifecycle/versioning, backup, migration/egress cost, and operational ownership.
 - Send Cloudflare security/rate-limit logs to central monitoring with privacy minimization and retention. Alert on origin bypass attempts, WAF spikes, bot anomalies, TLS/certificate issues, and unexpected cache hits on private paths.
 
-## 14. Privacy, compliance and data governance
+## 15. Privacy, compliance and data governance
 
 ### Data classification
 
@@ -838,7 +795,7 @@ flowchart TB
 - Prepare breach classification, containment, evidence preservation, processor coordination, notification decision, affected-school/user communication, credential rotation, and post-incident actions; legal deadlines come from counsel.
 - Confirm Saudi PDPL, education/child requirements, regional hosting, international transfers, and breach obligations with qualified Saudi counsel. Assess GDPR only where territorial/data-subject applicability exists. Record decisions rather than presenting this plan as legal advice.
 
-## 15. Observability and incident response
+## 16. Observability and incident response
 
 ### Telemetry standards
 
@@ -866,7 +823,7 @@ Define an on-call schedule and incident commander, operations, security/privacy/
 
 Never log passwords, access/refresh tokens, cookies, MFA secrets/codes, KMS/data keys, service credentials, database URLs, raw store receipts, signed URLs, full payment information, message/file bodies, or unnecessary personal/education data.
 
-## 16. Testing and quality assurance
+## 17. Testing and quality assurance
 
 ### Layered strategy
 
@@ -899,7 +856,7 @@ Automate attempts by an authenticated user to replace every path/body/cursor ID 
 - Test data is synthetic and clearly marked. Never copy live student records into development/test.
 - Perform accessibility testing for screen readers, dynamic text, contrast, focus order, touch targets, reduced motion, RTL, Arabic/English, and keyboard/web if a web product is approved.
 
-## 17. CI/CD and environments
+## 18. CI/CD and environments
 
 ### Environments
 
@@ -927,7 +884,7 @@ Never share Supabase projects, Redis databases, storage buckets, signing credent
 - Infrastructure is declarative, peer-reviewed, policy-tested, drift-detected, and state protected. Emergency changes are recorded and reconciled immediately.
 - Dependency updates are automated in small groups, with weekly advisory review, monthly routine cadence, rapid critical patch path, compatibility tests, and rollback. No abandoned critical package remains without replacement/acceptance.
 
-## 18. Performance and scalability
+## 19. Performance and scalability
 
 ### Necessary now
 
@@ -958,159 +915,31 @@ Never share Supabase projects, Redis databases, storage buckets, signing credent
 
 Product/operations must approve RTO/RPO by data class. Initial planning candidates—not commitments—are: near-zero loss for committed grades/memberships/store transactions through PostgreSQL durability/PITR; bounded minutes for notification/outbox recovery; caches/queues rebuildable where durable source exists; object recovery matching academic retention. Quarterly recovery exercises must report actual achieved restore time, data gap, consistency validation, and follow-up.
 
-## 19. Phased implementation roadmap
+---
 
-Complexity is relative (`S`, `M`, `L`, `XL`) and deliberately not converted to time. “Parallel” means safe only after listed dependencies/entry conditions.
+## 20. Implementation roadmap
 
-### Phase 0: discovery, risk containment and baseline
+Complexity is relative (`S`, `M`, `L`, `XL`) and deliberately not converted to
+time. "Parallel" means safe only after the listed dependencies and entry
+conditions.
 
-#### Part 0A — Contain immediate security and release risk (`SEC-001`)
+### Completed phases
 
-| Field | Plan |
-|---|---|
-| Objective | Prevent real-data exposure or accidental store release while foundations are incomplete. |
-| Why necessary | The file-signing gap, local-only production flows, example IDs/debug signing, and absent security suite are release-blocking. |
-| Existing files affected | AI grading function, storage policies, Flutter feature flags/build configuration, native runners; initially configuration-only containment. |
-| New modules/files expected | Risk register, kill-switch registry, incident/credential checklist, production-readiness banner. |
-| Dependencies | Named product/security owner; access to Supabase and store consoles; confirmed environments. |
-| Detailed tasks | Disable AI grading and real uploads outside synthetic environments; block production flavour when demo/local-only features are enabled; restrict deployment credentials; inspect provider logs; establish Git and code owners; rotate any credential if later found. |
-| Database changes | Forward migration may revoke unsafe function/storage privileges; do not edit applied migrations. |
-| API changes | Existing unsafe grading endpoint returns stable unavailable response; no caller path signing. |
-| Security requirements | Fail closed, least privilege, no secret output, documented exception/expiry for every temporary control. |
-| Tests required | Feature-kill test; direct function/path substitution denied; production build refuses demo/debug configuration. |
-| Observability | Alert on calls to disabled endpoint, storage insert anomalies, origin/function errors. |
-| Risks | Interrupting prototype demos or orphaning test uploads. |
-| Rollback | Re-enable only in isolated synthetic environment; never roll back the authorization containment for real data. |
-| Deliverables | Approved risk register, containment migration/config, evidence screenshots/log queries, owner matrix. |
-| Acceptance criteria | No real-data route can invoke arbitrary signing; production release pipeline is blocked; critical risks have owners. |
-| Complexity | M |
-| Parallel | Git/ownership, native release block, and endpoint containment can run in parallel with shared security review. |
-| Conditions before proceeding | Security owner signs containment evidence; no unresolved unknown production endpoint/project. |
+| Phase | Parts | Status |
+|---|---|---|
+| 0 — Discovery and containment | `SEC-001`, `ARC-001` | Complete; Phase 0A human gate still open |
+| 1 — Architecture and repository | `ARC-010`, `ARC-011` | Complete |
+| 2 — Database foundation | `DB-020`, `DB-021` | Implemented and verified locally |
 
-#### Part 0B — Inventory, decisions and reproducible baseline (`ARC-001`)
+**Phase 2 gate is not closed.** DB-021 requires an independent named security
+owner to review the policy matrix, grants inventory, function hardening and
+tenant-isolation evidence. Backup/PITR approval and the Phase 0 human gate also
+remain open. Evidence: `docs/evidence/phase-2b/README.md`.
 
-| Field | Plan |
-|---|---|
-| Objective | Establish verified system/data/integration inventory and measurable baselines. |
-| Why necessary | Git history, environment/provider choices, real schema/data shape, and non-functional targets are unknown. |
-| Existing files affected | README, Flutter manifests/lockfile, Supabase config/migrations/tests; documentation updates follow evidence. |
-| New modules/files expected | ADRs, threat model/data-flow inventory, environment matrix, data classification/retention draft, benchmark reports. |
-| Dependencies | Console access, stakeholder interviews, qualified legal input, synthetic data generator. |
-| Detailed tasks | Restore/import Git history; inventory APIs/tables/buckets/secrets/providers/products; reconcile live schema with migrations; scan history/dependencies/licences; identify supported platforms/versions; approve tenant/admin/family/billing/data-residency/RTO/RPO decisions; baseline queries, build, app flows and cost. |
-| Database changes | None except disposable inspection; capture schema diff and row/cardinality estimates without PII. |
-| API changes | None. Produce route/use-case inventory and migration order. |
-| Security requirements | Read-only production inspection, redaction, approved access, no live-data copying. |
-| Tests required | Repeat existing analyze/test; make pgTAP fixture runnable in disposable stack; smoke current remote functions with synthetic users. |
-| Observability | Record baseline latency/errors/query plans and current absence/gaps. |
-| Risks | Live state may differ from repository; missing stakeholders can delay decisions. |
-| Rollback | Documentation/baseline changes are versioned; no production mutation. |
-| Deliverables | Approved ADR set, live-vs-repo diff, inventory, threat model, SLO and data-governance decision log. |
-| Acceptance criteria | Every environment/integration/data owner is known; blocking open questions are decided or explicitly stop later phase. |
-| Complexity | L |
-| Parallel | Inventory streams can run in parallel; architecture decisions consolidate afterward. |
-| Conditions before proceeding | Phase 0 evidence review and security gate passed. |
-
-**Phase 0 gate:** critical containment verified; Git/owners/environments known; historical secret scan completed or formally bounded; live schema reconciled; tenant, platform, region, data, billing and SLO decisions approved; reproducible Flutter and disposable Supabase checks run.
-
-### Phase 1: architecture and repository restructuring
-
-#### Part 1A — Monorepo and delivery skeleton (`ARC-010`)
-
-| Field | Plan |
-|---|---|
-| Objective | Add Bun workspace, Hono API and worker skeleton while preserving Flutter behaviour. |
-| Why necessary | Target services and shared delivery controls do not exist. |
-| Existing files affected | Root Flutter project/build docs only after CI supports paths; no feature rewrite. |
-| New modules/files expected | `apps/api`, `apps/worker`, `packages/{contracts,domain,database,config,observability,test-support}`, root Bun manifests, container/dev stack. |
-| Dependencies | Phase 0 ADRs; pinned Bun; selected SQL/validation/telemetry libraries. |
-| Detailed tasks | Create workspaces; health/readiness; typed config; graceful shutdown; lint/test/build scripts; local Postgres/Redis; dependency boundaries; immutable container builds; only then mechanically relocate Flutter if approved. |
-| Database changes | Connectivity/read-only smoke only. |
-| API changes | Internal health endpoints and empty `/v1` router; no traffic cutover. |
-| Security requirements | Non-root minimal image, locked dependencies, secret injection, no debug/admin exposure. |
-| Tests required | Bun unit smoke, container health/shutdown, frozen installs, Flutter commands before/after any move. |
-| Observability | Startup/config/version metrics without secret values; readiness reason codes. |
-| Risks | Breaking native paths or adding unsupported dependencies. |
-| Rollback | Revert mechanical move/workspace commit; Flutter stays runnable at old root until parity. |
-| Deliverables | Reproducible monorepo skeleton and architecture boundary checks. |
-| Acceptance criteria | Clean clone runs pinned installs, tests and containers; no Flutter behaviour change. |
-| Complexity | L |
-| Parallel | API/worker skeleton and Flutter path rehearsal can run in parallel after common workspace decision. |
-| Conditions before proceeding | CI proves reproducibility and dependency/security scans pass. |
-
-#### Part 1B — Flutter boundaries and typed contracts (`ARC-011`)
-
-| Field | Plan |
-|---|---|
-| Objective | Remove direct persistence/provider coupling one vertical slice at a time. |
-| Why necessary | Widgets currently own SQL, files, validation, and remote calls through dynamic maps. |
-| Existing files affected | `main.dart`, feature files, database/data/core modules. |
-| New modules/files expected | App router/session, feature presentation/application/domain/data folders, repository ports, generated Dart client, preview adapters. |
-| Dependencies | 1A; approved first slice (recommended session + class read). |
-| Detailed tasks | Add typed IDs/entities/failures; dependency injection; wrap SQLite and Supabase behind repositories; isolate preview mode by build flavour; extract shared design/localization; prohibit cross-feature imports/direct DB in analyzer rules. |
-| Database changes | Local cache schema unchanged initially; add sync schema only in later slice. |
-| API changes | Contract package defines `/v1/me` and classroom list without activating production route. |
-| Security requirements | Auth context immutable; no demo fallback in production; DTO allowlists. |
-| Tests required | Repository contract tests, session state widgets, preview/production flavour guards, generated client drift. |
-| Observability | Client request/error/sync state interfaces with PII-safe events. |
-| Risks | Large UI regressions and mixed old/new state. |
-| Rollback | Per-slice feature flag and adapter; preserve old preview adapter until parity. |
-| Deliverables | First typed vertical slice and enforceable dependency rules. |
-| Acceptance criteria | Slice contains no widget SQL/provider call/dynamic transport cast; existing UX tests pass. |
-| Complexity | XL |
-| Parallel | Independent UI extraction after common contracts/design/session primitives. |
-| Conditions before proceeding | Architecture tests and production demo-mode denial pass. |
-
-**Phase 1 gate:** clean dependency direction, pinned/reproducible Bun and Flutter builds, first typed slice parity, production flavour contains no demo authorization, no direct persistence from migrated widgets.
-
-### Phase 2: database foundation and migrations
-
-#### Part 2A — Tenant constraints, lifecycle schema and indexes (`DB-020`)
-
-| Field | Plan |
-|---|---|
-| Objective | Make cross-school corruption structurally impossible and supply the target domain schema. |
-| Why necessary | Current FKs/RLS assume tenant consistency but do not enforce it; lifecycle tables are incomplete. |
-| Existing files affected | Supabase migrations only through new files; existing migration files remain immutable. |
-| New modules/files expected | Forward migrations, generated DB types, schema lint, pgTAP fixtures, index/query catalogue. |
-| Dependencies | Live schema diff; tenancy/admin/family/retention decisions. |
-| Detailed tasks | Expand roles/status; make ownership explicit via staged backfill; add composite tenant FKs; add staff/resources/files/outbox/billing/events/idempotency tables; timestamps/state checks; query-backed indexes; append-only protections. |
-| Database changes | Expand/backfill/validate/contract sequence with not-valid constraints where needed; no table rewrite without rehearsal. |
-| API changes | Additive contract fields/version tokens only; old clients remain valid. |
-| Security requirements | Tenant ID non-null, restricted grants, secure function ownership/search path, no client writes to privileged tables. |
-| Tests required | Migration from empty and prior snapshot; cross-tenant FK failures; state/score constraints; query plans at synthetic scale. |
-| Observability | Migration duration/locks, invalid rows, index size/use, RLS/query latency. |
-| Risks | Existing inconsistent rows and long locks. |
-| Rollback | Stop before validation/contract; retain additive columns/tables; corrective forward migration. |
-| Deliverables | Validated target foundation and schema/data dictionary. |
-| Acceptance criteria | No cross-school graph can be inserted; hot-path plans use justified indexes within budget. |
-| Complexity | XL |
-| Parallel | New independent tables and synthetic fixtures may progress in parallel; constraints sequence centrally controlled. |
-| Conditions before proceeding | Staging-size migration rehearsal and backup/restore checkpoint pass. |
-
-#### Part 2B — RLS, grants and database assurance (`DB-021`)
-
-| Field | Plan |
-|---|---|
-| Objective | Establish least-privileged, tested defense-in-depth policies. |
-| Why necessary | Current coverage is partial, un-runnable, and contains an unsafe submission update. |
-| Existing files affected | New policy migrations and `supabase/tests`; no in-place policy history edits. |
-| New modules/files expected | Synthetic multi-school seed, role harness, policy matrix, security-definer review. |
-| Dependencies | 2A relationships; action/role matrix. |
-| Detailed tasks | Revoke default privileges; separate runtime/migration/service roles; replace unsafe policies; lock immutable columns; harden functions/search paths/grants; add policies for every exposed table/view/RPC; minimize Data API schemas. |
-| Database changes | Forward policy/function/grant migrations; views/RPCs for safe field projections. |
-| API changes | Document which data is API-only versus safe direct Supabase access; default privileged mutations API-only. |
-| Security requirements | Deny by default; no service-role assumption in tests; admin/support scope audited. |
-| Tests required | Positive/negative matrix for all roles, states and cross-tenant IDs; property substitution; anon grants; policy performance. |
-| Observability | Authorization deny reason metrics at API; Supabase/RLS performance reports without sensitive IDs. |
-| Risks | Accidental lockout or policy recursion/performance regression. |
-| Rollback | Feature flag API slice; corrective policy migration restoring last safe policy, never broad public access. |
-| Deliverables | Executable RLS suite, grants inventory, signed policy review. |
-| Acceptance criteria | Test suite starts from zero automatically; every protected table has denial tests and acceptable plans. |
-| Complexity | XL |
-| Parallel | Policies by module after common helpers/grants are stable. |
-| Conditions before proceeding | Independent security review and tenant-isolation gate pass. |
-
-**Phase 2 gate:** schema upgrade and rollback rehearsal complete; all tenant invariants enforced; all RLS/grant negative tests automated; no unindexed critical policy path; PITR/object recovery design approved.
+The remaining phases below retain their full specification: objective,
+rationale, affected files, dependencies, detailed tasks, database and API
+changes, security requirements, tests, observability, risks, rollback,
+deliverables, acceptance criteria, complexity and entry conditions.
 
 ### Phase 3: authentication, authorisation and tenant isolation
 
@@ -1512,7 +1341,562 @@ Complexity is relative (`S`, `M`, `L`, `XL`) and deliberately not converted to t
 
 **Phase 10 gate:** migrated data reconciles, supported clients are safe, pilot and staged cohorts meet SLO/security/cost targets, restore/rollback is proven, and production ownership/support are active. Further scaling follows measured thresholds.
 
-## 20. Migration and launch strategy
+### Phase 11: store release (`REL-002`)
+
+1. Complete §21.1–§21.4 native identity work.
+2. Remove containment guards (§21.5) with recorded decisions.
+3. Build signed release artifacts in CI.
+4. Internal testing: TestFlight + Play internal track.
+5. Closed testing with the pilot school.
+6. Complete store listings, Data Safety, privacy labels, review notes (§25).
+7. Submit. Expect at least one rejection round; budget for it.
+8. Staged rollout: Play 1% → 5% → 20% → 50% → 100%; iOS phased release.
+
+**Gate:** both apps live, crash-free rate above target, entitlement
+reconciliation clean, no P1 support issues.
+
+---
+
+---
+
+## 21. File-by-file edit list
+
+Everything in this section is a concrete change. Items marked **BLOCKER**
+prevent store submission.
+
+### 21.1 Android application identity — BLOCKER
+
+**File:** `android/app/build.gradle.kts`
+
+| Line | Current | Change to |
+|---|---|---|
+| 18 | `namespace = "com.example.studafy"` | your reverse-DNS ID, e.g. `sa.studafy.app` |
+| 29 | `applicationId = "com.example.studafy"` | the same ID — **permanent, never changeable after publish** |
+| 46 | `signingConfig = signingConfigs.getByName("debug")` | a real release config (below) |
+| 9–15 | SEC-001 `GradleException` block | delete only at REL-002 cutover |
+
+Add a release signing config reading from an untracked `android/key.properties`:
+
+```kotlin
+import java.util.Properties
+import java.io.FileInputStream
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+}
+```
+
+Also set `targetSdk = 35` explicitly (Play requires targeting within one year
+of the latest Android release; verify the current floor at submission time).
+
+**File:** `android/app/src/main/AndroidManifest.xml`
+
+- Line 3: `android:label="studafy"` → `android:label="Studafy"` (capitalised —
+  this is the name under the icon).
+- Confirm the deep-link `android:scheme="io.studafy.app"` matches your final
+  OAuth redirect and Supabase `site_url`.
+- Add `<uses-permission android:name="android.permission.INTERNET"/>` explicitly
+  if you stop relying on manifest merging.
+
+**File:** `android/key.properties` — **create, and add to `.gitignore`.**
+
+```properties
+storePassword=<from your password manager>
+keyPassword=<from your password manager>
+keyAlias=upload
+storeFile=/absolute/path/to/upload-keystore.jks
+```
+
+Generate the upload keystore once and back it up in at least two places:
+
+```bash
+keytool -genkey -v -keystore ~/studafy-upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+> Losing this file without Play App Signing enrolment means you can never
+> update the app again. Enrol in Play App Signing (§22.1) so Google holds the
+> distribution key and this is only the upload key.
+
+### 21.2 iOS application identity — BLOCKER
+
+**File:** `ios/Runner.xcodeproj/project.pbxproj`
+
+- Lines 402, 583, 605: `PRODUCT_BUNDLE_IDENTIFIER = com.example.studafy;` →
+  your final ID. Lines 418, 435, 450 are `RunnerTests` — update to match.
+- Lines 155 / 239–252: delete the `SEC-001 Release Block` shell script phase at cutover.
+- Set `DEVELOPMENT_TEAM` to your Apple Developer Team ID.
+- Set `CODE_SIGN_STYLE` and provisioning profiles for Release.
+
+**File:** `ios/Runner/Info.plist`
+
+- `CFBundleName` is `studafy` (lowercase) — change to `Studafy`.
+- `NSPhotoLibraryUsageDescription` exists and is well written. **Add** the
+  camera string if `image_picker` is ever used with `ImageSource.camera`:
+  ```xml
+  <key>NSCameraUsageDescription</key>
+  <string>Studafy uses the camera so you can take a profile photo.</string>
+  ```
+  A missing usage string causes an **immediate crash on first use** and is a
+  guaranteed rejection.
+- Verify `CFBundleURLSchemes` (`io.studafy.app`) matches the final bundle ID
+  convention and Supabase redirect.
+- Add `ITSAppUsesNonExemptEncryption` to avoid an export-compliance prompt on
+  every upload:
+  ```xml
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+  ```
+  Only declare `false` if you use HTTPS/TLS exclusively, which is currently true.
+
+**File:** `ios/Runner/PrivacyInfo.xcprivacy` — **create. BLOCKER.**
+
+Apple requires a privacy manifest. Missing or inaccurate manifests cause
+automated rejection emails on upload. Declare your data types and the reason
+codes for every required-reason API your dependencies use.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyTracking</key>
+  <false/>
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+    <!-- Repeat for: Name, UserID, PhotosorVideos, OtherDiagnosticData,
+         and any education/performance data you classify. -->
+  </array>
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array><string>C617.1</string></array>
+    </dict>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array><string>CA92.1</string></array>
+    </dict>
+  </array>
+</dict>
+</plist>
+```
+
+Add it to the Runner target in Xcode (Build Phases → Copy Bundle Resources).
+Then audit each plugin (`sqflite`, `share_plus`, `image_picker`, `file_picker`,
+`url_launcher`, `in_app_purchase`, `supabase_flutter`) for its own manifest and
+required-reason APIs before submitting.
+
+### 21.3 App icons and launch assets — BLOCKER
+
+`android/app/src/main/res/mipmap-hdpi/ic_launcher.png` is 544 bytes: the
+**default Flutter logo**. Shipping the default icon is a rejection under Apple
+4.3 (spam) / design review, and looks unfinished on Play.
+
+Add `flutter_launcher_icons` to `dev_dependencies` and supply a 1024×1024
+source. Apple additionally requires the 1024×1024 icon to have **no alpha
+channel and no transparency** — a transparent icon fails upload validation.
+
+Also replace the default launch screen (`ios/Runner/Base.lproj/LaunchScreen.storyboard`
+and `android/app/src/main/res/drawable/launch_background.xml`).
+
+### 21.4 Version identity
+
+**File:** `pubspec.yaml` line with `version: 1.0.0+1`.
+
+`1.0.0` is the user-visible version; `+1` is the build number. The build number
+must strictly increase on **every** upload to either store, including rejected
+ones. Wire this to CI rather than editing by hand.
+
+### 21.5 Remove containment guards — LAST STEP
+
+Only after Phases 3–10 pass their gates:
+
+| File | Change |
+|---|---|
+| `lib/core/runtime_environment.dart:36-37` | `blocksApplicationStartup` → `false` |
+| `lib/core/runtime_environment.dart:31-32` | `allowsAiGrading` / `allowsRemoteFileUploads` → only after FILE-051 and an approved AI DPA |
+| `android/app/build.gradle.kts:9-15` | delete `GradleException` guard |
+| `ios/Runner.xcodeproj/project.pbxproj` | delete SEC-001 script phase |
+| `test/release_containment_test.dart` | rewrite to assert the *new* release invariants — do not simply delete |
+
+Each removal requires a forward change referencing REL-002 and a recorded
+decision-log entry, per `docs/security/sec-001-containment.md:114`.
+
+### 21.6 Privacy policy and terms — BLOCKER
+
+**File:** `lib/features/session/presentation/login_page.dart:253-275` (`showPolicy`, line 253)
+
+Replace `showPolicy`'s hardcoded bottom-sheet strings with `url_launcher` calls
+to hosted documents:
+
+```dart
+void showPolicy(BuildContext c, PolicyDocument doc) => launchUrl(
+  Uri.parse(switch (doc) {
+    PolicyDocument.privacy => 'https://studafy.example/privacy',
+    PolicyDocument.terms   => 'https://studafy.example/terms',
+  }),
+  mode: LaunchMode.externalApplication,
+);
+```
+
+You need a real domain serving both documents publicly, without a login wall,
+in **English and Arabic** (the app ships `en` + `ar`). The same privacy URL goes
+into both store consoles. Keep `_termsPolicyVersion`
+(`lib/features/session/data/supabase_session_repository.dart:13`) in lockstep
+with the published document version, and bump it when the text changes.
+
+### 21.7 In-app account deletion — BLOCKER
+
+Apple 5.1.1(v) requires that an app offering account creation also offers
+**in-app account deletion** — not an email link, not a web form. Google Play
+requires an in-app path *and* a publicly reachable web deletion URL.
+
+`supabase/functions/request-account-deletion` exists and
+`lib/data/supabase_repository.dart:88` calls it, but confirm the UI exposes it
+plainly in the account screen for **every** role (teacher, parent, student),
+explains what is deleted versus retained, and completes without contacting
+support. School-owned student records legitimately cannot be deleted by a
+student — that must be *explained in-app*, and the guardian/school path
+documented, or reviewers will treat it as a missing deletion flow.
+
+### 21.8 Billing rewrite (PAY-071)
+
+**Delete and replace** `supabase/functions/verify-store-purchase/index.ts`.
+Build the billing module in `apps/api` instead, with:
+
+- **Apple:** App Store Server API v1, verify the signed `JWSTransaction` chain
+  against Apple's root CAs; handle App Store Server Notifications V2
+  (`SUBSCRIBED`, `DID_RENEW`, `DID_FAIL_TO_RENEW`, `EXPIRED`, `REFUND`,
+  `REVOKE`, `GRACE_PERIOD_EXPIRED`).
+- **Google:** Play Developer API `purchases.subscriptionsv2.get`, plus
+  Real-Time Developer Notifications over Pub/Sub. Acknowledge every purchase
+  within **3 days** or Google **automatically refunds it**.
+- A `store_transactions` / `store_events` ledger (tables already exist from
+  DB-020) as the append-only source of truth; derive `entitlements` from it.
+- Idempotent webhook processing keyed on the store transaction ID.
+- Environment/bundle checks so a sandbox receipt cannot grant production access.
+
+`lib/data/subscription_service.dart` keeps `in_app_purchase`, but must also
+handle `PurchaseStatus.error`, `.canceled` and `.pending`, and must call
+`completePurchase` on terminal failures or iOS will replay the transaction
+forever.
+
+### 21.9 Supabase Data API posture
+
+`supabase/config.toml` is correctly locked (`schemas = ["public"]`,
+`max_rows = 1000`). Keep it that way. As Phase 4 moves flows to the Hono API,
+progressively revoke the remaining direct authenticated reads so the API
+becomes the only mutation path, per DL-028.
+
+---
+
+## 22. Credentials and API keys register
+
+Nothing here belongs in Git. Values live in a password manager and are injected
+by CI secrets or the platform secret store. The repo already enforces this:
+`.env.example` carries placeholders only, and `config/dart-defines.*.json`
+is ignored.
+
+### 22.1 Store accounts — obtain first, longest lead time
+
+| Item | Where | Cost / lead time | Notes |
+|---|---|---|---|
+| Apple Developer Program | developer.apple.com | ~$99/yr, days–weeks | **Use an Organization account, not Individual** — requires a D-U-N-S number, which alone can take 1–2 weeks. An Individual account publishes under your personal name. |
+| App Store Connect app record | appstoreconnect.apple.com | — | Reserve the bundle ID and app name early; names are first-come |
+| Google Play Developer | play.google.com/console | $25 one-time, days–weeks | Organization accounts now require D-U-N-S and identity verification |
+| Play App Signing | Play Console | — | Enrol at first upload; Google holds the distribution key |
+
+For an education app handling minors' data, use an **organisation** account on
+both stores. A personal developer account on a school product is itself a
+review-trust problem and a contractual problem with schools.
+
+### 22.2 Signing and release credentials
+
+| Credential | Used by | Storage |
+|---|---|---|
+| Android upload keystore (`.jks`) | `android/key.properties` | Password manager + offline backup; CI secret as base64 |
+| Keystore/key passwords, alias | `android/key.properties` | CI secrets |
+| Apple Distribution certificate (`.p12`) | Xcode / CI | CI secret |
+| App Store provisioning profile | Xcode / CI | CI secret |
+| App Store Connect API key (`.p8`, Key ID, Issuer ID) | CI upload (`altool`/Fastlane) | CI secret — **the `.p8` is downloadable only once** |
+| Google Play service account JSON | CI upload | CI secret; grant only "Release manager" |
+
+### 22.3 Runtime application keys
+
+| Variable | Consumer | Notes |
+|---|---|---|
+| `SUPABASE_URL` | Flutter `--dart-define` | Public |
+| `SUPABASE_PUBLISHABLE_KEY` | Flutter `--dart-define` | Public by design (`sb_publishable_*`). RLS is the control — this is why DB-021 mattered |
+| `APP_ENV` | Flutter `--dart-define` | `production` for release builds |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | **Never** in the Flutter app or any client bundle |
+| `DATABASE_URL` | `apps/api`, `apps/worker` | Pooled connection string |
+| `REDIS_URL` | `apps/api`, `apps/worker` | Private network only, TLS + AUTH |
+
+Create a `config/dart-defines.production.json` (ignored) mirroring the existing
+development file, and extend `scripts/write-synthetic-mobile-config.ts` to
+generate it. The script's refusal to accept anything but a `sb_publishable_*`
+key is a good control — preserve it.
+
+### 22.4 Store billing credentials (PAY-071)
+
+| Credential | Purpose |
+|---|---|
+| App Store Connect API key (in-app purchase scope) | App Store Server API |
+| Apple root CA certificates | Verify JWS signature chains |
+| Apple shared secret | Legacy `verifyReceipt` fallback only |
+| Google Play service account JSON | `purchases.subscriptionsv2` |
+| Google Cloud Pub/Sub topic + subscription | Real-Time Developer Notifications |
+| Apple Server Notification URL | Configured in App Store Connect |
+
+Retire `PURCHASE_VERIFIER_URL` / `PURCHASE_VERIFIER_SECRET` entirely.
+
+### 22.5 OAuth provider credentials
+
+The app offers Google, Microsoft and Apple sign-in
+(`lib/features/session/domain/session_repository.dart:8`).
+
+| Provider | Needed |
+|---|---|
+| Google | OAuth client IDs (iOS, Android w/ SHA-1, Web) in Google Cloud Console |
+| Microsoft | Azure AD app registration; client ID + secret; redirect URI |
+| Apple | Sign in with Apple: Service ID, Key ID, Team ID, `.p8` private key |
+
+All are configured in the Supabase Auth provider settings, with the redirect
+URI matching `io.studafy.app://login-callback`.
+
+> **Apple 4.8:** because you offer Google and Microsoft sign-in, Sign in with
+> Apple is **mandatory** on iOS. It is already in the enum — make sure it is
+> actually wired, tested, and visible on the iOS login screen, not just present
+> in code.
+
+### 22.6 Infrastructure and other services
+
+| Service | Credential | Phase |
+|---|---|---|
+| Supabase production project | Project ref, DB password, service role key | 8 |
+| Container host (Fly/Railway/Cloud Run) | Deploy token | 8 |
+| Managed Redis | Connection URL + password | 6 |
+| Cloudflare | API token, zone ID, origin certificate | 8 |
+| Push (FCM + APNs) | `google-services.json`, APNs key | 6/7 |
+| Email provider | API key, verified domain (SPF/DKIM/DMARC) | 6 |
+| Error/telemetry (e.g. Sentry) | DSN — **must be PII-scrubbed** | 9 |
+| Malware scanning | Licence/API key | 5 |
+| AI provider | API key — **blocked until DPA signed** | deferred |
+
+---
+
+## 23. Apple App Store rejection register
+
+Mapped to the App Review Guidelines. Each row is a realistic rejection cause
+for *this* app, not a generic checklist.
+
+### 23.1 Guideline 2.1 — App Completeness
+
+| Risk | Why it hits Studafy | Fix |
+|---|---|---|
+| **Non-functional / demo app** | The app is local SQLite (§1.3). A reviewer creating a teacher account sees no real data, and nothing syncs. Apple rejects "demo, trial or test versions". | MOB-070 must be complete |
+| Crash on review | Missing usage strings; unhandled null session | §21.2; full E2E pass |
+| **No demo account provided** | Studafy requires a school membership. A reviewer signing in with Google gets *no membership* → correctly denied → looks broken | Supply a fully provisioned demo account in App Review notes (§25.3) |
+| Backend unavailable during review | Review can happen days later, in any region | Keep staging/production up continuously through review |
+
+> The demo-account issue is the most commonly underestimated one for
+> school apps. Your authorization model is deliberately fail-closed — a
+> reviewer with no membership sees an empty, broken-looking app and rejects it.
+> You **must** ship reviewer credentials for a seeded school with a teacher, a
+> parent and a student account, and explain the role switch in the notes.
+
+### 23.2 Guideline 1.3 / 5.1.4 — Kids and minors
+
+| Risk | Detail |
+|---|---|
+| **Kids Category rules** | If you list under Kids (under-13), you may not include third-party analytics or advertising, and links out require a parental gate |
+| Behavioural profiling of minors | "Parent Insights" is paid analysis of a child's education data — Apple scrutinises this heavily |
+| Parental gate | Purchases and external links in a child-facing context need a gate |
+| COPPA / GDPR-K | Verifiable parental consent required where applicable |
+
+**Recommendation:** do **not** list in the Kids Category. Position Studafy as a
+school-administered tool where accounts are provisioned by the school, set the
+age rating accordingly, and make clear that students do not self-register. This
+materially reduces review risk. The existing decision to keep paid insights
+disabled until legal review (§29) should hold through v1.
+
+### 23.3 Guideline 5.1.1 — Data collection and storage
+
+| Risk | Fix |
+|---|---|
+| Privacy policy link missing/broken | §21.6 |
+| Privacy manifest missing | §21.2 |
+| App Privacy "nutrition label" mismatched to actual behaviour | Fill honestly in App Store Connect; mismatches are caught and rejected |
+| **No in-app account deletion** | §21.7 |
+| Requesting data not needed | Only request photo access at the moment of use |
+
+### 23.4 Guideline 4.8 — Login Services
+
+Sign in with Apple is required. See §22.5.
+
+### 23.5 Guideline 3.1.1 — In-App Purchase
+
+| Risk | Fix |
+|---|---|
+| Digital content sold outside IAP | All Insights+ purchases must use `in_app_purchase` |
+| **No Restore Purchases button** | `restorePurchases()` exists in code — it must be a visible UI control |
+| Subscription terms not disclosed | Before purchase, show: title, length, price per period, auto-renewal; link Terms + Privacy |
+| Server verification absent | §21.8 |
+| Who benefits from a purchase is ambiguous | Resolve the beneficiary question (§29) — Apple asks |
+
+### 23.6 Guideline 5.1.2 / 2.5.1 — Other
+
+| Risk | Fix |
+|---|---|
+| Data shared with third parties without consent | No AI provider until a DPA exists; keep `allowsAiGrading = false` |
+| Private API use | None currently — re-verify after adding plugins |
+| Export compliance prompt | §21.2 `ITSAppUsesNonExemptEncryption` |
+| Default icon / placeholder UI (4.3 spam) | §21.3 |
+
+---
+
+## 24. Google Play rejection register
+
+### 24.1 Hard upload blockers
+
+| Blocker | Detail |
+|---|---|
+| **`com.example.*` package** | Play **refuses the upload outright** |
+| Debug signing | Rejected; must be release-signed |
+| `targetSdk` too low | Must target within one year of the latest Android release |
+| Missing 64-bit / AAB | Ship an Android App Bundle, not an APK |
+
+### 24.2 Families and children's policy
+
+Studafy is education software processing minors' data. Play applies the
+**Families policy** and **Designed for Families** rules.
+
+| Requirement | Action |
+|---|---|
+| Target Audience & Content declaration | Declare accurately; "Teachers/schools" audience if not child-facing |
+| No ads to children | Ship no ad SDK |
+| Approved SDK list | Every SDK must be Families-policy compliant — audit before adding |
+| Data safety accuracy | §24.3 |
+
+### 24.3 Data Safety form — high rejection rate
+
+Must exactly match observed app behaviour; Google actively cross-checks. You
+must declare: email, name, user IDs, photos, app activity, and education data;
+whether each is collected or shared, encrypted in transit, and whether users
+can request deletion.
+
+> Declaring "no data collected" while the app authenticates users is an
+> automatic rejection and can suspend the account.
+
+### 24.4 Billing policy
+
+| Requirement | Detail |
+|---|---|
+| Play Billing for digital goods | No external payment links for in-app digital content |
+| **Acknowledge within 3 days** | Unacknowledged purchases are **auto-refunded** — §21.8 |
+| Subscription disclosure | Price, period, renewal shown before purchase |
+| Cancellation path | Must be discoverable |
+
+### 24.5 Account deletion
+
+Play requires **both** an in-app deletion path and a **publicly accessible web
+URL** for deletion requests, submitted in the Data Safety form. Add the web URL
+alongside the privacy policy (§21.6).
+
+### 24.6 Permissions and policy declarations
+
+Current manifest is minimal — good. Before adding any of the following, know
+they each require a declaration and may trigger review: `QUERY_ALL_PACKAGES`,
+`MANAGE_EXTERNAL_STORAGE`, background location, `SCHEDULE_EXACT_ALARM`,
+`FOREGROUND_SERVICE` (needs a declared type on modern Android).
+
+`file_picker` and `image_picker` should use the Photo Picker / scoped storage
+paths rather than broad storage permissions.
+
+---
+
+## 25. Store console setup
+
+### 25.1 Listing assets (both stores)
+
+- App name, short and full description — **English and Arabic**
+- Screenshots: iPhone 6.7" and 6.5"; Android phone + 7"/10" tablet if supported
+- Feature graphic (Play, 1024×500)
+- Category: Education
+- Support URL, marketing URL, privacy policy URL
+- Content/age rating questionnaires — answer honestly about user-generated
+  content and messaging (Studafy has teacher↔parent messaging, which affects
+  the rating)
+
+### 25.2 Products
+
+Create `studafy_parent_insights_monthly` as an auto-renewing subscription in
+**both** consoles, matching the constant at
+`lib/data/subscription_service.dart:12`. Configure pricing per territory, a
+subscription group, and localised descriptions.
+
+### 25.3 Review notes — do not skip
+
+Provide: reviewer credentials for a seeded school (teacher, parent, student),
+how to switch roles, what data to expect, an explanation that accounts are
+school-provisioned, and sandbox purchase instructions. See §23.1.
+
+### 25.4 Testing tracks
+
+Use TestFlight and Play internal testing first. Play's closed-testing
+requirement for new personal developer accounts (a cohort of testers over a
+sustained period before production access) is another reason to register an
+**organisation** account (§22.1).
+
+---
+
+---
+
+## 26. Migration and launch strategy
 
 ### Existing-data assessment
 
@@ -1543,7 +1927,31 @@ Complexity is relative (`S`, `M`, `L`, `XL`) and deliberately not converted to t
 - If cross-tenant corruption/exposure is suspected, stop affected writes/downloads/AI, preserve evidence, revoke signed access/credentials as needed, scope affected tenants, restore/repair only through the incident process, and involve privacy/legal owners.
 - After launch, maintain heightened dashboards/on-call, daily reconciliation of migration/billing/files, support triage, and a formal review before each expansion.
 
-## 21. Prioritised backlog
+---
+
+## 27. Rollback and incident posture
+
+- **Server:** previous signed immutable images plus feature flags.
+- **Mobile:** halt rollout, disable the feature server-side, ship a corrective
+  build. **Installed binaries cannot be recalled** — server-side kill switches
+  are the only real mobile rollback.
+- **Database:** forward repair. Verify a PITR checkpoint before cutover;
+  destructive contraction waits beyond the supported-client window.
+- **Suspected cross-tenant exposure:** stop affected writes/downloads, preserve
+  evidence, revoke signed access, scope affected tenants, restore only through
+  the incident process, involve privacy/legal owners.
+
+---
+
+---
+
+## 28. Prioritised backlog
+
+**Status as of 2026-09-11.** Complete: `SEC-001`, `GOV-003`, `AUD-004`,
+`ADR-005`, `TEST-006`, `ARC-010`, `ARC-011`, `DB-020`, `DB-021` (the last
+pending independent security review). `REL-002` has its identity half decided
+(ADR-0015 / DL-029) with registration, signing and privacy manifests open.
+Every other row below is outstanding — 16 phase parts, 11 of them XL.
 
 | Task ID | Phase | Task | Priority/milestone | Dependencies | Security impact | Scaling impact | Complexity | Acceptance criteria |
 |---|---:|---|---|---|---|---|---|---|
@@ -1584,28 +1992,48 @@ Complexity is relative (`S`, `M`, `L`, `XL`) and deliberately not converted to t
 - **Before production:** all mobile core flows server-backed/offline-safe, native release configuration, migration rehearsal/pilot, penetration/privacy/legal/restore gates, no unowned critical/high risk.
 - **Postpone until measured:** read replicas, partitioning, Redis Cluster, service extraction, R2 migration, and active-active multi-region.
 
-## 22. Open questions and decisions required
+---
 
-| Question | Why it matters | Options | Recommended default | Consequences | Blocks |
-|---|---|---|---|---|---|
-| Is each school the commercial/data tenant, or are school groups required? | Determines keys, admin scope, billing and isolation | School tenant; organisation containing schools | School tenant now; add organisation only for confirmed group use | Organisation adds hierarchy/cross-school reports and policy complexity | Phase 2 if groups are launch scope |
-| Which roles and provisioning authority exist? | Current schema lacks admins and trusted onboarding | School invite; domain claim; SIS import; public signup | Admin/invite/SIS trusted provisioning; public signup gets no membership | Automation convenience versus privilege/enumeration risk | Phase 3 |
-| What ages and guardian rules apply? | Consent, account creation, visibility, deletion and safety depend on age/jurisdiction | Student accounts by age; school-managed; guardian-managed | School-managed with verified guardian policy until legal/product decision | Changes authentication and data-subject flows | Phase 3/beta |
-| How is guardian relationship verified/revoked? | Studafy ID/QR is not proof | School approval; verified invite; external SIS; combination | School/SIS or existing verified guardian invitation with audit/expiry | More friction but prevents unauthorized child access | Family launch |
-| Is the current SQLite/device data synthetic only? | Determines migration and breach/data-loss risk | Discard preview; import approved records; mixed classification | Treat as synthetic and do not import unless ownership is proven | Import needs encryption, mapping and reconciliation | Phase 10 |
-| Is Flutter web a production product? | Affects cookie/CSRF, accessibility, hosting and API compatibility | Mobile only; Flutter web; separate web app | iOS/Android only for v1; retain web scaffold as non-production | Web adds security/SEO/browser testing and release scope | Web launch only |
-| Which compute and Redis providers/regions are approved? | Bun containers, BullMQ semantics, residency, latency and DR depend on them | Managed containers/Kubernetes/VM; provider Redis/Valkey | Managed container platform + BullMQ-compatible private Redis in Supabase region | Provider changes IaC, pooling, failover and cost | Phase 1 production design/8 |
-| Must data remain in Saudi Arabia, and where may backups/telemetry/AI go? | Legal/contractual location controls vendor selection | Saudi-only; approved region/transfers; tenant choice | Saudi/approved local region where available; no transfer until counsel approves | May limit Supabase/Redis/AI/observability vendors | Phase 0 critical |
-| Which records and durations are legally/contractually retained? | Soft delete, backups, audit and account deletion depend on it | School-defined; platform standard; jurisdiction matrix | Policy matrix approved per data class with school override boundaries | Too short loses records; too long increases privacy risk | Phase 2 contract/9 |
-| What are approved RTO/RPO/SLOs and support hours? | Determines backup tier, architecture, staffing and cost | Business-hours; 24x7; tiered journeys | Tiered core/optional journeys based on pilot needs | Higher targets require cost/on-call/redundancy | Phase 8/production |
-| Who purchases and who benefits from Parent Insights? | Entitlement cannot be safely derived otherwise | Purchaser only; family; per child; school licence | Authenticated purchaser across own devices | Family/per-child requires beneficiary and transfer rules | Phase 7 payment |
-| Are paid insights based on child education data legally/product-approved? | Monetization and profiling of children need scrutiny | Remove; aggregate; explicit school/guardian feature | Keep disabled until legal/school/AI assessment approves | May change product/revenue scope | Paid beta |
-| Which Apple/Google accounts, bundle/package IDs and products are final? | Current IDs are examples; verification binds exact identity | Existing owned IDs/accounts; new production setup | Dedicated production IDs controlled by organization | Changing after release is difficult; affects OAuth/IAP | Native release |
-| Which file types/sizes and retention are required by purpose? | Determines scan/CDR tooling, quotas and UX | Restrictive allowlist; broad documents; links only for some content | Restrictive purpose-specific PDF/JPEG/PNG initially | Broader formats increase malware/fidelity/cost risk | Phase 5 |
-| Which AI providers, models and data-use terms are approved? | Child files/materials leave Studafy trust boundary | No AI; approved zero-retention provider; self-hosted | AI disabled until DPA/retention/training/residency and safety review | Provider choice affects encryption, egress, cost and quality | AI beta |
-| Is Google Workspace per school or per teacher, and who owns meetings? | Token custody, revocation, Calendar ownership and recovery differ | Domain-wide delegation; per-user OAuth broker; alternative provider | Per-user OAuth with encrypted refresh credentials unless school approves domain delegation | Domain delegation has broader blast radius; per-user has reauth/support cost | Meeting production |
-| Which email/push/SMS providers and notification obligations apply? | Queue contracts, consent, residency and delivery SLOs depend on them | Email/push only; SMS; school providers | In-app + push/email; SMS only for approved critical use | More providers add PII, cost and compliance | Phase 6/9 |
-| Are wellbeing/incident records visible to every guardian/teacher? | These may be especially sensitive or safeguarding-restricted | Standard relationship visibility; classification-based; specialist only | Classification-based policy with designated staff/school admin | Requires finer roles but reduces harmful disclosure | Phase 2/4 |
-| Which Supabase tables remain directly client-accessible? | Direct Data API can reduce latency but expands RLS contract surface | API-only; mixed safe reads; broad direct access | API-only for privileged/mutable data; narrowly reviewed direct realtime/read views | API-only centralizes policy; mixed access requires duplicate assurance | Phase 2/4 |
+## 29. Decisions that need human owners
 
-Any question marked blocking must have an owner, decision date, ADR/policy link, and affected backlog tasks before its gate. Unanswered non-blocking questions use the recommended default temporarily and remain visible in the risk register; defaults are not permanent consent or legal conclusions.
+These block gates and **cannot be resolved by writing code**. Each needs an
+owner, a decision date, and an ADR link.
+
+| Decision | Blocks | Recommended default |
+|---|---|---|
+| **Who owns the Apple/Google org accounts?** | All submission | Dedicated org accounts with D-U-N-S |
+| **Named independent security owner** | Closes DB-021 / Phase 2 | Assign now — already blocking |
+| **Are paid insights on children's data approved?** | Paid beta | Keep disabled until legal + school sign-off |
+| **Ages and guardian consent rules** | Phase 3, store age rating | School-managed accounts; no student self-registration |
+| **Data residency (Saudi Arabia?)** | Phase 8 vendor selection | Approved local region; no transfer until counsel approves |
+| **Kids Category listing?** | Apple review | **Do not list in Kids Category** (§23.2) |
+| Guardian verification method | Family launch | School/SIS approval with audit and expiry |
+| Who benefits from an Insights purchase | Phase 7 billing | Authenticated purchaser across own devices |
+| Retention schedule per data class | Phase 2 contract, Phase 9 | Policy matrix with school override bounds |
+| RTO/RPO/SLOs and support hours | Phase 8 | Tiered by journey |
+| AI provider and DPA terms | AI beta | AI stays disabled |
+| Flutter web as a product? | Web launch | iOS/Android only for v1 |
+| Backup/PITR approval | Phase 2 close | Outstanding |
+| Phase 0 human gate | Phase 2 close | Outstanding |
+
+---
+
+## 30. Immediate next actions
+
+In order. The first four are not engineering tasks and have the longest lead
+times — start them today.
+
+1. Register the Apple Developer **organisation** account (begin D-U-N-S now).
+   Walkthrough, prerequisites and credential custody:
+   [`docs/release/rel-002-store-accounts.md`](docs/release/rel-002-store-accounts.md).
+2. Register the Google Play **organisation** developer account — same document,
+   §21. Enrol in Play App Signing at first upload.
+3. Engage legal counsel on minors' data, consent, residency and paid insights.
+4. Name the independent security owner and close the DB-021 review.
+5. ~~Choose~~ **Decided 2026-09-11: `io.studafy.app`** (ADR-0015, DL-029) —
+   chosen because it is already the OAuth redirect scheme, so no redirect
+   changes are needed. Still to do: register the App ID with Apple, reserve the
+   name in App Store Connect, and apply the identifier to the build files at the
+   REL-002 cutover (§21.1–§21.2) — **not before**.
+6. Stand up the domain and publish the privacy policy and terms (en + ar).
+7. Begin Phase 3 (AUTH-030) — the next engineering item on the critical path.
