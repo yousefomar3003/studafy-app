@@ -33,6 +33,10 @@ The 2026-09-11 hotspot follow-up also separates startup, parent presentation,
 teacher dashboard, preview SQLite modules, and Study Coach policy/adapters;
 evidence is in `docs/evidence/phase-1b/hotspot-refactor-2026-09-11.md`.
 
+The local-only DB-020 foundation is documented in ADR-0013, the schema data
+dictionary, index catalogue, and `docs/evidence/phase-2a/`. It is not deployed
+and does not activate Phase 2B policies or any production feature.
+
 ```sh
 bun install --frozen-lockfile          # workspace install
 cp .env.example .env                   # replace placeholders; file is ignored
@@ -40,6 +44,7 @@ bun run dev:stack                      # local Redis (Postgres = bunx supabase s
 bun run format:check                   # deterministic TypeScript/JSON/YAML formatting
 bun run lint                           # TypeScript lint
 bun run generate:check                 # OpenAPI -> Dart client drift check
+bun run generate:db-types:check        # local public schema -> TypeScript drift
 bun run check:bounds                   # architecture boundary check
 bun run typecheck                      # tsc for every workspace member
 bun test apps packages                 # unit + integration tests (Redis/DB tests skip when unset)
@@ -141,6 +146,9 @@ bunx supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,sup
 bunx supabase db reset --local --no-seed
 bunx supabase test db --local supabase/tests/containment.sql
 bunx supabase test db --local supabase/tests/rls_access_seed.sql  # synthetic fixture + 8 RLS assertions
+bunx supabase test db --local supabase/tests/db020_constraints.sql
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+  bun run test:db020:plans
 ```
 
 CI (`.github/workflows/ci.yml`) runs the same checks read-only on every push,

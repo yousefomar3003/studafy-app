@@ -1,6 +1,7 @@
 import postgres, { type Sql } from "postgres";
 
 export type { Sql };
+export type { Database } from "./database.types.generated.ts";
 
 export interface DatabaseOptions {
   /** Maximum pooled connections. */

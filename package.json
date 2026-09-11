@@ -9,6 +9,9 @@
     "lint": "deno lint --rules-exclude=no-sloppy-imports,require-await apps packages scripts",
     "generate:dart-client": "bun scripts/generate-dart-client.ts",
     "generate:check": "bun scripts/generate-dart-client.ts --check",
+    "generate:db-types": "bun scripts/generate-db-types.ts",
+    "generate:db-types:check": "bun scripts/generate-db-types.ts --check",
+    "test:db020:plans": "bun scripts/verify-db020-query-plans.ts",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
     "check:bounds": "bun scripts/check-bounds.ts",
@@ -18,6 +21,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/bun": "1.4.2",
+    "postgres": "3.4.9",
     "supabase": "2.117.0",
     "typescript": "7.0.2"
   }

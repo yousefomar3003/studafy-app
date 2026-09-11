@@ -105,9 +105,11 @@ jobs:
         run: bun audit --audit-level high
 
   database:
-    name: Local Supabase migration and RLS validation
+    name: Local Supabase upgrade, recovery, schema, and RLS validation
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
     steps:
       - name: Check out source
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -119,12 +121,32 @@ jobs:
         with:
           bun-version: 1.3.14
 
+      - name: Set up Deno for deterministic generated-type formatting
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.6
+
       - name: Install pinned tool dependencies
         run: bun install --frozen-lockfile
 
       # Every command is explicitly local. The checkout has no linked-project state.
       - name: Start disposable local Supabase stack
         run: bunx supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+
+      - name: Reset to the pre-DB-020 migration boundary
+        run: bunx supabase db reset --local --version 202609090004 --no-seed
+
+      - name: Load synthetic legacy multi-school fixture
+        run: bun scripts/run-local-sql.ts supabase/tests/db020_legacy_seed.sql
+
+      - name: Checksum and restore the pre-upgrade logical backup
+        run: bun scripts/rehearse-db020-recovery.ts
+
+      - name: Apply the six DB-020 forward migrations
+        run: bunx supabase migration up --local
+
+      - name: Verify legacy identifier, row, lifecycle, and tenant preservation
+        run: bunx supabase test db --local supabase/tests/db020_upgrade.sql
 
       - name: Replay all migrations from zero
         run: bunx supabase db reset --local --no-seed
@@ -139,6 +161,15 @@ jobs:
       # creates the cross-school fixture and includes rls_access.sql itself.
       - name: Run multi-school RLS access tests
         run: bunx supabase test db --local supabase/tests/rls_access_seed.sql
+
+      - name: Run DB-020 tenant and lifecycle constraint tests
+        run: bunx supabase test db --local supabase/tests/db020_constraints.sql
+
+      - name: Verify DB-020 query plans and provisional local latency bounds
+        run: bun run test:db020:plans
+
+      - name: Verify checked-in public database types have no drift
+        run: bun run generate:db-types:check
 
       # ARC-010: read-only connectivity smoke from the workspace database
       # package against the disposable stack database.
@@ -207,7 +238,7 @@ jobs:
           docker build -q -f apps/api/Dockerfile -t studafy-api .
           docker run -d --name api-smoke --network host \
             -e ENVIRONMENT=development -e REDIS_URL=redis://127.0.0.1:6379 studafy-api
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             curl -sf http://127.0.0.1:8080/healthz >/dev/null && break; sleep 1
           done
           curl -sf http://127.0.0.1:8080/healthz | grep -q '"ok"'
@@ -224,12 +255,12 @@ jobs:
           docker build -q -f apps/worker/Dockerfile -t studafy-worker .
           docker run -d --name worker-smoke --network host \
             -e ENVIRONMENT=development -e REDIS_URL=redis://127.0.0.1:6379 studafy-worker
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             docker logs worker-smoke 2>&1 | grep -q worker_ready && break; sleep 1
           done
           docker logs worker-smoke 2>&1 | grep -q worker_ready
           REDIS_URL=redis://127.0.0.1:6379 bun -e 'const m = await import("./packages/infrastructure/src/index.ts"); const q = m.createQueue("smoke", process.env.REDIS_URL, { prefix: "studafy-development" }); await q.add("smoke-job", { value: "ci-smoke" }); await m.closeQueue(q);'
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             docker logs worker-smoke 2>&1 | grep -q job_processed && break; sleep 1
           done
           docker logs worker-smoke 2>&1 | grep -q job_processed
