@@ -35,57 +35,37 @@ select throws_like(
 reset role;
 
 select ok(
-  not has_function_privilege(
-    'anon',
-    'public.is_school_member(uuid, public.app_role[])',
-    'execute'
-  ),
-  'anonymous cannot execute is_school_member'
+  to_regprocedure('public.is_school_member(uuid, public.app_role[])') is null,
+  'legacy public is_school_member helper is removed'
 );
 
 select ok(
-  not has_function_privilege(
-    'anon',
-    'public.is_class_teacher(uuid)',
-    'execute'
-  ),
-  'anonymous cannot execute is_class_teacher'
+  to_regprocedure('public.is_class_teacher(uuid)') is null,
+  'legacy public is_class_teacher helper is removed'
 );
 
 select ok(
-  not has_function_privilege(
-    'anon',
-    'public.can_access_student(uuid)',
-    'execute'
-  ),
-  'anonymous cannot execute can_access_student'
+  to_regprocedure('public.can_access_student(uuid)') is null,
+  'legacy public can_access_student helper is removed'
 );
 
 select ok(
-  not has_function_privilege(
-    'anon',
-    'public.can_access_classroom(uuid)',
-    'execute'
-  ),
-  'anonymous cannot execute can_access_classroom'
+  to_regprocedure('public.can_access_classroom(uuid)') is null,
+  'legacy public can_access_classroom helper is removed'
 );
 
 select ok(
-  not has_function_privilege(
-    'anon',
-    'public.handle_new_auth_user()',
-    'execute'
-  ),
-  'anonymous cannot execute handle_new_auth_user'
+  to_regprocedure('public.handle_new_auth_user()') is null,
+  'auth trigger helper is absent from the public RPC schema'
 );
 
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.handle_new_auth_user()',
+    'private.handle_new_auth_user()',
     'execute'
   ),
-  'authenticated callers cannot invoke the auth trigger helper directly'
+  'authenticated callers cannot invoke the private auth trigger helper'
 );
 
 select ok(
@@ -101,19 +81,19 @@ select ok(
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.is_school_member(uuid, public.app_role[])',
+    'private.has_active_membership(uuid, public.app_role[])',
     'execute'
   ),
-  'authenticated RLS policies retain access to their membership helper'
+  'authenticated policies can execute the private membership helper'
 );
 
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.can_access_classroom(uuid)',
+    'private.can_view_classroom(uuid)',
     'execute'
   ),
-  'authenticated RLS policies retain access to their classroom helper'
+  'authenticated policies can execute the private classroom helper'
 );
 
 select * from finish();

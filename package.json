@@ -12,6 +12,7 @@
     "generate:db-types": "bun scripts/generate-db-types.ts",
     "generate:db-types:check": "bun scripts/generate-db-types.ts --check",
     "test:db020:plans": "bun scripts/verify-db020-query-plans.ts",
+    "test:db021:plans": "bun scripts/verify-db021-policy-plans.ts",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
     "check:bounds": "bun scripts/check-bounds.ts",
