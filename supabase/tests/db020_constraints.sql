@@ -65,8 +65,8 @@ select is(
         'consent_policies', 'idempotency_records'
       ])
   ),
-  0::bigint,
-  'Part 2A adds no premature client policies to new tables'
+  5::bigint,
+  'DB-021 exposes only five reviewed DB-020 read models'
 );
 
 select is(
@@ -380,7 +380,8 @@ select school_id, 'abcd0000-0000-4000-8000-000000000007',
 from public.memberships
 where school_id = '11111111-1111-1111-1111-111111111111'
   and user_id = 'aaaa0000-0000-4000-8000-000000000001'
-  and role = 'teacher';
+  and role = 'teacher'
+on conflict do nothing;
 
 select throws_like(
   $$insert into public.classroom_staff (

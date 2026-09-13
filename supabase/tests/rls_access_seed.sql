@@ -63,10 +63,10 @@ where id in (:'teacher_user', :'student_user', :'guardian_user', :'unverified_gu
   and (instance_id is null or confirmation_token is null or recovery_token is null
     or email_change_token_new is null or updated_at is null);
 
-insert into public.schools (id, name) values
-  (:'school_id', 'Seed School A'),
-  (:'other_school_id', 'Seed School B')
-on conflict (id) do nothing;
+insert into public.schools (id, name, status) values
+  (:'school_id', 'Seed School A', 'active'),
+  (:'other_school_id', 'Seed School B', 'active')
+on conflict (id) do update set status = excluded.status;
 
 insert into public.memberships (school_id, user_id, role, active) values
   (:'school_id', :'teacher_user', 'teacher', true),
@@ -91,6 +91,14 @@ on conflict (student_id, guardian_id) do nothing;
 insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id) values
   (:'classroom_id', :'school_id', :'term_id', 'Seed Classroom', 'G6', 'A', :'teacher_user')
 on conflict (id) do nothing;
+
+insert into public.classroom_staff (
+  school_id, classroom_id, membership_id, user_id, role
+)
+select :'school_id', :'classroom_id', m.id, :'teacher_user', 'lead_teacher'
+from public.memberships m
+where m.school_id=:'school_id' and m.user_id=:'teacher_user' and m.role='teacher'
+on conflict do nothing;
 
 insert into public.enrollments (classroom_id, student_id, active) values
   (:'classroom_id', :'student_id', true)

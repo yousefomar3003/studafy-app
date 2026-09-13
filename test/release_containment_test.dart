@@ -29,10 +29,15 @@ void main() {
       source('lib/teacher_features.dart'),
       isNot(contains('uploadBinary')),
     );
-    expect(
+    final studentPresentation = <String>[
       source('lib/student_features.dart'),
-      isNot(contains('uploadBinary')),
-    );
+      ...Directory('lib/legacy/student/presentation')
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))
+          .map((file) => file.readAsStringSync()),
+    ].join('\n');
+    expect(studentPresentation, isNot(contains('uploadBinary')));
   });
 
   test('forward migration removes the direct upload policy', () {

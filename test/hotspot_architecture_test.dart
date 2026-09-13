@@ -15,6 +15,35 @@ void main() {
     expect(_source(path), isNot(contains('rawQuery(')));
   });
 
+  test('student presentation is split into bounded independent libraries', () {
+    const barrelPath = 'lib/student_features.dart';
+    final barrel = _source(barrelPath);
+    expect(_lines(barrelPath), lessThan(40));
+    expect(barrel, isNot(contains('StudafyDatabase')));
+    expect(barrel, isNot(contains('part ')));
+
+    final modules = Directory('lib/legacy/student/presentation')
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .toList();
+    expect(modules.length, greaterThanOrEqualTo(15));
+
+    var previewDatabaseCalls = 0;
+    for (final module in modules) {
+      final source = module.readAsStringSync();
+      expect(_lines(module.path), lessThan(650), reason: module.path);
+      expect(source, isNot(contains('part of ')), reason: module.path);
+      previewDatabaseCalls += 'StudafyDatabase.instance'
+          .allMatches(source)
+          .length;
+    }
+
+    // Structural extraction must not increase preview persistence coupling.
+    // MOB-070 replaces these calls with server-backed repository ports.
+    expect(previewDatabaseCalls, lessThanOrEqualTo(32));
+  });
+
   test(
     'parent feature is split and presentation has no persistence access',
     () {

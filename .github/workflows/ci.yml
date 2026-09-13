@@ -142,11 +142,26 @@ jobs:
       - name: Checksum and restore the pre-upgrade logical backup
         run: bun scripts/rehearse-db020-recovery.ts
 
-      - name: Apply the six DB-020 forward migrations
+      - name: Apply forward migrations through DB-021
         run: bunx supabase migration up --local
 
       - name: Verify legacy identifier, row, lifecycle, and tenant preservation
         run: bunx supabase test db --local supabase/tests/db020_upgrade.sql
+
+      - name: Reset to the DB-020 migration boundary
+        run: bunx supabase db reset --local --version 202609110006 --no-seed
+
+      - name: Load synthetic DB-021 upgrade fixture
+        run: bun scripts/run-local-sql.ts supabase/tests/db021_upgrade_seed.sql
+
+      - name: Apply the six DB-021 forward migrations
+        run: bunx supabase migration up --local
+
+      - name: Verify DB-021 upgrade preservation and grants
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/db021_upgrade.sql
+          supabase/tests/db021_grants.sql
 
       - name: Replay all migrations from zero
         run: bunx supabase db reset --local --no-seed
@@ -165,8 +180,17 @@ jobs:
       - name: Run DB-020 tenant and lifecycle constraint tests
         run: bunx supabase test db --local supabase/tests/db020_constraints.sql
 
+      - name: Run DB-021 multi-role policy and RPC tests
+        run: bunx supabase test db --local supabase/tests/db021_access_seed.sql
+
+      - name: Verify DB-021 grant and function surface
+        run: bunx supabase test db --local supabase/tests/db021_grants.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
+
+      - name: Verify DB-021 RLS plans and provisional local latency bounds
+        run: bun run test:db021:plans
 
       - name: Verify checked-in public database types have no drift
         run: bun run generate:db-types:check
@@ -273,6 +297,12 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # gitleaks-action resolves the PR commit range through GitHub's pull
+    # request API. Scope this read-only permission to this job only; comments
+    # and artifact uploads remain disabled below.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - name: Check out complete history
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

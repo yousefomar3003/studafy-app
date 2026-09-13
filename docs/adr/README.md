@@ -19,6 +19,8 @@ that references the old one.
 | [ADR-0011](ADR-0011-monorepo-workspaces-and-toolchain.md) | Monorepo workspaces and pinned toolchain | Accepted | DL-016/017/018 |
 | [ADR-0012](ADR-0012-flutter-feature-boundaries.md) | Flutter feature boundaries and the first typed vertical slice | Accepted | DL-019/020/021/022 |
 | [ADR-0013](ADR-0013-db020-tenant-lifecycle-foundation.md) | DB-020 tenant and lifecycle foundation | Accepted for local/disposable use | DL-027 |
+| [ADR-0014](ADR-0014-db021-least-privilege-database-access.md) | DB-021 least-privilege database access | Accepted for local/disposable use | DL-028 |
+| [ADR-0015](ADR-0015-application-identity-and-store-accounts.md) | Application identity and store accounts | Accepted (identity); signing and privacy manifests open | DL-029 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

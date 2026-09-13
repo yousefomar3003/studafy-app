@@ -77,11 +77,7 @@ class SupabaseStudafyRepository
   Future<void> markAllNotificationsRead() async {
     final user = _client.auth.currentUser;
     if (user == null) throw StateError('Authentication required');
-    await _client
-        .from('notifications')
-        .update({'read_at': DateTime.now().toUtc().toIso8601String()})
-        .eq('user_id', user.id)
-        .isFilter('read_at', null);
+    await _client.rpc('mark_notifications_read');
   }
 
   @override

@@ -17,6 +17,10 @@ by the SEC-001 controls described in `docs/security/sec-001-containment.md`.
   `docs/evidence/`
 - Current cross-phase verification and remaining gates:
   `docs/evidence/closing-verification-2026-09-10.md`
+- Whole-repository launch-readiness audit and corrected roadmap gaps:
+  `docs/evidence/launch-readiness/2026-09-13-repository-audit.md`
+- Ordered implementation prompts and external input/secret-handling checklist:
+  `prompts.md`, `inputs.md`
 - Phase gates: `docs/security/sec-001-containment.md`,
   `docs/security/phase-0b-gate.md`
 
@@ -33,9 +37,11 @@ The 2026-09-11 hotspot follow-up also separates startup, parent presentation,
 teacher dashboard, preview SQLite modules, and Study Coach policy/adapters;
 evidence is in `docs/evidence/phase-1b/hotspot-refactor-2026-09-11.md`.
 
-The local-only DB-020 foundation is documented in ADR-0013, the schema data
-dictionary, index catalogue, and `docs/evidence/phase-2a/`. It is not deployed
-and does not activate Phase 2B policies or any production feature.
+The local-only DB-020 and DB-021 foundation is documented in ADR-0013/0014,
+the schema data dictionary, policy/grants matrices, index catalogues, and
+`docs/evidence/phase-2a/` plus `docs/evidence/phase-2b/`. It is on the current
+feature branch, has not been deployed remotely, and does not activate a
+production feature. Independent DB-021 review and main-branch CI remain open.
 
 ```sh
 bun install --frozen-lockfile          # workspace install
@@ -47,7 +53,7 @@ bun run generate:check                 # OpenAPI -> Dart client drift check
 bun run generate:db-types:check        # local public schema -> TypeScript drift
 bun run check:bounds                   # architecture boundary check
 bun run typecheck                      # tsc for every workspace member
-bun test apps packages                 # unit + integration tests (Redis/DB tests skip when unset)
+bun test apps packages                 # unit + integration; start local Redis and Supabase first
 ENVIRONMENT=development \
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
 REDIS_URL=redis://127.0.0.1:6379 \
@@ -98,10 +104,11 @@ authorized remote environment so far is the contained synthetic project.
 3. Keep the `private-school-files` storage bucket private. New uploads and AI
    grading remain disabled until immutable file ownership, scanning, and clean
    publication are implemented; do not restore the former path-signing flow.
-4. Deploy the functions under `supabase/functions` and provide their server-side
-   secrets. Google Meet creation requires a per-user Google token broker;
-   purchase verification and AI generation require their corresponding trusted
-   server endpoints.
+4. Do **not** deploy the prototype meeting, grade, deletion, billing or Study
+   Coach functions as a production backend. Keep the SEC-001 containment
+   endpoints deployed only where required, then replace the other functions
+   endpoint-by-endpoint after equivalent Hono routes pass schema,
+   authorization, transaction, idempotency, retry and contract tests.
 5. Configure private Realtime channels for notifications, messages,
    publications, and meeting changes before enabling them for a pilot school.
 
@@ -110,9 +117,11 @@ The native OAuth callback is registered in AndroidManifest.xml and Info.plist.
 ## Store products
 
 Parent Insights+ expects `studafy_parent_insights_monthly` in App Store Connect
-and Google Play Console. The client never grants premium access from a local
-purchase result: the receipt or purchase token must pass server verification,
-which writes the `subscription_entitlements` record.
+and Google Play Console. Billing is currently a contained prototype: the client
+does not grant locally, but the generic verification function is not an Apple
+or Google authoritative implementation. PAY-071 must introduce signed store
+verification, webhooks, an append-only ledger, derived entitlements and
+reconciliation before sales are enabled.
 
 ## Safety and records
 
@@ -123,8 +132,10 @@ which writes the `subscription_entitlements` record.
   separate publish action is required before students or guardians see it.
 - Grade suggestions, overrides, review, publication, guardian access changes,
   and deletion requests create audit records.
-- Deletion uses recent authentication, an impact summary, typed confirmation,
-  and a 14-day recoverable grace period.
+- The deletion UI has an impact summary, typed confirmation and a 14-day grace
+  period. Its current server check incorrectly treats JWT issuance time as
+  recent authentication; AUTH-030/API-042 must replace this with a real
+  challenge and add cancellation/execution evidence before production.
 
 Before production, configure the school's Saudi PDPL notices, lawful purposes,
 retention periods, guardian processes, export/correction workflow, breach
@@ -147,10 +158,13 @@ bunx supabase db reset --local --no-seed
 bunx supabase test db --local supabase/tests/containment.sql
 bunx supabase test db --local supabase/tests/rls_access_seed.sql  # synthetic fixture + 8 RLS assertions
 bunx supabase test db --local supabase/tests/db020_constraints.sql
+bunx supabase test db --local supabase/tests/db021_access_seed.sql
+bunx supabase test db --local supabase/tests/db021_grants.sql
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
   bun run test:db020:plans
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same checks read-only on every push,
-including these pgTAP suites, gitleaks, and OSV scans. CI has no deployment
-credentials and deploys nothing.
+CI (`.github/workflows/ci.yml`) runs on pushes to `main`, pull requests targeting
+`main`, and manual dispatch. It includes the pgTAP suites, gitleaks, and OSV
+scans. CI has no deployment credentials and deploys nothing. A pushed feature
+branch with no pull request does not receive this workflow automatically.

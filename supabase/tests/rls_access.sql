@@ -6,10 +6,19 @@ select plan(8);
 -- session: it defines :student_user, :guardian_user, :unverified_guardian,
 -- :teacher_user, :other_school_user, :student_id, :classroom_id and
 -- :school_id as synthetic cross-school fixtures, then includes this file.
-select ok(public.can_access_student(:'student_id'), 'student can access self');
-select ok(public.can_access_classroom(:'classroom_id'), 'enrolled user can access classroom');
-
 set local role authenticated;
+select set_config('request.jwt.claim.sub', :'student_user', true);
+select is(
+  (select count(*) from public.students where id=:'student_id'),
+  1::bigint,
+  'student can access self'
+);
+select is(
+  (select count(*) from public.classrooms where id=:'classroom_id'),
+  1::bigint,
+  'enrolled student can access classroom'
+);
+
 select set_config('request.jwt.claim.sub', :'guardian_user', true);
 select is(
   (select count(*) from public.grade_results where student_id=:'student_id' and state='published'),
@@ -31,8 +40,11 @@ select is((select count(*) from public.attendance_records where student_id=:'stu
   'cross-school user cannot access attendance');
 select is((select count(*) from public.wellbeing_events where student_id=:'student_id'), 0::bigint,
   'cross-school user cannot access wellbeing');
-select is((select count(*) from public.audit_events where school_id=:'school_id'), 0::bigint,
-  'non-admin cannot read audit records');
+select throws_like(
+  $$select count(*) from public.audit_events$$,
+  '%permission denied%',
+  'authenticated clients have no direct audit-table privilege'
+);
 
 select * from finish();
 rollback;

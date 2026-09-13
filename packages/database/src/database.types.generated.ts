@@ -3248,25 +3248,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      can_access_classroom: {
-        Args: { target_classroom: string };
-        Returns: boolean;
-      };
-      can_access_student: {
-        Args: { target_student: string };
-        Returns: boolean;
-      };
-      is_class_teacher: {
-        Args: { target_classroom: string };
-        Returns: boolean;
-      };
-      is_school_member: {
-        Args: {
-          allowed_roles?: Database["public"]["Enums"]["app_role"][];
-          target_school: string;
-        };
-        Returns: boolean;
-      };
+      mark_notifications_read: { Args: never; Returns: number };
       record_policy_consent: {
         Args: {
           requested_locale?: string;
