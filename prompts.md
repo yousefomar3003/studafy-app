@@ -1,7 +1,7 @@
 # Studafy task prompts
 
 Copy-paste prompts for each remaining task, in execution order. One prompt per
-task. Paste into a fresh Claude Code session in the repository root.
+task. Paste into a fresh capable coding-agent session in the repository root.
 
 ## How to use this
 
@@ -29,8 +29,9 @@ Each prompt below already carries the rules that matter. For reference, they are
 
 # §A. Engineering phases
 
-The 16 remaining parts. Each maps to one part table in `instructions.md` §20 and
-one design section in §4–§19.
+The remaining parts map to the roadmap tables in `instructions.md` §20 and the
+design sections in §4–§19. API-042 and SAFE-043 were added by the 2026-09-13
+launch audit; do not skip them.
 
 ## A1 — AUTH-030: Supabase Auth lifecycle
 
@@ -49,8 +50,13 @@ Key requirements from the design:
 - Validate JWKS iss/aud/alg/exp. Never trust role metadata from the client.
 - Store tokens in Keychain/Keystore via a secure-storage adapter.
 - Anti-enumeration on every auth error.
-- Sign in with Apple must work — Apple guideline 4.8 requires it because we
-  offer Google and Microsoft.
+- Decide the truthful Apple guideline 4.8 posture: implement and physically
+  test Sign in with Apple, or document and obtain acceptance of the current
+  education/enterprise-account exception. Do not use the exception if public
+  Google/Microsoft signup creates the primary account.
+- Prefer an owned HTTPS Universal Link/App Link callback. If the custom URI
+  scheme remains as fallback, prove state/nonce/PKCE enforcement and test
+  callback hijacking.
 
 Constraints: local/disposable Supabase only, never the linked remote project.
 Forward migrations only. Do not touch SEC-001 guards.
@@ -137,6 +143,57 @@ Key requirements:
 Acceptance: no core production mutation is local-only.
 
 Finish with: contract docs, evidence, and a decision-log entry.
+```
+
+## A4b — API-042: Remaining product workflows and school operations
+
+```
+Implement Phase 4 Part 4C (API-042) from instructions.md.
+
+Read first: §6–§7 and the Part 4C table in §20. API-040, API-041 and AUTH-031
+must be done.
+
+Scope: make the rest of the launch product authoritative: school
+provisioning/closure, invitations and membership lifecycle, classroom staffing
+and enrollment transitions, family linking, communications, meetings,
+notifications, profile/account rights, time-bounded support access and the
+non-production reviewer tenant.
+
+Replace the legacy Edge Functions only after equivalent Hono commands pass
+authorization, transaction, idempotency and retry tests. In particular, fix
+meeting recipient N+1/duplicate-event behavior and the JWT-iat account-deletion
+check. Never deploy the prototype functions as the production backend.
+
+Acceptance: a fresh approved school and every role can complete onboarding,
+normal cross-device work and offboarding without local-only state.
+
+Finish with: complete route/feature matrix, E2E evidence, runbooks, ADR and
+decision-log entry.
+```
+
+## A4c — SAFE-043: Communications safety and safeguarding
+
+```
+Implement Phase 4 Part 4D (SAFE-043) from instructions.md.
+
+Read first: the communications routes in §7, privacy/governance in §15, Apple
+Guideline 1.2 and current Google Play UGC policy. API-042 communications must
+exist and a moderation/safeguarding owner must be named.
+
+Scope: clearly labelled in-app report-content, report-user and block/unblock
+controls; content controls; tenant-safe moderation queue and tools; response
+targets; safeguarding escalation; appeal; immutable evidence and legal holds;
+published support contact and acceptable-use rules.
+
+Do not use an AI classifier as the sole basis for a high-impact moderation
+decision. Moderator access is least-privilege, time-bounded and audited.
+
+Tests: blocked-contact denial, report discoverability, cross-tenant ID
+substitution, abusive duplicate reports, moderator scope, restricted wellbeing
+records, evidence retention/deletion and an end-to-end response drill.
+
+Finish with: independent safety review evidence, operating runbook, training,
+ADR and decision-log entry. Messaging remains disabled until this gate passes.
 ```
 
 ## A5 — FILE-050: Upload intent, metadata and quarantine
@@ -258,12 +315,19 @@ Scope: migrate every remaining Flutter screen from direct SQLite to typed /v1
 repositories, with a user-scoped offline cache, a mutation outbox, and conflict
 rules.
 
-The problem: there are 94 direct StudafyDatabase call sites —
-lib/student_features.dart (32) and lib/legacy/teacher/ (62). Until these are
+The problem: there are 94 direct StudafyDatabase call sites — 32 across the
+student presentation modules and 62 under lib/legacy/teacher/. Until these are
 gone the app is a local single-device prototype.
 
 Suggested order: pick ONE feature slice, migrate it end to end, prove it, then
 repeat. Do not attempt all 94 at once.
+
+Structural baseline: `lib/student_features.dart` is now a 15-line compatibility
+barrel backed by 15 independently compiled, sub-650-line modules. Preserve that
+architecture guard while replacing the 60 map-shaped declarations and direct
+SQLite calls. The remaining teacher/parent umbrella `part` libraries must also
+become independently compiled feature slices; presentation must receive typed
+entities, not transport/SQLite maps.
 
 Key requirements:
 - Cache is scoped per user and school, re-keyed on session switch, wiped on
@@ -271,12 +335,20 @@ Key requirements:
 - No offline grant, publish, admin or entitlement decision. Those are server
   authoritative, always.
 - Eliminate hard-coded identities and the fake QR linking path.
+- Replace hard-coded parent/student account emails with authenticated profile
+  data.
+- Complete English/Arabic localization and RTL. Prove VoiceOver/TalkBack,
+  dynamic text, contrast, focus order and touch targets on supported devices.
+- Implement claimed HTTPS deep links, notification navigation and safe
+  background/termination recovery within platform limits.
 - Respect the existing analyzer boundary rules (bun run check:bounds).
 
 Acceptance: no production widget calls StudafyDatabase directly.
 
 Tests required: airplane mode, reconnect, duplicate replay, conflict, partial
 page, token expiry, role/school/account switch, cache extraction and wipe.
+Also run bilingual/RTL, accessibility, claimed-link hijack, push
+permission/tap/denial, low-memory and background-termination suites.
 
 Tell me which slice you are starting with before you begin.
 ```
@@ -490,15 +562,16 @@ Changes to android/app/build.gradle.kts:
 - line 46: replace debug signingConfig with a release config reading from an
   untracked android/key.properties
 - lines 9-15: delete the SEC-001 GradleException guard
-- enable minify and resource shrinking; set targetSdk explicitly (verify the
-  current Play requirement first)
+- enable minify and resource shrinking; set targetSdk explicitly (API 36 is
+  the 2026 baseline in §21.1; verify the live Play requirement first)
 
 Also android/app/src/main/AndroidManifest.xml line 3:
 android:label="studafy" -> "Studafy"
 
-Add android/key.properties and *.jks to .gitignore. Do NOT generate the
-keystore yourself and do NOT ask me for passwords — tell me the keytool command
-to run and what to put in key.properties.
+android/key.properties and *.jks are already covered by .gitignore — verify,
+do not re-add. Do NOT generate the keystore yourself and do NOT ask me for
+passwords: tell me the keytool command to run and what to put in
+key.properties.
 
 Record the guard removal as a forward change referencing REL-002 with a
 decision-log entry, per docs/security/sec-001-containment.md.
@@ -670,6 +743,11 @@ attention to:
 - In-app account deletion for every role
 - Privacy manifest accuracy against what the app really collects
 - Data Safety answers matching observed behaviour
+- Android target API meets the live submission floor (API 36 at the
+  2026-09-13 audit)
+- Claimed HTTPS OAuth links work and cannot be hijacked by another app
+- Messaging has clearly labelled report-content, report-user and block-user
+  controls backed by an owned moderation/safeguarding process
 
 Note: store policies change. Flag anything where your knowledge may be stale
 and I should verify against live store documentation.
