@@ -297,6 +297,12 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # gitleaks-action resolves the PR commit range through GitHub's pull
+    # request API. Scope this read-only permission to this job only; comments
+    # and artifact uploads remain disabled below.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - name: Check out complete history
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
