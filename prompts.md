@@ -391,6 +391,56 @@ Tests required: full sandbox lifecycle, duplicates, out-of-order notifications,
 account switch/link/delete, store outage, revoked access.
 ```
 
+## A10b — AI-072: Resolve the AI capability
+
+```
+Implement Phase 7 Part 7C (AI-072) from instructions.md.
+
+Read first: the Part 7C table in §20, the SEC-001 risk register and
+kill-switch registry in docs/security/sec-001-containment.md, §15 (privacy),
+and §22.6. FILE-051, AUTH-031 and API-041 must be done.
+
+Context you must not miss: AI is the only capability with a shipped user
+interface and no task behind it. Four student screens and the study_coach
+feature slice exist today. propose-paper-grade is hard-disabled — it was the
+original SEC-001 critical vulnerability, where a caller-selected path was
+signed with service-role credentials and sent to a provider. study-coach is
+NOT disabled: it forwards lesson material to whatever STUDY_COACH_URL names,
+gated only by an environment variable.
+
+This task has two lawful outcomes. Decide which, with a named owner, before
+writing code:
+
+- ENABLE, only if a signed DPA and a DPIA extended to AI processing of
+  minors' data both exist. Then: a named provider adapter instead of the
+  generic forward-to-a-URL; server-owned file_object_id only; per-request
+  tenant and relationship authorization; redaction of student identifiers
+  before egress; an egress allowlist so a changed variable cannot retarget
+  the provider; quotas and cost caps; teacher review before any AI proposal
+  affects a grade.
+
+- REMOVE, if either is missing. Delete both Edge Functions, the AI screens and
+  the study_coach slice, and the STUDY_COACH_* credentials. Leave no
+  disabled-looking surface: a reviewer who finds a dead feature rejects under
+  Apple 2.1.
+
+Do not add an environment variable that re-enables AI. SEC-001 says so
+explicitly, and study-coach is the counterexample this task exists to fix.
+
+Constraints: local/disposable Supabase only. Forward migrations only. Removing
+the allowsAiGrading guard, if you get there, is a reviewed change with an ADR
+and a decision-log entry — never a side effect.
+
+Tests required: path and URL substitution denied, cross-tenant material
+denied, egress-allowlist bypass denied, redaction proven, quota exhaustion,
+provider outage. On the removal path, a test asserting no AI route, screen or
+credential remains.
+
+Finish with: an ADR recording the direction and its evidence, the DPA/DPIA
+references or their explicit absence, evidence in docs/evidence/phase-7/, and
+a decision-log entry.
+```
+
 ## A11 — INFRA-080: Runtime, network and Cloudflare
 
 ```
