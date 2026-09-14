@@ -14,13 +14,15 @@ that references the old one.
 | [ADR-0006](ADR-0006-time-and-time-zones.md) | UTC storage, per-school IANA rendering | Accepted | DL-007 |
 | [ADR-0007](ADR-0007-rto-rpo-candidates.md) | RTO/RPO provisional candidates | Deferred (blocks Phase 6) | DL-010 |
 | [ADR-0008](ADR-0008-data-classification-and-retention.md) | Data classification and retention | Deferred (blocks pilot/legal) | DL-011, DL-014 |
-| [ADR-0009](ADR-0009-billing-and-entitlements.md) | Billing product and purchaser/beneficiary model | Deferred (blocks PAY-071) | DL-012 |
+| [ADR-0009](ADR-0009-billing-and-entitlements.md) | Billing product and purchaser/beneficiary model | **Decided** 2026-09-14 — four products, store IAP only, purchaser/beneficiary separated | DL-012, DL-036, DL-037 |
 | [ADR-0010](ADR-0010-strangler-refactor-and-migrations.md) | Strangler refactor; forward-only migrations | Accepted | DL-008 |
 | [ADR-0011](ADR-0011-monorepo-workspaces-and-toolchain.md) | Monorepo workspaces and pinned toolchain | Accepted | DL-016/017/018 |
 | [ADR-0012](ADR-0012-flutter-feature-boundaries.md) | Flutter feature boundaries and the first typed vertical slice | Accepted | DL-019/020/021/022 |
 | [ADR-0013](ADR-0013-db020-tenant-lifecycle-foundation.md) | DB-020 tenant and lifecycle foundation | Accepted for local/disposable use | DL-027 |
 | [ADR-0014](ADR-0014-db021-least-privilege-database-access.md) | DB-021 least-privilege database access | Accepted for local/disposable use | DL-028 |
 | [ADR-0015](ADR-0015-application-identity-and-store-accounts.md) | Application identity and store accounts | Accepted (identity); signing and privacy manifests open | DL-029 |
+| [ADR-0016](ADR-0016-auth030-session-lifecycle.md) | AUTH-030 session lifecycle, token verification and Apple 4.8 posture | Accepted for local/disposable use | DL-032/033/034 |
+| [ADR-0017](ADR-0017-auth031-server-authorization.md) | AUTH-031 action/resource authorization and server-derived tenant context | Accepted for local/disposable use | DL-038 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

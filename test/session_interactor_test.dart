@@ -9,10 +9,12 @@ import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/session/application/session_interactor.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
 
+import 'support/session_repository_fake.dart';
+
 /// ARC-011 session slice tests: prove the state machine, the demo denial,
 /// and the term resolution — all against a fake repository, never a real
 /// provider client.
-class _FakeSessionRepository implements SessionRepository {
+class _FakeSessionRepository extends FakeSessionRepositoryBase {
   _FakeSessionRepository({
     this.profileToReturn,
     this.termToReturn,
@@ -66,8 +68,11 @@ class _FakeSessionRepository implements SessionRepository {
   }
 
   @override
-  Future<void> signOut() async {
+  Future<void> signOut({
+    SignOutScope scope = SignOutScope.currentDevice,
+  }) async {
     signOutCalls++;
+    signOutScopes.add(scope);
   }
 
   void dispose() => _sessionController.close();

@@ -38,6 +38,263 @@
           }
         }
       }
+    },
+    "/v1/auth/context": {
+      "get": {
+        "operationId": "getAuthContext",
+        "responses": {
+          "200": {
+            "description": "Server-derived tenant and role context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AuthContextResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/devices": {
+      "get": {
+        "operationId": "listAuthDevices",
+        "responses": {
+          "200": {
+            "description": "Devices that have held a session for this account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AuthDeviceListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/devices/revoke": {
+      "post": {
+        "operationId": "revokeAuthDevice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1AuthDeviceRevokeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device revocation outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AuthDeviceRevokeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/sign-out": {
+      "post": {
+        "operationId": "signOut",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1AuthSignOutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session revocation outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AuthSignOutResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/reauth/challenge": {
+      "post": {
+        "operationId": "challengeReauth",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1ReauthChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the caller must satisfy to obtain a recent-auth grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ReauthChallengeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/reauth/verify": {
+      "post": {
+        "operationId": "verifyReauth",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1ReauthVerifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A single-use recent-authentication grant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ReauthVerifyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/identities/link": {
+      "post": {
+        "operationId": "linkIdentity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1IdentityLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider identity linking outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1IdentityLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/identities/unlink": {
+      "post": {
+        "operationId": "unlinkIdentity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1IdentityUnlinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider identity unlinking outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1IdentityUnlinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account/deletion-impact": {
+      "get": {
+        "operationId": "getDeletionImpact",
+        "responses": {
+          "200": {
+            "description": "What account deletion removes and what the school retains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1DeletionImpactResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account/deletion-request": {
+      "post": {
+        "operationId": "requestAccountDeletion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1DeletionRequestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The scheduled deletion request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1DeletionRequestResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account/deletion-cancel": {
+      "post": {
+        "operationId": "cancelAccountDeletion",
+        "responses": {
+          "200": {
+            "description": "Cancellation outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1DeletionCancelResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -45,16 +302,37 @@
       "V1Membership": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "school_id", "school_name", "role", "active"],
+        "required": [
+          "id",
+          "school_id",
+          "school_name",
+          "role",
+          "active"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "school_id": { "type": "string", "minLength": 1 },
-          "school_name": { "type": "string", "minLength": 1 },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "school_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "school_name": {
+            "type": "string",
+            "minLength": 1
+          },
           "role": {
             "type": "string",
-            "enum": ["teacher", "parent", "student"]
+            "enum": [
+              "teacher",
+              "parent",
+              "student"
+            ]
           },
-          "active": { "type": "boolean" }
+          "active": {
+            "type": "boolean"
+          }
         }
       },
       "V1MeResponse": {
@@ -69,18 +347,40 @@
           "active_term_id"
         ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "display_name": { "type": "string", "minLength": 1 },
-          "email": { "type": "string", "minLength": 1 },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1
+          },
           "memberships": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/V1Membership" }
+            "items": {
+              "$ref": "#/components/schemas/V1Membership"
+            }
           },
           "environment": {
             "type": "string",
-            "enum": ["synthetic", "development", "staging", "production"]
+            "enum": [
+              "synthetic",
+              "development",
+              "staging",
+              "production"
+            ]
           },
-          "active_term_id": { "type": ["string", "null"], "minLength": 1 }
+          "active_term_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
         }
       },
       "V1Classroom": {
@@ -97,27 +397,672 @@
           "term_name"
         ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "grade": { "type": "string" },
-          "section": { "type": "string" },
-          "room": { "type": ["string", "null"] },
-          "student_count": { "type": "integer", "minimum": 0 },
-          "weekly_sessions": {
-            "type": ["integer", "null"],
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "grade": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "room": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "student_count": {
+            "type": "integer",
             "minimum": 0
           },
-          "term_name": { "type": ["string", "null"] }
+          "weekly_sessions": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "term_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       },
       "V1ClassroomListResponse": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["classrooms"],
+        "required": [
+          "classrooms"
+        ],
         "properties": {
           "classrooms": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/V1Classroom" }
+            "items": {
+              "$ref": "#/components/schemas/V1Classroom"
+            }
+          }
+        }
+      },
+      "V1ContextMembership": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "school_id",
+          "school_name",
+          "school_timezone",
+          "role",
+          "active_term_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "school_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "school_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "school_timezone": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "school_admin",
+              "teacher",
+              "parent",
+              "guardian",
+              "student"
+            ]
+          },
+          "active_term_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "V1AuthContextResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "user_id",
+          "display_name",
+          "locale",
+          "memberships",
+          "membership_version",
+          "assurance_level",
+          "mfa_enrolled",
+          "mfa_required",
+          "pending_deletion"
+        ],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "ar"
+            ]
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1ContextMembership"
+            }
+          },
+          "membership_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assurance_level": {
+            "type": "string",
+            "enum": [
+              "aal1",
+              "aal2"
+            ]
+          },
+          "mfa_enrolled": {
+            "type": "boolean"
+          },
+          "mfa_required": {
+            "type": "boolean"
+          },
+          "pending_deletion": {
+            "type": "boolean"
+          }
+        }
+      },
+      "V1AuthDevice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "platform",
+          "app_version",
+          "display_label",
+          "first_seen_at",
+          "last_seen_at",
+          "revoked_at",
+          "current"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "ios",
+              "android",
+              "other"
+            ]
+          },
+          "app_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_seen_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "last_seen_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current": {
+            "type": "boolean"
+          }
+        }
+      },
+      "V1AuthDeviceListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "devices"
+        ],
+        "properties": {
+          "devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1AuthDevice"
+            }
+          }
+        }
+      },
+      "V1AuthDeviceRevokeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_id"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "V1AuthDeviceRevokeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revoked"
+        ],
+        "properties": {
+          "revoked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "V1AuthSignOutRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "current",
+              "all"
+            ]
+          }
+        }
+      },
+      "V1AuthSignOutResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope",
+          "revoked_before"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "current",
+              "all"
+            ]
+          },
+          "revoked_before": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "V1ReauthChallengeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose"
+        ],
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "account_deletion",
+              "account_deletion_cancel",
+              "account_link",
+              "all_device_sign_out",
+              "device_revoke",
+              "school_admin_privileged"
+            ]
+          }
+        }
+      },
+      "V1ReauthChallengeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose",
+          "required_assurance",
+          "expires_at"
+        ],
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "account_deletion",
+              "account_deletion_cancel",
+              "account_link",
+              "all_device_sign_out",
+              "device_revoke",
+              "school_admin_privileged"
+            ]
+          },
+          "required_assurance": {
+            "type": "string",
+            "enum": [
+              "aal1",
+              "aal2"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "V1ReauthVerifyRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose"
+        ],
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "account_deletion",
+              "account_deletion_cancel",
+              "account_link",
+              "all_device_sign_out",
+              "device_revoke",
+              "school_admin_privileged"
+            ]
+          }
+        }
+      },
+      "V1ReauthVerifyResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purpose",
+          "grant",
+          "expires_at"
+        ],
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "account_deletion",
+              "account_deletion_cancel",
+              "account_link",
+              "all_device_sign_out",
+              "device_revoke",
+              "school_admin_privileged"
+            ]
+          },
+          "grant": {
+            "type": "string",
+            "minLength": 43
+          },
+          "expires_at": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "V1IdentityLinkRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "id_token",
+          "make_primary"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "azure",
+              "apple",
+              "email"
+            ]
+          },
+          "id_token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "make_primary": {
+            "type": "boolean"
+          }
+        }
+      },
+      "V1IdentityLinkResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "linked",
+              "already_linked",
+              "collision"
+            ]
+          }
+        }
+      },
+      "V1IdentityUnlinkRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "subject"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "azure",
+              "apple",
+              "email"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "V1IdentityUnlinkResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "unlinked",
+              "not_linked",
+              "last_identity"
+            ]
+          }
+        }
+      },
+      "V1DeletionImpactMembership": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "school_name",
+          "role"
+        ],
+        "properties": {
+          "school_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "school_admin",
+              "teacher",
+              "parent",
+              "guardian",
+              "student"
+            ]
+          }
+        }
+      },
+      "V1DeletionRetainedRecords": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attendance",
+          "grades",
+          "submissions",
+          "wellbeing"
+        ],
+        "properties": {
+          "attendance": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "grades": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "submissions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wellbeing": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "V1DeletionDeletedData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "devices",
+          "consents",
+          "notifications"
+        ],
+        "properties": {
+          "profile": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "devices": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "consents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "notifications": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "V1DeletionImpactResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "memberships",
+          "retained_school_records",
+          "deleted_personal_data",
+          "guardian_links",
+          "active_entitlements",
+          "grace_period_days"
+        ],
+        "properties": {
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1DeletionImpactMembership"
+            }
+          },
+          "retained_school_records": {
+            "$ref": "#/components/schemas/V1DeletionRetainedRecords"
+          },
+          "deleted_personal_data": {
+            "$ref": "#/components/schemas/V1DeletionDeletedData"
+          },
+          "guardian_links": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active_entitlements": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "grace_period_days": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "V1DeletionRequestRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason_code",
+          "confirmation"
+        ],
+        "properties": {
+          "reason_code": {
+            "type": "string",
+            "enum": [
+              "no_longer_using",
+              "changing_schools",
+              "privacy_concern",
+              "duplicate_account",
+              "undisclosed"
+            ]
+          },
+          "confirmation": {
+            "type": "string",
+            "enum": [
+              "DELETE"
+            ]
+          }
+        }
+      },
+      "V1DeletionRequestResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "state",
+          "execute_after",
+          "created"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "grace_period",
+              "executing",
+              "cancelled",
+              "completed"
+            ]
+          },
+          "execute_after": {
+            "type": "string",
+            "minLength": 1
+          },
+          "created": {
+            "type": "boolean"
+          }
+        }
+      },
+      "V1DeletionCancelResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cancelled"
+        ],
+        "properties": {
+          "cancelled": {
+            "type": "boolean"
           }
         }
       }

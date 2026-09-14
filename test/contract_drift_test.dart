@@ -111,4 +111,14 @@ class _FixtureTransport implements V1JsonTransport {
       _ => throw StateError('Unexpected generated-client path'),
     };
   }
+
+  @override
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, Object?> body,
+  ) async {
+    // The drift fixture covers reads only; a write reaching here means the
+    // spec grew an operation the fixture has not been extended for.
+    throw StateError('Unexpected generated-client write to $path');
+  }
 }

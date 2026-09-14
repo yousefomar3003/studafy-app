@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   apiEnvSchema,
+  authIssuer,
+  authJwksUrl,
   ConfigError,
   describeApiEnv,
   describeWorkerEnv,
@@ -53,13 +55,53 @@ describe("production fail-closed", () => {
     expect(() => enforceApiFailClosed(env)).toThrow(ConfigError);
   });
 
-  test("production with both stores configured starts", () => {
+  test("production without SUPABASE_URL refuses to start", () => {
+    // AUTH-030: with no JWKS source the API cannot verify a token, and an API
+    // that cannot authenticate must not serve rather than serve unauthorized.
     const env = parseEnv(apiEnvSchema, {
       ENVIRONMENT: "production",
       DATABASE_URL: "postgresql://u:p@example.com:5432/db",
       REDIS_URL: "rediss://example.com:6380",
     });
+    expect(() => enforceApiFailClosed(env)).toThrow(ConfigError);
+  });
+
+  test("production with every dependency configured starts", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "production",
+      DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+      REDIS_URL: "rediss://example.com:6380",
+      SUPABASE_URL: "https://project.supabase.co",
+    });
     expect(() => enforceApiFailClosed(env)).not.toThrow();
+  });
+
+  test("the issuer and JWKS URL are derived from SUPABASE_URL", () => {
+    // Deriving rather than configuring separately means a misconfiguration
+    // cannot leave the API trusting one origin's keys for another's tokens.
+    expect(authIssuer("https://project.supabase.co/")).toBe(
+      "https://project.supabase.co/auth/v1",
+    );
+    expect(authJwksUrl("https://project.supabase.co")).toBe(
+      "https://project.supabase.co/auth/v1/.well-known/jwks.json",
+    );
+  });
+
+  test("auth tuning values are bounded", () => {
+    // A large clock skew silently extends the life of expired tokens, and a
+    // long reauth TTL makes a stolen grant valuable; both are capped.
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        AUTH_CLOCK_SKEW_SECONDS: "86400",
+      })
+    ).toThrow(ConfigError);
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        AUTH_REAUTH_TTL_SECONDS: "99999",
+      })
+    ).toThrow(ConfigError);
   });
 
   test("non-production may start degraded", () => {

@@ -11,21 +11,26 @@ type Schema = {
   required?: string[];
 };
 
-type OpenApi = {
-  paths: Record<
+type Operation = {
+  operationId: string;
+  requestBody?: {
+    required?: boolean;
+    content: { "application/json": { schema: Schema } };
+  };
+  responses: Record<
     string,
-    {
-      get?: {
-        operationId: string;
-        responses: Record<
-          string,
-          { content?: { "application/json"?: { schema: Schema } } }
-        >;
-      };
-    }
+    { content?: { "application/json"?: { schema: Schema } } }
   >;
+};
+
+type OpenApi = {
+  paths: Record<string, { get?: Operation; post?: Operation }>;
   components: { schemas: Record<string, Schema> };
 };
+
+/** HTTP methods the generator emits, in the order they appear on a path. */
+const METHODS = ["get", "post"] as const;
+type Method = (typeof METHODS)[number];
 
 const root = resolve(import.meta.dir, "..");
 const specPath = resolve(root, "packages/contracts/openapi/v1.json");
@@ -153,7 +158,8 @@ ${serializer}
 
 function renderOperation(
   path: string,
-  operation: NonNullable<OpenApi["paths"][string]["get"]>,
+  method: Method,
+  operation: Operation,
 ): string {
   const responseSchema = operation.responses["200"]?.content
     ?.["application/json"]
@@ -164,8 +170,33 @@ function renderOperation(
       `${operation.operationId} must have a referenced 200 response`,
     );
   }
-  return `  Future<${responseName}Dto> ${operation.operationId}() async =>
+  if (method === "get") {
+    return `  Future<${responseName}Dto> ${operation.operationId}() async =>
       ${responseName}Dto.fromJson(await _transport.get('${path}'));`;
+  }
+
+  const requestSchema = operation.requestBody?.content["application/json"]
+    .schema;
+  const requestName = requestSchema && referencedName(requestSchema);
+  if (requestSchema && !requestName) {
+    throw new Error(
+      `${operation.operationId} request body must reference a schema`,
+    );
+  }
+  // A command with no body still posts an empty object, so the transport has
+  // one shape to serialize and servers see a consistent content type.
+  if (!requestName) {
+    return `  Future<${responseName}Dto> ${operation.operationId}() async =>
+      ${responseName}Dto.fromJson(
+        await _transport.post('${path}', const <String, Object?>{}),
+      );`;
+  }
+  return `  Future<${responseName}Dto> ${operation.operationId}(
+    ${requestName}Dto request,
+  ) async =>
+      ${responseName}Dto.fromJson(
+        await _transport.post('${path}', request.toJson()),
+      );`;
 }
 
 const models = Object.entries(spec.components.schemas)
@@ -173,7 +204,10 @@ const models = Object.entries(spec.components.schemas)
   .join("\n\n");
 const operations = Object.entries(spec.paths)
   .flatMap(([path, pathItem]) =>
-    pathItem.get ? [renderOperation(path, pathItem.get)] : []
+    METHODS.flatMap((method) => {
+      const operation = pathItem[method];
+      return operation ? [renderOperation(path, method, operation)] : [];
+    })
   )
   .join("\n\n");
 
@@ -183,6 +217,8 @@ const unformatted = `// GENERATED CODE — DO NOT EDIT.
 
 abstract interface class V1JsonTransport {
   Future<Map<String, dynamic>> get(String path);
+
+  Future<Map<String, dynamic>> post(String path, Map<String, Object?> body);
 }
 
 class V1ApiClient {

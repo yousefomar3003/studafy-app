@@ -16,6 +16,7 @@ import 'data/backend.dart';
 import 'data/studafy_repository.dart';
 import 'data/supabase_repository.dart';
 import 'data/session_service.dart';
+import 'app/account_scope.dart';
 import 'features/account/presentation/delete_account_page.dart';
 
 part 'legacy/teacher/presentation/teacher_shared.dart';

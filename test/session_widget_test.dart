@@ -8,6 +8,9 @@ import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/session/application/session_interactor.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
+
+import 'support/session_repository_fake.dart';
+
 import 'package:studafy/features/session/presentation/login_page.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
 
@@ -87,7 +90,7 @@ SessionInteractor _interactor(
   runtimePolicy: policy,
 );
 
-class _WidgetSessionRepository implements SessionRepository {
+class _WidgetSessionRepository extends FakeSessionRepositoryBase {
   _WidgetSessionRepository({this.failProvider = false});
 
   final bool failProvider;
@@ -115,8 +118,8 @@ class _WidgetSessionRepository implements SessionRepository {
   @override
   Future<void> recordTermsConsent({required String locale}) async {}
 
-  @override
-  Future<void> signOut() async {}
-
-  Future<void> close() => _sessions.close();
+  Future<void> close() async {
+    await _sessions.close();
+    await closeLifecycle();
+  }
 }

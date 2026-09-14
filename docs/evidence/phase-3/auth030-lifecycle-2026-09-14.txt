@@ -1,0 +1,58 @@
+$ bun apps/api/scripts/verify-auth030-lifecycle.ts
+AUTH-030 lifecycle verification — 2026-09-14T14:09:00.696Z
+Supabase: http://127.0.0.1:54321
+
+PASS  anonymous request is refused
+        expected 401 · got 401
+PASS  malformed token is refused
+        expected 401 · got 401
+PASS  both refusals are byte-identical apart from the request id
+        expected identical · got identical
+PASS  GoTrue signs access tokens asymmetrically
+        expected ES256 · got ES256
+PASS  a real provider token is accepted
+        expected 200 · got 200
+PASS  memberships come from the database
+        expected teacher · got teacher
+PASS  the provider token really does claim school_admin
+        expected school_admin · got school_admin
+PASS  a token claiming school_admin receives no memberships
+        expected 0 · got 0
+PASS  a token claiming school_admin triggers no admin policy
+        expected false · got false
+PASS  a privileged command without a grant is refused
+        expected 401 · got 401
+PASS  a reauth grant is issued
+        expected true · got true
+PASS  only the digest of the grant is stored
+        expected true · got true
+PASS  the grant authorizes the command
+        expected 200 · got 200
+PASS  the grant cannot be replayed
+        expected 401 · got 401
+PASS  deletion is cancellable in app
+        expected true · got true
+PASS  a cancelled user can request deletion again
+        expected true · got true
+PASS  the session works before signing out everywhere
+        expected 200 · got 200
+PASS  sign out everywhere succeeds
+        expected 200 · got 200
+PASS  the same unexpired token is refused on the next request
+        expected 401 · got 401
+PASS  and it was refused well before its own expiry
+        expected true · got true
+PASS  the lifecycle produced security events
+        expected true · got true
+PASS  no security event stores an email address
+        expected true · got true
+PASS  an authorization code cannot be exchanged without the real verifier
+        expected true · got true
+PASS  an authorization code cannot be exchanged with no verifier at all
+        expected true · got true
+PASS  an unlisted redirect target is not honoured
+        expected true · got true
+PASS  the API's database role cannot read tables directly
+        expected denied · got denied
+
+26/26 checks passed

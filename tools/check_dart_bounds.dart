@@ -27,11 +27,16 @@ const _zoneRules = <String, Map<String, List<String>>>{
 };
 
 /// Legacy feature folders that are exempt until their slice migrates.
-const _legacyExemptFeatures = <String>{'account'};
+///
+/// AUTH-030 migrated `account` behind AccountRepository/AccountInteractor, so
+/// it is now enforced like every other feature.
+const _legacyExemptFeatures = <String>{};
 
 /// Core modules every zone may import.
 const _coreAllowlist = <String>[
   'core/ids.dart',
+  'core/secure_storage.dart',
+  'core/account_lifecycle.dart',
   'core/failures.dart',
   'core/result.dart',
   'core/telemetry.dart',
@@ -45,6 +50,12 @@ const _coreAllowlist = <String>[
 /// them (ARC-011 "slice contains no widget SQL/provider call").
 const _dataOnlyImports = <String>[
   'studafy_database.dart',
+  // The generated transport client and its HTTP adapter are data-layer:
+  // presentation must go through a repository port, never call /v1 itself.
+  'data/contracts/v1_client.generated.dart',
+  'data/contracts/v1_http_transport.dart',
+  'data/secure/keychain_secure_store.dart',
+  'data/secure/secure_session_storage.dart',
   'data/backend.dart',
   'data/supabase_repository.dart',
   'data/session_service.dart',
@@ -65,6 +76,9 @@ const _dataOnlySymbols = <String>[
   '.rawUpdate(',
   '.rawDelete(',
   '.functions.invoke(',
+  // Reaching an interactor's repository from a widget re-crosses the boundary
+  // the interactor exists to hold (AUTH-030).
+  'session.repository',
 ];
 
 final _importPattern = RegExp(r"^import\s+'([^']+)'", multiLine: true);
@@ -187,8 +201,13 @@ String? _check({
 
   if (import.startsWith('package:') && !import.startsWith('package:studafy/')) {
     if (import.startsWith('package:flutter/')) return null;
+    // AUTH-030 adapters: the identity provider SDK, the platform keystore,
+    // native Sign in with Apple, and the hashing used to bind the Apple nonce.
     if (import.startsWith('package:supabase') ||
-        import.startsWith('package:sqflite/')) {
+        import.startsWith('package:sqflite/') ||
+        import.startsWith('package:flutter_secure_storage/') ||
+        import.startsWith('package:sign_in_with_apple/') ||
+        import.startsWith('package:crypto/')) {
       return zone == 'data'
           ? null
           : '$filePath: $zone imports provider package "$import" '

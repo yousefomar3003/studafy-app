@@ -365,6 +365,26 @@ Context: supabase/functions/verify-store-purchase/index.ts does NOT verify with
 Apple or Google. It forwards the receipt to a generic PURCHASE_VERIFIER_URL and
 trusts the reply. Delete it and build properly in apps/api.
 
+The catalogue is four products, all in-app purchase. Stripe is NOT used for
+any of them: they unlock in-app features, so Apple 3.1.1 and Play billing
+policy require IAP, and §23.5 already records selling them outside IAP as a
+rejection cause. The app must contain no card, Apple Pay or Google Pay form.
+
+| Product | Price | Trial | Beneficiary |
+|---|---|---|---|
+| Parent Insights | 1.99/mo | 30 days | the guardian's linked child |
+| Student Notebook | 1.99/mo | 30 days | one student |
+| Student AI | 6.99/mo | none | one student |
+| Teacher AI grading | 8.99/mo | none | the purchasing teacher |
+
+Purchaser and beneficiary are separate. A guardian may buy for a linked child,
+and a student may buy for themselves; the entitlement attaches to the
+beneficiary. Students are minors, so student-initiated purchase requires a
+parental gate and a per-school switch that defaults to OFF.
+
+Neither AI product may be listed in a store console until AI-072 resolves to
+enable with a signed DPA. Do not create those SKUs before then.
+
 Scope:
 - Apple: App Store Server API, verify the signed JWSTransaction chain against
   Apple root CAs. Handle App Store Server Notifications V2 (SUBSCRIBED,
@@ -387,8 +407,67 @@ does not replay them forever.
 Do not enable the paid Parent Insights product until legal sign-off exists
 (see §29). Build the machinery; leave the product gated.
 
-Tests required: full sandbox lifecycle, duplicates, out-of-order notifications,
-account switch/link/delete, store outage, revoked access.
+Read docs/release/subscription-disclosure-requirements.md and implement the
+paywall disclosure set from it. Render prices and trial eligibility from the
+store product query — never hardcode "1.99", because tiers differ per
+storefront and a wrong price is an Apple 3.1.2 rejection.
+
+Tests required: full sandbox lifecycle per product, duplicates, out-of-order
+notifications, account switch/link/delete, store outage, revoked access,
+guardian purchase for a linked child, guardian link revoked while active,
+student purchase refused when the school switch is off, parental gate not
+bypassable, duplicate active entitlement for one beneficiary, and restore
+refused on an unrelated account.
+```
+
+## A10b — AI-072: Resolve the AI capability
+
+```
+Implement Phase 7 Part 7C (AI-072) from instructions.md.
+
+Read first: the Part 7C table in §20, the SEC-001 risk register and
+kill-switch registry in docs/security/sec-001-containment.md, §15 (privacy),
+and §22.6. FILE-051, AUTH-031 and API-041 must be done.
+
+Context you must not miss: AI is the only capability with a shipped user
+interface and no task behind it. Four student screens and the study_coach
+feature slice exist today. propose-paper-grade is hard-disabled — it was the
+original SEC-001 critical vulnerability, where a caller-selected path was
+signed with service-role credentials and sent to a provider. study-coach is
+NOT disabled: it forwards lesson material to whatever STUDY_COACH_URL names,
+gated only by an environment variable.
+
+This task has two lawful outcomes. Decide which, with a named owner, before
+writing code:
+
+- ENABLE, only if a signed DPA and a DPIA extended to AI processing of
+  minors' data both exist. Then: a named provider adapter instead of the
+  generic forward-to-a-URL; server-owned file_object_id only; per-request
+  tenant and relationship authorization; redaction of student identifiers
+  before egress; an egress allowlist so a changed variable cannot retarget
+  the provider; quotas and cost caps; teacher review before any AI proposal
+  affects a grade.
+
+- REMOVE, if either is missing. Delete both Edge Functions, the AI screens and
+  the study_coach slice, and the STUDY_COACH_* credentials. Leave no
+  disabled-looking surface: a reviewer who finds a dead feature rejects under
+  Apple 2.1.
+
+Do not add an environment variable that re-enables AI. SEC-001 says so
+explicitly, and study-coach is the counterexample this task exists to fix.
+
+Constraints: local/disposable Supabase only. Forward migrations only. Removing
+the allowsAiGrading guard, if you get there, is a reviewed change with an ADR
+and a decision-log entry — never a side effect.
+
+Tests required: path and URL substitution denied, cross-tenant material
+denied, egress-allowlist bypass denied, redaction proven, quota exhaustion,
+provider outage. On the removal path, a test asserting no AI route, screen or
+credential remains.
+
+Finish with: an ADR recording the direction and its evidence, the DPA/DPIA
+references or their explicit absence, evidence in docs/evidence/phase-7/, and
+a decision-log entry.
 ```
 
 ## A11 — INFRA-080: Runtime, network and Cloudflare

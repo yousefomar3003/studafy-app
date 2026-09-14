@@ -34,11 +34,25 @@ export const ServiceInfo = z.object({
 });
 export type ServiceInfo = z.infer<typeof ServiceInfo>;
 
-/** Stable machine error codes. Messages may change; codes may not. */
+/**
+ * Stable machine error codes. Messages may change; codes may not.
+ *
+ * The authentication codes are deliberately coarse. There is no code for
+ * "unknown account", "wrong provider", or "account deleted" — every such
+ * outcome is `UNAUTHENTICATED`, so a caller cannot use error codes to learn
+ * whether an address belongs to a Studafy user (AUTH-030 anti-enumeration).
+ */
 export const ErrorCode = {
   NOT_FOUND: "NOT_FOUND",
   NOT_IMPLEMENTED: "NOT_IMPLEMENTED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
+  UNAUTHENTICATED: "UNAUTHENTICATED",
+  REAUTH_REQUIRED: "REAUTH_REQUIRED",
+  MFA_REQUIRED: "MFA_REQUIRED",
+  FORBIDDEN: "FORBIDDEN",
+  RATE_LIMITED: "RATE_LIMITED",
+  INVALID_REQUEST: "INVALID_REQUEST",
+  CONFLICT: "CONFLICT",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 

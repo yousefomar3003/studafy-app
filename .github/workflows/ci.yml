@@ -183,8 +183,19 @@ jobs:
       - name: Run DB-021 multi-role policy and RPC tests
         run: bunx supabase test db --local supabase/tests/db021_access_seed.sql
 
+      - name: Run AUTH-030 session, device, reauth, and deletion tests
+        run: bunx supabase test db --local supabase/tests/auth030_access.sql
+
+      - name: Prove AUTH-031 action/resource decisions match DB-021 RLS
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/auth031_authorization_seed.sql
+
       - name: Verify DB-021 grant and function surface
         run: bunx supabase test db --local supabase/tests/db021_grants.sql
+
+      - name: Verify the AUTH-030 API grant surface stays least-privilege
+        run: bunx supabase test db --local supabase/tests/auth030_grants.sql
 
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
@@ -199,6 +210,28 @@ jobs:
       # package against the disposable stack database.
       - name: Run database package connectivity smoke
         run: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres bun test packages/database
+
+      # AUTH-030: the repository suite exercises the real SQL through
+      # postgres.js, which the fake-backed route tests cannot cover.
+      - name: Run AUTH-030 repository integration suite
+        run: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres bun test apps/api/test/auth
+
+      - name: Run AUTH-031 real /v1 and RLS parity integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/authorization/parity.integration.test.ts
+
+      # End-to-end against the live local GoTrue: real ES256 tokens, real JWKS,
+      # and the least-privilege database role.
+      - name: Verify the AUTH-030 lifecycle end to end
+        run: |
+          # `status -o env` also prints a non-assignment "Stopped services"
+          # line, so only KEY="value" lines are exported.
+          eval "$(bunx supabase status -o env | grep -E '^[A-Z_]+="' | sed 's/^/export /')"
+          SUPABASE_URL=http://127.0.0.1:54321 \
+          SUPABASE_SECRET_KEY="$SECRET_KEY" \
+          SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY" \
+          bun run test:auth030:lifecycle
 
       - name: Stop disposable Supabase stack
         if: always()
