@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { LogLevel } from "@studafy/contracts";
+import { type LogLevel, V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
 import { createAuthRoutes } from "../../src/auth/routes";
@@ -101,6 +101,50 @@ describe("permission catalogue", () => {
         ),
       ).toHaveLength(1);
     }
+  });
+
+  test("the route contract catalogue exactly covers every mounted v1 handler", () => {
+    const mounted = [
+      ...new Set(
+        routeTable().routes
+          .filter((route) =>
+            route.path.startsWith("/v1/") && route.method !== "ALL"
+          )
+          .map((route) => `${route.method} ${route.path}`),
+      ),
+    ];
+    const contracted = V1_ROUTE_CATALOGUE.map((route) =>
+      `${route.method.toUpperCase()} ${route.path}`
+    );
+    expect(mounted).toEqual(contracted);
+    expect(JSON.stringify(V1_ROUTE_CATALOGUE.map((route) => ({
+      method: route.method.toUpperCase(),
+      path: route.path,
+      permission: route.permission,
+    })))).toBe(JSON.stringify(AUTH_HANDLER_PERMISSIONS));
+    expect(
+      V1_ROUTE_CATALOGUE.some((route) =>
+        String(route.path) === "/v1/classrooms"
+      ),
+    ).toBe(false);
+  });
+
+  test("command idempotency modes are explicit and reauth verification is never replayed", () => {
+    for (const route of V1_ROUTE_CATALOGUE) {
+      expect(["none", "required", "forbidden"]).toContain(route.idempotency);
+      if (route.method === "get") expect(route.idempotency).toBe("none");
+    }
+    expect(
+      V1_ROUTE_CATALOGUE.find((route) => route.operationId === "verifyReauth")
+        ?.idempotency,
+    )
+      .toBe("forbidden");
+    expect(
+      V1_ROUTE_CATALOGUE.filter((route) =>
+        route.method === "post" && route.operationId !== "verifyReauth"
+      )
+        .every((route) => route.idempotency === "required"),
+    ).toBe(true);
   });
 
   test("every declared protected handler enforces its self permission", async () => {

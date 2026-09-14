@@ -6,6 +6,8 @@ import { JwksKeySource } from "./auth/jwks";
 import { createAuthRoutes } from "./auth/routes";
 import { PostgresAuthorizationRepository } from "./authorization/repository";
 import { createAuthorizationDependencies } from "./authorization/middleware";
+import { PostgresIdempotencyRepository } from "./platform/idempotency";
+import { createRedactingLogger } from "./platform/logging";
 import {
   checkDatabase,
   closeDatabase,
@@ -21,7 +23,9 @@ import {
 import { version as apiVersion } from "../package.json";
 
 const env = loadApiEnv();
-const logger = createJsonLogger("api", apiVersion, env.LOG_LEVEL);
+const logger = createRedactingLogger(
+  createJsonLogger("api", apiVersion, env.LOG_LEVEL),
+);
 
 logStartup(logger, {
   environment: env.ENVIRONMENT,
@@ -59,6 +63,7 @@ const auth = sql && env.SUPABASE_URL
       logger,
       new PostgresAuthorizationRepository(sql),
     ),
+    { logger, repository: new PostgresIdempotencyRepository(sql) },
   )
   : undefined;
 
@@ -76,11 +81,19 @@ const app = createApp({
   },
   logger,
   checks: { database: databaseCheck, redis: redisCheck },
+  platform: {
+    allowedOrigins: env.API_ALLOWED_ORIGINS,
+    limits: {
+      maxBodyBytes: env.API_MAX_BODY_BYTES,
+      requestTimeoutMs: env.API_REQUEST_TIMEOUT_MS,
+    },
+  },
   ...(auth ? { auth } : {}),
 });
 
 const server = Bun.serve({
   port: env.API_PORT,
+  maxRequestBodySize: env.API_MAX_BODY_BYTES,
   fetch: app.fetch,
 });
 

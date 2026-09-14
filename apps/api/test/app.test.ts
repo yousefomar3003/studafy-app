@@ -111,49 +111,66 @@ describe("empty /v1 router and unmatched routes", () => {
       const [method, path] of [
         ["GET", "/v1/me"],
         ["POST", "/v1/classrooms"],
-        ["DELETE", "/v1/nested/resource"],
       ] as const
     ) {
       const response = await app.request(path, { method });
       expect(response.status).toBe(404);
       const body = (await response.json()) as {
-        error: { code: string; request_id: string };
+        code: string;
+        requestId: string;
       };
-      expect(body.error.code).toBe(ErrorCode.NOT_IMPLEMENTED);
-      expect(body.error.request_id).toBeString();
+      expect(body.code).toBe(ErrorCode.NOT_IMPLEMENTED);
+      expect(body.requestId).toBeString();
     }
+  });
+
+  test("unsupported methods fail before routing", async () => {
+    const { deps } = buildDependencies();
+    const response = await createApp(deps).request("/v1/x", {
+      method: "DELETE",
+    });
+    expect(response.status).toBe(405);
+    expect((await response.json() as { code: string }).code).toBe(
+      ErrorCode.METHOD_NOT_ALLOWED,
+    );
   });
 
   test("routes outside /v1 answer NOT_FOUND", async () => {
     const { deps } = buildDependencies();
     const response = await createApp(deps).request("/nope");
     expect(response.status).toBe(404);
-    const body = (await response.json()) as { error: { code: string } };
-    expect(body.error.code).toBe(ErrorCode.NOT_FOUND);
+    const body = (await response.json()) as { code: string };
+    expect(body.code).toBe(ErrorCode.NOT_FOUND);
   });
 });
 
 describe("error handling and request correlation", () => {
-  test("thrown route errors return a sanitized body and log the detail", async () => {
+  test("thrown route errors return a sanitized body and never log the detail", async () => {
     const { deps, collector } = buildDependencies();
     const app = createApp(deps);
     app.get("/boom", () => {
-      throw new Error("sensitive internal detail");
+      throw new Error(
+        "SQL SELECT password, token FROM private.users; signed=https://files.test/secret; at source.ts:42",
+      );
     });
 
     const response = await app.request("/boom");
     expect(response.status).toBe(500);
     const body = (await response.json()) as {
-      error: { code: string; message: string; request_id: string };
+      code: string;
+      detail: string;
+      requestId: string;
     };
-    expect(body.error.code).toBe(ErrorCode.INTERNAL_ERROR);
-    expect(body.error.message).not.toContain("sensitive");
-    expect(body.error.request_id).toBeString();
+    expect(body.code).toBe(ErrorCode.INTERNAL_ERROR);
+    expect(body.detail).not.toContain("SQL");
+    expect(body.detail).not.toContain("token");
+    expect(body.requestId).toBeString();
 
     const logged = collector.parsed().find((entry) =>
       entry.event === "http_error"
     );
-    expect(logged?.error_message).toBe("sensitive internal detail");
+    expect(JSON.stringify(logged)).not.toContain("private.users");
+    expect(JSON.stringify(logged)).not.toContain("source.ts");
   });
 
   test("every response carries a server-generated X-Request-ID", async () => {
@@ -167,9 +184,9 @@ describe("error handling and request correlation", () => {
 
     const errorResponse = await app.request("/v1/x");
     const body = (await errorResponse.json()) as {
-      error: { request_id: string };
+      requestId: string;
     };
-    expect(body.error.request_id).toBe(
+    expect(body.requestId).toBe(
       errorResponse.headers.get("X-Request-ID") ?? "",
     );
   });

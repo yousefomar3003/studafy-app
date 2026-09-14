@@ -1,13 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
-  ErrorBody,
   ErrorCode,
-  notImplementedError,
+  ProblemDetails,
   ReadinessReport,
   V1AuthContextResponse,
   V1AuthDevice,
   V1AuthErrorCode,
-  V1Classroom,
   V1ClassroomListResponse,
   V1ContextMembership,
   V1DeletionImpactResponse,
@@ -40,21 +38,28 @@ describe("readiness contract", () => {
   });
 });
 
-describe("error contract", () => {
-  test("ErrorBody accepts the canonical error envelope", () => {
-    const body = ErrorBody.parse({
-      error: {
-        code: ErrorCode.INTERNAL_ERROR,
-        message: "An unexpected error occurred.",
-        request_id: "00000000-0000-4000-8000-000000000001",
-      },
+describe("problem details contract", () => {
+  test("ProblemDetails accepts the canonical error envelope", () => {
+    const body = ProblemDetails.parse({
+      type: "https://api.studafy.io/problems/internal-error",
+      title: "Internal error",
+      status: 500,
+      code: ErrorCode.INTERNAL_ERROR,
+      detail: "An unexpected error occurred.",
+      requestId: "00000000-0000-4000-8000-000000000001",
     });
-    expect(body.error.code).toBe("INTERNAL_ERROR");
+    expect(body.code).toBe("INTERNAL_ERROR");
   });
 
   test("an error without a request id is rejected", () => {
     expect(() =>
-      ErrorBody.parse({ error: { code: "X", message: "y", request_id: "" } })
+      ProblemDetails.parse({
+        type: "https://api.studafy.io/problems/internal-error",
+        title: "Internal error",
+        status: 500,
+        code: "INTERNAL_ERROR",
+        detail: "An unexpected error occurred.",
+      })
     ).toThrow();
   });
 
@@ -62,14 +67,24 @@ describe("error contract", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "CONFLICT",
       "FORBIDDEN",
+      "IDEMPOTENCY_IN_PROGRESS",
+      "IDEMPOTENCY_KEY_NOT_ALLOWED",
+      "IDEMPOTENCY_KEY_REQUIRED",
+      "IDEMPOTENCY_KEY_REUSED",
       "INTERNAL_ERROR",
+      "INVALID_HEADER",
       "INVALID_REQUEST",
+      "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
       "NOT_FOUND",
       "NOT_IMPLEMENTED",
+      "PAYLOAD_TOO_LARGE",
       "RATE_LIMITED",
       "REAUTH_REQUIRED",
+      "REQUEST_TIMEOUT",
+      "SERVICE_UNAVAILABLE",
       "UNAUTHENTICATED",
+      "UNSUPPORTED_MEDIA_TYPE",
     ]);
   });
 
@@ -82,26 +97,23 @@ describe("error contract", () => {
     );
     expect(leaky).toEqual([]);
   });
-
-  test("notImplementedError matches the /v1 empty-router contract", () => {
-    const error = notImplementedError("req-1");
-    expect(ErrorBody.parse({ error })).toEqual({
-      error: {
-        code: "NOT_IMPLEMENTED",
-        message: "No /v1 resources are implemented yet.",
-        request_id: "req-1",
-      },
-    });
-  });
 });
 
 describe("/v1 typed contracts (ARC-011)", () => {
   test("OpenAPI schemas and operations stay aligned with zod contracts", async () => {
     const specUrl = new URL("../openapi/v1.json", import.meta.url);
     const spec = await Bun.file(specUrl).json() as {
-      paths: Record<string, { get: { operationId: string } }>;
+      paths: Record<string, {
+        get?: { operationId: string };
+        post?: {
+          operationId: string;
+          "x-studafy-idempotency-mode": string;
+          responses: Record<string, { headers: Record<string, unknown> }>;
+        };
+      }>;
       components: {
         schemas: Record<string, { properties: Record<string, unknown> }>;
+        headers: Record<string, { schema: { format?: string } }>;
       };
     };
     const schemaKeys = (name: string) =>
@@ -113,16 +125,16 @@ describe("/v1 typed contracts (ARC-011)", () => {
     expect(V1MeResponse.keyof().options.map(String).sort()).toEqual(
       schemaKeys("V1MeResponse"),
     );
-    expect(V1Classroom.keyof().options.map(String).sort()).toEqual(
-      schemaKeys("V1Classroom"),
-    );
-    expect(V1ClassroomListResponse.keyof().options.map(String).sort()).toEqual(
-      schemaKeys("V1ClassroomListResponse"),
-    );
-    expect(spec.paths["/v1/me"]!.get.operationId).toBe("getMe");
-    expect(spec.paths["/v1/classrooms"]!.get.operationId).toBe(
-      "listClassrooms",
-    );
+    expect(spec.paths["/v1/me"]!.get!.operationId).toBe("getMe");
+    expect(spec.paths["/v1/classrooms"]).toBeUndefined();
+    expect(spec.components.headers.XRequestId!.schema.format).toBe("uuid");
+    expect(
+      spec.paths["/v1/auth/sign-out"]!.post!.responses["200"]!
+        .headers["Cache-Control"],
+    )
+      .toEqual({ $ref: "#/components/headers/CacheControl" });
+    expect(spec.paths["/v1/auth/sign-out"]!.post!["x-studafy-idempotency-mode"])
+      .toBe("required");
   });
 
   test("AUTH-030 OpenAPI schemas stay aligned with their zod contracts", async () => {
@@ -152,6 +164,34 @@ describe("/v1 typed contracts (ARC-011)", () => {
     }
   });
 
+  test("every published request body is an allowlist with no additional properties", async () => {
+    const specUrl = new URL("../openapi/v1.json", import.meta.url);
+    const spec = await Bun.file(specUrl).json() as {
+      paths: Record<
+        string,
+        Record<string, {
+          requestBody?: {
+            content: { "application/json": { schema: { $ref: string } } };
+          };
+        }>
+      >;
+      components: {
+        schemas: Record<string, { additionalProperties?: boolean }>;
+      };
+    };
+    for (const pathItem of Object.values(spec.paths)) {
+      for (const operation of Object.values(pathItem)) {
+        const reference = operation.requestBody?.content["application/json"]
+          .schema.$ref;
+        if (!reference) continue;
+        const name = reference.split("/").at(-1)!;
+        expect(spec.components.schemas[name]?.additionalProperties, name).toBe(
+          false,
+        );
+      }
+    }
+  });
+
   test("no auth request lets the caller name a user, school, or role", () => {
     // Tenancy is derived server-side. A request field that could carry it
     // would be the bug, so the contract is asserted rather than the handler.
@@ -163,7 +203,7 @@ describe("/v1 typed contracts (ARC-011)", () => {
       expect({
         name,
         leaked: fields.filter((field) =>
-          /^(user_id|school_id|role|actor_id|tenant_id)$/.test(field)
+          /^(userId|schoolId|role|actorId|tenantId)$/.test(field)
         ),
       }).toEqual({ name, leaked: [] });
     }
@@ -172,19 +212,17 @@ describe("/v1 typed contracts (ARC-011)", () => {
   test("V1MeResponse accepts a valid authenticated profile", () => {
     const parsed = V1MeResponse.parse({
       id: "00000000-0000-4000-8000-000000000001",
-      display_name: "Rana Haddad",
-      email: "rana@alnoor.edu",
+      displayName: "Rana Haddad",
       memberships: [
         {
           id: "00000000-0000-4000-8000-0000000000aa",
-          school_id: "00000000-0000-4000-8000-0000000000bb",
-          school_name: "Al-Noor International",
+          schoolId: "00000000-0000-4000-8000-0000000000bb",
+          schoolName: "Al-Noor International",
           role: "teacher",
           active: true,
         },
       ],
-      environment: "development",
-      active_term_id: "00000000-0000-4000-8000-0000000000cc",
+      activeTermId: "00000000-0000-4000-8000-0000000000cc",
     });
     expect(parsed.memberships).toHaveLength(1);
     expect(parsed.memberships[0]!.role).toBe("teacher");
@@ -193,20 +231,18 @@ describe("/v1 typed contracts (ARC-011)", () => {
   test("V1MeResponse rejects an unknown role", () => {
     expect(() =>
       V1MeResponse.parse({
-        id: "x",
-        display_name: "x",
-        email: "x",
+        id: "00000000-0000-4000-8000-000000000001",
+        displayName: "x",
         memberships: [
           {
-            id: "x",
-            school_id: "x",
-            school_name: "x",
+            id: "00000000-0000-4000-8000-000000000002",
+            schoolId: "00000000-0000-4000-8000-000000000003",
+            schoolName: "x",
             role: "admin",
             active: true,
           },
         ],
-        environment: "development",
-        active_term_id: null,
+        activeTermId: null,
       })
     ).toThrow();
   });
@@ -220,9 +256,9 @@ describe("/v1 typed contracts (ARC-011)", () => {
           grade: "10",
           section: "B",
           room: "Lab 2",
-          student_count: 6,
-          weekly_sessions: 3,
-          term_name: "Term 1",
+          studentCount: 6,
+          weeklySessions: 3,
+          termName: "Term 1",
         },
       ],
     });
@@ -240,9 +276,9 @@ describe("/v1 typed contracts (ARC-011)", () => {
             grade: "x",
             section: "x",
             room: null,
-            student_count: -1,
-            weekly_sessions: null,
-            term_name: null,
+            studentCount: -1,
+            weeklySessions: null,
+            termName: null,
           },
         ],
       })

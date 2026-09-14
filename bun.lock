@@ -21,6 +21,7 @@
         "@studafy/infrastructure": "workspace:*",
         "@studafy/observability": "workspace:*",
         "hono": "4.13.7",
+        "zod": "4.6.1",
       },
       "devDependencies": {
         "@studafy/test-support": "workspace:*",

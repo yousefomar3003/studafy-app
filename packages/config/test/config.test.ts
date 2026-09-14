@@ -21,6 +21,9 @@ describe("parseEnv", () => {
     });
     expect(env.API_PORT).toBe(8080);
     expect(env.LOG_LEVEL).toBe("info");
+    expect(env.API_ALLOWED_ORIGINS).toEqual([]);
+    expect(env.API_MAX_BODY_BYTES).toBe(64 * 1024);
+    expect(env.API_REQUEST_TIMEOUT_MS).toBe(10_000);
   });
 
   test("rejects an unknown environment with a stable error", () => {
@@ -46,6 +49,47 @@ describe("parseEnv", () => {
       REDIS_URL: "redis://127.0.0.1:6379",
     });
     expect(env.LOG_LEVEL).toBe("info");
+  });
+
+  test("browser origins are exact, unique, and never wildcard patterns", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      API_ALLOWED_ORIGINS: "https://app.studafy.test,https://app.studafy.test",
+    });
+    expect(env.API_ALLOWED_ORIGINS).toEqual(["https://app.studafy.test"]);
+    for (
+      const invalid of [
+        "*",
+        "https://*.studafy.test",
+        "https://user:pass@app.test",
+        "https://app.test/path",
+      ]
+    ) {
+      expect(() =>
+        parseEnv(apiEnvSchema, {
+          ENVIRONMENT: "development",
+          API_ALLOWED_ORIGINS: invalid,
+        })
+      )
+        .toThrow(ConfigError);
+    }
+  });
+
+  test("request byte and deadline configuration is bounded", () => {
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        API_MAX_BODY_BYTES: "9999999",
+      })
+    )
+      .toThrow(ConfigError);
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        API_REQUEST_TIMEOUT_MS: "50",
+      })
+    )
+      .toThrow(ConfigError);
   });
 });
 

@@ -17,6 +17,7 @@ import {
   type TestKey,
 } from "./support";
 import { baseContext, FakeAuthRepository } from "./fake-repository";
+import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
 
 let key: TestKey;
 let repository: FakeAuthRepository;
@@ -29,6 +30,7 @@ interface Harness {
   ) => Promise<Response>;
   repository: FakeAuthRepository;
   collector: LogCollector;
+  idempotency: FakeIdempotencyRepository;
 }
 
 async function harness(
@@ -59,17 +61,22 @@ async function harness(
     deletionGraceDays: 14,
     ...overrides,
   };
+  const idempotency = new FakeIdempotencyRepository();
 
   const app = createApp({
     info: { service: "api", version: "0.1.0-test", environment: "development" },
     logger,
     checks: {},
-    auth: createAuthRoutes(deps),
+    auth: createAuthRoutes(deps, undefined, {
+      logger,
+      repository: idempotency,
+    }),
   });
 
   return {
     repository,
     collector,
+    idempotency,
     // Hono's `request` can return a Response synchronously; awaiting here
     // gives callers one shape.
     request: async (path, init = {}) => {
@@ -78,6 +85,12 @@ async function harness(
       if (token) headers.set("authorization", `Bearer ${token}`);
       if (reauth) headers.set("x-studafy-reauth", reauth);
       if (rest.body) headers.set("content-type", "application/json");
+      if (
+        rest.method === "POST" && path !== "/v1/auth/reauth/verify" &&
+        !headers.has("idempotency-key")
+      ) {
+        headers.set("idempotency-key", crypto.randomUUID());
+      }
       return await app.request(path, { ...rest, headers });
     },
   };
@@ -114,7 +127,7 @@ describe("authenticated context", () => {
     expect(response.status).toBe(200);
     const body = await response.json() as {
       id: string;
-      memberships: { role: string; school_id: string }[];
+      memberships: { role: string; schoolId: string }[];
     };
     expect(body.id).toBe(SUBJECT);
     expect(body.memberships[0]!.role).toBe("teacher");
@@ -126,13 +139,13 @@ describe("authenticated context", () => {
       token: await validToken(),
     });
     const body = await response.json() as {
-      membership_version: string;
-      assurance_level: string;
-      mfa_required: boolean;
+      membershipVersion: string;
+      assuranceLevel: string;
+      mfaRequired: boolean;
     };
-    expect(body.membership_version).toBe("v1");
-    expect(body.assurance_level).toBe("aal1");
-    expect(body.mfa_required).toBe(false);
+    expect(body.membershipVersion).toBe("v1");
+    expect(body.assuranceLevel).toBe("aal1");
+    expect(body.mfaRequired).toBe(false);
   });
 });
 
@@ -150,11 +163,11 @@ describe("role metadata in the token is never trusted", () => {
     const response = await h.request("/v1/auth/context", { token });
     const body = await response.json() as {
       memberships: { role: string }[];
-      mfa_required: boolean;
+      mfaRequired: boolean;
     };
     // The database says teacher, so the answer is teacher.
     expect(body.memberships.map((m) => m.role)).toEqual(["teacher"]);
-    expect(body.mfa_required).toBe(false);
+    expect(body.mfaRequired).toBe(false);
   });
 
   test("a token claiming memberships for another school is ignored", async () => {
@@ -166,9 +179,9 @@ describe("role metadata in the token is never trusted", () => {
     });
     const response = await h.request("/v1/auth/context", { token });
     const body = await response.json() as {
-      memberships: { school_id: string }[];
+      memberships: { schoolId: string }[];
     };
-    expect(body.memberships.map((m) => m.school_id)).toEqual([
+    expect(body.memberships.map((m) => m.schoolId)).toEqual([
       "bbbbbbbb-0000-4000-8000-000000000001",
     ]);
   });
@@ -272,8 +285,8 @@ describe("anti-enumeration", () => {
     const normalized = results.map((result) => ({
       status: result.status,
       body: {
-        ...(result.body as { error: Record<string, unknown> }).error,
-        request_id: "<redacted>",
+        ...(result.body as Record<string, unknown>),
+        requestId: "<redacted>",
       } as Record<string, unknown>,
       headers: result.headers,
     }));
@@ -283,7 +296,7 @@ describe("anti-enumeration", () => {
       expect(entry).toEqual(first!);
     }
     expect(first!.status).toBe(401);
-    expect(first!.body["message"]).toBe(UNAUTHENTICATED_MESSAGE);
+    expect(first!.body["detail"]).toBe(UNAUTHENTICATED_MESSAGE);
   });
 
   test("no denial message names an account, provider, or reason", async () => {
@@ -415,12 +428,12 @@ describe("recent authentication", () => {
       method: "POST",
       token: await validToken(),
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
     expect(response.status).toBe(401);
-    expect((await response.json() as { error: { code: string } }).error.code)
+    expect((await response.json() as { code: string }).code)
       .toBe("REAUTH_REQUIRED");
   });
 
@@ -434,7 +447,7 @@ describe("recent authentication", () => {
       token,
       reauth: grant,
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -445,11 +458,48 @@ describe("recent authentication", () => {
       token,
       reauth: grant,
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
     expect(replay.status).toBe(401);
+  });
+
+  test("a completed replay is resolved before consuming recent auth again", async () => {
+    const h = await harness();
+    const token = await validToken();
+    const grant = await grantFor(h, token, "account_deletion");
+    const headers = { "idempotency-key": "deletion-replay-000001" };
+    const body = JSON.stringify({
+      reasonCode: "undisclosed",
+      confirmation: "DELETE",
+    });
+
+    const first = await h.request("/v1/account/deletion-request", {
+      method: "POST",
+      token,
+      reauth: grant,
+      headers,
+      body,
+    });
+    const replay = await h.request("/v1/account/deletion-request", {
+      method: "POST",
+      token,
+      reauth: grant,
+      headers,
+      body,
+    });
+
+    expect(first.status).toBe(200);
+    expect(replay.status).toBe(200);
+    expect(replay.headers.get("idempotency-replayed")).toBe("true");
+    expect(await replay.json()).toEqual(await first.json());
+    expect(
+      h.repository.events.filter((event) =>
+        event.eventType === "account_deletion_requested"
+      ),
+    )
+      .toHaveLength(1);
   });
 
   test("a grant for one purpose does not authorize another", async () => {
@@ -462,7 +512,7 @@ describe("recent authentication", () => {
       token,
       reauth: grant,
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -484,7 +534,7 @@ describe("recent authentication", () => {
       token: otherSession,
       reauth: grant,
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -498,7 +548,7 @@ describe("recent authentication", () => {
       token: await validToken(),
       reauth: "a".repeat(43),
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -517,7 +567,7 @@ describe("recent authentication", () => {
       token,
       reauth: grant,
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -561,12 +611,12 @@ describe("admin MFA", () => {
       token: await validToken({ aal: "aal1" }),
       body: JSON.stringify({
         provider: "google",
-        id_token: "x",
-        make_primary: false,
+        idToken: "x",
+        makePrimary: false,
       }),
     });
     expect(response.status).toBe(403);
-    expect((await response.json() as { error: { code: string } }).error.code)
+    expect((await response.json() as { code: string }).code)
       .toBe("MFA_REQUIRED");
   });
 
@@ -583,8 +633,8 @@ describe("admin MFA", () => {
       token: await validToken({ aal: "aal1" }),
       body: JSON.stringify({
         provider: "google",
-        id_token: "x",
-        make_primary: false,
+        idToken: "x",
+        makePrimary: false,
       }),
     });
     expect(response.status).toBe(403);
@@ -624,8 +674,8 @@ describe("identity linking", () => {
       reauth: grant,
       body: JSON.stringify({
         provider: "google",
-        id_token: "unverifiable",
-        make_primary: false,
+        idToken: "unverifiable",
+        makePrimary: false,
       }),
     });
     expect(response.status).toBe(400);
@@ -645,8 +695,8 @@ describe("identity linking", () => {
       reauth: grant,
       body: JSON.stringify({
         provider: "google",
-        id_token: "valid",
-        make_primary: false,
+        idToken: "valid",
+        makePrimary: false,
       }),
     });
     expect(response.status).toBe(409);
@@ -677,7 +727,7 @@ describe("device revocation", () => {
       token,
       reauth: grant,
       body: JSON.stringify({
-        device_id: "00000000-0000-4000-8000-000000000001",
+        deviceId: "00000000-0000-4000-8000-000000000001",
       }),
     });
     expect(response.status).toBe(200);
@@ -723,11 +773,11 @@ describe("account deletion", () => {
       token: await validToken(),
     });
     const body = await response.json() as {
-      retained_school_records: { attendance: number };
-      grace_period_days: number;
+      retainedSchoolRecords: { attendance: number };
+      gracePeriodDays: number;
     };
-    expect(body.retained_school_records.attendance).toBe(12);
-    expect(body.grace_period_days).toBe(14);
+    expect(body.retainedSchoolRecords.attendance).toBe(12);
+    expect(body.gracePeriodDays).toBe(14);
   });
 
   test("requesting twice returns the live request rather than duplicating", async () => {
@@ -739,7 +789,7 @@ describe("account deletion", () => {
       token,
       reauth: await grantFor(h, token, "account_deletion"),
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -750,7 +800,7 @@ describe("account deletion", () => {
       token,
       reauth: await grantFor(h, token, "account_deletion"),
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -768,7 +818,7 @@ describe("account deletion", () => {
       token,
       reauth: await grantFor(h, token, "account_deletion"),
       body: JSON.stringify({
-        reason_code: "undisclosed",
+        reasonCode: "undisclosed",
         confirmation: "DELETE",
       }),
     });
@@ -776,6 +826,7 @@ describe("account deletion", () => {
     const response = await h.request("/v1/account/deletion-cancel", {
       method: "POST",
       token,
+      body: "{}",
     });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ cancelled: true });
@@ -788,7 +839,7 @@ describe("account deletion", () => {
       method: "POST",
       token,
       reauth: await grantFor(h, token, "account_deletion"),
-      body: JSON.stringify({ reason_code: "undisclosed", confirmation: "yes" }),
+      body: JSON.stringify({ reasonCode: "undisclosed", confirmation: "yes" }),
     });
     expect(response.status).toBe(400);
   });
@@ -801,7 +852,7 @@ describe("unmigrated paths still fail closed", () => {
       token: await validToken(),
     });
     expect(response.status).toBe(404);
-    expect((await response.json() as { error: { code: string } }).error.code)
+    expect((await response.json() as { code: string }).code)
       .toBe("NOT_IMPLEMENTED");
   });
 

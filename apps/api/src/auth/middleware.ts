@@ -20,12 +20,9 @@ import {
   type VerifiedToken,
   verifyAccessToken,
 } from "./verify";
-import {
-  type AuthDenialReason,
-  denyUnauthenticated,
-  mfaRequired,
-  reauthRequired,
-} from "./errors";
+import { type AuthDenialReason, denyUnauthenticated } from "./errors";
+import { problem } from "../platform/errors";
+import type { PlatformEnv } from "../platform/types";
 
 export interface Actor {
   token: VerifiedToken;
@@ -37,8 +34,7 @@ export interface Actor {
 }
 
 export interface AuthEnv {
-  Variables: {
-    requestId: string;
+  Variables: PlatformEnv["Variables"] & {
     actor: Actor;
     authDenialReason?: string;
   };
@@ -177,7 +173,7 @@ export function requireAal2(): MiddlewareHandler<AuthEnv> {
   return async (c, next) => {
     const actor = c.get("actor");
     if (actor.mfaRequiredByPolicy && !actor.aal2) {
-      return c.json(mfaRequired(c.get("requestId")), 403);
+      return problem(c, "MFA_REQUIRED", 403);
     }
     await next();
   };
@@ -208,7 +204,7 @@ export function requireRecentAuth(
         reasonCode: "reauth_missing",
         requestId,
       });
-      return c.json(reauthRequired(requestId), 401);
+      return problem(c, "REAUTH_REQUIRED", 401);
     }
 
     const consumed = await deps.repository.consumeReauthGrant(
@@ -228,7 +224,7 @@ export function requireRecentAuth(
         reasonCode: "reauth_invalid",
         requestId,
       });
-      return c.json(reauthRequired(requestId), 401);
+      return problem(c, "REAUTH_REQUIRED", 401);
     }
 
     await recordAuthEvent(deps, actor.token.subject, {
@@ -260,7 +256,7 @@ function logDenial(
   deps.logger.warn("auth_denied", {
     request_id: c.get("requestId"),
     method: c.req.method,
-    path: c.req.path,
+    route: "auth",
     reason,
   });
 }
@@ -311,11 +307,10 @@ export async function recordAuthEvent(
       userAgentFamily: event.userAgentFamily ?? null,
       schoolId: event.schoolId ?? null,
     });
-  } catch (error) {
+  } catch {
     deps.logger.error("auth_event_write_failed", {
       request_id: event.requestId,
       event_type: event.eventType,
-      error_message: error instanceof Error ? error.message : String(error),
     });
   }
 }

@@ -1,19 +1,17 @@
 {
   "me": {
     "id": "00000000-0000-4000-8000-000000000001",
-    "display_name": "Rana Haddad",
-    "email": "rana.haddad@alnoor.edu",
+    "displayName": "Rana Haddad",
     "memberships": [
       {
         "id": "00000000-0000-4000-8000-0000000000aa",
-        "school_id": "00000000-0000-4000-8000-0000000000bb",
-        "school_name": "Al-Noor International",
+        "schoolId": "00000000-0000-4000-8000-0000000000bb",
+        "schoolName": "Al-Noor International",
         "role": "teacher",
         "active": true
       }
     ],
-    "environment": "development",
-    "active_term_id": "00000000-0000-4000-8000-0000000000cc"
+    "activeTermId": "00000000-0000-4000-8000-0000000000cc"
   },
   "classrooms": {
     "classrooms": [
@@ -23,9 +21,9 @@
         "grade": "10",
         "section": "B",
         "room": "Lab 2",
-        "student_count": 6,
-        "weekly_sessions": 3,
-        "term_name": "Term 1"
+        "studentCount": 6,
+        "weeklySessions": 3,
+        "termName": "Term 1"
       },
       {
         "id": "00000000-0000-4000-8000-000000000002",
@@ -33,9 +31,9 @@
         "grade": "10",
         "section": "A",
         "room": null,
-        "student_count": 0,
-        "weekly_sessions": null,
-        "term_name": null
+        "studentCount": 0,
+        "weeklySessions": null,
+        "termName": null
       }
     ]
   }

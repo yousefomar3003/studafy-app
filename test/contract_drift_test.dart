@@ -41,14 +41,12 @@ void main() {
       final serialized = dto.toJson();
 
       expect(serialized['id'], original['id']);
-      expect(serialized['display_name'], original['display_name']);
-      expect(serialized['email'], original['email']);
+      expect(serialized['displayName'], original['displayName']);
       expect(
         (serialized['memberships'] as List).first,
         (original['memberships'] as List).first,
       );
-      expect(serialized['environment'], original['environment']);
-      expect(serialized['active_term_id'], original['active_term_id']);
+      expect(serialized['activeTermId'], original['activeTermId']);
     });
   });
 
@@ -78,8 +76,8 @@ void main() {
           (serialized['classrooms'] as List).last as Map<String, Object?>;
       expect(first['room'], 'Lab 2');
       expect(second['room'], isNull);
-      expect(second['weekly_sessions'], isNull);
-      expect(second['term_name'], isNull);
+      expect(second['weeklySessions'], isNull);
+      expect(second['termName'], isNull);
     });
   });
 
@@ -88,11 +86,8 @@ void main() {
     final client = V1ApiClient(transport);
 
     final me = await client.getMe();
-    final classrooms = await client.listClassrooms();
-
     expect(me.memberships.first.role, 'teacher');
-    expect(classrooms.classrooms, hasLength(2));
-    expect(transport.paths, ['/v1/me', '/v1/classrooms']);
+    expect(transport.paths, ['/v1/me']);
   });
 }
 
@@ -115,8 +110,10 @@ class _FixtureTransport implements V1JsonTransport {
   @override
   Future<Map<String, dynamic>> post(
     String path,
-    Map<String, Object?> body,
-  ) async {
+    Map<String, Object?> body, {
+    String? idempotencyKey,
+    bool requiresIdempotency = false,
+  }) async {
     // The drift fixture covers reads only; a write reaching here means the
     // spec grew an operation the fixture has not been extended for.
     throw StateError('Unexpected generated-client write to $path');

@@ -35,6 +35,7 @@ const ALLOWED: Record<string, string[]> = {
   "@studafy/test-support": [],
   "@studafy/api": [
     "hono",
+    "zod",
     "@studafy/config",
     "@studafy/contracts",
     "@studafy/database",

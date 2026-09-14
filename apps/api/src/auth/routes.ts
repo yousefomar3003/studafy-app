@@ -7,13 +7,14 @@
  */
 import { Hono, type MiddlewareHandler } from "hono";
 import {
-  V1AuthDeviceRevokeRequest,
-  V1AuthSignOutRequest,
-  V1DeletionRequestRequest,
-  V1IdentityLinkRequest,
-  V1IdentityUnlinkRequest,
-  V1ReauthChallengeRequest,
-  V1ReauthVerifyRequest,
+  type V1AuthDeviceRevokeRequestType,
+  type V1AuthSignOutRequestType,
+  type V1DeletionRequestRequestType,
+  type V1IdentityLinkRequestType,
+  type V1IdentityUnlinkRequestType,
+  type V1ReauthChallengeRequestType,
+  type V1ReauthVerifyRequestType,
+  v1Route,
 } from "@studafy/contracts";
 import {
   type AuthDependencies,
@@ -23,28 +24,18 @@ import {
   requireRecentAuth,
   sha256Hex,
 } from "./middleware";
-import { conflict, invalidRequest } from "./errors";
 import type { AuthorizationEnv } from "../authorization/middleware";
 import {
   type AuthorizationDependencies,
   createAuthorizationDependencies,
   requirePermission,
 } from "../authorization/middleware";
-
-/** Parses a JSON body against a contract, returning null on any mismatch. */
-async function parseBody<T>(
-  c: { req: { json: () => Promise<unknown> } },
-  schema: { safeParse: (value: unknown) => { success: boolean; data?: T } },
-): Promise<T | null> {
-  let raw: unknown;
-  try {
-    raw = await c.req.json();
-  } catch {
-    return null;
-  }
-  const result = schema.safeParse(raw);
-  return result.success ? (result.data as T) : null;
-}
+import { problem } from "../platform/errors";
+import {
+  idempotency,
+  type IdempotencyDependencies,
+} from "../platform/idempotency";
+import { validatedBody, validateRouteInput } from "../platform/validation";
 
 /** 43 base64url characters is 32 bytes of entropy. */
 function opaqueGrant(): string {
@@ -60,6 +51,7 @@ export function createAuthRoutes(
   authorization: AuthorizationDependencies = createAuthorizationDependencies(
     deps.logger,
   ),
+  idempotencyDependencies: IdempotencyDependencies = { logger: deps.logger },
 ): Hono<AuthorizationEnv> {
   const routes = new Hono<AuthorizationEnv>();
 
@@ -78,46 +70,48 @@ export function createAuthRoutes(
 
   routes.get(
     "/v1/me",
+    validateRouteInput(v1Route("getMe")) as never,
     requirePermission(authorization, "account.profile.read"),
     (c) => {
       const { context } = c.get("actor");
       return c.json({
         id: context.userId,
-        display_name: context.displayName,
+        displayName: context.displayName,
         memberships: context.memberships.map((membership) => ({
           id: membership.id,
-          school_id: membership.school_id,
-          school_name: membership.school_name,
+          schoolId: membership.school_id,
+          schoolName: membership.school_name,
           role: membership.role,
           active: membership.active,
         })),
-        active_term_id: context.memberships[0]?.active_term_id ?? null,
+        activeTermId: context.memberships[0]?.active_term_id ?? null,
       });
     },
   );
 
   routes.get(
     "/v1/auth/context",
+    validateRouteInput(v1Route("getAuthContext")) as never,
     requirePermission(authorization, "account.context.read"),
     (c) => {
       const actor = c.get("actor");
       return c.json({
-        user_id: actor.context.userId,
-        display_name: actor.context.displayName,
+        userId: actor.context.userId,
+        displayName: actor.context.displayName,
         locale: actor.context.locale,
         memberships: actor.context.memberships.map((membership) => ({
           id: membership.id,
-          school_id: membership.school_id,
-          school_name: membership.school_name,
-          school_timezone: membership.school_timezone,
+          schoolId: membership.school_id,
+          schoolName: membership.school_name,
+          schoolTimezone: membership.school_timezone,
           role: membership.role,
-          active_term_id: membership.active_term_id,
+          activeTermId: membership.active_term_id,
         })),
-        membership_version: actor.context.membershipVersion,
-        assurance_level: actor.aal2 ? "aal2" : "aal1",
-        mfa_enrolled: actor.context.mfaEnrolled,
-        mfa_required: actor.mfaRequiredByPolicy,
-        pending_deletion: actor.context.deletionState !== null,
+        membershipVersion: actor.context.membershipVersion,
+        assuranceLevel: actor.aal2 ? "aal2" : "aal1",
+        mfaEnrolled: actor.context.mfaEnrolled,
+        mfaRequired: actor.mfaRequiredByPolicy,
+        pendingDeletion: actor.context.deletionState !== null,
       });
     },
   );
@@ -128,6 +122,7 @@ export function createAuthRoutes(
 
   routes.get(
     "/v1/auth/devices",
+    validateRouteInput(v1Route("listAuthDevices")) as never,
     requirePermission(authorization, "account.devices.read"),
     async (c) => {
       const actor = c.get("actor");
@@ -140,11 +135,11 @@ export function createAuthRoutes(
         devices: devices.map((device) => ({
           id: device.id,
           platform: device.platform,
-          app_version: device.app_version,
-          display_label: device.display_label,
-          first_seen_at: device.first_seen_at,
-          last_seen_at: device.last_seen_at,
-          revoked_at: device.revoked_at,
+          appVersion: device.app_version,
+          displayLabel: device.display_label,
+          firstSeenAt: device.first_seen_at,
+          lastSeenAt: device.last_seen_at,
+          revokedAt: device.revoked_at,
           current: currentDigest !== null && device.id === currentDigest
             ? true
             : false,
@@ -155,16 +150,17 @@ export function createAuthRoutes(
 
   routes.post(
     "/v1/auth/devices/revoke",
+    validateRouteInput(v1Route("revokeAuthDevice")) as never,
     requirePermission(authorization, "account.device.revoke"),
+    idempotency(idempotencyDependencies, "revokeAuthDevice", "required"),
     requireRecentAuth(deps, "device_revoke"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1AuthDeviceRevokeRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1AuthDeviceRevokeRequestType>(c as never);
 
       const revoked = await deps.repository.revokeDevice(
         actor.token.subject,
-        body.device_id,
+        body.deviceId,
       );
       await recordAuthEvent(deps, actor.token.subject, {
         eventType: "device_revoked",
@@ -180,11 +176,12 @@ export function createAuthRoutes(
 
   routes.post(
     "/v1/auth/sign-out",
+    validateRouteInput(v1Route("signOut")) as never,
     requirePermission(authorization, "account.session.revoke"),
+    idempotency(idempotencyDependencies, "signOut", "required"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1AuthSignOutRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1AuthSignOutRequestType>(c as never);
 
       if (body.scope === "current") {
         // The current session's refresh token is revoked by the client's own
@@ -195,7 +192,7 @@ export function createAuthRoutes(
           reasonCode: "current_device_sign_out",
           requestId: c.get("requestId"),
         });
-        return c.json({ scope: "current", revoked_before: null });
+        return c.json({ scope: "current", revokedBefore: null });
       }
 
       const watermark = await deps.repository.signOutAll(actor.token.subject);
@@ -205,7 +202,7 @@ export function createAuthRoutes(
         reasonCode: "user_requested",
         requestId: c.get("requestId"),
       });
-      return c.json({ scope: "all", revoked_before: watermark });
+      return c.json({ scope: "all", revokedBefore: watermark });
     },
   );
 
@@ -215,11 +212,12 @@ export function createAuthRoutes(
 
   routes.post(
     "/v1/auth/reauth/challenge",
+    validateRouteInput(v1Route("challengeReauth")) as never,
     requirePermission(authorization, "account.reauth.challenge"),
+    idempotency(idempotencyDependencies, "challengeReauth", "required"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1ReauthChallengeRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1ReauthChallengeRequestType>(c as never);
 
       await recordAuthEvent(deps, actor.token.subject, {
         eventType: "reauth_challenged",
@@ -230,8 +228,8 @@ export function createAuthRoutes(
 
       return c.json({
         purpose: body.purpose,
-        required_assurance: actor.mfaRequiredByPolicy ? "aal2" : "aal1",
-        expires_at: new Date(
+        requiredAssurance: actor.mfaRequiredByPolicy ? "aal2" : "aal1",
+        expiresAt: new Date(
           (deps.now?.() ?? Date.now()) + deps.reauthTtlSeconds * 1000,
         ).toISOString(),
       });
@@ -240,28 +238,20 @@ export function createAuthRoutes(
 
   routes.post(
     "/v1/auth/reauth/verify",
+    validateRouteInput(v1Route("verifyReauth")) as never,
     requirePermission(authorization, "account.reauth.verify"),
+    idempotency(idempotencyDependencies, "verifyReauth", "forbidden"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1ReauthVerifyRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1ReauthVerifyRequestType>(c as never);
 
       const sessionId = actor.token.sessionId;
-      if (!sessionId) return c.json(invalidRequest(c.get("requestId")), 400);
+      if (!sessionId) return problem(c, "INVALID_REQUEST", 400);
 
       // A grant is only minted when the session already satisfies the assurance
       // its roles demand; otherwise the challenge would be a formality.
       if (actor.mfaRequiredByPolicy && !actor.aal2) {
-        return c.json(
-          {
-            error: {
-              code: "MFA_REQUIRED",
-              message: "Two-factor authentication is required for this action.",
-              request_id: c.get("requestId"),
-            },
-          },
-          403,
-        );
+        return problem(c, "MFA_REQUIRED", 403);
       }
 
       const grant = opaqueGrant();
@@ -275,12 +265,12 @@ export function createAuthRoutes(
           ttlSeconds: deps.reauthTtlSeconds,
         },
       );
-      if (!expiresAt) return c.json(invalidRequest(c.get("requestId")), 400);
+      if (!expiresAt) return problem(c, "INVALID_REQUEST", 400);
 
       return c.json({
         purpose: body.purpose,
         grant,
-        expires_at: new Date(expiresAt).toISOString(),
+        expiresAt: new Date(expiresAt).toISOString(),
       });
     },
   );
@@ -291,19 +281,20 @@ export function createAuthRoutes(
 
   routes.post(
     "/v1/auth/identities/link",
+    validateRouteInput(v1Route("linkIdentity")) as never,
     requirePermission(authorization, "account.identity.link"),
+    idempotency(idempotencyDependencies, "linkIdentity", "required"),
     requireAal2(),
     requireRecentAuth(deps, "account_link"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1IdentityLinkRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1IdentityLinkRequestType>(c as never);
 
       // The provider's id token is verified before anything is linked, so a
       // caller cannot claim an identity it does not control.
       const providerSubject = await deps.verifyProviderIdentity?.(
         body.provider,
-        body.id_token,
+        body.idToken,
       );
       if (!providerSubject) {
         await recordAuthEvent(deps, actor.token.subject, {
@@ -312,14 +303,14 @@ export function createAuthRoutes(
           reasonCode: "provider_token_invalid",
           requestId: c.get("requestId"),
         });
-        return c.json(invalidRequest(c.get("requestId")), 400);
+        return problem(c, "INVALID_REQUEST", 400);
       }
 
       const outcome = await deps.repository.linkIdentity(
         actor.token.subject,
         body.provider,
         providerSubject,
-        body.make_primary,
+        body.makePrimary,
       );
       await recordAuthEvent(deps, actor.token.subject, {
         eventType: outcome === "collision"
@@ -332,13 +323,10 @@ export function createAuthRoutes(
       });
 
       if (outcome === "collision") {
-        return c.json(
-          conflict(
-            c.get("requestId"),
+        return problem(c, "CONFLICT", 409, {
+          detail:
             "That sign-in method is already in use. Contact your school to merge accounts.",
-          ),
-          409,
-        );
+        });
       }
       return c.json({ outcome });
     },
@@ -346,13 +334,14 @@ export function createAuthRoutes(
 
   routes.post(
     "/v1/auth/identities/unlink",
+    validateRouteInput(v1Route("unlinkIdentity")) as never,
     requirePermission(authorization, "account.identity.unlink"),
+    idempotency(idempotencyDependencies, "unlinkIdentity", "required"),
     requireAal2(),
     requireRecentAuth(deps, "account_link"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1IdentityUnlinkRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1IdentityUnlinkRequestType>(c as never);
 
       const outcome = await deps.repository.unlinkIdentity(
         actor.token.subject,
@@ -376,23 +365,42 @@ export function createAuthRoutes(
 
   routes.get(
     "/v1/account/deletion-impact",
+    validateRouteInput(v1Route("getDeletionImpact")) as never,
     requirePermission(authorization, "account.deletion.impact"),
     async (c) => {
       const actor = c.get("actor");
       const impact = await deps.repository.deletionImpact(actor.token.subject);
-      if (!impact) return c.json(invalidRequest(c.get("requestId")), 400);
-      return c.json({ ...impact, grace_period_days: deps.deletionGraceDays });
+      if (!impact) return problem(c, "INVALID_REQUEST", 400);
+      const raw = impact as {
+        memberships: { school_name: string; role: string }[];
+        retained_school_records: Record<string, number>;
+        deleted_personal_data: Record<string, number>;
+        guardian_links: number;
+        active_entitlements: number;
+      };
+      return c.json({
+        memberships: raw.memberships.map((membership) => ({
+          schoolName: membership.school_name,
+          role: membership.role,
+        })),
+        retainedSchoolRecords: raw.retained_school_records,
+        deletedPersonalData: raw.deleted_personal_data,
+        guardianLinks: raw.guardian_links,
+        activeEntitlements: raw.active_entitlements,
+        gracePeriodDays: deps.deletionGraceDays,
+      });
     },
   );
 
   routes.post(
     "/v1/account/deletion-request",
+    validateRouteInput(v1Route("requestAccountDeletion")) as never,
     requirePermission(authorization, "account.deletion.request"),
+    idempotency(idempotencyDependencies, "requestAccountDeletion", "required"),
     requireRecentAuth(deps, "account_deletion"),
     async (c) => {
       const actor = c.get("actor");
-      const body = await parseBody(c, V1DeletionRequestRequest);
-      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+      const body = validatedBody<V1DeletionRequestRequestType>(c as never);
 
       // The impact is recomputed server-side and stored with the request, so
       // the record shows what was true at confirmation rather than whatever
@@ -400,22 +408,22 @@ export function createAuthRoutes(
       const impact = await deps.repository.deletionImpact(actor.token.subject);
       const result = await deps.repository.requestDeletion(
         actor.token.subject,
-        body.reason_code,
+        body.reasonCode,
         impact,
         deps.deletionGraceDays,
       );
-      if (!result) return c.json(invalidRequest(c.get("requestId")), 400);
+      if (!result) return problem(c, "INVALID_REQUEST", 400);
 
       await recordAuthEvent(deps, actor.token.subject, {
         eventType: "account_deletion_requested",
         outcome: "allowed",
-        reasonCode: body.reason_code,
+        reasonCode: body.reasonCode,
         requestId: c.get("requestId"),
       });
       return c.json({
         id: result.id,
         state: result.state,
-        execute_after: new Date(result.execute_after).toISOString(),
+        executeAfter: new Date(result.execute_after).toISOString(),
         created: result.created,
       });
     },
@@ -426,7 +434,9 @@ export function createAuthRoutes(
   // strand a user who cannot re-authenticate before the grace period ends.
   routes.post(
     "/v1/account/deletion-cancel",
+    validateRouteInput(v1Route("cancelAccountDeletion")) as never,
     requirePermission(authorization, "account.deletion.cancel"),
+    idempotency(idempotencyDependencies, "cancelAccountDeletion", "required"),
     async (c) => {
       const actor = c.get("actor");
       const cancelled = await deps.repository.cancelDeletion(

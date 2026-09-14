@@ -39,14 +39,22 @@ export {
   type V1AuthSignOutResponse as V1AuthSignOutResponseType,
   V1ContextMembership,
   type V1ContextMembership as V1ContextMembershipType,
+  V1DeletionCancelRequest,
+  type V1DeletionCancelRequest as V1DeletionCancelRequestType,
   V1DeletionCancelResponse,
   type V1DeletionCancelResponse as V1DeletionCancelResponseType,
+  V1DeletionDeletedData,
+  type V1DeletionDeletedData as V1DeletionDeletedDataType,
+  V1DeletionImpactMembership,
+  type V1DeletionImpactMembership as V1DeletionImpactMembershipType,
   V1DeletionImpactResponse,
   type V1DeletionImpactResponse as V1DeletionImpactResponseType,
   V1DeletionRequestRequest,
   type V1DeletionRequestRequest as V1DeletionRequestRequestType,
   V1DeletionRequestResponse,
   type V1DeletionRequestResponse as V1DeletionRequestResponseType,
+  V1DeletionRetainedRecords,
+  type V1DeletionRetainedRecords as V1DeletionRetainedRecordsType,
   V1IdentityLinkRequest,
   type V1IdentityLinkRequest as V1IdentityLinkRequestType,
   V1IdentityLinkResponse,
@@ -66,3 +74,5 @@ export {
   V1ReauthVerifyResponse,
   type V1ReauthVerifyResponse as V1ReauthVerifyResponseType,
 } from "./auth";
+export * from "./platform";
+export * from "./routes";
