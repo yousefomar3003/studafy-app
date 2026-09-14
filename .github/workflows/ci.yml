@@ -186,6 +186,11 @@ jobs:
       - name: Run AUTH-030 session, device, reauth, and deletion tests
         run: bunx supabase test db --local supabase/tests/auth030_access.sql
 
+      - name: Prove AUTH-031 action/resource decisions match DB-021 RLS
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/auth031_authorization_seed.sql
+
       - name: Verify DB-021 grant and function surface
         run: bunx supabase test db --local supabase/tests/db021_grants.sql
 
@@ -210,6 +215,11 @@ jobs:
       # postgres.js, which the fake-backed route tests cannot cover.
       - name: Run AUTH-030 repository integration suite
         run: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres bun test apps/api/test/auth
+
+      - name: Run AUTH-031 real /v1 and RLS parity integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/authorization/parity.integration.test.ts
 
       # End-to-end against the live local GoTrue: real ES256 tokens, real JWKS,
       # and the least-privilege database role.

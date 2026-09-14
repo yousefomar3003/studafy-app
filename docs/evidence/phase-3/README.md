@@ -1,4 +1,4 @@
-# Phase 3A / AUTH-030 local evidence
+# Phase 3 / AUTH-030 and AUTH-031 local evidence
 
 - Evidence date: 2026-09-13; end-to-end transcript re-captured 2026-09-14
   after the verification script moved into `apps/api/scripts/` (see below)
@@ -8,7 +8,9 @@
   `eamewgaptdfqzpmayavx`; every command in this part used `--local`, and
   `db push`, `config push`, and `functions deploy` were never run.
 
-**This does not close the Phase 3 gate.** See "Open" below.
+**This does not close the Phase 3 gate.** AUTH-031's local engineering
+acceptance evidence is present, but provider and independent-review gates
+listed under "Open" remain unresolved.
 
 ## Implemented controls
 
@@ -25,6 +27,7 @@ least-privilege API function surface. Earlier migrations are unchanged.
 | `202609130004_auth030_deletion_lifecycle.sql` | `5db847d755cecdaa9ec6f2783a1711dee1c8b0f69324087b76ab39b18d225e70` |
 | `202609130005_auth030_consent_versioning.sql` | `b34a92e049114ba0be2f68c4a9c6fea9279bd1062d84561267bee0ebab730347` |
 | `202609130006_auth030_api_surface.sql` | `23bf21ba55f76d2c2685222bb702cfcce9e944fb18f5821651909d79ff4fb4b9` |
+| `202609140001_auth031_authorization.sql` | `86337e6a0e2946b8ffd10c59d2b4ce08c8001a0bf89c8bbbcf27ab14941334fc` |
 
 Server: a JWKS verifier, authentication middleware, a session-context
 repository, and the `/v1` auth routes in `apps/api/src/auth/`. Client: a
@@ -32,6 +35,14 @@ Keychain/Keystore-backed session and PKCE store, an API-backed session
 repository over the generated `/v1` client, an explicit session state machine,
 native Sign in with Apple, an account-security screen, and a rebuilt in-app
 deletion flow.
+
+AUTH-031 adds `apps/api/src/authorization/`: a stable action/resource
+catalogue, fail-closed resource evaluator, server-derived tenant middleware and
+membership-version cache. All 12 shipped protected handlers declare one
+permission. The API role gains EXECUTE on one private decision function and
+still has zero table, column and sequence grants. No DB-021 policy or grant was
+weakened. The catalogue is documented in
+[`docs/security/auth031-permission-catalogue.md`](../../security/auth031-permission-catalogue.md).
 
 ## What was proven, and how
 
@@ -71,11 +82,28 @@ a real connection. Transcript:
 | `test/auth030_session_lifecycle_test.dart` | 19 | Refresh failure → `reauthRequired` and never a demo fallback; sign-out scopes; account switching leaves no trace of the previous account |
 | `test/auth030_account_deletion_test.dart` | 7 | Server-computed impact rendered; typed confirmation enforced; in-app cancellation reachable |
 
-Whole-suite results on this machine: `bun test apps packages` — 139 passed, 0
-failed. `flutter test` — 104 passed, 0 failed. `flutter analyze` — no issues.
+Whole-suite results on this machine after AUTH-031: `bun test apps packages` —
+154 passed, 0 failed with the pinned local Postgres and Redis services. The
+prior AUTH-030 mobile evidence remains `flutter test` — 104 passed, 0 failed
+and `flutter analyze` — no issues.
 `dart run tools/check_dart_bounds.dart` — 47 feature files, **0** legacy-exempt
 features, 0 violations. `bunx supabase db lint` — no errors. The full database
-suite in CI order (containment, RLS, DB-020, DB-021, AUTH-030) passes.
+suite in CI order (containment, RLS, DB-020, DB-021, AUTH-030, AUTH-031) passes.
+
+### AUTH-031 authorization and parity
+
+| Suite | Result | Covers |
+|---|---:|---|
+| `apps/api/test/authorization/catalogue.test.ts` | 4 pass | Definitions, catalogue-to-SQL drift, actual Hono route declaration coverage, and anonymous enforcement per handler |
+| `apps/api/test/authorization/middleware.test.ts` | 5 pass | Tenant spoofing ignored, concealed cross-tenant denial, membership agreement, uncached resource decisions and fail-closed errors |
+| `apps/api/test/authorization/cache.test.ts` | 3 pass | Same-version reuse, changed-version replacement, revocation eviction, TTL and explicit invalidation |
+| `apps/api/test/authorization/parity.integration.test.ts` | 3 pass | Real `/v1` middleware versus direct RLS for allow, cross-tenant denial and next-request membership revocation |
+| `supabase/tests/auth031_authorization_seed.sql` | 20 pass | API/RLS role, relationship, state and cross-tenant parity; unknown-action denial; unchanged zero-table-grant posture |
+
+The clean verification replayed all 31 migrations from zero and database lint
+reported no errors. pgTAP switches between `studafy_api_runtime` and the
+direct `authenticated` RLS role for the same actor/resource; the Bun integration
+adds the real `/v1` middleware and versioned tenant-cache layer.
 
 ## Defects found and fixed while doing this
 
@@ -114,7 +142,21 @@ performs the deletion after the grace period is later work, and it will hit
 this. `auth_security_events` avoids the problem by carrying no foreign keys.
 Recorded here so the executor's author does not discover it in production.
 
-## Open — the Phase 3 gate is not closed
+## §20 Phase 3 gate assessment
+
+| Gate item | Assessment | Evidence or blocker |
+|---|---|---|
+| Complete session lifecycle | **Not met overall** | Local AUTH-030 flows pass; real provider sandboxes, physical-device Apple and claimed-link verification remain blocked |
+| Recent-auth/MFA for privileged actions | **Partially met** | Current account/device/identity/deletion actions enforce reviewed rules; API-042 membership commands and JIT support are not active |
+| Server-derived tenants | **Met locally** | Resource school comes only from the private DB decision and fresh memberships; spoofed header/body/JWT values are tested |
+| Authorization catalogue coverage | **Met for shipped handlers** | Hono's actual protected route table equals the 12-row declaration inventory |
+| Prompt revocation | **Met locally for the shipped surface** | Session watermark and membership changes deny on the next request; relationship decisions are never cached |
+| API/RLS cross-tenant parity | **Met locally** | 20 pgTAP assertions and 3 real `/v1`/Postgres cases pass; independent review is still required |
+
+**Overall Phase 3 gate: not closed.** Partial items and mandatory independent
+review cannot honestly be promoted to a pass.
+
+## Open — why the Phase 3 gate remains closed
 
 Blocked on work outside engineering:
 
@@ -130,8 +172,10 @@ Blocked on engineering or review still to come:
 - §20 lists "threat-model and auth penetration test findings resolved" as 3A's
   own entry condition. Neither exists. That is SEC-091 and an independent
   reviewer.
-- AUTH-031 (Part 3B) has not started, so the gate's "authorization catalogue
-  coverage" and "API/RLS cross-tenant parity" items are untouched.
+- §20's independent BOLA/BFLA review has not occurred.
+- JIT platform-support access and API-042's bounded membership grant/revoke
+  commands remain fail-closed. Their action names are reserved, not shipped as
+  handlers.
 - Rate limiting on auth endpoints is OPS-060. The anti-enumeration responses
   are uniform, but nothing yet limits how fast they can be requested.
 - Independent DB-021 security review, the Phase 0 human gate, and backup/PITR

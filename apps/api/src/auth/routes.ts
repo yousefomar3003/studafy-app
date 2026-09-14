@@ -5,7 +5,7 @@
  * derived from a verified token plus the database. No handler reads a user,
  * school, or role from the request.
  */
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import {
   V1AuthDeviceRevokeRequest,
   V1AuthSignOutRequest,
@@ -17,7 +17,6 @@ import {
 } from "@studafy/contracts";
 import {
   type AuthDependencies,
-  type AuthEnv,
   createAuthMiddleware,
   recordAuthEvent,
   requireAal2,
@@ -25,6 +24,12 @@ import {
   sha256Hex,
 } from "./middleware";
 import { conflict, invalidRequest } from "./errors";
+import type { AuthorizationEnv } from "../authorization/middleware";
+import {
+  type AuthorizationDependencies,
+  createAuthorizationDependencies,
+  requirePermission,
+} from "../authorization/middleware";
 
 /** Parses a JSON body against a contract, returning null on any mismatch. */
 async function parseBody<T>(
@@ -50,82 +55,107 @@ function opaqueGrant(): string {
     .replace(/=+$/, "");
 }
 
-export function createAuthRoutes(deps: AuthDependencies): Hono<AuthEnv> {
-  const routes = new Hono<AuthEnv>();
+export function createAuthRoutes(
+  deps: AuthDependencies,
+  authorization: AuthorizationDependencies = createAuthorizationDependencies(
+    deps.logger,
+  ),
+): Hono<AuthorizationEnv> {
+  const routes = new Hono<AuthorizationEnv>();
 
-  routes.use("*", createAuthMiddleware(deps));
+  // AuthorizationEnv extends AuthEnv with variables populated later in the
+  // chain; authentication therefore remains the valid first middleware.
+  routes.use(
+    "*",
+    createAuthMiddleware(deps) as unknown as MiddlewareHandler<
+      AuthorizationEnv
+    >,
+  );
 
   // ------------------------------------------------------------------
   // Identity and context
   // ------------------------------------------------------------------
 
-  routes.get("/v1/me", (c) => {
-    const { context } = c.get("actor");
-    return c.json({
-      id: context.userId,
-      display_name: context.displayName,
-      memberships: context.memberships.map((membership) => ({
-        id: membership.id,
-        school_id: membership.school_id,
-        school_name: membership.school_name,
-        role: membership.role,
-        active: membership.active,
-      })),
-      active_term_id: context.memberships[0]?.active_term_id ?? null,
-    });
-  });
+  routes.get(
+    "/v1/me",
+    requirePermission(authorization, "account.profile.read"),
+    (c) => {
+      const { context } = c.get("actor");
+      return c.json({
+        id: context.userId,
+        display_name: context.displayName,
+        memberships: context.memberships.map((membership) => ({
+          id: membership.id,
+          school_id: membership.school_id,
+          school_name: membership.school_name,
+          role: membership.role,
+          active: membership.active,
+        })),
+        active_term_id: context.memberships[0]?.active_term_id ?? null,
+      });
+    },
+  );
 
-  routes.get("/v1/auth/context", (c) => {
-    const actor = c.get("actor");
-    return c.json({
-      user_id: actor.context.userId,
-      display_name: actor.context.displayName,
-      locale: actor.context.locale,
-      memberships: actor.context.memberships.map((membership) => ({
-        id: membership.id,
-        school_id: membership.school_id,
-        school_name: membership.school_name,
-        school_timezone: membership.school_timezone,
-        role: membership.role,
-        active_term_id: membership.active_term_id,
-      })),
-      membership_version: actor.context.membershipVersion,
-      assurance_level: actor.aal2 ? "aal2" : "aal1",
-      mfa_enrolled: actor.context.mfaEnrolled,
-      mfa_required: actor.mfaRequiredByPolicy,
-      pending_deletion: actor.context.deletionState !== null,
-    });
-  });
+  routes.get(
+    "/v1/auth/context",
+    requirePermission(authorization, "account.context.read"),
+    (c) => {
+      const actor = c.get("actor");
+      return c.json({
+        user_id: actor.context.userId,
+        display_name: actor.context.displayName,
+        locale: actor.context.locale,
+        memberships: actor.context.memberships.map((membership) => ({
+          id: membership.id,
+          school_id: membership.school_id,
+          school_name: membership.school_name,
+          school_timezone: membership.school_timezone,
+          role: membership.role,
+          active_term_id: membership.active_term_id,
+        })),
+        membership_version: actor.context.membershipVersion,
+        assurance_level: actor.aal2 ? "aal2" : "aal1",
+        mfa_enrolled: actor.context.mfaEnrolled,
+        mfa_required: actor.mfaRequiredByPolicy,
+        pending_deletion: actor.context.deletionState !== null,
+      });
+    },
+  );
 
   // ------------------------------------------------------------------
   // Devices and sign-out
   // ------------------------------------------------------------------
 
-  routes.get("/v1/auth/devices", async (c) => {
-    const actor = c.get("actor");
-    const devices = await deps.repository.listDevices(actor.token.subject);
-    // "current" is resolved from the device header rather than stored, so a
-    // stale server-side notion of the current device cannot mislabel a row.
-    const currentHash = c.req.header("x-studafy-device");
-    const currentDigest = currentHash ? await sha256Hex(currentHash) : null;
-    return c.json({
-      devices: devices.map((device) => ({
-        id: device.id,
-        platform: device.platform,
-        app_version: device.app_version,
-        display_label: device.display_label,
-        first_seen_at: device.first_seen_at,
-        last_seen_at: device.last_seen_at,
-        revoked_at: device.revoked_at,
-        current: currentDigest !== null && device.id === currentDigest
-          ? true
-          : false,
-      })),
-    });
-  });
+  routes.get(
+    "/v1/auth/devices",
+    requirePermission(authorization, "account.devices.read"),
+    async (c) => {
+      const actor = c.get("actor");
+      const devices = await deps.repository.listDevices(actor.token.subject);
+      // "current" is resolved from the device header rather than stored, so a
+      // stale server-side notion of the current device cannot mislabel a row.
+      const currentHash = c.req.header("x-studafy-device");
+      const currentDigest = currentHash ? await sha256Hex(currentHash) : null;
+      return c.json({
+        devices: devices.map((device) => ({
+          id: device.id,
+          platform: device.platform,
+          app_version: device.app_version,
+          display_label: device.display_label,
+          first_seen_at: device.first_seen_at,
+          last_seen_at: device.last_seen_at,
+          revoked_at: device.revoked_at,
+          current: currentDigest !== null && device.id === currentDigest
+            ? true
+            : false,
+        })),
+      });
+    },
+  );
 
   routes.post(
     "/v1/auth/devices/revoke",
+    requirePermission(authorization, "account.device.revoke"),
     requireRecentAuth(deps, "device_revoke"),
     async (c) => {
       const actor = c.get("actor");
@@ -148,100 +178,112 @@ export function createAuthRoutes(deps: AuthDependencies): Hono<AuthEnv> {
     },
   );
 
-  routes.post("/v1/auth/sign-out", async (c) => {
-    const actor = c.get("actor");
-    const body = await parseBody(c, V1AuthSignOutRequest);
-    if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+  routes.post(
+    "/v1/auth/sign-out",
+    requirePermission(authorization, "account.session.revoke"),
+    async (c) => {
+      const actor = c.get("actor");
+      const body = await parseBody(c, V1AuthSignOutRequest);
+      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
 
-    if (body.scope === "current") {
-      // The current session's refresh token is revoked by the client's own
-      // Supabase sign-out; the server records the event and nothing more.
+      if (body.scope === "current") {
+        // The current session's refresh token is revoked by the client's own
+        // Supabase sign-out; the server records the event and nothing more.
+        await recordAuthEvent(deps, actor.token.subject, {
+          eventType: "session_revoked",
+          outcome: "allowed",
+          reasonCode: "current_device_sign_out",
+          requestId: c.get("requestId"),
+        });
+        return c.json({ scope: "current", revoked_before: null });
+      }
+
+      const watermark = await deps.repository.signOutAll(actor.token.subject);
       await recordAuthEvent(deps, actor.token.subject, {
-        eventType: "session_revoked",
+        eventType: "all_device_sign_out",
         outcome: "allowed",
-        reasonCode: "current_device_sign_out",
+        reasonCode: "user_requested",
         requestId: c.get("requestId"),
       });
-      return c.json({ scope: "current", revoked_before: null });
-    }
-
-    const watermark = await deps.repository.signOutAll(actor.token.subject);
-    await recordAuthEvent(deps, actor.token.subject, {
-      eventType: "all_device_sign_out",
-      outcome: "allowed",
-      reasonCode: "user_requested",
-      requestId: c.get("requestId"),
-    });
-    return c.json({ scope: "all", revoked_before: watermark });
-  });
+      return c.json({ scope: "all", revoked_before: watermark });
+    },
+  );
 
   // ------------------------------------------------------------------
   // Recent authentication
   // ------------------------------------------------------------------
 
-  routes.post("/v1/auth/reauth/challenge", async (c) => {
-    const actor = c.get("actor");
-    const body = await parseBody(c, V1ReauthChallengeRequest);
-    if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+  routes.post(
+    "/v1/auth/reauth/challenge",
+    requirePermission(authorization, "account.reauth.challenge"),
+    async (c) => {
+      const actor = c.get("actor");
+      const body = await parseBody(c, V1ReauthChallengeRequest);
+      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
 
-    await recordAuthEvent(deps, actor.token.subject, {
-      eventType: "reauth_challenged",
-      outcome: "allowed",
-      reasonCode: body.purpose,
-      requestId: c.get("requestId"),
-    });
+      await recordAuthEvent(deps, actor.token.subject, {
+        eventType: "reauth_challenged",
+        outcome: "allowed",
+        reasonCode: body.purpose,
+        requestId: c.get("requestId"),
+      });
 
-    return c.json({
-      purpose: body.purpose,
-      required_assurance: actor.mfaRequiredByPolicy ? "aal2" : "aal1",
-      expires_at: new Date(
-        (deps.now?.() ?? Date.now()) + deps.reauthTtlSeconds * 1000,
-      ).toISOString(),
-    });
-  });
-
-  routes.post("/v1/auth/reauth/verify", async (c) => {
-    const actor = c.get("actor");
-    const body = await parseBody(c, V1ReauthVerifyRequest);
-    if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
-
-    const sessionId = actor.token.sessionId;
-    if (!sessionId) return c.json(invalidRequest(c.get("requestId")), 400);
-
-    // A grant is only minted when the session already satisfies the assurance
-    // its roles demand; otherwise the challenge would be a formality.
-    if (actor.mfaRequiredByPolicy && !actor.aal2) {
-      return c.json(
-        {
-          error: {
-            code: "MFA_REQUIRED",
-            message: "Two-factor authentication is required for this action.",
-            request_id: c.get("requestId"),
-          },
-        },
-        403,
-      );
-    }
-
-    const grant = opaqueGrant();
-    const expiresAt = await deps.repository.issueReauthGrant(
-      actor.token.subject,
-      {
+      return c.json({
         purpose: body.purpose,
-        grantHash: await sha256Hex(grant),
-        sessionId,
-        assuranceLevel: actor.aal2 ? "aal2" : "aal1",
-        ttlSeconds: deps.reauthTtlSeconds,
-      },
-    );
-    if (!expiresAt) return c.json(invalidRequest(c.get("requestId")), 400);
+        required_assurance: actor.mfaRequiredByPolicy ? "aal2" : "aal1",
+        expires_at: new Date(
+          (deps.now?.() ?? Date.now()) + deps.reauthTtlSeconds * 1000,
+        ).toISOString(),
+      });
+    },
+  );
 
-    return c.json({
-      purpose: body.purpose,
-      grant,
-      expires_at: new Date(expiresAt).toISOString(),
-    });
-  });
+  routes.post(
+    "/v1/auth/reauth/verify",
+    requirePermission(authorization, "account.reauth.verify"),
+    async (c) => {
+      const actor = c.get("actor");
+      const body = await parseBody(c, V1ReauthVerifyRequest);
+      if (!body) return c.json(invalidRequest(c.get("requestId")), 400);
+
+      const sessionId = actor.token.sessionId;
+      if (!sessionId) return c.json(invalidRequest(c.get("requestId")), 400);
+
+      // A grant is only minted when the session already satisfies the assurance
+      // its roles demand; otherwise the challenge would be a formality.
+      if (actor.mfaRequiredByPolicy && !actor.aal2) {
+        return c.json(
+          {
+            error: {
+              code: "MFA_REQUIRED",
+              message: "Two-factor authentication is required for this action.",
+              request_id: c.get("requestId"),
+            },
+          },
+          403,
+        );
+      }
+
+      const grant = opaqueGrant();
+      const expiresAt = await deps.repository.issueReauthGrant(
+        actor.token.subject,
+        {
+          purpose: body.purpose,
+          grantHash: await sha256Hex(grant),
+          sessionId,
+          assuranceLevel: actor.aal2 ? "aal2" : "aal1",
+          ttlSeconds: deps.reauthTtlSeconds,
+        },
+      );
+      if (!expiresAt) return c.json(invalidRequest(c.get("requestId")), 400);
+
+      return c.json({
+        purpose: body.purpose,
+        grant,
+        expires_at: new Date(expiresAt).toISOString(),
+      });
+    },
+  );
 
   // ------------------------------------------------------------------
   // Identity linking
@@ -249,6 +291,7 @@ export function createAuthRoutes(deps: AuthDependencies): Hono<AuthEnv> {
 
   routes.post(
     "/v1/auth/identities/link",
+    requirePermission(authorization, "account.identity.link"),
     requireAal2(),
     requireRecentAuth(deps, "account_link"),
     async (c) => {
@@ -303,6 +346,7 @@ export function createAuthRoutes(deps: AuthDependencies): Hono<AuthEnv> {
 
   routes.post(
     "/v1/auth/identities/unlink",
+    requirePermission(authorization, "account.identity.unlink"),
     requireAal2(),
     requireRecentAuth(deps, "account_link"),
     async (c) => {
@@ -330,15 +374,20 @@ export function createAuthRoutes(deps: AuthDependencies): Hono<AuthEnv> {
   // Account deletion
   // ------------------------------------------------------------------
 
-  routes.get("/v1/account/deletion-impact", async (c) => {
-    const actor = c.get("actor");
-    const impact = await deps.repository.deletionImpact(actor.token.subject);
-    if (!impact) return c.json(invalidRequest(c.get("requestId")), 400);
-    return c.json({ ...impact, grace_period_days: deps.deletionGraceDays });
-  });
+  routes.get(
+    "/v1/account/deletion-impact",
+    requirePermission(authorization, "account.deletion.impact"),
+    async (c) => {
+      const actor = c.get("actor");
+      const impact = await deps.repository.deletionImpact(actor.token.subject);
+      if (!impact) return c.json(invalidRequest(c.get("requestId")), 400);
+      return c.json({ ...impact, grace_period_days: deps.deletionGraceDays });
+    },
+  );
 
   routes.post(
     "/v1/account/deletion-request",
+    requirePermission(authorization, "account.deletion.request"),
     requireRecentAuth(deps, "account_deletion"),
     async (c) => {
       const actor = c.get("actor");
@@ -375,19 +424,23 @@ export function createAuthRoutes(deps: AuthDependencies): Hono<AuthEnv> {
   // Cancellation deliberately requires no recent-auth grant. Stopping a
   // destructive action is the safe direction, and adding friction here would
   // strand a user who cannot re-authenticate before the grace period ends.
-  routes.post("/v1/account/deletion-cancel", async (c) => {
-    const actor = c.get("actor");
-    const cancelled = await deps.repository.cancelDeletion(
-      actor.token.subject,
-    );
-    await recordAuthEvent(deps, actor.token.subject, {
-      eventType: "account_deletion_cancelled",
-      outcome: cancelled ? "allowed" : "denied",
-      reasonCode: cancelled ? "user_cancelled" : "no_live_request",
-      requestId: c.get("requestId"),
-    });
-    return c.json({ cancelled });
-  });
+  routes.post(
+    "/v1/account/deletion-cancel",
+    requirePermission(authorization, "account.deletion.cancel"),
+    async (c) => {
+      const actor = c.get("actor");
+      const cancelled = await deps.repository.cancelDeletion(
+        actor.token.subject,
+      );
+      await recordAuthEvent(deps, actor.token.subject, {
+        eventType: "account_deletion_cancelled",
+        outcome: cancelled ? "allowed" : "denied",
+        reasonCode: cancelled ? "user_cancelled" : "no_live_request",
+        requestId: c.get("requestId"),
+      });
+      return c.json({ cancelled });
+    },
+  );
 
   return routes;
 }

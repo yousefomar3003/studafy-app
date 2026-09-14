@@ -163,4 +163,7 @@ insert into public.resource_publications (
   ('abda0000-0000-4000-8000-000000000119', :'school_id', 'abd90000-0000-4000-8000-000000000117', :'classroom_id', 'both', 'published', now(), :'teacher_user')
 on conflict (id) do nothing;
 
+\if :{?auth031_fixture_only}
+\else
 \ir db021_access.sql
+\endif

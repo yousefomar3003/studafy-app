@@ -4,6 +4,8 @@ import { authIssuer, authJwksUrl } from "@studafy/config";
 import { AuthContextRepository } from "./auth/context";
 import { JwksKeySource } from "./auth/jwks";
 import { createAuthRoutes } from "./auth/routes";
+import { PostgresAuthorizationRepository } from "./authorization/repository";
+import { createAuthorizationDependencies } from "./authorization/middleware";
 import {
   checkDatabase,
   closeDatabase,
@@ -41,17 +43,23 @@ const redisCheck: DependentCheck | undefined = redis
 // the auth routes are not mounted at all, so /v1 keeps answering
 // NOT_IMPLEMENTED instead of exposing handlers that cannot authenticate.
 const auth = sql && env.SUPABASE_URL
-  ? createAuthRoutes({
-    keys: new JwksKeySource(authJwksUrl(env.SUPABASE_URL)),
-    repository: new AuthContextRepository(sql),
-    logger,
-    issuer: authIssuer(env.SUPABASE_URL),
-    audience: env.AUTH_JWT_AUDIENCE,
-    clockSkewSeconds: env.AUTH_CLOCK_SKEW_SECONDS,
-    revocationBudgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
-    reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
-    deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
-  })
+  ? createAuthRoutes(
+    {
+      keys: new JwksKeySource(authJwksUrl(env.SUPABASE_URL)),
+      repository: new AuthContextRepository(sql),
+      logger,
+      issuer: authIssuer(env.SUPABASE_URL),
+      audience: env.AUTH_JWT_AUDIENCE,
+      clockSkewSeconds: env.AUTH_CLOCK_SKEW_SECONDS,
+      revocationBudgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
+      reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
+      deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
+    },
+    createAuthorizationDependencies(
+      logger,
+      new PostgresAuthorizationRepository(sql),
+    ),
+  )
   : undefined;
 
 if (!auth) {

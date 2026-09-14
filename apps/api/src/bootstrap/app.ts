@@ -5,7 +5,7 @@ import {
   type ServiceInfo,
 } from "@studafy/contracts";
 import type { Logger } from "@studafy/observability";
-import type { AuthEnv } from "../auth/middleware";
+import type { AuthorizationEnv } from "../authorization/middleware";
 
 export type DependentCheck = () => Promise<void>;
 
@@ -21,7 +21,7 @@ export interface AppDependencies {
    * token source configured, in which case every /v1 path keeps answering
    * NOT_IMPLEMENTED rather than serving an unauthenticated surface.
    */
-  auth?: Hono<AuthEnv>;
+  auth?: Hono<AuthorizationEnv>;
 }
 
 export interface AppEnv {

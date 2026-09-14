@@ -66,7 +66,8 @@ select is(
     'auth_revoke_device',
     'auth_sign_out_all',
     'auth_touch_device',
-    'auth_unlink_identity'
+    'auth_unlink_identity',
+    'authz_authorize'
   ],
   'API runtime role executes exactly the reviewed auth function surface'
 );

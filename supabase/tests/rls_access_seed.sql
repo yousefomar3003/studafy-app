@@ -139,4 +139,7 @@ select set_config('request.jwt.claim.sub', :'student_user', false);
 
 \set QUIET off
 
+\if :{?auth031_fixture_only}
+\else
 \ir rls_access.sql
+\endif
