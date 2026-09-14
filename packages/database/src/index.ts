@@ -20,10 +20,14 @@ export function createDatabase(
   url: string,
   options: DatabaseOptions = {},
 ): Sql {
+  // postgres.js takes both timeouts in seconds. They were previously
+  // multiplied by 1000, which made the idle timeout roughly eight hours and
+  // the connect timeout roughly 83 minutes: pooled connections were never
+  // recycled and an unreachable host hung instead of failing fast.
   return postgres(url, {
     max: options.max ?? 5,
-    idle_timeout: (options.idleTimeout ?? 30) * 1000,
-    connect_timeout: (options.connectTimeout ?? 5) * 1000,
+    idle_timeout: options.idleTimeout ?? 30,
+    connect_timeout: options.connectTimeout ?? 5,
   });
 }
 

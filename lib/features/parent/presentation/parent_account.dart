@@ -179,8 +179,10 @@ class _ParentAccountPageState extends State<ParentAccountPage> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) =>
-                    const DeleteAccountPage(email: 'nadia.hassan@example.com'),
+                builder: (_) => DeleteAccountPage(
+                  email: accountEmail(context),
+                  account: AccountScope.of(context),
+                ),
               ),
             ),
             child: const Text(

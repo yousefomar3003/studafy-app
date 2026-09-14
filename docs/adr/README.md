@@ -21,6 +21,7 @@ that references the old one.
 | [ADR-0013](ADR-0013-db020-tenant-lifecycle-foundation.md) | DB-020 tenant and lifecycle foundation | Accepted for local/disposable use | DL-027 |
 | [ADR-0014](ADR-0014-db021-least-privilege-database-access.md) | DB-021 least-privilege database access | Accepted for local/disposable use | DL-028 |
 | [ADR-0015](ADR-0015-application-identity-and-store-accounts.md) | Application identity and store accounts | Accepted (identity); signing and privacy manifests open | DL-029 |
+| [ADR-0016](ADR-0016-auth030-session-lifecycle.md) | AUTH-030 session lifecycle, token verification and Apple 4.8 posture | Accepted for local/disposable use | DL-032/033/034 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

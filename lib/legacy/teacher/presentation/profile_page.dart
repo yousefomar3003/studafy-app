@@ -372,7 +372,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => DeleteAccountPage(email: '${p['email']}'),
+                    builder: (_) => DeleteAccountPage(
+                      email: accountEmail(context, fallback: '${p['email']}'),
+                      account: AccountScope.of(context),
+                    ),
                   ),
                 ),
                 child: const Text(

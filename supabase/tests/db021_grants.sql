@@ -121,12 +121,19 @@ select ok(
   'service role receives sequence usage without sequence read access'
 );
 
+-- Superseded in part by AUTH-030, which activates studafy_api_runtime with
+-- LOGIN and EXECUTE on the private auth_* function surface only. The DB-021
+-- guarantees that matter — no inherited privilege, no RLS bypass, and no
+-- table grant (asserted separately below) — are unchanged, and the worker
+-- role remains entirely inactive. auth030_grants.sql asserts the exact new
+-- surface.
 select is(
   (select count(*) from pg_roles
    where rolname in ('studafy_api_runtime','studafy_worker_runtime')
-     and not rolcanlogin and not rolinherit and not rolbypassrls),
+     and not rolinherit and not rolbypassrls
+     and rolcanlogin = (rolname = 'studafy_api_runtime')),
   2::bigint,
-  'future runtime roles are inactive and cannot bypass RLS'
+  'runtime roles never inherit or bypass RLS; only the API role is activated'
 );
 
 select is(

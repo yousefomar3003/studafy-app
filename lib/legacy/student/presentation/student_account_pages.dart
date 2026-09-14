@@ -4,6 +4,7 @@ import '../../../core/studafy_localizations.dart';
 import '../../../data/session_service.dart';
 import '../../../studafy_database.dart';
 import '../../../student_linking.dart';
+import '../../../app/account_scope.dart';
 import '../../../features/account/presentation/delete_account_page.dart';
 import 'student_shared.dart';
 
@@ -303,8 +304,10 @@ class _StudentSettingsPageState extends State<StudentSettingsPage> {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute<void>(
-              builder: (_) =>
-                  const DeleteAccountPage(email: 'layla.hassan@alnoor.edu'),
+              builder: (_) => DeleteAccountPage(
+                email: accountEmail(context),
+                account: AccountScope.of(context),
+              ),
             ),
           ),
           child: const Text(

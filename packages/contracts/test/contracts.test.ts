@@ -4,10 +4,17 @@ import {
   ErrorCode,
   notImplementedError,
   ReadinessReport,
+  V1AuthContextResponse,
+  V1AuthDevice,
+  V1AuthErrorCode,
   V1Classroom,
   V1ClassroomListResponse,
+  V1ContextMembership,
+  V1DeletionImpactResponse,
+  V1DeletionRequestRequest,
   V1Membership,
   V1MeResponse,
+  V1ReauthVerifyResponse,
 } from "../src";
 
 describe("readiness contract", () => {
@@ -53,10 +60,27 @@ describe("error contract", () => {
 
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
+      "CONFLICT",
+      "FORBIDDEN",
       "INTERNAL_ERROR",
+      "INVALID_REQUEST",
+      "MFA_REQUIRED",
       "NOT_FOUND",
       "NOT_IMPLEMENTED",
+      "RATE_LIMITED",
+      "REAUTH_REQUIRED",
+      "UNAUTHENTICATED",
     ]);
+  });
+
+  test("no auth error code distinguishes why authentication failed", () => {
+    // Anti-enumeration is a property of the vocabulary, not of one handler:
+    // if a code like USER_NOT_FOUND ever exists, some handler will return it.
+    const leaky = V1AuthErrorCode.options.filter((code) =>
+      /USER|ACCOUNT|EMAIL|PASSWORD|PROVIDER|EXISTS|UNKNOWN|DELETED|SUSPENDED/
+        .test(code)
+    );
+    expect(leaky).toEqual([]);
   });
 
   test("notImplementedError matches the /v1 empty-router contract", () => {
@@ -99,6 +123,50 @@ describe("/v1 typed contracts (ARC-011)", () => {
     expect(spec.paths["/v1/classrooms"]!.get.operationId).toBe(
       "listClassrooms",
     );
+  });
+
+  test("AUTH-030 OpenAPI schemas stay aligned with their zod contracts", async () => {
+    const specUrl = new URL("../openapi/v1.json", import.meta.url);
+    const spec = await Bun.file(specUrl).json() as {
+      paths: Record<string, Record<string, { operationId: string }>>;
+      components: {
+        schemas: Record<string, { properties: Record<string, unknown> }>;
+      };
+    };
+    const schemaKeys = (name: string) =>
+      Object.keys(spec.components.schemas[name]!.properties).sort();
+
+    for (
+      const [schema, name] of [
+        [V1ContextMembership, "V1ContextMembership"],
+        [V1AuthContextResponse, "V1AuthContextResponse"],
+        [V1AuthDevice, "V1AuthDevice"],
+        [V1DeletionImpactResponse, "V1DeletionImpactResponse"],
+        [V1DeletionRequestRequest, "V1DeletionRequestRequest"],
+        [V1ReauthVerifyResponse, "V1ReauthVerifyResponse"],
+      ] as const
+    ) {
+      expect(schema.keyof().options.map(String).sort()).toEqual(
+        schemaKeys(name),
+      );
+    }
+  });
+
+  test("no auth request lets the caller name a user, school, or role", () => {
+    // Tenancy is derived server-side. A request field that could carry it
+    // would be the bug, so the contract is asserted rather than the handler.
+    const requestSchemas = {
+      V1DeletionRequestRequest,
+    };
+    for (const [name, schema] of Object.entries(requestSchemas)) {
+      const fields = schema.keyof().options.map(String);
+      expect({
+        name,
+        leaked: fields.filter((field) =>
+          /^(user_id|school_id|role|actor_id|tenant_id)$/.test(field)
+        ),
+      }).toEqual({ name, leaked: [] });
+    }
   });
 
   test("V1MeResponse accepts a valid authenticated profile", () => {

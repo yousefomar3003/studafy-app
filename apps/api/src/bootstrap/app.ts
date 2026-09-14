@@ -5,6 +5,7 @@ import {
   type ServiceInfo,
 } from "@studafy/contracts";
 import type { Logger } from "@studafy/observability";
+import type { AuthEnv } from "../auth/middleware";
 
 export type DependentCheck = () => Promise<void>;
 
@@ -15,6 +16,12 @@ export interface AppDependencies {
     database?: DependentCheck;
     redis?: DependentCheck;
   };
+  /**
+   * AUTH-030 session lifecycle routes. Absent when the API has no verified
+   * token source configured, in which case every /v1 path keeps answering
+   * NOT_IMPLEMENTED rather than serving an unauthenticated surface.
+   */
+  auth?: Hono<AuthEnv>;
 }
 
 export interface AppEnv {
@@ -81,7 +88,13 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
       environment: deps.info.environment,
     }));
 
-  // The versioned public API surface is intentionally empty until slices
+  // AUTH-030 routes mount ahead of the catch-all so migrated paths are
+  // served and everything else still fails closed below.
+  if (deps.auth) {
+    app.route("/", deps.auth as unknown as Hono<AppEnv>);
+  }
+
+  // The remaining versioned surface is intentionally empty until slices
   // migrate behind reviewed contracts (ARC-011+).
   app.all("/v1/*", (c) =>
     c.json(

@@ -10,6 +10,21 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Studafy</string>
+	<!-- AUTH-030 local development.
+
+	     NSAllowsLocalNetworking permits plaintext HTTP to loopback and the
+	     local network only; it does not relax App Transport Security for any
+	     public host, and unlike NSAllowsArbitraryLoads it needs no App Review
+	     justification. It exists so a simulator or device can reach the local
+	     Supabase stack (127.0.0.1:54321) and the local API (127.0.0.1:8080)
+	     during development. Every real backend is HTTPS, so nothing in a
+	     shipped configuration depends on this.
+	-->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	AUTH-030 entitlements.
+
+	Neither entitlement takes effect until the file is referenced by
+	CODE_SIGN_ENTITLEMENTS in the Xcode project and the app is signed by a
+	team that owns them. Both are blocked on the Apple Developer organisation
+	account (D1); the associated domain additionally needs the domain itself
+	(D5) to serve /.well-known/apple-app-site-association.
+	-->
+
+	<!--
+	Sign in with Apple. Required on iOS because Google and Microsoft sign-in
+	establish the primary account (Apple guideline 4.8); the app implements
+	the native flow rather than a web redirect.
+	-->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+
+	<!--
+	Universal Link for the OAuth callback. Unlike the custom URI scheme, a
+	domain can only be claimed by whoever controls it, so this is the
+	callback a hostile app cannot intercept.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.studafy.io</string>
+	</array>
+</dict>
+</plist>

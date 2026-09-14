@@ -129,16 +129,21 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(color: studafyMuted),
         ),
         const SizedBox(height: 30),
+        // Sign in with Apple is required on iOS wherever third-party login
+        // establishes the primary account (Apple guideline 4.8). It is hidden
+        // where it cannot complete natively rather than offered as a button
+        // that fails.
         for (final x in [
           ('G', 'Google', LoginProvider.google),
           ('M', 'Microsoft', LoginProvider.microsoft),
-          ('●', 'Apple', LoginProvider.apple),
+          ('', 'Apple', LoginProvider.apple),
         ])
-          SocialButton(
-            mark: x.$1,
-            label: 'Continue with ${x.$2}',
-            onTap: signingIn ? () {} : () => login(x.$3),
-          ),
+          if (widget.session.supportsProvider(x.$3))
+            SocialButton(
+              mark: x.$1,
+              label: 'Continue with ${x.$2}',
+              onTap: signingIn ? () {} : () => login(x.$3),
+            ),
         if (signingIn)
           const Padding(
             padding: EdgeInsets.only(bottom: 12),

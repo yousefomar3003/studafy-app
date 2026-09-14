@@ -6,9 +6,70 @@ schemas = ["public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
+# AUTH-030. This file configures the LOCAL stack only. `supabase config push`
+# is never run: the linked remote project's auth settings are changed through
+# its own reviewed process, not from this repository.
 [auth]
 enabled = true
-site_url = "io.studafy.app://login-callback"
+
+# The owned HTTPS callback is the primary redirect target (Universal Link on
+# iOS, App Link on Android). Domain verification is blocked on the domain and
+# the Apple Team ID, so the custom scheme stays in the allowlist as a proven
+# fallback rather than being removed before its replacement works.
+site_url = "https://app.studafy.io/auth/callback"
+additional_redirect_urls = [
+  "https://app.studafy.io/auth/callback",
+  "io.studafy.app://login-callback",
+]
+
+# Short access tokens keep the window in which a stolen token is useful small.
+# Revocation does not depend on this: the API refuses any token issued before
+# the user's sign-out watermark, so "sign out everywhere" takes effect on the
+# next request rather than after expiry.
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+# A refresh token replayed outside this window revokes the whole family, which
+# is what turns token theft into a detected event instead of a silent one.
+refresh_token_reuse_interval = 10
+
+# Accounts are school-provisioned. Signing up creates a profile with no school
+# access; authority comes only from a membership row an administrator grants.
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+secure_password_change = true
+
+# Required for school administrators (enforced server-side by the API's
+# requireAal2 middleware, which checks the token's aal claim rather than
+# whether a factor is merely enrolled).
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# Provider credentials are never committed. These blocks reference environment
+# variable names only; the values live in the local operator's untracked env
+# file and, for deployed environments, in the secret manager. Providers stay
+# disabled until the corresponding console registration exists (D1/D2).
+[auth.external.apple]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+
+[auth.external.azure]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_AZURE_SECRET)"
 
 [storage]
 enabled = true

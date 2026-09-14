@@ -12,36 +12,67 @@ export type Database = {
     Tables: {
       account_deletion_requests: {
         Row: {
+          cancelled_at: string | null;
+          cancelled_by: string | null;
           completed_at: string | null;
+          education_record_classification: string;
           execute_after: string;
           id: string;
+          impact_snapshot: Json | null;
+          legal_hold: boolean;
+          legal_hold_reason: string | null;
+          reason_code: string | null;
           requested_at: string;
+          requested_via: string;
           state: string;
           updated_at: string;
           user_id: string;
           version: number;
         };
         Insert: {
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           completed_at?: string | null;
+          education_record_classification?: string;
           execute_after?: string;
           id?: string;
+          impact_snapshot?: Json | null;
+          legal_hold?: boolean;
+          legal_hold_reason?: string | null;
+          reason_code?: string | null;
           requested_at?: string;
+          requested_via?: string;
           state?: string;
           updated_at?: string;
           user_id: string;
           version?: number;
         };
         Update: {
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
           completed_at?: string | null;
+          education_record_classification?: string;
           execute_after?: string;
           id?: string;
+          impact_snapshot?: Json | null;
+          legal_hold?: boolean;
+          legal_hold_reason?: string | null;
+          reason_code?: string | null;
           requested_at?: string;
+          requested_via?: string;
           state?: string;
           updated_at?: string;
           user_id?: string;
           version?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "account_deletion_requests_cancelled_by_fkey";
+            columns: ["cancelled_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "account_deletion_requests_user_id_fkey";
             columns: ["user_id"];
@@ -531,6 +562,273 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      auth_devices: {
+        Row: {
+          app_version: string | null;
+          created_at: string;
+          device_hash: string;
+          display_label: string | null;
+          first_seen_at: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          revocation_reason: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          app_version?: string | null;
+          created_at?: string;
+          device_hash: string;
+          display_label?: string | null;
+          first_seen_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          revocation_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          app_version?: string | null;
+          created_at?: string;
+          device_hash?: string;
+          display_label?: string | null;
+          first_seen_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          revocation_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "auth_devices_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "auth_devices_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      auth_identity_links: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_primary: boolean;
+          linked_at: string;
+          linked_by: string | null;
+          provider: string;
+          provider_subject_hash: string;
+          unlinked_at: string | null;
+          unlinked_by: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_primary?: boolean;
+          linked_at?: string;
+          linked_by?: string | null;
+          provider: string;
+          provider_subject_hash: string;
+          unlinked_at?: string | null;
+          unlinked_by?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_primary?: boolean;
+          linked_at?: string;
+          linked_by?: string | null;
+          provider?: string;
+          provider_subject_hash?: string;
+          unlinked_at?: string | null;
+          unlinked_by?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "auth_identity_links_linked_by_fkey";
+            columns: ["linked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "auth_identity_links_unlinked_by_fkey";
+            columns: ["unlinked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "auth_identity_links_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      auth_reauth_grants: {
+        Row: {
+          aal: string;
+          consumed_at: string | null;
+          consumed_request_id: string | null;
+          expires_at: string;
+          grant_hash: string;
+          id: string;
+          issued_at: string;
+          purpose: string;
+          session_id: string;
+          user_id: string;
+        };
+        Insert: {
+          aal: string;
+          consumed_at?: string | null;
+          consumed_request_id?: string | null;
+          expires_at: string;
+          grant_hash: string;
+          id?: string;
+          issued_at?: string;
+          purpose: string;
+          session_id: string;
+          user_id: string;
+        };
+        Update: {
+          aal?: string;
+          consumed_at?: string | null;
+          consumed_request_id?: string | null;
+          expires_at?: string;
+          grant_hash?: string;
+          id?: string;
+          issued_at?: string;
+          purpose?: string;
+          session_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "auth_reauth_grants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      auth_security_events: {
+        Row: {
+          aal: string | null;
+          account_hash: string | null;
+          actor_id: string | null;
+          created_at: string;
+          device_hash: string | null;
+          event_type: string;
+          id: number;
+          ip_hash: string | null;
+          method: string | null;
+          outcome: string;
+          reason_code: string;
+          request_id: string | null;
+          school_id: string | null;
+          user_agent_family: string | null;
+        };
+        Insert: {
+          aal?: string | null;
+          account_hash?: string | null;
+          actor_id?: string | null;
+          created_at?: string;
+          device_hash?: string | null;
+          event_type: string;
+          id?: never;
+          ip_hash?: string | null;
+          method?: string | null;
+          outcome: string;
+          reason_code: string;
+          request_id?: string | null;
+          school_id?: string | null;
+          user_agent_family?: string | null;
+        };
+        Update: {
+          aal?: string | null;
+          account_hash?: string | null;
+          actor_id?: string | null;
+          created_at?: string;
+          device_hash?: string | null;
+          event_type?: string;
+          id?: never;
+          ip_hash?: string | null;
+          method?: string | null;
+          outcome?: string;
+          reason_code?: string;
+          request_id?: string | null;
+          school_id?: string | null;
+          user_agent_family?: string | null;
+        };
+        Relationships: [];
+      };
+      auth_session_revocations: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          reason: string;
+          revoked_before: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          reason: string;
+          revoked_before: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          reason?: string;
+          revoked_before?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "auth_session_revocations_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "auth_session_revocations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/app_bootstrap.dart';
+import 'app/account_scope.dart';
 import 'app/app_dependencies.dart';
 import 'app/teacher_shell.dart';
 import 'core/studafy_localizations.dart';
@@ -62,8 +63,13 @@ class StudafyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext c) {
-    final deps = dependencies ?? AppDependencies.forPolicy(runtimePolicy);
-    final routes = runtimePolicy.blocksApplicationStartup
+    // A blocked build renders only the readiness page, so it constructs no
+    // adapters at all. Building the composition root anyway would make the
+    // containment page depend on backend configuration it must never need.
+    final deps = runtimePolicy.blocksApplicationStartup
+        ? null
+        : (dependencies ?? AppDependencies.forPolicy(runtimePolicy));
+    final routes = deps == null
         ? <String, WidgetBuilder>{}
         : <String, WidgetBuilder>{
             '/roles': (_) => RolePage(session: deps.session),
@@ -187,16 +193,20 @@ class StudafyApp extends StatelessWidget {
               ],
             );
           }
-          return ParentRepositoryScope(
-            repository: deps.parent,
-            subscription: deps.parentSubscription,
-            signOut: deps.session.signOut,
-            isRemote: runtimePolicy.requiresRemoteBackend,
-            child: TeacherDashboardRepositoryScope(
-              repository: deps.teacherDashboard,
-              child: StudyCoachScope(
-                interactor: deps.studyCoach,
-                child: content,
+          if (deps == null) return content;
+          return AccountScope(
+            account: deps.account,
+            child: ParentRepositoryScope(
+              repository: deps.parent,
+              subscription: deps.parentSubscription,
+              signOut: deps.session.signOut,
+              isRemote: runtimePolicy.requiresRemoteBackend,
+              child: TeacherDashboardRepositoryScope(
+                repository: deps.teacherDashboard,
+                child: StudyCoachScope(
+                  interactor: deps.studyCoach,
+                  child: content,
+                ),
               ),
             ),
           );
