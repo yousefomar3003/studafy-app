@@ -365,6 +365,26 @@ Context: supabase/functions/verify-store-purchase/index.ts does NOT verify with
 Apple or Google. It forwards the receipt to a generic PURCHASE_VERIFIER_URL and
 trusts the reply. Delete it and build properly in apps/api.
 
+The catalogue is four products, all in-app purchase. Stripe is NOT used for
+any of them: they unlock in-app features, so Apple 3.1.1 and Play billing
+policy require IAP, and §23.5 already records selling them outside IAP as a
+rejection cause. The app must contain no card, Apple Pay or Google Pay form.
+
+| Product | Price | Trial | Beneficiary |
+|---|---|---|---|
+| Parent Insights | 1.99/mo | 30 days | the guardian's linked child |
+| Student Notebook | 1.99/mo | 30 days | one student |
+| Student AI | 6.99/mo | none | one student |
+| Teacher AI grading | 8.99/mo | none | the purchasing teacher |
+
+Purchaser and beneficiary are separate. A guardian may buy for a linked child,
+and a student may buy for themselves; the entitlement attaches to the
+beneficiary. Students are minors, so student-initiated purchase requires a
+parental gate and a per-school switch that defaults to OFF.
+
+Neither AI product may be listed in a store console until AI-072 resolves to
+enable with a signed DPA. Do not create those SKUs before then.
+
 Scope:
 - Apple: App Store Server API, verify the signed JWSTransaction chain against
   Apple root CAs. Handle App Store Server Notifications V2 (SUBSCRIBED,
@@ -387,8 +407,17 @@ does not replay them forever.
 Do not enable the paid Parent Insights product until legal sign-off exists
 (see §29). Build the machinery; leave the product gated.
 
-Tests required: full sandbox lifecycle, duplicates, out-of-order notifications,
-account switch/link/delete, store outage, revoked access.
+Read docs/release/subscription-disclosure-requirements.md and implement the
+paywall disclosure set from it. Render prices and trial eligibility from the
+store product query — never hardcode "1.99", because tiers differ per
+storefront and a wrong price is an Apple 3.1.2 rejection.
+
+Tests required: full sandbox lifecycle per product, duplicates, out-of-order
+notifications, account switch/link/delete, store outage, revoked access,
+guardian purchase for a linked child, guardian link revoked while active,
+student purchase refused when the school switch is off, parental gate not
+bypassable, duplicate active entitlement for one beneficiary, and restore
+refused on an unrelated account.
 ```
 
 ## A10b — AI-072: Resolve the AI capability

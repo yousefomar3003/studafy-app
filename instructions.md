@@ -1270,21 +1270,21 @@ deliverables, acceptance criteria, complexity and entry conditions.
 
 | Field | Plan |
 |---|---|
-| Objective | Replace generic verification/single entitlement row with compliant server-authoritative billing. |
+| Objective | Replace generic verification/single entitlement row with compliant server-authoritative billing across the four-product catalogue, with purchaser and beneficiary modelled separately (ADR-0009). |
 | Why necessary | Renewals/refunds/revocations/pending states and webhooks are absent. |
 | Existing files affected | Flutter subscription service/paywall and verification Edge Function. |
 | New modules/files expected | Billing Hono module, Apple/Google adapters/webhooks, billing worker, ledger/entitlement services, reconciliation/admin runbook. |
-| Dependencies | Product-beneficiary decision, store console access, Phase 6 queue, current official policy review. |
-| Detailed tasks | Product mapping; client state UX; JWS/OIDC/store API verification; durable dedupe; transaction/event ledger; derive entitlement; acknowledge/complete; restore; lifecycle/reconciliation; management/delete flows. |
+| Dependencies | ADR-0009 (decided 2026-09-14), store console access, Phase 6 queue, current official policy review, **API-042 verified guardian links** for guardian-purchased entitlements, and **AI-072 resolved to enable** before either AI SKU may be listed. |
+| Detailed tasks | Catalogue the four products; render prices and trial eligibility **from the store query, never hardcoded**; guardian-purchases-for-linked-child and student-self-purchase paths; parental gate before any student-initiated purchase; per-school switch disabling student purchasing, default off; client state UX; JWS/OIDC/store API verification; durable dedupe; transaction/event ledger recording purchaser and beneficiary separately; derive entitlement; acknowledge/complete; restore across reinstall, device and account switch; lifecycle/reconciliation; management/delete flows; the disclosure surface in docs/release/subscription-disclosure-requirements.md. |
 | Database changes | Store product/transaction/event/entitlement tables and migration from existing grants. |
 | API changes | Catalog, submit verification, restore/status, entitlement; Apple/Google webhook endpoints. |
-| Security requirements | Store truth only, environment/bundle/package checks, replay/fraud controls, no raw receipt logs. |
-| Tests required | Full sandbox lifecycle, duplicates/out-of-order, account switch/link/delete, outage/reconcile, revoked access. |
+| Security requirements | Store truth only, environment/bundle/package checks, replay/fraud controls, no raw receipt logs. **No card, Apple Pay or Google Pay form exists in the app** — the stores own the payment surface and no payment instrument data reaches Studafy. A guardian may only purchase for a child whose link is verified and unexpired; a restore on an unrelated account must refuse rather than transfer an entitlement. |
+| Tests required | Full sandbox lifecycle per product, duplicates/out-of-order, account switch/link/delete, outage/reconcile, revoked access, trial eligibility reported by the store rather than assumed, guardian purchase for a linked child, guardian link revoked while an entitlement is active, student purchase refused when the school switch is off, parental gate not bypassable, duplicate active entitlement for one beneficiary detected, and restore refused on an unrelated account. |
 | Observability | Webhook/verification lag/errors, transaction/entitlement mismatch, pending age, revenue-impact alerts. |
 | Risks | Incorrect access/revenue, store rejection, account ownership ambiguity. |
 | Rollback | Pause new sales behind flag; preserve ledger; derive from last verified state within approved grace; reconcile before re-enable. |
 | Deliverables | Audited billing architecture, sandbox evidence, policy checklist. |
-| Acceptance criteria | Entitlements match authoritative store lifecycle across every tested state and device restore. |
+| Acceptance criteria | Entitlements match authoritative store lifecycle across every tested state and device restore, for every product and both purchase paths; no in-app payment form exists; every paywall shows the §3.1.2 disclosure set. |
 | Complexity | XL |
 | Parallel | Apple/Google adapters parallel after common ledger/derivation contracts. |
 | Conditions before proceeding | Store sandbox certification, finance/product/legal/security sign-off. |
@@ -1854,7 +1854,7 @@ for *this* app, not a generic checklist.
 |---|---|
 | **Kids Category rules** | If you list under Kids (under-13), you may not include third-party analytics or advertising, and links out require a parental gate |
 | Behavioural profiling of minors | "Parent Insights" is paid analysis of a child's education data — Apple scrutinises this heavily |
-| Parental gate | Purchases and external links in a child-facing context need a gate |
+| Parental gate | Purchases and external links in a child-facing context need a gate. **Students may purchase Notebook and Student AI for themselves (ADR-0009), so the gate is mandatory, plus a per-school switch defaulting to off and verifiable parental consent where COPPA/GDPR-K applies** |
 | COPPA / GDPR-K | Verifiable parental consent required where applicable |
 
 **Recommendation:** do **not** list in the Kids Category. Position Studafy as a
@@ -1888,7 +1888,10 @@ the exception while allowing public Google/Microsoft self-registration. See
 
 | Risk | Fix |
 |---|---|
-| Digital content sold outside IAP | All Insights+ purchases must use `in_app_purchase` |
+| Digital content sold outside IAP | **All four products use `in_app_purchase`. Stripe is explicitly excluded for in-app unlocks (ADR-0009); the app contains no card, Apple Pay or Google Pay form.** Stripe remains available only for a future off-app school licence, which must not be linked to from inside the app |
+| Trial shown without the price that follows | Both 30-day trials are store introductory offers; the paywall must show trial length, the price after it, and the 24-hour cancellation window (3.1.2) |
+| Price hardcoded in the app | Render price strings from the store product query; tiers differ per storefront |
+| Subscription sold for a disabled feature | The two AI SKUs must not be listed until AI-072 resolves to enable with a signed DPA |
 | Restore lifecycle is unverified | A visible `Restore purchase` button and adapter call exist, but restored transactions still pass through the unsafe generic verifier and terminal/pending states are incomplete; PAY-071 must prove sandbox restore end to end |
 | Subscription terms not disclosed | Before purchase, show: title, length, price per period, auto-renewal; link Terms + Privacy |
 | Server verification absent | §21.8 |
