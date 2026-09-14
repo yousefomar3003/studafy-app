@@ -431,7 +431,8 @@
         "npm:@types/bun@1.4.2",
         "npm:postgres@3.4.9",
         "npm:supabase@2.117.0",
-        "npm:typescript@7.0.2"
+        "npm:typescript@7.0.2",
+        "npm:zod@4.6.1"
       ]
     },
     "members": {
