@@ -438,7 +438,8 @@
       "apps/api": {
         "packageJson": {
           "dependencies": [
-            "npm:hono@4.13.7"
+            "npm:hono@4.13.7",
+            "npm:zod@4.6.1"
           ]
         }
       },

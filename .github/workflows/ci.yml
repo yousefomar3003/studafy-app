@@ -44,6 +44,11 @@ jobs:
         with:
           bun-version: 1.3.14
 
+      # generate:check now builds the OpenAPI document from the zod contracts,
+      # so this job needs the workspace dependencies, not just Bun itself.
+      - name: Install pinned tool dependencies
+        run: bun install --frozen-lockfile
+
       - name: Install Flutter dependencies
         run: flutter pub get
 
