@@ -1,6 +1,7 @@
 # Phase 3A / AUTH-030 local evidence
 
-- Evidence date: 2026-09-13
+- Evidence date: 2026-09-13; end-to-end transcript re-captured 2026-09-14
+  after the verification script moved into `apps/api/scripts/` (see below)
 - Target: disposable local Supabase only (`127.0.0.1:54321`, `127.0.0.1:54322`)
 - Data: deterministic synthetic fixtures and locally created test users only
 - Remote projects modified: none. The repository is linked to
@@ -40,7 +41,7 @@ deletion flow.
 GoTrue, using real ES256 tokens verified against the published JWKS, with every
 database call going through the least-privilege `studafy_api_runtime` role over
 a real connection. Transcript:
-[`auth030-lifecycle-2026-09-13.txt`](auth030-lifecycle-2026-09-13.txt).
+[`auth030-lifecycle-2026-09-14.txt`](auth030-lifecycle-2026-09-14.txt).
 
 26/26 checks passed. The ones that matter most:
 
@@ -90,6 +91,18 @@ suite in CI order (containment, RLS, DB-020, DB-021, AUTH-030) passes.
 - **Production containment built adapters it never used.** `StudafyApp`
   constructed the composition root even when startup was blocked, so the
   readiness page depended on backend configuration it must never need.
+
+## Fixed after the first CI run
+
+**The verification script could not resolve its imports on a clean install.**
+It lived at `scripts/verify-auth030-lifecycle.ts` and imported workspace
+packages, but Bun links `@studafy/*` into each workspace's own `node_modules`,
+not the repository root, because the root manifest depends on none of them. A
+developer machine with an older install has stale root links and passes; CI,
+installing from scratch, fails with `Cannot find module '@studafy/database'`.
+Every other root script imports only `postgres`, which is a real root
+dependency. The script moved to `apps/api/scripts/`, where its dependencies
+actually live. Reproduced in a clean clone before and after the fix.
 
 ## Discovered, not fixed here
 

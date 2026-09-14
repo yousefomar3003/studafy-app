@@ -8,19 +8,22 @@
  *
  * Usage:
  *   bunx supabase start
- *   bun scripts/verify-auth030-lifecycle.ts
+ *   bun run test:auth030:lifecycle
+ *
+ * It lives inside apps/api rather than the repository root because it imports
+ * workspace packages. Bun links those per workspace, not into the root
+ * node_modules, so a root-level script cannot resolve them on a clean install.
  *
  * Local only. It refuses to run against anything but a loopback Supabase URL,
  * because it creates users and deletes data.
  */
-import postgres from "postgres";
 import { createDatabase } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import { authIssuer, authJwksUrl } from "@studafy/config";
-import { createApp } from "../apps/api/src/bootstrap/app";
-import { AuthContextRepository } from "../apps/api/src/auth/context";
-import { JwksKeySource } from "../apps/api/src/auth/jwks";
-import { createAuthRoutes } from "../apps/api/src/auth/routes";
+import { createApp } from "../src/bootstrap/app";
+import { AuthContextRepository } from "../src/auth/context";
+import { JwksKeySource } from "../src/auth/jwks";
+import { createAuthRoutes } from "../src/auth/routes";
 
 const SUPABASE_URL = process.env["SUPABASE_URL"] ??
   "http://127.0.0.1:54321";
@@ -168,10 +171,10 @@ async function main(): Promise<void> {
   const runtimeUrl = new URL(ADMIN_URL);
   runtimeUrl.username = "studafy_api_runtime";
   runtimeUrl.password = runtimePassword;
-  const runtimeSql = postgres(runtimeUrl.toString(), {
+  const runtimeSql = createDatabase(runtimeUrl.toString(), {
     max: 3,
-    idle_timeout: 5,
-    connect_timeout: 5,
+    idleTimeout: 5,
+    connectTimeout: 5,
   });
 
   const app = createApp({

@@ -1,5 +1,5 @@
-$ bun scripts/verify-auth030-lifecycle.ts
-AUTH-030 lifecycle verification — 2026-09-13T17:09:29.801Z
+$ bun apps/api/scripts/verify-auth030-lifecycle.ts
+AUTH-030 lifecycle verification — 2026-09-14T14:09:00.696Z
 Supabase: http://127.0.0.1:54321
 
 PASS  anonymous request is refused
