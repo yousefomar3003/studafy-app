@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 type Schema = {
   $ref?: string;
   type?: string | string[];
+  anyOf?: Schema[];
   items?: Schema;
   properties?: Record<string, Schema>;
   required?: string[];
@@ -13,6 +14,7 @@ type Schema = {
 
 type Operation = {
   operationId: string;
+  "x-studafy-idempotency-mode"?: "none" | "required" | "forbidden";
   requestBody?: {
     required?: boolean;
     content: { "application/json": { schema: Schema } };
@@ -48,22 +50,28 @@ function dartName(value: string): string {
 }
 
 function referencedName(schema: Schema): string | null {
-  return schema.$ref?.split("/").at(-1) ?? null;
+  return effectiveSchema(schema).$ref?.split("/").at(-1) ?? null;
 }
 
 function isNullable(schema: Schema): boolean {
-  return Array.isArray(schema.type) && schema.type.includes("null");
+  return (Array.isArray(schema.type) && schema.type.includes("null")) ||
+    (schema.anyOf?.some((entry) => entry.type === "null") ?? false);
+}
+
+function effectiveSchema(schema: Schema): Schema {
+  return schema.anyOf?.find((entry) => entry.type !== "null") ?? schema;
 }
 
 function dartType(schema: Schema): string {
   const reference = referencedName(schema);
+  const effective = effectiveSchema(schema);
   let base: string;
   if (reference) {
     base = `${reference}Dto`;
   } else {
-    const type = Array.isArray(schema.type)
-      ? schema.type.find((entry) => entry !== "null")
-      : schema.type;
+    const type = Array.isArray(effective.type)
+      ? effective.type.find((entry) => entry !== "null")
+      : effective.type;
     switch (type) {
       case "string":
         base = "String";
@@ -78,8 +86,8 @@ function dartType(schema: Schema): string {
         base = "bool";
         break;
       case "array":
-        if (!schema.items) throw new Error("Array schema is missing items");
-        base = `List<${dartType(schema.items).replace(/\?$/, "")}>`;
+        if (!effective.items) throw new Error("Array schema is missing items");
+        base = `List<${dartType(effective.items).replace(/\?$/, "")}>`;
         break;
       default:
         throw new Error(`Unsupported OpenAPI schema type: ${String(type)}`);
@@ -88,27 +96,43 @@ function dartType(schema: Schema): string {
   return isNullable(schema) ? `${base}?` : base;
 }
 
-function parseExpression(schema: Schema, wireName: string): string {
+function propertyType(schema: Schema, required: boolean): string {
+  const type = dartType(schema);
+  return required || type.endsWith("?") ? type : `${type}?`;
+}
+
+function parseExpression(
+  schema: Schema,
+  wireName: string,
+  required: boolean,
+): string {
   const reference = referencedName(schema);
   if (reference) {
-    return `${reference}Dto.fromJson(json['${wireName}'] as Map<String, dynamic>)`;
+    const parsed =
+      `${reference}Dto.fromJson(json['${wireName}'] as Map<String, dynamic>)`;
+    return required ? parsed : `json['${wireName}'] == null ? null : ${parsed}`;
   }
-  const type = Array.isArray(schema.type)
-    ? schema.type.find((entry) => entry !== "null")
-    : schema.type;
+  const effective = effectiveSchema(schema);
+  const type = Array.isArray(effective.type)
+    ? effective.type.find((entry) => entry !== "null")
+    : effective.type;
   if (type === "array") {
-    if (!schema.items) throw new Error("Array schema is missing items");
-    const itemReference = referencedName(schema.items);
+    if (!effective.items) throw new Error("Array schema is missing items");
+    const itemReference = referencedName(effective.items);
     if (itemReference) {
-      return "[for (final item in json['" + wireName +
+      const parsed = "[for (final item in json['" + wireName +
         "'] as List<dynamic>) " + itemReference +
         "Dto.fromJson(item as Map<String, dynamic>)]";
+      return required
+        ? parsed
+        : `json['${wireName}'] == null ? null : ${parsed}`;
     }
-    return `(json['${wireName}'] as List<dynamic>).cast<${
-      dartType(schema.items).replace(/\?$/, "")
+    const parsed = `(json['${wireName}'] as List<dynamic>).cast<${
+      dartType(effective.items).replace(/\?$/, "")
     }>()`;
+    return required ? parsed : `json['${wireName}'] == null ? null : ${parsed}`;
   }
-  return `json['${wireName}'] as ${dartType(schema)}`;
+  return `json['${wireName}'] as ${propertyType(schema, required)}`;
 }
 
 function serializeExpression(schema: Schema, propertyName: string): string {
@@ -124,20 +148,42 @@ function serializeExpression(schema: Schema, propertyName: string): string {
 
 function renderModel(name: string, schema: Schema): string {
   const properties = Object.entries(schema.properties ?? {});
+  if (properties.length === 0) {
+    return `class ${name}Dto {
+  const ${name}Dto();
+
+  factory ${name}Dto.fromJson(Map<String, dynamic> json) => const ${name}Dto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}`;
+  }
   const required = new Set(schema.required ?? []);
   const constructor = properties.map(([wireName]) => {
     const keyword = required.has(wireName) ? "required " : "";
     return `    ${keyword}this.${dartName(wireName)},`;
   }).join("\n");
   const fields = properties.map(([wireName, property]) =>
-    `  final ${dartType(property)} ${dartName(wireName)};`
+    `  final ${propertyType(property, required.has(wireName))} ${
+      dartName(wireName)
+    };`
   ).join("\n");
   const parser = properties.map(([wireName, property]) =>
-    `      ${dartName(wireName)}: ${parseExpression(property, wireName)},`
+    `      ${dartName(wireName)}: ${
+      parseExpression(property, wireName, required.has(wireName))
+    },`
   ).join("\n");
-  const serializer = properties.map(([wireName, property]) =>
-    `    '${wireName}': ${serializeExpression(property, dartName(wireName))},`
-  ).join("\n");
+  const serializer = properties.map(([wireName, property]) => {
+    const propertyName = dartName(wireName);
+    const isRequired = required.has(wireName);
+    return `    ${
+      isRequired ? "" : `if (${propertyName} != null) `
+    }'${wireName}': ${
+      serializeExpression(
+        property,
+        isRequired ? propertyName : `${propertyName}!`,
+      )
+    },`;
+  }).join("\n");
 
   return `class ${name}Dto {
   const ${name}Dto({
@@ -178,6 +224,11 @@ function renderOperation(
   const requestSchema = operation.requestBody?.content["application/json"]
     .schema;
   const requestName = requestSchema && referencedName(requestSchema);
+  const idempotent = operation["x-studafy-idempotency-mode"] === "required";
+  const optionalKey = idempotent ? "{String? idempotencyKey}" : "";
+  const postOptions = idempotent
+    ? "idempotencyKey: idempotencyKey, requiresIdempotency: true"
+    : "";
   if (requestSchema && !requestName) {
     throw new Error(
       `${operation.operationId} request body must reference a schema`,
@@ -186,16 +237,16 @@ function renderOperation(
   // A command with no body still posts an empty object, so the transport has
   // one shape to serialize and servers see a consistent content type.
   if (!requestName) {
-    return `  Future<${responseName}Dto> ${operation.operationId}() async =>
+    return `  Future<${responseName}Dto> ${operation.operationId}(${optionalKey}) async =>
       ${responseName}Dto.fromJson(
-        await _transport.post('${path}', const <String, Object?>{}),
+        await _transport.post('${path}', const <String, Object?>{}, ${postOptions}),
       );`;
   }
   return `  Future<${responseName}Dto> ${operation.operationId}(
-    ${requestName}Dto request,
+    ${requestName}Dto request, ${optionalKey}
   ) async =>
       ${responseName}Dto.fromJson(
-        await _transport.post('${path}', request.toJson()),
+        await _transport.post('${path}', request.toJson(), ${postOptions}),
       );`;
 }
 
@@ -218,7 +269,12 @@ const unformatted = `// GENERATED CODE — DO NOT EDIT.
 abstract interface class V1JsonTransport {
   Future<Map<String, dynamic>> get(String path);
 
-  Future<Map<String, dynamic>> post(String path, Map<String, Object?> body);
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, Object?> body, {
+    String? idempotencyKey,
+    bool requiresIdempotency = false,
+  });
 }
 
 class V1ApiClient {

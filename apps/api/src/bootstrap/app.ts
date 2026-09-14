@@ -6,6 +6,19 @@ import {
 } from "@studafy/contracts";
 import type { Logger } from "@studafy/observability";
 import type { AuthorizationEnv } from "../authorization/middleware";
+import {
+  protocolControls,
+  requestContext,
+  requestTelemetry,
+  secureResponseHeaders,
+  totalTimeout,
+} from "../platform/middleware";
+import { problem, RequestTimeoutError } from "../platform/errors";
+import {
+  DEFAULT_PLATFORM_LIMITS,
+  type PlatformEnv,
+  type PlatformLimits,
+} from "../platform/types";
 
 export type DependentCheck = () => Promise<void>;
 
@@ -22,19 +35,14 @@ export interface AppDependencies {
    * NOT_IMPLEMENTED rather than serving an unauthenticated surface.
    */
   auth?: Hono<AuthorizationEnv>;
+  platform?: {
+    allowedOrigins?: readonly string[];
+    limits?: Partial<PlatformLimits>;
+    now?: () => number;
+  };
 }
 
-export interface AppEnv {
-  Variables: { requestId: string };
-}
-
-function errorBody(
-  code: string,
-  message: string,
-  requestId: string,
-): { error: { code: string; message: string; request_id: string } } {
-  return { error: { code, message, request_id: requestId } };
-}
+export interface AppEnv extends PlatformEnv {}
 
 /** Maps an optional dependency to a readiness reason code. */
 async function evaluate(
@@ -52,15 +60,25 @@ async function evaluate(
 
 export function createApp(deps: AppDependencies): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
+  const limits = { ...DEFAULT_PLATFORM_LIMITS, ...deps.platform?.limits };
+  const now = deps.platform?.now ?? Date.now;
 
-  // Every request gets a server-generated request id; inbound ids are not
-  // trusted, so clients cannot spoof correlation identifiers.
-  app.use("*", async (c, next) => {
-    const requestId = globalThis.crypto.randomUUID();
-    c.set("requestId", requestId);
-    await next();
-    c.header("X-Request-ID", requestId);
-  });
+  // Extend the existing request-id skeleton with the API-040 platform stack.
+  // Ordering follows instructions.md section 7: correlation and protocol
+  // controls run before authentication, validation, authorization and use cases.
+  app.use("*", requestContext(now));
+  app.use("*", secureResponseHeaders(deps.info.environment));
+  app.use("*", requestTelemetry(deps.logger, now));
+  app.use(
+    "*",
+    protocolControls({
+      logger: deps.logger,
+      environment: deps.info.environment,
+      allowedOrigins: deps.platform?.allowedOrigins,
+      limits,
+    }),
+  );
+  app.use("*", totalTimeout(limits.requestTimeoutMs));
 
   // Liveness: no dependency checks. The process is alive and serving.
   app.get("/healthz", (c) => c.json({ status: "ok" }));
@@ -96,42 +114,22 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
 
   // The remaining versioned surface is intentionally empty until slices
   // migrate behind reviewed contracts (ARC-011+).
-  app.all("/v1/*", (c) =>
-    c.json(
-      errorBody(
-        ErrorCode.NOT_IMPLEMENTED,
-        "No /v1 resources are implemented yet.",
-        c.get("requestId"),
-      ),
-      404,
-    ));
+  app.all("/v1/*", (c) => problem(c, ErrorCode.NOT_IMPLEMENTED, 404));
 
-  app.notFound((c) =>
-    c.json(
-      errorBody(
-        ErrorCode.NOT_FOUND,
-        "No such resource.",
-        c.get("requestId"),
-      ),
-      404,
-    )
-  );
+  app.notFound((c) => problem(c, ErrorCode.NOT_FOUND, 404));
 
   app.onError((error, c) => {
     deps.logger.error("http_error", {
       request_id: c.get("requestId"),
       method: c.req.method,
-      path: c.req.path,
-      error_message: error instanceof Error ? error.message : String(error),
+      route: c.req.routePath || "unmatched",
+      error_kind: error instanceof RequestTimeoutError
+        ? "timeout"
+        : "unexpected",
     });
-    return c.json(
-      errorBody(
-        ErrorCode.INTERNAL_ERROR,
-        "An unexpected error occurred.",
-        c.get("requestId"),
-      ),
-      500,
-    );
+    return error instanceof RequestTimeoutError
+      ? problem(c, ErrorCode.REQUEST_TIMEOUT, 504)
+      : problem(c, ErrorCode.INTERNAL_ERROR, 500);
   });
 
   return app;

@@ -24,6 +24,7 @@ import { createApp } from "../src/bootstrap/app";
 import { AuthContextRepository } from "../src/auth/context";
 import { JwksKeySource } from "../src/auth/jwks";
 import { createAuthRoutes } from "../src/auth/routes";
+import { PostgresIdempotencyRepository } from "../src/platform/idempotency";
 
 const SUPABASE_URL = process.env["SUPABASE_URL"] ??
   "http://127.0.0.1:54321";
@@ -158,6 +159,10 @@ async function main(): Promise<void> {
     delete from public.account_deletion_requests
     where user_id in (${teacherId}::uuid, ${adminId}::uuid)
   `;
+  await admin`
+    delete from public.idempotency_records
+    where actor_id in (${teacherId}::uuid, ${adminId}::uuid)
+  `;
 
   // ---------------------------------------------------------------------
   // Provision the least-privilege runtime role with a throwaway local
@@ -185,17 +190,24 @@ async function main(): Promise<void> {
     },
     logger: createJsonLogger("api", "auth030-verify", "warn"),
     checks: {},
-    auth: createAuthRoutes({
-      keys: new JwksKeySource(authJwksUrl(SUPABASE_URL)),
-      repository: new AuthContextRepository(runtimeSql as never),
-      logger: createJsonLogger("api", "auth030-verify", "warn"),
-      issuer: authIssuer(SUPABASE_URL),
-      audience: "authenticated",
-      clockSkewSeconds: 30,
-      revocationBudgetSeconds: 0,
-      reauthTtlSeconds: 300,
-      deletionGraceDays: 14,
-    }),
+    auth: createAuthRoutes(
+      {
+        keys: new JwksKeySource(authJwksUrl(SUPABASE_URL)),
+        repository: new AuthContextRepository(runtimeSql as never),
+        logger: createJsonLogger("api", "auth030-verify", "warn"),
+        issuer: authIssuer(SUPABASE_URL),
+        audience: "authenticated",
+        clockSkewSeconds: 30,
+        revocationBudgetSeconds: 0,
+        reauthTtlSeconds: 300,
+        deletionGraceDays: 14,
+      },
+      undefined,
+      {
+        logger: createJsonLogger("api", "auth030-verify", "warn"),
+        repository: new PostgresIdempotencyRepository(runtimeSql as never),
+      },
+    ),
   });
 
   const call = (
@@ -208,6 +220,9 @@ async function main(): Promise<void> {
     if (init.reauth) headers.set("x-studafy-reauth", init.reauth);
     if (init.body !== undefined) {
       headers.set("content-type", "application/json");
+    }
+    if (init.method === "POST" && path !== "/v1/auth/reauth/verify") {
+      headers.set("idempotency-key", crypto.randomUUID());
     }
     return app.request(path, {
       method: init.method ?? "GET",
@@ -230,8 +245,8 @@ async function main(): Promise<void> {
   record(
     "both refusals are byte-identical apart from the request id",
     "identical",
-    anonymousBody.replace(/"request_id":"[^"]+"/, "") ===
-        garbageBody.replace(/"request_id":"[^"]+"/, "")
+    anonymousBody.replace(/"requestId":"[^"]+"/, "") ===
+        garbageBody.replace(/"requestId":"[^"]+"/, "")
       ? "identical"
       : "different",
   );
@@ -248,7 +263,7 @@ async function main(): Promise<void> {
   const me = await call("/v1/me", { token: teacherToken });
   record("a real provider token is accepted", "200", String(me.status));
   const meBody = await me.json() as {
-    memberships: { role: string; school_id: string }[];
+    memberships: { role: string; schoolId: string }[];
   };
   record(
     "memberships come from the database",
@@ -272,7 +287,7 @@ async function main(): Promise<void> {
   const adminContext = await call("/v1/auth/context", { token: adminToken });
   const adminBody = await adminContext.json() as {
     memberships: unknown[];
-    mfa_required: boolean;
+    mfaRequired: boolean;
   };
   record(
     "a token claiming school_admin receives no memberships",
@@ -282,7 +297,7 @@ async function main(): Promise<void> {
   record(
     "a token claiming school_admin triggers no admin policy",
     "false",
-    String(adminBody.mfa_required),
+    String(adminBody.mfaRequired),
   );
 
   // ---------------------------------------------------------------------
@@ -291,7 +306,7 @@ async function main(): Promise<void> {
   const noGrant = await call("/v1/account/deletion-request", {
     method: "POST",
     token: teacherToken,
-    body: { reason_code: "undisclosed", confirmation: "DELETE" },
+    body: { reasonCode: "undisclosed", confirmation: "DELETE" },
   });
   record(
     "a privileged command without a grant is refused",
@@ -321,7 +336,7 @@ async function main(): Promise<void> {
     method: "POST",
     token: teacherToken,
     reauth: grant,
-    body: { reason_code: "undisclosed", confirmation: "DELETE" },
+    body: { reasonCode: "undisclosed", confirmation: "DELETE" },
   });
   record("the grant authorizes the command", "200", String(withGrant.status));
 
@@ -329,7 +344,7 @@ async function main(): Promise<void> {
     method: "POST",
     token: teacherToken,
     reauth: grant,
-    body: { reason_code: "undisclosed", confirmation: "DELETE" },
+    body: { reasonCode: "undisclosed", confirmation: "DELETE" },
   });
   record("the grant cannot be replayed", "401", String(replayed.status));
 
@@ -339,6 +354,7 @@ async function main(): Promise<void> {
   const cancelled = await call("/v1/account/deletion-cancel", {
     method: "POST",
     token: teacherToken,
+    body: {},
   });
   record(
     "deletion is cancellable in app",
@@ -355,7 +371,7 @@ async function main(): Promise<void> {
     method: "POST",
     token: teacherToken,
     reauth: secondGrant,
-    body: { reason_code: "changing_schools", confirmation: "DELETE" },
+    body: { reasonCode: "changing_schools", confirmation: "DELETE" },
   });
   record(
     "a cancelled user can request deletion again",
@@ -365,6 +381,7 @@ async function main(): Promise<void> {
   await call("/v1/account/deletion-cancel", {
     method: "POST",
     token: teacherToken,
+    body: {},
   });
 
   // ---------------------------------------------------------------------

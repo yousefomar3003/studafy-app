@@ -2,15 +2,59 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Studafy API",
-    "version": "0.1.0"
+    "version": "1.0.0",
+    "description": "Version 1 is additive-only after the API-040 platform contract."
+  },
+  "x-studafy-platform": {
+    "cors": "exact-origin allowlist; disabled when empty",
+    "requestBodyBytes": 65536,
+    "requestTimeoutMilliseconds": 10000,
+    "compressedRequestBodies": "rejected"
   },
   "paths": {
     "/v1/me": {
       "get": {
         "operationId": "getMe",
+        "summary": "Authenticated profile and tenant memberships",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.profile.read",
+        "x-studafy-idempotency-mode": "none",
         "responses": {
           "200": {
             "description": "Authenticated profile and tenant memberships",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -18,20 +62,42 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/v1/classrooms": {
-      "get": {
-        "operationId": "listClassrooms",
-        "responses": {
-          "200": {
-            "description": "Authorized classroom summaries",
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/V1ClassroomListResponse"
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -42,13 +108,89 @@
     "/v1/auth/context": {
       "get": {
         "operationId": "getAuthContext",
+        "summary": "Server-derived tenant and role context",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.context.read",
+        "x-studafy-idempotency-mode": "none",
         "responses": {
           "200": {
             "description": "Server-derived tenant and role context",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/V1AuthContextResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -59,13 +201,89 @@
     "/v1/auth/devices": {
       "get": {
         "operationId": "listAuthDevices",
+        "summary": "Devices that have held a session for this account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.devices.read",
+        "x-studafy-idempotency-mode": "none",
         "responses": {
           "200": {
             "description": "Devices that have held a session for this account",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/V1AuthDeviceListResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -76,6 +294,94 @@
     "/v1/auth/devices/revoke": {
       "post": {
         "operationId": "revokeAuthDevice",
+        "summary": "Revoke one owned device",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.device.revoke",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "Revoke one owned device",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AuthDeviceRevokeResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -86,23 +392,112 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Device revocation outcome",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1AuthDeviceRevokeResponse"
-                }
-              }
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
             }
           }
-        }
+        ]
       }
     },
     "/v1/auth/sign-out": {
       "post": {
         "operationId": "signOut",
+        "summary": "Revoke the current or every session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.session.revoke",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "Revoke the current or every session",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AuthSignOutResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -113,23 +508,112 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Session revocation outcome",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1AuthSignOutResponse"
-                }
-              }
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
             }
           }
-        }
+        ]
       }
     },
     "/v1/auth/reauth/challenge": {
       "post": {
         "operationId": "challengeReauth",
+        "summary": "Describe the assurance required for a privileged action",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.reauth.challenge",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "Describe the assurance required for a privileged action",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ReauthChallengeResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -140,23 +624,112 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "What the caller must satisfy to obtain a recent-auth grant",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1ReauthChallengeResponse"
-                }
-              }
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
             }
           }
-        }
+        ]
       }
     },
     "/v1/auth/reauth/verify": {
       "post": {
         "operationId": "verifyReauth",
+        "summary": "Issue a single-use recent-authentication grant",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.reauth.verify",
+        "x-studafy-idempotency-mode": "forbidden",
+        "responses": {
+          "200": {
+            "description": "Issue a single-use recent-authentication grant",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ReauthVerifyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -166,24 +739,100 @@
               }
             }
           }
-        },
-        "responses": {
-          "200": {
-            "description": "A single-use recent-authentication grant",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1ReauthVerifyResponse"
-                }
-              }
-            }
-          }
         }
       }
     },
     "/v1/auth/identities/link": {
       "post": {
         "operationId": "linkIdentity",
+        "summary": "Link a verified sign-in identity",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.identity.link",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "Link a verified sign-in identity",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1IdentityLinkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -194,23 +843,112 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Provider identity linking outcome",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1IdentityLinkResponse"
-                }
-              }
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
             }
           }
-        }
+        ]
       }
     },
     "/v1/auth/identities/unlink": {
       "post": {
         "operationId": "unlinkIdentity",
+        "summary": "Unlink a sign-in identity",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.identity.unlink",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "Unlink a sign-in identity",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1IdentityUnlinkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -221,30 +959,107 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Provider identity unlinking outcome",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1IdentityUnlinkResponse"
-                }
-              }
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
             }
           }
-        }
+        ]
       }
     },
     "/v1/account/deletion-impact": {
       "get": {
         "operationId": "getDeletionImpact",
+        "summary": "Preview the effect of account deletion",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.deletion.impact",
+        "x-studafy-idempotency-mode": "none",
         "responses": {
           "200": {
-            "description": "What account deletion removes and what the school retains",
+            "description": "Preview the effect of account deletion",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/V1DeletionImpactResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -255,6 +1070,94 @@
     "/v1/account/deletion-request": {
       "post": {
         "operationId": "requestAccountDeletion",
+        "summary": "Schedule account deletion",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.deletion.request",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "Schedule account deletion",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1DeletionRequestResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
         "requestBody": {
           "required": true,
           "content": {
@@ -265,26 +1168,64 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "The scheduled deletion request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/V1DeletionRequestResponse"
-                }
-              }
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
             }
           }
-        }
+        ]
       }
     },
     "/v1/account/deletion-cancel": {
       "post": {
         "operationId": "cancelAccountDeletion",
+        "summary": "Cancel a pending account deletion",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "account.deletion.cancel",
+        "x-studafy-idempotency-mode": "required",
         "responses": {
           "200": {
-            "description": "Cancellation outcome",
+            "description": "Cancel a pending account deletion",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -292,70 +1233,284 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1DeletionCancelRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "headers": {
+      "XRequestId": {
+        "description": "Server-generated request identifier.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "CacheControl": {
+        "description": "API responses are not cacheable.",
+        "schema": {
+          "type": "string",
+          "const": "no-store"
+        }
+      },
+      "ContentSecurityPolicy": {
+        "description": "Restrictive API content policy.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PermissionsPolicy": {
+        "description": "Browser capabilities disabled for API responses.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ReferrerPolicy": {
+        "description": "Referrer data is not sent.",
+        "schema": {
+          "type": "string",
+          "const": "no-referrer"
+        }
+      },
+      "XContentTypeOptions": {
+        "description": "MIME sniffing is disabled.",
+        "schema": {
+          "type": "string",
+          "const": "nosniff"
+        }
+      },
+      "XFrameOptions": {
+        "description": "Framing is denied.",
+        "schema": {
+          "type": "string",
+          "const": "DENY"
+        }
+      },
+      "StrictTransportSecurity": {
+        "description": "Emitted by production over HTTPS.",
+        "schema": {
+          "type": "string",
+          "const": "max-age=31536000; includeSubDomains"
+        }
+      },
+      "IdempotencyReplayed": {
+        "description": "True only when a completed durable response was replayed.",
+        "schema": {
+          "type": "string",
+          "const": "true"
+        }
+      }
+    },
     "schemas": {
+      "ProblemField": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "path",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "NOT_FOUND",
+              "NOT_IMPLEMENTED",
+              "INTERNAL_ERROR",
+              "UNAUTHENTICATED",
+              "REAUTH_REQUIRED",
+              "MFA_REQUIRED",
+              "FORBIDDEN",
+              "RATE_LIMITED",
+              "INVALID_REQUEST",
+              "INVALID_HEADER",
+              "METHOD_NOT_ALLOWED",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "PAYLOAD_TOO_LARGE",
+              "REQUEST_TIMEOUT",
+              "SERVICE_UNAVAILABLE",
+              "CONFLICT",
+              "IDEMPOTENCY_KEY_REQUIRED",
+              "IDEMPOTENCY_KEY_NOT_ALLOWED",
+              "IDEMPOTENCY_KEY_REUSED",
+              "IDEMPOTENCY_IN_PROGRESS"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "errors": {
+            "maxItems": 16,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemField"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "detail",
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
       "V1Membership": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "school_id",
-          "school_name",
-          "role",
-          "active"
-        ],
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "school_id": {
+          "schoolId": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "school_name": {
+          "schoolName": {
             "type": "string",
             "minLength": 1
           },
           "role": {
             "type": "string",
             "enum": [
+              "school_admin",
               "teacher",
               "parent",
+              "guardian",
               "student"
             ]
           },
           "active": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "id",
+          "schoolId",
+          "schoolName",
+          "role",
+          "active"
+        ],
+        "additionalProperties": false
       },
       "V1MeResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "display_name",
-          "email",
-          "memberships",
-          "environment",
-          "active_term_id"
-        ],
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "display_name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "email": {
+          "displayName": {
             "type": "string",
             "minLength": 1
           },
@@ -365,37 +1520,29 @@
               "$ref": "#/components/schemas/V1Membership"
             }
           },
-          "environment": {
-            "type": "string",
-            "enum": [
-              "synthetic",
-              "development",
-              "staging",
-              "production"
+          "activeTermId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
             ]
-          },
-          "active_term_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "minLength": 1
           }
-        }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "memberships",
+          "activeTermId"
+        ],
+        "additionalProperties": false
       },
       "V1Classroom": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "name",
-          "grade",
-          "section",
-          "room",
-          "student_count",
-          "weekly_sessions",
-          "term_name"
-        ],
         "properties": {
           "id": {
             "type": "string",
@@ -417,31 +1564,44 @@
               "null"
             ]
           },
-          "student_count": {
+          "studentCount": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
-          "weekly_sessions": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "minimum": 0
+          "weeklySessions": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
-          "term_name": {
+          "termName": {
             "type": [
               "string",
               "null"
             ]
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "grade",
+          "section",
+          "room",
+          "studentCount",
+          "weeklySessions",
+          "termName"
+        ],
+        "additionalProperties": false
       },
       "V1ClassroomListResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "classrooms"
-        ],
         "properties": {
           "classrooms": {
             "type": "array",
@@ -449,33 +1609,30 @@
               "$ref": "#/components/schemas/V1Classroom"
             }
           }
-        }
+        },
+        "required": [
+          "classrooms"
+        ],
+        "additionalProperties": false
       },
       "V1ContextMembership": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "school_id",
-          "school_name",
-          "school_timezone",
-          "role",
-          "active_term_id"
-        ],
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "school_id": {
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "schoolName": {
             "type": "string",
             "minLength": 1
           },
-          "school_name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "school_timezone": {
+          "schoolTimezone": {
             "type": "string",
             "minLength": 1
           },
@@ -489,34 +1646,38 @@
               "student"
             ]
           },
-          "active_term_id": {
-            "type": [
-              "string",
-              "null"
+          "activeTermId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
-        }
+        },
+        "required": [
+          "id",
+          "schoolId",
+          "schoolName",
+          "schoolTimezone",
+          "role",
+          "activeTermId"
+        ],
+        "additionalProperties": false
       },
       "V1AuthContextResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "user_id",
-          "display_name",
-          "locale",
-          "memberships",
-          "membership_version",
-          "assurance_level",
-          "mfa_enrolled",
-          "mfa_required",
-          "pending_deletion"
-        ],
         "properties": {
-          "user_id": {
+          "userId": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
-          "display_name": {
+          "displayName": {
             "type": "string",
             "minLength": 1
           },
@@ -533,45 +1694,47 @@
               "$ref": "#/components/schemas/V1ContextMembership"
             }
           },
-          "membership_version": {
+          "membershipVersion": {
             "type": "string",
             "minLength": 1
           },
-          "assurance_level": {
+          "assuranceLevel": {
             "type": "string",
             "enum": [
               "aal1",
               "aal2"
             ]
           },
-          "mfa_enrolled": {
+          "mfaEnrolled": {
             "type": "boolean"
           },
-          "mfa_required": {
+          "mfaRequired": {
             "type": "boolean"
           },
-          "pending_deletion": {
+          "pendingDeletion": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "userId",
+          "displayName",
+          "locale",
+          "memberships",
+          "membershipVersion",
+          "assuranceLevel",
+          "mfaEnrolled",
+          "mfaRequired",
+          "pendingDeletion"
+        ],
+        "additionalProperties": false
       },
       "V1AuthDevice": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "platform",
-          "app_version",
-          "display_label",
-          "first_seen_at",
-          "last_seen_at",
-          "revoked_at",
-          "current"
-        ],
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "platform": {
             "type": "string",
@@ -581,43 +1744,58 @@
               "other"
             ]
           },
-          "app_version": {
+          "appVersion": {
             "type": [
               "string",
               "null"
             ]
           },
-          "display_label": {
+          "displayLabel": {
             "type": [
               "string",
               "null"
             ]
           },
-          "first_seen_at": {
+          "firstSeenAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           },
-          "last_seen_at": {
+          "lastSeenAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           },
-          "revoked_at": {
-            "type": [
-              "string",
-              "null"
+          "revokedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "current": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "id",
+          "platform",
+          "appVersion",
+          "displayLabel",
+          "firstSeenAt",
+          "lastSeenAt",
+          "revokedAt",
+          "current"
+        ],
+        "additionalProperties": false
       },
       "V1AuthDeviceListResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "devices"
-        ],
         "properties": {
           "devices": {
             "type": "array",
@@ -625,56 +1803,56 @@
               "$ref": "#/components/schemas/V1AuthDevice"
             }
           }
-        }
+        },
+        "required": [
+          "devices"
+        ],
+        "additionalProperties": false
       },
       "V1AuthDeviceRevokeRequest": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "device_id"
-        ],
         "properties": {
-          "device_id": {
+          "deviceId": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
-        }
+        },
+        "required": [
+          "deviceId"
+        ],
+        "additionalProperties": false
       },
       "V1AuthDeviceRevokeResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "revoked"
-        ],
         "properties": {
           "revoked": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "revoked"
+        ],
+        "additionalProperties": false
       },
       "V1AuthSignOutRequest": {
         "type": "object",
-        "additionalProperties": false,
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "current",
+              "all"
+            ]
+          }
+        },
         "required": [
           "scope"
         ],
-        "properties": {
-          "scope": {
-            "type": "string",
-            "enum": [
-              "current",
-              "all"
-            ]
-          }
-        }
+        "additionalProperties": false
       },
       "V1AuthSignOutResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "scope",
-          "revoked_before"
-        ],
         "properties": {
           "scope": {
             "type": "string",
@@ -683,20 +1861,27 @@
               "all"
             ]
           },
-          "revoked_before": {
-            "type": [
-              "string",
-              "null"
+          "revokedBefore": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
-        }
+        },
+        "required": [
+          "scope",
+          "revokedBefore"
+        ],
+        "additionalProperties": false
       },
       "V1ReauthChallengeRequest": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "purpose"
-        ],
         "properties": {
           "purpose": {
             "type": "string",
@@ -709,16 +1894,14 @@
               "school_admin_privileged"
             ]
           }
-        }
+        },
+        "required": [
+          "purpose"
+        ],
+        "additionalProperties": false
       },
       "V1ReauthChallengeResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "purpose",
-          "required_assurance",
-          "expires_at"
-        ],
         "properties": {
           "purpose": {
             "type": "string",
@@ -731,25 +1914,28 @@
               "school_admin_privileged"
             ]
           },
-          "required_assurance": {
+          "requiredAssurance": {
             "type": "string",
             "enum": [
               "aal1",
               "aal2"
             ]
           },
-          "expires_at": {
+          "expiresAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           }
-        }
+        },
+        "required": [
+          "purpose",
+          "requiredAssurance",
+          "expiresAt"
+        ],
+        "additionalProperties": false
       },
       "V1ReauthVerifyRequest": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "purpose"
-        ],
         "properties": {
           "purpose": {
             "type": "string",
@@ -762,16 +1948,14 @@
               "school_admin_privileged"
             ]
           }
-        }
+        },
+        "required": [
+          "purpose"
+        ],
+        "additionalProperties": false
       },
       "V1ReauthVerifyResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "purpose",
-          "grant",
-          "expires_at"
-        ],
         "properties": {
           "purpose": {
             "type": "string",
@@ -788,20 +1972,21 @@
             "type": "string",
             "minLength": 43
           },
-          "expires_at": {
+          "expiresAt": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           }
-        }
+        },
+        "required": [
+          "purpose",
+          "grant",
+          "expiresAt"
+        ],
+        "additionalProperties": false
       },
       "V1IdentityLinkRequest": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "provider",
-          "id_token",
-          "make_primary"
-        ],
         "properties": {
           "provider": {
             "type": "string",
@@ -812,21 +1997,24 @@
               "email"
             ]
           },
-          "id_token": {
+          "idToken": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 16384
           },
-          "make_primary": {
+          "makePrimary": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "provider",
+          "idToken",
+          "makePrimary"
+        ],
+        "additionalProperties": false
       },
       "V1IdentityLinkResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "outcome"
-        ],
         "properties": {
           "outcome": {
             "type": "string",
@@ -836,15 +2024,14 @@
               "collision"
             ]
           }
-        }
+        },
+        "required": [
+          "outcome"
+        ],
+        "additionalProperties": false
       },
       "V1IdentityUnlinkRequest": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "provider",
-          "subject"
-        ],
         "properties": {
           "provider": {
             "type": "string",
@@ -859,14 +2046,15 @@
             "type": "string",
             "minLength": 1
           }
-        }
+        },
+        "required": [
+          "provider",
+          "subject"
+        ],
+        "additionalProperties": false
       },
       "V1IdentityUnlinkResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "outcome"
-        ],
         "properties": {
           "outcome": {
             "type": "string",
@@ -876,17 +2064,16 @@
               "last_identity"
             ]
           }
-        }
+        },
+        "required": [
+          "outcome"
+        ],
+        "additionalProperties": false
       },
       "V1DeletionImpactMembership": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "school_name",
-          "role"
-        ],
         "properties": {
-          "school_name": {
+          "schoolName": {
             "type": "string",
             "minLength": 1
           },
@@ -900,75 +2087,79 @@
               "student"
             ]
           }
-        }
+        },
+        "required": [
+          "schoolName",
+          "role"
+        ],
+        "additionalProperties": false
       },
       "V1DeletionRetainedRecords": {
         "type": "object",
-        "additionalProperties": false,
+        "properties": {
+          "attendance": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "grades": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "submissions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "wellbeing": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
         "required": [
           "attendance",
           "grades",
           "submissions",
           "wellbeing"
         ],
-        "properties": {
-          "attendance": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "grades": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "submissions": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "wellbeing": {
-            "type": "integer",
-            "minimum": 0
-          }
-        }
+        "additionalProperties": false
       },
       "V1DeletionDeletedData": {
         "type": "object",
-        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "devices": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "consents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "notifications": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
         "required": [
           "profile",
           "devices",
           "consents",
           "notifications"
         ],
-        "properties": {
-          "profile": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "devices": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "consents": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "notifications": {
-            "type": "integer",
-            "minimum": 0
-          }
-        }
+        "additionalProperties": false
       },
       "V1DeletionImpactResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "memberships",
-          "retained_school_records",
-          "deleted_personal_data",
-          "guardian_links",
-          "active_entitlements",
-          "grace_period_days"
-        ],
         "properties": {
           "memberships": {
             "type": "array",
@@ -976,35 +2167,42 @@
               "$ref": "#/components/schemas/V1DeletionImpactMembership"
             }
           },
-          "retained_school_records": {
+          "retainedSchoolRecords": {
             "$ref": "#/components/schemas/V1DeletionRetainedRecords"
           },
-          "deleted_personal_data": {
+          "deletedPersonalData": {
             "$ref": "#/components/schemas/V1DeletionDeletedData"
           },
-          "guardian_links": {
+          "guardianLinks": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
-          "active_entitlements": {
+          "activeEntitlements": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
-          "grace_period_days": {
+          "gracePeriodDays": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 9007199254740991
           }
-        }
+        },
+        "required": [
+          "memberships",
+          "retainedSchoolRecords",
+          "deletedPersonalData",
+          "guardianLinks",
+          "activeEntitlements",
+          "gracePeriodDays"
+        ],
+        "additionalProperties": false
       },
       "V1DeletionRequestRequest": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "reason_code",
-          "confirmation"
-        ],
         "properties": {
-          "reason_code": {
+          "reasonCode": {
             "type": "string",
             "enum": [
               "no_longer_using",
@@ -1016,25 +2214,22 @@
           },
           "confirmation": {
             "type": "string",
-            "enum": [
-              "DELETE"
-            ]
+            "const": "DELETE"
           }
-        }
+        },
+        "required": [
+          "reasonCode",
+          "confirmation"
+        ],
+        "additionalProperties": false
       },
       "V1DeletionRequestResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "state",
-          "execute_after",
-          "created"
-        ],
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "state": {
             "type": "string",
@@ -1045,26 +2240,39 @@
               "completed"
             ]
           },
-          "execute_after": {
+          "executeAfter": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           },
           "created": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "id",
+          "state",
+          "executeAfter",
+          "created"
+        ],
+        "additionalProperties": false
+      },
+      "V1DeletionCancelRequest": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
       },
       "V1DeletionCancelResponse": {
         "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "cancelled"
-        ],
         "properties": {
           "cancelled": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "cancelled"
+        ],
+        "additionalProperties": false
       }
     }
   }

@@ -18,12 +18,39 @@ const url = z.string().min(1).refine((value) => {
   }
 }, "must be a valid absolute URL");
 
+const origins = z.string().default("").transform((value, context) => {
+  const values = value.split(",").map((entry) => entry.trim()).filter(Boolean);
+  for (const origin of values) {
+    try {
+      const parsed = new URL(origin);
+      if (
+        parsed.origin !== origin || parsed.username || parsed.password ||
+        !["https:", "http:"].includes(parsed.protocol) ||
+        parsed.hostname.includes("*")
+      ) throw new Error();
+    } catch {
+      context.addIssue({
+        code: "custom",
+        message: "must contain exact comma-separated origins",
+      });
+      return z.NEVER;
+    }
+  }
+  return [...new Set(values)];
+});
+
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
   API_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   DATABASE_URL: url.optional(),
   REDIS_URL: url.optional(),
   LOG_LEVEL: LogLevelSchema.default("info"),
+  API_ALLOWED_ORIGINS: origins,
+  API_MAX_BODY_BYTES: z.coerce.number().int().min(1024).max(1024 * 1024)
+    .default(64 * 1024),
+  API_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(
+    10_000,
+  ),
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
   // separately, so a misconfiguration cannot leave the API trusting one
@@ -126,6 +153,9 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     environment: env.ENVIRONMENT,
     port: env.API_PORT,
     log_level: env.LOG_LEVEL,
+    allowed_origins: env.API_ALLOWED_ORIGINS,
+    max_body_bytes: env.API_MAX_BODY_BYTES,
+    request_timeout_ms: env.API_REQUEST_TIMEOUT_MS,
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
     redis_url: env.REDIS_URL ? redactUrl(env.REDIS_URL) : null,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,

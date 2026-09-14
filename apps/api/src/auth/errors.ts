@@ -13,7 +13,7 @@
  * is itself a disclosure.
  */
 import type { Context } from "hono";
-import { ErrorCode } from "@studafy/contracts";
+import { problem, problemBody } from "../platform/errors";
 
 /** Private reasons. These reach logs and metrics; they never reach a client. */
 export type AuthDenialReason =
@@ -39,55 +39,38 @@ export type AuthDenialReason =
 export const UNAUTHENTICATED_MESSAGE = "Authentication required.";
 
 export interface AuthErrorBody {
-  error: { code: string; message: string; request_id: string };
-}
-
-function body(
-  code: string,
-  message: string,
-  requestId: string,
-): AuthErrorBody {
-  return { error: { code, message, request_id: requestId } };
+  type: string;
+  title: string;
+  status: number;
+  code: string;
+  detail: string;
+  requestId: string;
 }
 
 export function unauthenticated(requestId: string): AuthErrorBody {
-  return body(ErrorCode.UNAUTHENTICATED, UNAUTHENTICATED_MESSAGE, requestId);
+  return problemBody("UNAUTHENTICATED", 401, requestId) as AuthErrorBody;
 }
 
 export function forbidden(requestId: string): AuthErrorBody {
-  return body(
-    ErrorCode.FORBIDDEN,
-    "You do not have access to this resource.",
-    requestId,
-  );
+  return problemBody("FORBIDDEN", 403, requestId) as AuthErrorBody;
 }
 
 export function reauthRequired(requestId: string): AuthErrorBody {
-  return body(
-    ErrorCode.REAUTH_REQUIRED,
-    "Confirm it is you before continuing.",
-    requestId,
-  );
+  return problemBody("REAUTH_REQUIRED", 401, requestId) as AuthErrorBody;
 }
 
 export function mfaRequired(requestId: string): AuthErrorBody {
-  return body(
-    ErrorCode.MFA_REQUIRED,
-    "Two-factor authentication is required for this action.",
-    requestId,
-  );
+  return problemBody("MFA_REQUIRED", 403, requestId) as AuthErrorBody;
 }
 
 export function invalidRequest(requestId: string): AuthErrorBody {
-  return body(
-    ErrorCode.INVALID_REQUEST,
-    "The request could not be processed.",
-    requestId,
-  );
+  return problemBody("INVALID_REQUEST", 400, requestId) as AuthErrorBody;
 }
 
 export function conflict(requestId: string, message: string): AuthErrorBody {
-  return body(ErrorCode.CONFLICT, message, requestId);
+  return problemBody("CONFLICT", 409, requestId, {
+    detail: message,
+  }) as AuthErrorBody;
 }
 
 /**
@@ -108,5 +91,5 @@ export function denyUnauthenticated<
   // WWW-Authenticate carries no error detail for the same reason the body
   // does not: `error_description` would reintroduce the oracle.
   c.header("WWW-Authenticate", 'Bearer realm="studafy"');
-  return c.json(unauthenticated(c.get("requestId")), 401);
+  return problem(c, "UNAUTHENTICATED", 401);
 }

@@ -132,8 +132,8 @@ describe("resource permission and tenant middleware", () => {
       body: "{}",
     });
     expect(response.status).toBe(404);
-    const body = await response.json() as { error: { code: string } };
-    expect(body.error.code).toBe("NOT_FOUND");
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe("NOT_FOUND");
   });
 
   test("requires the fresh membership context to agree with resource school", async () => {

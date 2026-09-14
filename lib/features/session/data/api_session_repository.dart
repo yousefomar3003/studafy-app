@@ -160,7 +160,9 @@ class ApiSessionRepository implements SessionRepository {
     return UserProfile(
       id: me.id,
       displayName: me.displayName,
-      email: me.email,
+      // Email is identity-provider profile data, not school authorization
+      // data; the API-040 /v1/me contract therefore does not duplicate it.
+      email: _auth.auth.currentUser?.email ?? '',
       memberships: [
         for (final membership in me.memberships)
           if (_roleFor(membership.role) case final role?)
@@ -329,7 +331,9 @@ class ApiSessionRepository implements SessionRepository {
 
   @override
   Future<bool> cancelAccountDeletion() async {
-    final response = await _client.cancelAccountDeletion();
+    final response = await _client.cancelAccountDeletion(
+      const V1DeletionCancelRequestDto(),
+    );
     return response.cancelled;
   }
 

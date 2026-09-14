@@ -1,6 +1,6 @@
 import type { Context, MiddlewareHandler } from "hono";
 import type { Logger } from "@studafy/observability";
-import { forbidden } from "../auth/errors";
+import { problem } from "../platform/errors";
 import type { AuthEnv } from "../auth/middleware";
 import { type Permission, PERMISSION_CATALOGUE } from "./catalogue";
 import { type TenantContext, VersionedTenantContextCache } from "./cache";
@@ -80,11 +80,10 @@ export function requirePermission(
         permission,
         resourceId,
       );
-    } catch (error) {
+    } catch {
       deps.logger.error("authorization_decision_failed", {
         request_id: c.get("requestId"),
         action: permission,
-        error_message: error instanceof Error ? error.message : String(error),
       });
       return deny(deps, c, permission, resourceId, "decision_unavailable");
     }
@@ -130,15 +129,9 @@ function deny(
   // Object denials are deliberately indistinguishable from absence. This
   // prevents cross-school UUID substitution from becoming an existence oracle.
   if (PERMISSION_CATALOGUE[permission].concealDeniedResource) {
-    return c.json({
-      error: {
-        code: "NOT_FOUND",
-        message: "No such resource.",
-        request_id: c.get("requestId"),
-      },
-    }, 404);
+    return problem(c, "NOT_FOUND", 404);
   }
-  return c.json(forbidden(c.get("requestId")), 403);
+  return problem(c, "FORBIDDEN", 403);
 }
 
 /** Default cache for a route collection; injectable tests use a fresh one. */

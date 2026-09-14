@@ -1,4 +1,16 @@
 import { z } from "zod";
+export {
+  ErrorCode,
+  IdempotencyMode,
+  ProblemDetails,
+  ProblemField,
+} from "./v1/platform";
+export type {
+  ErrorCode as ErrorCodeType,
+  IdempotencyMode as IdempotencyModeType,
+  ProblemDetails as ProblemDetailsType,
+  ProblemField as ProblemFieldType,
+} from "./v1/platform";
 
 /** Shared vocabulary for all services. Contracts is the base of the dependency
  * graph: it imports only `zod` and is imported by every other member. */
@@ -42,37 +54,5 @@ export type ServiceInfo = z.infer<typeof ServiceInfo>;
  * outcome is `UNAUTHENTICATED`, so a caller cannot use error codes to learn
  * whether an address belongs to a Studafy user (AUTH-030 anti-enumeration).
  */
-export const ErrorCode = {
-  NOT_FOUND: "NOT_FOUND",
-  NOT_IMPLEMENTED: "NOT_IMPLEMENTED",
-  INTERNAL_ERROR: "INTERNAL_ERROR",
-  UNAUTHENTICATED: "UNAUTHENTICATED",
-  REAUTH_REQUIRED: "REAUTH_REQUIRED",
-  MFA_REQUIRED: "MFA_REQUIRED",
-  FORBIDDEN: "FORBIDDEN",
-  RATE_LIMITED: "RATE_LIMITED",
-  INVALID_REQUEST: "INVALID_REQUEST",
-  CONFLICT: "CONFLICT",
-} as const;
-export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
-
-export const ErrorBody = z.object({
-  error: z.object({
-    code: z.string().min(1),
-    message: z.string().min(1),
-    request_id: z.string().min(1),
-  }),
-});
-export type ErrorBody = z.infer<typeof ErrorBody>;
-
-/** The empty /v1 router answers every request with this contract. */
-export const notImplementedError = (
-  requestId: string,
-): { code: string; message: string; request_id: string } => ({
-  code: ErrorCode.NOT_IMPLEMENTED,
-  message: "No /v1 resources are implemented yet.",
-  request_id: requestId,
-});
-
 // Versioned API contracts (ARC-011).
 export * from "./v1";

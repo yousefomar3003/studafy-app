@@ -8,7 +8,9 @@
     "format:check": "deno fmt --check apps packages scripts package.json tsconfig.base.json docker-compose.dev.yml .github/workflows/ci.yml",
     "lint": "deno lint --rules-exclude=no-sloppy-imports,require-await apps packages scripts",
     "generate:dart-client": "bun scripts/generate-dart-client.ts",
-    "generate:check": "bun scripts/generate-dart-client.ts --check",
+    "generate:openapi": "bun scripts/generate-openapi.ts",
+    "generate:openapi:check": "bun scripts/generate-openapi.ts --check",
+    "generate:check": "bun scripts/generate-openapi.ts --check && bun scripts/generate-dart-client.ts --check",
     "generate:db-types": "bun scripts/generate-db-types.ts",
     "generate:db-types:check": "bun scripts/generate-db-types.ts --check",
     "test:db020:plans": "bun scripts/verify-db020-query-plans.ts",
@@ -25,6 +27,7 @@
     "@types/bun": "1.4.2",
     "postgres": "3.4.9",
     "supabase": "2.117.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "zod": "4.6.1"
   }
 }

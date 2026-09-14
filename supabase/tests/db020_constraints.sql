@@ -439,21 +439,23 @@ select throws_like(
 
 insert into public.idempotency_records (
   school_id, actor_id, scope, idempotency_key, request_hash,
-  status, expires_at
+  status, expires_at, lease_expires_at
 ) values (
   '11111111-1111-1111-1111-111111111111',
   'aaaa0000-0000-4000-8000-000000000001',
-  'seed', 'same-key', repeat('c', 64), 'reserved', now() + interval '1 hour'
+  'seed', 'same-key', repeat('c', 64), 'reserved',
+  now() + interval '1 hour', now() + interval '1 minute'
 );
 
 select throws_like(
   $$insert into public.idempotency_records (
       school_id, actor_id, scope, idempotency_key, request_hash,
-      status, expires_at
+      status, expires_at, lease_expires_at
     ) values (
       '11111111-1111-1111-1111-111111111111',
       'aaaa0000-0000-4000-8000-000000000001',
-      'seed', 'same-key', repeat('d', 64), 'reserved', now() + interval '1 hour'
+      'seed', 'same-key', repeat('d', 64), 'reserved',
+      now() + interval '1 hour', now() + interval '1 minute'
     )$$,
   '%duplicate key%',
   'idempotency keys are unique within tenant, actor, and scope'

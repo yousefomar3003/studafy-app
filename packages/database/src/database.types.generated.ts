@@ -1821,8 +1821,10 @@ export type Database = {
           actor_id: string;
           created_at: string;
           expires_at: string;
+          generation: number;
           id: string;
           idempotency_key: string;
+          lease_expires_at: string | null;
           request_hash: string;
           response_body: Json | null;
           response_status: number | null;
@@ -1835,8 +1837,10 @@ export type Database = {
           actor_id: string;
           created_at?: string;
           expires_at: string;
+          generation?: number;
           id?: string;
           idempotency_key: string;
+          lease_expires_at?: string | null;
           request_hash: string;
           response_body?: Json | null;
           response_status?: number | null;
@@ -1849,8 +1853,10 @@ export type Database = {
           actor_id?: string;
           created_at?: string;
           expires_at?: string;
+          generation?: number;
           id?: string;
           idempotency_key?: string;
+          lease_expires_at?: string | null;
           request_hash?: string;
           response_body?: Json | null;
           response_status?: number | null;

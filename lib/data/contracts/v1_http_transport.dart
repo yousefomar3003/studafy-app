@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'v1_client.generated.dart';
 
@@ -83,25 +84,37 @@ class V1HttpTransport implements V1JsonTransport {
   Future<Map<String, dynamic>> get(String path) => _send('GET', path, null);
 
   @override
-  Future<Map<String, dynamic>> post(String path, Map<String, Object?> body) =>
-      _send('POST', path, body);
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, Object?> body, {
+    String? idempotencyKey,
+    bool requiresIdempotency = false,
+  }) => _send(
+    'POST',
+    path,
+    body,
+    idempotencyKey: requiresIdempotency
+        ? idempotencyKey ?? _newIdempotencyKey()
+        : idempotencyKey,
+  );
 
   Future<Map<String, dynamic>> _send(
     String method,
     String path,
-    Map<String, Object?>? body,
-  ) async {
+    Map<String, Object?>? body, {
+    String? idempotencyKey,
+  }) async {
     final grant = _pendingReauthGrant;
     _pendingReauthGrant = null;
 
-    var response = await _attempt(method, path, body, grant);
+    var response = await _attempt(method, path, body, grant, idempotencyKey);
     if (response.status == 401) {
       final refreshed = await _refreshSession();
       if (!refreshed) {
         onSessionLost();
         throw _exceptionFrom(response);
       }
-      response = await _attempt(method, path, body, grant);
+      response = await _attempt(method, path, body, grant, idempotencyKey);
       if (response.status == 401) {
         onSessionLost();
         throw _exceptionFrom(response);
@@ -116,6 +129,7 @@ class V1HttpTransport implements V1JsonTransport {
     String path,
     Map<String, Object?>? body,
     String? reauthGrant,
+    String? idempotencyKey,
   ) async {
     final request = await _client
         .openUrl(method, _baseUri.resolve(path))
@@ -131,6 +145,9 @@ class V1HttpTransport implements V1JsonTransport {
     }
     if (reauthGrant != null) {
       request.headers.set('X-Studafy-Reauth', reauthGrant);
+    }
+    if (idempotencyKey != null) {
+      request.headers.set('Idempotency-Key', idempotencyKey);
     }
     if (body != null) {
       request.headers.contentType = ContentType.json;
@@ -152,13 +169,12 @@ class V1HttpTransport implements V1JsonTransport {
   }
 
   V1ApiException _exceptionFrom(_RawResponse response) {
-    final error = response.body['error'];
-    if (error is Map<String, dynamic>) {
+    if (response.body['code'] is String) {
       return V1ApiException(
         status: response.status,
-        code: error['code'] as String? ?? 'INTERNAL_ERROR',
-        message: error['message'] as String? ?? 'The request failed.',
-        requestId: error['request_id'] as String?,
+        code: response.body['code'] as String? ?? 'INTERNAL_ERROR',
+        message: response.body['detail'] as String? ?? 'The request failed.',
+        requestId: response.body['requestId'] as String?,
       );
     }
     return V1ApiException(
@@ -169,6 +185,16 @@ class V1HttpTransport implements V1JsonTransport {
   }
 
   void close() => _client.close(force: true);
+
+  static String _newIdempotencyKey() {
+    final random = Random.secure();
+    const alphabet =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    return List.generate(
+      32,
+      (_) => alphabet[random.nextInt(alphabet.length)],
+    ).join();
+  }
 }
 
 class _RawResponse {
