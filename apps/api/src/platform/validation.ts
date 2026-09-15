@@ -16,9 +16,21 @@ export function validateRouteInput(
     c.set("idempotencyMode", route.idempotency);
 
     const url = new URL(c.req.url);
-    if ([...url.searchParams.keys()].length > 0) {
+    const rawQuery = Object.fromEntries(url.searchParams.entries());
+    if (!route.query && Object.keys(rawQuery).length > 0) {
       return problem(c, "INVALID_REQUEST", 400);
     }
+    if (route.query) {
+      const parsed = route.query.safeParse(rawQuery);
+      if (!parsed.success) return problem(c, "INVALID_REQUEST", 400);
+      c.set("validatedQuery", parsed.data);
+    } else c.set("validatedQuery", undefined);
+
+    if (route.params) {
+      const parsed = route.params.safeParse(c.req.param());
+      if (!parsed.success) return problem(c, "INVALID_REQUEST", 400);
+      c.set("validatedParams", parsed.data);
+    } else c.set("validatedParams", undefined);
 
     if (!route.request) {
       if (c.req.raw.body !== null) return problem(c, "INVALID_REQUEST", 400);
@@ -59,4 +71,12 @@ export function validateRouteInput(
 
 export function validatedBody<T>(c: Context<PlatformEnv>): T {
   return c.get("validatedBody") as T;
+}
+
+export function validatedParams<T>(c: Context<PlatformEnv>): T {
+  return c.get("validatedParams") as T;
+}
+
+export function validatedQuery<T>(c: Context<PlatformEnv>): T {
+  return c.get("validatedQuery") as T;
 }

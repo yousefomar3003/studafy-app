@@ -38,6 +38,9 @@ const origins = z.string().default("").transform((value, context) => {
   }
   return [...new Set(values)];
 });
+const switchFlag = z.enum(["true", "false"]).default("true").transform(
+  (value) => value === "true",
+);
 
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
@@ -51,6 +54,14 @@ export const apiEnvSchema = z.object({
   API_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(
     10_000,
   ),
+  API_CURSOR_SIGNING_KEY: z.string().min(32).optional(),
+  API041_CLASSES_ENABLED: switchFlag,
+  API041_CONTENT_ENABLED: switchFlag,
+  API041_ASSIGNMENTS_ENABLED: switchFlag,
+  API041_ASSESSMENTS_ENABLED: switchFlag,
+  API041_GRADES_ENABLED: switchFlag,
+  API041_ATTENDANCE_ENABLED: switchFlag,
+  API041_WELLBEING_ENABLED: switchFlag,
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
   // separately, so a misconfiguration cannot leave the API trusting one
@@ -116,6 +127,7 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   // Without SUPABASE_URL there is no JWKS to verify against, and an API that
   // cannot verify a token must not start rather than start unauthenticated.
   if (!env.SUPABASE_URL) missing.push("SUPABASE_URL");
+  if (!env.API_CURSOR_SIGNING_KEY) missing.push("API_CURSOR_SIGNING_KEY");
   if (missing.length > 0) {
     throw new ConfigError(
       `Production requires ${missing.join(", ")} to be configured.`,
@@ -164,6 +176,16 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     auth_revocation_budget_seconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
     auth_reauth_ttl_seconds: env.AUTH_REAUTH_TTL_SECONDS,
     auth_deletion_grace_days: env.AUTH_DELETION_GRACE_DAYS,
+    cursor_signing_key_configured: Boolean(env.API_CURSOR_SIGNING_KEY),
+    api041_slices: {
+      classes: env.API041_CLASSES_ENABLED,
+      content: env.API041_CONTENT_ENABLED,
+      assignments: env.API041_ASSIGNMENTS_ENABLED,
+      assessments: env.API041_ASSESSMENTS_ENABLED,
+      grades: env.API041_GRADES_ENABLED,
+      attendance: env.API041_ATTENDANCE_ENABLED,
+      wellbeing: env.API041_WELLBEING_ENABLED,
+    },
   };
 }
 

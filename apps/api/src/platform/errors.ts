@@ -69,6 +69,22 @@ const DEFINITIONS: Record<
     title: "Conflict",
     detail: "The request conflicts with the current state.",
   },
+  VERSION_CONFLICT: {
+    title: "Version conflict",
+    detail: "The resource changed since it was read.",
+  },
+  INVALID_STATE: {
+    title: "Invalid state",
+    detail: "The command is not valid in the resource's current state.",
+  },
+  WINDOW_CLOSED: {
+    title: "Submission window closed",
+    detail: "The server-enforced submission window has closed.",
+  },
+  CURSOR_INVALID: {
+    title: "Invalid cursor",
+    detail: "The cursor is invalid or does not match this query.",
+  },
   IDEMPOTENCY_KEY_REQUIRED: {
     title: "Idempotency key required",
     detail: "This operation requires an Idempotency-Key header.",

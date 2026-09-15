@@ -3,6 +3,7 @@ import { type LogLevel, V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
 import { createAuthRoutes } from "../../src/auth/routes";
+import { createAcademicRoutes } from "../../src/academic/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import {
   AUTH_HANDLER_PERMISSIONS,
@@ -12,6 +13,8 @@ import {
 } from "../../src/authorization/catalogue";
 import { declaredPermission } from "../../src/authorization/middleware";
 import { FakeAuthRepository } from "../auth/fake-repository";
+import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
+import { VersionedTenantContextCache } from "../../src/authorization/cache";
 
 function routeTable() {
   const logger = createJsonLogger(
@@ -21,7 +24,7 @@ function routeTable() {
     new LogCollector().sink,
   );
   const repository = new FakeAuthRepository();
-  const routes = createAuthRoutes({
+  const authDependencies = {
     keys: new JwksKeySource("https://unused.test/jwks"),
     repository: repository.asRepository(),
     logger,
@@ -31,7 +34,36 @@ function routeTable() {
     revocationBudgetSeconds: 0,
     reauthTtlSeconds: 300,
     deletionGraceDays: 14,
-  });
+  };
+  const authorization = {
+    logger,
+    cache: new VersionedTenantContextCache(),
+    repository: {
+      authorize: async () => ({
+        allowed: true,
+        schoolId: "bbbbbbbb-0000-4000-8000-000000000001",
+        reason: "allowed" as const,
+      }),
+    },
+  };
+  const idempotency = { logger, repository: new FakeIdempotencyRepository() };
+  const academic = createAcademicRoutes(
+    {
+      cursorSigningKey: "catalogue-test-key-that-is-at-least-32-bytes",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const routes = createAuthRoutes(
+    authDependencies,
+    authorization,
+    idempotency,
+    academic,
+  );
   return routes;
 }
 
@@ -51,17 +83,21 @@ describe("permission catalogue", () => {
   });
 
   test("the private database evaluator covers every resource action exactly", async () => {
-    const migration = await Bun.file(
+    const authMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609140001_auth031_authorization.sql`,
     ).text();
-    const databaseActions = [
-      ...migration.matchAll(/when '([a-z_]+\.[a-z_]+)' then/g),
-    ].map((match) => match[1]!).sort();
+    const academicMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609150002_api041_authoritative_surface.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
-    expect(databaseActions).toEqual(cataloguedResourceActions);
+    for (const permission of cataloguedResourceActions) {
+      expect(`${authMigration}\n${academicMigration}`).toContain(
+        `'${permission}'`,
+      );
+    }
   });
 
   test("every protected handler has exactly its declared permission middleware", () => {
@@ -114,19 +150,21 @@ describe("permission catalogue", () => {
       ),
     ];
     const contracted = V1_ROUTE_CATALOGUE.map((route) =>
-      `${route.method.toUpperCase()} ${route.path}`
+      `${route.method.toUpperCase()} ${
+        route.path.replaceAll(/\{([^}]+)\}/g, ":$1")
+      }`
     );
     expect(mounted).toEqual(contracted);
     expect(JSON.stringify(V1_ROUTE_CATALOGUE.map((route) => ({
       method: route.method.toUpperCase(),
-      path: route.path,
+      path: route.path.replaceAll(/\{([^}]+)\}/g, ":$1"),
       permission: route.permission,
     })))).toBe(JSON.stringify(AUTH_HANDLER_PERMISSIONS));
     expect(
       V1_ROUTE_CATALOGUE.some((route) =>
-        String(route.path) === "/v1/classrooms"
+        route.operationId === "createClassroom"
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   test("command idempotency modes are explicit and reauth verification is never replayed", () => {

@@ -7,6 +7,8 @@ import 'core/studafy_localizations.dart';
 import 'student_linking.dart';
 import 'app/account_scope.dart';
 import 'features/account/presentation/delete_account_page.dart';
+import 'features/academic/domain/academic_repository.dart';
+import 'features/academic/presentation/academic_overview_page.dart';
 import 'features/parent/domain/parent_subscription_repository.dart';
 import 'features/parent/presentation/parent_repository_scope.dart';
 

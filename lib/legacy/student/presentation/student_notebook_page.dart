@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../../studafy_database.dart';
+import '../../../features/academic/data/preview_student_identity.dart';
 import 'student_account_pages.dart';
 import 'student_notebook_components.dart';
 import 'student_shared.dart';
@@ -14,7 +15,7 @@ class StudentNotebookPage extends StatefulWidget {
 }
 
 class _StudentNotebookPageState extends State<StudentNotebookPage> {
-  static const studentId = 1;
+  static const studentId = PreviewStudentIdentity.localId;
   int period = 1;
   String query = '';
   final search = TextEditingController();

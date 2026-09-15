@@ -116,6 +116,7 @@ describe("production fail-closed", () => {
       DATABASE_URL: "postgresql://u:p@example.com:5432/db",
       REDIS_URL: "rediss://example.com:6380",
       SUPABASE_URL: "https://project.supabase.co",
+      API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
     });
     expect(() => enforceApiFailClosed(env)).not.toThrow();
   });

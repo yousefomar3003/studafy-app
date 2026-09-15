@@ -54,6 +54,8 @@ select is(
    where n.nspname = 'private'
      and has_function_privilege('studafy_api_runtime', p.oid, 'execute')),
   array[
+    'api041_command',
+    'api041_query',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',
@@ -72,7 +74,7 @@ select is(
     'auth_unlink_identity',
     'authz_authorize'
   ],
-  'API runtime role executes exactly the reviewed auth and idempotency surface'
+  'API runtime role executes exactly the reviewed auth, idempotency and academic surface'
 );
 
 select is(

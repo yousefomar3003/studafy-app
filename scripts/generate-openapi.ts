@@ -34,6 +34,7 @@ import {
   V1ReauthVerifyRequest,
   V1ReauthVerifyResponse,
 } from "../packages/contracts/src/index";
+import * as Academic from "../packages/contracts/src/v1/academic";
 
 const schemas = {
   ProblemField,
@@ -66,6 +67,7 @@ const schemas = {
   V1DeletionRequestResponse,
   V1DeletionCancelRequest,
   V1DeletionCancelResponse,
+  ...Academic,
 };
 
 const registry = z.registry<{ id: string }>();
@@ -100,6 +102,7 @@ const responseHeaders = {
   "Idempotency-Replayed": { $ref: "#/components/headers/IdempotencyReplayed" },
 };
 for (const route of V1_ROUTE_CATALOGUE) {
+  const successStatus = String(route.successStatus ?? 200);
   const operation: Record<string, unknown> = {
     operationId: route.operationId,
     summary: route.summary,
@@ -107,7 +110,7 @@ for (const route of V1_ROUTE_CATALOGUE) {
     "x-studafy-permission": route.permission,
     "x-studafy-idempotency-mode": route.idempotency,
     responses: {
-      "200": {
+      [successStatus]: {
         description: route.summary,
         headers: responseHeaders,
         content: {
@@ -127,6 +130,32 @@ for (const route of V1_ROUTE_CATALOGUE) {
       },
     },
   };
+  const parameters: Record<string, unknown>[] = [];
+  if (route.params && "shape" in route.params) {
+    for (const name of Object.keys(route.params.shape)) {
+      parameters.push({
+        name,
+        in: "path",
+        required: true,
+        schema: { type: "string", format: "uuid" },
+      });
+    }
+  }
+  if (route.query && "shape" in route.query) {
+    const shape = route.query.shape as Record<string, z.ZodType>;
+    for (const [name, schema] of Object.entries(shape)) {
+      const generatedQuery = z.toJSONSchema(schema, {
+        target: "draft-2020-12",
+      }) as Record<string, unknown>;
+      delete generatedQuery["$schema"];
+      parameters.push({
+        name,
+        in: "query",
+        required: false,
+        schema: generatedQuery,
+      });
+    }
+  }
   if (route.requestSchema) {
     operation.requestBody = {
       required: true,
@@ -138,7 +167,7 @@ for (const route of V1_ROUTE_CATALOGUE) {
     };
   }
   if (route.idempotency === "required") {
-    operation.parameters = [{
+    parameters.push({
       name: "Idempotency-Key",
       in: "header",
       required: true,
@@ -148,8 +177,9 @@ for (const route of V1_ROUTE_CATALOGUE) {
         maxLength: 128,
         pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$",
       },
-    }];
+    });
   }
+  if (parameters.length > 0) operation.parameters = parameters;
   (paths[route.path] ??= {})[route.method] = operation;
 }
 

@@ -1,7 +1,8 @@
 part of '../../../parent_features.dart';
 
 class ParentShell extends StatefulWidget {
-  const ParentShell({super.key});
+  const ParentShell({super.key, required this.academic});
+  final AcademicRepository academic;
   @override
   State<ParentShell> createState() => _ParentShellState();
 }
@@ -16,7 +17,11 @@ class _ParentShellState extends State<ParentShell> {
       index: index,
       children: [
         ParentHomePage(key: homeKey),
-        const ParentAcademicsPage(),
+        AcademicOverviewPage(
+          repository: widget.academic,
+          studentId: ActiveContextController.instance.selectedStudent?.id,
+          initialFeed: AcademicFeed.grades,
+        ),
         const ParentInsightsPage(),
         const ParentMessagesPage(initialTab: 1, updatesOnly: true),
         const ParentMessagesPage(),

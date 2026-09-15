@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../studafy_database.dart';
+import '../../../features/academic/data/preview_student_identity.dart';
 import 'student_account_pages.dart';
 import 'student_ai_ask_page.dart';
 import 'student_ai_insights.dart';
@@ -14,7 +15,7 @@ class StudentAiPage extends StatefulWidget {
 }
 
 class _StudentAiPageState extends State<StudentAiPage> {
-  static const studentId = 1;
+  static const studentId = PreviewStudentIdentity.localId;
   late Future<List<Object>> data;
 
   @override

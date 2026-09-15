@@ -31,12 +31,16 @@ abstract interface class PaperGradingRepository {
   });
 
   Future<void> reviewDraft({
+    required String gradeResultId,
+    required int expectedVersion,
     required String draftId,
     required List<QuestionSuggestion> finalScores,
-    required String reviewerId,
   });
 
-  Future<void> publishGradeResult({required String gradeResultId});
+  Future<void> publishGradeResult({
+    required String gradeResultId,
+    required int expectedVersion,
+  });
 }
 
 enum GradingStrictness { strict, balanced, lenient }

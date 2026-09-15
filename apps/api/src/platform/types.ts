@@ -1,4 +1,5 @@
 import type { IdempotencyMode, V1OperationId } from "@studafy/contracts";
+import type { Reservation } from "./idempotency";
 
 export interface PlatformEnv {
   Variables: {
@@ -6,8 +7,14 @@ export interface PlatformEnv {
     requestStartedAt: number;
     abortSignal: AbortSignal;
     validatedBody: unknown;
+    validatedParams: unknown;
+    validatedQuery: unknown;
     operationId: V1OperationId;
     idempotencyMode: IdempotencyMode;
+    idempotencyReservation:
+      | Extract<Reservation, { outcome: "reserved" }>
+      | null;
+    idempotencyCompleted: boolean;
   };
 }
 

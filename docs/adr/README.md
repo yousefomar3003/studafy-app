@@ -24,6 +24,7 @@ that references the old one.
 | [ADR-0016](ADR-0016-auth030-session-lifecycle.md) | AUTH-030 session lifecycle, token verification and Apple 4.8 posture | Accepted for local/disposable use | DL-032/033/034 |
 | [ADR-0017](ADR-0017-auth031-server-authorization.md) | AUTH-031 action/resource authorization and server-derived tenant context | Accepted for local/disposable use | DL-038 |
 | [ADR-0018](ADR-0018-api040-platform-controls.md) | API-040 shared validation, problem, durable idempotency and egress controls | Accepted for local/disposable use | DL-039 |
+| [ADR-0019](ADR-0019-api041-authoritative-academic-slices.md) | API-041 authoritative academic slices, atomic commands, signed cursors and parity-gated Edge removal | Accepted for local/disposable use | DL-040 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

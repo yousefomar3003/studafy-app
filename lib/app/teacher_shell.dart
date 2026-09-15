@@ -4,6 +4,8 @@ import '../core/studafy_design.dart';
 import '../core/studafy_localizations.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
+import '../features/academic/presentation/academic_overview_page.dart';
+import '../features/academic/domain/academic_repository.dart';
 import '../features/teacher_dashboard/presentation/teacher_dashboard.dart';
 import '../teacher_features.dart';
 import 'app_dependencies.dart';
@@ -18,14 +20,17 @@ class TeacherShell extends StatefulWidget {
 class _TeacherShellState extends State<TeacherShell> {
   int index = 0;
 
-  // ARC-011 classes slice: the typed ClassesPage replaces DatabaseClassesPage.
-  // The shell (composition layer) owns the legacy-workspace bridge; the
-  // classes feature stays free of cross-feature imports.
+  // API-041 classes open only the typed authoritative/preview academic port.
   Future<void> _openClassroom(ClassroomSummary classroom) async {
+    final academic = widget.dependencies.academic;
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => ClassWorkspacePage(classData: classroom.toLegacyMap()),
+      MaterialPageRoute<void>(
+        builder: (_) => AcademicOverviewPage(
+          repository: academic,
+          classroomId: classroom.id.value,
+          teacherTools: true,
+        ),
       ),
     );
   }
@@ -48,8 +53,16 @@ class _TeacherShellState extends State<TeacherShell> {
         onOpenClassroom: _openClassroom,
         header: const FeatureHeader('Classes'),
       ),
-      const ContentPage(),
-      const GradebookPage(),
+      AcademicOverviewPage(
+        repository: widget.dependencies.academic,
+        teacherTools: true,
+        initialFeed: AcademicFeed.content,
+      ),
+      AcademicOverviewPage(
+        repository: widget.dependencies.academic,
+        teacherTools: true,
+        initialFeed: AcademicFeed.grades,
+      ),
       const CommsPage(),
     ];
     return Scaffold(

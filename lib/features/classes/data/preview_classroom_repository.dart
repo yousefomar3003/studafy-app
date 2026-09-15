@@ -32,7 +32,6 @@ class PreviewClassroomRepository implements ClassroomRepository {
           colorValue: row['color'] as int?,
           studentCount: (row['student_count'] as int?) ?? 0,
           weeklySessions: row['weekly_sessions'] as int?,
-          legacyLocalId: row['id'] as int,
         ),
     ];
   }

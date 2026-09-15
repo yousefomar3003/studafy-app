@@ -73,7 +73,7 @@ effective policies**, all on public tables:
   authenticated execution was removed by `202609090004` without altering the
   event trigger.
 
-## Edge Functions (8 in source; 2 deployed synthetic, Deno)
+## Edge Functions (6 in source; 2 deployed synthetic, Deno)
 
 Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 → 401) + separate service-role client for privileged writes. CORS: wildcard
@@ -84,8 +84,8 @@ Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 |---|---|---|---|---|
 | `propose-paper-grade` | SEC-001 kill-switch stub | none (deliberate) | none | Always 503 `AI_GRADING_DISABLED` |
 | `study-coach` | Grounded Q&A/quiz/flashcards; writes `practice_sessions` | `SUPABASE_URL/ANON_KEY/SERVICE_ROLE_KEY`, `STUDY_COACH_URL`, `STUDY_COACH_KEY` | Study Coach AI endpoint | Active; rejects attachments |
-| `approve-paper-grade` | Teacher review of AI draft → `reviewed` | SUPABASE trio | none | Source only; not deployed synthetic |
-| `publish-grade-result` | Publish reviewed grade + notification + audit | SUPABASE trio | none | Source only; not deployed synthetic |
+| `approve-paper-grade` | Teacher review of AI draft → `reviewed` | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
+| `publish-grade-result` | Publish reviewed grade + notification + audit | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
 | `create-google-meet` | Calendar event + Meet + deliveries | SUPABASE trio, `GOOGLE_TOKEN_BROKER_URL/SECRET` | Token broker, googleapis Calendar | Source only; not deployed synthetic |
 | `cancel-google-meet` | Delete event, cancel deliveries | SUPABASE trio, broker pair | Token broker, Calendar | Source only; not deployed synthetic |
 | `verify-store-purchase` | Verify receipt → entitlement upsert | SUPABASE trio, `PURCHASE_VERIFIER_URL/SECRET` | Purchase verifier | Source only; not deployed synthetic |
@@ -98,7 +98,9 @@ deliberately absent).
 
 - One bucket: `private-school-files` (private, 50 MiB limit via config).
 - No client upload path (SEC-001); objects reachable only via server-signed
-  URLs inside functions; no metadata/`file_objects` table yet (FILE-050/051).
+  URLs inside functions. DB-020 introduced `file_objects` metadata, but no
+  API-041 upload or attachment path is enabled; FILE-050/051 still owns that
+  pipeline and its authorization/scanning evidence.
 
 ## Client touch points (Flutter)
 
@@ -106,14 +108,17 @@ deliberately absent).
   joins), `guardian_links` (with students), `notifications` (count + mark
   read), `subscription_entitlements` (read only).
 - RPC: `record_policy_consent` (policy version `2026-09-09`).
-- Edge Function call sites exist for seven workflows, but the remote synthetic
-  project deploys only the two contained functions (`propose-paper-grade` and
-  `study-coach`). No other remote function availability is claimed.
+- Remaining Edge invocation adapters cover Study Coach, meetings and purchase
+  verification; API-041 grade review/publication invocations are removed. The
+  remote synthetic project deploys only the two contained functions
+  (`propose-paper-grade` and `study-coach`). No other availability is claimed.
+- API-041 academic context, class, content, assignment, assessment, grade,
+  attendance and wellbeing traffic uses the generated `/v1` client.
 - Auth: Supabase PKCE OAuth (Google, Microsoft, Apple) with redirect
   `io.studafy.app://login-callback`; no Realtime, no push, no direct storage
   use in the client.
-- Local: SQLite `studafy_preview.db` (synthetic, seeded) and
-  `studafy_cache.db` (remote mode, unseeded — finding → ARC-011/MOB-070).
+- Local: SQLite `studafy_preview.db` is synthetic-only. Remote access fails
+  closed and API-041 has no local production write queue.
 
 ## Providers and products
 

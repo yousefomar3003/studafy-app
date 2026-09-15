@@ -72,9 +72,9 @@ behavior.
 - A command side effect and idempotency completion are not one transaction for
   every future provider-backed flow. Those use cases must add their own state
   machine/outbox invariant; an uncertain completion remains leased meanwhile.
-- Cursor signing/tamper utilities are intentionally deferred to API-041 because
-  API-040 publishes no paginated route. They become mandatory before the first
-  list operation is mounted.
+- API-041 subsequently supplied the signed cursor/tamper implementation before
+  mounting its first paginated route; see ADR-0019. This supersedes the local
+  deferral without changing API-040's platform decision.
 
 ## Recovery
 

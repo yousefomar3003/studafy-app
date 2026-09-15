@@ -1,3 +1,5 @@
+import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
+
 /**
  * AUTH-031 permission catalogue.
  *
@@ -199,6 +201,153 @@ export const PERMISSION_CATALOGUE = {
     "Read a safe publication for its exact audience.",
   ),
 
+  // API-041 authoritative academic collections and commands.
+  "term.list": resource("school", "List terms in the actor-visible school."),
+  "classroom.list": resource(
+    "school",
+    "List only classrooms related to the actor.",
+  ),
+  "classroom.create": resource(
+    "school",
+    "Create a classroom as an active school administrator.",
+  ),
+  "classroom.update": resource(
+    "classroom",
+    "Update an exactly assigned classroom.",
+  ),
+  "classroom.schedule.write": resource(
+    "classroom",
+    "Replace an exactly assigned classroom schedule.",
+  ),
+  "classroom.roster.read": resource(
+    "classroom",
+    "Read an exact classroom roster as staff or admin.",
+  ),
+  "classroom.staff.read": resource(
+    "classroom",
+    "Read assigned classroom staff as staff or admin.",
+  ),
+  "lesson_session.list": resource(
+    "school_or_classroom",
+    "List relationship-visible lesson sessions.",
+  ),
+  "resource.list": resource(
+    "school_or_classroom",
+    "List relationship-visible learning resources.",
+  ),
+  "resource.create": resource(
+    "school",
+    "Create text-only content in an assigned classroom.",
+  ),
+  "resource.revise": resource(
+    "resource",
+    "Create an immutable revision as assigned staff.",
+  ),
+  "resource.publish": resource(
+    "resource",
+    "Publish a safe text resource as assigned staff.",
+  ),
+  "resource.withdraw": resource(
+    "resource",
+    "Withdraw a resource publication as assigned staff.",
+  ),
+  "assignment.list": resource(
+    "school_or_classroom",
+    "List relationship-visible assignments.",
+  ),
+  "assignment.create": resource(
+    "classroom",
+    "Create an assignment in an assigned classroom.",
+  ),
+  "assignment.publish": resource(
+    "assignment",
+    "Publish a draft assignment as assigned staff.",
+  ),
+  "assignment.withdraw": resource(
+    "assignment",
+    "Withdraw a published assignment as assigned staff.",
+  ),
+  "assignment.submit": resource(
+    "assignment",
+    "Submit work as the exact enrolled student.",
+  ),
+  "submission.list": resource(
+    "assignment",
+    "List submissions as exact class staff.",
+  ),
+  "assessment.list": resource(
+    "school_or_classroom",
+    "List relationship-visible assessments.",
+  ),
+  "assessment.create": resource(
+    "classroom",
+    "Create an assessment in an assigned classroom.",
+  ),
+  "assessment.publish": resource(
+    "assessment",
+    "Publish an assessment as assigned staff.",
+  ),
+  "assessment.withdraw": resource(
+    "assessment",
+    "Withdraw an assessment as assigned staff.",
+  ),
+  "assessment.submit": resource(
+    "assessment",
+    "Submit an online assessment as the exact enrolled student.",
+  ),
+  "assessment_question.list": resource(
+    "assessment",
+    "Read learner-safe questions for an authorized assessment.",
+  ),
+  "assessment_question.authoring.list": resource(
+    "assessment",
+    "Read preferred answers as exact writable class staff.",
+  ),
+  "assessment_attempt.list": resource(
+    "assessment",
+    "List assessment attempts as exact class staff.",
+  ),
+  "grade_result.list": resource(
+    "school_class_or_student",
+    "List relationship-visible grade results.",
+  ),
+  "grade_result.review": resource(
+    "grade_result",
+    "Review a grade as exact class staff.",
+  ),
+  "grade_result.publish": resource(
+    "grade_result",
+    "Publish a reviewed grade as exact class staff.",
+  ),
+  "grade_result.correct": resource(
+    "grade_result",
+    "Correct a published grade with a reason.",
+  ),
+  "grade_result.withdraw": resource(
+    "grade_result",
+    "Withdraw a grade as exact class staff.",
+  ),
+  "attendance_record.list": resource(
+    "school_class_or_student",
+    "List relationship-visible attendance.",
+  ),
+  "attendance_record.write": resource(
+    "classroom",
+    "Batch-record attendance as exact class staff.",
+  ),
+  "attendance_roster.read": resource(
+    "classroom",
+    "Read a dated attendance roster as exact class staff.",
+  ),
+  "wellbeing_event.list": resource(
+    "school_class_or_student",
+    "List visibility-filtered wellbeing records.",
+  ),
+  "wellbeing_event.create": resource(
+    "classroom",
+    "Create a classified wellbeing record as exact class staff.",
+  ),
+
   // Reserved for the bounded API-042 membership commands. They are catalogued
   // now so no future handler invents a role check outside this service.
   "membership.grant": resource(
@@ -311,5 +460,10 @@ export const AUTH_HANDLER_PERMISSIONS = Object.freeze(
       path: "/v1/account/deletion-cancel",
       permission: "account.deletion.cancel",
     },
+    ...V1_ROUTE_CATALOGUE.slice(12).map((route) => ({
+      method: route.method.toUpperCase() as "GET" | "POST",
+      path: route.path.replaceAll(/\{([^}]+)\}/g, ":$1"),
+      permission: route.permission as Permission,
+    })),
   ] satisfies ProtectedHandlerDeclaration[],
 );

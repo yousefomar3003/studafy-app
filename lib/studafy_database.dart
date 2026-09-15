@@ -31,16 +31,18 @@ class StudafyDatabase extends _StudafyDatabaseAccess
   Database? _database;
 
   @override
-  Future<Database> get database async => _database ??= await _open();
+  Future<Database> get database async {
+    if (StudafyBackend.isRemote) {
+      throw StateError(
+        'SQLite is a synthetic preview adapter only; remote data must use /v1.',
+      );
+    }
+    return _database ??= await _open();
+  }
 
   Future<Database> _open() async {
     final root = await getDatabasesPath();
-    // Production and synthetic preview data must never share a cache file.
-    // This also prevents a developer who later adds Supabase credentials from
-    // carrying seeded identities or records into an authenticated session.
-    final filename = StudafyBackend.isRemote
-        ? 'studafy_cache.db'
-        : 'studafy_preview.db';
+    const filename = 'studafy_preview.db';
     return openDatabase(
       join(root, filename),
       version: 10,
