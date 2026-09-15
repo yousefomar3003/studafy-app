@@ -25,6 +25,7 @@ import type { IdempotencyMode } from "./platform";
 import * as Academic from "./academic";
 import * as SchoolAdmin from "./schoolAdmin";
 import * as Invitations from "./invitations";
+import * as Family from "./family";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -747,6 +748,48 @@ export const V1_ROUTE_CATALOGUE = [
     "V1AcceptInvitationResponse",
     200,
   ),
+  academicPost(
+    "locateStudent",
+    "/v1/students/locate",
+    "student.locate",
+    Family.V1LocateStudentRequest,
+    "V1LocateStudentRequest",
+    Family.V1LocateStudentResponse,
+    "V1LocateStudentResponse",
+    200,
+  ),
+  academicPost(
+    "requestGuardianLink",
+    "/v1/guardian-links",
+    "guardian_link.request",
+    Family.V1RequestGuardianLinkRequest,
+    "V1RequestGuardianLinkRequest",
+    Family.V1GuardianLink,
+    "V1GuardianLink",
+    201,
+  ),
+  academicPost(
+    "verifyGuardianLink",
+    "/v1/guardian-links/{guardianLinkId}/verify",
+    "guardian_link.verify",
+    Family.V1VerifyGuardianLinkRequest,
+    "V1VerifyGuardianLinkRequest",
+    Family.V1GuardianLink,
+    "V1GuardianLink",
+    200,
+    guardianLinkParams(),
+  ),
+  academicPost(
+    "revokeGuardianLink",
+    "/v1/guardian-links/{guardianLinkId}/revoke",
+    "guardian_link.revoke",
+    Family.V1RevokeGuardianLinkRequest,
+    "V1RevokeGuardianLinkRequest",
+    Family.V1GuardianLink,
+    "V1GuardianLink",
+    200,
+    guardianLinkParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -775,6 +818,9 @@ function membershipParams() {
 }
 function invitationParams() {
   return params("invitationId");
+}
+function guardianLinkParams() {
+  return params("guardianLinkId");
 }
 
 function academicGet(

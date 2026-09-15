@@ -412,6 +412,45 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Accept an invitation by presenting its valid token. The token is the credential; no resourceId is resolved.",
   },
+
+  // API-042 S3: guarded student locator and guardian linking.
+  "student.locate": {
+    resource: "student_locate",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Look up one student by its opaque studafyId. Rate-limited and audited per attempt; response shape is uniform whether found or not.",
+  },
+  "guardian_link.request": {
+    resource: "guardian_link",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Request a guardian link to a student as the authenticated actor. Starts pending; a school administrator must verify it.",
+  },
+  "guardian_link.verify": resource(
+    "guardian_link",
+    "Verify a pending guardian link as the student's school administrator.",
+  ),
+  // Not tenantRequired: an admin revoking always has a membership in the
+  // resolved school and gets the usual tenant context, but the linked
+  // guardian revoking their own link often has no memberships row at all -
+  // guardian membership is "if required by school policy" per
+  // instructions.md section 6, not universal, and a guardian_links row is
+  // not a membership. The SQL command's own
+  // is_school_admin(tenant) or guardian_id = auth.uid() check is the real
+  // guard either way; this only stops the tenant-cache lookup from denying
+  // a guardian who has no membership row before that check ever runs.
+  "guardian_link.revoke": {
+    resource: "guardian_link",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Revoke a guardian link as the student's school administrator or the linked guardian themselves.",
+  },
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {
