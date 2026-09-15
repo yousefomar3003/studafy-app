@@ -35,6 +35,7 @@ import {
   V1ReauthVerifyResponse,
 } from "../packages/contracts/src/index";
 import * as Academic from "../packages/contracts/src/v1/academic";
+import * as SchoolAdmin from "../packages/contracts/src/v1/schoolAdmin";
 
 const schemas = {
   ProblemField,
@@ -68,6 +69,7 @@ const schemas = {
   V1DeletionCancelRequest,
   V1DeletionCancelResponse,
   ...Academic,
+  ...SchoolAdmin,
 };
 
 const registry = z.registry<{ id: string }>();

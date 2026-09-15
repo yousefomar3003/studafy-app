@@ -57,6 +57,7 @@ select is(
     'api041_command',
     'api041_query',
     'api042_command',
+    'api042_query',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',
