@@ -1,80 +1,17 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
-import {
-  ProblemDetails,
-  ProblemField,
-  V1_ROUTE_CATALOGUE,
-  V1AuthContextResponse,
-  V1AuthDevice,
-  V1AuthDeviceListResponse,
-  V1AuthDeviceRevokeRequest,
-  V1AuthDeviceRevokeResponse,
-  V1AuthSignOutRequest,
-  V1AuthSignOutResponse,
-  V1Classroom,
-  V1ClassroomListResponse,
-  V1ContextMembership,
-  V1DeletionCancelRequest,
-  V1DeletionCancelResponse,
-  V1DeletionDeletedData,
-  V1DeletionImpactMembership,
-  V1DeletionImpactResponse,
-  V1DeletionRequestRequest,
-  V1DeletionRequestResponse,
-  V1DeletionRetainedRecords,
-  V1IdentityLinkRequest,
-  V1IdentityLinkResponse,
-  V1IdentityUnlinkRequest,
-  V1IdentityUnlinkResponse,
-  V1Membership,
-  V1MeResponse,
-  V1ReauthChallengeRequest,
-  V1ReauthChallengeResponse,
-  V1ReauthVerifyRequest,
-  V1ReauthVerifyResponse,
-} from "../packages/contracts/src/index";
-import * as Academic from "../packages/contracts/src/v1/academic";
-import * as SchoolAdmin from "../packages/contracts/src/v1/schoolAdmin";
-
-const schemas = {
-  ProblemField,
-  ProblemDetails,
-  V1Membership,
-  V1MeResponse,
-  V1Classroom,
-  V1ClassroomListResponse,
-  V1ContextMembership,
-  V1AuthContextResponse,
-  V1AuthDevice,
-  V1AuthDeviceListResponse,
-  V1AuthDeviceRevokeRequest,
-  V1AuthDeviceRevokeResponse,
-  V1AuthSignOutRequest,
-  V1AuthSignOutResponse,
-  V1ReauthChallengeRequest,
-  V1ReauthChallengeResponse,
-  V1ReauthVerifyRequest,
-  V1ReauthVerifyResponse,
-  V1IdentityLinkRequest,
-  V1IdentityLinkResponse,
-  V1IdentityUnlinkRequest,
-  V1IdentityUnlinkResponse,
-  V1DeletionImpactMembership,
-  V1DeletionRetainedRecords,
-  V1DeletionDeletedData,
-  V1DeletionImpactResponse,
-  V1DeletionRequestRequest,
-  V1DeletionRequestResponse,
-  V1DeletionCancelRequest,
-  V1DeletionCancelResponse,
-  ...Academic,
-  ...SchoolAdmin,
-};
+import { V1_ROUTE_CATALOGUE } from "../packages/contracts/src/index";
+// A single namespace import of the v1 barrel, not a hand-maintained list:
+// every schema packages/contracts/src/v1/index.ts re-exports (however it
+// re-exports it - named or `export *`) is registered automatically, so a
+// new v1/<module>.ts schema can never again go undefined in the generated
+// spec just because this file forgot to list it.
+import * as AllV1 from "../packages/contracts/src/v1";
 
 const registry = z.registry<{ id: string }>();
-for (const [id, schema] of Object.entries(schemas)) {
-  schema.register(registry, { id });
+for (const [id, value] of Object.entries(AllV1)) {
+  if (value instanceof z.ZodType) value.register(registry, { id });
 }
 const generated = z.toJSONSchema(registry, {
   target: "draft-2020-12",

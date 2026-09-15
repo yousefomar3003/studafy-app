@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { createAuthRoutes } from "../../src/auth/routes";
 import { createAcademicRoutes } from "../../src/academic/routes";
 import { createSchoolAdminRoutes } from "../../src/school-admin/routes";
+import { createInvitationsRoutes } from "../../src/invitations/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -72,9 +73,21 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const invitations = createInvitationsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
+  combined.route("/", invitations);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -109,13 +122,17 @@ describe("permission catalogue", () => {
     const schoolAdminMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609160002_api042_school_operations.sql`,
     ).text();
+    const invitationsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160003_api042_invitations.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
-      expect(`${authMigration}\n${academicMigration}\n${schoolAdminMigration}`)
-        .toContain(`'${permission}'`);
+      expect(
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}`,
+      ).toContain(`'${permission}'`);
     }
   });
 

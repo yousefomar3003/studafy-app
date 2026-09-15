@@ -16,6 +16,8 @@ import { createAcademicRoutes } from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
 import { createSchoolAdminRoutes } from "./school-admin/routes";
 import { PostgresSchoolAdminRepository } from "./school-admin/repository";
+import { createInvitationsRoutes } from "./invitations/routes";
+import { PostgresInvitationsRepository } from "./invitations/repository";
 import {
   checkDatabase,
   closeDatabase,
@@ -99,15 +101,27 @@ const schoolAdmin = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
-// createAuthRoutes mounts one companion router at "/"; academic and
-// school-admin are combined here first so both ride along on the same slot
-// instead of widening that function's signature for every new API-042
-// module that follows the same pattern.
-const combinedRoutes = academic || schoolAdmin
+const invitations = sql && env.API_CURSOR_SIGNING_KEY
+  ? createInvitationsRoutes(
+    {
+      repository: new PostgresInvitationsRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { invitations: env.API042_INVITATIONS_ENABLED },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+// createAuthRoutes mounts one companion router at "/"; every API-042 module
+// is combined here first so each rides along on the same slot instead of
+// widening that function's signature every time a new module lands.
+const combinedRoutes = academic || schoolAdmin || invitations
   ? (() => {
     const combined = new Hono<AuthorizationEnv>();
     if (academic) combined.route("/", academic);
     if (schoolAdmin) combined.route("/", schoolAdmin);
+    if (invitations) combined.route("/", invitations);
     return combined;
   })()
   : undefined;

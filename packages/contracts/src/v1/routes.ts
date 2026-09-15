@@ -24,6 +24,7 @@ import { V1MeResponse } from "./me";
 import type { IdempotencyMode } from "./platform";
 import * as Academic from "./academic";
 import * as SchoolAdmin from "./schoolAdmin";
+import * as Invitations from "./invitations";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -705,6 +706,47 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
+  academicPost(
+    "issueInvitation",
+    "/v1/schools/{schoolId}/invitations",
+    "invitation.issue",
+    Invitations.V1IssueInvitationRequest,
+    "V1IssueInvitationRequest",
+    Invitations.V1IssueInvitationResponse,
+    "V1IssueInvitationResponse",
+    201,
+    schoolParams(),
+  ),
+  academicGet(
+    "listInvitations",
+    "/v1/schools/{schoolId}/invitations",
+    "invitation.list",
+    Invitations.V1InvitationPage,
+    "V1InvitationPage",
+    schoolParams(),
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "revokeInvitation",
+    "/v1/invitations/{invitationId}/revoke",
+    "invitation.revoke",
+    Invitations.V1RevokeInvitationRequest,
+    "V1RevokeInvitationRequest",
+    Invitations.V1Invitation,
+    "V1Invitation",
+    200,
+    invitationParams(),
+  ),
+  academicPost(
+    "acceptInvitation",
+    "/v1/invitations/accept",
+    "invitation.accept",
+    Invitations.V1AcceptInvitationRequest,
+    "V1AcceptInvitationRequest",
+    Invitations.V1AcceptInvitationResponse,
+    "V1AcceptInvitationResponse",
+    200,
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -730,6 +772,9 @@ function gradeParams() {
 }
 function membershipParams() {
   return params("membershipId");
+}
+function invitationParams() {
+  return params("invitationId");
 }
 
 function academicGet(

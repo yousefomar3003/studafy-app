@@ -390,6 +390,28 @@ export const PERMISSION_CATALOGUE = {
     "classroom",
     "Enroll, withdraw or transfer a student as school admin or exact class writer.",
   ),
+
+  // API-042 S2: invitations.
+  "invitation.issue": resource(
+    "school",
+    "Issue a hashed, expiring, attempt-budgeted invitation as a school administrator.",
+  ),
+  "invitation.list": resource(
+    "school",
+    "List invitations as a school administrator.",
+  ),
+  "invitation.revoke": resource(
+    "invitation",
+    "Revoke a pending invitation as its issuing school's administrator.",
+  ),
+  "invitation.accept": {
+    resource: "invitation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Accept an invitation by presenting its valid token. The token is the credential; no resourceId is resolved.",
+  },
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

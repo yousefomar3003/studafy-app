@@ -78,3 +78,4 @@ export * from "./platform";
 export * from "./routes";
 export * from "./academic";
 export * from "./schoolAdmin";
+export * from "./invitations";
