@@ -10069,6 +10069,360 @@
           }
         ]
       }
+    },
+    "/v1/classrooms/{classroomId}/meetings": {
+      "post": {
+        "operationId": "requestMeeting",
+        "summary": "requestMeeting",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "meeting.request",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "requestMeeting",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1Meeting"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1RequestMeetingRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/meetings/{meetingId}/cancel": {
+      "post": {
+        "operationId": "cancelMeeting",
+        "summary": "cancelMeeting",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "meeting.cancel",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "cancelMeeting",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1Meeting"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CancelMeetingRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/meetings/{meetingId}": {
+      "get": {
+        "operationId": "getMeetingStatus",
+        "summary": "getMeetingStatus",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "meeting.status",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "getMeetingStatus",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1MeetingStatusResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "meetingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -11331,6 +11685,20 @@
         "required": [
           "scope",
           "revokedBefore"
+        ],
+        "additionalProperties": false
+      },
+      "V1CancelMeetingRequest": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "expectedVersion"
         ],
         "additionalProperties": false
       },
@@ -12969,6 +13337,141 @@
         ],
         "additionalProperties": false
       },
+      "V1Meeting": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "students",
+              "guardians",
+              "both"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "scheduled",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "meetUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "recipientCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "classroomId",
+          "title",
+          "startsAt",
+          "endsAt",
+          "audience",
+          "state",
+          "meetUrl",
+          "version",
+          "recipientCount"
+        ],
+        "additionalProperties": false
+      },
+      "V1MeetingDelivery": {
+        "type": "object",
+        "properties": {
+          "recipientId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "sent",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "deliveredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "recipientId",
+          "state",
+          "deliveredAt"
+        ],
+        "additionalProperties": false
+      },
+      "V1MeetingStatusResponse": {
+        "type": "object",
+        "properties": {
+          "meeting": {
+            "$ref": "#/components/schemas/V1Meeting"
+          },
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1MeetingDelivery"
+            }
+          }
+        },
+        "required": [
+          "meeting",
+          "deliveries"
+        ],
+        "additionalProperties": false
+      },
       "V1Membership": {
         "type": "object",
         "properties": {
@@ -13452,6 +13955,42 @@
         },
         "required": [
           "studentId"
+        ],
+        "additionalProperties": false
+      },
+      "V1RequestMeetingRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "audience": {
+            "default": "both",
+            "type": "string",
+            "enum": [
+              "students",
+              "guardians",
+              "both"
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "startsAt",
+          "endsAt",
+          "audience"
         ],
         "additionalProperties": false
       },

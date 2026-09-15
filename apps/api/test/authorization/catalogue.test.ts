@@ -9,6 +9,7 @@ import { createSchoolAdminRoutes } from "../../src/school-admin/routes";
 import { createInvitationsRoutes } from "../../src/invitations/routes";
 import { createFamilyRoutes } from "../../src/family/routes";
 import { createCommunicationsRoutes } from "../../src/communications/routes";
+import { createMeetingsRoutes } from "../../src/meetings/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -108,12 +109,24 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const meetings = createMeetingsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
   combined.route("/", invitations);
   combined.route("/", family);
   combined.route("/", communications);
+  combined.route("/", meetings);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -157,13 +170,16 @@ describe("permission catalogue", () => {
     const communicationsMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609160005_api042_communications.sql`,
     ).text();
+    const meetingsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160006_api042_meetings.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}`,
       ).toContain(`'${permission}'`);
     }
   });

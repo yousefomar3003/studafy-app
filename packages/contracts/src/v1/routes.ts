@@ -27,6 +27,7 @@ import * as SchoolAdmin from "./schoolAdmin";
 import * as Invitations from "./invitations";
 import * as Family from "./family";
 import * as Communications from "./communications";
+import * as Meetings from "./meetings";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -849,6 +850,36 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
+  academicPost(
+    "requestMeeting",
+    "/v1/classrooms/{classroomId}/meetings",
+    "meeting.request",
+    Meetings.V1RequestMeetingRequest,
+    "V1RequestMeetingRequest",
+    Meetings.V1Meeting,
+    "V1Meeting",
+    201,
+    classroomParams(),
+  ),
+  academicPost(
+    "cancelMeeting",
+    "/v1/meetings/{meetingId}/cancel",
+    "meeting.cancel",
+    Meetings.V1CancelMeetingRequest,
+    "V1CancelMeetingRequest",
+    Meetings.V1Meeting,
+    "V1Meeting",
+    200,
+    meetingParams(),
+  ),
+  academicGet(
+    "getMeetingStatus",
+    "/v1/meetings/{meetingId}",
+    "meeting.status",
+    Meetings.V1MeetingStatusResponse,
+    "V1MeetingStatusResponse",
+    meetingParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -883,6 +914,9 @@ function guardianLinkParams() {
 }
 function conversationParams() {
   return params("conversationId");
+}
+function meetingParams() {
+  return params("meetingId");
 }
 
 function academicGet(

@@ -35,6 +35,7 @@ re-evidencing these rows with named, separated owners.
 | New private-file uploads | Storage insert policy dropped; Study Coach rejects `attachment_path` | Study Coach attachment control disabled and upload code removed | Ownership metadata, quotas, signature checks, quarantine, scanning, sanitization rules, clean publication, and tenant-negative tests |
 | Production application | No production backend/SQLite initialization and no feature routes | Production-readiness screen only | Core screens use server-backed repositories; offline synchronization, tenant isolation, and upgrade tests pass |
 | Android/iOS release | Not applicable | Native Release/archive tasks exit with a `SEC-001` error | `REL-002` final identity, non-debug signing, privacy declarations, CI policy, and store-console evidence |
+| Legacy meeting Edge Functions (`create-google-meet`, `cancel-google-meet`) | Both return stable `MEETINGS_DISABLED` 503s without reading the body, resolving recipients, using service credentials, or contacting a provider | Not applicable | API-042's `POST /v1/classrooms/{classroomId}/meetings` and `POST /v1/meetings/{meetingId}/cancel` pass authorization, transaction, idempotency and retry tests (`supabase/tests/api042_meetings.sql`, `apps/api/test/meetings`) and replace these functions in traffic |
 
 There is intentionally no environment variable that re-enables grading or
 uploads. A synthetic demonstration requiring either capability must use a

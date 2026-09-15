@@ -70,6 +70,7 @@ export const apiEnvSchema = z.object({
   API042_FAMILY_ENABLED: switchFlag,
   API042_CONVERSATIONS_ENABLED: switchFlag,
   API042_ANNOUNCEMENTS_ENABLED: switchFlag,
+  API042_MEETINGS_ENABLED: switchFlag,
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
   // separately, so a misconfiguration cannot leave the API trusting one
@@ -203,6 +204,7 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       family: env.API042_FAMILY_ENABLED,
       conversations: env.API042_CONVERSATIONS_ENABLED,
       announcements: env.API042_ANNOUNCEMENTS_ENABLED,
+      meetings: env.API042_MEETINGS_ENABLED,
     },
   };
 }

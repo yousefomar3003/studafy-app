@@ -1,8 +1,8 @@
 import { corsHeaders } from "./http.ts";
 
 export type DisabledFeature = {
-  code: "AI_GRADING_DISABLED" | "FILE_UPLOADS_DISABLED";
-  feature: "ai_grading" | "file_uploads";
+  code: "AI_GRADING_DISABLED" | "FILE_UPLOADS_DISABLED" | "MEETINGS_DISABLED";
+  feature: "ai_grading" | "file_uploads" | "meetings";
   message: string;
 };
 

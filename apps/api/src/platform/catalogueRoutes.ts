@@ -141,13 +141,21 @@ export function createCatalogueRoutes<Slice extends string>(
       routes.get(path, validate, authorize, available as never, async (c) => {
         const actor = c.get("actor");
         const tenant = c.get("authorization").tenant;
-        if (!tenant) return problem(c, "FORBIDDEN", 403);
         const query = (validatedQuery<V1PageQueryType>(c as never) ??
           {}) as V1PageQueryType;
         const filters = { ...query, cursor: undefined };
         const digest = await filterHash(filters);
         let position: string | null = null;
         if (query.cursor) {
+          // A signed cursor is always school-bound; a null tenant can never
+          // hold one. This is the only case a null tenant fails a GET here
+          // - single-resource reads (no items/cursor in their response,
+          // e.g. getMeetingStatus) intentionally allow it, for the same
+          // reason message.list/send and meeting.status are not
+          // tenantRequired: an invited guardian recipient often has no
+          // memberships row, and the resource-level check inside the SQL
+          // function is the real guard either way.
+          if (!tenant) return problem(c, "CURSOR_INVALID", 400);
           const decoded = await verifyCursor(
             cursorSigningKey,
             query.cursor,
@@ -163,7 +171,7 @@ export function createCatalogueRoutes<Slice extends string>(
         const result = await repository.query(
           {
             subject: actor.token.subject,
-            schoolId: tenant.schoolId,
+            schoolId: tenant?.schoolId ?? null,
             requestId: c.get("requestId"),
           },
           route.operationId,
@@ -185,7 +193,11 @@ export function createCatalogueRoutes<Slice extends string>(
           ...payload,
           ...(Object.hasOwn(payload, "items")
             ? {
-              nextCursor: nextPosition
+              // A null tenant (a participant/recipient with no memberships
+              // row - see the comment above) never gets a continuation
+              // cursor, since a cursor is always school-signed; the page
+              // itself is unaffected, only paging past it is unavailable.
+              nextCursor: (nextPosition && tenant)
                 ? await signCursor(cursorSigningKey, {
                   version: 1,
                   filterVersion: 1,

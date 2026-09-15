@@ -469,6 +469,27 @@ export const PERMISSION_CATALOGUE = {
     "school",
     "List announcements visible to an active member, filtered per row by classroom relationship.",
   ),
+
+  // API-042 S5: meetings.
+  "meeting.request": resource(
+    "classroom",
+    "Request a meeting as the classroom's exact writer.",
+  ),
+  "meeting.cancel": resource(
+    "meeting",
+    "Cancel a meeting as its school administrator or the classroom's exact writer.",
+  ),
+  // Not tenantRequired for the same reason as message.list/message.send: an
+  // invited guardian recipient may have no memberships row at all.
+  // is_meeting_authorized(...) or an exact meeting_deliveries row is the
+  // real guard.
+  "meeting.status": {
+    resource: "meeting",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Read meeting and delivery status as staff or an invited recipient.",
+  },
   "guardian_link.verify": resource(
     "guardian_link",
     "Verify a pending guardian link as the student's school administrator.",
