@@ -49,7 +49,7 @@ function routeTable() {
   const idempotency = { logger, repository: new FakeIdempotencyRepository() };
   const academic = createAcademicRoutes(
     {
-      cursorSigningKey: "catalogue-test-key-that-is-at-least-32-bytes",
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       repository: {
         query: async () => null,
         command: async () => ({ outcome: "invalid" as const }),

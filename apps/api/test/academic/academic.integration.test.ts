@@ -503,7 +503,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     const publish = await request(`/v1/assignments/${assignmentId}/publish`, {
       method: "POST",
       subject: TEACHER_A,
-      key: "api041-it-assignment-publish-1",
+      key: "aaaaaaaaaaaaaaaaaaaaaa01",
       requestId: "api041-it-publish-assignment",
       body: { expectedVersion: 1 },
     });
@@ -539,7 +539,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     ).toBe(0);
     expect(
       await scalar(
-        sql`select status::text as result from public.idempotency_records where idempotency_key = 'api041-it-assignment-publish-1' and scope = 'v1.publishAssignment'`,
+        sql`select status::text as result from public.idempotency_records where idempotency_key = 'aaaaaaaaaaaaaaaaaaaaaa01' and scope = 'v1.publishAssignment'`,
       ),
     ).toBe("completed");
   });
@@ -662,7 +662,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     const stale = await request(`/v1/assignments/${assignmentId}/withdraw`, {
       method: "POST",
       subject: TEACHER_A,
-      key: "api041-it-assignment-stale-01",
+      key: "aaaaaaaaaaaaaaaaaaaaaa02",
       body: { expectedVersion: 1 },
     });
     expect(stale.status).toBe(409);
@@ -818,7 +818,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     const publish = await request(`/v1/assessments/${assessmentId}/publish`, {
       method: "POST",
       subject: TEACHER_A,
-      key: "api041-it-assessment-publish-1",
+      key: "aaaaaaaaaaaaaaaaaaaaaa03",
       body: { expectedVersion: 1 },
     });
     expect(publish.status).toBe(200);
@@ -892,7 +892,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       {
         method: "POST",
         subject: TEACHER_A,
-        key: "api041-it-grade-publish-0001",
+        key: "aaaaaaaaaaaaaaaaaaaaaa04",
         requestId: "api041-it-publish-grade",
         body: { expectedVersion: 2 },
       },
@@ -944,7 +944,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       {
         method: "POST",
         subject: TEACHER_A,
-        key: "api041-it-grade-correct-bad",
+        key: "aaaaaaaaaaaaaaaaaaaaaa05",
         body: { expectedVersion: 3, score: 9, feedback: "Rechecked." },
       },
     );
@@ -955,7 +955,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       {
         method: "POST",
         subject: TEACHER_A,
-        key: "api041-it-grade-correct-001",
+        key: "aaaaaaaaaaaaaaaaaaaaaa06",
         body: {
           expectedVersion: 3,
           score: 9,
@@ -983,7 +983,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       {
         method: "POST",
         subject: TEACHER_A,
-        key: "api041-it-grade-withdraw-01",
+        key: "aaaaaaaaaaaaaaaaaaaaaa07",
         body: { expectedVersion: corrected.version },
       },
     );
@@ -1110,7 +1110,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     const denied = await request(`/v1/assignments/${assignmentId}/withdraw`, {
       method: "POST",
       subject: TEACHER_A,
-      key: "api041-it-revoked-denied-1",
+      key: "aaaaaaaaaaaaaaaaaaaaaa08",
       body: { expectedVersion: 2 },
     });
     expect(denied.status).toBe(404);

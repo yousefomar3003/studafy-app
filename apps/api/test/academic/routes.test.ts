@@ -37,7 +37,7 @@ const TERM = "cccccccc-0000-4000-8000-000000000001";
 const CLASSROOM = "dddddddd-0000-4000-8000-000000000001";
 const ASSIGNMENT = "eeeeeeee-0000-4000-8000-000000000001";
 const POSITION = "abcd0000-0000-4000-8000-000000000010";
-const CURSOR_KEY = "api041-test-cursor-signing-key-0001";
+const CURSOR_KEY = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 function classroomItem() {
   return {
@@ -571,13 +571,13 @@ describe("API-041 command handling", () => {
     const first = await h.request("/v1/assignments", {
       method: "POST",
       body: JSON.stringify(assignmentBody),
-      key: "api041-mismatch-key-00001",
+      key: "aaaaaaaaaaaaaaaaaaaaaaaa",
     });
     expect(first.status).toBe(201);
     const mismatch = await h.request("/v1/assignments", {
       method: "POST",
       body: JSON.stringify({ ...assignmentBody, title: "Different work" }),
-      key: "api041-mismatch-key-00001",
+      key: "aaaaaaaaaaaaaaaaaaaaaaaa",
     });
     expect(mismatch.status).toBe(409);
     expect(((await mismatch.json()) as { code: string }).code).toBe(
