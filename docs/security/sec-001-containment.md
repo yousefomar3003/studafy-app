@@ -36,6 +36,7 @@ re-evidencing these rows with named, separated owners.
 | Production application | No production backend/SQLite initialization and no feature routes | Production-readiness screen only | Core screens use server-backed repositories; offline synchronization, tenant isolation, and upgrade tests pass |
 | Android/iOS release | Not applicable | Native Release/archive tasks exit with a `SEC-001` error | `REL-002` final identity, non-debug signing, privacy declarations, CI policy, and store-console evidence |
 | Legacy meeting Edge Functions (`create-google-meet`, `cancel-google-meet`) | Both return stable `MEETINGS_DISABLED` 503s without reading the body, resolving recipients, using service credentials, or contacting a provider | Not applicable | API-042's `POST /v1/classrooms/{classroomId}/meetings` and `POST /v1/meetings/{meetingId}/cancel` pass authorization, transaction, idempotency and retry tests (`supabase/tests/api042_meetings.sql`, `apps/api/test/meetings`) and replace these functions in traffic |
+| Legacy `request-account-deletion` Edge Function | Returns a stable `ACCOUNT_DELETION_PROTOTYPE_DISABLED` 503; its manual JWT-`iat` decode (the broken recent-auth check DL-032 documents) never runs | Not applicable | Already fully superseded by AUTH-030/031's `POST /v1/account/deletion-request`, which uses the real single-use hashed recent-auth grant instead |
 
 There is intentionally no environment variable that re-enables grading or
 uploads. A synthetic demonstration requiring either capability must use a

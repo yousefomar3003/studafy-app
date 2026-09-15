@@ -513,6 +513,31 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description: "Set one of the authenticated actor's own notification channel/category preferences.",
   },
+
+  // API-042 S7: profile correction and data export request/status.
+  // account.deletion.* (AUTH-030/031) already covers deletion; this is the
+  // other half of account rights under the same self scope.
+  "account.profile.write": {
+    resource: "profile",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Update the authenticated actor's own allowlisted profile fields.",
+  },
+  "account.export.request": {
+    resource: "data_export_request",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Request an export of the authenticated actor's own data.",
+  },
+  "account.export.status": {
+    resource: "data_export_request",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Read the status of the authenticated actor's own most recent data export request.",
+  },
   "meeting.status": {
     resource: "meeting",
     scope: "resource",

@@ -11,6 +11,7 @@ import { createFamilyRoutes } from "../../src/family/routes";
 import { createCommunicationsRoutes } from "../../src/communications/routes";
 import { createMeetingsRoutes } from "../../src/meetings/routes";
 import { createNotificationsRoutes } from "../../src/notifications/routes";
+import { createAccountRoutes } from "../../src/account/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -132,6 +133,17 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const account = createAccountRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
@@ -140,6 +152,7 @@ function routeTable() {
   combined.route("/", communications);
   combined.route("/", meetings);
   combined.route("/", notifications);
+  combined.route("/", account);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,

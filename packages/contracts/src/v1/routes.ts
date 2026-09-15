@@ -29,6 +29,7 @@ import * as Family from "./family";
 import * as Communications from "./communications";
 import * as Meetings from "./meetings";
 import * as Notifications from "./notifications";
+import * as Account from "./account";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -923,6 +924,33 @@ export const V1_ROUTE_CATALOGUE = [
     Notifications.V1NotificationPreference,
     "V1NotificationPreference",
     200,
+  ),
+  academicPost(
+    "updateProfile",
+    "/v1/account/profile",
+    "account.profile.write",
+    Account.V1UpdateProfileRequest,
+    "V1UpdateProfileRequest",
+    Account.V1ProfileResponse,
+    "V1ProfileResponse",
+    200,
+  ),
+  academicPost(
+    "requestDataExport",
+    "/v1/account/export-request",
+    "account.export.request",
+    Account.V1RequestDataExportRequest,
+    "V1RequestDataExportRequest",
+    Account.V1DataExportRequest,
+    "V1DataExportRequest",
+    201,
+  ),
+  academicGet(
+    "getExportStatus",
+    "/v1/account/export-status",
+    "account.export.status",
+    Account.V1ExportStatusResponse,
+    "V1ExportStatusResponse",
   ),
 ] as const satisfies readonly V1RouteContract[];
 
