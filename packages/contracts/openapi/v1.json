@@ -9241,6 +9241,834 @@
           }
         ]
       }
+    },
+    "/v1/conversations": {
+      "get": {
+        "operationId": "listConversations",
+        "summary": "listConversations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "conversation.list",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "listConversations",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ConversationPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "schoolId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "classroomId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createConversation",
+        "summary": "createConversation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "conversation.create",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "createConversation",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1Conversation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CreateConversationRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/conversations/{conversationId}/messages": {
+      "get": {
+        "operationId": "listMessages",
+        "summary": "listMessages",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "message.list",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "listMessages",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1MessagePage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "schoolId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "classroomId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "sendMessage",
+        "summary": "sendMessage",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "message.send",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "sendMessage",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1Message"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1SendMessageRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/announcements": {
+      "post": {
+        "operationId": "createAnnouncement",
+        "summary": "createAnnouncement",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "announcement.create",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "createAnnouncement",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1Announcement"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CreateAnnouncementRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      },
+      "get": {
+        "operationId": "listAnnouncements",
+        "summary": "listAnnouncements",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "announcement.list",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "listAnnouncements",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1AnnouncementPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "schoolId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "classroomId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -9570,6 +10398,88 @@
           "role",
           "status",
           "version"
+        ],
+        "additionalProperties": false
+      },
+      "V1Announcement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "students",
+              "guardians",
+              "both"
+            ]
+          },
+          "important": {
+            "type": "boolean"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "schoolId",
+          "classroomId",
+          "title",
+          "body",
+          "audience",
+          "important",
+          "publishedAt"
+        ],
+        "additionalProperties": false
+      },
+      "V1AnnouncementPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1Announcement"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
         ],
         "additionalProperties": false
       },
@@ -10688,6 +11598,77 @@
         ],
         "additionalProperties": false
       },
+      "V1Conversation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived",
+              "closed"
+            ]
+          },
+          "lastReadAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "schoolId",
+          "subject",
+          "state",
+          "lastReadAt"
+        ],
+        "additionalProperties": false
+      },
+      "V1ConversationPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1Conversation"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
       "V1CorrectGradeRequest": {
         "type": "object",
         "properties": {
@@ -10734,6 +11715,52 @@
           "score",
           "feedback",
           "reason"
+        ],
+        "additionalProperties": false
+      },
+      "V1CreateAnnouncementRequest": {
+        "type": "object",
+        "properties": {
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "audience": {
+            "default": "both",
+            "type": "string",
+            "enum": [
+              "students",
+              "guardians",
+              "both"
+            ]
+          },
+          "important": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schoolId",
+          "title",
+          "body",
+          "audience",
+          "important"
         ],
         "additionalProperties": false
       },
@@ -10895,6 +11922,35 @@
           "section",
           "room",
           "schedule"
+        ],
+        "additionalProperties": false
+      },
+      "V1CreateConversationRequest": {
+        "type": "object",
+        "properties": {
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "participantIds": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        },
+        "required": [
+          "schoolId",
+          "participantIds"
         ],
         "additionalProperties": false
       },
@@ -12026,6 +13082,70 @@
         ],
         "additionalProperties": false
       },
+      "V1Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "senderId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "clientMessageId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "senderId",
+          "clientMessageId",
+          "body",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "V1MessagePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V1Message"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "additionalProperties": false
+      },
       "V1PageQuery": {
         "type": "object",
         "properties": {
@@ -12720,6 +13840,26 @@
         },
         "required": [
           "expectedVersion"
+        ],
+        "additionalProperties": false
+      },
+      "V1SendMessageRequest": {
+        "type": "object",
+        "properties": {
+          "clientMessageId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "clientMessageId",
+          "body"
         ],
         "additionalProperties": false
       },

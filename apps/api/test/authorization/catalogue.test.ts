@@ -8,6 +8,7 @@ import { createAcademicRoutes } from "../../src/academic/routes";
 import { createSchoolAdminRoutes } from "../../src/school-admin/routes";
 import { createInvitationsRoutes } from "../../src/invitations/routes";
 import { createFamilyRoutes } from "../../src/family/routes";
+import { createCommunicationsRoutes } from "../../src/communications/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -96,11 +97,23 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const communications = createCommunicationsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
   combined.route("/", invitations);
   combined.route("/", family);
+  combined.route("/", communications);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -141,13 +154,16 @@ describe("permission catalogue", () => {
     const familyMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609160004_api042_family.sql`,
     ).text();
+    const communicationsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160005_api042_communications.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}`,
       ).toContain(`'${permission}'`);
     }
   });

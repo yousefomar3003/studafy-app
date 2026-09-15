@@ -430,6 +430,45 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Request a guardian link to a student as the authenticated actor. Starts pending; a school administrator must verify it.",
   },
+  "conversation.list": {
+    resource: "conversation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "List conversations the authenticated actor actively participates in, across every school.",
+  },
+  "conversation.create": {
+    resource: "conversation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Create a conversation as a member or verified guardian of the named school.",
+  },
+  // Not tenantRequired for the same reason as guardian_link.revoke: a
+  // verified-guardian participant frequently has no memberships row at all.
+  // is_conversation_participant(conversationId) is the real guard.
+  "message.list": {
+    resource: "conversation",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "List messages in a conversation the actor actively participates in.",
+  },
+  "message.send": {
+    resource: "conversation",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Send a message in a conversation the actor actively participates in.",
+  },
+  "announcement.create": resource(
+    "school_or_classroom",
+    "Create an announcement as a school administrator (school-wide) or the classroom's exact writer.",
+  ),
+  "announcement.list": resource(
+    "school",
+    "List announcements visible to an active member, filtered per row by classroom relationship.",
+  ),
   "guardian_link.verify": resource(
     "guardian_link",
     "Verify a pending guardian link as the student's school administrator.",

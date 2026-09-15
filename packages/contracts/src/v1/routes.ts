@@ -26,6 +26,7 @@ import * as Academic from "./academic";
 import * as SchoolAdmin from "./schoolAdmin";
 import * as Invitations from "./invitations";
 import * as Family from "./family";
+import * as Communications from "./communications";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -790,6 +791,64 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     guardianLinkParams(),
   ),
+  academicGet(
+    "listConversations",
+    "/v1/conversations",
+    "conversation.list",
+    Communications.V1ConversationPage,
+    "V1ConversationPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "createConversation",
+    "/v1/conversations",
+    "conversation.create",
+    Communications.V1CreateConversationRequest,
+    "V1CreateConversationRequest",
+    Communications.V1Conversation,
+    "V1Conversation",
+    201,
+  ),
+  academicGet(
+    "listMessages",
+    "/v1/conversations/{conversationId}/messages",
+    "message.list",
+    Communications.V1MessagePage,
+    "V1MessagePage",
+    conversationParams(),
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "sendMessage",
+    "/v1/conversations/{conversationId}/messages",
+    "message.send",
+    Communications.V1SendMessageRequest,
+    "V1SendMessageRequest",
+    Communications.V1Message,
+    "V1Message",
+    201,
+    conversationParams(),
+  ),
+  academicPost(
+    "createAnnouncement",
+    "/v1/announcements",
+    "announcement.create",
+    Communications.V1CreateAnnouncementRequest,
+    "V1CreateAnnouncementRequest",
+    Communications.V1Announcement,
+    "V1Announcement",
+    201,
+  ),
+  academicGet(
+    "listAnnouncements",
+    "/v1/announcements",
+    "announcement.list",
+    Communications.V1AnnouncementPage,
+    "V1AnnouncementPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -821,6 +880,9 @@ function invitationParams() {
 }
 function guardianLinkParams() {
   return params("guardianLinkId");
+}
+function conversationParams() {
+  return params("conversationId");
 }
 
 function academicGet(
