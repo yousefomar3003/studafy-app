@@ -20,7 +20,9 @@ export type AcademicSlice =
   | "attendance"
   | "wellbeing";
 
-const ACADEMIC_ROUTES = V1_ROUTE_CATALOGUE.slice(12);
+// Bounded, not open-ended: entries after index 51 belong to school-admin
+// (API-042 S1) and are mounted by createSchoolAdminRoutes instead.
+const ACADEMIC_ROUTES = V1_ROUTE_CATALOGUE.slice(12, 52);
 
 function selector(
   c: Context<AuthorizationEnv>,

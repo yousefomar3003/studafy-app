@@ -1,3 +1,4 @@
+import { Hono } from "hono";
 import { describeApiEnv, loadApiEnv } from "./bootstrap/config";
 import { createApp, type DependentCheck } from "./bootstrap/app";
 import { authIssuer, authJwksUrl } from "@studafy/config";
@@ -5,11 +6,16 @@ import { AuthContextRepository } from "./auth/context";
 import { JwksKeySource } from "./auth/jwks";
 import { createAuthRoutes } from "./auth/routes";
 import { PostgresAuthorizationRepository } from "./authorization/repository";
-import { createAuthorizationDependencies } from "./authorization/middleware";
+import {
+  type AuthorizationEnv,
+  createAuthorizationDependencies,
+} from "./authorization/middleware";
 import { PostgresIdempotencyRepository } from "./platform/idempotency";
 import { createRedactingLogger } from "./platform/logging";
 import { createAcademicRoutes } from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
+import { createSchoolAdminRoutes } from "./school-admin/routes";
+import { PostgresSchoolAdminRepository } from "./school-admin/repository";
 import {
   checkDatabase,
   closeDatabase,
@@ -76,6 +82,36 @@ const academic = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+const schoolAdmin = sql && env.API_CURSOR_SIGNING_KEY
+  ? createSchoolAdminRoutes(
+    {
+      repository: new PostgresSchoolAdminRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: {
+        schools: env.API042_SCHOOLS_ENABLED,
+        memberships: env.API042_MEMBERSHIPS_ENABLED,
+        staffing: env.API042_STAFFING_ENABLED,
+        enrollment: env.API042_ENROLLMENT_ENABLED,
+      },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+// createAuthRoutes mounts one companion router at "/"; academic and
+// school-admin are combined here first so both ride along on the same slot
+// instead of widening that function's signature for every new API-042
+// module that follows the same pattern.
+const combinedRoutes = academic || schoolAdmin
+  ? (() => {
+    const combined = new Hono<AuthorizationEnv>();
+    if (academic) combined.route("/", academic);
+    if (schoolAdmin) combined.route("/", schoolAdmin);
+    return combined;
+  })()
+  : undefined;
+
 const auth = sql && env.SUPABASE_URL
   ? createAuthRoutes(
     {
@@ -91,7 +127,7 @@ const auth = sql && env.SUPABASE_URL
     },
     authorization,
     idempotencyDependencies,
-    academic,
+    combinedRoutes,
   )
   : undefined;
 

@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { type LogLevel, V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
+import { Hono } from "hono";
 import { createAuthRoutes } from "../../src/auth/routes";
 import { createAcademicRoutes } from "../../src/academic/routes";
+import { createSchoolAdminRoutes } from "../../src/school-admin/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
+import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
   AUTH_HANDLER_PERMISSIONS,
   isPermission,
@@ -58,11 +61,25 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const schoolAdmin = createSchoolAdminRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const combined = new Hono<AuthorizationEnv>();
+  combined.route("/", academic);
+  combined.route("/", schoolAdmin);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
     idempotency,
-    academic,
+    combined,
   );
   return routes;
 }
@@ -89,14 +106,16 @@ describe("permission catalogue", () => {
     const academicMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609150002_api041_authoritative_surface.sql`,
     ).text();
+    const schoolAdminMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160002_api042_school_operations.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
-      expect(`${authMigration}\n${academicMigration}`).toContain(
-        `'${permission}'`,
-      );
+      expect(`${authMigration}\n${academicMigration}\n${schoolAdminMigration}`)
+        .toContain(`'${permission}'`);
     }
   });
 

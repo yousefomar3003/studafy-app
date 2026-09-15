@@ -77,3 +77,4 @@ export {
 export * from "./platform";
 export * from "./routes";
 export * from "./academic";
+export * from "./schoolAdmin";

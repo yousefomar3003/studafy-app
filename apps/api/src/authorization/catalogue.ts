@@ -348,15 +348,47 @@ export const PERMISSION_CATALOGUE = {
     "Create a classified wellbeing record as exact class staff.",
   ),
 
-  // Reserved for the bounded API-042 membership commands. They are catalogued
-  // now so no future handler invents a role check outside this service.
+  // API-042 S1: school provisioning/lifecycle, membership lifecycle,
+  // classroom staffing and enrollment transitions.
+  "school.provision": {
+    resource: "school",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Provision a new school as a platform operator. Not client-selectable: the SQL command independently requires a platform_operators row.",
+  },
+  "school.suspend": resource(
+    "school",
+    "Suspend a school as its administrator or a platform operator.",
+  ),
+  "school.close": resource(
+    "school",
+    "Close a school as its administrator or a platform operator.",
+  ),
   "membership.grant": resource(
     "school",
     "Grant a school membership as an active school administrator.",
   ),
+  "membership.activate": resource(
+    "membership",
+    "Reactivate a suspended membership as an active administrator in its school.",
+  ),
+  "membership.suspend": resource(
+    "membership",
+    "Suspend a membership as an active administrator in its school.",
+  ),
   "membership.revoke": resource(
     "membership",
     "Revoke a membership as an active administrator in its school.",
+  ),
+  "classroom_staff.write": resource(
+    "classroom",
+    "Assign or remove classroom staff as school admin or the classroom's lead teacher.",
+  ),
+  "enrollment.write": resource(
+    "classroom",
+    "Enroll, withdraw or transfer a student as school admin or exact class writer.",
   ),
 } as const satisfies Record<string, PermissionDefinition>;
 

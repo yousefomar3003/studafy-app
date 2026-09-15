@@ -23,6 +23,7 @@ import {
 import { V1MeResponse } from "./me";
 import type { IdempotencyMode } from "./platform";
 import * as Academic from "./academic";
+import * as SchoolAdmin from "./schoolAdmin";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -573,6 +574,137 @@ export const V1_ROUTE_CATALOGUE = [
     "V1WellbeingEvent",
     201,
   ),
+  academicPost(
+    "provisionSchool",
+    "/v1/schools",
+    "school.provision",
+    SchoolAdmin.V1ProvisionSchoolRequest,
+    "V1ProvisionSchoolRequest",
+    SchoolAdmin.V1SchoolAdmin,
+    "V1SchoolAdmin",
+    201,
+  ),
+  academicPost(
+    "suspendSchool",
+    "/v1/schools/{schoolId}/suspend",
+    "school.suspend",
+    SchoolAdmin.V1SchoolLifecycleRequest,
+    "V1SchoolLifecycleRequest",
+    SchoolAdmin.V1SchoolAdmin,
+    "V1SchoolAdmin",
+    200,
+    schoolParams(),
+  ),
+  academicPost(
+    "closeSchool",
+    "/v1/schools/{schoolId}/close",
+    "school.close",
+    SchoolAdmin.V1SchoolLifecycleRequest,
+    "V1SchoolLifecycleRequest",
+    SchoolAdmin.V1SchoolAdmin,
+    "V1SchoolAdmin",
+    200,
+    schoolParams(),
+  ),
+  academicPost(
+    "grantMembership",
+    "/v1/schools/{schoolId}/memberships/grant",
+    "membership.grant",
+    SchoolAdmin.V1GrantMembershipRequest,
+    "V1GrantMembershipRequest",
+    SchoolAdmin.V1MembershipRecord,
+    "V1MembershipRecord",
+    201,
+    schoolParams(),
+  ),
+  academicPost(
+    "activateMembership",
+    "/v1/memberships/{membershipId}/activate",
+    "membership.activate",
+    SchoolAdmin.V1MembershipLifecycleRequest,
+    "V1MembershipLifecycleRequest",
+    SchoolAdmin.V1MembershipRecord,
+    "V1MembershipRecord",
+    200,
+    membershipParams(),
+  ),
+  academicPost(
+    "suspendMembership",
+    "/v1/memberships/{membershipId}/suspend",
+    "membership.suspend",
+    SchoolAdmin.V1MembershipLifecycleRequest,
+    "V1MembershipLifecycleRequest",
+    SchoolAdmin.V1MembershipRecord,
+    "V1MembershipRecord",
+    200,
+    membershipParams(),
+  ),
+  academicPost(
+    "revokeMembership",
+    "/v1/memberships/{membershipId}/revoke",
+    "membership.revoke",
+    SchoolAdmin.V1MembershipLifecycleRequest,
+    "V1MembershipLifecycleRequest",
+    SchoolAdmin.V1MembershipRecord,
+    "V1MembershipRecord",
+    200,
+    membershipParams(),
+  ),
+  academicPost(
+    "assignClassroomStaff",
+    "/v1/classrooms/{classroomId}/staff/assign",
+    "classroom_staff.write",
+    SchoolAdmin.V1AssignClassroomStaffRequest,
+    "V1AssignClassroomStaffRequest",
+    SchoolAdmin.V1ClassroomStaffAssignment,
+    "V1ClassroomStaffAssignment",
+    201,
+    classroomParams(),
+  ),
+  academicPost(
+    "removeClassroomStaff",
+    "/v1/classrooms/{classroomId}/staff/remove",
+    "classroom_staff.write",
+    SchoolAdmin.V1RemoveClassroomStaffRequest,
+    "V1RemoveClassroomStaffRequest",
+    SchoolAdmin.V1ClassroomStaffAssignment,
+    "V1ClassroomStaffAssignment",
+    200,
+    classroomParams(),
+  ),
+  academicPost(
+    "enrollStudent",
+    "/v1/classrooms/{classroomId}/enrollments/enroll",
+    "enrollment.write",
+    SchoolAdmin.V1EnrollStudentRequest,
+    "V1EnrollStudentRequest",
+    SchoolAdmin.V1EnrollmentTransition,
+    "V1EnrollmentTransition",
+    200,
+    classroomParams(),
+  ),
+  academicPost(
+    "withdrawStudent",
+    "/v1/classrooms/{classroomId}/enrollments/withdraw",
+    "enrollment.write",
+    SchoolAdmin.V1WithdrawStudentRequest,
+    "V1WithdrawStudentRequest",
+    SchoolAdmin.V1EnrollmentTransition,
+    "V1EnrollmentTransition",
+    200,
+    classroomParams(),
+  ),
+  academicPost(
+    "transferEnrollment",
+    "/v1/classrooms/{classroomId}/enrollments/transfer",
+    "enrollment.write",
+    SchoolAdmin.V1TransferEnrollmentRequest,
+    "V1TransferEnrollmentRequest",
+    SchoolAdmin.V1EnrollmentTransition,
+    "V1EnrollmentTransition",
+    200,
+    classroomParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -595,6 +727,9 @@ function assessmentParams() {
 }
 function gradeParams() {
   return params("gradeResultId");
+}
+function membershipParams() {
+  return params("membershipId");
 }
 
 function academicGet(
