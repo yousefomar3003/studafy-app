@@ -28,6 +28,7 @@ import * as Invitations from "./invitations";
 import * as Family from "./family";
 import * as Communications from "./communications";
 import * as Meetings from "./meetings";
+import * as Notifications from "./notifications";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -879,6 +880,49 @@ export const V1_ROUTE_CATALOGUE = [
     Meetings.V1MeetingStatusResponse,
     "V1MeetingStatusResponse",
     meetingParams(),
+  ),
+  academicGet(
+    "listNotifications",
+    "/v1/notifications",
+    "notification.list",
+    Notifications.V1NotificationPage,
+    "V1NotificationPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "getUnreadCount",
+    "/v1/notifications/unread-count",
+    "notification.list",
+    Notifications.V1UnreadCountResponse,
+    "V1UnreadCountResponse",
+  ),
+  academicPost(
+    "markNotificationsRead",
+    "/v1/notifications/mark-read",
+    "notification.mark_read",
+    Notifications.V1MarkNotificationsReadRequest,
+    "V1MarkNotificationsReadRequest",
+    Notifications.V1MarkNotificationsReadResponse,
+    "V1MarkNotificationsReadResponse",
+    200,
+  ),
+  academicGet(
+    "getNotificationPreferences",
+    "/v1/notifications/preferences",
+    "notification.preferences.read",
+    Notifications.V1NotificationPreferencesResponse,
+    "V1NotificationPreferencesResponse",
+  ),
+  academicPost(
+    "updateNotificationPreferences",
+    "/v1/notifications/preferences",
+    "notification.preferences.write",
+    Notifications.V1UpdateNotificationPreferenceRequest,
+    "V1UpdateNotificationPreferenceRequest",
+    Notifications.V1NotificationPreference,
+    "V1NotificationPreference",
+    200,
   ),
 ] as const satisfies readonly V1RouteContract[];
 

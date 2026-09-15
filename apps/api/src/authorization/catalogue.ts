@@ -483,6 +483,36 @@ export const PERMISSION_CATALOGUE = {
   // invited guardian recipient may have no memberships row at all.
   // is_meeting_authorized(...) or an exact meeting_deliveries row is the
   // real guard.
+  // API-042 S6: notifications. All self-scoped - every operation reads or
+  // writes only the authenticated actor's own rows, across every school.
+  "notification.list": {
+    resource: "notification",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "List or count the authenticated actor's own in-app notifications.",
+  },
+  "notification.mark_read": {
+    resource: "notification",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Mark the authenticated actor's own notifications read, bounded to 100 ids or all.",
+  },
+  "notification.preferences.read": {
+    resource: "notification_preference",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Read the authenticated actor's own notification channel/category preferences.",
+  },
+  "notification.preferences.write": {
+    resource: "notification_preference",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Set one of the authenticated actor's own notification channel/category preferences.",
+  },
   "meeting.status": {
     resource: "meeting",
     scope: "resource",

@@ -82,3 +82,4 @@ export * from "./invitations";
 export * from "./family";
 export * from "./communications";
 export * from "./meetings";
+export * from "./notifications";
