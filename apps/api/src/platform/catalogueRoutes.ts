@@ -45,7 +45,12 @@ export interface CatalogueCommandResult {
 
 export interface RequestDbContext {
   subject: string;
-  schoolId: string;
+  /**
+   * Null only for self-scoped permissions (e.g. platform-operator school
+   * provisioning) that have no resolved tenant to check. Every
+   * resource/tenant-scoped permission always resolves a school here.
+   */
+  schoolId: string | null;
   requestId: string;
 }
 
@@ -213,11 +218,11 @@ export function createCatalogueRoutes<Slice extends string>(
         const actor = c.get("actor");
         const tenant = c.get("authorization").tenant;
         const reservation = c.get("idempotencyReservation");
-        if (!tenant || !reservation) return problem(c, "FORBIDDEN", 403);
+        if (!reservation) return problem(c, "FORBIDDEN", 403);
         const result = await repository.command(
           {
             subject: actor.token.subject,
-            schoolId: tenant.schoolId,
+            schoolId: tenant?.schoolId ?? null,
             requestId: c.get("requestId"),
           },
           route.operationId,

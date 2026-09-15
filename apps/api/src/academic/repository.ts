@@ -1,44 +1,19 @@
 import type { Sql } from "@studafy/database";
 import { withRequestContext } from "../auth/context";
+import type {
+  CatalogueCommandResult,
+  CatalogueRepository,
+  RequestDbContext,
+} from "../platform/catalogueRoutes";
 
 export interface AcademicPageResult {
   items: unknown[];
   nextPosition: string | null;
 }
 
-export interface AcademicCommandResult {
-  outcome:
-    | "ok"
-    | "not_found"
-    | "forbidden"
-    | "version_conflict"
-    | "invalid_state"
-    | "window_closed"
-    | "invalid";
-  response?: unknown;
-}
-
-export interface AcademicRepository {
-  query(
-    context: RequestDbContext,
-    operation: string,
-    resourceId: string | null,
-    input: unknown,
-  ): Promise<unknown>;
-  command(
-    context: RequestDbContext,
-    operation: string,
-    resourceId: string | null,
-    input: unknown,
-    reservation: { id: string; generation: number },
-  ): Promise<AcademicCommandResult>;
-}
-
-export interface RequestDbContext {
-  subject: string;
-  schoolId: string;
-  requestId: string;
-}
+export type AcademicCommandResult = CatalogueCommandResult;
+export type AcademicRepository = CatalogueRepository;
+export type { RequestDbContext };
 
 export class PostgresAcademicRepository implements AcademicRepository {
   constructor(readonly sql: Sql) {}
