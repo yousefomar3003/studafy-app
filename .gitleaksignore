@@ -1,0 +1,16 @@
+# API-041 synthetic cursor/idempotency fixtures in 071303b. These exact
+# fingerprints are false positives; the values are not credentials. Current
+# fixtures use deliberately low-entropy values to avoid future detections.
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/authorization/catalogue.test.ts:generic-api-key:52
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/routes.test.ts:generic-api-key:40
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/routes.test.ts:generic-api-key:574
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/routes.test.ts:generic-api-key:580
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:506
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:542
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:665
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:821
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:895
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:947
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:958
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:986
+071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:1113

@@ -3,6 +3,8 @@ import {
   ErrorCode,
   ProblemDetails,
   ReadinessReport,
+  V1AssessmentAuthoringQuestionsResponse,
+  V1AssessmentQuestionsResponse,
   V1AuthContextResponse,
   V1AuthDevice,
   V1AuthErrorCode,
@@ -66,6 +68,7 @@ describe("problem details contract", () => {
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "CONFLICT",
+      "CURSOR_INVALID",
       "FORBIDDEN",
       "IDEMPOTENCY_IN_PROGRESS",
       "IDEMPOTENCY_KEY_NOT_ALLOWED",
@@ -74,6 +77,7 @@ describe("problem details contract", () => {
       "INTERNAL_ERROR",
       "INVALID_HEADER",
       "INVALID_REQUEST",
+      "INVALID_STATE",
       "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
       "NOT_FOUND",
@@ -85,6 +89,8 @@ describe("problem details contract", () => {
       "SERVICE_UNAVAILABLE",
       "UNAUTHENTICATED",
       "UNSUPPORTED_MEDIA_TYPE",
+      "VERSION_CONFLICT",
+      "WINDOW_CLOSED",
     ]);
   });
 
@@ -126,7 +132,9 @@ describe("/v1 typed contracts (ARC-011)", () => {
       schemaKeys("V1MeResponse"),
     );
     expect(spec.paths["/v1/me"]!.get!.operationId).toBe("getMe");
-    expect(spec.paths["/v1/classrooms"]).toBeUndefined();
+    expect(spec.paths["/v1/classrooms"]!.get!.operationId).toBe(
+      "listClassrooms",
+    );
     expect(spec.components.headers.XRequestId!.schema.format).toBe("uuid");
     expect(
       spec.paths["/v1/auth/sign-out"]!.post!.responses["200"]!
@@ -162,6 +170,27 @@ describe("/v1 typed contracts (ARC-011)", () => {
         schemaKeys(name),
       );
     }
+  });
+
+  test("learner assessment questions cannot carry answer guidance", () => {
+    const question = {
+      id: "11111111-1111-4111-8111-111111111111",
+      position: 1,
+      prompt: "Name the organelle",
+      maximumScore: 2,
+    };
+    expect(
+      V1AssessmentQuestionsResponse.safeParse({
+        items: [{ ...question, preferredAnswer: "nucleus" }],
+        nextCursor: null,
+      }).success,
+    ).toBe(false);
+    expect(
+      V1AssessmentAuthoringQuestionsResponse.parse({
+        items: [{ ...question, preferredAnswer: "nucleus" }],
+        nextCursor: null,
+      }).items[0]?.preferredAnswer,
+    ).toBe("nucleus");
   });
 
   test("every published request body is an allowlist with no additional properties", async () => {

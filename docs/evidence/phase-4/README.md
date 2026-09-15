@@ -1,9 +1,14 @@
-# Phase 4 / API-040 local evidence
+# Phase 4 / API-040 and API-041 local evidence
 
 - Evidence date: 2026-09-14
 - Target: local workspace and disposable Supabase only
 - Data: deterministic synthetic fixtures only
 - Remote changes or deployment: none
+
+API-041 was added and verified on 2026-09-15. Its current transcript, query
+plans, Edge parity matrix, generated hashes, direct-call scan, and gate
+assessment are in [`api041-verification.md`](api041-verification.md). The
+API-040 counts/hashes below remain the historical API-040 checkpoint.
 
 ## Delivered platform surface
 
@@ -17,7 +22,8 @@ an AUTH-031 permission and an explicit idempotency mode.
 OpenAPI 3.1 is generated from the Zod 4.6.1 schemas and catalogue. The Dart
 client is generated from OpenAPI; its transport understands top-level problem
 details and preserves one idempotency key across its internal auth refresh.
-The published contract intentionally contains no `/v1/classrooms` operation.
+API-041 subsequently extends the same catalogue with 40 academic routes. No
+parallel or hand-maintained contract exists.
 
 Migration `202609140002_api040_platform_controls.sql` adds only generation and
 lease state to the existing durable record plus three narrow private functions.
@@ -84,15 +90,14 @@ and structured status/body replay passes.
 | Strict contracts and generated clients | **Met locally** | Closed Zod schemas, generated OpenAPI/Dart, drift checks |
 | Durable idempotency | **Met for the shipped commands** | PostgreSQL reservation/complete/fail functions, concurrency and lease tests; no broad grant |
 | SSRF/provider boundary | **Met in application code; infrastructure control open** | Redirect/DNS/IP/byte/time tests pass; isolated production egress is not provisioned |
-| Cursor tamper control | **Not applicable to the current mounted surface; deferred** | No paginated route exists; API-041 is blocked from adding one until signed cursor tests land |
+| Cursor tamper control | **Met locally** | API-041 HMAC cursors bind version/operation/tenant/filters/position; tamper and mismatch tests pass |
 | Production telemetry | **Partially met** | One safe per-route completion event supplies RED inputs; metrics backend, traces, retention and alerting are OPS-090 |
-| Launch API contracts/adapters | **Not met** | API-041 and API-042 are not implemented; current academic/school journeys are not authoritative |
+| Launch API contracts/adapters | **Partially met** | API-041 academic contracts/adapters are authoritative; API-042 remains open |
 | Communications safety | **Not met** | SAFE-043 remains mandatory before communications launch |
-| Transactions/outbox for all workflows | **Not met** | Idempotency is proven here; slice transactions/outbox/provider reconciliation remain API-041/042 |
-| Deno traffic replacement | **Not met** | Prototype functions remain until endpoint parity and explicit cutover |
+| Transactions/outbox for all workflows | **Met for API-041; later slices open** | Forced rollback, concurrent idempotency and outbox-only academic requests pass; API-042/OPS-061 remain |
+| Deno traffic replacement | **Met for the two API-041 grade sources** | Frozen DB/Hono/Flutter parity preceded source/invocation removal; no remote deployment existed or is claimed |
 
 **API-040's selected local acceptance criteria pass. The overall Phase 4 gate
-is open.** API-041, API-042, SAFE-043, authoritative Flutter journey adapters,
-transactional outbox proofs, Deno parity/cutover, production RED telemetry and
-isolated egress remain required. No result here authorizes remote deployment or
-real student data.
+is open.** API-041 is locally complete, while API-042, SAFE-043, production RED
+telemetry, outbox relay operations and isolated egress remain required. No
+result here authorizes remote deployment or real student data.

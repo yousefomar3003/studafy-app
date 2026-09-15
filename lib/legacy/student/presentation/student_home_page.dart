@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../studafy_database.dart';
+import '../../../features/academic/data/preview_student_identity.dart';
 import 'student_account_pages.dart';
 import 'student_home_components.dart';
 import 'student_shared.dart';
@@ -13,7 +14,7 @@ class StudentHomePage extends StatefulWidget {
 }
 
 class _StudentHomePageState extends State<StudentHomePage> {
-  static const studentId = 1;
+  static const studentId = PreviewStudentIdentity.localId;
   late Future<List<Object>> data;
 
   @override

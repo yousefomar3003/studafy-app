@@ -5,13 +5,17 @@ import '../core/studafy_domain.dart';
 import '../core/telemetry.dart';
 import '../data/backend.dart';
 import '../data/contracts/v1_http_transport.dart';
+import '../data/contracts/v1_client.generated.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/subscription_service.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/data/session_account_repository.dart';
+import '../features/academic/data/api_academic_repository.dart';
+import '../features/academic/data/preview_academic_repository.dart';
+import '../features/academic/domain/academic_repository.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/data/preview_classroom_repository.dart';
-import '../features/classes/data/supabase_classroom_repository.dart';
+import '../features/classes/data/api_classroom_repository.dart';
 import '../features/classes/domain/classroom_repository.dart';
 import '../features/parent/data/preview_parent_repository.dart';
 import '../features/parent/data/unavailable_parent_repository.dart';
@@ -42,6 +46,8 @@ class AppDependencies {
     required this.studyCoach,
     required this.parentSubscription,
     required this.account,
+    required this.academicApi,
+    required this.academic,
   });
 
   final SessionInteractor session;
@@ -51,16 +57,19 @@ class AppDependencies {
   final StudyCoachInteractor studyCoach;
   final ParentSubscriptionRepository parentSubscription;
   final AccountInteractor account;
+  final V1ApiClient? academicApi;
+  final AcademicRepository academic;
 
   static AppDependencies forPolicy(RuntimePolicy policy) {
     final telemetry = const DebugLogTelemetry();
     final context = ActiveContextController.instance;
+    final remote = policy.isSynthetic ? null : _remoteClients();
     final SessionRepository sessionRepository = policy.isSynthetic
         ? const DemoSessionRepository()
-        : _apiSessionRepository();
+        : remote!.session;
     final ClassroomRepository classroomRepository = policy.isSynthetic
         ? const PreviewClassroomRepository()
-        : SupabaseClassroomRepository();
+        : ApiClassroomRepository(remote!.api, context: context);
     final ParentRepository parentRepository = policy.isSynthetic
         ? const PreviewParentRepository()
         : const UnavailableParentRepository();
@@ -97,6 +106,10 @@ class AppDependencies {
                 cancelRequest: sessionRepository.cancelAccountDeletion,
               ),
       ),
+      academicApi: remote?.api,
+      academic: remote == null
+          ? PreviewAcademicRepository()
+          : ApiAcademicRepository(remote.api, context: context),
     );
   }
 
@@ -105,7 +118,7 @@ class AppDependencies {
   /// Fails closed: a remote build with no configured API has nothing that can
   /// verify a token or resolve a role, and the client must never decide
   /// authority for itself in that situation.
-  static SessionRepository _apiSessionRepository() {
+  static _RemoteClients _remoteClients() {
     final config = BackendConfig.fromEnvironment;
     if (!config.hasApi) {
       throw StateError(
@@ -132,6 +145,18 @@ class AppDependencies {
         ActiveContextController.instance.signOut();
       },
     );
-    return ApiSessionRepository(transport: transport, secureStore: secureStore);
+    return _RemoteClients(
+      api: V1ApiClient(transport),
+      session: ApiSessionRepository(
+        transport: transport,
+        secureStore: secureStore,
+      ),
+    );
   }
+}
+
+class _RemoteClients {
+  const _RemoteClients({required this.api, required this.session});
+  final V1ApiClient api;
+  final SessionRepository session;
 }

@@ -75,6 +75,23 @@ export async function withVerifiedActor<T>(
   }) as T;
 }
 
+/** API-041 transaction boundary. Tenant and request correlation are installed
+ * with SET LOCAL beside the verified subject so pooled connections cannot
+ * retain authority from a previous request. */
+export async function withRequestContext<T>(
+  sql: Sql,
+  context: { subject: string; schoolId: string; requestId: string },
+  work: (tx: Sql) => Promise<T>,
+): Promise<T> {
+  return await sql.begin(async (tx) => {
+    await tx`select
+      set_config('request.jwt.claim.sub', ${context.subject}, true),
+      set_config('studafy.school_id', ${context.schoolId}, true),
+      set_config('studafy.request_id', ${context.requestId}, true)`;
+    return await work(tx as unknown as Sql);
+  }) as T;
+}
+
 /**
  * Normalizes a `timestamptz` to an ISO string.
  *

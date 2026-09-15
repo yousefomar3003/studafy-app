@@ -137,4 +137,54 @@ void main() {
     expect(domain, isNot(contains('StudafyBackend')));
     expect(data, contains('StudafyBackend.client.functions.invoke'));
   });
+
+  test(
+    'API-041 production academic boundary has no local or Supabase data calls',
+    () {
+      final productionAcademic = [
+        'lib/app/app_dependencies.dart',
+        'lib/app/teacher_shell.dart',
+        'lib/features/academic/data/api_academic_repository.dart',
+        'lib/features/academic/data/api_paper_grading_repository.dart',
+        'lib/features/classes/data/api_classroom_repository.dart',
+        'lib/features/academic/presentation/academic_overview_page.dart',
+      ];
+      for (final path in productionAcademic) {
+        final source = _source(path);
+        expect(source, isNot(contains('StudafyDatabase')), reason: path);
+        expect(source, isNot(contains(".from('")), reason: path);
+        expect(source, isNot(contains('.rpc(')), reason: path);
+        expect(source, isNot(contains('.functions.invoke')), reason: path);
+      }
+      expect(
+        File('lib/features/classes/data/supabase_classroom_repository.dart')
+            .existsSync(),
+        isFalse,
+      );
+      expect(
+        File('supabase/functions/approve-paper-grade/index.ts').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('supabase/functions/publish-grade-result/index.ts').existsSync(),
+        isFalse,
+      );
+      expect(
+        _source('lib/studafy_database.dart'),
+        contains('SQLite is a synthetic preview adapter only'),
+      );
+      expect(
+        _source('lib/features/classes/domain/classroom.dart'),
+        isNot(contains('toLegacyMap')),
+      );
+      expect(
+        _source('lib/app/teacher_shell.dart'),
+        isNot(contains('ClassWorkspacePage')),
+      );
+      expect(
+        _source('lib/legacy/student/presentation/student_shell.dart'),
+        isNot(contains('StudentClassworkPage')),
+      );
+    },
+  );
 }

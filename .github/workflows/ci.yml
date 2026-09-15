@@ -207,8 +207,19 @@ jobs:
           bunx supabase test db --local
           supabase/tests/api040_idempotency_seed.sql
 
+      # API-041: transaction coupling (forced audit/outbox rollback),
+      # idempotency completion, cross-tenant concealment and the least
+      # privilege query/command surface.
+      - name: Verify API-041 authoritative academic surface
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/api041_academic_seed.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
+
+      - name: Verify API-041 cursor query plans
+        run: bun run test:api041:plans
 
       - name: Verify DB-021 RLS plans and provisional local latency bounds
         run: bun run test:db021:plans
@@ -235,6 +246,15 @@ jobs:
         run: >-
           DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
           bun test apps/api/test/platform/idempotency.integration.test.ts
+
+      # API-041: the real /v1 academic route stack over the real database —
+      # teacher/student/guardian slices, transactions, outbox and idempotent
+      # replays end to end. This is the parity proof behind removing the
+      # approve-paper-grade and publish-grade-result Edge Functions.
+      - name: Run API-041 academic /v1 integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/academic/academic.integration.test.ts
 
       # End-to-end against the live local GoTrue: real ES256 tokens, real JWKS,
       # and the least-privilege database role.

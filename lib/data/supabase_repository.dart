@@ -7,7 +7,7 @@ import 'studafy_repository.dart';
 /// Production repository. All privileged mutations are delegated to audited
 /// Edge Functions; the mobile client never receives a service-role key.
 class SupabaseStudafyRepository
-    implements StudafyRepository, MeetingRepository, PaperGradingRepository {
+    implements StudafyRepository, MeetingRepository {
   SupabaseClient get _client => StudafyBackend.client;
 
   @override
@@ -113,39 +113,13 @@ class SupabaseStudafyRepository
     await _invoke('cancel-google-meet', {'meeting_id': meetingId});
   }
 
-  @override
+  /// The contained proposal source remains unavailable until AI-072.
   Future<AiGradingDraft> proposeGrade({
     required String submissionId,
     required Uri privateScan,
     required GradingStrictness strictness,
   }) async {
     throw StateError('AI grading is temporarily unavailable.');
-  }
-
-  @override
-  Future<void> reviewDraft({
-    required String draftId,
-    required List<QuestionSuggestion> finalScores,
-    required String reviewerId,
-  }) async {
-    await _invoke('approve-paper-grade', {
-      'draft_id': draftId,
-      'reviewer_id': reviewerId,
-      'scores': [
-        for (final score in finalScores)
-          {
-            'question_id': score.questionId,
-            'score': score.proposedScore,
-            'maximum_score': score.maximumScore,
-            'reason': score.rationale,
-          },
-      ],
-    });
-  }
-
-  @override
-  Future<void> publishGradeResult({required String gradeResultId}) async {
-    await _invoke('publish-grade-result', {'grade_result_id': gradeResultId});
   }
 
   Future<Map<String, dynamic>> _invoke(

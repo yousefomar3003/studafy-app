@@ -15,6 +15,12 @@ type Schema = {
 type Operation = {
   operationId: string;
   "x-studafy-idempotency-mode"?: "none" | "required" | "forbidden";
+  parameters?: Array<{
+    name: string;
+    in: "path" | "query" | "header";
+    required?: boolean;
+    schema: Schema;
+  }>;
   requestBody?: {
     required?: boolean;
     content: { "application/json": { schema: Schema } };
@@ -110,7 +116,9 @@ function parseExpression(
   if (reference) {
     const parsed =
       `${reference}Dto.fromJson(json['${wireName}'] as Map<String, dynamic>)`;
-    return required ? parsed : `json['${wireName}'] == null ? null : ${parsed}`;
+    return required && !isNullable(schema)
+      ? parsed
+      : `json['${wireName}'] == null ? null : ${parsed}`;
   }
   const effective = effectiveSchema(schema);
   const type = Array.isArray(effective.type)
@@ -135,8 +143,29 @@ function parseExpression(
   return `json['${wireName}'] as ${propertyType(schema, required)}`;
 }
 
-function serializeExpression(schema: Schema, propertyName: string): string {
-  if (referencedName(schema)) return `${propertyName}.toJson()`;
+/** True when serialization is the bare property value, so an optional field
+ * can use a Dart null-aware element instead of `if (x != null) 'k': x!`,
+ * which the use_null_aware_elements lint rejects in generated code. */
+function isBareValue(schema: Schema): boolean {
+  if (referencedName(schema)) return false;
+  const effective = effectiveSchema(schema);
+  const type = Array.isArray(effective.type)
+    ? effective.type.find((entry) => entry !== "null")
+    : effective.type;
+  if (type === "array") return !referencedName(effective.items ?? {});
+  return true;
+}
+
+function serializeExpression(
+  schema: Schema,
+  propertyName: string,
+  knownNonNull: boolean,
+): string {
+  if (referencedName(schema)) {
+    return knownNonNull
+      ? `${propertyName}.toJson()`
+      : `${propertyName}?.toJson()`;
+  }
   const type = Array.isArray(schema.type)
     ? schema.type.find((entry) => entry !== "null")
     : schema.type;
@@ -175,12 +204,16 @@ function renderModel(name: string, schema: Schema): string {
   const serializer = properties.map(([wireName, property]) => {
     const propertyName = dartName(wireName);
     const isRequired = required.has(wireName);
+    if (!isRequired && isBareValue(property)) {
+      return `    '${wireName}': ?${propertyName},`;
+    }
     return `    ${
       isRequired ? "" : `if (${propertyName} != null) `
     }'${wireName}': ${
       serializeExpression(
         property,
         isRequired ? propertyName : `${propertyName}!`,
+        !isRequired || !isNullable(property),
       )
     },`;
   }).join("\n");
@@ -207,25 +240,49 @@ function renderOperation(
   method: Method,
   operation: Operation,
 ): string {
-  const responseSchema = operation.responses["200"]?.content
-    ?.["application/json"]
-    ?.schema;
+  const success = Object.entries(operation.responses).find(([status]) =>
+    /^2\d\d$/.test(status)
+  )?.[1];
+  const responseSchema = success?.content?.["application/json"]?.schema;
   const responseName = responseSchema && referencedName(responseSchema);
   if (!responseName) {
     throw new Error(
-      `${operation.operationId} must have a referenced 200 response`,
+      `${operation.operationId} must have a referenced success response`,
     );
   }
+  const allParams = (operation.parameters ?? []).filter((entry) =>
+    entry.in === "path" || entry.in === "query"
+  );
+  const pathNames = new Set(
+    allParams.filter((entry) => entry.in === "path").map((entry) => entry.name),
+  );
+  const apiParams = allParams.filter((entry) =>
+    entry.in === "path" || !pathNames.has(entry.name)
+  );
+  const named = apiParams.map((entry) => {
+    const rawType = effectiveSchema(entry.schema).type;
+    const base = rawType === "integer" ? "int" : "String";
+    return `${entry.required ? "required " : ""}${base}${
+      entry.required ? "" : "?"
+    } ${dartName(entry.name)}`;
+  });
+  const pathValues = apiParams.filter((entry) => entry.in === "path")
+    .map((entry) => `'${entry.name}': ${dartName(entry.name)}`).join(", ");
+  const queryValues = apiParams.filter((entry) => entry.in === "query")
+    .map((entry) => `'${entry.name}': ${dartName(entry.name)}`).join(", ");
+  const resolvedPath = `_v1Path('${path}', {${pathValues}}, {${queryValues}})`;
   if (method === "get") {
-    return `  Future<${responseName}Dto> ${operation.operationId}() async =>
-      ${responseName}Dto.fromJson(await _transport.get('${path}'));`;
+    const argumentsText = named.length > 0 ? `({${named.join(", ")}})` : "()";
+    return `  Future<${responseName}Dto> ${operation.operationId}${argumentsText} async =>
+      ${responseName}Dto.fromJson(await _transport.get(${resolvedPath}));`;
   }
 
   const requestSchema = operation.requestBody?.content["application/json"]
     .schema;
   const requestName = requestSchema && referencedName(requestSchema);
   const idempotent = operation["x-studafy-idempotency-mode"] === "required";
-  const optionalKey = idempotent ? "{String? idempotencyKey}" : "";
+  if (idempotent) named.push("String? idempotencyKey");
+  const optionalKey = named.length > 0 ? `{${named.join(", ")}}` : "";
   const postOptions = idempotent
     ? "idempotencyKey: idempotencyKey, requiresIdempotency: true"
     : "";
@@ -239,14 +296,14 @@ function renderOperation(
   if (!requestName) {
     return `  Future<${responseName}Dto> ${operation.operationId}(${optionalKey}) async =>
       ${responseName}Dto.fromJson(
-        await _transport.post('${path}', const <String, Object?>{}, ${postOptions}),
+        await _transport.post(${resolvedPath}, const <String, Object?>{}, ${postOptions}),
       );`;
   }
   return `  Future<${responseName}Dto> ${operation.operationId}(
     ${requestName}Dto request, ${optionalKey}
   ) async =>
       ${responseName}Dto.fromJson(
-        await _transport.post('${path}', request.toJson(), ${postOptions}),
+        await _transport.post(${resolvedPath}, request.toJson(), ${postOptions}),
       );`;
 }
 
@@ -283,6 +340,27 @@ class V1ApiClient {
   final V1JsonTransport _transport;
 
 ${operations}
+}
+
+String _v1Path(
+  String template,
+  Map<String, Object?> pathValues,
+  Map<String, Object?> queryValues,
+) {
+  var value = template;
+  for (final entry in pathValues.entries) {
+    value = value.replaceAll(
+      '{\${entry.key}}',
+      Uri.encodeComponent(entry.value.toString()),
+    );
+  }
+  final query = <String, String>{
+    for (final entry in queryValues.entries)
+      if (entry.value != null) entry.key: entry.value.toString(),
+  };
+  return query.isEmpty
+      ? value
+      : Uri.parse(value).replace(queryParameters: query).toString();
 }
 
 ${models}

@@ -74,8 +74,8 @@ class StudafyApp extends StatelessWidget {
         : <String, WidgetBuilder>{
             '/roles': (_) => RolePage(session: deps.session),
             '/teacher': (_) => TeacherShell(dependencies: deps),
-            '/parent': (_) => const ParentShell(),
-            '/student': (_) => const StudentShell(),
+            '/parent': (_) => ParentShell(academic: deps.academic),
+            '/student': (_) => StudentShell(academic: deps.academic),
           };
     return ListenableBuilder(
       listenable: StudafyLocaleController.instance,

@@ -50,7 +50,6 @@ void main() {
         );
         expect(classroom.section, isA<String>());
         expect(classroom.studentCount, isA<int>());
-        expect(classroom.legacyLocalId, isA<int>());
       }
 
       // Spot-check the first seeded class: Biology, Grade 10, Section B.
@@ -67,24 +66,12 @@ void main() {
       );
     });
 
-    test(
-      'the legacy bridge map carries every key the workspace reads',
-      () async {
-        final repository = const PreviewClassroomRepository();
-        final classes = await repository.listClasses();
-        final bridge = classes.first.toLegacyMap();
-
-        // ClassWorkspacePage reads exactly these keys (see the audit).
-        expect(bridge['id'], isA<int>());
-        expect(bridge['name'], isA<String>());
-        expect(bridge['grade'], isA<int>());
-        expect(bridge['section'], isA<String>());
-        expect(bridge['room'], isA<String>());
-        expect(bridge['color'], isA<int>());
-        expect(bridge['student_count'], isA<int>());
-        expect(bridge['weekly_sessions'], isA<int>());
-      },
-    );
+    test('typed entities expose no legacy map bridge', () {
+      expect(
+        File('lib/features/classes/domain/classroom.dart').readAsStringSync(),
+        isNot(contains('toLegacyMap')),
+      );
+    });
   });
 
   group('PreviewClassroomRepository.createClass', () {

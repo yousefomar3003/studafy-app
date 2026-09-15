@@ -23,7 +23,20 @@ flagged for the ADR-0005 legal review.
 | F4 | `notifications` count + mark-read | Notification metadata (P2) | Client-side counting fetches every unread ID (perf finding → API phase) |
 | F5 | `subscription_entitlements` read | Own entitlement (P2) | Read-only client access |
 | F6 | `record_policy_consent` RPC | Consent purpose/version/locale (P1) | Hard-coded policy version `2026-09-09`; policy text is placeholder copy (finding) |
-| F7 | SQLite preview/cache (device-local) | Full synthetic school dataset (P3 synthetic; P1 if ever real) | Two DB files; cache unseeded/unsynchronized (ARC-011) |
+| F7 | SQLite preview (device-local) | Synthetic school dataset (P3 only) | `studafy_preview.db`; remote access throws and there is no production write queue (API-041) |
+
+### Mobile client → Bun/Hono `/v1` API
+
+| # | Flow | Content (sensitivity) | Notes |
+|---|---|---|---|
+| F26 | School/class context and rosters | Membership, staff, student summaries, schedules (P0/P1) | Server-derived tenant; relationship-scoped; cursor paginated |
+| F27 | Content/assignment/assessment reads and text submissions | Teaching text, student answers (P0/P1) | Strict role-specific DTOs; learner responses exclude preferred answers and storage identifiers |
+| F28 | Grade review/publish/correct/withdraw | Scores, feedback, reviewer action (P0/P1) | Optimistic state machine; immutable history; atomic outbox/idempotency |
+| F29 | Attendance and wellbeing | Attendance reasons and classified wellbeing text (P0) | Exact class/student relationship and classification-specific visibility |
+
+Every API-041 command reaches PostgreSQL through one transaction-local actor,
+school, and request context. Notification-worthy actions write only a minimal
+`notification_outbox` event; provider delivery is not part of the request.
 
 ### Mobile client → Edge Functions (JWT required)
 
@@ -31,7 +44,7 @@ flagged for the ADR-0005 legal review.
 |---|---|---|---|
 | F8 | `study-coach` ask/quiz/flashcards | Classroom ID, topic, question (P1/P2) | Attachment paths rejected (SEC-001); enrollment verified server-side |
 | F9 | `create/cancel-google-meet` | Class, audience, times (P2) | Client never holds Google tokens |
-| F10 | `approve/publish-grade-result` | Draft/score review (P0/P1) | Teacher-only checks server-side |
+| F10 | (Removed) `approve/publish-grade-result` | Draft/score review (P0/P1) | Replaced by transactional `/v1/grade-results/{id}:review/:publish`; sources were not deployed in inspected synthetic project |
 | F11 | `verify-store-purchase` | Store receipt/purchase token (P2) | Forwarded to verifier; client never grants entitlement |
 | F12 | `request-account-deletion` | Typed confirmation (P1) | Recent-auth via JWT `iat` (weak — finding) |
 
@@ -69,7 +82,7 @@ idempotency, transactions, timeouts (API-040/041).
 | Only 2 explicit indexes; nested RLS paths unindexed | migration set | DB-020 |
 | Client-side unread-notification counting; N+1 guardian/auth-admin loops in Meet creation | client + `create-google-meet` | API/OPS phases |
 | Study Coach sends up to 30 material bodies without budget/chunking/cost controls | `study-coach` | later AI hardening |
-| Sequential, non-transactional multi-row updates; duplicate-question weakness in grade approval | `approve/publish-grade-result` | API-041 |
+| Sequential, non-transactional multi-row updates; duplicate-question weakness in grade approval | Removed `approve/publish-grade-result` sources | Resolved locally by API-041 transaction/parity tests; no remote cutover claim |
 | Single-row entitlement table; no ledger/webhooks/reconciliation | `subscription_entitlements`, verifier | PAY-071 |
 | QR scanner returns hard-coded ID; painter is not an interoperable encoder | `lib/student_linking.dart` | post-threat-model decision; never identity proof |
 | Consent records a code-owned policy version; policy text/legal approval remains pending | `features/session/data/supabase_session_repository.dart`, migration 0006 | AUTH-030 |

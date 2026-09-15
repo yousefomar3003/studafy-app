@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/studafy_localizations.dart';
 import '../../../data/session_service.dart';
 import '../../../studafy_database.dart';
+import '../../../features/academic/data/preview_student_identity.dart';
 import '../../../student_linking.dart';
 import '../../../app/account_scope.dart';
 import '../../../features/account/presentation/delete_account_page.dart';
@@ -359,10 +360,12 @@ class _StudentNotificationsPageState extends State<StudentNotificationsPage> {
   }
 
   Future<List<Object>> _load() => Future.wait<Object>([
-    StudafyDatabase.instance.gradesForStudent(1),
-    StudafyDatabase.instance.noticesForStudent(1),
-    StudafyDatabase.instance.workForStudent(1),
-    StudafyDatabase.instance.assessmentsForStudent(1),
+    StudafyDatabase.instance.gradesForStudent(PreviewStudentIdentity.localId),
+    StudafyDatabase.instance.noticesForStudent(PreviewStudentIdentity.localId),
+    StudafyDatabase.instance.workForStudent(PreviewStudentIdentity.localId),
+    StudafyDatabase.instance.assessmentsForStudent(
+      PreviewStudentIdentity.localId,
+    ),
   ]);
 
   @override

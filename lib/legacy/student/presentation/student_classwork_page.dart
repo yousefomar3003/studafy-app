@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../studafy_database.dart';
+import '../../../features/academic/data/preview_student_identity.dart';
 import 'student_account_pages.dart';
 import 'student_classwork_assignment.dart';
 import 'student_classwork_exam.dart';
@@ -13,7 +14,7 @@ class StudentClassworkPage extends StatefulWidget {
 }
 
 class _StudentClassworkPageState extends State<StudentClassworkPage> {
-  static const studentId = 1;
+  static const studentId = PreviewStudentIdentity.localId;
   int tab = 0;
   String filter = 'All';
   late Future<List<Map<String, Object?>>> assignments;

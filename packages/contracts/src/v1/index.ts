@@ -76,3 +76,4 @@ export {
 } from "./auth";
 export * from "./platform";
 export * from "./routes";
+export * from "./academic";

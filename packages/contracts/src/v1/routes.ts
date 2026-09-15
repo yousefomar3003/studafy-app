@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 import {
   V1AuthContextResponse,
   V1AuthDeviceListResponse,
@@ -22,6 +22,7 @@ import {
 } from "./auth";
 import { V1MeResponse } from "./me";
 import type { IdempotencyMode } from "./platform";
+import * as Academic from "./academic";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -30,6 +31,11 @@ export interface V1RouteContract {
   summary: string;
   permission: string;
   idempotency: IdempotencyMode;
+  successStatus?: 200 | 201;
+  params?: z.ZodType;
+  paramsSchema?: string;
+  query?: z.ZodType;
+  querySchema?: string;
   request?: z.ZodType;
   requestSchema?: string;
   response: z.ZodType;
@@ -174,7 +180,472 @@ export const V1_ROUTE_CATALOGUE = [
     response: V1DeletionCancelResponse,
     responseSchema: "V1DeletionCancelResponse",
   },
+  academicGet(
+    "getSchool",
+    "/v1/schools/{schoolId}",
+    "school.read",
+    Academic.V1School,
+    "V1School",
+    schoolParams(),
+  ),
+  academicGet(
+    "listTerms",
+    "/v1/schools/{schoolId}/terms",
+    "term.list",
+    Academic.V1TermPage,
+    "V1TermPage",
+    schoolParams(),
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listClassrooms",
+    "/v1/classrooms",
+    "classroom.list",
+    Academic.V1ClassroomPage,
+    "V1ClassroomPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "createClassroom",
+    "/v1/classrooms",
+    "classroom.create",
+    Academic.V1CreateClassroomRequest,
+    "V1CreateClassroomRequest",
+    Academic.V1AcademicClassroom,
+    "V1AcademicClassroom",
+    201,
+  ),
+  academicGet(
+    "getClassroom",
+    "/v1/classrooms/{classroomId}",
+    "classroom.read",
+    Academic.V1ClassroomDetail,
+    "V1ClassroomDetail",
+    classroomParams(),
+  ),
+  academicGet(
+    "listClassroomStaff",
+    "/v1/classrooms/{classroomId}/staff",
+    "classroom.staff.read",
+    Academic.V1ClassroomStaffPage,
+    "V1ClassroomStaffPage",
+    classroomParams(),
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "updateClassroom",
+    "/v1/classrooms/{classroomId}/update",
+    "classroom.update",
+    Academic.V1UpdateClassroomRequest,
+    "V1UpdateClassroomRequest",
+    Academic.V1AcademicClassroom,
+    "V1AcademicClassroom",
+    200,
+    classroomParams(),
+  ),
+  academicPost(
+    "replaceClassroomSchedule",
+    "/v1/classrooms/{classroomId}/schedule/replace",
+    "classroom.schedule.write",
+    Academic.V1ReplaceScheduleRequest,
+    "V1ReplaceScheduleRequest",
+    Academic.V1ClassroomDetail,
+    "V1ClassroomDetail",
+    200,
+    classroomParams(),
+  ),
+  academicGet(
+    "listClassroomStudents",
+    "/v1/classrooms/{classroomId}/students",
+    "classroom.roster.read",
+    Academic.V1StudentPage,
+    "V1StudentPage",
+    classroomParams(),
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listResources",
+    "/v1/resources",
+    "resource.list",
+    Academic.V1ResourcePage,
+    "V1ResourcePage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listLessonSessions",
+    "/v1/lesson-sessions",
+    "lesson_session.list",
+    Academic.V1LessonSessionPage,
+    "V1LessonSessionPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "createResource",
+    "/v1/resources",
+    "resource.create",
+    Academic.V1CreateResourceRequest,
+    "V1CreateResourceRequest",
+    Academic.V1Resource,
+    "V1Resource",
+    201,
+  ),
+  academicPost(
+    "reviseResource",
+    "/v1/resources/{resourceId}/revise",
+    "resource.revise",
+    Academic.V1ReviseResourceRequest,
+    "V1ReviseResourceRequest",
+    Academic.V1Resource,
+    "V1Resource",
+    200,
+    resourceParams(),
+  ),
+  academicPost(
+    "publishResource",
+    "/v1/resources/{resourceId}/publish",
+    "resource.publish",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1Resource,
+    "V1Resource",
+    200,
+    resourceParams(),
+  ),
+  academicPost(
+    "withdrawResource",
+    "/v1/resources/{resourceId}/withdraw",
+    "resource.withdraw",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1Resource,
+    "V1Resource",
+    200,
+    resourceParams(),
+  ),
+  academicGet(
+    "listAssignments",
+    "/v1/assignments",
+    "assignment.list",
+    Academic.V1AssignmentPage,
+    "V1AssignmentPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "createAssignment",
+    "/v1/assignments",
+    "assignment.create",
+    Academic.V1CreateAssignmentRequest,
+    "V1CreateAssignmentRequest",
+    Academic.V1Assignment,
+    "V1Assignment",
+    201,
+  ),
+  academicPost(
+    "publishAssignment",
+    "/v1/assignments/{assignmentId}/publish",
+    "assignment.publish",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1Assignment,
+    "V1Assignment",
+    200,
+    assignmentParams(),
+  ),
+  academicPost(
+    "withdrawAssignment",
+    "/v1/assignments/{assignmentId}/withdraw",
+    "assignment.withdraw",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1Assignment,
+    "V1Assignment",
+    200,
+    assignmentParams(),
+  ),
+  academicPost(
+    "submitAssignment",
+    "/v1/assignments/{assignmentId}/submit",
+    "assignment.submit",
+    Academic.V1SubmitAssignmentRequest,
+    "V1SubmitAssignmentRequest",
+    Academic.V1Submission,
+    "V1Submission",
+    201,
+    assignmentParams(),
+  ),
+  academicGet(
+    "getAssignment",
+    "/v1/assignments/{assignmentId}",
+    "assignment.read",
+    Academic.V1Assignment,
+    "V1Assignment",
+    assignmentParams(),
+  ),
+  academicGet(
+    "listAssignmentSubmissions",
+    "/v1/assignments/{assignmentId}/submissions",
+    "submission.list",
+    Academic.V1SubmissionPage,
+    "V1SubmissionPage",
+    assignmentParams(),
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listAssessments",
+    "/v1/assessments",
+    "assessment.list",
+    Academic.V1AssessmentPage,
+    "V1AssessmentPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "createAssessment",
+    "/v1/assessments",
+    "assessment.create",
+    Academic.V1CreateAssessmentRequest,
+    "V1CreateAssessmentRequest",
+    Academic.V1Assessment,
+    "V1Assessment",
+    201,
+  ),
+  academicPost(
+    "publishAssessment",
+    "/v1/assessments/{assessmentId}/publish",
+    "assessment.publish",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1Assessment,
+    "V1Assessment",
+    200,
+    assessmentParams(),
+  ),
+  academicPost(
+    "withdrawAssessment",
+    "/v1/assessments/{assessmentId}/withdraw",
+    "assessment.withdraw",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1Assessment,
+    "V1Assessment",
+    200,
+    assessmentParams(),
+  ),
+  academicGet(
+    "listAssessmentQuestions",
+    "/v1/assessments/{assessmentId}/questions",
+    "assessment_question.list",
+    Academic.V1AssessmentQuestionsResponse,
+    "V1AssessmentQuestionsResponse",
+    assessmentParams(),
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listAssessmentAuthoringQuestions",
+    "/v1/assessments/{assessmentId}/authoring-questions",
+    "assessment_question.authoring.list",
+    Academic.V1AssessmentAuthoringQuestionsResponse,
+    "V1AssessmentAuthoringQuestionsResponse",
+    assessmentParams(),
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listAssessmentAttempts",
+    "/v1/assessments/{assessmentId}/attempts",
+    "assessment_attempt.list",
+    Academic.V1AssessmentAttemptPage,
+    "V1AssessmentAttemptPage",
+    assessmentParams(),
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "submitAssessment",
+    "/v1/assessments/{assessmentId}/submit",
+    "assessment.submit",
+    Academic.V1SubmitAssessmentRequest,
+    "V1SubmitAssessmentRequest",
+    Academic.V1AssessmentAttempt,
+    "V1AssessmentAttempt",
+    201,
+    assessmentParams(),
+  ),
+  academicGet(
+    "listGradeResults",
+    "/v1/grade-results",
+    "grade_result.list",
+    Academic.V1GradeResultPage,
+    "V1GradeResultPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "reviewGradeResult",
+    "/v1/grade-results/{gradeResultId}/review",
+    "grade_result.review",
+    Academic.V1ReviewGradeRequest,
+    "V1ReviewGradeRequest",
+    Academic.V1GradeResult,
+    "V1GradeResult",
+    200,
+    gradeParams(),
+  ),
+  academicPost(
+    "publishGradeResult",
+    "/v1/grade-results/{gradeResultId}/publish",
+    "grade_result.publish",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1GradeResult,
+    "V1GradeResult",
+    200,
+    gradeParams(),
+  ),
+  academicPost(
+    "correctGradeResult",
+    "/v1/grade-results/{gradeResultId}/correct",
+    "grade_result.correct",
+    Academic.V1CorrectGradeRequest,
+    "V1CorrectGradeRequest",
+    Academic.V1GradeResult,
+    "V1GradeResult",
+    200,
+    gradeParams(),
+  ),
+  academicPost(
+    "withdrawGradeResult",
+    "/v1/grade-results/{gradeResultId}/withdraw",
+    "grade_result.withdraw",
+    Academic.V1VersionCommandRequest,
+    "V1VersionCommandRequest",
+    Academic.V1GradeResult,
+    "V1GradeResult",
+    200,
+    gradeParams(),
+  ),
+  academicGet(
+    "listAttendance",
+    "/v1/attendance",
+    "attendance_record.list",
+    Academic.V1AttendancePage,
+    "V1AttendancePage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "listAttendanceRoster",
+    "/v1/classrooms/{classroomId}/attendance-roster",
+    "attendance_roster.read",
+    Academic.V1AttendanceRosterPage,
+    "V1AttendanceRosterPage",
+    classroomParams(),
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "recordAttendance",
+    "/v1/attendance/record",
+    "attendance_record.write",
+    Academic.V1RecordAttendanceRequest,
+    "V1RecordAttendanceRequest",
+    Academic.V1RecordAttendanceResponse,
+    "V1RecordAttendanceResponse",
+    200,
+  ),
+  academicGet(
+    "listWellbeing",
+    "/v1/wellbeing",
+    "wellbeing_event.list",
+    Academic.V1WellbeingPage,
+    "V1WellbeingPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicPost(
+    "createWellbeing",
+    "/v1/wellbeing",
+    "wellbeing_event.create",
+    Academic.V1CreateWellbeingRequest,
+    "V1CreateWellbeingRequest",
+    Academic.V1WellbeingEvent,
+    "V1WellbeingEvent",
+    201,
+  ),
 ] as const satisfies readonly V1RouteContract[];
+
+function params(key: string) {
+  return z.strictObject({ [key]: z.string().uuid() });
+}
+function schoolParams() {
+  return params("schoolId");
+}
+function classroomParams() {
+  return params("classroomId");
+}
+function resourceParams() {
+  return params("resourceId");
+}
+function assignmentParams() {
+  return params("assignmentId");
+}
+function assessmentParams() {
+  return params("assessmentId");
+}
+function gradeParams() {
+  return params("gradeResultId");
+}
+
+function academicGet(
+  operationId: string,
+  path: string,
+  permission: string,
+  response: z.ZodType,
+  responseSchema: string,
+  paramsSchema?: z.ZodType,
+  query?: z.ZodType,
+): V1RouteContract {
+  return {
+    method: "get",
+    path,
+    operationId,
+    summary: operationId,
+    permission,
+    idempotency: "none",
+    response,
+    responseSchema,
+    ...(paramsSchema ? { params: paramsSchema } : {}),
+    ...(query ? { query, querySchema: "V1PageQuery" } : {}),
+  };
+}
+
+function academicPost(
+  operationId: string,
+  path: string,
+  permission: string,
+  request: z.ZodType,
+  requestSchema: string,
+  response: z.ZodType,
+  responseSchema: string,
+  successStatus: 200 | 201,
+  paramsSchema?: z.ZodType,
+): V1RouteContract {
+  return {
+    method: "post",
+    path,
+    operationId,
+    summary: operationId,
+    permission,
+    idempotency: "required",
+    successStatus,
+    request,
+    requestSchema,
+    response,
+    responseSchema,
+    ...(paramsSchema ? { params: paramsSchema } : {}),
+  };
+}
 
 export type V1OperationId = (typeof V1_ROUTE_CATALOGUE)[number]["operationId"];
 

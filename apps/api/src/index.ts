@@ -8,6 +8,8 @@ import { PostgresAuthorizationRepository } from "./authorization/repository";
 import { createAuthorizationDependencies } from "./authorization/middleware";
 import { PostgresIdempotencyRepository } from "./platform/idempotency";
 import { createRedactingLogger } from "./platform/logging";
+import { createAcademicRoutes } from "./academic/routes";
+import { PostgresAcademicRepository } from "./academic/repository";
 import {
   checkDatabase,
   closeDatabase,
@@ -46,6 +48,34 @@ const redisCheck: DependentCheck | undefined = redis
 // AUTH-030 needs both a verified token source and a database. Without either
 // the auth routes are not mounted at all, so /v1 keeps answering
 // NOT_IMPLEMENTED instead of exposing handlers that cannot authenticate.
+const authorization = createAuthorizationDependencies(
+  logger,
+  sql ? new PostgresAuthorizationRepository(sql) : undefined,
+);
+const idempotencyDependencies = {
+  logger,
+  ...(sql ? { repository: new PostgresIdempotencyRepository(sql) } : {}),
+};
+const academic = sql && env.API_CURSOR_SIGNING_KEY
+  ? createAcademicRoutes(
+    {
+      repository: new PostgresAcademicRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: {
+        classes: env.API041_CLASSES_ENABLED,
+        content: env.API041_CONTENT_ENABLED,
+        assignments: env.API041_ASSIGNMENTS_ENABLED,
+        assessments: env.API041_ASSESSMENTS_ENABLED,
+        grades: env.API041_GRADES_ENABLED,
+        attendance: env.API041_ATTENDANCE_ENABLED,
+        wellbeing: env.API041_WELLBEING_ENABLED,
+      },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 const auth = sql && env.SUPABASE_URL
   ? createAuthRoutes(
     {
@@ -59,11 +89,9 @@ const auth = sql && env.SUPABASE_URL
       reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
       deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
     },
-    createAuthorizationDependencies(
-      logger,
-      new PostgresAuthorizationRepository(sql),
-    ),
-    { logger, repository: new PostgresIdempotencyRepository(sql) },
+    authorization,
+    idempotencyDependencies,
+    academic,
   )
   : undefined;
 

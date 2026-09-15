@@ -52,6 +52,7 @@ export function createAuthRoutes(
     deps.logger,
   ),
   idempotencyDependencies: IdempotencyDependencies = { logger: deps.logger },
+  academicRoutes?: Hono<AuthorizationEnv>,
 ): Hono<AuthorizationEnv> {
   const routes = new Hono<AuthorizationEnv>();
 
@@ -452,5 +453,6 @@ export function createAuthRoutes(
     },
   );
 
+  if (academicRoutes) routes.route("/", academicRoutes);
   return routes;
 }

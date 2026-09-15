@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../studafy_database.dart';
+import '../../../features/academic/data/preview_student_identity.dart';
 import 'student_account_pages.dart';
 import 'student_shared.dart';
 
@@ -12,7 +13,7 @@ class StudentProgressPage extends StatefulWidget {
 }
 
 class _StudentProgressPageState extends State<StudentProgressPage> {
-  static const studentId = 1;
+  static const studentId = PreviewStudentIdentity.localId;
   int tab = 0;
   late Future<List<Object>> data;
 

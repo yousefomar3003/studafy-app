@@ -179,6 +179,8 @@ export function idempotency(
     if (reservation.outcome !== "reserved") {
       return problem(c, "SERVICE_UNAVAILABLE", 503);
     }
+    c.set("idempotencyReservation", reservation);
+    c.set("idempotencyCompleted", false);
 
     try {
       await next();
@@ -192,6 +194,7 @@ export function idempotency(
     }
 
     if (c.res.status >= 200 && c.res.status <= 299) {
+      if (c.get("idempotencyCompleted")) return;
       try {
         const body = await c.res.clone().json() as unknown;
         const completed = await deps.repository.complete(
