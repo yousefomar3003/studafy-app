@@ -48,13 +48,14 @@ select is(
   'no column privileges exist on SAFE-043 tables'
 );
 
--- The append-only sequences are closed to runtime roles but the audit
--- sequence grant expected by db021_grants.sql survives.
+-- The append-only report_events identity sequence is closed to runtime roles
+-- (report_evidence keys on uuid and has no sequence), but the audit sequence
+-- grant expected by db021_grants.sql survives.
 select ok(
   not has_sequence_privilege('service_role', 'public.report_events_id_seq', 'usage,select,update')
   and not has_sequence_privilege('authenticated', 'public.report_events_id_seq', 'usage')
-  and not has_sequence_privilege('studafy_api_runtime', 'public.report_evidence_id_seq', 'usage'),
-  'append-only identity sequences are closed to runtime roles'
+  and not has_sequence_privilege('studafy_api_runtime', 'public.report_events_id_seq', 'usage'),
+  'append-only identity sequence is closed to runtime roles'
 );
 
 select has_column('public', 'reports', 'enqueue_seq',

@@ -409,9 +409,10 @@ begin
 end
 $safe043$;
 
--- The two append-only tables' identity sequences are read by SECURITY
--- DEFINER helpers only; no runtime role ever uses them directly. The
+-- The append-only report_events identity sequence is read by SECURITY
+-- DEFINER helpers only; no runtime role ever uses it directly. (The
+-- report_evidence relation keys on uuid, so it has no sequence.) The
 -- service_role audit sequence grant (db021_grants.sql) is deliberately left
 -- untouched.
-revoke all on sequence public.report_events_id_seq, public.report_evidence_id_seq
+revoke all on sequence public.report_events_id_seq
 from anon, authenticated, service_role, studafy_api_runtime, studafy_worker_runtime;

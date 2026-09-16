@@ -122,7 +122,7 @@ begin
   values (p_school)
   on conflict (school_id) do nothing;
 
-  foreach rule slice 1 in baseline loop
+  foreach rule slice 1 in array baseline loop
     insert into public.safety_content_rules(
       school_id, name, category, pattern_type, pattern, severity, action,
       system_rule
