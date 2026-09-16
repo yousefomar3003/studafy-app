@@ -348,16 +348,301 @@ export const PERMISSION_CATALOGUE = {
     "Create a classified wellbeing record as exact class staff.",
   ),
 
-  // Reserved for the bounded API-042 membership commands. They are catalogued
-  // now so no future handler invents a role check outside this service.
+  // API-042 S1: school provisioning/lifecycle, membership lifecycle,
+  // classroom staffing and enrollment transitions.
+  "school.provision": {
+    resource: "school",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Provision a new school as a platform operator. Not client-selectable: the SQL command independently requires a platform_operators row.",
+  },
+  // Not resource(): its tenantRequired: true default needs a membership-
+  // derived tenant, which a platform operator - one of this permission's two
+  // legitimate actors - never has. private.authz_authorize's own
+  // is_platform_operator() OR is_school_admin() check is the real guard,
+  // the same reasoning support_access.* and guardian_link.revoke already
+  // document for the identical gap.
+  "school.suspend": {
+    resource: "school",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Suspend a school as its administrator or a platform operator.",
+  },
+  "school.close": {
+    resource: "school",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Close a school as its administrator or a platform operator.",
+  },
   "membership.grant": resource(
     "school",
     "Grant a school membership as an active school administrator.",
+  ),
+  "membership.activate": resource(
+    "membership",
+    "Reactivate a suspended membership as an active administrator in its school.",
+  ),
+  "membership.suspend": resource(
+    "membership",
+    "Suspend a membership as an active administrator in its school.",
   ),
   "membership.revoke": resource(
     "membership",
     "Revoke a membership as an active administrator in its school.",
   ),
+  "classroom_staff.write": resource(
+    "classroom",
+    "Assign or remove classroom staff as school admin or the classroom's lead teacher.",
+  ),
+  "enrollment.write": resource(
+    "classroom",
+    "Enroll, withdraw or transfer a student as school admin or exact class writer.",
+  ),
+  "term.create": resource(
+    "school",
+    "Create a term as an active school administrator.",
+  ),
+  "student.create": resource(
+    "school",
+    "Create a student roster record as an active school administrator.",
+  ),
+
+  // API-042 S2: invitations.
+  "invitation.issue": resource(
+    "school",
+    "Issue a hashed, expiring, attempt-budgeted invitation as a school administrator.",
+  ),
+  "invitation.list": resource(
+    "school",
+    "List invitations as a school administrator.",
+  ),
+  "invitation.revoke": resource(
+    "invitation",
+    "Revoke a pending invitation as its issuing school's administrator.",
+  ),
+  "invitation.accept": {
+    resource: "invitation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Accept an invitation by presenting its valid token. The token is the credential; no resourceId is resolved.",
+  },
+
+  // API-042 S3: guarded student locator and guardian linking.
+  "student.locate": {
+    resource: "student_locate",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Look up one student by its opaque studafyId. Rate-limited and audited per attempt; response shape is uniform whether found or not.",
+  },
+  "guardian_link.request": {
+    resource: "guardian_link",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Request a guardian link to a student as the authenticated actor. Starts pending; a school administrator must verify it.",
+  },
+  "conversation.list": {
+    resource: "conversation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List conversations the authenticated actor actively participates in, across every school.",
+  },
+  "conversation.create": {
+    resource: "conversation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Create a conversation as a member or verified guardian of the named school.",
+  },
+  // Not tenantRequired for the same reason as guardian_link.revoke: a
+  // verified-guardian participant frequently has no memberships row at all.
+  // is_conversation_participant(conversationId) is the real guard.
+  "message.list": {
+    resource: "conversation",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "List messages in a conversation the actor actively participates in.",
+  },
+  "message.send": {
+    resource: "conversation",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Send a message in a conversation the actor actively participates in.",
+  },
+  "announcement.create": resource(
+    "school_or_classroom",
+    "Create an announcement as a school administrator (school-wide) or the classroom's exact writer.",
+  ),
+  "announcement.list": resource(
+    "school",
+    "List announcements visible to an active member, filtered per row by classroom relationship.",
+  ),
+
+  // API-042 S5: meetings.
+  "meeting.request": resource(
+    "classroom",
+    "Request a meeting as the classroom's exact writer.",
+  ),
+  "meeting.cancel": resource(
+    "meeting",
+    "Cancel a meeting as its school administrator or the classroom's exact writer.",
+  ),
+  // Not tenantRequired for the same reason as message.list/message.send: an
+  // invited guardian recipient may have no memberships row at all.
+  // is_meeting_authorized(...) or an exact meeting_deliveries row is the
+  // real guard.
+  // API-042 S6: notifications. All self-scoped - every operation reads or
+  // writes only the authenticated actor's own rows, across every school.
+  "notification.list": {
+    resource: "notification",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List or count the authenticated actor's own in-app notifications.",
+  },
+  "notification.mark_read": {
+    resource: "notification",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Mark the authenticated actor's own notifications read, bounded to 100 ids or all.",
+  },
+  "notification.preferences.read": {
+    resource: "notification_preference",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read the authenticated actor's own notification channel/category preferences.",
+  },
+  "notification.preferences.write": {
+    resource: "notification_preference",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Set one of the authenticated actor's own notification channel/category preferences.",
+  },
+
+  // API-042 S7: profile correction and data export request/status.
+  // account.deletion.* (AUTH-030/031) already covers deletion; this is the
+  // other half of account rights under the same self scope.
+  "account.profile.write": {
+    resource: "profile",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Update the authenticated actor's own allowlisted profile fields.",
+  },
+  "account.export.request": {
+    resource: "data_export_request",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Request an export of the authenticated actor's own data.",
+  },
+  "account.export.status": {
+    resource: "data_export_request",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read the status of the authenticated actor's own most recent data export request.",
+  },
+
+  // API-042 S8: time-bounded, MFA-gated, two-person-approved support
+  // access. Requesting has no existing resource to resolve a tenant from
+  // (self-scoped, like provisionSchool); the SQL command's own
+  // is_platform_operator() check is the real guard. Every other operation
+  // is not tenantRequired for the same reason S1's platform-operator
+  // widening exists: an operator approving/starting/revoking access to a
+  // school they are not a member of must not be blocked by the
+  // membership-only tenant cache before the real check ever runs.
+  "support_access.request": {
+    resource: "support_access_grant",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Request a time-bounded support session as a platform operator, with MFA and a ticket reference.",
+  },
+  "support_access.approve": {
+    resource: "support_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Approve a pending support-access request as a different platform operator, with MFA.",
+  },
+  "support_access.start": {
+    resource: "support_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Start an approved support session as its exact original requester.",
+  },
+  "support_access.revoke": {
+    resource: "support_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Revoke a support-access grant as a platform operator or the affected school's administrator.",
+  },
+  "support_access.list": resource(
+    "school",
+    "List support-access grants for a school as a platform operator or that school's administrator.",
+  ),
+  "meeting.status": {
+    resource: "meeting",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Read meeting and delivery status as staff or an invited recipient.",
+  },
+  "guardian_link.verify": resource(
+    "guardian_link",
+    "Verify a pending guardian link as the student's school administrator.",
+  ),
+  // Not tenantRequired: an admin revoking always has a membership in the
+  // resolved school and gets the usual tenant context, but the linked
+  // guardian revoking their own link often has no memberships row at all -
+  // guardian membership is "if required by school policy" per
+  // instructions.md section 6, not universal, and a guardian_links row is
+  // not a membership. The SQL command's own
+  // is_school_admin(tenant) or guardian_id = auth.uid() check is the real
+  // guard either way; this only stops the tenant-cache lookup from denying
+  // a guardian who has no membership row before that check ever runs.
+  "guardian_link.revoke": {
+    resource: "guardian_link",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Revoke a guardian link as the student's school administrator or the linked guardian themselves.",
+  },
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

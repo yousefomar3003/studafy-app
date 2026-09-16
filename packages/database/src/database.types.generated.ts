@@ -1352,6 +1352,44 @@ export type Database = {
           },
         ];
       };
+      data_export_requests: {
+        Row: {
+          expires_at: string | null;
+          id: string;
+          ready_at: string | null;
+          requested_at: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          expires_at?: string | null;
+          id?: string;
+          ready_at?: string | null;
+          requested_at?: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          expires_at?: string | null;
+          id?: string;
+          ready_at?: string | null;
+          requested_at?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "data_export_requests_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       enrollments: {
         Row: {
           active: boolean;
@@ -1989,6 +2027,105 @@ export type Database = {
           },
         ];
       };
+      invitations: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by: string | null;
+          attempt_count: number;
+          classroom_id: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string;
+          max_attempts: number;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          role: Database["public"]["Enums"]["app_role"];
+          school_id: string;
+          status: Database["public"]["Enums"]["invitation_status"];
+          token_hash: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          attempt_count?: number;
+          classroom_id?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at: string;
+          id?: string;
+          invited_by: string;
+          max_attempts?: number;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          role: Database["public"]["Enums"]["app_role"];
+          school_id: string;
+          status?: Database["public"]["Enums"]["invitation_status"];
+          token_hash: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          attempt_count?: number;
+          classroom_id?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string;
+          max_attempts?: number;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          role?: Database["public"]["Enums"]["app_role"];
+          school_id?: string;
+          status?: Database["public"]["Enums"]["invitation_status"];
+          token_hash?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitations_accepted_by_fkey";
+            columns: ["accepted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_classroom_id_fkey";
+            columns: ["classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lesson_materials: {
         Row: {
           body: string | null;
@@ -2190,6 +2327,7 @@ export type Database = {
           state: string;
           title: string;
           updated_at: string;
+          version: number;
         };
         Insert: {
           audience: Database["public"]["Enums"]["meeting_audience"];
@@ -2206,6 +2344,7 @@ export type Database = {
           state?: string;
           title: string;
           updated_at?: string;
+          version?: number;
         };
         Update: {
           audience?: Database["public"]["Enums"]["meeting_audience"];
@@ -2222,6 +2361,7 @@ export type Database = {
           state?: string;
           title?: string;
           updated_at?: string;
+          version?: number;
         };
         Relationships: [
           {
@@ -2442,6 +2582,7 @@ export type Database = {
           notification_id: string | null;
           outbox_id: number;
           provider_message_id: string | null;
+          read_at: string | null;
           recipient_id: string;
           school_id: string;
           state: Database["public"]["Enums"]["delivery_state"];
@@ -2456,6 +2597,7 @@ export type Database = {
           notification_id?: string | null;
           outbox_id: number;
           provider_message_id?: string | null;
+          read_at?: string | null;
           recipient_id: string;
           school_id: string;
           state?: Database["public"]["Enums"]["delivery_state"];
@@ -2470,6 +2612,7 @@ export type Database = {
           notification_id?: string | null;
           outbox_id?: number;
           provider_message_id?: string | null;
+          read_at?: string | null;
           recipient_id?: string;
           school_id?: string;
           state?: Database["public"]["Enums"]["delivery_state"];
@@ -2589,6 +2732,51 @@ export type Database = {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          category: string;
+          channel: string;
+          enabled: boolean;
+          id: string;
+          school_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          category: string;
+          channel: string;
+          enabled?: boolean;
+          id?: string;
+          school_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          category?: string;
+          channel?: string;
+          enabled?: boolean;
+          id?: string;
+          school_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notifications: {
         Row: {
           body: string;
@@ -2647,6 +2835,42 @@ export type Database = {
             foreignKeyName: "notifications_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_operators: {
+        Row: {
+          created_at: string;
+          granted_by: string | null;
+          note: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          granted_by?: string | null;
+          note?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          granted_by?: string | null;
+          note?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_operators_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "platform_operators_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
@@ -3056,6 +3280,7 @@ export type Database = {
           status: Database["public"]["Enums"]["school_status"];
           timezone: string;
           updated_at: string;
+          version: number;
         };
         Insert: {
           created_at?: string;
@@ -3067,6 +3292,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["school_status"];
           timezone?: string;
           updated_at?: string;
+          version?: number;
         };
         Update: {
           created_at?: string;
@@ -3078,6 +3304,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["school_status"];
           timezone?: string;
           updated_at?: string;
+          version?: number;
         };
         Relationships: [];
       };
@@ -3458,6 +3685,98 @@ export type Database = {
           },
         ];
       };
+      support_access_grants: {
+        Row: {
+          approved_by: string | null;
+          created_at: string;
+          ended_at: string | null;
+          expires_at: string;
+          id: string;
+          mfa_verified_at: string;
+          reason: string;
+          requested_by: string;
+          requires_second_approver: boolean;
+          resource_scope: Json;
+          revoked_by: string | null;
+          revoked_reason: string | null;
+          school_id: string;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["support_access_status"];
+          ticket_ref: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          approved_by?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at: string;
+          id?: string;
+          mfa_verified_at: string;
+          reason: string;
+          requested_by: string;
+          requires_second_approver?: boolean;
+          resource_scope?: Json;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          school_id: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["support_access_status"];
+          ticket_ref: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          approved_by?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          mfa_verified_at?: string;
+          reason?: string;
+          requested_by?: string;
+          requires_second_approver?: boolean;
+          resource_scope?: Json;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          school_id?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["support_access_status"];
+          ticket_ref?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "support_access_grants_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "support_access_grants_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "support_access_grants_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "support_access_grants_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       terms: {
         Row: {
           active: boolean;
@@ -3700,6 +4019,7 @@ export type Database = {
         | "rejected"
         | "error"
         | "deleted";
+      invitation_status: "pending" | "accepted" | "revoked" | "expired";
       lesson_session_status: "scheduled" | "completed" | "cancelled";
       link_status: "pending" | "verified" | "declined" | "revoked";
       meeting_audience: "students" | "guardians" | "both";
@@ -3731,6 +4051,13 @@ export type Database = {
         | "revoked"
         | "expired";
       submission_status: "open" | "submitted" | "excused" | "withdrawn";
+      support_access_status:
+        | "pending"
+        | "approved"
+        | "active"
+        | "expired"
+        | "revoked"
+        | "denied";
       term_status: "planned" | "active" | "closed" | "cancelled";
       upload_session_state:
         | "initiated"
@@ -3910,6 +4237,7 @@ export const Constants = {
         "error",
         "deleted",
       ],
+      invitation_status: ["pending", "accepted", "revoked", "expired"],
       lesson_session_status: ["scheduled", "completed", "cancelled"],
       link_status: ["pending", "verified", "declined", "revoked"],
       meeting_audience: ["students", "guardians", "both"],
@@ -3944,6 +4272,14 @@ export const Constants = {
         "expired",
       ],
       submission_status: ["open", "submitted", "excused", "withdrawn"],
+      support_access_status: [
+        "pending",
+        "approved",
+        "active",
+        "expired",
+        "revoked",
+        "denied",
+      ],
       term_status: ["planned", "active", "closed", "cancelled"],
       upload_session_state: [
         "initiated",

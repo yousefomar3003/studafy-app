@@ -77,3 +77,11 @@ export {
 export * from "./platform";
 export * from "./routes";
 export * from "./academic";
+export * from "./schoolAdmin";
+export * from "./invitations";
+export * from "./family";
+export * from "./communications";
+export * from "./meetings";
+export * from "./notifications";
+export * from "./account";
+export * from "./supportAccess";

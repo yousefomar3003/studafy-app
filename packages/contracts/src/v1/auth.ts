@@ -132,6 +132,7 @@ export const V1ReauthPurpose = z.enum([
   "all_device_sign_out",
   "device_revoke",
   "school_admin_privileged",
+  "account_data_export",
 ]);
 export type V1ReauthPurpose = z.infer<typeof V1ReauthPurpose>;
 

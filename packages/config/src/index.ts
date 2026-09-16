@@ -62,6 +62,18 @@ export const apiEnvSchema = z.object({
   API041_GRADES_ENABLED: switchFlag,
   API041_ATTENDANCE_ENABLED: switchFlag,
   API041_WELLBEING_ENABLED: switchFlag,
+  API042_SCHOOLS_ENABLED: switchFlag,
+  API042_MEMBERSHIPS_ENABLED: switchFlag,
+  API042_STAFFING_ENABLED: switchFlag,
+  API042_ENROLLMENT_ENABLED: switchFlag,
+  API042_INVITATIONS_ENABLED: switchFlag,
+  API042_FAMILY_ENABLED: switchFlag,
+  API042_CONVERSATIONS_ENABLED: switchFlag,
+  API042_ANNOUNCEMENTS_ENABLED: switchFlag,
+  API042_MEETINGS_ENABLED: switchFlag,
+  API042_NOTIFICATIONS_ENABLED: switchFlag,
+  API042_ACCOUNT_RIGHTS_ENABLED: switchFlag,
+  API042_SUPPORT_ACCESS_ENABLED: switchFlag,
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
   // separately, so a misconfiguration cannot leave the API trusting one
@@ -185,6 +197,20 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       grades: env.API041_GRADES_ENABLED,
       attendance: env.API041_ATTENDANCE_ENABLED,
       wellbeing: env.API041_WELLBEING_ENABLED,
+    },
+    api042_slices: {
+      schools: env.API042_SCHOOLS_ENABLED,
+      memberships: env.API042_MEMBERSHIPS_ENABLED,
+      staffing: env.API042_STAFFING_ENABLED,
+      enrollment: env.API042_ENROLLMENT_ENABLED,
+      invitations: env.API042_INVITATIONS_ENABLED,
+      family: env.API042_FAMILY_ENABLED,
+      conversations: env.API042_CONVERSATIONS_ENABLED,
+      announcements: env.API042_ANNOUNCEMENTS_ENABLED,
+      meetings: env.API042_MEETINGS_ENABLED,
+      notifications: env.API042_NOTIFICATIONS_ENABLED,
+      accountRights: env.API042_ACCOUNT_RIGHTS_ENABLED,
+      supportAccess: env.API042_SUPPORT_ACCESS_ENABLED,
     },
   };
 }

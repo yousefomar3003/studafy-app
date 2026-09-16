@@ -1,47 +1,25 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
-import { corsHeaders, json } from "../_shared/http.ts";
+import { disabledFeatureResponse } from "../_shared/containment.ts";
+import { corsHeaders } from "../_shared/http.ts";
 
-Deno.serve(async (request) => {
+export function handleRequestAccountDeletion(request: Request): Response {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-  const auth = request.headers.get("Authorization") ?? "";
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const client = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: auth } },
+
+  // AUTH-030/031: /v1/account/deletion-request is the authoritative
+  // replacement (apps/api/src/auth/routes.ts, ADR-0016, ADR-0017). This
+  // prototype's recent-auth check manually base64-decoded the JWT payload
+  // and treated "issued within the last 600 seconds" as proof of recent
+  // authentication - not a real assurance check, and exactly the broken
+  // iat check DL-032 replaced with a single-use hashed recent-auth grant.
+  // Never deploy this function as the production backend; do not add an
+  // environment-variable bypass.
+  return disabledFeatureResponse(request, {
+    code: "ACCOUNT_DELETION_PROTOTYPE_DISABLED",
+    feature: "account_deletion",
+    message:
+      "This endpoint is retired. Account deletion is requested through POST /v1/account/deletion-request.",
   });
-  const service = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) return json({ error: "Authentication required" }, 401);
-  const token = auth.replace(/^Bearer\s+/i, "");
-  const payload = JSON.parse(
-    atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-  );
-  if (!payload.iat || Date.now() / 1000 - Number(payload.iat) > 600) {
-    return json(
-      { error: "Reauthentication required before account deletion" },
-      401,
-    );
-  }
-  const body = await request.json();
-  if (body.confirmation !== "DELETE") {
-    return json({ error: "Typed confirmation required" }, 422);
-  }
-  const executeAfter = new Date(Date.now() + 14 * 86400000).toISOString();
-  const { data, error } = await service.from("account_deletion_requests")
-    .upsert({
-      user_id: user.id,
-      state: "grace_period",
-      requested_at: new Date().toISOString(),
-      execute_after: executeAfter,
-    }, { onConflict: "user_id,state" }).select("id").single();
-  if (error) return json({ error: error.message }, 400);
-  await service.from("audit_events").insert({
-    actor_id: user.id,
-    action: "account_deletion_requested",
-    entity_type: "profile",
-    entity_id: user.id,
-    after_value: { execute_after: executeAfter },
-  });
-  return json({ request_id: data.id, execute_after: executeAfter });
-});
+}
+
+if (import.meta.main) Deno.serve(handleRequestAccountDeletion);

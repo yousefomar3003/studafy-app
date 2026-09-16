@@ -2,9 +2,22 @@ import { describe, expect, test } from "bun:test";
 import { type LogLevel, V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
+import { Hono } from "hono";
 import { createAuthRoutes } from "../../src/auth/routes";
 import { createAcademicRoutes } from "../../src/academic/routes";
+import {
+  createSchoolAdminRoutes,
+  createSchoolRosterRoutes,
+} from "../../src/school-admin/routes";
+import { createInvitationsRoutes } from "../../src/invitations/routes";
+import { createFamilyRoutes } from "../../src/family/routes";
+import { createCommunicationsRoutes } from "../../src/communications/routes";
+import { createMeetingsRoutes } from "../../src/meetings/routes";
+import { createNotificationsRoutes } from "../../src/notifications/routes";
+import { createAccountRoutes } from "../../src/account/routes";
+import { createSupportAccessRoutes } from "../../src/support-access/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
+import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
   AUTH_HANDLER_PERMISSIONS,
   isPermission,
@@ -58,11 +71,123 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const schoolAdmin = createSchoolAdminRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+    authDependencies,
+  );
+  const invitations = createInvitationsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const family = createFamilyRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const communications = createCommunicationsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const meetings = createMeetingsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const notifications = createNotificationsRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const account = createAccountRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+    authDependencies,
+  );
+  const supportAccess = createSupportAccessRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const schoolRoster = createSchoolRosterRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const combined = new Hono<AuthorizationEnv>();
+  combined.route("/", academic);
+  combined.route("/", schoolAdmin);
+  combined.route("/", invitations);
+  combined.route("/", family);
+  combined.route("/", communications);
+  combined.route("/", meetings);
+  combined.route("/", notifications);
+  combined.route("/", account);
+  combined.route("/", supportAccess);
+  combined.route("/", schoolRoster);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
     idempotency,
-    academic,
+    combined,
   );
   return routes;
 }
@@ -89,14 +214,35 @@ describe("permission catalogue", () => {
     const academicMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609150002_api041_authoritative_surface.sql`,
     ).text();
+    const schoolAdminMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160002_api042_school_operations.sql`,
+    ).text();
+    const invitationsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160003_api042_invitations.sql`,
+    ).text();
+    const familyMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160004_api042_family.sql`,
+    ).text();
+    const communicationsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160005_api042_communications.sql`,
+    ).text();
+    const meetingsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160006_api042_meetings.sql`,
+    ).text();
+    const supportAccessMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160009_api042_support_access.sql`,
+    ).text();
+    const rosterMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160011_api042_terms_students.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
-      expect(`${authMigration}\n${academicMigration}`).toContain(
-        `'${permission}'`,
-      );
+      expect(
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}`,
+      ).toContain(`'${permission}'`);
     }
   });
 
@@ -106,7 +252,9 @@ describe("permission catalogue", () => {
       ...new Set(
         routes
           .filter((route) =>
-            route.path.startsWith("/v1/") && route.method !== "ALL"
+            (route.path.startsWith("/v1/") ||
+              route.path.startsWith("/internal/")) &&
+            route.method !== "ALL"
           )
           .map((route) => `${route.method} ${route.path}`),
       ),
@@ -144,7 +292,9 @@ describe("permission catalogue", () => {
       ...new Set(
         routeTable().routes
           .filter((route) =>
-            route.path.startsWith("/v1/") && route.method !== "ALL"
+            (route.path.startsWith("/v1/") ||
+              route.path.startsWith("/internal/")) &&
+            route.method !== "ALL"
           )
           .map((route) => `${route.method} ${route.path}`),
       ),

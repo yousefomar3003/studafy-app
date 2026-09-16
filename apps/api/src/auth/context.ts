@@ -80,7 +80,7 @@ export async function withVerifiedActor<T>(
  * retain authority from a previous request. */
 export async function withRequestContext<T>(
   sql: Sql,
-  context: { subject: string; schoolId: string; requestId: string },
+  context: { subject: string; schoolId: string | null; requestId: string },
   work: (tx: Sql) => Promise<T>,
 ): Promise<T> {
   return await sql.begin(async (tx) => {

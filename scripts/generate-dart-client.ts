@@ -10,6 +10,7 @@ type Schema = {
   items?: Schema;
   properties?: Record<string, Schema>;
   required?: string[];
+  enum?: string[];
 };
 
 type Operation = {
@@ -59,6 +60,20 @@ function referencedName(schema: Schema): string | null {
   return effectiveSchema(schema).$ref?.split("/").at(-1) ?? null;
 }
 
+/**
+ * True when a named component schema is a bare string enum (a Zod `z.enum()`
+ * registered at the top level, e.g. V1ReauthPurpose) rather than a structured
+ * object. These still surface as `$ref`s wherever they're used, exactly like
+ * an object component, but have no `properties` and must not go through the
+ * object-DTO code path - there is nothing to construct, and the wire value
+ * already is the Dart-usable value.
+ */
+function isEnumComponent(name: string): boolean {
+  const target = spec.components.schemas[name];
+  return target !== undefined && Array.isArray(target.enum) &&
+    target.properties === undefined;
+}
+
 function isNullable(schema: Schema): boolean {
   return (Array.isArray(schema.type) && schema.type.includes("null")) ||
     (schema.anyOf?.some((entry) => entry.type === "null") ?? false);
@@ -73,7 +88,7 @@ function dartType(schema: Schema): string {
   const effective = effectiveSchema(schema);
   let base: string;
   if (reference) {
-    base = `${reference}Dto`;
+    base = isEnumComponent(reference) ? "String" : `${reference}Dto`;
   } else {
     const type = Array.isArray(effective.type)
       ? effective.type.find((entry) => entry !== "null")
@@ -95,6 +110,14 @@ function dartType(schema: Schema): string {
         if (!effective.items) throw new Error("Array schema is missing items");
         base = `List<${dartType(effective.items).replace(/\?$/, "")}>`;
         break;
+      case "object":
+        // Only a free-form record (z.record()) reaches this branch: every
+        // structured object schema is registered as a named component (see
+        // generate-openapi.ts) and resolves through the `reference` branch
+        // above instead. A record's own field types aren't representable in
+        // the generated client's static types, so it maps to a raw map.
+        base = "Map<String, dynamic>";
+        break;
       default:
         throw new Error(`Unsupported OpenAPI schema type: ${String(type)}`);
     }
@@ -113,7 +136,7 @@ function parseExpression(
   required: boolean,
 ): string {
   const reference = referencedName(schema);
-  if (reference) {
+  if (reference && !isEnumComponent(reference)) {
     const parsed =
       `${reference}Dto.fromJson(json['${wireName}'] as Map<String, dynamic>)`;
     return required && !isNullable(schema)
@@ -127,7 +150,7 @@ function parseExpression(
   if (type === "array") {
     if (!effective.items) throw new Error("Array schema is missing items");
     const itemReference = referencedName(effective.items);
-    if (itemReference) {
+    if (itemReference && !isEnumComponent(itemReference)) {
       const parsed = "[for (final item in json['" + wireName +
         "'] as List<dynamic>) " + itemReference +
         "Dto.fromJson(item as Map<String, dynamic>)]";
@@ -147,12 +170,16 @@ function parseExpression(
  * can use a Dart null-aware element instead of `if (x != null) 'k': x!`,
  * which the use_null_aware_elements lint rejects in generated code. */
 function isBareValue(schema: Schema): boolean {
-  if (referencedName(schema)) return false;
+  const reference = referencedName(schema);
+  if (reference && !isEnumComponent(reference)) return false;
   const effective = effectiveSchema(schema);
   const type = Array.isArray(effective.type)
     ? effective.type.find((entry) => entry !== "null")
     : effective.type;
-  if (type === "array") return !referencedName(effective.items ?? {});
+  if (type === "array") {
+    const itemReference = referencedName(effective.items ?? {});
+    return !itemReference || isEnumComponent(itemReference);
+  }
   return true;
 }
 
@@ -161,7 +188,8 @@ function serializeExpression(
   propertyName: string,
   knownNonNull: boolean,
 ): string {
-  if (referencedName(schema)) {
+  const reference = referencedName(schema);
+  if (reference && !isEnumComponent(reference)) {
     return knownNonNull
       ? `${propertyName}.toJson()`
       : `${propertyName}?.toJson()`;
@@ -169,7 +197,8 @@ function serializeExpression(
   const type = Array.isArray(schema.type)
     ? schema.type.find((entry) => entry !== "null")
     : schema.type;
-  if (type === "array" && referencedName(schema.items ?? {})) {
+  const itemReference = referencedName(schema.items ?? {});
+  if (type === "array" && itemReference && !isEnumComponent(itemReference)) {
     return `[for (final item in ${propertyName}) item.toJson()]`;
   }
   return propertyName;
@@ -308,6 +337,7 @@ function renderOperation(
 }
 
 const models = Object.entries(spec.components.schemas)
+  .filter(([name]) => !isEnumComponent(name))
   .map(([name, schema]) => renderModel(name, schema))
   .join("\n\n");
 const operations = Object.entries(spec.paths)
