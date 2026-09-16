@@ -1,4 +1,4 @@
-import { type Context, Hono } from "hono";
+import { type Context, Hono, type MiddlewareHandler } from "hono";
 import type {
   V1PageQuery as V1PageQueryType,
   V1RouteContract,
@@ -8,6 +8,8 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
+import type { AuthDependencies } from "../auth/middleware";
+import { requireAal2, requireRecentAuth } from "../auth/middleware";
 import type { IdempotencyDependencies } from "./idempotency";
 import { idempotency } from "./idempotency";
 import { problem } from "./errors";
@@ -82,6 +84,21 @@ export type CatalogueSelector = (
   route: V1RouteContract,
 ) => string | null;
 
+/**
+ * instructions.md section 7's route table calls out MFA/recent-auth for
+ * specific admin mutations by name (school closure, data export) - the same
+ * short-lived re-confirmation AUTH-030's account-linking/deletion routes
+ * already require, just reachable from the generic catalogue dispatcher
+ * instead of a hand-written route. `aal2: true` stacks requireAal2() in
+ * front for operations destructive enough to also need a standing second
+ * factor, not just a fresh challenge (school closure; support-access uses
+ * its own stricter per-request check instead, see support-access/repository.ts).
+ */
+export interface ReauthRequirement {
+  purpose: string;
+  aal2?: boolean;
+}
+
 export interface CatalogueRoutesOptions<Slice extends string> {
   routes: readonly V1RouteContract[];
   repository: CatalogueRepository;
@@ -89,6 +106,10 @@ export interface CatalogueRoutesOptions<Slice extends string> {
   selector: CatalogueSelector;
   sliceFor: (operationId: string) => Slice;
   enabledSlices?: Partial<Record<Slice, boolean>>;
+  reauth?: {
+    dependencies: AuthDependencies;
+    requirements: Partial<Record<string, ReauthRequirement>>;
+  };
 }
 
 export function honoPath(path: string): string {
@@ -225,12 +246,27 @@ export function createCatalogueRoutes<Slice extends string>(
       continue;
     }
 
+    const reauthRequirement = options.reauth?.requirements[route.operationId];
+    const reauthMiddlewares: MiddlewareHandler<AuthorizationEnv>[] = [];
+    if (reauthRequirement) {
+      if (reauthRequirement.aal2) {
+        reauthMiddlewares.push(requireAal2() as never);
+      }
+      reauthMiddlewares.push(
+        requireRecentAuth(
+          options.reauth!.dependencies,
+          reauthRequirement.purpose,
+        ) as never,
+      );
+    }
+
     routes.post(
       path,
       validate,
       authorize,
       available as never,
       idempotency(idempotencyDependencies, route.operationId, "required"),
+      ...reauthMiddlewares,
       async (c) => {
         const successStatus = "successStatus" in route
           ? route.successStatus ?? 200

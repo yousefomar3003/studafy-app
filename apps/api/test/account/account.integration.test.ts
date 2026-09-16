@@ -9,7 +9,9 @@ import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import { AuthContextRepository } from "../../src/auth/context";
-import type { Actor } from "../../src/auth/middleware";
+import type { Actor, AuthDependencies } from "../../src/auth/middleware";
+import { sha256Hex } from "../../src/auth/middleware";
+import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import { createAuthorizationDependencies } from "../../src/authorization/middleware";
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
@@ -49,11 +51,14 @@ async function cleanup(): Promise<void> {
   });
 }
 
+const SESSION_ID = "5f480000-0000-4000-8000-00000000f001";
+
 interface RequestInput {
   method?: "GET" | "POST";
   subject: string;
   key?: string;
   body?: unknown;
+  reauth?: string;
 }
 
 async function request(path: string, input: RequestInput): Promise<Response> {
@@ -63,11 +68,34 @@ async function request(path: string, input: RequestInput): Promise<Response> {
   if ((input.method ?? "GET") === "POST") {
     headers.set("idempotency-key", input.key ?? crypto.randomUUID());
   }
+  if (input.reauth) headers.set("x-studafy-reauth", input.reauth);
   return await app.request(path, {
     method: input.method ?? "GET",
     headers,
     ...(input.body !== undefined ? { body: JSON.stringify(input.body) } : {}),
   });
+}
+
+/** 43 base64url characters, matching AUTH-030's own reauth grant format. */
+function opaqueGrant(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
+}
+
+async function mintReauthGrant(subject: string, purpose: string): Promise<string> {
+  const grant = opaqueGrant();
+  const minted = await contexts.issueReauthGrant(subject, {
+    purpose,
+    grantHash: await sha256Hex(grant),
+    sessionId: SESSION_ID,
+    assuranceLevel: "aal1",
+    ttlSeconds: 300,
+  });
+  if (!minted) throw new Error("Failed to mint a test reauth grant");
+  return grant;
 }
 
 suite("API-042 S7 account rights over the real /v1 stack", () => {
@@ -90,6 +118,17 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
       logger,
       repository: new PostgresIdempotencyRepository(sql),
     };
+    const authDependencies: AuthDependencies = {
+      keys: new JwksKeySource("https://unused.test/jwks"),
+      repository: contexts,
+      logger,
+      issuer: "https://unused.test/auth/v1",
+      audience: "authenticated",
+      clockSkewSeconds: 0,
+      revocationBudgetSeconds: 0,
+      reauthTtlSeconds: 300,
+      deletionGraceDays: 14,
+    };
 
     app = new Hono<AuthorizationEnv>();
     app.use("*", async (c, next) => {
@@ -99,7 +138,7 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
       const actor: Actor = {
         token: {
           subject,
-          sessionId: null,
+          sessionId: SESSION_ID,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
           assuranceLevel: "aal1",
@@ -120,6 +159,7 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
         { repository: new PostgresAccountRepository(sql), cursorSigningKey: "api042-account-cursor-key-00" },
         authorization,
         idempotency,
+        authDependencies,
       ),
     );
   });
@@ -151,16 +191,35 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
     expect(res.status).toBe(400);
   });
 
+  test("requesting an export without a recent-auth grant is refused", async () => {
+    const res = await request("/v1/account/export-request", { method: "POST", subject: USER_A, body: {} });
+    expect(res.status).toBe(401);
+    const body = await res.json() as { code: string };
+    expect(body.code).toBe("REAUTH_REQUIRED");
+  });
+
   test("export request/status round-trips and a second request reuses the pending one", async () => {
     const before = await request("/v1/account/export-status", { subject: USER_A });
     expect((await before.json() as { request: unknown }).request).toBeNull();
 
-    const first = await request("/v1/account/export-request", { method: "POST", subject: USER_A, body: {} });
+    const firstGrant = await mintReauthGrant(USER_A, "account_data_export");
+    const first = await request("/v1/account/export-request", {
+      method: "POST",
+      subject: USER_A,
+      reauth: firstGrant,
+      body: {},
+    });
     expect(first.status).toBe(201);
     const firstBody = await first.json() as { id: string; status: string };
     expect(firstBody.status).toBe("pending");
 
-    const second = await request("/v1/account/export-request", { method: "POST", subject: USER_A, body: {} });
+    const secondGrant = await mintReauthGrant(USER_A, "account_data_export");
+    const second = await request("/v1/account/export-request", {
+      method: "POST",
+      subject: USER_A,
+      reauth: secondGrant,
+      body: {},
+    });
     const secondBody = await second.json() as { id: string };
     expect(secondBody.id).toBe(firstBody.id);
 

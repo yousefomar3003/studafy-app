@@ -15599,7 +15599,8 @@
           "account_link",
           "all_device_sign_out",
           "device_revoke",
-          "school_admin_privileged"
+          "school_admin_privileged",
+          "account_data_export"
         ]
       },
       "V1ReauthVerifyRequest": {

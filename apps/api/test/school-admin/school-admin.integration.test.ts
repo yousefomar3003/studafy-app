@@ -16,7 +16,9 @@ import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import { AuthContextRepository } from "../../src/auth/context";
-import type { Actor } from "../../src/auth/middleware";
+import type { Actor, AuthDependencies } from "../../src/auth/middleware";
+import { sha256Hex } from "../../src/auth/middleware";
+import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import { createAuthorizationDependencies } from "../../src/authorization/middleware";
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
@@ -119,11 +121,14 @@ async function cleanup(provisioned?: string): Promise<void> {
   });
 }
 
+const SESSION_ID = "5f420000-0000-4000-8000-00000000f001";
+
 interface RequestInput {
   method?: "GET" | "POST";
   subject: string;
   key?: string;
   body?: unknown;
+  reauth?: string;
 }
 
 async function request(path: string, input: RequestInput): Promise<Response> {
@@ -133,11 +138,34 @@ async function request(path: string, input: RequestInput): Promise<Response> {
   if ((input.method ?? "GET") === "POST") {
     headers.set("idempotency-key", input.key ?? crypto.randomUUID());
   }
+  if (input.reauth) headers.set("x-studafy-reauth", input.reauth);
   return await app.request(path, {
     method: input.method ?? "GET",
     headers,
     ...(input.body !== undefined ? { body: JSON.stringify(input.body) } : {}),
   });
+}
+
+/** 43 base64url characters, matching AUTH-030's own reauth grant format. */
+function opaqueGrant(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
+}
+
+async function mintReauthGrant(subject: string, purpose: string): Promise<string> {
+  const grant = opaqueGrant();
+  const minted = await contexts.issueReauthGrant(subject, {
+    purpose,
+    grantHash: await sha256Hex(grant),
+    sessionId: SESSION_ID,
+    assuranceLevel: "aal1",
+    ttlSeconds: 300,
+  });
+  if (!minted) throw new Error("Failed to mint a test reauth grant");
+  return grant;
 }
 
 suite("API-042 S1 school-admin over the real /v1 stack", () => {
@@ -162,6 +190,17 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
       logger,
       repository: new PostgresIdempotencyRepository(sql),
     };
+    const authDependencies: AuthDependencies = {
+      keys: new JwksKeySource("https://unused.test/jwks"),
+      repository: contexts,
+      logger,
+      issuer: "https://unused.test/auth/v1",
+      audience: "authenticated",
+      clockSkewSeconds: 0,
+      revocationBudgetSeconds: 0,
+      reauthTtlSeconds: 300,
+      deletionGraceDays: 14,
+    };
 
     app = new Hono<AuthorizationEnv>();
     app.use("*", async (c, next) => {
@@ -171,7 +210,7 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
       const actor: Actor = {
         token: {
           subject,
-          sessionId: null,
+          sessionId: SESSION_ID,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
           assuranceLevel: "aal1",
@@ -192,6 +231,7 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
         { repository: new PostgresSchoolAdminRepository(sql), cursorSigningKey: CURSOR_KEY },
         authorization,
         idempotency,
+        authDependencies,
       ),
     );
     // enrollStudent's classroom-writer check needs api041_class_writer, whose
@@ -240,15 +280,70 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
     provisionedSchoolId = body.id;
   });
 
-  test("suspending with a stale version returns a 409 problem", async () => {
+  test("suspending without a recent-auth grant is refused before the version is even checked", async () => {
     const res = await request(`/v1/schools/${provisionedSchoolId}/suspend`, {
       method: "POST",
       subject: ADMIN,
       body: { expectedVersion: 99 },
     });
+    expect(res.status).toBe(401);
+    const body = await res.json() as { code: string };
+    expect(body.code).toBe("REAUTH_REQUIRED");
+  });
+
+  test("suspending with a stale version returns a 409 problem", async () => {
+    const grant = await mintReauthGrant(ADMIN, "school_admin_privileged");
+    const res = await request(`/v1/schools/${provisionedSchoolId}/suspend`, {
+      method: "POST",
+      subject: ADMIN,
+      reauth: grant,
+      body: { expectedVersion: 99 },
+    });
     expect(res.status).toBe(409);
     const body = await res.json() as { code: string };
     expect(body.code).toBe("VERSION_CONFLICT");
+  });
+
+  test("suspending with a valid grant and version succeeds", async () => {
+    const grant = await mintReauthGrant(ADMIN, "school_admin_privileged");
+    const res = await request(`/v1/schools/${provisionedSchoolId}/suspend`, {
+      method: "POST",
+      subject: ADMIN,
+      reauth: grant,
+      body: { expectedVersion: 1 },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as { status: string; version: number };
+    expect(body.status).toBe("suspended");
+    expect(body.version).toBe(2);
+  });
+
+  test("a fabricated grant cannot close the now-suspended school", async () => {
+    // Suspension drops the school's own status to non-active, which - by the
+    // same has_active_membership() check every other module relies on -
+    // means its own admin loses standing entirely; only a platform operator
+    // can still act on it. Use one here so this exercises grant validation
+    // rather than being short-circuited by authorization first.
+    const res = await request(`/v1/schools/${provisionedSchoolId}/close`, {
+      method: "POST",
+      subject: OPERATOR,
+      reauth: "a".repeat(43),
+      body: { expectedVersion: 2 },
+    });
+    expect(res.status).toBe(401);
+  });
+
+  test("closing with a fresh grant succeeds", async () => {
+    const grant = await mintReauthGrant(OPERATOR, "school_admin_privileged");
+    const res = await request(`/v1/schools/${provisionedSchoolId}/close`, {
+      method: "POST",
+      subject: OPERATOR,
+      reauth: grant,
+      body: { expectedVersion: 2 },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as { status: string };
+    expect(body.status).toBe("closed");
   });
 
   test("a school admin grants an additional role to an existing member", async () => {

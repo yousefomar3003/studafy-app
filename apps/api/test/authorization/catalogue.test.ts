@@ -78,6 +78,7 @@ function routeTable() {
     },
     authorization,
     idempotency,
+    authDependencies,
   );
   const invitations = createInvitationsRoutes(
     {
@@ -144,6 +145,7 @@ function routeTable() {
     },
     authorization,
     idempotency,
+    authDependencies,
   );
   const supportAccess = createSupportAccessRoutes(
     {

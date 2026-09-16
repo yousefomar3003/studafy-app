@@ -358,14 +358,26 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Provision a new school as a platform operator. Not client-selectable: the SQL command independently requires a platform_operators row.",
   },
-  "school.suspend": resource(
-    "school",
-    "Suspend a school as its administrator or a platform operator.",
-  ),
-  "school.close": resource(
-    "school",
-    "Close a school as its administrator or a platform operator.",
-  ),
+  // Not resource(): its tenantRequired: true default needs a membership-
+  // derived tenant, which a platform operator - one of this permission's two
+  // legitimate actors - never has. private.authz_authorize's own
+  // is_platform_operator() OR is_school_admin() check is the real guard,
+  // the same reasoning support_access.* and guardian_link.revoke already
+  // document for the identical gap.
+  "school.suspend": {
+    resource: "school",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Suspend a school as its administrator or a platform operator.",
+  },
+  "school.close": {
+    resource: "school",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Close a school as its administrator or a platform operator.",
+  },
   "membership.grant": resource(
     "school",
     "Grant a school membership as an active school administrator.",

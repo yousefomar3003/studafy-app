@@ -76,6 +76,24 @@ const idempotencyDependencies = {
   logger,
   ...(sql ? { repository: new PostgresIdempotencyRepository(sql) } : {}),
 };
+
+// Built ahead of the route modules below so school-admin (closeSchool,
+// suspendSchool) and account (requestDataExport) can require the same
+// recent-auth/AAL2 grants AUTH-030's own routes require, instead of each
+// carrying a separate, easy-to-diverge copy of these settings.
+const authDependencies = sql && env.SUPABASE_URL
+  ? {
+    keys: new JwksKeySource(authJwksUrl(env.SUPABASE_URL)),
+    repository: new AuthContextRepository(sql),
+    logger,
+    issuer: authIssuer(env.SUPABASE_URL),
+    audience: env.AUTH_JWT_AUDIENCE,
+    clockSkewSeconds: env.AUTH_CLOCK_SKEW_SECONDS,
+    revocationBudgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
+    reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
+    deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
+  }
+  : undefined;
 const academic = sql && env.API_CURSOR_SIGNING_KEY
   ? createAcademicRoutes(
     {
@@ -96,7 +114,7 @@ const academic = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
-const schoolAdmin = sql && env.API_CURSOR_SIGNING_KEY
+const schoolAdmin = sql && env.API_CURSOR_SIGNING_KEY && authDependencies
   ? createSchoolAdminRoutes(
     {
       repository: new PostgresSchoolAdminRepository(sql),
@@ -110,6 +128,7 @@ const schoolAdmin = sql && env.API_CURSOR_SIGNING_KEY
     },
     authorization,
     idempotencyDependencies,
+    authDependencies,
   )
   : undefined;
 
@@ -176,7 +195,7 @@ const notifications = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
-const account = sql && env.API_CURSOR_SIGNING_KEY
+const account = sql && env.API_CURSOR_SIGNING_KEY && authDependencies
   ? createAccountRoutes(
     {
       repository: new PostgresAccountRepository(sql),
@@ -185,6 +204,7 @@ const account = sql && env.API_CURSOR_SIGNING_KEY
     },
     authorization,
     idempotencyDependencies,
+    authDependencies,
   )
   : undefined;
 
@@ -219,19 +239,9 @@ const combinedRoutes = academic || schoolAdmin || invitations || family || commu
   })()
   : undefined;
 
-const auth = sql && env.SUPABASE_URL
+const auth = authDependencies
   ? createAuthRoutes(
-    {
-      keys: new JwksKeySource(authJwksUrl(env.SUPABASE_URL)),
-      repository: new AuthContextRepository(sql),
-      logger,
-      issuer: authIssuer(env.SUPABASE_URL),
-      audience: env.AUTH_JWT_AUDIENCE,
-      clockSkewSeconds: env.AUTH_CLOCK_SKEW_SECONDS,
-      revocationBudgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
-      reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
-      deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
-    },
+    authDependencies,
     authorization,
     idempotencyDependencies,
     combinedRoutes,
