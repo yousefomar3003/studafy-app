@@ -358,7 +358,7 @@ select set_config('request.jwt.claim.sub', :'student_user', true);
 select set_config('studafy.school_id', '', true);
 select set_config('studafy.request_id', 'safe043-request-nonop', true);
 insert into safe043_results values ('req-nonop-res', private.api_idempotency_reserve(
-  null, 'v1.requestModerationAccess', 'safe043-req-nonop', repeat('c', 64)));
+  null, 'v1.requestModerationAccess', 'safe043-req-nonop-000000000000000000', repeat('c', 64)));
 insert into safe043_results values ('req-nonop', private.api042_command(
   'requestModerationAccess', null,
   jsonb_build_object('responseStatus', 201, 'aal2', true, 'body', jsonb_build_object(
@@ -371,7 +371,7 @@ select is((select result->>'outcome' from safe043_results where name = 'req-nono
 select set_config('request.jwt.claim.sub', :'operator_a', true);
 select set_config('studafy.request_id', 'safe043-request-no-mfa', true);
 insert into safe043_results values ('req-nomfa-res', private.api_idempotency_reserve(
-  null, 'v1.requestModerationAccess', 'safe043-req-nomfa', repeat('d', 64)));
+  null, 'v1.requestModerationAccess', 'safe043-req-nomfa-000000000000000000', repeat('d', 64)));
 insert into safe043_results values ('req-nomfa', private.api042_command(
   'requestModerationAccess', null,
   jsonb_build_object('responseStatus', 201, 'aal2', false, 'body', jsonb_build_object(
@@ -401,7 +401,7 @@ select is((select result->'response'->>'status' from safe043_results where name 
 
 select set_config('studafy.request_id', 'safe043-self-approve', true);
 insert into safe043_results values ('self-approve-res', private.api_idempotency_reserve(
-  null, 'v1.approveModerationAccess', 'safe043-self-approve', repeat('f', 64)));
+  null, 'v1.approveModerationAccess', 'safe043-self-approve-000000000000000000', repeat('f', 64)));
 insert into safe043_results values ('self-approve', private.api042_command(
   'approveModerationAccess', :'grant_id',
   jsonb_build_object('responseStatus', 200, 'aal2', true, 'body', jsonb_build_object(

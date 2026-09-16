@@ -32,7 +32,7 @@ const TEACHER = "5f4a0000-0000-4000-8000-0000000000a4";
 const STUDENT = "5f4a0000-0000-4000-8000-0000000000a5";
 const SCHOOL = "5f4a0000-0000-4000-8000-0000000000b1";
 
-const CURSOR_KEY = "safe043-safety-integration-cursor-key-01";
+const CURSOR_KEY = "safe043-safety-integration-cursor-key-000000000000000000";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
