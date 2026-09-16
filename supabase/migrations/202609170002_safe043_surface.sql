@@ -110,7 +110,8 @@ declare
   baseline text[][] := array[
     array['bullying', 'bullying', 'phrase', 'bullying', 'high', 'flag'],
     array['harassment', 'harassment', 'phrase', 'harassment', 'high', 'flag'],
-    array['threats of violence', 'violence', 'phrase', 'hurt you', 'critical', 'flag'],
+    array['threats of violence', 'violence', 'phrase', 'threats of violence', 'high', 'flag'],
+    array['hurt you', 'violence', 'phrase', 'hurt you', 'critical', 'flag'],
     array['self-harm language', 'self_harm', 'phrase', 'kill myself', 'critical', 'flag'],
     array['sexual content', 'sexual_content', 'keyword', 'nude', 'high', 'flag'],
     array['hate speech', 'hate', 'phrase', 'hate you', 'high', 'flag'],

@@ -30,7 +30,7 @@ where id in (:'operator_a', :'operator_b')
   and (instance_id is null or confirmation_token is null or recovery_token is null
     or email_change_token_new is null or email_change_token_current is null);
 
-insert into public.profiles (id, full_name, created_at) values
+insert into public.profiles (id, display_name, created_at) values
   (:'operator_a', 'Seed Moderation Operator A', now()),
   (:'operator_b', 'Seed Moderation Operator B', now())
 on conflict (id) do nothing;

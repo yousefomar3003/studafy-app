@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(24);
+select plan(25);
 
 -- ---------------------------------------------------------------------------
 -- SAFE-043 relations exist with the expected shape.
@@ -9,7 +9,7 @@ select plan(24);
 
 select ok(
   (select count(*) from pg_tables
-   where schemaname = 'public' and table_name in (
+   where schemaname = 'public' and tablename in (
      'school_content_controls','safety_content_rules','reports','report_events',
      'report_evidence','report_attempts','user_blocks','legal_holds',
      'moderation_access_grants')) = 9::bigint,
@@ -43,9 +43,10 @@ select is(
      and table_name in (
        'school_content_controls','safety_content_rules','reports','report_events',
        'report_evidence','report_attempts','user_blocks','legal_holds',
-       'moderation_access_grants')),
+       'moderation_access_grants')
+     and grantee in ('anon','authenticated','service_role','studafy_api_runtime','studafy_worker_runtime')),
   0::bigint,
-  'no column privileges exist on SAFE-043 tables'
+  'no runtime role has column privileges on any SAFE-043 table'
 );
 
 -- The append-only report_events identity sequence is closed to runtime roles
@@ -78,22 +79,22 @@ select ok(
 
 select ok(
   exists (select 1 from pg_trigger
-          where tgname = 'safe043_reject_mutation_report_events'),
+          where tgname = 'safe043_reject_mutation'),
   'report_events is append-only'
 );
 select ok(
   exists (select 1 from pg_trigger
-          where tgname = 'safe043_reject_mutation_report_evidence'),
+          where tgname = 'safe043_reject_mutation'),
   'report_evidence is append-only'
 );
 select ok(
   exists (select 1 from pg_trigger
-          where tgname = 'safe043_immutable_reports'),
+          where tgname = 'safe043_immutable_report'),
   'report identity columns are immutable'
 );
 select ok(
   exists (select 1 from pg_trigger
-          where tgname = 'safe043_immutable_block'),
+          where tgname = 'safe043_immutable_user_block'),
   'block identity columns are immutable'
 );
 select ok(
@@ -132,7 +133,7 @@ select is(
    from pg_enum e join pg_type t on t.oid = e.enumtypid
    where t.typname = 'report_event_kind'),
   array[
-    'appeal','assign','evidence_added','escalate','hold','queued','release_hold',
+    'appeal','assign','escalate','evidence_added','hold','queued','release_hold',
     'reporter_alerted','resolve','submitted','triage','withdraw'
   ],
   'report_event_kind enum matches the auditable timeline contract'

@@ -2126,6 +2126,109 @@ export type Database = {
           },
         ];
       };
+      legal_holds: {
+        Row: {
+          account_deletion_request_id: string | null;
+          applied_to: string;
+          created_at: string;
+          expires_at: string | null;
+          granted_by: string;
+          id: string;
+          reason: string;
+          released_at: string | null;
+          released_by: string | null;
+          released_reason: string | null;
+          report_id: string | null;
+          school_id: string;
+          status: string;
+          subject_user_id: string | null;
+          ticket_ref: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          account_deletion_request_id?: string | null;
+          applied_to?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          granted_by: string;
+          id?: string;
+          reason: string;
+          released_at?: string | null;
+          released_by?: string | null;
+          released_reason?: string | null;
+          report_id?: string | null;
+          school_id: string;
+          status?: string;
+          subject_user_id?: string | null;
+          ticket_ref: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          account_deletion_request_id?: string | null;
+          applied_to?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          granted_by?: string;
+          id?: string;
+          reason?: string;
+          released_at?: string | null;
+          released_by?: string | null;
+          released_reason?: string | null;
+          report_id?: string | null;
+          school_id?: string;
+          status?: string;
+          subject_user_id?: string | null;
+          ticket_ref?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "legal_holds_account_deletion_request_id_fkey";
+            columns: ["account_deletion_request_id"];
+            isOneToOne: false;
+            referencedRelation: "account_deletion_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_released_by_fkey";
+            columns: ["released_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_subject_user_id_fkey";
+            columns: ["subject_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lesson_materials: {
         Row: {
           body: string | null;
@@ -2567,6 +2670,98 @@ export type Database = {
             columns: ["sender_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      moderation_access_grants: {
+        Row: {
+          approved_by: string | null;
+          created_at: string;
+          ended_at: string | null;
+          expires_at: string;
+          id: string;
+          mfa_verified_at: string;
+          reason: string;
+          requested_by: string;
+          requires_second_approver: boolean;
+          resource_scope: Json;
+          revoked_by: string | null;
+          revoked_reason: string | null;
+          school_id: string;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["moderation_access_status"];
+          ticket_ref: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          approved_by?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at: string;
+          id?: string;
+          mfa_verified_at: string;
+          reason: string;
+          requested_by: string;
+          requires_second_approver?: boolean;
+          resource_scope?: Json;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          school_id: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["moderation_access_status"];
+          ticket_ref: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          approved_by?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          mfa_verified_at?: string;
+          reason?: string;
+          requested_by?: string;
+          requires_second_approver?: boolean;
+          resource_scope?: Json;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          school_id?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["moderation_access_status"];
+          ticket_ref?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "moderation_access_grants_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_access_grants_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_access_grants_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_access_grants_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];
@@ -3045,6 +3240,296 @@ export type Database = {
           },
         ];
       };
+      report_attempts: {
+        Row: {
+          count_this_window: number;
+          digest: string;
+          id: string;
+          reporter_id: string;
+          school_id: string;
+          window_expires_at: string;
+          window_started_at: string;
+        };
+        Insert: {
+          count_this_window?: number;
+          digest: string;
+          id?: string;
+          reporter_id: string;
+          school_id: string;
+          window_expires_at: string;
+          window_started_at?: string;
+        };
+        Update: {
+          count_this_window?: number;
+          digest?: string;
+          id?: string;
+          reporter_id?: string;
+          school_id?: string;
+          window_expires_at?: string;
+          window_started_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_attempts_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_attempts_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      report_events: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          detail: Json;
+          event: Database["public"]["Enums"]["report_event_kind"];
+          id: number;
+          report_id: string;
+          school_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          detail?: Json;
+          event: Database["public"]["Enums"]["report_event_kind"];
+          id?: never;
+          report_id: string;
+          school_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          detail?: Json;
+          event?: Database["public"]["Enums"]["report_event_kind"];
+          id?: never;
+          report_id?: string;
+          school_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_events_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_events_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_events_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      report_evidence: {
+        Row: {
+          added_by: string;
+          attachment_file_id: string | null;
+          content_hash: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          message_id: string | null;
+          note: string | null;
+          report_id: string;
+          school_id: string;
+        };
+        Insert: {
+          added_by: string;
+          attachment_file_id?: string | null;
+          content_hash?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          message_id?: string | null;
+          note?: string | null;
+          report_id: string;
+          school_id: string;
+        };
+        Update: {
+          added_by?: string;
+          attachment_file_id?: string | null;
+          content_hash?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          message_id?: string | null;
+          note?: string | null;
+          report_id?: string;
+          school_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_evidence_added_by_fkey";
+            columns: ["added_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_attachment_file_id_fkey";
+            columns: ["attachment_file_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reports: {
+        Row: {
+          assigned_to: string | null;
+          aup_version: string | null;
+          classifier_confidence: number | null;
+          contact_consent: boolean;
+          conversation_id: string | null;
+          created_at: string;
+          details: string;
+          enqueue_seq: number;
+          evidence_snapshot: Json;
+          id: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          message_id: string | null;
+          priority: string;
+          reported_by: string;
+          resolution: Database["public"]["Enums"]["report_resolution"] | null;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          school_id: string;
+          status: Database["public"]["Enums"]["report_status"];
+          subject_user_id: string | null;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          assigned_to?: string | null;
+          aup_version?: string | null;
+          classifier_confidence?: number | null;
+          contact_consent?: boolean;
+          conversation_id?: string | null;
+          created_at?: string;
+          details: string;
+          enqueue_seq?: never;
+          evidence_snapshot?: Json;
+          id?: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          message_id?: string | null;
+          priority?: string;
+          reported_by: string;
+          resolution?: Database["public"]["Enums"]["report_resolution"] | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          school_id: string;
+          status?: Database["public"]["Enums"]["report_status"];
+          subject_user_id?: string | null;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          assigned_to?: string | null;
+          aup_version?: string | null;
+          classifier_confidence?: number | null;
+          contact_consent?: boolean;
+          conversation_id?: string | null;
+          created_at?: string;
+          details?: string;
+          enqueue_seq?: never;
+          evidence_snapshot?: Json;
+          id?: string;
+          kind?: Database["public"]["Enums"]["report_kind"];
+          message_id?: string | null;
+          priority?: string;
+          reported_by?: string;
+          resolution?: Database["public"]["Enums"]["report_resolution"] | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          school_id?: string;
+          status?: Database["public"]["Enums"]["report_status"];
+          subject_user_id?: string | null;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reports_assigned_to_fkey";
+            columns: ["assigned_to"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_reported_by_fkey";
+            columns: ["reported_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_subject_user_id_fkey";
+            columns: ["subject_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       resource_publications: {
         Row: {
           audience: Database["public"]["Enums"]["meeting_audience"];
@@ -3265,6 +3750,129 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      safety_content_rules: {
+        Row: {
+          action: string;
+          active: boolean;
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          pattern: string;
+          pattern_type: string;
+          school_id: string;
+          severity: string;
+          system_rule: boolean;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          action?: string;
+          active?: boolean;
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          pattern: string;
+          pattern_type?: string;
+          school_id: string;
+          severity?: string;
+          system_rule?: boolean;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          action?: string;
+          active?: boolean;
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          pattern?: string;
+          pattern_type?: string;
+          school_id?: string;
+          severity?: string;
+          system_rule?: boolean;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "safety_content_rules_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "safety_content_rules_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      school_content_controls: {
+        Row: {
+          classifier_assist_enabled: boolean;
+          content_filter_level: string;
+          created_at: string;
+          id: string;
+          messaging_enabled: boolean;
+          school_id: string;
+          sla_hours: Json;
+          support_contact: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          version: number;
+        };
+        Insert: {
+          classifier_assist_enabled?: boolean;
+          content_filter_level?: string;
+          created_at?: string;
+          id?: string;
+          messaging_enabled?: boolean;
+          school_id: string;
+          sla_hours?: Json;
+          support_contact?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Update: {
+          classifier_assist_enabled?: boolean;
+          content_filter_level?: string;
+          created_at?: string;
+          id?: string;
+          messaging_enabled?: boolean;
+          school_id?: string;
+          sla_hours?: Json;
+          support_contact?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "school_content_controls_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: true;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "school_content_controls_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -3895,6 +4503,67 @@ export type Database = {
           },
         ];
       };
+      user_blocks: {
+        Row: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          reason: string | null;
+          school_id: string;
+          scope: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          reason?: string | null;
+          school_id: string;
+          scope?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          reason?: string | null;
+          school_id?: string;
+          scope?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_blocks_blocked_id_fkey";
+            columns: ["blocked_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_blocks_blocker_id_fkey";
+            columns: ["blocker_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_blocks_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       wellbeing_events: {
         Row: {
           classroom_id: string | null;
@@ -4029,6 +4698,13 @@ export type Database = {
         | "suspended"
         | "revoked"
         | "expired";
+      moderation_access_status:
+        | "pending"
+        | "approved"
+        | "active"
+        | "expired"
+        | "revoked"
+        | "denied";
       outbox_state:
         | "pending"
         | "processing"
@@ -4038,6 +4714,29 @@ export type Database = {
         | "cancelled";
       profile_status: "active" | "suspended" | "deletion_pending" | "deleted";
       publication_state: "draft" | "reviewed" | "published" | "withdrawn";
+      report_event_kind:
+        | "submitted"
+        | "queued"
+        | "triage"
+        | "assign"
+        | "resolve"
+        | "escalate"
+        | "hold"
+        | "release_hold"
+        | "appeal"
+        | "withdraw"
+        | "evidence_added"
+        | "reporter_alerted";
+      report_kind: "message" | "conversation" | "user";
+      report_resolution: "upheld" | "not_upheld" | "partial" | "no_action";
+      report_status:
+        | "submitted"
+        | "queued"
+        | "under_review"
+        | "on_hold"
+        | "escalated"
+        | "resolved"
+        | "withdrawn";
       resource_state: "draft" | "published" | "withdrawn" | "archived";
       school_status: "provisioning" | "active" | "suspended" | "closed";
       staff_assignment_status: "active" | "ended";
@@ -4248,6 +4947,14 @@ export const Constants = {
         "revoked",
         "expired",
       ],
+      moderation_access_status: [
+        "pending",
+        "approved",
+        "active",
+        "expired",
+        "revoked",
+        "denied",
+      ],
       outbox_state: [
         "pending",
         "processing",
@@ -4258,6 +4965,31 @@ export const Constants = {
       ],
       profile_status: ["active", "suspended", "deletion_pending", "deleted"],
       publication_state: ["draft", "reviewed", "published", "withdrawn"],
+      report_event_kind: [
+        "submitted",
+        "queued",
+        "triage",
+        "assign",
+        "resolve",
+        "escalate",
+        "hold",
+        "release_hold",
+        "appeal",
+        "withdraw",
+        "evidence_added",
+        "reporter_alerted",
+      ],
+      report_kind: ["message", "conversation", "user"],
+      report_resolution: ["upheld", "not_upheld", "partial", "no_action"],
+      report_status: [
+        "submitted",
+        "queued",
+        "under_review",
+        "on_hold",
+        "escalated",
+        "resolved",
+        "withdrawn",
+      ],
       resource_state: ["draft", "published", "withdrawn", "archived"],
       school_status: ["provisioning", "active", "suspended", "closed"],
       staff_assignment_status: ["active", "ended"],

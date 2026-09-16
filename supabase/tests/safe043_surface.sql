@@ -141,13 +141,13 @@ select is((select result->'response'->>'priority' from safe043_results where nam
 -- ---------------------------------------------------------------------------
 
 select set_config('request.jwt.claim.sub', :'admin_user', true);
-select is(jsonb_typeof(private.api042_query('getModerationQueue', :'school_id',
+select is(jsonb_typeof(private.api042_query('listModerationQueue', :'school_id',
   jsonb_build_object('schoolId', :'school_id', 'pageSize', 50))->'items'), 'array',
   'school admin can open the queue');
-select is((select jsonb_array_length(private.api042_query('getModerationQueue', :'school_id',
+select is((select jsonb_array_length(private.api042_query('listModerationQueue', :'school_id',
   jsonb_build_object('schoolId', :'school_id', 'pageSize', 50))->'items')), 2,
   'queue lists both open reports');
-select ok(nullif((select private.api042_query('getModerationQueue', :'school_id',
+select ok(nullif((select private.api042_query('listModerationQueue', :'school_id',
   jsonb_build_object('schoolId', :'school_id', 'pageSize', 50))->'items'->0->>'reporterId'), '') is null,
   'queue rows mask the reporter until escalation');
 select is((select private.api042_query('getModerationOverview', :'school_id',
@@ -242,7 +242,7 @@ select set_config('request.jwt.claim.sub', :'operator_a', true);
 select set_config('studafy.school_id', '', true);
 select set_config('studafy.request_id', 'safe043-hold', true);
 insert into safe043_results values ('hold-res', private.api_idempotency_reserve(
-  null, 'v1.holdReport', 'safe043-hold-r', repeat('5', 64)));
+  null, 'v1.holdReport', 'safe043-hold-req', repeat('5', 64)));
 insert into safe043_results values ('hold', private.api042_command(
   'holdReport', :'report2_id',
   jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object(
@@ -323,8 +323,8 @@ insert into safe043_results values ('convo-blocked2', private.api042_command(
   'createConversation', null,
   jsonb_build_object('responseStatus', 201, 'body', jsonb_build_object(
     'schoolId', :'school_id', 'participantIds', jsonb_build_array(:'student_user'),
-    'subject', 'ping'))),
-  (select (result->>'id')::uuid from safe043_results where name = 'convo-blocked2-res'), 1));
+    'subject', 'ping')),
+  (select (result->>'id')::uuid from safe043_results where name = 'convo-blocked-res'), 1));
 select is((select result->>'outcome' from safe043_results where name = 'convo-blocked2'),
   'forbidden', 'the blocker is also refused: blocks are symmetric');
 
@@ -383,7 +383,7 @@ select is((select result->>'outcome' from safe043_results where name = 'req-nomf
 
 select set_config('studafy.request_id', 'safe043-request', true);
 insert into safe043_results values ('req-res', private.api_idempotency_reserve(
-  null, 'v1.requestModerationAccess', 'safe043-req-r', repeat('e', 64)));
+  null, 'v1.requestModerationAccess', 'safe043-req-res', repeat('e', 64)));
 insert into safe043_results values ('req', private.api042_command(
   'requestModerationAccess', null,
   jsonb_build_object('responseStatus', 201, 'aal2', true, 'body', jsonb_build_object(
@@ -439,7 +439,7 @@ select is((select result->'response'->>'status' from safe043_results where name 
   'active', 'session becomes active');
 
 select set_config('studafy.school_id', :'school_id', true);
-select is(jsonb_typeof(private.api042_query('getModerationQueue', :'school_id',
+select is(jsonb_typeof(private.api042_query('listModerationQueue', :'school_id',
   jsonb_build_object('schoolId', :'school_id', 'pageSize', 50))->'items'), 'array',
   'an active grant opens the queue for the operator');
 select is(private.api042_query('getModerationReport', :'report_id', '{}'::jsonb)->>'id',
@@ -462,7 +462,7 @@ select is((select result->>'outcome' from safe043_results where name = 'revoke')
   'ok', 'the operator can revoke the session');
 select is((select result->'response'->>'status' from safe043_results where name = 'revoke'),
   'revoked', 'session ends revoked');
-select is(private.api042_query('getModerationQueue', :'school_id',
+select is(private.api042_query('listModerationQueue', :'school_id',
   jsonb_build_object('schoolId', :'school_id', 'pageSize', 50))->>'outcome',
   'forbidden', 'the operator is cut off once the grant is revoked');
 
