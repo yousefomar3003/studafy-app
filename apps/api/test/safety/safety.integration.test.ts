@@ -286,25 +286,35 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
   });
 
   test("triage, resolve, appeal, and escalate move the report along; escalation unmasks the reporter", async () => {
-    const triage = await request(`/internal/moderation/reports/${reportId}/triage`, {
-      method: "POST",
-      subject: ADMIN,
-      body: {
-        expectedVersion: 1,
-        priority: "critical",
-        note: "assigned to reviewer",
+    const triage = await request(
+      `/internal/moderation/reports/${reportId}/triage`,
+      {
+        method: "POST",
+        subject: ADMIN,
+        body: {
+          expectedVersion: 1,
+          priority: "critical",
+          note: "assigned to reviewer",
+        },
       },
-    });
+    );
     expect(triage.status).toBe(200);
-    expect((await triage.json() as { status: string }).status).toBe("under_review");
+    expect((await triage.json() as { status: string }).status).toBe(
+      "under_review",
+    );
 
-    const resolve = await request(`/internal/moderation/reports/${reportId}/resolve`, {
-      method: "POST",
-      subject: ADMIN,
-      body: { expectedVersion: 2, resolution: "upheld", note: "upskilling" },
-    });
+    const resolve = await request(
+      `/internal/moderation/reports/${reportId}/resolve`,
+      {
+        method: "POST",
+        subject: ADMIN,
+        body: { expectedVersion: 2, resolution: "upheld", note: "upskilling" },
+      },
+    );
     expect(resolve.status).toBe(200);
-    expect((await resolve.json() as { resolution: string }).resolution).toBe("upheld");
+    expect((await resolve.json() as { resolution: string }).resolution).toBe(
+      "upheld",
+    );
 
     const appeal = await request(`/v1/reports/${reportId}/appeal`, {
       method: "POST",
@@ -315,13 +325,18 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
       },
     });
     expect(appeal.status).toBe(200);
-    expect((await appeal.json() as { status: string }).status).toBe("under_review");
+    expect((await appeal.json() as { status: string }).status).toBe(
+      "under_review",
+    );
 
-    const escalate = await request(`/internal/moderation/reports/${reportId}/escalate`, {
-      method: "POST",
-      subject: ADMIN,
-      body: { expectedVersion: 4, note: "platform operator review" },
-    });
+    const escalate = await request(
+      `/internal/moderation/reports/${reportId}/escalate`,
+      {
+        method: "POST",
+        subject: ADMIN,
+        body: { expectedVersion: 4, note: "platform operator review" },
+      },
+    );
     expect(escalate.status).toBe(200);
     const escalated = await escalate.json() as { reporterId: string | null };
     expect(escalated.reporterId).toBe(STUDENT);
@@ -399,7 +414,9 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
       },
     );
     expect(approve.status).toBe(200);
-    expect((await approve.json() as { status: string }).status).toBe("approved");
+    expect((await approve.json() as { status: string }).status).toBe(
+      "approved",
+    );
 
     const start = await request(
       `/internal/moderation/access/${grantId}/start`,

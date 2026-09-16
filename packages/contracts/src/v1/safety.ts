@@ -258,7 +258,9 @@ export const V1ReleaseLegalHoldRequest = z.strictObject({
   expectedVersion: Version,
   reason: z.string().trim().min(8).max(2000),
 });
-export type V1ReleaseLegalHoldRequest = z.infer<typeof V1ReleaseLegalHoldRequest>;
+export type V1ReleaseLegalHoldRequest = z.infer<
+  typeof V1ReleaseLegalHoldRequest
+>;
 
 export const V1AddReportEvidenceRequest = z.strictObject({
   schoolId: Id,

@@ -29,7 +29,8 @@ function selector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
   const query = (c.get("validatedQuery") ?? {}) as Record<string, string>;
   return params["reportId"] ?? params["blockId"] ?? params["legalHoldId"] ??
-    params["moderationGrantId"] ?? params["schoolId"] ?? query["schoolId"] ?? null;
+    params["moderationGrantId"] ?? params["schoolId"] ?? query["schoolId"] ??
+    null;
 }
 
 function sliceFor(operationId: string): SafetySlice {

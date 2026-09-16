@@ -64,7 +64,13 @@ async function command(
   await claim(subject, schoolId, requestId);
   const [reservation] = await sql!.unsafe(
     `select private.api_idempotency_reserve($1, $2, $3, $4) as r`,
-    [schoolId === "" ? null : schoolId, `v1.${operation}`, requestId, crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "")],
+    [
+      schoolId === "" ? null : schoolId,
+      `v1.${operation}`,
+      requestId,
+      crypto.randomUUID().replaceAll("-", "") +
+      crypto.randomUUID().replaceAll("-", ""),
+    ],
   );
   const id = (JSON.parse(JSON.stringify(reservation?.r)) as { id: string }).id;
   const [row] = await sql!.unsafe(
@@ -84,7 +90,9 @@ async function command(
     outcome: string;
     response?: unknown;
   };
-  if (value.outcome !== "ok") throw new Error(`${operation} failed: ${value.outcome}`);
+  if (value.outcome !== "ok") {
+    throw new Error(`${operation} failed: ${value.outcome}`);
+  }
   return value;
 }
 
@@ -170,10 +178,15 @@ async function main(): Promise<void> {
 
   // Phase 1: content-controls baseline and assert.
   phases.controlsBaseline = (await query(
-    "getContentControls", SCHOOL, {}, ADMIN, SCHOOL,
+    "getContentControls",
+    SCHOOL,
+    {},
+    ADMIN,
+    SCHOOL,
   )) as { contentFilterLevel: string };
   const controls = await command(
-    "updateContentControls", SCHOOL,
+    "updateContentControls",
+    SCHOOL,
     {
       expectedVersion: 1,
       messagingEnabled: true,
@@ -181,55 +194,77 @@ async function main(): Promise<void> {
       classifierAssistEnabled: true,
       supportContact: "safeguarding@drill.test",
     },
-    SCHOOL, "drill-update-controls", ADMIN,
+    SCHOOL,
+    "drill-update-controls",
+    ADMIN,
   );
   phases.controlsAsserted = controls.response;
 
   // Phase 2: a student reports; the queue and overview are masked.
   const report = await command(
-    "createReport", "",
+    "createReport",
+    "",
     {
       schoolId: SCHOOL,
       kind: "user",
       subjectUserId: TEACHER,
       details: "She said she would hurt you if you keep talking to me",
     },
-    SCHOOL, "drill-create-report", STUDENT,
+    SCHOOL,
+    "drill-create-report",
+    STUDENT,
   );
   const reportId = (report.response as { id: string }).id;
   phases.reportSubmitted = report.response;
   phases.overviewMasked = await query(
-    "getModerationOverview", SCHOOL, {}, ADMIN, SCHOOL,
+    "getModerationOverview",
+    SCHOOL,
+    {},
+    ADMIN,
+    SCHOOL,
   );
 
   // Phase 3: triage, resolve, appeal, escalate.
   const triaged = await command(
-    "triageReport", reportId,
+    "triageReport",
+    reportId,
     { expectedVersion: 1, priority: "critical" },
-    SCHOOL, "drill-triage", ADMIN,
+    SCHOOL,
+    "drill-triage",
+    ADMIN,
   );
   phases.triaged = triaged.response as { status: string };
   const resolved = await command(
-    "resolveReport", reportId,
+    "resolveReport",
+    reportId,
     { expectedVersion: 2, resolution: "upheld" },
-    SCHOOL, "drill-resolve", ADMIN,
+    SCHOOL,
+    "drill-resolve",
+    ADMIN,
   );
   phases.resolved = resolved.response as { resolution: string };
   await command(
-    "appealReport", reportId,
+    "appealReport",
+    reportId,
     { expectedVersion: 3, reason: "the concern was never actionable" },
-    SCHOOL, "drill-appeal", STUDENT,
+    SCHOOL,
+    "drill-appeal",
+    STUDENT,
   );
   const escalated = await command(
-    "escalateReport", reportId,
+    "escalateReport",
+    reportId,
     { expectedVersion: 4 },
-    SCHOOL, "drill-escalate", ADMIN,
+    SCHOOL,
+    "drill-escalate",
+    ADMIN,
   );
   phases.escalated = escalated.response as { reporterId: string | null };
 
   // Phase 4: platform operator applies and the admin releases a legal hold.
   const held = await command(
-    "holdReport", reportId,
+    "holdReport",
+    reportId,
     {
       schoolId: SCHOOL,
       expectedVersion: 5,
@@ -237,19 +272,25 @@ async function main(): Promise<void> {
       reason: "drill legal hold",
       ticketRef: "DRILL-LEG-1",
     },
-    "", "drill-hold", OPERATOR_A,
+    "",
+    "drill-hold",
+    OPERATOR_A,
   );
   const holdId = (held.response as { id: string }).id;
   phases.held = held.response as { appliedTo: string };
   await command(
-    "releaseLegalHold", holdId,
+    "releaseLegalHold",
+    holdId,
     { expectedVersion: 1, reason: "drill complete" },
-    "", "drill-release", OPERATOR_A,
+    "",
+    "drill-release",
+    OPERATOR_A,
   );
 
   // Phase 5: JIT moderator session lifecycle.
   const requested = await command(
-    "requestModerationAccess", "",
+    "requestModerationAccess",
+    "",
     {
       schoolId: SCHOOL,
       reason: "uncovered review window",
@@ -257,43 +298,60 @@ async function main(): Promise<void> {
       durationMinutes: 60,
       resourceScope: { reportIds: [reportId] },
     },
-    "", "drill-request", OPERATOR_A,
+    "",
+    "drill-request",
+    OPERATOR_A,
   );
   const grantId = (requested.response as { id: string }).id;
   await command(
-    "approveModerationAccess", grantId,
+    "approveModerationAccess",
+    grantId,
     { expectedVersion: 1 },
-    "", "drill-approve", OPERATOR_B,
+    "",
+    "drill-approve",
+    OPERATOR_B,
   );
   const started = await command(
-    "startModerationAccess", grantId,
+    "startModerationAccess",
+    grantId,
     { expectedVersion: 1 },
-    "", "drill-start", OPERATOR_A,
+    "",
+    "drill-start",
+    OPERATOR_A,
   );
   phases.grantActive = started.response as { status: string };
   await command(
-    "revokeModerationAccess", grantId,
+    "revokeModerationAccess",
+    grantId,
     { expectedVersion: 2, reason: "drill complete" },
-    "", "drill-revoke", OPERATOR_A,
+    "",
+    "drill-revoke",
+    OPERATOR_A,
   );
 
   // Phase 6: symmetric blocks, then unblock.
   const block = await command(
-    "createBlock", "",
+    "createBlock",
+    "",
     {
       schoolId: SCHOOL,
       blockedUserId: STUDENT,
       scope: "messages",
       durationHours: 24,
     },
-    SCHOOL, "drill-block", TEACHER,
+    SCHOOL,
+    "drill-block",
+    TEACHER,
   );
   const blockId = (block.response as { id: string }).id;
   phases.blockCreated = block.response as { blockerId: string };
   await command(
-    "unblockUser", blockId,
+    "unblockUser",
+    blockId,
     {},
-    SCHOOL, "drill-unblock", TEACHER,
+    SCHOOL,
+    "drill-unblock",
+    TEACHER,
   );
 
   console.log(JSON.stringify({
