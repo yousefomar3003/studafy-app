@@ -52,6 +52,13 @@ export interface RequestDbContext {
    */
   schoolId: string | null;
   requestId: string;
+  /**
+   * Whether this session actually presented a second factor (AAL2), not
+   * just whether MFA is enrolled. Most modules ignore this; support-access
+   * requires it unconditionally, matching instructions.md section 7's
+   * "MFA, ticket/reason, ... full audit" requirement.
+   */
+  aal2: boolean;
 }
 
 export interface CatalogueRepository {
@@ -173,6 +180,7 @@ export function createCatalogueRoutes<Slice extends string>(
             subject: actor.token.subject,
             schoolId: tenant?.schoolId ?? null,
             requestId: c.get("requestId"),
+            aal2: actor.aal2,
           },
           route.operationId,
           selector(c as never, route),
@@ -236,6 +244,7 @@ export function createCatalogueRoutes<Slice extends string>(
             subject: actor.token.subject,
             schoolId: tenant?.schoolId ?? null,
             requestId: c.get("requestId"),
+            aal2: actor.aal2,
           },
           route.operationId,
           selector(c as never, route),

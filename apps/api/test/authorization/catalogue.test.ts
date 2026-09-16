@@ -12,6 +12,7 @@ import { createCommunicationsRoutes } from "../../src/communications/routes";
 import { createMeetingsRoutes } from "../../src/meetings/routes";
 import { createNotificationsRoutes } from "../../src/notifications/routes";
 import { createAccountRoutes } from "../../src/account/routes";
+import { createSupportAccessRoutes } from "../../src/support-access/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -144,6 +145,17 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const supportAccess = createSupportAccessRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
@@ -153,6 +165,7 @@ function routeTable() {
   combined.route("/", meetings);
   combined.route("/", notifications);
   combined.route("/", account);
+  combined.route("/", supportAccess);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -199,13 +212,16 @@ describe("permission catalogue", () => {
     const meetingsMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609160006_api042_meetings.sql`,
     ).text();
+    const supportAccessMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160009_api042_support_access.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}`,
       ).toContain(`'${permission}'`);
     }
   });
@@ -216,7 +232,9 @@ describe("permission catalogue", () => {
       ...new Set(
         routes
           .filter((route) =>
-            route.path.startsWith("/v1/") && route.method !== "ALL"
+            (route.path.startsWith("/v1/") ||
+              route.path.startsWith("/internal/")) &&
+            route.method !== "ALL"
           )
           .map((route) => `${route.method} ${route.path}`),
       ),
@@ -254,7 +272,9 @@ describe("permission catalogue", () => {
       ...new Set(
         routeTable().routes
           .filter((route) =>
-            route.path.startsWith("/v1/") && route.method !== "ALL"
+            (route.path.startsWith("/v1/") ||
+              route.path.startsWith("/internal/")) &&
+            route.method !== "ALL"
           )
           .map((route) => `${route.method} ${route.path}`),
       ),

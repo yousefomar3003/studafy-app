@@ -30,6 +30,7 @@ import * as Communications from "./communications";
 import * as Meetings from "./meetings";
 import * as Notifications from "./notifications";
 import * as Account from "./account";
+import * as SupportAccess from "./supportAccess";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -952,6 +953,58 @@ export const V1_ROUTE_CATALOGUE = [
     Account.V1ExportStatusResponse,
     "V1ExportStatusResponse",
   ),
+  academicPost(
+    "requestSupportAccess",
+    "/internal/support-access",
+    "support_access.request",
+    SupportAccess.V1RequestSupportAccessRequest,
+    "V1RequestSupportAccessRequest",
+    SupportAccess.V1SupportAccessGrant,
+    "V1SupportAccessGrant",
+    201,
+  ),
+  academicPost(
+    "approveSupportAccess",
+    "/internal/support-access/{supportGrantId}/approve",
+    "support_access.approve",
+    SupportAccess.V1SupportAccessLifecycleRequest,
+    "V1SupportAccessLifecycleRequest",
+    SupportAccess.V1SupportAccessGrant,
+    "V1SupportAccessGrant",
+    200,
+    supportGrantParams(),
+  ),
+  academicPost(
+    "startSupportAccess",
+    "/internal/support-access/{supportGrantId}/start",
+    "support_access.start",
+    SupportAccess.V1SupportAccessLifecycleRequest,
+    "V1SupportAccessLifecycleRequest",
+    SupportAccess.V1SupportAccessGrant,
+    "V1SupportAccessGrant",
+    200,
+    supportGrantParams(),
+  ),
+  academicPost(
+    "revokeSupportAccess",
+    "/internal/support-access/{supportGrantId}/revoke",
+    "support_access.revoke",
+    SupportAccess.V1RevokeSupportAccessRequest,
+    "V1RevokeSupportAccessRequest",
+    SupportAccess.V1SupportAccessGrant,
+    "V1SupportAccessGrant",
+    200,
+    supportGrantParams(),
+  ),
+  academicGet(
+    "listSupportAccessGrants",
+    "/internal/support-access",
+    "support_access.list",
+    SupportAccess.V1SupportAccessGrantPage,
+    "V1SupportAccessGrantPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -989,6 +1042,9 @@ function conversationParams() {
 }
 function meetingParams() {
   return params("meetingId");
+}
+function supportGrantParams() {
+  return params("supportGrantId");
 }
 
 function academicGet(

@@ -538,6 +538,47 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description: "Read the status of the authenticated actor's own most recent data export request.",
   },
+
+  // API-042 S8: time-bounded, MFA-gated, two-person-approved support
+  // access. Requesting has no existing resource to resolve a tenant from
+  // (self-scoped, like provisionSchool); the SQL command's own
+  // is_platform_operator() check is the real guard. Every other operation
+  // is not tenantRequired for the same reason S1's platform-operator
+  // widening exists: an operator approving/starting/revoking access to a
+  // school they are not a member of must not be blocked by the
+  // membership-only tenant cache before the real check ever runs.
+  "support_access.request": {
+    resource: "support_access_grant",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Request a time-bounded support session as a platform operator, with MFA and a ticket reference.",
+  },
+  "support_access.approve": {
+    resource: "support_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Approve a pending support-access request as a different platform operator, with MFA.",
+  },
+  "support_access.start": {
+    resource: "support_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Start an approved support session as its exact original requester.",
+  },
+  "support_access.revoke": {
+    resource: "support_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description: "Revoke a support-access grant as a platform operator or the affected school's administrator.",
+  },
+  "support_access.list": resource(
+    "school",
+    "List support-access grants for a school as a platform operator or that school's administrator.",
+  ),
   "meeting.status": {
     resource: "meeting",
     scope: "resource",

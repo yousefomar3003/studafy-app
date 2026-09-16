@@ -28,6 +28,8 @@ import { createNotificationsRoutes } from "./notifications/routes";
 import { PostgresNotificationsRepository } from "./notifications/repository";
 import { createAccountRoutes } from "./account/routes";
 import { PostgresAccountRepository } from "./account/repository";
+import { createSupportAccessRoutes } from "./support-access/routes";
+import { PostgresSupportAccessRepository } from "./support-access/repository";
 import {
   checkDatabase,
   closeDatabase,
@@ -186,10 +188,22 @@ const account = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+const supportAccess = sql && env.API_CURSOR_SIGNING_KEY
+  ? createSupportAccessRoutes(
+    {
+      repository: new PostgresSupportAccessRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { supportAccess: env.API042_SUPPORT_ACCESS_ENABLED },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 // createAuthRoutes mounts one companion router at "/"; every API-042 module
 // is combined here first so each rides along on the same slot instead of
 // widening that function's signature every time a new module lands.
-const combinedRoutes = academic || schoolAdmin || invitations || family || communications || meetings || notifications || account
+const combinedRoutes = academic || schoolAdmin || invitations || family || communications || meetings || notifications || account || supportAccess
   ? (() => {
     const combined = new Hono<AuthorizationEnv>();
     if (academic) combined.route("/", academic);
@@ -200,6 +214,7 @@ const combinedRoutes = academic || schoolAdmin || invitations || family || commu
     if (meetings) combined.route("/", meetings);
     if (notifications) combined.route("/", notifications);
     if (account) combined.route("/", account);
+    if (supportAccess) combined.route("/", supportAccess);
     return combined;
   })()
   : undefined;
