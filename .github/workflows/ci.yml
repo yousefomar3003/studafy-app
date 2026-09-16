@@ -256,6 +256,27 @@ jobs:
           DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
           bun test apps/api/test/academic/academic.integration.test.ts
 
+      # SAFE-043: schema shape/RLS/no-grant assertions, then the surface
+      # fixture (seed file includes safe043_surface.sql itself), proving the
+      # reports/queue/masking/holds/blocks contract against the real stack.
+      - name: Verify SAFE-043 safety schema shape and grants
+        run: bunx supabase test db --local supabase/tests/safe043_safety_schema.sql
+
+      - name: Verify SAFE-043 reporting, moderation, holds, and blocks surface
+        run: bunx supabase test db --local supabase/tests/safe043_surface_seed.sql
+
+      - name: Run SAFE-043 /v1 integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/safety/safety.integration.test.ts
+
+      # On call: the drill drives the real SQL dispatcher through the whole
+      # safeguarding lifecycle and exits non-zero on any step failing.
+      - name: Run SAFE-043 moderation drill
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun scripts/moderation-drill.ts
+
       # End-to-end against the live local GoTrue: real ES256 tokens, real JWKS,
       # and the least-privilege database role.
       - name: Verify the AUTH-030 lifecycle end to end
