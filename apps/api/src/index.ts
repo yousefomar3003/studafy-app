@@ -33,6 +33,8 @@ import { createAccountRoutes } from "./account/routes";
 import { PostgresAccountRepository } from "./account/repository";
 import { createSupportAccessRoutes } from "./support-access/routes";
 import { PostgresSupportAccessRepository } from "./support-access/repository";
+import { createSafetyRoutes } from "./safety/routes";
+import { PostgresSafetyRepository } from "./safety/repository";
 import {
   checkDatabase,
   closeDatabase,
@@ -223,10 +225,30 @@ const supportAccess = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+// SAFE-043 safety & safeguarding. The symmetric block gate over API-042
+// conversations lives in the database dispatcher and is unconditional once
+// these migrations are applied; the API surface is gated per slice here.
+const safety = sql && env.API_CURSOR_SIGNING_KEY
+  ? createSafetyRoutes(
+    {
+      repository: new PostgresSafetyRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: {
+        reporting: env.SAFE043_REPORTING_ENABLED,
+        blocks: env.SAFE043_BLOCKS_ENABLED,
+        moderation: env.SAFE043_MODERATION_ENABLED,
+        contentControls: env.SAFE043_CONTENT_CONTROLS_ENABLED,
+      },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 // createTerm/createStudent are the last two entries in V1_ROUTE_CATALOGUE
-// (see school-admin/routes.ts's SCHOOL_ROSTER_ROUTES comment) and must be
-// mounted last so the AUTH-031 parity test's mounted-route order matches
-// the catalogue's own order.
+// before the SAFE-043 block (see school-admin/routes.ts's
+// SCHOOL_ROSTER_ROUTES comment) and must be mounted in catalogue order so
+// the AUTH-031 parity test's mounted-route order matches the catalogue.
 const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
   ? createSchoolRosterRoutes(
     {
@@ -244,7 +266,8 @@ const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
 // widening that function's signature every time a new module lands.
 const combinedRoutes =
   academic || schoolAdmin || invitations || family || communications ||
-    meetings || notifications || account || supportAccess || schoolRoster
+    meetings || notifications || account || supportAccess || schoolRoster ||
+    safety
     ? (() => {
       const combined = new Hono<AuthorizationEnv>();
       if (academic) combined.route("/", academic);
@@ -257,6 +280,7 @@ const combinedRoutes =
       if (account) combined.route("/", account);
       if (supportAccess) combined.route("/", supportAccess);
       if (schoolRoster) combined.route("/", schoolRoster);
+      if (safety) combined.route("/", safety);
       return combined;
     })()
     : undefined;
