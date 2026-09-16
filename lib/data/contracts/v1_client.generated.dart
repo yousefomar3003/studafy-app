@@ -1419,6 +1419,319 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1ContentControlsDto> getContentControls({
+    required String schoolId,
+  }) async => V1ContentControlsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/control-panel/content-controls/{schoolId}', {
+        'schoolId': schoolId,
+      }, {}),
+    ),
+  );
+
+  Future<V1ContentControlsDto> updateContentControls(
+    V1UpdateContentControlsRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1ContentControlsDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/control-panel/content-controls/{schoolId}', {
+        'schoolId': schoolId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ReportPageDto> listReports({
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ReportPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/reports', {}, {
+        'schoolId': schoolId,
+        'classroomId': classroomId,
+        'studentId': studentId,
+        'date': date,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ReportDto> createReport(
+    V1CreateReportRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/reports', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ReportDto> getReport({required String reportId}) async =>
+      V1ReportDto.fromJson(
+        await _transport.get(
+          _v1Path('/v1/reports/{reportId}', {'reportId': reportId}, {}),
+        ),
+      );
+
+  Future<V1ReportDto> appealReport(
+    V1AppealReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/reports/{reportId}/appeal', {'reportId': reportId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1BlockPageDto> listBlocks({
+    String? schoolId,
+    String? cursor,
+    int? pageSize,
+  }) async => V1BlockPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/blocks', {}, {
+        'schoolId': schoolId,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1BlockDto> createBlock(
+    V1CreateBlockRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1BlockDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/blocks', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1BlockDto> unblockUser(
+    V1UnblockUserRequestDto request, {
+    required String blockId,
+    String? idempotencyKey,
+  }) async => V1BlockDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/blocks/{blockId}/unblock', {'blockId': blockId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationOverviewDto> getModerationOverview({
+    String? schoolId,
+  }) async => V1ModerationOverviewDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/overview', {}, {'schoolId': schoolId}),
+    ),
+  );
+
+  Future<V1ModerationQueuePageDto> listModerationQueue({
+    String? schoolId,
+    String? status,
+    String? priority,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ModerationQueuePageDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/queue', {}, {
+        'schoolId': schoolId,
+        'status': status,
+        'priority': priority,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ModerationReportDto> getModerationReport({
+    required String reportId,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/reports/{reportId}', {
+        'reportId': reportId,
+      }, {}),
+    ),
+  );
+
+  Future<V1ModerationReportDto> triageReport(
+    V1ReportLifecycleRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/triage', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationReportDto> resolveReport(
+    V1ResolveReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/resolve', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationReportDto> escalateReport(
+    V1EscalateReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/escalate', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationReportDto> addReportEvidence(
+    V1AddReportEvidenceRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/evidence', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1LegalHoldDto> holdReport(
+    V1HoldReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1LegalHoldDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/hold', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1LegalHoldDto> releaseLegalHold(
+    V1ReleaseLegalHoldRequestDto request, {
+    required String legalHoldId,
+    String? idempotencyKey,
+  }) async => V1LegalHoldDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/legal-holds/{legalHoldId}/release', {
+        'legalHoldId': legalHoldId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantPageDto> listModerationAccess({
+    String? schoolId,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ModerationAccessGrantPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/access', {}, {
+        'schoolId': schoolId,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> requestModerationAccess(
+    V1RequestModerationAccessRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> approveModerationAccess(
+    V1ModerationAccessLifecycleRequestDto request, {
+    required String moderationGrantId,
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access/{moderationGrantId}/approve', {
+        'moderationGrantId': moderationGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> startModerationAccess(
+    V1ModerationAccessLifecycleRequestDto request, {
+    required String moderationGrantId,
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access/{moderationGrantId}/start', {
+        'moderationGrantId': moderationGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> revokeModerationAccess(
+    V1RevokeModerationAccessRequestDto request, {
+    required String moderationGrantId,
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access/{moderationGrantId}/revoke', {
+        'moderationGrantId': moderationGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
