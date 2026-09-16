@@ -159,6 +159,19 @@ class V1ApiClient {
     ),
   );
 
+  Future<V1TermDto> createTerm(
+    V1CreateTermRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1TermDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools/{schoolId}/terms', {'schoolId': schoolId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
   Future<V1ClassroomPageDto> listClassrooms({
     String? schoolId,
     String? classroomId,
@@ -802,6 +815,610 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1SchoolAdminDto> provisionSchool(
+    V1ProvisionSchoolRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1SchoolAdminDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolAdminDto> suspendSchool(
+    V1SchoolLifecycleRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1SchoolAdminDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools/{schoolId}/suspend', {'schoolId': schoolId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolAdminDto> closeSchool(
+    V1SchoolLifecycleRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1SchoolAdminDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools/{schoolId}/close', {'schoolId': schoolId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MembershipRecordDto> grantMembership(
+    V1GrantMembershipRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1MembershipRecordDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools/{schoolId}/memberships/grant', {
+        'schoolId': schoolId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MembershipRecordDto> activateMembership(
+    V1MembershipLifecycleRequestDto request, {
+    required String membershipId,
+    String? idempotencyKey,
+  }) async => V1MembershipRecordDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/memberships/{membershipId}/activate', {
+        'membershipId': membershipId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MembershipRecordDto> suspendMembership(
+    V1MembershipLifecycleRequestDto request, {
+    required String membershipId,
+    String? idempotencyKey,
+  }) async => V1MembershipRecordDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/memberships/{membershipId}/suspend', {
+        'membershipId': membershipId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MembershipRecordDto> revokeMembership(
+    V1MembershipLifecycleRequestDto request, {
+    required String membershipId,
+    String? idempotencyKey,
+  }) async => V1MembershipRecordDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/memberships/{membershipId}/revoke', {
+        'membershipId': membershipId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ClassroomStaffAssignmentDto> assignClassroomStaff(
+    V1AssignClassroomStaffRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1ClassroomStaffAssignmentDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/staff/assign', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ClassroomStaffAssignmentDto> removeClassroomStaff(
+    V1RemoveClassroomStaffRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1ClassroomStaffAssignmentDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/staff/remove', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1EnrollmentTransitionDto> enrollStudent(
+    V1EnrollStudentRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1EnrollmentTransitionDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/enrollments/enroll', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1EnrollmentTransitionDto> withdrawStudent(
+    V1WithdrawStudentRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1EnrollmentTransitionDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/enrollments/withdraw', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1EnrollmentTransitionDto> transferEnrollment(
+    V1TransferEnrollmentRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1EnrollmentTransitionDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/enrollments/transfer', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1InvitationPageDto> listInvitations({
+    required String schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1InvitationPageDto.fromJson(
+    await _transport.get(
+      _v1Path(
+        '/v1/schools/{schoolId}/invitations',
+        {'schoolId': schoolId},
+        {
+          'classroomId': classroomId,
+          'studentId': studentId,
+          'date': date,
+          'cursor': cursor,
+          'pageSize': pageSize,
+        },
+      ),
+    ),
+  );
+
+  Future<V1IssueInvitationResponseDto> issueInvitation(
+    V1IssueInvitationRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1IssueInvitationResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools/{schoolId}/invitations', {'schoolId': schoolId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1InvitationDto> revokeInvitation(
+    V1RevokeInvitationRequestDto request, {
+    required String invitationId,
+    String? idempotencyKey,
+  }) async => V1InvitationDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/invitations/{invitationId}/revoke', {
+        'invitationId': invitationId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1AcceptInvitationResponseDto> acceptInvitation(
+    V1AcceptInvitationRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1AcceptInvitationResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/invitations/accept', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1LocateStudentResponseDto> locateStudent(
+    V1LocateStudentRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1LocateStudentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/students/locate', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1GuardianLinkDto> requestGuardianLink(
+    V1RequestGuardianLinkRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1GuardianLinkDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/guardian-links', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1GuardianLinkDto> verifyGuardianLink(
+    V1VerifyGuardianLinkRequestDto request, {
+    required String guardianLinkId,
+    String? idempotencyKey,
+  }) async => V1GuardianLinkDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/guardian-links/{guardianLinkId}/verify', {
+        'guardianLinkId': guardianLinkId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1GuardianLinkDto> revokeGuardianLink(
+    V1RevokeGuardianLinkRequestDto request, {
+    required String guardianLinkId,
+    String? idempotencyKey,
+  }) async => V1GuardianLinkDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/guardian-links/{guardianLinkId}/revoke', {
+        'guardianLinkId': guardianLinkId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ConversationPageDto> listConversations({
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ConversationPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/conversations', {}, {
+        'schoolId': schoolId,
+        'classroomId': classroomId,
+        'studentId': studentId,
+        'date': date,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ConversationDto> createConversation(
+    V1CreateConversationRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ConversationDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/conversations', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MessagePageDto> listMessages({
+    required String conversationId,
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1MessagePageDto.fromJson(
+    await _transport.get(
+      _v1Path(
+        '/v1/conversations/{conversationId}/messages',
+        {'conversationId': conversationId},
+        {
+          'schoolId': schoolId,
+          'classroomId': classroomId,
+          'studentId': studentId,
+          'date': date,
+          'cursor': cursor,
+          'pageSize': pageSize,
+        },
+      ),
+    ),
+  );
+
+  Future<V1MessageDto> sendMessage(
+    V1SendMessageRequestDto request, {
+    required String conversationId,
+    String? idempotencyKey,
+  }) async => V1MessageDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/conversations/{conversationId}/messages', {
+        'conversationId': conversationId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1AnnouncementPageDto> listAnnouncements({
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1AnnouncementPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/announcements', {}, {
+        'schoolId': schoolId,
+        'classroomId': classroomId,
+        'studentId': studentId,
+        'date': date,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1AnnouncementDto> createAnnouncement(
+    V1CreateAnnouncementRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1AnnouncementDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/announcements', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MeetingDto> requestMeeting(
+    V1RequestMeetingRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1MeetingDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/meetings', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MeetingDto> cancelMeeting(
+    V1CancelMeetingRequestDto request, {
+    required String meetingId,
+    String? idempotencyKey,
+  }) async => V1MeetingDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/meetings/{meetingId}/cancel', {'meetingId': meetingId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MeetingStatusResponseDto> getMeetingStatus({
+    required String meetingId,
+  }) async => V1MeetingStatusResponseDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/meetings/{meetingId}', {'meetingId': meetingId}, {}),
+    ),
+  );
+
+  Future<V1NotificationPageDto> listNotifications({
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1NotificationPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/notifications', {}, {
+        'schoolId': schoolId,
+        'classroomId': classroomId,
+        'studentId': studentId,
+        'date': date,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1UnreadCountResponseDto> getUnreadCount() async =>
+      V1UnreadCountResponseDto.fromJson(
+        await _transport.get(_v1Path('/v1/notifications/unread-count', {}, {})),
+      );
+
+  Future<V1MarkNotificationsReadResponseDto> markNotificationsRead(
+    V1MarkNotificationsReadRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1MarkNotificationsReadResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/notifications/mark-read', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1NotificationPreferencesResponseDto>
+  getNotificationPreferences() async =>
+      V1NotificationPreferencesResponseDto.fromJson(
+        await _transport.get(_v1Path('/v1/notifications/preferences', {}, {})),
+      );
+
+  Future<V1NotificationPreferenceDto> updateNotificationPreferences(
+    V1UpdateNotificationPreferenceRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1NotificationPreferenceDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/notifications/preferences', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ProfileResponseDto> updateProfile(
+    V1UpdateProfileRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ProfileResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/account/profile', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1DataExportRequestDto> requestDataExport(
+    V1RequestDataExportRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1DataExportRequestDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/account/export-request', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ExportStatusResponseDto> getExportStatus() async =>
+      V1ExportStatusResponseDto.fromJson(
+        await _transport.get(_v1Path('/v1/account/export-status', {}, {})),
+      );
+
+  Future<V1SupportAccessGrantPageDto> listSupportAccessGrants({
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1SupportAccessGrantPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/support-access', {}, {
+        'schoolId': schoolId,
+        'classroomId': classroomId,
+        'studentId': studentId,
+        'date': date,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1SupportAccessGrantDto> requestSupportAccess(
+    V1RequestSupportAccessRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1SupportAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/support-access', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SupportAccessGrantDto> approveSupportAccess(
+    V1SupportAccessLifecycleRequestDto request, {
+    required String supportGrantId,
+    String? idempotencyKey,
+  }) async => V1SupportAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/support-access/{supportGrantId}/approve', {
+        'supportGrantId': supportGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SupportAccessGrantDto> startSupportAccess(
+    V1SupportAccessLifecycleRequestDto request, {
+    required String supportGrantId,
+    String? idempotencyKey,
+  }) async => V1SupportAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/support-access/{supportGrantId}/start', {
+        'supportGrantId': supportGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SupportAccessGrantDto> revokeSupportAccess(
+    V1RevokeSupportAccessRequestDto request, {
+    required String supportGrantId,
+    String? idempotencyKey,
+  }) async => V1SupportAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/support-access/{supportGrantId}/revoke', {
+        'supportGrantId': supportGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolStudentDto> createStudent(
+    V1CreateStudentRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1SchoolStudentDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/schools/{schoolId}/students', {'schoolId': schoolId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -823,21 +1440,6 @@ String _v1Path(
   return query.isEmpty
       ? value
       : Uri.parse(value).replace(queryParameters: query).toString();
-}
-
-class ProblemFieldDto {
-  const ProblemFieldDto({required this.path, required this.code});
-
-  factory ProblemFieldDto.fromJson(Map<String, dynamic> json) =>
-      ProblemFieldDto(
-        path: json['path'] as String,
-        code: json['code'] as String,
-      );
-
-  final String path;
-  final String code;
-
-  Map<String, Object?> toJson() => {'path': path, 'code': code};
 }
 
 class ProblemDetailsDto {
@@ -886,666 +1488,19 @@ class ProblemDetailsDto {
   };
 }
 
-class V1MembershipDto {
-  const V1MembershipDto({
-    required this.id,
-    required this.schoolId,
-    required this.schoolName,
-    required this.role,
-    required this.active,
-  });
+class ProblemFieldDto {
+  const ProblemFieldDto({required this.path, required this.code});
 
-  factory V1MembershipDto.fromJson(Map<String, dynamic> json) =>
-      V1MembershipDto(
-        id: json['id'] as String,
-        schoolId: json['schoolId'] as String,
-        schoolName: json['schoolName'] as String,
-        role: json['role'] as String,
-        active: json['active'] as bool,
+  factory ProblemFieldDto.fromJson(Map<String, dynamic> json) =>
+      ProblemFieldDto(
+        path: json['path'] as String,
+        code: json['code'] as String,
       );
 
-  final String id;
-  final String schoolId;
-  final String schoolName;
-  final String role;
-  final bool active;
+  final String path;
+  final String code;
 
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'schoolId': schoolId,
-    'schoolName': schoolName,
-    'role': role,
-    'active': active,
-  };
-}
-
-class V1MeResponseDto {
-  const V1MeResponseDto({
-    required this.id,
-    required this.displayName,
-    required this.memberships,
-    required this.activeTermId,
-  });
-
-  factory V1MeResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1MeResponseDto(
-        id: json['id'] as String,
-        displayName: json['displayName'] as String,
-        memberships: [
-          for (final item in json['memberships'] as List<dynamic>)
-            V1MembershipDto.fromJson(item as Map<String, dynamic>),
-        ],
-        activeTermId: json['activeTermId'] as String?,
-      );
-
-  final String id;
-  final String displayName;
-  final List<V1MembershipDto> memberships;
-  final String? activeTermId;
-
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'displayName': displayName,
-    'memberships': [for (final item in memberships) item.toJson()],
-    'activeTermId': activeTermId,
-  };
-}
-
-class V1ClassroomDto {
-  const V1ClassroomDto({
-    required this.id,
-    required this.name,
-    required this.grade,
-    required this.section,
-    required this.room,
-    required this.studentCount,
-    required this.weeklySessions,
-    required this.termName,
-  });
-
-  factory V1ClassroomDto.fromJson(Map<String, dynamic> json) => V1ClassroomDto(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    grade: json['grade'] as String,
-    section: json['section'] as String,
-    room: json['room'] as String?,
-    studentCount: json['studentCount'] as int,
-    weeklySessions: json['weeklySessions'] as int?,
-    termName: json['termName'] as String?,
-  );
-
-  final String id;
-  final String name;
-  final String grade;
-  final String section;
-  final String? room;
-  final int studentCount;
-  final int? weeklySessions;
-  final String? termName;
-
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'name': name,
-    'grade': grade,
-    'section': section,
-    'room': room,
-    'studentCount': studentCount,
-    'weeklySessions': weeklySessions,
-    'termName': termName,
-  };
-}
-
-class V1ClassroomListResponseDto {
-  const V1ClassroomListResponseDto({required this.classrooms});
-
-  factory V1ClassroomListResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1ClassroomListResponseDto(
-        classrooms: [
-          for (final item in json['classrooms'] as List<dynamic>)
-            V1ClassroomDto.fromJson(item as Map<String, dynamic>),
-        ],
-      );
-
-  final List<V1ClassroomDto> classrooms;
-
-  Map<String, Object?> toJson() => {
-    'classrooms': [for (final item in classrooms) item.toJson()],
-  };
-}
-
-class V1ContextMembershipDto {
-  const V1ContextMembershipDto({
-    required this.id,
-    required this.schoolId,
-    required this.schoolName,
-    required this.schoolTimezone,
-    required this.role,
-    required this.activeTermId,
-  });
-
-  factory V1ContextMembershipDto.fromJson(Map<String, dynamic> json) =>
-      V1ContextMembershipDto(
-        id: json['id'] as String,
-        schoolId: json['schoolId'] as String,
-        schoolName: json['schoolName'] as String,
-        schoolTimezone: json['schoolTimezone'] as String,
-        role: json['role'] as String,
-        activeTermId: json['activeTermId'] as String?,
-      );
-
-  final String id;
-  final String schoolId;
-  final String schoolName;
-  final String schoolTimezone;
-  final String role;
-  final String? activeTermId;
-
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'schoolId': schoolId,
-    'schoolName': schoolName,
-    'schoolTimezone': schoolTimezone,
-    'role': role,
-    'activeTermId': activeTermId,
-  };
-}
-
-class V1AuthContextResponseDto {
-  const V1AuthContextResponseDto({
-    required this.userId,
-    required this.displayName,
-    required this.locale,
-    required this.memberships,
-    required this.membershipVersion,
-    required this.assuranceLevel,
-    required this.mfaEnrolled,
-    required this.mfaRequired,
-    required this.pendingDeletion,
-  });
-
-  factory V1AuthContextResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthContextResponseDto(
-        userId: json['userId'] as String,
-        displayName: json['displayName'] as String,
-        locale: json['locale'] as String,
-        memberships: [
-          for (final item in json['memberships'] as List<dynamic>)
-            V1ContextMembershipDto.fromJson(item as Map<String, dynamic>),
-        ],
-        membershipVersion: json['membershipVersion'] as String,
-        assuranceLevel: json['assuranceLevel'] as String,
-        mfaEnrolled: json['mfaEnrolled'] as bool,
-        mfaRequired: json['mfaRequired'] as bool,
-        pendingDeletion: json['pendingDeletion'] as bool,
-      );
-
-  final String userId;
-  final String displayName;
-  final String locale;
-  final List<V1ContextMembershipDto> memberships;
-  final String membershipVersion;
-  final String assuranceLevel;
-  final bool mfaEnrolled;
-  final bool mfaRequired;
-  final bool pendingDeletion;
-
-  Map<String, Object?> toJson() => {
-    'userId': userId,
-    'displayName': displayName,
-    'locale': locale,
-    'memberships': [for (final item in memberships) item.toJson()],
-    'membershipVersion': membershipVersion,
-    'assuranceLevel': assuranceLevel,
-    'mfaEnrolled': mfaEnrolled,
-    'mfaRequired': mfaRequired,
-    'pendingDeletion': pendingDeletion,
-  };
-}
-
-class V1AuthDeviceDto {
-  const V1AuthDeviceDto({
-    required this.id,
-    required this.platform,
-    required this.appVersion,
-    required this.displayLabel,
-    required this.firstSeenAt,
-    required this.lastSeenAt,
-    required this.revokedAt,
-    required this.current,
-  });
-
-  factory V1AuthDeviceDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthDeviceDto(
-        id: json['id'] as String,
-        platform: json['platform'] as String,
-        appVersion: json['appVersion'] as String?,
-        displayLabel: json['displayLabel'] as String?,
-        firstSeenAt: json['firstSeenAt'] as String,
-        lastSeenAt: json['lastSeenAt'] as String,
-        revokedAt: json['revokedAt'] as String?,
-        current: json['current'] as bool,
-      );
-
-  final String id;
-  final String platform;
-  final String? appVersion;
-  final String? displayLabel;
-  final String firstSeenAt;
-  final String lastSeenAt;
-  final String? revokedAt;
-  final bool current;
-
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'platform': platform,
-    'appVersion': appVersion,
-    'displayLabel': displayLabel,
-    'firstSeenAt': firstSeenAt,
-    'lastSeenAt': lastSeenAt,
-    'revokedAt': revokedAt,
-    'current': current,
-  };
-}
-
-class V1AuthDeviceListResponseDto {
-  const V1AuthDeviceListResponseDto({required this.devices});
-
-  factory V1AuthDeviceListResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthDeviceListResponseDto(
-        devices: [
-          for (final item in json['devices'] as List<dynamic>)
-            V1AuthDeviceDto.fromJson(item as Map<String, dynamic>),
-        ],
-      );
-
-  final List<V1AuthDeviceDto> devices;
-
-  Map<String, Object?> toJson() => {
-    'devices': [for (final item in devices) item.toJson()],
-  };
-}
-
-class V1AuthDeviceRevokeRequestDto {
-  const V1AuthDeviceRevokeRequestDto({required this.deviceId});
-
-  factory V1AuthDeviceRevokeRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthDeviceRevokeRequestDto(deviceId: json['deviceId'] as String);
-
-  final String deviceId;
-
-  Map<String, Object?> toJson() => {'deviceId': deviceId};
-}
-
-class V1AuthDeviceRevokeResponseDto {
-  const V1AuthDeviceRevokeResponseDto({required this.revoked});
-
-  factory V1AuthDeviceRevokeResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthDeviceRevokeResponseDto(revoked: json['revoked'] as bool);
-
-  final bool revoked;
-
-  Map<String, Object?> toJson() => {'revoked': revoked};
-}
-
-class V1AuthSignOutRequestDto {
-  const V1AuthSignOutRequestDto({required this.scope});
-
-  factory V1AuthSignOutRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthSignOutRequestDto(scope: json['scope'] as String);
-
-  final String scope;
-
-  Map<String, Object?> toJson() => {'scope': scope};
-}
-
-class V1AuthSignOutResponseDto {
-  const V1AuthSignOutResponseDto({
-    required this.scope,
-    required this.revokedBefore,
-  });
-
-  factory V1AuthSignOutResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1AuthSignOutResponseDto(
-        scope: json['scope'] as String,
-        revokedBefore: json['revokedBefore'] as String?,
-      );
-
-  final String scope;
-  final String? revokedBefore;
-
-  Map<String, Object?> toJson() => {
-    'scope': scope,
-    'revokedBefore': revokedBefore,
-  };
-}
-
-class V1ReauthChallengeRequestDto {
-  const V1ReauthChallengeRequestDto({required this.purpose});
-
-  factory V1ReauthChallengeRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1ReauthChallengeRequestDto(purpose: json['purpose'] as String);
-
-  final String purpose;
-
-  Map<String, Object?> toJson() => {'purpose': purpose};
-}
-
-class V1ReauthChallengeResponseDto {
-  const V1ReauthChallengeResponseDto({
-    required this.purpose,
-    required this.requiredAssurance,
-    required this.expiresAt,
-  });
-
-  factory V1ReauthChallengeResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1ReauthChallengeResponseDto(
-        purpose: json['purpose'] as String,
-        requiredAssurance: json['requiredAssurance'] as String,
-        expiresAt: json['expiresAt'] as String,
-      );
-
-  final String purpose;
-  final String requiredAssurance;
-  final String expiresAt;
-
-  Map<String, Object?> toJson() => {
-    'purpose': purpose,
-    'requiredAssurance': requiredAssurance,
-    'expiresAt': expiresAt,
-  };
-}
-
-class V1ReauthVerifyRequestDto {
-  const V1ReauthVerifyRequestDto({required this.purpose});
-
-  factory V1ReauthVerifyRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1ReauthVerifyRequestDto(purpose: json['purpose'] as String);
-
-  final String purpose;
-
-  Map<String, Object?> toJson() => {'purpose': purpose};
-}
-
-class V1ReauthVerifyResponseDto {
-  const V1ReauthVerifyResponseDto({
-    required this.purpose,
-    required this.grant,
-    required this.expiresAt,
-  });
-
-  factory V1ReauthVerifyResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1ReauthVerifyResponseDto(
-        purpose: json['purpose'] as String,
-        grant: json['grant'] as String,
-        expiresAt: json['expiresAt'] as String,
-      );
-
-  final String purpose;
-  final String grant;
-  final String expiresAt;
-
-  Map<String, Object?> toJson() => {
-    'purpose': purpose,
-    'grant': grant,
-    'expiresAt': expiresAt,
-  };
-}
-
-class V1IdentityLinkRequestDto {
-  const V1IdentityLinkRequestDto({
-    required this.provider,
-    required this.idToken,
-    required this.makePrimary,
-  });
-
-  factory V1IdentityLinkRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1IdentityLinkRequestDto(
-        provider: json['provider'] as String,
-        idToken: json['idToken'] as String,
-        makePrimary: json['makePrimary'] as bool,
-      );
-
-  final String provider;
-  final String idToken;
-  final bool makePrimary;
-
-  Map<String, Object?> toJson() => {
-    'provider': provider,
-    'idToken': idToken,
-    'makePrimary': makePrimary,
-  };
-}
-
-class V1IdentityLinkResponseDto {
-  const V1IdentityLinkResponseDto({required this.outcome});
-
-  factory V1IdentityLinkResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1IdentityLinkResponseDto(outcome: json['outcome'] as String);
-
-  final String outcome;
-
-  Map<String, Object?> toJson() => {'outcome': outcome};
-}
-
-class V1IdentityUnlinkRequestDto {
-  const V1IdentityUnlinkRequestDto({
-    required this.provider,
-    required this.subject,
-  });
-
-  factory V1IdentityUnlinkRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1IdentityUnlinkRequestDto(
-        provider: json['provider'] as String,
-        subject: json['subject'] as String,
-      );
-
-  final String provider;
-  final String subject;
-
-  Map<String, Object?> toJson() => {'provider': provider, 'subject': subject};
-}
-
-class V1IdentityUnlinkResponseDto {
-  const V1IdentityUnlinkResponseDto({required this.outcome});
-
-  factory V1IdentityUnlinkResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1IdentityUnlinkResponseDto(outcome: json['outcome'] as String);
-
-  final String outcome;
-
-  Map<String, Object?> toJson() => {'outcome': outcome};
-}
-
-class V1DeletionImpactMembershipDto {
-  const V1DeletionImpactMembershipDto({
-    required this.schoolName,
-    required this.role,
-  });
-
-  factory V1DeletionImpactMembershipDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionImpactMembershipDto(
-        schoolName: json['schoolName'] as String,
-        role: json['role'] as String,
-      );
-
-  final String schoolName;
-  final String role;
-
-  Map<String, Object?> toJson() => {'schoolName': schoolName, 'role': role};
-}
-
-class V1DeletionRetainedRecordsDto {
-  const V1DeletionRetainedRecordsDto({
-    required this.attendance,
-    required this.grades,
-    required this.submissions,
-    required this.wellbeing,
-  });
-
-  factory V1DeletionRetainedRecordsDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionRetainedRecordsDto(
-        attendance: json['attendance'] as int,
-        grades: json['grades'] as int,
-        submissions: json['submissions'] as int,
-        wellbeing: json['wellbeing'] as int,
-      );
-
-  final int attendance;
-  final int grades;
-  final int submissions;
-  final int wellbeing;
-
-  Map<String, Object?> toJson() => {
-    'attendance': attendance,
-    'grades': grades,
-    'submissions': submissions,
-    'wellbeing': wellbeing,
-  };
-}
-
-class V1DeletionDeletedDataDto {
-  const V1DeletionDeletedDataDto({
-    required this.profile,
-    required this.devices,
-    required this.consents,
-    required this.notifications,
-  });
-
-  factory V1DeletionDeletedDataDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionDeletedDataDto(
-        profile: json['profile'] as int,
-        devices: json['devices'] as int,
-        consents: json['consents'] as int,
-        notifications: json['notifications'] as int,
-      );
-
-  final int profile;
-  final int devices;
-  final int consents;
-  final int notifications;
-
-  Map<String, Object?> toJson() => {
-    'profile': profile,
-    'devices': devices,
-    'consents': consents,
-    'notifications': notifications,
-  };
-}
-
-class V1DeletionImpactResponseDto {
-  const V1DeletionImpactResponseDto({
-    required this.memberships,
-    required this.retainedSchoolRecords,
-    required this.deletedPersonalData,
-    required this.guardianLinks,
-    required this.activeEntitlements,
-    required this.gracePeriodDays,
-  });
-
-  factory V1DeletionImpactResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionImpactResponseDto(
-        memberships: [
-          for (final item in json['memberships'] as List<dynamic>)
-            V1DeletionImpactMembershipDto.fromJson(
-              item as Map<String, dynamic>,
-            ),
-        ],
-        retainedSchoolRecords: V1DeletionRetainedRecordsDto.fromJson(
-          json['retainedSchoolRecords'] as Map<String, dynamic>,
-        ),
-        deletedPersonalData: V1DeletionDeletedDataDto.fromJson(
-          json['deletedPersonalData'] as Map<String, dynamic>,
-        ),
-        guardianLinks: json['guardianLinks'] as int,
-        activeEntitlements: json['activeEntitlements'] as int,
-        gracePeriodDays: json['gracePeriodDays'] as int,
-      );
-
-  final List<V1DeletionImpactMembershipDto> memberships;
-  final V1DeletionRetainedRecordsDto retainedSchoolRecords;
-  final V1DeletionDeletedDataDto deletedPersonalData;
-  final int guardianLinks;
-  final int activeEntitlements;
-  final int gracePeriodDays;
-
-  Map<String, Object?> toJson() => {
-    'memberships': [for (final item in memberships) item.toJson()],
-    'retainedSchoolRecords': retainedSchoolRecords.toJson(),
-    'deletedPersonalData': deletedPersonalData.toJson(),
-    'guardianLinks': guardianLinks,
-    'activeEntitlements': activeEntitlements,
-    'gracePeriodDays': gracePeriodDays,
-  };
-}
-
-class V1DeletionRequestRequestDto {
-  const V1DeletionRequestRequestDto({
-    required this.reasonCode,
-    required this.confirmation,
-  });
-
-  factory V1DeletionRequestRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionRequestRequestDto(
-        reasonCode: json['reasonCode'] as String,
-        confirmation: json['confirmation'] as String,
-      );
-
-  final String reasonCode;
-  final String confirmation;
-
-  Map<String, Object?> toJson() => {
-    'reasonCode': reasonCode,
-    'confirmation': confirmation,
-  };
-}
-
-class V1DeletionRequestResponseDto {
-  const V1DeletionRequestResponseDto({
-    required this.id,
-    required this.state,
-    required this.executeAfter,
-    required this.created,
-  });
-
-  factory V1DeletionRequestResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionRequestResponseDto(
-        id: json['id'] as String,
-        state: json['state'] as String,
-        executeAfter: json['executeAfter'] as String,
-        created: json['created'] as bool,
-      );
-
-  final String id;
-  final String state;
-  final String executeAfter;
-  final bool created;
-
-  Map<String, Object?> toJson() => {
-    'id': id,
-    'state': state,
-    'executeAfter': executeAfter,
-    'created': created,
-  };
-}
-
-class V1DeletionCancelRequestDto {
-  const V1DeletionCancelRequestDto();
-
-  factory V1DeletionCancelRequestDto.fromJson(Map<String, dynamic> json) =>
-      const V1DeletionCancelRequestDto();
-
-  Map<String, Object?> toJson() => const <String, Object?>{};
-}
-
-class V1DeletionCancelResponseDto {
-  const V1DeletionCancelResponseDto({required this.cancelled});
-
-  factory V1DeletionCancelResponseDto.fromJson(Map<String, dynamic> json) =>
-      V1DeletionCancelResponseDto(cancelled: json['cancelled'] as bool);
-
-  final bool cancelled;
-
-  Map<String, Object?> toJson() => {'cancelled': cancelled};
+  Map<String, Object?> toJson() => {'path': path, 'code': code};
 }
 
 class V1AcademicClassroomDto {
@@ -1606,6 +1561,120 @@ class V1AcademicClassroomDto {
     'studentCount': studentCount,
     'weeklySessions': weeklySessions,
     'termName': termName,
+  };
+}
+
+class V1AcceptInvitationRequestDto {
+  const V1AcceptInvitationRequestDto({required this.token});
+
+  factory V1AcceptInvitationRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1AcceptInvitationRequestDto(token: json['token'] as String);
+
+  final String token;
+
+  Map<String, Object?> toJson() => {'token': token};
+}
+
+class V1AcceptInvitationResponseDto {
+  const V1AcceptInvitationResponseDto({
+    required this.id,
+    required this.schoolId,
+    required this.userId,
+    required this.role,
+    required this.status,
+    required this.version,
+  });
+
+  factory V1AcceptInvitationResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1AcceptInvitationResponseDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        userId: json['userId'] as String,
+        role: json['role'] as String,
+        status: json['status'] as String,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String schoolId;
+  final String userId;
+  final String role;
+  final String status;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'userId': userId,
+    'role': role,
+    'status': status,
+    'version': version,
+  };
+}
+
+class V1AnnouncementDto {
+  const V1AnnouncementDto({
+    required this.id,
+    required this.schoolId,
+    required this.classroomId,
+    required this.title,
+    required this.body,
+    required this.audience,
+    required this.important,
+    required this.publishedAt,
+  });
+
+  factory V1AnnouncementDto.fromJson(Map<String, dynamic> json) =>
+      V1AnnouncementDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        classroomId: json['classroomId'] as String?,
+        title: json['title'] as String,
+        body: json['body'] as String,
+        audience: json['audience'] as String,
+        important: json['important'] as bool,
+        publishedAt: json['publishedAt'] as String,
+      );
+
+  final String id;
+  final String schoolId;
+  final String? classroomId;
+  final String title;
+  final String body;
+  final String audience;
+  final bool important;
+  final String publishedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'classroomId': classroomId,
+    'title': title,
+    'body': body,
+    'audience': audience,
+    'important': important,
+    'publishedAt': publishedAt,
+  };
+}
+
+class V1AnnouncementPageDto {
+  const V1AnnouncementPageDto({required this.items, required this.nextCursor});
+
+  factory V1AnnouncementPageDto.fromJson(Map<String, dynamic> json) =>
+      V1AnnouncementPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1AnnouncementDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1AnnouncementDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
   };
 }
 
@@ -1899,6 +1968,25 @@ class V1AssessmentQuestionsResponseDto {
   };
 }
 
+class V1AssignClassroomStaffRequestDto {
+  const V1AssignClassroomStaffRequestDto({
+    required this.userId,
+    required this.role,
+  });
+
+  factory V1AssignClassroomStaffRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1AssignClassroomStaffRequestDto(
+    userId: json['userId'] as String,
+    role: json['role'] as String,
+  );
+
+  final String userId;
+  final String role;
+
+  Map<String, Object?> toJson() => {'userId': userId, 'role': role};
+}
+
 class V1AssignmentDto {
   const V1AssignmentDto({
     required this.id,
@@ -2107,6 +2195,241 @@ class V1AttendanceRosterPageDto {
   };
 }
 
+class V1AuthContextResponseDto {
+  const V1AuthContextResponseDto({
+    required this.userId,
+    required this.displayName,
+    required this.locale,
+    required this.memberships,
+    required this.membershipVersion,
+    required this.assuranceLevel,
+    required this.mfaEnrolled,
+    required this.mfaRequired,
+    required this.pendingDeletion,
+  });
+
+  factory V1AuthContextResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthContextResponseDto(
+        userId: json['userId'] as String,
+        displayName: json['displayName'] as String,
+        locale: json['locale'] as String,
+        memberships: [
+          for (final item in json['memberships'] as List<dynamic>)
+            V1ContextMembershipDto.fromJson(item as Map<String, dynamic>),
+        ],
+        membershipVersion: json['membershipVersion'] as String,
+        assuranceLevel: json['assuranceLevel'] as String,
+        mfaEnrolled: json['mfaEnrolled'] as bool,
+        mfaRequired: json['mfaRequired'] as bool,
+        pendingDeletion: json['pendingDeletion'] as bool,
+      );
+
+  final String userId;
+  final String displayName;
+  final String locale;
+  final List<V1ContextMembershipDto> memberships;
+  final String membershipVersion;
+  final String assuranceLevel;
+  final bool mfaEnrolled;
+  final bool mfaRequired;
+  final bool pendingDeletion;
+
+  Map<String, Object?> toJson() => {
+    'userId': userId,
+    'displayName': displayName,
+    'locale': locale,
+    'memberships': [for (final item in memberships) item.toJson()],
+    'membershipVersion': membershipVersion,
+    'assuranceLevel': assuranceLevel,
+    'mfaEnrolled': mfaEnrolled,
+    'mfaRequired': mfaRequired,
+    'pendingDeletion': pendingDeletion,
+  };
+}
+
+class V1AuthDeviceDto {
+  const V1AuthDeviceDto({
+    required this.id,
+    required this.platform,
+    required this.appVersion,
+    required this.displayLabel,
+    required this.firstSeenAt,
+    required this.lastSeenAt,
+    required this.revokedAt,
+    required this.current,
+  });
+
+  factory V1AuthDeviceDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthDeviceDto(
+        id: json['id'] as String,
+        platform: json['platform'] as String,
+        appVersion: json['appVersion'] as String?,
+        displayLabel: json['displayLabel'] as String?,
+        firstSeenAt: json['firstSeenAt'] as String,
+        lastSeenAt: json['lastSeenAt'] as String,
+        revokedAt: json['revokedAt'] as String?,
+        current: json['current'] as bool,
+      );
+
+  final String id;
+  final String platform;
+  final String? appVersion;
+  final String? displayLabel;
+  final String firstSeenAt;
+  final String lastSeenAt;
+  final String? revokedAt;
+  final bool current;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'platform': platform,
+    'appVersion': appVersion,
+    'displayLabel': displayLabel,
+    'firstSeenAt': firstSeenAt,
+    'lastSeenAt': lastSeenAt,
+    'revokedAt': revokedAt,
+    'current': current,
+  };
+}
+
+class V1AuthDeviceListResponseDto {
+  const V1AuthDeviceListResponseDto({required this.devices});
+
+  factory V1AuthDeviceListResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthDeviceListResponseDto(
+        devices: [
+          for (final item in json['devices'] as List<dynamic>)
+            V1AuthDeviceDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1AuthDeviceDto> devices;
+
+  Map<String, Object?> toJson() => {
+    'devices': [for (final item in devices) item.toJson()],
+  };
+}
+
+class V1AuthDeviceRevokeRequestDto {
+  const V1AuthDeviceRevokeRequestDto({required this.deviceId});
+
+  factory V1AuthDeviceRevokeRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthDeviceRevokeRequestDto(deviceId: json['deviceId'] as String);
+
+  final String deviceId;
+
+  Map<String, Object?> toJson() => {'deviceId': deviceId};
+}
+
+class V1AuthDeviceRevokeResponseDto {
+  const V1AuthDeviceRevokeResponseDto({required this.revoked});
+
+  factory V1AuthDeviceRevokeResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthDeviceRevokeResponseDto(revoked: json['revoked'] as bool);
+
+  final bool revoked;
+
+  Map<String, Object?> toJson() => {'revoked': revoked};
+}
+
+class V1AuthErrorDto {
+  const V1AuthErrorDto();
+
+  factory V1AuthErrorDto.fromJson(Map<String, dynamic> json) =>
+      const V1AuthErrorDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1AuthSignOutRequestDto {
+  const V1AuthSignOutRequestDto({required this.scope});
+
+  factory V1AuthSignOutRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthSignOutRequestDto(scope: json['scope'] as String);
+
+  final String scope;
+
+  Map<String, Object?> toJson() => {'scope': scope};
+}
+
+class V1AuthSignOutResponseDto {
+  const V1AuthSignOutResponseDto({
+    required this.scope,
+    required this.revokedBefore,
+  });
+
+  factory V1AuthSignOutResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1AuthSignOutResponseDto(
+        scope: json['scope'] as String,
+        revokedBefore: json['revokedBefore'] as String?,
+      );
+
+  final String scope;
+  final String? revokedBefore;
+
+  Map<String, Object?> toJson() => {
+    'scope': scope,
+    'revokedBefore': revokedBefore,
+  };
+}
+
+class V1CancelMeetingRequestDto {
+  const V1CancelMeetingRequestDto({required this.expectedVersion});
+
+  factory V1CancelMeetingRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CancelMeetingRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+      );
+
+  final int expectedVersion;
+
+  Map<String, Object?> toJson() => {'expectedVersion': expectedVersion};
+}
+
+class V1ClassroomDto {
+  const V1ClassroomDto({
+    required this.id,
+    required this.name,
+    required this.grade,
+    required this.section,
+    required this.room,
+    required this.studentCount,
+    required this.weeklySessions,
+    required this.termName,
+  });
+
+  factory V1ClassroomDto.fromJson(Map<String, dynamic> json) => V1ClassroomDto(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    grade: json['grade'] as String,
+    section: json['section'] as String,
+    room: json['room'] as String?,
+    studentCount: json['studentCount'] as int,
+    weeklySessions: json['weeklySessions'] as int?,
+    termName: json['termName'] as String?,
+  );
+
+  final String id;
+  final String name;
+  final String grade;
+  final String section;
+  final String? room;
+  final int studentCount;
+  final int? weeklySessions;
+  final String? termName;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'grade': grade,
+    'section': section,
+    'room': room,
+    'studentCount': studentCount,
+    'weeklySessions': weeklySessions,
+    'termName': termName,
+  };
+}
+
 class V1ClassroomDetailDto {
   const V1ClassroomDetailDto({required this.classroom, required this.schedule});
 
@@ -2127,6 +2450,33 @@ class V1ClassroomDetailDto {
   Map<String, Object?> toJson() => {
     'classroom': classroom.toJson(),
     'schedule': [for (final item in schedule) item.toJson()],
+  };
+}
+
+class V1ClassroomListErrorDto {
+  const V1ClassroomListErrorDto();
+
+  factory V1ClassroomListErrorDto.fromJson(Map<String, dynamic> json) =>
+      const V1ClassroomListErrorDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1ClassroomListResponseDto {
+  const V1ClassroomListResponseDto({required this.classrooms});
+
+  factory V1ClassroomListResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1ClassroomListResponseDto(
+        classrooms: [
+          for (final item in json['classrooms'] as List<dynamic>)
+            V1ClassroomDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1ClassroomDto> classrooms;
+
+  Map<String, Object?> toJson() => {
+    'classrooms': [for (final item in classrooms) item.toJson()],
   };
 }
 
@@ -2180,6 +2530,39 @@ class V1ClassroomStaffDto {
   };
 }
 
+class V1ClassroomStaffAssignmentDto {
+  const V1ClassroomStaffAssignmentDto({
+    required this.id,
+    required this.classroomId,
+    required this.userId,
+    required this.role,
+    required this.status,
+  });
+
+  factory V1ClassroomStaffAssignmentDto.fromJson(Map<String, dynamic> json) =>
+      V1ClassroomStaffAssignmentDto(
+        id: json['id'] as String,
+        classroomId: json['classroomId'] as String,
+        userId: json['userId'] as String,
+        role: json['role'] as String,
+        status: json['status'] as String,
+      );
+
+  final String id;
+  final String classroomId;
+  final String userId;
+  final String role;
+  final String status;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'classroomId': classroomId,
+    'userId': userId,
+    'role': role,
+    'status': status,
+  };
+}
+
 class V1ClassroomStaffPageDto {
   const V1ClassroomStaffPageDto({
     required this.items,
@@ -2196,6 +2579,97 @@ class V1ClassroomStaffPageDto {
       );
 
   final List<V1ClassroomStaffDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1ContextMembershipDto {
+  const V1ContextMembershipDto({
+    required this.id,
+    required this.schoolId,
+    required this.schoolName,
+    required this.schoolTimezone,
+    required this.role,
+    required this.activeTermId,
+  });
+
+  factory V1ContextMembershipDto.fromJson(Map<String, dynamic> json) =>
+      V1ContextMembershipDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        schoolName: json['schoolName'] as String,
+        schoolTimezone: json['schoolTimezone'] as String,
+        role: json['role'] as String,
+        activeTermId: json['activeTermId'] as String?,
+      );
+
+  final String id;
+  final String schoolId;
+  final String schoolName;
+  final String schoolTimezone;
+  final String role;
+  final String? activeTermId;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'schoolName': schoolName,
+    'schoolTimezone': schoolTimezone,
+    'role': role,
+    'activeTermId': activeTermId,
+  };
+}
+
+class V1ConversationDto {
+  const V1ConversationDto({
+    required this.id,
+    required this.schoolId,
+    required this.subject,
+    required this.state,
+    required this.lastReadAt,
+  });
+
+  factory V1ConversationDto.fromJson(Map<String, dynamic> json) =>
+      V1ConversationDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        subject: json['subject'] as String?,
+        state: json['state'] as String,
+        lastReadAt: json['lastReadAt'] as String?,
+      );
+
+  final String id;
+  final String schoolId;
+  final String? subject;
+  final String state;
+  final String? lastReadAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'subject': subject,
+    'state': state,
+    'lastReadAt': lastReadAt,
+  };
+}
+
+class V1ConversationPageDto {
+  const V1ConversationPageDto({required this.items, required this.nextCursor});
+
+  factory V1ConversationPageDto.fromJson(Map<String, dynamic> json) =>
+      V1ConversationPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1ConversationDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1ConversationDto> items;
   final String? nextCursor;
 
   Map<String, Object?> toJson() => {
@@ -2246,6 +2720,43 @@ class V1CorrectGradeRequestDto {
     if (questionScores != null)
       'questionScores': [for (final item in questionScores!) item.toJson()],
     'reason': reason,
+  };
+}
+
+class V1CreateAnnouncementRequestDto {
+  const V1CreateAnnouncementRequestDto({
+    required this.schoolId,
+    this.classroomId,
+    required this.title,
+    required this.body,
+    required this.audience,
+    required this.important,
+  });
+
+  factory V1CreateAnnouncementRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateAnnouncementRequestDto(
+        schoolId: json['schoolId'] as String,
+        classroomId: json['classroomId'] as String?,
+        title: json['title'] as String,
+        body: json['body'] as String,
+        audience: json['audience'] as String,
+        important: json['important'] as bool,
+      );
+
+  final String schoolId;
+  final String? classroomId;
+  final String title;
+  final String body;
+  final String audience;
+  final bool important;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'classroomId': ?classroomId,
+    'title': title,
+    'body': body,
+    'audience': audience,
+    'important': important,
   };
 }
 
@@ -2366,6 +2877,32 @@ class V1CreateClassroomRequestDto {
   };
 }
 
+class V1CreateConversationRequestDto {
+  const V1CreateConversationRequestDto({
+    required this.schoolId,
+    this.subject,
+    required this.participantIds,
+  });
+
+  factory V1CreateConversationRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateConversationRequestDto(
+        schoolId: json['schoolId'] as String,
+        subject: json['subject'] as String?,
+        participantIds: (json['participantIds'] as List<dynamic>)
+            .cast<String>(),
+      );
+
+  final String schoolId;
+  final String? subject;
+  final List<String> participantIds;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'subject': ?subject,
+    'participantIds': participantIds,
+  };
+}
+
 class V1CreateResourceRequestDto {
   const V1CreateResourceRequestDto({
     required this.schoolId,
@@ -2400,6 +2937,49 @@ class V1CreateResourceRequestDto {
     'resourceType': resourceType,
     'body': body,
     'audience': audience,
+  };
+}
+
+class V1CreateStudentRequestDto {
+  const V1CreateStudentRequestDto({required this.displayName, this.userId});
+
+  factory V1CreateStudentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateStudentRequestDto(
+        displayName: json['displayName'] as String,
+        userId: json['userId'] as String?,
+      );
+
+  final String displayName;
+  final String? userId;
+
+  Map<String, Object?> toJson() => {
+    'displayName': displayName,
+    'userId': ?userId,
+  };
+}
+
+class V1CreateTermRequestDto {
+  const V1CreateTermRequestDto({
+    required this.name,
+    required this.startsOn,
+    required this.endsOn,
+  });
+
+  factory V1CreateTermRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateTermRequestDto(
+        name: json['name'] as String,
+        startsOn: json['startsOn'] as String,
+        endsOn: json['endsOn'] as String,
+      );
+
+  final String name;
+  final String startsOn;
+  final String endsOn;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'startsOn': startsOn,
+    'endsOn': endsOn,
   };
 }
 
@@ -2446,6 +3026,284 @@ class V1CreateWellbeingRequestDto {
     'visibility': visibility,
     'severity': severity,
   };
+}
+
+class V1DataExportRequestDto {
+  const V1DataExportRequestDto({
+    required this.id,
+    required this.status,
+    required this.requestedAt,
+    required this.readyAt,
+    required this.expiresAt,
+  });
+
+  factory V1DataExportRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1DataExportRequestDto(
+        id: json['id'] as String,
+        status: json['status'] as String,
+        requestedAt: json['requestedAt'] as String,
+        readyAt: json['readyAt'] as String?,
+        expiresAt: json['expiresAt'] as String?,
+      );
+
+  final String id;
+  final String status;
+  final String requestedAt;
+  final String? readyAt;
+  final String? expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'status': status,
+    'requestedAt': requestedAt,
+    'readyAt': readyAt,
+    'expiresAt': expiresAt,
+  };
+}
+
+class V1DeletionCancelRequestDto {
+  const V1DeletionCancelRequestDto();
+
+  factory V1DeletionCancelRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1DeletionCancelRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1DeletionCancelResponseDto {
+  const V1DeletionCancelResponseDto({required this.cancelled});
+
+  factory V1DeletionCancelResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionCancelResponseDto(cancelled: json['cancelled'] as bool);
+
+  final bool cancelled;
+
+  Map<String, Object?> toJson() => {'cancelled': cancelled};
+}
+
+class V1DeletionDeletedDataDto {
+  const V1DeletionDeletedDataDto({
+    required this.profile,
+    required this.devices,
+    required this.consents,
+    required this.notifications,
+  });
+
+  factory V1DeletionDeletedDataDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionDeletedDataDto(
+        profile: json['profile'] as int,
+        devices: json['devices'] as int,
+        consents: json['consents'] as int,
+        notifications: json['notifications'] as int,
+      );
+
+  final int profile;
+  final int devices;
+  final int consents;
+  final int notifications;
+
+  Map<String, Object?> toJson() => {
+    'profile': profile,
+    'devices': devices,
+    'consents': consents,
+    'notifications': notifications,
+  };
+}
+
+class V1DeletionImpactMembershipDto {
+  const V1DeletionImpactMembershipDto({
+    required this.schoolName,
+    required this.role,
+  });
+
+  factory V1DeletionImpactMembershipDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionImpactMembershipDto(
+        schoolName: json['schoolName'] as String,
+        role: json['role'] as String,
+      );
+
+  final String schoolName;
+  final String role;
+
+  Map<String, Object?> toJson() => {'schoolName': schoolName, 'role': role};
+}
+
+class V1DeletionImpactResponseDto {
+  const V1DeletionImpactResponseDto({
+    required this.memberships,
+    required this.retainedSchoolRecords,
+    required this.deletedPersonalData,
+    required this.guardianLinks,
+    required this.activeEntitlements,
+    required this.gracePeriodDays,
+  });
+
+  factory V1DeletionImpactResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionImpactResponseDto(
+        memberships: [
+          for (final item in json['memberships'] as List<dynamic>)
+            V1DeletionImpactMembershipDto.fromJson(
+              item as Map<String, dynamic>,
+            ),
+        ],
+        retainedSchoolRecords: V1DeletionRetainedRecordsDto.fromJson(
+          json['retainedSchoolRecords'] as Map<String, dynamic>,
+        ),
+        deletedPersonalData: V1DeletionDeletedDataDto.fromJson(
+          json['deletedPersonalData'] as Map<String, dynamic>,
+        ),
+        guardianLinks: json['guardianLinks'] as int,
+        activeEntitlements: json['activeEntitlements'] as int,
+        gracePeriodDays: json['gracePeriodDays'] as int,
+      );
+
+  final List<V1DeletionImpactMembershipDto> memberships;
+  final V1DeletionRetainedRecordsDto retainedSchoolRecords;
+  final V1DeletionDeletedDataDto deletedPersonalData;
+  final int guardianLinks;
+  final int activeEntitlements;
+  final int gracePeriodDays;
+
+  Map<String, Object?> toJson() => {
+    'memberships': [for (final item in memberships) item.toJson()],
+    'retainedSchoolRecords': retainedSchoolRecords.toJson(),
+    'deletedPersonalData': deletedPersonalData.toJson(),
+    'guardianLinks': guardianLinks,
+    'activeEntitlements': activeEntitlements,
+    'gracePeriodDays': gracePeriodDays,
+  };
+}
+
+class V1DeletionRequestRequestDto {
+  const V1DeletionRequestRequestDto({
+    required this.reasonCode,
+    required this.confirmation,
+  });
+
+  factory V1DeletionRequestRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionRequestRequestDto(
+        reasonCode: json['reasonCode'] as String,
+        confirmation: json['confirmation'] as String,
+      );
+
+  final String reasonCode;
+  final String confirmation;
+
+  Map<String, Object?> toJson() => {
+    'reasonCode': reasonCode,
+    'confirmation': confirmation,
+  };
+}
+
+class V1DeletionRequestResponseDto {
+  const V1DeletionRequestResponseDto({
+    required this.id,
+    required this.state,
+    required this.executeAfter,
+    required this.created,
+  });
+
+  factory V1DeletionRequestResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionRequestResponseDto(
+        id: json['id'] as String,
+        state: json['state'] as String,
+        executeAfter: json['executeAfter'] as String,
+        created: json['created'] as bool,
+      );
+
+  final String id;
+  final String state;
+  final String executeAfter;
+  final bool created;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'state': state,
+    'executeAfter': executeAfter,
+    'created': created,
+  };
+}
+
+class V1DeletionRetainedRecordsDto {
+  const V1DeletionRetainedRecordsDto({
+    required this.attendance,
+    required this.grades,
+    required this.submissions,
+    required this.wellbeing,
+  });
+
+  factory V1DeletionRetainedRecordsDto.fromJson(Map<String, dynamic> json) =>
+      V1DeletionRetainedRecordsDto(
+        attendance: json['attendance'] as int,
+        grades: json['grades'] as int,
+        submissions: json['submissions'] as int,
+        wellbeing: json['wellbeing'] as int,
+      );
+
+  final int attendance;
+  final int grades;
+  final int submissions;
+  final int wellbeing;
+
+  Map<String, Object?> toJson() => {
+    'attendance': attendance,
+    'grades': grades,
+    'submissions': submissions,
+    'wellbeing': wellbeing,
+  };
+}
+
+class V1EnrollStudentRequestDto {
+  const V1EnrollStudentRequestDto({required this.studentId});
+
+  factory V1EnrollStudentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1EnrollStudentRequestDto(studentId: json['studentId'] as String);
+
+  final String studentId;
+
+  Map<String, Object?> toJson() => {'studentId': studentId};
+}
+
+class V1EnrollmentTransitionDto {
+  const V1EnrollmentTransitionDto({
+    required this.classroomId,
+    required this.studentId,
+    required this.status,
+  });
+
+  factory V1EnrollmentTransitionDto.fromJson(Map<String, dynamic> json) =>
+      V1EnrollmentTransitionDto(
+        classroomId: json['classroomId'] as String,
+        studentId: json['studentId'] as String,
+        status: json['status'] as String,
+      );
+
+  final String classroomId;
+  final String studentId;
+  final String status;
+
+  Map<String, Object?> toJson() => {
+    'classroomId': classroomId,
+    'studentId': studentId,
+    'status': status,
+  };
+}
+
+class V1ExportStatusResponseDto {
+  const V1ExportStatusResponseDto({required this.request});
+
+  factory V1ExportStatusResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1ExportStatusResponseDto(
+        request: json['request'] == null
+            ? null
+            : V1DataExportRequestDto.fromJson(
+                json['request'] as Map<String, dynamic>,
+              ),
+      );
+
+  final V1DataExportRequestDto? request;
+
+  Map<String, Object?> toJson() => {'request': request?.toJson()};
 }
 
 class V1GradeResultDto {
@@ -2522,6 +3380,269 @@ class V1GradeResultPageDto {
   };
 }
 
+class V1GrantMembershipRequestDto {
+  const V1GrantMembershipRequestDto({
+    required this.userId,
+    required this.role,
+    this.reason,
+  });
+
+  factory V1GrantMembershipRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1GrantMembershipRequestDto(
+        userId: json['userId'] as String,
+        role: json['role'] as String,
+        reason: json['reason'] as String?,
+      );
+
+  final String userId;
+  final String role;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {
+    'userId': userId,
+    'role': role,
+    'reason': ?reason,
+  };
+}
+
+class V1GuardianLinkDto {
+  const V1GuardianLinkDto({
+    required this.id,
+    required this.schoolId,
+    required this.studentId,
+    required this.guardianId,
+    required this.relationship,
+    required this.status,
+    required this.expiresAt,
+  });
+
+  factory V1GuardianLinkDto.fromJson(Map<String, dynamic> json) =>
+      V1GuardianLinkDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        studentId: json['studentId'] as String,
+        guardianId: json['guardianId'] as String,
+        relationship: json['relationship'] as String?,
+        status: json['status'] as String,
+        expiresAt: json['expiresAt'] as String?,
+      );
+
+  final String id;
+  final String schoolId;
+  final String studentId;
+  final String guardianId;
+  final String? relationship;
+  final String status;
+  final String? expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'studentId': studentId,
+    'guardianId': guardianId,
+    'relationship': relationship,
+    'status': status,
+    'expiresAt': expiresAt,
+  };
+}
+
+class V1IdentityLinkRequestDto {
+  const V1IdentityLinkRequestDto({
+    required this.provider,
+    required this.idToken,
+    required this.makePrimary,
+  });
+
+  factory V1IdentityLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1IdentityLinkRequestDto(
+        provider: json['provider'] as String,
+        idToken: json['idToken'] as String,
+        makePrimary: json['makePrimary'] as bool,
+      );
+
+  final String provider;
+  final String idToken;
+  final bool makePrimary;
+
+  Map<String, Object?> toJson() => {
+    'provider': provider,
+    'idToken': idToken,
+    'makePrimary': makePrimary,
+  };
+}
+
+class V1IdentityLinkResponseDto {
+  const V1IdentityLinkResponseDto({required this.outcome});
+
+  factory V1IdentityLinkResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1IdentityLinkResponseDto(outcome: json['outcome'] as String);
+
+  final String outcome;
+
+  Map<String, Object?> toJson() => {'outcome': outcome};
+}
+
+class V1IdentityUnlinkRequestDto {
+  const V1IdentityUnlinkRequestDto({
+    required this.provider,
+    required this.subject,
+  });
+
+  factory V1IdentityUnlinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1IdentityUnlinkRequestDto(
+        provider: json['provider'] as String,
+        subject: json['subject'] as String,
+      );
+
+  final String provider;
+  final String subject;
+
+  Map<String, Object?> toJson() => {'provider': provider, 'subject': subject};
+}
+
+class V1IdentityUnlinkResponseDto {
+  const V1IdentityUnlinkResponseDto({required this.outcome});
+
+  factory V1IdentityUnlinkResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1IdentityUnlinkResponseDto(outcome: json['outcome'] as String);
+
+  final String outcome;
+
+  Map<String, Object?> toJson() => {'outcome': outcome};
+}
+
+class V1InvitationDto {
+  const V1InvitationDto({
+    required this.id,
+    required this.schoolId,
+    required this.role,
+    required this.email,
+    required this.status,
+    required this.expiresAt,
+    required this.version,
+  });
+
+  factory V1InvitationDto.fromJson(Map<String, dynamic> json) =>
+      V1InvitationDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        role: json['role'] as String,
+        email: json['email'] as String,
+        status: json['status'] as String,
+        expiresAt: json['expiresAt'] as String,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String schoolId;
+  final String role;
+  final String email;
+  final String status;
+  final String expiresAt;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'role': role,
+    'email': email,
+    'status': status,
+    'expiresAt': expiresAt,
+    'version': version,
+  };
+}
+
+class V1InvitationPageDto {
+  const V1InvitationPageDto({required this.items, required this.nextCursor});
+
+  factory V1InvitationPageDto.fromJson(Map<String, dynamic> json) =>
+      V1InvitationPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1InvitationDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1InvitationDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1IssueInvitationRequestDto {
+  const V1IssueInvitationRequestDto({
+    required this.email,
+    required this.role,
+    this.classroomId,
+  });
+
+  factory V1IssueInvitationRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1IssueInvitationRequestDto(
+        email: json['email'] as String,
+        role: json['role'] as String,
+        classroomId: json['classroomId'] as String?,
+      );
+
+  final String email;
+  final String role;
+  final String? classroomId;
+
+  Map<String, Object?> toJson() => {
+    'email': email,
+    'role': role,
+    'classroomId': ?classroomId,
+  };
+}
+
+class V1IssueInvitationResponseDto {
+  const V1IssueInvitationResponseDto({
+    required this.id,
+    required this.schoolId,
+    required this.role,
+    required this.email,
+    required this.status,
+    required this.expiresAt,
+    required this.version,
+    required this.token,
+  });
+
+  factory V1IssueInvitationResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1IssueInvitationResponseDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        role: json['role'] as String,
+        email: json['email'] as String,
+        status: json['status'] as String,
+        expiresAt: json['expiresAt'] as String,
+        version: json['version'] as int,
+        token: json['token'] as String,
+      );
+
+  final String id;
+  final String schoolId;
+  final String role;
+  final String email;
+  final String status;
+  final String expiresAt;
+  final int version;
+  final String token;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'role': role,
+    'email': email,
+    'status': status,
+    'expiresAt': expiresAt,
+    'version': version,
+    'token': token,
+  };
+}
+
 class V1LessonSessionDto {
   const V1LessonSessionDto({
     required this.id,
@@ -2584,6 +3705,472 @@ class V1LessonSessionPageDto {
   };
 }
 
+class V1LocateStudentRequestDto {
+  const V1LocateStudentRequestDto({required this.studafyId});
+
+  factory V1LocateStudentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1LocateStudentRequestDto(studafyId: json['studafyId'] as String);
+
+  final String studafyId;
+
+  Map<String, Object?> toJson() => {'studafyId': studafyId};
+}
+
+class V1LocateStudentResponseDto {
+  const V1LocateStudentResponseDto({
+    required this.found,
+    required this.studentId,
+    required this.displayName,
+  });
+
+  factory V1LocateStudentResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1LocateStudentResponseDto(
+        found: json['found'] as bool,
+        studentId: json['studentId'] as String?,
+        displayName: json['displayName'] as String?,
+      );
+
+  final bool found;
+  final String? studentId;
+  final String? displayName;
+
+  Map<String, Object?> toJson() => {
+    'found': found,
+    'studentId': studentId,
+    'displayName': displayName,
+  };
+}
+
+class V1MarkNotificationsReadRequestDto {
+  const V1MarkNotificationsReadRequestDto({this.ids, this.all});
+
+  factory V1MarkNotificationsReadRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1MarkNotificationsReadRequestDto(
+    ids: json['ids'] == null
+        ? null
+        : (json['ids'] as List<dynamic>).cast<String>(),
+    all: json['all'] as bool?,
+  );
+
+  final List<String>? ids;
+  final bool? all;
+
+  Map<String, Object?> toJson() => {'ids': ?ids, 'all': ?all};
+}
+
+class V1MarkNotificationsReadResponseDto {
+  const V1MarkNotificationsReadResponseDto({required this.markedCount});
+
+  factory V1MarkNotificationsReadResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1MarkNotificationsReadResponseDto(
+    markedCount: json['markedCount'] as int,
+  );
+
+  final int markedCount;
+
+  Map<String, Object?> toJson() => {'markedCount': markedCount};
+}
+
+class V1MeErrorDto {
+  const V1MeErrorDto();
+
+  factory V1MeErrorDto.fromJson(Map<String, dynamic> json) =>
+      const V1MeErrorDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1MeResponseDto {
+  const V1MeResponseDto({
+    required this.id,
+    required this.displayName,
+    required this.memberships,
+    required this.activeTermId,
+  });
+
+  factory V1MeResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1MeResponseDto(
+        id: json['id'] as String,
+        displayName: json['displayName'] as String,
+        memberships: [
+          for (final item in json['memberships'] as List<dynamic>)
+            V1MembershipDto.fromJson(item as Map<String, dynamic>),
+        ],
+        activeTermId: json['activeTermId'] as String?,
+      );
+
+  final String id;
+  final String displayName;
+  final List<V1MembershipDto> memberships;
+  final String? activeTermId;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'displayName': displayName,
+    'memberships': [for (final item in memberships) item.toJson()],
+    'activeTermId': activeTermId,
+  };
+}
+
+class V1MeetingDto {
+  const V1MeetingDto({
+    required this.id,
+    required this.classroomId,
+    required this.title,
+    required this.startsAt,
+    required this.endsAt,
+    required this.audience,
+    required this.state,
+    required this.meetUrl,
+    required this.version,
+    required this.recipientCount,
+  });
+
+  factory V1MeetingDto.fromJson(Map<String, dynamic> json) => V1MeetingDto(
+    id: json['id'] as String,
+    classroomId: json['classroomId'] as String,
+    title: json['title'] as String,
+    startsAt: json['startsAt'] as String,
+    endsAt: json['endsAt'] as String,
+    audience: json['audience'] as String,
+    state: json['state'] as String,
+    meetUrl: json['meetUrl'] as String?,
+    version: json['version'] as int,
+    recipientCount: json['recipientCount'] as int,
+  );
+
+  final String id;
+  final String classroomId;
+  final String title;
+  final String startsAt;
+  final String endsAt;
+  final String audience;
+  final String state;
+  final String? meetUrl;
+  final int version;
+  final int recipientCount;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'classroomId': classroomId,
+    'title': title,
+    'startsAt': startsAt,
+    'endsAt': endsAt,
+    'audience': audience,
+    'state': state,
+    'meetUrl': meetUrl,
+    'version': version,
+    'recipientCount': recipientCount,
+  };
+}
+
+class V1MeetingDeliveryDto {
+  const V1MeetingDeliveryDto({
+    required this.recipientId,
+    required this.state,
+    required this.deliveredAt,
+  });
+
+  factory V1MeetingDeliveryDto.fromJson(Map<String, dynamic> json) =>
+      V1MeetingDeliveryDto(
+        recipientId: json['recipientId'] as String,
+        state: json['state'] as String,
+        deliveredAt: json['deliveredAt'] as String?,
+      );
+
+  final String recipientId;
+  final String state;
+  final String? deliveredAt;
+
+  Map<String, Object?> toJson() => {
+    'recipientId': recipientId,
+    'state': state,
+    'deliveredAt': deliveredAt,
+  };
+}
+
+class V1MeetingStatusResponseDto {
+  const V1MeetingStatusResponseDto({
+    required this.meeting,
+    required this.deliveries,
+  });
+
+  factory V1MeetingStatusResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1MeetingStatusResponseDto(
+        meeting: V1MeetingDto.fromJson(json['meeting'] as Map<String, dynamic>),
+        deliveries: [
+          for (final item in json['deliveries'] as List<dynamic>)
+            V1MeetingDeliveryDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final V1MeetingDto meeting;
+  final List<V1MeetingDeliveryDto> deliveries;
+
+  Map<String, Object?> toJson() => {
+    'meeting': meeting.toJson(),
+    'deliveries': [for (final item in deliveries) item.toJson()],
+  };
+}
+
+class V1MembershipDto {
+  const V1MembershipDto({
+    required this.id,
+    required this.schoolId,
+    required this.schoolName,
+    required this.role,
+    required this.active,
+  });
+
+  factory V1MembershipDto.fromJson(Map<String, dynamic> json) =>
+      V1MembershipDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        schoolName: json['schoolName'] as String,
+        role: json['role'] as String,
+        active: json['active'] as bool,
+      );
+
+  final String id;
+  final String schoolId;
+  final String schoolName;
+  final String role;
+  final bool active;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'schoolName': schoolName,
+    'role': role,
+    'active': active,
+  };
+}
+
+class V1MembershipLifecycleRequestDto {
+  const V1MembershipLifecycleRequestDto({
+    required this.expectedVersion,
+    this.reason,
+  });
+
+  factory V1MembershipLifecycleRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1MembershipLifecycleRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        reason: json['reason'] as String?,
+      );
+
+  final int expectedVersion;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'reason': ?reason,
+  };
+}
+
+class V1MembershipRecordDto {
+  const V1MembershipRecordDto({
+    required this.id,
+    required this.schoolId,
+    required this.userId,
+    required this.role,
+    required this.status,
+    required this.version,
+  });
+
+  factory V1MembershipRecordDto.fromJson(Map<String, dynamic> json) =>
+      V1MembershipRecordDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        userId: json['userId'] as String,
+        role: json['role'] as String,
+        status: json['status'] as String,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String schoolId;
+  final String userId;
+  final String role;
+  final String status;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'userId': userId,
+    'role': role,
+    'status': status,
+    'version': version,
+  };
+}
+
+class V1MessageDto {
+  const V1MessageDto({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required this.clientMessageId,
+    required this.body,
+    required this.createdAt,
+  });
+
+  factory V1MessageDto.fromJson(Map<String, dynamic> json) => V1MessageDto(
+    id: json['id'] as String,
+    conversationId: json['conversationId'] as String,
+    senderId: json['senderId'] as String,
+    clientMessageId: json['clientMessageId'] as String,
+    body: json['body'] as String,
+    createdAt: json['createdAt'] as String,
+  );
+
+  final String id;
+  final String conversationId;
+  final String senderId;
+  final String clientMessageId;
+  final String body;
+  final String createdAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'conversationId': conversationId,
+    'senderId': senderId,
+    'clientMessageId': clientMessageId,
+    'body': body,
+    'createdAt': createdAt,
+  };
+}
+
+class V1MessagePageDto {
+  const V1MessagePageDto({required this.items, required this.nextCursor});
+
+  factory V1MessagePageDto.fromJson(Map<String, dynamic> json) =>
+      V1MessagePageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1MessageDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1MessageDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1NotificationDto {
+  const V1NotificationDto({
+    required this.id,
+    required this.templateKey,
+    required this.payload,
+    required this.createdAt,
+    required this.readAt,
+  });
+
+  factory V1NotificationDto.fromJson(Map<String, dynamic> json) =>
+      V1NotificationDto(
+        id: json['id'] as String,
+        templateKey: json['templateKey'] as String,
+        payload: json['payload'] as Map<String, dynamic>,
+        createdAt: json['createdAt'] as String,
+        readAt: json['readAt'] as String?,
+      );
+
+  final String id;
+  final String templateKey;
+  final Map<String, dynamic> payload;
+  final String createdAt;
+  final String? readAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'templateKey': templateKey,
+    'payload': payload,
+    'createdAt': createdAt,
+    'readAt': readAt,
+  };
+}
+
+class V1NotificationPageDto {
+  const V1NotificationPageDto({required this.items, required this.nextCursor});
+
+  factory V1NotificationPageDto.fromJson(Map<String, dynamic> json) =>
+      V1NotificationPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1NotificationDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1NotificationDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1NotificationPreferenceDto {
+  const V1NotificationPreferenceDto({
+    required this.schoolId,
+    required this.channel,
+    required this.category,
+    required this.enabled,
+  });
+
+  factory V1NotificationPreferenceDto.fromJson(Map<String, dynamic> json) =>
+      V1NotificationPreferenceDto(
+        schoolId: json['schoolId'] as String?,
+        channel: json['channel'] as String,
+        category: json['category'] as String,
+        enabled: json['enabled'] as bool,
+      );
+
+  final String? schoolId;
+  final String channel;
+  final String category;
+  final bool enabled;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'channel': channel,
+    'category': category,
+    'enabled': enabled,
+  };
+}
+
+class V1NotificationPreferencesResponseDto {
+  const V1NotificationPreferencesResponseDto({
+    required this.items,
+    required this.nextCursor,
+  });
+
+  factory V1NotificationPreferencesResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1NotificationPreferencesResponseDto(
+    items: [
+      for (final item in json['items'] as List<dynamic>)
+        V1NotificationPreferenceDto.fromJson(item as Map<String, dynamic>),
+    ],
+    nextCursor: json['nextCursor'] as String?,
+  );
+
+  final List<V1NotificationPreferenceDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
 class V1PageQueryDto {
   const V1PageQueryDto({
     this.schoolId,
@@ -2620,6 +4207,60 @@ class V1PageQueryDto {
   };
 }
 
+class V1ProfileResponseDto {
+  const V1ProfileResponseDto({
+    required this.id,
+    required this.displayName,
+    required this.locale,
+  });
+
+  factory V1ProfileResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1ProfileResponseDto(
+        id: json['id'] as String,
+        displayName: json['displayName'] as String,
+        locale: json['locale'] as String,
+      );
+
+  final String id;
+  final String displayName;
+  final String locale;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'displayName': displayName,
+    'locale': locale,
+  };
+}
+
+class V1ProvisionSchoolRequestDto {
+  const V1ProvisionSchoolRequestDto({
+    required this.name,
+    required this.timezone,
+    required this.locale,
+    required this.initialAdminUserId,
+  });
+
+  factory V1ProvisionSchoolRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ProvisionSchoolRequestDto(
+        name: json['name'] as String,
+        timezone: json['timezone'] as String,
+        locale: json['locale'] as String,
+        initialAdminUserId: json['initialAdminUserId'] as String,
+      );
+
+  final String name;
+  final String timezone;
+  final String locale;
+  final String initialAdminUserId;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'timezone': timezone,
+    'locale': locale,
+    'initialAdminUserId': initialAdminUserId,
+  };
+}
+
 class V1QuestionScoreReviewDto {
   const V1QuestionScoreReviewDto({
     required this.questionId,
@@ -2642,6 +4283,78 @@ class V1QuestionScoreReviewDto {
     'questionId': questionId,
     'score': score,
     'reason': reason,
+  };
+}
+
+class V1ReauthChallengeRequestDto {
+  const V1ReauthChallengeRequestDto({required this.purpose});
+
+  factory V1ReauthChallengeRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ReauthChallengeRequestDto(purpose: json['purpose'] as String);
+
+  final String purpose;
+
+  Map<String, Object?> toJson() => {'purpose': purpose};
+}
+
+class V1ReauthChallengeResponseDto {
+  const V1ReauthChallengeResponseDto({
+    required this.purpose,
+    required this.requiredAssurance,
+    required this.expiresAt,
+  });
+
+  factory V1ReauthChallengeResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1ReauthChallengeResponseDto(
+        purpose: json['purpose'] as String,
+        requiredAssurance: json['requiredAssurance'] as String,
+        expiresAt: json['expiresAt'] as String,
+      );
+
+  final String purpose;
+  final String requiredAssurance;
+  final String expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'purpose': purpose,
+    'requiredAssurance': requiredAssurance,
+    'expiresAt': expiresAt,
+  };
+}
+
+class V1ReauthVerifyRequestDto {
+  const V1ReauthVerifyRequestDto({required this.purpose});
+
+  factory V1ReauthVerifyRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ReauthVerifyRequestDto(purpose: json['purpose'] as String);
+
+  final String purpose;
+
+  Map<String, Object?> toJson() => {'purpose': purpose};
+}
+
+class V1ReauthVerifyResponseDto {
+  const V1ReauthVerifyResponseDto({
+    required this.purpose,
+    required this.grant,
+    required this.expiresAt,
+  });
+
+  factory V1ReauthVerifyResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1ReauthVerifyResponseDto(
+        purpose: json['purpose'] as String,
+        grant: json['grant'] as String,
+        expiresAt: json['expiresAt'] as String,
+      );
+
+  final String purpose;
+  final String grant;
+  final String expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'purpose': purpose,
+    'grant': grant,
+    'expiresAt': expiresAt,
   };
 }
 
@@ -2706,6 +4419,20 @@ class V1RecordAttendanceResponseDto {
   };
 }
 
+class V1RemoveClassroomStaffRequestDto {
+  const V1RemoveClassroomStaffRequestDto({required this.staffAssignmentId});
+
+  factory V1RemoveClassroomStaffRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RemoveClassroomStaffRequestDto(
+    staffAssignmentId: json['staffAssignmentId'] as String,
+  );
+
+  final String staffAssignmentId;
+
+  Map<String, Object?> toJson() => {'staffAssignmentId': staffAssignmentId};
+}
+
 class V1ReplaceScheduleRequestDto {
   const V1ReplaceScheduleRequestDto({
     required this.expectedVersion,
@@ -2727,6 +4454,103 @@ class V1ReplaceScheduleRequestDto {
   Map<String, Object?> toJson() => {
     'expectedVersion': expectedVersion,
     'schedule': [for (final item in schedule) item.toJson()],
+  };
+}
+
+class V1RequestDataExportRequestDto {
+  const V1RequestDataExportRequestDto();
+
+  factory V1RequestDataExportRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1RequestDataExportRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1RequestGuardianLinkRequestDto {
+  const V1RequestGuardianLinkRequestDto({
+    required this.studentId,
+    this.relationship,
+  });
+
+  factory V1RequestGuardianLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1RequestGuardianLinkRequestDto(
+        studentId: json['studentId'] as String,
+        relationship: json['relationship'] as String?,
+      );
+
+  final String studentId;
+  final String? relationship;
+
+  Map<String, Object?> toJson() => {
+    'studentId': studentId,
+    'relationship': ?relationship,
+  };
+}
+
+class V1RequestMeetingRequestDto {
+  const V1RequestMeetingRequestDto({
+    required this.title,
+    required this.startsAt,
+    required this.endsAt,
+    required this.audience,
+  });
+
+  factory V1RequestMeetingRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1RequestMeetingRequestDto(
+        title: json['title'] as String,
+        startsAt: json['startsAt'] as String,
+        endsAt: json['endsAt'] as String,
+        audience: json['audience'] as String,
+      );
+
+  final String title;
+  final String startsAt;
+  final String endsAt;
+  final String audience;
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'startsAt': startsAt,
+    'endsAt': endsAt,
+    'audience': audience,
+  };
+}
+
+class V1RequestSupportAccessRequestDto {
+  const V1RequestSupportAccessRequestDto({
+    required this.schoolId,
+    required this.reason,
+    required this.ticketRef,
+    this.resourceScope,
+    required this.requiresSecondApprover,
+    required this.durationMinutes,
+  });
+
+  factory V1RequestSupportAccessRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RequestSupportAccessRequestDto(
+    schoolId: json['schoolId'] as String,
+    reason: json['reason'] as String,
+    ticketRef: json['ticketRef'] as String,
+    resourceScope: json['resourceScope'] as Map<String, dynamic>?,
+    requiresSecondApprover: json['requiresSecondApprover'] as bool,
+    durationMinutes: json['durationMinutes'] as int,
+  );
+
+  final String schoolId;
+  final String reason;
+  final String ticketRef;
+  final Map<String, dynamic>? resourceScope;
+  final bool requiresSecondApprover;
+  final int durationMinutes;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'reason': reason,
+    'ticketRef': ticketRef,
+    'resourceScope': ?resourceScope,
+    'requiresSecondApprover': requiresSecondApprover,
+    'durationMinutes': durationMinutes,
   };
 }
 
@@ -2865,6 +4689,45 @@ class V1ReviseResourceRequestDto {
   };
 }
 
+class V1RevokeGuardianLinkRequestDto {
+  const V1RevokeGuardianLinkRequestDto();
+
+  factory V1RevokeGuardianLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1RevokeGuardianLinkRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1RevokeInvitationRequestDto {
+  const V1RevokeInvitationRequestDto();
+
+  factory V1RevokeInvitationRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1RevokeInvitationRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1RevokeSupportAccessRequestDto {
+  const V1RevokeSupportAccessRequestDto({
+    required this.expectedVersion,
+    this.reason,
+  });
+
+  factory V1RevokeSupportAccessRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1RevokeSupportAccessRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        reason: json['reason'] as String?,
+      );
+
+  final int expectedVersion;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'reason': ?reason,
+  };
+}
+
 class V1ScheduleSlotDto {
   const V1ScheduleSlotDto({
     required this.id,
@@ -2960,6 +4823,122 @@ class V1SchoolDto {
     'name': name,
     'timezone': timezone,
     'locale': locale,
+  };
+}
+
+class V1SchoolAdminDto {
+  const V1SchoolAdminDto({
+    required this.id,
+    required this.name,
+    required this.timezone,
+    required this.locale,
+    required this.status,
+    required this.version,
+  });
+
+  factory V1SchoolAdminDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolAdminDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        timezone: json['timezone'] as String,
+        locale: json['locale'] as String,
+        status: json['status'] as String,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String name;
+  final String timezone;
+  final String locale;
+  final String status;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'timezone': timezone,
+    'locale': locale,
+    'status': status,
+    'version': version,
+  };
+}
+
+class V1SchoolLifecycleRequestDto {
+  const V1SchoolLifecycleRequestDto({
+    required this.expectedVersion,
+    this.reason,
+  });
+
+  factory V1SchoolLifecycleRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolLifecycleRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        reason: json['reason'] as String?,
+      );
+
+  final int expectedVersion;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'reason': ?reason,
+  };
+}
+
+class V1SchoolStudentDto {
+  const V1SchoolStudentDto({
+    required this.id,
+    required this.schoolId,
+    required this.userId,
+    required this.studafyId,
+    required this.displayName,
+    required this.provisional,
+  });
+
+  factory V1SchoolStudentDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolStudentDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        userId: json['userId'] as String?,
+        studafyId: json['studafyId'] as String,
+        displayName: json['displayName'] as String,
+        provisional: json['provisional'] as bool,
+      );
+
+  final String id;
+  final String schoolId;
+  final String? userId;
+  final String studafyId;
+  final String displayName;
+  final bool provisional;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'userId': userId,
+    'studafyId': studafyId,
+    'displayName': displayName,
+    'provisional': provisional,
+  };
+}
+
+class V1SendMessageRequestDto {
+  const V1SendMessageRequestDto({
+    required this.clientMessageId,
+    required this.body,
+  });
+
+  factory V1SendMessageRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1SendMessageRequestDto(
+        clientMessageId: json['clientMessageId'] as String,
+        body: json['body'] as String,
+      );
+
+  final String clientMessageId;
+  final String body;
+
+  Map<String, Object?> toJson() => {
+    'clientMessageId': clientMessageId,
+    'body': body,
   };
 }
 
@@ -3100,6 +5079,109 @@ class V1SubmitAssignmentRequestDto {
   Map<String, Object?> toJson() => {'answerText': answerText};
 }
 
+class V1SupportAccessGrantDto {
+  const V1SupportAccessGrantDto({
+    required this.id,
+    required this.schoolId,
+    required this.requestedBy,
+    required this.approvedBy,
+    required this.reason,
+    required this.ticketRef,
+    required this.resourceScope,
+    required this.status,
+    required this.requiresSecondApprover,
+    required this.expiresAt,
+    required this.startedAt,
+    required this.endedAt,
+    required this.version,
+  });
+
+  factory V1SupportAccessGrantDto.fromJson(Map<String, dynamic> json) =>
+      V1SupportAccessGrantDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        requestedBy: json['requestedBy'] as String,
+        approvedBy: json['approvedBy'] as String?,
+        reason: json['reason'] as String,
+        ticketRef: json['ticketRef'] as String,
+        resourceScope: json['resourceScope'] as Map<String, dynamic>,
+        status: json['status'] as String,
+        requiresSecondApprover: json['requiresSecondApprover'] as bool,
+        expiresAt: json['expiresAt'] as String,
+        startedAt: json['startedAt'] as String?,
+        endedAt: json['endedAt'] as String?,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String schoolId;
+  final String requestedBy;
+  final String? approvedBy;
+  final String reason;
+  final String ticketRef;
+  final Map<String, dynamic> resourceScope;
+  final String status;
+  final bool requiresSecondApprover;
+  final String expiresAt;
+  final String? startedAt;
+  final String? endedAt;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'requestedBy': requestedBy,
+    'approvedBy': approvedBy,
+    'reason': reason,
+    'ticketRef': ticketRef,
+    'resourceScope': resourceScope,
+    'status': status,
+    'requiresSecondApprover': requiresSecondApprover,
+    'expiresAt': expiresAt,
+    'startedAt': startedAt,
+    'endedAt': endedAt,
+    'version': version,
+  };
+}
+
+class V1SupportAccessGrantPageDto {
+  const V1SupportAccessGrantPageDto({
+    required this.items,
+    required this.nextCursor,
+  });
+
+  factory V1SupportAccessGrantPageDto.fromJson(Map<String, dynamic> json) =>
+      V1SupportAccessGrantPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1SupportAccessGrantDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1SupportAccessGrantDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1SupportAccessLifecycleRequestDto {
+  const V1SupportAccessLifecycleRequestDto({required this.expectedVersion});
+
+  factory V1SupportAccessLifecycleRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SupportAccessLifecycleRequestDto(
+    expectedVersion: json['expectedVersion'] as int,
+  );
+
+  final int expectedVersion;
+
+  Map<String, Object?> toJson() => {'expectedVersion': expectedVersion};
+}
+
 class V1TermDto {
   const V1TermDto({
     required this.id,
@@ -3156,6 +5238,38 @@ class V1TermPageDto {
   };
 }
 
+class V1TransferEnrollmentRequestDto {
+  const V1TransferEnrollmentRequestDto({
+    required this.studentId,
+    required this.targetClassroomId,
+  });
+
+  factory V1TransferEnrollmentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1TransferEnrollmentRequestDto(
+        studentId: json['studentId'] as String,
+        targetClassroomId: json['targetClassroomId'] as String,
+      );
+
+  final String studentId;
+  final String targetClassroomId;
+
+  Map<String, Object?> toJson() => {
+    'studentId': studentId,
+    'targetClassroomId': targetClassroomId,
+  };
+}
+
+class V1UnreadCountResponseDto {
+  const V1UnreadCountResponseDto({required this.unreadCount});
+
+  factory V1UnreadCountResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1UnreadCountResponseDto(unreadCount: json['unreadCount'] as int);
+
+  final int unreadCount;
+
+  Map<String, Object?> toJson() => {'unreadCount': unreadCount};
+}
+
 class V1UpdateClassroomRequestDto {
   const V1UpdateClassroomRequestDto({
     required this.expectedVersion,
@@ -3187,6 +5301,67 @@ class V1UpdateClassroomRequestDto {
     'section': section,
     'room': room,
   };
+}
+
+class V1UpdateNotificationPreferenceRequestDto {
+  const V1UpdateNotificationPreferenceRequestDto({
+    this.schoolId,
+    required this.channel,
+    required this.category,
+    required this.enabled,
+  });
+
+  factory V1UpdateNotificationPreferenceRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1UpdateNotificationPreferenceRequestDto(
+    schoolId: json['schoolId'] as String?,
+    channel: json['channel'] as String,
+    category: json['category'] as String,
+    enabled: json['enabled'] as bool,
+  );
+
+  final String? schoolId;
+  final String channel;
+  final String category;
+  final bool enabled;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': ?schoolId,
+    'channel': channel,
+    'category': category,
+    'enabled': enabled,
+  };
+}
+
+class V1UpdateProfileRequestDto {
+  const V1UpdateProfileRequestDto({this.displayName, this.locale});
+
+  factory V1UpdateProfileRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1UpdateProfileRequestDto(
+        displayName: json['displayName'] as String?,
+        locale: json['locale'] as String?,
+      );
+
+  final String? displayName;
+  final String? locale;
+
+  Map<String, Object?> toJson() => {
+    'displayName': ?displayName,
+    'locale': ?locale,
+  };
+}
+
+class V1VerifyGuardianLinkRequestDto {
+  const V1VerifyGuardianLinkRequestDto({this.expiresInDays});
+
+  factory V1VerifyGuardianLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1VerifyGuardianLinkRequestDto(
+        expiresInDays: json['expiresInDays'] as int?,
+      );
+
+  final int? expiresInDays;
+
+  Map<String, Object?> toJson() => {'expiresInDays': ?expiresInDays};
 }
 
 class V1VersionCommandRequestDto {
@@ -3274,4 +5449,15 @@ class V1WellbeingPageDto {
     'items': [for (final item in items) item.toJson()],
     'nextCursor': nextCursor,
   };
+}
+
+class V1WithdrawStudentRequestDto {
+  const V1WithdrawStudentRequestDto({required this.studentId});
+
+  factory V1WithdrawStudentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1WithdrawStudentRequestDto(studentId: json['studentId'] as String);
+
+  final String studentId;
+
+  Map<String, Object?> toJson() => {'studentId': studentId};
 }
