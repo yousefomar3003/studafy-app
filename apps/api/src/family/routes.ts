@@ -1,6 +1,9 @@
 import type { Context, Hono } from "hono";
 import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
-import type { AuthorizationDependencies, AuthorizationEnv } from "../authorization/middleware";
+import type {
+  AuthorizationDependencies,
+  AuthorizationEnv,
+} from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
 import { createCatalogueRoutes } from "../platform/catalogueRoutes";
 import type { FamilyRepository } from "./repository";

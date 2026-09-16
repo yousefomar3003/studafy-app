@@ -14,7 +14,10 @@ import { PostgresIdempotencyRepository } from "./platform/idempotency";
 import { createRedactingLogger } from "./platform/logging";
 import { createAcademicRoutes } from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
-import { createSchoolAdminRoutes, createSchoolRosterRoutes } from "./school-admin/routes";
+import {
+  createSchoolAdminRoutes,
+  createSchoolRosterRoutes,
+} from "./school-admin/routes";
 import { PostgresSchoolAdminRepository } from "./school-admin/repository";
 import { createInvitationsRoutes } from "./invitations/routes";
 import { PostgresInvitationsRepository } from "./invitations/repository";
@@ -239,22 +242,24 @@ const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
 // createAuthRoutes mounts one companion router at "/"; every API-042 module
 // is combined here first so each rides along on the same slot instead of
 // widening that function's signature every time a new module lands.
-const combinedRoutes = academic || schoolAdmin || invitations || family || communications || meetings || notifications || account || supportAccess || schoolRoster
-  ? (() => {
-    const combined = new Hono<AuthorizationEnv>();
-    if (academic) combined.route("/", academic);
-    if (schoolAdmin) combined.route("/", schoolAdmin);
-    if (invitations) combined.route("/", invitations);
-    if (family) combined.route("/", family);
-    if (communications) combined.route("/", communications);
-    if (meetings) combined.route("/", meetings);
-    if (notifications) combined.route("/", notifications);
-    if (account) combined.route("/", account);
-    if (supportAccess) combined.route("/", supportAccess);
-    if (schoolRoster) combined.route("/", schoolRoster);
-    return combined;
-  })()
-  : undefined;
+const combinedRoutes =
+  academic || schoolAdmin || invitations || family || communications ||
+    meetings || notifications || account || supportAccess || schoolRoster
+    ? (() => {
+      const combined = new Hono<AuthorizationEnv>();
+      if (academic) combined.route("/", academic);
+      if (schoolAdmin) combined.route("/", schoolAdmin);
+      if (invitations) combined.route("/", invitations);
+      if (family) combined.route("/", family);
+      if (communications) combined.route("/", communications);
+      if (meetings) combined.route("/", meetings);
+      if (notifications) combined.route("/", notifications);
+      if (account) combined.route("/", account);
+      if (supportAccess) combined.route("/", supportAccess);
+      if (schoolRoster) combined.route("/", schoolRoster);
+      return combined;
+    })()
+    : undefined;
 
 const auth = authDependencies
   ? createAuthRoutes(

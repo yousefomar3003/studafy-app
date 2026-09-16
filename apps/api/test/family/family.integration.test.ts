@@ -27,7 +27,7 @@ const SCHOOL = "5f440000-0000-4000-8000-0000000000b1";
 const STUDENT_USER = "5f440000-0000-4000-8000-0000000000a3";
 const STUDENT_ROW = "5f440000-0000-4000-8000-0000000000c1";
 
-const CURSOR_KEY = "api042-family-integration-cursor-key-01";
+const CURSOR_KEY = "api042-family-integration-cursor-key-0000000001";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
@@ -142,7 +142,10 @@ suite("API-042 S3 family over the real /v1 stack", () => {
     app.route(
       "/",
       createFamilyRoutes(
-        { repository: new PostgresFamilyRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresFamilyRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -172,7 +175,11 @@ suite("API-042 S3 family over the real /v1 stack", () => {
       body: { studafyId: "NOPE-DOES-NOT-EXIST" },
     });
     expect(res.status).toBe(200);
-    const body = await res.json() as { found: boolean; studentId: null; displayName: null };
+    const body = await res.json() as {
+      found: boolean;
+      studentId: null;
+      displayName: null;
+    };
     expect(body.found).toBe(false);
     expect(body.studentId).toBeNull();
     expect(body.displayName).toBeNull();

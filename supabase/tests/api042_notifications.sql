@@ -16,21 +16,21 @@ select ok(
 
 -- Simulate three notification-producing events for the teacher and one for
 -- the student, the way a future command or OPS-061 worker would.
-select private.notify_recipient(:'school_id', :'teacher_user', 'academic.grade_published', '{"assessmentId":"x"}'::jsonb, 'evt-1', 'notify-teacher-1');
+select private.notify_recipient(:'school_id', :'teacher_user', 'academic.grade_published', '{"assessmentId":"x"}'::jsonb, 'evt-1', 'notify-teacher-0000000001');
 select private.notify_recipient(:'school_id', :'teacher_user', 'family.guardian_link_requested', '{"studentId":"y"}'::jsonb, 'evt-2', 'notify-teacher-2');
 select private.notify_recipient(:'school_id', :'teacher_user', 'communications.message_sent', '{"conversationId":"z"}'::jsonb, 'evt-3', 'notify-teacher-3');
 select private.notify_recipient(:'school_id', :'student_user', 'academic.assignment_published', '{"assignmentId":"a"}'::jsonb, 'evt-4', 'notify-student-1');
 
 -- A repeated call with the same idempotency key must not create a second
 -- outbox/delivery row.
-select private.notify_recipient(:'school_id', :'teacher_user', 'academic.grade_published', '{"assessmentId":"x"}'::jsonb, 'evt-1', 'notify-teacher-1');
+select private.notify_recipient(:'school_id', :'teacher_user', 'academic.grade_published', '{"assessmentId":"x"}'::jsonb, 'evt-1', 'notify-teacher-0000000001');
 select is(
-  (select count(*) from public.notification_outbox where school_id = :'school_id' and idempotency_key = 'notify-teacher-1'),
+  (select count(*) from public.notification_outbox where school_id = :'school_id' and idempotency_key = 'notify-teacher-0000000001'),
   1::bigint, 'notify_recipient is idempotent on (school_id, idempotency_key)'
 );
 select is(
   (select count(*) from public.notification_deliveries nd join public.notification_outbox o on o.id = nd.outbox_id
-   where o.idempotency_key = 'notify-teacher-1'),
+   where o.idempotency_key = 'notify-teacher-0000000001'),
   1::bigint, 'the matching delivery row is not duplicated either'
 );
 

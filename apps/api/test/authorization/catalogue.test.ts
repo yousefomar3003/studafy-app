@@ -5,7 +5,10 @@ import { LogCollector } from "@studafy/test-support";
 import { Hono } from "hono";
 import { createAuthRoutes } from "../../src/auth/routes";
 import { createAcademicRoutes } from "../../src/academic/routes";
-import { createSchoolAdminRoutes, createSchoolRosterRoutes } from "../../src/school-admin/routes";
+import {
+  createSchoolAdminRoutes,
+  createSchoolRosterRoutes,
+} from "../../src/school-admin/routes";
 import { createInvitationsRoutes } from "../../src/invitations/routes";
 import { createFamilyRoutes } from "../../src/family/routes";
 import { createCommunicationsRoutes } from "../../src/communications/routes";

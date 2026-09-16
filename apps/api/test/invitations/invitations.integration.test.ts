@@ -32,7 +32,7 @@ const TEACHER = "5f430000-0000-4000-8000-0000000000a2";
 const INVITEE = "5f430000-0000-4000-8000-0000000000a3";
 const SCHOOL = "5f430000-0000-4000-8000-0000000000b1";
 
-const CURSOR_KEY = "api042-inv-integration-cursor-key-000001";
+const CURSOR_KEY = "api042-inv-integration-cursor-key-0000000001";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
@@ -148,7 +148,10 @@ suite("API-042 S2 invitations over the real /v1 stack", () => {
     app.route(
       "/",
       createInvitationsRoutes(
-        { repository: new PostgresInvitationsRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresInvitationsRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -165,7 +168,10 @@ suite("API-042 S2 invitations over the real /v1 stack", () => {
     const res = await request(`/v1/schools/${SCHOOL}/invitations`, {
       method: "POST",
       subject: TEACHER,
-      body: { email: "api042.inv.invitee@synthetic.studafy.test", role: "teacher" },
+      body: {
+        email: "api042.inv.invitee@synthetic.studafy.test",
+        role: "teacher",
+      },
     });
     expect([403, 404]).toContain(res.status);
   });
@@ -174,7 +180,10 @@ suite("API-042 S2 invitations over the real /v1 stack", () => {
     const res = await request(`/v1/schools/${SCHOOL}/invitations`, {
       method: "POST",
       subject: ADMIN,
-      body: { email: "api042.inv.invitee@synthetic.studafy.test", role: "teacher" },
+      body: {
+        email: "api042.inv.invitee@synthetic.studafy.test",
+        role: "teacher",
+      },
     });
     expect(res.status).toBe(201);
     const body = await res.json() as {
@@ -194,7 +203,11 @@ suite("API-042 S2 invitations over the real /v1 stack", () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json() as { items: { email: string }[] };
-    expect(body.items.some((i) => i.email === "api042.inv.invitee@synthetic.studafy.test"))
+    expect(
+      body.items.some((i) =>
+        i.email === "api042.inv.invitee@synthetic.studafy.test"
+      ),
+    )
       .toBe(true);
   });
 

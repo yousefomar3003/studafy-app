@@ -85,7 +85,10 @@ function opaqueGrant(): string {
     .replace(/=+$/, "");
 }
 
-async function mintReauthGrant(subject: string, purpose: string): Promise<string> {
+async function mintReauthGrant(
+  subject: string,
+  purpose: string,
+): Promise<string> {
   const grant = opaqueGrant();
   const minted = await contexts.issueReauthGrant(subject, {
     purpose,
@@ -156,7 +159,10 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
     app.route(
       "/",
       createAccountRoutes(
-        { repository: new PostgresAccountRepository(sql), cursorSigningKey: "api042-account-cursor-key-00" },
+        {
+          repository: new PostgresAccountRepository(sql),
+          cursorSigningKey: "api042-account-cursor-key-00",
+        },
         authorization,
         idempotency,
         authDependencies,
@@ -192,14 +198,20 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
   });
 
   test("requesting an export without a recent-auth grant is refused", async () => {
-    const res = await request("/v1/account/export-request", { method: "POST", subject: USER_A, body: {} });
+    const res = await request("/v1/account/export-request", {
+      method: "POST",
+      subject: USER_A,
+      body: {},
+    });
     expect(res.status).toBe(401);
     const body = await res.json() as { code: string };
     expect(body.code).toBe("REAUTH_REQUIRED");
   });
 
   test("export request/status round-trips and a second request reuses the pending one", async () => {
-    const before = await request("/v1/account/export-status", { subject: USER_A });
+    const before = await request("/v1/account/export-status", {
+      subject: USER_A,
+    });
     expect((await before.json() as { request: unknown }).request).toBeNull();
 
     const firstGrant = await mintReauthGrant(USER_A, "account_data_export");
@@ -223,8 +235,12 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
     const secondBody = await second.json() as { id: string };
     expect(secondBody.id).toBe(firstBody.id);
 
-    const status = await request("/v1/account/export-status", { subject: USER_A });
-    const statusBody = await status.json() as { request: { id: string } | null };
+    const status = await request("/v1/account/export-status", {
+      subject: USER_A,
+    });
+    const statusBody = await status.json() as {
+      request: { id: string } | null;
+    };
     expect(statusBody.request?.id).toBe(firstBody.id);
   });
 });

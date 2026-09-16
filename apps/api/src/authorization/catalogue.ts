@@ -369,7 +369,8 @@ export const PERMISSION_CATALOGUE = {
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "Suspend a school as its administrator or a platform operator.",
+    description:
+      "Suspend a school as its administrator or a platform operator.",
   },
   "school.close": {
     resource: "school",
@@ -455,14 +456,16 @@ export const PERMISSION_CATALOGUE = {
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "List conversations the authenticated actor actively participates in, across every school.",
+    description:
+      "List conversations the authenticated actor actively participates in, across every school.",
   },
   "conversation.create": {
     resource: "conversation",
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Create a conversation as a member or verified guardian of the named school.",
+    description:
+      "Create a conversation as a member or verified guardian of the named school.",
   },
   // Not tenantRequired for the same reason as guardian_link.revoke: a
   // verified-guardian participant frequently has no memberships row at all.
@@ -472,14 +475,16 @@ export const PERMISSION_CATALOGUE = {
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "List messages in a conversation the actor actively participates in.",
+    description:
+      "List messages in a conversation the actor actively participates in.",
   },
   "message.send": {
     resource: "conversation",
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "Send a message in a conversation the actor actively participates in.",
+    description:
+      "Send a message in a conversation the actor actively participates in.",
   },
   "announcement.create": resource(
     "school_or_classroom",
@@ -510,28 +515,32 @@ export const PERMISSION_CATALOGUE = {
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "List or count the authenticated actor's own in-app notifications.",
+    description:
+      "List or count the authenticated actor's own in-app notifications.",
   },
   "notification.mark_read": {
     resource: "notification",
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Mark the authenticated actor's own notifications read, bounded to 100 ids or all.",
+    description:
+      "Mark the authenticated actor's own notifications read, bounded to 100 ids or all.",
   },
   "notification.preferences.read": {
     resource: "notification_preference",
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Read the authenticated actor's own notification channel/category preferences.",
+    description:
+      "Read the authenticated actor's own notification channel/category preferences.",
   },
   "notification.preferences.write": {
     resource: "notification_preference",
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Set one of the authenticated actor's own notification channel/category preferences.",
+    description:
+      "Set one of the authenticated actor's own notification channel/category preferences.",
   },
 
   // API-042 S7: profile correction and data export request/status.
@@ -542,7 +551,8 @@ export const PERMISSION_CATALOGUE = {
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Update the authenticated actor's own allowlisted profile fields.",
+    description:
+      "Update the authenticated actor's own allowlisted profile fields.",
   },
   "account.export.request": {
     resource: "data_export_request",
@@ -556,7 +566,8 @@ export const PERMISSION_CATALOGUE = {
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Read the status of the authenticated actor's own most recent data export request.",
+    description:
+      "Read the status of the authenticated actor's own most recent data export request.",
   },
 
   // API-042 S8: time-bounded, MFA-gated, two-person-approved support
@@ -572,28 +583,32 @@ export const PERMISSION_CATALOGUE = {
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Request a time-bounded support session as a platform operator, with MFA and a ticket reference.",
+    description:
+      "Request a time-bounded support session as a platform operator, with MFA and a ticket reference.",
   },
   "support_access.approve": {
     resource: "support_access_grant",
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "Approve a pending support-access request as a different platform operator, with MFA.",
+    description:
+      "Approve a pending support-access request as a different platform operator, with MFA.",
   },
   "support_access.start": {
     resource: "support_access_grant",
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "Start an approved support session as its exact original requester.",
+    description:
+      "Start an approved support session as its exact original requester.",
   },
   "support_access.revoke": {
     resource: "support_access_grant",
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "Revoke a support-access grant as a platform operator or the affected school's administrator.",
+    description:
+      "Revoke a support-access grant as a platform operator or the affected school's administrator.",
   },
   "support_access.list": resource(
     "school",
@@ -604,7 +619,8 @@ export const PERMISSION_CATALOGUE = {
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: false,
-    description: "Read meeting and delivery status as staff or an invited recipient.",
+    description:
+      "Read meeting and delivery status as staff or an invited recipient.",
   },
   "guardian_link.verify": resource(
     "guardian_link",

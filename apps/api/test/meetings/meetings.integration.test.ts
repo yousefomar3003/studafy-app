@@ -30,7 +30,7 @@ const CLASSROOM = "5f460000-0000-4000-8000-0000000000d1";
 const STUDENT_USER = "5f460000-0000-4000-8000-0000000000a4";
 const STUDENT_ROW = "5f460000-0000-4000-8000-0000000000e1";
 
-const CURSOR_KEY = "api042-meetings-integration-cursor-key-01";
+const CURSOR_KEY = "api042-meetings-integration-cursor-key-0000000001";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
@@ -182,7 +182,10 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
     app.route(
       "/",
       createMeetingsRoutes(
-        { repository: new PostgresMeetingsRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresMeetingsRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -207,7 +210,11 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
       },
     });
     expect(res.status).toBe(201);
-    const body = await res.json() as { id: string; state: string; recipientCount: number };
+    const body = await res.json() as {
+      id: string;
+      state: string;
+      recipientCount: number;
+    };
     expect(body.state).toBe("pending");
     // Student + guardian + lead teacher, resolved by one bulk query.
     expect(body.recipientCount).toBe(3);
@@ -215,7 +222,9 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
   });
 
   test("the guardian recipient (no memberships row) reads meeting status", async () => {
-    const res = await request(`/v1/meetings/${meetingId}`, { subject: GUARDIAN });
+    const res = await request(`/v1/meetings/${meetingId}`, {
+      subject: GUARDIAN,
+    });
     expect(res.status).toBe(200);
     const body = await res.json() as { deliveries: { recipientId: string }[] };
     expect(body.deliveries.some((d) => d.recipientId === GUARDIAN)).toBe(true);
@@ -225,7 +234,9 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
     // ADMIN is a school admin of the same school, so they ARE authorized
     // (is_meeting_authorized covers admins); this instead proves a bare
     // 404 problem shape on an unrelated random id.
-    const res = await request(`/v1/meetings/${crypto.randomUUID()}`, { subject: GUARDIAN });
+    const res = await request(`/v1/meetings/${crypto.randomUUID()}`, {
+      subject: GUARDIAN,
+    });
     expect(res.status).toBe(404);
   });
 

@@ -14,3 +14,27 @@
 071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:958
 071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:986
 071303b9d11341147dfb9a1f48e7e94dc95fa6bd:apps/api/test/academic/academic.integration.test.ts:generic-api-key:1113
+
+# API-042 synthetic cursor-signing-key/idempotency-key fixtures introduced on
+# feat/api-042-school-operations before the naming convention above (long
+# trailing zero padding to keep entropy below the generic-api-key threshold)
+# was applied. Same class of false positive as above, not a credential.
+# Fixed going forward in the same commit that added these ignore entries;
+# these fingerprints cover the values as they existed in the commits below,
+# which are not rewritten per this repo's forward-only history policy.
+928a3debff45f7a2913a4c061175d95dd447286a:apps/api/test/invitations/invitations.integration.test.ts:generic-api-key:35
+dc562da147a1dd675f0ab6911c6a61a3b8abedd0:apps/api/test/family/family.integration.test.ts:generic-api-key:30
+139b1b6e583f9b5755c7ca97369cba098e8b51c4:apps/api/test/communications/communications.integration.test.ts:generic-api-key:31
+20a4645d13e9c6a35317c80765c11ca95db1b6d9:apps/api/test/meetings/meetings.integration.test.ts:generic-api-key:33
+1cf80cfeeec67614a948c77327a921e2b4bea989:apps/api/test/notifications/notifications.integration.test.ts:generic-api-key:26
+1cf80cfeeec67614a948c77327a921e2b4bea989:supabase/tests/api042_notifications.sql:generic-api-key:28
+1cf80cfeeec67614a948c77327a921e2b4bea989:supabase/tests/api042_notifications.sql:generic-api-key:33
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:66
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:76
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:85
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:94
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:103
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:142
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:152
+b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:164
+17211c3a164a415a0a46b9e03da4e61054908254:apps/api/test/school-admin/roster.integration.test.ts:generic-api-key:30

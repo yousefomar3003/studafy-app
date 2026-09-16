@@ -137,7 +137,9 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
           sessionId: null,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
-          assuranceLevel: c.req.header("x-test-aal2") === "true" ? "aal2" : "aal1",
+          assuranceLevel: c.req.header("x-test-aal2") === "true"
+            ? "aal2"
+            : "aal1",
           authMethods: [],
           claims: {},
         },
@@ -152,7 +154,10 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
     app.route(
       "/",
       createSupportAccessRoutes(
-        { repository: new PostgresSupportAccessRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresSupportAccessRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -170,7 +175,11 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
       method: "POST",
       subject: TEACHER,
       aal2: true,
-      body: { schoolId: SCHOOL, reason: "Investigating a support ticket", ticketRef: "TICK-HTTP-1" },
+      body: {
+        schoolId: SCHOOL,
+        reason: "Investigating a support ticket",
+        ticketRef: "TICK-HTTP-1",
+      },
     });
     expect(res.status).toBe(403);
   });
@@ -180,7 +189,11 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
       method: "POST",
       subject: OPERATOR_A,
       aal2: false,
-      body: { schoolId: SCHOOL, reason: "Investigating a support ticket", ticketRef: "TICK-HTTP-2" },
+      body: {
+        schoolId: SCHOOL,
+        reason: "Investigating a support ticket",
+        ticketRef: "TICK-HTTP-2",
+      },
     });
     expect(res.status).toBe(403);
   });
@@ -230,12 +243,15 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
   });
 
   test("only the original requester can start the approved session", async () => {
-    const wrongActor = await request(`/internal/support-access/${grantId}/start`, {
-      method: "POST",
-      subject: OPERATOR_B,
-      aal2: true,
-      body: { expectedVersion: 2 },
-    });
+    const wrongActor = await request(
+      `/internal/support-access/${grantId}/start`,
+      {
+        method: "POST",
+        subject: OPERATOR_B,
+        aal2: true,
+        body: { expectedVersion: 2 },
+      },
+    );
     expect(wrongActor.status).toBe(404);
 
     const res = await request(`/internal/support-access/${grantId}/start`, {
@@ -245,7 +261,10 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
       body: { expectedVersion: 2 },
     });
     expect(res.status).toBe(200);
-    const body = await res.json() as { status: string; startedAt: string | null };
+    const body = await res.json() as {
+      status: string;
+      startedAt: string | null;
+    };
     expect(body.status).toBe("active");
     expect(body.startedAt).not.toBeNull();
   });
@@ -270,10 +289,16 @@ suite("API-042 S8 support-access over the real /v1 stack", () => {
   });
 
   test("an ordinary teacher cannot list a school's support-access grants, but the admin can", async () => {
-    const denied = await request(`/internal/support-access?schoolId=${SCHOOL}`, { subject: TEACHER });
+    const denied = await request(
+      `/internal/support-access?schoolId=${SCHOOL}`,
+      { subject: TEACHER },
+    );
     expect(denied.status).toBe(404);
 
-    const allowed = await request(`/internal/support-access?schoolId=${SCHOOL}`, { subject: ADMIN });
+    const allowed = await request(
+      `/internal/support-access?schoolId=${SCHOOL}`,
+      { subject: ADMIN },
+    );
     expect(allowed.status).toBe(200);
     const body = await allowed.json() as { items: { id: string }[] };
     expect(body.items.some((item) => item.id === grantId)).toBe(true);

@@ -50,7 +50,9 @@ function readLocalStack(): {
     encoding: "utf8",
   });
   if (status.status !== 0) {
-    throw new Error("Could not read the local stack. Run `bunx supabase start` first.");
+    throw new Error(
+      "Could not read the local stack. Run `bunx supabase start` first.",
+    );
   }
   const values = new Map<string, string>();
   for (const line of status.stdout.split("\n")) {
@@ -62,7 +64,9 @@ function readLocalStack(): {
   const serviceRoleKey = values.get("SERVICE_ROLE_KEY");
   const publishableKey = values.get("PUBLISHABLE_KEY");
   if (!apiUrl || !dbUrl || !serviceRoleKey || !publishableKey) {
-    throw new Error("The local stack did not report API_URL/DB_URL/SERVICE_ROLE_KEY/PUBLISHABLE_KEY.");
+    throw new Error(
+      "The local stack did not report API_URL/DB_URL/SERVICE_ROLE_KEY/PUBLISHABLE_KEY.",
+    );
   }
   return { apiUrl, dbUrl, serviceRoleKey, publishableKey };
 }
@@ -110,7 +114,9 @@ async function ensureUser(email: string, fullName: string): Promise<string> {
       headers: adminHeaders,
       body: JSON.stringify({ password: REVIEWER_PASSWORD }),
     });
-    if (!res.ok) throw new Error(`Failed to reset password for ${email} (${res.status})`);
+    if (!res.ok) {
+      throw new Error(`Failed to reset password for ${email} (${res.status})`);
+    }
     return existing;
   }
   const res = await fetch(`${stack.apiUrl}/auth/v1/admin/users`, {
@@ -131,12 +137,17 @@ async function ensureUser(email: string, fullName: string): Promise<string> {
 async function passwordLogin(email: string): Promise<string> {
   const res = await fetch(`${stack.apiUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
-    headers: { apikey: stack.publishableKey, "Content-Type": "application/json" },
+    headers: {
+      apikey: stack.publishableKey,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ email, password: REVIEWER_PASSWORD }),
   });
   if (!res.ok) throw new Error(`Login failed for ${email} (${res.status})`);
   const body = await res.json() as { access_token?: string };
-  if (!body.access_token) throw new Error(`Login for ${email} returned no access token`);
+  if (!body.access_token) {
+    throw new Error(`Login for ${email} returned no access token`);
+  }
   return body.access_token;
 }
 
@@ -192,7 +203,10 @@ async function main(): Promise<void> {
     student: await ensureUser(REVIEWER_EMAIL.student, "Reviewer Student"),
     guardian: await ensureUser(REVIEWER_EMAIL.guardian, "Reviewer Guardian"),
   };
-  const seedOperatorId = await ensureUser(SEED_OPERATOR_EMAIL, "Reviewer Seed Operator");
+  const seedOperatorId = await ensureUser(
+    SEED_OPERATOR_EMAIL,
+    "Reviewer Seed Operator",
+  );
 
   // The one sanctioned direct-SQL step - see the module docstring.
   await sql`
@@ -201,7 +215,9 @@ async function main(): Promise<void> {
     on conflict (user_id) do nothing
   `;
 
-  console.log("Logging in as each account to obtain real, JWKS-verifiable tokens...");
+  console.log(
+    "Logging in as each account to obtain real, JWKS-verifiable tokens...",
+  );
   const tokens: Record<ReviewerRole, string> = {
     admin: await passwordLogin(REVIEWER_EMAIL.admin),
     teacher: await passwordLogin(REVIEWER_EMAIL.teacher),
@@ -230,9 +246,16 @@ async function main(): Promise<void> {
       headers,
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
-    const parsed = await res.json().catch(() => ({})) as Record<string, unknown>;
+    const parsed = await res.json().catch(() => ({})) as Record<
+      string,
+      unknown
+    >;
     if (!res.ok) {
-      throw new Error(`${method} ${path} as ${role} failed (${res.status}): ${JSON.stringify(parsed)}`);
+      throw new Error(
+        `${method} ${path} as ${role} failed (${res.status}): ${
+          JSON.stringify(parsed)
+        }`,
+      );
     }
     return parsed;
   }
@@ -246,7 +269,9 @@ async function main(): Promise<void> {
   });
   const schoolId = school["id"] as string;
 
-  console.log("Creating the term and classroom (real createTerm/createClassroom)...");
+  console.log(
+    "Creating the term and classroom (real createTerm/createClassroom)...",
+  );
   await call("admin", "POST", `/v1/schools/${schoolId}/terms`, {
     name: "Reviewer Term",
     startsOn: "2026-09-01",
@@ -262,30 +287,53 @@ async function main(): Promise<void> {
   });
   const classroomId = classroom["id"] as string;
 
-  console.log("Inviting the teacher, student and guardian (real issueInvitation/acceptInvitation)...");
+  console.log(
+    "Inviting the teacher, student and guardian (real issueInvitation/acceptInvitation)...",
+  );
   for (const role of ["teacher", "student", "guardian"] as const) {
-    const invitation = await call("admin", "POST", `/v1/schools/${schoolId}/invitations`, {
-      email: REVIEWER_EMAIL[role],
-      role,
+    const invitation = await call(
+      "admin",
+      "POST",
+      `/v1/schools/${schoolId}/invitations`,
+      {
+        email: REVIEWER_EMAIL[role],
+        role,
+      },
+    );
+    await call(role, "POST", "/v1/invitations/accept", {
+      token: invitation["token"],
     });
-    await call(role, "POST", "/v1/invitations/accept", { token: invitation["token"] });
   }
 
-  console.log("Assigning the teacher and enrolling the student (real assignClassroomStaff/createStudent/enrollStudent)...");
+  console.log(
+    "Assigning the teacher and enrolling the student (real assignClassroomStaff/createStudent/enrollStudent)...",
+  );
   await call("admin", "POST", `/v1/classrooms/${classroomId}/staff/assign`, {
     userId: userIds.teacher,
     role: "co_teacher",
   });
-  const student = await call("admin", "POST", `/v1/schools/${schoolId}/students`, {
-    displayName: "Reviewer Student",
-    userId: userIds.student,
-  });
+  const student = await call(
+    "admin",
+    "POST",
+    `/v1/schools/${schoolId}/students`,
+    {
+      displayName: "Reviewer Student",
+      userId: userIds.student,
+    },
+  );
   const studentId = student["id"] as string;
-  await call("admin", "POST", `/v1/classrooms/${classroomId}/enrollments/enroll`, {
-    studentId,
-  });
+  await call(
+    "admin",
+    "POST",
+    `/v1/classrooms/${classroomId}/enrollments/enroll`,
+    {
+      studentId,
+    },
+  );
 
-  console.log("Linking and verifying the guardian (real requestGuardianLink/verifyGuardianLink)...");
+  console.log(
+    "Linking and verifying the guardian (real requestGuardianLink/verifyGuardianLink)...",
+  );
   const link = await call("guardian", "POST", "/v1/guardian-links", {
     studentId,
     relationship: "parent",
@@ -302,7 +350,11 @@ async function main(): Promise<void> {
 function printCredentials(): void {
   console.log("\nReviewer credentials (non-production only):");
   for (const role of ROLES) {
-    console.log(`  ${role.padEnd(9)} ${REVIEWER_EMAIL[role]}  password: ${REVIEWER_PASSWORD}`);
+    console.log(
+      `  ${role.padEnd(9)} ${
+        REVIEWER_EMAIL[role]
+      }  password: ${REVIEWER_PASSWORD}`,
+    );
   }
   console.log(
     "\nThe seed-operator account is provisioning-only and is not meant to " +

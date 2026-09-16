@@ -28,7 +28,7 @@ const SCHOOL = "5f450000-0000-4000-8000-0000000000b1";
 const STUDENT_USER = "5f450000-0000-4000-8000-0000000000a4";
 const STUDENT_ROW = "5f450000-0000-4000-8000-0000000000c1";
 
-const CURSOR_KEY = "api042-comms-integration-cursor-key-01";
+const CURSOR_KEY = "api042-comms-integration-cursor-key-0000000001";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
@@ -159,7 +159,10 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     app.route(
       "/",
       createCommunicationsRoutes(
-        { repository: new PostgresCommunicationsRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresCommunicationsRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -176,7 +179,11 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     const res = await request("/v1/conversations", {
       method: "POST",
       subject: TEACHER,
-      body: { schoolId: SCHOOL, subject: "About homework", participantIds: [GUARDIAN] },
+      body: {
+        schoolId: SCHOOL,
+        subject: "About homework",
+        participantIds: [GUARDIAN],
+      },
     });
     expect(res.status).toBe(201);
     const body = await res.json() as { id: string; state: string };
@@ -188,7 +195,10 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     const res = await request(`/v1/conversations/${conversationId}/messages`, {
       method: "POST",
       subject: GUARDIAN,
-      body: { clientMessageId: crypto.randomUUID(), body: "Thank you for the update." },
+      body: {
+        clientMessageId: crypto.randomUUID(),
+        body: "Thank you for the update.",
+      },
     });
     expect(res.status).toBe(201);
     const body = await res.json() as { body: string; senderId: string };
@@ -216,11 +226,17 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     const create = await request("/v1/announcements", {
       method: "POST",
       subject: ADMIN,
-      body: { schoolId: SCHOOL, title: "Term dates", body: "See the calendar." },
+      body: {
+        schoolId: SCHOOL,
+        title: "Term dates",
+        body: "See the calendar.",
+      },
     });
     expect(create.status).toBe(201);
 
-    const list = await request(`/v1/announcements?schoolId=${SCHOOL}`, { subject: TEACHER });
+    const list = await request(`/v1/announcements?schoolId=${SCHOOL}`, {
+      subject: TEACHER,
+    });
     expect(list.status).toBe(200);
     const body = await list.json() as { items: { title: string }[] };
     expect(body.items.some((a) => a.title === "Term dates")).toBe(true);

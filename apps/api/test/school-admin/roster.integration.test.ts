@@ -27,7 +27,7 @@ const ADMIN = "5f430000-0000-4000-8000-0000000000a1";
 const TEACHER = "5f430000-0000-4000-8000-0000000000a2";
 const SCHOOL = "5f430000-0000-4000-8000-0000000000b1";
 
-const CURSOR_KEY = "api042-roster-integration-cursor-key-01";
+const CURSOR_KEY = "api042-roster-integration-cursor-key-0000000001";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
@@ -88,105 +88,119 @@ async function post(path: string, input: RequestInput): Promise<Response> {
   });
 }
 
-suite("API-042 S9 school roster (createTerm/createStudent) over the real /v1 stack", () => {
-  beforeAll(async () => {
-    sql = createDatabase(databaseUrl!);
-    await cleanup();
-    await seed();
-    contexts = new AuthContextRepository(sql);
-    const logger = createJsonLogger(
-      "api",
-      "api042-roster-integration",
-      "debug" as LogLevel,
-      () => undefined,
-    );
-    const authorization = createAuthorizationDependencies(
-      logger,
-      new PostgresAuthorizationRepository(sql),
-    );
-    const idempotency = {
-      logger,
-      repository: new PostgresIdempotencyRepository(sql),
-    };
-
-    app = new Hono<AuthorizationEnv>();
-    app.use("*", async (c, next) => {
-      const subject = c.req.header("x-test-subject")!;
-      const context = await contexts.load(subject);
-      if (!context) return c.text("unauthenticated", 401);
-      const actor: Actor = {
-        token: {
-          subject,
-          sessionId: null,
-          issuedAt: 1,
-          expiresAt: 4_000_000_000,
-          assuranceLevel: "aal1",
-          authMethods: [],
-          claims: {},
-        },
-        context,
-        aal2: false,
-        mfaRequiredByPolicy: false,
+suite(
+  "API-042 S9 school roster (createTerm/createStudent) over the real /v1 stack",
+  () => {
+    beforeAll(async () => {
+      sql = createDatabase(databaseUrl!);
+      await cleanup();
+      await seed();
+      contexts = new AuthContextRepository(sql);
+      const logger = createJsonLogger(
+        "api",
+        "api042-roster-integration",
+        "debug" as LogLevel,
+        () => undefined,
+      );
+      const authorization = createAuthorizationDependencies(
+        logger,
+        new PostgresAuthorizationRepository(sql),
+      );
+      const idempotency = {
+        logger,
+        repository: new PostgresIdempotencyRepository(sql),
       };
-      c.set("requestId", crypto.randomUUID());
-      c.set("actor", actor);
-      await next();
-    });
-    app.route(
-      "/",
-      createSchoolRosterRoutes(
-        { repository: new PostgresSchoolAdminRepository(sql), cursorSigningKey: CURSOR_KEY },
-        authorization,
-        idempotency,
-      ),
-    );
-  });
 
-  afterAll(async () => {
-    if (!sql) return;
-    await cleanup();
-    await sql.end({ timeout: 5 });
-  });
-
-  test("a teacher cannot create a term", async () => {
-    // term.create/student.create use the resource() catalogue helper's
-    // concealDeniedResource: true, so a denial reads as 404, not 403 - the
-    // same existence-oracle protection every other resource-scoped
-    // permission in API-042 uses.
-    const res = await post(`/v1/schools/${SCHOOL}/terms`, {
-      subject: TEACHER,
-      body: { name: "Rogue Term", startsOn: "2026-09-01", endsOn: "2026-12-31" },
+      app = new Hono<AuthorizationEnv>();
+      app.use("*", async (c, next) => {
+        const subject = c.req.header("x-test-subject")!;
+        const context = await contexts.load(subject);
+        if (!context) return c.text("unauthenticated", 401);
+        const actor: Actor = {
+          token: {
+            subject,
+            sessionId: null,
+            issuedAt: 1,
+            expiresAt: 4_000_000_000,
+            assuranceLevel: "aal1",
+            authMethods: [],
+            claims: {},
+          },
+          context,
+          aal2: false,
+          mfaRequiredByPolicy: false,
+        };
+        c.set("requestId", crypto.randomUUID());
+        c.set("actor", actor);
+        await next();
+      });
+      app.route(
+        "/",
+        createSchoolRosterRoutes(
+          {
+            repository: new PostgresSchoolAdminRepository(sql),
+            cursorSigningKey: CURSOR_KEY,
+          },
+          authorization,
+          idempotency,
+        ),
+      );
     });
-    expect(res.status).toBe(404);
-  });
 
-  test("a school admin creates a term", async () => {
-    const res = await post(`/v1/schools/${SCHOOL}/terms`, {
-      subject: ADMIN,
-      body: { name: "HTTP Term", startsOn: "2026-09-01", endsOn: "2026-12-31" },
+    afterAll(async () => {
+      if (!sql) return;
+      await cleanup();
+      await sql.end({ timeout: 5 });
     });
-    expect(res.status).toBe(201);
-    const body = await res.json() as { status: string; schoolId: string };
-    expect(body.status).toBe("active");
-    expect(body.schoolId).toBe(SCHOOL);
-  });
 
-  test("a school admin creates a provisional student and the response matches V1SchoolStudent", async () => {
-    const res = await post(`/v1/schools/${SCHOOL}/students`, {
-      subject: ADMIN,
-      body: { displayName: "HTTP Student" },
+    test("a teacher cannot create a term", async () => {
+      // term.create/student.create use the resource() catalogue helper's
+      // concealDeniedResource: true, so a denial reads as 404, not 403 - the
+      // same existence-oracle protection every other resource-scoped
+      // permission in API-042 uses.
+      const res = await post(`/v1/schools/${SCHOOL}/terms`, {
+        subject: TEACHER,
+        body: {
+          name: "Rogue Term",
+          startsOn: "2026-09-01",
+          endsOn: "2026-12-31",
+        },
+      });
+      expect(res.status).toBe(404);
     });
-    expect(res.status).toBe(201);
-    const body = await res.json() as {
-      id: string;
-      schoolId: string;
-      userId: string | null;
-      studafyId: string;
-      provisional: boolean;
-    };
-    expect(body.schoolId).toBe(SCHOOL);
-    expect(body.userId).toBeNull();
-    expect(body.provisional).toBe(true);
-    expect(body.studafyId.startsWith("STU-")).toBe(true);
-  });
-});
+
+    test("a school admin creates a term", async () => {
+      const res = await post(`/v1/schools/${SCHOOL}/terms`, {
+        subject: ADMIN,
+        body: {
+          name: "HTTP Term",
+          startsOn: "2026-09-01",
+          endsOn: "2026-12-31",
+        },
+      });
+      expect(res.status).toBe(201);
+      const body = await res.json() as { status: string; schoolId: string };
+      expect(body.status).toBe("active");
+      expect(body.schoolId).toBe(SCHOOL);
+    });
+
+    test("a school admin creates a provisional student and the response matches V1SchoolStudent", async () => {
+      const res = await post(`/v1/schools/${SCHOOL}/students`, {
+        subject: ADMIN,
+        body: { displayName: "HTTP Student" },
+      });
+      expect(res.status).toBe(201);
+      const body = await res.json() as {
+        id: string;
+        schoolId: string;
+        userId: string | null;
+        studafyId: string;
+        provisional: boolean;
+      };
+      expect(body.schoolId).toBe(SCHOOL);
+      expect(body.userId).toBeNull();
+      expect(body.provisional).toBe(true);
+      expect(body.studafyId.startsWith("STU-")).toBe(true);
+    });
+  },
+);

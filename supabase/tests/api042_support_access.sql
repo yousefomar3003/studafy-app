@@ -63,7 +63,7 @@ select set_config('studafy.school_id', :'school_id', true);
 
 select set_config('studafy.request_id', 'api042-approve-self', true);
 insert into api042_sup_results values('approve-self-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.approveSupportAccess', 'api042-approve-self-1', repeat('d', 64)));
+  :'school_id', 'v1.approveSupportAccess', 'api042-approve-self-0000000001', repeat('d', 64)));
 insert into api042_sup_results values('approve-self', private.api042_command(
   'approveSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'aal2', true, 'body', jsonb_build_object('expectedVersion', 1)),
   ((select result->>'id' from api042_sup_results where name = 'approve-self-reservation')::uuid), 1));
@@ -73,7 +73,7 @@ select is((select result->>'outcome' from api042_sup_results where name = 'appro
 select set_config('request.jwt.claim.sub', :'operator_b', true);
 select set_config('studafy.request_id', 'api042-approve-no-mfa', true);
 insert into api042_sup_results values('approve-no-mfa-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.approveSupportAccess', 'api042-approve-no-mfa-1', repeat('e', 64)));
+  :'school_id', 'v1.approveSupportAccess', 'api042-approve-no-mfa-0000000001', repeat('e', 64)));
 insert into api042_sup_results values('approve-no-mfa', private.api042_command(
   'approveSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'aal2', false, 'body', jsonb_build_object('expectedVersion', 1)),
   ((select result->>'id' from api042_sup_results where name = 'approve-no-mfa-reservation')::uuid), 1));
@@ -82,7 +82,7 @@ select is((select result->>'outcome' from api042_sup_results where name = 'appro
 
 select set_config('studafy.request_id', 'api042-approve-stale', true);
 insert into api042_sup_results values('approve-stale-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.approveSupportAccess', 'api042-approve-stale-1', repeat('f', 64)));
+  :'school_id', 'v1.approveSupportAccess', 'api042-approve-stale-0000000001', repeat('f', 64)));
 insert into api042_sup_results values('approve-stale', private.api042_command(
   'approveSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'aal2', true, 'body', jsonb_build_object('expectedVersion', 99)),
   ((select result->>'id' from api042_sup_results where name = 'approve-stale-reservation')::uuid), 1));
@@ -91,7 +91,7 @@ select is((select result->>'outcome' from api042_sup_results where name = 'appro
 
 select set_config('studafy.request_id', 'api042-approve', true);
 insert into api042_sup_results values('approve-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.approveSupportAccess', 'api042-approve-key-01', repeat('0', 64)));
+  :'school_id', 'v1.approveSupportAccess', 'api042-approve-key-0000000001', repeat('0', 64)));
 insert into api042_sup_results values('approve', private.api042_command(
   'approveSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'aal2', true, 'body', jsonb_build_object('expectedVersion', 1)),
   ((select result->>'id' from api042_sup_results where name = 'approve-reservation')::uuid), 1));
@@ -100,7 +100,7 @@ select is((select result->'response'->>'status' from api042_sup_results where na
 
 select set_config('studafy.request_id', 'api042-approve-again', true);
 insert into api042_sup_results values('approve-again-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.approveSupportAccess', 'api042-approve-again-1', repeat('1', 64)));
+  :'school_id', 'v1.approveSupportAccess', 'api042-approve-again-0000000001', repeat('1', 64)));
 insert into api042_sup_results values('approve-again', private.api042_command(
   'approveSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'aal2', true, 'body', jsonb_build_object('expectedVersion', 2)),
   ((select result->>'id' from api042_sup_results where name = 'approve-again-reservation')::uuid), 1));
@@ -139,7 +139,7 @@ select ok((select started_at from public.support_access_grants where id = :'gran
 select set_config('request.jwt.claim.sub', :'teacher_user', true);
 select set_config('studafy.request_id', 'api042-revoke-denied', true);
 insert into api042_sup_results values('revoke-denied-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.revokeSupportAccess', 'api042-revoke-denied-1', repeat('4', 64)));
+  :'school_id', 'v1.revokeSupportAccess', 'api042-revoke-denied-0000000001', repeat('4', 64)));
 insert into api042_sup_results values('revoke-denied', private.api042_command(
   'revokeSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object('expectedVersion', 3)),
   ((select result->>'id' from api042_sup_results where name = 'revoke-denied-reservation')::uuid), 1));
@@ -149,7 +149,7 @@ select is((select result->>'outcome' from api042_sup_results where name = 'revok
 select set_config('request.jwt.claim.sub', :'admin_user', true);
 select set_config('studafy.request_id', 'api042-revoke', true);
 insert into api042_sup_results values('revoke-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.revokeSupportAccess', 'api042-revoke-key-01', repeat('5', 64)));
+  :'school_id', 'v1.revokeSupportAccess', 'api042-revoke-key-0000000001', repeat('5', 64)));
 insert into api042_sup_results values('revoke', private.api042_command(
   'revokeSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object(
     'expectedVersion', 3, 'reason', 'Investigation complete')),
@@ -161,7 +161,7 @@ select ok((select ended_at from public.support_access_grants where id = :'grant_
 
 select set_config('studafy.request_id', 'api042-revoke-again', true);
 insert into api042_sup_results values('revoke-again-reservation', private.api_idempotency_reserve(
-  :'school_id', 'v1.revokeSupportAccess', 'api042-revoke-again-1', repeat('6', 64)));
+  :'school_id', 'v1.revokeSupportAccess', 'api042-revoke-again-0000000001', repeat('6', 64)));
 insert into api042_sup_results values('revoke-again', private.api042_command(
   'revokeSupportAccess', :'grant_id', jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object('expectedVersion', 4)),
   ((select result->>'id' from api042_sup_results where name = 'revoke-again-reservation')::uuid), 1));

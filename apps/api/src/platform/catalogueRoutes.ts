@@ -141,8 +141,14 @@ export function createCatalogueRoutes<Slice extends string>(
   authorization: AuthorizationDependencies,
   idempotencyDependencies: IdempotencyDependencies,
 ): Hono<AuthorizationEnv> {
-  const { routes: catalogue, repository, cursorSigningKey, selector, sliceFor, enabledSlices } =
-    options;
+  const {
+    routes: catalogue,
+    repository,
+    cursorSigningKey,
+    selector,
+    sliceFor,
+    enabledSlices,
+  } = options;
   const routes = new Hono<AuthorizationEnv>();
 
   for (const route of catalogue) {

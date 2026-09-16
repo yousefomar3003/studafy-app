@@ -20,7 +20,10 @@ import { PostgresAuthorizationRepository } from "../authorization/repository";
 import { PostgresIdempotencyRepository } from "../platform/idempotency";
 import { createAcademicRoutes } from "../academic/routes";
 import { PostgresAcademicRepository } from "../academic/repository";
-import { createSchoolAdminRoutes, createSchoolRosterRoutes } from "../school-admin/routes";
+import {
+  createSchoolAdminRoutes,
+  createSchoolRosterRoutes,
+} from "../school-admin/routes";
 import { PostgresSchoolAdminRepository } from "../school-admin/repository";
 import { createInvitationsRoutes } from "../invitations/routes";
 import { PostgresInvitationsRepository } from "../invitations/repository";
@@ -31,7 +34,12 @@ export function buildReviewerSeedApp(
   sql: Sql,
   supabaseApiUrl: string,
 ): Hono<AuthorizationEnv> {
-  const logger = createJsonLogger("api", "seed-reviewer-tenant", "warn", () => undefined);
+  const logger = createJsonLogger(
+    "api",
+    "seed-reviewer-tenant",
+    "warn",
+    () => undefined,
+  );
   const authDependencies: AuthDependencies = {
     keys: new JwksKeySource(`${supabaseApiUrl}/auth/v1/.well-known/jwks.json`),
     repository: new AuthContextRepository(sql),
@@ -47,7 +55,10 @@ export function buildReviewerSeedApp(
     logger,
     new PostgresAuthorizationRepository(sql),
   );
-  const idempotency = { logger, repository: new PostgresIdempotencyRepository(sql) };
+  const idempotency = {
+    logger,
+    repository: new PostgresIdempotencyRepository(sql),
+  };
   const cursorSigningKey = "seed-reviewer-tenant-unused-cursor-key-0000";
 
   const combined = new Hono<AuthorizationEnv>();
@@ -97,7 +108,13 @@ export function buildReviewerSeedApp(
   // it has to be applied by hand or requestId (and therefore every
   // audit_events row) would be undefined.
   const app = new Hono<AuthorizationEnv>();
-  app.use("*", requestContext() as unknown as MiddlewareHandler<AuthorizationEnv>);
-  app.route("/", createAuthRoutes(authDependencies, authorization, idempotency, combined));
+  app.use(
+    "*",
+    requestContext() as unknown as MiddlewareHandler<AuthorizationEnv>,
+  );
+  app.route(
+    "/",
+    createAuthRoutes(authDependencies, authorization, idempotency, combined),
+  );
   return app;
 }

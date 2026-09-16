@@ -155,7 +155,10 @@ function opaqueGrant(): string {
     .replace(/=+$/, "");
 }
 
-async function mintReauthGrant(subject: string, purpose: string): Promise<string> {
+async function mintReauthGrant(
+  subject: string,
+  purpose: string,
+): Promise<string> {
   const grant = opaqueGrant();
   const minted = await contexts.issueReauthGrant(subject, {
     purpose,
@@ -228,7 +231,10 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
     app.route(
       "/",
       createSchoolAdminRoutes(
-        { repository: new PostgresSchoolAdminRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresSchoolAdminRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
         authDependencies,
@@ -240,7 +246,10 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
     app.route(
       "/",
       createAcademicRoutes(
-        { repository: new PostgresAcademicRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresAcademicRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -368,11 +377,14 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
   });
 
   test("an enrollment command round-trips a validated V1EnrollmentTransition", async () => {
-    const res = await request(`/v1/classrooms/${CLASSROOM}/enrollments/enroll`, {
-      method: "POST",
-      subject: ADMIN,
-      body: { studentId: STUDENT_ROW },
-    });
+    const res = await request(
+      `/v1/classrooms/${CLASSROOM}/enrollments/enroll`,
+      {
+        method: "POST",
+        subject: ADMIN,
+        body: { studentId: STUDENT_ROW },
+      },
+    );
     expect(res.status).toBe(200);
     const body = await res.json() as {
       classroomId: string;
@@ -385,18 +397,24 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
 
   test("a replayed idempotency key returns the identical stored response", async () => {
     const key = crypto.randomUUID();
-    const first = await request(`/v1/classrooms/${CLASSROOM}/enrollments/withdraw`, {
-      method: "POST",
-      subject: ADMIN,
-      key,
-      body: { studentId: STUDENT_ROW },
-    });
-    const second = await request(`/v1/classrooms/${CLASSROOM}/enrollments/withdraw`, {
-      method: "POST",
-      subject: ADMIN,
-      key,
-      body: { studentId: STUDENT_ROW },
-    });
+    const first = await request(
+      `/v1/classrooms/${CLASSROOM}/enrollments/withdraw`,
+      {
+        method: "POST",
+        subject: ADMIN,
+        key,
+        body: { studentId: STUDENT_ROW },
+      },
+    );
+    const second = await request(
+      `/v1/classrooms/${CLASSROOM}/enrollments/withdraw`,
+      {
+        method: "POST",
+        subject: ADMIN,
+        key,
+        body: { studentId: STUDENT_ROW },
+      },
+    );
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(await first.json()).toEqual(await second.json());

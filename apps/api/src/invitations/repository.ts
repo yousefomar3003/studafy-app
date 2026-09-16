@@ -85,7 +85,13 @@ export class PostgresInvitationsRepository implements CatalogueRepository {
       );
     }
 
-    return await this.execute(context, operation, resourceId, input, reservation);
+    return await this.execute(
+      context,
+      operation,
+      resourceId,
+      input,
+      reservation,
+    );
   }
 
   private async execute(

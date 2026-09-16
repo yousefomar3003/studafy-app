@@ -23,7 +23,7 @@ const suite = databaseUrl ? describe : describe.skip;
 const USER_A = "5f470000-0000-4000-8000-0000000000a1";
 const SCHOOL = "5f470000-0000-4000-8000-0000000000b1";
 
-const CURSOR_KEY = "api042-notifications-integration-cursor-key-01";
+const CURSOR_KEY = "api042-notifications-integration-cursor-key-0000000001";
 
 let sql: Sql;
 let contexts: AuthContextRepository;
@@ -129,7 +129,10 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
     app.route(
       "/",
       createNotificationsRoutes(
-        { repository: new PostgresNotificationsRepository(sql), cursorSigningKey: CURSOR_KEY },
+        {
+          repository: new PostgresNotificationsRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
         authorization,
         idempotency,
       ),
@@ -145,14 +148,21 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
   test("a user with no school membership lists their own notifications", async () => {
     const res = await request("/v1/notifications", { subject: USER_A });
     expect(res.status).toBe(200);
-    const body = await res.json() as { items: unknown[]; nextCursor: string | null };
+    const body = await res.json() as {
+      items: unknown[];
+      nextCursor: string | null;
+    };
     expect(body.items.length).toBe(2);
     expect(body.nextCursor).toBeNull();
   });
 
   test("the unread count matches, then drops after marking all read", async () => {
-    const before = await request("/v1/notifications/unread-count", { subject: USER_A });
-    expect((await before.json() as { unreadCount: number }).unreadCount).toBe(2);
+    const before = await request("/v1/notifications/unread-count", {
+      subject: USER_A,
+    });
+    expect((await before.json() as { unreadCount: number }).unreadCount).toBe(
+      2,
+    );
 
     const mark = await request("/v1/notifications/mark-read", {
       method: "POST",
@@ -162,7 +172,9 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
     expect(mark.status).toBe(200);
     expect((await mark.json() as { markedCount: number }).markedCount).toBe(2);
 
-    const after = await request("/v1/notifications/unread-count", { subject: USER_A });
+    const after = await request("/v1/notifications/unread-count", {
+      subject: USER_A,
+    });
     expect((await after.json() as { unreadCount: number }).unreadCount).toBe(0);
   });
 
@@ -174,10 +186,18 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
     });
     expect(update.status).toBe(200);
 
-    const list = await request("/v1/notifications/preferences", { subject: USER_A });
+    const list = await request("/v1/notifications/preferences", {
+      subject: USER_A,
+    });
     expect(list.status).toBe(200);
-    const body = await list.json() as { items: { channel: string; category: string; enabled: boolean }[] };
-    expect(body.items.some((p) => p.channel === "email" && p.category === "academic" && !p.enabled))
+    const body = await list.json() as {
+      items: { channel: string; category: string; enabled: boolean }[];
+    };
+    expect(
+      body.items.some((p) =>
+        p.channel === "email" && p.category === "academic" && !p.enabled
+      ),
+    )
       .toBe(true);
   });
 });

@@ -1,6 +1,9 @@
 import type { Context, Hono } from "hono";
 import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
-import type { AuthorizationDependencies, AuthorizationEnv } from "../authorization/middleware";
+import type {
+  AuthorizationDependencies,
+  AuthorizationEnv,
+} from "../authorization/middleware";
 import type { AuthDependencies } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
 import { createCatalogueRoutes } from "../platform/catalogueRoutes";
@@ -12,7 +15,11 @@ export interface SchoolAdminDependencies {
   enabledSlices?: Partial<Record<SchoolAdminSlice, boolean>>;
 }
 
-export type SchoolAdminSlice = "schools" | "memberships" | "staffing" | "enrollment";
+export type SchoolAdminSlice =
+  | "schools"
+  | "memberships"
+  | "staffing"
+  | "enrollment";
 
 // School-admin owns the fixed slice of the catalogue appended after
 // academic (indices 52-63); academic/routes.ts bounds its own slice to
@@ -23,7 +30,8 @@ function selector(
   c: Context<AuthorizationEnv>,
 ): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
-  return params["schoolId"] ?? params["membershipId"] ?? params["classroomId"] ?? null;
+  return params["schoolId"] ?? params["membershipId"] ??
+    params["classroomId"] ?? null;
 }
 
 function sliceFor(operation: string): SchoolAdminSlice {

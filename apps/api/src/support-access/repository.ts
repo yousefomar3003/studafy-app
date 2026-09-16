@@ -42,7 +42,10 @@ export class PostgresSupportAccessRepository implements CatalogueRepository {
     input: unknown,
     reservation: { id: string; generation: number },
   ): Promise<CatalogueCommandResult> {
-    const withAal2 = { ...(input as Record<string, unknown>), aal2: context.aal2 };
+    const withAal2 = {
+      ...(input as Record<string, unknown>),
+      aal2: context.aal2,
+    };
     return await withRequestContext(this.sql, context, async (tx) => {
       const rows = await tx<{ result: CatalogueCommandResult }[]>`
         select private.api042_command(
