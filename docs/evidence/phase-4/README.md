@@ -10,6 +10,13 @@ plans, Edge parity matrix, generated hashes, direct-call scan, and gate
 assessment are in [`api041-verification.md`](api041-verification.md). The
 API-040 counts/hashes below remain the historical API-040 checkpoint.
 
+API-042 was added and verified on 2026-09-16, making every remaining launch
+product workflow authoritative (school operations, invitations, family,
+communications, meetings, notifications, account rights, support access).
+Its transcript, negative-path matrix, the two named legacy-defect fixes, the
+authorization gaps found and fixed during its own verification, and gate
+assessment are in [`api042-verification.md`](api042-verification.md).
+
 ## Delivered platform surface
 
 The existing Hono bootstrap is extended, not replaced. Every route inherits
@@ -92,12 +99,15 @@ and structured status/body replay passes.
 | SSRF/provider boundary | **Met in application code; infrastructure control open** | Redirect/DNS/IP/byte/time tests pass; isolated production egress is not provisioned |
 | Cursor tamper control | **Met locally** | API-041 HMAC cursors bind version/operation/tenant/filters/position; tamper and mismatch tests pass |
 | Production telemetry | **Partially met** | One safe per-route completion event supplies RED inputs; metrics backend, traces, retention and alerting are OPS-090 |
-| Launch API contracts/adapters | **Partially met** | API-041 academic contracts/adapters are authoritative; API-042 remains open |
+| Launch API contracts/adapters | **Met locally for backend routes; Flutter wiring open** | API-041 academic and API-042 school-operations contracts/adapters are both authoritative; no Dart/Flutter SDK was available this phase, so no screen was rewired |
 | Communications safety | **Not met** | SAFE-043 remains mandatory before communications launch |
-| Transactions/outbox for all workflows | **Met for API-041; later slices open** | Forced rollback, concurrent idempotency and outbox-only academic requests pass; API-042/OPS-061 remain |
-| Deno traffic replacement | **Met for the two API-041 grade sources** | Frozen DB/Hono/Flutter parity preceded source/invocation removal; no remote deployment existed or is claimed |
+| Transactions/outbox for all workflows | **Met for API-041 and API-042; OPS-061 open** | Forced rollback, concurrent idempotency and outbox-only requests pass for both parts; no real queue exists yet |
+| Deno traffic replacement | **Met for the two API-041 grade sources and all three API-042 sources** | Frozen DB/Hono/Flutter parity (API-041) and authorization/transaction/idempotency/retry tests (API-042) preceded each source/invocation removal; no remote deployment existed or is claimed |
+| Fresh-school onboarding E2E | **Met locally** | `scripts/seed-reviewer-tenant.ts` provisions a school, term, classroom, three invited/accepted roles, staffing, roster and a verified guardian link entirely through real `/v1` commands against the local stack |
 
 **API-040's selected local acceptance criteria pass. The overall Phase 4 gate
-is open.** API-041 is locally complete, while API-042, SAFE-043, production RED
-telemetry, outbox relay operations and isolated egress remain required. No
-result here authorizes remote deployment or real student data.
+is open.** API-041 and API-042 are both locally complete for the backend
+surface, while SAFE-043, production RED telemetry, outbox relay operations,
+isolated egress, independent security review, and the Flutter/mobile wiring
+deferred throughout Phase 4 remain required. No result here authorizes
+remote deployment or real student data.
