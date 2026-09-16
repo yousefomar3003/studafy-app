@@ -17,6 +17,13 @@ Its transcript, negative-path matrix, the two named legacy-defect fixes, the
 authorization gaps found and fixed during its own verification, and gate
 assessment are in [`api042-verification.md`](api042-verification.md).
 
+SAFE-043 (communications safety and safeguarding) was added on 2026-09-16 as
+code, contracts, pgTAP/Bun suites, a drill script, runbook, and CI wiring. It
+could **not be executed** in this environment (no `bun`/`node`/`docker`/
+`supabase` toolchain), so its transcript is a verification-pending static
+record with a run-me checklist, not a passing claim. See
+[`safe043-verification.md`](safe043-verification.md) and ADR-0021/DL-042.
+
 ## Delivered platform surface
 
 The existing Hono bootstrap is extended, not replaced. Every route inherits
