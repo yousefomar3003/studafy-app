@@ -102,3 +102,30 @@ export const V1TransferEnrollmentRequest = z.strictObject({
 export type V1TransferEnrollmentRequest = z.infer<
   typeof V1TransferEnrollmentRequest
 >;
+
+export const V1CreateTermRequest = z.strictObject({
+  name: z.string().trim().min(1).max(120),
+  startsOn: z.string().date(),
+  endsOn: z.string().date(),
+});
+export type V1CreateTermRequest = z.infer<typeof V1CreateTermRequest>;
+
+// userId is optional: a school admin can seed a roster entry ahead of the
+// student's own account existing (students.provisional tracks exactly this)
+// and link it later, the same "invite before signup" shape S2's invitations
+// established for staff/guardian onboarding.
+export const V1CreateStudentRequest = z.strictObject({
+  displayName: z.string().trim().min(1).max(160),
+  userId: Id.nullable().optional(),
+});
+export type V1CreateStudentRequest = z.infer<typeof V1CreateStudentRequest>;
+
+export const V1SchoolStudent = z.strictObject({
+  id: Id,
+  schoolId: Id,
+  userId: Id.nullable(),
+  studafyId: z.string().min(1),
+  displayName: z.string().min(1),
+  provisional: z.boolean(),
+});
+export type V1SchoolStudent = z.infer<typeof V1SchoolStudent>;

@@ -1005,6 +1005,38 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
+  // Appended rather than inserted: every other module's slice() bound is a
+  // fixed numeric range into this array (see school-admin/routes.ts and
+  // friends), so a new entry always lands at the end. createTerm/
+  // createStudent close a real gap API-041 shipped with: createClassroom
+  // requires an existing 'active'/'planned' term and enrollStudent requires
+  // an existing student row, and until now nothing in the catalogue could
+  // create either - a freshly provisioned school could never actually reach
+  // a working classroom. Found writing the S9 reviewer-tenant seed script,
+  // which is exactly the "fresh school, real commands, no local-only state"
+  // path this gap would otherwise have hidden from indefinitely.
+  academicPost(
+    "createTerm",
+    "/v1/schools/{schoolId}/terms",
+    "term.create",
+    SchoolAdmin.V1CreateTermRequest,
+    "V1CreateTermRequest",
+    Academic.V1Term,
+    "V1Term",
+    201,
+    schoolParams(),
+  ),
+  academicPost(
+    "createStudent",
+    "/v1/schools/{schoolId}/students",
+    "student.create",
+    SchoolAdmin.V1CreateStudentRequest,
+    "V1CreateStudentRequest",
+    SchoolAdmin.V1SchoolStudent,
+    "V1SchoolStudent",
+    201,
+    schoolParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

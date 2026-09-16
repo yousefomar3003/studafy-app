@@ -33,6 +33,42 @@ function sliceFor(operation: string): SchoolAdminSlice {
   return "enrollment";
 }
 
+// createTerm/createStudent (indices [94, 96)) were appended after every
+// other module's slice - see the comment in
+// packages/contracts/src/v1/routes.ts - rather than inserted into this
+// module's contiguous [52, 64) range, so this is a second small router
+// instead of a second range on SCHOOL_ADMIN_ROUTES. The mounted-route order
+// AUTH-031's parity test checks must match V1_ROUTE_CATALOGUE's own order,
+// and this module is mounted right after academic - long before the
+// catalogue reaches index 94 - so folding them into SCHOOL_ADMIN_ROUTES
+// would desync the two orderings. apps/api/src/index.ts mounts this last,
+// after every other module, to match.
+const SCHOOL_ROSTER_ROUTES = V1_ROUTE_CATALOGUE.slice(94, 96);
+
+function rosterSelector(c: Context<AuthorizationEnv>): string | null {
+  const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
+  return params["schoolId"] ?? null;
+}
+
+export function createSchoolRosterRoutes(
+  deps: SchoolAdminDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: SCHOOL_ROSTER_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: rosterSelector,
+      sliceFor: () => "schools",
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
 export function createSchoolAdminRoutes(
   deps: SchoolAdminDependencies,
   authorization: AuthorizationDependencies,

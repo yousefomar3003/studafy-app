@@ -402,6 +402,14 @@ export const PERMISSION_CATALOGUE = {
     "classroom",
     "Enroll, withdraw or transfer a student as school admin or exact class writer.",
   ),
+  "term.create": resource(
+    "school",
+    "Create a term as an active school administrator.",
+  ),
+  "student.create": resource(
+    "school",
+    "Create a student roster record as an active school administrator.",
+  ),
 
   // API-042 S2: invitations.
   "invitation.issue": resource(

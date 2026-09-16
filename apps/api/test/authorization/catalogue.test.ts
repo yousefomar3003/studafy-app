@@ -5,7 +5,7 @@ import { LogCollector } from "@studafy/test-support";
 import { Hono } from "hono";
 import { createAuthRoutes } from "../../src/auth/routes";
 import { createAcademicRoutes } from "../../src/academic/routes";
-import { createSchoolAdminRoutes } from "../../src/school-admin/routes";
+import { createSchoolAdminRoutes, createSchoolRosterRoutes } from "../../src/school-admin/routes";
 import { createInvitationsRoutes } from "../../src/invitations/routes";
 import { createFamilyRoutes } from "../../src/family/routes";
 import { createCommunicationsRoutes } from "../../src/communications/routes";
@@ -158,6 +158,17 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const schoolRoster = createSchoolRosterRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
@@ -168,6 +179,7 @@ function routeTable() {
   combined.route("/", notifications);
   combined.route("/", account);
   combined.route("/", supportAccess);
+  combined.route("/", schoolRoster);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -217,13 +229,16 @@ describe("permission catalogue", () => {
     const supportAccessMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609160009_api042_support_access.sql`,
     ).text();
+    const rosterMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609160011_api042_terms_students.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}`,
       ).toContain(`'${permission}'`);
     }
   });
