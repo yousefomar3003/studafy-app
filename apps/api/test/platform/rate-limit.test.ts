@@ -21,8 +21,29 @@ const redisUrl = process.env.REDIS_URL;
 const redisTest = redisUrl ? test : test.skip;
 const RUN = Math.random().toString(36).slice(2, 8);
 const clients: { quit: () => Promise<unknown> }[] = [];
+/**
+ * Keys the suite must hand back clean. CI shares one Redis between the test
+ * step and the container-smoke step: leaving the shared `unresolved` edge
+ * bucket exhausted would make the smoke's unauthenticated /v1 request get a
+ * 429 instead of the NOT_IMPLEMENTED it asserts. Edge buckets are the only
+ * shared-by-shape keys this suite creates (every flow key embeds a
+ * per-run unique subject), so cleaning these three is sufficient.
+ */
+const EDGE_KEYS = [
+  "rl:publicDefault:ip:unresolved",
+  "rl:publicDefault:ip:192.0.2.7",
+  "rl:publicDefault:ip:192.0.2.8",
+];
 
 afterAll(async () => {
+  if (redisUrl) {
+    const cleaner = createRedis(redisUrl);
+    try {
+      await cleaner.del(...EDGE_KEYS);
+    } finally {
+      await cleaner.quit();
+    }
+  }
   await Promise.all(clients.map((client) => client.quit()));
 });
 
@@ -225,8 +246,8 @@ describe("edge limiter enforcement", () => {
     "blocks an address past the publicDefault budget with 429 and Retry-After",
     async () => {
       const { deps } = harnessDependencies();
-      const ip = `203.0.${RUN.length}.${7}`;
-      const key = `rl:publicDefault:ip:203.0.${RUN.length}.7`;
+      const ip = "192.0.2.7";
+      const key = "rl:publicDefault:ip:192.0.2.7";
       if (deps.redis) await deps.redis.del(key);
       const app = edgeRunner(deps);
       const limit = RATE_LIMIT_FLOWS.publicDefault.policy.limit;
@@ -248,7 +269,7 @@ describe("edge limiter enforcement", () => {
 
   redisTest("the prefix budget spans paths and methods", async () => {
     const { deps } = harnessDependencies();
-    const ip = `198.51.100.${RUN.length}`;
+    const ip = "192.0.2.8";
     if (deps.redis) await deps.redis.del(`rl:publicDefault:ip:${ip}`);
     const app = edgeRunner(deps);
     const limit = RATE_LIMIT_FLOWS.publicDefault.policy.limit;

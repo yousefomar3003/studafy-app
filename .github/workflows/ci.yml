@@ -405,7 +405,10 @@ jobs:
           curl -sf http://127.0.0.1:8080/healthz | grep -q '"ok"'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/readyz)" = "503"
           curl -s http://127.0.0.1:8080/readyz | grep -q 'database_unreachable'
-          curl -s http://127.0.0.1:8080/v1/me | grep -q 'NOT_IMPLEMENTED'
+          # The unauthenticated /v1 probe rides the OPS-060 edge limiter; a
+          # dedicated test IP keeps it immune to limiter state left by the
+          # workspace test step sharing the same Redis service.
+          curl -s -H 'x-forwarded-for: 203.0.113.77' http://127.0.0.1:8080/v1/me | grep -q 'NOT_IMPLEMENTED'
           docker stop -t 10 api-smoke
           test "$(docker inspect api-smoke --format '{{.State.ExitCode}}')" = "0"
           docker logs api-smoke 2>&1 | grep -q '"phase":"complete"'
