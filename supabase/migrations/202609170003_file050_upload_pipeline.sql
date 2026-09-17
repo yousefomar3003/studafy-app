@@ -35,6 +35,8 @@ on conflict (purpose) do update set
   enabled=excluded.enabled,
   updated_at=now();
 
+alter table public.file_purpose_policies enable row level security;
+
 create table public.file_quota_policies (
   school_id uuid primary key references public.schools(id) on delete cascade,
   user_rolling_bytes bigint not null default 104857600 check (user_rolling_bytes > 0),
@@ -47,6 +49,8 @@ create table public.file_quota_policies (
 );
 insert into public.file_quota_policies(school_id)
 select id from public.schools on conflict do nothing;
+
+alter table public.file_quota_policies enable row level security;
 
 create or replace function private.file050_seed_school_quota()
 returns trigger language plpgsql security definer set search_path='' as $$
@@ -521,7 +525,7 @@ begin
     values(job.school_id,null,'quarantine_object_deleted','upload_session',job.upload_session_id,
       jsonb_build_object('fileId',job.file_object_id,'jobId',job.id),'file050-cleanup-'||job.id);
   else
-    update public.file_job_outbox set state=case when attempt_count>=10 then 'dead_letter' else 'retry' end,
+    update public.file_job_outbox set state=case when attempt_count>=10 then 'dead_letter'::public.outbox_state else 'retry'::public.outbox_state end,
       available_at=now()+make_interval(secs=>least(3600,5*(2^least(attempt_count,9))::integer)),
       locked_at=null,locked_by=null,last_error_code=left(coalesce(p_error_code,'STORAGE_UNAVAILABLE'),80)
     where id=job.id;

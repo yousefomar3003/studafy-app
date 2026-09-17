@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(32);
+select plan(36);
 
 \set school_id '11111111-1111-1111-1111-111111111111'
 \set other_school_id '22222222-2222-2222-2222-222222222222'
@@ -132,6 +132,18 @@ select ok(private.api050_finish_cleanup('file050-test-worker',((select jobs->0->
   'cleanup acknowledgement succeeds only for the claiming worker');
 select is((select scan_state::text from public.file_objects where id=((select jobs->0->>'fileId' from f050_claim)::uuid)),
   'deleted','database deletion is recorded only after worker acknowledgement');
+
+-- The second claimed job exercises the failure branch: a delete that storage
+-- refuses must move to retry with backoff, not raise. The enum cast in that
+-- branch is load-bearing, so it is asserted rather than assumed.
+select ok(private.api050_finish_cleanup('file050-test-worker',((select jobs->1->>'jobId' from f050_claim)::bigint),false,'STORAGE_UNAVAILABLE'),
+  'a failed deletion is acknowledged without raising');
+select is((select state::text from public.file_job_outbox where id=((select jobs->1->>'jobId' from f050_claim)::bigint)),
+  'retry','a failed deletion is rescheduled for retry');
+select is((select last_error_code from public.file_job_outbox where id=((select jobs->1->>'jobId' from f050_claim)::bigint)),
+  'STORAGE_UNAVAILABLE','the retry records why the deletion failed');
+select is((select scan_state::text from public.file_objects where id=((select jobs->1->>'fileId' from f050_claim)::uuid)),
+  'rejected','a failed deletion never records the object as deleted');
 
 update public.file_quota_policies set user_hourly_intents=1,user_active_sessions=3 where school_id=:'school_id';
 insert into f050_results values('reserve3',private.api_idempotency_reserve(

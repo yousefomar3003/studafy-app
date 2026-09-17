@@ -58,6 +58,13 @@ select is(
     'api041_query',
     'api042_command',
     'api042_query',
+    -- FILE-050. Five narrow upload/file commands; each independently
+    -- re-validates actor, tenant, membership, relationship, purpose and state.
+    'api050_complete_upload',
+    'api050_issue_intent',
+    'api050_prepare_completion',
+    'api050_prepare_intent',
+    'api050_query',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',
@@ -76,7 +83,7 @@ select is(
     'auth_unlink_identity',
     'authz_authorize'
   ],
-  'API runtime role executes exactly the reviewed auth, idempotency and academic surface'
+  'API runtime role executes exactly the reviewed auth, idempotency, academic and file surface'
 );
 
 select is(
