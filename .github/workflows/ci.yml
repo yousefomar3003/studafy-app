@@ -220,6 +220,14 @@ jobs:
           bunx supabase test db --local
           supabase/tests/file050_upload_seed.sql
 
+      # FILE-051: scan state machine, single-object publication for thirty
+      # recipients, school-scoped dedupe, single-use re-authorized grants,
+      # retention units, containment/release, and the runtime grant surface.
+      - name: Verify FILE-051 scanning, publication, dedupe, delivery, and retention
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/file051_scan_delivery_seed.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
 
@@ -228,6 +236,9 @@ jobs:
 
       - name: Verify FILE-050 quota, status, expiry, and outbox query plans
         run: bun run test:file050:plans
+
+      - name: Verify FILE-051 grant, scan, dedupe, and retention query plans
+        run: bun run test:file051:plans
 
       - name: Verify DB-021 RLS plans and provisional local latency bounds
         run: bun run test:db021:plans
@@ -278,6 +289,20 @@ jobs:
         run: >-
           DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
           bun test apps/api/test/files/quota.integration.test.ts
+
+      # FILE-051: the whole lifecycle over real Storage with the API and
+      # worker connected as their least-privilege runtime roles — transform,
+      # publication, single-use delivery, revocation, rejection, dedupe with
+      # physical cleanup, and bucket/row reconciliation.
+      - name: Run FILE-051 end-to-end delivery verification
+        run: bun run test:file051:e2e
+
+      # FILE-051 gate: the malicious-file response exercise from the runbook.
+      - name: Run FILE-051 malicious-file response drill
+        run: bun run test:file051:drill
+
+      - name: Verify FILE-051 storage reconciliation after the drills
+        run: bun run test:file051:reconcile
 
       # SAFE-043: schema shape/RLS/no-grant assertions, then the surface
       # fixture (seed file includes safe043_surface.sql itself), proving the

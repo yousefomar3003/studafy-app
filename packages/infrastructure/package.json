@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@studafy/domain": "workspace:*",
     "@supabase/supabase-js": "2.116.0",
     "bullmq": "6.3.4",
     "ioredis": "6.0.0"

@@ -142,6 +142,15 @@ const DEFINITIONS: Record<
     detail:
       "File delivery remains disabled until secure processing is available.",
   },
+  FILE_PUBLISH_DISABLED: {
+    title: "File publication disabled",
+    detail: "File publication is currently disabled.",
+  },
+  DELIVERY_GRANT_INVALID: {
+    title: "Download link invalid",
+    detail:
+      "The download link is expired, already used, or not valid for this account.",
+  },
   STORAGE_UNAVAILABLE: {
     title: "Storage unavailable",
     detail: "Private file storage is temporarily unavailable.",

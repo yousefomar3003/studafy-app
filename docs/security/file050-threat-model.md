@@ -183,7 +183,11 @@ introduces dedup.
 
 ## Malicious-upload response
 
-What to do when an object in quarantine is believed hostile.
+What to do when an object in quarantine is believed hostile. Once files can
+be clean, published or delivered (FILE-051), follow
+[`file051-malicious-file-runbook.md`](file051-malicious-file-runbook.md)
+instead. The FILE-051 threat model is
+[`file051-threat-model.md`](file051-threat-model.md).
 
 1. **Contain.** Nothing is required to stop delivery: quarantined objects are
    not downloadable in FILE-050, the bucket has no authenticated read policy,

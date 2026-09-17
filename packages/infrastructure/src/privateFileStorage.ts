@@ -30,6 +30,23 @@ export interface PrivateFileStorage {
     maximumBytes: number,
   ): Promise<ObservedObject>;
   delete(bucket: string, objectKey: string): Promise<void>;
+  /** Reads the exact object bytes (bounded by the global file ceiling). */
+  openObject(
+    bucket: string,
+    objectKey: string,
+  ): Promise<{ bytes: Uint8Array; sizeBytes: number }>;
+  /**
+   * Overwrites the object at an existing internal key with sanitized bytes.
+   * Used only by the scan worker after a clean verdict, before the database
+   * records `clean` — the read-back verification in the worker is what makes
+   * that ordering fail-closed.
+   */
+  replaceObject(
+    bucket: string,
+    objectKey: string,
+    bytes: Uint8Array,
+    contentType: string,
+  ): Promise<void>;
 }
 
 export class SupabasePrivateFileStorage implements PrivateFileStorage {
@@ -102,6 +119,41 @@ export class SupabasePrivateFileStorage implements PrivateFileStorage {
     ]);
     if (error) throw new StorageUnavailableError();
   }
+
+  async openObject(
+    bucket: string,
+    objectKey: string,
+  ): Promise<{ bytes: Uint8Array; sizeBytes: number }> {
+    assertInternalLocation(bucket, objectKey);
+    const store = this.#client.storage.from(bucket);
+    const { data: info, error: infoError } = await store.info(objectKey);
+    if (infoError) throw new StorageUnavailableError();
+    const size = Number((info as { size?: number }).size);
+    if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_BYTES) {
+      throw new StorageUnavailableError();
+    }
+    const { data, error } = await store.download(objectKey);
+    if (error || !data) throw new StorageUnavailableError();
+    const bytes = new Uint8Array(await data.arrayBuffer());
+    if (bytes.byteLength !== size) throw new StorageUnavailableError();
+    return { bytes, sizeBytes: bytes.byteLength };
+  }
+
+  async replaceObject(
+    bucket: string,
+    objectKey: string,
+    bytes: Uint8Array,
+    contentType: string,
+  ): Promise<void> {
+    assertInternalLocation(bucket, objectKey);
+    if (bytes.byteLength > MAX_FILE_BYTES) throw new StorageUnavailableError();
+    const { error } = await this.#client.storage.from(bucket).upload(
+      objectKey,
+      bytes,
+      { upsert: true, contentType },
+    );
+    if (error) throw new StorageUnavailableError();
+  }
 }
 
 export class StorageUnavailableError extends Error {
@@ -144,7 +196,7 @@ function startsWith(bytes: Uint8Array, signature: number[]): boolean {
   return bytes.length >= signature.length &&
     signature.every((value, index) => bytes[index] === value);
 }
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
+export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }

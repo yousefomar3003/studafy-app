@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { V1Resource } from "./academic";
 
 const Id = z.string().uuid();
 const Timestamp = z.string().datetime({ offset: true });
@@ -152,3 +153,19 @@ export const V1DownloadIntentResponse = z.strictObject({
 export type V1DownloadIntentResponse = z.infer<
   typeof V1DownloadIntentResponse
 >;
+
+/**
+ * FILE-051 publication. Publishing never copies bytes: one clean file object
+ * becomes one resource, one immutable version and one classroom publication,
+ * and access derives from that publication.
+ */
+export const V1PublishFileRequest = z.strictObject({
+  audience: z.enum(["students", "guardians", "both"]),
+});
+export type V1PublishFileRequest = z.infer<typeof V1PublishFileRequest>;
+
+export const V1PublishFileResponse = z.strictObject({
+  file: V1File,
+  resource: V1Resource,
+});
+export type V1PublishFileResponse = z.infer<typeof V1PublishFileResponse>;

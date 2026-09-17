@@ -23,8 +23,19 @@ export {
   normalizeDisplayName,
   type ObservedObject,
   type PrivateFileStorage,
+  sha256Hex,
   SIGNED_UPLOAD_TTL_SECONDS,
   StorageUnavailableError,
   SupabasePrivateFileStorage,
   type UploadCapability,
 } from "./privateFileStorage";
+export {
+  ExternalMalwareScannerClient,
+  type ExternalScannerConfig,
+  ExternalScannerUnavailableError,
+  type FileScanInput,
+  type FileScanner,
+  type FileScanResult,
+  FileSecurityScanner,
+  LocalDeterministicScanner,
+} from "./fileScanner";

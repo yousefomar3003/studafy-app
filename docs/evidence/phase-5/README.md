@@ -1,4 +1,4 @@
-# Phase 5 / FILE-050 local evidence
+# Phase 5 / FILE-050 and FILE-051 local evidence
 
 - Evidence date: 2026-09-17
 - Target: local workspace and disposable local Supabase only
@@ -8,8 +8,48 @@
 Phase 5 covers file storage. Part 5A (**FILE-050**) builds the private upload
 pipeline: server-issued signed upload intents bound to an authenticated
 owner, tenant and purpose; immutable object metadata rows; and quarantine on
-arrival. Part 5B (**FILE-051**) owns scanning and delivery and has not
-started.
+arrival. Part 5B (**FILE-051**) adds five things:
+- fail-closed scanning and deterministic metadata stripping;
+- copy-free publication;
+- school-scoped deduplication;
+- retention units with storage reconciliation;
+- single-use delivery links that are re-authorized when used.
+
+It also adds the malicious-file runbook and a drill that rehearses it.
+
+## FILE-051 at a glance
+
+The transcript is
+[`file051-verification.md`](file051-verification.md). The decisions are
+ADR-0023 and DL-044. The response procedure is
+[`docs/security/file051-malicious-file-runbook.md`](../../security/file051-malicious-file-runbook.md),
+and the threat model is
+[`docs/security/file051-threat-model.md`](../../security/file051-threat-model.md).
+
+| Gate | Result |
+|---|---|
+| Only clean, scanned objects publishable and deliverable | Pass |
+| Publication derives access without copies (thirty recipients, one object) | Pass |
+| Signed delivery re-authorizes at use; a leaked link is not a standing grant | Pass |
+| No cross-tenant dedupe signal | Pass |
+| Retention and reconciliation | Pass (mechanism; no durations set) |
+| Malicious-file response exercise | Pass (local drill) |
+| Independent file penetration test | **Not done** |
+| `allowsRemoteFileUploads` | still `false`; flipping it is a separate reviewed change |
+
+Executed for FILE-051:
+- 99 pgTAP assertions;
+- 30 end-to-end checks over real Storage, with the API and workers running
+  as their least-privilege roles;
+- a 15-check drill;
+- 6 index-backed query plans;
+- zero-drift reconciliation;
+- a full CI database replay from the pre-DB-020 boundary.
+
+The Bun suite is 368 pass, 1 skip, 0 fail. Twelve defects in the resumed,
+never-executed draft were found and fixed. One of them came from FILE-050:
+the worker role had no `USAGE` on `private`. The FILE-050 material below is
+unchanged.
 
 The full transcript, matrices, plans, scans, and gate assessment are in
 [`file050-verification.md`](file050-verification.md). The route contract is
@@ -104,6 +144,10 @@ None of these were caused by FILE-050; all are diagnosed in the transcript.
 
 ## Still blocking Phase 5 and launch
 
-FILE-051 (scanning, parser validation, EXIF removal, clean transitions,
-publication, deduplication, retention, delivery), independent security
-review, OPS-061/090, production E2E, and the remaining launch gates.
+- An independent file penetration test and security review.
+- A real malware-scanner vendor and credential (inputs.md A6).
+- Approved retention periods (§29).
+- OPS-061/090.
+- Production end-to-end testing.
+- The separately reviewed `allowsRemoteFileUploads` change.
+- The remaining launch gates.

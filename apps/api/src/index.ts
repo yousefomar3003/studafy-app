@@ -260,6 +260,17 @@ const files = sql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
         env.SUPABASE_SERVICE_ROLE_KEY,
       ),
       newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
+      // FILE-051 switches default off; delivery also needs its own signing
+      // key and public origin (production refuses to start without them).
+      publishEnabled: env.FILE051_PUBLISH_ENABLED,
+      delivery: env.FILE051_DELIVERY_ENABLED &&
+          env.FILE051_DELIVERY_SIGNING_KEY &&
+          env.FILE051_DELIVERY_PUBLIC_BASE_URL
+        ? {
+          signingKey: env.FILE051_DELIVERY_SIGNING_KEY,
+          publicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL,
+        }
+        : null,
     },
     authorization,
     idempotencyDependencies,

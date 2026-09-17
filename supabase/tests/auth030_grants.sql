@@ -65,6 +65,11 @@ select is(
     'api050_prepare_completion',
     'api050_prepare_intent',
     'api050_query',
+    -- FILE-051. Publication, download-grant issue and grant consumption;
+    -- each re-derives authorization from current state before acting.
+    'api051_consume_download_grant',
+    'api051_create_download_grant',
+    'api051_publish_file',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

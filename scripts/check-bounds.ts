@@ -31,6 +31,7 @@ const ALLOWED: Record<string, string[]> = {
     "ioredis",
     "bullmq",
     "@studafy/config",
+    "@studafy/domain",
     "@studafy/observability",
   ],
   "@studafy/test-support": [],

@@ -1643,6 +1643,68 @@ export type Database = {
           },
         ];
       };
+      file_delivery_grants: {
+        Row: {
+          consumed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          file_object_id: string;
+          id: string;
+          nonce_hash: string;
+          recipient_id: string;
+          request_id: string | null;
+          school_id: string;
+          state: string;
+        };
+        Insert: {
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at: string;
+          file_object_id: string;
+          id?: string;
+          nonce_hash: string;
+          recipient_id: string;
+          request_id?: string | null;
+          school_id: string;
+          state?: string;
+        };
+        Update: {
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          file_object_id?: string;
+          id?: string;
+          nonce_hash?: string;
+          recipient_id?: string;
+          request_id?: string | null;
+          school_id?: string;
+          state?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "file_delivery_grants_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName:
+              "file_delivery_grants_school_id_file_object_id_fkey";
+            columns: ["school_id", "file_object_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_delivery_grants_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       file_job_outbox: {
         Row: {
           attempt_count: number;
@@ -1657,7 +1719,7 @@ export type Database = {
           locked_by: string | null;
           school_id: string;
           state: Database["public"]["Enums"]["outbox_state"];
-          upload_session_id: string;
+          upload_session_id: string | null;
         };
         Insert: {
           attempt_count?: number;
@@ -1672,7 +1734,7 @@ export type Database = {
           locked_by?: string | null;
           school_id: string;
           state?: Database["public"]["Enums"]["outbox_state"];
-          upload_session_id: string;
+          upload_session_id?: string | null;
         };
         Update: {
           attempt_count?: number;
@@ -1687,7 +1749,7 @@ export type Database = {
           locked_by?: string | null;
           school_id?: string;
           state?: Database["public"]["Enums"]["outbox_state"];
-          upload_session_id?: string;
+          upload_session_id?: string | null;
         };
         Relationships: [
           {
@@ -1718,6 +1780,7 @@ export type Database = {
           bucket: string;
           created_at: string;
           declared_media_type: string | null;
+          dedup_source_file_id: string | null;
           deleted_at: string | null;
           detected_media_type: string | null;
           display_name: string | null;
@@ -1727,21 +1790,28 @@ export type Database = {
           object_key: string;
           owner_id: string | null;
           owner_membership_id: string | null;
+          physical_deleted_at: string | null;
           policy_version: string;
           purpose: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until: string | null;
+          scan_duration_ms: number | null;
           scan_error_code: string | null;
+          scan_policy_version: string | null;
           scan_state: Database["public"]["Enums"]["file_scan_state"];
           scanned_at: string | null;
           school_id: string;
           sha256: string | null;
           size_bytes: number;
+          stored_sha256: string | null;
+          stored_size_bytes: number | null;
+          transform_policy_version: string | null;
           uploader_id: string;
         };
         Insert: {
           bucket: string;
           created_at?: string;
           declared_media_type?: string | null;
+          dedup_source_file_id?: string | null;
           deleted_at?: string | null;
           detected_media_type?: string | null;
           display_name?: string | null;
@@ -1751,21 +1821,28 @@ export type Database = {
           object_key: string;
           owner_id?: string | null;
           owner_membership_id?: string | null;
+          physical_deleted_at?: string | null;
           policy_version?: string;
           purpose?: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until?: string | null;
+          scan_duration_ms?: number | null;
           scan_error_code?: string | null;
+          scan_policy_version?: string | null;
           scan_state?: Database["public"]["Enums"]["file_scan_state"];
           scanned_at?: string | null;
           school_id: string;
           sha256?: string | null;
           size_bytes: number;
+          stored_sha256?: string | null;
+          stored_size_bytes?: number | null;
+          transform_policy_version?: string | null;
           uploader_id: string;
         };
         Update: {
           bucket?: string;
           created_at?: string;
           declared_media_type?: string | null;
+          dedup_source_file_id?: string | null;
           deleted_at?: string | null;
           detected_media_type?: string | null;
           display_name?: string | null;
@@ -1775,15 +1852,21 @@ export type Database = {
           object_key?: string;
           owner_id?: string | null;
           owner_membership_id?: string | null;
+          physical_deleted_at?: string | null;
           policy_version?: string;
           purpose?: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until?: string | null;
+          scan_duration_ms?: number | null;
           scan_error_code?: string | null;
+          scan_policy_version?: string | null;
           scan_state?: Database["public"]["Enums"]["file_scan_state"];
           scanned_at?: string | null;
           school_id?: string;
           sha256?: string | null;
           size_bytes?: number;
+          stored_sha256?: string | null;
+          stored_size_bytes?: number | null;
+          transform_policy_version?: string | null;
           uploader_id?: string;
         };
         Relationships: [
@@ -1815,6 +1898,13 @@ export type Database = {
             referencedRelation: "memberships";
             referencedColumns: ["school_id", "id", "user_id"];
           },
+          {
+            foreignKeyName: "file051_file_dedup_same_school_fk";
+            columns: ["school_id", "dedup_source_file_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["school_id", "id"];
+          },
         ];
       };
       file_purpose_policies: {
@@ -1824,6 +1914,7 @@ export type Database = {
           maximum_size_bytes: number;
           policy_version: string;
           purpose: Database["public"]["Enums"]["file_purpose"];
+          retention_interval_days: number | null;
           updated_at: string;
         };
         Insert: {
@@ -1832,6 +1923,7 @@ export type Database = {
           maximum_size_bytes: number;
           policy_version: string;
           purpose: Database["public"]["Enums"]["file_purpose"];
+          retention_interval_days?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -1840,6 +1932,7 @@ export type Database = {
           maximum_size_bytes?: number;
           policy_version?: string;
           purpose?: Database["public"]["Enums"]["file_purpose"];
+          retention_interval_days?: number | null;
           updated_at?: string;
         };
         Relationships: [];
