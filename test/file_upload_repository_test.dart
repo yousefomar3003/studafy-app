@@ -21,23 +21,32 @@ void main() {
     bytes: bytes,
   );
 
-  test('API adapter reuses the intent key after response/upload failure', () async {
-    final transport = _FakeJsonTransport(uploadId: upload, fileId: file);
-    final signed = _FakeSignedUploadTransport(failOnce: true);
-    final repository = ApiFileUploadRepository(V1ApiClient(transport), signed);
+  test(
+    'API adapter reuses the intent key after response/upload failure',
+    () async {
+      final transport = _FakeJsonTransport(uploadId: upload, fileId: file);
+      final signed = _FakeSignedUploadTransport(failOnce: true);
+      final repository = ApiFileUploadRepository(
+        V1ApiClient(transport),
+        signed,
+      );
 
-    await expectLater(repository.upload(command), throwsA(isA<StateError>()));
-    final result = await repository.upload(command);
+      await expectLater(repository.upload(command), throwsA(isA<StateError>()));
+      final result = await repository.upload(command);
 
-    expect(result.id, file);
-    expect(result.scanState, 'quarantined');
-    expect(transport.intentKeys, [
-      'file-intent-attempt-1',
-      'file-intent-attempt-1',
-    ]);
-    expect(transport.completeKeys, ['file-complete-attempt-1']);
-    expect(signed.urls.every((value) => value.path == '/opaque-capability'), isTrue);
-  });
+      expect(result.id, file);
+      expect(result.scanState, 'quarantined');
+      expect(transport.intentKeys, [
+        'file-intent-attempt-1',
+        'file-intent-attempt-1',
+      ]);
+      expect(transport.completeKeys, ['file-complete-attempt-1']);
+      expect(
+        signed.urls.every((value) => value.path == '/opaque-capability'),
+        isTrue,
+      );
+    },
+  );
 
   test('synthetic preview is isolated and reports quarantine', () async {
     final result = await const PreviewFileUploadRepository().upload(command);

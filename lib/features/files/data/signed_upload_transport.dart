@@ -12,7 +12,8 @@ abstract interface class SignedUploadTransport {
 /// Sends bytes only to the complete server-issued capability. It never accepts
 /// a bucket or object key and refuses redirects so the capability cannot leak.
 class IoSignedUploadTransport implements SignedUploadTransport {
-  IoSignedUploadTransport({HttpClient? client}) : _client = client ?? HttpClient();
+  IoSignedUploadTransport({HttpClient? client})
+    : _client = client ?? HttpClient();
 
   final HttpClient _client;
 
@@ -32,7 +33,9 @@ class IoSignedUploadTransport implements SignedUploadTransport {
     request.add(bytes);
     final response = await request.close();
     await response.drain<void>();
-    if (response.isRedirect || response.statusCode < 200 || response.statusCode >= 300) {
+    if (response.isRedirect ||
+        response.statusCode < 200 ||
+        response.statusCode >= 300) {
       throw HttpException('Private upload failed.', uri: signedUrl);
     }
   }
