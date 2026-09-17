@@ -91,6 +91,9 @@ function harness(options: { enabled?: boolean; allowed?: boolean } = {}) {
     query: async () => ({ outcome: "not_found" }),
     prepareCompletion: async () => ({ outcome: "not_found" }),
     complete: async () => ({ outcome: "invalid" }),
+    publish: async () => ({ outcome: "invalid" }),
+    createDownloadGrant: async () => ({ outcome: "invalid" }),
+    consumeDownloadGrant: async () => ({ outcome: "grant_invalid" }),
   };
   const storage: PrivateFileStorage = {
     async createUploadCapability(uploadId) {
@@ -105,6 +108,10 @@ function harness(options: { enabled?: boolean; allowed?: boolean } = {}) {
     },
     inspect: async () => ({ exists: false }),
     delete: async () => undefined,
+    openObject: async () => {
+      throw new Error("not used");
+    },
+    replaceObject: async () => undefined,
   };
   const logger = createJsonLogger(
     "api",

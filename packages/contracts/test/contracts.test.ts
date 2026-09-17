@@ -70,8 +70,10 @@ describe("problem details contract", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "CONFLICT",
       "CURSOR_INVALID",
+      "DELIVERY_GRANT_INVALID",
       "FILE_DELIVERY_DISABLED",
       "FILE_NOT_CLEAN",
+      "FILE_PUBLISH_DISABLED",
       "FORBIDDEN",
       "IDEMPOTENCY_IN_PROGRESS",
       "IDEMPOTENCY_KEY_NOT_ALLOWED",

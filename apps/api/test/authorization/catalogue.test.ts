@@ -194,6 +194,9 @@ function routeTable() {
         query: async () => ({ outcome: "not_found" }),
         prepareCompletion: async () => ({ outcome: "not_found" }),
         complete: async () => ({ outcome: "invalid" }),
+        publish: async () => ({ outcome: "invalid" }),
+        createDownloadGrant: async () => ({ outcome: "invalid" }),
+        consumeDownloadGrant: async () => ({ outcome: "grant_invalid" }),
       },
       storage: {
         createUploadCapability: async () => {
@@ -201,6 +204,10 @@ function routeTable() {
         },
         inspect: async () => ({ exists: false }),
         delete: async () => undefined,
+        openObject: async () => {
+          throw new Error("disabled");
+        },
+        replaceObject: async () => undefined,
       },
     },
     authorization,
@@ -280,13 +287,16 @@ describe("permission catalogue", () => {
     const fileMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609170003_file050_upload_pipeline.sql`,
     ).text();
+    const file051Migration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609170004_file051_scan_delivery_publication.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}`,
       ).toContain(`'${permission}'`);
     }
   });
