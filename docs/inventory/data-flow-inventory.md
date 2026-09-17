@@ -67,8 +67,13 @@ idempotency, transactions, timeouts (API-040/041).
 
 | # | Flow | Content | Notes |
 |---|---|---|---|
-| F24 | (Removed) client → `private-school-files` | — | Dropped by SEC-001; no current client upload flow |
+| F24 | (Removed) client → `private-school-files` | — | Dropped by SEC-001; the direct client upload policy has never been restored |
 | F25 | Function-signed object URLs → AI provider | — | Only the disabled grading path ever did this; reinstatement requires FILE-050/051 metadata pipeline |
+| F26 | Client → `POST /v1/uploads` → API → storage adapter | P2 (declared name, size, type, SHA-256) | FILE-050. The request carries no path, key, bucket, owner or scan state. The API authorizes purpose and relationship, enforces six quotas under a row lock, and the adapter generates `quarantine/v1/{uploadId}/{random}` and signs it for two hours. The URL is returned once and redacted from logs, audit records, errors and telemetry |
+| F27 | Client → signed capability → `private-school-files` | P0/P1 (schoolwork, identifiable images, graded papers) | FILE-050. Direct `PUT` of the declared bytes only, to the server-chosen key, no redirects followed. One key accepts one object (`upsert: false`). Off by default: `FILE050_NEW_INTENTS_ENABLED=false`, `allowsRemoteFileUploads=false` |
+| F28 | API → storage (service role) → API | P0/P1 | FILE-050 completion. The path comes from a private owner-only query, never the client. Bytes are streamed under a hard byte bound, digested server-side and type-detected from magic bytes; object, binding, audit event, outbox job and idempotency completion commit in one transaction. Objects land `quarantined`; mismatches land `rejected` |
+| F29 | Worker → storage (service role) | P2 (object locations) | FILE-050 cleanup. Exact bucket/key come from a `SECURITY DEFINER` claim, never from the job payload. The database row is marked `deleted` only after storage confirms removal |
+| F30 | (Not enabled) `POST /v1/files/{fileId}/download-intent` → client | — | Contract and authorization boundary only. FILE-050 returns `FILE_NOT_CLEAN` or `FILE_DELIVERY_DISABLED`; no object is downloadable until FILE-051 |
 
 ## Known-weakness register (linked to roadmap)
 
@@ -89,6 +94,8 @@ idempotency, transactions, timeouts (API-040/041).
 | Demo-role fallback is restricted to synthetic runtime but full server role authorization remains future work | `features/session/application/session_interactor.dart`, `studafy_domain.dart` | ARC-011 / AUTH-030 |
 | Local errors swallowed; raw server causes returned as 400s | feature files, functions | API-040 |
 | No CI/CD deploy, central logging, metrics, tracing, alerting | repository-wide | INFRA-080/081, OPS-090 |
+| Quarantined objects are inert but unexamined — magic-byte detection establishes format, not safety | FILE-050 pipeline | FILE-051 (scanning, parser validation, EXIF removal, clean transitions) |
+| `POST /v1/blocks/{blockId}/unblock` returns 500: the dispatcher branch returns the raw snake_case row instead of the camelCase `V1Block` projection | migration `202609170002` | SAFE-043 follow-up (forward-only re-emit of the dispatcher) |
 
 ## Positive controls already in place
 

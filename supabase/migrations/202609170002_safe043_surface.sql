@@ -798,10 +798,13 @@ begin
       if not (v_user = auth.uid() or private.is_school_admin(resolved_school)) then
         return jsonb_build_object('outcome', 'forbidden');
       end if;
+      -- Project the row while it still exists: the route validates against the
+      -- camelCase V1Block, and to_jsonb(b) is the raw snake_case row, which
+      -- fails response validation and surfaces as a 500.
+      response := private.safe043_block_json(p_resource_id);
       delete from public.user_blocks where id = p_resource_id;
       entity_id := p_resource_id; entity_type := 'user_block'; audit_action := 'user_unblocked';
       tenant := resolved_school;
-      response := before_value;
 
     when 'triageReport' then
       select r.school_id, r.status, r.version, to_jsonb(r)

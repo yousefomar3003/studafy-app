@@ -31,6 +31,17 @@ the synthetic public URL/publishable key and mode 0600; it contains no server
 secret. The ignored root `.env` contains only disposable local API/worker
 Postgres and Redis connection settings.
 
+`allowsRemoteFileUploads` is `false` in every runtime environment. FILE-050
+built the upload pipeline but did not switch it on; FILE-051 owns that.
+
+### Server-only settings (FILE-050)
+
+| Setting | Default | Notes |
+|---|---|---|
+| `FILE050_NEW_INTENTS_ENABLED` | `false` | API. Turning it off still allows completion, status reads and cleanup of already-issued sessions, so ingress can be stopped without stranding in-flight uploads |
+| `FILE050_CLEANUP_ENABLED` | `false` | Worker. Requires `DATABASE_URL`, `SUPABASE_URL` and the service-role key, validated at startup |
+| `SUPABASE_SERVICE_ROLE_KEY` | unset | **Server and worker only.** Never a dart-define. Held by one storage adapter and injected at the composition root; production fails closed if intents are enabled without it |
+
 ## CI (`ci.yml`, "CI (no deployment)")
 
 Read-only permissions, no deployment credentials, no linked-project state,

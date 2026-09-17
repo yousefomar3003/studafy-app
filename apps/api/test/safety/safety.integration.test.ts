@@ -75,9 +75,12 @@ async function seed(): Promise<void> {
 async function cleanup(): Promise<void> {
   await sql.begin(async (tx) => {
     await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
+    await tx`alter table public.report_events disable trigger safe043_reject_mutation`;
+    await tx`alter table public.report_evidence disable trigger safe043_reject_mutation`;
     await tx`delete from public.moderation_access_grants where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.legal_holds where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.user_blocks where school_id = ${SCHOOL}::uuid`;
+    await tx`delete from public.report_evidence where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.report_events where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.report_attempts where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.reports where school_id = ${SCHOOL}::uuid`;
@@ -86,6 +89,8 @@ async function cleanup(): Promise<void> {
     await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
     await tx`delete from auth.users where id in (${OPERATOR_A}::uuid, ${OPERATOR_B}::uuid, ${ADMIN}::uuid, ${TEACHER}::uuid, ${STUDENT}::uuid)`;
+    await tx`alter table public.report_evidence enable trigger safe043_reject_mutation`;
+    await tx`alter table public.report_events enable trigger safe043_reject_mutation`;
     await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
   });
 }
@@ -205,6 +210,7 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
         method: "POST",
         subject: ADMIN,
         body: {
+          schoolId: SCHOOL,
           expectedVersion: 1,
           messagingEnabled: true,
           contentFilterLevel: "moderate",
@@ -424,7 +430,7 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
         method: "POST",
         subject: OPERATOR_A,
         aal2: true,
-        body: { expectedVersion: 1 },
+        body: { expectedVersion: 2 },
       },
     );
     expect(start.status).toBe(200);
@@ -441,7 +447,7 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
         method: "POST",
         subject: OPERATOR_A,
         aal2: true,
-        body: { expectedVersion: 2, reason: "coverage resolved" },
+        body: { expectedVersion: 3, reason: "coverage resolved" },
       },
     );
     expect(revoke.status).toBe(200);
@@ -453,7 +459,7 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
         method: "POST",
         subject: OPERATOR_A,
         aal2: true,
-        body: { expectedVersion: 3 },
+        body: { expectedVersion: 4 },
       },
     );
     expect(revived.status).toBe(409);
@@ -484,6 +490,7 @@ suite("SAFE-043 safety & safeguarding over the real /v1 stack", () => {
     const unblock = await request(`/v1/blocks/${blockId}/unblock`, {
       method: "POST",
       subject: TEACHER,
+      body: {},
     });
     expect(unblock.status).toBe(200);
   });

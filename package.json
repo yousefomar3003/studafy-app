@@ -16,10 +16,12 @@
     "test:db020:plans": "bun scripts/verify-db020-query-plans.ts",
     "test:db021:plans": "bun scripts/verify-db021-policy-plans.ts",
     "test:api041:plans": "bun scripts/verify-api041-query-plans.ts",
+    "test:file050:plans": "bun scripts/verify-file050-query-plans.ts",
+    "test:file050:storage": "bun scripts/verify-file050-storage.ts",
     "test:auth030:lifecycle": "bun apps/api/scripts/verify-auth030-lifecycle.ts",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
-    "check:bounds": "bun scripts/check-bounds.ts",
+    "check:bounds": "bun scripts/check-bounds.ts && bun scripts/check-file050-boundaries.ts",
     "build": "bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build",
     "dev:stack": "docker compose -f docker-compose.dev.yml up -d"
   },

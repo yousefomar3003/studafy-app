@@ -17,6 +17,9 @@ import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/data/preview_classroom_repository.dart';
 import '../features/classes/data/api_classroom_repository.dart';
 import '../features/classes/domain/classroom_repository.dart';
+import '../features/files/data/preview_file_upload_repository.dart';
+import '../features/files/data/unavailable_file_upload_repository.dart';
+import '../features/files/domain/file_upload_repository.dart';
 import '../features/parent/data/preview_parent_repository.dart';
 import '../features/parent/data/unavailable_parent_repository.dart';
 import '../features/parent/domain/parent_repository.dart';
@@ -48,6 +51,7 @@ class AppDependencies {
     required this.account,
     required this.academicApi,
     required this.academic,
+    required this.fileUploads,
   });
 
   final SessionInteractor session;
@@ -59,6 +63,7 @@ class AppDependencies {
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
+  final FileUploadRepository fileUploads;
 
   static AppDependencies forPolicy(RuntimePolicy policy) {
     final telemetry = const DebugLogTelemetry();
@@ -110,6 +115,12 @@ class AppDependencies {
       academic: remote == null
           ? PreviewAcademicRepository()
           : ApiAcademicRepository(remote.api, context: context),
+      // FILE-050 ships the typed client but does not activate remote bytes.
+      // FILE-051 will replace this remote adapter only after scanning and
+      // clean delivery pass their gate.
+      fileUploads: policy.isSynthetic
+          ? const PreviewFileUploadRepository()
+          : const UnavailableFileUploadRepository(),
     );
   }
 

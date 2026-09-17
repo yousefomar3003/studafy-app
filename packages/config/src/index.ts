@@ -41,6 +41,8 @@ const origins = z.string().default("").transform((value, context) => {
 const switchFlag = z.enum(["true", "false"]).default("true").transform(
   (value) => value === "true",
 );
+const disabledSwitchFlag = z.enum(["true", "false"]).default("false")
+  .transform((value) => value === "true");
 
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
@@ -78,6 +80,8 @@ export const apiEnvSchema = z.object({
   SAFE043_BLOCKS_ENABLED: switchFlag,
   SAFE043_MODERATION_ENABLED: switchFlag,
   SAFE043_CONTENT_CONTROLS_ENABLED: switchFlag,
+  FILE050_NEW_INTENTS_ENABLED: disabledSwitchFlag,
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
   // separately, so a misconfiguration cannot leave the API trusting one
@@ -104,6 +108,27 @@ export const workerEnvSchema = z.object({
   ENVIRONMENT: Environment,
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
+  DATABASE_URL: url.optional(),
+  SUPABASE_URL: url.optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  FILE050_CLEANUP_ENABLED: disabledSwitchFlag,
+}).superRefine((value, context) => {
+  if (!value.FILE050_CLEANUP_ENABLED) return;
+  for (
+    const key of [
+      "DATABASE_URL",
+      "SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+    ] as const
+  ) {
+    if (!value[key]) {
+      context.addIssue({
+        code: "custom",
+        path: [key],
+        message: "required when FILE050 cleanup is enabled",
+      });
+    }
+  }
 });
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 
@@ -144,6 +169,9 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   // cannot verify a token must not start rather than start unauthenticated.
   if (!env.SUPABASE_URL) missing.push("SUPABASE_URL");
   if (!env.API_CURSOR_SIGNING_KEY) missing.push("API_CURSOR_SIGNING_KEY");
+  if (env.FILE050_NEW_INTENTS_ENABLED && !env.SUPABASE_SERVICE_ROLE_KEY) {
+    missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  }
   if (missing.length > 0) {
     throw new ConfigError(
       `Production requires ${missing.join(", ")} to be configured.`,
@@ -222,6 +250,10 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       moderation: env.SAFE043_MODERATION_ENABLED,
       contentControls: env.SAFE043_CONTENT_CONTROLS_ENABLED,
     },
+    file050: {
+      newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
+      serviceRoleConfigured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    },
   };
 }
 
@@ -231,5 +263,9 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     environment: env.ENVIRONMENT,
     log_level: env.LOG_LEVEL,
     redis_url: redactUrl(env.REDIS_URL),
+    database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
+    supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
+    file050_cleanup_enabled: env.FILE050_CLEANUP_ENABLED,
+    service_role_configured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
   };
 }

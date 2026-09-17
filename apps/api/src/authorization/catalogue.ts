@@ -800,6 +800,26 @@ export const PERMISSION_CATALOGUE = {
     "school",
     "List moderation-access grants for a school as a platform operator or that school's administrator.",
   ),
+  "upload.intent.create": resource(
+    "school",
+    "Create a purpose-bound upload reservation in an active school.",
+  ),
+  "upload.read": resource(
+    "upload_session",
+    "Read an upload session owned by the authenticated actor.",
+  ),
+  "upload.complete": resource(
+    "upload_session",
+    "Complete an upload session owned by the authenticated actor.",
+  ),
+  "file.read": resource(
+    "file_object",
+    "Read safe metadata for a file owned by the authenticated actor.",
+  ),
+  "file.download": resource(
+    "file_object",
+    "Request delivery only for a currently authorized clean file.",
+  ),
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

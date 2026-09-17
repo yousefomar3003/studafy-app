@@ -1532,6 +1532,7 @@ export type Database = {
           resource_version_id: string | null;
           school_id: string;
           submission_attempt_id: string | null;
+          upload_session_id: string | null;
         };
         Insert: {
           ai_grading_draft_id?: string | null;
@@ -1542,6 +1543,7 @@ export type Database = {
           resource_version_id?: string | null;
           school_id: string;
           submission_attempt_id?: string | null;
+          upload_session_id?: string | null;
         };
         Update: {
           ai_grading_draft_id?: string | null;
@@ -1552,6 +1554,7 @@ export type Database = {
           resource_version_id?: string | null;
           school_id?: string;
           submission_attempt_id?: string | null;
+          upload_session_id?: string | null;
         };
         Relationships: [
           {
@@ -1631,6 +1634,83 @@ export type Database = {
             referencedRelation: "submission_attempts";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "file050_binding_upload_school_fk";
+            columns: ["school_id", "upload_session_id"];
+            isOneToOne: false;
+            referencedRelation: "upload_sessions";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
+      file_job_outbox: {
+        Row: {
+          attempt_count: number;
+          available_at: string;
+          completed_at: string | null;
+          created_at: string;
+          file_object_id: string | null;
+          id: number;
+          job_type: string;
+          last_error_code: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
+          school_id: string;
+          state: Database["public"]["Enums"]["outbox_state"];
+          upload_session_id: string;
+        };
+        Insert: {
+          attempt_count?: number;
+          available_at?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          file_object_id?: string | null;
+          id?: never;
+          job_type: string;
+          last_error_code?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          school_id: string;
+          state?: Database["public"]["Enums"]["outbox_state"];
+          upload_session_id: string;
+        };
+        Update: {
+          attempt_count?: number;
+          available_at?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          file_object_id?: string | null;
+          id?: never;
+          job_type?: string;
+          last_error_code?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          school_id?: string;
+          state?: Database["public"]["Enums"]["outbox_state"];
+          upload_session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "file_job_outbox_school_id_file_object_id_fkey";
+            columns: ["school_id", "file_object_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_job_outbox_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "file_job_outbox_school_id_upload_session_id_fkey";
+            columns: ["school_id", "upload_session_id"];
+            isOneToOne: false;
+            referencedRelation: "upload_sessions";
+            referencedColumns: ["school_id", "id"];
+          },
         ];
       };
       file_objects: {
@@ -1640,16 +1720,21 @@ export type Database = {
           declared_media_type: string | null;
           deleted_at: string | null;
           detected_media_type: string | null;
+          display_name: string | null;
           encryption_key_id: string | null;
           id: string;
           legal_hold: boolean;
           object_key: string;
+          owner_id: string | null;
+          owner_membership_id: string | null;
+          policy_version: string;
+          purpose: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until: string | null;
           scan_error_code: string | null;
           scan_state: Database["public"]["Enums"]["file_scan_state"];
           scanned_at: string | null;
           school_id: string;
-          sha256: string;
+          sha256: string | null;
           size_bytes: number;
           uploader_id: string;
         };
@@ -1659,16 +1744,21 @@ export type Database = {
           declared_media_type?: string | null;
           deleted_at?: string | null;
           detected_media_type?: string | null;
+          display_name?: string | null;
           encryption_key_id?: string | null;
           id?: string;
           legal_hold?: boolean;
           object_key: string;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          policy_version?: string;
+          purpose?: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until?: string | null;
           scan_error_code?: string | null;
           scan_state?: Database["public"]["Enums"]["file_scan_state"];
           scanned_at?: string | null;
           school_id: string;
-          sha256: string;
+          sha256?: string | null;
           size_bytes: number;
           uploader_id: string;
         };
@@ -1678,20 +1768,32 @@ export type Database = {
           declared_media_type?: string | null;
           deleted_at?: string | null;
           detected_media_type?: string | null;
+          display_name?: string | null;
           encryption_key_id?: string | null;
           id?: string;
           legal_hold?: boolean;
           object_key?: string;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          policy_version?: string;
+          purpose?: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until?: string | null;
           scan_error_code?: string | null;
           scan_state?: Database["public"]["Enums"]["file_scan_state"];
           scanned_at?: string | null;
           school_id?: string;
-          sha256?: string;
+          sha256?: string | null;
           size_bytes?: number;
           uploader_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "file_objects_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "file_objects_school_id_fkey";
             columns: ["school_id"];
@@ -1704,6 +1806,81 @@ export type Database = {
             columns: ["uploader_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "file050_file_owner_school_fk";
+            columns: ["school_id", "owner_membership_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "memberships";
+            referencedColumns: ["school_id", "id", "user_id"];
+          },
+        ];
+      };
+      file_purpose_policies: {
+        Row: {
+          allowed_media_types: string[];
+          enabled: boolean;
+          maximum_size_bytes: number;
+          policy_version: string;
+          purpose: Database["public"]["Enums"]["file_purpose"];
+          updated_at: string;
+        };
+        Insert: {
+          allowed_media_types: string[];
+          enabled?: boolean;
+          maximum_size_bytes: number;
+          policy_version: string;
+          purpose: Database["public"]["Enums"]["file_purpose"];
+          updated_at?: string;
+        };
+        Update: {
+          allowed_media_types?: string[];
+          enabled?: boolean;
+          maximum_size_bytes?: number;
+          policy_version?: string;
+          purpose?: Database["public"]["Enums"]["file_purpose"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      file_quota_policies: {
+        Row: {
+          school_id: string;
+          school_live_objects: number;
+          school_rolling_bytes: number;
+          school_stored_bytes: number;
+          updated_at: string;
+          user_active_sessions: number;
+          user_hourly_intents: number;
+          user_rolling_bytes: number;
+        };
+        Insert: {
+          school_id: string;
+          school_live_objects?: number;
+          school_rolling_bytes?: number;
+          school_stored_bytes?: number;
+          updated_at?: string;
+          user_active_sessions?: number;
+          user_hourly_intents?: number;
+          user_rolling_bytes?: number;
+        };
+        Update: {
+          school_id?: string;
+          school_live_objects?: number;
+          school_rolling_bytes?: number;
+          school_stored_bytes?: number;
+          updated_at?: string;
+          user_active_sessions?: number;
+          user_hourly_intents?: number;
+          user_rolling_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "file_quota_policies_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: true;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];
@@ -4428,47 +4605,89 @@ export type Database = {
       };
       upload_sessions: {
         Row: {
+          actual_size_bytes: number | null;
           allowed_media_types: string[];
+          assignment_id: string | null;
+          bucket: string | null;
+          classroom_id: string | null;
           completed_at: string | null;
           created_at: string;
+          declared_media_type: string | null;
+          display_name: string | null;
+          expected_sha256: string | null;
           expected_size_bytes: number;
           expires_at: string;
+          failure_code: string | null;
           file_object_id: string | null;
+          grade_result_id: string | null;
           id: string;
           nonce_hash: string;
+          object_key: string | null;
+          owner_id: string | null;
+          owner_membership_id: string | null;
+          policy_version: string;
           purpose: string;
           school_id: string;
           state: Database["public"]["Enums"]["upload_session_state"];
+          student_id: string | null;
           updated_at: string;
           uploader_id: string;
         };
         Insert: {
+          actual_size_bytes?: number | null;
           allowed_media_types: string[];
+          assignment_id?: string | null;
+          bucket?: string | null;
+          classroom_id?: string | null;
           completed_at?: string | null;
           created_at?: string;
+          declared_media_type?: string | null;
+          display_name?: string | null;
+          expected_sha256?: string | null;
           expected_size_bytes: number;
           expires_at: string;
+          failure_code?: string | null;
           file_object_id?: string | null;
+          grade_result_id?: string | null;
           id?: string;
           nonce_hash: string;
+          object_key?: string | null;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          policy_version?: string;
           purpose: string;
           school_id: string;
           state?: Database["public"]["Enums"]["upload_session_state"];
+          student_id?: string | null;
           updated_at?: string;
           uploader_id: string;
         };
         Update: {
+          actual_size_bytes?: number | null;
           allowed_media_types?: string[];
+          assignment_id?: string | null;
+          bucket?: string | null;
+          classroom_id?: string | null;
           completed_at?: string | null;
           created_at?: string;
+          declared_media_type?: string | null;
+          display_name?: string | null;
+          expected_sha256?: string | null;
           expected_size_bytes?: number;
           expires_at?: string;
+          failure_code?: string | null;
           file_object_id?: string | null;
+          grade_result_id?: string | null;
           id?: string;
           nonce_hash?: string;
+          object_key?: string | null;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          policy_version?: string;
           purpose?: string;
           school_id?: string;
           state?: Database["public"]["Enums"]["upload_session_state"];
+          student_id?: string | null;
           updated_at?: string;
           uploader_id?: string;
         };
@@ -4481,10 +4700,52 @@ export type Database = {
             referencedColumns: ["school_id", "id"];
           },
           {
+            foreignKeyName: "file050_upload_assignment_school_fk";
+            columns: ["school_id", "assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file050_upload_classroom_school_fk";
+            columns: ["school_id", "classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file050_upload_grade_school_fk";
+            columns: ["school_id", "grade_result_id"];
+            isOneToOne: false;
+            referencedRelation: "grade_results";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file050_upload_owner_school_fk";
+            columns: ["school_id", "owner_membership_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "memberships";
+            referencedColumns: ["school_id", "id", "user_id"];
+          },
+          {
+            foreignKeyName: "file050_upload_student_school_fk";
+            columns: ["school_id", "student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
             foreignKeyName: "upload_sessions_file_object_id_fkey";
             columns: ["file_object_id"];
             isOneToOne: false;
             referencedRelation: "file_objects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "upload_sessions_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -4681,6 +4942,13 @@ export type Database = {
         | "on_hold"
         | "revoked"
         | "expired";
+      file_purpose:
+        | "profile_image"
+        | "lesson_resource"
+        | "assignment_material"
+        | "assignment_submission"
+        | "paper_scan"
+        | "coach_attachment";
       file_scan_state:
         | "quarantined"
         | "scanning"
@@ -4763,7 +5031,8 @@ export type Database = {
         | "uploaded"
         | "completed"
         | "expired"
-        | "cancelled";
+        | "cancelled"
+        | "rejected";
       wellbeing_visibility:
         | "class_staff"
         | "guardian_shared"
@@ -4928,6 +5197,14 @@ export const Constants = {
         "revoked",
         "expired",
       ],
+      file_purpose: [
+        "profile_image",
+        "lesson_resource",
+        "assignment_material",
+        "assignment_submission",
+        "paper_scan",
+        "coach_attachment",
+      ],
       file_scan_state: [
         "quarantined",
         "scanning",
@@ -5019,6 +5296,7 @@ export const Constants = {
         "completed",
         "expired",
         "cancelled",
+        "rejected",
       ],
       wellbeing_visibility: [
         "class_staff",

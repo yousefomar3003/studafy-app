@@ -11,6 +11,7 @@
   "dependencies": {
     "@studafy/config": "workspace:*",
     "@studafy/contracts": "workspace:*",
+    "@studafy/database": "workspace:*",
     "@studafy/infrastructure": "workspace:*",
     "@studafy/observability": "workspace:*",
     "bullmq": "6.3.4"
