@@ -33,7 +33,7 @@ FILE-051 (scanning and delivery) remains the gate.
 | Suite | Command | Result |
 |---|---|---|
 | TypeScript | `bun run typecheck` | 9/9 workspaces clean |
-| Bun tests | `bun test apps packages` | 302 pass, 1 skip, 1 fail (pre-existing SAFE-043, below) |
+| Bun tests | `bun test apps packages` | 303 pass, 1 skip, 0 fail |
 | pgTAP | `bunx supabase test db --local supabase/tests/file050_upload_seed.sql` | 36/36 pass |
 | Storage | `bun run test:file050:storage` | 1 pass, 5 assertions |
 | Quota races | `bun test apps/api/test/files/quota.integration.test.ts` | 4 pass, 18 assertions |
@@ -48,7 +48,9 @@ FILE-051 (scanning and delivery) remains the gate.
 | Flutter tests | `flutter test` | 127 pass |
 | Secret scan | `gitleaks detect` | no leaks in history; working-tree findings confined to gitignored `build/` |
 | Database lint | `bunx supabase db lint --local --level error --fail-on error` | no errors |
-| Full CI database job | replay from zero, then the eleven pgTAP suites in CI order | all pass |
+| Full CI database job | replay from zero, then the thirteen pgTAP suites in CI order | all pass |
+| SAFE-043 drill | `bun scripts/moderation-drill.ts` | `passed: true` |
+| AUTH-030 lifecycle | `bun run test:auth030:lifecycle` | 26/26 checks passed |
 | Edge Functions | `deno check --frozen=true`, `deno test --frozen=true`, `deno lint`, `deno fmt --check` | all clean |
 | Dart format | `dart format --set-exit-if-changed lib test tools` | 148 files, 0 changed |
 | Dart boundaries | `dart run tools/check_dart_bounds.dart` | 58 feature files, 0 violations |
@@ -268,57 +270,85 @@ image.
    Function job before it type-checked anything. `deno fmt` does not touch
    Dart, so `dart format --set-exit-if-changed` failed separately.
 
-## Pre-existing failures, not caused by FILE-050
+## Pre-existing SAFE-043 failures, found here and fixed
 
-The Bun suite reports one failure:
+None of the following were caused by FILE-050. All were confirmed pre-existing
+by running the suites from a clean detached worktree at `HEAD` (`a05bf93`),
+where they fail identically. DL-042 had already recorded the reason: SAFE-043
+shipped with its suites written but **never executed**, because that
+environment had no `bun`/`node`/`docker`/`supabase` toolchain. Running the real
+CI jobs for this phase was the first time any of it ran.
 
-> `SAFE-043 … > blocks are created and unblocked over the HTTP surface`
+They are fixed here because CI is a required gate and this branch cannot merge
+behind them.
 
-This was confirmed pre-existing by running the same suite from a clean
-detached worktree at `HEAD` (`a05bf93`), where it fails identically. Four
-SAFE-043 tests were failing there; three were straightforward test defects
-and are fixed in this branch:
+### The /v1 integration suite
 
 | Defect | Cause | Fix |
 |---|---|---|
 | `cleanup()` threw `Append-only relation cannot be updated or deleted` | `report_events`/`report_evidence` carry `safe043_reject_mutation`, which `cleanup()` never disabled, so the suite passed once against a fresh database and failed forever after | disable both triggers around the deletes, and delete `report_evidence` too |
 | content-controls assert returned `400` | `V1UpdateContentControlsRequest` requires `schoolId` in the body; path params are not merged into the body, and the test only supplied it in the path | send `schoolId` in the body |
 | moderator `start` returned `409` | the preceding `approve` moved the grant to version 2; `start`/`revoke` still sent the pre-approval versions | advance the expected versions |
-| unblock returned `400`, then `500` | the test sent no JSON body at all; with a body it reaches the dispatcher, which returns the raw snake-case row | **not fixed — see below** |
+| unblock returned `400`, then `500` | no JSON body was sent; with one it reached the dispatcher, which returned the raw row | see below |
 
-### The SAFE-043 surface pgTAP suite has never passed
+### The unblock route returned 500 in every environment
 
-Separately, `supabase/tests/safe043_surface_seed.sql` fails. DL-042 recorded
-why: SAFE-043 shipped with its suites written but never executed, because that
-environment had no `bun`/`node`/`docker`/`supabase` toolchain. None of those
-files are touched by this branch.
-
-Two unbalanced-paren syntax errors are fixed here as partial progress — two
-`api042_command` calls closed `jsonb_build_object` one paren too many, which
-terminated the call early. With those corrected the script reaches further,
-and what remains are authorization mismatches rather than syntax: "held report
-leaves the queue" returns null, "teacher can block a student" returns
-forbidden, and "operator request with MFA is accepted" returns forbidden. The
-later `:'grant_id'` syntax error is a consequence, not a cause — the `\gset`
-that binds it runs off a request that already failed.
-
-Resolving those is SAFE-043 remediation and is not attempted here.
-
-### The unblock route returns 500
-
-The remaining Bun failure is a genuine SAFE-043 **product** defect, not a test
-bug. In `202609170002_safe043_surface.sql`, the `unblockUser` branch sets
+A genuine **product** defect, not a test bug. In
+`202609170002_safe043_surface.sql`, the `unblockUser` branch set
 `response := before_value`, which is `to_jsonb(b)` — the raw row, with
 snake_case columns. The route validates against `V1Block`, which is camelCase,
-so `safeParse` fails and the handler returns `500`. Every other branch uses a
-projection function (`private.safe043_block_json`); `unblockUser` cannot,
+so `safeParse` failed and the handler returned `500`. Every other branch uses
+a projection function (`private.safe043_block_json`); `unblockUser` could not,
 because it deletes the row first.
 
-The fix is to capture the projection *before* the delete. It is left
-unapplied here deliberately: the dispatcher is a single large PL/pgSQL
-function, so a forward-only correction means re-emitting it in a new
-migration, which is SAFE-043's scope and its own review. **`POST
-/v1/blocks/{blockId}/unblock` currently returns `500` in every environment.**
+The projection is now taken while the row still exists. Fixed in place rather
+than as a new migration, following the precedent of 497e65b: SAFE-043 has
+never been deployed anywhere, and CI replays every migration from zero.
+
+### The surface pgTAP suite had never passed
+
+Five defects, only the last of which is syntax:
+
+- Three idempotency keys were exactly 15 characters, one under the 16-128
+  contract in `202609140002_api040_platform_controls.sql`, so the reservation
+  returned `invalid` and every command built on it was refused. c9e3f46 had
+  padded most of these; three were missed.
+- Phase F ran as the teacher while the tenant was still blank from the
+  operator's global context in Phase E, so every school-scoped command in the
+  blocks phase was forbidden.
+- "held report leaves the queue" read the report back as the platform operator
+  who had just applied the hold. That operator holds no JIT grant yet, so
+  `not_found` is correct behaviour; the assertion belongs in the school
+  admin's context, since the school's own admins are the moderation authority
+  by design. Moved rather than weakened.
+- `startModerationAccess`/`revokeModerationAccess` sent pre-approval expected
+  versions after `approve` had advanced the grant.
+- One `insert into safe043_results values (` was never closed, so the
+  statement swallowed everything through to `rollback`.
+
+All 69 assertions now pass.
+
+### The moderation drill had never run
+
+- Identity was established with `set_config(..., is_local => true)` as a
+  standalone statement on a pooled connection. Those settings are
+  transaction-local, so they were discarded before the next call and every
+  dispatcher call ran with a null `auth.uid()`. Query and command now each run
+  inside one claimed transaction, mirroring the API's `withRequestContext`.
+- Payloads were bound with `JSON.stringify` to a `::jsonb` parameter, but
+  postgres.js JSON-encodes a JS string bound to a json/jsonb parameter, so the
+  database received a JSON **string scalar**. `->'body'` was null, every
+  `schoolId` resolved to null, and `createReport` answered `not_found`.
+- An empty resource id reached a `::uuid` parameter as `""`.
+- Twelve request ids doubled as idempotency keys while being shorter than the
+  16-character minimum. A refused reservation now throws with its outcome
+  instead of surfacing later as an undefined query parameter.
+- `start`/`revoke` sent pre-approval expected versions.
+- Teardown had the same append-only defect as the integration suite, and
+  fixture emails used a fixed local part with random uuids, so any aborted run
+  permanently blocked later runs on the unique email index.
+
+The drill now reports `passed: true` end to end.
 
 ## Gaps against the plan
 

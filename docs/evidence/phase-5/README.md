@@ -75,23 +75,32 @@ integration cases, 1 live signed-capability storage case, 5 query plans,
 127 Flutter tests, the eleven-suite CI database sequence replayed from zero,
 the Edge Function checks, plus typecheck, lint, format, build,
 generation-drift, database-type-drift, database lint, boundary, and secret
-scans. The pre-existing SAFE-043 failures below are unrelated to this slice
-and are documented in the transcript.
+scans. The full Bun suite is 303 pass / 0 fail and every pgTAP suite in the
+CI database job passes from a clean replay.
 
-## Known carry-over
+## SAFE-043 debt cleared along the way
 
-Two SAFE-043 items, both found while running the suites for this phase, both
-diagnosed in the transcript and neither caused by this branch:
+Running the real CI jobs for this phase surfaced that SAFE-043 had never
+passed its own gates — DL-042 said as much, recording that its suites were
+written but never executed for want of a toolchain. Three things were fixed
+here so this branch's CI can go green:
 
-- `POST /v1/blocks/{blockId}/unblock` returns `500` in every environment: the
-  dispatcher returns the raw snake-case row where the contract expects the
-  camelCase `V1Block` projection. Left for SAFE-043 to fix forward-only,
-  because the correction means re-emitting its dispatcher.
-- `supabase/tests/safe043_surface_seed.sql` has never passed. DL-042 recorded
-  that SAFE-043's suites were written but never executed for want of a
-  toolchain. Two unbalanced-paren syntax errors are fixed here as partial
-  progress; the remaining failures are authorization mismatches in the
-  dispatcher and are not attempted.
+- **`POST /v1/blocks/{blockId}/unblock` returned `500` in every
+  environment.** Its dispatcher branch returned the raw snake-case row where
+  the contract expects the camelCase `V1Block` projection. The projection is
+  now taken before the row is deleted.
+- **`safe043_surface_seed.sql` had never passed.** Five defects: three
+  idempotency keys one character under the API-040 minimum, a blank tenant
+  carried into the blocks phase, a held-report read performed as an operator
+  with no JIT grant, a stale expected-version chain after approval, and an
+  unclosed `insert`. All 69 assertions now pass.
+- **The moderation drill had never run.** Transaction-local identity was set
+  outside a transaction, payloads were double-encoded into jsonb, twelve
+  request ids were below the idempotency key minimum, teardown could not
+  clear append-only tables, and fixture emails collided across runs. It now
+  reports `passed: true` end to end.
+
+None of these were caused by FILE-050; all are diagnosed in the transcript.
 
 ## Still blocking Phase 5 and launch
 
