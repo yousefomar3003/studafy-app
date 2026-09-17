@@ -27,6 +27,7 @@ const ALLOWED: Record<string, string[]> = {
     "@studafy/observability",
   ],
   "@studafy/infrastructure": [
+    "@supabase/supabase-js",
     "ioredis",
     "bullmq",
     "@studafy/config",
@@ -48,6 +49,7 @@ const ALLOWED: Record<string, string[]> = {
     "bullmq",
     "@studafy/config",
     "@studafy/contracts",
+    "@studafy/database",
     "@studafy/infrastructure",
     "@studafy/observability",
     "@studafy/test-support",

@@ -10,6 +10,7 @@ import {
   V1AuthErrorCode,
   V1ClassroomListResponse,
   V1ContextMembership,
+  V1CreateUploadIntentRequest,
   V1DeletionImpactResponse,
   V1DeletionRequestRequest,
   V1Membership,
@@ -69,6 +70,8 @@ describe("problem details contract", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "CONFLICT",
       "CURSOR_INVALID",
+      "FILE_DELIVERY_DISABLED",
+      "FILE_NOT_CLEAN",
       "FORBIDDEN",
       "IDEMPOTENCY_IN_PROGRESS",
       "IDEMPOTENCY_KEY_NOT_ALLOWED",
@@ -87,8 +90,17 @@ describe("problem details contract", () => {
       "REAUTH_REQUIRED",
       "REQUEST_TIMEOUT",
       "SERVICE_UNAVAILABLE",
+      "STORAGE_UNAVAILABLE",
       "UNAUTHENTICATED",
       "UNSUPPORTED_MEDIA_TYPE",
+      "UPLOAD_ALREADY_COMPLETED",
+      "UPLOAD_CHECKSUM_MISMATCH",
+      "UPLOAD_CONCURRENCY_LIMIT",
+      "UPLOAD_EXPIRED",
+      "UPLOAD_INCOMPLETE",
+      "UPLOAD_QUOTA_EXCEEDED",
+      "UPLOAD_SIZE_MISMATCH",
+      "UPLOAD_TYPE_MISMATCH",
       "VERSION_CONFLICT",
       "WINDOW_CLOSED",
     ]);
@@ -102,6 +114,54 @@ describe("problem details contract", () => {
         .test(code)
     );
     expect(leaky).toEqual([]);
+  });
+});
+
+describe("FILE-050 upload contracts", () => {
+  const common = {
+    schoolId: "bbbbbbbb-0000-4000-8000-000000000001",
+    displayName: "work.pdf",
+    expectedSizeBytes: 128,
+    declaredMediaType: "application/pdf",
+    sha256: "a".repeat(64),
+  };
+
+  test("accepts only the exact target shape for each purpose", () => {
+    expect(
+      V1CreateUploadIntentRequest.safeParse({
+        ...common,
+        purpose: "assignment_submission",
+        assignmentId: "cccccccc-0000-4000-8000-000000000001",
+        studentId: "dddddddd-0000-4000-8000-000000000001",
+      }).success,
+    ).toBe(true);
+    expect(
+      V1CreateUploadIntentRequest.safeParse({
+        ...common,
+        purpose: "profile_image",
+        studentId: "dddddddd-0000-4000-8000-000000000001",
+      }).success,
+    ).toBe(false);
+  });
+
+  test("rejects caller-selected storage and ownership fields", () => {
+    for (
+      const injected of [
+        { path: "another-school/file" },
+        { objectKey: "quarantine/attacker" },
+        { bucket: "private-school-files" },
+        { ownerId: "dddddddd-0000-4000-8000-000000000001" },
+        { scanState: "clean" },
+      ]
+    ) {
+      expect(
+        V1CreateUploadIntentRequest.safeParse({
+          ...common,
+          purpose: "profile_image",
+          ...injected,
+        }).success,
+      ).toBe(false);
+    }
   });
 });
 

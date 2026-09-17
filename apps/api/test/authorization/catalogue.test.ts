@@ -17,6 +17,7 @@ import { createNotificationsRoutes } from "../../src/notifications/routes";
 import { createAccountRoutes } from "../../src/account/routes";
 import { createSupportAccessRoutes } from "../../src/support-access/routes";
 import { createSafetyRoutes } from "../../src/safety/routes";
+import { createFileRoutes } from "../../src/files/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -184,6 +185,27 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const files = createFileRoutes(
+    {
+      newIntentsEnabled: false,
+      repository: {
+        prepareIntent: async () => ({ outcome: "invalid" }),
+        issueIntent: async () => ({ outcome: "invalid" }),
+        query: async () => ({ outcome: "not_found" }),
+        prepareCompletion: async () => ({ outcome: "not_found" }),
+        complete: async () => ({ outcome: "invalid" }),
+      },
+      storage: {
+        createUploadCapability: async () => {
+          throw new Error("disabled");
+        },
+        inspect: async () => ({ exists: false }),
+        delete: async () => undefined,
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
@@ -196,6 +218,7 @@ function routeTable() {
   combined.route("/", supportAccess);
   combined.route("/", schoolRoster);
   combined.route("/", safety);
+  combined.route("/", files);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -254,13 +277,16 @@ describe("permission catalogue", () => {
     const safetySurfaceMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609170002_safe043_surface.sql`,
     ).text();
+    const fileMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609170003_file050_upload_pipeline.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}`,
       ).toContain(`'${permission}'`);
     }
   });

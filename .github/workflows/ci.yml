@@ -215,23 +215,25 @@ jobs:
           bunx supabase test db --local
           supabase/tests/api041_academic_seed.sql
 
+      - name: Verify FILE-050 upload metadata, quotas, and quarantine
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/file050_upload_seed.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
 
       - name: Verify API-041 cursor query plans
         run: bun run test:api041:plans
 
+      - name: Verify FILE-050 quota, status, expiry, and outbox query plans
+        run: bun run test:file050:plans
+
       - name: Verify DB-021 RLS plans and provisional local latency bounds
         run: bun run test:db021:plans
 
-      - name: Regenerate public database types (temporary diagnostic)
-        run: bun run generate:db-types
-      - name: Upload regenerated database types
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # temporary
-        with:
-          name: db-types
-          path: packages/database/src/database.types.generated.ts
-          retention-days: 1
+      - name: Verify generated public database types
+        run: bun run generate:db-types:check
 
       # ARC-010: read-only connectivity smoke from the workspace database
       # package against the disposable stack database.
@@ -261,6 +263,21 @@ jobs:
         run: >-
           DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
           bun test apps/api/test/academic/academic.integration.test.ts
+
+      # FILE-050: use a real local signed capability and prove the token cannot
+      # be redirected to a substituted object key.
+      - name: Run FILE-050 signed-upload path-binding integration suite
+        run: bun run test:file050:storage
+
+      # FILE-050: the pgTAP suite runs in one transaction and can only prove
+      # sequential quota enforcement. These cases race two real connections for
+      # the last session slot and the last quota byte, race two completions of
+      # one session, and force an outbox failure to prove the registration
+      # transaction rolls back whole.
+      - name: Run FILE-050 quota-race and atomicity integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/files/quota.integration.test.ts
 
       # SAFE-043: schema shape/RLS/no-grant assertions, then the surface
       # fixture (seed file includes safe043_surface.sql itself), proving the
