@@ -26,6 +26,8 @@ that references the old one.
 | [ADR-0018](ADR-0018-api040-platform-controls.md) | API-040 shared validation, problem, durable idempotency and egress controls | Accepted for local/disposable use | DL-039 |
 | [ADR-0019](ADR-0019-api041-authoritative-academic-slices.md) | API-041 authoritative academic slices, atomic commands, signed cursors and parity-gated Edge removal | Accepted for local/disposable use | DL-040 |
 | [ADR-0020](ADR-0020-api042-school-operations.md) | API-042 school operations, invitations, family, communications, meetings, notifications, account rights and support access | Accepted for local/disposable use | DL-041 |
+| [ADR-0021](ADR-0021-safe043-safety-and-safeguarding.md) | SAFE-043 reporting, moderation, blocks, legal holds and two-person moderator access | Accepted for local/disposable use | DL-042 |
+| [ADR-0022](ADR-0022-file050-secure-upload-pipeline.md) | FILE-050 server-owned upload paths, purpose-bound intents, quotas, quarantine and outbox cleanup | Accepted for local/disposable use | DL-043 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which
