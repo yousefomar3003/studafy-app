@@ -1,4 +1,4 @@
-# `/v1` file upload contract (FILE-050)
+# `/v1` file contract (FILE-050, FILE-051)
 
 Status: implemented for local/disposable synthetic use. This document does
 not authorize a production deployment, real school/student data, or any
@@ -13,10 +13,11 @@ immutable metadata, a durable binding, audit history, processing-outbox work,
 and idempotency completion.
 
 **Nothing in FILE-050 marks a file clean, publishes it, deduplicates it, or
-makes it downloadable.** Those are FILE-051 responsibilities.
+makes it downloadable.** FILE-051 adds those capabilities. They are described
+in [FILE-051: scanning, publication and delivery](#file-051-scanning-publication-and-delivery).
 `allowsRemoteFileUploads` remains `false` in
-`lib/core/runtime_environment.dart`, and `FILE050_NEW_INTENTS_ENABLED`
-defaults to `false`.
+`lib/core/runtime_environment.dart`, and every `FILE050_*` and `FILE051_*`
+switch defaults to `false`.
 
 This slice exists because of SEC-001, where a caller-selected file path was
 signed by a service role. The controlling rule below is therefore not a
@@ -28,8 +29,9 @@ preference:
 
 ## Route inventory
 
-Five routes, indices 119–123 of `V1_ROUTE_CATALOGUE`. Each declares exactly
-one AUTH-031 permission; each POST requires `Idempotency-Key`.
+Six routes, indices 119–124 of `V1_ROUTE_CATALOGUE`, plus one delivery
+endpoint outside the JSON catalogue. Each catalogue route declares exactly
+one AUTH-031 permission, and each POST requires `Idempotency-Key`.
 
 | Route | Method | Permission | Success | Idempotency |
 |---|---|---|---|---|
@@ -37,12 +39,14 @@ one AUTH-031 permission; each POST requires `Idempotency-Key`.
 | `/v1/uploads/{uploadId}` | GET | `upload.read` | `200` | — |
 | `/v1/uploads/{uploadId}/complete` | POST | `upload.complete` | `200` | required |
 | `/v1/files/{fileId}` | GET | `file.read` | `200` | — |
-| `/v1/files/{fileId}/download-intent` | POST | `file.download` | `200` (FILE-051) | required |
+| `/v1/files/{fileId}/download-intent` | POST | `file.download` | `200` | required |
+| `/v1/files/{fileId}/publish` | POST | `file.publish` | `201` | required |
+| `/delivery/v1/files/{fileId}/content?token=…` | GET | authenticated; authorized by the consume command | `200` bytes | — |
 
-`download-intent` ships as a contract and authorization boundary only. In
-FILE-050 it returns `FILE_NOT_CLEAN` for quarantined or rejected objects and
-`FILE_DELIVERY_DISABLED` for any legacy clean row that has no FILE-051 scan
-policy behind it. It never returns a URL in this slice.
+While `FILE051_DELIVERY_ENABLED` is off, `download-intent` behaves exactly as
+it did in FILE-050: `FILE_NOT_CLEAN` for a file that is not clean, and
+`FILE_DELIVERY_DISABLED` otherwise, never a URL. The delivery endpoint
+answers `404`.
 
 ## Purposes and their targets
 
@@ -129,7 +133,9 @@ Added in this slice, on top of the API-040 catalogue:
 | `UPLOAD_TYPE_MISMATCH` | 422 | magic bytes contradict the declared type |
 | `UPLOAD_CHECKSUM_MISMATCH` | 422 | server-computed digest differs from the declared SHA-256 |
 | `FILE_NOT_CLEAN` | 409 | the object has not passed security processing |
-| `FILE_DELIVERY_DISABLED` | 409 | delivery is off until FILE-051 |
+| `FILE_DELIVERY_DISABLED` | 409 | delivery is switched off |
+| `FILE_PUBLISH_DISABLED` | 503 | publication is switched off (FILE-051) |
+| `DELIVERY_GRANT_INVALID` | 404 | the delivery link is expired, already used, forged, or belongs to another account (FILE-051) |
 | `STORAGE_UNAVAILABLE` | 503 | private storage could not be reached |
 
 The three `422` mismatch outcomes are *deterministic* results of inspecting
@@ -258,12 +264,170 @@ roots.
 | `FILE050_NEW_INTENTS_ENABLED` | `false` | off; disabling still allows completion, status, and cleanup of already-issued sessions |
 | `SUPABASE_SERVICE_ROLE_KEY` | unset | server-only; production fails closed if intents are enabled without it |
 | `FILE050_CLEANUP_ENABLED` | `false` | worker-side; requires `DATABASE_URL`, `SUPABASE_URL`, and the service-role key |
+| `FILE051_PUBLISH_ENABLED` | `false` | API-side publication switch |
+| `FILE051_DELIVERY_ENABLED` | `false` | API-side; production also requires the signing key, an HTTPS public base URL, and the service-role key |
+| `FILE051_DELIVERY_SIGNING_KEY` | unset | at least 32 characters; must differ from `API_CURSOR_SIGNING_KEY`; secret manager only |
+| `FILE051_DELIVERY_PUBLIC_BASE_URL` | unset | origin the delivery links are built on |
+| `FILE051_SCAN_ENABLED` | `false` | worker-side; production also requires `MALWARE_SCANNER_URL` and `MALWARE_SCANNER_API_KEY` |
+| `FILE051_RETENTION_ENABLED` | `false` | worker-side retention sweep; no retention durations are configured yet |
+| `MALWARE_SCANNER_URL` / `MALWARE_SCANNER_API_KEY` | unset | the one external scanner origin and its credential; secret manager only |
 
-## What FILE-051 owns
+## FILE-051: scanning, publication and delivery
 
-Malware scanning, parser validation, image transformation and EXIF removal,
-the transition to `clean`, publication, deduplication, retention
-reconciliation, and actual signed download delivery. The `scan` outbox job,
-the `download-intent` route shape, and the same-school clean-deduplication
-index are already in place so FILE-051 can activate delivery without changing
-the v1 wire shape.
+Forward-only migration: `202609170004_file051_scan_delivery_publication.sql`.
+The design record is ADR-0023. The attacker's view is
+[`file051-threat-model.md`](../security/file051-threat-model.md), and the
+incident procedure is
+[`file051-malicious-file-runbook.md`](../security/file051-malicious-file-runbook.md).
+
+### Scan and transform (worker)
+
+1. `api051_claim_scan` marks the object `scanning` and returns the exact key
+   from the immutable session.
+2. The worker reads the object. The bytes must hash to the uploaded digest,
+   or to a transform digest recorded by an earlier attempt.
+3. The scanner analyses the bytes by their **detected** type. Anything that
+   fails is `rejected` with a stable code:
+   - `malware_detected`
+   - `malformed_file`
+   - `polyglot_file`
+   - `encrypted_document`
+   - `embedded_file`
+   - `active_content`
+   - `decompression_limit`
+   - `unsupported_animation`
+4. For images, the metadata segments are removed (EXIF, XMP, ICC, text
+   chunks). The worker records the new digest with
+   `api051_record_transform`, overwrites the object, reads it back, and
+   requires an exact digest match. PDFs are stored unchanged.
+5. `api051_finish_scan` records `clean` together with the scan policy
+   version, duration, transform policy version and stored digest.
+   Infrastructure failures go back to quarantine with capped backoff and
+   dead-letter to `error` after ten attempts. **Nothing becomes `clean`
+   without a verdict.**
+
+The file status response is unchanged. It never says whether a file was
+deduplicated.
+
+### Deduplication
+
+When a file becomes clean, the worker looks for a canonical root that
+matches on all of the following:
+
+- same school;
+- same purpose;
+- same uploaded SHA-256;
+- same transform policy;
+- same stored digest;
+- the root is clean;
+- neither file is under legal hold.
+
+If one exists, the new row points at the root and its own redundant bytes
+are queued for exact-key deletion (`dedupe_delete`). The row stays `clean`
+with `physical_deleted_at` recorded. Delivery of a dependent serves the
+root's bytes. Deduplication never looks across schools, and nothing in any
+response reveals whether it happened.
+
+### Publication — `POST /v1/files/{fileId}/publish`
+
+The request is `{ "audience": "students" | "guardians" | "both" }` and
+nothing else.
+
+The command resolves the target classroom from the upload's own binding. It
+then checks, in order:
+
+1. the caller is a lead or co-teacher of that classroom, or a school admin
+   (otherwise `404`);
+2. the file's purpose is `lesson_resource` (otherwise `400`);
+3. the file is clean (otherwise `FILE_NOT_CLEAN`);
+4. the file has not been published before (otherwise `INVALID_STATE`).
+
+In one transaction it creates one resource (`resourceType: "file"`), one
+immutable version, one classroom publication and one binding, then audits
+and completes idempotency. The response is `{ file, resource }`. **No bytes
+are copied**: recipients reach the one object through the publication. The
+existing `POST /v1/resources/{resourceId}/withdraw` withdraws it.
+
+### Download intent — `POST /v1/files/{fileId}/download-intent`
+
+The API generates a 32-byte nonce and signs a token that binds the file, the
+caller, the nonce and an expiry five minutes ahead. The link is
+`{FILE051_DELIVERY_PUBLIC_BASE_URL}/delivery/v1/files/{fileId}/content?token=…`.
+
+`api051_create_download_grant` then runs in one transaction:
+
+1. re-authorizes from current state, before revealing the file's state;
+2. requires the file to be clean;
+3. validates the expiry (between 30 seconds and 10 minutes);
+4. stores one grant row holding only the nonce's SHA-256 and the recipient;
+5. writes an audit event and completes idempotency.
+
+The link is returned only after that transaction commits.
+
+Who may request a link:
+
+- the owner;
+- students or guardians in the audience of a live publication;
+- the student who submitted an attempt;
+- the assigned lead or co-teacher, or a school admin, for assignment and
+  grading material.
+
+### Delivery — `GET /delivery/v1/files/{fileId}/content?token=…`
+
+The request must be authenticated, and exactly one `token` query parameter
+is accepted. The API verifies the signature, the file binding and the
+expiry, and that the token's user is the caller. It then calls
+`api051_consume_download_grant`, which:
+
+1. spends the grant atomically (single use, correct recipient, not
+   expired);
+2. **re-authorizes against current state**, so a withdrawn publication, an
+   ended enrollment or a contained file denies the link;
+3. resolves the physical object, which is the root's for a deduplicated
+   file.
+
+Only then is the object read. Its size and SHA-256 must match the recorded
+stored digest, or the answer is `503`.
+
+The response headers are:
+
+| Header | Value |
+|---|---|
+| `Content-Type` | one of the four scanned types, otherwise `application/octet-stream` |
+| `Content-Disposition` | `attachment; filename="…"; filename*=UTF-8''…` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Content-Security-Policy` | `sandbox; default-src 'none'` |
+| `Cache-Control` | `private, no-store` (the platform middleware normalizes this to `no-store`) |
+| `Referrer-Policy` | `no-referrer` |
+| `Cross-Origin-Resource-Policy` | `same-origin` |
+
+Every failure is `404`. A spent, expired, forged or foreign link is
+`DELIVERY_GRANT_INVALID`, and a denied or no-longer-clean file is
+`NOT_FOUND`. Bytes are streamed through the API, never redirected to a
+storage-signed URL.
+
+### Retention and reconciliation (worker)
+
+`file_purpose_policies.retention_interval_days` stays `NULL` until the
+retention decision (§29), so nothing is deleted on a schedule yet.
+
+The sweep deletes one physical object (a root and its dependents) only when
+every member meets all of these conditions:
+
+- past its horizon;
+- not held;
+- no live reference;
+- no deletion already in flight.
+
+Rows become `deleted` only after storage confirms.
+`scripts/file051-reconciliation.ts` compares the bucket index with the rows
+and must report zero drift.
+
+### Privilege posture
+
+- **API runtime:** gains EXECUTE on the three `api051_*` commands.
+- **Worker runtime:** gains `USAGE` on `private`, which FILE-050 had
+  omitted, and EXECUTE on its scan, transform, backlog, retention and cleanup
+  functions.
+- **Operators:** the containment functions are granted to no runtime role.
+- **Table grants:** none added for either runtime role.

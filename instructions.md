@@ -60,7 +60,7 @@ tables are `SELECT`-only, and 21 unactivated tables are fail-closed.
 | REL-002 native identity | **Decision only** | `io.studafy.app` is selected but not applied, registered or signed |
 | AUTH-030/031 auth + authz | Not started | No session lifecycle, no server authorization |
 | API-040/041/042 + SAFE-043 | **Skeleton only** | Only `/healthz`, `/readyz`, `/version` exist; no product or moderation routes |
-| FILE-050/051 file pipeline | Not started | Uploads disabled; no scanning |
+| FILE-050/051 file pipeline | **Implemented and verified locally (2026-09-17); Phase 5 gate not closed** | Every switch is off and `allowsRemoteFileUploads` is still `false`. The gate still needs an independent file penetration test, a real scanner vendor (A6) and approved retention periods (§29). Evidence: `docs/evidence/phase-5/` |
 | OPS-060/061 Redis + queues | Skeleton only | No rate limiting; smoke queue only |
 | MOB-070 mobile migration | **Structural decomposition started; server migration not started** | Student presentation is bounded, but the app still relies on local SQLite; see §1.3 |
 | PAY-071 billing | **Unsafe stub** | See §1.4 |

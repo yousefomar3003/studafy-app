@@ -32,7 +32,9 @@ secret. The ignored root `.env` contains only disposable local API/worker
 Postgres and Redis connection settings.
 
 `allowsRemoteFileUploads` is `false` in every runtime environment. FILE-050
-built the upload pipeline but did not switch it on; FILE-051 owns that.
+built the upload pipeline and FILE-051 built scanning and delivery, but
+neither switched uploads on. Flipping it is a separate reviewed change with
+its own decision-log entry.
 
 ### Server-only settings (FILE-050)
 
@@ -41,6 +43,22 @@ built the upload pipeline but did not switch it on; FILE-051 owns that.
 | `FILE050_NEW_INTENTS_ENABLED` | `false` | API. Turning it off still allows completion, status reads and cleanup of already-issued sessions, so ingress can be stopped without stranding in-flight uploads |
 | `FILE050_CLEANUP_ENABLED` | `false` | Worker. Requires `DATABASE_URL`, `SUPABASE_URL` and the service-role key, validated at startup |
 | `SUPABASE_SERVICE_ROLE_KEY` | unset | **Server and worker only.** Never a dart-define. Held by one storage adapter and injected at the composition root; production fails closed if intents are enabled without it |
+
+### Server-only settings (FILE-051)
+
+| Setting | Default | Notes |
+|---|---|---|
+| `FILE051_PUBLISH_ENABLED` | `false` | API publication switch |
+| `FILE051_DELIVERY_ENABLED` | `false` | API. Production requires the signing key, an HTTPS base URL and the service-role key |
+| `FILE051_DELIVERY_SIGNING_KEY` | unset | **Secret.** At least 32 characters, and must differ from `API_CURSOR_SIGNING_KEY`. Secret manager only |
+| `FILE051_DELIVERY_PUBLIC_BASE_URL` | unset | Origin the delivery links are built on |
+| `FILE051_SCAN_ENABLED` | `false` | Worker. Requires the database and storage settings; production also requires the external scanner |
+| `FILE051_RETENTION_ENABLED` | `false` | Worker retention sweep. No retention durations are configured yet (§29) |
+| `MALWARE_SCANNER_URL` / `MALWARE_SCANNER_API_KEY` | unset | **Secret key.** The one scanner origin; CI or platform secret manager only |
+
+The worker connects as `studafy_worker_runtime`. That role stays `nologin`
+until a deployment provisions it; the verification scripts give it a
+throwaway local password and revoke it afterwards.
 
 ## CI (`ci.yml`, "CI (no deployment)")
 
