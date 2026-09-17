@@ -256,11 +256,14 @@ select is((select result->>'outcome' from safe043_results where name = 'hold'),
   'ok', 'platform operator can apply a legal hold');
 select is((select result->'response'->>'appliedTo' from safe043_results where name = 'hold'),
   'report', 'hold is scoped to the report by default');
-select is(private.api042_query('getModerationReport', :'report2_id', '{}'::jsonb)->>'status',
-  'on_hold', 'held report leaves the queue');
 
 select set_config('request.jwt.claim.sub', :'admin_user', true);
 select set_config('studafy.school_id', :'school_id', true);
+-- Read back as the school's own admin. The operator who applied the hold has
+-- no moderation grant yet, so for them the report is correctly not_found.
+select is(private.api042_query('getModerationReport', :'report2_id', '{}'::jsonb)->>'status',
+  'on_hold', 'held report leaves the queue');
+
 select set_config('studafy.request_id', 'safe043-release-admin-denied', true);
 insert into safe043_results values ('release-admin-res', private.api_idempotency_reserve(
   :'school_id', 'v1.releaseLegalHold', 'safe043-release-admin-r', repeat('6', 64)));
@@ -290,9 +293,12 @@ select is((select result->>'outcome' from safe043_results where name = 'release'
 -- ---------------------------------------------------------------------------
 
 select set_config('request.jwt.claim.sub', :'teacher_user', true);
+-- Phase E finished in the operator's global context (school_id deliberately
+-- blank). Every Phase F command is school-scoped, so the tenant is restored.
+select set_config('studafy.school_id', :'school_id', true);
 select set_config('studafy.request_id', 'safe043-block', true);
 insert into safe043_results values ('block-res', private.api_idempotency_reserve(
-  :'school_id', 'v1.createBlock', 'safe043-block-r', repeat('7', 64)));
+  :'school_id', 'v1.createBlock', 'safe043-block-req', repeat('7', 64)));
 insert into safe043_results values ('block', private.api042_command(
   'createBlock', null,
   jsonb_build_object('responseStatus', 201, 'body', jsonb_build_object(
@@ -383,7 +389,7 @@ select is((select result->>'outcome' from safe043_results where name = 'req-nomf
 
 select set_config('studafy.request_id', 'safe043-request', true);
 insert into safe043_results values ('req-res', private.api_idempotency_reserve(
-  null, 'v1.requestModerationAccess', 'safe043-req-res', repeat('e', 64)));
+  null, 'v1.requestModerationAccess', 'safe043-request-res', repeat('e', 64)));
 insert into safe043_results values ('req', private.api042_command(
   'requestModerationAccess', null,
   jsonb_build_object('responseStatus', 201, 'aal2', true, 'body', jsonb_build_object(
@@ -427,11 +433,12 @@ select is((select result->'response'->>'status' from safe043_results where name 
 select set_config('request.jwt.claim.sub', :'operator_a', true);
 select set_config('studafy.request_id', 'safe043-start', true);
 insert into safe043_results values ('start-res', private.api_idempotency_reserve(
-  null, 'v1.startModerationAccess', 'safe043-start-r', repeat('1', 64)));
+  null, 'v1.startModerationAccess', 'safe043-start-req', repeat('1', 64)));
 insert into safe043_results values ('start', private.api042_command(
   'startModerationAccess', :'grant_id',
   jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object(
-    'expectedVersion', 1)),
+    -- The approve above moved the grant to version 2.
+    'expectedVersion', 2)),
   (select (result->>'id')::uuid from safe043_results where name = 'start-res'), 1));
 select is((select result->>'outcome' from safe043_results where name = 'start'),
   'ok', 'the requester starts their approved session');
@@ -456,7 +463,8 @@ insert into safe043_results values ('revoke-res', private.api_idempotency_reserv
 insert into safe043_results values ('revoke', private.api042_command(
   'revokeModerationAccess', :'grant_id',
   jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object(
-    'expectedVersion', 2, 'reason', 'coverage resolved')),
+    -- Starting the session moved it to version 3.
+    'expectedVersion', 3, 'reason', 'coverage resolved')),
   (select (result->>'id')::uuid from safe043_results where name = 'revoke-res'), 1));
 select is((select result->>'outcome' from safe043_results where name = 'revoke'),
   'ok', 'the operator can revoke the session');
@@ -492,7 +500,7 @@ insert into safe043_results values ('controls', private.api042_command(
   jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object(
     'expectedVersion', 1, 'messagingEnabled', true, 'contentFilterLevel', 'moderate',
     'classifierAssistEnabled', true, 'supportContact', 'safeguarding@seed.test')),
-  (select (result->>'id')::uuid from safe043_results where name = 'controls-res'), 1);
+  (select (result->>'id')::uuid from safe043_results where name = 'controls-res'), 1));
 select is((select result->>'outcome' from safe043_results where name = 'controls'),
   'ok', 'school admin can update content controls');
 select is((select result->'response'->>'contentFilterLevel' from safe043_results where name = 'controls'),
