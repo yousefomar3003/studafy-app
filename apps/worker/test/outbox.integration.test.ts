@@ -42,21 +42,6 @@ let runtime: NotificationRuntime;
 const scratchQueues: Queue[] = [];
 const scratchWorkers: Worker[] = [];
 
-beforeAll(async () => {
-  sql = createDatabase(databaseUrl!);
-  const logger = createJsonLogger(
-    "worker",
-    "test",
-    "error",
-    new LogCollector().sink,
-  );
-  runtime = buildNotificationRuntime(redisUrl!, sql, logger, {
-    environment: "development",
-    concurrency: 3,
-  });
-  await runtime.worker.waitUntilReady();
-});
-
 async function seedGraph(): Promise<void> {
   await sql`
     insert into auth.users (
@@ -190,20 +175,32 @@ async function drainBacklog(
   throw new Error("the dispatchable backlog did not drain");
 }
 
-beforeAll(async () => {
-  await cleanup();
-  await seedGraph();
-});
-
-afterAll(async () => {
-  await cleanup();
-  await Promise.all(scratchWorkers.map((worker) => closeWorker(worker)));
-  await Promise.all(scratchQueues.map((queue) => closeQueue(queue)));
-  await runtime.close();
-  await sql.end({ timeout: 5 });
-});
-
 suite("OPS-061 notifications queue", () => {
+  beforeAll(async () => {
+    sql = createDatabase(databaseUrl!);
+    const logger = createJsonLogger(
+      "worker",
+      "test",
+      "error",
+      new LogCollector().sink,
+    );
+    runtime = buildNotificationRuntime(redisUrl!, sql, logger, {
+      environment: "development",
+      concurrency: 3,
+    });
+    await runtime.worker.waitUntilReady();
+    await cleanup();
+    await seedGraph();
+  });
+
+  afterAll(async () => {
+    await cleanup();
+    await Promise.all(scratchWorkers.map((worker) => closeWorker(worker)));
+    await Promise.all(scratchQueues.map((queue) => closeQueue(queue)));
+    await runtime.close();
+    await sql.end({ timeout: 5 });
+  });
+
   test(
     "happy path: one audience row produces exactly one delivery per active staff member",
     async () => {

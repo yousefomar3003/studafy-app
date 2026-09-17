@@ -61,8 +61,8 @@ insert into public.notification_outbox(
     :'teacher_user'::uuid, null, '{}'::jsonb);
 
 create temporary table ops061_ids as
-  select id, idempotency_key from public.notification_outbox
-  where school_id = :'school_id'::uuid and idempotency_key like 'ops061-%';
+  select id, source_event_id from public.notification_outbox
+  where school_id = :'school_id'::uuid and source_event_id like 'ops061-%';
 
 -- --------------------------------------------------------------------------
 -- Dispatch claim: the direct-recipient row is invisible; the audience rows
@@ -73,7 +73,7 @@ select is(
   (select count(*) from jsonb_array_elements(
     private.api061_claim_outbox_dispatch('ops061-worker-a', 50)) claimed
    join ops061_ids i on i.id = (claimed->>'outboxId')::bigint
-   where i.idempotency_key = 'ops061-direct'),
+   where i.source_event_id = 'ops061-evt-6'),
   0::bigint,
   'an outbox row with a direct recipient is never claimed'
 );
@@ -85,7 +85,7 @@ select is(
 );
 select is(
   (select count(*) from public.notification_outbox
-   where school_id = :'school_id'::uuid and idempotency_key = 'ops061-direct'
+   where school_id = :'school_id'::uuid and source_event_id = 'ops061-evt-6'
      and state = 'pending'),
   1::bigint,
   'the direct-recipient row stayed pending and untouched'
@@ -118,7 +118,7 @@ update public.notification_outbox
   set state = 'pending', lease_token = null, lease_until = null,
       attempt_count = 0
   where school_id = :'school_id'::uuid
-    and idempotency_key in ('ops061-school-1', 'ops061-school-2', 'ops061-weird');
+    and source_event_id in ('ops061-evt-1', 'ops061-evt-2', 'ops061-evt-3');
 
 select is(
   (select count(*) from jsonb_array_elements(
@@ -129,7 +129,7 @@ select is(
 );
 select is(
   (select count(*) from public.notification_outbox
-   where idempotency_key in ('ops061-school-1', 'ops061-school-2', 'ops061-weird')
+   where source_event_id in ('ops061-evt-1', 'ops061-evt-2', 'ops061-evt-3')
      and state = 'processing' and attempt_count = 1
      and lease_token = 'ops061-worker-a' and lease_until > now()),
   3::bigint,
@@ -142,34 +142,34 @@ select is(
 
 select is(
   private.api061_record_dispatched('ops061-worker-a',
-    (select id from ops061_ids where idempotency_key = 'ops061-school-1'),
-    'outbox-' || (select id from ops061_ids where idempotency_key = 'ops061-school-1')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-1'),
+    'outbox-' || (select id from ops061_ids where source_event_id = 'ops061-evt-1')),
   true,
   'the dispatcher records its deterministic BullMQ job id'
 );
 select is(
   private.api061_record_dispatched('ops061-worker-b',
-    (select id from ops061_ids where idempotency_key = 'ops061-school-1'), 'outbox-9'),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-1'), 'outbox-9'),
   false,
   'a different dispatcher token cannot record over a live lease'
 );
 select is(
   (select count(*) from public.notification_outbox
-   where idempotency_key = 'ops061-school-1'
+   where source_event_id = 'ops061-evt-1'
      and bullmq_job_id like 'outbox-%' and dispatched_at is not null),
   1::bigint,
   'the recorded job id is the deterministic one and dispatch time is set'
 );
 select is(
   private.api061_release_dispatch('ops061-worker-a',
-    (select id from ops061_ids where idempotency_key = 'ops061-school-1'),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-1'),
     'REDIS_UNAVAILABLE'),
   true,
   'a failed enqueue hands the row back for a later dispatch'
 );
 select is(
   (select count(*) from public.notification_outbox
-   where idempotency_key = 'ops061-school-1' and state = 'retry'
+   where source_event_id = 'ops061-evt-1' and state = 'retry'
      and last_error_code = 'REDIS_UNAVAILABLE'
      and next_attempt_at > now()),
   1::bigint,
@@ -179,12 +179,12 @@ select is(
 -- The backoff elapses; the next poll re-claims and finishes the row.
 update public.notification_outbox
   set next_attempt_at = now()
-  where idempotency_key = 'ops061-school-1';
+  where source_event_id = 'ops061-evt-1';
 select is(
   (select count(*) from jsonb_array_elements(
     private.api061_claim_outbox_dispatch('ops061-worker-b', 50)) claimed
    join ops061_ids i on i.id = (claimed->>'outboxId')::bigint
-   where i.idempotency_key = 'ops061-school-1'),
+   where i.source_event_id = 'ops061-evt-1'),
   1::bigint,
   'the released row dispatches again once its backoff elapses'
 );
@@ -196,46 +196,46 @@ select is(
 
 select is(
   private.api061_finish_notification(
-    (select id from ops061_ids where idempotency_key = 'ops061-school-1')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-1')),
   'completed',
   'finishing the school audience expands it in one transaction'
 );
 select is(
   (select count(distinct nd.recipient_id) from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
-   where o.idempotency_key = 'ops061-school-1'),
+   where o.source_event_id = 'ops061-evt-1'),
   4::bigint,
   'every active staff member got exactly one delivery; suspended profiles did not'
 );
 select is(
   (select nd.attempt from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
-   where o.idempotency_key = 'ops061-school-1' limit 1),
+   where o.source_event_id = 'ops061-evt-1' limit 1),
   1,
   'in-app deliveries record attempt 1 and are marked sent'
 );
 select is(
   private.api061_finish_notification(
-    (select id from ops061_ids where idempotency_key = 'ops061-school-1')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-1')),
   'completed',
   'a repeat run of the same job is an idempotent no-op'
 );
 select is(
   (select count(*) from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
-   where o.idempotency_key = 'ops061-school-1'),
+   where o.source_event_id = 'ops061-evt-1'),
   4::bigint,
   'the repeat run inserted no second delivery'
 );
 select is(
   private.api061_finish_notification(
-    (select id from ops061_ids where idempotency_key = 'ops061-weird')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-3')),
   'terminal',
   'an unsupported audience is terminal, not retried'
 );
 select is(
   (select count(*) from public.notification_outbox
-   where idempotency_key = 'ops061-weird' and state = 'dead_letter'
+   where source_event_id = 'ops061-evt-3' and state = 'dead_letter'
      and last_error_code = 'UNSUPPORTED_AUDIENCE'),
   1::bigint,
   'the terminal row dead-letters with a normalized reason'
@@ -243,13 +243,13 @@ select is(
 select is(
   (select count(*) from public.audit_events
    where action = 'ops061_outbox_dead_letter'
-     and after_value->>'outboxId' = (select id from ops061_ids where idempotency_key = 'ops061-weird')::text),
+     and after_value->>'outboxId' = (select id from ops061_ids where source_event_id = 'ops061-evt-3')::text),
   1::bigint,
   'the dead letter is audited'
 );
 select is(
   private.api061_finish_notification(
-    (select id from ops061_ids where idempotency_key = 'ops061-school-2')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-2')),
   'terminal',
   'an audience pointing at another school never applies there'
 );
@@ -258,16 +258,16 @@ select is(
 update public.notification_outbox
   set state = 'processing', attempt_count = 1, lease_token = 'ops061-worker-dead',
       lease_until = now() - interval '11 minutes'
-  where idempotency_key = 'ops061-stale';
+  where source_event_id = 'ops061-evt-5';
 select is(
   private.api061_reclaim_dispatch(
-    (select id from ops061_ids where idempotency_key = 'ops061-stale')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-5')),
   true,
   'a dispatcher death is recoverable through the stale lease'
 );
 select is(
   private.api061_reclaim_dispatch(
-    (select id from ops061_ids where idempotency_key = 'ops061-stale')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-5')),
   false,
   'the reclaim is a one-shot: a retry row cannot be reclaimed again'
 );
@@ -275,20 +275,20 @@ select is(
   (select count(*) from jsonb_array_elements(
     private.api061_claim_outbox_dispatch('ops061-worker-b', 50)) claimed
    join ops061_ids i on i.id = (claimed->>'outboxId')::bigint
-   where i.idempotency_key = 'ops061-stale'),
+   where i.source_event_id = 'ops061-evt-5'),
   1::bigint,
   'the reclaimed row dispatches again for a new worker'
 );
 select is(
   private.api061_finish_notification(
-    (select id from ops061_ids where idempotency_key = 'ops061-stale')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-5')),
   'completed',
   'the recovered run finishes normally'
 );
 select is(
   (select count(distinct nd.recipient_id) from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
-   where o.idempotency_key = 'ops061-stale'),
+   where o.source_event_id = 'ops061-evt-5'),
   4::bigint,
   'the recovered run produced the same four deliveries, once'
 );
@@ -304,14 +304,14 @@ select is(
 );
 select is(
   private.api061_redrive_dlq(
-    (select id from ops061_ids where idempotency_key = 'ops061-school-2')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-2')),
   true,
   'an operator redrive returns the row to dispatch'
 );
 select is(
   (select count(*) from public.audit_events
    where action = 'ops061_dlq_redriven'
-     and after_value->>'outboxId' = (select id from ops061_ids where idempotency_key = 'ops061-school-2')::text),
+     and after_value->>'outboxId' = (select id from ops061_ids where source_event_id = 'ops061-evt-2')::text),
   1::bigint,
   'the redrive is audited'
 );
@@ -319,13 +319,13 @@ select is(
   (select count(*) from jsonb_array_elements(
     private.api061_claim_outbox_dispatch('ops061-worker-b', 50)) claimed
    join ops061_ids i on i.id = (claimed->>'outboxId')::bigint
-   where i.idempotency_key = 'ops061-school-2'),
+   where i.source_event_id = 'ops061-evt-2'),
   1::bigint,
   'the redriven row is claimed again and dead-letters again, deterministically'
 );
 select is(
   private.api061_finish_notification(
-    (select id from ops061_ids where idempotency_key = 'ops061-school-2')),
+    (select id from ops061_ids where source_event_id = 'ops061-evt-2')),
   'terminal',
   'a permanently unsupported audience dead-letters again after redrive'
 );
