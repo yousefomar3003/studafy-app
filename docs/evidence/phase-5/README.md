@@ -70,19 +70,28 @@ claim.
 | Remote uploads still disabled | Pass |
 | Nothing becomes `clean` | Pass |
 
-Executed: 302 Bun tests, 32 pgTAP assertions, 4 quota-race/atomicity
+Executed: 302 Bun tests, 36 pgTAP assertions, 4 quota-race/atomicity
 integration cases, 1 live signed-capability storage case, 5 query plans,
-127 Flutter tests, plus typecheck, lint, format, build, generation-drift,
-database-type-drift, boundary, and secret scans. One pre-existing SAFE-043
-failure is unrelated to this slice and is documented in the transcript.
+127 Flutter tests, the eleven-suite CI database sequence replayed from zero,
+the Edge Function checks, plus typecheck, lint, format, build,
+generation-drift, database-type-drift, database lint, boundary, and secret
+scans. The pre-existing SAFE-043 failures below are unrelated to this slice
+and are documented in the transcript.
 
 ## Known carry-over
 
-`POST /v1/blocks/{blockId}/unblock` (SAFE-043) returns `500` in every
-environment: the dispatcher returns the raw snake-case row where the contract
-expects the camelCase `V1Block` projection. Found while running the suites for
-this phase, diagnosed in the transcript, and left for SAFE-043 to fix
-forward-only because the correction means re-emitting its dispatcher.
+Two SAFE-043 items, both found while running the suites for this phase, both
+diagnosed in the transcript and neither caused by this branch:
+
+- `POST /v1/blocks/{blockId}/unblock` returns `500` in every environment: the
+  dispatcher returns the raw snake-case row where the contract expects the
+  camelCase `V1Block` projection. Left for SAFE-043 to fix forward-only,
+  because the correction means re-emitting its dispatcher.
+- `supabase/tests/safe043_surface_seed.sql` has never passed. DL-042 recorded
+  that SAFE-043's suites were written but never executed for want of a
+  toolchain. Two unbalanced-paren syntax errors are fixed here as partial
+  progress; the remaining failures are authorization mismatches in the
+  dispatcher and are not attempted.
 
 ## Still blocking Phase 5 and launch
 

@@ -34,7 +34,7 @@ FILE-051 (scanning and delivery) remains the gate.
 |---|---|---|
 | TypeScript | `bun run typecheck` | 9/9 workspaces clean |
 | Bun tests | `bun test apps packages` | 302 pass, 1 skip, 1 fail (pre-existing SAFE-043, below) |
-| pgTAP | `bunx supabase test db --local supabase/tests/file050_upload_seed.sql` | 32/32 pass |
+| pgTAP | `bunx supabase test db --local supabase/tests/file050_upload_seed.sql` | 36/36 pass |
 | Storage | `bun run test:file050:storage` | 1 pass, 5 assertions |
 | Quota races | `bun test apps/api/test/files/quota.integration.test.ts` | 4 pass, 18 assertions |
 | Query plans | `bun run test:file050:plans` | 5 queries, all index-backed |
@@ -47,8 +47,13 @@ FILE-051 (scanning and delivery) remains the gate.
 | Flutter analyze | `flutter analyze` | no issues |
 | Flutter tests | `flutter test` | 127 pass |
 | Secret scan | `gitleaks detect` | no leaks in history; working-tree findings confined to gitignored `build/` |
+| Database lint | `bunx supabase db lint --local --level error --fail-on error` | no errors |
+| Full CI database job | replay from zero, then the eleven pgTAP suites in CI order | all pass |
+| Edge Functions | `deno check --frozen=true`, `deno test --frozen=true`, `deno lint`, `deno fmt --check` | all clean |
+| Dart format | `dart format --set-exit-if-changed lib test tools` | 148 files, 0 changed |
+| Dart boundaries | `dart run tools/check_dart_bounds.dart` | 58 feature files, 0 violations |
 
-### pgTAP coverage (32 assertions)
+### pgTAP coverage (36 assertions)
 
 Grants and policy surface:
 
@@ -100,6 +105,10 @@ Cleanup:
 27. cleanup claim resolves the immutable server-owned exact key
 28. cleanup acknowledgement succeeds only for the claiming worker
 29. database deletion is recorded only after worker acknowledgement
+33. a failed deletion is acknowledged without raising
+34. a failed deletion is rescheduled for retry
+35. the retry records why the deletion failed
+36. a failed deletion never records the object as deleted
 
 Delivery boundary:
 
@@ -235,6 +244,29 @@ image.
    evidence was pgTAP-only, and pgTAP runs in one transaction. Added the
    four-case integration suite above, including the backend-PID assertion so
    the test cannot pass by accidentally serializing on one connection.
+4. **`file_purpose_policies` and `file_quota_policies` had no RLS.** Both were
+   created without `enable row level security`, breaking the repository
+   invariant that every public application table has it. Caught by
+   `db021_grants.sql` in the CI database job. Both tables already carry zero
+   runtime grants, so this was defence in depth, but the invariant is
+   fail-closed and explicitly tested. Fixed in the migration, which was
+   unmerged and which CI replays from zero.
+5. **The cleanup retry and dead-letter path could never run.** In
+   `private.api050_finish_cleanup`, the CASE selecting `dead_letter` or
+   `retry` produces `text`, and assigning `text` to the `outbox_state` column
+   raises `42804`. A deletion that storage refused would therefore raise
+   instead of backing off — precisely what the worker's failure branch calls.
+   `supabase db lint --fail-on error` reports it; CI runs exactly that.
+   The pgTAP suite had covered only the success path, so four assertions now
+   cover the failure branch and the plan rose from 32 to 36.
+6. **The reviewed API-runtime execute baseline was stale.**
+   `auth030_grants.sql` pins the exact function set the API role may execute;
+   FILE-050 adds five. The baseline now names them rather than being loosened.
+7. **`deno.lock` was stale and two Dart files were unformatted.** Deno
+   resolves npm dependencies across the whole bun workspace, so adding
+   `@supabase/supabase-js` invalidated the frozen lockfile and failed the Edge
+   Function job before it type-checked anything. `deno fmt` does not touch
+   Dart, so `dart format --set-exit-if-changed` failed separately.
 
 ## Pre-existing failures, not caused by FILE-050
 
@@ -254,7 +286,27 @@ and are fixed in this branch:
 | moderator `start` returned `409` | the preceding `approve` moved the grant to version 2; `start`/`revoke` still sent the pre-approval versions | advance the expected versions |
 | unblock returned `400`, then `500` | the test sent no JSON body at all; with a body it reaches the dispatcher, which returns the raw snake-case row | **not fixed — see below** |
 
-The remaining failure is a genuine SAFE-043 **product** defect, not a test
+### The SAFE-043 surface pgTAP suite has never passed
+
+Separately, `supabase/tests/safe043_surface_seed.sql` fails. DL-042 recorded
+why: SAFE-043 shipped with its suites written but never executed, because that
+environment had no `bun`/`node`/`docker`/`supabase` toolchain. None of those
+files are touched by this branch.
+
+Two unbalanced-paren syntax errors are fixed here as partial progress — two
+`api042_command` calls closed `jsonb_build_object` one paren too many, which
+terminated the call early. With those corrected the script reaches further,
+and what remains are authorization mismatches rather than syntax: "held report
+leaves the queue" returns null, "teacher can block a student" returns
+forbidden, and "operator request with MFA is accepted" returns forbidden. The
+later `:'grant_id'` syntax error is a consequence, not a cause — the `\gset`
+that binds it runs off a request that already failed.
+
+Resolving those is SAFE-043 remediation and is not attempted here.
+
+### The unblock route returns 500
+
+The remaining Bun failure is a genuine SAFE-043 **product** defect, not a test
 bug. In `202609170002_safe043_surface.sql`, the `unblockUser` branch sets
 `response := before_value`, which is `to_jsonb(b)` — the raw row, with
 snake_case columns. The route validates against `V1Block`, which is camelCase,
