@@ -12,6 +12,12 @@ import {
 } from "./authorization/middleware";
 import { PostgresIdempotencyRepository } from "./platform/idempotency";
 import { createRedactingLogger } from "./platform/logging";
+import { RedisAuthContextCache } from "./platform/cache/authContextCache";
+import {
+  createRateLimitDependencies,
+  rateLimitAuto,
+  rateLimitEdge,
+} from "./platform/rate-limit/middleware";
 import { createAcademicRoutes } from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
 import {
@@ -73,6 +79,38 @@ const redisCheck: DependentCheck | undefined = redis
   ? () => checkRedis(redis)
   : undefined;
 
+// OPS-060. Rate limiting and the revocation-safe session-context cache share
+// one Redis client; production is required to configure the HMAC secret
+// (enforceApiFailClosed), development mints an ephemeral one for the boot so
+// no identifier is ever stored raw in a Redis key either way.
+const ephemeralSecret = env.RATE_LIMIT_HMAC_SIGNING_KEY == null &&
+  env.RATE_LIMIT_ENABLED;
+if (ephemeralSecret) {
+  logger.warn("rate_limit_hmac_ephemeral", {
+    environment: env.ENVIRONMENT,
+  });
+}
+const rateLimitSecret = env.RATE_LIMIT_HMAC_SIGNING_KEY ??
+  `${crypto.randomUUID()}${crypto.randomUUID()}`;
+const rateLimitDependencies = createRateLimitDependencies({
+  enabled: env.RATE_LIMIT_ENABLED,
+  secret: rateLimitSecret,
+  redis: redis ?? null,
+  logger,
+  trustCloudflare: env.ENVIRONMENT === "production",
+});
+
+// The session-context cache: version-keyed (membershipVersion, revocation
+// watermark, profile state ride along in the generation), TTL clamped to
+// min(30s, AUTH_REVOCATION_BUDGET_SECONDS), failing back to the DB loader
+// whenever Redis cannot serve.
+const authContextCache = env.RATE_LIMIT_ENABLED && redis
+  ? new RedisAuthContextCache(redis, rateLimitSecret, {
+    environment: env.ENVIRONMENT,
+    budgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
+  })
+  : undefined;
+
 // AUTH-030 needs both a verified token source and a database. Without either
 // the auth routes are not mounted at all, so /v1 keeps answering
 // NOT_IMPLEMENTED instead of exposing handlers that cannot authenticate.
@@ -92,7 +130,7 @@ const idempotencyDependencies = {
 const authDependencies = sql && env.SUPABASE_URL
   ? {
     keys: new JwksKeySource(authJwksUrl(env.SUPABASE_URL)),
-    repository: new AuthContextRepository(sql),
+    repository: new AuthContextRepository(sql, authContextCache),
     logger,
     issuer: authIssuer(env.SUPABASE_URL),
     audience: env.AUTH_JWT_AUDIENCE,
@@ -324,6 +362,7 @@ const auth = authDependencies
     authorization,
     idempotencyDependencies,
     combinedRoutes,
+    env.RATE_LIMIT_ENABLED ? rateLimitAuto(rateLimitDependencies) : undefined,
   )
   : undefined;
 
@@ -348,6 +387,9 @@ const app = createApp({
       requestTimeoutMs: env.API_REQUEST_TIMEOUT_MS,
     },
   },
+  ...(env.RATE_LIMIT_ENABLED
+    ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }
+    : {}),
   ...(auth ? { auth } : {}),
 });
 

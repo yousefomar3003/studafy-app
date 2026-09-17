@@ -27,7 +27,7 @@
     "typecheck": "bun run --filter='@studafy/*' typecheck",
     "check:bounds": "bun scripts/check-bounds.ts && bun scripts/check-file050-boundaries.ts",
     "build": "bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build",
-    "dev:stack": "docker compose -f docker-compose.dev.yml up -d"
+    "dev:stack": "docker compose -f docker-compose.dev.yml up -d || docker-compose -f docker-compose.dev.yml up -d"
   },
   "dependencies": {},
   "devDependencies": {

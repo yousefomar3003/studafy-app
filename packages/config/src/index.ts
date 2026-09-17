@@ -57,6 +57,13 @@ export const apiEnvSchema = z.object({
     10_000,
   ),
   API_CURSOR_SIGNING_KEY: z.string().min(32).optional(),
+  // OPS-060. The HMAC key is the only place account identifiers exist before
+  // they enter a Redis key: every limiter/cache key carries HMAC(subject)
+  // instead, so the key namespace itself is not an enumeration side channel.
+  // The key is per-environment and rotatable (ROTATED key keeps old digests
+  // readable for one grace window while new writes use the new digest).
+  RATE_LIMIT_ENABLED: switchFlag,
+  RATE_LIMIT_HMAC_SIGNING_KEY: z.string().min(32).optional(),
   API041_CLASSES_ENABLED: switchFlag,
   API041_CONTENT_ENABLED: switchFlag,
   API041_ASSIGNMENTS_ENABLED: switchFlag,
@@ -195,6 +202,33 @@ export function parseEnv<T>(
  * not starting. Non-production environments may start degraded and report the
  * missing dependencies as readiness reason codes instead.
  */
+
+/**
+ * OPS-060: Redis carries rate-limit counters and revocation-safe caches, so a
+ * production connection must never be plaintext or passwordless — TLS
+ * (rediss) plus AUTH, on a private-network address. Development keeps the
+ * docker-compose dev stack (plain redis:// on loopback) as the documented
+ * local posture; TLS and private networking land with Phase 8 IaC.
+ */
+export function redisUrlPostureProblems(
+  value: string | undefined,
+): string[] {
+  if (!value) return [];
+  const problems: string[] = [];
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "rediss:") {
+      problems.push("REDIS_URL must use rediss:// (TLS) in production.");
+    }
+    if (!parsed.password && !parsed.username) {
+      problems.push("REDIS_URL must carry AUTH credentials in production.");
+    }
+  } catch {
+    problems.push("REDIS_URL must be a valid URL in production.");
+  }
+  return problems;
+}
+
 export function enforceApiFailClosed(env: ApiEnv): void {
   if (env.ENVIRONMENT !== "production") return;
   const missing: string[] = [];
@@ -229,9 +263,28 @@ export function enforceApiFailClosed(env: ApiEnv): void {
       missing.push("SUPABASE_SERVICE_ROLE_KEY");
     }
   }
+  if (env.RATE_LIMIT_ENABLED && !env.RATE_LIMIT_HMAC_SIGNING_KEY) {
+    missing.push("RATE_LIMIT_HMAC_SIGNING_KEY");
+  }
   if (missing.length > 0) {
     throw new ConfigError(
       `Production requires ${missing.join(", ")} to be configured.`,
+    );
+  }
+  const posture = redisUrlPostureProblems(env.REDIS_URL);
+  if (posture.length > 0) {
+    throw new ConfigError(
+      `Production Redis posture rejected: ${posture.join(" ")}`,
+    );
+  }
+}
+
+export function enforceWorkerFailClosed(env: WorkerEnv): void {
+  if (env.ENVIRONMENT !== "production") return;
+  const posture = redisUrlPostureProblems(env.REDIS_URL);
+  if (posture.length > 0) {
+    throw new ConfigError(
+      `Production Redis posture rejected: ${posture.join(" ")}`,
     );
   }
 }
@@ -278,6 +331,8 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     auth_reauth_ttl_seconds: env.AUTH_REAUTH_TTL_SECONDS,
     auth_deletion_grace_days: env.AUTH_DELETION_GRACE_DAYS,
     cursor_signing_key_configured: Boolean(env.API_CURSOR_SIGNING_KEY),
+    rate_limit_enabled: env.RATE_LIMIT_ENABLED,
+    rate_limit_hmac_key_configured: Boolean(env.RATE_LIMIT_HMAC_SIGNING_KEY),
     api041_slices: {
       classes: env.API041_CLASSES_ENABLED,
       content: env.API041_CONTENT_ENABLED,

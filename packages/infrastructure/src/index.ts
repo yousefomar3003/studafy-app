@@ -1,9 +1,32 @@
 export {
+  CacheConfigError,
+  type CacheEnvelope,
+  type CacheEvent,
+  type CacheResult,
+  type CacheResultStatus,
+  type GetOrLoadOptions,
+  RedisCache,
+  type RedisCacheOptions,
+} from "./cache";
+export {
+  type ConsumeOptions,
+  consumeRateLimit,
+  type FixedWindowPolicy,
+  RateLimitConfigError,
+  type RateLimitDecision,
+  type RateLimitPolicy,
+  resetRateLimit,
+  type SlidingWindowPolicy,
+  type TokenBucketPolicy,
+} from "./rate-limit";
+export {
   checkRedis,
   closeRedis,
   createRedis,
   type Redis,
   type RedisOptions,
+  RedisUnavailableError,
+  withRedisFailure,
 } from "./redis";
 export {
   closeQueue,

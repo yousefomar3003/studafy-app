@@ -53,6 +53,13 @@ export function createAuthRoutes(
   ),
   idempotencyDependencies: IdempotencyDependencies = { logger: deps.logger },
   academicRoutes?: Hono<AuthorizationEnv>,
+  /**
+   * OPS-060: post-auth flow limiter (flowFor-classified, account/tenant
+   * keyed). Mounted here so every route this router serves - session
+   * lifecycle and every catalogue module riding along - enforces its
+   * registry policy at one insertion point.
+   */
+  rateLimit?: MiddlewareHandler<AuthorizationEnv>,
 ): Hono<AuthorizationEnv> {
   const routes = new Hono<AuthorizationEnv>();
 
@@ -64,6 +71,13 @@ export function createAuthRoutes(
       AuthorizationEnv
     >,
   );
+
+  // OPS-060 flow limiter: runs after authentication (it needs the actor)
+  // and before any handler, validation included - a flood never reaches
+  // schema work either.
+  if (rateLimit) {
+    routes.use("*", rateLimit);
+  }
 
   // ------------------------------------------------------------------
   // Identity and context
