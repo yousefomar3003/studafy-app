@@ -81,6 +81,12 @@ export const apiEnvSchema = z.object({
   SAFE043_MODERATION_ENABLED: switchFlag,
   SAFE043_CONTENT_CONTROLS_ENABLED: switchFlag,
   FILE050_NEW_INTENTS_ENABLED: disabledSwitchFlag,
+  // FILE-051 delivery/publication switches stay off unless explicitly enabled
+  // in a disposable environment, exactly like the FILE-050 intent switch.
+  FILE051_DELIVERY_ENABLED: disabledSwitchFlag,
+  FILE051_PUBLISH_ENABLED: disabledSwitchFlag,
+  FILE051_DELIVERY_SIGNING_KEY: z.string().min(32).optional(),
+  FILE051_DELIVERY_PUBLIC_BASE_URL: url.optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
@@ -112,21 +118,50 @@ export const workerEnvSchema = z.object({
   SUPABASE_URL: url.optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   FILE050_CLEANUP_ENABLED: disabledSwitchFlag,
+  // FILE-051 scan/retention workers stay off unless explicitly enabled.
+  FILE051_SCAN_ENABLED: disabledSwitchFlag,
+  FILE051_RETENTION_ENABLED: disabledSwitchFlag,
+  // The external malware scanner. Absent in local/disposable use (the
+  // deterministic structural scanner runs instead); production refuses to
+  // scan without it, because structural validation is not signature-grade.
+  MALWARE_SCANNER_URL: url.optional(),
+  MALWARE_SCANNER_API_KEY: z.string().min(20).optional(),
 }).superRefine((value, context) => {
-  if (!value.FILE050_CLEANUP_ENABLED) return;
+  const dependentKeys = [
+    "DATABASE_URL",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ] as const;
   for (
-    const key of [
-      "DATABASE_URL",
-      "SUPABASE_URL",
-      "SUPABASE_SERVICE_ROLE_KEY",
-    ] as const
+    const enabled of [
+      value.FILE050_CLEANUP_ENABLED,
+      value.FILE051_SCAN_ENABLED,
+      value.FILE051_RETENTION_ENABLED,
+    ]
   ) {
-    if (!value[key]) {
-      context.addIssue({
-        code: "custom",
-        path: [key],
-        message: "required when FILE050 cleanup is enabled",
-      });
+    if (!enabled) continue;
+    for (const key of dependentKeys) {
+      if (!value[key]) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: `required when a file worker is enabled (${key})`,
+        });
+      }
+    }
+    break;
+  }
+  if (value.ENVIRONMENT === "production" && value.FILE051_SCAN_ENABLED) {
+    for (
+      const key of ["MALWARE_SCANNER_URL", "MALWARE_SCANNER_API_KEY"] as const
+    ) {
+      if (!value[key]) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: "required when scanning is enabled in production",
+        });
+      }
     }
   }
 });
@@ -171,6 +206,28 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   if (!env.API_CURSOR_SIGNING_KEY) missing.push("API_CURSOR_SIGNING_KEY");
   if (env.FILE050_NEW_INTENTS_ENABLED && !env.SUPABASE_SERVICE_ROLE_KEY) {
     missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  }
+  if (env.FILE051_DELIVERY_ENABLED) {
+    if (!env.FILE051_DELIVERY_SIGNING_KEY) {
+      missing.push("FILE051_DELIVERY_SIGNING_KEY");
+    } else if (
+      env.FILE051_DELIVERY_SIGNING_KEY === env.API_CURSOR_SIGNING_KEY
+    ) {
+      // One key per purpose: a cursor must never verify as a delivery token.
+      throw new ConfigError(
+        "FILE051_DELIVERY_SIGNING_KEY must differ from API_CURSOR_SIGNING_KEY.",
+      );
+    }
+    if (!env.FILE051_DELIVERY_PUBLIC_BASE_URL) {
+      missing.push("FILE051_DELIVERY_PUBLIC_BASE_URL");
+    } else if (!env.FILE051_DELIVERY_PUBLIC_BASE_URL.startsWith("https://")) {
+      throw new ConfigError(
+        "Production delivery URLs must use an HTTPS public base URL.",
+      );
+    }
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+      missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    }
   }
   if (missing.length > 0) {
     throw new ConfigError(
@@ -254,6 +311,12 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
       serviceRoleConfigured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
     },
+    file051: {
+      deliveryEnabled: env.FILE051_DELIVERY_ENABLED,
+      publishEnabled: env.FILE051_PUBLISH_ENABLED,
+      deliverySigningKeyConfigured: Boolean(env.FILE051_DELIVERY_SIGNING_KEY),
+      deliveryPublicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL ?? null,
+    },
   };
 }
 
@@ -267,5 +330,12 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
     file050_cleanup_enabled: env.FILE050_CLEANUP_ENABLED,
     service_role_configured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    file051: {
+      scanEnabled: env.FILE051_SCAN_ENABLED,
+      retentionEnabled: env.FILE051_RETENTION_ENABLED,
+      malwareScannerConfigured: Boolean(
+        env.MALWARE_SCANNER_URL && env.MALWARE_SCANNER_API_KEY,
+      ),
+    },
   };
 }

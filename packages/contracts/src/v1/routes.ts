@@ -1338,6 +1338,17 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     fileParams(),
   ),
+  academicPost(
+    "publishFile",
+    "/v1/files/{fileId}/publish",
+    "file.publish",
+    Files.V1PublishFileRequest,
+    "V1PublishFileRequest",
+    Files.V1PublishFileResponse,
+    "V1PublishFileResponse",
+    201,
+    fileParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

@@ -49,10 +49,16 @@ export function secureResponseHeaders(
       await next();
     } finally {
       c.header("Cache-Control", "no-store");
-      c.header(
-        "Content-Security-Policy",
-        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
-      );
+      // FILE-051 delivery responses carry a stricter, sandboxed policy of
+      // their own; every other response gets the platform default.
+      if (
+        !c.res.headers.get("Content-Security-Policy")?.startsWith("sandbox")
+      ) {
+        c.header(
+          "Content-Security-Policy",
+          "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+        );
+      }
       c.header(
         "Permissions-Policy",
         "camera=(), microphone=(), geolocation=(), payment=()",

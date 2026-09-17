@@ -820,6 +820,11 @@ export const PERMISSION_CATALOGUE = {
     "file_object",
     "Request delivery only for a currently authorized clean file.",
   ),
+  "file.publish": resource(
+    "file_object",
+    "Publish one clean lesson-resource file to its classroom as a single " +
+      "resource, version and publication.",
+  ),
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

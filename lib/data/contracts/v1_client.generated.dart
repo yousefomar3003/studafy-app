@@ -1785,6 +1785,19 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1PublishFileResponseDto> publishFile(
+    V1PublishFileRequestDto request, {
+    required String fileId,
+    String? idempotencyKey,
+  }) async => V1PublishFileResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/files/{fileId}/publish', {'fileId': fileId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -5546,6 +5559,37 @@ class V1ProvisionSchoolRequestDto {
     'timezone': timezone,
     'locale': locale,
     'initialAdminUserId': initialAdminUserId,
+  };
+}
+
+class V1PublishFileRequestDto {
+  const V1PublishFileRequestDto({required this.audience});
+
+  factory V1PublishFileRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1PublishFileRequestDto(audience: json['audience'] as String);
+
+  final String audience;
+
+  Map<String, Object?> toJson() => {'audience': audience};
+}
+
+class V1PublishFileResponseDto {
+  const V1PublishFileResponseDto({required this.file, required this.resource});
+
+  factory V1PublishFileResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1PublishFileResponseDto(
+        file: V1FileDto.fromJson(json['file'] as Map<String, dynamic>),
+        resource: V1ResourceDto.fromJson(
+          json['resource'] as Map<String, dynamic>,
+        ),
+      );
+
+  final V1FileDto file;
+  final V1ResourceDto resource;
+
+  Map<String, Object?> toJson() => {
+    'file': file.toJson(),
+    'resource': resource.toJson(),
   };
 }
 
