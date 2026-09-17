@@ -128,6 +128,14 @@ export const workerEnvSchema = z.object({
   // FILE-051 scan/retention workers stay off unless explicitly enabled.
   FILE051_SCAN_ENABLED: disabledSwitchFlag,
   FILE051_RETENTION_ENABLED: disabledSwitchFlag,
+  // OPS-061. The outbox drain is producer+consumer over BullMQ: the
+  // dispatcher claims notification_outbox rows and enqueues deterministic
+  // jobs; the processor expands audiences into deliveries. Off by default;
+  // enabling it requires the database (durable outbox + idempotency fence).
+  OPS061_NOTIFICATIONS_ENABLED: disabledSwitchFlag,
+  OPS061_OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(250).max(60_000)
+    .default(5000),
+  OPS061_OUTBOX_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
   // The external malware scanner. Absent in local/disposable use (the
   // deterministic structural scanner runs instead); production refuses to
   // scan without it, because structural validation is not signature-grade.
@@ -170,6 +178,13 @@ export const workerEnvSchema = z.object({
         });
       }
     }
+  }
+  if (value.OPS061_NOTIFICATIONS_ENABLED && !value.DATABASE_URL) {
+    context.addIssue({
+      code: "custom",
+      path: ["DATABASE_URL"],
+      message: "required when the outbox drain is enabled (DATABASE_URL)",
+    });
   }
 });
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
@@ -385,6 +400,11 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
     file050_cleanup_enabled: env.FILE050_CLEANUP_ENABLED,
     service_role_configured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    ops061: {
+      notificationsEnabled: env.OPS061_NOTIFICATIONS_ENABLED,
+      outboxPollIntervalMs: env.OPS061_OUTBOX_POLL_INTERVAL_MS,
+      outboxConcurrency: env.OPS061_OUTBOX_CONCURRENCY,
+    },
     file051: {
       scanEnabled: env.FILE051_SCAN_ENABLED,
       retentionEnabled: env.FILE051_RETENTION_ENABLED,

@@ -56,3 +56,5 @@ export type ServiceInfo = z.infer<typeof ServiceInfo>;
  */
 // Versioned API contracts (ARC-011).
 export * from "./v1";
+// Versioned job payload contracts (OPS-061).
+export * from "./jobs";

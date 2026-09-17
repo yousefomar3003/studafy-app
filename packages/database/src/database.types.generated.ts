@@ -3132,11 +3132,15 @@ export type Database = {
         Row: {
           attempt_count: number;
           audience: Json | null;
+          bullmq_job_id: string | null;
           channel: string;
           created_at: string;
+          dispatched_at: string | null;
           id: number;
           idempotency_key: string;
           last_error_code: string | null;
+          lease_token: string | null;
+          lease_until: string | null;
           next_attempt_at: string;
           payload: Json;
           recipient_id: string | null;
@@ -3149,11 +3153,15 @@ export type Database = {
         Insert: {
           attempt_count?: number;
           audience?: Json | null;
+          bullmq_job_id?: string | null;
           channel: string;
           created_at?: string;
+          dispatched_at?: string | null;
           id?: never;
           idempotency_key: string;
           last_error_code?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
           next_attempt_at?: string;
           payload?: Json;
           recipient_id?: string | null;
@@ -3166,11 +3174,15 @@ export type Database = {
         Update: {
           attempt_count?: number;
           audience?: Json | null;
+          bullmq_job_id?: string | null;
           channel?: string;
           created_at?: string;
+          dispatched_at?: string | null;
           id?: never;
           idempotency_key?: string;
           last_error_code?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
           next_attempt_at?: string;
           payload?: Json;
           recipient_id?: string | null;

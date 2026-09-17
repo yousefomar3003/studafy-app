@@ -1,3 +1,12 @@
+export { backoffOptions, type BackoffPolicy, maxDelayMs } from "./backoff";
+export {
+  assertQueueRedisPosture,
+  QueuePostureError,
+  queuePostureProblems,
+  type QueueRedisPosture,
+  readQueueRedisPosture,
+} from "./queuePosture";
+export { oldestWaitingAgeMs, type QueueStats, queueStats } from "./queues";
 export {
   CacheConfigError,
   type CacheEnvelope,
@@ -39,6 +48,7 @@ export {
   type Queue,
   type QueueOptions,
   type Worker,
+  type WorkerOptions,
 } from "./queues";
 export {
   detectMediaType,

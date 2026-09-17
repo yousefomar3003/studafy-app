@@ -292,3 +292,66 @@ describe("redaction", () => {
     expect(JSON.stringify(describeWorkerEnv(env))).not.toContain(":pw@");
   });
 });
+
+describe("outbox drain configuration (OPS-061)", () => {
+  test("the drain is off by default", () => {
+    const env = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+    });
+    expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(false);
+    expect(env.OPS061_OUTBOX_POLL_INTERVAL_MS).toBe(5000);
+    expect(env.OPS061_OUTBOX_CONCURRENCY).toBe(5);
+  });
+
+  test("enabling the drain requires the durable outbox database", () => {
+    expect(() =>
+      parseEnv(workerEnvSchema, {
+        ENVIRONMENT: "development",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        OPS061_NOTIFICATIONS_ENABLED: "true",
+      })
+    ).toThrow(/DATABASE_URL/);
+    const env = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+      DATABASE_URL: "postgresql://postgres@127.0.0.1:54322/postgres",
+      OPS061_NOTIFICATIONS_ENABLED: "true",
+    });
+    expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(true);
+  });
+
+  test("poll interval and concurrency are bounded", () => {
+    for (const value of ["0", "249", "60001"]) {
+      expect(() =>
+        parseEnv(workerEnvSchema, {
+          ENVIRONMENT: "development",
+          REDIS_URL: "redis://127.0.0.1:6379",
+          OPS061_OUTBOX_POLL_INTERVAL_MS: value,
+        })
+      ).toThrow(/OPS061_OUTBOX_POLL_INTERVAL_MS/);
+    }
+    expect(() =>
+      parseEnv(workerEnvSchema, {
+        ENVIRONMENT: "development",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        OPS061_OUTBOX_CONCURRENCY: "21",
+      })
+    ).toThrow(/OPS061_OUTBOX_CONCURRENCY/);
+  });
+
+  test("describeWorkerEnv reports the drain without identifiers", () => {
+    const env = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+      DATABASE_URL: "postgresql://postgres@127.0.0.1:54322/postgres",
+      OPS061_NOTIFICATIONS_ENABLED: "true",
+    });
+    const described = describeWorkerEnv(env);
+    expect(described["ops061"]).toEqual({
+      notificationsEnabled: true,
+      outboxPollIntervalMs: 5000,
+      outboxConcurrency: 5,
+    });
+  });
+});
