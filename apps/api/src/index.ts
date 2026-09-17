@@ -35,6 +35,9 @@ import { createSupportAccessRoutes } from "./support-access/routes";
 import { PostgresSupportAccessRepository } from "./support-access/repository";
 import { createSafetyRoutes } from "./safety/routes";
 import { PostgresSafetyRepository } from "./safety/repository";
+import { createFileRoutes } from "./files/routes";
+import { PostgresFileRepository } from "./files/repository";
+import { SupabasePrivateFileStorage } from "./files/storage";
 import {
   checkDatabase,
   closeDatabase,
@@ -245,6 +248,24 @@ const safety = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+// FILE-050 uses the service role only inside the isolated storage adapter.
+// Database authorization and mutation still run as studafy_api_runtime via
+// the narrow private.api050_* surface. With no key the routes do not mount.
+const files = sql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
+  ? createFileRoutes(
+    {
+      repository: new PostgresFileRepository(sql),
+      storage: new SupabasePrivateFileStorage(
+        env.SUPABASE_URL,
+        env.SUPABASE_SERVICE_ROLE_KEY,
+      ),
+      newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 // createTerm/createStudent are the last two entries in V1_ROUTE_CATALOGUE
 // before the SAFE-043 block (see school-admin/routes.ts's
 // SCHOOL_ROSTER_ROUTES comment) and must be mounted in catalogue order so
@@ -267,7 +288,7 @@ const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
 const combinedRoutes =
   academic || schoolAdmin || invitations || family || communications ||
     meetings || notifications || account || supportAccess || schoolRoster ||
-    safety
+    safety || files
     ? (() => {
       const combined = new Hono<AuthorizationEnv>();
       if (academic) combined.route("/", academic);
@@ -281,6 +302,7 @@ const combinedRoutes =
       if (supportAccess) combined.route("/", supportAccess);
       if (schoolRoster) combined.route("/", schoolRoster);
       if (safety) combined.route("/", safety);
+      if (files) combined.route("/", files);
       return combined;
     })()
     : undefined;

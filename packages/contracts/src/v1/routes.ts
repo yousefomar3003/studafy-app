@@ -32,6 +32,7 @@ import * as Notifications from "./notifications";
 import * as Account from "./account";
 import * as SupportAccess from "./supportAccess";
 import * as Safety from "./safety";
+import * as Files from "./files";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -1289,6 +1290,54 @@ export const V1_ROUTE_CATALOGUE = [
     query: Safety.V1ModerationAccessQuery,
     querySchema: "V1ModerationAccessQuery",
   },
+  academicPost(
+    "createUploadIntent",
+    "/v1/uploads",
+    "upload.intent.create",
+    Files.V1CreateUploadIntentRequest,
+    "V1CreateUploadIntentRequest",
+    Files.V1CreateUploadIntentResponse,
+    "V1CreateUploadIntentResponse",
+    201,
+  ),
+  academicGet(
+    "getUploadStatus",
+    "/v1/uploads/{uploadId}",
+    "upload.read",
+    Files.V1UploadSession,
+    "V1UploadSession",
+    uploadParams(),
+  ),
+  academicPost(
+    "completeUpload",
+    "/v1/uploads/{uploadId}/complete",
+    "upload.complete",
+    Files.V1CompleteUploadRequest,
+    "V1CompleteUploadRequest",
+    Files.V1CompleteUploadResponse,
+    "V1CompleteUploadResponse",
+    200,
+    uploadParams(),
+  ),
+  academicGet(
+    "getFileStatus",
+    "/v1/files/{fileId}",
+    "file.read",
+    Files.V1File,
+    "V1File",
+    fileParams(),
+  ),
+  academicPost(
+    "createFileDownloadIntent",
+    "/v1/files/{fileId}/download-intent",
+    "file.download",
+    Files.V1DownloadIntentRequest,
+    "V1DownloadIntentRequest",
+    Files.V1DownloadIntentResponse,
+    "V1DownloadIntentResponse",
+    200,
+    fileParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -1341,6 +1390,12 @@ function legalHoldParams() {
 }
 function moderationGrantParams() {
   return params("moderationGrantId");
+}
+function uploadParams() {
+  return params("uploadId");
+}
+function fileParams() {
+  return params("fileId");
 }
 
 function academicGet(

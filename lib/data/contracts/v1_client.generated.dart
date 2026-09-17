@@ -1732,6 +1732,59 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1CreateUploadIntentResponseDto> createUploadIntent(
+    V1CreateUploadIntentRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1CreateUploadIntentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/uploads', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1UploadSessionDto> getUploadStatus({
+    required String uploadId,
+  }) async => V1UploadSessionDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/uploads/{uploadId}', {'uploadId': uploadId}, {}),
+    ),
+  );
+
+  Future<V1CompleteUploadResponseDto> completeUpload(
+    V1CompleteUploadRequestDto request, {
+    required String uploadId,
+    String? idempotencyKey,
+  }) async => V1CompleteUploadResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/uploads/{uploadId}/complete', {'uploadId': uploadId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1FileDto> getFileStatus({required String fileId}) async =>
+      V1FileDto.fromJson(
+        await _transport.get(
+          _v1Path('/v1/files/{fileId}', {'fileId': fileId}, {}),
+        ),
+      );
+
+  Future<V1DownloadIntentResponseDto> createFileDownloadIntent(
+    V1DownloadIntentRequestDto request, {
+    required String fileId,
+    String? idempotencyKey,
+  }) async => V1DownloadIntentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/files/{fileId}/download-intent', {'fileId': fileId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -3018,6 +3071,38 @@ class V1ClassroomStaffPageDto {
   };
 }
 
+class V1CompleteUploadRequestDto {
+  const V1CompleteUploadRequestDto();
+
+  factory V1CompleteUploadRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1CompleteUploadRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1CompleteUploadResponseDto {
+  const V1CompleteUploadResponseDto({
+    required this.session,
+    required this.file,
+  });
+
+  factory V1CompleteUploadResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1CompleteUploadResponseDto(
+        session: V1UploadSessionDto.fromJson(
+          json['session'] as Map<String, dynamic>,
+        ),
+        file: V1FileDto.fromJson(json['file'] as Map<String, dynamic>),
+      );
+
+  final V1UploadSessionDto session;
+  final V1FileDto file;
+
+  Map<String, Object?> toJson() => {
+    'session': session.toJson(),
+    'file': file.toJson(),
+  };
+}
+
 class V1ContentControlsDto {
   const V1ContentControlsDto({
     required this.schoolId,
@@ -3541,6 +3626,94 @@ class V1CreateTermRequestDto {
   };
 }
 
+class V1CreateUploadIntentRequestDto {
+  const V1CreateUploadIntentRequestDto({
+    required this.schoolId,
+    required this.purpose,
+    required this.displayName,
+    required this.expectedSizeBytes,
+    required this.declaredMediaType,
+    required this.sha256,
+    this.classroomId,
+    this.assignmentId,
+    this.studentId,
+    this.gradeResultId,
+  });
+
+  factory V1CreateUploadIntentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateUploadIntentRequestDto(
+        schoolId: json['schoolId'] as String,
+        purpose: json['purpose'] as String,
+        displayName: json['displayName'] as String,
+        expectedSizeBytes: json['expectedSizeBytes'] as int,
+        declaredMediaType: json['declaredMediaType'] as String,
+        sha256: json['sha256'] as String,
+        classroomId: json['classroomId'] as String?,
+        assignmentId: json['assignmentId'] as String?,
+        studentId: json['studentId'] as String?,
+        gradeResultId: json['gradeResultId'] as String?,
+      );
+
+  final String schoolId;
+  final String purpose;
+  final String displayName;
+  final int expectedSizeBytes;
+  final String declaredMediaType;
+  final String sha256;
+  final String? classroomId;
+  final String? assignmentId;
+  final String? studentId;
+  final String? gradeResultId;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'purpose': purpose,
+    'displayName': displayName,
+    'expectedSizeBytes': expectedSizeBytes,
+    'declaredMediaType': declaredMediaType,
+    'sha256': sha256,
+    'classroomId': ?classroomId,
+    'assignmentId': ?assignmentId,
+    'studentId': ?studentId,
+    'gradeResultId': ?gradeResultId,
+  };
+}
+
+class V1CreateUploadIntentResponseDto {
+  const V1CreateUploadIntentResponseDto({
+    required this.session,
+    required this.uploadUrl,
+    required this.method,
+    required this.requiredHeaders,
+    required this.expiresAt,
+  });
+
+  factory V1CreateUploadIntentResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateUploadIntentResponseDto(
+        session: V1UploadSessionDto.fromJson(
+          json['session'] as Map<String, dynamic>,
+        ),
+        uploadUrl: json['uploadUrl'] as String,
+        method: json['method'] as String,
+        requiredHeaders: json['requiredHeaders'] as Map<String, dynamic>,
+        expiresAt: json['expiresAt'] as String,
+      );
+
+  final V1UploadSessionDto session;
+  final String uploadUrl;
+  final String method;
+  final Map<String, dynamic> requiredHeaders;
+  final String expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'session': session.toJson(),
+    'uploadUrl': uploadUrl,
+    'method': method,
+    'requiredHeaders': requiredHeaders,
+    'expiresAt': expiresAt,
+  };
+}
+
 class V1CreateWellbeingRequestDto {
   const V1CreateWellbeingRequestDto({
     required this.studentId,
@@ -3811,6 +3984,44 @@ class V1DeletionRetainedRecordsDto {
   };
 }
 
+class V1DownloadIntentRequestDto {
+  const V1DownloadIntentRequestDto();
+
+  factory V1DownloadIntentRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1DownloadIntentRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1DownloadIntentResponseDto {
+  const V1DownloadIntentResponseDto({
+    required this.downloadUrl,
+    required this.expiresAt,
+    required this.displayName,
+    required this.mediaType,
+  });
+
+  factory V1DownloadIntentResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1DownloadIntentResponseDto(
+        downloadUrl: json['downloadUrl'] as String,
+        expiresAt: json['expiresAt'] as String,
+        displayName: json['displayName'] as String,
+        mediaType: json['mediaType'] as String,
+      );
+
+  final String downloadUrl;
+  final String expiresAt;
+  final String displayName;
+  final String mediaType;
+
+  Map<String, Object?> toJson() => {
+    'downloadUrl': downloadUrl,
+    'expiresAt': expiresAt,
+    'displayName': displayName,
+    'mediaType': mediaType,
+  };
+}
+
 class V1EnrollStudentRequestDto {
   const V1EnrollStudentRequestDto({required this.studentId});
 
@@ -3880,6 +4091,58 @@ class V1ExportStatusResponseDto {
   final V1DataExportRequestDto? request;
 
   Map<String, Object?> toJson() => {'request': request?.toJson()};
+}
+
+class V1FileDto {
+  const V1FileDto({
+    required this.id,
+    required this.purpose,
+    required this.displayName,
+    required this.sizeBytes,
+    required this.declaredMediaType,
+    required this.detectedMediaType,
+    required this.scanState,
+    required this.createdAt,
+    required this.scannedAt,
+    required this.failureCode,
+  });
+
+  factory V1FileDto.fromJson(Map<String, dynamic> json) => V1FileDto(
+    id: json['id'] as String,
+    purpose: json['purpose'] as String,
+    displayName: json['displayName'] as String,
+    sizeBytes: json['sizeBytes'] as int,
+    declaredMediaType: json['declaredMediaType'] as String,
+    detectedMediaType: json['detectedMediaType'] as String?,
+    scanState: json['scanState'] as String,
+    createdAt: json['createdAt'] as String,
+    scannedAt: json['scannedAt'] as String?,
+    failureCode: json['failureCode'] as String?,
+  );
+
+  final String id;
+  final String purpose;
+  final String displayName;
+  final int sizeBytes;
+  final String declaredMediaType;
+  final String? detectedMediaType;
+  final String scanState;
+  final String createdAt;
+  final String? scannedAt;
+  final String? failureCode;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'purpose': purpose,
+    'displayName': displayName,
+    'sizeBytes': sizeBytes,
+    'declaredMediaType': declaredMediaType,
+    'detectedMediaType': detectedMediaType,
+    'scanState': scanState,
+    'createdAt': createdAt,
+    'scannedAt': scannedAt,
+    'failureCode': failureCode,
+  };
 }
 
 class V1GradeResultDto {
@@ -6694,6 +6957,63 @@ class V1UpdateProfileRequestDto {
   Map<String, Object?> toJson() => {
     'displayName': ?displayName,
     'locale': ?locale,
+  };
+}
+
+class V1UploadSessionDto {
+  const V1UploadSessionDto({
+    required this.id,
+    required this.purpose,
+    required this.displayName,
+    required this.declaredMediaType,
+    required this.expectedSizeBytes,
+    required this.state,
+    required this.expiresAt,
+    required this.createdAt,
+    required this.completedAt,
+    required this.fileId,
+    required this.failureCode,
+  });
+
+  factory V1UploadSessionDto.fromJson(Map<String, dynamic> json) =>
+      V1UploadSessionDto(
+        id: json['id'] as String,
+        purpose: json['purpose'] as String,
+        displayName: json['displayName'] as String,
+        declaredMediaType: json['declaredMediaType'] as String,
+        expectedSizeBytes: json['expectedSizeBytes'] as int,
+        state: json['state'] as String,
+        expiresAt: json['expiresAt'] as String,
+        createdAt: json['createdAt'] as String,
+        completedAt: json['completedAt'] as String?,
+        fileId: json['fileId'] as String?,
+        failureCode: json['failureCode'] as String?,
+      );
+
+  final String id;
+  final String purpose;
+  final String displayName;
+  final String declaredMediaType;
+  final int expectedSizeBytes;
+  final String state;
+  final String expiresAt;
+  final String createdAt;
+  final String? completedAt;
+  final String? fileId;
+  final String? failureCode;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'purpose': purpose,
+    'displayName': displayName,
+    'declaredMediaType': declaredMediaType,
+    'expectedSizeBytes': expectedSizeBytes,
+    'state': state,
+    'expiresAt': expiresAt,
+    'createdAt': createdAt,
+    'completedAt': completedAt,
+    'fileId': fileId,
+    'failureCode': failureCode,
   };
 }
 
