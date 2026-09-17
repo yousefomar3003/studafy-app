@@ -310,7 +310,7 @@ insert into safe043_results values ('convo-blocked', private.api042_command(
   'createConversation', null,
   jsonb_build_object('responseStatus', 201, 'body', jsonb_build_object(
     'schoolId', :'school_id', 'participantIds', jsonb_build_array(:'teacher_user'),
-    'subject', 'ping'))),
+    'subject', 'ping')),
   (select (result->>'id')::uuid from safe043_results where name = 'convo-blocked-res'), 1));
 select is((select result->>'outcome' from safe043_results where name = 'convo-blocked'),
   'forbidden', 'the blocked student cannot start a conversation with the teacher');
@@ -345,7 +345,7 @@ insert into safe043_results values ('convo-after', private.api042_command(
   'createConversation', null,
   jsonb_build_object('responseStatus', 201, 'body', jsonb_build_object(
     'schoolId', :'school_id', 'participantIds', jsonb_build_array(:'student_user'),
-    'subject', 'classes resume'))),
+    'subject', 'classes resume')),
   (select (result->>'id')::uuid from safe043_results where name = 'convo-after-res'), 1));
 select is((select result->>'outcome' from safe043_results where name = 'convo-after'),
   'ok', 'a new conversation is allowed once the block is lifted');
