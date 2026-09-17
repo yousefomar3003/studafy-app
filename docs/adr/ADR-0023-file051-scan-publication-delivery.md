@@ -139,7 +139,7 @@ a whole dedupe group in one transaction. It moves every member out of
 legal hold and writes an attributed audit event.
 `file051_release_contained_object` lifts the hold and queues exact-key
 deletion. Neither function is granted to a runtime role. The runbook is
-rehearsed by `scripts/file051-malware-drill.ts`.
+rehearsed by `apps/api/scripts/file051-malware-drill.ts`.
 
 **Least privilege holds, and one FILE-050 gap is closed.** The API gains
 EXECUTE on three commands. The worker gains its own functions and `USAGE` on

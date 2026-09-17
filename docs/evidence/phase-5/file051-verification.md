@@ -178,7 +178,7 @@ academic 19, FILE-050 storage 1, FILE-050 quota races 4, and SAFE-043 `/v1`
 
 ### End-to-end transcript (real Storage, least-privilege roles)
 
-`scripts/verify-file051-delivery.ts` connects the API as
+`apps/api/scripts/verify-file051-delivery.ts` connects the API as
 `studafy_api_runtime` and the workers as `studafy_worker_runtime`, each with
 a throwaway password that is revoked on exit. The worker role is returned to
 `nologin`. Only token verification is replaced: the actor's session context

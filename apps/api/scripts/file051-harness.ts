@@ -15,25 +15,25 @@ import {
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { createJsonLogger } from "@studafy/observability";
-import { AuthContextRepository } from "../apps/api/src/auth/context";
-import type { Actor } from "../apps/api/src/auth/middleware";
+import { AuthContextRepository } from "../src/auth/context";
+import type { Actor } from "../src/auth/middleware";
 import {
   type AuthorizationEnv,
   createAuthorizationDependencies,
-} from "../apps/api/src/authorization/middleware";
-import { PostgresAuthorizationRepository } from "../apps/api/src/authorization/repository";
-import { PostgresFileRepository } from "../apps/api/src/files/repository";
-import { createFileRoutes } from "../apps/api/src/files/routes";
-import { PostgresIdempotencyRepository } from "../apps/api/src/platform/idempotency";
+} from "../src/authorization/middleware";
+import { PostgresAuthorizationRepository } from "../src/authorization/repository";
+import { PostgresFileRepository } from "../src/files/repository";
+import { createFileRoutes } from "../src/files/routes";
+import { PostgresIdempotencyRepository } from "../src/platform/idempotency";
 import {
   requestContext,
   secureResponseHeaders,
-} from "../apps/api/src/platform/middleware";
-import { startFileCleanup } from "../apps/worker/src/processors/fileCleanup";
+} from "../src/platform/middleware";
+import { startFileCleanup } from "../../worker/src/processors/fileCleanup";
 import {
   createFileScanProcessor,
   postgresScanQueue,
-} from "../apps/worker/src/processors/fileScan";
+} from "../../worker/src/processors/fileScan";
 
 export const IDS = {
   school: "f051e000-0000-4000-8000-000000000001",
@@ -70,11 +70,11 @@ export async function localSupabase(): Promise<{
   dbUrl: string;
 }> {
   const status = Bun.spawnSync([
-    `${import.meta.dir}/../node_modules/.bin/supabase`,
+    `${import.meta.dir}/../../../node_modules/.bin/supabase`,
     "status",
     "--output",
     "json",
-  ], { cwd: `${import.meta.dir}/..`, stdout: "pipe", stderr: "pipe" });
+  ], { cwd: `${import.meta.dir}/../../..`, stdout: "pipe", stderr: "pipe" });
   if (status.exitCode !== 0) throw new Error("local Supabase is unavailable");
   const local = JSON.parse(status.stdout.toString()) as Record<string, string>;
   const apiUrl = local.API_URL ?? "";

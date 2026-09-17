@@ -420,7 +420,7 @@ every member meets all of these conditions:
 - no deletion already in flight.
 
 Rows become `deleted` only after storage confirms.
-`scripts/file051-reconciliation.ts` compares the bucket index with the rows
+`apps/api/scripts/file051-reconciliation.ts` compares the bucket index with the rows
 and must report zero drift.
 
 ### Privilege posture

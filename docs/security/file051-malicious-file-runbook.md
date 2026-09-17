@@ -14,7 +14,7 @@ from the legal work in §15.
 Owner: repository owner (`@yousefomar3003`), single-owner project.
 
 The procedure is rehearsed end to end by `bun run test:file051:drill`
-(`scripts/file051-malware-drill.ts`), which must report `passed: true`.
+(`apps/api/scripts/file051-malware-drill.ts`), which must report `passed: true`.
 
 ## Vocabulary
 
