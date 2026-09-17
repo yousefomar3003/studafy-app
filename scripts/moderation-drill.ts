@@ -40,19 +40,40 @@ const OPERATOR_B = crypto.randomUUID();
 
 let sql: ReturnType<typeof postgres> | undefined;
 
-async function claim(
+/**
+ * Runs `work` inside one transaction that carries the caller's identity.
+ *
+ * The third argument to set_config is is_local, so the settings live for the
+ * duration of the transaction and no longer. Issuing them as a standalone
+ * statement on a pooled connection discards them before the next call, which
+ * left every dispatcher call running with a null auth.uid(). This mirrors the
+ * API's own withRequestContext.
+ */
+async function withClaim<T>(
   subject: string,
   schoolId: string,
   requestId: string,
-): Promise<void> {
-  await sql!.unsafe(
-    `select set_config('request.jwt.claim.sub', $1, true),
-            set_config('studafy.school_id', $2, true),
-            set_config('studafy.request_id', $3, true)`,
-    [subject, schoolId, requestId],
-  );
+  work: (tx: ReturnType<typeof postgres>) => Promise<T>,
+): Promise<T> {
+  return await sql!.begin(async (tx) => {
+    await tx.unsafe(
+      `select set_config('request.jwt.claim.sub', $1, true),
+              set_config('studafy.school_id', $2, true),
+              set_config('studafy.request_id', $3, true)`,
+      [subject, schoolId, requestId],
+    );
+    return await work(tx as unknown as ReturnType<typeof postgres>);
+  }) as T;
 }
 
+/**
+ * Note the `::text::jsonb` double cast on the payload parameters below.
+ * postgres.js JSON-encodes a JS string bound to a json/jsonb parameter, so a
+ * pre-stringified payload arrives as a JSON *string scalar* rather than an
+ * object: `->'body'` is then null, every schoolId resolves to null, and the
+ * dispatcher answers not_found. Binding as text and parsing in Postgres keeps
+ * the payload an object.
+ */
 async function command(
   operation: string,
   resourceId: string,
@@ -61,30 +82,58 @@ async function command(
   requestId: string,
   subject: string,
 ): Promise<{ outcome: string; response?: unknown }> {
-  await claim(subject, schoolId, requestId);
-  const [reservation] = await sql!.unsafe(
-    `select private.api_idempotency_reserve($1, $2, $3, $4) as r`,
-    [
-      schoolId === "" ? null : schoolId,
-      `v1.${operation}`,
-      requestId,
-      crypto.randomUUID().replaceAll("-", "") +
-      crypto.randomUUID().replaceAll("-", ""),
-    ],
+  // API-040 requires an idempotency key of 16-128 characters. The drill's
+  // request ids are shorter than that, and a rejected reservation returns no
+  // id, which previously surfaced only as an undefined query parameter.
+  // Padding is deterministic, so a replayed request still reuses its key.
+  const idempotencyKey = requestId.padEnd(16, "0");
+
+  // The API reserves in idempotency middleware and commands in its own
+  // request transaction, so the drill keeps them as two claimed transactions.
+  const [reservation] = await withClaim(
+    subject,
+    schoolId,
+    requestId,
+    (tx) =>
+      tx.unsafe(
+        `select private.api_idempotency_reserve($1, $2, $3, $4) as r`,
+        [
+          schoolId === "" ? null : schoolId,
+          `v1.${operation}`,
+          idempotencyKey,
+          crypto.randomUUID().replaceAll("-", "") +
+          crypto.randomUUID().replaceAll("-", ""),
+        ],
+      ),
   );
-  const id = (JSON.parse(JSON.stringify(reservation?.r)) as { id: string }).id;
-  const [row] = await sql!.unsafe(
-    `select private.api042_command($1, $2::uuid, $3::jsonb, $4::uuid, 1) as c`,
-    [
-      operation,
-      resourceId ?? null,
-      JSON.stringify({
-        responseStatus: 200,
-        aal2: true,
-        body,
-      }),
-      id,
-    ],
+  const reserved = JSON.parse(JSON.stringify(reservation?.r)) as {
+    id?: string;
+    outcome?: string;
+  };
+  if (!reserved.id) {
+    throw new Error(
+      `${operation} reservation refused: ${reserved.outcome ?? "unknown"}`,
+    );
+  }
+  const id = reserved.id;
+  const [row] = await withClaim(
+    subject,
+    schoolId,
+    requestId,
+    (tx) =>
+      tx.unsafe(
+        `select private.api042_command($1, $2::uuid, $3::text::jsonb, $4::uuid, 1) as c`,
+        [
+          operation,
+          resourceId || null,
+          JSON.stringify({
+            responseStatus: 200,
+            aal2: true,
+            body,
+          }),
+          id,
+        ],
+      ),
   );
   const value = JSON.parse(JSON.stringify(row?.c)) as {
     outcome: string;
@@ -103,10 +152,15 @@ async function query(
   subject: string,
   schoolId = "",
 ): Promise<unknown> {
-  await claim(subject, schoolId, `query-${operation}`);
-  const [row] = await sql!.unsafe(
-    `select private.api042_query($1, $2::uuid, $3::jsonb) as q`,
-    [operation, resourceId ?? null, JSON.stringify(input)],
+  const [row] = await withClaim(
+    subject,
+    schoolId,
+    `query-${operation}`,
+    (tx) =>
+      tx.unsafe(
+        `select private.api042_query($1, $2::uuid, $3::text::jsonb) as q`,
+        [operation, resourceId || null, JSON.stringify(input)],
+      ),
   );
   const value = JSON.parse(JSON.stringify(row?.q)) as Record<string, unknown>;
   if (value.outcome === "forbidden" || value.outcome === "not_found") {
@@ -116,6 +170,18 @@ async function query(
 }
 
 async function seed(): Promise<void> {
+  // Emails are derived from the run's own identities. A fixed local part
+  // collides with any earlier run that aborted before its cleanup, which made
+  // the drill unrunnable a second time.
+  const row =
+    `($%d, $%d, 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{}'::jsonb)`;
+  const people = [
+    [STUDENT, `drill.student.${STUDENT}@synthetic.studafy.test`],
+    [TEACHER, `drill.teacher.${TEACHER}@synthetic.studafy.test`],
+    [ADMIN, `drill.admin.${ADMIN}@synthetic.studafy.test`],
+    [OPERATOR_A, `drill.operator-a.${OPERATOR_A}@synthetic.studafy.test`],
+    [OPERATOR_B, `drill.operator-b.${OPERATOR_B}@synthetic.studafy.test`],
+  ];
   await sql!.unsafe(
     `insert into auth.users (
       id, email, encrypted_password, aud, role, email_confirmed_at,
@@ -123,13 +189,13 @@ async function seed(): Promise<void> {
       email_change, email_change_token_new, email_change_token_current,
       phone_change_token, raw_app_meta_data, raw_user_meta_data
     ) values
-      ($1, 'drill.student', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{}'::jsonb),
-      ($2, 'drill.teacher', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{}'::jsonb),
-      ($3, 'drill.admin', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{}'::jsonb),
-      ($4, 'drill.operator-a', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{}'::jsonb),
-      ($5, 'drill.operator-b', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{}'::jsonb)
+      ${
+      people.map((_, i) =>
+        row.replace("$%d", `$${i * 2 + 1}`).replace("$%d", `$${i * 2 + 2}`)
+      ).join(",\n      ")
+    }
     on conflict (id) do nothing`,
-    [STUDENT, TEACHER, ADMIN, OPERATOR_A, OPERATOR_B],
+    people.flat(),
   );
   await sql!.unsafe(
     `insert into public.schools (id, name, timezone, status) values ($1, 'SAFE-043 Drill School', 'Asia/Riyadh', 'active')
@@ -155,9 +221,14 @@ async function seed(): Promise<void> {
 async function cleanup(): Promise<void> {
   await sql!.begin(async (tx) => {
     await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
+    // report_events and report_evidence are append-only by trigger, so a
+    // teardown that does not lift them can never clear a completed run.
+    await tx`alter table public.report_events disable trigger safe043_reject_mutation`;
+    await tx`alter table public.report_evidence disable trigger safe043_reject_mutation`;
     await tx`delete from public.moderation_access_grants where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.legal_holds where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.user_blocks where school_id = ${SCHOOL}::uuid`;
+    await tx`delete from public.report_evidence where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.report_events where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.report_attempts where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.reports where school_id = ${SCHOOL}::uuid`;
@@ -166,6 +237,8 @@ async function cleanup(): Promise<void> {
     await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
     await tx`delete from auth.users where id in (${STUDENT}::uuid, ${TEACHER}::uuid, ${ADMIN}::uuid, ${OPERATOR_A}::uuid, ${OPERATOR_B}::uuid)`;
+    await tx`alter table public.report_evidence enable trigger safe043_reject_mutation`;
+    await tx`alter table public.report_events enable trigger safe043_reject_mutation`;
     await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
   });
 }
@@ -314,7 +387,8 @@ async function main(): Promise<void> {
   const started = await command(
     "startModerationAccess",
     grantId,
-    { expectedVersion: 1 },
+    // The approve above moved the grant to version 2.
+    { expectedVersion: 2 },
     "",
     "drill-start",
     OPERATOR_A,
@@ -323,7 +397,8 @@ async function main(): Promise<void> {
   await command(
     "revokeModerationAccess",
     grantId,
-    { expectedVersion: 2, reason: "drill complete" },
+    // Starting the session moved it to version 3.
+    { expectedVersion: 3, reason: "drill complete" },
     "",
     "drill-revoke",
     OPERATOR_A,
@@ -364,6 +439,7 @@ async function main(): Promise<void> {
 
 main()
   .catch((error: unknown) => {
+    if (error instanceof Error && error.stack) console.error(error.stack);
     console.error(JSON.stringify({
       event: "safe043_moderation_drill_failed",
       error: error instanceof Error ? error.message : String(error),
