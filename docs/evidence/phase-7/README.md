@@ -68,26 +68,28 @@ grade left unchanged, non-AI purposes intact, and non-AI products active. With
 CI runs the new pgTAP file as "Verify AI-072 removal leaves no AI data path"
 (`.github/workflows/ci.yml`).
 
-### Pending owner actions (not performed: remote systems are out of scope)
+### Synthetic project cleanup — done 2026-09-18 (owner-authorized)
 
-1. **Delete the deployed functions from the synthetic project.** Both
-   `study-coach` and `propose-paper-grade` were ACTIVE at version 1 in
-   `eamewgaptdfqzpmayavx` at the last inspection (2026-09-10). Removing them
-   from the repository does not undeploy them. Run
-   `supabase functions delete study-coach --project-ref eamewgaptdfqzpmayavx`,
-   then the same for `propose-paper-grade`.
-2. **Unset any `STUDY_COACH_URL` / `STUDY_COACH_KEY` project secret** in that
-   project (`supabase secrets list` / `unset`), and confirm that no AI-provider
-   key exists anywhere.
-3. **Verify:** `supabase projects api-keys --project-ref eamewgaptdfqzpmayavx
-   --output json | bun scripts/verify-synthetic-ai-removal.ts
-   --project-ref=eamewgaptdfqzpmayavx` must print `"passed":true`, with both
-   slugs returning 404.
-4. **Apply `202609180007` to the synthetic project** when migrations are next
-   promoted there, following the usual dry-run procedure.
-5. **Retention owner:** decide when to delete legacy rows in the three retired
-   relations. None exist in the synthetic project, which has zero data.
+This was performed after the local work, with the owner's explicit go-ahead,
+against `eamewgaptdfqzpmayavx` ("studafy light", the linked synthetic project)
+only. The other project in the organization was not touched.
 
-Until items 1–3 are done, the repository and the synthetic project disagree.
+| Step | Command | Result |
+|---|---|---|
+| Inspect before change | `supabase functions list`, `supabase secrets list` | Exactly `propose-paper-grade` and `study-coach`, both ACTIVE v1, JWT verification on. Secrets are only the seven Supabase-managed `SUPABASE_*` entries (names checked; values are digests and were not recorded). **No `STUDY_COACH_*` or AI-provider secret existed, so there was nothing to unset** |
+| Delete | `supabase functions delete study-coach` / `propose-paper-grade` `--project-ref eamewgaptdfqzpmayavx` | "Deleted Edge Function." for both; `functions list` now returns `[]` |
+| Verify | `supabase projects api-keys … --output json \| bun scripts/verify-synthetic-ai-removal.ts --project-ref=eamewgaptdfqzpmayavx` | 2026-09-18T20:29:54Z: `study-coach` 404, `propose-paper-grade` 404, `"passed":true` |
+
+The repository and the synthetic project now agree: neither has an AI
+function or an AI credential.
+
+### Remaining follow-ups
+
+1. **Apply `202609180007` to the synthetic project** when migrations are next
+   promoted there, following the usual dry-run procedure. The project has zero
+   rows in the retired relations, so the migration is not urgent.
+2. **Retention owner:** decide when to delete legacy rows in the three retired
+   relations wherever any exist.
+
 Security-owner approval of this change remains pending, as for every earlier
 phase.

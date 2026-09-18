@@ -84,8 +84,8 @@ Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 
 | Function | Purpose | Required env/secrets | External provider | State |
 |---|---|---|---|---|
-| `propose-paper-grade` | Former SEC-001 kill-switch stub | — | none | Deleted by AI-072 (ADR-0026); remote synthetic deletion pending owner action |
-| `study-coach` | Former env-selected AI forwarder; wrote `practice_sessions` | — (`STUDY_COACH_*` retired) | none | Deleted by AI-072 (ADR-0026); remote synthetic deletion pending owner action |
+| `propose-paper-grade` | Former SEC-001 kill-switch stub | — | none | Deleted by AI-072 (ADR-0026); removed from the synthetic project 2026-09-18 (404) |
+| `study-coach` | Former env-selected AI forwarder; wrote `practice_sessions` | — (`STUDY_COACH_*` retired) | none | Deleted by AI-072 (ADR-0026); removed from the synthetic project 2026-09-18 (404) |
 | `approve-paper-grade` | Teacher review of AI draft → `reviewed` | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
 | `publish-grade-result` | Publish reviewed grade + notification + audit | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
 | `create-google-meet` | Calendar event + Meet + deliveries | SUPABASE trio, `GOOGLE_TOKEN_BROKER_URL/SECRET` | Token broker, googleapis Calendar | Source only; not deployed synthetic |
@@ -124,10 +124,10 @@ deliberately absent).
 - RPC: `record_policy_consent` (policy version `2026-09-09`).
 - The remaining Edge invocation adapter covers meetings; API-041 grade
   review/publication invocations are removed. AI-072 (ADR-0026) deleted
-  `propose-paper-grade` and `study-coach` from the repository. The remote
-  synthetic project still ran both at the last inspection (2026-09-10); their
-  remote deletion is a pending owner action recorded in
-  `docs/evidence/phase-7/README.md`. No other availability is claimed.
+  `propose-paper-grade` and `study-coach` from the repository, and on
+  2026-09-18 from the remote synthetic project, which now deploys no Edge
+  Function (`docs/evidence/phase-7/README.md`). No other availability is
+  claimed.
 - PAY-071 store billing traffic uses `/v1/billing/*` (catalogue, submit,
   restore, entitlements, webhooks) through `V1BillingApi` on the same
   transport as the generated `/v1` client; CSS-gated card/payment surfaces

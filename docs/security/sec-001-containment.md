@@ -12,7 +12,7 @@ release and does not authorize real student, family, teacher, or school data.
 
 | Risk | Severity | Containment | Accountable role | Exit condition | Status |
 |---|---:|---|---|---|---|
-| Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | **Closed by removal (AI-072, ADR-0026, 2026-09-18):** the grading function and every AI surface are deleted from the repository; the remote synthetic copy awaits owner deletion (`docs/evidence/phase-7/README.md`) |
+| Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | **Closed by removal (AI-072, ADR-0026, 2026-09-18):** the grading function and every AI surface are deleted from the repository and, on 2026-09-18, from the synthetic project (both slugs 404; `docs/evidence/phase-7/README.md`) |
 | Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | Contained in app; release verification pending |
 | Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Upload containment applied and tested; safe replacement pending |
 | Example identities and debug signing could reach a store build | High | Android release and iOS Release/archive builds fail with `SEC-001` | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Release guards verified; REL-002 replacement pending |
@@ -78,7 +78,9 @@ security system, not in this repository.
 - Confirm who can deploy Edge Functions, apply migrations, read storage, change
   secrets, view provider prompts/files, and access store-signing credentials.
 - Remove unused accounts/tokens and require MFA where the provider supports it.
-- Verify the contained grading function version is deployed in every project.
+- Verify no AI Edge Function is deployed in any project: since AI-072
+  (ADR-0026), `study-coach` and `propose-paper-grade` must return 404
+  (`scripts/verify-synthetic-ai-removal.ts`).
 - Apply `202609090003_contain_unsafe_uploads.sql` and confirm authenticated
   inserts into both `papers/` and `coach/` are denied.
 - Apply `202609090004_lock_down_function_execute.sql`; confirm the five

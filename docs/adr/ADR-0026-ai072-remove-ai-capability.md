@@ -108,10 +108,11 @@ There is no flag and no environment variable that re-enables any of this.
   clears). The AI SKUs can never be listed without a new migration.
 - Privacy disclosures state that no AI processing occurs
   (`docs/release/subscription-disclosure-requirements.md`).
-- The remote synthetic project `eamewgaptdfqzpmayavx` still runs the two
-  functions deployed on 2026-09-09. This work is local-only, so their deletion
-  is a **pending owner action** (see the evidence file). Until it is done, the
-  repository and that project disagree.
+- The two functions deployed to the synthetic project `eamewgaptdfqzpmayavx`
+  on 2026-09-09 were deleted there on 2026-09-18 with the owner's go-ahead.
+  Both slugs now return 404, and no `STUDY_COACH_*` secret ever existed there
+  (see the evidence file). The migration is applied there at the next
+  promotion.
 
 ## Rollback and future enablement
 
