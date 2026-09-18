@@ -16,6 +16,8 @@ import { createMeetingsRoutes } from "../../src/meetings/routes";
 import { createNotificationsRoutes } from "../../src/notifications/routes";
 import { createAccountRoutes } from "../../src/account/routes";
 import { createSupportAccessRoutes } from "../../src/support-access/routes";
+import { createSafetyRoutes } from "../../src/safety/routes";
+import { createFileRoutes } from "../../src/files/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -172,6 +174,45 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const safety = createSafetyRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const files = createFileRoutes(
+    {
+      newIntentsEnabled: false,
+      repository: {
+        prepareIntent: async () => ({ outcome: "invalid" }),
+        issueIntent: async () => ({ outcome: "invalid" }),
+        query: async () => ({ outcome: "not_found" }),
+        prepareCompletion: async () => ({ outcome: "not_found" }),
+        complete: async () => ({ outcome: "invalid" }),
+        publish: async () => ({ outcome: "invalid" }),
+        createDownloadGrant: async () => ({ outcome: "invalid" }),
+        consumeDownloadGrant: async () => ({ outcome: "grant_invalid" }),
+      },
+      storage: {
+        createUploadCapability: async () => {
+          throw new Error("disabled");
+        },
+        inspect: async () => ({ exists: false }),
+        delete: async () => undefined,
+        openObject: async () => {
+          throw new Error("disabled");
+        },
+        replaceObject: async () => undefined,
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
@@ -183,6 +224,8 @@ function routeTable() {
   combined.route("/", account);
   combined.route("/", supportAccess);
   combined.route("/", schoolRoster);
+  combined.route("/", safety);
+  combined.route("/", files);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -235,13 +278,25 @@ describe("permission catalogue", () => {
     const rosterMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609160011_api042_terms_students.sql`,
     ).text();
+    const safetySchemaMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609170001_safe043_safety_schema.sql`,
+    ).text();
+    const safetySurfaceMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609170002_safe043_surface.sql`,
+    ).text();
+    const fileMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609170003_file050_upload_pipeline.sql`,
+    ).text();
+    const file051Migration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609170004_file051_scan_delivery_publication.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}`,
       ).toContain(`'${permission}'`);
     }
   });

@@ -1532,6 +1532,7 @@ export type Database = {
           resource_version_id: string | null;
           school_id: string;
           submission_attempt_id: string | null;
+          upload_session_id: string | null;
         };
         Insert: {
           ai_grading_draft_id?: string | null;
@@ -1542,6 +1543,7 @@ export type Database = {
           resource_version_id?: string | null;
           school_id: string;
           submission_attempt_id?: string | null;
+          upload_session_id?: string | null;
         };
         Update: {
           ai_grading_draft_id?: string | null;
@@ -1552,6 +1554,7 @@ export type Database = {
           resource_version_id?: string | null;
           school_id?: string;
           submission_attempt_id?: string | null;
+          upload_session_id?: string | null;
         };
         Relationships: [
           {
@@ -1631,6 +1634,145 @@ export type Database = {
             referencedRelation: "submission_attempts";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "file050_binding_upload_school_fk";
+            columns: ["school_id", "upload_session_id"];
+            isOneToOne: false;
+            referencedRelation: "upload_sessions";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
+      file_delivery_grants: {
+        Row: {
+          consumed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          file_object_id: string;
+          id: string;
+          nonce_hash: string;
+          recipient_id: string;
+          request_id: string | null;
+          school_id: string;
+          state: string;
+        };
+        Insert: {
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at: string;
+          file_object_id: string;
+          id?: string;
+          nonce_hash: string;
+          recipient_id: string;
+          request_id?: string | null;
+          school_id: string;
+          state?: string;
+        };
+        Update: {
+          consumed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          file_object_id?: string;
+          id?: string;
+          nonce_hash?: string;
+          recipient_id?: string;
+          request_id?: string | null;
+          school_id?: string;
+          state?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "file_delivery_grants_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName:
+              "file_delivery_grants_school_id_file_object_id_fkey";
+            columns: ["school_id", "file_object_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_delivery_grants_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      file_job_outbox: {
+        Row: {
+          attempt_count: number;
+          available_at: string;
+          completed_at: string | null;
+          created_at: string;
+          file_object_id: string | null;
+          id: number;
+          job_type: string;
+          last_error_code: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
+          school_id: string;
+          state: Database["public"]["Enums"]["outbox_state"];
+          upload_session_id: string | null;
+        };
+        Insert: {
+          attempt_count?: number;
+          available_at?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          file_object_id?: string | null;
+          id?: never;
+          job_type: string;
+          last_error_code?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          school_id: string;
+          state?: Database["public"]["Enums"]["outbox_state"];
+          upload_session_id?: string | null;
+        };
+        Update: {
+          attempt_count?: number;
+          available_at?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          file_object_id?: string | null;
+          id?: never;
+          job_type?: string;
+          last_error_code?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          school_id?: string;
+          state?: Database["public"]["Enums"]["outbox_state"];
+          upload_session_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "file_job_outbox_school_id_file_object_id_fkey";
+            columns: ["school_id", "file_object_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_job_outbox_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "file_job_outbox_school_id_upload_session_id_fkey";
+            columns: ["school_id", "upload_session_id"];
+            isOneToOne: false;
+            referencedRelation: "upload_sessions";
+            referencedColumns: ["school_id", "id"];
+          },
         ];
       };
       file_objects: {
@@ -1638,60 +1780,103 @@ export type Database = {
           bucket: string;
           created_at: string;
           declared_media_type: string | null;
+          dedup_source_file_id: string | null;
           deleted_at: string | null;
           detected_media_type: string | null;
+          display_name: string | null;
           encryption_key_id: string | null;
           id: string;
           legal_hold: boolean;
           object_key: string;
+          owner_id: string | null;
+          owner_membership_id: string | null;
+          physical_deleted_at: string | null;
+          policy_version: string;
+          purpose: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until: string | null;
+          scan_duration_ms: number | null;
           scan_error_code: string | null;
+          scan_policy_version: string | null;
           scan_state: Database["public"]["Enums"]["file_scan_state"];
           scanned_at: string | null;
           school_id: string;
-          sha256: string;
+          sha256: string | null;
           size_bytes: number;
+          stored_sha256: string | null;
+          stored_size_bytes: number | null;
+          transform_policy_version: string | null;
           uploader_id: string;
         };
         Insert: {
           bucket: string;
           created_at?: string;
           declared_media_type?: string | null;
+          dedup_source_file_id?: string | null;
           deleted_at?: string | null;
           detected_media_type?: string | null;
+          display_name?: string | null;
           encryption_key_id?: string | null;
           id?: string;
           legal_hold?: boolean;
           object_key: string;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          physical_deleted_at?: string | null;
+          policy_version?: string;
+          purpose?: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until?: string | null;
+          scan_duration_ms?: number | null;
           scan_error_code?: string | null;
+          scan_policy_version?: string | null;
           scan_state?: Database["public"]["Enums"]["file_scan_state"];
           scanned_at?: string | null;
           school_id: string;
-          sha256: string;
+          sha256?: string | null;
           size_bytes: number;
+          stored_sha256?: string | null;
+          stored_size_bytes?: number | null;
+          transform_policy_version?: string | null;
           uploader_id: string;
         };
         Update: {
           bucket?: string;
           created_at?: string;
           declared_media_type?: string | null;
+          dedup_source_file_id?: string | null;
           deleted_at?: string | null;
           detected_media_type?: string | null;
+          display_name?: string | null;
           encryption_key_id?: string | null;
           id?: string;
           legal_hold?: boolean;
           object_key?: string;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          physical_deleted_at?: string | null;
+          policy_version?: string;
+          purpose?: Database["public"]["Enums"]["file_purpose"] | null;
           retention_until?: string | null;
+          scan_duration_ms?: number | null;
           scan_error_code?: string | null;
+          scan_policy_version?: string | null;
           scan_state?: Database["public"]["Enums"]["file_scan_state"];
           scanned_at?: string | null;
           school_id?: string;
-          sha256?: string;
+          sha256?: string | null;
           size_bytes?: number;
+          stored_sha256?: string | null;
+          stored_size_bytes?: number | null;
+          transform_policy_version?: string | null;
           uploader_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "file_objects_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "file_objects_school_id_fkey";
             columns: ["school_id"];
@@ -1704,6 +1889,91 @@ export type Database = {
             columns: ["uploader_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "file050_file_owner_school_fk";
+            columns: ["school_id", "owner_membership_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "memberships";
+            referencedColumns: ["school_id", "id", "user_id"];
+          },
+          {
+            foreignKeyName: "file051_file_dedup_same_school_fk";
+            columns: ["school_id", "dedup_source_file_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
+      file_purpose_policies: {
+        Row: {
+          allowed_media_types: string[];
+          enabled: boolean;
+          maximum_size_bytes: number;
+          policy_version: string;
+          purpose: Database["public"]["Enums"]["file_purpose"];
+          retention_interval_days: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          allowed_media_types: string[];
+          enabled?: boolean;
+          maximum_size_bytes: number;
+          policy_version: string;
+          purpose: Database["public"]["Enums"]["file_purpose"];
+          retention_interval_days?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          allowed_media_types?: string[];
+          enabled?: boolean;
+          maximum_size_bytes?: number;
+          policy_version?: string;
+          purpose?: Database["public"]["Enums"]["file_purpose"];
+          retention_interval_days?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      file_quota_policies: {
+        Row: {
+          school_id: string;
+          school_live_objects: number;
+          school_rolling_bytes: number;
+          school_stored_bytes: number;
+          updated_at: string;
+          user_active_sessions: number;
+          user_hourly_intents: number;
+          user_rolling_bytes: number;
+        };
+        Insert: {
+          school_id: string;
+          school_live_objects?: number;
+          school_rolling_bytes?: number;
+          school_stored_bytes?: number;
+          updated_at?: string;
+          user_active_sessions?: number;
+          user_hourly_intents?: number;
+          user_rolling_bytes?: number;
+        };
+        Update: {
+          school_id?: string;
+          school_live_objects?: number;
+          school_rolling_bytes?: number;
+          school_stored_bytes?: number;
+          updated_at?: string;
+          user_active_sessions?: number;
+          user_hourly_intents?: number;
+          user_rolling_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "file_quota_policies_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: true;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];
@@ -2122,6 +2392,109 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      legal_holds: {
+        Row: {
+          account_deletion_request_id: string | null;
+          applied_to: string;
+          created_at: string;
+          expires_at: string | null;
+          granted_by: string;
+          id: string;
+          reason: string;
+          released_at: string | null;
+          released_by: string | null;
+          released_reason: string | null;
+          report_id: string | null;
+          school_id: string;
+          status: string;
+          subject_user_id: string | null;
+          ticket_ref: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          account_deletion_request_id?: string | null;
+          applied_to?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          granted_by: string;
+          id?: string;
+          reason: string;
+          released_at?: string | null;
+          released_by?: string | null;
+          released_reason?: string | null;
+          report_id?: string | null;
+          school_id: string;
+          status?: string;
+          subject_user_id?: string | null;
+          ticket_ref: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          account_deletion_request_id?: string | null;
+          applied_to?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          granted_by?: string;
+          id?: string;
+          reason?: string;
+          released_at?: string | null;
+          released_by?: string | null;
+          released_reason?: string | null;
+          report_id?: string | null;
+          school_id?: string;
+          status?: string;
+          subject_user_id?: string | null;
+          ticket_ref?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "legal_holds_account_deletion_request_id_fkey";
+            columns: ["account_deletion_request_id"];
+            isOneToOne: false;
+            referencedRelation: "account_deletion_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_released_by_fkey";
+            columns: ["released_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legal_holds_subject_user_id_fkey";
+            columns: ["subject_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -2571,6 +2944,98 @@ export type Database = {
           },
         ];
       };
+      moderation_access_grants: {
+        Row: {
+          approved_by: string | null;
+          created_at: string;
+          ended_at: string | null;
+          expires_at: string;
+          id: string;
+          mfa_verified_at: string;
+          reason: string;
+          requested_by: string;
+          requires_second_approver: boolean;
+          resource_scope: Json;
+          revoked_by: string | null;
+          revoked_reason: string | null;
+          school_id: string;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["moderation_access_status"];
+          ticket_ref: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          approved_by?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at: string;
+          id?: string;
+          mfa_verified_at: string;
+          reason: string;
+          requested_by: string;
+          requires_second_approver?: boolean;
+          resource_scope?: Json;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          school_id: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["moderation_access_status"];
+          ticket_ref: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          approved_by?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          mfa_verified_at?: string;
+          reason?: string;
+          requested_by?: string;
+          requires_second_approver?: boolean;
+          resource_scope?: Json;
+          revoked_by?: string | null;
+          revoked_reason?: string | null;
+          school_id?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["moderation_access_status"];
+          ticket_ref?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "moderation_access_grants_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_access_grants_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_access_grants_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "moderation_access_grants_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notification_deliveries: {
         Row: {
           attempt: number;
@@ -2667,11 +3132,15 @@ export type Database = {
         Row: {
           attempt_count: number;
           audience: Json | null;
+          bullmq_job_id: string | null;
           channel: string;
           created_at: string;
+          dispatched_at: string | null;
           id: number;
           idempotency_key: string;
           last_error_code: string | null;
+          lease_token: string | null;
+          lease_until: string | null;
           next_attempt_at: string;
           payload: Json;
           recipient_id: string | null;
@@ -2684,11 +3153,15 @@ export type Database = {
         Insert: {
           attempt_count?: number;
           audience?: Json | null;
+          bullmq_job_id?: string | null;
           channel: string;
           created_at?: string;
+          dispatched_at?: string | null;
           id?: never;
           idempotency_key: string;
           last_error_code?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
           next_attempt_at?: string;
           payload?: Json;
           recipient_id?: string | null;
@@ -2701,11 +3174,15 @@ export type Database = {
         Update: {
           attempt_count?: number;
           audience?: Json | null;
+          bullmq_job_id?: string | null;
           channel?: string;
           created_at?: string;
+          dispatched_at?: string | null;
           id?: never;
           idempotency_key?: string;
           last_error_code?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
           next_attempt_at?: string;
           payload?: Json;
           recipient_id?: string | null;
@@ -3045,6 +3522,296 @@ export type Database = {
           },
         ];
       };
+      report_attempts: {
+        Row: {
+          count_this_window: number;
+          digest: string;
+          id: string;
+          reporter_id: string;
+          school_id: string;
+          window_expires_at: string;
+          window_started_at: string;
+        };
+        Insert: {
+          count_this_window?: number;
+          digest: string;
+          id?: string;
+          reporter_id: string;
+          school_id: string;
+          window_expires_at: string;
+          window_started_at?: string;
+        };
+        Update: {
+          count_this_window?: number;
+          digest?: string;
+          id?: string;
+          reporter_id?: string;
+          school_id?: string;
+          window_expires_at?: string;
+          window_started_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_attempts_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_attempts_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      report_events: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          detail: Json;
+          event: Database["public"]["Enums"]["report_event_kind"];
+          id: number;
+          report_id: string;
+          school_id: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          detail?: Json;
+          event: Database["public"]["Enums"]["report_event_kind"];
+          id?: never;
+          report_id: string;
+          school_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          detail?: Json;
+          event?: Database["public"]["Enums"]["report_event_kind"];
+          id?: never;
+          report_id?: string;
+          school_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_events_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_events_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_events_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      report_evidence: {
+        Row: {
+          added_by: string;
+          attachment_file_id: string | null;
+          content_hash: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          message_id: string | null;
+          note: string | null;
+          report_id: string;
+          school_id: string;
+        };
+        Insert: {
+          added_by: string;
+          attachment_file_id?: string | null;
+          content_hash?: string | null;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          message_id?: string | null;
+          note?: string | null;
+          report_id: string;
+          school_id: string;
+        };
+        Update: {
+          added_by?: string;
+          attachment_file_id?: string | null;
+          content_hash?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          message_id?: string | null;
+          note?: string | null;
+          report_id?: string;
+          school_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_evidence_added_by_fkey";
+            columns: ["added_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_attachment_file_id_fkey";
+            columns: ["attachment_file_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_evidence_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reports: {
+        Row: {
+          assigned_to: string | null;
+          aup_version: string | null;
+          classifier_confidence: number | null;
+          contact_consent: boolean;
+          conversation_id: string | null;
+          created_at: string;
+          details: string;
+          enqueue_seq: number;
+          evidence_snapshot: Json;
+          id: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          message_id: string | null;
+          priority: string;
+          reported_by: string;
+          resolution: Database["public"]["Enums"]["report_resolution"] | null;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          school_id: string;
+          status: Database["public"]["Enums"]["report_status"];
+          subject_user_id: string | null;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          assigned_to?: string | null;
+          aup_version?: string | null;
+          classifier_confidence?: number | null;
+          contact_consent?: boolean;
+          conversation_id?: string | null;
+          created_at?: string;
+          details: string;
+          enqueue_seq?: never;
+          evidence_snapshot?: Json;
+          id?: string;
+          kind: Database["public"]["Enums"]["report_kind"];
+          message_id?: string | null;
+          priority?: string;
+          reported_by: string;
+          resolution?: Database["public"]["Enums"]["report_resolution"] | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          school_id: string;
+          status?: Database["public"]["Enums"]["report_status"];
+          subject_user_id?: string | null;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          assigned_to?: string | null;
+          aup_version?: string | null;
+          classifier_confidence?: number | null;
+          contact_consent?: boolean;
+          conversation_id?: string | null;
+          created_at?: string;
+          details?: string;
+          enqueue_seq?: never;
+          evidence_snapshot?: Json;
+          id?: string;
+          kind?: Database["public"]["Enums"]["report_kind"];
+          message_id?: string | null;
+          priority?: string;
+          reported_by?: string;
+          resolution?: Database["public"]["Enums"]["report_resolution"] | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          school_id?: string;
+          status?: Database["public"]["Enums"]["report_status"];
+          subject_user_id?: string | null;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reports_assigned_to_fkey";
+            columns: ["assigned_to"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_reported_by_fkey";
+            columns: ["reported_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reports_subject_user_id_fkey";
+            columns: ["subject_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       resource_publications: {
         Row: {
           audience: Database["public"]["Enums"]["meeting_audience"];
@@ -3265,6 +4032,129 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      safety_content_rules: {
+        Row: {
+          action: string;
+          active: boolean;
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          pattern: string;
+          pattern_type: string;
+          school_id: string;
+          severity: string;
+          system_rule: boolean;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          action?: string;
+          active?: boolean;
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          pattern: string;
+          pattern_type?: string;
+          school_id: string;
+          severity?: string;
+          system_rule?: boolean;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          action?: string;
+          active?: boolean;
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          pattern?: string;
+          pattern_type?: string;
+          school_id?: string;
+          severity?: string;
+          system_rule?: boolean;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "safety_content_rules_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "safety_content_rules_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      school_content_controls: {
+        Row: {
+          classifier_assist_enabled: boolean;
+          content_filter_level: string;
+          created_at: string;
+          id: string;
+          messaging_enabled: boolean;
+          school_id: string;
+          sla_hours: Json;
+          support_contact: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          version: number;
+        };
+        Insert: {
+          classifier_assist_enabled?: boolean;
+          content_filter_level?: string;
+          created_at?: string;
+          id?: string;
+          messaging_enabled?: boolean;
+          school_id: string;
+          sla_hours?: Json;
+          support_contact?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Update: {
+          classifier_assist_enabled?: boolean;
+          content_filter_level?: string;
+          created_at?: string;
+          id?: string;
+          messaging_enabled?: boolean;
+          school_id?: string;
+          sla_hours?: Json;
+          support_contact?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "school_content_controls_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: true;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "school_content_controls_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -3820,47 +4710,89 @@ export type Database = {
       };
       upload_sessions: {
         Row: {
+          actual_size_bytes: number | null;
           allowed_media_types: string[];
+          assignment_id: string | null;
+          bucket: string | null;
+          classroom_id: string | null;
           completed_at: string | null;
           created_at: string;
+          declared_media_type: string | null;
+          display_name: string | null;
+          expected_sha256: string | null;
           expected_size_bytes: number;
           expires_at: string;
+          failure_code: string | null;
           file_object_id: string | null;
+          grade_result_id: string | null;
           id: string;
           nonce_hash: string;
+          object_key: string | null;
+          owner_id: string | null;
+          owner_membership_id: string | null;
+          policy_version: string;
           purpose: string;
           school_id: string;
           state: Database["public"]["Enums"]["upload_session_state"];
+          student_id: string | null;
           updated_at: string;
           uploader_id: string;
         };
         Insert: {
+          actual_size_bytes?: number | null;
           allowed_media_types: string[];
+          assignment_id?: string | null;
+          bucket?: string | null;
+          classroom_id?: string | null;
           completed_at?: string | null;
           created_at?: string;
+          declared_media_type?: string | null;
+          display_name?: string | null;
+          expected_sha256?: string | null;
           expected_size_bytes: number;
           expires_at: string;
+          failure_code?: string | null;
           file_object_id?: string | null;
+          grade_result_id?: string | null;
           id?: string;
           nonce_hash: string;
+          object_key?: string | null;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          policy_version?: string;
           purpose: string;
           school_id: string;
           state?: Database["public"]["Enums"]["upload_session_state"];
+          student_id?: string | null;
           updated_at?: string;
           uploader_id: string;
         };
         Update: {
+          actual_size_bytes?: number | null;
           allowed_media_types?: string[];
+          assignment_id?: string | null;
+          bucket?: string | null;
+          classroom_id?: string | null;
           completed_at?: string | null;
           created_at?: string;
+          declared_media_type?: string | null;
+          display_name?: string | null;
+          expected_sha256?: string | null;
           expected_size_bytes?: number;
           expires_at?: string;
+          failure_code?: string | null;
           file_object_id?: string | null;
+          grade_result_id?: string | null;
           id?: string;
           nonce_hash?: string;
+          object_key?: string | null;
+          owner_id?: string | null;
+          owner_membership_id?: string | null;
+          policy_version?: string;
           purpose?: string;
           school_id?: string;
           state?: Database["public"]["Enums"]["upload_session_state"];
+          student_id?: string | null;
           updated_at?: string;
           uploader_id?: string;
         };
@@ -3873,10 +4805,52 @@ export type Database = {
             referencedColumns: ["school_id", "id"];
           },
           {
+            foreignKeyName: "file050_upload_assignment_school_fk";
+            columns: ["school_id", "assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file050_upload_classroom_school_fk";
+            columns: ["school_id", "classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file050_upload_grade_school_fk";
+            columns: ["school_id", "grade_result_id"];
+            isOneToOne: false;
+            referencedRelation: "grade_results";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file050_upload_owner_school_fk";
+            columns: ["school_id", "owner_membership_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "memberships";
+            referencedColumns: ["school_id", "id", "user_id"];
+          },
+          {
+            foreignKeyName: "file050_upload_student_school_fk";
+            columns: ["school_id", "student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
             foreignKeyName: "upload_sessions_file_object_id_fkey";
             columns: ["file_object_id"];
             isOneToOne: false;
             referencedRelation: "file_objects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "upload_sessions_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -3891,6 +4865,67 @@ export type Database = {
             columns: ["uploader_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_blocks: {
+        Row: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          reason: string | null;
+          school_id: string;
+          scope: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          reason?: string | null;
+          school_id: string;
+          scope?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          reason?: string | null;
+          school_id?: string;
+          scope?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_blocks_blocked_id_fkey";
+            columns: ["blocked_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_blocks_blocker_id_fkey";
+            columns: ["blocker_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_blocks_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];
@@ -4012,6 +5047,13 @@ export type Database = {
         | "on_hold"
         | "revoked"
         | "expired";
+      file_purpose:
+        | "profile_image"
+        | "lesson_resource"
+        | "assignment_material"
+        | "assignment_submission"
+        | "paper_scan"
+        | "coach_attachment";
       file_scan_state:
         | "quarantined"
         | "scanning"
@@ -4029,6 +5071,13 @@ export type Database = {
         | "suspended"
         | "revoked"
         | "expired";
+      moderation_access_status:
+        | "pending"
+        | "approved"
+        | "active"
+        | "expired"
+        | "revoked"
+        | "denied";
       outbox_state:
         | "pending"
         | "processing"
@@ -4038,6 +5087,29 @@ export type Database = {
         | "cancelled";
       profile_status: "active" | "suspended" | "deletion_pending" | "deleted";
       publication_state: "draft" | "reviewed" | "published" | "withdrawn";
+      report_event_kind:
+        | "submitted"
+        | "queued"
+        | "triage"
+        | "assign"
+        | "resolve"
+        | "escalate"
+        | "hold"
+        | "release_hold"
+        | "appeal"
+        | "withdraw"
+        | "evidence_added"
+        | "reporter_alerted";
+      report_kind: "message" | "conversation" | "user";
+      report_resolution: "upheld" | "not_upheld" | "partial" | "no_action";
+      report_status:
+        | "submitted"
+        | "queued"
+        | "under_review"
+        | "on_hold"
+        | "escalated"
+        | "resolved"
+        | "withdrawn";
       resource_state: "draft" | "published" | "withdrawn" | "archived";
       school_status: "provisioning" | "active" | "suspended" | "closed";
       staff_assignment_status: "active" | "ended";
@@ -4064,7 +5136,8 @@ export type Database = {
         | "uploaded"
         | "completed"
         | "expired"
-        | "cancelled";
+        | "cancelled"
+        | "rejected";
       wellbeing_visibility:
         | "class_staff"
         | "guardian_shared"
@@ -4229,6 +5302,14 @@ export const Constants = {
         "revoked",
         "expired",
       ],
+      file_purpose: [
+        "profile_image",
+        "lesson_resource",
+        "assignment_material",
+        "assignment_submission",
+        "paper_scan",
+        "coach_attachment",
+      ],
       file_scan_state: [
         "quarantined",
         "scanning",
@@ -4248,6 +5329,14 @@ export const Constants = {
         "revoked",
         "expired",
       ],
+      moderation_access_status: [
+        "pending",
+        "approved",
+        "active",
+        "expired",
+        "revoked",
+        "denied",
+      ],
       outbox_state: [
         "pending",
         "processing",
@@ -4258,6 +5347,31 @@ export const Constants = {
       ],
       profile_status: ["active", "suspended", "deletion_pending", "deleted"],
       publication_state: ["draft", "reviewed", "published", "withdrawn"],
+      report_event_kind: [
+        "submitted",
+        "queued",
+        "triage",
+        "assign",
+        "resolve",
+        "escalate",
+        "hold",
+        "release_hold",
+        "appeal",
+        "withdraw",
+        "evidence_added",
+        "reporter_alerted",
+      ],
+      report_kind: ["message", "conversation", "user"],
+      report_resolution: ["upheld", "not_upheld", "partial", "no_action"],
+      report_status: [
+        "submitted",
+        "queued",
+        "under_review",
+        "on_hold",
+        "escalated",
+        "resolved",
+        "withdrawn",
+      ],
       resource_state: ["draft", "published", "withdrawn", "archived"],
       school_status: ["provisioning", "active", "suspended", "closed"],
       staff_assignment_status: ["active", "ended"],
@@ -4287,6 +5401,7 @@ export const Constants = {
         "completed",
         "expired",
         "cancelled",
+        "rejected",
       ],
       wellbeing_visibility: [
         "class_staff",

@@ -104,33 +104,75 @@ function isoOrNull(value: Date | string | null | undefined): string | null {
   return value instanceof Date ? value.toISOString() : value;
 }
 
+/**
+ * OPS-060 cache port for the session context. The implementation
+ * (platform/cache/authContextCache.ts) keys on HMAC(subject) plus an
+ * account generation and must never store an authorization decision.
+ */
+export interface AuthContextCache {
+  load(
+    subject: string,
+    loader: () => Promise<SessionContext | null>,
+  ): Promise<SessionContext | null>;
+  invalidate(subject: string): Promise<void>;
+}
+
 export class AuthContextRepository {
   readonly #sql: Sql;
+  readonly #cache: AuthContextCache | null;
 
-  constructor(sql: Sql) {
+  constructor(sql: Sql, cache?: AuthContextCache) {
     this.#sql = sql;
+    this.#cache = cache ?? null;
   }
 
+  /**
+   * OPS-060: when a cache is wired, the DB load runs behind a version-keyed
+   * Redis entry whose key embeds the account generation; a cache failure
+   * falls back to the loader (the catalogue's documented failure mode), so
+   * Redis problems can only cost latency, never correctness.
+   */
   async load(subject: string): Promise<SessionContext | null> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
-      const rows = await tx<{ context: RawContext | null }[]>`
-        select private.auth_context() as context
-      `;
-      const raw = rows[0]?.context ?? null;
-      if (!raw) return null;
-      return {
-        userId: raw.user_id,
-        displayName: raw.display_name,
-        locale: raw.locale,
-        profileStatus: raw.profile_status,
-        profileDeletedAt: raw.profile_deleted_at,
-        revokedBefore: raw.revoked_before,
-        deletionState: raw.deletion_state,
-        memberships: raw.memberships ?? [],
-        membershipVersion: raw.membership_version,
-        mfaEnrolled: raw.mfa_enrolled,
-      };
-    });
+    const loader = () =>
+      withVerifiedActor(this.#sql, subject, async (tx) => {
+        const rows = await tx<{ context: RawContext | null }[]>`
+          select private.auth_context() as context
+        `;
+        const raw = rows[0]?.context ?? null;
+        if (!raw) return null;
+        return {
+          userId: raw.user_id,
+          displayName: raw.display_name,
+          locale: raw.locale,
+          profileStatus: raw.profile_status,
+          profileDeletedAt: raw.profile_deleted_at,
+          revokedBefore: raw.revoked_before,
+          deletionState: raw.deletion_state,
+          memberships: raw.memberships ?? [],
+          membershipVersion: raw.membership_version,
+          mfaEnrolled: raw.mfa_enrolled,
+        };
+      });
+    if (!this.#cache) return await loader();
+    try {
+      return await this.#cache.load(subject, loader);
+    } catch {
+      return await loader();
+    }
+  }
+
+  /**
+   * Bumps the account's cache generation after a mutation changes session
+   * state, so the next load keys a fresh entry immediately. Best effort:
+   * a failed bump is bounded by the cache TTL.
+   */
+  async #invalidate(subject: string | null | undefined): Promise<void> {
+    if (!this.#cache || !subject) return;
+    try {
+      await this.#cache.invalidate(subject);
+    } catch {
+      // Bounded by the cache TTL; recorded context freshness recovers.
+    }
   }
 
   async listDevices(subject: string): Promise<
@@ -161,7 +203,7 @@ export class AuthContextRepository {
       label: string | null;
     },
   ): Promise<{ id: string; revoked: boolean } | null> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
+    const result = await withVerifiedActor(this.#sql, subject, async (tx) => {
       const rows = await tx<
         { device: { id: string; revoked: boolean } | null }[]
       >`
@@ -172,24 +214,34 @@ export class AuthContextRepository {
       `;
       return rows[0]?.device ?? null;
     });
+    if (result?.revoked) await this.#invalidate(subject);
+    return result;
   }
 
   async revokeDevice(subject: string, deviceId: string): Promise<boolean> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
+    const revoked = await withVerifiedActor(this.#sql, subject, async (tx) => {
       const rows = await tx<{ revoked: boolean }[]>`
         select private.auth_revoke_device(${deviceId}::uuid) as revoked
       `;
       return rows[0]?.revoked ?? false;
     });
+    if (revoked) await this.#invalidate(subject);
+    return revoked;
   }
 
   async signOutAll(subject: string): Promise<string | null> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
-      const rows = await tx<{ watermark: Date | string | null }[]>`
+    const watermark = await withVerifiedActor(
+      this.#sql,
+      subject,
+      async (tx) => {
+        const rows = await tx<{ watermark: Date | string | null }[]>`
         select private.auth_sign_out_all() as watermark
       `;
-      return isoOrNull(rows[0]?.watermark);
-    });
+        return isoOrNull(rows[0]?.watermark);
+      },
+    );
+    await this.#invalidate(subject);
+    return watermark;
   }
 
   async issueReauthGrant(
@@ -239,7 +291,7 @@ export class AuthContextRepository {
     providerSubject: string,
     makePrimary: boolean,
   ): Promise<string> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
+    const outcome = await withVerifiedActor(this.#sql, subject, async (tx) => {
       const rows = await tx<{ outcome: string }[]>`
         select private.auth_link_identity(
           ${provider}, ${providerSubject}, ${makePrimary}
@@ -247,6 +299,8 @@ export class AuthContextRepository {
       `;
       return rows[0]?.outcome ?? "collision";
     });
+    if (outcome !== "collision") await this.#invalidate(subject);
+    return outcome;
   }
 
   async unlinkIdentity(
@@ -254,13 +308,15 @@ export class AuthContextRepository {
     provider: string,
     providerSubject: string,
   ): Promise<string> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
+    const outcome = await withVerifiedActor(this.#sql, subject, async (tx) => {
       const rows = await tx<{ outcome: string }[]>`
         select private.auth_unlink_identity(${provider}, ${providerSubject})
           as outcome
       `;
       return rows[0]?.outcome ?? "not_linked";
     });
+    if (outcome === "unlinked") await this.#invalidate(subject);
+    return outcome;
   }
 
   async deletionImpact(
@@ -283,7 +339,7 @@ export class AuthContextRepository {
     | { id: string; state: string; execute_after: string; created: boolean }
     | null
   > {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
+    const result = await withVerifiedActor(this.#sql, subject, async (tx) => {
       const rows = await tx<{ result: never }[]>`
         select private.auth_request_deletion(
           ${reasonCode}, ${JSON.stringify(impact ?? {})}::jsonb, ${graceDays}
@@ -291,15 +347,23 @@ export class AuthContextRepository {
       `;
       return rows[0]?.result ?? null;
     });
+    if (result) await this.#invalidate(subject);
+    return result;
   }
 
   async cancelDeletion(subject: string): Promise<boolean> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
-      const rows = await tx<{ result: { cancelled: boolean } | null }[]>`
+    const cancelled = await withVerifiedActor(
+      this.#sql,
+      subject,
+      async (tx) => {
+        const rows = await tx<{ result: { cancelled: boolean } | null }[]>`
         select private.auth_cancel_deletion() as result
       `;
-      return rows[0]?.result?.cancelled ?? false;
-    });
+        return rows[0]?.result?.cancelled ?? false;
+      },
+    );
+    if (cancelled) await this.#invalidate(subject);
+    return cancelled;
   }
 
   /**

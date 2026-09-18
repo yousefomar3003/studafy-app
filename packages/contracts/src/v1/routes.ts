@@ -31,6 +31,8 @@ import * as Meetings from "./meetings";
 import * as Notifications from "./notifications";
 import * as Account from "./account";
 import * as SupportAccess from "./supportAccess";
+import * as Safety from "./safety";
+import * as Files from "./files";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -1037,6 +1039,316 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     schoolParams(),
   ),
+  // -----------------------------------------------------------------------
+  // SAFE-043 safety & safeguarding (appended at the end). Three clusters:
+  // reporter-facing reporting/blocks, then the internal moderation cluster
+  // (queue, triage, resolve, escalate, evidence, holds), then moderator
+  // JIT-access grants. Reporting and blocks are self-scoped; every
+  // moderation read/write is additionally school-scoped and enforcement of
+  // that scope lives in the SQL dispatcher's safe043_can_access_* guards.
+  // -----------------------------------------------------------------------
+  academicGet(
+    "getContentControls",
+    "/v1/control-panel/content-controls/{schoolId}",
+    "content_controls.read",
+    Safety.V1ContentControls,
+    "V1ContentControls",
+    schoolParams(),
+  ),
+  academicPost(
+    "updateContentControls",
+    "/v1/control-panel/content-controls/{schoolId}",
+    "content_controls.write",
+    Safety.V1UpdateContentControlsRequest,
+    "V1UpdateContentControlsRequest",
+    Safety.V1ContentControls,
+    "V1ContentControls",
+    200,
+    schoolParams(),
+  ),
+  academicPost(
+    "createReport",
+    "/v1/reports",
+    "report.create",
+    Safety.V1CreateReportRequest,
+    "V1CreateReportRequest",
+    Safety.V1Report,
+    "V1Report",
+    201,
+  ),
+  academicGet(
+    "listReports",
+    "/v1/reports",
+    "report.read",
+    Safety.V1ReportPage,
+    "V1ReportPage",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  academicGet(
+    "getReport",
+    "/v1/reports/{reportId}",
+    "report.read",
+    Safety.V1Report,
+    "V1Report",
+    reportParams(),
+  ),
+  academicPost(
+    "appealReport",
+    "/v1/reports/{reportId}/appeal",
+    "report.appeal",
+    Safety.V1AppealReportRequest,
+    "V1AppealReportRequest",
+    Safety.V1Report,
+    "V1Report",
+    200,
+    reportParams(),
+  ),
+  academicPost(
+    "createBlock",
+    "/v1/blocks",
+    "block.manage",
+    Safety.V1CreateBlockRequest,
+    "V1CreateBlockRequest",
+    Safety.V1Block,
+    "V1Block",
+    201,
+  ),
+  {
+    method: "get",
+    path: "/v1/blocks",
+    operationId: "listBlocks",
+    summary: "listBlocks",
+    permission: "block.manage",
+    idempotency: "none",
+    response: Safety.V1BlockPage,
+    responseSchema: "V1BlockPage",
+    query: Safety.V1SchoolScopeQuery,
+    querySchema: "V1SchoolScopeQuery",
+  },
+  academicPost(
+    "unblockUser",
+    "/v1/blocks/{blockId}/unblock",
+    "block.manage",
+    Safety.V1UnblockUserRequest,
+    "V1UnblockUserRequest",
+    Safety.V1Block,
+    "V1Block",
+    200,
+    blockParams(),
+  ),
+  {
+    method: "get",
+    path: "/internal/moderation/overview",
+    operationId: "getModerationOverview",
+    summary: "getModerationOverview",
+    permission: "moderation.overview.read",
+    idempotency: "none",
+    response: Safety.V1ModerationOverview,
+    responseSchema: "V1ModerationOverview",
+    query: Safety.V1SchoolIdQuery,
+    querySchema: "V1SchoolIdQuery",
+  },
+  {
+    method: "get",
+    path: "/internal/moderation/queue",
+    operationId: "listModerationQueue",
+    summary: "listModerationQueue",
+    permission: "moderation.queue.read",
+    idempotency: "none",
+    response: Safety.V1ModerationQueuePage,
+    responseSchema: "V1ModerationQueuePage",
+    query: Safety.V1ModerationQueueQuery,
+    querySchema: "V1ModerationQueueQuery",
+  },
+  academicGet(
+    "getModerationReport",
+    "/internal/moderation/reports/{reportId}",
+    "moderation.report.read",
+    Safety.V1ModerationReport,
+    "V1ModerationReport",
+    reportParams(),
+  ),
+  academicPost(
+    "triageReport",
+    "/internal/moderation/reports/{reportId}/triage",
+    "moderation.triage",
+    Safety.V1ReportLifecycleRequest,
+    "V1ReportLifecycleRequest",
+    Safety.V1ModerationReport,
+    "V1ModerationReport",
+    200,
+    reportParams(),
+  ),
+  academicPost(
+    "resolveReport",
+    "/internal/moderation/reports/{reportId}/resolve",
+    "moderation.resolve",
+    Safety.V1ResolveReportRequest,
+    "V1ResolveReportRequest",
+    Safety.V1ModerationReport,
+    "V1ModerationReport",
+    200,
+    reportParams(),
+  ),
+  academicPost(
+    "escalateReport",
+    "/internal/moderation/reports/{reportId}/escalate",
+    "moderation.escalate",
+    Safety.V1EscalateReportRequest,
+    "V1EscalateReportRequest",
+    Safety.V1ModerationReport,
+    "V1ModerationReport",
+    200,
+    reportParams(),
+  ),
+  academicPost(
+    "addReportEvidence",
+    "/internal/moderation/reports/{reportId}/evidence",
+    "moderation.evidence.write",
+    Safety.V1AddReportEvidenceRequest,
+    "V1AddReportEvidenceRequest",
+    Safety.V1ModerationReport,
+    "V1ModerationReport",
+    201,
+    reportParams(),
+  ),
+  academicPost(
+    "holdReport",
+    "/internal/moderation/reports/{reportId}/hold",
+    "moderation.hold",
+    Safety.V1HoldReportRequest,
+    "V1HoldReportRequest",
+    Safety.V1LegalHold,
+    "V1LegalHold",
+    201,
+    reportParams(),
+  ),
+  academicPost(
+    "releaseLegalHold",
+    "/internal/legal-holds/{legalHoldId}/release",
+    "moderation.hold",
+    Safety.V1ReleaseLegalHoldRequest,
+    "V1ReleaseLegalHoldRequest",
+    Safety.V1LegalHold,
+    "V1LegalHold",
+    200,
+    legalHoldParams(),
+  ),
+  academicPost(
+    "requestModerationAccess",
+    "/internal/moderation/access",
+    "moderation.access.request",
+    Safety.V1RequestModerationAccessRequest,
+    "V1RequestModerationAccessRequest",
+    Safety.V1ModerationAccessGrant,
+    "V1ModerationAccessGrant",
+    201,
+  ),
+  academicPost(
+    "approveModerationAccess",
+    "/internal/moderation/access/{moderationGrantId}/approve",
+    "moderation.access.approve",
+    Safety.V1ModerationAccessLifecycleRequest,
+    "V1ModerationAccessLifecycleRequest",
+    Safety.V1ModerationAccessGrant,
+    "V1ModerationAccessGrant",
+    200,
+    moderationGrantParams(),
+  ),
+  academicPost(
+    "startModerationAccess",
+    "/internal/moderation/access/{moderationGrantId}/start",
+    "moderation.access.start",
+    Safety.V1ModerationAccessLifecycleRequest,
+    "V1ModerationAccessLifecycleRequest",
+    Safety.V1ModerationAccessGrant,
+    "V1ModerationAccessGrant",
+    200,
+    moderationGrantParams(),
+  ),
+  academicPost(
+    "revokeModerationAccess",
+    "/internal/moderation/access/{moderationGrantId}/revoke",
+    "moderation.access.revoke",
+    Safety.V1RevokeModerationAccessRequest,
+    "V1RevokeModerationAccessRequest",
+    Safety.V1ModerationAccessGrant,
+    "V1ModerationAccessGrant",
+    200,
+    moderationGrantParams(),
+  ),
+  {
+    method: "get",
+    path: "/internal/moderation/access",
+    operationId: "listModerationAccess",
+    summary: "listModerationAccess",
+    permission: "moderation.access.list",
+    idempotency: "none",
+    response: Safety.V1ModerationAccessGrantPage,
+    responseSchema: "V1ModerationAccessGrantPage",
+    query: Safety.V1ModerationAccessQuery,
+    querySchema: "V1ModerationAccessQuery",
+  },
+  academicPost(
+    "createUploadIntent",
+    "/v1/uploads",
+    "upload.intent.create",
+    Files.V1CreateUploadIntentRequest,
+    "V1CreateUploadIntentRequest",
+    Files.V1CreateUploadIntentResponse,
+    "V1CreateUploadIntentResponse",
+    201,
+  ),
+  academicGet(
+    "getUploadStatus",
+    "/v1/uploads/{uploadId}",
+    "upload.read",
+    Files.V1UploadSession,
+    "V1UploadSession",
+    uploadParams(),
+  ),
+  academicPost(
+    "completeUpload",
+    "/v1/uploads/{uploadId}/complete",
+    "upload.complete",
+    Files.V1CompleteUploadRequest,
+    "V1CompleteUploadRequest",
+    Files.V1CompleteUploadResponse,
+    "V1CompleteUploadResponse",
+    200,
+    uploadParams(),
+  ),
+  academicGet(
+    "getFileStatus",
+    "/v1/files/{fileId}",
+    "file.read",
+    Files.V1File,
+    "V1File",
+    fileParams(),
+  ),
+  academicPost(
+    "createFileDownloadIntent",
+    "/v1/files/{fileId}/download-intent",
+    "file.download",
+    Files.V1DownloadIntentRequest,
+    "V1DownloadIntentRequest",
+    Files.V1DownloadIntentResponse,
+    "V1DownloadIntentResponse",
+    200,
+    fileParams(),
+  ),
+  academicPost(
+    "publishFile",
+    "/v1/files/{fileId}/publish",
+    "file.publish",
+    Files.V1PublishFileRequest,
+    "V1PublishFileRequest",
+    Files.V1PublishFileResponse,
+    "V1PublishFileResponse",
+    201,
+    fileParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -1077,6 +1389,24 @@ function meetingParams() {
 }
 function supportGrantParams() {
   return params("supportGrantId");
+}
+function reportParams() {
+  return params("reportId");
+}
+function blockParams() {
+  return params("blockId");
+}
+function legalHoldParams() {
+  return params("legalHoldId");
+}
+function moderationGrantParams() {
+  return params("moderationGrantId");
+}
+function uploadParams() {
+  return params("uploadId");
+}
+function fileParams() {
+  return params("fileId");
 }
 
 function academicGet(

@@ -112,9 +112,22 @@ jobs:
   database:
     name: Local Supabase upgrade, recovery, schema, and RLS validation
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    services:
+      # OPS-061: the outbox end-to-end suite needs a queue backend next to the
+      # durable outbox. The dev posture (non-evicting, persisted) is pinned in
+      # docker-compose.dev.yml; this service matches it.
+      redis:
+        image: redis:7.4.4-alpine3.21@sha256:ee9e8748ace004102a267f7b8265dab2c618317df22507b89d16a8add7154273
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
     steps:
       - name: Check out source
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -215,16 +228,35 @@ jobs:
           bunx supabase test db --local
           supabase/tests/api041_academic_seed.sql
 
+      - name: Verify FILE-050 upload metadata, quotas, and quarantine
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/file050_upload_seed.sql
+
+      # FILE-051: scan state machine, single-object publication for thirty
+      # recipients, school-scoped dedupe, single-use re-authorized grants,
+      # retention units, containment/release, and the runtime grant surface.
+      - name: Verify FILE-051 scanning, publication, dedupe, delivery, and retention
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/file051_scan_delivery_seed.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
 
       - name: Verify API-041 cursor query plans
         run: bun run test:api041:plans
 
+      - name: Verify FILE-050 quota, status, expiry, and outbox query plans
+        run: bun run test:file050:plans
+
+      - name: Verify FILE-051 grant, scan, dedupe, and retention query plans
+        run: bun run test:file051:plans
+
       - name: Verify DB-021 RLS plans and provisional local latency bounds
         run: bun run test:db021:plans
 
-      - name: Verify checked-in public database types have no drift
+      - name: Verify generated public database types
         run: bun run generate:db-types:check
 
       # ARC-010: read-only connectivity smoke from the workspace database
@@ -255,6 +287,71 @@ jobs:
         run: >-
           DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
           bun test apps/api/test/academic/academic.integration.test.ts
+
+      # FILE-050: use a real local signed capability and prove the token cannot
+      # be redirected to a substituted object key.
+      - name: Run FILE-050 signed-upload path-binding integration suite
+        run: bun run test:file050:storage
+
+      # FILE-050: the pgTAP suite runs in one transaction and can only prove
+      # sequential quota enforcement. These cases race two real connections for
+      # the last session slot and the last quota byte, race two completions of
+      # one session, and force an outbox failure to prove the registration
+      # transaction rolls back whole.
+      - name: Run FILE-050 quota-race and atomicity integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/files/quota.integration.test.ts
+
+      # FILE-051: the whole lifecycle over real Storage with the API and
+      # worker connected as their least-privilege runtime roles — transform,
+      # publication, single-use delivery, revocation, rejection, dedupe with
+      # physical cleanup, and bucket/row reconciliation.
+      - name: Run FILE-051 end-to-end delivery verification
+        run: bun run test:file051:e2e
+
+      # FILE-051 gate: the malicious-file response exercise from the runbook.
+      - name: Run FILE-051 malicious-file response drill
+        run: bun run test:file051:drill
+
+      - name: Verify FILE-051 storage reconciliation after the drills
+        run: bun run test:file051:reconcile
+
+      # SAFE-043: schema shape/RLS/no-grant assertions, then the surface
+      # fixture (seed file includes safe043_surface.sql itself), proving the
+      # reports/queue/masking/holds/blocks contract against the real stack.
+      - name: Verify SAFE-043 safety schema shape and grants
+        run: bunx supabase test db --local supabase/tests/safe043_safety_schema.sql
+
+      - name: Verify SAFE-043 reporting, moderation, holds, and blocks surface
+        run: bunx supabase test db --local supabase/tests/safe043_surface_seed.sql
+
+      - name: Run SAFE-043 /v1 integration suite
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun test apps/api/test/safety/safety.integration.test.ts
+
+      # On call: the drill drives the real SQL dispatcher through the whole
+      # safeguarding lifecycle and exits non-zero on any step failing.
+      - name: Run SAFE-043 moderation drill
+        run: >-
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          bun scripts/moderation-drill.ts
+
+      # OPS-061: the outbox drain state machine — claim/lease/bookkeeping,
+      # idempotent expansion, terminal dead-lettering, DLQ redrive, grants.
+      - name: Verify OPS-061 outbox drain state machine
+        run: bunx supabase test db --local supabase/tests/ops061_outbox_seed.sql
+
+      - name: Verify OPS-061 outbox query plans
+        run: bun run test:ops061:plans
+
+      # OPS-061 end-to-end: crash mid-job, failover, duplicate delivery,
+      # poison message, and backlog drain over the real queue + database.
+      - name: Run OPS-061 outbox queue end-to-end suite
+        run: >-
+          REDIS_URL=redis://127.0.0.1:6379
+          bun run test:ops061:e2e
 
       # End-to-end against the live local GoTrue: real ES256 tokens, real JWKS,
       # and the least-privilege database role.
@@ -336,7 +433,10 @@ jobs:
           curl -sf http://127.0.0.1:8080/healthz | grep -q '"ok"'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/readyz)" = "503"
           curl -s http://127.0.0.1:8080/readyz | grep -q 'database_unreachable'
-          curl -s http://127.0.0.1:8080/v1/me | grep -q 'NOT_IMPLEMENTED'
+          # The unauthenticated /v1 probe rides the OPS-060 edge limiter; a
+          # dedicated test IP keeps it immune to limiter state left by the
+          # workspace test step sharing the same Redis service.
+          curl -s -H 'x-forwarded-for: 203.0.113.77' http://127.0.0.1:8080/v1/me | grep -q 'NOT_IMPLEMENTED'
           docker stop -t 10 api-smoke
           test "$(docker inspect api-smoke --format '{{.State.ExitCode}}')" = "0"
           docker logs api-smoke 2>&1 | grep -q '"phase":"complete"'

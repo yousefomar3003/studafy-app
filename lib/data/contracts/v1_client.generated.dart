@@ -1419,6 +1419,385 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1ContentControlsDto> getContentControls({
+    required String schoolId,
+  }) async => V1ContentControlsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/control-panel/content-controls/{schoolId}', {
+        'schoolId': schoolId,
+      }, {}),
+    ),
+  );
+
+  Future<V1ContentControlsDto> updateContentControls(
+    V1UpdateContentControlsRequestDto request, {
+    required String schoolId,
+    String? idempotencyKey,
+  }) async => V1ContentControlsDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/control-panel/content-controls/{schoolId}', {
+        'schoolId': schoolId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ReportPageDto> listReports({
+    String? schoolId,
+    String? classroomId,
+    String? studentId,
+    String? date,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ReportPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/reports', {}, {
+        'schoolId': schoolId,
+        'classroomId': classroomId,
+        'studentId': studentId,
+        'date': date,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ReportDto> createReport(
+    V1CreateReportRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/reports', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ReportDto> getReport({required String reportId}) async =>
+      V1ReportDto.fromJson(
+        await _transport.get(
+          _v1Path('/v1/reports/{reportId}', {'reportId': reportId}, {}),
+        ),
+      );
+
+  Future<V1ReportDto> appealReport(
+    V1AppealReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/reports/{reportId}/appeal', {'reportId': reportId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1BlockPageDto> listBlocks({
+    String? schoolId,
+    String? cursor,
+    int? pageSize,
+  }) async => V1BlockPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/blocks', {}, {
+        'schoolId': schoolId,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1BlockDto> createBlock(
+    V1CreateBlockRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1BlockDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/blocks', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1BlockDto> unblockUser(
+    V1UnblockUserRequestDto request, {
+    required String blockId,
+    String? idempotencyKey,
+  }) async => V1BlockDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/blocks/{blockId}/unblock', {'blockId': blockId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationOverviewDto> getModerationOverview({
+    String? schoolId,
+  }) async => V1ModerationOverviewDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/overview', {}, {'schoolId': schoolId}),
+    ),
+  );
+
+  Future<V1ModerationQueuePageDto> listModerationQueue({
+    String? schoolId,
+    String? status,
+    String? priority,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ModerationQueuePageDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/queue', {}, {
+        'schoolId': schoolId,
+        'status': status,
+        'priority': priority,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ModerationReportDto> getModerationReport({
+    required String reportId,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/reports/{reportId}', {
+        'reportId': reportId,
+      }, {}),
+    ),
+  );
+
+  Future<V1ModerationReportDto> triageReport(
+    V1ReportLifecycleRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/triage', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationReportDto> resolveReport(
+    V1ResolveReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/resolve', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationReportDto> escalateReport(
+    V1EscalateReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/escalate', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationReportDto> addReportEvidence(
+    V1AddReportEvidenceRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/evidence', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1LegalHoldDto> holdReport(
+    V1HoldReportRequestDto request, {
+    required String reportId,
+    String? idempotencyKey,
+  }) async => V1LegalHoldDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/reports/{reportId}/hold', {
+        'reportId': reportId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1LegalHoldDto> releaseLegalHold(
+    V1ReleaseLegalHoldRequestDto request, {
+    required String legalHoldId,
+    String? idempotencyKey,
+  }) async => V1LegalHoldDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/legal-holds/{legalHoldId}/release', {
+        'legalHoldId': legalHoldId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantPageDto> listModerationAccess({
+    String? schoolId,
+    String? cursor,
+    int? pageSize,
+  }) async => V1ModerationAccessGrantPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/moderation/access', {}, {
+        'schoolId': schoolId,
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> requestModerationAccess(
+    V1RequestModerationAccessRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> approveModerationAccess(
+    V1ModerationAccessLifecycleRequestDto request, {
+    required String moderationGrantId,
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access/{moderationGrantId}/approve', {
+        'moderationGrantId': moderationGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> startModerationAccess(
+    V1ModerationAccessLifecycleRequestDto request, {
+    required String moderationGrantId,
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access/{moderationGrantId}/start', {
+        'moderationGrantId': moderationGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ModerationAccessGrantDto> revokeModerationAccess(
+    V1RevokeModerationAccessRequestDto request, {
+    required String moderationGrantId,
+    String? idempotencyKey,
+  }) async => V1ModerationAccessGrantDto.fromJson(
+    await _transport.post(
+      _v1Path('/internal/moderation/access/{moderationGrantId}/revoke', {
+        'moderationGrantId': moderationGrantId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1CreateUploadIntentResponseDto> createUploadIntent(
+    V1CreateUploadIntentRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1CreateUploadIntentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/uploads', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1UploadSessionDto> getUploadStatus({
+    required String uploadId,
+  }) async => V1UploadSessionDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/uploads/{uploadId}', {'uploadId': uploadId}, {}),
+    ),
+  );
+
+  Future<V1CompleteUploadResponseDto> completeUpload(
+    V1CompleteUploadRequestDto request, {
+    required String uploadId,
+    String? idempotencyKey,
+  }) async => V1CompleteUploadResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/uploads/{uploadId}/complete', {'uploadId': uploadId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1FileDto> getFileStatus({required String fileId}) async =>
+      V1FileDto.fromJson(
+        await _transport.get(
+          _v1Path('/v1/files/{fileId}', {'fileId': fileId}, {}),
+        ),
+      );
+
+  Future<V1DownloadIntentResponseDto> createFileDownloadIntent(
+    V1DownloadIntentRequestDto request, {
+    required String fileId,
+    String? idempotencyKey,
+  }) async => V1DownloadIntentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/files/{fileId}/download-intent', {'fileId': fileId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1PublishFileResponseDto> publishFile(
+    V1PublishFileRequestDto request, {
+    required String fileId,
+    String? idempotencyKey,
+  }) async => V1PublishFileResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/files/{fileId}/publish', {'fileId': fileId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -1612,6 +1991,35 @@ class V1AcceptInvitationResponseDto {
   };
 }
 
+class V1AddReportEvidenceRequestDto {
+  const V1AddReportEvidenceRequestDto({
+    required this.schoolId,
+    required this.kind,
+    this.attachmentFileId,
+    this.note,
+  });
+
+  factory V1AddReportEvidenceRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1AddReportEvidenceRequestDto(
+        schoolId: json['schoolId'] as String,
+        kind: json['kind'] as String,
+        attachmentFileId: json['attachmentFileId'] as String?,
+        note: json['note'] as String?,
+      );
+
+  final String schoolId;
+  final String kind;
+  final String? attachmentFileId;
+  final String? note;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'kind': kind,
+    'attachmentFileId': ?attachmentFileId,
+    'note': ?note,
+  };
+}
+
 class V1AnnouncementDto {
   const V1AnnouncementDto({
     required this.id,
@@ -1675,6 +2083,27 @@ class V1AnnouncementPageDto {
   Map<String, Object?> toJson() => {
     'items': [for (final item in items) item.toJson()],
     'nextCursor': nextCursor,
+  };
+}
+
+class V1AppealReportRequestDto {
+  const V1AppealReportRequestDto({
+    required this.expectedVersion,
+    required this.reason,
+  });
+
+  factory V1AppealReportRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1AppealReportRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        reason: json['reason'] as String,
+      );
+
+  final int expectedVersion;
+  final String reason;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'reason': reason,
   };
 }
 
@@ -2373,6 +2802,74 @@ class V1AuthSignOutResponseDto {
   };
 }
 
+class V1BlockDto {
+  const V1BlockDto({
+    required this.id,
+    required this.schoolId,
+    required this.blockerId,
+    required this.blockedId,
+    required this.scope,
+    required this.reason,
+    required this.expiresAt,
+    required this.createdAt,
+    required this.version,
+  });
+
+  factory V1BlockDto.fromJson(Map<String, dynamic> json) => V1BlockDto(
+    id: json['id'] as String,
+    schoolId: json['schoolId'] as String,
+    blockerId: json['blockerId'] as String,
+    blockedId: json['blockedId'] as String,
+    scope: json['scope'] as String,
+    reason: json['reason'] as String?,
+    expiresAt: json['expiresAt'] as String?,
+    createdAt: json['createdAt'] as String,
+    version: json['version'] as int,
+  );
+
+  final String id;
+  final String schoolId;
+  final String blockerId;
+  final String blockedId;
+  final String scope;
+  final String? reason;
+  final String? expiresAt;
+  final String createdAt;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'blockerId': blockerId,
+    'blockedId': blockedId,
+    'scope': scope,
+    'reason': reason,
+    'expiresAt': expiresAt,
+    'createdAt': createdAt,
+    'version': version,
+  };
+}
+
+class V1BlockPageDto {
+  const V1BlockPageDto({required this.items, required this.nextCursor});
+
+  factory V1BlockPageDto.fromJson(Map<String, dynamic> json) => V1BlockPageDto(
+    items: [
+      for (final item in json['items'] as List<dynamic>)
+        V1BlockDto.fromJson(item as Map<String, dynamic>),
+    ],
+    nextCursor: json['nextCursor'] as String?,
+  );
+
+  final List<V1BlockDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
 class V1CancelMeetingRequestDto {
   const V1CancelMeetingRequestDto({required this.expectedVersion});
 
@@ -2584,6 +3081,83 @@ class V1ClassroomStaffPageDto {
   Map<String, Object?> toJson() => {
     'items': [for (final item in items) item.toJson()],
     'nextCursor': nextCursor,
+  };
+}
+
+class V1CompleteUploadRequestDto {
+  const V1CompleteUploadRequestDto();
+
+  factory V1CompleteUploadRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1CompleteUploadRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1CompleteUploadResponseDto {
+  const V1CompleteUploadResponseDto({
+    required this.session,
+    required this.file,
+  });
+
+  factory V1CompleteUploadResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1CompleteUploadResponseDto(
+        session: V1UploadSessionDto.fromJson(
+          json['session'] as Map<String, dynamic>,
+        ),
+        file: V1FileDto.fromJson(json['file'] as Map<String, dynamic>),
+      );
+
+  final V1UploadSessionDto session;
+  final V1FileDto file;
+
+  Map<String, Object?> toJson() => {
+    'session': session.toJson(),
+    'file': file.toJson(),
+  };
+}
+
+class V1ContentControlsDto {
+  const V1ContentControlsDto({
+    required this.schoolId,
+    required this.messagingEnabled,
+    required this.contentFilterLevel,
+    required this.classifierAssistEnabled,
+    required this.supportContact,
+    required this.slaHours,
+    required this.version,
+    required this.updatedAt,
+  });
+
+  factory V1ContentControlsDto.fromJson(Map<String, dynamic> json) =>
+      V1ContentControlsDto(
+        schoolId: json['schoolId'] as String,
+        messagingEnabled: json['messagingEnabled'] as bool,
+        contentFilterLevel: json['contentFilterLevel'] as String,
+        classifierAssistEnabled: json['classifierAssistEnabled'] as bool,
+        supportContact: json['supportContact'] as String?,
+        slaHours: json['slaHours'] as Map<String, dynamic>,
+        version: json['version'] as int,
+        updatedAt: json['updatedAt'] as String?,
+      );
+
+  final String schoolId;
+  final bool messagingEnabled;
+  final String contentFilterLevel;
+  final bool classifierAssistEnabled;
+  final String? supportContact;
+  final Map<String, dynamic> slaHours;
+  final int version;
+  final String? updatedAt;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'messagingEnabled': messagingEnabled,
+    'contentFilterLevel': contentFilterLevel,
+    'classifierAssistEnabled': classifierAssistEnabled,
+    'supportContact': supportContact,
+    'slaHours': slaHours,
+    'version': version,
+    'updatedAt': updatedAt,
   };
 }
 
@@ -2837,6 +3411,39 @@ class V1CreateAssignmentRequestDto {
   };
 }
 
+class V1CreateBlockRequestDto {
+  const V1CreateBlockRequestDto({
+    required this.schoolId,
+    required this.blockedUserId,
+    required this.scope,
+    this.reason,
+    this.durationHours,
+  });
+
+  factory V1CreateBlockRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateBlockRequestDto(
+        schoolId: json['schoolId'] as String,
+        blockedUserId: json['blockedUserId'] as String,
+        scope: json['scope'] as String,
+        reason: json['reason'] as String?,
+        durationHours: json['durationHours'] as int?,
+      );
+
+  final String schoolId;
+  final String blockedUserId;
+  final String scope;
+  final String? reason;
+  final int? durationHours;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'blockedUserId': blockedUserId,
+    'scope': scope,
+    'reason': ?reason,
+    'durationHours': ?durationHours,
+  };
+}
+
 class V1CreateClassroomRequestDto {
   const V1CreateClassroomRequestDto({
     required this.schoolId,
@@ -2900,6 +3507,55 @@ class V1CreateConversationRequestDto {
     'schoolId': schoolId,
     'subject': ?subject,
     'participantIds': participantIds,
+  };
+}
+
+class V1CreateReportRequestDto {
+  const V1CreateReportRequestDto({
+    required this.schoolId,
+    required this.kind,
+    required this.details,
+    this.messageId,
+    this.conversationId,
+    this.subjectUserId,
+    this.evidenceSnapshot,
+    this.classifierConfidence,
+    required this.contactConsent,
+  });
+
+  factory V1CreateReportRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateReportRequestDto(
+        schoolId: json['schoolId'] as String,
+        kind: json['kind'] as String,
+        details: json['details'] as String,
+        messageId: json['messageId'] as String?,
+        conversationId: json['conversationId'] as String?,
+        subjectUserId: json['subjectUserId'] as String?,
+        evidenceSnapshot: json['evidenceSnapshot'] as Map<String, dynamic>?,
+        classifierConfidence: json['classifierConfidence'] as num?,
+        contactConsent: json['contactConsent'] as bool,
+      );
+
+  final String schoolId;
+  final String kind;
+  final String details;
+  final String? messageId;
+  final String? conversationId;
+  final String? subjectUserId;
+  final Map<String, dynamic>? evidenceSnapshot;
+  final num? classifierConfidence;
+  final bool contactConsent;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'kind': kind,
+    'details': details,
+    'messageId': ?messageId,
+    'conversationId': ?conversationId,
+    'subjectUserId': ?subjectUserId,
+    'evidenceSnapshot': ?evidenceSnapshot,
+    'classifierConfidence': ?classifierConfidence,
+    'contactConsent': contactConsent,
   };
 }
 
@@ -2980,6 +3636,94 @@ class V1CreateTermRequestDto {
     'name': name,
     'startsOn': startsOn,
     'endsOn': endsOn,
+  };
+}
+
+class V1CreateUploadIntentRequestDto {
+  const V1CreateUploadIntentRequestDto({
+    required this.schoolId,
+    required this.purpose,
+    required this.displayName,
+    required this.expectedSizeBytes,
+    required this.declaredMediaType,
+    required this.sha256,
+    this.classroomId,
+    this.assignmentId,
+    this.studentId,
+    this.gradeResultId,
+  });
+
+  factory V1CreateUploadIntentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateUploadIntentRequestDto(
+        schoolId: json['schoolId'] as String,
+        purpose: json['purpose'] as String,
+        displayName: json['displayName'] as String,
+        expectedSizeBytes: json['expectedSizeBytes'] as int,
+        declaredMediaType: json['declaredMediaType'] as String,
+        sha256: json['sha256'] as String,
+        classroomId: json['classroomId'] as String?,
+        assignmentId: json['assignmentId'] as String?,
+        studentId: json['studentId'] as String?,
+        gradeResultId: json['gradeResultId'] as String?,
+      );
+
+  final String schoolId;
+  final String purpose;
+  final String displayName;
+  final int expectedSizeBytes;
+  final String declaredMediaType;
+  final String sha256;
+  final String? classroomId;
+  final String? assignmentId;
+  final String? studentId;
+  final String? gradeResultId;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'purpose': purpose,
+    'displayName': displayName,
+    'expectedSizeBytes': expectedSizeBytes,
+    'declaredMediaType': declaredMediaType,
+    'sha256': sha256,
+    'classroomId': ?classroomId,
+    'assignmentId': ?assignmentId,
+    'studentId': ?studentId,
+    'gradeResultId': ?gradeResultId,
+  };
+}
+
+class V1CreateUploadIntentResponseDto {
+  const V1CreateUploadIntentResponseDto({
+    required this.session,
+    required this.uploadUrl,
+    required this.method,
+    required this.requiredHeaders,
+    required this.expiresAt,
+  });
+
+  factory V1CreateUploadIntentResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateUploadIntentResponseDto(
+        session: V1UploadSessionDto.fromJson(
+          json['session'] as Map<String, dynamic>,
+        ),
+        uploadUrl: json['uploadUrl'] as String,
+        method: json['method'] as String,
+        requiredHeaders: json['requiredHeaders'] as Map<String, dynamic>,
+        expiresAt: json['expiresAt'] as String,
+      );
+
+  final V1UploadSessionDto session;
+  final String uploadUrl;
+  final String method;
+  final Map<String, dynamic> requiredHeaders;
+  final String expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'session': session.toJson(),
+    'uploadUrl': uploadUrl,
+    'method': method,
+    'requiredHeaders': requiredHeaders,
+    'expiresAt': expiresAt,
   };
 }
 
@@ -3253,6 +3997,44 @@ class V1DeletionRetainedRecordsDto {
   };
 }
 
+class V1DownloadIntentRequestDto {
+  const V1DownloadIntentRequestDto();
+
+  factory V1DownloadIntentRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1DownloadIntentRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1DownloadIntentResponseDto {
+  const V1DownloadIntentResponseDto({
+    required this.downloadUrl,
+    required this.expiresAt,
+    required this.displayName,
+    required this.mediaType,
+  });
+
+  factory V1DownloadIntentResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1DownloadIntentResponseDto(
+        downloadUrl: json['downloadUrl'] as String,
+        expiresAt: json['expiresAt'] as String,
+        displayName: json['displayName'] as String,
+        mediaType: json['mediaType'] as String,
+      );
+
+  final String downloadUrl;
+  final String expiresAt;
+  final String displayName;
+  final String mediaType;
+
+  Map<String, Object?> toJson() => {
+    'downloadUrl': downloadUrl,
+    'expiresAt': expiresAt,
+    'displayName': displayName,
+    'mediaType': mediaType,
+  };
+}
+
 class V1EnrollStudentRequestDto {
   const V1EnrollStudentRequestDto({required this.studentId});
 
@@ -3289,6 +4071,24 @@ class V1EnrollmentTransitionDto {
   };
 }
 
+class V1EscalateReportRequestDto {
+  const V1EscalateReportRequestDto({required this.expectedVersion, this.note});
+
+  factory V1EscalateReportRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1EscalateReportRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        note: json['note'] as String?,
+      );
+
+  final int expectedVersion;
+  final String? note;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'note': ?note,
+  };
+}
+
 class V1ExportStatusResponseDto {
   const V1ExportStatusResponseDto({required this.request});
 
@@ -3304,6 +4104,58 @@ class V1ExportStatusResponseDto {
   final V1DataExportRequestDto? request;
 
   Map<String, Object?> toJson() => {'request': request?.toJson()};
+}
+
+class V1FileDto {
+  const V1FileDto({
+    required this.id,
+    required this.purpose,
+    required this.displayName,
+    required this.sizeBytes,
+    required this.declaredMediaType,
+    required this.detectedMediaType,
+    required this.scanState,
+    required this.createdAt,
+    required this.scannedAt,
+    required this.failureCode,
+  });
+
+  factory V1FileDto.fromJson(Map<String, dynamic> json) => V1FileDto(
+    id: json['id'] as String,
+    purpose: json['purpose'] as String,
+    displayName: json['displayName'] as String,
+    sizeBytes: json['sizeBytes'] as int,
+    declaredMediaType: json['declaredMediaType'] as String,
+    detectedMediaType: json['detectedMediaType'] as String?,
+    scanState: json['scanState'] as String,
+    createdAt: json['createdAt'] as String,
+    scannedAt: json['scannedAt'] as String?,
+    failureCode: json['failureCode'] as String?,
+  );
+
+  final String id;
+  final String purpose;
+  final String displayName;
+  final int sizeBytes;
+  final String declaredMediaType;
+  final String? detectedMediaType;
+  final String scanState;
+  final String createdAt;
+  final String? scannedAt;
+  final String? failureCode;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'purpose': purpose,
+    'displayName': displayName,
+    'sizeBytes': sizeBytes,
+    'declaredMediaType': declaredMediaType,
+    'detectedMediaType': detectedMediaType,
+    'scanState': scanState,
+    'createdAt': createdAt,
+    'scannedAt': scannedAt,
+    'failureCode': failureCode,
+  };
 }
 
 class V1GradeResultDto {
@@ -3443,6 +4295,51 @@ class V1GuardianLinkDto {
     'relationship': relationship,
     'status': status,
     'expiresAt': expiresAt,
+  };
+}
+
+class V1HoldReportRequestDto {
+  const V1HoldReportRequestDto({
+    required this.schoolId,
+    required this.expectedVersion,
+    this.subjectUserId,
+    required this.appliedTo,
+    required this.reason,
+    required this.ticketRef,
+    this.accountDeletionRequestId,
+    this.expiresAt,
+  });
+
+  factory V1HoldReportRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1HoldReportRequestDto(
+        schoolId: json['schoolId'] as String,
+        expectedVersion: json['expectedVersion'] as int,
+        subjectUserId: json['subjectUserId'] as String?,
+        appliedTo: json['appliedTo'] as String,
+        reason: json['reason'] as String,
+        ticketRef: json['ticketRef'] as String,
+        accountDeletionRequestId: json['accountDeletionRequestId'] as String?,
+        expiresAt: json['expiresAt'] as String?,
+      );
+
+  final String schoolId;
+  final int expectedVersion;
+  final String? subjectUserId;
+  final String appliedTo;
+  final String reason;
+  final String ticketRef;
+  final String? accountDeletionRequestId;
+  final String? expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'expectedVersion': expectedVersion,
+    'subjectUserId': ?subjectUserId,
+    'appliedTo': appliedTo,
+    'reason': reason,
+    'ticketRef': ticketRef,
+    'accountDeletionRequestId': ?accountDeletionRequestId,
+    'expiresAt': ?expiresAt,
   };
 }
 
@@ -3640,6 +4537,82 @@ class V1IssueInvitationResponseDto {
     'expiresAt': expiresAt,
     'version': version,
     'token': token,
+  };
+}
+
+class V1LegalHoldDto {
+  const V1LegalHoldDto({
+    required this.id,
+    required this.schoolId,
+    required this.subjectUserId,
+    required this.reportId,
+    required this.accountDeletionRequestId,
+    required this.appliedTo,
+    required this.reason,
+    required this.ticketRef,
+    required this.status,
+    required this.grantedBy,
+    required this.releasedBy,
+    required this.releasedReason,
+    required this.expiresAt,
+    required this.releasedAt,
+    required this.createdAt,
+    required this.version,
+  });
+
+  factory V1LegalHoldDto.fromJson(Map<String, dynamic> json) => V1LegalHoldDto(
+    id: json['id'] as String,
+    schoolId: json['schoolId'] as String,
+    subjectUserId: json['subjectUserId'] as String?,
+    reportId: json['reportId'] as String?,
+    accountDeletionRequestId: json['accountDeletionRequestId'] as String?,
+    appliedTo: json['appliedTo'] as String,
+    reason: json['reason'] as String,
+    ticketRef: json['ticketRef'] as String,
+    status: json['status'] as String,
+    grantedBy: json['grantedBy'] as String,
+    releasedBy: json['releasedBy'] as String?,
+    releasedReason: json['releasedReason'] as String?,
+    expiresAt: json['expiresAt'] as String?,
+    releasedAt: json['releasedAt'] as String?,
+    createdAt: json['createdAt'] as String,
+    version: json['version'] as int,
+  );
+
+  final String id;
+  final String schoolId;
+  final String? subjectUserId;
+  final String? reportId;
+  final String? accountDeletionRequestId;
+  final String appliedTo;
+  final String reason;
+  final String ticketRef;
+  final String status;
+  final String grantedBy;
+  final String? releasedBy;
+  final String? releasedReason;
+  final String? expiresAt;
+  final String? releasedAt;
+  final String createdAt;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'subjectUserId': subjectUserId,
+    'reportId': reportId,
+    'accountDeletionRequestId': accountDeletionRequestId,
+    'appliedTo': appliedTo,
+    'reason': reason,
+    'ticketRef': ticketRef,
+    'status': status,
+    'grantedBy': grantedBy,
+    'releasedBy': releasedBy,
+    'releasedReason': releasedReason,
+    'expiresAt': expiresAt,
+    'releasedAt': releasedAt,
+    'createdAt': createdAt,
+    'version': version,
   };
 }
 
@@ -4063,6 +5036,334 @@ class V1MessagePageDto {
   };
 }
 
+class V1ModerationAccessGrantDto {
+  const V1ModerationAccessGrantDto({
+    required this.id,
+    required this.schoolId,
+    required this.requestedBy,
+    required this.approvedBy,
+    required this.reason,
+    required this.ticketRef,
+    required this.resourceScope,
+    required this.status,
+    required this.requiresSecondApprover,
+    required this.expiresAt,
+    required this.startedAt,
+    required this.endedAt,
+    required this.version,
+  });
+
+  factory V1ModerationAccessGrantDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationAccessGrantDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        requestedBy: json['requestedBy'] as String,
+        approvedBy: json['approvedBy'] as String?,
+        reason: json['reason'] as String,
+        ticketRef: json['ticketRef'] as String,
+        resourceScope: json['resourceScope'] as Map<String, dynamic>,
+        status: json['status'] as String,
+        requiresSecondApprover: json['requiresSecondApprover'] as bool,
+        expiresAt: json['expiresAt'] as String,
+        startedAt: json['startedAt'] as String?,
+        endedAt: json['endedAt'] as String?,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String schoolId;
+  final String requestedBy;
+  final String? approvedBy;
+  final String reason;
+  final String ticketRef;
+  final Map<String, dynamic> resourceScope;
+  final String status;
+  final bool requiresSecondApprover;
+  final String expiresAt;
+  final String? startedAt;
+  final String? endedAt;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'requestedBy': requestedBy,
+    'approvedBy': approvedBy,
+    'reason': reason,
+    'ticketRef': ticketRef,
+    'resourceScope': resourceScope,
+    'status': status,
+    'requiresSecondApprover': requiresSecondApprover,
+    'expiresAt': expiresAt,
+    'startedAt': startedAt,
+    'endedAt': endedAt,
+    'version': version,
+  };
+}
+
+class V1ModerationAccessGrantPageDto {
+  const V1ModerationAccessGrantPageDto({
+    required this.items,
+    required this.nextCursor,
+  });
+
+  factory V1ModerationAccessGrantPageDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationAccessGrantPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1ModerationAccessGrantDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1ModerationAccessGrantDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1ModerationAccessLifecycleRequestDto {
+  const V1ModerationAccessLifecycleRequestDto({required this.expectedVersion});
+
+  factory V1ModerationAccessLifecycleRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1ModerationAccessLifecycleRequestDto(
+    expectedVersion: json['expectedVersion'] as int,
+  );
+
+  final int expectedVersion;
+
+  Map<String, Object?> toJson() => {'expectedVersion': expectedVersion};
+}
+
+class V1ModerationAccessQueryDto {
+  const V1ModerationAccessQueryDto({
+    required this.schoolId,
+    this.cursor,
+    required this.pageSize,
+  });
+
+  factory V1ModerationAccessQueryDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationAccessQueryDto(
+        schoolId: json['schoolId'] as String,
+        cursor: json['cursor'] as String?,
+        pageSize: json['pageSize'] as int,
+      );
+
+  final String schoolId;
+  final String? cursor;
+  final int pageSize;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'cursor': ?cursor,
+    'pageSize': pageSize,
+  };
+}
+
+class V1ModerationOverviewDto {
+  const V1ModerationOverviewDto({
+    required this.schoolId,
+    required this.submitted,
+    required this.underReview,
+    required this.onHold,
+    required this.escalated,
+    required this.resolved,
+    required this.slaBreaches,
+    required this.activeModeratorSessions,
+  });
+
+  factory V1ModerationOverviewDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationOverviewDto(
+        schoolId: json['schoolId'] as String,
+        submitted: json['submitted'] as int,
+        underReview: json['underReview'] as int,
+        onHold: json['onHold'] as int,
+        escalated: json['escalated'] as int,
+        resolved: json['resolved'] as int,
+        slaBreaches: json['slaBreaches'] as int,
+        activeModeratorSessions: json['activeModeratorSessions'] as int,
+      );
+
+  final String schoolId;
+  final int submitted;
+  final int underReview;
+  final int onHold;
+  final int escalated;
+  final int resolved;
+  final int slaBreaches;
+  final int activeModeratorSessions;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'submitted': submitted,
+    'underReview': underReview,
+    'onHold': onHold,
+    'escalated': escalated,
+    'resolved': resolved,
+    'slaBreaches': slaBreaches,
+    'activeModeratorSessions': activeModeratorSessions,
+  };
+}
+
+class V1ModerationQueuePageDto {
+  const V1ModerationQueuePageDto({
+    required this.items,
+    required this.nextCursor,
+  });
+
+  factory V1ModerationQueuePageDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationQueuePageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1ModerationReportDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1ModerationReportDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+  };
+}
+
+class V1ModerationQueueQueryDto {
+  const V1ModerationQueueQueryDto({
+    required this.schoolId,
+    this.status,
+    this.priority,
+    this.cursor,
+    required this.pageSize,
+  });
+
+  factory V1ModerationQueueQueryDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationQueueQueryDto(
+        schoolId: json['schoolId'] as String,
+        status: json['status'] as String?,
+        priority: json['priority'] as String?,
+        cursor: json['cursor'] as String?,
+        pageSize: json['pageSize'] as int,
+      );
+
+  final String schoolId;
+  final String? status;
+  final String? priority;
+  final String? cursor;
+  final int pageSize;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'status': ?status,
+    'priority': ?priority,
+    'cursor': ?cursor,
+    'pageSize': pageSize,
+  };
+}
+
+class V1ModerationReportDto {
+  const V1ModerationReportDto({
+    required this.id,
+    required this.schoolId,
+    required this.kind,
+    required this.status,
+    required this.resolution,
+    required this.priority,
+    required this.assignedTo,
+    required this.details,
+    required this.evidenceSnapshot,
+    required this.classifierConfidence,
+    required this.aupVersion,
+    required this.contactConsent,
+    required this.subjectUserId,
+    required this.conversationId,
+    required this.messageId,
+    required this.reporterId,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.version,
+    required this.events,
+    required this.evidence,
+  });
+
+  factory V1ModerationReportDto.fromJson(Map<String, dynamic> json) =>
+      V1ModerationReportDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        kind: json['kind'] as String,
+        status: json['status'] as String,
+        resolution: json['resolution'] as String?,
+        priority: json['priority'] as String,
+        assignedTo: json['assignedTo'] as String?,
+        details: json['details'] as String,
+        evidenceSnapshot: json['evidenceSnapshot'] as Map<String, dynamic>,
+        classifierConfidence: json['classifierConfidence'] as num?,
+        aupVersion: json['aupVersion'] as String?,
+        contactConsent: json['contactConsent'] as bool,
+        subjectUserId: json['subjectUserId'] as String?,
+        conversationId: json['conversationId'] as String?,
+        messageId: json['messageId'] as String?,
+        reporterId: json['reporterId'] as String?,
+        createdAt: json['createdAt'] as String,
+        updatedAt: json['updatedAt'] as String,
+        version: json['version'] as int,
+        events: (json['events'] as List<dynamic>).cast<Map<String, dynamic>>(),
+        evidence: (json['evidence'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String id;
+  final String schoolId;
+  final String kind;
+  final String status;
+  final String? resolution;
+  final String priority;
+  final String? assignedTo;
+  final String details;
+  final Map<String, dynamic> evidenceSnapshot;
+  final num? classifierConfidence;
+  final String? aupVersion;
+  final bool contactConsent;
+  final String? subjectUserId;
+  final String? conversationId;
+  final String? messageId;
+  final String? reporterId;
+  final String createdAt;
+  final String updatedAt;
+  final int version;
+  final List<Map<String, dynamic>> events;
+  final List<Map<String, dynamic>> evidence;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'kind': kind,
+    'status': status,
+    'resolution': resolution,
+    'priority': priority,
+    'assignedTo': assignedTo,
+    'details': details,
+    'evidenceSnapshot': evidenceSnapshot,
+    'classifierConfidence': classifierConfidence,
+    'aupVersion': aupVersion,
+    'contactConsent': contactConsent,
+    'subjectUserId': subjectUserId,
+    'conversationId': conversationId,
+    'messageId': messageId,
+    'reporterId': reporterId,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'version': version,
+    'events': events,
+    'evidence': evidence,
+  };
+}
+
 class V1NotificationDto {
   const V1NotificationDto({
     required this.id,
@@ -4261,6 +5562,37 @@ class V1ProvisionSchoolRequestDto {
   };
 }
 
+class V1PublishFileRequestDto {
+  const V1PublishFileRequestDto({required this.audience});
+
+  factory V1PublishFileRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1PublishFileRequestDto(audience: json['audience'] as String);
+
+  final String audience;
+
+  Map<String, Object?> toJson() => {'audience': audience};
+}
+
+class V1PublishFileResponseDto {
+  const V1PublishFileResponseDto({required this.file, required this.resource});
+
+  factory V1PublishFileResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1PublishFileResponseDto(
+        file: V1FileDto.fromJson(json['file'] as Map<String, dynamic>),
+        resource: V1ResourceDto.fromJson(
+          json['resource'] as Map<String, dynamic>,
+        ),
+      );
+
+  final V1FileDto file;
+  final V1ResourceDto resource;
+
+  Map<String, Object?> toJson() => {
+    'file': file.toJson(),
+    'resource': resource.toJson(),
+  };
+}
+
 class V1QuestionScoreReviewDto {
   const V1QuestionScoreReviewDto({
     required this.questionId,
@@ -4419,6 +5751,27 @@ class V1RecordAttendanceResponseDto {
   };
 }
 
+class V1ReleaseLegalHoldRequestDto {
+  const V1ReleaseLegalHoldRequestDto({
+    required this.expectedVersion,
+    required this.reason,
+  });
+
+  factory V1ReleaseLegalHoldRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ReleaseLegalHoldRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        reason: json['reason'] as String,
+      );
+
+  final int expectedVersion;
+  final String reason;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'reason': reason,
+  };
+}
+
 class V1RemoveClassroomStaffRequestDto {
   const V1RemoveClassroomStaffRequestDto({required this.staffAssignmentId});
 
@@ -4454,6 +5807,132 @@ class V1ReplaceScheduleRequestDto {
   Map<String, Object?> toJson() => {
     'expectedVersion': expectedVersion,
     'schedule': [for (final item in schedule) item.toJson()],
+  };
+}
+
+class V1ReportDto {
+  const V1ReportDto({
+    required this.id,
+    required this.schoolId,
+    required this.kind,
+    required this.status,
+    required this.resolution,
+    required this.details,
+    required this.priority,
+    required this.contactConsent,
+    required this.subjectUserId,
+    required this.conversationId,
+    required this.messageId,
+    required this.aupVersion,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.version,
+    required this.events,
+  });
+
+  factory V1ReportDto.fromJson(Map<String, dynamic> json) => V1ReportDto(
+    id: json['id'] as String,
+    schoolId: json['schoolId'] as String,
+    kind: json['kind'] as String,
+    status: json['status'] as String,
+    resolution: json['resolution'] as String?,
+    details: json['details'] as String,
+    priority: json['priority'] as String,
+    contactConsent: json['contactConsent'] as bool,
+    subjectUserId: json['subjectUserId'] as String?,
+    conversationId: json['conversationId'] as String?,
+    messageId: json['messageId'] as String?,
+    aupVersion: json['aupVersion'] as String?,
+    createdAt: json['createdAt'] as String,
+    updatedAt: json['updatedAt'] as String,
+    version: json['version'] as int,
+    events: (json['events'] as List<dynamic>).cast<Map<String, dynamic>>(),
+  );
+
+  final String id;
+  final String schoolId;
+  final String kind;
+  final String status;
+  final String? resolution;
+  final String details;
+  final String priority;
+  final bool contactConsent;
+  final String? subjectUserId;
+  final String? conversationId;
+  final String? messageId;
+  final String? aupVersion;
+  final String createdAt;
+  final String updatedAt;
+  final int version;
+  final List<Map<String, dynamic>> events;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'kind': kind,
+    'status': status,
+    'resolution': resolution,
+    'details': details,
+    'priority': priority,
+    'contactConsent': contactConsent,
+    'subjectUserId': subjectUserId,
+    'conversationId': conversationId,
+    'messageId': messageId,
+    'aupVersion': aupVersion,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'version': version,
+    'events': events,
+  };
+}
+
+class V1ReportLifecycleRequestDto {
+  const V1ReportLifecycleRequestDto({
+    required this.expectedVersion,
+    this.note,
+    this.assignedTo,
+    this.priority,
+  });
+
+  factory V1ReportLifecycleRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ReportLifecycleRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        note: json['note'] as String?,
+        assignedTo: json['assignedTo'] as String?,
+        priority: json['priority'] as String?,
+      );
+
+  final int expectedVersion;
+  final String? note;
+  final String? assignedTo;
+  final String? priority;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'note': ?note,
+    'assignedTo': ?assignedTo,
+    'priority': ?priority,
+  };
+}
+
+class V1ReportPageDto {
+  const V1ReportPageDto({required this.items, required this.nextCursor});
+
+  factory V1ReportPageDto.fromJson(Map<String, dynamic> json) =>
+      V1ReportPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1ReportDto.fromJson(item as Map<String, dynamic>),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+      );
+
+  final List<V1ReportDto> items;
+  final String? nextCursor;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
   };
 }
 
@@ -4516,6 +5995,44 @@ class V1RequestMeetingRequestDto {
   };
 }
 
+class V1RequestModerationAccessRequestDto {
+  const V1RequestModerationAccessRequestDto({
+    required this.schoolId,
+    required this.reason,
+    required this.ticketRef,
+    this.resourceScope,
+    required this.requiresSecondApprover,
+    required this.durationMinutes,
+  });
+
+  factory V1RequestModerationAccessRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RequestModerationAccessRequestDto(
+    schoolId: json['schoolId'] as String,
+    reason: json['reason'] as String,
+    ticketRef: json['ticketRef'] as String,
+    resourceScope: json['resourceScope'] as Map<String, dynamic>?,
+    requiresSecondApprover: json['requiresSecondApprover'] as bool,
+    durationMinutes: json['durationMinutes'] as int,
+  );
+
+  final String schoolId;
+  final String reason;
+  final String ticketRef;
+  final Map<String, dynamic>? resourceScope;
+  final bool requiresSecondApprover;
+  final int durationMinutes;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'reason': reason,
+    'ticketRef': ticketRef,
+    'resourceScope': ?resourceScope,
+    'requiresSecondApprover': requiresSecondApprover,
+    'durationMinutes': durationMinutes,
+  };
+}
+
 class V1RequestSupportAccessRequestDto {
   const V1RequestSupportAccessRequestDto({
     required this.schoolId,
@@ -4551,6 +6068,31 @@ class V1RequestSupportAccessRequestDto {
     'resourceScope': ?resourceScope,
     'requiresSecondApprover': requiresSecondApprover,
     'durationMinutes': durationMinutes,
+  };
+}
+
+class V1ResolveReportRequestDto {
+  const V1ResolveReportRequestDto({
+    required this.expectedVersion,
+    required this.resolution,
+    this.note,
+  });
+
+  factory V1ResolveReportRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ResolveReportRequestDto(
+        expectedVersion: json['expectedVersion'] as int,
+        resolution: json['resolution'] as String,
+        note: json['note'] as String?,
+      );
+
+  final int expectedVersion;
+  final String resolution;
+  final String? note;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'resolution': resolution,
+    'note': ?note,
   };
 }
 
@@ -4705,6 +6247,28 @@ class V1RevokeInvitationRequestDto {
       const V1RevokeInvitationRequestDto();
 
   Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1RevokeModerationAccessRequestDto {
+  const V1RevokeModerationAccessRequestDto({
+    required this.expectedVersion,
+    this.reason,
+  });
+
+  factory V1RevokeModerationAccessRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RevokeModerationAccessRequestDto(
+    expectedVersion: json['expectedVersion'] as int,
+    reason: json['reason'] as String?,
+  );
+
+  final int expectedVersion;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'reason': ?reason,
+  };
 }
 
 class V1RevokeSupportAccessRequestDto {
@@ -4863,6 +6427,17 @@ class V1SchoolAdminDto {
   };
 }
 
+class V1SchoolIdQueryDto {
+  const V1SchoolIdQueryDto({required this.schoolId});
+
+  factory V1SchoolIdQueryDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolIdQueryDto(schoolId: json['schoolId'] as String);
+
+  final String schoolId;
+
+  Map<String, Object?> toJson() => {'schoolId': schoolId};
+}
+
 class V1SchoolLifecycleRequestDto {
   const V1SchoolLifecycleRequestDto({
     required this.expectedVersion,
@@ -4881,6 +6456,31 @@ class V1SchoolLifecycleRequestDto {
   Map<String, Object?> toJson() => {
     'expectedVersion': expectedVersion,
     'reason': ?reason,
+  };
+}
+
+class V1SchoolScopeQueryDto {
+  const V1SchoolScopeQueryDto({
+    this.schoolId,
+    this.cursor,
+    required this.pageSize,
+  });
+
+  factory V1SchoolScopeQueryDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolScopeQueryDto(
+        schoolId: json['schoolId'] as String?,
+        cursor: json['cursor'] as String?,
+        pageSize: json['pageSize'] as int,
+      );
+
+  final String? schoolId;
+  final String? cursor;
+  final int pageSize;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': ?schoolId,
+    'cursor': ?cursor,
+    'pageSize': pageSize,
   };
 }
 
@@ -5259,6 +6859,17 @@ class V1TransferEnrollmentRequestDto {
   };
 }
 
+class V1UnblockUserRequestDto {
+  const V1UnblockUserRequestDto({this.reason});
+
+  factory V1UnblockUserRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1UnblockUserRequestDto(reason: json['reason'] as String?);
+
+  final String? reason;
+
+  Map<String, Object?> toJson() => {'reason': ?reason};
+}
+
 class V1UnreadCountResponseDto {
   const V1UnreadCountResponseDto({required this.unreadCount});
 
@@ -5300,6 +6911,48 @@ class V1UpdateClassroomRequestDto {
     'grade': grade,
     'section': section,
     'room': room,
+  };
+}
+
+class V1UpdateContentControlsRequestDto {
+  const V1UpdateContentControlsRequestDto({
+    required this.schoolId,
+    required this.expectedVersion,
+    this.messagingEnabled,
+    this.contentFilterLevel,
+    this.classifierAssistEnabled,
+    this.supportContact,
+    this.slaHours,
+  });
+
+  factory V1UpdateContentControlsRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1UpdateContentControlsRequestDto(
+    schoolId: json['schoolId'] as String,
+    expectedVersion: json['expectedVersion'] as int,
+    messagingEnabled: json['messagingEnabled'] as bool?,
+    contentFilterLevel: json['contentFilterLevel'] as String?,
+    classifierAssistEnabled: json['classifierAssistEnabled'] as bool?,
+    supportContact: json['supportContact'] as String?,
+    slaHours: json['slaHours'] as Map<String, dynamic>?,
+  );
+
+  final String schoolId;
+  final int expectedVersion;
+  final bool? messagingEnabled;
+  final String? contentFilterLevel;
+  final bool? classifierAssistEnabled;
+  final String? supportContact;
+  final Map<String, dynamic>? slaHours;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'expectedVersion': expectedVersion,
+    'messagingEnabled': ?messagingEnabled,
+    'contentFilterLevel': ?contentFilterLevel,
+    'classifierAssistEnabled': ?classifierAssistEnabled,
+    'supportContact': ?supportContact,
+    'slaHours': ?slaHours,
   };
 }
 
@@ -5348,6 +7001,63 @@ class V1UpdateProfileRequestDto {
   Map<String, Object?> toJson() => {
     'displayName': ?displayName,
     'locale': ?locale,
+  };
+}
+
+class V1UploadSessionDto {
+  const V1UploadSessionDto({
+    required this.id,
+    required this.purpose,
+    required this.displayName,
+    required this.declaredMediaType,
+    required this.expectedSizeBytes,
+    required this.state,
+    required this.expiresAt,
+    required this.createdAt,
+    required this.completedAt,
+    required this.fileId,
+    required this.failureCode,
+  });
+
+  factory V1UploadSessionDto.fromJson(Map<String, dynamic> json) =>
+      V1UploadSessionDto(
+        id: json['id'] as String,
+        purpose: json['purpose'] as String,
+        displayName: json['displayName'] as String,
+        declaredMediaType: json['declaredMediaType'] as String,
+        expectedSizeBytes: json['expectedSizeBytes'] as int,
+        state: json['state'] as String,
+        expiresAt: json['expiresAt'] as String,
+        createdAt: json['createdAt'] as String,
+        completedAt: json['completedAt'] as String?,
+        fileId: json['fileId'] as String?,
+        failureCode: json['failureCode'] as String?,
+      );
+
+  final String id;
+  final String purpose;
+  final String displayName;
+  final String declaredMediaType;
+  final int expectedSizeBytes;
+  final String state;
+  final String expiresAt;
+  final String createdAt;
+  final String? completedAt;
+  final String? fileId;
+  final String? failureCode;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'purpose': purpose,
+    'displayName': displayName,
+    'declaredMediaType': declaredMediaType,
+    'expectedSizeBytes': expectedSizeBytes,
+    'state': state,
+    'expiresAt': expiresAt,
+    'createdAt': createdAt,
+    'completedAt': completedAt,
+    'fileId': fileId,
+    'failureCode': failureCode,
   };
 }
 

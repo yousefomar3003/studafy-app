@@ -12,6 +12,12 @@ import {
 } from "./authorization/middleware";
 import { PostgresIdempotencyRepository } from "./platform/idempotency";
 import { createRedactingLogger } from "./platform/logging";
+import { RedisAuthContextCache } from "./platform/cache/authContextCache";
+import {
+  createRateLimitDependencies,
+  rateLimitAuto,
+  rateLimitEdge,
+} from "./platform/rate-limit/middleware";
 import { createAcademicRoutes } from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
 import {
@@ -33,6 +39,11 @@ import { createAccountRoutes } from "./account/routes";
 import { PostgresAccountRepository } from "./account/repository";
 import { createSupportAccessRoutes } from "./support-access/routes";
 import { PostgresSupportAccessRepository } from "./support-access/repository";
+import { createSafetyRoutes } from "./safety/routes";
+import { PostgresSafetyRepository } from "./safety/repository";
+import { createFileRoutes } from "./files/routes";
+import { PostgresFileRepository } from "./files/repository";
+import { SupabasePrivateFileStorage } from "./files/storage";
 import {
   checkDatabase,
   closeDatabase,
@@ -68,6 +79,38 @@ const redisCheck: DependentCheck | undefined = redis
   ? () => checkRedis(redis)
   : undefined;
 
+// OPS-060. Rate limiting and the revocation-safe session-context cache share
+// one Redis client; production is required to configure the HMAC secret
+// (enforceApiFailClosed), development mints an ephemeral one for the boot so
+// no identifier is ever stored raw in a Redis key either way.
+const ephemeralSecret = env.RATE_LIMIT_HMAC_SIGNING_KEY == null &&
+  env.RATE_LIMIT_ENABLED;
+if (ephemeralSecret) {
+  logger.warn("rate_limit_hmac_ephemeral", {
+    environment: env.ENVIRONMENT,
+  });
+}
+const rateLimitSecret = env.RATE_LIMIT_HMAC_SIGNING_KEY ??
+  `${crypto.randomUUID()}${crypto.randomUUID()}`;
+const rateLimitDependencies = createRateLimitDependencies({
+  enabled: env.RATE_LIMIT_ENABLED,
+  secret: rateLimitSecret,
+  redis: redis ?? null,
+  logger,
+  trustCloudflare: env.ENVIRONMENT === "production",
+});
+
+// The session-context cache: version-keyed (membershipVersion, revocation
+// watermark, profile state ride along in the generation), TTL clamped to
+// min(30s, AUTH_REVOCATION_BUDGET_SECONDS), failing back to the DB loader
+// whenever Redis cannot serve.
+const authContextCache = env.RATE_LIMIT_ENABLED && redis
+  ? new RedisAuthContextCache(redis, rateLimitSecret, {
+    environment: env.ENVIRONMENT,
+    budgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
+  })
+  : undefined;
+
 // AUTH-030 needs both a verified token source and a database. Without either
 // the auth routes are not mounted at all, so /v1 keeps answering
 // NOT_IMPLEMENTED instead of exposing handlers that cannot authenticate.
@@ -87,7 +130,7 @@ const idempotencyDependencies = {
 const authDependencies = sql && env.SUPABASE_URL
   ? {
     keys: new JwksKeySource(authJwksUrl(env.SUPABASE_URL)),
-    repository: new AuthContextRepository(sql),
+    repository: new AuthContextRepository(sql, authContextCache),
     logger,
     issuer: authIssuer(env.SUPABASE_URL),
     audience: env.AUTH_JWT_AUDIENCE,
@@ -223,10 +266,59 @@ const supportAccess = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+// SAFE-043 safety & safeguarding. The symmetric block gate over API-042
+// conversations lives in the database dispatcher and is unconditional once
+// these migrations are applied; the API surface is gated per slice here.
+const safety = sql && env.API_CURSOR_SIGNING_KEY
+  ? createSafetyRoutes(
+    {
+      repository: new PostgresSafetyRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: {
+        reporting: env.SAFE043_REPORTING_ENABLED,
+        blocks: env.SAFE043_BLOCKS_ENABLED,
+        moderation: env.SAFE043_MODERATION_ENABLED,
+        contentControls: env.SAFE043_CONTENT_CONTROLS_ENABLED,
+      },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+// FILE-050 uses the service role only inside the isolated storage adapter.
+// Database authorization and mutation still run as studafy_api_runtime via
+// the narrow private.api050_* surface. With no key the routes do not mount.
+const files = sql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
+  ? createFileRoutes(
+    {
+      repository: new PostgresFileRepository(sql),
+      storage: new SupabasePrivateFileStorage(
+        env.SUPABASE_URL,
+        env.SUPABASE_SERVICE_ROLE_KEY,
+      ),
+      newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
+      // FILE-051 switches default off; delivery also needs its own signing
+      // key and public origin (production refuses to start without them).
+      publishEnabled: env.FILE051_PUBLISH_ENABLED,
+      delivery: env.FILE051_DELIVERY_ENABLED &&
+          env.FILE051_DELIVERY_SIGNING_KEY &&
+          env.FILE051_DELIVERY_PUBLIC_BASE_URL
+        ? {
+          signingKey: env.FILE051_DELIVERY_SIGNING_KEY,
+          publicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL,
+        }
+        : null,
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 // createTerm/createStudent are the last two entries in V1_ROUTE_CATALOGUE
-// (see school-admin/routes.ts's SCHOOL_ROSTER_ROUTES comment) and must be
-// mounted last so the AUTH-031 parity test's mounted-route order matches
-// the catalogue's own order.
+// before the SAFE-043 block (see school-admin/routes.ts's
+// SCHOOL_ROSTER_ROUTES comment) and must be mounted in catalogue order so
+// the AUTH-031 parity test's mounted-route order matches the catalogue.
 const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
   ? createSchoolRosterRoutes(
     {
@@ -244,7 +336,8 @@ const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
 // widening that function's signature every time a new module lands.
 const combinedRoutes =
   academic || schoolAdmin || invitations || family || communications ||
-    meetings || notifications || account || supportAccess || schoolRoster
+    meetings || notifications || account || supportAccess || schoolRoster ||
+    safety || files
     ? (() => {
       const combined = new Hono<AuthorizationEnv>();
       if (academic) combined.route("/", academic);
@@ -257,6 +350,8 @@ const combinedRoutes =
       if (account) combined.route("/", account);
       if (supportAccess) combined.route("/", supportAccess);
       if (schoolRoster) combined.route("/", schoolRoster);
+      if (safety) combined.route("/", safety);
+      if (files) combined.route("/", files);
       return combined;
     })()
     : undefined;
@@ -267,6 +362,7 @@ const auth = authDependencies
     authorization,
     idempotencyDependencies,
     combinedRoutes,
+    env.RATE_LIMIT_ENABLED ? rateLimitAuto(rateLimitDependencies) : undefined,
   )
   : undefined;
 
@@ -291,6 +387,9 @@ const app = createApp({
       requestTimeoutMs: env.API_REQUEST_TIMEOUT_MS,
     },
   },
+  ...(env.RATE_LIMIT_ENABLED
+    ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }
+    : {}),
   ...(auth ? { auth } : {}),
 });
 

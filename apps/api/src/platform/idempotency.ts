@@ -193,8 +193,12 @@ export function idempotency(
       throw error;
     }
 
+    // A domain transaction may persist a deterministic non-2xx result (for
+    // example an observed upload mismatch plus its cleanup job) together with
+    // the idempotency response. Never release that already-completed record.
+    if (c.get("idempotencyCompleted")) return;
+
     if (c.res.status >= 200 && c.res.status <= 299) {
-      if (c.get("idempotencyCompleted")) return;
       try {
         const body = await c.res.clone().json() as unknown;
         const completed = await deps.repository.complete(

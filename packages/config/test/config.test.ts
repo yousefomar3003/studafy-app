@@ -7,6 +7,7 @@ import {
   describeApiEnv,
   describeWorkerEnv,
   enforceApiFailClosed,
+  enforceWorkerFailClosed,
   parseEnv,
   redactUrl,
   workerEnvSchema,
@@ -105,7 +106,7 @@ describe("production fail-closed", () => {
     const env = parseEnv(apiEnvSchema, {
       ENVIRONMENT: "production",
       DATABASE_URL: "postgresql://u:p@example.com:5432/db",
-      REDIS_URL: "rediss://example.com:6380",
+      REDIS_URL: "rediss://:pw@example.com:6380",
     });
     expect(() => enforceApiFailClosed(env)).toThrow(ConfigError);
   });
@@ -114,9 +115,10 @@ describe("production fail-closed", () => {
     const env = parseEnv(apiEnvSchema, {
       ENVIRONMENT: "production",
       DATABASE_URL: "postgresql://u:p@example.com:5432/db",
-      REDIS_URL: "rediss://example.com:6380",
+      REDIS_URL: "rediss://:pw@example.com:6380",
       SUPABASE_URL: "https://project.supabase.co",
       API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+      RATE_LIMIT_HMAC_SIGNING_KEY: "a-development-test-key-with-32-bytes",
     });
     expect(() => enforceApiFailClosed(env)).not.toThrow();
   });
@@ -155,6 +157,109 @@ describe("production fail-closed", () => {
   });
 });
 
+describe("redis production posture (OPS-060)", () => {
+  const productionEnv = {
+    ENVIRONMENT: "production",
+    DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+    SUPABASE_URL: "https://project.supabase.co",
+    API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+    RATE_LIMIT_HMAC_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+  } as const;
+
+  test("accepts redis:// with credentials in development", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+    });
+    expect(() => enforceApiFailClosed(env)).not.toThrow();
+  });
+
+  test("rejects plaintext redis:// in production", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ...productionEnv,
+      REDIS_URL: "redis://:pw@redis.example.com:6379",
+    });
+    expect(() => enforceApiFailClosed(env)).toThrow(
+      /must use rediss:\/\/ \(TLS\)/,
+    );
+  });
+
+  test("rejects rediss:// without AUTH credentials in production", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ...productionEnv,
+      REDIS_URL: "rediss://redis.example.com:6379",
+    });
+    expect(() => enforceApiFailClosed(env)).toThrow(
+      /must carry AUTH credentials/,
+    );
+  });
+
+  test("accepts rediss:// with AUTH credentials in production", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ...productionEnv,
+      REDIS_URL: "rediss://:pw@redis.example.com:6379",
+    });
+    expect(() => enforceApiFailClosed(env)).not.toThrow();
+  });
+
+  test("worker production posture is enforced by enforceWorkerFailClosed", () => {
+    const plaintext = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "production",
+      REDIS_URL: "redis://:pw@redis.example.com:6379",
+    });
+    expect(() => enforceWorkerFailClosed(plaintext)).toThrow(ConfigError);
+    const tls = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "production",
+      REDIS_URL: "rediss://:pw@redis.example.com:6379",
+    });
+    expect(() => enforceWorkerFailClosed(tls)).not.toThrow();
+  });
+});
+
+describe("rate limiting configuration (OPS-060)", () => {
+  test("rate limiting is enabled by default and requires an HMAC key in production", () => {
+    const env = parseEnv(apiEnvSchema, { ENVIRONMENT: "development" });
+    expect(env.RATE_LIMIT_ENABLED).toBe(true);
+    expect(env.RATE_LIMIT_HMAC_SIGNING_KEY).toBeUndefined();
+    const env2 = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "production",
+      DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+      REDIS_URL: "rediss://:pw@redis.example.com:6379",
+      SUPABASE_URL: "https://project.supabase.co",
+      API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+    });
+    expect(() => enforceApiFailClosed(env2)).toThrow(
+      /RATE_LIMIT_HMAC_SIGNING_KEY/,
+    );
+  });
+
+  test("the HMAC key must be at least 32 bytes and can be disabled explicitly", () => {
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        RATE_LIMIT_HMAC_SIGNING_KEY: "short",
+      })
+    ).toThrow(ConfigError);
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      RATE_LIMIT_ENABLED: "false",
+      RATE_LIMIT_HMAC_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+    });
+    expect(env.RATE_LIMIT_ENABLED).toBe(false);
+  });
+
+  test("describeApiEnv reports rate limiting without leaking the key", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      RATE_LIMIT_HMAC_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+    });
+    const described = JSON.stringify(describeApiEnv(env));
+    expect(described).toContain('"rate_limit_enabled":true');
+    expect(described).toContain('"rate_limit_hmac_key_configured":true');
+    expect(described).not.toContain("a-development-test-key-with-32-bytes");
+  });
+});
+
 describe("redaction", () => {
   test("redactUrl hides credentials but keeps host and path", () => {
     expect(
@@ -185,5 +290,68 @@ describe("redaction", () => {
       REDIS_URL: "redis://:pw@127.0.0.1:6379",
     });
     expect(JSON.stringify(describeWorkerEnv(env))).not.toContain(":pw@");
+  });
+});
+
+describe("outbox drain configuration (OPS-061)", () => {
+  test("the drain is off by default", () => {
+    const env = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+    });
+    expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(false);
+    expect(env.OPS061_OUTBOX_POLL_INTERVAL_MS).toBe(5000);
+    expect(env.OPS061_OUTBOX_CONCURRENCY).toBe(5);
+  });
+
+  test("enabling the drain requires the durable outbox database", () => {
+    expect(() =>
+      parseEnv(workerEnvSchema, {
+        ENVIRONMENT: "development",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        OPS061_NOTIFICATIONS_ENABLED: "true",
+      })
+    ).toThrow(/DATABASE_URL/);
+    const env = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+      DATABASE_URL: "postgresql://postgres@127.0.0.1:54322/postgres",
+      OPS061_NOTIFICATIONS_ENABLED: "true",
+    });
+    expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(true);
+  });
+
+  test("poll interval and concurrency are bounded", () => {
+    for (const value of ["0", "249", "60001"]) {
+      expect(() =>
+        parseEnv(workerEnvSchema, {
+          ENVIRONMENT: "development",
+          REDIS_URL: "redis://127.0.0.1:6379",
+          OPS061_OUTBOX_POLL_INTERVAL_MS: value,
+        })
+      ).toThrow(/OPS061_OUTBOX_POLL_INTERVAL_MS/);
+    }
+    expect(() =>
+      parseEnv(workerEnvSchema, {
+        ENVIRONMENT: "development",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        OPS061_OUTBOX_CONCURRENCY: "21",
+      })
+    ).toThrow(/OPS061_OUTBOX_CONCURRENCY/);
+  });
+
+  test("describeWorkerEnv reports the drain without identifiers", () => {
+    const env = parseEnv(workerEnvSchema, {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+      DATABASE_URL: "postgresql://postgres@127.0.0.1:54322/postgres",
+      OPS061_NOTIFICATIONS_ENABLED: "true",
+    });
+    const described = describeWorkerEnv(env);
+    expect(described["ops061"]).toEqual({
+      notificationsEnabled: true,
+      outboxPollIntervalMs: 5000,
+      outboxConcurrency: 5,
+    });
   });
 });

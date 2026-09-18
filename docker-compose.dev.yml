@@ -3,9 +3,30 @@
 # `bunx supabase start` (127.0.0.1:54322). This file adds only Redis.
 #
 #   bun run dev:stack        # equals: docker compose -f docker-compose.dev.yml up -d
+#
+# OPS-060: this loopback passwordless instance is the documented development
+# posture only. Production Redis requires TLS (rediss) + AUTH on a private
+# network (enforced at boot) and a non-evicting allocation whose key
+# namespaces (studafy:{env}:rl, studafy:{env}:cache) stay separate from
+# BullMQ's (studafy-{env}) - see docs/security/ops060-operator-runbook.md.
+#
+# OPS-061: the queue allocation is pinned non-evicting and persisted even in
+# development, so BullMQ job payloads are never reclaimed and a container
+# restart cannot silently drop enqueued jobs (the worker asserts the same
+# posture at boot in production). Cache/limiter keys are TTL-bounded, so
+# noeviction is safe for them too on this shared dev instance.
 services:
   redis:
     image: redis:7.4.4-alpine3.21@sha256:ee9e8748ace004102a267f7b8265dab2c618317df22507b89d16a8add7154273
+    command: [
+      "redis-server",
+      "--maxmemory-policy",
+      "noeviction",
+      "--appendonly",
+      "yes",
+    ]
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
     healthcheck:
@@ -13,3 +34,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+
+volumes:
+  redis-data:

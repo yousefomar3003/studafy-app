@@ -16,12 +16,21 @@
     "test:db020:plans": "bun scripts/verify-db020-query-plans.ts",
     "test:db021:plans": "bun scripts/verify-db021-policy-plans.ts",
     "test:api041:plans": "bun scripts/verify-api041-query-plans.ts",
+    "test:file050:plans": "bun scripts/verify-file050-query-plans.ts",
+    "test:file050:storage": "bun scripts/verify-file050-storage.ts",
+    "test:file051:plans": "bun scripts/verify-file051-query-plans.ts",
+    "test:file051:e2e": "bun apps/api/scripts/verify-file051-delivery.ts",
+    "test:file051:reconcile": "bun apps/api/scripts/file051-reconciliation.ts",
+    "test:file051:drill": "bun apps/api/scripts/file051-malware-drill.ts",
+    "test:ops061:plans": "bun scripts/verify-ops061-query-plans.ts",
+    "test:ops061:e2e": "bun test apps/worker/test/outbox.integration.test.ts",
+    "ops061:redrive": "bun scripts/redrive-ops061-dlq.ts",
     "test:auth030:lifecycle": "bun apps/api/scripts/verify-auth030-lifecycle.ts",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
-    "check:bounds": "bun scripts/check-bounds.ts",
+    "check:bounds": "bun scripts/check-bounds.ts && bun scripts/check-file050-boundaries.ts",
     "build": "bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build",
-    "dev:stack": "docker compose -f docker-compose.dev.yml up -d"
+    "dev:stack": "docker compose -f docker-compose.dev.yml up -d || docker-compose -f docker-compose.dev.yml up -d"
   },
   "dependencies": {},
   "devDependencies": {

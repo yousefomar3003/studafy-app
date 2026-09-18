@@ -643,6 +643,188 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Revoke a guardian link as the student's school administrator or the linked guardian themselves.",
   },
+
+  // SAFE-043 reporting, symmetry blocks, moderation and legal holds.
+  // Reporter-facing operations (report.*, block.manage) are self-scoped: no
+  // resource id exists at the API layer (a reporter's own list, a pair of
+  // identities in the request body) and the SQL dispatcher enforces
+  // ownership inside the school. Moderation operations are resource-scoped
+  // so the DB decision surface is reached: permissions only open the API
+  // route, safe043_can_access_* (active session grant, school admin, or
+  // platform operator) decides every queue read and every disposition.
+  "content_controls.read": {
+    resource: "school_content_controls",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Read a school's safety configuration as an active member, its administrator, or a platform operator.",
+  },
+  "content_controls.write": {
+    resource: "school_content_controls",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Update a school's safety configuration as its administrator or a platform operator.",
+  },
+  "report.create": {
+    resource: "report",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Submit a concern about a message, conversation, or school member. Deduplicated and rate-limited per reporter.",
+  },
+  "report.read": {
+    resource: "report",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read one of the authenticated reporter's own reports and its status timeline.",
+  },
+  "report.appeal": {
+    resource: "report",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Appeal a resolved or closed report from its original reporter.",
+  },
+  "block.manage": {
+    resource: "user_block",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Create or remove the authenticated actor's own school-scoped block on another member. The SQL dispatcher enforces the block symmetrically on new communication unconditionally.",
+  },
+  "moderation.overview.read": {
+    resource: "school",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Read moderation queue health for a school as an active moderator, its administrator, or a platform operator.",
+  },
+  "moderation.queue.read": {
+    resource: "school",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Read the moderation queue for a school as an active moderator, its administrator, or a platform operator. Reporter identity stays masked unless a report is escalated.",
+  },
+  "moderation.report.read": {
+    resource: "report",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Read one moderation report with its events and evidence as an active moderator of its school.",
+  },
+  "moderation.triage": {
+    resource: "report",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Assign or re-prioritize an open report as an active moderator of its school.",
+  },
+  "moderation.resolve": {
+    resource: "report",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Resolve an open report with a disposition and note as an active moderator of its school.",
+  },
+  "moderation.escalate": {
+    resource: "report",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Escalate a report, unmasking the reporter's identity to the queue, as an active moderator of its school.",
+  },
+  "moderation.evidence.write": {
+    resource: "report",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Attach evidenced content or a moderator note to an open report as an active moderator of its school.",
+  },
+  "moderation.hold": {
+    resource: "report",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: true,
+    description:
+      "Apply or release a legal hold as a platform operator, pausing any live account deletion of the subject.",
+  },
+  "moderation.access.request": {
+    resource: "moderation_access_grant",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Request a time-bounded moderation session as their school's administrator or a platform operator, with MFA and a ticket reference.",
+  },
+  "moderation.access.approve": {
+    resource: "moderation_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Approve a pending moderation-access request as a different platform operator, with MFA.",
+  },
+  "moderation.access.start": {
+    resource: "moderation_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Start an approved moderation session as its exact original requester.",
+  },
+  "moderation.access.revoke": {
+    resource: "moderation_access_grant",
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Revoke a moderation-access grant as a platform operator or the affected school's administrator.",
+  },
+  "moderation.access.list": resource(
+    "school",
+    "List moderation-access grants for a school as a platform operator or that school's administrator.",
+  ),
+  "upload.intent.create": resource(
+    "school",
+    "Create a purpose-bound upload reservation in an active school.",
+  ),
+  "upload.read": resource(
+    "upload_session",
+    "Read an upload session owned by the authenticated actor.",
+  ),
+  "upload.complete": resource(
+    "upload_session",
+    "Complete an upload session owned by the authenticated actor.",
+  ),
+  "file.read": resource(
+    "file_object",
+    "Read safe metadata for a file owned by the authenticated actor.",
+  ),
+  "file.download": resource(
+    "file_object",
+    "Request delivery only for a currently authorized clean file.",
+  ),
+  "file.publish": resource(
+    "file_object",
+    "Publish one clean lesson-resource file to its classroom as a single " +
+      "resource, version and publication.",
+  ),
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import {
   ErrorCode,
   type ReadinessReasonCode,
@@ -35,6 +35,13 @@ export interface AppDependencies {
    * NOT_IMPLEMENTED rather than serving an unauthenticated surface.
    */
   auth?: Hono<AuthorizationEnv>;
+  /**
+   * OPS-060: pre-auth edge rate limiter mounted on /v1/* ahead of
+   * authentication. Absent when limiting is disabled or no Redis is
+   * configured in non-production (the limiter then only exists inside the
+   * auth router as its bounded local fallback).
+   */
+  rateLimit?: { edge: MiddlewareHandler };
   platform?: {
     allowedOrigins?: readonly string[];
     limits?: Partial<PlatformLimits>;
@@ -79,6 +86,12 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
     }),
   );
   app.use("*", totalTimeout(limits.requestTimeoutMs));
+
+  // OPS-060 edge limiter: IP-scoped pre-auth backstop on the versioned
+  // surface only - infrastructure probes stay unthrottled for oracles.
+  if (deps.rateLimit) {
+    app.use("/v1/*", deps.rateLimit.edge as unknown as MiddlewareHandler);
+  }
 
   // Liveness: no dependency checks. The process is alive and serving.
   app.get("/healthz", (c) => c.json({ status: "ok" }));

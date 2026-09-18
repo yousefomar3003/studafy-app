@@ -94,3 +94,38 @@ Future resource handlers must add their route declaration and an allow/deny test
 before they can ship. If their semantics are not expressible by a catalogued
 action, the catalogue, SQL decision and API/RLS parity fixture must be extended
 together.
+
+## SAFE-043 safety and safeguarding permissions
+
+Added by SAFE-043 (indices 96–118 of the route catalogue). Reporter-facing
+permissions are self-scoped (`tenantRequired: false` with no resource id at the
+API layer) and enforce ownership in the SQL dispatcher; moderation permissions
+are resource-scoped so the DB decision surface is reached, and
+`safe043_can_access_reports`/`safe043_can_access_report` decide every queue
+read and disposition inside SQL — the catalogue only opens the route.
+
+| Permission | Scope | Rule |
+|---|---|---|
+| `content_controls.read` | resource (`school_content_controls`) | Any active member of the school, its admin, or a platform operator |
+| `content_controls.write` | resource | The school's admin or a platform operator; versioned update |
+| `report.create` | self | Active membership in the school; message reports also require participant/moderator standing; 24h dedupe + attempt window enforced in SQL |
+| `report.read` | self | Only the authenticated reporter's own reports |
+| `report.appeal` | self | Only the original reporter of a resolved/closed report |
+| `block.manage` | self | Create/remove the actor's own school-scoped block; enforced symmetrically on new communication unconditionally in SQL |
+| `moderation.overview.read` | resource (`school`) | Active safe moderator of the school |
+| `moderation.queue.read` | resource (`school`) | Active safe moderator; reporter id masked until escalation |
+| `moderation.report.read` | resource (`report`) | Active safe moderator of the report's school; reporter masked until escalation |
+| `moderation.triage` | resource (`report`) | Active safe moderator of the report's school |
+| `moderation.resolve` | resource (`report`) | Active safe moderator of the report's school |
+| `moderation.escalate` | resource (`report`) | Active safe moderator; unmasks the reporter permanently for that report |
+| `moderation.evidence.write` | resource (`report`) | Active safe moderator; append-only evidence snapshots |
+| `moderation.hold` | resource (`report`) | **Platform operator only** in SQL (`is_platform_operator()`); a school admin passing this catalogue entry is refused 403 by the dispatcher — a tested backstop |
+| `moderation.access.request` | self (`moderation_access_grant`) | Platform operator or the school's admin with `aal2` this request; ticket reference required |
+| `moderation.access.approve` | resource (grant) | A *different* platform operator with `aal2` this request; self-approval refused |
+| `moderation.access.start` | resource (grant) | Only the exact original requester |
+| `moderation.access.revoke` | resource (grant) | Any platform operator or the affected school's admin |
+| `moderation.access.list` | resource (`school`) | A platform operator or that school's admin |
+
+SAFE-043 does not weaken a single DB-021 policy or grant. `studafy_api_runtime`
+gains no table/column/sequence grant; every new SQL function is execute-only
+behind the same `private.*` dispatcher chain.

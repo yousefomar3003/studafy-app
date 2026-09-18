@@ -96,11 +96,23 @@ deliberately absent).
 
 ## Storage
 
-- One bucket: `private-school-files` (private, 50 MiB limit via config).
-- No client upload path (SEC-001); objects reachable only via server-signed
-  URLs inside functions. DB-020 introduced `file_objects` metadata, but no
-  API-041 upload or attachment path is enabled; FILE-050/051 still owns that
-  pipeline and its authorization/scanning evidence.
+- One bucket: `private-school-files` (private). FILE-050 tightened it to the
+  union MIME allowlist with a 25 MiB outer limit.
+- No client upload path and no authenticated insert/select/list/update/
+  download policy on `storage.objects` (SEC-001 containment, unchanged).
+- FILE-050 (2026-09-17) added the server-side pipeline: purpose-bound upload
+  intents, server-generated `quarantine/v1/{uploadId}/{random}` keys signed
+  for two hours, server-side size/magic-byte/SHA-256 verification at
+  completion, immutable object metadata defaulting to `quarantined`, durable
+  session bindings, six server-enforced quotas, and a delete/scan outbox with
+  a narrow cleanup worker. One adapter
+  (`packages/infrastructure/src/privateFileStorage.ts`) holds the
+  service-role credential and constructs every key; a CI boundary script
+  enforces that.
+- **Nothing is delivered.** No object becomes `clean`, is published,
+  deduplicated, or downloadable. `FILE050_NEW_INTENTS_ENABLED` defaults off
+  and `allowsRemoteFileUploads` is `false`. FILE-051 owns scanning and
+  delivery.
 
 ## Client touch points (Flutter)
 

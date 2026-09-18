@@ -38,3 +38,23 @@ b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sq
 b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:152
 b77be3ed9d2784363636d99d07f02cf63d14d6e8:supabase/tests/api042_support_access.sql:generic-api-key:164
 17211c3a164a415a0a46b9e03da4e61054908254:apps/api/test/school-admin/roster.integration.test.ts:generic-api-key:30
+
+# SAFE-043 synthetic idempotency/cursor fixtures from the initial local commits
+# (see apps/api/test/safety/safety.integration.test.ts and
+# supabase/tests/safe043_surface.sql). Same generic-api-key false-positive class
+# as the API-041/API-042 entries above; not credentials. Fixed going forward in
+# the following commit by trailing-zero padding to keep entropy below the
+# generic-api-key threshold. Historical commits are not rewritten per this
+# repo's forward-only history policy.
+7cc533db52c07cbbdc60ec5efc9c76d91e043e8a:apps/api/test/safety/safety.integration.test.ts:generic-api-key:35
+f00e10cf0f7439bed4d0e35ad6254f919fa95f5c:supabase/tests/safe043_surface.sql:generic-api-key:361
+f00e10cf0f7439bed4d0e35ad6254f919fa95f5c:supabase/tests/safe043_surface.sql:generic-api-key:374
+f00e10cf0f7439bed4d0e35ad6254f919fa95f5c:supabase/tests/safe043_surface.sql:generic-api-key:404
+# OPS-061 pgTAP suite: synthetic outbox idempotency keys in 40dfd05 matched
+# the generic-api-key rule. The values are disposable local-stack constants,
+# not credentials; the current fixtures compare on source_event_id instead.
+40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:76
+40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:88
+40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:232
+40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:238
+40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:246

@@ -59,7 +59,8 @@ variable with no reader is a live credential guarding nothing.
 | Credential | Phase | Why not now |
 |---|---|---|
 | Cloudflare API token, zone ID, origin certificate | 8 (INFRA-080) | No deploy target exists, and ADR-0005 (data residency) is **Deferred**, which blocks provisioning outright. A Cloudflare token obtained now would sit unused and unrotated for months |
-| Managed Redis connection URL + password | 6 (OPS-060) | Local Redis covers development |
+| Managed Redis connection URL + password | 6 (OPS-060) | Local Redis covers development; production requires a `rediss://` URL with AUTH (boot-enforced) |
+| Rate-limit HMAC signing key (`RATE_LIMIT_HMAC_SIGNING_KEY`) | 6 (OPS-060) | Development mints an ephemeral per-boot key; production refuses to start without a configured, per-environment, rotatable key |
 | Push: `google-services.json`, APNs key | 6/7 | No notification delivery is implemented |
 | Email provider API key + verified domain | 6 | No transactional email is sent |
 | Android upload keystore, Play service account | REL-002 | Release builds are blocked by the SEC-001 guard |

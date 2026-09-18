@@ -41,6 +41,8 @@ const origins = z.string().default("").transform((value, context) => {
 const switchFlag = z.enum(["true", "false"]).default("true").transform(
   (value) => value === "true",
 );
+const disabledSwitchFlag = z.enum(["true", "false"]).default("false")
+  .transform((value) => value === "true");
 
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
@@ -55,6 +57,13 @@ export const apiEnvSchema = z.object({
     10_000,
   ),
   API_CURSOR_SIGNING_KEY: z.string().min(32).optional(),
+  // OPS-060. The HMAC key is the only place account identifiers exist before
+  // they enter a Redis key: every limiter/cache key carries HMAC(subject)
+  // instead, so the key namespace itself is not an enumeration side channel.
+  // The key is per-environment and rotatable (ROTATED key keeps old digests
+  // readable for one grace window while new writes use the new digest).
+  RATE_LIMIT_ENABLED: switchFlag,
+  RATE_LIMIT_HMAC_SIGNING_KEY: z.string().min(32).optional(),
   API041_CLASSES_ENABLED: switchFlag,
   API041_CONTENT_ENABLED: switchFlag,
   API041_ASSIGNMENTS_ENABLED: switchFlag,
@@ -74,6 +83,18 @@ export const apiEnvSchema = z.object({
   API042_NOTIFICATIONS_ENABLED: switchFlag,
   API042_ACCOUNT_RIGHTS_ENABLED: switchFlag,
   API042_SUPPORT_ACCESS_ENABLED: switchFlag,
+  SAFE043_REPORTING_ENABLED: switchFlag,
+  SAFE043_BLOCKS_ENABLED: switchFlag,
+  SAFE043_MODERATION_ENABLED: switchFlag,
+  SAFE043_CONTENT_CONTROLS_ENABLED: switchFlag,
+  FILE050_NEW_INTENTS_ENABLED: disabledSwitchFlag,
+  // FILE-051 delivery/publication switches stay off unless explicitly enabled
+  // in a disposable environment, exactly like the FILE-050 intent switch.
+  FILE051_DELIVERY_ENABLED: disabledSwitchFlag,
+  FILE051_PUBLISH_ENABLED: disabledSwitchFlag,
+  FILE051_DELIVERY_SIGNING_KEY: z.string().min(32).optional(),
+  FILE051_DELIVERY_PUBLIC_BASE_URL: url.optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
 
   // AUTH-030. The issuer is derived from SUPABASE_URL rather than configured
   // separately, so a misconfiguration cannot leave the API trusting one
@@ -100,6 +121,71 @@ export const workerEnvSchema = z.object({
   ENVIRONMENT: Environment,
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
+  DATABASE_URL: url.optional(),
+  SUPABASE_URL: url.optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  FILE050_CLEANUP_ENABLED: disabledSwitchFlag,
+  // FILE-051 scan/retention workers stay off unless explicitly enabled.
+  FILE051_SCAN_ENABLED: disabledSwitchFlag,
+  FILE051_RETENTION_ENABLED: disabledSwitchFlag,
+  // OPS-061. The outbox drain is producer+consumer over BullMQ: the
+  // dispatcher claims notification_outbox rows and enqueues deterministic
+  // jobs; the processor expands audiences into deliveries. Off by default;
+  // enabling it requires the database (durable outbox + idempotency fence).
+  OPS061_NOTIFICATIONS_ENABLED: disabledSwitchFlag,
+  OPS061_OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(250).max(60_000)
+    .default(5000),
+  OPS061_OUTBOX_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
+  // The external malware scanner. Absent in local/disposable use (the
+  // deterministic structural scanner runs instead); production refuses to
+  // scan without it, because structural validation is not signature-grade.
+  MALWARE_SCANNER_URL: url.optional(),
+  MALWARE_SCANNER_API_KEY: z.string().min(20).optional(),
+}).superRefine((value, context) => {
+  const dependentKeys = [
+    "DATABASE_URL",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ] as const;
+  for (
+    const enabled of [
+      value.FILE050_CLEANUP_ENABLED,
+      value.FILE051_SCAN_ENABLED,
+      value.FILE051_RETENTION_ENABLED,
+    ]
+  ) {
+    if (!enabled) continue;
+    for (const key of dependentKeys) {
+      if (!value[key]) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: `required when a file worker is enabled (${key})`,
+        });
+      }
+    }
+    break;
+  }
+  if (value.ENVIRONMENT === "production" && value.FILE051_SCAN_ENABLED) {
+    for (
+      const key of ["MALWARE_SCANNER_URL", "MALWARE_SCANNER_API_KEY"] as const
+    ) {
+      if (!value[key]) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: "required when scanning is enabled in production",
+        });
+      }
+    }
+  }
+  if (value.OPS061_NOTIFICATIONS_ENABLED && !value.DATABASE_URL) {
+    context.addIssue({
+      code: "custom",
+      path: ["DATABASE_URL"],
+      message: "required when the outbox drain is enabled (DATABASE_URL)",
+    });
+  }
 });
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 
@@ -131,6 +217,33 @@ export function parseEnv<T>(
  * not starting. Non-production environments may start degraded and report the
  * missing dependencies as readiness reason codes instead.
  */
+
+/**
+ * OPS-060: Redis carries rate-limit counters and revocation-safe caches, so a
+ * production connection must never be plaintext or passwordless — TLS
+ * (rediss) plus AUTH, on a private-network address. Development keeps the
+ * docker-compose dev stack (plain redis:// on loopback) as the documented
+ * local posture; TLS and private networking land with Phase 8 IaC.
+ */
+export function redisUrlPostureProblems(
+  value: string | undefined,
+): string[] {
+  if (!value) return [];
+  const problems: string[] = [];
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "rediss:") {
+      problems.push("REDIS_URL must use rediss:// (TLS) in production.");
+    }
+    if (!parsed.password && !parsed.username) {
+      problems.push("REDIS_URL must carry AUTH credentials in production.");
+    }
+  } catch {
+    problems.push("REDIS_URL must be a valid URL in production.");
+  }
+  return problems;
+}
+
 export function enforceApiFailClosed(env: ApiEnv): void {
   if (env.ENVIRONMENT !== "production") return;
   const missing: string[] = [];
@@ -140,9 +253,53 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   // cannot verify a token must not start rather than start unauthenticated.
   if (!env.SUPABASE_URL) missing.push("SUPABASE_URL");
   if (!env.API_CURSOR_SIGNING_KEY) missing.push("API_CURSOR_SIGNING_KEY");
+  if (env.FILE050_NEW_INTENTS_ENABLED && !env.SUPABASE_SERVICE_ROLE_KEY) {
+    missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  }
+  if (env.FILE051_DELIVERY_ENABLED) {
+    if (!env.FILE051_DELIVERY_SIGNING_KEY) {
+      missing.push("FILE051_DELIVERY_SIGNING_KEY");
+    } else if (
+      env.FILE051_DELIVERY_SIGNING_KEY === env.API_CURSOR_SIGNING_KEY
+    ) {
+      // One key per purpose: a cursor must never verify as a delivery token.
+      throw new ConfigError(
+        "FILE051_DELIVERY_SIGNING_KEY must differ from API_CURSOR_SIGNING_KEY.",
+      );
+    }
+    if (!env.FILE051_DELIVERY_PUBLIC_BASE_URL) {
+      missing.push("FILE051_DELIVERY_PUBLIC_BASE_URL");
+    } else if (!env.FILE051_DELIVERY_PUBLIC_BASE_URL.startsWith("https://")) {
+      throw new ConfigError(
+        "Production delivery URLs must use an HTTPS public base URL.",
+      );
+    }
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+      missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    }
+  }
+  if (env.RATE_LIMIT_ENABLED && !env.RATE_LIMIT_HMAC_SIGNING_KEY) {
+    missing.push("RATE_LIMIT_HMAC_SIGNING_KEY");
+  }
   if (missing.length > 0) {
     throw new ConfigError(
       `Production requires ${missing.join(", ")} to be configured.`,
+    );
+  }
+  const posture = redisUrlPostureProblems(env.REDIS_URL);
+  if (posture.length > 0) {
+    throw new ConfigError(
+      `Production Redis posture rejected: ${posture.join(" ")}`,
+    );
+  }
+}
+
+export function enforceWorkerFailClosed(env: WorkerEnv): void {
+  if (env.ENVIRONMENT !== "production") return;
+  const posture = redisUrlPostureProblems(env.REDIS_URL);
+  if (posture.length > 0) {
+    throw new ConfigError(
+      `Production Redis posture rejected: ${posture.join(" ")}`,
     );
   }
 }
@@ -189,6 +346,8 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     auth_reauth_ttl_seconds: env.AUTH_REAUTH_TTL_SECONDS,
     auth_deletion_grace_days: env.AUTH_DELETION_GRACE_DAYS,
     cursor_signing_key_configured: Boolean(env.API_CURSOR_SIGNING_KEY),
+    rate_limit_enabled: env.RATE_LIMIT_ENABLED,
+    rate_limit_hmac_key_configured: Boolean(env.RATE_LIMIT_HMAC_SIGNING_KEY),
     api041_slices: {
       classes: env.API041_CLASSES_ENABLED,
       content: env.API041_CONTENT_ENABLED,
@@ -212,6 +371,22 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       accountRights: env.API042_ACCOUNT_RIGHTS_ENABLED,
       supportAccess: env.API042_SUPPORT_ACCESS_ENABLED,
     },
+    safe043_slices: {
+      reporting: env.SAFE043_REPORTING_ENABLED,
+      blocks: env.SAFE043_BLOCKS_ENABLED,
+      moderation: env.SAFE043_MODERATION_ENABLED,
+      contentControls: env.SAFE043_CONTENT_CONTROLS_ENABLED,
+    },
+    file050: {
+      newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
+      serviceRoleConfigured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    },
+    file051: {
+      deliveryEnabled: env.FILE051_DELIVERY_ENABLED,
+      publishEnabled: env.FILE051_PUBLISH_ENABLED,
+      deliverySigningKeyConfigured: Boolean(env.FILE051_DELIVERY_SIGNING_KEY),
+      deliveryPublicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL ?? null,
+    },
   };
 }
 
@@ -221,5 +396,21 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     environment: env.ENVIRONMENT,
     log_level: env.LOG_LEVEL,
     redis_url: redactUrl(env.REDIS_URL),
+    database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
+    supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
+    file050_cleanup_enabled: env.FILE050_CLEANUP_ENABLED,
+    service_role_configured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    ops061: {
+      notificationsEnabled: env.OPS061_NOTIFICATIONS_ENABLED,
+      outboxPollIntervalMs: env.OPS061_OUTBOX_POLL_INTERVAL_MS,
+      outboxConcurrency: env.OPS061_OUTBOX_CONCURRENCY,
+    },
+    file051: {
+      scanEnabled: env.FILE051_SCAN_ENABLED,
+      retentionEnabled: env.FILE051_RETENTION_ENABLED,
+      malwareScannerConfigured: Boolean(
+        env.MALWARE_SCANNER_URL && env.MALWARE_SCANNER_API_KEY,
+      ),
+    },
   };
 }

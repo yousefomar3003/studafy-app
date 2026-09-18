@@ -126,9 +126,11 @@ retirement was independent of the rest of this slice and could land first.
 - **SAFE-043** (report/block/moderation): communications ships
   conversations/messages/announcements only. Per the Phase 4 gate,
   communications is not launch-authorized without SAFE-043.
-- **OPS-061** (a real queue): meeting/notification/export side effects are
-  outbox rows (`public.notification_outbox`, `public.data_export_requests`),
-  not a dispatched job. No production relay exists yet.
+- **OPS-061** (a real queue): notification audience rows are drained by the
+  OPS-061 BullMQ worker (ADR-0025) — an audience row expands into per-
+  recipient deliveries and the outbox row completes asynchronously. Meeting
+  Calendar side effects and exports remain outbox rows without processors
+  (declared queues, ADR-0025); no external relay exists yet.
 - **Flutter/mobile wiring**: this phase is backend-only (no Dart/Flutter SDK
   was available in this environment). Every new area has a real typed `/v1`
   surface to wire a client against; no existing screen was rewired.

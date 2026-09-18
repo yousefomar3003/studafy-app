@@ -22,6 +22,9 @@ import '../features/notifications/application/notifications_interactor.dart';
 import '../features/notifications/data/api_notifications_repository.dart';
 import '../features/notifications/data/preview_notifications_repository.dart';
 import '../features/notifications/domain/notifications_repository.dart';
+import '../features/files/data/preview_file_upload_repository.dart';
+import '../features/files/data/unavailable_file_upload_repository.dart';
+import '../features/files/domain/file_upload_repository.dart';
 import '../features/parent/data/preview_parent_repository.dart';
 import '../features/parent/data/unavailable_parent_repository.dart';
 import '../features/parent/domain/parent_repository.dart';
@@ -55,6 +58,7 @@ class AppDependencies {
     required this.academic,
     required this.notifications,
     required this.cacheBinder,
+    required this.fileUploads,
   });
 
   final SessionInteractor session;
@@ -72,6 +76,7 @@ class AppDependencies {
   /// (MOB-070). Held here, not discarded after construction, so it stays
   /// alive and listening for the app's whole lifetime.
   final SessionCacheBinder cacheBinder;
+  final FileUploadRepository fileUploads;
 
   static AppDependencies forPolicy(RuntimePolicy policy) {
     final telemetry = const DebugLogTelemetry();
@@ -132,6 +137,12 @@ class AppDependencies {
         telemetry: telemetry,
       ),
       cacheBinder: cacheBinder,
+      // FILE-050 ships the typed client but does not activate remote bytes.
+      // FILE-051 will replace this remote adapter only after scanning and
+      // clean delivery pass their gate.
+      fileUploads: policy.isSynthetic
+          ? const PreviewFileUploadRepository()
+          : const UnavailableFileUploadRepository(),
     );
   }
 

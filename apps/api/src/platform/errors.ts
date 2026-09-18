@@ -101,6 +101,60 @@ const DEFINITIONS: Record<
     title: "Request in progress",
     detail: "A request with this idempotency key is still in progress.",
   },
+  UPLOAD_QUOTA_EXCEEDED: {
+    title: "Upload quota exceeded",
+    detail: "The upload quota has been exhausted.",
+  },
+  UPLOAD_CONCURRENCY_LIMIT: {
+    title: "Too many active uploads",
+    detail: "Complete or wait for an active upload before starting another.",
+  },
+  UPLOAD_EXPIRED: {
+    title: "Upload expired",
+    detail: "The upload intent has expired.",
+  },
+  UPLOAD_ALREADY_COMPLETED: {
+    title: "Upload already completed",
+    detail: "The upload intent has already been completed.",
+  },
+  UPLOAD_INCOMPLETE: {
+    title: "Upload incomplete",
+    detail: "The expected object has not arrived in private storage.",
+  },
+  UPLOAD_SIZE_MISMATCH: {
+    title: "Upload size mismatch",
+    detail: "The uploaded object size does not match the reservation.",
+  },
+  UPLOAD_TYPE_MISMATCH: {
+    title: "Upload type mismatch",
+    detail: "The uploaded bytes do not match the declared file type.",
+  },
+  UPLOAD_CHECKSUM_MISMATCH: {
+    title: "Upload checksum mismatch",
+    detail: "The uploaded object checksum does not match the reservation.",
+  },
+  FILE_NOT_CLEAN: {
+    title: "File unavailable",
+    detail: "The file has not passed security processing.",
+  },
+  FILE_DELIVERY_DISABLED: {
+    title: "File delivery disabled",
+    detail:
+      "File delivery remains disabled until secure processing is available.",
+  },
+  FILE_PUBLISH_DISABLED: {
+    title: "File publication disabled",
+    detail: "File publication is currently disabled.",
+  },
+  DELIVERY_GRANT_INVALID: {
+    title: "Download link invalid",
+    detail:
+      "The download link is expired, already used, or not valid for this account.",
+  },
+  STORAGE_UNAVAILABLE: {
+    title: "Storage unavailable",
+    detail: "Private file storage is temporarily unavailable.",
+  },
 };
 
 export class RequestTimeoutError extends Error {
@@ -136,7 +190,20 @@ export function problemBody(
 export function problem<E extends Env>(
   c: Context<E>,
   code: ErrorCodeType,
-  status: 400 | 401 | 403 | 404 | 405 | 409 | 413 | 415 | 429 | 500 | 503 | 504,
+  status:
+    | 400
+    | 401
+    | 403
+    | 404
+    | 405
+    | 409
+    | 413
+    | 415
+    | 422
+    | 429
+    | 500
+    | 503
+    | 504,
   options: ProblemOptions = {},
 ): Response {
   const requestId = (c.var as { requestId?: unknown }).requestId;
