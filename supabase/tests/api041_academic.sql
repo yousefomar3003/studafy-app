@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(33);
+select plan(30);
 
 \set school_id '11111111-1111-1111-1111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
@@ -115,25 +115,15 @@ insert into public.assessment_questions(id,school_id,assessment_id,position,prom
 ('a0410000-0000-4000-8000-000000000053',:'school_id','a0410000-0000-4000-8000-000000000050',2,'Q2','secret',6);
 insert into public.grade_results(id,school_id,assessment_id,student_id,score,state,version)
 values('a0410000-0000-4000-8000-000000000051',:'school_id','a0410000-0000-4000-8000-000000000050','abcf0000-0000-4000-8000-000000000008',null,'draft',1);
-insert into public.ai_grading_drafts(id,school_id,grade_result_id,private_scan_path,strictness,model_version,status,created_by,version)
-values('a0410000-0000-4000-8000-000000000054',:'school_id','a0410000-0000-4000-8000-000000000051','synthetic/disabled.pdf','balanced','fixture','ready',:'teacher_user',1);
-insert into public.question_suggestions(school_id,draft_id,question_id,proposed_score,confidence,rationale) values
-(:'school_id','a0410000-0000-4000-8000-000000000054','a0410000-0000-4000-8000-000000000052',2,0.8,'fixture'),
-(:'school_id','a0410000-0000-4000-8000-000000000054','a0410000-0000-4000-8000-000000000053',5,0.9,'fixture');
 select set_config('studafy.request_id','api041-grade-review',true);
 insert into api041_results values('review-reservation',private.api_idempotency_reserve(
   :'school_id','v1.reviewGradeResult','api041-review-key-001',repeat('7',64)));
 insert into api041_results values('review',private.api041_command(
   'reviewGradeResult','a0410000-0000-4000-8000-000000000051',jsonb_build_object('responseStatus',200,'body',jsonb_build_object(
-    'expectedVersion',1,'score',8,'feedback',null,'draftId','a0410000-0000-4000-8000-000000000054','questionScores',jsonb_build_array(
-      jsonb_build_object('questionId','a0410000-0000-4000-8000-000000000052','score',3,'reason','Teacher override'),
-      jsonb_build_object('questionId','a0410000-0000-4000-8000-000000000053','score',5,'reason',null)))),
+    'expectedVersion',1,'score',8,'feedback',null)),
   ((select result->>'id' from api041_results where name='review-reservation')::uuid),1));
 select is((select result->'response'->>'state' from api041_results where name='review'),'reviewed','paper review reaches reviewed state transactionally');
 select is((select score from public.grade_results where id='a0410000-0000-4000-8000-000000000051'),8::numeric,'review score is bounded and stored');
-select is((select status from public.ai_grading_drafts where id='a0410000-0000-4000-8000-000000000054'),'approved','linked ready draft is approved');
-select is((select teacher_score from public.question_suggestions where question_id='a0410000-0000-4000-8000-000000000052'),3::numeric,'question override is stored');
-select is((select override_reason from public.question_suggestions where question_id='a0410000-0000-4000-8000-000000000052'),'Teacher override','changed score requires and records a reason');
 select is((select count(*) from public.grade_result_events where grade_result_id='a0410000-0000-4000-8000-000000000051' and event_type='reviewed'),1::bigint,'grade review writes immutable history');
 select set_config('studafy.request_id','api041-grade-publish',true);
 insert into api041_results values('grade-publish-reservation',private.api_idempotency_reserve(

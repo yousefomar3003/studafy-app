@@ -28,8 +28,6 @@ export type RateLimitFlow =
   | "linking"
   | "uploadIntent"
   | "search"
-  | "aiCoach"
-  | "aiGrading"
   | "publicDefault"
   | "authenticatedApi"
   | "adminApi"
@@ -127,22 +125,6 @@ export const RATE_LIMIT_FLOWS: Record<RateLimitFlow, FlowPolicy> = {
     failClosed: true,
     rationale:
       "Full-text search is the most expensive read; enforcement lands with ARC-011's owning route.",
-  },
-  aiCoach: {
-    flow: "aiCoach",
-    subject: "account",
-    policy: { kind: "fixedWindow", limit: 50, windowSeconds: 3600 },
-    failClosed: true,
-    rationale:
-      "Coach prompts cost model tokens; enforcement lands with the study-coach Edge Function gateway rule.",
-  },
-  aiGrading: {
-    flow: "aiGrading",
-    subject: "account",
-    policy: { kind: "fixedWindow", limit: 100, windowSeconds: 3600 },
-    failClosed: true,
-    rationale:
-      "Grading prompts cost model tokens; enforcement lands with the study-grader Edge Function gateway rule.",
   },
   publicDefault: {
     flow: "publicDefault",

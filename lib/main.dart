@@ -11,7 +11,6 @@ import 'features/notifications/presentation/notifications_scope.dart';
 import 'features/parent/presentation/parent_repository_scope.dart';
 import 'features/session/presentation/role_page.dart';
 import 'features/session/presentation/splash_page.dart';
-import 'features/study_coach/presentation/study_coach_scope.dart';
 import 'features/teacher_dashboard/presentation/teacher_dashboard_repository_scope.dart';
 import 'parent_features.dart';
 import 'student_features.dart';
@@ -206,10 +205,7 @@ class StudafyApp extends StatelessWidget {
                 isRemote: runtimePolicy.requiresRemoteBackend,
                 child: TeacherDashboardRepositoryScope(
                   repository: deps.teacherDashboard,
-                  child: StudyCoachScope(
-                    interactor: deps.studyCoach,
-                    child: content,
-                  ),
+                  child: content,
                 ),
               ),
             ),

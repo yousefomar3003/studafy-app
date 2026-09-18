@@ -22,7 +22,7 @@ describe("queue inventory", () => {
     const declared = Object.values(QUEUE_INVENTORY).filter(
       (definition) => definition.status === "declared",
     );
-    expect(declared).toHaveLength(7);
+    expect(declared).toHaveLength(6);
   });
 
   test("implemented queue set matches what the worker boots", () => {

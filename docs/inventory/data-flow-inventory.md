@@ -42,7 +42,7 @@ school, and request context. Notification-worthy actions write only a minimal
 
 | # | Flow | Content | Notes |
 |---|---|---|---|
-| F8 | `study-coach` ask/quiz/flashcards | Classroom ID, topic, question (P1/P2) | Attachment paths rejected (SEC-001); enrollment verified server-side |
+| F8 | (Removed) `study-coach` ask/quiz/flashcards | — | Deleted by AI-072 (ADR-0026) with its screens; no client path remains |
 | F9 | `create/cancel-google-meet` | Class, audience, times (P2) | Client never holds Google tokens |
 | F10 | (Removed) `approve/publish-grade-result` | Draft/score review (P0/P1) | Replaced by transactional `/v1/grade-results/{id}:review/:publish`; sources were not deployed in inspected synthetic project |
 | F11 | (Removed) `verify-store-purchase` | Store receipt/purchase token (P2) | Replaced (2026-09-18) by `/v1/billing/*` submit/restore + store webhooks; client still never grants entitlement |
@@ -52,7 +52,7 @@ school, and request context. Notification-worthy actions write only a minimal
 
 | # | Flow | Content | Notes |
 |---|---|---|---|
-| F13 | `study-coach` → Study Coach AI (cross-border) | Question, topic, up to 30 material bodies (P1/P0 if real) | No token budget/chunking/cost controls (finding); synthetic endpoint today |
+| F13 | (Removed) `study-coach` → env-selected AI endpoint | — | Deleted by AI-072 (ADR-0026). No AI egress exists; no DPA/DPIA covers one |
 | F14 | Meet functions → Google token broker → Calendar (cross-border) | Event title/times/attendees (P1) | N+1 recipient expansion; external side effect before durable idempotency (OPS-061) |
 | F15 | API/worker → Apple App Store Server API / Google Play Android Publisher | Store verification payloads (P2, never raw receipts logged) | PAY-071: environment/bundle/package trust enforced; webhook receivers exist; reconciliation enabled via flag |
 
@@ -60,6 +60,8 @@ school, and request context. Notification-worthy actions write only a minimal
 
 F16–F23: one privileged write path per function (drafts/results, meetings and
 deliveries, entitlements, deletion requests, practice sessions, audit events).
+AI-072 removed the practice-session and AI-draft paths and revoked the service
+role's grants on those relations.
 Blast radius: service role bypasses RLS; lacks shared strict schemas,
 idempotency, transactions, timeouts (API-040/041).
 
@@ -68,7 +70,7 @@ idempotency, transactions, timeouts (API-040/041).
 | # | Flow | Content | Notes |
 |---|---|---|---|
 | F24 | (Removed) client → `private-school-files` | — | Dropped by SEC-001; the direct client upload policy has never been restored |
-| F25 | Function-signed object URLs → AI provider | — | Only the disabled grading path ever did this; reinstatement requires FILE-050/051 metadata pipeline |
+| F25 | (Removed) Function-signed object URLs → AI provider | — | Only the former grading path ever did this; the function itself was deleted by AI-072 |
 | F26 | Client → `POST /v1/uploads` → API → storage adapter | P2 (declared name, size, type, SHA-256) | FILE-050. The request carries no path, key, bucket, owner or scan state. The API authorizes purpose and relationship, enforces six quotas under a row lock, and the adapter generates `quarantine/v1/{uploadId}/{random}` and signs it for two hours. The URL is returned once and redacted from logs, audit records, errors and telemetry |
 | F27 | Client → signed capability → `private-school-files` | P0/P1 (schoolwork, identifiable images, graded papers) | FILE-050. Direct `PUT` of the declared bytes only, to the server-chosen key, no redirects followed. One key accepts one object (`upsert: false`). Off by default: `FILE050_NEW_INTENTS_ENABLED=false`, `allowsRemoteFileUploads=false` |
 | F28 | API → storage (service role) → API | P0/P1 | FILE-050 completion. The path comes from a private owner-only query, never the client. Bytes are streamed under a hard byte bound, digested server-side and type-detected from magic bytes; object, binding, audit event, outbox job and idempotency completion commit in one transaction. Objects land `quarantined`; mismatches land `rejected` |
@@ -86,7 +88,7 @@ idempotency, transactions, timeouts (API-040/041).
 | Public/anon EXECUTE on 5 SECURITY DEFINER helpers | migrations 0001/0002/0006 | DB-021 (advisor finding; forward migration required) |
 | Only 2 explicit indexes; nested RLS paths unindexed | migration set | DB-020 |
 | Client-side unread-notification counting; N+1 guardian/auth-admin loops in Meet creation | client + `create-google-meet` | API/OPS phases |
-| Study Coach sends up to 30 material bodies without budget/chunking/cost controls | `study-coach` | later AI hardening |
+| Study Coach sent up to 30 material bodies to an env-selected URL without budget/chunking/cost controls | Former `study-coach` | **Resolved by AI-072** — function, credentials and screens removed (ADR-0026) |
 | Sequential, non-transactional multi-row updates; duplicate-question weakness in grade approval | Removed `approve/publish-grade-result` sources | Resolved locally by API-041 transaction/parity tests; no remote cutover claim |
 | Single-row entitlement table; no ledger/webhooks/reconciliation | `subscription_entitlements`, verifier | **Resolved by PAY-071** (`store_products`/`store_transactions`/`store_events`/`entitlements` + worker queue + reconciliation; legacy table retired from billing reads) |
 | QR scanner returns hard-coded ID; painter is not an interoperable encoder | `lib/student_linking.dart` | post-threat-model decision; never identity proof |

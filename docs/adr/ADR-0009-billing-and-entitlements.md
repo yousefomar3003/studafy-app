@@ -106,6 +106,11 @@ may be listed in a store console until AI-072 resolves in the enable direction
 with a signed DPA. Selling a subscription to a feature that is then removed is
 a refund event and a store-trust problem.
 
+> **Resolved 2026-09-18 by ADR-0026 (DL-047): AI-072 removed the AI
+> capability.** Both AI products are retired: a database constraint keeps them
+> inactive and unlisted in every environment, and their feature keys remain
+> only as ledger vocabulary.
+
 Parent Insights additionally remains gated on the legal review in §29.
 
 ## Consequences

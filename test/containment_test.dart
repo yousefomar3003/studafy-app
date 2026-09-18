@@ -1,15 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/runtime_environment.dart';
-import 'package:studafy/data/studafy_repository.dart';
-import 'package:studafy/data/supabase_repository.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
 import 'package:studafy/features/session/presentation/splash_page.dart';
-import 'package:studafy/features/study_coach/application/study_coach_interactor.dart';
-import 'package:studafy/features/study_coach/data/unavailable_study_coach_repository.dart';
 import 'package:studafy/main.dart';
-import 'package:studafy/student_features.dart';
-import 'package:studafy/teacher_features.dart';
 
 void main() {
   group('SEC-001 runtime policy', () {
@@ -98,69 +91,4 @@ void main() {
       findsOneWidget,
     );
   });
-
-  testWidgets('AI grading upload and generation controls are disabled', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: AiGradingContainmentControls())),
-    );
-
-    final upload = tester.widget<OutlinedButton>(
-      find.byKey(const Key('ai-grading-upload-control')),
-    );
-    final generate = tester.widget<FilledButton>(
-      find.byKey(const Key('ai-grading-generate-control')),
-    );
-    expect(upload.onPressed, isNull);
-    expect(generate.onPressed, isNull);
-    expect(find.textContaining('secure file ownership'), findsOneWidget);
-  });
-
-  testWidgets('Study Coach attachment control is disabled', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: AskAiPage()));
-    final attach = tester.widget<IconButton>(
-      find.byKey(const Key('study-coach-attachment-control')),
-    );
-    expect(attach.onPressed, isNull);
-    expect(
-      find.textContaining('New file attachments are temporarily unavailable'),
-      findsOneWidget,
-    );
-  });
-
-  test(
-    'repositories reject grading and attachments before network use',
-    () async {
-      await expectLater(
-        SupabaseStudafyRepository().proposeGrade(
-          submissionId: 'submission',
-          privateScan: Uri.parse('papers/another-user/private.pdf'),
-          strictness: GradingStrictness.balanced,
-        ),
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            'AI grading is temporarily unavailable.',
-          ),
-        ),
-      );
-      await expectLater(
-        const StudyCoachInteractor(
-          repository: UnavailableStudyCoachRepository(),
-        ).ask(
-          question: 'Read this',
-          attachmentPath: 'coach/another-user/private.pdf',
-        ),
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            'File attachments are temporarily unavailable.',
-          ),
-        ),
-      );
-    },
-  );
 }

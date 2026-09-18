@@ -12,7 +12,7 @@ release and does not authorize real student, family, teacher, or school data.
 
 | Risk | Severity | Containment | Accountable role | Exit condition | Status |
 |---|---:|---|---|---|---|
-| Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | Repository and synthetic deployment verified; capability remains disabled |
+| Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | **Closed by removal (AI-072, ADR-0026, 2026-09-18):** the grading function and every AI surface are deleted from the repository; the remote synthetic copy awaits owner deletion (`docs/evidence/phase-7/README.md`) |
 | Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | Contained in app; release verification pending |
 | Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Upload containment applied and tested; safe replacement pending |
 | Example identities and debug signing could reach a store build | High | Android release and iOS Release/archive builds fail with `SEC-001` | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Release guards verified; REL-002 replacement pending |
@@ -31,8 +31,8 @@ re-evidencing these rows with named, separated owners.
 
 | Capability | Server/data control | Client/build control | Removal conditions |
 |---|---|---|---|
-| AI paper grading | `propose-paper-grade` returns stable 503 without reading the body, using service credentials, signing a path, or contacting a provider | Upload and generation controls disabled; production repository always throws | Phase 5 clean immutable file objects plus Phase 7 grading authorization, transaction, idempotency, and contract tests |
-| New private-file uploads | Storage insert policy dropped; Study Coach rejects `attachment_path` | Study Coach attachment control disabled and upload code removed | Ownership metadata, quotas, signature checks, quarantine, scanning, sanitization rules, clean publication, and tenant-negative tests |
+| AI paper grading and Study Coach | **Removed by AI-072 (ADR-0026).** Both Edge Functions deleted; `ai_grading_drafts`, `question_suggestions` and `practice_sessions` have no grant or policy and refuse every write; the AI store products cannot be activated | AI screens, the `study_coach` slice and the teacher grading controls deleted; `allowsAiGrading => false` retained as a tripwire | Not a kill switch any more: a future AI capability needs a signed DPA, an extended DPIA, a new ADR and the full enable-path engineering in `instructions.md` §20 Part 7C |
+| New private-file uploads | Storage insert policy dropped; the `coach_attachment` purpose is retired by AI-072 | Study Coach and its attachment control deleted by AI-072; direct upload code removed | Ownership metadata, quotas, signature checks, quarantine, scanning, sanitization rules, clean publication, and tenant-negative tests |
 | Production application | No production backend/SQLite initialization and no feature routes | Production-readiness screen only | Core screens use server-backed repositories; offline synchronization, tenant isolation, and upgrade tests pass |
 | Android/iOS release | Not applicable | Native Release/archive tasks exit with a `SEC-001` error | `REL-002` final identity, non-debug signing, privacy declarations, CI policy, and store-console evidence |
 | Legacy meeting Edge Functions (`create-google-meet`, `cancel-google-meet`) | Both return stable `MEETINGS_DISABLED` 503s without reading the body, resolving recipients, using service credentials, or contacting a provider | Not applicable | API-042's `POST /v1/classrooms/{classroomId}/meetings` and `POST /v1/meetings/{meetingId}/cancel` pass authorization, transaction, idempotency and retry tests (`supabase/tests/api042_meetings.sql`, `apps/api/test/meetings`) and replace these functions in traffic |
@@ -42,6 +42,11 @@ There is intentionally no environment variable that re-enables grading or
 uploads. A synthetic demonstration requiring either capability must use a
 separate isolated project and a reviewed replacement implementation; the
 contained path must not be restored.
+
+`study-coach` was the counterexample to this rule: it forwarded lesson
+material to whatever `STUDY_COACH_URL` named, gated only by that variable.
+AI-072 (ADR-0026, DL-047) removed it rather than adding another gate, and no
+AI or Study Coach variable exists in either `.env.example`.
 
 ## Configuration and secret handling
 

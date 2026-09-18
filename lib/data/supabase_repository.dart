@@ -113,15 +113,6 @@ class SupabaseStudafyRepository
     await _invoke('cancel-google-meet', {'meeting_id': meetingId});
   }
 
-  /// The contained proposal source remains unavailable until AI-072.
-  Future<AiGradingDraft> proposeGrade({
-    required String submissionId,
-    required Uri privateScan,
-    required GradingStrictness strictness,
-  }) async {
-    throw StateError('AI grading is temporarily unavailable.');
-  }
-
   Future<Map<String, dynamic>> _invoke(
     String name,
     Map<String, dynamic> body,

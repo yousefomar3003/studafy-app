@@ -15,6 +15,14 @@ export const V1FilePurpose = z.enum([
 ]);
 export type V1FilePurpose = z.infer<typeof V1FilePurpose>;
 
+/**
+ * AI-072 (ADR-0026) retired `coach_attachment`: Study Coach no longer exists,
+ * so no new upload may claim it. It stays in `V1FilePurpose` only so legacy
+ * sessions/objects remain describable in responses.
+ */
+export const V1UploadablePurpose = V1FilePurpose.exclude(["coach_attachment"]);
+export type V1UploadablePurpose = z.infer<typeof V1UploadablePurpose>;
+
 export const V1UploadSessionState = z.enum([
   "initiated",
   "completed",
@@ -41,7 +49,7 @@ export type V1FileScanState = z.infer<typeof V1FileScanState>;
  */
 export const V1CreateUploadIntentRequest = z.strictObject({
   schoolId: Id,
-  purpose: V1FilePurpose,
+  purpose: V1UploadablePurpose,
   displayName: z.string().min(1).max(255),
   expectedSizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
   declaredMediaType: z.enum([
@@ -62,13 +70,12 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     studentId: value.studentId !== undefined,
     gradeResultId: value.gradeResultId !== undefined,
   };
-  const required: Record<V1FilePurpose, (keyof typeof present)[]> = {
+  const required: Record<V1UploadablePurpose, (keyof typeof present)[]> = {
     profile_image: [],
     lesson_resource: ["classroomId"],
     assignment_material: ["assignmentId"],
     assignment_submission: ["assignmentId", "studentId"],
     paper_scan: ["gradeResultId"],
-    coach_attachment: ["studentId"],
   };
   const allowed = new Set(required[value.purpose]);
   for (const [key, isPresent] of Object.entries(present)) {

@@ -241,6 +241,14 @@ jobs:
           bunx supabase test db --local
           supabase/tests/file051_scan_delivery_seed.sql
 
+      # AI-072 (ADR-0026): retired AI relations have no grant or policy and
+      # refuse every write, the draft-review branch is unreachable, the Study
+      # Coach upload purpose and both AI store products cannot come back.
+      - name: Verify AI-072 removal leaves no AI data path
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/ai072_removal_seed.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
 

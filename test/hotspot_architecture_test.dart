@@ -27,7 +27,8 @@ void main() {
         .whereType<File>()
         .where((file) => file.path.endsWith('.dart'))
         .toList();
-    expect(modules.length, greaterThanOrEqualTo(15));
+    // 15 before AI-072 deleted the four student AI modules (ADR-0026).
+    expect(modules.length, greaterThanOrEqualTo(11));
 
     var previewDatabaseCalls = 0;
     for (final module in modules) {
@@ -118,26 +119,6 @@ void main() {
     },
   );
 
-  test('Study Coach policy, domain, and provider adapter are separated', () {
-    expect(File('lib/data/study_coach_repository.dart').existsSync(), isFalse);
-    final application = _source(
-      'lib/features/study_coach/application/study_coach_interactor.dart',
-    );
-    final domain = _source(
-      'lib/features/study_coach/domain/study_coach_repository.dart',
-    );
-    final data = _source(
-      'lib/features/study_coach/data/supabase_study_coach_repository.dart',
-    );
-    expect(
-      application,
-      contains('File attachments are temporarily unavailable'),
-    );
-    expect(application, isNot(contains('StudafyBackend')));
-    expect(domain, isNot(contains('StudafyBackend')));
-    expect(data, contains('StudafyBackend.client.functions.invoke'));
-  });
-
   test(
     'API-041 production academic boundary has no local or Supabase data calls',
     () {
@@ -145,7 +126,6 @@ void main() {
         'lib/app/app_dependencies.dart',
         'lib/app/teacher_shell.dart',
         'lib/features/academic/data/api_academic_repository.dart',
-        'lib/features/academic/data/api_paper_grading_repository.dart',
         'lib/features/classes/data/api_classroom_repository.dart',
         'lib/features/academic/presentation/academic_overview_page.dart',
       ];

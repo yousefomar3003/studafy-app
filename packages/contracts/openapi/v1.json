@@ -18374,18 +18374,6 @@
               }
             ]
           },
-          "draftId": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "questionScores": {
-            "maxItems": 100,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/V1QuestionScoreReview"
-            }
-          },
           "reason": {
             "type": "string",
             "minLength": 3,
@@ -18855,7 +18843,7 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "purpose": {
-            "$ref": "#/components/schemas/V1FilePurpose"
+            "$ref": "#/components/schemas/V1UploadablePurpose"
           },
           "displayName": {
             "type": "string",
@@ -21581,38 +21569,6 @@
         ],
         "additionalProperties": false
       },
-      "V1QuestionScoreReview": {
-        "type": "object",
-        "properties": {
-          "questionId": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "score": {
-            "type": "number",
-            "minimum": 0
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 3,
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "questionId",
-          "score",
-          "reason"
-        ],
-        "additionalProperties": false
-      },
       "V1ReauthChallengeRequest": {
         "type": "object",
         "properties": {
@@ -22407,18 +22363,6 @@
                 "type": "null"
               }
             ]
-          },
-          "draftId": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          },
-          "questionScores": {
-            "maxItems": 100,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/V1QuestionScoreReview"
-            }
           }
         },
         "required": [
@@ -23599,6 +23543,16 @@
           "rejected",
           "expired",
           "cancelled"
+        ]
+      },
+      "V1UploadablePurpose": {
+        "type": "string",
+        "enum": [
+          "profile_image",
+          "lesson_resource",
+          "assignment_material",
+          "assignment_submission",
+          "paper_scan"
         ]
       },
       "V1VerifyGuardianLinkRequest": {

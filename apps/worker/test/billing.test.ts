@@ -128,7 +128,7 @@ function verifiedApple(
     environment: "Production",
     originalTransactionId: "apple-orig-1",
     transactionId: "apple-txn-1",
-    productId: "student_ai",
+    productId: "studafy_student_notebook_monthly",
     purchaseDate: Date.now() - 1000,
     expiresDate: Date.now() + 86400000,
     revocationReason: null,
@@ -141,7 +141,7 @@ function verifiedGoogle(
 ): VerifiedGooglePurchase {
   return {
     packageName: "com.studafy.app",
-    productId: "student_ai",
+    productId: "studafy_student_notebook_monthly",
     purchaseToken: "gpa.token-1",
     originalTransactionId: "gpa.orig-1",
     transactionId: "gpa.token-1",

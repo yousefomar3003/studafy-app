@@ -87,38 +87,6 @@ mixin _StudafyAssessmentQueries on _StudafyDatabaseAccess {
     });
   }
 
-  Future<void> saveAiGradeProposal({
-    required int submissionId,
-    required String scanUri,
-    required String strictness,
-    required List<Map<String, Object?>> grades,
-  }) async {
-    final db = await database;
-    final total = grades.fold<double>(
-      0,
-      (sum, item) => sum + (item['score'] as num).toDouble(),
-    );
-    await db.transaction((txn) async {
-      await txn.insert('ai_grading_runs', {
-        'submission_id': submissionId,
-        'scan_uri': scanUri,
-        'strictness': strictness,
-        'proposed_score': total,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-      for (final item in grades) {
-        await txn.insert('question_grades', {
-          'submission_id': submissionId,
-          'question_id': item['question_id'],
-          'score': item['score'],
-          'max_score': item['max_score'],
-          'rationale': item['rationale'],
-          'overridden': item['overridden'] ?? 0,
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-    });
-  }
-
   Future<void> updateQuestionAnswer(int questionId, String answer) async {
     await (await database).update(
       'assessment_questions',

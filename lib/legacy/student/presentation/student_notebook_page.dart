@@ -130,7 +130,6 @@ class _StudentNotebookPageState extends State<StudentNotebookPage> {
                                 : expanded.add(entry.key);
                           }),
                           onAttachment: _openAttachment,
-                          onStudyAction: _studyAction,
                         ),
                       ),
                     if (filtered.isNotEmpty)
@@ -272,87 +271,6 @@ class _StudentNotebookPageState extends State<StudentNotebookPage> {
                     ),
                   ),
                 ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _studyAction(String action, Map<String, Object?> note) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundColor: Color(0xFFF0EFFF),
-                    child: Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Color(0xFF7737EE),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          action,
-                          style: const TextStyle(
-                            color: studentInk,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          '${note['class_name']} · ${note['lesson']}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: studentMuted,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(switch (action) {
-                'Summarise' => 'Create a concise explanation using the teacher’s lesson notes and attachments.',
-                'Quiz me' => 'Generate practice questions grounded only in today’s lesson material.',
-                'Flashcards' => 'Turn key facts and definitions from this lesson into review cards.',
-                _ => 'Ask a question and get an answer grounded in the filed lesson content.',
-              }, style: const TextStyle(color: Color(0xFF5F6680), height: 1.4)),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(this.context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '$action is ready for the AI study screen.',
-                      ),
-                    ),
-                  );
-                },
-                child: Text('Continue to $action'),
-              ),
-              const SizedBox(height: 7),
-              const Text(
-                'AI output should be checked against the teacher’s original material.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: studentMuted, fontSize: 10),
               ),
             ],
           ),

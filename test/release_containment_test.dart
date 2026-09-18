@@ -5,23 +5,28 @@ import 'package:flutter_test/flutter_test.dart';
 String source(String path) => File(path).readAsStringSync();
 
 void main() {
-  test('unsafe grading path and provider flow are absent', () {
-    final grading = source('supabase/functions/propose-paper-grade/index.ts');
-    expect(grading, contains('AI_GRADING_DISABLED'));
-    expect(grading, isNot(contains('private_scan_path')));
-    expect(grading, isNot(contains('createSignedUrl')));
-    expect(grading, isNot(contains('SUPABASE_SERVICE_ROLE_KEY')));
-    expect(grading, isNot(contains('AI_GRADING_KEY')));
-    expect(grading, isNot(contains('fetch(')));
-  });
-
-  test('Study Coach cannot sign or forward attachments', () {
-    final coach = source('supabase/functions/study-coach/index.ts');
-    final containment = source('supabase/functions/_shared/containment.ts');
-    expect(coach, contains('rejectFileAttachment'));
-    expect(containment, contains('FILE_UPLOADS_DISABLED'));
-    expect(coach, isNot(contains('createSignedUrl')));
-    expect(coach, isNot(contains('attachment_url')));
+  test('no Edge Function signs a private object or contacts a provider', () {
+    // SEC-001's critical finding was a caller-selected path signed with
+    // service-role credentials and sent to a provider. AI-072 deleted both
+    // AI functions; every remaining function must stay incapable of that.
+    final functions = Directory('supabase/functions')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.ts'))
+        .toList();
+    expect(functions, isNotEmpty);
+    for (final file in functions) {
+      final code = file.readAsStringSync();
+      for (final forbidden in [
+        'createSignedUrl',
+        'private_scan_path',
+        'attachment_path',
+        'SUPABASE_SERVICE_ROLE_KEY',
+        'fetch(',
+      ]) {
+        expect(code, isNot(contains(forbidden)), reason: file.path);
+      }
+    }
   });
 
   test('direct mobile storage uploads are absent', () {

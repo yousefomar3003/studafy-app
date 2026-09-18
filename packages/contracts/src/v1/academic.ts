@@ -362,19 +362,10 @@ export const V1GradeResultPage = z.strictObject({
 });
 export type V1GradeResultPage = z.infer<typeof V1GradeResultPage>;
 
-export const V1QuestionScoreReview = z.strictObject({
-  questionId: Id,
-  score: z.number().min(0),
-  reason: z.string().trim().min(3).max(500).nullable(),
-});
-export type V1QuestionScoreReview = z.infer<typeof V1QuestionScoreReview>;
-
 export const V1ReviewGradeRequest = z.strictObject({
   expectedVersion: Version,
   score: z.number().min(0),
   feedback: z.string().max(10_000).nullable(),
-  draftId: Id.optional(),
-  questionScores: z.array(V1QuestionScoreReview).max(100).optional(),
 });
 export type V1ReviewGradeRequest = z.infer<typeof V1ReviewGradeRequest>;
 

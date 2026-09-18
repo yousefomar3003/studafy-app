@@ -636,7 +636,7 @@ PostgreSQL/Supabase remains the source of truth. Cache only proven hot, read-hea
 | `notifications` | expand audience, create in-app, email, push | source event + recipient + channel + template version | 5 exponential retries with jitter; provider-specific timeout; concurrency from provider quota |
 | `file-security` | inspect signature, malware scan, archive guard, re-encode/CDR, finalize quarantine | file object ID + scan policy version | 3 infrastructure retries; deterministic malicious result is terminal; isolated low concurrency/sandbox |
 | `media-processing` | thumbnails, previews, metadata stripping | file object ID + transform version | 3 retries; size-based timeout; concurrency by CPU/memory budget |
-| `ai-grading` | build authorized input, call grader, validate/store proposal | grade result + file object + rubric/model policy version | 2 provider retries only for transient failures; strict timeout/cost budget; per-school concurrency |
+| ~~`ai-grading`~~ | **Removed by AI-072 (ADR-0026)** — was: build authorized input, call grader, validate/store proposal | grade result + file object + rubric/model policy version | 2 provider retries only for transient failures; strict timeout/cost budget; per-school concurrency |
 | `billing-events` | Apple/Google verification, transaction upsert, entitlement derivation | platform + environment + event/transaction ID | retry until provider-defined safe horizon; exponential capped backoff; serialized per original transaction |
 | `meeting-operations` | create/cancel/reconcile Calendar event and notify audience | meeting command UUID | transient retries; serialized per meeting; compensation/reconciliation on ambiguity |
 | `exports` | authorized user/school data export, package, expire link | export request ID + requested snapshot/version | long timeout with progress/checkpoints; concurrency/tenant quota 1–2 |
@@ -1291,6 +1291,13 @@ deliverables, acceptance criteria, complexity and entry conditions.
 
 #### Part 7C — AI capability: enable safely or remove (`AI-072`)
 
+> **Status (2026-09-18): resolved — REMOVE.** Owner: repository owner
+> (GitHub `@yousefomar3003`). No signed DPA and no DPIA extended to AI
+> processing of minors' data exist, so removal was the only lawful outcome.
+> Record: `docs/adr/ADR-0026-ai072-remove-ai-capability.md`, DL-047,
+> `docs/evidence/phase-7/README.md`. The table below is retained as the
+> specification any future enable proposal must meet.
+
 | Field | Plan |
 |---|---|
 | Objective | Resolve the deferred AI decision in one direction or the other, so the shipped app is coherent either way: a reviewed, lawful AI capability, or an app with no AI surface at all. |
@@ -1656,7 +1663,7 @@ Only after Phases 3–10 pass their gates:
 | File | Change |
 |---|---|
 | `lib/core/runtime_environment.dart:36-37` | `blocksApplicationStartup` → `false` |
-| `lib/core/runtime_environment.dart:31-32` | `allowsAiGrading` / `allowsRemoteFileUploads` → only after FILE-051 and an approved AI DPA |
+| `lib/core/runtime_environment.dart:31-32` | `allowsAiGrading` / `allowsRemoteFileUploads` → only after FILE-051 and an approved AI DPA. AI-072 removed the AI capability and deliberately **retained** `allowsAiGrading => false` (ADR-0026); with no AI surface left it stays false |
 | `android/app/build.gradle.kts:9-15` | delete `GradleException` guard |
 | `ios/Runner.xcodeproj/project.pbxproj` | delete SEC-001 script phase |
 | `test/release_containment_test.dart` | rewrite to assert the *new* release invariants — do not simply delete |
@@ -1823,8 +1830,8 @@ URI matching `io.studafy.app://login-callback`.
 | Email provider | API key, verified domain (SPF/DKIM/DMARC) | 6 |
 | Error/telemetry (e.g. Sentry) | DSN — **must be PII-scrubbed** | 9 |
 | Malware scanning | Licence/API key | 5 |
-| AI provider | API key — **blocked until DPA signed** | 7C (`AI-072`) |
-| Study Coach provider | `STUDY_COACH_URL`, `STUDY_COACH_KEY` — a generic forward-to-a-URL egress path, previously unregistered. Same DPA gate as any AI provider | 7C (`AI-072`) |
+| AI provider | API key — **retired**: AI-072 removed the capability (ADR-0026); no code reads any AI key | 7C (`AI-072`) |
+| Study Coach provider | `STUDY_COACH_URL`, `STUDY_COACH_KEY` — **retired** with the `study-coach` function by AI-072 (ADR-0026). Unset them in any project secret store that still holds them | 7C (`AI-072`) |
 
 ---
 

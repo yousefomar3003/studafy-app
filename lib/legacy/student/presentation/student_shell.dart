@@ -5,7 +5,6 @@ import '../../../core/studafy_localizations.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../features/academic/domain/academic_repository.dart';
 import '../../../features/academic/presentation/academic_overview_page.dart';
-import 'student_ai_page.dart';
 import 'student_shared.dart';
 
 class StudentShell extends StatefulWidget {
@@ -38,7 +37,6 @@ class _StudentShellState extends State<StudentShell> {
         studentId: studentId,
         initialFeed: AcademicFeed.grades,
       ),
-      const StudentAiPage(),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
@@ -65,11 +63,6 @@ class _StudentShellState extends State<StudentShell> {
             StudafyLocalizations.of(context).text('grades'),
             Icons.bar_chart_outlined,
             Icons.bar_chart_rounded,
-          ),
-          StudafyNavItem(
-            StudafyLocalizations.of(context).text('coach'),
-            Icons.auto_awesome_outlined,
-            Icons.auto_awesome_rounded,
           ),
         ],
         accent: studentNavy,

@@ -8,6 +8,9 @@ ADR-0024; operations: `docs/security/ops060-operator-runbook.md`.
 
 ## Rate-limit flows (§8 coverage)
 
+The former `aiCoach` and `aiGrading` flows were retired by AI-072
+(ADR-0026): no AI capability exists, so there is nothing to meter.
+
 | Flow | Subject | Policy | Fail closed | Covers today |
 |---|---|---|---|---|
 | `auth` | account | sliding window, 30 events / 5 min, cost ×2 per op | yes | `/v1/auth/*` and `/v1/account/*` POSTs (device revoke, sign-out, reauth, identity link/unlink, deletion request/cancel, profile write, export request) |
@@ -18,8 +21,6 @@ ADR-0024; operations: `docs/security/ops060-operator-runbook.md`.
 | `linking` | account | sliding window, 20 / 5 min, cost ×2 | yes | `/v1/students/locate`, `/v1/guardian-links*` (enumeration-prone) |
 | `uploadIntent` | account | fixed window, 100 / hour | yes | `POST /v1/uploads` (create intent), `POST /v1/uploads/{id}/complete`, `POST /v1/files/{id}/download-intent` (FILE-050/051); publish stays an ordinary command |
 | `search` | account | sliding window, 60 / 5 min | yes | declared — lands with ARC-011's route |
-| `aiCoach` | account | fixed window, 50 / hour | yes | declared — study-coach gateway rule |
-| `aiGrading` | account | fixed window, 100 / hour | yes | declared — study-grader gateway rule |
 | `publicDefault` | ip | fixed window, 120 / min | **no** (bounded local fallback) | every `/v1/*` request, pre-auth (edge backstop) |
 | `authenticatedApi` | account (+ tenant ceiling) | token bucket, 300 sustained / 5 min, burst 150 | **no** (bounded local fallback) | ordinary reads/collections (weight 1 / 2) and non-sensitive commands (weight 2); tenant ceiling 2000 / 5 min per school |
 | `adminApi` | account | sliding window, 120 / 5 min, cost ×2 per op | yes | `/internal/*` (support access, moderation, legal holds), school-admin command surface (`/v1/schools*`, `/v1/memberships/*` POST), `/v1/control-panel/*` |

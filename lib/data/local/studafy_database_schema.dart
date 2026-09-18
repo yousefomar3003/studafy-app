@@ -54,10 +54,7 @@ mixin _StudafySchema on _StudafyDatabaseAccess {
     );
   }
 
-  Future<void> _createAiGradingTables(Database db) async {
-    await db.execute(
-      'CREATE TABLE IF NOT EXISTS ai_grading_runs(id INTEGER PRIMARY KEY AUTOINCREMENT, submission_id INTEGER NOT NULL, scan_uri TEXT NOT NULL, strictness TEXT NOT NULL, proposed_score REAL NOT NULL, created_at TEXT NOT NULL)',
-    );
+  Future<void> _createQuestionGradeTables(Database db) async {
     await db.execute(
       'CREATE TABLE IF NOT EXISTS question_grades(id INTEGER PRIMARY KEY AUTOINCREMENT, submission_id INTEGER NOT NULL, question_id INTEGER NOT NULL, score REAL NOT NULL, max_score REAL NOT NULL, rationale TEXT, overridden INTEGER NOT NULL DEFAULT 0, UNIQUE(submission_id, question_id))',
     );

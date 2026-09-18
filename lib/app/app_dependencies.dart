@@ -34,9 +34,6 @@ import '../features/session/application/session_interactor.dart';
 import '../features/session/data/demo_session_repository.dart';
 import '../features/session/data/api_session_repository.dart';
 import '../features/session/domain/session_repository.dart';
-import '../features/study_coach/application/study_coach_interactor.dart';
-import '../features/study_coach/data/supabase_study_coach_repository.dart';
-import '../features/study_coach/data/unavailable_study_coach_repository.dart';
 import '../features/teacher_dashboard/data/preview_teacher_dashboard_repository.dart';
 import '../features/teacher_dashboard/data/unavailable_teacher_dashboard_repository.dart';
 import '../features/teacher_dashboard/domain/teacher_dashboard_repository.dart';
@@ -52,7 +49,6 @@ class AppDependencies {
     required this.classes,
     required this.parent,
     required this.teacherDashboard,
-    required this.studyCoach,
     required this.parentSubscription,
     required this.account,
     required this.academicApi,
@@ -66,7 +62,6 @@ class AppDependencies {
   final ClassListInteractor classes;
   final ParentRepository parent;
   final TeacherDashboardRepository teacherDashboard;
-  final StudyCoachInteractor studyCoach;
   final ParentSubscriptionRepository parentSubscription;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
@@ -96,9 +91,6 @@ class AppDependencies {
         policy.isSynthetic
         ? const PreviewTeacherDashboardRepository()
         : const UnavailableTeacherDashboardRepository();
-    final studyCoachRepository = policy.isSynthetic
-        ? const UnavailableStudyCoachRepository()
-        : const SupabaseStudyCoachRepository();
     final cacheBinder = SessionCacheBinder(context: context);
     final NotificationsRepository notificationsRepository = policy.isSynthetic
         ? PreviewNotificationsRepository()
@@ -122,7 +114,6 @@ class AppDependencies {
       ),
       parent: parentRepository,
       teacherDashboard: teacherDashboardRepository,
-      studyCoach: StudyCoachInteractor(repository: studyCoachRepository),
       parentSubscription: StoreSubscriptionRepository(billingApi: billingApi),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.

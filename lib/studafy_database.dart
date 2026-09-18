@@ -87,7 +87,7 @@ class StudafyDatabase extends _StudafyDatabaseAccess
         await _createIdentityTables(db);
         if (!StudafyBackend.isRemote) await _seed(db);
         await _createProductV6Tables(db);
-        await _createAiGradingTables(db);
+        await _createQuestionGradeTables(db);
         await _createMeetingsFields(db);
         await _createProductionFoundation(db);
         await _createRemoteCacheKeys(db);
@@ -98,7 +98,7 @@ class StudafyDatabase extends _StudafyDatabaseAccess
         if (oldVersion < 4) await _createLearningTables(db);
         if (oldVersion < 5) await _createIdentityTables(db);
         if (oldVersion < 6) await _createProductV6Tables(db);
-        if (oldVersion < 7) await _createAiGradingTables(db);
+        if (oldVersion < 7) await _createQuestionGradeTables(db);
         if (oldVersion < 8) await _createMeetingsFields(db);
         if (oldVersion < 9) await _createProductionFoundation(db);
         if (oldVersion < 10) await _createRemoteCacheKeys(db);

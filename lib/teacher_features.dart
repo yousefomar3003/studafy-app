@@ -11,7 +11,6 @@ import 'student_linking.dart';
 import 'core/studafy_design.dart' show FeatureCard;
 import 'core/studafy_domain.dart';
 import 'core/studafy_localizations.dart';
-import 'core/runtime_environment.dart';
 import 'data/backend.dart';
 import 'data/studafy_repository.dart';
 import 'data/supabase_repository.dart';

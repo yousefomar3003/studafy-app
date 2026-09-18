@@ -3381,8 +3381,6 @@ class V1CorrectGradeRequestDto {
     required this.expectedVersion,
     required this.score,
     required this.feedback,
-    this.draftId,
-    this.questionScores,
     required this.reason,
   });
 
@@ -3391,32 +3389,18 @@ class V1CorrectGradeRequestDto {
         expectedVersion: json['expectedVersion'] as int,
         score: json['score'] as num,
         feedback: json['feedback'] as String?,
-        draftId: json['draftId'] as String?,
-        questionScores: json['questionScores'] == null
-            ? null
-            : [
-                for (final item in json['questionScores'] as List<dynamic>)
-                  V1QuestionScoreReviewDto.fromJson(
-                    item as Map<String, dynamic>,
-                  ),
-              ],
         reason: json['reason'] as String,
       );
 
   final int expectedVersion;
   final num score;
   final String? feedback;
-  final String? draftId;
-  final List<V1QuestionScoreReviewDto>? questionScores;
   final String reason;
 
   Map<String, Object?> toJson() => {
     'expectedVersion': expectedVersion,
     'score': score,
     'feedback': feedback,
-    'draftId': ?draftId,
-    if (questionScores != null)
-      'questionScores': [for (final item in questionScores!) item.toJson()],
     'reason': reason,
   };
 }
@@ -5798,31 +5782,6 @@ class V1PublishFileResponseDto {
   };
 }
 
-class V1QuestionScoreReviewDto {
-  const V1QuestionScoreReviewDto({
-    required this.questionId,
-    required this.score,
-    required this.reason,
-  });
-
-  factory V1QuestionScoreReviewDto.fromJson(Map<String, dynamic> json) =>
-      V1QuestionScoreReviewDto(
-        questionId: json['questionId'] as String,
-        score: json['score'] as num,
-        reason: json['reason'] as String?,
-      );
-
-  final String questionId;
-  final num score;
-  final String? reason;
-
-  Map<String, Object?> toJson() => {
-    'questionId': questionId,
-    'score': score,
-    'reason': reason,
-  };
-}
-
 class V1ReauthChallengeRequestDto {
   const V1ReauthChallengeRequestDto({required this.purpose});
 
@@ -6445,8 +6404,6 @@ class V1ReviewGradeRequestDto {
     required this.expectedVersion,
     required this.score,
     required this.feedback,
-    this.draftId,
-    this.questionScores,
   });
 
   factory V1ReviewGradeRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -6454,30 +6411,16 @@ class V1ReviewGradeRequestDto {
         expectedVersion: json['expectedVersion'] as int,
         score: json['score'] as num,
         feedback: json['feedback'] as String?,
-        draftId: json['draftId'] as String?,
-        questionScores: json['questionScores'] == null
-            ? null
-            : [
-                for (final item in json['questionScores'] as List<dynamic>)
-                  V1QuestionScoreReviewDto.fromJson(
-                    item as Map<String, dynamic>,
-                  ),
-              ],
       );
 
   final int expectedVersion;
   final num score;
   final String? feedback;
-  final String? draftId;
-  final List<V1QuestionScoreReviewDto>? questionScores;
 
   Map<String, Object?> toJson() => {
     'expectedVersion': expectedVersion,
     'score': score,
     'feedback': feedback,
-    'draftId': ?draftId,
-    if (questionScores != null)
-      'questionScores': [for (final item in questionScores!) item.toJson()],
   };
 }
 
