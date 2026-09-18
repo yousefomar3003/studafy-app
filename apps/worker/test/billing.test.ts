@@ -266,7 +266,6 @@ describe("PAY-071 billing-events processor", () => {
   });
 
   test("an Apple webhook with no embedded transaction is a noop", async () => {
-    const dispatch = new FakeDispatch();
     const apple = new FakeAppleVerifier();
     apple.notification = {
       notificationType: "EXPIRED",

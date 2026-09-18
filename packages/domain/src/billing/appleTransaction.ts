@@ -57,7 +57,7 @@ export function mapAppleNotificationToTransactionState(
 
 /** Apple's `JWSTransactionDecodedPayload.type` for a currently active state. */
 export function mapAppleTransactionTypeToState(
-  ownershipType: string | null | undefined,
+  _ownershipType: string | null | undefined,
   revocationReason: number | null | undefined,
   expiresDate: number | null | undefined,
   nowMillis: number,

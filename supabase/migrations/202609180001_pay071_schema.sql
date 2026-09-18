@@ -66,7 +66,7 @@ begin
       and trigger_name = 'pay071_set_updated_at'
   ) then
     create trigger pay071_set_updated_at before update on public.school_billing_settings
-      for each row execute function public.set_updated_at();
+      for each row execute function private.set_updated_at();
   end if;
 end
 $pay071$;

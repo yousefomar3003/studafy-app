@@ -4102,6 +4102,32 @@ export type Database = {
           },
         ];
       };
+      school_billing_settings: {
+        Row: {
+          school_id: string;
+          self_purchase_enabled: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          school_id: string;
+          self_purchase_enabled?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          school_id?: string;
+          self_purchase_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "school_billing_settings_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: true;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       school_content_controls: {
         Row: {
           classifier_assist_enabled: boolean;
@@ -4201,40 +4227,55 @@ export type Database = {
       store_events: {
         Row: {
           attempt_count: number;
+          bullmq_job_id: string | null;
+          dispatched_at: string | null;
           environment: string;
           external_event_id: string | null;
           id: number;
           last_error_code: string | null;
+          lease_token: string | null;
+          lease_until: string | null;
           next_attempt_at: string;
           payload_hash: string;
           platform: Database["public"]["Enums"]["store_platform"];
           processed_at: string | null;
+          raw_payload: string | null;
           received_at: string;
           state: Database["public"]["Enums"]["outbox_state"];
         };
         Insert: {
           attempt_count?: number;
+          bullmq_job_id?: string | null;
+          dispatched_at?: string | null;
           environment: string;
           external_event_id?: string | null;
           id?: never;
           last_error_code?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
           next_attempt_at?: string;
           payload_hash: string;
           platform: Database["public"]["Enums"]["store_platform"];
           processed_at?: string | null;
+          raw_payload?: string | null;
           received_at?: string;
           state?: Database["public"]["Enums"]["outbox_state"];
         };
         Update: {
           attempt_count?: number;
+          bullmq_job_id?: string | null;
+          dispatched_at?: string | null;
           environment?: string;
           external_event_id?: string | null;
           id?: never;
           last_error_code?: string | null;
+          lease_token?: string | null;
+          lease_until?: string | null;
           next_attempt_at?: string;
           payload_hash?: string;
           platform?: Database["public"]["Enums"]["store_platform"];
           processed_at?: string | null;
+          raw_payload?: string | null;
           received_at?: string;
           state?: Database["public"]["Enums"]["outbox_state"];
         };
@@ -4251,6 +4292,7 @@ export type Database = {
           id: string;
           platform: Database["public"]["Enums"]["store_platform"];
           store_product_id: string;
+          storefront_listed: boolean;
           updated_at: string;
         };
         Insert: {
@@ -4263,6 +4305,7 @@ export type Database = {
           id?: string;
           platform: Database["public"]["Enums"]["store_platform"];
           store_product_id: string;
+          storefront_listed?: boolean;
           updated_at?: string;
         };
         Update: {
@@ -4275,17 +4318,22 @@ export type Database = {
           id?: string;
           platform?: Database["public"]["Enums"]["store_platform"];
           store_product_id?: string;
+          storefront_listed?: boolean;
           updated_at?: string;
         };
         Relationships: [];
       };
       store_transactions: {
         Row: {
+          acknowledged_at: string | null;
+          beneficiary_id: string;
           created_at: string;
           effective_until: string | null;
           environment: string;
+          guardian_link_id: string | null;
           id: string;
           original_transaction_id: string;
+          parental_gate_confirmed_at: string | null;
           platform: Database["public"]["Enums"]["store_platform"];
           product_id: string;
           purchased_at: string;
@@ -4295,11 +4343,15 @@ export type Database = {
           transaction_id: string;
         };
         Insert: {
+          acknowledged_at?: string | null;
+          beneficiary_id: string;
           created_at?: string;
           effective_until?: string | null;
           environment: string;
+          guardian_link_id?: string | null;
           id?: string;
           original_transaction_id: string;
+          parental_gate_confirmed_at?: string | null;
           platform: Database["public"]["Enums"]["store_platform"];
           product_id: string;
           purchased_at: string;
@@ -4309,11 +4361,15 @@ export type Database = {
           transaction_id: string;
         };
         Update: {
+          acknowledged_at?: string | null;
+          beneficiary_id?: string;
           created_at?: string;
           effective_until?: string | null;
           environment?: string;
+          guardian_link_id?: string | null;
           id?: string;
           original_transaction_id?: string;
+          parental_gate_confirmed_at?: string | null;
           platform?: Database["public"]["Enums"]["store_platform"];
           product_id?: string;
           purchased_at?: string;
@@ -4323,6 +4379,20 @@ export type Database = {
           transaction_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "store_transactions_beneficiary_id_fkey";
+            columns: ["beneficiary_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "store_transactions_guardian_link_id_fkey";
+            columns: ["guardian_link_id"];
+            isOneToOne: false;
+            referencedRelation: "guardian_links";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "store_transactions_product_id_fkey";
             columns: ["product_id"];

@@ -264,7 +264,7 @@ declare
   gate_confirmed_at timestamptz;
   existing public.store_transactions%rowtype;
   purchased_at timestamptz := (p_body->>'purchasedAt')::timestamptz;
-  effective_until timestamptz := nullif(p_body->>'effectiveUntil', '')::timestamptz;
+  resolved_effective_until timestamptz := nullif(p_body->>'effectiveUntil', '')::timestamptz;
   txn_state public.store_transaction_state := (p_body->>'state')::public.store_transaction_state;
   applied jsonb;
 begin
@@ -272,13 +272,13 @@ begin
     return jsonb_build_object('outcome', 'forbidden');
   end if;
 
-  select * into product_row from public.store_products
-  where platform = (p_body->>'platform')::public.store_platform
-    and environment = p_body->>'environment'
-    and store_product_id = p_body->>'storeProductId'
-    and active
-    and effective_from <= now()
-    and (effective_until is null or effective_until > now());
+  select * into product_row from public.store_products sp
+  where sp.platform = (p_body->>'platform')::public.store_platform
+    and sp.environment = p_body->>'environment'
+    and sp.store_product_id = p_body->>'storeProductId'
+    and sp.active
+    and sp.effective_from <= now()
+    and (sp.effective_until is null or sp.effective_until > now());
   if product_row.id is null or product_row.feature_key <> p_body->>'productFeatureKey' then
     return jsonb_build_object('outcome', 'product_not_found');
   end if;
@@ -309,7 +309,7 @@ begin
       return jsonb_build_object('outcome', 'owned_by_other_account');
     end if;
     update public.store_transactions
-      set state = txn_state, effective_until = effective_until
+      set state = txn_state, effective_until = resolved_effective_until
       where id = existing.id;
   else
     insert into public.store_transactions(
@@ -321,13 +321,13 @@ begin
       product_row.platform, p_body->>'environment', purchaser, product_row.id,
       beneficiary, guardian_link, gate_confirmed_at,
       p_body->>'originalTransactionId', p_body->>'transactionId', p_body->>'signedDataHash',
-      txn_state, purchased_at, effective_until
+      txn_state, purchased_at, resolved_effective_until
     ) returning * into existing;
   end if;
 
   applied := private.billing_derive_entitlement(
     beneficiary, product_row.feature_key, product_row.platform, existing.id,
-    p_body->>'originalTransactionId', txn_state, purchased_at, effective_until
+    p_body->>'originalTransactionId', txn_state, purchased_at, resolved_effective_until
   );
 
   return jsonb_build_object(

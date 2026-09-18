@@ -33,6 +33,9 @@
     "dev:stack": "docker compose -f docker-compose.dev.yml up -d || docker-compose -f docker-compose.dev.yml up -d"
   },
   "dependencies": {},
+  "overrides": {
+    "jsrsasign": "^11.1.5"
+  },
   "devDependencies": {
     "@types/bun": "1.4.2",
     "postgres": "3.4.9",
