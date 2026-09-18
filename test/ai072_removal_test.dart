@@ -82,9 +82,9 @@ void main() {
       final declared = File(path)
           .readAsLinesSync()
           .where(
-            (line) => RegExp(
-              r'^\s*#?\s*(STUDY_COACH|AI_GRADING|AI_PROVIDER)[A-Z_]*=',
-            ).hasMatch(line),
+            (line) =>
+                RegExp(r'^\s*#?\s*(STUDY_COACH|AI_GRADING|AI_PROVIDER)[A-Z_]*=')
+                    .hasMatch(line),
           )
           .toList();
       expect(declared, isEmpty, reason: path);
