@@ -83,13 +83,59 @@ only. The other project in the organization was not touched.
 The repository and the synthetic project now agree: neither has an AI
 function or an AI credential.
 
+### Remote migration promotion — deferred (owner decision 2026-09-18)
+
+`supabase migration list --linked` (read-only) shows the synthetic project at
+`202609090004`, with **45 migrations pending**: `202609110001` (DB-020)
+through `202609180007` (AI-072). Migrations are forward-only and ordered, so
+AI-072's migration cannot be applied on its own. Applying it would be the
+first remote promotion of DB-020, DB-021, AUTH-030/031, API-040–042,
+SAFE-043, FILE-050/051, OPS-061 and PAY-071, all of which are accepted for
+local/disposable use only. The Phase 2 gate requires independent
+security-owner review before that.
+
+The owner therefore deferred remote promotion until that gate closes. Nothing
+is exposed meanwhile: the synthetic project has zero rows, no AI Edge Function
+(both slugs 404), and no AI credential.
+
 ### Remaining follow-ups
 
-1. **Apply `202609180007` to the synthetic project** when migrations are next
-   promoted there, following the usual dry-run procedure. The project has zero
-   rows in the retired relations, so the migration is not urgent.
+1. **Promote `202609110001`–`202609180007` to the synthetic project** after the
+   Phase 2 security-owner gate closes, following the usual dry-run procedure,
+   then rerun `scripts/verify-synthetic-ai-removal.ts`.
 2. **Retention owner:** decide when to delete legacy rows in the three retired
    relations wherever any exist.
 
-Security-owner approval of this change remains pending, as for every earlier
-phase.
+### Security review and approval packet
+
+A security review of the PR #10 diff (`main...feat/ai072-remove-ai-capability`)
+was run on 2026-09-18 using the repository's security-review procedure. It
+covered input validation, authorization, secrets, injection and data exposure.
+**No high- or medium-confidence vulnerability was found.** The change removes
+attack surface and adds none that a caller can reach.
+
+| Area | Observation |
+|---|---|
+| Removed egress | `study-coach`'s env-selected `fetch` and its service-role client are gone; no Edge Function calls `fetch` (enforced by `test/release_containment_test.dart`) |
+| Migration `202609180007` | Only `revoke`, `drop policy` (identifiers quoted with `format('%I')`), `check` constraints, two bounded `update`s and comments. It adds no function, grant or `SECURITY DEFINER` code |
+| Retired relations | RLS stays enabled with zero policies and zero grants, so every client, `service_role` and API-runtime read is denied; `check (false) not valid` blocks writes from definer code |
+| Contracts | Only narrowing: fewer accepted fields and purposes. Strict objects reject smuggled `draftId`/path/URL fields |
+| New script `verify-synthetic-ai-removal.ts` | Read-only POST probe; takes the publishable (public) key from stdin and never prints it; refuses a malformed project ref |
+| Residual, not a vulnerability | `private.api041_command` still contains the unreachable draft branch, and file-binding liveness still recognises legacy draft bindings. Both only read legacy rows; neither grants access. Remove them in a future reviewed migration if desired |
+
+**Approval — pending. Not approved by anyone yet.** The security owner must
+verify the following and then fill in the row below. Evidence goes in the
+approved private security system, not this file.
+
+- [ ] Both slugs return 404 on every Supabase project (`verify-synthetic-ai-removal.ts`)
+- [ ] No `STUDY_COACH_*` or AI-provider secret exists in any project or CI secret store
+- [ ] No provider-side copy of prompts/files exists (no AI provider was ever contracted)
+- [ ] Migration `202609180007` and `supabase/tests/ai072_removal.sql` reviewed; CI job "Verify AI-072 removal leaves no AI data path" green on PR #10
+- [ ] Retaining `allowsAiGrading => false` (ADR-0026) accepted
+- [ ] Deferral of remote promotion accepted, or a promotion date set
+
+| Reviewer (named security owner) | Date | Decision | Exceptions |
+|---|---|---|---|
+| _unassigned_ | — | **Pending** | — |
+
+Security-owner approval is recorded only in the table above.
