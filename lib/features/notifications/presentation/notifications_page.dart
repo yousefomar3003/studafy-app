@@ -72,7 +72,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _markAllRead() async {
     setState(() {
       _items = [
-        for (final item in _items) item.isRead ? item : item.copyWith(readAt: DateTime.now()),
+        for (final item in _items)
+          item.isRead ? item : item.copyWith(readAt: DateTime.now()),
       ];
     });
     await NotificationsScope.of(context).markAllRead();
@@ -83,7 +84,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
     setState(() {
       _items = [
         for (final existing in _items)
-          existing.id == item.id ? existing.copyWith(readAt: DateTime.now()) : existing,
+          existing.id == item.id
+              ? existing.copyWith(readAt: DateTime.now())
+              : existing,
       ];
     });
     await NotificationsScope.of(context).markRead(item.id);
@@ -130,12 +133,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.cloud_off_rounded, size: 18, color: Color(0xFF8A7650)),
+                            const Icon(
+                              Icons.cloud_off_rounded,
+                              size: 18,
+                              color: Color(0xFF8A7650),
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 t('notifications.offlineBanner'),
-                                style: const TextStyle(color: Color(0xFF8A7650), fontSize: 11),
+                                style: const TextStyle(
+                                  color: Color(0xFF8A7650),
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
                           ],
@@ -173,13 +183,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       t(item.title),
                                       style: TextStyle(
                                         color: studafyInk,
-                                        fontWeight: item.isRead ? FontWeight.w600 : FontWeight.w800,
+                                        fontWeight: item.isRead
+                                            ? FontWeight.w600
+                                            : FontWeight.w800,
                                       ),
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
                                       t(item.detail),
-                                      style: const TextStyle(color: studafyMuted, fontSize: 12),
+                                      style: const TextStyle(
+                                        color: studafyMuted,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),

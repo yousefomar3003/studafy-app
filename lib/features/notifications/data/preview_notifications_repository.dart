@@ -37,7 +37,11 @@ class PreviewNotificationsRepository implements NotificationsRepository {
 
   @override
   Future<NotificationPage> list({String? cursor, int pageSize = 20}) async =>
-      NotificationPage(items: List.of(_items), nextCursor: null, isFromCache: false);
+      NotificationPage(
+        items: List.of(_items),
+        nextCursor: null,
+        isFromCache: false,
+      );
 
   @override
   Future<int> unreadCount() async =>

@@ -39,6 +39,5 @@ class NotificationsInteractor {
     });
   }
 
-  Future<Result<void>> syncPending() =>
-      runCatching(repository.syncPending);
+  Future<Result<void>> syncPending() => runCatching(repository.syncPending);
 }

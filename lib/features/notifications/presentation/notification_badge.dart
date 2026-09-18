@@ -5,8 +5,8 @@ import 'notifications_scope.dart';
 
 /// Unread-count badge over a bell icon, backed by the typed notifications
 /// interactor (MOB-070) instead of a direct SQLite call. Replaces the fake
-/// per-screen count the legacy header used to read straight off
-/// `StudafyDatabase`.
+/// per-screen count the legacy header used to read straight from the local
+/// preview database.
 class NotificationBadge extends StatelessWidget {
   const NotificationBadge({super.key});
 
@@ -16,10 +16,12 @@ class NotificationBadge extends StatelessWidget {
     return FutureBuilder(
       future: interactor.unreadCount(),
       builder: (context, snapshot) {
-        final count = snapshot.data?.fold(
-          onSuccess: (value) => value,
-          onFailure: (_) => 0,
-        ) ?? 0;
+        final count =
+            snapshot.data?.fold(
+              onSuccess: (value) => value,
+              onFailure: (_) => 0,
+            ) ??
+            0;
         return Badge(
           isLabelVisible: count > 0,
           label: Text('$count'),

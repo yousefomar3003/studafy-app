@@ -56,8 +56,9 @@ class MutationSessionLost extends MutationOutcome {
   const MutationSessionLost();
 }
 
-typedef MutationExecutor =
-    Future<MutationOutcome> Function(QueuedMutation mutation);
+typedef MutationExecutor = Future<MutationOutcome> Function(
+  QueuedMutation mutation,
+);
 
 /// Drains one feature's mutation queue against its own executor (MOB-070).
 ///
@@ -73,7 +74,10 @@ class MutationOutboxEngine {
     void Function(QueuedMutation mutation, String reason)? onConflict,
     void Function(QueuedMutation mutation, String reason)? onRejected,
     Duration Function(int attempts)? backoff,
-  }) : _store = store,
+  }) // Not initializing formals: the fields are private, and `this._store`
+    // would put the underscored spelling in every call site.
+    // ignore_for_file: prefer_initializing_formals
+    : _store = store,
        _executor = executor,
        _onConflict = onConflict,
        _onRejected = onRejected,
@@ -120,11 +124,18 @@ class MutationOutboxEngine {
   /// a connectivity-regained listener, an app-resume hook, or a manual
   /// pull-to-refresh — concurrent calls collapse into the call already in
   /// flight instead of racing the same rows.
-  Future<void> drain() async {
+  ///
+  /// [force] skips the backoff timer: an explicit "try now" signal (the
+  /// caller just detected reconnection, or the user pulled to refresh)
+  /// should not still be waiting out a delay computed from the last
+  /// unattended automatic failure.
+  Future<void> drain({bool force = false}) async {
     if (_draining) return;
     _draining = true;
     try {
-      final due = await _store.duePending(DateTime.now().toUtc());
+      final due = force
+          ? await _store.allPending()
+          : await _store.duePending(DateTime.now().toUtc());
       for (final mutation in due) {
         final outcome = await _attempt(mutation);
         if (outcome is MutationSessionLost) return;
@@ -135,7 +146,7 @@ class MutationOutboxEngine {
   }
 
   Future<MutationOutcome> _attempt(QueuedMutation mutation) async {
-    final MutationOutcome outcome;
+    MutationOutcome outcome;
     try {
       outcome = await _executor(mutation);
     } on V1ApiException catch (error) {

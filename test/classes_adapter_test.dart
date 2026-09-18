@@ -12,20 +12,25 @@ import 'package:studafy/features/classes/domain/classroom.dart';
 /// same rows the legacy DatabaseClassesPage read as raw maps.
 void main() {
   // The ffi factory stores databases under .dart_tool/sqflite_common_ffi/.
-  // Clean up any leftover from a previous run so the seed count is exact.
+  // Clean up any leftover of this file's own database from a previous run
+  // so the seed count is exact. Scoped to this one file rather than the
+  // whole shared directory: other test files use the same ffi storage
+  // directory for their own, differently-named databases, and a
+  // directory-wide wipe would race their concurrently-running setup/teardown.
+  const dbPath = '.dart_tool/sqflite_common_ffi/databases/studafy_preview.db';
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    final leftover = Directory('.dart_tool/sqflite_common_ffi/databases');
+    final leftover = File(dbPath);
     if (leftover.existsSync()) {
-      leftover.deleteSync(recursive: true);
+      leftover.deleteSync();
     }
   });
 
   tearDownAll(() {
-    final leftover = Directory('.dart_tool/sqflite_common_ffi/databases');
+    final leftover = File(dbPath);
     if (leftover.existsSync()) {
-      leftover.deleteSync(recursive: true);
+      leftover.deleteSync();
     }
   });
 

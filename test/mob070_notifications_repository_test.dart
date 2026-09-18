@@ -15,16 +15,13 @@ import 'package:studafy/features/notifications/data/api_notifications_repository
 /// calls out by name — airplane mode, reconnect, duplicate replay, partial
 /// page, and a read receipt that must never regress.
 void main() {
+  // No shared-directory wipe here: `scope` below is re-keyed with a unique
+  // id per test in setUp, and tearDown wipes only that scope's own file. A
+  // directory-wide wipe would race other test files sharing this same ffi
+  // database directory when the suite runs them concurrently.
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    final leftover = Directory('.dart_tool/sqflite_common_ffi/databases');
-    if (leftover.existsSync()) leftover.deleteSync(recursive: true);
-  });
-
-  tearDownAll(() {
-    final leftover = Directory('.dart_tool/sqflite_common_ffi/databases');
-    if (leftover.existsSync()) leftover.deleteSync(recursive: true);
   });
 
   late CacheScope scope;
@@ -69,19 +66,29 @@ void main() {
     await OfflineCacheDatabase.wipe(scope);
   });
 
-  test('a live page is cached and mapped to typed items, not raw maps', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published')]);
+  test(
+    'a live page is cached and mapped to typed items, not raw maps',
+    () async {
+      transport.nextPage = _page([
+        _notification(id: 'n1', templateKey: 'academic.grade_published'),
+      ]);
 
-    final page = await repository.list();
+      final page = await repository.list();
 
-    expect(page.isFromCache, isFalse);
-    expect(page.items.single.id, 'n1');
-    expect(page.items.single.title, 'notification.academic.grade_published.title');
-    expect(page.items.single.isRead, isFalse);
-  });
+      expect(page.isFromCache, isFalse);
+      expect(page.items.single.id, 'n1');
+      expect(
+        page.items.single.title,
+        'notification.academic.grade_published.title',
+      );
+      expect(page.items.single.isRead, isFalse);
+    },
+  );
 
   test('airplane mode falls back to the cache instead of throwing', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published')]);
+    transport.nextPage = _page([
+      _notification(id: 'n1', templateKey: 'academic.grade_published'),
+    ]);
     await repository.list(); // primes the cache while "online"
 
     transport.failNextGet = true;
@@ -91,16 +98,23 @@ void main() {
     expect(offlinePage.items.single.id, 'n1');
   });
 
-  test('offline pagination reports no next page rather than inventing a cursor', () async {
-    transport.failNextGet = true;
-    final page = await repository.list(cursor: 'some-cursor-from-before-airplane-mode');
+  test(
+    'offline pagination reports no next page rather than inventing a cursor',
+    () async {
+      transport.failNextGet = true;
+      final page = await repository.list(
+        cursor: 'some-cursor-from-before-airplane-mode',
+      );
 
-    expect(page.isFromCache, isTrue);
-    expect(page.nextCursor, isNull);
-  });
+      expect(page.isFromCache, isTrue);
+      expect(page.nextCursor, isNull);
+    },
+  );
 
   test('marking read while offline is optimistic locally and queues durably', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published')]);
+    transport.nextPage = _page([
+      _notification(id: 'n1', templateKey: 'academic.grade_published'),
+    ]);
     await repository.list();
 
     transport.failNextGet = true;
@@ -109,12 +123,22 @@ void main() {
     await _settle(); // let the fire-and-forget opportunistic flush attempt run
 
     final offlinePage = await repository.list();
-    expect(offlinePage.items.single.isRead, isTrue, reason: 'optimistic local read must apply immediately');
-    expect(transport.postAttempts, 1, reason: 'the immediate opportunistic flush should have been attempted once and failed');
+    expect(
+      offlinePage.items.single.isRead,
+      isTrue,
+      reason: 'optimistic local read must apply immediately',
+    );
+    expect(
+      transport.postAttempts,
+      1,
+      reason: 'the immediate opportunistic flush should have been attempted once and failed',
+    );
   });
 
   test('reconnecting replays the queued mutation with its original idempotency key', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published')]);
+    transport.nextPage = _page([
+      _notification(id: 'n1', templateKey: 'academic.grade_published'),
+    ]);
     await repository.list();
 
     transport.failNextPost = true;
@@ -126,13 +150,18 @@ void main() {
     await repository.syncPending();
 
     expect(transport.postAttempts, 2);
-    expect(transport.idempotencyKeys.first, transport.idempotencyKeys.last,
-        reason: 'a retried mutation must reuse its original idempotency key');
+    expect(
+      transport.idempotencyKeys.first,
+      transport.idempotencyKeys.last,
+      reason: 'a retried mutation must reuse its original idempotency key',
+    );
     expect(transport.postBodies.last['ids'], ['n1']);
   });
 
   test('a dropped response is replayed safely: the server\'s "already applied" reply is treated as success', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published')]);
+    transport.nextPage = _page([
+      _notification(id: 'n1', templateKey: 'academic.grade_published'),
+    ]);
     await repository.list();
 
     // First attempt: the request reached the server and applied, but the
@@ -152,35 +181,56 @@ void main() {
   });
 
   test('a stale server snapshot fetched during an in-flight replay does not un-read a notification', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published')]);
-    await repository.list();
-
-    transport.failNextPost = true; // mark-read stays queued, not yet applied server-side
-    await repository.markRead(ids: const ['n1'], all: false);
-
-    // A concurrent read returns the server's still-unread snapshot.
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'academic.grade_published', readAt: null)]);
-    final page = await repository.list();
-
-    expect(page.items.single.isRead, isTrue,
-        reason: 'the local read receipt must win over a stale unread snapshot');
-  });
-
-  test('unread count falls back to the cache when the live count is unavailable', () async {
     transport.nextPage = _page([
       _notification(id: 'n1', templateKey: 'academic.grade_published'),
-      _notification(id: 'n2', templateKey: 'communications.message_sent', readAt: '2026-01-01T00:00:00Z'),
     ]);
     await repository.list();
 
-    transport.failNextGet = true;
-    final count = await repository.unreadCount();
+    transport.failNextPost =
+        true; // mark-read stays queued, not yet applied server-side
+    await repository.markRead(ids: const ['n1'], all: false);
 
-    expect(count, 1);
+    // A concurrent read returns the server's still-unread snapshot.
+    transport.nextPage = _page([
+      _notification(
+        id: 'n1',
+        templateKey: 'academic.grade_published',
+        readAt: null,
+      ),
+    ]);
+    final page = await repository.list();
+
+    expect(
+      page.items.single.isRead,
+      isTrue,
+      reason: 'the local read receipt must win over a stale unread snapshot',
+    );
   });
 
+  test(
+    'unread count falls back to the cache when the live count is unavailable',
+    () async {
+      transport.nextPage = _page([
+        _notification(id: 'n1', templateKey: 'academic.grade_published'),
+        _notification(
+          id: 'n2',
+          templateKey: 'communications.message_sent',
+          readAt: '2026-01-01T00:00:00Z',
+        ),
+      ]);
+      await repository.list();
+
+      transport.failNextGet = true;
+      final count = await repository.unreadCount();
+
+      expect(count, 1);
+    },
+  );
+
   test('an unrecognized template key falls back to generic localization keys instead of crashing', () async {
-    transport.nextPage = _page([_notification(id: 'n1', templateKey: 'future.unknown_template')]);
+    transport.nextPage = _page([
+      _notification(id: 'n1', templateKey: 'future.unknown_template'),
+    ]);
 
     final page = await repository.list();
 
@@ -193,10 +243,13 @@ void main() {
 /// deliberately does not await it (an optimistic write must not block the
 /// UI on network latency), so a test asserting on its outcome has to yield
 /// to the event loop explicitly instead of racing it.
-Future<void> _settle() => Future<void>.delayed(const Duration(milliseconds: 20));
+Future<void> _settle() =>
+    Future<void>.delayed(const Duration(milliseconds: 20));
 
-Map<String, dynamic> _page(List<Map<String, dynamic>> items, {String? nextCursor}) =>
-    {'items': items, 'nextCursor': nextCursor};
+Map<String, dynamic> _page(
+  List<Map<String, dynamic>> items, {
+  String? nextCursor,
+}) => {'items': items, 'nextCursor': nextCursor};
 
 Map<String, dynamic> _notification({
   required String id,
@@ -229,7 +282,10 @@ class _ScriptedTransport implements V1JsonTransport {
     }
     if (path.contains('unread-count')) {
       final items = nextPage['items'] as List<dynamic>;
-      final unread = items.cast<Map<String, dynamic>>().where((n) => n['readAt'] == null).length;
+      final unread = items
+          .cast<Map<String, dynamic>>()
+          .where((n) => n['readAt'] == null)
+          .length;
       return {'unreadCount': unread};
     }
     return nextPage;
@@ -262,6 +318,8 @@ class _ScriptedTransport implements V1JsonTransport {
       failNextPost = false;
       throw const SocketException('offline');
     }
-    return {'markedCount': (body['all'] == true) ? 1 : (body['ids'] as List).length};
+    return {
+      'markedCount': (body['all'] == true) ? 1 : (body['ids'] as List).length,
+    };
   }
 }

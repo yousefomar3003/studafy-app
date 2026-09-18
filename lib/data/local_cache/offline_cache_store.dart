@@ -139,34 +139,45 @@ class OfflineCacheStore {
     return rows.isEmpty ? null : rows.first['cursor'] as String?;
   }
 
-  Future<void> saveCursor(String entityType, String? cursor) => _db.insert(
-    'sync_cursor', {
-      'entity_type': entityType,
-      'cursor': cursor,
-      'synced_at': DateTime.now().toUtc().toIso8601String(),
-    },
-    conflictAlgorithm: ConflictAlgorithm.replace,
-  );
+  Future<void> saveCursor(String entityType, String? cursor) =>
+      _db.insert('sync_cursor', {
+        'entity_type': entityType,
+        'cursor': cursor,
+        'synced_at': DateTime.now().toUtc().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
 
-  Future<void> enqueueMutation(QueuedMutation mutation) => _db.insert(
-    'mutation_outbox', {
-      'id': mutation.id,
-      'kind': mutation.kind,
-      'idempotency_key': mutation.idempotencyKey,
-      'payload': jsonEncode(mutation.payload),
-      'created_at': mutation.createdAt,
-      'attempts': mutation.attempts,
-      'next_attempt_at': mutation.nextAttemptAt.toUtc().toIso8601String(),
-      'last_error': mutation.lastError,
-      'status': mutation.status,
-    },
-  );
+  Future<void> enqueueMutation(QueuedMutation mutation) =>
+      _db.insert('mutation_outbox', {
+        'id': mutation.id,
+        'kind': mutation.kind,
+        'idempotency_key': mutation.idempotencyKey,
+        'payload': jsonEncode(mutation.payload),
+        'created_at': mutation.createdAt,
+        'attempts': mutation.attempts,
+        'next_attempt_at': mutation.nextAttemptAt.toUtc().toIso8601String(),
+        'last_error': mutation.lastError,
+        'status': mutation.status,
+      });
 
   Future<List<QueuedMutation>> duePending(DateTime asOf) async {
     final rows = await _db.query(
       'mutation_outbox',
       where: 'status = ? AND next_attempt_at <= ?',
       whereArgs: ['pending', asOf.toUtc().toIso8601String()],
+      orderBy: 'created_at ASC',
+    );
+    return rows.map(_mutationFromRow).toList();
+  }
+
+  /// Every pending mutation regardless of backoff timing. Used when the
+  /// caller has an explicit "try now" signal (reconnect, pull-to-refresh):
+  /// backoff exists to space out unattended automatic retries, not to make
+  /// the user wait out a timer they just asked to skip.
+  Future<List<QueuedMutation>> allPending() async {
+    final rows = await _db.query(
+      'mutation_outbox',
+      where: 'status = ?',
+      whereArgs: ['pending'],
       orderBy: 'created_at ASC',
     );
     return rows.map(_mutationFromRow).toList();
@@ -190,30 +201,38 @@ class OfflineCacheStore {
   );
 
   Future<void> markDone(String id) => _db.update(
-    'mutation_outbox', {'status': 'done'},
+    'mutation_outbox',
+    {'status': 'done'},
     where: 'id = ?',
     whereArgs: [id],
   );
 
-  Future<void> markRetry(String id, int attempts, DateTime nextAttemptAt, String error) =>
-      _db.update(
-        'mutation_outbox', {
-          'attempts': attempts,
-          'next_attempt_at': nextAttemptAt.toUtc().toIso8601String(),
-          'last_error': error,
-        },
-        where: 'id = ?',
-        whereArgs: [id],
-      );
+  Future<void> markRetry(
+    String id,
+    int attempts,
+    DateTime nextAttemptAt,
+    String error,
+  ) => _db.update(
+    'mutation_outbox',
+    {
+      'attempts': attempts,
+      'next_attempt_at': nextAttemptAt.toUtc().toIso8601String(),
+      'last_error': error,
+    },
+    where: 'id = ?',
+    whereArgs: [id],
+  );
 
   Future<void> markFailed(String id, String error) => _db.update(
-    'mutation_outbox', {'status': 'failed', 'last_error': error},
+    'mutation_outbox',
+    {'status': 'failed', 'last_error': error},
     where: 'id = ?',
     whereArgs: [id],
   );
 
   Future<void> markConflict(String id, String error) => _db.update(
-    'mutation_outbox', {'status': 'conflict', 'last_error': error},
+    'mutation_outbox',
+    {'status': 'conflict', 'last_error': error},
     where: 'id = ?',
     whereArgs: [id],
   );

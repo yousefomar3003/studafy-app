@@ -90,10 +90,12 @@ class StudafyLocalizations {
       'notifications.emptyMessage': "You'll see updates here as they happen.",
       'notifications.loading': 'Loading…',
       'notifications.loadMore': 'Load more',
-      'notification.academic.assessment_published.title': 'Assessment published',
+      'notification.academic.assessment_published.title':
+          'Assessment published',
       'notification.academic.assessment_published.detail':
           'A new assessment is ready for one of your classes.',
-      'notification.academic.assignment_published.title': 'Assignment published',
+      'notification.academic.assignment_published.title':
+          'Assignment published',
       'notification.academic.assignment_published.detail':
           'A new assignment is ready for one of your classes.',
       'notification.academic.grade_published.title': 'New grade',
@@ -105,7 +107,8 @@ class StudafyLocalizations {
       'notification.academic.wellbeing_shared.title': 'Wellbeing note shared',
       'notification.academic.wellbeing_shared.detail':
           'A wellbeing note was shared with you.',
-      'notification.communications.announcement_created.title': 'New announcement',
+      'notification.communications.announcement_created.title':
+          'New announcement',
       'notification.communications.announcement_created.detail':
           'A new announcement was posted.',
       'notification.communications.message_sent.title': 'New message',
@@ -127,10 +130,12 @@ class StudafyLocalizations {
           'A scheduled meeting was cancelled.',
       'notification.meetings.requested.title': 'Meeting requested',
       'notification.meetings.requested.detail': 'A meeting was requested.',
-      'notification.school_admin.classroom_staff_assigned.title': 'Staff assigned',
+      'notification.school_admin.classroom_staff_assigned.title':
+          'Staff assigned',
       'notification.school_admin.classroom_staff_assigned.detail':
           'A staff member was assigned to a class.',
-      'notification.school_admin.classroom_staff_removed.title': 'Staff removed',
+      'notification.school_admin.classroom_staff_removed.title':
+          'Staff removed',
       'notification.school_admin.classroom_staff_removed.detail':
           'A staff member was removed from a class.',
       'notification.school_admin.membership_granted.title': 'Access granted',
@@ -139,7 +144,8 @@ class StudafyLocalizations {
       'notification.school_admin.student_enrolled.title': 'Student enrolled',
       'notification.school_admin.student_enrolled.detail':
           'A student was enrolled.',
-      'notification.school_admin.student_transferred.title': 'Student transferred',
+      'notification.school_admin.student_transferred.title':
+          'Student transferred',
       'notification.school_admin.student_transferred.detail':
           'A student was transferred between classes.',
       'notification.school_admin.student_withdrawn.title': 'Student withdrawn',
@@ -210,7 +216,8 @@ class StudafyLocalizations {
       'notification.family.guardian_link_revoked.title': 'إزالة ربط عائلي',
       'notification.family.guardian_link_revoked.detail':
           'تمت إزالة ربط عائلي.',
-      'notification.family.guardian_link_verified.title': 'تم تأكيد الربط العائلي',
+      'notification.family.guardian_link_verified.title':
+          'تم تأكيد الربط العائلي',
       'notification.family.guardian_link_verified.detail':
           'تم تأكيد ربط عائلي.',
       'notification.invitations.issued.title': 'تم إرسال دعوة',
@@ -246,8 +253,7 @@ class StudafyLocalizations {
       'notification.support_access.revoked.detail':
           'تم إلغاء وصول الدعم الفني.',
       'notification.support_access.started.title': 'بدأت جلسة الدعم',
-      'notification.support_access.started.detail':
-          'بدأت جلسة دعم فني.',
+      'notification.support_access.started.detail': 'بدأت جلسة دعم فني.',
       'notification.generic.title': 'إشعار',
       'notification.generic.detail': 'لديك تحديث جديد.',
     },

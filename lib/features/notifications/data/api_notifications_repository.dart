@@ -38,7 +38,10 @@ class ApiNotificationsRepository implements NotificationsRepository {
     final ids = (mutation.payload['ids'] as List).cast<String>();
     final all = mutation.payload['all'] as bool;
     final response = await _client.markNotificationsRead(
-      V1MarkNotificationsReadRequestDto(ids: ids.isEmpty ? null : ids, all: all ? true : null),
+      V1MarkNotificationsReadRequestDto(
+        ids: ids.isEmpty ? null : ids,
+        all: all ? true : null,
+      ),
       idempotencyKey: mutation.idempotencyKey,
     );
     return MutationDone(response.toJson());
@@ -52,9 +55,9 @@ class ApiNotificationsRepository implements NotificationsRepository {
         cursor: cursor,
         pageSize: pageSize,
       );
-      await _cacheMerged(store, page.items);
+      final items = await _cacheMerged(store, page.items);
       return NotificationPage(
-        items: page.items.map(_mapDto).toList(),
+        items: items,
         nextCursor: page.nextCursor,
         isFromCache: false,
       );
@@ -77,30 +80,48 @@ class ApiNotificationsRepository implements NotificationsRepository {
   }
 
   /// Writes the freshly-fetched page into the cache without regressing a
-  /// read receipt applied locally while offline: once `readAt` is set
+  /// read receipt applied locally while offline — once `readAt` is set
   /// locally, a stale server snapshot fetched concurrently with an
-  /// in-flight outbox replay must not un-read it.
-  Future<void> _cacheMerged(
+  /// in-flight outbox replay must not un-read it — and returns the same
+  /// merged view, so a caller reading the result right now sees the same
+  /// truth the cache now holds, not the raw pre-merge server snapshot.
+  Future<List<NotificationItem>> _cacheMerged(
     OfflineCacheStore store,
     List<V1NotificationDto> items,
   ) async {
-    final existing = await store.entitiesFor(_entityType, includeTombstoned: true);
+    final existing = await store.entitiesFor(
+      _entityType,
+      includeTombstoned: true,
+    );
     final localReadAt = {
       for (final entity in existing)
         entity.entityId: entity.payload['readAt'] as String?,
     };
     final now = DateTime.now().toUtc().toIso8601String();
-    await store.putEntities(_entityType, [
-      for (final item in items)
+    final entities = <CachedEntity>[];
+    final merged = <NotificationItem>[];
+    for (final item in items) {
+      final readAt = localReadAt[item.id] ?? item.readAt;
+      entities.add(
         CachedEntity(
           entityId: item.id,
-          payload: {
-            ...item.toJson(),
-            'readAt': localReadAt[item.id] ?? item.readAt,
-          },
+          payload: {...item.toJson(), 'readAt': readAt},
           updatedAt: now,
         ),
-    ]);
+      );
+      merged.add(
+        NotificationItem(
+          id: item.id,
+          templateKey: item.templateKey,
+          title: _titleKey(item.templateKey),
+          detail: _detailKey(item.templateKey),
+          createdAt: DateTime.parse(item.createdAt),
+          readAt: readAt == null ? null : DateTime.parse(readAt),
+        ),
+      );
+    }
+    await store.putEntities(_entityType, entities);
+    return merged;
   }
 
   @override
@@ -149,17 +170,8 @@ class ApiNotificationsRepository implements NotificationsRepository {
   @override
   Future<void> syncPending() async {
     final store = await _store();
-    await _engineFor(store).drain();
+    await _engineFor(store).drain(force: true);
   }
-
-  static NotificationItem _mapDto(V1NotificationDto dto) => NotificationItem(
-    id: dto.id,
-    templateKey: dto.templateKey,
-    title: _titleKey(dto.templateKey),
-    detail: _detailKey(dto.templateKey),
-    createdAt: DateTime.parse(dto.createdAt),
-    readAt: dto.readAt == null ? null : DateTime.parse(dto.readAt!),
-  );
 
   static NotificationItem _mapCached(CachedEntity entity) {
     final templateKey = entity.payload['templateKey'] as String? ?? '';
