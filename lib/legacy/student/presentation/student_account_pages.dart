@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/studafy_localizations.dart';
 import '../../../data/session_service.dart';
-import '../../../studafy_database.dart';
-import '../../../features/academic/data/preview_student_identity.dart';
+import '../../../features/notifications/presentation/notification_badge.dart';
 import '../../../student_linking.dart';
 import '../../../app/account_scope.dart';
 import '../../../features/account/presentation/delete_account_page.dart';
@@ -49,24 +48,7 @@ class StudentHeader extends StatelessWidget {
                     ),
                   ),
           ),
-          FutureBuilder<int>(
-            future: StudafyDatabase.instance.unreadNotificationCount(),
-            builder: (context, snapshot) => Badge(
-              isLabelVisible: (snapshot.data ?? 0) > 0,
-              label: Text('${snapshot.data ?? 0}'),
-              backgroundColor: const Color(0xFFFF5D5D),
-              child: IconButton(
-                tooltip: 'Notifications',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const StudentNotificationsPage(),
-                  ),
-                ),
-                icon: const Icon(Icons.notifications_none_rounded),
-              ),
-            ),
-          ),
+          const NotificationBadge(),
           IconButton(
             tooltip: 'Profile',
             onPressed: () => Navigator.push(
@@ -343,198 +325,6 @@ class _StudentSectionLabel extends StatelessWidget {
   );
 }
 
-class StudentNotificationsPage extends StatefulWidget {
-  const StudentNotificationsPage({super.key});
-  @override
-  State<StudentNotificationsPage> createState() =>
-      _StudentNotificationsPageState();
-}
-
-class _StudentNotificationsPageState extends State<StudentNotificationsPage> {
-  late Future<List<Object>> data;
-  final read = <String>{};
-  @override
-  void initState() {
-    super.initState();
-    data = _load();
-  }
-
-  Future<List<Object>> _load() => Future.wait<Object>([
-    StudafyDatabase.instance.gradesForStudent(PreviewStudentIdentity.localId),
-    StudafyDatabase.instance.noticesForStudent(PreviewStudentIdentity.localId),
-    StudafyDatabase.instance.workForStudent(PreviewStudentIdentity.localId),
-    StudafyDatabase.instance.assessmentsForStudent(
-      PreviewStudentIdentity.localId,
-    ),
-  ]);
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: studentCanvas,
-    appBar: AppBar(
-      title: const Text('Notifications'),
-      actions: [
-        TextButton(
-          onPressed: () async {
-            await StudafyDatabase.instance.markNotificationsRead();
-            if (mounted) {
-              setState(() => read.addAll(['grade', 'notice', 'due', 'exam']));
-            }
-          },
-          child: const Text('Mark all read'),
-        ),
-      ],
-    ),
-    body: FutureBuilder<List<Object>>(
-      future: data,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final gradeRows = snapshot.data![0] as List<Map<String, Object?>>;
-        final notices = snapshot.data![1] as List<Map<String, Object?>>;
-        final work = snapshot.data![2] as List<Map<String, Object?>>;
-        final exams = snapshot.data![3] as List<Map<String, Object?>>;
-        final cards =
-            <
-              ({
-                String id,
-                IconData icon,
-                Color color,
-                String title,
-                String detail,
-              })
-            >[];
-        if (gradeRows.isNotEmpty) {
-          final g = gradeRows.first;
-          cards.add((
-            id: 'grade',
-            icon: Icons.star_rounded,
-            color: const Color(0xFF16A36D),
-            title: 'New grade: ${g['class_name']}',
-            detail:
-                '${g['title']} — ${studentScore(g['score'])}/${studentScore(g['max_score'])} was published.',
-          ));
-        }
-        if (notices.isNotEmpty) {
-          final n = notices.first;
-          cards.add((
-            id: 'notice',
-            icon: Icons.priority_high_rounded,
-            color: const Color(0xFFFF5D5D),
-            title: '${n['class_name']} announcement',
-            detail: '${n['message']}',
-          ));
-        }
-        final due = work.where((e) => e['submitted_at'] == null).toList();
-        if (due.isNotEmpty) {
-          cards.add((
-            id: 'due',
-            icon: Icons.timer_outlined,
-            color: const Color(0xFFE0A01B),
-            title: 'Assignment due',
-            detail:
-                '${due.first['title']} is due ${studentShortDate('${due.first['due_at']}')}.',
-          ));
-        }
-        if (exams.isNotEmpty) {
-          cards.add((
-            id: 'exam',
-            icon: Icons.event_note_rounded,
-            color: studentNavy,
-            title: 'Exam scheduled',
-            detail: '${exams.first['title']} · ${exams.first['class_name']}',
-          ));
-        }
-        return RefreshIndicator(
-          onRefresh: () async {
-            setState(() {
-              data = _load();
-            });
-            await data;
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              if (cards.isEmpty)
-                const StudentEmptyState(
-                  icon: Icons.notifications_none_rounded,
-                  title: 'You’re all caught up',
-                  message: 'Grades, announcements, deadlines, and exam updates will appear here.',
-                ),
-              for (final card in cards)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(17),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(19),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: card.color.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: Icon(card.icon, color: card.color, size: 21),
-                      ),
-                      const SizedBox(width: 13),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    card.title,
-                                    style: const TextStyle(
-                                      color: studentInk,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                if (!read.contains(card.id))
-                                  const CircleAvatar(
-                                    radius: 4,
-                                    backgroundColor: studentCyan,
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              card.detail,
-                              style: const TextStyle(
-                                color: studentMuted,
-                                height: 1.35,
-                              ),
-                            ),
-                            const SizedBox(height: 7),
-                            const Text(
-                              'Recently',
-                              style: TextStyle(
-                                color: Color(0xFFB7BCD0),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    ),
-  );
-}
-
 class StudentSectionHeader extends StatelessWidget {
   const StudentSectionHeader({super.key, required this.title});
   final String title;
@@ -556,24 +346,7 @@ class StudentSectionHeader extends StatelessWidget {
               ),
             ),
           ),
-          FutureBuilder<int>(
-            future: StudafyDatabase.instance.unreadNotificationCount(),
-            builder: (context, snapshot) => Badge(
-              isLabelVisible: (snapshot.data ?? 0) > 0,
-              label: Text('${snapshot.data ?? 0}'),
-              backgroundColor: const Color(0xFFFF5D5D),
-              child: IconButton(
-                tooltip: 'Notifications',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const StudentNotificationsPage(),
-                  ),
-                ),
-                icon: const Icon(Icons.notifications_none_rounded),
-              ),
-            ),
-          ),
+          const NotificationBadge(),
           IconButton(
             tooltip: 'Profile',
             onPressed: () => Navigator.push(

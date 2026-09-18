@@ -80,6 +80,85 @@ class StudafyLocalizations {
       'work': 'Work',
       'grades': 'Grades',
       'coach': 'Study Coach',
+      'notifications.title': 'Notifications',
+      'notifications.markAllRead': 'Mark all read',
+      'notifications.errorTitle': "Couldn't load notifications",
+      'notifications.retry': 'Try again',
+      'notifications.offlineBanner':
+          'Showing your last saved notifications — reconnect to update.',
+      'notifications.emptyTitle': 'No notifications yet',
+      'notifications.emptyMessage': "You'll see updates here as they happen.",
+      'notifications.loading': 'Loading…',
+      'notifications.loadMore': 'Load more',
+      'notification.academic.assessment_published.title': 'Assessment published',
+      'notification.academic.assessment_published.detail':
+          'A new assessment is ready for one of your classes.',
+      'notification.academic.assignment_published.title': 'Assignment published',
+      'notification.academic.assignment_published.detail':
+          'A new assignment is ready for one of your classes.',
+      'notification.academic.grade_published.title': 'New grade',
+      'notification.academic.grade_published.detail':
+          'A grade was published. Open Grades to view it.',
+      'notification.academic.resource_published.title': 'New class material',
+      'notification.academic.resource_published.detail':
+          'Your teacher shared new material for one of your classes.',
+      'notification.academic.wellbeing_shared.title': 'Wellbeing note shared',
+      'notification.academic.wellbeing_shared.detail':
+          'A wellbeing note was shared with you.',
+      'notification.communications.announcement_created.title': 'New announcement',
+      'notification.communications.announcement_created.detail':
+          'A new announcement was posted.',
+      'notification.communications.message_sent.title': 'New message',
+      'notification.communications.message_sent.detail':
+          'You received a new message.',
+      'notification.family.guardian_link_requested.title': 'Connection request',
+      'notification.family.guardian_link_requested.detail':
+          'Someone requested to connect as a guardian.',
+      'notification.family.guardian_link_revoked.title': 'Connection removed',
+      'notification.family.guardian_link_revoked.detail':
+          'A family connection was removed.',
+      'notification.family.guardian_link_verified.title': 'Connection verified',
+      'notification.family.guardian_link_verified.detail':
+          'A family connection was verified.',
+      'notification.invitations.issued.title': 'Invitation sent',
+      'notification.invitations.issued.detail': 'An invitation was issued.',
+      'notification.meetings.cancelled.title': 'Meeting cancelled',
+      'notification.meetings.cancelled.detail':
+          'A scheduled meeting was cancelled.',
+      'notification.meetings.requested.title': 'Meeting requested',
+      'notification.meetings.requested.detail': 'A meeting was requested.',
+      'notification.school_admin.classroom_staff_assigned.title': 'Staff assigned',
+      'notification.school_admin.classroom_staff_assigned.detail':
+          'A staff member was assigned to a class.',
+      'notification.school_admin.classroom_staff_removed.title': 'Staff removed',
+      'notification.school_admin.classroom_staff_removed.detail':
+          'A staff member was removed from a class.',
+      'notification.school_admin.membership_granted.title': 'Access granted',
+      'notification.school_admin.membership_granted.detail':
+          'School access was granted.',
+      'notification.school_admin.student_enrolled.title': 'Student enrolled',
+      'notification.school_admin.student_enrolled.detail':
+          'A student was enrolled.',
+      'notification.school_admin.student_transferred.title': 'Student transferred',
+      'notification.school_admin.student_transferred.detail':
+          'A student was transferred between classes.',
+      'notification.school_admin.student_withdrawn.title': 'Student withdrawn',
+      'notification.school_admin.student_withdrawn.detail':
+          'A student was withdrawn.',
+      'notification.support_access.approved.title': 'Support access approved',
+      'notification.support_access.approved.detail':
+          'A support access request was approved.',
+      'notification.support_access.requested.title': 'Support access requested',
+      'notification.support_access.requested.detail':
+          'Support access was requested.',
+      'notification.support_access.revoked.title': 'Support access revoked',
+      'notification.support_access.revoked.detail':
+          'Support access was revoked.',
+      'notification.support_access.started.title': 'Support session started',
+      'notification.support_access.started.detail':
+          'A support session has started.',
+      'notification.generic.title': 'Notification',
+      'notification.generic.detail': 'You have a new update.',
     },
     'ar': {
       'today': 'اليوم',
@@ -95,6 +174,82 @@ class StudafyLocalizations {
       'work': 'الأعمال',
       'grades': 'الدرجات',
       'coach': 'مدرب الدراسة',
+      'notifications.title': 'الإشعارات',
+      'notifications.markAllRead': 'تعليم الكل كمقروء',
+      'notifications.errorTitle': 'تعذّر تحميل الإشعارات',
+      'notifications.retry': 'إعادة المحاولة',
+      'notifications.offlineBanner':
+          'يتم عرض آخر الإشعارات المحفوظة — أعد الاتصال للتحديث.',
+      'notifications.emptyTitle': 'لا توجد إشعارات بعد',
+      'notifications.emptyMessage': 'ستظهر هنا التحديثات فور حدوثها.',
+      'notifications.loading': 'جارٍ التحميل…',
+      'notifications.loadMore': 'تحميل المزيد',
+      'notification.academic.assessment_published.title': 'تم نشر التقييم',
+      'notification.academic.assessment_published.detail':
+          'أصبح تقييم جديد متاحًا لأحد فصولك.',
+      'notification.academic.assignment_published.title': 'تم نشر الواجب',
+      'notification.academic.assignment_published.detail':
+          'أصبح واجب جديد متاحًا لأحد فصولك.',
+      'notification.academic.grade_published.title': 'درجة جديدة',
+      'notification.academic.grade_published.detail':
+          'تم نشر درجة جديدة. افتح الدرجات للاطلاع عليها.',
+      'notification.academic.resource_published.title': 'مادة دراسية جديدة',
+      'notification.academic.resource_published.detail':
+          'شارك معلمك مادة جديدة لأحد فصولك.',
+      'notification.academic.wellbeing_shared.title': 'ملاحظة رفاهية',
+      'notification.academic.wellbeing_shared.detail':
+          'تمت مشاركة ملاحظة متعلقة بالرفاهية معك.',
+      'notification.communications.announcement_created.title': 'إعلان جديد',
+      'notification.communications.announcement_created.detail':
+          'تم نشر إعلان جديد.',
+      'notification.communications.message_sent.title': 'رسالة جديدة',
+      'notification.communications.message_sent.detail': 'وصلتك رسالة جديدة.',
+      'notification.family.guardian_link_requested.title': 'طلب ربط عائلي',
+      'notification.family.guardian_link_requested.detail':
+          'طلب أحدهم الربط كولي أمر.',
+      'notification.family.guardian_link_revoked.title': 'إزالة ربط عائلي',
+      'notification.family.guardian_link_revoked.detail':
+          'تمت إزالة ربط عائلي.',
+      'notification.family.guardian_link_verified.title': 'تم تأكيد الربط العائلي',
+      'notification.family.guardian_link_verified.detail':
+          'تم تأكيد ربط عائلي.',
+      'notification.invitations.issued.title': 'تم إرسال دعوة',
+      'notification.invitations.issued.detail': 'تم إصدار دعوة.',
+      'notification.meetings.cancelled.title': 'تم إلغاء الاجتماع',
+      'notification.meetings.cancelled.detail': 'تم إلغاء اجتماع مجدول.',
+      'notification.meetings.requested.title': 'طلب اجتماع',
+      'notification.meetings.requested.detail': 'تم طلب اجتماع.',
+      'notification.school_admin.classroom_staff_assigned.title': 'تعيين موظف',
+      'notification.school_admin.classroom_staff_assigned.detail':
+          'تم تعيين موظف لأحد الفصول.',
+      'notification.school_admin.classroom_staff_removed.title': 'إزالة موظف',
+      'notification.school_admin.classroom_staff_removed.detail':
+          'تمت إزالة موظف من أحد الفصول.',
+      'notification.school_admin.membership_granted.title': 'تم منح الصلاحية',
+      'notification.school_admin.membership_granted.detail':
+          'تم منح صلاحية الوصول للمدرسة.',
+      'notification.school_admin.student_enrolled.title': 'تسجيل طالب',
+      'notification.school_admin.student_enrolled.detail':
+          'تم تسجيل طالب جديد.',
+      'notification.school_admin.student_transferred.title': 'نقل طالب',
+      'notification.school_admin.student_transferred.detail':
+          'تم نقل طالب بين الفصول.',
+      'notification.school_admin.student_withdrawn.title': 'انسحاب طالب',
+      'notification.school_admin.student_withdrawn.detail': 'تم سحب طالب.',
+      'notification.support_access.approved.title': 'تمت الموافقة على الدعم',
+      'notification.support_access.approved.detail':
+          'تمت الموافقة على طلب وصول الدعم.',
+      'notification.support_access.requested.title': 'طلب وصول للدعم',
+      'notification.support_access.requested.detail':
+          'تم طلب وصول الدعم الفني.',
+      'notification.support_access.revoked.title': 'تم إلغاء وصول الدعم',
+      'notification.support_access.revoked.detail':
+          'تم إلغاء وصول الدعم الفني.',
+      'notification.support_access.started.title': 'بدأت جلسة الدعم',
+      'notification.support_access.started.detail':
+          'بدأت جلسة دعم فني.',
+      'notification.generic.title': 'إشعار',
+      'notification.generic.detail': 'لديك تحديث جديد.',
     },
   };
 

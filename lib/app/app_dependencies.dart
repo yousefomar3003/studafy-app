@@ -6,6 +6,7 @@ import '../core/telemetry.dart';
 import '../data/backend.dart';
 import '../data/contracts/v1_http_transport.dart';
 import '../data/contracts/v1_client.generated.dart';
+import '../data/local_cache/session_cache_binder.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/subscription_service.dart';
 import '../features/account/application/account_interactor.dart';
@@ -17,6 +18,10 @@ import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/data/preview_classroom_repository.dart';
 import '../features/classes/data/api_classroom_repository.dart';
 import '../features/classes/domain/classroom_repository.dart';
+import '../features/notifications/application/notifications_interactor.dart';
+import '../features/notifications/data/api_notifications_repository.dart';
+import '../features/notifications/data/preview_notifications_repository.dart';
+import '../features/notifications/domain/notifications_repository.dart';
 import '../features/parent/data/preview_parent_repository.dart';
 import '../features/parent/data/unavailable_parent_repository.dart';
 import '../features/parent/domain/parent_repository.dart';
@@ -48,6 +53,8 @@ class AppDependencies {
     required this.account,
     required this.academicApi,
     required this.academic,
+    required this.notifications,
+    required this.cacheBinder,
   });
 
   final SessionInteractor session;
@@ -59,6 +66,12 @@ class AppDependencies {
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
+  final NotificationsInteractor notifications;
+
+  /// Keeps the on-disk cache re-keyed and wiped as the session changes
+  /// (MOB-070). Held here, not discarded after construction, so it stays
+  /// alive and listening for the app's whole lifetime.
+  final SessionCacheBinder cacheBinder;
 
   static AppDependencies forPolicy(RuntimePolicy policy) {
     final telemetry = const DebugLogTelemetry();
@@ -80,6 +93,10 @@ class AppDependencies {
     final studyCoachRepository = policy.isSynthetic
         ? const UnavailableStudyCoachRepository()
         : const SupabaseStudyCoachRepository();
+    final cacheBinder = SessionCacheBinder(context: context);
+    final NotificationsRepository notificationsRepository = policy.isSynthetic
+        ? PreviewNotificationsRepository()
+        : ApiNotificationsRepository(remote!.api, cacheBinder);
     return AppDependencies(
       session: SessionInteractor(
         repository: sessionRepository,
@@ -110,6 +127,11 @@ class AppDependencies {
       academic: remote == null
           ? PreviewAcademicRepository()
           : ApiAcademicRepository(remote.api, context: context),
+      notifications: NotificationsInteractor(
+        repository: notificationsRepository,
+        telemetry: telemetry,
+      ),
+      cacheBinder: cacheBinder,
     );
   }
 

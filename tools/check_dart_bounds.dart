@@ -62,6 +62,14 @@ const _dataOnlyImports = <String>[
   'data/studafy_repository.dart',
   'data/study_coach_repository.dart',
   'data/subscription_service.dart',
+  // MOB-070 local cache vNext: presentation/application must go through a
+  // repository port, never touch the scoped cache, outbox, or its sqflite
+  // handle directly.
+  'data/local_cache/cache_scope.dart',
+  'data/local_cache/offline_cache_database.dart',
+  'data/local_cache/offline_cache_store.dart',
+  'data/local_cache/mutation_outbox_engine.dart',
+  'data/local_cache/session_cache_binder.dart',
 ];
 
 /// Provider/persistence symbols are forbidden even when a Dart `part` file
