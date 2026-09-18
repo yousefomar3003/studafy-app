@@ -86,9 +86,16 @@ select is(
     'auth_sign_out_all',
     'auth_touch_device',
     'auth_unlink_identity',
-    'authz_authorize'
+    'authz_authorize',
+    'billing_catalogue',
+    'billing_list_entitlements',
+    'billing_record_event',
+    'billing_restore',
+    'billing_self_purchase_status',
+    'billing_set_self_purchase',
+    'billing_submit_verification'
   ],
-  'API runtime role executes exactly the reviewed auth, idempotency, academic and file surface'
+  'API runtime role executes exactly the reviewed auth, idempotency, academic, file, and billing surface'
 );
 
 select is(

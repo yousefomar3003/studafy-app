@@ -18,6 +18,7 @@ import { createAccountRoutes } from "../../src/account/routes";
 import { createSupportAccessRoutes } from "../../src/support-access/routes";
 import { createSafetyRoutes } from "../../src/safety/routes";
 import { createFileRoutes } from "../../src/files/routes";
+import { createBillingRoutes } from "../../src/billing/routes";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import {
@@ -213,6 +214,25 @@ function routeTable() {
     authorization,
     idempotency,
   );
+  const billing = createBillingRoutes(
+    {
+      environment: "synthetic",
+      apple: null,
+      google: null,
+      parentalGateSigningKey: "a".repeat(32),
+      repository: {
+        catalogue: async () => ({ products: [] }),
+        selfPurchaseStatus: async () => [],
+        setSelfPurchase: async () => false,
+        submitVerification: async () => ({ outcome: "invalid" }),
+        restore: async () => ({ outcome: "invalid" }),
+        listEntitlements: async () => [],
+        recordEvent: async () => ({ outcome: "duplicate" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
   combined.route("/", schoolAdmin);
@@ -226,6 +246,7 @@ function routeTable() {
   combined.route("/", schoolRoster);
   combined.route("/", safety);
   combined.route("/", files);
+  combined.route("/", billing);
   const routes = createAuthRoutes(
     authDependencies,
     authorization,

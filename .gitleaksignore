@@ -58,3 +58,10 @@ f00e10cf0f7439bed4d0e35ad6254f919fa95f5c:supabase/tests/safe043_surface.sql:gene
 40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:232
 40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:238
 40dfd0533091aca487a8ef7686c316b1a5caaa58:supabase/tests/ops061_outbox.sql:generic-api-key:246
+
+# PAY-071 parental gate test fixture in 826b92e matched the generic-api-key
+# rule. The value is a disposable in-memory HMAC key used only in the domain
+# unit test, not a credential. Fixed going forward by trailing-zero padding,
+# same as the other entries above; the historical commit is not rewritten
+# per this repo's forward-only history policy.
+826b92e2316d1ad36addf3a00687f6e9a1c0f198:packages/domain/test/billing.test.ts:generic-api-key:169

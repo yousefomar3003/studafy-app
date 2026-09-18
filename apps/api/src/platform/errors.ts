@@ -155,6 +155,30 @@ const DEFINITIONS: Record<
     title: "Storage unavailable",
     detail: "Private file storage is temporarily unavailable.",
   },
+  RECEIPT_INVALID: {
+    title: "Purchase could not be verified",
+    detail: "The store could not verify this purchase.",
+  },
+  BENEFICIARY_LINK_INVALID: {
+    title: "Guardian link invalid",
+    detail: "No verified, unexpired guardian link exists for this student.",
+  },
+  PARENTAL_GATE_REQUIRED: {
+    title: "Parental gate required",
+    detail: "Confirm the parental gate before this purchase can continue.",
+  },
+  STUDENT_PURCHASE_DISABLED: {
+    title: "Student purchases disabled",
+    detail: "This school has not enabled student self-purchase.",
+  },
+  ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT: {
+    title: "Owned by another account",
+    detail: "This purchase belongs to a different Studafy account.",
+  },
+  PRODUCT_NOT_FOUND: {
+    title: "Product not available",
+    detail: "This product is not currently offered.",
+  },
 };
 
 export class RequestTimeoutError extends Error {

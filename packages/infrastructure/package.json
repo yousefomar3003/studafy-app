@@ -11,7 +11,10 @@
   "dependencies": {
     "@studafy/domain": "workspace:*",
     "@supabase/supabase-js": "2.116.0",
+    "app-store-server-library": "^0.1.3",
     "bullmq": "6.3.4",
+    "google-auth-library": "^11.1.0",
+    "googleapis": "^181.0.0",
     "ioredis": "6.0.0"
   }
 }

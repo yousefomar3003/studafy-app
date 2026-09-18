@@ -45,7 +45,7 @@ school, and request context. Notification-worthy actions write only a minimal
 | F8 | `study-coach` ask/quiz/flashcards | Classroom ID, topic, question (P1/P2) | Attachment paths rejected (SEC-001); enrollment verified server-side |
 | F9 | `create/cancel-google-meet` | Class, audience, times (P2) | Client never holds Google tokens |
 | F10 | (Removed) `approve/publish-grade-result` | Draft/score review (P0/P1) | Replaced by transactional `/v1/grade-results/{id}:review/:publish`; sources were not deployed in inspected synthetic project |
-| F11 | `verify-store-purchase` | Store receipt/purchase token (P2) | Forwarded to verifier; client never grants entitlement |
+| F11 | (Removed) `verify-store-purchase` | Store receipt/purchase token (P2) | Replaced (2026-09-18) by `/v1/billing/*` submit/restore + store webhooks; client still never grants entitlement |
 | F12 | `request-account-deletion` | Typed confirmation (P1) | Recent-auth via JWT `iat` (weak — finding) |
 
 ### Edge Functions → external providers (cross-border)
@@ -54,7 +54,7 @@ school, and request context. Notification-worthy actions write only a minimal
 |---|---|---|---|
 | F13 | `study-coach` → Study Coach AI (cross-border) | Question, topic, up to 30 material bodies (P1/P0 if real) | No token budget/chunking/cost controls (finding); synthetic endpoint today |
 | F14 | Meet functions → Google token broker → Calendar (cross-border) | Event title/times/attendees (P1) | N+1 recipient expansion; external side effect before durable idempotency (OPS-061) |
-| F15 | `verify-store-purchase` → purchase verifier (cross-border) | Receipt data (P2) | Generic verifier; no official store webhook receivers (PAY-071) |
+| F15 | API/worker → Apple App Store Server API / Google Play Android Publisher | Store verification payloads (P2, never raw receipts logged) | PAY-071: environment/bundle/package trust enforced; webhook receivers exist; reconciliation enabled via flag |
 
 ### Edge Functions → PostgreSQL (service role)
 
@@ -88,7 +88,7 @@ idempotency, transactions, timeouts (API-040/041).
 | Client-side unread-notification counting; N+1 guardian/auth-admin loops in Meet creation | client + `create-google-meet` | API/OPS phases |
 | Study Coach sends up to 30 material bodies without budget/chunking/cost controls | `study-coach` | later AI hardening |
 | Sequential, non-transactional multi-row updates; duplicate-question weakness in grade approval | Removed `approve/publish-grade-result` sources | Resolved locally by API-041 transaction/parity tests; no remote cutover claim |
-| Single-row entitlement table; no ledger/webhooks/reconciliation | `subscription_entitlements`, verifier | PAY-071 |
+| Single-row entitlement table; no ledger/webhooks/reconciliation | `subscription_entitlements`, verifier | **Resolved by PAY-071** (`store_products`/`store_transactions`/`store_events`/`entitlements` + worker queue + reconciliation; legacy table retired from billing reads) |
 | QR scanner returns hard-coded ID; painter is not an interoperable encoder | `lib/student_linking.dart` | post-threat-model decision; never identity proof |
 | Consent records a code-owned policy version; policy text/legal approval remains pending | `features/session/data/supabase_session_repository.dart`, migration 0006 | AUTH-030 |
 | Demo-role fallback is restricted to synthetic runtime but full server role authorization remains future work | `features/session/application/session_interactor.dart`, `studafy_domain.dart` | ARC-011 / AUTH-030 |

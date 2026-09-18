@@ -45,6 +45,11 @@ dependencies:
   supabase_flutter: ^2.10.3
   url_launcher: ^6.3.2
   in_app_purchase: ^3.2.3
+  # PAY-071: the paywall renders price/period/trial strings from the store
+  # product query (Apple 3.1.2). Those fields live on the platform-specific
+  # product subtypes, both pulled by in_app_purchase's federated plugin.
+  in_app_purchase_android: ^0.5.3
+  in_app_purchase_storekit: ^0.4.12
   flutter_secure_storage: ^11.1.1
   sign_in_with_apple: ^8.2.0
   crypto: ^3.0.7

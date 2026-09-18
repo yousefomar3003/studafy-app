@@ -68,9 +68,11 @@ describe("problem details contract", () => {
 
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
+      "BENEFICIARY_LINK_INVALID",
       "CONFLICT",
       "CURSOR_INVALID",
       "DELIVERY_GRANT_INVALID",
+      "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT",
       "FILE_DELIVERY_DISABLED",
       "FILE_NOT_CLEAN",
       "FILE_PUBLISH_DISABLED",
@@ -87,12 +89,16 @@ describe("problem details contract", () => {
       "MFA_REQUIRED",
       "NOT_FOUND",
       "NOT_IMPLEMENTED",
+      "PARENTAL_GATE_REQUIRED",
       "PAYLOAD_TOO_LARGE",
+      "PRODUCT_NOT_FOUND",
       "RATE_LIMITED",
       "REAUTH_REQUIRED",
+      "RECEIPT_INVALID",
       "REQUEST_TIMEOUT",
       "SERVICE_UNAVAILABLE",
       "STORAGE_UNAVAILABLE",
+      "STUDENT_PURCHASE_DISABLED",
       "UNAUTHENTICATED",
       "UNSUPPORTED_MEDIA_TYPE",
       "UPLOAD_ALREADY_COMPLETED",

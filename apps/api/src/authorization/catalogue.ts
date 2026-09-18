@@ -825,6 +825,53 @@ export const PERMISSION_CATALOGUE = {
     "Publish one clean lesson-resource file to its classroom as a single " +
       "resource, version and publication.",
   ),
+
+  // PAY-071. Self-scoped: the "resource" is always the caller's own
+  // purchase/entitlement/beneficiary relationship, which the private.billing_*
+  // functions re-derive from auth.uid() and guardian_links themselves - the
+  // same reasoning guardian_link.request and account.profile.read already
+  // document. billing.school_settings.write is also self-scoped for the same
+  // reason support_access.request is: no existing resource exists to resolve
+  // a tenant from at the API layer, and the SQL command's own
+  // is_school_admin(schoolId) check is the real guard.
+  "billing.catalogue.read": {
+    resource: "store_product",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read the store product catalogue for the current environment.",
+  },
+  "billing.purchase.submit": {
+    resource: "store_transaction",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Submit a store purchase for server verification, for self or a linked child.",
+  },
+  "billing.restore": {
+    resource: "store_transaction",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Restore a previously verified store purchase.",
+  },
+  "billing.entitlement.read": {
+    resource: "entitlement",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "List the authenticated user's own entitlements.",
+  },
+  "billing.school_settings.write": {
+    resource: "school_billing_settings",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Enable or disable student self-purchase for a school as its administrator.",
+  },
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

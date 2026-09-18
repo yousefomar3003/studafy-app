@@ -87,3 +87,4 @@ export * from "./account";
 export * from "./supportAccess";
 export * from "./safety";
 export * from "./files";
+export * from "./billing";
