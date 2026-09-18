@@ -18,6 +18,7 @@ part 'features/parent/presentation/parent_home.dart';
 part 'features/parent/presentation/parent_academics.dart';
 part 'features/parent/presentation/parent_academic_components.dart';
 part 'features/parent/presentation/parent_insights.dart';
+part 'features/parent/presentation/parent_insights_paywall.dart';
 part 'features/parent/presentation/parent_insight_components.dart';
 part 'features/parent/presentation/parent_behaviours.dart';
 part 'features/parent/presentation/parent_account.dart';

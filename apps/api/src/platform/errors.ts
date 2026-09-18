@@ -161,8 +161,7 @@ const DEFINITIONS: Record<
   },
   BENEFICIARY_LINK_INVALID: {
     title: "Guardian link invalid",
-    detail:
-      "No verified, unexpired guardian link exists for this student.",
+    detail: "No verified, unexpired guardian link exists for this student.",
   },
   PARENTAL_GATE_REQUIRED: {
     title: "Parental gate required",

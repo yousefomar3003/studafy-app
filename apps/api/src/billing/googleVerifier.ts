@@ -6,8 +6,8 @@
  * stable.
  */
 export {
-  GoogleVerificationError,
   type GooglePurchaseVerifier,
+  GoogleVerificationError,
   type GoogleVerifierConfig,
   RealGooglePurchaseVerifier,
   type VerifiedGooglePurchase,

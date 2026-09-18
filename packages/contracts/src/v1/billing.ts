@@ -103,7 +103,12 @@ export type V1SubmitPurchaseRequest = z.infer<typeof V1SubmitPurchaseRequest>;
 
 export const V1SubmitPurchaseResponse = z.strictObject({
   featureKey: V1BillingFeatureKey,
-  derivation: z.enum(["granted", "updated", "pending", "duplicate_entitlement"]),
+  derivation: z.enum([
+    "granted",
+    "updated",
+    "pending",
+    "duplicate_entitlement",
+  ]),
 });
 export type V1SubmitPurchaseResponse = z.infer<
   typeof V1SubmitPurchaseResponse

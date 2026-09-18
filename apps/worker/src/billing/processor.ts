@@ -43,8 +43,8 @@ import type { Logger } from "@studafy/observability";
 import { type Processor, UnrecoverableError } from "bullmq";
 import { isFinalAttempt, normalizedErrorCode } from "../platform/jobGuards";
 import {
-  billingEventIdFromJobId,
   type BillingDispatchPort,
+  billingEventIdFromJobId,
   type BillingEventPayload,
 } from "./billingDispatch";
 
@@ -175,11 +175,19 @@ export async function reverify(
 ): Promise<FinishBody | null> {
   const environment = payload.environment || verifiers.environment;
   if (payload.platform === "app_store") {
-    const body = await reverifyApple(payload.rawPayload, verifiers.apple, environment);
+    const body = await reverifyApple(
+      payload.rawPayload,
+      verifiers.apple,
+      environment,
+    );
     return body ?? { platform: "app_store", environment, noop: true };
   }
   if (payload.platform === "play_store") {
-    const body = await reverifyGoogle(payload.rawPayload, verifiers.google, environment);
+    const body = await reverifyGoogle(
+      payload.rawPayload,
+      verifiers.google,
+      environment,
+    );
     return body ?? { platform: "play_store", environment, noop: true };
   }
   return { platform: payload.platform as never, environment, noop: true };
@@ -190,8 +198,12 @@ async function reverifyApple(
   apple: BillingVerifierDependencies["apple"],
   environment: string,
 ): Promise<FinishBody | null> {
-  if (!apple) throw new AppleVerificationErrorShim("apple verifier not configured");
-  if (!rawPayload) throw new AppleVerificationErrorShim("billing payload is empty");
+  if (!apple) {
+    throw new AppleVerificationErrorShim("apple verifier not configured");
+  }
+  if (!rawPayload) {
+    throw new AppleVerificationErrorShim("billing payload is empty");
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawPayload);
@@ -203,7 +215,9 @@ async function reverifyApple(
   }
   const signedPayload = (parsed as Record<string, unknown>).signedPayload;
   if (typeof signedPayload !== "string" || !signedPayload) {
-    throw new AppleVerificationErrorShim("billing payload missing signedPayload");
+    throw new AppleVerificationErrorShim(
+      "billing payload missing signedPayload",
+    );
   }
   const notification = await apple.verifier.verifyNotification(signedPayload);
   const transaction = notification.transaction;
@@ -219,7 +233,9 @@ async function reverifyApple(
   ) {
     // A sandbox receipt must never move a production ledger row (and an
     // event for another app never moves ours).
-    throw new AppleVerificationErrorShim("notification fails bundle/environment trust");
+    throw new AppleVerificationErrorShim(
+      "notification fails bundle/environment trust",
+    );
   }
 
   const signal = mapAppleNotificationToTransactionState(
@@ -286,8 +302,12 @@ async function reverifyGoogle(
   google: BillingVerifierDependencies["google"],
   environment: string,
 ): Promise<FinishBody | null> {
-  if (!google) throw new GoogleVerificationErrorShim("google verifier not configured");
-  if (!rawPayload) throw new GoogleVerificationErrorShim("billing payload is empty");
+  if (!google) {
+    throw new GoogleVerificationErrorShim("google verifier not configured");
+  }
+  if (!rawPayload) {
+    throw new GoogleVerificationErrorShim("billing payload is empty");
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawPayload);
@@ -304,11 +324,15 @@ async function reverifyGoogle(
   }
   const sub = record.subscriptionNotification;
   if (typeof sub !== "object" || sub === null) {
-    throw new GoogleVerificationErrorShim("billing payload is not a subscription notification");
+    throw new GoogleVerificationErrorShim(
+      "billing payload is not a subscription notification",
+    );
   }
   const purchaseToken = (sub as Record<string, unknown>).purchaseToken;
   if (typeof purchaseToken !== "string" || !purchaseToken) {
-    throw new GoogleVerificationErrorShim("subscription notification missing purchaseToken");
+    throw new GoogleVerificationErrorShim(
+      "subscription notification missing purchaseToken",
+    );
   }
 
   const verified = await google.verifier.verifySubscription(
@@ -320,7 +344,7 @@ async function reverifyGoogle(
   }
   const state =
     mapGoogleSubscriptionStateToTransactionState(verified.subscriptionState) ??
-    "on_hold";
+      "on_hold";
 
   let acknowledged = verified.acknowledgementState === "2";
   if (

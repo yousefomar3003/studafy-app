@@ -11,6 +11,7 @@ import 'contracts/v1_http_transport.dart';
 class StoreSubscriptionRepository implements ParentSubscriptionRepository {
   StoreSubscriptionRepository({InAppPurchase? store, V1BillingApi? billingApi})
     : _store = store ?? InAppPurchase.instance,
+      // ignore: prefer_initializing_formals
       _billingApi = billingApi;
 
   final InAppPurchase _store;
@@ -75,7 +76,7 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
   }
 
   Future<V1BillingProduct> _insightsProductOrThrow() async {
-    final products = await _products();
+    await _products();
     final insights = _insightsProduct;
     if (insights == null) {
       // PAY-071 §29: Parent Insights is not sold until legal sign-off and is
@@ -95,7 +96,8 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
       for (final row in rows) {
         if (row.featureKey == 'parent_insights') {
           return SubscriptionEntitlement(
-            active: row.grantsAccess &&
+            active:
+                row.grantsAccess &&
                 (row.endsAt == null || row.endsAt!.isAfter(DateTime.now())),
             source: row.status,
             expiresAt: row.endsAt,
@@ -105,7 +107,10 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
       return const SubscriptionEntitlement(active: false, source: 'none');
     } catch (error) {
       if (error is V1ApiException && error.isUnauthenticated) rethrow;
-      return const SubscriptionEntitlement(active: false, source: 'unavailable');
+      return const SubscriptionEntitlement(
+        active: false,
+        source: 'unavailable',
+      );
     }
   }
 
@@ -123,7 +128,9 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
       return fallback;
     }
     final response = await _store.queryProductDetails({product.storeProductId});
-    if (response.error != null || response.productDetails.isEmpty) return fallback;
+    if (response.error != null || response.productDetails.isEmpty) {
+      return fallback;
+    }
     final terms = resolveStoreOfferTerms(response.productDetails.first);
     return PaywallOffer(
       featureKey: 'parent_insights',
@@ -211,7 +218,8 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
       // Deterministic idempotency key: a replayed stream event collapses onto
       // the server's completed idempotency reservation instead of submitting
       // the same store receipt twice.
-      final idempotencyKey = 'pay071:${purchase.purchaseID ?? product.storeProductId}';
+      final idempotencyKey =
+          'pay071:${purchase.purchaseID ?? product.storeProductId}';
       if (restored) {
         await _billingApi!.restorePurchase(
           platform: product.platform,

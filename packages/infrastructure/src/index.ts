@@ -73,16 +73,16 @@ export {
   LocalDeterministicScanner,
 } from "./fileScanner";
 export {
-  AppleVerificationError,
   type AppleTransactionVerifier,
+  AppleVerificationError,
   type AppleVerifierConfig,
   RealAppleTransactionVerifier,
   type VerifiedAppleNotification,
   type VerifiedAppleTransaction,
 } from "./billing/appleVerifier";
 export {
-  GoogleVerificationError,
   type GooglePurchaseVerifier,
+  GoogleVerificationError,
   type GoogleVerifierConfig,
   RealGooglePurchaseVerifier,
   type VerifiedGooglePurchase,

@@ -11,19 +11,19 @@ import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
 import type { Job, JobsOptions } from "bullmq";
 import {
+  type BillingDispatchPort,
   billingEventIdFromJobId,
   billingEventJobId,
-  type BillingDispatchPort,
-  type BillingFinishOutcome,
   type BillingEventPayload,
+  type BillingFinishOutcome,
   type ClaimedBillingEvent,
   type ReconciliationCandidate,
 } from "../src/billing/billingDispatch";
 import { createBillingDispatcher } from "../src/billing/dispatcher";
 import {
+  type BillingVerifierDependencies,
   createBillingEventProcessor,
   reverify,
-  type BillingVerifierDependencies,
 } from "../src/billing/processor";
 import { startBillingReconciliation } from "../src/billing/reconciliation";
 
@@ -68,7 +68,10 @@ class FakeDispatch implements BillingDispatchPort {
   async finishEvent(eventId: number, _body: Record<string, unknown>) {
     return this.finishOutcomeByEvent.get(eventId) ?? "completed";
   }
-  async reconcileTransaction(transactionId: string, body: Record<string, unknown>) {
+  async reconcileTransaction(
+    transactionId: string,
+    body: Record<string, unknown>,
+  ) {
     this.reconcileOutcomes.push([transactionId, body]);
     return "updated";
   }
@@ -117,7 +120,9 @@ class FakeGoogleVerifier implements GooglePurchaseVerifier {
   }
 }
 
-function verifiedApple(overrides: Partial<VerifiedAppleTransaction> = {}): VerifiedAppleTransaction {
+function verifiedApple(
+  overrides: Partial<VerifiedAppleTransaction> = {},
+): VerifiedAppleTransaction {
   return {
     bundleId: "com.studafy.app",
     environment: "Production",
@@ -131,7 +136,9 @@ function verifiedApple(overrides: Partial<VerifiedAppleTransaction> = {}): Verif
   };
 }
 
-function verifiedGoogle(overrides: Partial<VerifiedGooglePurchase> = {}): VerifiedGooglePurchase {
+function verifiedGoogle(
+  overrides: Partial<VerifiedGooglePurchase> = {},
+): VerifiedGooglePurchase {
   return {
     packageName: "com.studafy.app",
     productId: "student_ai",
@@ -146,7 +153,10 @@ function verifiedGoogle(overrides: Partial<VerifiedGooglePurchase> = {}): Verifi
   };
 }
 
-function appleEnv(apple: FakeAppleVerifier, overrides: Partial<BillingVerifierDependencies["apple"]> = {}) {
+function appleEnv(
+  apple: FakeAppleVerifier,
+  overrides: Partial<BillingVerifierDependencies["apple"]> = {},
+) {
   return {
     verifier: apple,
     bundleId: "com.studafy.app",
@@ -155,7 +165,10 @@ function appleEnv(apple: FakeAppleVerifier, overrides: Partial<BillingVerifierDe
   };
 }
 
-function googleEnv(google: FakeGoogleVerifier, overrides: Partial<BillingVerifierDependencies["google"]> = {}) {
+function googleEnv(
+  google: FakeGoogleVerifier,
+  overrides: Partial<BillingVerifierDependencies["google"]> = {},
+) {
   return {
     verifier: google,
     packageName: "com.studafy.app",
@@ -178,7 +191,10 @@ function job(
 }
 
 const googleRtDn = JSON.stringify({
-  subscriptionNotification: { purchaseToken: "gpa.token-1", notificationType: 4 },
+  subscriptionNotification: {
+    purchaseToken: "gpa.token-1",
+    notificationType: 4,
+  },
 });
 
 describe("PAY-071 billing job ids", () => {
@@ -203,7 +219,11 @@ describe("PAY-071 billing-events processor", () => {
     google.purchase = verifiedGoogle();
     const process = createBillingEventProcessor(
       dispatch,
-      { environment: "production", apple: appleEnv(apple), google: googleEnv(google) },
+      {
+        environment: "production",
+        apple: appleEnv(apple),
+        google: googleEnv(google),
+      },
       testLogger().logger,
     );
     dispatch.payloads.set(7, {
@@ -274,10 +294,18 @@ describe("PAY-071 billing-events processor", () => {
       transaction: null,
     };
     const body = await reverify(
-      { platform: "app_store", environment: "production", rawPayload: JSON.stringify({ signedPayload: "signed.payload" }) },
+      {
+        platform: "app_store",
+        environment: "production",
+        rawPayload: JSON.stringify({ signedPayload: "signed.payload" }),
+      },
       { environment: "production", apple: appleEnv(apple), google: null },
     );
-    expect(body).toEqual({ platform: "app_store", environment: "production", noop: true });
+    expect(body).toEqual({
+      platform: "app_store",
+      environment: "production",
+      noop: true,
+    });
   });
 
   test("an Apple sandbox transaction can never finish as production", async () => {
@@ -289,7 +317,11 @@ describe("PAY-071 billing-events processor", () => {
       transaction: verifiedApple({ environment: "Sandbox" }),
     };
     await expect(reverify(
-      { platform: "app_store", environment: "production", rawPayload: JSON.stringify({ signedPayload: "signed.payload" }) },
+      {
+        platform: "app_store",
+        environment: "production",
+        rawPayload: JSON.stringify({ signedPayload: "signed.payload" }),
+      },
       { environment: "production", apple: appleEnv(apple), google: null },
     )).rejects.toThrow(/trust/i);
   });
@@ -304,7 +336,11 @@ describe("PAY-071 billing-events processor", () => {
     };
     apple.status = verifiedApple({ revocationReason: null });
     const body = await reverify(
-      { platform: "app_store", environment: "production", rawPayload: JSON.stringify({ signedPayload: "signed.payload" }) },
+      {
+        platform: "app_store",
+        environment: "production",
+        rawPayload: JSON.stringify({ signedPayload: "signed.payload" }),
+      },
       { environment: "production", apple: appleEnv(apple), google: null },
     );
     expect(body?.state).toBe("refunded");
@@ -398,7 +434,9 @@ describe("PAY-071 billing-events processor", () => {
       environment: "production",
       transactionId: "5",
     }))).rejects.toThrow("billing original transaction unknown");
-    expect(collector.events()).toContain("billing_job_retry_unknown_transaction");
+    expect(collector.events()).toContain(
+      "billing_job_retry_unknown_transaction",
+    );
     expect(collector.events()).not.toContain("billing_job_exhausted");
   });
 
@@ -431,7 +469,11 @@ describe("PAY-071 billing-events processor", () => {
     const { logger, collector } = testLogger();
     const process = createBillingEventProcessor(
       dispatch,
-      { environment: "production", apple: null, google: googleEnv(new FakeGoogleVerifier()) },
+      {
+        environment: "production",
+        apple: null,
+        google: googleEnv(new FakeGoogleVerifier()),
+      },
       logger,
     );
     dispatch.payloads.set(17, {
@@ -441,11 +483,16 @@ describe("PAY-071 billing-events processor", () => {
     });
 
     await expect(process(
-      job("billing-event-17", {
-        platform: "play_store",
-        environment: "production",
-        transactionId: "17",
-      }, 7, 8),
+      job(
+        "billing-event-17",
+        {
+          platform: "play_store",
+          environment: "production",
+          transactionId: "17",
+        },
+        7,
+        8,
+      ),
     )).rejects.toThrow("PROCESSING_FAILED");
     expect(dispatch.failed).toEqual([[17, "PROCESSING_FAILED"]]);
     expect(collector.events()).toContain("billing_job_exhausted");
@@ -456,7 +503,11 @@ describe("PAY-071 billing-events processor", () => {
     const { logger, collector } = testLogger();
     const process = createBillingEventProcessor(
       dispatch,
-      { environment: "production", apple: null, google: googleEnv(new FakeGoogleVerifier()) },
+      {
+        environment: "production",
+        apple: null,
+        google: googleEnv(new FakeGoogleVerifier()),
+      },
       logger,
     );
     dispatch.payloads.set(19, {
@@ -493,11 +544,13 @@ describe("PAY-071 billing-events processor", () => {
       { environment: "production", apple: null, google: null },
       testLogger().logger,
     );
-await expect(process(job("unrelated-id", {
+    await expect(process(job("unrelated-id", {
       platform: "play_store",
       environment: "production",
       transactionId: "1",
-    }))).rejects.toThrow("billing job id does not match the deterministic event contract");
+    }))).rejects.toThrow(
+      "billing job id does not match the deterministic event contract",
+    );
   });
 
   test("a vanished processing lease throws to retry", async () => {
@@ -518,7 +571,11 @@ await expect(process(job("unrelated-id", {
 function fakeQueueJobs(jobsById: Map<string, FakeJob>): Queue {
   return {
     getJob: async (jobId: string) => jobsById.get(jobId) ?? null,
-    add: async (_name: string, data: unknown, opts: { jobId?: string } = {}) => {
+    add: async (
+      _name: string,
+      data: unknown,
+      opts: { jobId?: string } = {},
+    ) => {
       const id = opts.jobId ?? `auto-${jobsById.size + 1}`;
       const f = new FakeJob(id, data);
       jobsById.set(id, f);
@@ -594,7 +651,11 @@ describe("PAY-071 billing dispatcher", () => {
     f.completed = true;
     jobsById.set("billing-event-7", f);
     const queued = fakeQueueJobs(jobsById);
-    const dispatcher = createBillingDispatcher(dispatch, queued, testLogger().logger);
+    const dispatcher = createBillingDispatcher(
+      dispatch,
+      queued,
+      testLogger().logger,
+    );
     dispatch.claimed = [{ ...dispatchRow(), bullmqJobId: "billing-event-7" }];
 
     await dispatcher.runOnce();
@@ -632,7 +693,11 @@ describe("PAY-071 billing dispatcher", () => {
         throw new Error("Redis connection time out");
       },
     } as unknown as Queue;
-    const dispatcher = createBillingDispatcher(dispatch, brokenQueue, testLogger().logger);
+    const dispatcher = createBillingDispatcher(
+      dispatch,
+      brokenQueue,
+      testLogger().logger,
+    );
     dispatch.claimed = [dispatchRow()];
 
     await dispatcher.runOnce();
@@ -647,7 +712,9 @@ describe("PAY-071 billing dispatcher", () => {
 });
 
 describe("PAY-071 billing reconciliation", () => {
-  function candidate(overrides: Partial<ReconciliationCandidate> = {}): ReconciliationCandidate {
+  function candidate(
+    overrides: Partial<ReconciliationCandidate> = {},
+  ): ReconciliationCandidate {
     return {
       transactionId: "11111111-1111-4111-8111-111111111111",
       platform: "play_store",
@@ -689,7 +756,9 @@ describe("PAY-071 billing reconciliation", () => {
   test("an expired Google transaction is never acknowledged", async () => {
     const dispatch = new FakeDispatch();
     const google = new FakeGoogleVerifier();
-    google.purchase = verifiedGoogle({ subscriptionState: "SUBSCRIPTION_STATE_EXPIRED" });
+    google.purchase = verifiedGoogle({
+      subscriptionState: "SUBSCRIPTION_STATE_EXPIRED",
+    });
     const sweep = startBillingReconciliation(
       dispatch,
       { environment: "production", apple: null, google: googleEnv(google) },
@@ -701,7 +770,10 @@ describe("PAY-071 billing reconciliation", () => {
     await sweep.close();
 
     expect(google.ackCalls).toBe(0);
-    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({ state: "expired", acknowledged: false });
+    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({
+      state: "expired",
+      acknowledged: false,
+    });
   });
 
   test("a failed Google ack still converges without acknowledgement", async () => {
@@ -719,7 +791,9 @@ describe("PAY-071 billing reconciliation", () => {
     await sweep.runOnce();
     await sweep.close();
 
-    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({ acknowledged: false });
+    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({
+      acknowledged: false,
+    });
   });
 
   test("an Apple candidate is re-verified against the status API", async () => {
@@ -731,7 +805,9 @@ describe("PAY-071 billing reconciliation", () => {
       { environment: "production", apple: appleEnv(apple), google: null },
       testLogger().logger,
     );
-    dispatch.scan = [candidate({ platform: "app_store", storeTransactionId: "apple-txn-1" })];
+    dispatch.scan = [
+      candidate({ platform: "app_store", storeTransactionId: "apple-txn-1" }),
+    ];
 
     await sweep.runOnce();
     await sweep.close();
@@ -754,7 +830,9 @@ describe("PAY-071 billing reconciliation", () => {
       { environment: "production", apple: appleEnv(apple), google: null },
       logger,
     );
-    dispatch.scan = [candidate({ platform: "app_store", storeTransactionId: "apple-txn-1" })];
+    dispatch.scan = [
+      candidate({ platform: "app_store", storeTransactionId: "apple-txn-1" }),
+    ];
 
     await sweep.runOnce();
     await sweep.close();

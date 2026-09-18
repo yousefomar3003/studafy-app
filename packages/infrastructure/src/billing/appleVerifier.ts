@@ -46,7 +46,9 @@ export interface VerifiedAppleNotification {
 }
 
 export interface AppleTransactionVerifier {
-  verifyTransaction(signedTransaction: string): Promise<VerifiedAppleTransaction>;
+  verifyTransaction(
+    signedTransaction: string,
+  ): Promise<VerifiedAppleTransaction>;
   verifyNotification(signedPayload: string): Promise<VerifiedAppleNotification>;
   /** Authoritative current status, used by the webhook processor rather than
    * trusting the notification's embedded transaction alone. */
@@ -105,7 +107,9 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
       return toVerifiedTransaction(decoded);
     } catch (error) {
       throw new AppleVerificationError(
-        error instanceof Error ? error.message : "transaction verification failed",
+        error instanceof Error
+          ? error.message
+          : "transaction verification failed",
       );
     }
   }
@@ -129,7 +133,9 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
       };
     } catch (error) {
       throw new AppleVerificationError(
-        error instanceof Error ? error.message : "notification verification failed",
+        error instanceof Error
+          ? error.message
+          : "notification verification failed",
       );
     }
   }
@@ -167,7 +173,9 @@ function toVerifiedTransaction(
     !payload.transactionId || !payload.productId ||
     typeof payload.purchaseDate !== "number"
   ) {
-    throw new AppleVerificationError("decoded transaction missing required fields");
+    throw new AppleVerificationError(
+      "decoded transaction missing required fields",
+    );
   }
   return {
     bundleId: payload.bundleId,

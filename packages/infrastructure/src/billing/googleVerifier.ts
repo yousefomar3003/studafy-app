@@ -67,7 +67,9 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
     try {
       credentials = JSON.parse(config.serviceAccountJson);
     } catch {
-      throw new GoogleVerificationError("service account JSON is not valid JSON");
+      throw new GoogleVerificationError(
+        "service account JSON is not valid JSON",
+      );
     }
     this.#auth = new GoogleAuth({
       credentials,
@@ -110,7 +112,9 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
     } catch (error) {
       if (error instanceof GoogleVerificationError) throw error;
       throw new GoogleVerificationError(
-        error instanceof Error ? error.message : "subscription verification failed",
+        error instanceof Error
+          ? error.message
+          : "subscription verification failed",
       );
     }
   }

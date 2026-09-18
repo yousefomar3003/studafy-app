@@ -6,8 +6,8 @@
  * stable.
  */
 export {
-  AppleVerificationError,
   type AppleTransactionVerifier,
+  AppleVerificationError,
   type AppleVerifierConfig,
   RealAppleTransactionVerifier,
   type VerifiedAppleNotification,

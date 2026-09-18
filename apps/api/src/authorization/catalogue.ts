@@ -839,7 +839,8 @@ export const PERMISSION_CATALOGUE = {
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Read the store product catalogue for the current environment.",
+    description:
+      "Read the store product catalogue for the current environment.",
   },
   "billing.purchase.submit": {
     resource: "store_transaction",

@@ -37,7 +37,7 @@ class StoreOfferTerms {
   /// Adjective for the same period ("monthly", "weekly", "yearly").
   final String periodAdjective;
 
-  /// The period as a billing noun for "X / <period>" copy ("month", "3 months").
+  /// The period as a billing noun for "X / `<period>`" copy ("month", "3 months").
   String get periodNoun {
     final length = periodLength;
     if (length == '1 month') return 'month';
@@ -118,7 +118,9 @@ StoreOfferTerms _fromGooglePlay(GooglePlayProductDetails product) {
     }
   }
   return StoreOfferTerms(
-    price: renewal.formattedPrice.isEmpty ? product.price : renewal.formattedPrice,
+    price: renewal.formattedPrice.isEmpty
+        ? product.price
+        : renewal.formattedPrice,
     currencyCode: renewal.priceCurrencyCode.isEmpty
         ? product.currencyCode
         : renewal.priceCurrencyCode,
@@ -133,18 +135,21 @@ StoreOfferTerms _fromAppStore(AppStoreProductDetails product) {
   final sku = product.skProduct;
   final period = sku.subscriptionPeriod;
   final intro = sku.introductoryPrice;
-  final hasTrial = intro != null &&
+  final hasTrial =
+      intro != null &&
       intro.paymentMode == SKProductDiscountPaymentMode.freeTrail &&
       intro.subscriptionPeriod.numberOfUnits > 0;
   return StoreOfferTerms(
     price: product.price,
     currencyCode: product.currencyCode,
-    periodLength: period == null ? '' : _periodFromIos(period.numberOfUnits, period.unit),
+    periodLength: period == null
+        ? ''
+        : _periodFromIos(period.numberOfUnits, period.unit),
     periodAdjective: period == null ? '' : _adjectiveFromIos(period.unit),
     hasTrial: hasTrial,
     trialLength: hasTrial
         ? _periodFromIos(
-            intro!.subscriptionPeriod.numberOfUnits,
+            intro.subscriptionPeriod.numberOfUnits,
             intro.subscriptionPeriod.unit,
           )
         : '',
@@ -186,17 +191,16 @@ String _adjectiveFromIso(String iso) {
   return null;
 }
 
-String _countAndUnit(int count, String unit) => count == 1 ? '1 $unit' : '$count $unit';
+String _countAndUnit(int count, String unit) =>
+    count == 1 ? '1 $unit' : '$count $unit';
 
-String _periodFromIos(int count, SKSubscriptionPeriodUnit unit) => _countAndUnit(
-  count,
-  switch (unit) {
-    SKSubscriptionPeriodUnit.day => 'day',
-    SKSubscriptionPeriodUnit.week => 'week',
-    SKSubscriptionPeriodUnit.month => 'month',
-    SKSubscriptionPeriodUnit.year => 'year',
-  },
-);
+String _periodFromIos(int count, SKSubscriptionPeriodUnit unit) =>
+    _countAndUnit(count, switch (unit) {
+      SKSubscriptionPeriodUnit.day => 'day',
+      SKSubscriptionPeriodUnit.week => 'week',
+      SKSubscriptionPeriodUnit.month => 'month',
+      SKSubscriptionPeriodUnit.year => 'year',
+    });
 
 String _adjectiveFromIos(SKSubscriptionPeriodUnit unit) => switch (unit) {
   SKSubscriptionPeriodUnit.day => 'daily',

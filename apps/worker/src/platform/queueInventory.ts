@@ -205,6 +205,10 @@ export function queueDefinition(name: string): QueueDefinition {
   return definition;
 }
 
-export const IMPLEMENTED_QUEUES = ["smoke", "notifications", "billing-events"] as const;
+export const IMPLEMENTED_QUEUES = [
+  "smoke",
+  "notifications",
+  "billing-events",
+] as const;
 
 export type { QueueStats };

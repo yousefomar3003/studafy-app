@@ -124,11 +124,17 @@ export function startBillingReconciliation(
         verifiers.google.packageName,
         purchaseToken,
       );
-      if (!isGooglePackageNameTrusted(verified.packageName, verifiers.google.packageName)) {
+      if (
+        !isGooglePackageNameTrusted(
+          verified.packageName,
+          verifiers.google.packageName,
+        )
+      ) {
         throw new Error("package name mismatch");
       }
-      const state =
-        mapGoogleSubscriptionStateToTransactionState(verified.subscriptionState) ??
+      const state = mapGoogleSubscriptionStateToTransactionState(
+        verified.subscriptionState,
+      ) ??
         "on_hold";
 
       let acknowledged = verified.acknowledgementState === "2";
@@ -150,8 +156,8 @@ export function startBillingReconciliation(
       return dispatch.reconcileTransaction(candidate.transactionId, {
         platform: "play_store",
         environment: candidate.environment,
-        originalTransactionId:
-          verified.originalTransactionId || candidate.originalTransactionId,
+        originalTransactionId: verified.originalTransactionId ||
+          candidate.originalTransactionId,
         purchasedAt: verified.startTime ?? candidate.purchasedAt,
         effectiveUntil: verified.expiryTime,
         state,

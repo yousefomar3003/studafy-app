@@ -1,9 +1,9 @@
 import { type Context, Hono } from "hono";
 import {
   V1RestorePurchaseRequest,
+  v1Route,
   V1SetSelfPurchaseRequest,
   V1SubmitPurchaseRequest,
-  v1Route,
 } from "@studafy/contracts";
 import {
   isAppleTransactionTrusted,
@@ -200,7 +200,11 @@ export function createBillingRoutes(
     "/v1/billing/school-settings/self-purchase",
     validateRouteInput(setSelfPurchase) as never,
     requirePermission(authorization, "billing.school_settings.write"),
-    idempotency(idempotencyDependencies, setSelfPurchase.operationId, "required"),
+    idempotency(
+      idempotencyDependencies,
+      setSelfPurchase.operationId,
+      "required",
+    ),
     async (c) => {
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
@@ -212,7 +216,10 @@ export function createBillingRoutes(
       );
       if (!ok) return problem(c, "FORBIDDEN", 403);
       c.set("idempotencyCompleted", true);
-      return c.json({ schoolId: body.schoolId, selfPurchaseEnabled: body.enabled });
+      return c.json({
+        schoolId: body.schoolId,
+        selfPurchaseEnabled: body.enabled,
+      });
     },
   );
 
@@ -248,7 +255,9 @@ async function verifyAndNormalize(
         expectedEnvironment: deps.apple.platformEnvironment,
       }) || decoded.productId !== body.storeProductId
     ) {
-      throw new AppleVerificationError("bundle, environment or product mismatch");
+      throw new AppleVerificationError(
+        "bundle, environment or product mismatch",
+      );
     }
     const state = mapAppleTransactionTypeToState(
       null,
@@ -278,7 +287,10 @@ async function verifyAndNormalize(
     body.verificationPayload,
   );
   if (
-    !isGooglePackageNameTrusted(verified.packageName, deps.google.packageName) ||
+    !isGooglePackageNameTrusted(
+      verified.packageName,
+      deps.google.packageName,
+    ) ||
     verified.productId !== body.storeProductId
   ) {
     throw new GoogleVerificationError("package name or product mismatch");

@@ -1,4 +1,4 @@
-import '../contracts/v1_http_transport.dart';
+import '../contracts/v1_client.generated.dart';
 import '../../core/runtime_environment.dart';
 
 String billingEnvironmentName(StudafyEnvironment environment) =>
@@ -45,24 +45,27 @@ class V1BillingSelfPurchaseStatus {
 }
 
 class V1BillingCatalogue {
-  const V1BillingCatalogue({required this.products, required this.selfPurchase});
+  const V1BillingCatalogue({
+    required this.products,
+    required this.selfPurchase,
+  });
 
   final List<V1BillingProduct> products;
   final List<V1BillingSelfPurchaseStatus> selfPurchase;
 
-  factory V1BillingCatalogue.fromJson(Map<String, dynamic> json) =>
-      V1BillingCatalogue(
-        products: (json['products'] as List<dynamic>)
-            .map((row) => V1BillingProduct.fromJson(row as Map<String, dynamic>))
-            .toList(),
-        selfPurchase: (json['selfPurchase'] as List<dynamic>)
-            .map(
-              (row) => V1BillingSelfPurchaseStatus.fromJson(
-                row as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
-      );
+  factory V1BillingCatalogue.fromJson(
+    Map<String, dynamic> json,
+  ) => V1BillingCatalogue(
+    products: (json['products'] as List<dynamic>)
+        .map((row) => V1BillingProduct.fromJson(row as Map<String, dynamic>))
+        .toList(),
+    selfPurchase: (json['selfPurchase'] as List<dynamic>)
+        .map(
+          (row) =>
+              V1BillingSelfPurchaseStatus.fromJson(row as Map<String, dynamic>),
+        )
+        .toList(),
+  );
 }
 
 class V1ParentalGateChallenge {
@@ -104,17 +107,22 @@ class V1SubmitPurchaseOutcome {
 }
 
 class V1RestoreOutcome {
-  const V1RestoreOutcome({required this.restored, this.featureKey, this.derivation});
+  const V1RestoreOutcome({
+    required this.restored,
+    this.featureKey,
+    this.derivation,
+  });
 
   final bool restored;
   final String? featureKey;
   final String? derivation;
 
-  factory V1RestoreOutcome.fromJson(Map<String, dynamic> json) => V1RestoreOutcome(
-    restored: json['restored'] as bool? ?? false,
-    featureKey: json['featureKey'] as String?,
-    derivation: json['derivation'] as String?,
-  );
+  factory V1RestoreOutcome.fromJson(Map<String, dynamic> json) =>
+      V1RestoreOutcome(
+        restored: json['restored'] as bool? ?? false,
+        featureKey: json['featureKey'] as String?,
+        derivation: json['derivation'] as String?,
+      );
 }
 
 class V1EntitlementRow {
@@ -154,8 +162,9 @@ class V1BillingApi {
   final V1JsonTransport _transport;
   final String environment;
 
-  Future<V1BillingCatalogue> catalogue() async =>
-      V1BillingCatalogue.fromJson(await _transport.get('/v1/billing/catalogue'));
+  Future<V1BillingCatalogue> catalogue() async => V1BillingCatalogue.fromJson(
+    await _transport.get('/v1/billing/catalogue'),
+  );
 
   Future<V1ParentalGateChallenge> parentalGate() async =>
       V1ParentalGateChallenge.fromJson(
@@ -179,8 +188,7 @@ class V1BillingApi {
         'storeProductId': storeProductId,
         'productFeatureKey': featureKey,
         'verificationPayload': verificationPayload,
-        if (beneficiaryStudentId != null)
-          'beneficiaryStudentId': beneficiaryStudentId,
+        'beneficiaryStudentId': ?beneficiaryStudentId,
         if (parentalGate != null) 'parentalGate': parentalGate.toJson(),
       },
       idempotencyKey: idempotencyKey,
@@ -206,8 +214,7 @@ class V1BillingApi {
         'storeProductId': storeProductId,
         'productFeatureKey': featureKey,
         'verificationPayload': verificationPayload,
-        if (beneficiaryStudentId != null)
-          'beneficiaryStudentId': beneficiaryStudentId,
+        'beneficiaryStudentId': ?beneficiaryStudentId,
         if (parentalGate != null) 'parentalGate': parentalGate.toJson(),
       },
       idempotencyKey: idempotencyKey,

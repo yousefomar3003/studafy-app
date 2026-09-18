@@ -27,7 +27,7 @@ class PaywallOffer {
   final String price;
   final String currencyCode;
 
-  /// Billing period noun for "X / <period>" copy: "month", "3 months".
+  /// Billing period noun for "X / `<period>`" copy: "month", "3 months".
   final String periodLabel;
   final bool hasTrial;
 

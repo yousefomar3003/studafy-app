@@ -7,9 +7,9 @@ import {
   createWorker,
   type Queue,
   type QueueOptions,
-  type Worker,
   RealAppleTransactionVerifier,
   RealGooglePurchaseVerifier,
+  type Worker,
 } from "@studafy/infrastructure";
 import type { WorkerEnv } from "@studafy/config";
 import type { Processor } from "bullmq";
@@ -25,7 +25,10 @@ import { createOutboxDispatcher } from "../outbox/dispatcher";
 import { createSmokeProcessor } from "../processors/smoke";
 import { postgresBillingDispatch } from "../billing/billingDispatch";
 import { createBillingDispatcher } from "../billing/dispatcher";
-import { createBillingEventProcessor, type BillingVerifierDependencies } from "../billing/processor";
+import {
+  type BillingVerifierDependencies,
+  createBillingEventProcessor,
+} from "../billing/processor";
 import { startBillingReconciliation } from "../billing/reconciliation";
 
 export interface WorkerRuntime {
@@ -53,7 +56,9 @@ export interface BillingRuntime {
 }
 
 /** PAY-071 store verifiers from the worker environment; null when unconfigured. */
-export function billingVerifiersFromEnv(env: WorkerEnv): BillingVerifierDependencies {
+export function billingVerifiersFromEnv(
+  env: WorkerEnv,
+): BillingVerifierDependencies {
   const apple = env.APPLE_BUNDLE_ID && env.APPLE_ENVIRONMENT &&
       env.APPLE_ISSUER_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY &&
       env.APPLE_ROOT_CERTIFICATES_BASE64

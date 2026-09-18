@@ -21,9 +21,9 @@ import type { Logger } from "@studafy/observability";
 import type { Queue } from "@studafy/infrastructure";
 import { normalizedErrorCode } from "../platform/jobGuards";
 import {
+  type BillingDispatchPort,
   billingEventIdFromJobId,
   billingEventJobId,
-  type BillingDispatchPort,
   type ClaimedBillingEvent,
 } from "./billingDispatch";
 

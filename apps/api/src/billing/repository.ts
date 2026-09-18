@@ -31,7 +31,11 @@ export interface NormalizedTransaction {
 
 export interface BillingRepository {
   catalogue(environment: string): Promise<{
-    products: { featureKey: string; platform: string; storeProductId: string }[];
+    products: {
+      featureKey: string;
+      platform: string;
+      storeProductId: string;
+    }[];
   }>;
   selfPurchaseStatus(
     context: RequestDbContext,
@@ -50,7 +54,12 @@ export interface BillingRepository {
     body: NormalizedTransaction,
   ): Promise<BillingResult>;
   listEntitlements(context: RequestDbContext): Promise<
-    { featureKey: string; status: string; startsAt: string; endsAt: string | null }[]
+    {
+      featureKey: string;
+      status: string;
+      startsAt: string;
+      endsAt: string | null;
+    }[]
   >;
   /** Durable webhook dedupe. Returns the new event id, or null on a duplicate. */
   recordEvent(
@@ -100,7 +109,9 @@ export class PostgresBillingRepository implements BillingRepository {
   ): Promise<BillingResult> {
     return await withRequestContext(this.sql, context, async (tx) => {
       const rows = await tx<{ result: BillingResult }[]>`
-        select private.billing_submit_verification(${tx.json(body as never)}) as result
+        select private.billing_submit_verification(${
+        tx.json(body as never)
+      }) as result
       `;
       return rows[0]?.result ?? { outcome: "invalid" };
     });
@@ -134,7 +145,9 @@ export class PostgresBillingRepository implements BillingRepository {
     payloadHash: string,
     rawPayload: string,
   ) {
-    const rows = await this.sql<{ result: { outcome: "new" | "duplicate"; eventId?: number } }[]>`
+    const rows = await this.sql<
+      { result: { outcome: "new" | "duplicate"; eventId?: number } }[]
+    >`
       select private.billing_record_event(
         ${platform}, ${environment}, ${externalEventId}, ${payloadHash}, ${rawPayload}
       ) as result

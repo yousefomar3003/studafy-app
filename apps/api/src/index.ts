@@ -346,17 +346,18 @@ const appleConfig = env.APPLE_BUNDLE_ID && env.APPLE_ENVIRONMENT &&
   }
   : null;
 
-const googleConfig = env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
+const googleConfig =
+  env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
     env.GOOGLE_PUBSUB_AUDIENCE && env.GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL
-  ? {
-    verifier: new RealGooglePurchaseVerifier({
-      serviceAccountJson: env.GOOGLE_SERVICE_ACCOUNT_JSON,
-      pubsubAudience: env.GOOGLE_PUBSUB_AUDIENCE,
-      pubsubServiceAccountEmail: env.GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL,
-    }),
-    packageName: env.GOOGLE_PACKAGE_NAME,
-  }
-  : null;
+    ? {
+      verifier: new RealGooglePurchaseVerifier({
+        serviceAccountJson: env.GOOGLE_SERVICE_ACCOUNT_JSON,
+        pubsubAudience: env.GOOGLE_PUBSUB_AUDIENCE,
+        pubsubServiceAccountEmail: env.GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL,
+      }),
+      packageName: env.GOOGLE_PACKAGE_NAME,
+    }
+    : null;
 
 const billingRepository = sql ? new PostgresBillingRepository(sql) : undefined;
 const billing = sql && env.PAY071_BILLING_ENABLED && env.PAY071_ENVIRONMENT &&

@@ -127,7 +127,9 @@ describe("mapGoogleSubscriptionStateToTransactionState", () => {
       ),
     ).toBe("grace_period");
     expect(
-      mapGoogleSubscriptionStateToTransactionState("SUBSCRIPTION_STATE_ON_HOLD"),
+      mapGoogleSubscriptionStateToTransactionState(
+        "SUBSCRIPTION_STATE_ON_HOLD",
+      ),
     ).toBe("on_hold");
     expect(
       mapGoogleSubscriptionStateToTransactionState("SUBSCRIPTION_STATE_PAUSED"),
@@ -166,7 +168,7 @@ describe("isGooglePackageNameTrusted", () => {
 });
 
 describe("parental gate", () => {
-  const key = "test-parental-gate-key-at-least-32-bytes-long";
+  const key = "pay071-parental-gate-test-key-0000000000000000";
 
   test("the correct answer verifies", async () => {
     const challenge = await issueParentalGateChallenge(key, 1_000);

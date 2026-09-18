@@ -118,7 +118,9 @@ export function postgresBillingDispatch(sql: Sql): BillingDispatchPort {
     },
     async finishEvent(eventId, body) {
       const rows = await sql<{ outcome: BillingFinishOutcome }[]>`
-        select private.billing_finish_event(${eventId},${sql.json(body as never)}) as outcome
+        select private.billing_finish_event(${eventId},${
+        sql.json(body as never)
+      }) as outcome
       `;
       return rows[0]?.outcome ?? "lost";
     },
