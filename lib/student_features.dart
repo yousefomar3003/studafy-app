@@ -2,7 +2,7 @@
 // independently compiled, bounded legacy libraries until MOB-070 replaces
 // their direct preview persistence with repository-backed feature slices.
 export 'legacy/student/presentation/student_account_pages.dart'
-    show StudentNotificationsPage, StudentProfilePage, StudentSettingsPage;
+    show StudentProfilePage, StudentSettingsPage;
 export 'legacy/student/presentation/student_ai_ask_page.dart' show AskAiPage;
 export 'legacy/student/presentation/student_ai_page.dart' show StudentAiPage;
 export 'legacy/student/presentation/student_classwork_page.dart'

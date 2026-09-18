@@ -7,6 +7,7 @@ import 'app/app_dependencies.dart';
 import 'app/teacher_shell.dart';
 import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
+import 'features/notifications/presentation/notifications_scope.dart';
 import 'features/parent/presentation/parent_repository_scope.dart';
 import 'features/session/presentation/role_page.dart';
 import 'features/session/presentation/splash_page.dart';
@@ -196,16 +197,19 @@ class StudafyApp extends StatelessWidget {
           if (deps == null) return content;
           return AccountScope(
             account: deps.account,
-            child: ParentRepositoryScope(
-              repository: deps.parent,
-              subscription: deps.parentSubscription,
-              signOut: deps.session.signOut,
-              isRemote: runtimePolicy.requiresRemoteBackend,
-              child: TeacherDashboardRepositoryScope(
-                repository: deps.teacherDashboard,
-                child: StudyCoachScope(
-                  interactor: deps.studyCoach,
-                  child: content,
+            child: NotificationsScope(
+              interactor: deps.notifications,
+              child: ParentRepositoryScope(
+                repository: deps.parent,
+                subscription: deps.parentSubscription,
+                signOut: deps.session.signOut,
+                isRemote: runtimePolicy.requiresRemoteBackend,
+                child: TeacherDashboardRepositoryScope(
+                  repository: deps.teacherDashboard,
+                  child: StudyCoachScope(
+                    interactor: deps.studyCoach,
+                    child: content,
+                  ),
                 ),
               ),
             ),
