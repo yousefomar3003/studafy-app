@@ -42,6 +42,13 @@ export interface AppDependencies {
    * auth router as its bounded local fallback).
    */
   rateLimit?: { edge: MiddlewareHandler };
+  /**
+   * PAY-071 store webhooks. Mounted ahead of the /v1/* catch-all but
+   * deliberately outside `auth` - Apple/Google notifications are the first
+   * unauthenticated inbound routes this API serves, verified by JWS/OIDC
+   * instead of a bearer token.
+   */
+  webhooks?: Hono<AppEnv>;
   platform?: {
     allowedOrigins?: readonly string[];
     limits?: Partial<PlatformLimits>;
@@ -123,6 +130,10 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   // served and everything else still fails closed below.
   if (deps.auth) {
     app.route("/", deps.auth as unknown as Hono<AppEnv>);
+  }
+
+  if (deps.webhooks) {
+    app.route("/", deps.webhooks);
   }
 
   // The remaining versioned surface is intentionally empty until slices

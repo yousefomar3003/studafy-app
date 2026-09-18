@@ -88,7 +88,7 @@ Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 | `publish-grade-result` | Publish reviewed grade + notification + audit | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
 | `create-google-meet` | Calendar event + Meet + deliveries | SUPABASE trio, `GOOGLE_TOKEN_BROKER_URL/SECRET` | Token broker, googleapis Calendar | Source only; not deployed synthetic |
 | `cancel-google-meet` | Delete event, cancel deliveries | SUPABASE trio, broker pair | Token broker, Calendar | Source only; not deployed synthetic |
-| `verify-store-purchase` | Verify receipt → entitlement upsert | SUPABASE trio, `PURCHASE_VERIFIER_URL/SECRET` | Purchase verifier | Source only; not deployed synthetic |
+| `verify-store-purchase` | Verify receipt → entitlement upsert | — | — | **Removed after PAY-071 parity** (2026-09-18); store verification and entitlement derivation moved into the `/v1/billing` API module and the `billing-events` worker queue; source no longer exists |
 | `request-account-deletion` | 14-day grace deletion request | SUPABASE trio | none | Source only; not deployed synthetic; JWT `iat` recent-auth finding → AUTH-030 |
 
 `.env.example` lists all names above with placeholders (grading keys
@@ -120,10 +120,14 @@ deliberately absent).
   joins), `guardian_links` (with students), `notifications` (count + mark
   read), `subscription_entitlements` (read only).
 - RPC: `record_policy_consent` (policy version `2026-09-09`).
-- Remaining Edge invocation adapters cover Study Coach, meetings and purchase
-  verification; API-041 grade review/publication invocations are removed. The
-  remote synthetic project deploys only the two contained functions
+- Remaining Edge invocation adapters cover Study Coach and meetings; API-041
+  grade review/publication invocations are removed. The remote synthetic
+  project deploys only the two contained functions
   (`propose-paper-grade` and `study-coach`). No other availability is claimed.
+- PAY-071 store billing traffic uses `/v1/billing/*` (catalogue, submit,
+  restore, entitlements, webhooks) through `V1BillingApi` on the same
+  transport as the generated `/v1` client; CSS-gated card/payment surfaces
+  are prohibited (§23.5) and none exist.
 - API-041 academic context, class, content, assignment, assessment, grade,
   attendance and wellbeing traffic uses the generated `/v1` client.
 - Auth: Supabase PKCE OAuth (Google, Microsoft, Apple) with redirect
@@ -139,11 +143,15 @@ deliberately absent).
 | Supabase (Auth/DB/Storage/Functions) | client + functions | publishable key in app; service-role key only in function secrets |
 | Study Coach AI | `study-coach` | function secret |
 | Google token broker (custom) + Calendar API | Meet functions | function secrets; per-user tokens via broker |
-| Purchase verifier (custom) | `verify-store-purchase` | function secret |
-| App Store Connect / Google Play Console | planned only | **no products or credentials exist yet** |
+| App Store Server API / Google Play Android Publisher | PAY-071 store verification (API + worker) | `PAY071_APPLE_*` / `PAY071_GOOGLE_*` env on worker/API; no app-side secret (`PURCHASE_VERIFIER_URL/SECRET` retired with the function that used it) |
+| App Store Connect / Google Play Console | store products, sandbox | **no product catalog signing / sandbox data yet** — open PAY-071 gate |
 
-Store product (planned, single): `studafy_parent_insights_monthly`
-(Parent Insights+). Purchaser/beneficiary model deferred (ADR-0009).
+PAY-071 four-product catalogue (ADR-0009): Parent Insights 1.99, Student
+Notebook 1.99, Student AI 6.99, Teacher AI grading 8.99. Purchaser and
+beneficiary are modelled separately on `store_transactions`; a guardian may
+buy for a linked child. `student_ai` and `teacher_ai_grading` are never sold
+until AI-072 resolves (§29). Prices/trials rendered on paywalls come from the
+store product query alone, never hardcoded (Apple 3.1.2).
 
 ## Toolchain pins (verified in CI, 2026-09-10)
 

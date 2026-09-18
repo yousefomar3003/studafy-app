@@ -114,6 +114,58 @@ export const apiEnvSchema = z.object({
   AUTH_REAUTH_TTL_SECONDS: z.coerce.number().int().min(30).max(1800)
     .default(300),
   AUTH_DELETION_GRACE_DAYS: z.coerce.number().int().min(1).max(90).default(14),
+
+  // PAY-071. Off by default, like every other module switch; the store
+  // billing machinery is built even while the paid products stay gated at
+  // the catalogue layer (storefront_listed), not by leaving this off.
+  PAY071_BILLING_ENABLED: disabledSwitchFlag,
+  PAY071_ENVIRONMENT: z.enum([
+    "synthetic",
+    "development",
+    "staging",
+    "production",
+  ]).optional(),
+  APPLE_BUNDLE_ID: z.string().min(1).optional(),
+  APPLE_ENVIRONMENT: z.enum(["Sandbox", "Production"]).optional(),
+  APPLE_APP_APPLE_ID: z.coerce.number().int().positive().optional(),
+  APPLE_ISSUER_ID: z.string().min(1).optional(),
+  APPLE_KEY_ID: z.string().min(1).optional(),
+  APPLE_PRIVATE_KEY: z.string().min(1).optional(),
+  // DER-encoded Apple root CA certificates, base64, comma-separated. Never
+  // fetched or embedded by this codebase - obtained from Apple's own PKI
+  // page and rotated per the runbook in docs/evidence/pay-071/README.md.
+  APPLE_ROOT_CERTIFICATES_BASE64: z.string().min(1).optional(),
+  GOOGLE_PACKAGE_NAME: z.string().min(1).optional(),
+  // Raw service account JSON content, never a file path.
+  GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
+  GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: z.string().min(1).optional(),
+  GOOGLE_PUBSUB_AUDIENCE: url.optional(),
+  PARENTAL_GATE_SIGNING_KEY: z.string().min(32).optional(),
+}).superRefine((value, context) => {
+  if (!value.PAY071_BILLING_ENABLED) return;
+  if (!value.PAY071_ENVIRONMENT) {
+    context.addIssue({
+      code: "custom",
+      path: ["PAY071_ENVIRONMENT"],
+      message: "required when billing is enabled",
+    });
+  }
+  if (!value.PARENTAL_GATE_SIGNING_KEY) {
+    context.addIssue({
+      code: "custom",
+      path: ["PARENTAL_GATE_SIGNING_KEY"],
+      message: "required when billing is enabled",
+    });
+  } else if (
+    value.PARENTAL_GATE_SIGNING_KEY === value.API_CURSOR_SIGNING_KEY ||
+    value.PARENTAL_GATE_SIGNING_KEY === value.FILE051_DELIVERY_SIGNING_KEY
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["PARENTAL_GATE_SIGNING_KEY"],
+      message: "must differ from every other signing key",
+    });
+  }
 });
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
 
@@ -136,6 +188,32 @@ export const workerEnvSchema = z.object({
   OPS061_OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(250).max(60_000)
     .default(5000),
   OPS061_OUTBOX_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
+  // PAY-071. Mirrors the API's billing config: the worker re-verifies
+  // authoritative state through the same official APIs rather than trusting
+  // a webhook payload, and acknowledges Google purchases within its 3-day
+  // auto-refund window.
+  PAY071_BILLING_ENABLED: disabledSwitchFlag,
+  PAY071_ENVIRONMENT: z.enum([
+    "synthetic",
+    "development",
+    "staging",
+    "production",
+  ]).optional(),
+  PAY071_RECONCILIATION_ENABLED: disabledSwitchFlag,
+  PAY071_OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(250).max(60_000)
+    .default(5000),
+  PAY071_OUTBOX_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
+  APPLE_BUNDLE_ID: z.string().min(1).optional(),
+  APPLE_ENVIRONMENT: z.enum(["Sandbox", "Production"]).optional(),
+  APPLE_APP_APPLE_ID: z.coerce.number().int().positive().optional(),
+  APPLE_ISSUER_ID: z.string().min(1).optional(),
+  APPLE_KEY_ID: z.string().min(1).optional(),
+  APPLE_PRIVATE_KEY: z.string().min(1).optional(),
+  APPLE_ROOT_CERTIFICATES_BASE64: z.string().min(1).optional(),
+  GOOGLE_PACKAGE_NAME: z.string().min(1).optional(),
+  GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
+  GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: z.string().min(1).optional(),
+  GOOGLE_PUBSUB_AUDIENCE: url.optional(),
   // The external malware scanner. Absent in local/disposable use (the
   // deterministic structural scanner runs instead); production refuses to
   // scan without it, because structural validation is not signature-grade.
@@ -185,6 +263,22 @@ export const workerEnvSchema = z.object({
       path: ["DATABASE_URL"],
       message: "required when the outbox drain is enabled (DATABASE_URL)",
     });
+  }
+  if (value.PAY071_BILLING_ENABLED) {
+    if (!value.DATABASE_URL) {
+      context.addIssue({
+        code: "custom",
+        path: ["DATABASE_URL"],
+        message: "required when billing is enabled",
+      });
+    }
+    if (!value.PAY071_ENVIRONMENT) {
+      context.addIssue({
+        code: "custom",
+        path: ["PAY071_ENVIRONMENT"],
+        message: "required when billing is enabled",
+      });
+    }
   }
 });
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
@@ -387,6 +481,19 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       deliverySigningKeyConfigured: Boolean(env.FILE051_DELIVERY_SIGNING_KEY),
       deliveryPublicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL ?? null,
     },
+    pay071: {
+      billingEnabled: env.PAY071_BILLING_ENABLED,
+      environment: env.PAY071_ENVIRONMENT ?? null,
+      appleConfigured: Boolean(
+        env.APPLE_BUNDLE_ID && env.APPLE_ISSUER_ID && env.APPLE_KEY_ID &&
+          env.APPLE_PRIVATE_KEY && env.APPLE_ROOT_CERTIFICATES_BASE64,
+      ),
+      googleConfigured: Boolean(
+        env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
+          env.GOOGLE_PUBSUB_AUDIENCE,
+      ),
+      parentalGateKeyConfigured: Boolean(env.PARENTAL_GATE_SIGNING_KEY),
+    },
   };
 }
 
@@ -410,6 +517,19 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       retentionEnabled: env.FILE051_RETENTION_ENABLED,
       malwareScannerConfigured: Boolean(
         env.MALWARE_SCANNER_URL && env.MALWARE_SCANNER_API_KEY,
+      ),
+    },
+    pay071: {
+      billingEnabled: env.PAY071_BILLING_ENABLED,
+      environment: env.PAY071_ENVIRONMENT ?? null,
+      reconciliationEnabled: env.PAY071_RECONCILIATION_ENABLED,
+      appleConfigured: Boolean(
+        env.APPLE_BUNDLE_ID && env.APPLE_ISSUER_ID && env.APPLE_KEY_ID &&
+          env.APPLE_PRIVATE_KEY && env.APPLE_ROOT_CERTIFICATES_BASE64,
+      ),
+      googleConfigured: Boolean(
+        env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
+          env.GOOGLE_PUBSUB_AUDIENCE,
       ),
     },
   };

@@ -72,3 +72,18 @@ export {
   FileSecurityScanner,
   LocalDeterministicScanner,
 } from "./fileScanner";
+export {
+  AppleVerificationError,
+  type AppleTransactionVerifier,
+  type AppleVerifierConfig,
+  RealAppleTransactionVerifier,
+  type VerifiedAppleNotification,
+  type VerifiedAppleTransaction,
+} from "./billing/appleVerifier";
+export {
+  GoogleVerificationError,
+  type GooglePurchaseVerifier,
+  type GoogleVerifierConfig,
+  RealGooglePurchaseVerifier,
+  type VerifiedGooglePurchase,
+} from "./billing/googleVerifier";

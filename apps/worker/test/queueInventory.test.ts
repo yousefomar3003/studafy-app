@@ -16,17 +16,19 @@ describe("queue inventory", () => {
     );
   });
 
-  test("notifications is implemented; the remaining §10 queues declared", () => {
+  test("notifications and billing-events are implemented; the rest declared", () => {
     expect(QUEUE_INVENTORY["notifications"]?.status).toBe("implemented");
+    expect(QUEUE_INVENTORY["billing-events"]?.status).toBe("implemented");
     const declared = Object.values(QUEUE_INVENTORY).filter(
       (definition) => definition.status === "declared",
     );
-    expect(declared).toHaveLength(8);
+    expect(declared).toHaveLength(7);
   });
 
   test("implemented queue set matches what the worker boots", () => {
     expect(IMPLEMENTED_QUEUES).toContain("smoke");
     expect(IMPLEMENTED_QUEUES).toContain("notifications");
+    expect(IMPLEMENTED_QUEUES).toContain("billing-events");
   });
 
   test("every definition carries a bounded retry policy", () => {

@@ -33,6 +33,7 @@ import * as Account from "./account";
 import * as SupportAccess from "./supportAccess";
 import * as Safety from "./safety";
 import * as Files from "./files";
+import * as Billing from "./billing";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -1348,6 +1349,57 @@ export const V1_ROUTE_CATALOGUE = [
     "V1PublishFileResponse",
     201,
     fileParams(),
+  ),
+  academicGet(
+    "getParentalGateChallenge",
+    "/v1/billing/parental-gate",
+    "billing.purchase.submit",
+    Billing.V1ParentalGateChallengeResponse,
+    "V1ParentalGateChallengeResponse",
+  ),
+  academicGet(
+    "getBillingCatalogue",
+    "/v1/billing/catalogue",
+    "billing.catalogue.read",
+    Billing.V1BillingCatalogueResponse,
+    "V1BillingCatalogueResponse",
+  ),
+  academicPost(
+    "submitPurchase",
+    "/v1/billing/purchases",
+    "billing.purchase.submit",
+    Billing.V1SubmitPurchaseRequest,
+    "V1SubmitPurchaseRequest",
+    Billing.V1SubmitPurchaseResponse,
+    "V1SubmitPurchaseResponse",
+    200,
+  ),
+  academicPost(
+    "restorePurchase",
+    "/v1/billing/restore",
+    "billing.restore",
+    Billing.V1RestorePurchaseRequest,
+    "V1RestorePurchaseRequest",
+    Billing.V1RestorePurchaseResponse,
+    "V1RestorePurchaseResponse",
+    200,
+  ),
+  academicGet(
+    "listEntitlements",
+    "/v1/billing/entitlements",
+    "billing.entitlement.read",
+    Billing.V1EntitlementsResponse,
+    "V1EntitlementsResponse",
+  ),
+  academicPost(
+    "setSelfPurchase",
+    "/v1/billing/school-settings/self-purchase",
+    "billing.school_settings.write",
+    Billing.V1SetSelfPurchaseRequest,
+    "V1SetSelfPurchaseRequest",
+    Billing.V1SetSelfPurchaseResponse,
+    "V1SetSelfPurchaseResponse",
+    200,
   ),
 ] as const satisfies readonly V1RouteContract[];
 

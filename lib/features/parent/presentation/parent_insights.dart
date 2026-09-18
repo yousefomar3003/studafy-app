@@ -12,6 +12,7 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
   String period = 'Current term';
   SubscriptionEntitlement? entitlement;
   bool entitlementLoading = true;
+  ParentSubscriptionRepository? _subscription;
 
   Map<String, Object?>? get child =>
       children.isEmpty ? null : children[selectedChild];
@@ -33,7 +34,16 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
   void initState() {
     super.initState();
     ActiveContextController.instance.addListener(_contextChanged);
+    final scope = ParentRepositoryScope.of(context);
+    if (scope.isRemote) {
+      _subscription = scope.subscription;
+      scope.subscription.addEntitlementListener(_entitlementChanged);
+    }
     _load();
+  }
+
+  void _entitlementChanged() {
+    if (mounted) _load();
   }
 
   void _contextChanged() {
@@ -45,6 +55,7 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
   @override
   void dispose() {
     ActiveContextController.instance.removeListener(_contextChanged);
+    _subscription?.removeEntitlementListener(_entitlementChanged);
     super.dispose();
   }
 
@@ -274,10 +285,85 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
   );
 }
 
-class _InsightsPaywall extends StatelessWidget {
+class _InsightsPaywall extends StatefulWidget {
   const _InsightsPaywall({required this.onPurchase, required this.onRestore});
   final VoidCallback onPurchase;
   final VoidCallback onRestore;
+
+  @override
+  State<_InsightsPaywall> createState() => _InsightsPaywallState();
+}
+
+class _InsightsPaywallState extends State<_InsightsPaywall> {
+  PaywallOffer? _offer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOffer();
+  }
+
+  Future<void> _loadOffer() async {
+    PaywallOffer? offer;
+    try {
+      offer = await ParentRepositoryScope.of(context)
+          .subscription
+          .insightsOffer();
+    } catch (_) {
+      offer = null;
+    }
+    if (!mounted) return;
+    setState(() => _offer = offer);
+  }
+
+  String get _priceLine {
+    final offer = _offer;
+    if (offer == null || offer.storeAvailable != true) {
+      return 'Price is confirmed in your store before purchase';
+    }
+    final period = offer.periodLabel.isEmpty ? 'month' : offer.periodLabel;
+    return '${offer.price} / $period';
+  }
+
+  String get _trialLine {
+    final offer = _offer;
+    if (offer == null ||
+        !offer.hasTrial ||
+        offer.trialLengthLabel.isEmpty) {
+      return '';
+    }
+    final period = offer.periodLabel.isEmpty ? 'month' : offer.periodLabel;
+    // The price after the free trial is the store's recurring price.
+    return 'Free for ${offer.trialLengthLabel}, then ${offer.price} / $period';
+  }
+
+  Widget _policyLink(String label, String url) {
+    if (url.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Text(
+          label,
+          style: const TextStyle(color: _muted, fontSize: 12),
+        ),
+      );
+    }
+    return TextButton(
+      onPressed: () => _launchPolicy(url),
+      style: TextButton.styleFrom(
+        foregroundColor: _navy,
+        visualDensity: VisualDensity.compact,
+      ),
+      child: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  Widget _disclosureRow(String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Text(
+      text,
+      style: const TextStyle(color: _muted, fontSize: 11.5, height: 1.3),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -332,11 +418,79 @@ class _InsightsPaywall extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 18),
-      FilledButton(
-        onPressed: onPurchase,
-        child: const Text('Start Insights+ · monthly'),
+      _Card(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Parent Insights+',
+              style: TextStyle(
+                color: _ink,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const Text(
+              'Monthly subscription',
+              style: TextStyle(color: _muted, fontSize: 12),
+            ),
+            const Divider(height: 20),
+            _disclosureRow('$_priceLine · renews automatically each month until cancelled'),
+            if (_trialLine.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0EAFF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _disclosureRow(_trialLine),
+                    _disclosureRow('Your card is charged when the free trial ends.'),
+                    _disclosureRow(
+                      'Cancel at least 24 hours before the trial ends to avoid charge.',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            _disclosureRow(
+              "Cancel any time in your device's subscription settings.",
+            ),
+            _disclosureRow(
+              'Payment is handled by your app store (Apple or Google). Studafy never receives or stores your card details.',
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _policyLink('Terms of Use', _termsUrl),
+                const SizedBox(width: 6),
+                _policyLink('Privacy Policy', _privacyUrl),
+              ],
+            ),
+          ],
+        ),
       ),
-      TextButton(onPressed: onRestore, child: const Text('Restore purchase')),
+      const SizedBox(height: 18),
+      FilledButton(
+        onPressed: widget.onPurchase,
+        child: const Text('Start Insights+'),
+      ),
+      const SizedBox(height: 4),
+      const Text(
+        _priceLineInButton,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: _muted, fontSize: 11),
+      ),
+      TextButton(
+        onPressed: widget.onRestore,
+        child: const Text('Restore purchase'),
+      ),
       const Text(
         'Grades, attendance, messages, alerts, and official school records remain free.',
         textAlign: TextAlign.center,
@@ -345,6 +499,8 @@ class _InsightsPaywall extends StatelessWidget {
     ],
   );
 }
+
+const _priceLineInButton = 'Prices and periods are confirmed in your store';
 
 class _ParentPremiumBrief extends StatelessWidget {
   const _ParentPremiumBrief({required this.insight, required this.firstName});

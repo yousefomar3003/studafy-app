@@ -1,0 +1,15 @@
+/**
+ * Apple App Store Server API / JWS verification, shared with the worker
+ * (PAY-071). The implementation lives in `@studafy/infrastructure` so the
+ * client purchase path and the webhook re-verification path use exactly the
+ * same verifier; this file is a thin re-export that keeps the old import site
+ * stable.
+ */
+export {
+  AppleVerificationError,
+  type AppleTransactionVerifier,
+  type AppleVerifierConfig,
+  RealAppleTransactionVerifier,
+  type VerifiedAppleNotification,
+  type VerifiedAppleTransaction,
+} from "@studafy/infrastructure";

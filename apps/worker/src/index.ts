@@ -1,5 +1,6 @@
 import { describeWorkerEnv, loadWorkerEnv } from "./bootstrap/config";
 import {
+  buildBillingRuntime,
   buildNotificationRuntime,
   buildSmokeRuntime,
 } from "./bootstrap/queues";
@@ -55,6 +56,7 @@ try {
 const activeQueues = env.OPS061_NOTIFICATIONS_ENABLED
   ? ["smoke", "notifications"]
   : ["smoke"];
+if (env.PAY071_BILLING_ENABLED) activeQueues.push("billing-events");
 
 logStartup(logger, {
   environment: env.ENVIRONMENT,
@@ -71,7 +73,8 @@ await runtime.worker.waitUntilReady();
 logger.info("worker_ready", { queue: "smoke" });
 
 const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
-    env.FILE051_RETENTION_ENABLED || env.OPS061_NOTIFICATIONS_ENABLED
+    env.FILE051_RETENTION_ENABLED || env.OPS061_NOTIFICATIONS_ENABLED ||
+    env.PAY071_BILLING_ENABLED
   ? createDatabase(env.DATABASE_URL!)
   : undefined;
 const storage =
@@ -136,16 +139,53 @@ if (notifications) {
   notifications.runDispatchOnce().catch(() => undefined);
 }
 
+// PAY-071: the store-event drain. The dispatcher polls due `store_events`
+// rows and enqueues deterministic `billing-events` jobs; the processor
+// re-verifies against Apple/Google and converges the ledger. The
+// reconciliation sweep is the loss backstop (re-verify open transactions +
+// the Google 3-day acknowledgement window).
+const billingSql: Sql | undefined = env.PAY071_BILLING_ENABLED
+  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  : undefined;
+const billing = billingSql
+  ? buildBillingRuntime(env.REDIS_URL, billingSql, logger, env)
+  : undefined;
+if (billing) {
+  await billing.worker.waitUntilReady();
+  logger.info("worker_ready", { queue: "billing-events" });
+}
+
+const billingDispatchTimer = billing
+  ? setInterval(() => {
+    billing.runDispatchOnce().catch((error) => {
+      logger.error("billing_dispatch_poll_failed", {
+        error_name: error instanceof Error ? error.name : "unknown",
+      });
+    });
+  }, env.PAY071_OUTBOX_POLL_INTERVAL_MS)
+  : undefined;
+if (billing) {
+  billing.runDispatchOnce().catch(() => undefined);
+}
+if (billing && env.PAY071_RECONCILIATION_ENABLED) {
+  billing.runReconciliationOnce().catch(() => undefined);
+}
+
 installGracefulShutdown({
   logger,
   onClose: async () => {
     logShutdownStep(logger, "drain_workers", { queue: "smoke" });
     // Stop the producer before draining consumers: no new claims enqueue.
     if (outboxTimer) clearInterval(outboxTimer);
+    if (billingDispatchTimer) clearInterval(billingDispatchTimer);
     await notifications?.close();
+    await billing?.close();
     await scan?.close();
     await retention?.close();
     await cleanup?.close();
+    if (billingSql && billingSql !== fileWorkerSql) {
+      await closeDatabase(billingSql);
+    }
     if (outboxSql && outboxSql !== fileWorkerSql) {
       await closeDatabase(outboxSql);
     }

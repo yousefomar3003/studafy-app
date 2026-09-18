@@ -44,6 +44,11 @@ import { PostgresSafetyRepository } from "./safety/repository";
 import { createFileRoutes } from "./files/routes";
 import { PostgresFileRepository } from "./files/repository";
 import { SupabasePrivateFileStorage } from "./files/storage";
+import { createBillingRoutes } from "./billing/routes";
+import { createBillingWebhookRoutes } from "./billing/webhookRoutes";
+import { PostgresBillingRepository } from "./billing/repository";
+import { RealAppleTransactionVerifier } from "./billing/appleVerifier";
+import { RealGooglePurchaseVerifier } from "./billing/googleVerifier";
 import {
   checkDatabase,
   closeDatabase,
@@ -315,6 +320,71 @@ const files = sql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
   )
   : undefined;
 
+// PAY-071. Apple/Google are wired independently: a store not yet configured
+// with credentials simply answers SERVICE_UNAVAILABLE for that platform's
+// submit/restore/webhook path, rather than the whole module refusing to
+// mount. Root certificates are never embedded in this codebase - only
+// decoded from the operator-supplied base64 env value.
+const appleConfig = env.APPLE_BUNDLE_ID && env.APPLE_ENVIRONMENT &&
+    env.APPLE_ISSUER_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY &&
+    env.APPLE_ROOT_CERTIFICATES_BASE64
+  ? {
+    verifier: new RealAppleTransactionVerifier({
+      rootCertificates: env.APPLE_ROOT_CERTIFICATES_BASE64.split(",")
+        .map((value) => Buffer.from(value.trim(), "base64")),
+      bundleId: env.APPLE_BUNDLE_ID,
+      environment: env.APPLE_ENVIRONMENT,
+      appAppleId: env.APPLE_APP_APPLE_ID,
+      api: {
+        signingKey: env.APPLE_PRIVATE_KEY,
+        keyId: env.APPLE_KEY_ID,
+        issuerId: env.APPLE_ISSUER_ID,
+      },
+    }),
+    bundleId: env.APPLE_BUNDLE_ID,
+    platformEnvironment: env.APPLE_ENVIRONMENT,
+  }
+  : null;
+
+const googleConfig = env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
+    env.GOOGLE_PUBSUB_AUDIENCE && env.GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL
+  ? {
+    verifier: new RealGooglePurchaseVerifier({
+      serviceAccountJson: env.GOOGLE_SERVICE_ACCOUNT_JSON,
+      pubsubAudience: env.GOOGLE_PUBSUB_AUDIENCE,
+      pubsubServiceAccountEmail: env.GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL,
+    }),
+    packageName: env.GOOGLE_PACKAGE_NAME,
+  }
+  : null;
+
+const billingRepository = sql ? new PostgresBillingRepository(sql) : undefined;
+const billing = sql && env.PAY071_BILLING_ENABLED && env.PAY071_ENVIRONMENT &&
+    env.PARENTAL_GATE_SIGNING_KEY && billingRepository
+  ? createBillingRoutes(
+    {
+      repository: billingRepository,
+      environment: env.PAY071_ENVIRONMENT,
+      apple: appleConfig,
+      google: googleConfig,
+      parentalGateSigningKey: env.PARENTAL_GATE_SIGNING_KEY,
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+const billingWebhooks = sql && env.PAY071_BILLING_ENABLED &&
+    env.PAY071_ENVIRONMENT && billingRepository
+  ? createBillingWebhookRoutes({
+    repository: billingRepository,
+    environment: env.PAY071_ENVIRONMENT,
+    apple: appleConfig ? { verifier: appleConfig.verifier } : null,
+    google: googleConfig ? { verifier: googleConfig.verifier } : null,
+    logger,
+  })
+  : undefined;
+
 // createTerm/createStudent are the last two entries in V1_ROUTE_CATALOGUE
 // before the SAFE-043 block (see school-admin/routes.ts's
 // SCHOOL_ROSTER_ROUTES comment) and must be mounted in catalogue order so
@@ -337,7 +407,7 @@ const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
 const combinedRoutes =
   academic || schoolAdmin || invitations || family || communications ||
     meetings || notifications || account || supportAccess || schoolRoster ||
-    safety || files
+    safety || files || billing
     ? (() => {
       const combined = new Hono<AuthorizationEnv>();
       if (academic) combined.route("/", academic);
@@ -352,6 +422,7 @@ const combinedRoutes =
       if (schoolRoster) combined.route("/", schoolRoster);
       if (safety) combined.route("/", safety);
       if (files) combined.route("/", files);
+      if (billing) combined.route("/", billing);
       return combined;
     })()
     : undefined;
@@ -391,6 +462,7 @@ const app = createApp({
     ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }
     : {}),
   ...(auth ? { auth } : {}),
+  ...(billingWebhooks ? { webhooks: billingWebhooks } : {}),
 });
 
 const server = Bun.serve({

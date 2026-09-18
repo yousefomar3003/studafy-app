@@ -335,6 +335,8 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/notifications/unread-count",
   "/v1/notifications/preferences",
   "/internal/moderation/overview",
+  "/v1/billing/parental-gate",
+  "/v1/billing/catalogue",
 ]);
 
 /** Matches both the canonical {param} segment and a real uuid value. */

@@ -4,6 +4,7 @@ import '../core/runtime_environment.dart';
 import '../core/studafy_domain.dart';
 import '../core/telemetry.dart';
 import '../data/backend.dart';
+import '../data/billing/v1_billing_api.dart';
 import '../data/contracts/v1_http_transport.dart';
 import '../data/contracts/v1_client.generated.dart';
 import '../data/local_cache/session_cache_binder.dart';
@@ -102,6 +103,12 @@ class AppDependencies {
     final NotificationsRepository notificationsRepository = policy.isSynthetic
         ? PreviewNotificationsRepository()
         : ApiNotificationsRepository(remote!.api, cacheBinder);
+    final V1BillingApi? billingApi = policy.isSynthetic
+        ? null
+        : V1BillingApi(
+            remote!.transport,
+            environment: billingEnvironmentName(policy.environment),
+          );
     return AppDependencies(
       session: SessionInteractor(
         repository: sessionRepository,
@@ -116,7 +123,7 @@ class AppDependencies {
       parent: parentRepository,
       teacherDashboard: teacherDashboardRepository,
       studyCoach: StudyCoachInteractor(repository: studyCoachRepository),
-      parentSubscription: StoreSubscriptionRepository(),
+      parentSubscription: StoreSubscriptionRepository(billingApi: billingApi),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(
@@ -180,6 +187,7 @@ class AppDependencies {
     );
     return _RemoteClients(
       api: V1ApiClient(transport),
+      transport: transport,
       session: ApiSessionRepository(
         transport: transport,
         secureStore: secureStore,
@@ -189,7 +197,12 @@ class AppDependencies {
 }
 
 class _RemoteClients {
-  const _RemoteClients({required this.api, required this.session});
+  const _RemoteClients({
+    required this.api,
+    required this.transport,
+    required this.session,
+  });
   final V1ApiClient api;
+  final V1JsonTransport transport;
   final SessionRepository session;
 }

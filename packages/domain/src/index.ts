@@ -71,3 +71,20 @@ export {
   verifyDeliveryToken,
 } from "./files/deliveryToken";
 export { type DedupeEligibilityInput, isDedupeEligible } from "./files/dedup";
+export {
+  type AppleNotificationType,
+  isAppleTransactionTrusted,
+  mapAppleNotificationToTransactionState,
+  mapAppleTransactionTypeToState,
+  type StoreTransactionState,
+} from "./billing/appleTransaction";
+export {
+  type GoogleSubscriptionState,
+  isGooglePackageNameTrusted,
+  mapGoogleSubscriptionStateToTransactionState,
+} from "./billing/googlePurchase";
+export {
+  issueParentalGateChallenge,
+  type ParentalGateChallenge,
+  verifyParentalGateAnswer,
+} from "./billing/parentalGate";

@@ -84,6 +84,23 @@ const notifications: QueueDefinition = {
   idempotencyKey: "source event + recipient + channel + template version",
 };
 
+const billingEvents: QueueDefinition = {
+  name: "billing-events",
+  status: "implemented",
+  concurrency: 2,
+  lockDurationMs: 60_000,
+  stalledIntervalMs: 30_000,
+  maxStalledCount: 1,
+  // §10: 8 exponential retries with jitter; original-transaction unknowns
+  // re-verify against the store and the reconciliation sweep backstops the
+  // loss window, so a capped retry then a durable Postgres dead_letter is
+  // the correct terminal state.
+  backoff: { baseMs: 10_000, capMs: 60 * 60_000, attempts: 8 },
+  timeoutMs: 60_000,
+  removeOnComplete: { count: 5000, age: 7 * 24 * 3600 },
+  idempotencyKey: "platform + environment + event/transaction ID",
+};
+
 const declared: QueueDefinition[] = [
   {
     name: "file-security",
@@ -120,18 +137,6 @@ const declared: QueueDefinition[] = [
     timeoutMs: 2 * 60_000,
     removeOnComplete: { count: 1000, age: 24 * 3600 },
     idempotencyKey: "grade result + file object + rubric/model policy version",
-  },
-  {
-    name: "billing-events",
-    status: "declared",
-    concurrency: 2,
-    lockDurationMs: 60_000,
-    stalledIntervalMs: 30_000,
-    maxStalledCount: 1,
-    backoff: { baseMs: 10_000, capMs: 60 * 60_000, attempts: 8 },
-    timeoutMs: 60_000,
-    removeOnComplete: { count: 5000, age: 7 * 24 * 3600 },
-    idempotencyKey: "platform + environment + event/transaction ID",
   },
   {
     name: "meeting-operations",
@@ -185,7 +190,7 @@ const declared: QueueDefinition[] = [
 
 export const QUEUE_INVENTORY: Record<string, QueueDefinition> = Object
   .fromEntries(
-    [notifications, ...declared].map((definition) => [
+    [notifications, billingEvents, ...declared].map((definition) => [
       definition.name,
       definition,
     ]),
@@ -200,6 +205,6 @@ export function queueDefinition(name: string): QueueDefinition {
   return definition;
 }
 
-export const IMPLEMENTED_QUEUES = ["smoke", "notifications"] as const;
+export const IMPLEMENTED_QUEUES = ["smoke", "notifications", "billing-events"] as const;
 
 export type { QueueStats };

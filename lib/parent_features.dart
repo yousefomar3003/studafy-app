@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'core/studafy_design.dart';
 import 'core/studafy_domain.dart';
@@ -29,6 +30,20 @@ const _cyan = Color(0xFF20C6E8);
 const _ink = Color(0xFF171441);
 const _muted = Color(0xFF9299B4);
 const _canvas = Color(0xFFF7F6FE);
+
+/// Hosted policy documents (B5 / §21.6). Empty until the domain serves them,
+/// which keeps the paywall disclosure row present but non-navigable instead of
+/// sending users to a 404 (a 404 behind the CTA is itself a rejection trigger).
+const _termsUrl = String.fromEnvironment('STUDAFY_TERMS_URL', defaultValue: '');
+const _privacyUrl = String.fromEnvironment(
+  'STUDAFY_PRIVACY_URL',
+  defaultValue: '',
+);
+
+void _launchPolicy(String url) {
+  if (url.isEmpty) return;
+  launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+}
 
 int _activeChildIndex(List<Map<String, Object?>> rows, int fallback) {
   final activeId = ActiveContextController.instance.selectedStudent?.id;
