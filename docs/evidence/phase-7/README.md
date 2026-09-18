@@ -68,6 +68,12 @@ grade left unchanged, non-AI purposes intact, and non-AI products active. With
 CI runs the new pgTAP file as "Verify AI-072 removal leaves no AI data path"
 (`.github/workflows/ci.yml`).
 
+GitHub CI on PR #10, run `35392698700` (commit `1f4d8e4`): all six jobs
+succeeded (Flutter, Edge Functions, Bun, local Supabase including the AI-072
+job, OSV scan, secret scan). The earlier run failed only at "Verify Dart
+formatting" on `test/ai072_removal_test.dart`; `1f4d8e4` fixed it. The
+synthetic debug APK also builds locally.
+
 ### Synthetic project cleanup — done 2026-09-18 (owner-authorized)
 
 This was performed after the local work, with the owner's explicit go-ahead,
