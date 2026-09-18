@@ -2,34 +2,23 @@ import {
   assertEquals,
   assertMatch,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { rejectFileAttachment } from "./containment.ts";
+import { disabledFeatureResponse } from "./containment.ts";
 
-Deno.test("present attachment paths fail closed with a stable response", async () => {
-  const response = rejectFileAttachment(
-    new Request("http://localhost/study-coach", { method: "POST" }),
-    { attachment_path: "coach/another-user/private.pdf" },
+Deno.test("disabled capabilities fail closed with a stable response", async () => {
+  const response = disabledFeatureResponse(
+    new Request("http://localhost/create-google-meet", { method: "POST" }),
+    {
+      code: "MEETINGS_DISABLED",
+      feature: "meetings",
+      message: "Meetings are temporarily unavailable.",
+    },
   );
 
-  assertEquals(response?.status, 503);
-  const body = await response!.json();
-  assertEquals(body.code, "FILE_UPLOADS_DISABLED");
-  assertEquals(body.error, "File attachments are temporarily unavailable.");
+  assertEquals(response.status, 503);
+  assertEquals(response.headers.get("Cache-Control"), "no-store");
+  const body = await response.json();
+  assertEquals(body.code, "MEETINGS_DISABLED");
+  assertEquals(body.error, "Meetings are temporarily unavailable.");
   assertMatch(body.request_id, /^[0-9a-f-]{36}$/i);
-});
-
-Deno.test("missing or null attachment paths preserve text-only requests", () => {
-  const request = new Request("http://localhost/study-coach", {
-    method: "POST",
-  });
-  assertEquals(
-    rejectFileAttachment(request, { question: "Explain this" }),
-    null,
-  );
-  assertEquals(
-    rejectFileAttachment(request, {
-      question: "Explain this",
-      attachment_path: null,
-    }),
-    null,
-  );
+  assertEquals(response.headers.get("X-Request-ID"), body.request_id);
 });

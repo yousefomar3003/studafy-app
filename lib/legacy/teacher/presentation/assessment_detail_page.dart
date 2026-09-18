@@ -365,40 +365,6 @@ Future<void> showGradeSubmission(
                   '${row['answer_text'] ?? 'No answer was submitted.'}',
                 ),
               ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0EAFF),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_rounded,
-                          color: Color(0xFF7737EE),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'AI-assisted paper grading',
-                            style: TextStyle(
-                              color: _ink,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        StatusBadge('Teacher review required'),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const AiGradingContainmentControls(),
-                  ],
-                ),
-              ),
               if (questions.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 const Text(
@@ -486,34 +452,5 @@ Future<void> showGradeSubmission(
         ),
       ),
     ),
-  );
-}
-
-class AiGradingContainmentControls extends StatelessWidget {
-  const AiGradingContainmentControls({super.key});
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      const Text(
-        'Temporarily unavailable while secure file ownership, quarantine, malware scanning, and publication controls are built.',
-        style: TextStyle(color: _muted, fontSize: 11, height: 1.35),
-      ),
-      const SizedBox(height: 12),
-      OutlinedButton.icon(
-        key: const Key('ai-grading-upload-control'),
-        onPressed: StudafyRuntime.policy.allowsAiGrading ? () {} : null,
-        icon: const Icon(Icons.document_scanner_outlined),
-        label: const Text('Scanned-exam uploads are temporarily unavailable'),
-      ),
-      const SizedBox(height: 10),
-      FilledButton.icon(
-        key: const Key('ai-grading-generate-control'),
-        onPressed: null,
-        icon: const Icon(Icons.auto_awesome_rounded),
-        label: const Text('Generate proposed marks'),
-      ),
-    ],
   );
 }

@@ -55,7 +55,7 @@ select is(
     'attendance_records','class_schedules','classroom_staff','classrooms',
     'consent_records','enrollments','grade_results','guardian_links',
     'lesson_materials','lesson_sessions','meeting_deliveries','meetings',
-    'memberships','notifications','practice_sessions','profiles',
+    'memberships','notifications','profiles',
     'resource_publications','resource_versions','resources','schools',
     'students','submissions','subscription_entitlements','terms',
     'wellbeing_events'
@@ -90,10 +90,10 @@ select is(
    from information_schema.role_table_grants
    where table_schema='public' and grantee='service_role'),
   array[
-    'account_deletion_requests','ai_grading_drafts','assessment_questions',
+    'account_deletion_requests','assessment_questions',
     'audit_events','enrollments','grade_results','guardian_links',
-    'meeting_deliveries','meetings','notifications','practice_sessions',
-    'question_suggestions','students','subscription_entitlements'
+    'meeting_deliveries','meetings','notifications',
+    'students','subscription_entitlements'
   ]::information_schema.sql_identifier[],
   'service role table set exactly matches contained Edge Function use'
 );

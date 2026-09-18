@@ -5,8 +5,7 @@ enum FilePurpose {
   lessonResource('lesson_resource'),
   assignmentMaterial('assignment_material'),
   assignmentSubmission('assignment_submission'),
-  paperScan('paper_scan'),
-  coachAttachment('coach_attachment');
+  paperScan('paper_scan');
 
   const FilePurpose(this.wireValue);
   final String wireValue;

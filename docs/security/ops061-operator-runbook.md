@@ -30,7 +30,6 @@ notification outage).
 | `notifications` | **implemented** | 5, exponential full jitter, 5s base / 1h cap | 5 (env-tunable) | source event + recipient + channel + template version |
 | `file-security` | declared | 3 | 1 | file object ID + scan policy version |
 | `media-processing` | declared | 3 | 2 | file object ID + transform version |
-| `ai-grading` | declared | 2 (transient only) | 2 | grade result + file object + rubric version |
 | `billing-events` | declared | 8 | 2 | platform + environment + transaction ID |
 | `meeting-operations` | declared | 4 | 2 | meeting command UUID |
 | `exports` | declared | 3 | 2 | export request ID + snapshot version |

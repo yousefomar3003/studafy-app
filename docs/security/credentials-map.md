@@ -46,7 +46,7 @@ to obtain — a common misconception worth stating once.
 
 | Credential | Blocked by |
 |---|---|
-| **AI provider API key** | Two independent gates. `allowsAiGrading = false` is a SEC-001 containment guard requiring a reviewed code change, and §22.6 marks the key **blocked until a DPA is signed**. Obtaining one now creates a live credential for a capability the app refuses to use |
+| **AI provider API key** / `STUDY_COACH_URL`, `STUDY_COACH_KEY` | **Retired, not merely blocked.** AI-072 removed the AI capability (ADR-0026) because no signed DPA and no extended DPIA exist. No code reads any AI credential, so obtaining one creates a live secret for nothing. A future AI capability needs a new ADR, both legal documents and a reviewed code change; `allowsAiGrading = false` is retained as the SEC-001 tripwire |
 | Apple Sign in with Apple (Service ID, Key ID, Team ID, `.p8`) | D1 — Developer organisation account under review |
 
 ## Later phases — obtain when that phase starts

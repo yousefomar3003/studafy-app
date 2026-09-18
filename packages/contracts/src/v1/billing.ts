@@ -4,12 +4,12 @@ const Id = z.string().uuid();
 const Timestamp = z.string().datetime({ offset: true });
 
 /**
- * PAY-071. Four products, two platforms. `student_ai` and
- * `teacher_ai_grading` exist in the type system so the ledger/derivation
- * code is uniform across all four, but neither is ever returned by the
- * catalogue outside the `synthetic` environment until AI-072 resolves with a
- * signed DPA (see ADR-0009). `parent_insights` stays out of the catalogue
- * everywhere but `synthetic` until the §29 legal sign-off lands.
+ * PAY-071. Two platforms. `student_ai` and `teacher_ai_grading` are retired
+ * ledger vocabulary: AI-072 removed the AI capability (ADR-0026), so neither
+ * is offered in any environment and the database forbids activating either.
+ * They remain here only so historical ledger rows stay decodable.
+ * `parent_insights` stays out of the catalogue everywhere but `synthetic`
+ * until the §29 legal sign-off lands.
  */
 export const V1BillingFeatureKey = z.enum([
   "parent_insights",

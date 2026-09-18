@@ -64,14 +64,12 @@ class StudentNotebookSubject extends StatelessWidget {
     required this.expanded,
     required this.onToggle,
     required this.onAttachment,
-    required this.onStudyAction,
   });
   final String subject;
   final List<Map<String, Object?>> notes;
   final bool expanded;
   final VoidCallback onToggle;
   final ValueChanged<Map<String, Object?>> onAttachment;
-  final void Function(String, Map<String, Object?>) onStudyAction;
   @override
   Widget build(BuildContext context) {
     final color = _subjectColor(subject);
@@ -153,7 +151,6 @@ class StudentNotebookSubject extends StatelessWidget {
                 note: note,
                 color: color,
                 onAttachment: onAttachment,
-                onStudyAction: onStudyAction,
               ),
         ],
       ),
@@ -166,12 +163,10 @@ class _NotebookLesson extends StatelessWidget {
     required this.note,
     required this.color,
     required this.onAttachment,
-    required this.onStudyAction,
   });
   final Map<String, Object?> note;
   final Color color;
   final ValueChanged<Map<String, Object?>> onAttachment;
-  final void Function(String, Map<String, Object?>) onStudyAction;
   @override
   Widget build(
     BuildContext context,
@@ -246,30 +241,6 @@ class _NotebookLesson extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 13),
-            Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                for (final action in [
-                  'Summarise',
-                  'Quiz me',
-                  'Flashcards',
-                  'Ask',
-                ])
-                  ActionChip(
-                    avatar: Icon(
-                      action == 'Ask'
-                          ? Icons.chat_bubble_outline_rounded
-                          : Icons.auto_awesome_rounded,
-                      size: 14,
-                      color: studentNavy,
-                    ),
-                    label: Text(action, style: const TextStyle(fontSize: 10)),
-                    onPressed: () => onStudyAction(action, note),
-                  ),
-              ],
-            ),
             const SizedBox(height: 12),
             Text(
               'Filed by your teacher · ${_relativeDay('${note['day']}')}',

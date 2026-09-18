@@ -30,6 +30,8 @@ that references the old one.
 | [ADR-0022](ADR-0022-file050-secure-upload-pipeline.md) | FILE-050 server-owned upload paths, purpose-bound intents, quotas, quarantine and outbox cleanup | Accepted for local/disposable use | DL-043 |
 | [ADR-0023](ADR-0023-file051-scan-publication-delivery.md) | FILE-051 fail-closed scanning, deterministic metadata stripping, single-object publication, school-scoped dedupe, retention units and single-use re-authorizing delivery | Accepted for local/disposable use | DL-044 |
 | [ADR-0024](ADR-0024-ops060-rate-limits-and-caches.md) | OPS-060 Redis security posture, rate-limit registry/middleware and revocation-safe version-keyed caches | Accepted for local/disposable use | DL-045 |
+| [ADR-0025](ADR-0025-ops061-bullmq-outbox-platform.md) | OPS-061 BullMQ queue platform and transactional outbox drain | Accepted for local/disposable use | DL-046 |
+| [ADR-0026](ADR-0026-ai072-remove-ai-capability.md) | AI-072 removes the AI capability: no signed DPA or extended DPIA exists | Accepted for local/disposable use | DL-047 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

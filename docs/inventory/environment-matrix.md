@@ -75,7 +75,7 @@ bounded history) · OSV dependency scan. **No deploy job exists by design.**
 | Supabase | One org, one synthetic project; owner-only access |
 | App Store Connect / Google Play Console | No accounts, products, or signing credentials exist (ADR-0009/DL-015) |
 | Google Cloud (Calendar/token broker) | Not provisioned; broker is a planned custom service |
-| Study Coach / purchase verifier endpoints | Synthetic placeholders only |
+| Study Coach / purchase verifier endpoints | Both retired: Study Coach by AI-072 (ADR-0026), the verifier by PAY-071 |
 
 ## Rules
 

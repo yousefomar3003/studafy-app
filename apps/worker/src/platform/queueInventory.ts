@@ -127,18 +127,6 @@ const declared: QueueDefinition[] = [
     idempotencyKey: "file object ID + transform version",
   },
   {
-    name: "ai-grading",
-    status: "declared",
-    concurrency: 2,
-    lockDurationMs: 120_000,
-    stalledIntervalMs: 30_000,
-    maxStalledCount: 1,
-    backoff: { baseMs: 10_000, capMs: 10 * 60_000, attempts: 2 },
-    timeoutMs: 2 * 60_000,
-    removeOnComplete: { count: 1000, age: 24 * 3600 },
-    idempotencyKey: "grade result + file object + rubric/model policy version",
-  },
-  {
     name: "meeting-operations",
     status: "declared",
     concurrency: 2,

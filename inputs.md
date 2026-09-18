@@ -197,8 +197,10 @@ stub's variables. They are replaced, not reconfigured.
 | Pilot school agreement | A15 | n/a |
 | Moderation/safeguarding owner, escalation contact and response targets | A4c SAFE-043 | Names/policy only; no student content |
 
-**AI provider:** blocked. No key needed until a DPA covering retention,
-training and residency is signed. `allowsAiGrading` stays `false`.
+**AI provider:** retired. AI-072 removed the AI capability (ADR-0026) because
+no signed DPA or extended DPIA exists. Do not obtain an AI key or
+`STUDY_COACH_*` credential; nothing would read it. `allowsAiGrading` stays
+`false`.
 
 **Google Meet:** `GOOGLE_TOKEN_BROKER_URL` and `GOOGLE_TOKEN_BROKER_SECRET`
 exist in the meeting Edge Functions. Deferred until the Workspace decision in

@@ -34,8 +34,10 @@ Flutter feature boundaries and the first typed vertical slice
 (session + class read): `docs/adr/ADR-0012-flutter-feature-boundaries.md`.
 Architecture is enforced by `dart run tools/check_dart_bounds.dart`.
 The 2026-09-11 hotspot follow-up also separates startup, parent presentation,
-teacher dashboard, preview SQLite modules, and Study Coach policy/adapters;
-evidence is in `docs/evidence/phase-1b/hotspot-refactor-2026-09-11.md`.
+teacher dashboard and preview SQLite modules; evidence is in
+`docs/evidence/phase-1b/hotspot-refactor-2026-09-11.md`. The former Study
+Coach slice was removed with the rest of the AI capability by AI-072
+(`docs/adr/ADR-0026-ai072-remove-ai-capability.md`).
 
 The local-only DB-020 and DB-021 foundation is documented in ADR-0013/0014,
 the schema data dictionary, policy/grants matrices, index catalogues, and
@@ -101,11 +103,11 @@ authorized remote environment so far is the contained synthetic project.
    `supabase/migrations` in filename order.
 2. Configure `io.studafy.app://login-callback` as an allowed Supabase Auth
    redirect URL and configure Google, Microsoft, and Apple providers.
-3. Keep the `private-school-files` storage bucket private. New uploads and AI
-   grading remain disabled until immutable file ownership, scanning, and clean
-   publication are implemented; do not restore the former path-signing flow.
-4. Do **not** deploy the prototype meeting, grade, deletion, billing or Study
-   Coach functions as a production backend. Keep the SEC-001 containment
+3. Keep the `private-school-files` storage bucket private. Uploads go only
+   through the FILE-050/051 pipeline; do not restore the former path-signing
+   flow. There is no AI capability (AI-072, ADR-0026).
+4. Do **not** deploy the prototype meeting, grade or deletion functions as a
+   production backend. Keep the SEC-001 containment
    endpoints deployed only where required, then replace the other functions
    endpoint-by-endpoint after equivalent Hono routes pass schema,
    authorization, transaction, idempotency, retry and contract tests.
@@ -128,8 +130,9 @@ reconciliation before sales are enabled.
 - Students and verified guardians can read only authorized published records.
 - Teachers can access only students enrolled in classes they own. Operational
   backend maintenance uses trusted service processes, not another app role.
-- AI paper grading only creates proposals. A teacher reviews the result and a
-  separate publish action is required before students or guardians see it.
+- There is no AI grading: AI-072 removed the capability. A teacher enters and
+  reviews every grade, and a separate publish action is required before
+  students or guardians see it.
 - Grade suggestions, overrides, review, publication, guardian access changes,
   and deletion requests create audit records.
 - The deletion UI has an impact summary, typed confirmation and a 14-day grace

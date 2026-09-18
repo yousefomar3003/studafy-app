@@ -20,11 +20,11 @@ the call to action — not behind a link, not in a scroll-away footer.
 
 Every paywall must show, before purchase:
 
-| Element | Example for Student AI |
+| Element | Example for Student Notebook |
 |---|---|
-| Product title | Studafy Student AI |
+| Product title | Studafy Student Notebook |
 | Length of subscription | Monthly |
-| Price per period | 6.99 / month |
+| Price per period | 1.99 / month |
 | Auto-renewal statement | Renews automatically each month until cancelled |
 | How to cancel | Cancel any time in your device's subscription settings |
 | Link to Terms of Use | tappable, opens the hosted document |
@@ -98,9 +98,10 @@ must contain, at minimum:
 - That **no card or payment instrument data reaches Studafy**, because the
   stores handle payment. This is a genuine privacy strength and should be
   stated plainly.
-- For the AI products, if AI-072 resolves to enable: the provider, what leaves
-  the tenant, what is redacted, and the retention period. This section cannot
-  be written before that decision and the DPA exist.
+- That **no AI processing occurs**. AI-072 resolved to remove the AI
+  capability (ADR-0026): there is no AI provider, and both AI products are
+  retired and can never be offered. Any future AI product needs a new ADR,
+  a signed DPA and an extended DPIA before this document may describe it.
 - Both documents must be published in **English and Arabic**, publicly
   reachable with no login wall (§21.6), and the privacy URL goes into both
   store consoles.
@@ -131,7 +132,7 @@ Recorded because each is a real, common rejection:
 | Trial shown without the price that follows | Apple 3.1.2 |
 | Missing or non-functional Restore purchases | Apple 3.1.1 |
 | Terms or Privacy URL behind a login wall or 404 | Apple 5.1.1, Play policy |
-| Selling a subscription to an AI feature that is disabled | Apple 2.1, 3.1.2 |
+| Selling a subscription to an AI feature that is disabled | Apple 2.1, 3.1.2 — prevented: AI-072 retired both AI products at the database level |
 | Price in the app that disagrees with the store tier | Apple 3.1.2 — read prices from the store, never hardcode |
 
 That last row is an implementation rule, not just a listing rule: the paywall

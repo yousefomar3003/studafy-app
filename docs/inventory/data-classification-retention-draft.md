@@ -18,7 +18,7 @@ data exists in any environment as of 2026-09-10.
 | `notifications`, `meeting_deliveries` | P2 metadata | Operational pointers, no bodies | Short operational retention; strip provider error PII | |
 | `audit_events`, `membership_events` (future) | P2 security audit | Accountability records; avoid copying P0 content into audit | Long retention per security policy; append-only | |
 | `subscription_entitlements`, store receipts | P2 financial metadata | Purchase data; purchaser may differ from beneficiary | Financial/transaction retention per store and tax obligations | PAY-071 owns the ledger model |
-| `ai_grading_drafts`, `question_suggestions`, `practice_sessions` | P1/P2 derived | AI outputs about children; provider retention unknown | Shortest practical; provider deletion required | Provider data-processing terms must be reviewed before real use |
+| `ai_grading_drafts`, `question_suggestions`, `practice_sessions` | P1/P2 derived | Retired by AI-072 (ADR-0026): no role may read or write; legacy rows only | Shortest practical; delete legacy rows once the retention owner confirms no hold | No AI processing occurs; any legacy provider copies follow the provider-deletion step in the evidence log |
 | Edge Function logs / future telemetry | P2 | May embed request IDs, errors, normalized account hashes | Redacted, bounded retention; no secrets/PII by construction | OPS-090 |
 
 ## Retention principles (candidates)

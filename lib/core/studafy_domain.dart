@@ -186,37 +186,3 @@ class InsightMetric {
 }
 
 enum GradePublicationState { draft, reviewed, published }
-
-@immutable
-class QuestionSuggestion {
-  const QuestionSuggestion({
-    required this.questionId,
-    required this.proposedScore,
-    required this.maximumScore,
-    required this.confidence,
-    required this.rationale,
-  });
-
-  final String questionId;
-  final double proposedScore;
-  final double maximumScore;
-  final double confidence;
-  final String rationale;
-}
-
-@immutable
-class AiGradingDraft {
-  const AiGradingDraft({
-    required this.id,
-    required this.submissionId,
-    required this.suggestions,
-    required this.createdAt,
-    required this.requiresTeacherApproval,
-  });
-
-  final String id;
-  final String submissionId;
-  final List<QuestionSuggestion> suggestions;
-  final DateTime createdAt;
-  final bool requiresTeacherApproval;
-}

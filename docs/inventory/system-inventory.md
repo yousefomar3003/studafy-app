@@ -27,8 +27,10 @@ Classes/learning: `classrooms`, `enrollments`, `lesson_sessions`,
 `assessment_questions`, `grade_results`, `practice_sessions`.
 School life: `attendance_records`, `wellbeing_events`, `announcements`,
 `meetings`, `meeting_deliveries`, `notifications`, `audit_events`.
-AI/billing: `ai_grading_drafts`, `question_suggestions`,
-`subscription_entitlements`.
+Billing: `subscription_entitlements`.
+Retired by AI-072 (no grant, no policy, every write refused; legacy rows
+kept for retention): `ai_grading_drafts`, `question_suggestions`,
+`practice_sessions`.
 
 ### RLS policy inventory
 
@@ -82,8 +84,8 @@ Shared pattern: caller JWT forwarded to an anon-key client (`auth.getUser()`
 
 | Function | Purpose | Required env/secrets | External provider | State |
 |---|---|---|---|---|
-| `propose-paper-grade` | SEC-001 kill-switch stub | none (deliberate) | none | Always 503 `AI_GRADING_DISABLED` |
-| `study-coach` | Grounded Q&A/quiz/flashcards; writes `practice_sessions` | `SUPABASE_URL/ANON_KEY/SERVICE_ROLE_KEY`, `STUDY_COACH_URL`, `STUDY_COACH_KEY` | Study Coach AI endpoint | Active; rejects attachments |
+| `propose-paper-grade` | Former SEC-001 kill-switch stub | — | none | Deleted by AI-072 (ADR-0026); removed from the synthetic project 2026-09-18 (404) |
+| `study-coach` | Former env-selected AI forwarder; wrote `practice_sessions` | — (`STUDY_COACH_*` retired) | none | Deleted by AI-072 (ADR-0026); removed from the synthetic project 2026-09-18 (404) |
 | `approve-paper-grade` | Teacher review of AI draft → `reviewed` | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
 | `publish-grade-result` | Publish reviewed grade + notification + audit | — | none | Removed after API-041 parity; source-only and not deployed in inspected synthetic project |
 | `create-google-meet` | Calendar event + Meet + deliveries | SUPABASE trio, `GOOGLE_TOKEN_BROKER_URL/SECRET` | Token broker, googleapis Calendar | Source only; not deployed synthetic |
@@ -120,10 +122,12 @@ deliberately absent).
   joins), `guardian_links` (with students), `notifications` (count + mark
   read), `subscription_entitlements` (read only).
 - RPC: `record_policy_consent` (policy version `2026-09-09`).
-- Remaining Edge invocation adapters cover Study Coach and meetings; API-041
-  grade review/publication invocations are removed. The remote synthetic
-  project deploys only the two contained functions
-  (`propose-paper-grade` and `study-coach`). No other availability is claimed.
+- The remaining Edge invocation adapter covers meetings; API-041 grade
+  review/publication invocations are removed. AI-072 (ADR-0026) deleted
+  `propose-paper-grade` and `study-coach` from the repository, and on
+  2026-09-18 from the remote synthetic project, which now deploys no Edge
+  Function (`docs/evidence/phase-7/README.md`). No other availability is
+  claimed.
 - PAY-071 store billing traffic uses `/v1/billing/*` (catalogue, submit,
   restore, entitlements, webhooks) through `V1BillingApi` on the same
   transport as the generated `/v1` client; CSS-gated card/payment surfaces
@@ -141,7 +145,6 @@ deliberately absent).
 | Provider | Used by | Credential custody |
 |---|---|---|
 | Supabase (Auth/DB/Storage/Functions) | client + functions | publishable key in app; service-role key only in function secrets |
-| Study Coach AI | `study-coach` | function secret |
 | Google token broker (custom) + Calendar API | Meet functions | function secrets; per-user tokens via broker |
 | App Store Server API / Google Play Android Publisher | PAY-071 store verification (API + worker) | `PAY071_APPLE_*` / `PAY071_GOOGLE_*` env on worker/API; no app-side secret (`PURCHASE_VERIFIER_URL/SECRET` retired with the function that used it) |
 | App Store Connect / Google Play Console | store products, sandbox | **no product catalog signing / sandbox data yet** — open PAY-071 gate |
@@ -149,8 +152,9 @@ deliberately absent).
 PAY-071 four-product catalogue (ADR-0009): Parent Insights 1.99, Student
 Notebook 1.99, Student AI 6.99, Teacher AI grading 8.99. Purchaser and
 beneficiary are modelled separately on `store_transactions`; a guardian may
-buy for a linked child. `student_ai` and `teacher_ai_grading` are never sold
-until AI-072 resolves (§29). Prices/trials rendered on paywalls come from the
+buy for a linked child. `student_ai` and `teacher_ai_grading` are retired:
+AI-072 removed the AI capability (ADR-0026), and a database constraint keeps
+both products inactive and unlisted in every environment. Prices/trials rendered on paywalls come from the
 store product query alone, never hardcoded (Apple 3.1.2).
 
 ## Toolchain pins (verified in CI, 2026-09-10)

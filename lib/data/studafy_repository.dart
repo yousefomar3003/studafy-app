@@ -22,25 +22,3 @@ abstract interface class MeetingRepository {
 }
 
 enum MeetingAudience { students, guardians, both }
-
-abstract interface class PaperGradingRepository {
-  Future<AiGradingDraft> proposeGrade({
-    required String submissionId,
-    required Uri privateScan,
-    required GradingStrictness strictness,
-  });
-
-  Future<void> reviewDraft({
-    required String gradeResultId,
-    required int expectedVersion,
-    required String draftId,
-    required List<QuestionSuggestion> finalScores,
-  });
-
-  Future<void> publishGradeResult({
-    required String gradeResultId,
-    required int expectedVersion,
-  });
-}
-
-enum GradingStrictness { strict, balanced, lenient }

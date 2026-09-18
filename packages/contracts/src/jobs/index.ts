@@ -11,12 +11,15 @@
  */
 import { z } from "zod";
 
-/** The §10 queue inventory. Names are stable; never rename, only deprecate. */
+/**
+ * The §10 queue inventory. Names are stable; never rename, only deprecate.
+ * `ai-grading` was declared but never produced or consumed; AI-072 removed the
+ * AI capability (ADR-0026), so the declaration went with it.
+ */
 export const JobQueueName = z.enum([
   "notifications",
   "file-security",
   "media-processing",
-  "ai-grading",
   "billing-events",
   "meeting-operations",
   "exports",
@@ -55,13 +58,6 @@ export const MediaProcessingJobV1 = z.object({
   transformVersion: z.string().min(1).max(40),
 });
 export type MediaProcessingJobV1Type = z.infer<typeof MediaProcessingJobV1>;
-
-export const AiGradingJobV1 = z.object({
-  gradeResultId: z.string().min(1).max(64),
-  fileId: z.string().min(1).max(64),
-  rubricPolicyVersion: z.string().min(1).max(40),
-});
-export type AiGradingJobV1Type = z.infer<typeof AiGradingJobV1>;
 
 export const BillingEventsJobV1 = z.object({
   platform: z.enum(["app_store", "play_store", "school"]),

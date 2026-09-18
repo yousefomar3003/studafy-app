@@ -60,7 +60,6 @@ const _dataOnlyImports = <String>[
   'data/supabase_repository.dart',
   'data/session_service.dart',
   'data/studafy_repository.dart',
-  'data/study_coach_repository.dart',
   'data/subscription_service.dart',
   // MOB-070 local cache vNext: presentation/application must go through a
   // repository port, never touch the scoped cache, outbox, or its sqflite
