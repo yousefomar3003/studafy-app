@@ -87,3 +87,23 @@ export {
   RealGooglePurchaseVerifier,
   type VerifiedGooglePurchase,
 } from "./billing/googleVerifier";
+export {
+  calendarEventIdFor,
+  type ConferenceProvider,
+  ConferenceProviderError,
+  type ConferenceScheduleInput,
+  GoogleCalendarConferenceProvider,
+  type GoogleCalendarConfig,
+  type ScheduledConference,
+} from "./meetings/conferenceProvider";
+export {
+  ChannelSendError,
+  type EmailMessage,
+  type EmailSender,
+  type FcmConfig,
+  FcmPushSender,
+  type PushMessage,
+  type PushSender,
+  type ResendConfig,
+  ResendEmailSender,
+} from "./notifications/channelSenders";

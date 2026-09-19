@@ -1,6 +1,6 @@
 /**
  * Apple App Store Server API / JWS verification. Wraps Apple's own
- * `app-store-server-library`, which verifies the JWS signature chain against
+ * `@apple/app-store-server-library`, which verifies the JWS signature chain against
  * Apple's bundled root CAs and decodes the payload - hand-rolling X.509
  * chain validation here would be exactly the kind of security-critical crypto
  * code that's easy to get subtly wrong.
@@ -15,9 +15,8 @@ import {
   Environment as AppleLibraryEnvironment,
   type JWSTransactionDecodedPayload,
   RevocationReason,
-  // The package re-exports its verifier class under this name.
-  SignedJWTVerifier as SignedDataVerifier,
-} from "app-store-server-library";
+  SignedDataVerifier,
+} from "@apple/app-store-server-library";
 
 export class AppleVerificationError extends Error {
   constructor(message: string) {
@@ -27,6 +26,7 @@ export class AppleVerificationError extends Error {
 }
 
 export interface VerifiedAppleTransaction {
+  appAccountToken?: string | null;
   bundleId: string;
   environment: "Sandbox" | "Production";
   originalTransactionId: string;
@@ -150,9 +150,18 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
       const lastTransactions = statuses.data?.flatMap((group) =>
         group.lastTransactions ?? []
       ) ?? [];
-      const latest = lastTransactions[0]?.signedTransactionInfo;
-      if (!latest) return null;
-      return await this.verifyTransaction(latest);
+      const verified = await Promise.all(
+        lastTransactions
+          .filter((row) =>
+            row.originalTransactionId === originalTransactionId &&
+            row.signedTransactionInfo
+          )
+          .map((row) => this.verifyTransaction(row.signedTransactionInfo!)),
+      );
+      return verified.filter((row) =>
+        row.originalTransactionId === originalTransactionId
+      )
+        .sort((a, b) => b.purchaseDate - a.purchaseDate)[0] ?? null;
     } catch (error) {
       throw new AppleVerificationError(
         error instanceof Error ? error.message : "status lookup failed",
@@ -178,6 +187,7 @@ function toVerifiedTransaction(
     );
   }
   return {
+    appAccountToken: payload.appAccountToken ?? null,
     bundleId: payload.bundleId,
     environment: payload.environment === AppleLibraryEnvironment.PRODUCTION
       ? "Production"

@@ -249,6 +249,25 @@ jobs:
           bunx supabase test db --local
           supabase/tests/ai072_removal_seed.sql
 
+      # PAY-071 audit follow-up: lineage ownership across accounts, the
+      # storefront gate on first-seen restores, guardian entitlement reads,
+      # the self-purchase switch, and the ledger's lifecycle history.
+      - name: Verify PAY-071 billing ledger trust boundary
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/pay071_billing_seed.sql
+
+      # DL-051: account deletion executes as de-identification that keeps
+      # retained records intact and never while held, early or cancelled;
+      # data exports contain only the requester's own data.
+      - name: Verify account deletion and data export executors
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/account_deletion_seed.sql
+          supabase/tests/data_export_seed.sql
+          supabase/tests/meeting_processor_seed.sql
+          supabase/tests/notification_channels_seed.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:db020:plans
 
@@ -396,6 +415,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+          # Full history, so the migration gate can compare against main.
+          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -418,6 +439,11 @@ jobs:
 
       - name: Enforce architecture boundaries
         run: bun scripts/check-bounds.ts
+
+      # INFRA-081: migrations are forward-only. No applied migration may
+      # change, and new ones must sort last against main.
+      - name: Enforce forward-only migrations
+        run: bun run check:migrations origin/main
 
       - name: Type-check all workspace members
         run: bun run typecheck

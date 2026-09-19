@@ -18,6 +18,11 @@ export type FamilySlice = "family";
 
 // Appended after invitations' 4 entries (indices [64, 68)).
 const FAMILY_ROUTES = V1_ROUTE_CATALOGUE.slice(68, 72);
+// DL-050 appended listMyGuardianLinks at the end of the catalogue; it
+// mounts in its own router so handler order stays equal to the contract.
+const FAMILY_READ_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "listMyGuardianLinks"
+);
 
 function selector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
@@ -36,6 +41,25 @@ export function createFamilyRoutes(
   return createCatalogueRoutes(
     {
       routes: FAMILY_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector,
+      sliceFor,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
+export function createFamilyReadRoutes(
+  deps: FamilyDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: FAMILY_READ_ROUTES,
       repository: deps.repository,
       cursorSigningKey: deps.cursorSigningKey,
       selector,

@@ -30,7 +30,7 @@ const ALLOWED: Record<string, string[]> = {
     "@supabase/supabase-js",
     "ioredis",
     "bullmq",
-    "app-store-server-library",
+    "@apple/app-store-server-library",
     "google-auth-library",
     "googleapis",
     "@studafy/config",

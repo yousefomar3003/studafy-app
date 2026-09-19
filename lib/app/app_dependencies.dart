@@ -8,9 +8,11 @@ import '../data/billing/v1_billing_api.dart';
 import '../data/contracts/v1_http_transport.dart';
 import '../data/contracts/v1_client.generated.dart';
 import '../data/local_cache/session_cache_binder.dart';
+import '../core/secure_storage.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/subscription_service.dart';
 import '../features/account/application/account_interactor.dart';
+import '../features/account/data/api_data_export_repository.dart';
 import '../features/account/data/session_account_repository.dart';
 import '../features/academic/data/api_academic_repository.dart';
 import '../features/academic/data/preview_academic_repository.dart';
@@ -19,6 +21,12 @@ import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/data/preview_classroom_repository.dart';
 import '../features/classes/data/api_classroom_repository.dart';
 import '../features/classes/domain/classroom_repository.dart';
+import '../features/family/application/family_interactor.dart';
+import '../features/family/data/api_family_repository.dart';
+import '../features/family/data/preview_family_repository.dart';
+import '../features/messaging/application/messaging_interactor.dart';
+import '../features/messaging/data/api_messaging_repository.dart';
+import '../features/messaging/data/preview_messaging_repository.dart';
 import '../features/notifications/application/notifications_interactor.dart';
 import '../features/notifications/data/api_notifications_repository.dart';
 import '../features/notifications/data/preview_notifications_repository.dart';
@@ -56,6 +64,8 @@ class AppDependencies {
     required this.notifications,
     required this.cacheBinder,
     required this.fileUploads,
+    required this.messaging,
+    required this.family,
   });
 
   final SessionInteractor session;
@@ -73,6 +83,13 @@ class AppDependencies {
   /// alive and listening for the app's whole lifetime.
   final SessionCacheBinder cacheBinder;
   final FileUploadRepository fileUploads;
+
+  /// Conversations with report and block controls (MOB-070, SAFE-043).
+  final MessagingInteractor messaging;
+
+  /// Guardian home: linked children, link requests, progress and purchase
+  /// approvals (MOB-070 parent slice, DL-048/DL-050).
+  final FamilyInteractor family;
 
   static AppDependencies forPolicy(RuntimePolicy policy) {
     final telemetry = const DebugLogTelemetry();
@@ -101,7 +118,30 @@ class AppDependencies {
             remote!.transport,
             environment: billingEnvironmentName(policy.environment),
           );
+    final messagingAdapter = policy.isSynthetic
+        ? PreviewMessagingRepository()
+        : null;
+    final apiMessaging = remote == null
+        ? null
+        : ApiMessagingRepository(remote.api);
+    final previewFamily = policy.isSynthetic ? PreviewFamilyRepository() : null;
+    final apiFamily = remote == null
+        ? null
+        : ApiFamilyRepository(remote.api, billing: billingApi);
     return AppDependencies(
+      family: FamilyInteractor(
+        family: previewFamily ?? apiFamily!,
+        approvals: previewFamily ?? apiFamily!,
+        confirmRecentAuth: () => sessionRepository.confirmRecentAuth(
+          ReauthPurpose.billingPurchaseApproval,
+        ),
+        telemetry: telemetry,
+      ),
+      messaging: MessagingInteractor(
+        messaging: messagingAdapter ?? apiMessaging!,
+        safety: messagingAdapter ?? apiMessaging!,
+        telemetry: telemetry,
+      ),
       session: SessionInteractor(
         repository: sessionRepository,
         context: context,
@@ -114,7 +154,10 @@ class AppDependencies {
       ),
       parent: parentRepository,
       teacherDashboard: teacherDashboardRepository,
-      parentSubscription: StoreSubscriptionRepository(billingApi: billingApi),
+      parentSubscription: StoreSubscriptionRepository(
+        billingApi: billingApi,
+        pendingStore: remote?.secureStore,
+      ),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(
@@ -124,6 +167,14 @@ class AppDependencies {
                 loadImpact: sessionRepository.deletionImpact,
                 submitRequest: sessionRepository.requestAccountDeletion,
                 cancelRequest: sessionRepository.cancelAccountDeletion,
+              ),
+        exports: remote == null
+            ? null
+            : ApiDataExportRepository(
+                remote.api,
+                confirmRecentAuth: () => sessionRepository.confirmRecentAuth(
+                  ReauthPurpose.accountDataExport,
+                ),
               ),
       ),
       academicApi: remote?.api,
@@ -179,6 +230,7 @@ class AppDependencies {
     return _RemoteClients(
       api: V1ApiClient(transport),
       transport: transport,
+      secureStore: secureStore,
       session: ApiSessionRepository(
         transport: transport,
         secureStore: secureStore,
@@ -191,9 +243,11 @@ class _RemoteClients {
   const _RemoteClients({
     required this.api,
     required this.transport,
+    required this.secureStore,
     required this.session,
   });
   final V1ApiClient api;
   final V1JsonTransport transport;
+  final SecureStore secureStore;
   final SessionRepository session;
 }

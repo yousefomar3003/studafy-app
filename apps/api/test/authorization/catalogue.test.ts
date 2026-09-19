@@ -10,11 +10,23 @@ import {
   createSchoolRosterRoutes,
 } from "../../src/school-admin/routes";
 import { createInvitationsRoutes } from "../../src/invitations/routes";
-import { createFamilyRoutes } from "../../src/family/routes";
-import { createCommunicationsRoutes } from "../../src/communications/routes";
+import {
+  createFamilyReadRoutes,
+  createFamilyRoutes,
+} from "../../src/family/routes";
+import {
+  createCommunicationsRoutes,
+  createContactsRoutes,
+} from "../../src/communications/routes";
 import { createMeetingsRoutes } from "../../src/meetings/routes";
-import { createNotificationsRoutes } from "../../src/notifications/routes";
-import { createAccountRoutes } from "../../src/account/routes";
+import {
+  createNotificationsRoutes,
+  createPushDeviceRoutes,
+} from "../../src/notifications/routes";
+import {
+  createAccountReadRoutes,
+  createAccountRoutes,
+} from "../../src/account/routes";
 import { createSupportAccessRoutes } from "../../src/support-access/routes";
 import { createSafetyRoutes } from "../../src/safety/routes";
 import { createFileRoutes } from "../../src/files/routes";
@@ -219,19 +231,22 @@ function routeTable() {
       environment: "synthetic",
       apple: null,
       google: null,
-      parentalGateSigningKey: "a".repeat(32),
       repository: {
         catalogue: async () => ({ products: [] }),
         selfPurchaseStatus: async () => [],
         setSelfPurchase: async () => false,
         submitVerification: async () => ({ outcome: "invalid" }),
         restore: async () => ({ outcome: "invalid" }),
+        requestPurchaseApproval: async () => ({ outcome: "invalid" }),
+        listPurchaseApprovals: async () => [],
+        decidePurchaseApproval: async () => ({ outcome: "invalid" }),
         listEntitlements: async () => [],
         recordEvent: async () => ({ outcome: "duplicate" as const }),
       },
     },
     authorization,
     idempotency,
+    authDependencies as never,
   );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);
@@ -247,6 +262,62 @@ function routeTable() {
   combined.route("/", safety);
   combined.route("/", files);
   combined.route("/", billing);
+  combined.route(
+    "/",
+    createContactsRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createFamilyReadRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createAccountReadRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createPushDeviceRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
   const routes = createAuthRoutes(
     authDependencies,
     authorization,

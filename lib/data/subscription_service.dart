@@ -3,19 +3,37 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import '../core/secure_storage.dart';
 import '../features/parent/domain/parent_subscription_repository.dart';
 import 'billing/store_offer_details.dart';
 import 'billing/v1_billing_api.dart';
 import 'contracts/v1_http_transport.dart';
 
 class StoreSubscriptionRepository implements ParentSubscriptionRepository {
-  StoreSubscriptionRepository({InAppPurchase? store, V1BillingApi? billingApi})
-    : _store = store ?? InAppPurchase.instance,
-      // ignore: prefer_initializing_formals
-      _billingApi = billingApi;
+  StoreSubscriptionRepository({
+    InAppPurchase? store,
+    V1BillingApi? billingApi,
+    SecureStore? pendingStore,
+  }) : _store = store ?? InAppPurchase.instance,
+       // ignore: prefer_initializing_formals
+       _billingApi = billingApi,
+       _pending = pendingStore ?? InMemorySecureStore();
 
   final InAppPurchase _store;
   final V1BillingApi? _billingApi;
+
+  /// Remembers which linked child a started purchase is for, keyed by store
+  /// product id. It must survive an app kill between the store sheet and
+  /// server verification: the store stream replays the purchase on the next
+  /// launch, and without the beneficiary the server would refuse it, leaving
+  /// Google to auto-refund an unacknowledged purchase after three days. It
+  /// is cleared on sign-out with the rest of the secure store, which is also
+  /// correct: a different account's token could never verify it.
+  final SecureStore _pending;
+  String? _accountToken;
+
+  static String _pendingKey(String storeProductId) =>
+      'pay071.pending_beneficiary.$storeProductId';
 
   StreamSubscription<List<PurchaseDetails>>? _purchaseListener;
 
@@ -60,6 +78,7 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
     if (_catalogueError || !_isRemote) return <V1BillingProduct>[];
     try {
       final catalogue = await _billingApi!.catalogue();
+      _accountToken = catalogue.purchaseAccountToken;
       final products = catalogue.products
           .where((product) => product.platform == _platformName)
           .toList();
@@ -87,14 +106,19 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
   }
 
   @override
-  Future<SubscriptionEntitlement> entitlement() async {
+  Future<SubscriptionEntitlement> entitlement({
+    String? beneficiaryStudentId,
+  }) async {
     if (!_isRemote) {
       return const SubscriptionEntitlement(active: false, source: 'preview');
     }
     try {
       final rows = await _billingApi!.entitlements();
       for (final row in rows) {
-        if (row.featureKey == 'parent_insights') {
+        // Parent Insights is held by the child; a guardian reads it through
+        // the child's student id, never as their own entitlement.
+        if (row.featureKey == 'parent_insights' &&
+            row.beneficiaryStudentId == beneficiaryStudentId) {
           return SubscriptionEntitlement(
             active:
                 row.grantsAccess &&
@@ -145,10 +169,19 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
   }
 
   @override
-  Future<void> purchaseInsightsMonthly() async {
+  Future<void> purchaseInsightsMonthly({
+    required String beneficiaryStudentId,
+  }) async {
     await initialize();
     if (!_isRemote) throw StateError('Billing is unavailable in preview');
+    if (beneficiaryStudentId.isEmpty) {
+      throw StateError('Choose the child this subscription is for');
+    }
     final product = await _insightsProductOrThrow();
+    final accountToken = _accountToken;
+    if (accountToken == null) {
+      throw StateError('Billing is unavailable right now');
+    }
     if (!await _store.isAvailable()) {
       throw StateError('Store is unavailable');
     }
@@ -157,19 +190,28 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
     if (response.productDetails.isEmpty) {
       throw StateError('Insights+ is not available in this store region');
     }
+    await _pending.write(
+      _pendingKey(product.storeProductId),
+      beneficiaryStudentId,
+    );
     final started = await _store.buyNonConsumable(
       purchaseParam: PurchaseParam(
         productDetails: response.productDetails.first,
+        applicationUserName: accountToken,
       ),
     );
-    if (!started) throw StateError('The store did not start the purchase');
+    if (!started) {
+      await _pending.delete(_pendingKey(product.storeProductId));
+      throw StateError('The store did not start the purchase');
+    }
   }
 
   @override
   Future<void> restorePurchases() async {
     await initialize();
     if (!_isRemote) return;
-    await _store.restorePurchases();
+    await _products();
+    await _store.restorePurchases(applicationUserName: _accountToken);
   }
 
   Future<void> _handlePurchases(List<PurchaseDetails> purchases) async {
@@ -189,6 +231,7 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
         case PurchaseStatus.canceled:
           // Release an abandoned/failed payment; nothing was charged and the
           // server is never told about an unverified purchase (§13).
+          await _pending.delete(_pendingKey(purchase.productID));
           if (purchase.pendingCompletePurchase) {
             await _store.completePurchase(purchase);
           }
@@ -234,8 +277,12 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
           storeProductId: product.storeProductId,
           featureKey: product.featureKey,
           verificationPayload: verificationPayload,
+          beneficiaryStudentId: await _pending.read(
+            _pendingKey(product.storeProductId),
+          ),
           idempotencyKey: idempotencyKey,
         );
+        await _pending.delete(_pendingKey(product.storeProductId));
       }
     } catch (_) {
       // Do not complete or grant access to a purchase the server has not

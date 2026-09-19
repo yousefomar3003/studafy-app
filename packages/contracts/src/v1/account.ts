@@ -33,3 +33,14 @@ export const V1ExportStatusResponse = z.strictObject({
   request: V1DataExportRequest.nullable(),
 });
 export type V1ExportStatusResponse = z.infer<typeof V1ExportStatusResponse>;
+
+/**
+ * GET /v1/account/export-download (DL-051): the caller's latest ready,
+ * unexpired data export. Sections hold only the caller's own data.
+ */
+export const V1DataExportDocument = z.strictObject({
+  format: z.literal("studafy-export/v1"),
+  generatedAt: z.string().datetime({ offset: true }),
+  sections: z.record(z.string(), z.unknown()),
+});
+export type V1DataExportDocument = z.infer<typeof V1DataExportDocument>;

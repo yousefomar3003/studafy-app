@@ -164,8 +164,22 @@ const DEFINITIONS: Record<
     detail: "No verified, unexpired guardian link exists for this student.",
   },
   PARENTAL_GATE_REQUIRED: {
-    title: "Parental gate required",
-    detail: "Confirm the parental gate before this purchase can continue.",
+    title: "Guardian approval required",
+    detail:
+      "A linked guardian must approve this purchase before it can continue.",
+  },
+  MESSAGING_DISABLED: {
+    title: "Messaging is off",
+    detail: "This school has not turned on messaging.",
+  },
+  CONTACT_NOT_ALLOWED: {
+    title: "Contact not allowed",
+    detail: "You cannot message this person in this school.",
+  },
+  GUARDIAN_LINK_REQUIRED: {
+    title: "Guardian link required",
+    detail:
+      "A verified guardian must be linked before a student can request a purchase.",
   },
   STUDENT_PURCHASE_DISABLED: {
     title: "Student purchases disabled",

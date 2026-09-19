@@ -58,6 +58,7 @@ export type V1BillingSelfPurchaseStatus = z.infer<
 >;
 
 export const V1BillingCatalogueResponse = z.strictObject({
+  purchaseAccountToken: Id,
   products: z.array(V1BillingProduct).max(16),
   selfPurchase: z.array(V1BillingSelfPurchaseStatus).max(16),
 });
@@ -73,21 +74,53 @@ export type V1BillingCatalogueResponse = z.infer<
  * any field inside it - nothing here is trusted client input except "please
  * check this opaque blob".
  */
-/** From GET /v1/billing/parental-gate. Required, verified server-side, on
- * any purchase where the purchaser is the student beneficiary themselves -
- * a client cannot bypass it by simply asserting confirmation. */
-export const V1ParentalGateAnswer = z.strictObject({
-  token: z.string().min(1).max(512),
-  answer: z.number().int(),
-});
-export type V1ParentalGateAnswer = z.infer<typeof V1ParentalGateAnswer>;
+/**
+ * Guardian purchase approval (audit follow-up, DL-048). A student
+ * self-purchase is verified only when a guardian holding a verified,
+ * unexpired link has approved it from their own session after a
+ * recent-auth challenge. The server consumes the approval when it records
+ * the subscription's first ledger row; the client never asserts it.
+ */
+export const V1PurchaseApprovalFeatureKey = z.enum(["student_notebook"]);
+export const V1PurchaseApprovalStatus = z.enum([
+  "requested",
+  "approved",
+  "declined",
+  "consumed",
+  "expired",
+]);
 
-export const V1ParentalGateChallengeResponse = z.strictObject({
-  token: z.string().min(1).max(512),
-  question: z.string().min(1).max(80),
+export const V1PurchaseApproval = z.strictObject({
+  id: Id,
+  studentId: Id,
+  studentName: z.string().min(1).max(200),
+  featureKey: V1PurchaseApprovalFeatureKey,
+  status: V1PurchaseApprovalStatus,
+  requestedAt: Timestamp,
+  decidedAt: Timestamp.nullable(),
+  expiresAt: Timestamp,
 });
-export type V1ParentalGateChallengeResponse = z.infer<
-  typeof V1ParentalGateChallengeResponse
+export type V1PurchaseApproval = z.infer<typeof V1PurchaseApproval>;
+
+export const V1RequestPurchaseApprovalRequest = z.strictObject({
+  featureKey: V1PurchaseApprovalFeatureKey,
+});
+export type V1RequestPurchaseApprovalRequest = z.infer<
+  typeof V1RequestPurchaseApprovalRequest
+>;
+
+export const V1PurchaseApprovalsResponse = z.strictObject({
+  approvals: z.array(V1PurchaseApproval).max(50),
+});
+export type V1PurchaseApprovalsResponse = z.infer<
+  typeof V1PurchaseApprovalsResponse
+>;
+
+export const V1DecidePurchaseApprovalRequest = z.strictObject({
+  approve: z.boolean(),
+});
+export type V1DecidePurchaseApprovalRequest = z.infer<
+  typeof V1DecidePurchaseApprovalRequest
 >;
 
 export const V1SubmitPurchaseRequest = z.strictObject({
@@ -97,7 +130,6 @@ export const V1SubmitPurchaseRequest = z.strictObject({
   storeProductId: z.string().min(1).max(200),
   verificationPayload: z.string().min(1).max(16_384),
   beneficiaryStudentId: Id.optional(),
-  parentalGate: V1ParentalGateAnswer.optional(),
 });
 export type V1SubmitPurchaseRequest = z.infer<typeof V1SubmitPurchaseRequest>;
 
@@ -134,6 +166,12 @@ export const V1Entitlement = z.strictObject({
   status: V1BillingEntitlementStatus,
   startsAt: Timestamp,
   endsAt: Timestamp.nullable(),
+  /**
+   * Null for the caller's own entitlement. Set to a linked child's student id
+   * when a guardian reads the Parent Insights entitlement attached to that
+   * child (ADR-0009: the beneficiary, not the purchaser, holds access).
+   */
+  beneficiaryStudentId: Id.nullable(),
 });
 export type V1Entitlement = z.infer<typeof V1Entitlement>;
 

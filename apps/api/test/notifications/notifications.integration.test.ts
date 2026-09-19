@@ -5,6 +5,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono } from "hono";
+import { testAssurance } from "../support/assurance";
 import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
@@ -15,12 +16,17 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresNotificationsRepository } from "../../src/notifications/repository";
-import { createNotificationsRoutes } from "../../src/notifications/routes";
+import {
+  createNotificationsRoutes,
+  createPushDeviceRoutes,
+} from "../../src/notifications/routes";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;
 
 const USER_A = "5f470000-0000-4000-8000-0000000000a1";
+const USER_B = "5f470000-0000-4000-8000-0000000000a2";
+const TOKEN = "fcm-token-for-dl053-integration-".padEnd(64, "x");
 const SCHOOL = "5f470000-0000-4000-8000-0000000000b1";
 
 const CURSOR_KEY = "api042-notifications-integration-cursor-key-0000000001";
@@ -37,7 +43,8 @@ async function seed(): Promise<void> {
       email_change, email_change_token_new, email_change_token_current,
       phone_change_token, raw_app_meta_data, raw_user_meta_data
     ) values
-      (${USER_A}::uuid, 'api042.notif.user@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-042 Notif User"}'::jsonb)
+      (${USER_A}::uuid, 'api042.notif.user@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-042 Notif User"}'::jsonb),
+      (${USER_B}::uuid, 'api042.notif.user2@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-042 Notif User B"}'::jsonb)
     on conflict (id) do nothing
   `;
   await sql`
@@ -51,12 +58,13 @@ async function seed(): Promise<void> {
 async function cleanup(): Promise<void> {
   await sql.begin(async (tx) => {
     await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
+    await tx`delete from public.push_devices where user_id in (${USER_A}::uuid, ${USER_B}::uuid)`;
     await tx`delete from public.notification_preferences where user_id = ${USER_A}::uuid`;
     await tx`delete from public.notification_deliveries where recipient_id = ${USER_A}::uuid`;
     await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.audit_events where actor_id = ${USER_A}::uuid`;
     await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id = ${USER_A}::uuid`;
+    await tx`delete from auth.users where id in (${USER_A}::uuid, ${USER_B}::uuid)`;
     await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
   });
 }
@@ -114,28 +122,29 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
           sessionId: null,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
-          assuranceLevel: "aal1",
+          assuranceLevel: testAssurance(c),
           authMethods: [],
           claims: {},
         },
         context,
-        aal2: false,
+        aal2: testAssurance(c) === "aal2",
         mfaRequiredByPolicy: false,
       };
       c.set("requestId", crypto.randomUUID());
       c.set("actor", actor);
       await next();
     });
+    const notificationDeps = {
+      repository: new PostgresNotificationsRepository(sql),
+      cursorSigningKey: CURSOR_KEY,
+    };
     app.route(
       "/",
-      createNotificationsRoutes(
-        {
-          repository: new PostgresNotificationsRepository(sql),
-          cursorSigningKey: CURSOR_KEY,
-        },
-        authorization,
-        idempotency,
-      ),
+      createNotificationsRoutes(notificationDeps, authorization, idempotency),
+    );
+    app.route(
+      "/",
+      createPushDeviceRoutes(notificationDeps, authorization, idempotency),
     );
   });
 
@@ -199,5 +208,46 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
       ),
     )
       .toBe(true);
+  });
+
+  test("a device registers for push and moves with the signed-in account", async () => {
+    const registered = await request("/v1/me/push-devices", {
+      method: "POST",
+      subject: USER_A,
+      body: { platform: "android", token: TOKEN },
+    });
+    expect(registered.status).toBe(200);
+
+    // Someone else cannot remove A's registration.
+    await request("/v1/me/push-devices/unregister", {
+      method: "POST",
+      subject: USER_B,
+      body: { token: TOKEN },
+    });
+    const stillA = await sql<{ user_id: string }[]>`
+      select user_id from public.push_devices
+      where token = ${TOKEN} and revoked_at is null
+    `;
+    expect(stillA.map((r) => r.user_id)).toEqual([USER_A]);
+
+    // Signing in as B on the same device moves the token to B.
+    await request("/v1/me/push-devices", {
+      method: "POST",
+      subject: USER_B,
+      body: { platform: "android", token: TOKEN },
+    });
+    const nowB = await sql<{ user_id: string }[]>`
+      select user_id from public.push_devices
+      where token = ${TOKEN} and revoked_at is null
+    `;
+    expect(nowB.map((r) => r.user_id)).toEqual([USER_B]);
+
+    const removed = await request("/v1/me/push-devices/unregister", {
+      method: "POST",
+      subject: USER_B,
+      body: { token: TOKEN },
+    });
+    expect((await removed.json() as { registered: boolean }).registered)
+      .toBe(false);
   });
 });

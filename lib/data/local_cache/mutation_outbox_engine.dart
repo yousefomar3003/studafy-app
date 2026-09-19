@@ -184,7 +184,7 @@ class MutationOutboxEngine {
       return const MutationSessionLost();
     }
     if (error.code == 'IDEMPOTENCY_KEY_REUSED') {
-      return const MutationAlreadyApplied();
+      return MutationConflict(error.code);
     }
     if (error.code == 'IDEMPOTENCY_IN_PROGRESS') {
       return MutationTransientFailure(error.code);
@@ -192,7 +192,7 @@ class MutationOutboxEngine {
     if (error.code == 'VERSION_CONFLICT') {
       return MutationConflict(error.code);
     }
-    if (error.status >= 500) {
+    if (error.status == 429 || error.status >= 500) {
       return MutationTransientFailure(error.code);
     }
     return MutationRejected(error.code);

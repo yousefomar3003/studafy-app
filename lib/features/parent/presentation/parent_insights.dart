@@ -64,8 +64,14 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
     final rows = await dependencies.repository.linkedChildren();
     SubscriptionEntitlement? access;
     if (dependencies.isRemote) {
+      final index = _activeChildIndex(rows, selectedChild);
+      final serverId = rows.isEmpty ? null : rows[index]['serverId'];
       try {
-        access = await dependencies.subscription.entitlement();
+        access = serverId is String
+            ? await dependencies.subscription.entitlement(
+                beneficiaryStudentId: serverId,
+              )
+            : const SubscriptionEntitlement(active: false, source: 'none');
       } catch (_) {
         access = const SubscriptionEntitlement(
           active: false,
@@ -84,8 +90,15 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
 
   Future<void> _purchase() async {
     try {
+      // The entitlement attaches to the selected child, so the store sheet
+      // never opens without that child's server id: a purchase the server
+      // cannot attribute would go unacknowledged and be auto-refunded.
+      final beneficiary = child?['serverId'];
+      if (beneficiary is! String || beneficiary.isEmpty) {
+        throw StateError('Choose a linked child before subscribing');
+      }
       await ParentRepositoryScope.of(context).subscription
-          .purchaseInsightsMonthly();
+          .purchaseInsightsMonthly(beneficiaryStudentId: beneficiary);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -130,6 +143,8 @@ class _ParentInsightsPageState extends State<ParentInsightsPage> {
           onSelected: (value) {
             setState(() => selectedChild = value);
             _rememberChild(children[value]);
+            // Access is per child: re-read it for the newly selected one.
+            _load();
           },
         ),
         if (child == null)

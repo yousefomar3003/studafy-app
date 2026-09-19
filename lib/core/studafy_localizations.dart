@@ -106,6 +106,24 @@ class StudafyLocalizations {
       'notification.academic.wellbeing_shared.title': 'Wellbeing note shared',
       'notification.academic.wellbeing_shared.detail':
           'A wellbeing note was shared with you.',
+      'notification.billing.purchase_approval_requested.title':
+          'Purchase approval needed',
+      'notification.billing.purchase_approval_requested.detail':
+          'Your child asked you to approve a subscription.',
+      'notification.billing.purchase_approval_approved.title':
+          'Purchase approved',
+      'notification.billing.purchase_approval_approved.detail':
+          'A guardian approved your subscription request.',
+      'notification.billing.purchase_approval_declined.title':
+          'Purchase declined',
+      'notification.billing.purchase_approval_declined.detail':
+          'A guardian declined your subscription request.',
+      'notification.meetings.scheduled.title': 'Meeting confirmed',
+      'notification.meetings.scheduled.detail':
+          'A meeting was scheduled. Check your calendar for the invitation.',
+      'notification.meetings.failed.title': 'Meeting not scheduled',
+      'notification.meetings.failed.detail':
+          'A meeting you requested could not be scheduled. Please try again.',
       'notification.communications.announcement_created.title':
           'New announcement',
       'notification.communications.announcement_created.detail':
@@ -203,6 +221,23 @@ class StudafyLocalizations {
       'notification.academic.wellbeing_shared.title': 'ملاحظة رفاهية',
       'notification.academic.wellbeing_shared.detail':
           'تمت مشاركة ملاحظة متعلقة بالرفاهية معك.',
+      'notification.billing.purchase_approval_requested.title':
+          'مطلوب الموافقة على شراء',
+      'notification.billing.purchase_approval_requested.detail':
+          'طلب طفلك موافقتك على اشتراك.',
+      'notification.billing.purchase_approval_approved.title':
+          'تمت الموافقة على الشراء',
+      'notification.billing.purchase_approval_approved.detail':
+          'وافق ولي الأمر على طلب اشتراكك.',
+      'notification.billing.purchase_approval_declined.title': 'تم رفض الشراء',
+      'notification.billing.purchase_approval_declined.detail':
+          'رفض ولي الأمر طلب اشتراكك.',
+      'notification.meetings.scheduled.title': 'تم تأكيد الاجتماع',
+      'notification.meetings.scheduled.detail':
+          'تمت جدولة اجتماع. تحقق من تقويمك لرؤية الدعوة.',
+      'notification.meetings.failed.title': 'لم تتم جدولة الاجتماع',
+      'notification.meetings.failed.detail':
+          'تعذرت جدولة اجتماع طلبته. يرجى المحاولة مرة أخرى.',
       'notification.communications.announcement_created.title': 'إعلان جديد',
       'notification.communications.announcement_created.detail':
           'تم نشر إعلان جديد.',

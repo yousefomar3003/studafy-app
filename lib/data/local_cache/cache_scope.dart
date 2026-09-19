@@ -14,6 +14,8 @@ class CacheScope {
   final String userId;
   final String schoolId;
 
+  String get userFileKey => sha256.convert(utf8.encode(userId)).toString();
+
   /// Filesystem-safe, non-reversible file-name fragment. Deliberately not
   /// the raw id: neither belongs in a file name an OS-level backup or crash
   /// report might surface.

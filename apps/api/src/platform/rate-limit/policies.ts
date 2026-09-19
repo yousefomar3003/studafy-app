@@ -156,7 +156,7 @@ export const RATE_LIMIT_FLOWS: Record<RateLimitFlow, FlowPolicy> = {
     policy: { kind: "fixedWindow", limit: 20, windowSeconds: 3600 },
     failClosed: true,
     rationale:
-      "Purchase verification is money-adjacent; enforcement lands with BIL-051's owning surface.",
+      "Purchase, restore and parental challenges require a fail-closed account budget.",
   },
   storeWebhook: {
     flow: "storeWebhook",
@@ -164,7 +164,7 @@ export const RATE_LIMIT_FLOWS: Record<RateLimitFlow, FlowPolicy> = {
     policy: { kind: "fixedWindow", limit: 600, windowSeconds: 60 },
     failClosed: true,
     rationale:
-      "Store webhooks are replay-prone; declared for the Edge Function gateway rule (OPS-051).",
+      "Store webhook verification has a separate fail-closed IP budget.",
   },
 };
 
@@ -246,6 +246,21 @@ export function flowFor(
   method: "get" | "post",
   path: string,
 ): FlowClassification {
+  if (path === "/webhooks/apple" || path === "/webhooks/google") {
+    return { flow: "storeWebhook", weight: 1 };
+  }
+  if (path === "/v1/billing/school-settings/self-purchase") {
+    return { flow: "adminApi", weight: 2 };
+  }
+  if (
+    path === "/v1/billing/purchases" || path === "/v1/billing/restore" ||
+    (method === "post" && path === "/v1/billing/purchase-approvals")
+  ) {
+    return { flow: "billingPurchase", weight: 1 };
+  }
+  if (/^\/v1\/billing\/purchase-approvals\/[^/]+\/decision$/.test(path)) {
+    return { flow: "billingPurchase", weight: 1 };
+  }
   // Internal surfaces first: they are all privileged and low-volume.
   if (path.startsWith("/internal/")) {
     return { flow: "adminApi", weight: 2 };
@@ -314,10 +329,10 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/auth/context",
   "/v1/account/deletion-impact",
   "/v1/account/export-status",
+  "/v1/account/export-download",
   "/v1/notifications/unread-count",
   "/v1/notifications/preferences",
   "/internal/moderation/overview",
-  "/v1/billing/parental-gate",
   "/v1/billing/catalogue",
 ]);
 

@@ -8,12 +8,24 @@ import type {
 
 export type FamilyRepository = CatalogueRepository;
 
-/** Every S3 operation is a POST; query() is never reached. */
+/** S3 commands plus the guardian's own-links read (DL-050). */
 export class PostgresFamilyRepository implements CatalogueRepository {
   constructor(readonly sql: Sql) {}
 
-  query(): Promise<unknown> {
-    throw new Error("family module has no query operations");
+  async query(
+    context: RequestDbContext,
+    operation: string,
+    resourceId: string | null,
+    input: unknown,
+  ): Promise<unknown> {
+    return await withRequestContext(this.sql, context, async (tx) => {
+      const rows = await tx<{ result: unknown }[]>`
+        select private.api042_query(
+          ${operation}, ${resourceId}::uuid, ${tx.json(input as never)}
+        ) as result
+      `;
+      return rows[0]?.result ?? null;
+    });
   }
 
   async command(

@@ -83,8 +83,3 @@ export {
   isGooglePackageNameTrusted,
   mapGoogleSubscriptionStateToTransactionState,
 } from "./billing/googlePurchase";
-export {
-  issueParentalGateChallenge,
-  type ParentalGateChallenge,
-  verifyParentalGateAnswer,
-} from "./billing/parentalGate";

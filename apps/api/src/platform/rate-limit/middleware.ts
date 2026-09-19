@@ -277,7 +277,10 @@ export function rateLimitEdge(
   deps: LocalRateLimitDependencies,
 ): MiddlewareHandler {
   return async (c, next) => {
-    const response = await enforce(deps, c, "publicDefault", 1, false);
+    const flow = c.req.path.startsWith("/webhooks/")
+      ? "storeWebhook"
+      : "publicDefault";
+    const response = await enforce(deps, c, flow, 1, false);
     if (response) return response;
     await next();
   };

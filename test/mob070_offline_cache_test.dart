@@ -139,6 +139,37 @@ void main() {
     );
   });
 
+  test(
+    'user-wide wipe survives closed handles and preserves other users',
+    () async {
+      final id = DateTime.now().microsecondsSinceEpoch.toString();
+      final scopes = [
+        CacheScope(userId: 'owner-$id', schoolId: 'a'),
+        CacheScope(userId: 'owner-$id', schoolId: 'b'),
+        CacheScope(userId: 'other-$id', schoolId: 'a'),
+      ];
+      for (final scope in scopes) {
+        final db = await OfflineCacheDatabase.open(scope);
+        await OfflineCacheStore(db).putEntities('notification', [
+          CachedEntity(
+            entityId: 'secret',
+            payload: {'private': true},
+            updatedAt: 't',
+          ),
+        ]);
+        await db.close();
+      }
+      await OfflineCacheDatabase.wipeUser('owner-$id');
+      for (var i = 0; i < scopes.length; i++) {
+        final rows = await OfflineCacheStore(
+          await OfflineCacheDatabase.open(scopes[i]),
+        ).entitiesFor('notification');
+        expect(rows.length, i == 2 ? 1 : 0);
+        await OfflineCacheDatabase.wipe(scopes[i]);
+      }
+    },
+  );
+
   group('MutationOutboxEngine', () {
     late CacheScope scope;
     late OfflineCacheStore store;
@@ -194,21 +225,24 @@ void main() {
       expect(calls, 1);
     });
 
-    test('duplicate replay of an already-applied mutation is treated as success, not an error', () async {
-      final engine = MutationOutboxEngine(
-        store: store,
-        executor: (mutation) async => throw const V1ApiException(
-          status: 409,
-          code: 'IDEMPOTENCY_KEY_REUSED',
-          message: 'already applied',
-        ),
-      );
-      await engine.enqueue(kind: 'k', payload: const {});
-      await engine.drain();
+    test(
+      'a reused key with a different body is a conflict, never success',
+      () async {
+        final engine = MutationOutboxEngine(
+          store: store,
+          executor: (mutation) async => throw const V1ApiException(
+            status: 409,
+            code: 'IDEMPOTENCY_KEY_REUSED',
+            message: 'different request body',
+          ),
+        );
+        await engine.enqueue(kind: 'k', payload: const {});
+        await engine.drain();
 
-      final rows = await store.all();
-      expect(rows.single.status, 'done');
-    });
+        final rows = await store.all();
+        expect(rows.single.status, 'conflict');
+      },
+    );
 
     test('a version conflict is parked, not retried forever, and the caller is told', () async {
       final conflicts = <String>[];
@@ -326,7 +360,7 @@ void main() {
         // The listener callback runs synchronously off notifyListeners, but the
         // wipe it kicks off (close, then delete) is async; give it time to
         // finish rather than assuming a fixed number of microtask turns.
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await binder.settled;
 
         const scope = CacheScope(userId: 'wipe-user', schoolId: 'school-wipe');
         final reopened = OfflineCacheStore(
@@ -377,7 +411,7 @@ void main() {
         ]);
 
         context.switchMembership(membershipB);
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await binder.settled;
 
         final storeB = await binder.currentStore();
         expect(await storeB!.entitiesFor('notification'), isEmpty);
@@ -387,6 +421,17 @@ void main() {
           await OfflineCacheDatabase.open(scopeA),
         );
         expect(await reopenedA.entitiesFor('notification'), hasLength(1));
+
+        context.signOut();
+        await binder.settled;
+        final wipedA = OfflineCacheStore(
+          await OfflineCacheDatabase.open(scopeA),
+        );
+        expect(
+          await wipedA.entitiesFor('notification'),
+          isEmpty,
+          reason: 'sign-out also wipes schools visited earlier',
+        );
 
         await OfflineCacheDatabase.wipe(scopeA);
         const scopeB = CacheScope(userId: 'switch-user', schoolId: 'school-y');

@@ -70,6 +70,7 @@ describe("problem details contract", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "BENEFICIARY_LINK_INVALID",
       "CONFLICT",
+      "CONTACT_NOT_ALLOWED",
       "CURSOR_INVALID",
       "DELIVERY_GRANT_INVALID",
       "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT",
@@ -77,6 +78,7 @@ describe("problem details contract", () => {
       "FILE_NOT_CLEAN",
       "FILE_PUBLISH_DISABLED",
       "FORBIDDEN",
+      "GUARDIAN_LINK_REQUIRED",
       "IDEMPOTENCY_IN_PROGRESS",
       "IDEMPOTENCY_KEY_NOT_ALLOWED",
       "IDEMPOTENCY_KEY_REQUIRED",
@@ -85,6 +87,7 @@ describe("problem details contract", () => {
       "INVALID_HEADER",
       "INVALID_REQUEST",
       "INVALID_STATE",
+      "MESSAGING_DISABLED",
       "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
       "NOT_FOUND",

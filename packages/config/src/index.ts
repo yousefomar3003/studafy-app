@@ -140,7 +140,6 @@ export const apiEnvSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: z.string().min(1).optional(),
   GOOGLE_PUBSUB_AUDIENCE: url.optional(),
-  PARENTAL_GATE_SIGNING_KEY: z.string().min(32).optional(),
 }).superRefine((value, context) => {
   if (!value.PAY071_BILLING_ENABLED) return;
   if (!value.PAY071_ENVIRONMENT) {
@@ -148,22 +147,6 @@ export const apiEnvSchema = z.object({
       code: "custom",
       path: ["PAY071_ENVIRONMENT"],
       message: "required when billing is enabled",
-    });
-  }
-  if (!value.PARENTAL_GATE_SIGNING_KEY) {
-    context.addIssue({
-      code: "custom",
-      path: ["PARENTAL_GATE_SIGNING_KEY"],
-      message: "required when billing is enabled",
-    });
-  } else if (
-    value.PARENTAL_GATE_SIGNING_KEY === value.API_CURSOR_SIGNING_KEY ||
-    value.PARENTAL_GATE_SIGNING_KEY === value.FILE051_DELIVERY_SIGNING_KEY
-  ) {
-    context.addIssue({
-      code: "custom",
-      path: ["PARENTAL_GATE_SIGNING_KEY"],
-      message: "must differ from every other signing key",
     });
   }
 });
@@ -214,6 +197,27 @@ export const workerEnvSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: z.string().min(1).optional(),
   GOOGLE_PUBSUB_AUDIENCE: url.optional(),
+  // DL-051 account rights executors. Off by default; both need the
+  // database, because the request rows are the durable work queue.
+  ACCOUNT_DELETION_EXECUTOR_ENABLED: disabledSwitchFlag,
+  DATA_EXPORT_EXECUTOR_ENABLED: disabledSwitchFlag,
+  ACCOUNT_RIGHTS_POLL_INTERVAL_MS: z.coerce.number().int().min(1000).max(
+    3_600_000,
+  ).default(60_000),
+  // DL-052 meeting processor: Google Calendar events with Meet links,
+  // created as a Workspace user through domain-wide delegation. Off by
+  // default; attendee emails leave Studafy only when this is on, so it needs
+  // the Workspace processing terms in place first.
+  MEETINGS_PROCESSOR_ENABLED: disabledSwitchFlag,
+  GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
+  GOOGLE_CALENDAR_ORGANIZER_EMAIL: z.string().email().optional(),
+  // DL-053 email and push delivery. Each channel runs only when its
+  // provider is configured. Only fixed, content-free copy is ever sent.
+  NOTIFICATION_CHANNELS_ENABLED: disabledSwitchFlag,
+  RESEND_API_KEY: z.string().min(10).optional(),
+  EMAIL_FROM_ADDRESS: z.string().min(3).optional(),
+  FCM_PROJECT_ID: z.string().min(1).optional(),
+  FCM_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   // The external malware scanner. Absent in local/disposable use (the
   // deterministic structural scanner runs instead); production refuses to
   // scan without it, because structural validation is not signature-grade.
@@ -243,6 +247,58 @@ export const workerEnvSchema = z.object({
       }
     }
     break;
+  }
+  if (
+    (value.ACCOUNT_DELETION_EXECUTOR_ENABLED ||
+      value.DATA_EXPORT_EXECUTOR_ENABLED) && !value.DATABASE_URL
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["DATABASE_URL"],
+      message: "required when an account rights executor is enabled",
+    });
+  }
+  if (value.NOTIFICATION_CHANNELS_ENABLED) {
+    if (!value.DATABASE_URL) {
+      context.addIssue({
+        code: "custom",
+        path: ["DATABASE_URL"],
+        message: "required when notification channels are enabled",
+      });
+    }
+    if (Boolean(value.RESEND_API_KEY) !== Boolean(value.EMAIL_FROM_ADDRESS)) {
+      context.addIssue({
+        code: "custom",
+        path: ["EMAIL_FROM_ADDRESS"],
+        message: "email needs both RESEND_API_KEY and EMAIL_FROM_ADDRESS",
+      });
+    }
+    if (
+      Boolean(value.FCM_PROJECT_ID) !== Boolean(value.FCM_SERVICE_ACCOUNT_JSON)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["FCM_SERVICE_ACCOUNT_JSON"],
+        message: "push needs both FCM_PROJECT_ID and FCM_SERVICE_ACCOUNT_JSON",
+      });
+    }
+  }
+  if (value.MEETINGS_PROCESSOR_ENABLED) {
+    for (
+      const key of [
+        "DATABASE_URL",
+        "GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON",
+        "GOOGLE_CALENDAR_ORGANIZER_EMAIL",
+      ] as const
+    ) {
+      if (!value[key]) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: "required when the meeting processor is enabled",
+        });
+      }
+    }
   }
   if (value.ENVIRONMENT === "production" && value.FILE051_SCAN_ENABLED) {
     for (
@@ -492,7 +548,6 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
         env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
           env.GOOGLE_PUBSUB_AUDIENCE,
       ),
-      parentalGateKeyConfigured: Boolean(env.PARENTAL_GATE_SIGNING_KEY),
     },
   };
 }
@@ -518,6 +573,25 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       malwareScannerConfigured: Boolean(
         env.MALWARE_SCANNER_URL && env.MALWARE_SCANNER_API_KEY,
       ),
+    },
+    notificationChannels: {
+      enabled: env.NOTIFICATION_CHANNELS_ENABLED,
+      emailConfigured: Boolean(env.RESEND_API_KEY && env.EMAIL_FROM_ADDRESS),
+      pushConfigured: Boolean(
+        env.FCM_PROJECT_ID && env.FCM_SERVICE_ACCOUNT_JSON,
+      ),
+    },
+    meetings: {
+      processorEnabled: env.MEETINGS_PROCESSOR_ENABLED,
+      calendarConfigured: Boolean(
+        env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON &&
+          env.GOOGLE_CALENDAR_ORGANIZER_EMAIL,
+      ),
+    },
+    accountRights: {
+      deletionExecutorEnabled: env.ACCOUNT_DELETION_EXECUTOR_ENABLED,
+      exportExecutorEnabled: env.DATA_EXPORT_EXECUTOR_ENABLED,
+      pollIntervalMs: env.ACCOUNT_RIGHTS_POLL_INTERVAL_MS,
     },
     pay071: {
       billingEnabled: env.PAY071_BILLING_ENABLED,

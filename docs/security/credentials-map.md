@@ -4,9 +4,10 @@
 operational companion: *which file* each one goes in locally, and *whether it
 is worth obtaining now*.
 
-The short version: **only Google and Microsoft OAuth are needed today.**
-Everything else is either a later phase or actively blocked, and a live
-credential sitting unused in a local file is a liability, not preparation.
+The short version (updated 2026-09-19): **Google and Microsoft OAuth, plus
+three locally generated keys, are needed today.** Everything else is gathered
+when its integration is switched on, and a live credential sitting unused in a
+local file is a liability, not preparation.
 
 ## The four locations, and why they are separate
 
@@ -26,8 +27,13 @@ does nothing; a service-role key in a dart-define ships it to every device.
 |---|---|---|
 | Google OAuth client ID + secret | `supabase/.env` | Web application client. Redirect URI `http://127.0.0.1:54321/auth/v1/callback` |
 | Microsoft/Azure client ID + secret | `supabase/.env` | Multitenant + personal accounts. Same redirect URI |
+| `API_CURSOR_SIGNING_KEY` | `.env` | Generate locally: `openssl rand -hex 32`. The shipped value is a placeholder |
+| `RATE_LIMIT_HMAC_SIGNING_KEY` | `.env` | Generate locally. Development mints an ephemeral key without it; production refuses to boot |
+| `SUPABASE_SERVICE_ROLE_KEY` | `.env` | The local stack's own key from `supabase status`. API/worker only, never Flutter. Needed to exercise the FILE-050/051 storage path |
 
-Both files already carry step-by-step instructions inline.
+Both provider files already carry step-by-step instructions inline. The
+provider consoles point at Supabase's `/auth/v1/callback`; Supabase's allowed
+redirects then point at the app callback. Do not swap the two.
 
 ## Already configured locally — nothing to obtain
 
@@ -47,7 +53,7 @@ to obtain — a common misconception worth stating once.
 | Credential | Blocked by |
 |---|---|
 | **AI provider API key** / `STUDY_COACH_URL`, `STUDY_COACH_KEY` | **Retired, not merely blocked.** AI-072 removed the AI capability (ADR-0026) because no signed DPA and no extended DPIA exist. No code reads any AI credential, so obtaining one creates a live secret for nothing. A future AI capability needs a new ADR, both legal documents and a reviewed code change; `allowsAiGrading = false` is retained as the SEC-001 tripwire |
-| Apple Sign in with Apple (Service ID, Key ID, Team ID, `.p8`) | D1 — Developer organisation account under review |
+| Apple Sign in with Apple (`SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID`/`_SECRET`, from Service ID, Key ID, Team ID, `.p8`) | D1 — Developer organisation account under review |
 
 ## Later phases — obtain when that phase starts
 
@@ -61,12 +67,14 @@ variable with no reader is a live credential guarding nothing.
 | Cloudflare API token, zone ID, origin certificate | 8 (INFRA-080) | No deploy target exists, and ADR-0005 (data residency) is **Deferred**, which blocks provisioning outright. A Cloudflare token obtained now would sit unused and unrotated for months |
 | Managed Redis connection URL + password | 6 (OPS-060) | Local Redis covers development; production requires a `rediss://` URL with AUTH (boot-enforced) |
 | Rate-limit HMAC signing key (`RATE_LIMIT_HMAC_SIGNING_KEY`) | 6 (OPS-060) | Development mints an ephemeral per-boot key; production refuses to start without a configured, per-environment, rotatable key |
-| Push: `google-services.json`, APNs key | 6/7 | No notification delivery is implemented |
-| Email provider API key + verified domain | 6 | No transactional email is sent |
 | Android upload keystore, Play service account | REL-002 | Release builds are blocked by the SEC-001 guard |
 | App Store Connect API key (`.p8`) | REL-002 | Blocked on D1; note the `.p8` downloads **once** |
-| Store billing (Apple root CAs, Play service account, Pub/Sub) | 7B (PAY-071) | The current verifier stub is being deleted, not configured |
+| Store billing: `APPLE_BUNDLE_ID`, `APPLE_ENVIRONMENT`, `APPLE_APP_APPLE_ID`, `APPLE_ISSUER_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_ROOT_CERTIFICATES_BASE64`; `GOOGLE_PACKAGE_NAME`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PUBSUB_AUDIENCE` | 7B (PAY-071) | Code reads them. Obtain with sandbox accounts when store certification starts; billing stays off until then. The parental-gate signing key no longer exists (DL-048) |
+| File delivery and scanning: `FILE051_DELIVERY_SIGNING_KEY`, `FILE051_DELIVERY_PUBLIC_BASE_URL`, `MALWARE_SCANNER_URL`, `MALWARE_SCANNER_API_KEY` | 5 (FILE-051) | Code reads them. The scanner vendor is not chosen; production refuses to scan without one |
 | Error tracking DSN (e.g. Sentry) | 9 (OPS-090) | Must be PII-scrubbed before it handles minors' data |
+| Google Calendar: `GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON`, `GOOGLE_CALENDAR_ORGANIZER_EMAIL` | DL-052 meetings | Code reads them. Needs a Workspace account with domain-wide delegation and Workspace processing terms before attendee emails may leave Studafy |
+| Email: `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS` | DL-053 channels | Code reads them. Needs a verified sending domain. Swapping provider means a new adapter, not a URL |
+| Push: `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON`, plus `google-services.json` and an APNs key in Firebase | DL-053 channels | Server sender is built; the app still needs `firebase_messaging` and the native Firebase files |
 
 ## Rotation
 

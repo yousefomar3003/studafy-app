@@ -72,3 +72,24 @@ export const V1UpdateNotificationPreferenceRequest = z.strictObject({
 export type V1UpdateNotificationPreferenceRequest = z.infer<
   typeof V1UpdateNotificationPreferenceRequest
 >;
+
+/** DL-053: this device's FCM token, for push delivery. */
+export const V1RegisterPushDeviceRequest = z.strictObject({
+  platform: z.enum(["ios", "android"]),
+  token: z.string().min(32).max(4096),
+});
+export type V1RegisterPushDeviceRequest = z.infer<
+  typeof V1RegisterPushDeviceRequest
+>;
+
+export const V1UnregisterPushDeviceRequest = z.strictObject({
+  token: z.string().min(32).max(4096),
+});
+export type V1UnregisterPushDeviceRequest = z.infer<
+  typeof V1UnregisterPushDeviceRequest
+>;
+
+export const V1PushDeviceResponse = z.strictObject({
+  registered: z.boolean(),
+});
+export type V1PushDeviceResponse = z.infer<typeof V1PushDeviceResponse>;

@@ -99,9 +99,7 @@ void main() {
     }
   });
 
-  testWidgets('the student shell has four tabs and no Study Coach', (
-    tester,
-  ) async {
+  testWidgets('the student shell has no Study Coach tab', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         supportedLocales: StudafyLocalizations.supportedLocales,
@@ -116,6 +114,8 @@ void main() {
     );
     await tester.pump();
 
+    // Today, Notebook, Work and Grades. Messages (DL-049) appears only when
+    // the app provides messaging, and nothing replaced the Study Coach.
     expect(find.byType(NavigationDestination), findsNWidgets(4));
     expect(find.text('Study Coach'), findsNothing);
     expect(find.byIcon(Icons.auto_awesome_outlined), findsNothing);

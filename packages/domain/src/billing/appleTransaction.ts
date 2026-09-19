@@ -1,7 +1,7 @@
 /**
  * Pure Apple App Store Server Notifications V2 policy. JWS signature
  * verification against Apple's root CAs happens in apps/api (it needs the
- * `app-store-server-library` and its certificate bundle, which are I/O/SDK
+ * `@apple/app-store-server-library` and its certificate bundle, which are I/O/SDK
  * concerns); this module only maps an already-decoded, already-verified
  * payload to Studafy's ledger vocabulary, and checks the fraud-prevention
  * invariants §13 requires: a sandbox transaction must never be accepted as a

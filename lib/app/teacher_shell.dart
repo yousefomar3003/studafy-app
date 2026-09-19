@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../core/runtime_environment.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_localizations.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/messaging/presentation/conversations_page.dart';
 import '../features/teacher_dashboard/presentation/teacher_dashboard.dart';
 import '../teacher_features.dart';
+import 'account_hub_page.dart';
+import 'teacher_today_page.dart';
 import 'app_dependencies.dart';
 
 class TeacherShell extends StatefulWidget {
@@ -42,12 +46,27 @@ class _TeacherShellState extends State<TeacherShell> {
     }
 
     final dashboardActions = TeacherDashboardActions(
-      openChats: () => open(const ChatsPage()),
+      openChats: () => open(const ConversationsPage()),
       openNotifications: () => open(const NotificationsPage()),
-      openProfile: () => open(const MyStudafyPage()),
+      // Real builds use the shared account screen built from the signed-in
+      // profile; the legacy page with sample data stays in the demo only.
+      openProfile: () => open(
+        StudafyRuntime.policy.requiresRemoteBackend
+            ? const AccountHubPage()
+            : const MyStudafyPage(),
+      ),
     );
+    final remote = StudafyRuntime.policy.requiresRemoteBackend;
     final pages = [
-      TeacherHome(actions: dashboardActions),
+      if (remote)
+        TeacherTodayPage(
+          classes: widget.dependencies.classes,
+          onOpenClassroom: _openClassroom,
+          onOpenMessages: () => open(const ConversationsPage()),
+          onOpenNotifications: () => open(const NotificationsPage()),
+        )
+      else
+        TeacherHome(actions: dashboardActions),
       ClassesPage(
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
@@ -63,7 +82,13 @@ class _TeacherShellState extends State<TeacherShell> {
         teacherTools: true,
         initialFeed: AcademicFeed.grades,
       ),
-      const CommsPage(),
+      // Real builds message through /v1 with report and block controls.
+      // The legacy inbox stays only for the synthetic demo, where its
+      // announcement and meeting forms have no replacement yet.
+      if (StudafyRuntime.policy.requiresRemoteBackend)
+        const ConversationsPage()
+      else
+        const CommsPage(),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),

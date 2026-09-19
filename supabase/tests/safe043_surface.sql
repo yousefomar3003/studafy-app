@@ -487,8 +487,10 @@ select is(private.api042_query('getContentControls', :'school_id', '{}'::jsonb)-
 select set_config('request.jwt.claim.sub', :'admin_user', true);
 select is(private.api042_query('getContentControls', :'school_id', '{}'::jsonb)->>'contentFilterLevel',
   'strict', 'default filter level is strict');
-select is(private.api042_query('getContentControls', :'school_id', '{}'::jsonb)->>'messagingEnabled',
-  'false', 'messaging starts disabled by default');
+-- The seed school opted in to messaging (DL-049), so the default is proven
+-- on the second seed school, which never did.
+select is(private.school_messaging_enabled('22222222-2222-2222-2222-222222222222'),
+  false, 'messaging starts disabled by default');
 select is(private.api042_query('getContentControls', :'school_id', '{}'::jsonb)->>'version',
   '1', 'baseline controls version 1');
 

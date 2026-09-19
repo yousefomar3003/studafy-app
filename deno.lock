@@ -527,8 +527,8 @@
       "packages/infrastructure": {
         "packageJson": {
           "dependencies": [
+            "npm:@apple/app-store-server-library@3.1.0",
             "npm:@supabase/supabase-js@2.116.0",
-            "npm:app-store-server-library@~0.1.3",
             "npm:bullmq@6.3.4",
             "npm:google-auth-library@^11.1.0",
             "npm:googleapis@181",

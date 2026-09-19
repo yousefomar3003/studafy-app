@@ -12,6 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono } from "hono";
+import { testAssurance } from "../support/assurance";
 import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
@@ -129,6 +130,7 @@ interface RequestInput {
   key?: string;
   body?: unknown;
   reauth?: string;
+  aal?: "aal1" | "aal2";
 }
 
 async function request(path: string, input: RequestInput): Promise<Response> {
@@ -139,6 +141,7 @@ async function request(path: string, input: RequestInput): Promise<Response> {
     headers.set("idempotency-key", input.key ?? crypto.randomUUID());
   }
   if (input.reauth) headers.set("x-studafy-reauth", input.reauth);
+  if (input.aal) headers.set("x-test-aal", input.aal);
   return await app.request(path, {
     method: input.method ?? "GET",
     headers,
@@ -216,12 +219,12 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
           sessionId: SESSION_ID,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
-          assuranceLevel: "aal1",
+          assuranceLevel: testAssurance(c),
           authMethods: [],
           claims: {},
         },
         context,
-        aal2: false,
+        aal2: testAssurance(c) === "aal2",
         mfaRequiredByPolicy: false,
       };
       c.set("requestId", crypto.randomUUID());
@@ -353,6 +356,17 @@ suite("API-042 S1 school-admin over the real /v1 stack", () => {
     expect(res.status).toBe(200);
     const body = await res.json() as { status: string };
     expect(body.status).toBe("closed");
+  });
+
+  test("an AAL1 school admin is refused a membership grant over the real stack", async () => {
+    const res = await request(`/v1/schools/${SCHOOL}/memberships/grant`, {
+      method: "POST",
+      subject: ADMIN,
+      aal: "aal1",
+      body: { userId: TEACHER, role: "school_admin" },
+    });
+    expect(res.status).toBe(403);
+    expect((await res.json() as { code: string }).code).toBe("MFA_REQUIRED");
   });
 
   test("a school admin grants an additional role to an existing member", async () => {

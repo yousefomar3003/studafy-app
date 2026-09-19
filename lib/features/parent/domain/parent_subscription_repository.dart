@@ -40,12 +40,16 @@ class PaywallOffer {
 typedef EntitlementChanged = void Function();
 
 abstract interface class ParentSubscriptionRepository {
-  Future<SubscriptionEntitlement> entitlement();
+  /// Parent Insights access for one linked child. Null reads the caller's
+  /// own entitlement, which a guardian never holds for this product.
+  Future<SubscriptionEntitlement> entitlement({String? beneficiaryStudentId});
 
   /// The store product id + verified price disclosure for the paywall.
   Future<PaywallOffer> insightsOffer();
 
-  Future<void> purchaseInsightsMonthly();
+  /// Starts the store purchase for one linked child. The entitlement is
+  /// attached to that child, never to the purchasing guardian (ADR-0009).
+  Future<void> purchaseInsightsMonthly({required String beneficiaryStudentId});
 
   Future<void> restorePurchases();
 

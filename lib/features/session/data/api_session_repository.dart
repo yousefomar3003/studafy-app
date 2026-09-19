@@ -342,6 +342,8 @@ class ApiSessionRepository implements SessionRepository {
     ReauthPurpose.accountLink => 'account_link',
     ReauthPurpose.allDeviceSignOut => 'all_device_sign_out',
     ReauthPurpose.deviceRevoke => 'device_revoke',
+    ReauthPurpose.billingPurchaseApproval => 'billing_purchase_approval',
+    ReauthPurpose.accountDataExport => 'account_data_export',
   };
 
   /// Maps a server role onto the client's role vocabulary.

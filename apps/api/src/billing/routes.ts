@@ -1,5 +1,7 @@
-import { type Context, Hono } from "hono";
+import { type Context, Hono, type MiddlewareHandler } from "hono";
 import {
+  V1DecidePurchaseApprovalRequest,
+  V1RequestPurchaseApprovalRequest,
   V1RestorePurchaseRequest,
   v1Route,
   V1SetSelfPurchaseRequest,
@@ -8,10 +10,8 @@ import {
 import {
   isAppleTransactionTrusted,
   isGooglePackageNameTrusted,
-  issueParentalGateChallenge,
   mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
-  verifyParentalGateAnswer,
 } from "@studafy/domain";
 import { sha256Hex } from "@studafy/infrastructure";
 import type {
@@ -19,10 +19,16 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
+import type { AuthDependencies } from "../auth/middleware";
+import { requireRecentAuth } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
 import { idempotency } from "../platform/idempotency";
 import { problem } from "../platform/errors";
-import { validatedBody, validateRouteInput } from "../platform/validation";
+import {
+  validatedBody,
+  validatedParams,
+  validateRouteInput,
+} from "../platform/validation";
 import type { RequestDbContext } from "../platform/catalogueRoutes";
 import type { AppleTransactionVerifier } from "./appleVerifier";
 import { AppleVerificationError } from "./appleVerifier";
@@ -42,31 +48,98 @@ export interface BillingRoutesDependencies {
     verifier: GooglePurchaseVerifier;
     packageName: string;
   } | null;
-  parentalGateSigningKey: string;
 }
 
 export function createBillingRoutes(
   deps: BillingRoutesDependencies,
   authorization: AuthorizationDependencies,
   idempotencyDependencies: IdempotencyDependencies,
+  authDependencies: AuthDependencies,
 ): Hono<AuthorizationEnv> {
   const routes = new Hono<AuthorizationEnv>();
-  const parentalGate = v1Route("getParentalGateChallenge");
+  const requestApproval = v1Route("requestPurchaseApproval");
+  const listApprovals = v1Route("listPurchaseApprovals");
+  const decideApproval = v1Route("decidePurchaseApproval");
   const catalogue = v1Route("getBillingCatalogue");
   const submit = v1Route("submitPurchase");
   const restore = v1Route("restorePurchase");
   const entitlements = v1Route("listEntitlements");
   const setSelfPurchase = v1Route("setSelfPurchase");
 
-  routes.get(
-    "/v1/billing/parental-gate",
-    validateRouteInput(parentalGate) as never,
-    requirePermission(authorization, "billing.purchase.submit"),
+  // DL-048: a student self-purchase needs a guardian's approval, decided in
+  // the guardian's own session behind a fresh recent-auth challenge. This
+  // replaces the arithmetic challenge a child could answer unaided.
+  routes.post(
+    "/v1/billing/purchase-approvals",
+    validateRouteInput(requestApproval) as never,
+    requirePermission(authorization, "billing.purchase_approval.request"),
+    idempotency(
+      idempotencyDependencies,
+      requestApproval.operationId,
+      "required",
+    ),
     async (c) => {
-      const challenge = await issueParentalGateChallenge(
-        deps.parentalGateSigningKey,
+      const reservation = c.get("idempotencyReservation");
+      if (!reservation) return problem(c, "FORBIDDEN", 403);
+      const body = V1RequestPurchaseApprovalRequest.parse(
+        validatedBody(c as never),
       );
-      return c.json(challenge);
+      const result = await deps.repository.requestPurchaseApproval(
+        requestContext(c),
+        body.featureKey,
+        reservation,
+      );
+      const failure = mapBillingOutcome(c, result.outcome);
+      if (failure) return failure;
+      c.set("idempotencyCompleted", true);
+      return c.json(result.response, 201);
+    },
+  );
+
+  routes.get(
+    "/v1/billing/purchase-approvals",
+    validateRouteInput(listApprovals) as never,
+    requirePermission(authorization, "billing.purchase_approval.read"),
+    async (c) => {
+      const approvals = await deps.repository.listPurchaseApprovals(
+        requestContext(c),
+      );
+      return c.json({ approvals });
+    },
+  );
+
+  routes.post(
+    "/v1/billing/purchase-approvals/:approvalId/decision",
+    validateRouteInput(decideApproval) as never,
+    requirePermission(authorization, "billing.purchase_approval.decide"),
+    idempotency(
+      idempotencyDependencies,
+      decideApproval.operationId,
+      "required",
+    ),
+    requireRecentAuth(
+      authDependencies,
+      "billing_purchase_approval",
+    ) as unknown as MiddlewareHandler<AuthorizationEnv>,
+    async (c) => {
+      const reservation = c.get("idempotencyReservation");
+      if (!reservation) return problem(c, "FORBIDDEN", 403);
+      const { approvalId } = validatedParams<{ approvalId: string }>(
+        c as never,
+      );
+      const body = V1DecidePurchaseApprovalRequest.parse(
+        validatedBody(c as never),
+      );
+      const result = await deps.repository.decidePurchaseApproval(
+        requestContext(c),
+        approvalId,
+        body.approve,
+        reservation,
+      );
+      const failure = mapBillingOutcome(c, result.outcome);
+      if (failure) return failure;
+      c.set("idempotencyCompleted", true);
+      return c.json(result.response, 200);
     },
   );
 
@@ -79,7 +152,11 @@ export function createBillingRoutes(
         deps.repository.catalogue(deps.environment),
         deps.repository.selfPurchaseStatus(requestContext(c)),
       ]);
-      return c.json({ products: products.products, selfPurchase });
+      return c.json({
+        products: products.products,
+        selfPurchase,
+        purchaseAccountToken: c.get("actor").token.subject,
+      });
     },
   );
 
@@ -93,18 +170,13 @@ export function createBillingRoutes(
       if (!reservation) return problem(c, "FORBIDDEN", 403);
       const body = V1SubmitPurchaseRequest.parse(validatedBody(c as never));
 
-      if (body.parentalGate) {
-        const confirmed = await verifyParentalGateAnswer(
-          body.parentalGate.token,
-          body.parentalGate.answer,
-          deps.parentalGateSigningKey,
-        );
-        if (!confirmed) return problem(c, "PARENTAL_GATE_REQUIRED", 403);
-      }
-
       let normalized: NormalizedTransaction;
       try {
-        normalized = await verifyAndNormalize(body, deps);
+        normalized = await verifyAndNormalize(
+          body,
+          deps,
+          c.get("actor").token.subject,
+        );
       } catch (error) {
         if (
           error instanceof AppleVerificationError ||
@@ -118,11 +190,11 @@ export function createBillingRoutes(
         throw error;
       }
       normalized.beneficiaryStudentId = body.beneficiaryStudentId ?? null;
-      normalized.parentalGateConfirmed = Boolean(body.parentalGate);
 
       const result = await deps.repository.submitVerification(
         requestContext(c),
         normalized,
+        reservation,
       );
       const failure = mapBillingOutcome(c, result.outcome);
       if (failure) return failure;
@@ -155,7 +227,11 @@ export function createBillingRoutes(
 
       let normalized: NormalizedTransaction;
       try {
-        normalized = await verifyAndNormalize(body, deps);
+        normalized = await verifyAndNormalize(
+          body,
+          deps,
+          c.get("actor").token.subject,
+        );
       } catch (error) {
         if (
           error instanceof AppleVerificationError ||
@@ -169,11 +245,11 @@ export function createBillingRoutes(
         throw error;
       }
       normalized.beneficiaryStudentId = body.beneficiaryStudentId ?? null;
-      normalized.parentalGateConfirmed = Boolean(body.parentalGate);
 
       const result = await deps.repository.restore(
         requestContext(c),
         normalized,
+        reservation,
       );
       const failure = mapBillingOutcome(c, result.outcome);
       if (failure) return failure;
@@ -191,7 +267,10 @@ export function createBillingRoutes(
     validateRouteInput(entitlements) as never,
     requirePermission(authorization, "billing.entitlement.read"),
     async (c) => {
-      const rows = await deps.repository.listEntitlements(requestContext(c));
+      const rows = await deps.repository.listEntitlements(
+        requestContext(c),
+        deps.environment,
+      );
       return c.json({ entitlements: rows });
     },
   );
@@ -213,6 +292,7 @@ export function createBillingRoutes(
         requestContext(c),
         body.schoolId,
         body.enabled,
+        reservation,
       );
       if (!ok) return problem(c, "FORBIDDEN", 403);
       c.set("idempotencyCompleted", true);
@@ -237,16 +317,35 @@ async function verifyAndNormalize(
     verificationPayload: string;
   },
   deps: BillingRoutesDependencies,
+  subject: string,
 ): Promise<NormalizedTransaction> {
+  if (body.environment !== deps.environment) {
+    throw new AppleVerificationError("billing environment mismatch");
+  }
   const signedDataHash = await sha256Hex(
     new TextEncoder().encode(body.verificationPayload),
   );
 
   if (body.platform === "app_store") {
     if (!deps.apple) throw new VerifierUnavailableError();
-    const decoded = await deps.apple.verifier.verifyTransaction(
+    const receipt = await deps.apple.verifier.verifyTransaction(
       body.verificationPayload,
     );
+    const decoded = await deps.apple.verifier.getSubscriptionStatus(
+      receipt.originalTransactionId,
+    );
+    if (
+      !decoded ||
+      decoded.originalTransactionId !== receipt.originalTransactionId ||
+      decoded.appAccountToken !== subject ||
+      receipt.appAccountToken !== subject ||
+      (decoded.environment === "Production") !==
+        (deps.environment === "production")
+    ) {
+      throw new AppleVerificationError(
+        "subscription ownership or environment mismatch",
+      );
+    }
     if (
       !isAppleTransactionTrusted({
         bundleId: decoded.bundleId,
@@ -267,7 +366,7 @@ async function verifyAndNormalize(
     );
     return {
       platform: "app_store",
-      environment: body.environment,
+      environment: deps.environment,
       productFeatureKey: body.productFeatureKey,
       storeProductId: body.storeProductId,
       originalTransactionId: decoded.originalTransactionId,
@@ -291,7 +390,9 @@ async function verifyAndNormalize(
       verified.packageName,
       deps.google.packageName,
     ) ||
-    verified.productId !== body.storeProductId
+    verified.productId !== body.storeProductId ||
+    verified.obfuscatedExternalAccountId !== subject ||
+    verified.testPurchase !== (deps.environment !== "production")
   ) {
     throw new GoogleVerificationError("package name or product mismatch");
   }
@@ -300,7 +401,7 @@ async function verifyAndNormalize(
   ) ?? "on_hold";
   return {
     platform: "play_store",
-    environment: body.environment,
+    environment: deps.environment,
     productFeatureKey: body.productFeatureKey,
     storeProductId: body.storeProductId,
     originalTransactionId: verified.originalTransactionId,
@@ -334,6 +435,9 @@ function mapBillingOutcome(
     invalid_beneficiary: "BENEFICIARY_LINK_INVALID",
     not_eligible: "FORBIDDEN",
     parental_gate_required: "PARENTAL_GATE_REQUIRED",
+    guardian_link_required: "GUARDIAN_LINK_REQUIRED",
+    not_found: "NOT_FOUND",
+    invalid_state: "INVALID_STATE",
     student_purchase_disabled: "STUDENT_PURCHASE_DISABLED",
     owned_by_other_account: "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT",
   };
@@ -342,8 +446,10 @@ function mapBillingOutcome(
     ? 500
     : code === "FORBIDDEN" || code === "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT"
     ? 403
-    : code === "PRODUCT_NOT_FOUND"
+    : code === "PRODUCT_NOT_FOUND" || code === "NOT_FOUND"
     ? 404
+    : code === "INVALID_STATE"
+    ? 409
     : 422;
   return problem(c, code, status);
 }

@@ -5,26 +5,23 @@ import 'cache_scope.dart';
 import 'offline_cache_database.dart';
 import 'offline_cache_store.dart';
 
-/// Keeps the on-disk cache in step with who is signed in (MOB-070).
-///
-/// Registered once at the composition root against
-/// [ActiveContextController.instance]. It never decides *what* to cache —
-/// that is each feature repository's job — only *whose* cache is currently
-/// open:
-///  - switching school or role while still signed in re-keys: the old
-///    scope's file is closed (not deleted, it is still a valid cache for
-///    that membership) and the new scope's file is opened lazily;
-///  - signing out wipes: the scope that was active is deleted outright, so
-///    no cached record of a departed session survives on disk.
+/// Serializes cache opens and identity transitions. A sign-out/account switch
+/// erases all of the departed user's school files before another scope opens.
 class SessionCacheBinder {
   SessionCacheBinder({ActiveContextController? context})
     : _context = context ?? ActiveContextController.instance {
     _scope = _scopeFor(_context);
+    _tail = OfflineCacheDatabase.retireLegacyCaches();
     _context.addListener(_onContextChanged);
+    unawaited(_tail.catchError((Object _) {}));
   }
 
   final ActiveContextController _context;
   CacheScope? _scope;
+  Future<void> _tail = Future<void>.value();
+  bool _disposed = false;
+
+  Future<void> get settled => _tail;
 
   static CacheScope? _scopeFor(ActiveContextController context) {
     final profile = context.profile;
@@ -39,25 +36,33 @@ class SessionCacheBinder {
     if (next == previous) return;
     _scope = next;
     if (previous == null) return;
-    if (next == null) {
-      // Signed out: the departed scope's cache must not outlive the session.
-      unawaited(OfflineCacheDatabase.wipe(previous));
-    } else {
-      // Switched membership/role/account while still signed in: the old
-      // cache is still legitimate for its own scope, just not active now.
-      unawaited(OfflineCacheDatabase.open(previous).then((db) => db.close()));
-    }
+    _tail = _tail.then((_) async {
+      if (next == null || next.userId != previous.userId) {
+        await OfflineCacheDatabase.wipeUser(previous.userId);
+      } else {
+        await (await OfflineCacheDatabase.open(previous)).close();
+      }
+    });
+    // Keep the failed future on the chain: subsequent opens fail closed.
+    // Attach an error listener because ChangeNotifier cannot await cleanup.
+    unawaited(_tail.catchError((Object _) {}));
   }
 
-  /// Resolves the store for whoever is signed in right now. Feature
-  /// repositories call this on every operation rather than caching the
-  /// result, so a mid-session switch is picked up automatically instead of
-  /// silently writing into an about-to-be-closed scope.
-  Future<OfflineCacheStore?> currentStore() async {
+  Future<OfflineCacheStore?> currentStore() {
     final scope = _scope;
-    if (scope == null) return null;
-    return OfflineCacheStore(await OfflineCacheDatabase.open(scope));
+    final operation = _tail.then((_) async {
+      if (_disposed || scope == null || scope != _scope) return null;
+      final db = await OfflineCacheDatabase.open(scope);
+      if (_disposed || scope != _scope) return null;
+      return OfflineCacheStore(db);
+    });
+    _tail = operation.then<void>((_) {});
+    unawaited(_tail.catchError((Object _) {}));
+    return operation;
   }
 
-  void dispose() => _context.removeListener(_onContextChanged);
+  void dispose() {
+    _disposed = true;
+    _context.removeListener(_onContextChanged);
+  }
 }

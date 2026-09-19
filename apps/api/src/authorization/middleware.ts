@@ -31,6 +31,26 @@ export type ResourceIdResolver = (
 
 const DECLARED_PERMISSION = Symbol("studafy.requiredPermission");
 
+// Allow an administrator to reach the account controls needed to enroll MFA
+// and end a session. Product authority requires a verified second factor.
+const MFA_BOOTSTRAP_PERMISSIONS = new Set<string>([
+  "account.profile.read",
+  "account.context.read",
+  "account.devices.read",
+  "account.device.revoke",
+  "account.session.revoke",
+  "account.reauth.challenge",
+  "account.reauth.verify",
+  "account.deletion.cancel",
+]);
+
+export function permissionRequiresMfa(permission: string): boolean {
+  return permission === "school.provision" || permission === "school.suspend" ||
+    permission === "school.close" || permission.startsWith("support_access.") ||
+    permission.startsWith("moderation.") ||
+    permission === "billing.school_settings.write";
+}
+
 export function declaredPermission(
   handler: unknown,
 ): Permission | null {
@@ -57,6 +77,17 @@ export function requirePermission(
   const middleware: MiddlewareHandler<AuthorizationEnv> = async (c, next) => {
     c.set("requiredPermission", permission);
     const actor = c.get("actor");
+    const administrator =
+      actor.context.memberships?.some((membership) =>
+        membership.active && membership.role === "school_admin"
+      ) ?? false;
+    if (
+      !actor.aal2 && (permissionRequiresMfa(permission) ||
+        ((administrator || actor.mfaRequiredByPolicy) &&
+          !MFA_BOOTSTRAP_PERMISSIONS.has(permission)))
+    ) {
+      return problem(c, "MFA_REQUIRED", 403);
+    }
 
     if (definition.scope === "self") {
       c.set("authorization", {

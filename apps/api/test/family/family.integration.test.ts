@@ -6,6 +6,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono } from "hono";
+import { testAssurance } from "../support/assurance";
 import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
@@ -16,7 +17,10 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresFamilyRepository } from "../../src/family/repository";
-import { createFamilyRoutes } from "../../src/family/routes";
+import {
+  createFamilyReadRoutes,
+  createFamilyRoutes,
+} from "../../src/family/routes";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;
@@ -127,28 +131,26 @@ suite("API-042 S3 family over the real /v1 stack", () => {
           sessionId: null,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
-          assuranceLevel: "aal1",
+          assuranceLevel: testAssurance(c),
           authMethods: [],
           claims: {},
         },
         context,
-        aal2: false,
+        aal2: testAssurance(c) === "aal2",
         mfaRequiredByPolicy: false,
       };
       c.set("requestId", crypto.randomUUID());
       c.set("actor", actor);
       await next();
     });
+    const familyDeps = {
+      repository: new PostgresFamilyRepository(sql),
+      cursorSigningKey: CURSOR_KEY,
+    };
+    app.route("/", createFamilyRoutes(familyDeps, authorization, idempotency));
     app.route(
       "/",
-      createFamilyRoutes(
-        {
-          repository: new PostgresFamilyRepository(sql),
-          cursorSigningKey: CURSOR_KEY,
-        },
-        authorization,
-        idempotency,
-      ),
+      createFamilyReadRoutes(familyDeps, authorization, idempotency),
     );
   });
 
@@ -205,6 +207,31 @@ suite("API-042 S3 family over the real /v1 stack", () => {
     const body = await res.json() as { status: string; expiresAt: string };
     expect(body.status).toBe("verified");
     expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  test("the guardian lists their own children, and nobody else sees them", async () => {
+    const mine = await app.request("/v1/me/guardian-links", {
+      headers: { "x-test-subject": GUARDIAN },
+    });
+    expect(mine.status).toBe(200);
+    const body = await mine.json() as {
+      items: {
+        studentId: string;
+        studentName: string;
+        status: string;
+        schoolId: string;
+      }[];
+    };
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.studentId).toBe(STUDENT_ROW);
+    expect(body.items[0]?.status).toBe("verified");
+    expect(body.items[0]?.schoolId).toBe(SCHOOL);
+    expect(body.items[0]?.studentName.length).toBeGreaterThan(0);
+
+    const theirs = await app.request("/v1/me/guardian-links", {
+      headers: { "x-test-subject": ADMIN },
+    });
+    expect(((await theirs.json()) as { items: unknown[] }).items).toEqual([]);
   });
 
   test("the guardian revokes their own verified link", async () => {
