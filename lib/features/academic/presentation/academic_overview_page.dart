@@ -13,6 +13,7 @@ class AcademicOverviewPage extends StatefulWidget {
     this.studentId,
     this.teacherTools = false,
     this.initialFeed = AcademicFeed.assignments,
+    this.actions = const [],
   });
 
   final AcademicRepository repository;
@@ -20,6 +21,9 @@ class AcademicOverviewPage extends StatefulWidget {
   final String? studentId;
   final bool teacherTools;
   final AcademicFeed initialFeed;
+
+  /// App bar actions supplied by the host shell, such as its account entry.
+  final List<Widget> actions;
 
   @override
   State<AcademicOverviewPage> createState() => _AcademicOverviewPageState();
@@ -50,7 +54,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Academic workspace')),
+    appBar: AppBar(
+      title: const Text('Academic workspace'),
+      actions: widget.actions,
+    ),
     body: Column(
       children: [
         SizedBox(

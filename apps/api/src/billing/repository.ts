@@ -2,6 +2,11 @@ import type { Sql } from "@studafy/database";
 import { withRequestContext } from "../auth/context";
 import type { RequestDbContext } from "../platform/catalogueRoutes";
 
+export interface BillingReservation {
+  id: string;
+  generation: number;
+}
+
 export interface BillingResult {
   outcome: string;
   response?: unknown;
@@ -26,7 +31,6 @@ export interface NormalizedTransaction {
   purchasedAt: string;
   effectiveUntil: string | null;
   beneficiaryStudentId?: string | null;
-  parentalGateConfirmed?: boolean;
 }
 
 export interface BillingRepository {
@@ -44,21 +48,37 @@ export interface BillingRepository {
     context: RequestDbContext,
     schoolId: string,
     enabled: boolean,
+    reservation: BillingReservation,
   ): Promise<boolean>;
   submitVerification(
     context: RequestDbContext,
     body: NormalizedTransaction,
+    reservation: BillingReservation,
   ): Promise<BillingResult>;
   restore(
     context: RequestDbContext,
     body: NormalizedTransaction,
+    reservation: BillingReservation,
   ): Promise<BillingResult>;
-  listEntitlements(context: RequestDbContext): Promise<
+  requestPurchaseApproval(
+    context: RequestDbContext,
+    featureKey: string,
+    reservation: BillingReservation,
+  ): Promise<BillingResult>;
+  listPurchaseApprovals(context: RequestDbContext): Promise<unknown[]>;
+  decidePurchaseApproval(
+    context: RequestDbContext,
+    approvalId: string,
+    approve: boolean,
+    reservation: BillingReservation,
+  ): Promise<BillingResult>;
+  listEntitlements(context: RequestDbContext, environment: string): Promise<
     {
       featureKey: string;
       status: string;
       startsAt: string;
       endsAt: string | null;
+      beneficiaryStudentId: string | null;
     }[]
   >;
   /** Durable webhook dedupe. Returns the new event id, or null on a duplicate. */
@@ -94,18 +114,27 @@ export class PostgresBillingRepository implements BillingRepository {
     context: RequestDbContext,
     schoolId: string,
     enabled: boolean,
+    reservation: BillingReservation,
   ) {
     return await withRequestContext(this.sql, context, async (tx) => {
       const rows = await tx<{ result: boolean }[]>`
         select private.billing_set_self_purchase(${schoolId}::uuid, ${enabled}) as result
       `;
-      return rows[0]?.result ?? false;
+      const ok = rows[0]?.result ?? false;
+      if (ok) {
+        await this.complete(tx, reservation, {
+          schoolId,
+          selfPurchaseEnabled: enabled,
+        });
+      }
+      return ok;
     });
   }
 
   async submitVerification(
     context: RequestDbContext,
     body: NormalizedTransaction,
+    reservation: BillingReservation,
   ): Promise<BillingResult> {
     return await withRequestContext(this.sql, context, async (tx) => {
       const rows = await tx<{ result: BillingResult }[]>`
@@ -113,29 +142,105 @@ export class PostgresBillingRepository implements BillingRepository {
         tx.json(body as never)
       }) as result
       `;
-      return rows[0]?.result ?? { outcome: "invalid" };
+      const result = rows[0]?.result ?? { outcome: "invalid" };
+      if (result.outcome === "ok") {
+        await this.complete(tx, reservation, result.response);
+      }
+      return result;
     });
   }
 
   async restore(
     context: RequestDbContext,
     body: NormalizedTransaction,
+    reservation: BillingReservation,
   ): Promise<BillingResult> {
     return await withRequestContext(this.sql, context, async (tx) => {
       const rows = await tx<{ result: BillingResult }[]>`
         select private.billing_restore(${tx.json(body as never)}) as result
       `;
-      return rows[0]?.result ?? { outcome: "invalid" };
+      const result = rows[0]?.result ?? { outcome: "invalid" };
+      if (result.outcome === "ok") {
+        result.response = {
+          restored: true,
+          ...(result.response as object ?? {}),
+        };
+        await this.complete(tx, reservation, result.response);
+      }
+      return result;
     });
   }
 
-  async listEntitlements(context: RequestDbContext) {
+  async requestPurchaseApproval(
+    context: RequestDbContext,
+    featureKey: string,
+    reservation: BillingReservation,
+  ): Promise<BillingResult> {
+    return await withRequestContext(this.sql, context, async (tx) => {
+      const rows = await tx<{ result: BillingResult }[]>`
+        select private.billing_request_purchase_approval(${featureKey}) as result
+      `;
+      const result = rows[0]?.result ?? { outcome: "invalid" };
+      if (result.outcome === "ok") {
+        await this.complete(tx, reservation, result.response, 201);
+      }
+      return result;
+    });
+  }
+
+  async listPurchaseApprovals(context: RequestDbContext) {
+    return await withRequestContext(this.sql, context, async (tx) => {
+      const rows = await tx<{ result: unknown[] }[]>`
+        select private.billing_list_purchase_approvals() as result
+      `;
+      return rows[0]?.result ?? [];
+    });
+  }
+
+  async decidePurchaseApproval(
+    context: RequestDbContext,
+    approvalId: string,
+    approve: boolean,
+    reservation: BillingReservation,
+  ): Promise<BillingResult> {
+    return await withRequestContext(this.sql, context, async (tx) => {
+      const rows = await tx<{ result: BillingResult }[]>`
+        select private.billing_decide_purchase_approval(
+          ${approvalId}::uuid, ${approve}
+        ) as result
+      `;
+      const result = rows[0]?.result ?? { outcome: "invalid" };
+      if (result.outcome === "ok") {
+        await this.complete(tx, reservation, result.response);
+      }
+      return result;
+    });
+  }
+
+  async listEntitlements(context: RequestDbContext, environment: string) {
     return await withRequestContext(this.sql, context, async (tx) => {
       const rows = await tx<{ result: unknown }[]>`
-        select private.billing_list_entitlements() as result
+        select private.billing_list_entitlements(${environment}) as result
       `;
       return (rows[0]?.result ?? []) as never;
     });
+  }
+
+  private async complete(
+    tx: Sql,
+    reservation: BillingReservation,
+    response: unknown,
+    status = 200,
+  ) {
+    const rows = await tx<{ completed: boolean }[]>`
+      select private.api_idempotency_complete(${reservation.id}::uuid,
+        ${reservation.generation}, ${status}, ${
+      tx.json(response as never)
+    }) as completed
+    `;
+    // Throwing rolls back the business mutation as well as its response when
+    // another request has superseded the lease. Never commit unfenced work.
+    if (!rows[0]?.completed) throw new Error("billing idempotency fence lost");
   }
 
   async recordEvent(

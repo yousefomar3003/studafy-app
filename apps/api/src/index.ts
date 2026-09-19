@@ -27,15 +27,21 @@ import {
 import { PostgresSchoolAdminRepository } from "./school-admin/repository";
 import { createInvitationsRoutes } from "./invitations/routes";
 import { PostgresInvitationsRepository } from "./invitations/repository";
-import { createFamilyRoutes } from "./family/routes";
+import { createFamilyReadRoutes, createFamilyRoutes } from "./family/routes";
 import { PostgresFamilyRepository } from "./family/repository";
-import { createCommunicationsRoutes } from "./communications/routes";
+import {
+  createCommunicationsRoutes,
+  createContactsRoutes,
+} from "./communications/routes";
 import { PostgresCommunicationsRepository } from "./communications/repository";
 import { createMeetingsRoutes } from "./meetings/routes";
 import { PostgresMeetingsRepository } from "./meetings/repository";
-import { createNotificationsRoutes } from "./notifications/routes";
+import {
+  createNotificationsRoutes,
+  createPushDeviceRoutes,
+} from "./notifications/routes";
 import { PostgresNotificationsRepository } from "./notifications/repository";
-import { createAccountRoutes } from "./account/routes";
+import { createAccountReadRoutes, createAccountRoutes } from "./account/routes";
 import { PostgresAccountRepository } from "./account/repository";
 import { createSupportAccessRoutes } from "./support-access/routes";
 import { PostgresSupportAccessRepository } from "./support-access/repository";
@@ -195,28 +201,48 @@ const invitations = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
-const family = sql && env.API_CURSOR_SIGNING_KEY
+const familyDependencies = sql && env.API_CURSOR_SIGNING_KEY
+  ? {
+    repository: new PostgresFamilyRepository(sql),
+    cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+    enabledSlices: { family: env.API042_FAMILY_ENABLED },
+  }
+  : undefined;
+const family = familyDependencies
   ? createFamilyRoutes(
-    {
-      repository: new PostgresFamilyRepository(sql),
-      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
-      enabledSlices: { family: env.API042_FAMILY_ENABLED },
-    },
+    familyDependencies,
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+const familyReads = familyDependencies
+  ? createFamilyReadRoutes(
+    familyDependencies,
     authorization,
     idempotencyDependencies,
   )
   : undefined;
 
-const communications = sql && env.API_CURSOR_SIGNING_KEY
-  ? createCommunicationsRoutes(
-    {
-      repository: new PostgresCommunicationsRepository(sql),
-      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
-      enabledSlices: {
-        conversations: env.API042_CONVERSATIONS_ENABLED,
-        announcements: env.API042_ANNOUNCEMENTS_ENABLED,
-      },
+const communicationsDependencies = sql && env.API_CURSOR_SIGNING_KEY
+  ? {
+    repository: new PostgresCommunicationsRepository(sql),
+    cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+    enabledSlices: {
+      conversations: env.API042_CONVERSATIONS_ENABLED,
+      announcements: env.API042_ANNOUNCEMENTS_ENABLED,
     },
+  }
+  : undefined;
+const communications = communicationsDependencies
+  ? createCommunicationsRoutes(
+    communicationsDependencies,
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+const contacts = communicationsDependencies
+  ? createContactsRoutes(
+    communicationsDependencies,
     authorization,
     idempotencyDependencies,
   )
@@ -234,28 +260,48 @@ const meetings = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
-const notifications = sql && env.API_CURSOR_SIGNING_KEY
+const notificationsDependencies = sql && env.API_CURSOR_SIGNING_KEY
+  ? {
+    repository: new PostgresNotificationsRepository(sql),
+    cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+    enabledSlices: { notifications: env.API042_NOTIFICATIONS_ENABLED },
+  }
+  : undefined;
+const notifications = notificationsDependencies
   ? createNotificationsRoutes(
-    {
-      repository: new PostgresNotificationsRepository(sql),
-      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
-      enabledSlices: { notifications: env.API042_NOTIFICATIONS_ENABLED },
-    },
+    notificationsDependencies,
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+const pushDevices = notificationsDependencies
+  ? createPushDeviceRoutes(
+    notificationsDependencies,
     authorization,
     idempotencyDependencies,
   )
   : undefined;
 
-const account = sql && env.API_CURSOR_SIGNING_KEY && authDependencies
+const accountDependencies = sql && env.API_CURSOR_SIGNING_KEY
+  ? {
+    repository: new PostgresAccountRepository(sql),
+    cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+    enabledSlices: { account: env.API042_ACCOUNT_RIGHTS_ENABLED },
+  }
+  : undefined;
+const account = accountDependencies && authDependencies
   ? createAccountRoutes(
-    {
-      repository: new PostgresAccountRepository(sql),
-      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
-      enabledSlices: { account: env.API042_ACCOUNT_RIGHTS_ENABLED },
-    },
+    accountDependencies,
     authorization,
     idempotencyDependencies,
     authDependencies,
+  )
+  : undefined;
+const accountReads = accountDependencies
+  ? createAccountReadRoutes(
+    accountDependencies,
+    authorization,
+    idempotencyDependencies,
   )
   : undefined;
 
@@ -361,17 +407,17 @@ const googleConfig =
 
 const billingRepository = sql ? new PostgresBillingRepository(sql) : undefined;
 const billing = sql && env.PAY071_BILLING_ENABLED && env.PAY071_ENVIRONMENT &&
-    env.PARENTAL_GATE_SIGNING_KEY && billingRepository
+    authDependencies && billingRepository
   ? createBillingRoutes(
     {
       repository: billingRepository,
       environment: env.PAY071_ENVIRONMENT,
       apple: appleConfig,
       google: googleConfig,
-      parentalGateSigningKey: env.PARENTAL_GATE_SIGNING_KEY,
     },
     authorization,
     idempotencyDependencies,
+    authDependencies,
   )
   : undefined;
 
@@ -408,7 +454,8 @@ const schoolRoster = sql && env.API_CURSOR_SIGNING_KEY
 const combinedRoutes =
   academic || schoolAdmin || invitations || family || communications ||
     meetings || notifications || account || supportAccess || schoolRoster ||
-    safety || files || billing
+    safety || files || billing || contacts || familyReads || accountReads ||
+    pushDevices
     ? (() => {
       const combined = new Hono<AuthorizationEnv>();
       if (academic) combined.route("/", academic);
@@ -424,6 +471,10 @@ const combinedRoutes =
       if (safety) combined.route("/", safety);
       if (files) combined.route("/", files);
       if (billing) combined.route("/", billing);
+      if (contacts) combined.route("/", contacts);
+      if (familyReads) combined.route("/", familyReads);
+      if (accountReads) combined.route("/", accountReads);
+      if (pushDevices) combined.route("/", pushDevices);
       return combined;
     })()
     : undefined;

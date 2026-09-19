@@ -19,6 +19,11 @@ export type AccountSlice = "account";
 
 // Appended after notifications' 5 entries (indices [81, 86)).
 const ACCOUNT_ROUTES = V1_ROUTE_CATALOGUE.slice(86, 89);
+// DL-051 appended downloadDataExport at the end of the catalogue; it mounts
+// in its own router so handler order stays equal to the contract.
+const ACCOUNT_READ_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "downloadDataExport"
+);
 
 // Every operation is self-scoped with no path param at all.
 function selector(): string | null {
@@ -56,6 +61,25 @@ export function createAccountRoutes(
       },
       // 'account_data_export' is added to AUTH-030's reauth purpose
       // allowlist by supabase/migrations/202609160010_api042_reauth_purposes.sql.
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
+export function createAccountReadRoutes(
+  deps: AccountDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: ACCOUNT_READ_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector,
+      sliceFor,
+      enabledSlices: deps.enabledSlices,
     },
     authorization,
     idempotencyDependencies,

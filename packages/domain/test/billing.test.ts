@@ -2,11 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   isAppleTransactionTrusted,
   isGooglePackageNameTrusted,
-  issueParentalGateChallenge,
   mapAppleNotificationToTransactionState,
   mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
-  verifyParentalGateAnswer,
 } from "../src";
 
 describe("mapAppleNotificationToTransactionState", () => {
@@ -164,69 +162,5 @@ describe("isGooglePackageNameTrusted", () => {
   test("a different package name is never trusted", () => {
     expect(isGooglePackageNameTrusted("com.attacker.app", "io.studafy.app"))
       .toBe(false);
-  });
-});
-
-describe("parental gate", () => {
-  const key = "pay071-parental-gate-test-key-0000000000000000";
-
-  test("the correct answer verifies", async () => {
-    const challenge = await issueParentalGateChallenge(key, 1_000);
-    const match = /(\d+) . (\d+)/.exec(challenge.question);
-    const a = Number(match![1]);
-    const b = Number(match![2]);
-    expect(
-      await verifyParentalGateAnswer(challenge.token, a * b, key, 1_010),
-    ).toBe(true);
-  });
-
-  test("a client that never requests a challenge cannot fabricate a token", async () => {
-    expect(await verifyParentalGateAnswer("not-a-real-token", 42, key, 1_000))
-      .toBe(false);
-  });
-
-  test("the wrong answer is rejected", async () => {
-    const challenge = await issueParentalGateChallenge(key, 1_000);
-    expect(
-      await verifyParentalGateAnswer(challenge.token, -1, key, 1_010),
-    ).toBe(false);
-  });
-
-  test("an expired challenge is rejected even with the right answer", async () => {
-    const challenge = await issueParentalGateChallenge(key, 1_000);
-    const match = /(\d+) . (\d+)/.exec(challenge.question);
-    const a = Number(match![1]);
-    const b = Number(match![2]);
-    expect(
-      await verifyParentalGateAnswer(challenge.token, a * b, key, 1_000 + 121),
-    ).toBe(false);
-  });
-
-  test("a token signed with a different key is rejected", async () => {
-    const challenge = await issueParentalGateChallenge(key, 1_000);
-    const match = /(\d+) . (\d+)/.exec(challenge.question);
-    const a = Number(match![1]);
-    const b = Number(match![2]);
-    expect(
-      await verifyParentalGateAnswer(
-        challenge.token,
-        a * b,
-        "a-completely-different-key-value",
-        1_010,
-      ),
-    ).toBe(false);
-  });
-
-  test("a tampered token body is rejected", async () => {
-    const challenge = await issueParentalGateChallenge(key, 1_000);
-    const [, signature] = challenge.token.split(".");
-    const tampered = `${
-      Buffer.from(JSON.stringify({ a: 9, b: 9, exp: 999_999 })).toString(
-        "base64url",
-      )
-    }.${signature}`;
-    expect(await verifyParentalGateAnswer(tampered, 81, key, 1_010)).toBe(
-      false,
-    );
   });
 });

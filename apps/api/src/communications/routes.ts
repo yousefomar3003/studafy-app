@@ -18,6 +18,11 @@ export type CommunicationsSlice = "conversations" | "announcements";
 
 // Appended after family's 4 entries (indices [68, 72)).
 const COMMUNICATIONS_ROUTES = V1_ROUTE_CATALOGUE.slice(72, 78);
+// DL-049 appended listContacts at the end of the catalogue, so it mounts in
+// its own router after billing to keep handler order equal to the contract.
+const CONTACT_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "listContacts"
+);
 
 function selector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
@@ -44,6 +49,26 @@ export function createCommunicationsRoutes(
       cursorSigningKey: deps.cursorSigningKey,
       selector,
       sliceFor,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
+/** The contact directory rides the conversations slice switch. */
+export function createContactsRoutes(
+  deps: CommunicationsDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: CONTACT_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector,
+      sliceFor: () => "conversations" as CommunicationsSlice,
       enabledSlices: deps.enabledSlices,
     },
     authorization,

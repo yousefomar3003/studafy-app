@@ -106,7 +106,7 @@ interface RequestInput {
 async function request(path: string, input: RequestInput): Promise<Response> {
   const headers = new Headers();
   headers.set("x-test-subject", input.subject);
-  headers.set("x-test-aal2", input.aal2 ? "true" : "false");
+  headers.set("x-test-aal2", (input.aal2 ?? true) ? "true" : "false");
   if ((input.method ?? "GET") === "POST") {
     headers.set("content-type", "application/json");
     headers.set("idempotency-key", input.key ?? crypto.randomUUID());

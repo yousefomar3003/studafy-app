@@ -19,6 +19,8 @@ export class GoogleVerificationError extends Error {
 }
 
 export interface VerifiedGooglePurchase {
+  testPurchase?: boolean;
+  obfuscatedExternalAccountId?: string | null;
   packageName: string;
   productId: string;
   purchaseToken: string;
@@ -99,6 +101,9 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
         throw new GoogleVerificationError("incomplete subscription response");
       }
       return {
+        testPurchase: data.testPurchase != null,
+        obfuscatedExternalAccountId:
+          data.externalAccountIdentifiers?.obfuscatedExternalAccountId ?? null,
         packageName,
         productId: lineItem.productId,
         purchaseToken,

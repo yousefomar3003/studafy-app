@@ -131,6 +131,10 @@ function switchOutcome(
       return problem(c, "INVALID_STATE", 409);
     case "window_closed":
       return problem(c, "WINDOW_CLOSED", 409);
+    case "messaging_disabled":
+      return problem(c, "MESSAGING_DISABLED", 403);
+    case "contact_not_allowed":
+      return problem(c, "CONTACT_NOT_ALLOWED", 403);
     default:
       return problem(c, "INVALID_REQUEST", 400);
   }
@@ -175,27 +179,26 @@ export function createCatalogueRoutes<Slice extends string>(
       routes.get(path, validate, authorize, available as never, async (c) => {
         const actor = c.get("actor");
         const tenant = c.get("authorization").tenant;
+        // A caller with no memberships row (a verified guardian, an invited
+        // meeting recipient) has no tenant. Their cursor is bound to their
+        // own account instead, so it cannot be replayed by anyone else; the
+        // SQL function re-authorizes the resource on every page regardless.
+        const cursorBinding = tenant?.schoolId ??
+          `actor:${actor.token.subject}`;
         const query = (validatedQuery<V1PageQueryType>(c as never) ??
           {}) as V1PageQueryType;
         const filters = { ...query, cursor: undefined };
         const digest = await filterHash(filters);
         let position: string | null = null;
         if (query.cursor) {
-          // A signed cursor is always school-bound; a null tenant can never
-          // hold one. This is the only case a null tenant fails a GET here
-          // - single-resource reads (no items/cursor in their response,
-          // e.g. getMeetingStatus) intentionally allow it, for the same
-          // reason message.list/send and meeting.status are not
-          // tenantRequired: an invited guardian recipient often has no
-          // memberships row, and the resource-level check inside the SQL
-          // function is the real guard either way.
-          if (!tenant) return problem(c, "CURSOR_INVALID", 400);
+          // The cursor is bound to the school, or to the caller's own
+          // account when there is no tenant (see cursorBinding above).
           const decoded = await verifyCursor(
             cursorSigningKey,
             query.cursor,
             {
               operation: route.operationId,
-              schoolId: tenant.schoolId,
+              schoolId: cursorBinding,
               filterHash: digest,
             },
           );
@@ -228,16 +231,12 @@ export function createCatalogueRoutes<Slice extends string>(
           ...payload,
           ...(Object.hasOwn(payload, "items")
             ? {
-              // A null tenant (a participant/recipient with no memberships
-              // row - see the comment above) never gets a continuation
-              // cursor, since a cursor is always school-signed; the page
-              // itself is unaffected, only paging past it is unavailable.
-              nextCursor: (nextPosition && tenant)
+              nextCursor: nextPosition
                 ? await signCursor(cursorSigningKey, {
                   version: 1,
                   filterVersion: 1,
                   operation: route.operationId,
-                  schoolId: tenant.schoolId,
+                  schoolId: cursorBinding,
                   filterHash: digest,
                   position: nextPosition,
                 })

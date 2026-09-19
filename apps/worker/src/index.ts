@@ -17,12 +17,19 @@ import {
   closeRedis,
   createRedis,
   ExternalMalwareScannerClient,
+  FcmPushSender,
   FileSecurityScanner,
+  GoogleCalendarConferenceProvider,
+  ResendEmailSender,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { startFileCleanup } from "./processors/fileCleanup";
 import { startFileScan } from "./processors/fileScan";
 import { startFileRetentionSweep } from "./processors/retentionSweep";
+import { startAccountDeletionExecutor } from "./processors/accountDeletion";
+import { startDataExportExecutor } from "./processors/dataExport";
+import { startMeetingProcessor } from "./processors/meetings";
+import { startChannelDelivery } from "./processors/channelDelivery";
 
 const env = loadWorkerEnv();
 const logger = createJsonLogger("worker", workerVersion, env.LOG_LEVEL);
@@ -171,6 +178,68 @@ if (billing && env.PAY071_RECONCILIATION_ENABLED) {
   billing.runReconciliationOnce().catch(() => undefined);
 }
 
+// DL-051 account rights: execute deletions whose grace period ended and
+// build requested data exports. The request rows are the durable queue.
+const accountRightsSql: Sql | undefined =
+  env.ACCOUNT_DELETION_EXECUTOR_ENABLED || env.DATA_EXPORT_EXECUTOR_ENABLED
+    ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+    : undefined;
+const accountDeletion =
+  accountRightsSql && env.ACCOUNT_DELETION_EXECUTOR_ENABLED
+    ? startAccountDeletionExecutor(
+      accountRightsSql,
+      logger,
+      env.ACCOUNT_RIGHTS_POLL_INTERVAL_MS,
+    )
+    : undefined;
+const dataExport = accountRightsSql && env.DATA_EXPORT_EXECUTOR_ENABLED
+  ? startDataExportExecutor(
+    accountRightsSql,
+    logger,
+    env.ACCOUNT_RIGHTS_POLL_INTERVAL_MS,
+  )
+  : undefined;
+
+// DL-052: schedule requested meetings with the conferencing provider.
+const meetingsSql: Sql | undefined = env.MEETINGS_PROCESSOR_ENABLED
+  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  : undefined;
+const meetings = meetingsSql
+  ? startMeetingProcessor(
+    meetingsSql,
+    new GoogleCalendarConferenceProvider({
+      serviceAccountJson: env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON!,
+      organizerEmail: env.GOOGLE_CALENDAR_ORGANIZER_EMAIL!,
+    }),
+    logger,
+  )
+  : undefined;
+
+// DL-053: email and push delivery for channels with a configured provider.
+const channelsSql: Sql | undefined = env.NOTIFICATION_CHANNELS_ENABLED
+  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  : undefined;
+const channels = channelsSql
+  ? startChannelDelivery(
+    channelsSql,
+    {
+      email: env.RESEND_API_KEY && env.EMAIL_FROM_ADDRESS
+        ? new ResendEmailSender({
+          apiKey: env.RESEND_API_KEY,
+          from: env.EMAIL_FROM_ADDRESS,
+        })
+        : undefined,
+      push: env.FCM_PROJECT_ID && env.FCM_SERVICE_ACCOUNT_JSON
+        ? new FcmPushSender({
+          projectId: env.FCM_PROJECT_ID,
+          serviceAccountJson: env.FCM_SERVICE_ACCOUNT_JSON,
+        })
+        : undefined,
+    },
+    logger,
+  )
+  : undefined;
+
 installGracefulShutdown({
   logger,
   onClose: async () => {
@@ -183,6 +252,19 @@ installGracefulShutdown({
     await scan?.close();
     await retention?.close();
     await cleanup?.close();
+    await accountDeletion?.close();
+    await dataExport?.close();
+    await meetings?.close();
+    await channels?.close();
+    if (channelsSql && channelsSql !== fileWorkerSql) {
+      await closeDatabase(channelsSql);
+    }
+    if (meetingsSql && meetingsSql !== fileWorkerSql) {
+      await closeDatabase(meetingsSql);
+    }
+    if (accountRightsSql && accountRightsSql !== fileWorkerSql) {
+      await closeDatabase(accountRightsSql);
+    }
     if (billingSql && billingSql !== fileWorkerSql) {
       await closeDatabase(billingSql);
     }

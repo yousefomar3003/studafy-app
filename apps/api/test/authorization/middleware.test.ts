@@ -190,3 +190,78 @@ describe("resource permission and tenant middleware", () => {
     ).toBe(true);
   });
 });
+
+describe("privileged MFA boundary", () => {
+  for (
+    const permission of [
+      "school.provision",
+      "school.close",
+      "membership.grant",
+      "billing.school_settings.write",
+      "moderation.queue.read",
+    ] as Permission[]
+  ) {
+    test(`${permission} rejects AAL1 administrators even with a false cached policy flag`, async () => {
+      const a = actor();
+      a.context.memberships[0]!.role = "school_admin";
+      a.mfaRequiredByPolicy = false;
+      const logger = createJsonLogger(
+        "api",
+        "mfa-test",
+        "error",
+        () => undefined,
+      );
+      const app = new Hono<AuthorizationEnv>();
+      app.use("*", async (c, next) => {
+        c.set("actor", a);
+        c.set("requestId", crypto.randomUUID());
+        await next();
+      });
+      app.get(
+        "/",
+        requirePermission(
+          {
+            logger,
+            cache: new VersionedTenantContextCache(),
+            repository: new FakeAuthorizationRepository(),
+          },
+          permission,
+          () => RESOURCE,
+        ),
+        (c) => c.json({ ok: true }),
+      );
+      const response = await app.request("/");
+      expect(response.status).toBe(403);
+      expect(((await response.json()) as { code: string }).code).toBe(
+        "MFA_REQUIRED",
+      );
+      a.aal2 = true;
+      expect((await app.request("/")).status).toBe(200);
+    });
+  }
+  test("a platform operator with no school membership still needs AAL2", async () => {
+    const a = actor();
+    a.context.memberships = [];
+    const logger = createJsonLogger(
+      "api",
+      "mfa-test",
+      "error",
+      () => undefined,
+    );
+    const app = new Hono<AuthorizationEnv>();
+    app.use("*", async (c, next) => {
+      c.set("actor", a);
+      c.set("requestId", crypto.randomUUID());
+      await next();
+    });
+    app.get(
+      "/",
+      requirePermission(
+        { logger, cache: new VersionedTenantContextCache() },
+        "school.provision",
+      ),
+      (c) => c.json({ ok: true }),
+    );
+    expect((await app.request("/")).status).toBe(403);
+  });
+});

@@ -134,3 +134,30 @@ Prices and trials are store-console values and can be changed without a
 release. The beneficiary model is in the ledger schema and cannot: changing it
 later requires a forward migration plus reconciliation of live entitlements,
 which is why it is decided before implementation rather than after.
+
+## Addendum 2026-09-19 (DL-048): guardian approval replaces the parental gate
+
+The parental gate originally shipped as a signed single-digit multiplication
+challenge. It could not satisfy this ADR's intent: the question was answerable
+by the child it was meant to stop, and the token carried both operands in
+readable form, so a script could answer it too. It is removed.
+
+A student-initiated purchase now requires **guardian approval**:
+
+1. The student requests approval for one product
+   (`POST /v1/billing/purchase-approvals`). The school's self-purchase switch
+   must be on and at least one verified, unexpired guardian link must exist.
+   Each such guardian receives an in-app notification.
+2. A guardian decides (`POST /v1/billing/purchase-approvals/{id}/decision`)
+   from their own authenticated session, behind a single-use recent-auth grant
+   for the `billing_purchase_approval` purpose. Only a guardian with a live
+   link to that student can see or decide the request; anyone else receives
+   the same `404`.
+3. An approval is spendable for 72 hours. The server consumes it when it
+   records the first ledger row of the subscription lineage and records the
+   approval id on that row. Renewals of the lineage inherit it. A client
+   cannot assert approval: the request field no longer exists.
+
+The per-school switch still defaults to off, and the verifiable-consent
+condition above is unchanged; counsel may still require a stronger consent
+mechanism for particular markets.

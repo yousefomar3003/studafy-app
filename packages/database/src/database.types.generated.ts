@@ -934,6 +934,90 @@ export type Database = {
           },
         ];
       };
+      billing_purchase_approvals: {
+        Row: {
+          approval_expires_at: string | null;
+          consumed_at: string | null;
+          decided_at: string | null;
+          decided_by: string | null;
+          feature_key: string;
+          guardian_link_id: string | null;
+          id: string;
+          request_expires_at: string;
+          requested_at: string;
+          school_id: string;
+          status: Database["public"]["Enums"]["billing_approval_status"];
+          student_id: string;
+          student_user_id: string;
+        };
+        Insert: {
+          approval_expires_at?: string | null;
+          consumed_at?: string | null;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          feature_key: string;
+          guardian_link_id?: string | null;
+          id?: string;
+          request_expires_at?: string;
+          requested_at?: string;
+          school_id: string;
+          status?: Database["public"]["Enums"]["billing_approval_status"];
+          student_id: string;
+          student_user_id: string;
+        };
+        Update: {
+          approval_expires_at?: string | null;
+          consumed_at?: string | null;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          feature_key?: string;
+          guardian_link_id?: string | null;
+          id?: string;
+          request_expires_at?: string;
+          requested_at?: string;
+          school_id?: string;
+          status?: Database["public"]["Enums"]["billing_approval_status"];
+          student_id?: string;
+          student_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "billing_purchase_approvals_decided_by_fkey";
+            columns: ["decided_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "billing_purchase_approvals_guardian_link_id_fkey";
+            columns: ["guardian_link_id"];
+            isOneToOne: false;
+            referencedRelation: "guardian_links";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "billing_purchase_approvals_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "billing_purchase_approvals_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "billing_purchase_approvals_student_user_id_fkey";
+            columns: ["student_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       class_schedules: {
         Row: {
           classroom_id: string;
@@ -1348,6 +1432,45 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      data_export_payloads: {
+        Row: {
+          byte_size: number;
+          created_at: string;
+          payload: Json;
+          request_id: string;
+          user_id: string;
+        };
+        Insert: {
+          byte_size: number;
+          created_at?: string;
+          payload: Json;
+          request_id: string;
+          user_id: string;
+        };
+        Update: {
+          byte_size?: number;
+          created_at?: string;
+          payload?: Json;
+          request_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "data_export_payloads_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: true;
+            referencedRelation: "data_export_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "data_export_payloads_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -2694,7 +2817,11 @@ export type Database = {
           ends_at: string;
           id: string;
           idempotency_key: string | null;
+          last_error_code: string | null;
           meet_url: string | null;
+          next_attempt_at: string;
+          processing_attempts: number;
+          provider_cancelled_at: string | null;
           school_id: string;
           starts_at: string;
           state: string;
@@ -2711,7 +2838,11 @@ export type Database = {
           ends_at: string;
           id?: string;
           idempotency_key?: string | null;
+          last_error_code?: string | null;
           meet_url?: string | null;
+          next_attempt_at?: string;
+          processing_attempts?: number;
+          provider_cancelled_at?: string | null;
           school_id: string;
           starts_at: string;
           state?: string;
@@ -2728,7 +2859,11 @@ export type Database = {
           ends_at?: string;
           id?: string;
           idempotency_key?: string | null;
+          last_error_code?: string | null;
           meet_url?: string | null;
+          next_attempt_at?: string;
+          processing_attempts?: number;
+          provider_cancelled_at?: string | null;
           school_id?: string;
           starts_at?: string;
           state?: string;
@@ -3041,6 +3176,7 @@ export type Database = {
           attempt: number;
           attempted_at: string;
           channel: string;
+          channel_attempts: number;
           delivered_at: string | null;
           error_code: string | null;
           id: number;
@@ -3056,6 +3192,7 @@ export type Database = {
           attempt: number;
           attempted_at?: string;
           channel: string;
+          channel_attempts?: number;
           delivered_at?: string | null;
           error_code?: string | null;
           id?: never;
@@ -3071,6 +3208,7 @@ export type Database = {
           attempt?: number;
           attempted_at?: string;
           channel?: string;
+          channel_attempts?: number;
           delivered_at?: string | null;
           error_code?: string | null;
           id?: never;
@@ -3453,6 +3591,44 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      push_devices: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          revoked_at: string | null;
+          token: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          revoked_at?: string | null;
+          token: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          revoked_at?: string | null;
+          token?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_devices_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       question_suggestions: {
         Row: {
@@ -4323,6 +4499,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      store_transaction_history: {
+        Row: {
+          acknowledged_at: string | null;
+          id: number;
+          new_effective_until: string | null;
+          new_state: Database["public"]["Enums"]["store_transaction_state"];
+          previous_effective_until: string | null;
+          previous_state:
+            Database["public"]["Enums"]["store_transaction_state"];
+          recorded_at: string;
+          store_transaction_id: string;
+        };
+        Insert: {
+          acknowledged_at?: string | null;
+          id?: never;
+          new_effective_until?: string | null;
+          new_state: Database["public"]["Enums"]["store_transaction_state"];
+          previous_effective_until?: string | null;
+          previous_state:
+            Database["public"]["Enums"]["store_transaction_state"];
+          recorded_at?: string;
+          store_transaction_id: string;
+        };
+        Update: {
+          acknowledged_at?: string | null;
+          id?: never;
+          new_effective_until?: string | null;
+          new_state?: Database["public"]["Enums"]["store_transaction_state"];
+          previous_effective_until?: string | null;
+          previous_state?:
+            Database["public"]["Enums"]["store_transaction_state"];
+          recorded_at?: string;
+          store_transaction_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName:
+              "store_transaction_history_store_transaction_id_fkey";
+            columns: ["store_transaction_id"];
+            isOneToOne: false;
+            referencedRelation: "store_transactions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       store_transactions: {
         Row: {
           acknowledged_at: string | null;
@@ -4336,6 +4557,7 @@ export type Database = {
           parental_gate_confirmed_at: string | null;
           platform: Database["public"]["Enums"]["store_platform"];
           product_id: string;
+          purchase_approval_id: string | null;
           purchased_at: string;
           purchaser_id: string;
           signed_data_hash: string;
@@ -4354,6 +4576,7 @@ export type Database = {
           parental_gate_confirmed_at?: string | null;
           platform: Database["public"]["Enums"]["store_platform"];
           product_id: string;
+          purchase_approval_id?: string | null;
           purchased_at: string;
           purchaser_id: string;
           signed_data_hash: string;
@@ -4372,6 +4595,7 @@ export type Database = {
           parental_gate_confirmed_at?: string | null;
           platform?: Database["public"]["Enums"]["store_platform"];
           product_id?: string;
+          purchase_approval_id?: string | null;
           purchased_at?: string;
           purchaser_id?: string;
           signed_data_hash?: string;
@@ -4398,6 +4622,13 @@ export type Database = {
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "store_products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "store_transactions_purchase_approval_id_fkey";
+            columns: ["purchase_approval_id"];
+            isOneToOne: false;
+            referencedRelation: "billing_purchase_approvals";
             referencedColumns: ["id"];
           },
           {
@@ -5105,6 +5336,12 @@ export type Database = {
     Enums: {
       app_role: "school_admin" | "teacher" | "parent" | "guardian" | "student";
       attendance_state: "present" | "absent" | "late" | "excused";
+      billing_approval_status:
+        | "requested"
+        | "approved"
+        | "declined"
+        | "consumed"
+        | "expired";
       classroom_staff_role: "lead_teacher" | "co_teacher" | "assistant";
       classroom_status: "draft" | "active" | "archived";
       conversation_state: "active" | "archived" | "closed";
@@ -5359,6 +5596,13 @@ export const Constants = {
     Enums: {
       app_role: ["school_admin", "teacher", "parent", "guardian", "student"],
       attendance_state: ["present", "absent", "late", "excused"],
+      billing_approval_status: [
+        "requested",
+        "approved",
+        "declined",
+        "consumed",
+        "expired",
+      ],
       classroom_staff_role: ["lead_teacher", "co_teacher", "assistant"],
       classroom_status: ["draft", "active", "archived"],
       conversation_state: ["active", "archived", "closed"],

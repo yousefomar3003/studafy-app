@@ -54,6 +54,8 @@ const _dataOnlyImports = <String>[
   // presentation must go through a repository port, never call /v1 itself.
   'data/contracts/v1_client.generated.dart',
   'data/contracts/v1_http_transport.dart',
+  // The typed /v1/billing client is a transport client too (PAY-071).
+  'data/billing/v1_billing_api.dart',
   'data/secure/keychain_secure_store.dart',
   'data/secure/secure_session_storage.dart',
   'data/backend.dart',

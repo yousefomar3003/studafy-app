@@ -5,6 +5,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono } from "hono";
+import { testAssurance } from "../support/assurance";
 import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
@@ -17,7 +18,10 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresAccountRepository } from "../../src/account/repository";
-import { createAccountRoutes } from "../../src/account/routes";
+import {
+  createAccountReadRoutes,
+  createAccountRoutes,
+} from "../../src/account/routes";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;
@@ -144,29 +148,34 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
           sessionId: SESSION_ID,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
-          assuranceLevel: "aal1",
+          assuranceLevel: testAssurance(c),
           authMethods: [],
           claims: {},
         },
         context,
-        aal2: false,
+        aal2: testAssurance(c) === "aal2",
         mfaRequiredByPolicy: false,
       };
       c.set("requestId", crypto.randomUUID());
       c.set("actor", actor);
       await next();
     });
+    const accountDeps = {
+      repository: new PostgresAccountRepository(sql),
+      cursorSigningKey: "api042-account-cursor-key-00",
+    };
     app.route(
       "/",
       createAccountRoutes(
-        {
-          repository: new PostgresAccountRepository(sql),
-          cursorSigningKey: "api042-account-cursor-key-00",
-        },
+        accountDeps,
         authorization,
         idempotency,
         authDependencies,
       ),
+    );
+    app.route(
+      "/",
+      createAccountReadRoutes(accountDeps, authorization, idempotency),
     );
   });
 
@@ -242,5 +251,39 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
       request: { id: string } | null;
     };
     expect(statusBody.request?.id).toBe(firstBody.id);
+  });
+
+  test("the worker builds the export and only its owner can download it", async () => {
+    const notYet = await request("/v1/account/export-download", {
+      subject: USER_A,
+    });
+    expect(notYet.status).toBe(404);
+
+    const pending = await sql<{ id: string }[]>`
+      select id from public.data_export_requests
+      where user_id = ${USER_A}::uuid and status = 'pending'
+    `;
+    const built = await sql<{ outcome: string }[]>`
+      select private.data_export_build(${pending[0]!.id}::uuid) as outcome
+    `;
+    expect(built[0]?.outcome).toBe("ready");
+
+    const res = await request("/v1/account/export-download", {
+      subject: USER_A,
+    });
+    expect(res.status).toBe(200);
+    const doc = await res.json() as {
+      format: string;
+      sections: { profile: { id: string } };
+    };
+    expect(doc.format).toBe("studafy-export/v1");
+    expect(doc.sections.profile.id).toBe(USER_A);
+
+    const status = await request("/v1/account/export-status", {
+      subject: USER_A,
+    });
+    expect(
+      (await status.json() as { request: { status: string } }).request.status,
+    ).toBe("ready");
   });
 });

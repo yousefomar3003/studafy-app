@@ -447,3 +447,36 @@ function unreachableRedis() {
     ReturnType<typeof createRateLimitDependencies>["redis"]
   >;
 }
+
+test("billing and webhooks have explicit sensitive limits", () => {
+  for (
+    const path of [
+      "/v1/billing/purchases",
+      "/v1/billing/restore",
+      "/v1/billing/purchase-approvals",
+      "/v1/billing/purchase-approvals/{approvalId}/decision",
+    ]
+  ) {
+    expect(flowFor("post", path).flow).toBe("billingPurchase");
+  }
+  expect(flowFor("post", "/webhooks/apple").flow).toBe("storeWebhook");
+  expect(flowFor("post", "/webhooks/google").flow).toBe("storeWebhook");
+});
+
+test("webhook verification fails closed when Redis is unavailable", async () => {
+  const { deps } = harnessDependencies();
+  // A copy, so the harness still closes the real client it registered.
+  const offline = {
+    ...deps,
+    redis: {
+      eval: async () => {
+        throw new Error("offline");
+      },
+    },
+  } as never;
+  const app = new Hono();
+  app.use("/webhooks/*", rateLimitEdge(offline));
+  app.post("/webhooks/apple", (c) => c.json({ unexpected: true }));
+  expect((await app.request("/webhooks/apple", { method: "POST" })).status)
+    .toBe(503);
+});

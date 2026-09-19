@@ -88,8 +88,13 @@ select is(
     'auth_unlink_identity',
     'authz_authorize',
     'billing_catalogue',
+    -- DL-048 guardian purchase approval: request, list and decide. Each
+    -- re-derives the student and the verified guardian link from auth.uid().
+    'billing_decide_purchase_approval',
     'billing_list_entitlements',
+    'billing_list_purchase_approvals',
     'billing_record_event',
+    'billing_request_purchase_approval',
     'billing_restore',
     'billing_self_purchase_status',
     'billing_set_self_purchase',

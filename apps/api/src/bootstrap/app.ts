@@ -98,6 +98,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   // surface only - infrastructure probes stay unthrottled for oracles.
   if (deps.rateLimit) {
     app.use("/v1/*", deps.rateLimit.edge as unknown as MiddlewareHandler);
+    app.use("/webhooks/*", deps.rateLimit.edge as unknown as MiddlewareHandler);
   }
 
   // Liveness: no dependency checks. The process is alive and serving.

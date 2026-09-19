@@ -6,6 +6,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono } from "hono";
+import { testAssurance } from "../support/assurance";
 import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
@@ -167,12 +168,12 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
           sessionId: null,
           issuedAt: 1,
           expiresAt: 4_000_000_000,
-          assuranceLevel: "aal1",
+          assuranceLevel: testAssurance(c),
           authMethods: [],
           claims: {},
         },
         context,
-        aal2: false,
+        aal2: testAssurance(c) === "aal2",
         mfaRequiredByPolicy: false,
       };
       c.set("requestId", crypto.randomUUID());

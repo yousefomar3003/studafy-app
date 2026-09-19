@@ -45,3 +45,25 @@ export const V1RevokeGuardianLinkRequest = z.strictObject({});
 export type V1RevokeGuardianLinkRequest = z.infer<
   typeof V1RevokeGuardianLinkRequest
 >;
+
+/** One of the caller's own guardian links, with the child it concerns. */
+export const V1MyGuardianLink = z.strictObject({
+  id: Id,
+  schoolId: Id,
+  schoolName: z.string(),
+  studentId: Id,
+  studentName: z.string(),
+  relationship: z.string().nullable(),
+  status: z.enum(["pending", "verified", "declined", "revoked"]),
+  expiresAt: z.string().datetime({ offset: true }).nullable(),
+});
+export type V1MyGuardianLink = z.infer<typeof V1MyGuardianLink>;
+
+export const V1MyGuardianLinksResponse = z.strictObject({
+  items: z.array(V1MyGuardianLink).max(200),
+  /** Always null: a guardian's links fit in one response. */
+  nextCursor: z.string().nullable(),
+});
+export type V1MyGuardianLinksResponse = z.infer<
+  typeof V1MyGuardianLinksResponse
+>;

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/account_hub_page.dart';
+
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_localizations.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../features/academic/domain/academic_repository.dart';
 import '../../../features/academic/presentation/academic_overview_page.dart';
+import '../../../features/messaging/presentation/conversations_page.dart';
+import '../../../features/messaging/presentation/messaging_scope.dart';
 import 'student_shared.dart';
 
 class StudentShell extends StatefulWidget {
@@ -20,23 +24,32 @@ class _StudentShellState extends State<StudentShell> {
   Widget build(BuildContext context) {
     final repository = widget.academic;
     final studentId = ActiveContextController.instance.selectedStudent?.id;
+    final messaging = MessagingScope.isAvailable(context);
     final pages = <Widget>[
-      AcademicOverviewPage(repository: repository, studentId: studentId),
+      AcademicOverviewPage(
+        repository: repository,
+        studentId: studentId,
+        actions: const [AccountButton()],
+      ),
       AcademicOverviewPage(
         repository: repository,
         studentId: studentId,
         initialFeed: AcademicFeed.content,
+        actions: const [AccountButton()],
       ),
       AcademicOverviewPage(
         repository: repository,
         studentId: studentId,
         initialFeed: AcademicFeed.assignments,
+        actions: const [AccountButton()],
       ),
       AcademicOverviewPage(
         repository: repository,
         studentId: studentId,
         initialFeed: AcademicFeed.grades,
+        actions: const [AccountButton()],
       ),
+      if (messaging) const ConversationsPage(),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
@@ -64,6 +77,12 @@ class _StudentShellState extends State<StudentShell> {
             Icons.bar_chart_outlined,
             Icons.bar_chart_rounded,
           ),
+          if (messaging)
+            StudafyNavItem(
+              StudafyLocalizations.of(context).text('messages'),
+              Icons.forum_outlined,
+              Icons.forum_rounded,
+            ),
         ],
         accent: studentNavy,
       ),

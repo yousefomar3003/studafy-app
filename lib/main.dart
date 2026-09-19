@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/app_bootstrap.dart';
+import 'app/account_hub_page.dart';
 import 'app/account_scope.dart';
 import 'app/app_dependencies.dart';
 import 'app/teacher_shell.dart';
 import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
+import 'features/family/presentation/family_scope.dart';
+import 'features/messaging/presentation/messaging_scope.dart';
 import 'features/notifications/presentation/notifications_scope.dart';
 import 'features/parent/presentation/parent_repository_scope.dart';
 import 'features/session/presentation/role_page.dart';
@@ -194,18 +197,27 @@ class StudafyApp extends StatelessWidget {
             );
           }
           if (deps == null) return content;
-          return AccountScope(
-            account: deps.account,
-            child: NotificationsScope(
-              interactor: deps.notifications,
-              child: ParentRepositoryScope(
-                repository: deps.parent,
-                subscription: deps.parentSubscription,
-                signOut: deps.session.signOut,
-                isRemote: runtimePolicy.requiresRemoteBackend,
-                child: TeacherDashboardRepositoryScope(
-                  repository: deps.teacherDashboard,
-                  child: content,
+          return SessionScope(
+            session: deps.session,
+            child: AccountScope(
+              account: deps.account,
+              child: NotificationsScope(
+                interactor: deps.notifications,
+                child: MessagingScope(
+                  interactor: deps.messaging,
+                  child: FamilyScope(
+                    interactor: deps.family,
+                    child: ParentRepositoryScope(
+                      repository: deps.parent,
+                      subscription: deps.parentSubscription,
+                      signOut: deps.session.signOut,
+                      isRemote: runtimePolicy.requiresRemoteBackend,
+                      child: TeacherDashboardRepositoryScope(
+                        repository: deps.teacherDashboard,
+                        child: content,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

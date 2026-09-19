@@ -46,16 +46,23 @@ class V1BillingSelfPurchaseStatus {
 
 class V1BillingCatalogue {
   const V1BillingCatalogue({
+    required this.purchaseAccountToken,
     required this.products,
     required this.selfPurchase,
   });
 
+  /// Server-issued account binding. Sent to the store as the purchase's
+  /// application user name, which becomes Apple's `appAccountToken` and
+  /// Google's obfuscated account id; the server refuses any receipt that
+  /// does not carry the authenticated account's token.
+  final String purchaseAccountToken;
   final List<V1BillingProduct> products;
   final List<V1BillingSelfPurchaseStatus> selfPurchase;
 
   factory V1BillingCatalogue.fromJson(
     Map<String, dynamic> json,
   ) => V1BillingCatalogue(
+    purchaseAccountToken: json['purchaseAccountToken'] as String,
     products: (json['products'] as List<dynamic>)
         .map((row) => V1BillingProduct.fromJson(row as Map<String, dynamic>))
         .toList(),
@@ -68,26 +75,47 @@ class V1BillingCatalogue {
   );
 }
 
-class V1ParentalGateChallenge {
-  const V1ParentalGateChallenge({required this.token, required this.question});
+/// A student self-purchase approval (DL-048). Students see their own
+/// requests; guardians see those of children they are verified for.
+class V1PurchaseApproval {
+  const V1PurchaseApproval({
+    required this.id,
+    required this.studentId,
+    required this.studentName,
+    required this.featureKey,
+    required this.status,
+    required this.requestedAt,
+    required this.expiresAt,
+    this.decidedAt,
+  });
 
-  final String token;
-  final String question;
+  final String id;
+  final String studentId;
+  final String studentName;
+  final String featureKey;
 
-  factory V1ParentalGateChallenge.fromJson(Map<String, dynamic> json) =>
-      V1ParentalGateChallenge(
-        token: json['token'] as String,
-        question: json['question'] as String,
+  /// requested, approved, declined, consumed or expired.
+  final String status;
+  final DateTime requestedAt;
+  final DateTime? decidedAt;
+  final DateTime expiresAt;
+
+  bool get isPending => status == 'requested';
+  bool get isApproved => status == 'approved';
+
+  factory V1PurchaseApproval.fromJson(Map<String, dynamic> json) =>
+      V1PurchaseApproval(
+        id: json['id'] as String,
+        studentId: json['studentId'] as String,
+        studentName: json['studentName'] as String,
+        featureKey: json['featureKey'] as String,
+        status: json['status'] as String,
+        requestedAt: DateTime.parse(json['requestedAt'] as String),
+        decidedAt: json['decidedAt'] == null
+            ? null
+            : DateTime.parse(json['decidedAt'] as String),
+        expiresAt: DateTime.parse(json['expiresAt'] as String),
       );
-}
-
-class V1ParentalGateAnswer {
-  const V1ParentalGateAnswer({required this.token, required this.answer});
-
-  final String token;
-  final int answer;
-
-  Map<String, Object?> toJson() => {'token': token, 'answer': answer};
 }
 
 class V1SubmitPurchaseOutcome {
@@ -131,12 +159,17 @@ class V1EntitlementRow {
     required this.status,
     required this.startsAt,
     this.endsAt,
+    this.beneficiaryStudentId,
   });
 
   final String featureKey;
   final String status;
   final DateTime startsAt;
   final DateTime? endsAt;
+
+  /// Null for the caller's own entitlement; the linked child's student id
+  /// when a guardian reads the Parent Insights access attached to that child.
+  final String? beneficiaryStudentId;
 
   bool get grantsAccess => status == 'active' || status == 'grace_period';
 
@@ -148,6 +181,7 @@ class V1EntitlementRow {
         endsAt: json['endsAt'] == null
             ? null
             : DateTime.parse(json['endsAt'] as String),
+        beneficiaryStudentId: json['beneficiaryStudentId'] as String?,
       );
 }
 
@@ -166,18 +200,12 @@ class V1BillingApi {
     await _transport.get('/v1/billing/catalogue'),
   );
 
-  Future<V1ParentalGateChallenge> parentalGate() async =>
-      V1ParentalGateChallenge.fromJson(
-        await _transport.get('/v1/billing/parental-gate'),
-      );
-
   Future<V1SubmitPurchaseOutcome> submitPurchase({
     required String platform,
     required String storeProductId,
     required String featureKey,
     required String verificationPayload,
     String? beneficiaryStudentId,
-    V1ParentalGateAnswer? parentalGate,
     required String idempotencyKey,
   }) async {
     final response = await _transport.post(
@@ -189,7 +217,6 @@ class V1BillingApi {
         'productFeatureKey': featureKey,
         'verificationPayload': verificationPayload,
         'beneficiaryStudentId': ?beneficiaryStudentId,
-        if (parentalGate != null) 'parentalGate': parentalGate.toJson(),
       },
       idempotencyKey: idempotencyKey,
       requiresIdempotency: true,
@@ -203,7 +230,6 @@ class V1BillingApi {
     required String featureKey,
     required String verificationPayload,
     String? beneficiaryStudentId,
-    V1ParentalGateAnswer? parentalGate,
     required String idempotencyKey,
   }) async {
     final response = await _transport.post(
@@ -215,13 +241,48 @@ class V1BillingApi {
         'productFeatureKey': featureKey,
         'verificationPayload': verificationPayload,
         'beneficiaryStudentId': ?beneficiaryStudentId,
-        if (parentalGate != null) 'parentalGate': parentalGate.toJson(),
       },
       idempotencyKey: idempotencyKey,
       requiresIdempotency: true,
     );
     return V1RestoreOutcome.fromJson(response);
   }
+
+  /// Student: ask linked guardians to approve a self-purchase.
+  Future<V1PurchaseApproval> requestPurchaseApproval({
+    required String featureKey,
+    required String idempotencyKey,
+  }) async => V1PurchaseApproval.fromJson(
+    await _transport.post(
+      '/v1/billing/purchase-approvals',
+      {'featureKey': featureKey},
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<List<V1PurchaseApproval>> purchaseApprovals() async {
+    final response = await _transport.get('/v1/billing/purchase-approvals');
+    return (response['approvals'] as List<dynamic>)
+        .map((row) => V1PurchaseApproval.fromJson(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Guardian: approve or decline. The caller must first complete
+  /// `SessionRepository.confirmRecentAuth(ReauthPurpose.billingPurchaseApproval)`
+  /// so the shared transport attaches that one-time grant to this request.
+  Future<V1PurchaseApproval> decidePurchaseApproval({
+    required String approvalId,
+    required bool approve,
+    required String idempotencyKey,
+  }) async => V1PurchaseApproval.fromJson(
+    await _transport.post(
+      '/v1/billing/purchase-approvals/$approvalId/decision',
+      {'approve': approve},
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 
   Future<List<V1EntitlementRow>> entitlements() async {
     final response = await _transport.get('/v1/billing/entitlements');

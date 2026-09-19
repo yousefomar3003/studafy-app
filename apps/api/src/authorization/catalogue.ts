@@ -443,6 +443,14 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Look up one student by its opaque studafyId. Rate-limited and audited per attempt; response shape is uniform whether found or not.",
   },
+  "guardian_link.list_own": {
+    resource: "guardian_link",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List the authenticated guardian's own links and the children they concern.",
+  },
   "guardian_link.request": {
     resource: "guardian_link",
     scope: "self",
@@ -458,6 +466,14 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description:
       "List conversations the authenticated actor actively participates in, across every school.",
+  },
+  "contact.list": {
+    resource: "contact",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List people the actor may message in one school under the DL-049 contact policy.",
   },
   "conversation.create": {
     resource: "conversation",
@@ -560,6 +576,22 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: false,
     tenantRequired: false,
     description: "Request an export of the authenticated actor's own data.",
+  },
+  "push_device.manage": {
+    resource: "push_device",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Register or remove the authenticated actor's own device for push notifications.",
+  },
+  "account.export.download": {
+    resource: "data_export_request",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Download the authenticated actor's own most recent finished data export.",
   },
   "account.export.status": {
     resource: "data_export_request",
@@ -871,6 +903,32 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description:
       "Enable or disable student self-purchase for a school as its administrator.",
+  },
+  // Guardian purchase approval (DL-048). Self-scoped for the same reason as
+  // the rest of billing: private.billing_*_purchase_approval re-derive the
+  // student and the verified guardian link from auth.uid() themselves.
+  "billing.purchase_approval.request": {
+    resource: "billing_purchase_approval",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Ask linked guardians to approve a student self-purchase.",
+  },
+  "billing.purchase_approval.read": {
+    resource: "billing_purchase_approval",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List purchase approvals the caller requested or may decide as a verified guardian.",
+  },
+  "billing.purchase_approval.decide": {
+    resource: "billing_purchase_approval",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Approve or decline a linked child's purchase request after recent authentication.",
   },
 } as const satisfies Record<string, PermissionDefinition>;
 
