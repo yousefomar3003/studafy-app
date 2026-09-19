@@ -7,6 +7,7 @@ import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/features/academic/data/preview_academic_repository.dart';
 import 'package:studafy/student_features.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// AI-072 (ADR-0026): the AI capability was removed because no signed DPA
 /// and no extended DPIA exist. A reviewer must find no AI route, screen,
@@ -104,6 +105,7 @@ void main() {
       MaterialApp(
         supportedLocales: StudafyLocalizations.supportedLocales,
         localizationsDelegates: const [
+          AppL10n.delegate,
           StudafyLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

@@ -16,13 +16,16 @@ void showAttendance(BuildContext c, String className) async {
     showDragHandle: true,
     builder: (c) => StatefulBuilder(
       builder: (c, setSheet) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Take attendance', style: Theme.of(c).textTheme.headlineSmall),
-            Text(className, style: const TextStyle(color: muted)),
+            Text(
+              AppL10n.of(c).dashTakeAttendance,
+              style: Theme.of(c).textTheme.headlineSmall,
+            ),
+            UserContentText(className, style: const TextStyle(color: muted)),
             const SizedBox(height: 12),
             Flexible(
               child: ListView(
@@ -49,22 +52,24 @@ void showAttendance(BuildContext c, String className) async {
                           const SizedBox(height: 7),
                           DropdownButtonFormField<String>(
                             initialValue: values[student.localId]!.status,
-                            items: const [
+                            // The status values are the server's vocabulary;
+                            // only their labels change with language.
+                            items: [
                               DropdownMenuItem(
                                 value: 'present',
-                                child: Text('Present'),
+                                child: Text(AppL10n.of(c).attendancePresent),
                               ),
                               DropdownMenuItem(
                                 value: 'absent',
-                                child: Text('Absent'),
+                                child: Text(AppL10n.of(c).attendanceAbsent),
                               ),
                               DropdownMenuItem(
                                 value: 'tardy',
-                                child: Text('Tardy'),
+                                child: Text(AppL10n.of(c).attendanceTardy),
                               ),
                               DropdownMenuItem(
                                 value: 'excused',
-                                child: Text('Excused absence'),
+                                child: Text(AppL10n.of(c).attendanceExcused),
                               ),
                             ],
                             onChanged: (value) {
@@ -85,8 +90,9 @@ void showAttendance(BuildContext c, String className) async {
                                     status: 'excused',
                                     reason: value,
                                   ),
-                              decoration: const InputDecoration(
-                                labelText: 'Reason for excused absence',
+                              decoration: InputDecoration(
+                                labelText: AppL10n.of(c)
+                                    .attendanceExcusedReason,
                               ),
                             ),
                           ],
@@ -107,12 +113,10 @@ void showAttendance(BuildContext c, String className) async {
                 if (!c.mounted) return;
                 Navigator.pop(c);
                 ScaffoldMessenger.of(c).showSnackBar(
-                  const SnackBar(
-                    content: Text('Attendance saved successfully.'),
-                  ),
+                  SnackBar(content: Text(AppL10n.of(c).attendanceSaved)),
                 );
               },
-              child: const Text('Save attendance'),
+              child: Text(AppL10n.of(c).attendanceSave),
             ),
           ],
         ),
@@ -129,7 +133,7 @@ void showNotebook(BuildContext c, String className) async {
     isScrollControlled: true,
     showDragHandle: true,
     builder: (c) => Padding(
-      padding: EdgeInsets.fromLTRB(
+      padding: EdgeInsetsDirectional.fromSTEB(
         20,
         8,
         20,
@@ -139,21 +143,26 @@ void showNotebook(BuildContext c, String className) async {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Lesson notebook', style: Theme.of(c).textTheme.headlineSmall),
-          Text(className, style: const TextStyle(color: muted)),
+          Text(
+            AppL10n.of(c).notebookTitle,
+            style: Theme.of(c).textTheme.headlineSmall,
+          ),
+          UserContentText(className, style: const TextStyle(color: muted)),
           const SizedBox(height: 16),
           TextField(
             controller: lesson,
             maxLines: 3,
             decoration: InputDecoration(
-              labelText: 'Lesson covered',
-              hintText: 'What did you teach today?',
+              labelText: AppL10n.of(c).notebookLessonLabel,
+              hintText: AppL10n.of(c).notebookLessonHint,
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: homework,
-            decoration: const InputDecoration(labelText: 'Homework (optional)'),
+            decoration: InputDecoration(
+              labelText: AppL10n.of(c).notebookHomeworkLabel,
+            ),
           ),
           const SizedBox(height: 18),
           FilledButton(
@@ -166,7 +175,7 @@ void showNotebook(BuildContext c, String className) async {
               );
               if (saved && c.mounted) Navigator.pop(c);
             },
-            child: const Text('Save notebook'),
+            child: Text(AppL10n.of(c).notebookSave),
           ),
         ],
       ),

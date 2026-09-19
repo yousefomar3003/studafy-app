@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import 'login_page.dart';
 
@@ -43,20 +44,20 @@ class _RolePageState extends State<RolePage> {
         const StudafyLogo(size: 36),
         const SizedBox(height: 44),
         Text(
-          'How will you use Studafy?',
+          AppL10n.of(c).roleQuestion,
           style: Theme.of(c).textTheme.headlineSmall,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Choose your role to personalize your experience.',
+        Text(
+          AppL10n.of(c).roleChoosePrompt,
           textAlign: TextAlign.center,
-          style: TextStyle(color: studafyMuted),
+          style: const TextStyle(color: studafyMuted),
         ),
         const SizedBox(height: 32),
         ...UserRole.values.map(
           (r) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsetsDirectional.only(bottom: 12),
             child: RoleTile(
               role: r,
               selected: selected == r,
@@ -76,11 +77,24 @@ class _RolePageState extends State<RolePage> {
                   ),
                 ),
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
-          child: const Text('Continue'),
+          child: Text(AppL10n.of(c).roleContinue),
         ),
       ],
     ),
   );
+}
+
+/// The reader's name for a role.
+///
+/// One place, so the role a user picked reads the same on the role screen,
+/// the welcome line and anywhere else it is shown.
+String roleLabel(BuildContext context, UserRole role) {
+  final l10n = AppL10n.of(context);
+  return switch (role) {
+    UserRole.teacher => l10n.roleTeacher,
+    UserRole.student => l10n.roleStudent,
+    UserRole.parent => l10n.roleParent,
+  };
 }
 
 class RoleTile extends StatelessWidget {
@@ -95,21 +109,22 @@ class RoleTile extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext c) {
+    final l10n = AppL10n.of(c);
     final d = switch (role) {
       UserRole.teacher => (
         Icons.school_outlined,
-        'Teacher',
-        'Manage classes, attendance and learning',
+        l10n.roleTeacher,
+        l10n.roleTeacherDetail,
       ),
       UserRole.student => (
         Icons.menu_book_outlined,
-        'Student',
-        'Learn, submit work and stay updated',
+        l10n.roleStudent,
+        l10n.roleStudentDetail,
       ),
       UserRole.parent => (
         Icons.family_restroom_outlined,
-        'Parent',
-        'Follow progress and school updates',
+        l10n.roleParent,
+        l10n.roleParentDetail,
       ),
     };
     return InkWell(

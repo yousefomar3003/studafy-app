@@ -10,6 +10,7 @@ import 'package:studafy/features/family/domain/family.dart';
 import 'package:studafy/features/family/presentation/family_home_page.dart';
 import 'package:studafy/features/family/presentation/family_scope.dart';
 import 'package:studafy/features/family/presentation/family_strings.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// MOB-070 parent slice: a guardian's home runs on typed /v1 data, only a
 /// verified link opens a child, linking goes through the school, and
@@ -93,6 +94,7 @@ Widget _app(
   locale: locale,
   supportedLocales: StudafyLocalizations.supportedLocales,
   localizationsDelegates: const [
+    AppL10n.delegate,
     StudafyLocalizations.delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,

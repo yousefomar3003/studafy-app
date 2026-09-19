@@ -10,6 +10,18 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Studafy</string>
+	<!-- MOB-070 localization (ADR-0028).
+
+	     iOS reads the app's supported languages from this list, not from
+	     Flutter's supportedLocales. Without "ar" here, an Arabic phone reports
+	     an English locale to PlatformDispatcher, first-launch language
+	     detection never selects Arabic, and iOS offers no per-app language
+	     setting. This list must stay in step with lib/l10n/*.arb. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ar</string>
+	</array>
 	<!-- AUTH-030 local development.
 
 	     NSAllowsLocalNetworking permits plaintext HTTP to loopback and the

@@ -5,6 +5,8 @@ import 'package:studafy/features/account/application/account_interactor.dart';
 import 'package:studafy/features/account/domain/account_repository.dart';
 import 'package:studafy/features/account/presentation/delete_account_page.dart';
 
+import 'support/localized_app.dart';
+
 /// AUTH-030 in-app account deletion (Apple 5.1.1(v), Google Play).
 ///
 /// Two properties are load-bearing for store review: the user is told what the
@@ -76,7 +78,7 @@ Future<void> pumpPage(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
-    MaterialApp(
+    localizedApp(
       home: DeleteAccountPage(
         email: 'rana@alnoor.edu',
         account: AccountInteractor(repository),

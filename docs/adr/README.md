@@ -33,6 +33,7 @@ that references the old one.
 | [ADR-0025](ADR-0025-ops061-bullmq-outbox-platform.md) | OPS-061 BullMQ queue platform and transactional outbox drain | Accepted for local/disposable use | DL-046 |
 | [ADR-0026](ADR-0026-ai072-remove-ai-capability.md) | AI-072 removes the AI capability: no signed DPA or extended DPIA exists | Accepted for local/disposable use | DL-047 |
 | [ADR-0027](ADR-0027-messaging-safeguards-and-mobile-safety-controls.md) | Messaging contact policy, content-free notifications, enforced messaging switch, and mobile report/block controls | Accepted for local/disposable use | DL-049 |
+| [ADR-0028](ADR-0028-localization-rtl-and-locale-persistence.md) | Arabic as a switchable language: gen-l10n copy, device-scoped persistence, device-first resolution, RTL, untranslated user content, Western digits | Accepted for local/disposable use | DL-055 |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

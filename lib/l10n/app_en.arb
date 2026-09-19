@@ -1,0 +1,340 @@
+{
+  "@@locale": "en",
+  "languagePickerTitle": "App language",
+  "@languagePickerTitle": {
+    "description": "Heading of the bottom sheet that switches the interface language."
+  },
+  "languagePickerSubtitle": "The interface direction changes automatically.",
+  "@languagePickerSubtitle": {
+    "description": "Explains that choosing Arabic also flips the layout to right-to-left."
+  },
+  "languageSystemDefault": "System default",
+  "@languageSystemDefault": {
+    "description": "Option that follows the phone's own language instead of an explicit choice."
+  },
+  "languageSystemDefaultDetail": "Follow this phone's language",
+  "@languageSystemDefaultDetail": {
+    "description": "Subtitle for the system-default language option."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "The English language option. Always written in English, in both locales, so a speaker can find their own language."
+  },
+  "languageArabic": "العربية",
+  "@languageArabic": {
+    "description": "The Arabic language option. Always written in Arabic, in both locales, so a speaker can find their own language."
+  },
+  "securityTitle": "Account security",
+  "securityLoadFailed": "Could not load your security settings. Try again.",
+  "securityTryAgain": "Try again",
+  "securityCodeMismatch": "That code did not match.",
+  "securitySetupFailed": "Could not set up two-factor sign-in.",
+  "securitySignOutDeviceTitle": "Sign out this device?",
+  "securitySignOutDeviceBody": "{device} will need to sign in again.",
+  "@securitySignOutDeviceBody": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "securityKeepIt": "Keep it",
+  "securitySignItOut": "Sign it out",
+  "securityRevokeFailed": "Could not sign that device out.",
+  "securitySignOutEverywhereTitle": "Sign out everywhere?",
+  "securitySignOutEverywhereBody": "Every device signed in to this account will be signed out, including this one. Sessions stop working immediately.",
+  "securityCancel": "Cancel",
+  "securitySignOutEverywhere": "Sign out everywhere",
+  "securityTwoFactorHeading": "TWO-FACTOR SIGN-IN",
+  "securityTwoFactorOn": "Turned on",
+  "securityTwoFactorOff": "Not set up",
+  "securityTwoFactorOnDetail": "You use an authenticator app when signing in.",
+  "securityTwoFactorOffDetail": "School administrators must turn this on before they can manage a school.",
+  "securitySetUp": "Set up",
+  "securityDevicesHeading": "WHERE YOU ARE SIGNED IN",
+  "securityNoOtherDevices": "No other devices",
+  "securityOnlyThisDevice": "Only this device is signed in.",
+  "securityThisDevice": "this device",
+  "securityDeviceSignedOut": "Signed out",
+  "securityLastUsed": "Last used {when}",
+  "@securityLastUsed": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySignOut": "Sign out",
+  "securityTotpTitle": "Set up two-factor sign-in",
+  "securityTotpBody": "Add this key to your authenticator app, then enter the six-digit code it shows.",
+  "securityVerify": "Verify",
+  "securityJustNow": "just now",
+  "securityMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@securityMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securityHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@securityHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securityDaysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@securityDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roleQuestion": "How will you use Studafy?",
+  "roleChoosePrompt": "Choose your role to personalize your experience.",
+  "roleContinue": "Continue",
+  "roleTeacher": "Teacher",
+  "roleTeacherDetail": "Manage classes, attendance and learning",
+  "roleStudent": "Student",
+  "roleStudentDetail": "Learn, submit work and stay updated",
+  "roleParent": "Parent",
+  "roleParentDetail": "Follow progress and school updates",
+  "loginWelcome": "Welcome, {role}",
+  "@loginWelcome": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "loginSubtitle": "Use your school or personal account to continue.",
+  "loginContinueWith": "Continue with {provider}",
+  "@loginContinueWith": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "loginConsentPrefix": "I agree to the ",
+  "@loginConsentPrefix": {
+    "description": "The consent sentence is assembled from fragments in this order: prefix, Terms link, connector, Privacy link, suffix. Keep that order workable in the target language."
+  },
+  "loginConsentAnd": " and ",
+  "loginConsentSuffix": ".",
+  "loginTermsOfUse": "Terms of Use",
+  "loginPrivacyPolicy": "Privacy Policy",
+  "loginAcceptFirst": "Please accept before signing in.",
+  "loginChangeRole": "Change role",
+  "loginClose": "Close",
+  "policyPrivacyBody": "Studafy uses account, school, class, attendance, and communication data only to provide and secure the service. Schools control student records. We do not sell personal data. Contact your school to access, correct, or delete eligible records.",
+  "@policyPrivacyBody": {
+    "description": "Placeholder legal copy. REL-002 B5 replaces both policy bodies with hosted documents; this Arabic text has not been reviewed by counsel."
+  },
+  "policyTermsBody": "Use Studafy only for authorized school communication. Keep accounts secure, respect students and staff, and do not upload harmful or unlawful content. School policies continue to apply. Misuse may lead to account suspension.",
+  "@policyTermsBody": {
+    "description": "Placeholder legal copy. See policyPrivacyBody."
+  },
+  "deleteTitle": "Delete account",
+  "deleteWarningTitle": "This affects more than your profile",
+  "deleteWarningBody": "Access to your profile, classes, messages, and personal files will end.",
+  "deleteWhatGoesHeading": "WHAT WILL BE DELETED",
+  "deleteSchoolKeepsHeading": "WHAT YOUR SCHOOL KEEPS",
+  "deleteSchoolKeepsBody": "Schools are required to keep these education records. They stay with the school, not with your account, and deleting your account does not remove them. Ask your school if you need them corrected or erased.",
+  "deleteNoSchoolRecords": "Your school holds no records for this account.",
+  "deleteSchoolAccessHeading": "SCHOOL ACCESS THAT ENDS",
+  "deleteWhyHeading": "TELL US WHY",
+  "deleteReasonLabel": "Reason for leaving",
+  "deleteReasonNoLongerUsing": "I no longer use Studafy",
+  "deleteReasonChangingSchools": "I am changing schools",
+  "deleteReasonPrivacy": "Privacy concerns",
+  "deleteReasonDuplicate": "I have another account",
+  "deleteReasonUndisclosed": "Prefer not to say",
+  "deleteAcknowledgementsHeading": "ACKNOWLEDGEMENTS",
+  "deleteSavedWhatINeed": "I saved what I need",
+  "deleteSavedWhatINeedDetail": "Download a copy of personal data and files",
+  "deleteUnderstandFinal": "{days, plural, =1{I understand this cannot be undone after 1 day} other{I understand this cannot be undone after {days} days}}",
+  "@deleteUnderstandFinal": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteCancelWindow": "{days, plural, =1{You can cancel in this app during the 1-day period} other{You can cancel in this app during the {days}-day period}}",
+  "@deleteCancelWindow": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteUnderstandSchoolKeeps": "I understand my school keeps some records",
+  "deleteRetainedCount": "{count, plural, =0{No education records stay with your school} =1{1 education record stays with your school} other{{count} education records stay with your school}}",
+  "@deleteRetainedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteTypeToConfirm": "Type {word} to confirm deletion of {email}.",
+  "@deleteTypeToConfirm": {
+    "description": "{word} is the literal confirmation token the user must type. It stays untranslated on purpose: it is compared character for character, so translating it would break the check.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      },
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWorking": "Working…",
+  "deleteSchedule": "Schedule account deletion",
+  "deleteConfirmIdentityNote": "You will be asked to confirm it is you before this is scheduled.",
+  "deleteKeptSnack": "Your account will be kept.",
+  "deleteScheduledTitle": "Deletion scheduled",
+  "deleteScheduledBody": "{email} will be deleted after {date}. Until then you can stop it here — you do not need to contact support.",
+  "@deleteScheduledBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteKeepMyAccount": "Keep my account",
+  "deleteTryAgain": "Try again",
+  "recordProfile": "Your profile",
+  "recordDevices": "Signed-in devices",
+  "recordConsents": "Consent records",
+  "recordNotifications": "Notifications",
+  "recordAttendance": "Attendance records",
+  "recordGrades": "Grades",
+  "recordSubmissions": "Submitted work",
+  "recordWellbeing": "Wellbeing notes",
+  "academicTitle": "Academic workspace",
+  "academicNoRecords": "No records yet.",
+  "academicUnavailable": "School data is unavailable. No local copy was saved.",
+  "academicRetry": "Retry",
+  "academicFileNote": "File text lesson note",
+  "academicNoteTitle": "Text lesson note",
+  "academicNoteTitleLabel": "Title",
+  "academicNoteBodyLabel": "Note",
+  "academicAttachmentsUnavailable": "Attachments are unavailable until file uploads are switched on.",
+  "academicNoteNotSaved": "Not saved. Your text is kept here so you can retry.",
+  "academicCancel": "Cancel",
+  "academicSaveToSchool": "Save to school",
+  "feedContent": "Lessons",
+  "feedAssignments": "Assignments",
+  "feedAssessments": "Assessments",
+  "feedGrades": "Grades",
+  "feedAttendance": "Attendance",
+  "feedWellbeing": "Wellbeing",
+  "classesTitle": "My classes",
+  "classesCreate": "Create class",
+  "classesCreateTitle": "Create a new classroom",
+  "classesNameLabel": "Class name",
+  "classesRoomLabel": "Room",
+  "classesGradeLabel": "Grade",
+  "classesGradeOption": "Grade {number}",
+  "@classesGradeOption": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "classesSectionLabel": "Section",
+  "classesWeeklyLabel": "How many classes each week?",
+  "classesWeeklyOption": "{count, plural, =1{1 class} other{{count} classes}}",
+  "@classesWeeklyOption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "classesChooseTimes": "Choose the day and time for every class",
+  "classesSessionNumber": "Class {number}",
+  "@classesSessionNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "classesDayLabel": "Day",
+  "classesTo": "to",
+  "classesCancel": "Cancel",
+  "classesCreateAction": "Create classroom",
+  "classesInviteTitle": "Invite students",
+  "classesInviteBody": "Share this secure link. Students are added only after they open it and join the class.",
+  "classesInviteCopied": "Invite link copied.",
+  "classesCopy": "Copy",
+  "classesShareLink": "Share link",
+  "classesShareMessage": "Join my Studafy class: {link}",
+  "@classesShareMessage": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "classesGradeSection": "Grade {grade} · Section {section}",
+  "@classesGradeSection": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "section": {
+        "type": "String"
+      }
+    }
+  },
+  "classesStudentCount": "{count, plural, =0{No students} =1{1 student} other{{count} students}}",
+  "@classesStudentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "classesPerWeek": "{count, plural, =1{1 class/week} other{{count} classes/week}}",
+  "@classesPerWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "classesRoomTbd": "Room to be decided",
+  "dashNotifications": "Notifications",
+  "dashTakeAttendance": "Take attendance",
+  "dashAddNotebook": "Add lesson notebook",
+  "dashAttendanceRecorded": "Attendance recorded",
+  "dashNotebookMissing": "Notebook missing",
+  "attendancePresent": "Present",
+  "attendanceAbsent": "Absent",
+  "attendanceTardy": "Tardy",
+  "attendanceExcused": "Excused absence",
+  "attendanceExcusedReason": "Reason for excused absence",
+  "attendanceSaved": "Attendance saved successfully.",
+  "attendanceSave": "Save attendance",
+  "notebookTitle": "Lesson notebook",
+  "notebookLessonLabel": "Lesson covered",
+  "notebookLessonHint": "What did you teach today?",
+  "notebookHomeworkLabel": "Homework (optional)",
+  "notebookSave": "Save notebook",
+  "syntheticBanner": "SYNTHETIC DATA — NOT FOR REAL SCHOOL USE",
+  "blockedTitle": "Studafy is not production-ready",
+  "blockedDefaultReason": "Production access is blocked until security and data-integrity gates pass.",
+  "blockedReference": "Reference: SEC-001",
+  "blockedInvalidEnvironment": "Invalid APP_ENV. This build has been blocked for safety."
+}

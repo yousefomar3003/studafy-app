@@ -9,6 +9,7 @@ import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/session/application/session_interactor.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
 
+import 'support/localized_app.dart';
 import 'support/session_repository_fake.dart';
 
 import 'package:studafy/features/session/presentation/login_page.dart';
@@ -30,11 +31,12 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedApp(
         routes: {'/teacher': (_) => const Text('Teacher home')},
         home: LoginPage(role: UserRole.teacher, session: session),
       ),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Continue with Google'));
     await tester.pump();
@@ -61,10 +63,11 @@ void main() {
     final session = _interactor(repository, policy);
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedApp(
         home: LoginPage(role: UserRole.student, session: session),
       ),
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(Checkbox));
     await tester.pump();
     await tester.tap(find.text('Continue with Google'));

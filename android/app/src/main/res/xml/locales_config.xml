@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MOB-070 localization (ADR-0028).
+
+  Declares the languages Studafy ships so Android 13+ (API 33) shows the
+  per-app language picker in system settings and reports the right locale to
+  PlatformDispatcher. Keep in step with lib/l10n/*.arb and with
+  CFBundleLocalizations in ios/Runner/Info.plist.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="ar" />
+</locale-config>

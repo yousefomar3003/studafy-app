@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/studafy_localizations.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/studafy_domain.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
     final result = await widget.session.completeRemoteLogin(
       role: selectedRole,
       consentAccepted: accepted,
-      locale: StudafyLocaleController.instance.locale.languageCode,
+      locale: Localizations.localeOf(context).languageCode,
     );
     completingRemoteLogin = false;
     result.fold(
@@ -118,15 +118,15 @@ class _LoginPageState extends State<LoginPage> {
         const StudafyLogo(size: 36),
         const SizedBox(height: 40),
         Text(
-          'Welcome, ${widget.role.name}',
+          AppL10n.of(c).loginWelcome(roleLabel(c, widget.role)),
           textAlign: TextAlign.center,
           style: Theme.of(c).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Use your school or personal account to continue.',
+        Text(
+          AppL10n.of(c).loginSubtitle,
           textAlign: TextAlign.center,
-          style: TextStyle(color: studafyMuted),
+          style: const TextStyle(color: studafyMuted),
         ),
         const SizedBox(height: 30),
         // Sign in with Apple is required on iOS wherever third-party login
@@ -141,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
           if (widget.session.supportsProvider(x.$3))
             SocialButton(
               mark: x.$1,
-              label: 'Continue with ${x.$2}',
+              label: AppL10n.of(c).loginContinueWith(x.$2),
               onTap: signingIn ? () {} : () => login(x.$3),
             ),
         if (signingIn)
@@ -165,33 +165,33 @@ class _LoginPageState extends State<LoginPage> {
           contentPadding: EdgeInsets.zero,
           title: Wrap(
             children: [
-              const Text('I agree to the '),
+              Text(AppL10n.of(c).loginConsentPrefix),
               LinkText(
-                'Terms of Use',
-                onTap: () => showPolicy(c, 'Terms of Use'),
+                AppL10n.of(c).loginTermsOfUse,
+                onTap: () => showPolicy(c, PolicyDocument.terms),
               ),
-              const Text(' and '),
+              Text(AppL10n.of(c).loginConsentAnd),
               LinkText(
-                'Privacy Policy',
-                onTap: () => showPolicy(c, 'Privacy Policy'),
+                AppL10n.of(c).loginPrivacyPolicy,
+                onTap: () => showPolicy(c, PolicyDocument.privacy),
               ),
-              const Text('.'),
+              Text(AppL10n.of(c).loginConsentSuffix),
             ],
           ),
         ),
         if (!accepted)
-          const Padding(
-            padding: EdgeInsets.only(left: 12),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 12),
             child: Text(
-              'Please accept before signing in.',
-              style: TextStyle(color: studafyMuted, fontSize: 12),
+              AppL10n.of(c).loginAcceptFirst,
+              style: const TextStyle(color: studafyMuted, fontSize: 12),
             ),
           ),
         const SizedBox(height: 20),
         TextButton.icon(
           onPressed: () => Navigator.pop(c),
           icon: const Icon(Icons.arrow_back),
-          label: const Text('Change role'),
+          label: Text(AppL10n.of(c).loginChangeRole),
         ),
       ],
     ),
@@ -255,31 +255,52 @@ class LinkText extends StatelessWidget {
   );
 }
 
-void showPolicy(BuildContext c, String title) => showModalBottomSheet(
-  context: c,
-  showDragHandle: true,
-  builder: (c) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(c).textTheme.headlineSmall),
-        const SizedBox(height: 14),
-        Text(
-          title == 'Privacy Policy'
-              ? 'Studafy uses account, school, class, attendance, and communication data only to provide and secure the service. Schools control student records. We do not sell personal data. Contact your school to access, correct, or delete eligible records.'
-              : 'Use Studafy only for authorized school communication. Keep accounts secure, respect students and staff, and do not upload harmful or unlawful content. School policies continue to apply. Misuse may lead to account suspension.',
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () => Navigator.pop(c),
-            child: const Text('Close'),
+/// Which policy document the sheet shows.
+///
+/// An enum, not a display string: the old code compared the *title* against
+/// `'Privacy Policy'` to pick the body, so translating the title would have
+/// silently shown the terms text under the privacy heading.
+enum PolicyDocument { terms, privacy }
+
+/// Placeholder policy text shown in a sheet.
+///
+/// REL-002 §21.6 replaces both documents with hosted URLs, which both stores
+/// require; until then this keeps the app readable in either language. The
+/// Arabic copy has not been reviewed by counsel.
+void showPolicy(BuildContext c, PolicyDocument document) =>
+    showModalBottomSheet(
+      context: c,
+      showDragHandle: true,
+      builder: (c) {
+        final l10n = AppL10n.of(c);
+        return Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                document == PolicyDocument.privacy
+                    ? l10n.loginPrivacyPolicy
+                    : l10n.loginTermsOfUse,
+                style: Theme.of(c).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                document == PolicyDocument.privacy
+                    ? l10n.policyPrivacyBody
+                    : l10n.policyTermsBody,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: Text(l10n.loginClose),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
-    ),
-  ),
-);
+        );
+      },
+    );

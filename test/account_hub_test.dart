@@ -11,6 +11,7 @@ import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/features/academic/data/preview_academic_repository.dart';
 import 'package:studafy/student_features.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// Apple 5.1.1(v) / Google Play: sign-out and in-app account deletion must
 /// be reachable for every role. Before this screen the student shell had no
@@ -51,6 +52,7 @@ class _Exports implements DataExportRepository {
 Widget _app(Widget home, {DataExportRepository? exports}) => MaterialApp(
   supportedLocales: StudafyLocalizations.supportedLocales,
   localizationsDelegates: const [
+    AppL10n.delegate,
     StudafyLocalizations.delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,

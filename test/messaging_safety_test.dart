@@ -10,6 +10,7 @@ import 'package:studafy/features/messaging/presentation/blocked_people_page.dart
 import 'package:studafy/features/messaging/presentation/conversation_page.dart';
 import 'package:studafy/features/messaging/presentation/messaging_scope.dart';
 import 'package:studafy/features/messaging/presentation/messaging_strings.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// SAFE-043 / store UGC requirements: labelled report-content,
 /// report-user and block-user controls are reachable from every
@@ -133,6 +134,7 @@ Widget _app(_Fake fake, Widget home, {Locale locale = const Locale('en')}) =>
       locale: locale,
       supportedLocales: StudafyLocalizations.supportedLocales,
       localizationsDelegates: const [
+        AppL10n.delegate,
         StudafyLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

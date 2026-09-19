@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/account_lifecycle.dart';
 import '../application/account_interactor.dart';
 
@@ -42,20 +45,34 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   bool schoolRecords = false;
   bool submitting = false;
 
-  static const _reasons = <String, String>{
-    'no_longer_using': 'I no longer use Studafy',
-    'changing_schools': 'I am changing schools',
-    'privacy_concern': 'Privacy concerns',
-    'duplicate_account': 'I have another account',
-    'undisclosed': 'Prefer not to say',
+  /// Reason codes are the server's vocabulary and never change with language;
+  /// only the label the user reads does.
+  static const _reasonCodes = <String>[
+    'no_longer_using',
+    'changing_schools',
+    'privacy_concern',
+    'duplicate_account',
+    'undisclosed',
+  ];
+
+  static String _reasonLabel(AppL10n l10n, String code) => switch (code) {
+    'no_longer_using' => l10n.deleteReasonNoLongerUsing,
+    'changing_schools' => l10n.deleteReasonChangingSchools,
+    'privacy_concern' => l10n.deleteReasonPrivacy,
+    'duplicate_account' => l10n.deleteReasonDuplicate,
+    _ => l10n.deleteReasonUndisclosed,
   };
+
+  /// Typed literally by the user and compared character for character, so it
+  /// is deliberately not translated.
+  static const _confirmationWord = 'DELETE';
 
   bool get ready =>
       exported &&
       understood &&
       schoolRecords &&
       reason != null &&
-      confirmation.text.trim() == 'DELETE' &&
+      confirmation.text.trim() == _confirmationWord &&
       !submitting;
 
   @override
@@ -94,7 +111,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     backgroundColor: studafyCanvas,
     appBar: AppBar(
       backgroundColor: Colors.white,
-      title: const Text('Delete account'),
+      title: Text(AppL10n.of(context).deleteTitle),
     ),
     body: loading
         ? const Center(child: CircularProgressIndicator())
@@ -121,27 +138,26 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFFECACA)),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.warning_amber_rounded, color: Color(0xFFB42318)),
-              SizedBox(width: 12),
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFB42318)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'This affects more than your profile',
-                      style: TextStyle(
+                      AppL10n.of(context).deleteWarningTitle,
+                      style: const TextStyle(
                         color: Color(0xFF7A271A),
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
                     Text(
-                      'Access to your profile, classes, messages, and personal '
-                      'files will end.',
-                      style: TextStyle(color: Color(0xFF7A271A)),
+                      AppL10n.of(context).deleteWarningBody,
+                      style: const TextStyle(color: Color(0xFF7A271A)),
                     ),
                   ],
                 ),
@@ -150,46 +166,49 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           ),
         ),
         const SizedBox(height: 22),
-        const _SettingsLabel('WHAT WILL BE DELETED'),
+        _SettingsLabel(AppL10n.of(context).deleteWhatGoesHeading),
         const SizedBox(height: 8),
         FeatureCard(
           child: Column(
             children: [
               for (final entry in summary.deletedPersonalRecords.entries)
-                _CountRow(label: _friendly(entry.key), count: entry.value),
+                _CountRow(
+                  label: _friendly(AppL10n.of(context), entry.key),
+                  count: entry.value,
+                ),
             ],
           ),
         ),
         const SizedBox(height: 22),
-        const _SettingsLabel('WHAT YOUR SCHOOL KEEPS'),
+        _SettingsLabel(AppL10n.of(context).deleteSchoolKeepsHeading),
         const SizedBox(height: 8),
         FeatureCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 10),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(bottom: 10),
                 child: Text(
-                  'Schools are required to keep these education records. They '
-                  'stay with the school, not with your account, and deleting '
-                  'your account does not remove them. Ask your school if you '
-                  'need them corrected or erased.',
-                  style: TextStyle(color: studafyMuted),
+                  AppL10n.of(context).deleteSchoolKeepsBody,
+                  style: const TextStyle(color: studafyMuted),
                 ),
               ),
               for (final entry in summary.retainedSchoolRecords.entries)
-                _CountRow(label: _friendly(entry.key), count: entry.value),
+                _CountRow(
+                  label: _friendly(AppL10n.of(context), entry.key),
+                  count: entry.value,
+                ),
               if (summary.retainedTotal == 0)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6),
-                  child: Text('Your school holds no records for this account.'),
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(top: 6),
+                  child: Text(AppL10n.of(context).deleteNoSchoolRecords),
                 ),
             ],
           ),
         ),
         if (summary.schools.isNotEmpty) ...[
           const SizedBox(height: 22),
-          const _SettingsLabel('SCHOOL ACCESS THAT ENDS'),
+          _SettingsLabel(AppL10n.of(context).deleteSchoolAccessHeading),
           const SizedBox(height: 8),
           FeatureCard(
             child: Column(
@@ -198,26 +217,32 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                 for (final school in summary.schools)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(school),
+                    // The school's own name, shown as the school wrote it.
+                    child: UserContentText(school),
                   ),
               ],
             ),
           ),
         ],
         const SizedBox(height: 22),
-        const _SettingsLabel('TELL US WHY'),
+        _SettingsLabel(AppL10n.of(context).deleteWhyHeading),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: reason,
-          decoration: const InputDecoration(labelText: 'Reason for leaving'),
+          decoration: InputDecoration(
+            labelText: AppL10n.of(context).deleteReasonLabel,
+          ),
           items: [
-            for (final entry in _reasons.entries)
-              DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+            for (final code in _reasonCodes)
+              DropdownMenuItem(
+                value: code,
+                child: Text(_reasonLabel(AppL10n.of(context), code)),
+              ),
           ],
           onChanged: (value) => setState(() => reason = value),
         ),
         const SizedBox(height: 22),
-        const _SettingsLabel('ACKNOWLEDGEMENTS'),
+        _SettingsLabel(AppL10n.of(context).deleteAcknowledgementsHeading),
         const SizedBox(height: 8),
         FeatureCard(
           child: Column(
@@ -225,10 +250,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: exported,
-                title: const Text('I saved what I need'),
-                subtitle: const Text(
-                  'Download a copy of personal data and files',
-                ),
+                title: Text(AppL10n.of(context).deleteSavedWhatINeed),
+                subtitle: Text(AppL10n.of(context).deleteSavedWhatINeedDetail),
                 onChanged: (v) => setState(() => exported = v ?? false),
               ),
               const Divider(),
@@ -236,12 +259,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                 contentPadding: EdgeInsets.zero,
                 value: understood,
                 title: Text(
-                  'I understand this cannot be undone after '
-                  '${summary.gracePeriodDays} days',
+                  AppL10n.of(context)
+                      .deleteUnderstandFinal(summary.gracePeriodDays),
                 ),
                 subtitle: Text(
-                  'You can cancel in this app during the '
-                  '${summary.gracePeriodDays}-day period',
+                  AppL10n.of(context)
+                      .deleteCancelWindow(summary.gracePeriodDays),
                 ),
                 onChanged: (v) => setState(() => understood = v ?? false),
               ),
@@ -249,10 +272,10 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: schoolRecords,
-                title: const Text('I understand my school keeps some records'),
+                title: Text(AppL10n.of(context).deleteUnderstandSchoolKeeps),
                 subtitle: Text(
-                  '${summary.retainedTotal} education records stay with your '
-                  'school',
+                  AppL10n.of(context)
+                      .deleteRetainedCount(summary.retainedTotal),
                 ),
                 onChanged: (v) => setState(() => schoolRecords = v ?? false),
               ),
@@ -261,7 +284,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         ),
         const SizedBox(height: 18),
         Text(
-          'Type DELETE to confirm deletion of ${widget.email}.',
+          AppL10n.of(context)
+              .deleteTypeToConfirm(_confirmationWord, widget.email),
           style: const TextStyle(
             color: studafyInk,
             fontWeight: FontWeight.w700,
@@ -272,7 +296,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           controller: confirmation,
           autocorrect: false,
           enableSuggestions: false,
-          decoration: const InputDecoration(hintText: 'DELETE'),
+          decoration: const InputDecoration(hintText: _confirmationWord),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 18),
@@ -281,11 +305,15 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
             backgroundColor: const Color(0xFFB42318),
           ),
           onPressed: ready ? _requestDeletion : null,
-          child: Text(submitting ? 'Working…' : 'Schedule account deletion'),
+          child: Text(
+            submitting
+                ? AppL10n.of(context).deleteWorking
+                : AppL10n.of(context).deleteSchedule,
+          ),
         ),
         const SizedBox(height: 10),
         Text(
-          'You will be asked to confirm it is you before this is scheduled.',
+          AppL10n.of(context).deleteConfirmIdentityNote,
           textAlign: TextAlign.center,
           style: const TextStyle(color: studafyMuted, fontSize: 12),
         ),
@@ -315,7 +343,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         if (cancelled) {
           setState(() => scheduled = null);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Your account will be kept.')),
+            SnackBar(content: Text(AppL10n.of(context).deleteKeptSnack)),
           );
         }
       },
@@ -325,15 +353,18 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     );
   }
 
-  static String _friendly(String key) => switch (key) {
-    'profile' => 'Your profile',
-    'devices' => 'Signed-in devices',
-    'consents' => 'Consent records',
-    'notifications' => 'Notifications',
-    'attendance' => 'Attendance records',
-    'grades' => 'Grades',
-    'submissions' => 'Submitted work',
-    'wellbeing' => 'Wellbeing notes',
+  /// Record kinds come from the server as stable codes; this is the label the
+  /// reader sees. An unknown code falls back to the code itself rather than
+  /// hiding a record category that exists.
+  static String _friendly(AppL10n l10n, String key) => switch (key) {
+    'profile' => l10n.recordProfile,
+    'devices' => l10n.recordDevices,
+    'consents' => l10n.recordConsents,
+    'notifications' => l10n.recordNotifications,
+    'attendance' => l10n.recordAttendance,
+    'grades' => l10n.recordGrades,
+    'submissions' => l10n.recordSubmissions,
+    'wellbeing' => l10n.recordWellbeing,
     _ => key,
   };
 }
@@ -350,7 +381,10 @@ class _CountRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(child: Text(label)),
-        Text('$count', style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(
+          studafyNumber(context, count),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
       ],
     ),
   );
@@ -374,27 +408,27 @@ class _ScheduledState extends StatelessWidget {
       const Icon(Icons.event_available_outlined, color: studafyNavy, size: 40),
       const SizedBox(height: 14),
       Text(
-        'Deletion scheduled',
+        AppL10n.of(context).deleteScheduledTitle,
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.headlineSmall,
       ),
       const SizedBox(height: 10),
       Text(
-        '$email will be deleted after '
-        '${_formatDate(request.executeAfter)}. Until then you can stop it '
-        'here — you do not need to contact support.',
+        AppL10n.of(context).deleteScheduledBody(
+          email,
+          studafyDate(context, request.executeAfter),
+        ),
         textAlign: TextAlign.center,
         style: const TextStyle(color: studafyMuted),
       ),
       const SizedBox(height: 24),
       if (request.isCancellable)
-        FilledButton(onPressed: onCancel, child: const Text('Keep my account')),
+        FilledButton(
+          onPressed: onCancel,
+          child: Text(AppL10n.of(context).deleteKeepMyAccount),
+        ),
     ],
   );
-
-  static String _formatDate(DateTime when) =>
-      '${when.year}-${when.month.toString().padLeft(2, '0')}-'
-      '${when.day.toString().padLeft(2, '0')}';
 }
 
 class _ErrorState extends StatelessWidget {
@@ -411,7 +445,10 @@ class _ErrorState extends StatelessWidget {
         children: [
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          OutlinedButton(
+            onPressed: onRetry,
+            child: Text(AppL10n.of(context).deleteTryAgain),
+          ),
         ],
       ),
     ),

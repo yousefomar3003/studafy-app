@@ -48,7 +48,8 @@ class SessionCard extends StatelessWidget {
             color: ink,
           ),
         ),
-        Text(room, style: const TextStyle(color: muted)),
+        // The room is whatever the school called it.
+        UserContentText(room, style: const TextStyle(color: muted)),
         const SizedBox(height: 16),
         if (!completed)
           FilledButton(
@@ -56,14 +57,14 @@ class SessionCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
             ),
-            child: const Text('Take attendance'),
+            child: Text(AppL10n.of(c).dashTakeAttendance),
           )
         else ...[
-          const Wrap(
+          Wrap(
             spacing: 8,
             children: [
-              Pill('Attendance recorded', true),
-              Pill('Notebook missing', false),
+              Pill(AppL10n.of(c).dashAttendanceRecorded, true),
+              Pill(AppL10n.of(c).dashNotebookMissing, false),
             ],
           ),
           const SizedBox(height: 12),
@@ -72,7 +73,7 @@ class SessionCard extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
             ),
-            child: const Text('Add lesson notebook'),
+            child: Text(AppL10n.of(c).dashAddNotebook),
           ),
         ],
       ],

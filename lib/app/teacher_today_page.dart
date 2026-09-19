@@ -9,6 +9,7 @@ import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
 import 'account_hub_page.dart';
+import '../core/studafy_formatting.dart';
 
 /// Teacher home for real builds. Everything on it comes from the signed-in
 /// profile and the server: the legacy home was fixed demo content, with a
@@ -91,7 +92,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
             },
             icon: Badge(
               isLabelVisible: _unread > 0,
-              label: Text('$_unread'),
+              label: Text(studafyNumber(context, _unread)),
               child: const Icon(Icons.notifications_none),
             ),
           ),
@@ -101,7 +102,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 48),
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 48),
           children: [
             Text(
               firstName.isEmpty
@@ -180,7 +181,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded),
+                        Icon(forwardChevron(context)),
                       ],
                     ),
                   ),

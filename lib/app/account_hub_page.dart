@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/studafy_design.dart';
+import '../core/language_picker.dart';
 import '../core/studafy_domain.dart';
 import '../core/studafy_localizations.dart';
 import '../core/failures.dart';
@@ -118,7 +119,7 @@ class AccountHubPage extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
                   title: Text(t('language')),
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                  trailing: Icon(forwardChevron(context)),
                   onTap: () => showStudafyLanguagePicker(context),
                 ),
                 _DataExportTile(account: AccountScope.of(context)),
@@ -127,7 +128,7 @@ class AccountHubPage extends StatelessWidget {
                     leading: const Icon(Icons.shield_outlined),
                     title: Text(t('security')),
                     subtitle: Text(t('security.detail')),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    trailing: Icon(forwardChevron(context)),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute<void>(

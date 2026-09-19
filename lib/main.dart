@@ -5,9 +5,12 @@ import 'app/app_bootstrap.dart';
 import 'app/account_hub_page.dart';
 import 'app/account_scope.dart';
 import 'app/app_dependencies.dart';
+import 'app/studafy_theme.dart';
 import 'app/teacher_shell.dart';
+import 'core/locale_controller.dart';
 import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
+import 'l10n/generated/app_l10n.dart';
 import 'features/family/presentation/family_scope.dart';
 import 'features/messaging/presentation/messaging_scope.dart';
 import 'features/notifications/presentation/notifications_scope.dart';
@@ -23,6 +26,17 @@ const navy = Color(0xFF241D73),
     ink = Color(0xFF171441),
     muted = Color(0xFF8D94AF),
     canvas = Color(0xFFF7F6FE);
+
+/// Locale delegates every entry point needs: Studafy's own generated copy,
+/// plus Material, Widgets and Cupertino, which supply the built-in component
+/// strings and the right-to-left direction for Arabic.
+const _localizationsDelegates = <LocalizationsDelegate<Object>>[
+  AppL10n.delegate,
+  StudafyLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+];
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   late final RuntimePolicy runtimePolicy;
@@ -30,9 +44,9 @@ Future<void> main() async {
     runtimePolicy = RuntimePolicy.fromEnvironment();
   } on FormatException {
     runApp(
-      const StudafyConfigurationBlockedApp(
-        reason: 'Invalid APP_ENV. This build has been blocked for safety.',
-      ),
+      // No composition root exists yet, so this one reason cannot come from
+      // the localizations; the page translates the rest.
+      const StudafyConfigurationBlockedApp(),
     );
     return;
   }
@@ -80,93 +94,25 @@ class StudafyApp extends StatelessWidget {
             '/parent': (_) => ParentShell(academic: deps.academic),
             '/student': (_) => StudentShell(academic: deps.academic),
           };
+    // A blocked build has no composition root, so it has no locale controller
+    // either; it still needs the delegates and the device's own language.
+    final locale = deps?.locale;
     return ListenableBuilder(
-      listenable: StudafyLocaleController.instance,
+      listenable: locale ?? Listenable.merge(const []),
       builder: (context, _) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Studafy',
-        theme: ThemeData(
-          useMaterial3: true,
-          scaffoldBackgroundColor: canvas,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: navy,
-            primary: navy,
-            secondary: cyan,
-            tertiary: const Color(0xFFFF6B6B),
-            surface: Colors.white,
-          ),
-          textTheme: const TextTheme(
-            headlineSmall: TextStyle(fontWeight: FontWeight.w800, color: ink),
-            titleLarge: TextStyle(fontWeight: FontWeight.w800, color: ink),
-            titleMedium: TextStyle(fontWeight: FontWeight.w700, color: ink),
-            bodyMedium: TextStyle(color: ink, height: 1.35),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFDCE0EE)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFDCE0EE)),
-            ),
-          ),
-          filledButtonTheme: FilledButtonThemeData(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              textStyle: const TextStyle(
-                fontWeight: FontWeight.w800,
-                letterSpacing: .1,
-              ),
-            ),
-          ),
-          outlinedButtonTheme: OutlinedButtonThemeData(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 50),
-              side: const BorderSide(color: Color(0xFFD8DCEC)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              textStyle: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-          ),
-          iconButtonTheme: IconButtonThemeData(
-            style: IconButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          ),
-          chipTheme: ChipThemeData(
-            backgroundColor: cyan.withValues(alpha: .08),
-            selectedColor: const Color(0xFF7737EE).withValues(alpha: .15),
-            side: BorderSide(color: cyan.withValues(alpha: .16)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            labelStyle: const TextStyle(
-              color: ink,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          floatingActionButtonTheme: const FloatingActionButtonThemeData(
-            backgroundColor: Color(0xFFFF6B6B),
-            foregroundColor: Colors.white,
-          ),
-        ),
-        supportedLocales: StudafyLocalizations.supportedLocales,
-        locale: StudafyLocaleController.instance.locale,
-        localizationsDelegates: const [
-          StudafyLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
+        theme: studafyTheme(),
+        supportedLocales: kSupportedLocales,
+        // The controller is the single authority: it also decides the code
+        // published to the profile, so the rendered language and the one the
+        // server sends email and push in can never drift apart. It observes
+        // the binding, so a system language change still reaches here.
+        locale: locale?.resolvedLocale,
+        localeResolutionCallback: (device, _) =>
+            matchSupportedLocale(device == null ? null : [device]) ??
+            kFallbackLocale,
+        localizationsDelegates: _localizationsDelegates,
         routes: routes,
         builder: (context, child) {
           Widget content = child ?? const SizedBox.shrink();
@@ -181,7 +127,7 @@ class StudafyApp extends StatelessWidget {
                       height: 30,
                       child: Center(
                         child: Text(
-                          'SYNTHETIC DATA — NOT FOR REAL SCHOOL USE',
+                          AppL10n.of(context).syntheticBanner,
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: const Color(0xFF5E3B00),
@@ -197,24 +143,29 @@ class StudafyApp extends StatelessWidget {
             );
           }
           if (deps == null) return content;
-          return SessionScope(
-            session: deps.session,
-            child: AccountScope(
-              account: deps.account,
-              child: NotificationsScope(
-                interactor: deps.notifications,
-                child: MessagingScope(
-                  interactor: deps.messaging,
-                  child: FamilyScope(
-                    interactor: deps.family,
-                    child: ParentRepositoryScope(
-                      repository: deps.parent,
-                      subscription: deps.parentSubscription,
-                      signOut: deps.session.signOut,
-                      isRemote: runtimePolicy.requiresRemoteBackend,
-                      child: TeacherDashboardRepositoryScope(
-                        repository: deps.teacherDashboard,
-                        child: content,
+          // Outermost, because feature presentation opens the language picker
+          // and must reach the controller from anywhere in the tree.
+          return LocaleScope(
+            controller: deps.locale,
+            child: SessionScope(
+              session: deps.session,
+              child: AccountScope(
+                account: deps.account,
+                child: NotificationsScope(
+                  interactor: deps.notifications,
+                  child: MessagingScope(
+                    interactor: deps.messaging,
+                    child: FamilyScope(
+                      interactor: deps.family,
+                      child: ParentRepositoryScope(
+                        repository: deps.parent,
+                        subscription: deps.parentSubscription,
+                        signOut: deps.session.signOut,
+                        isRemote: runtimePolicy.requiresRemoteBackend,
+                        child: TeacherDashboardRepositoryScope(
+                          repository: deps.teacherDashboard,
+                          child: content,
+                        ),
                       ),
                     ),
                   ),
@@ -232,24 +183,35 @@ class StudafyApp extends StatelessWidget {
 }
 
 class StudafyConfigurationBlockedApp extends StatelessWidget {
-  const StudafyConfigurationBlockedApp({super.key, required this.reason});
+  const StudafyConfigurationBlockedApp({super.key, this.reason});
 
-  final String reason;
+  /// Why the build is blocked, when the caller can say. Null falls back to
+  /// the localized invalid-environment message, because this runs before any
+  /// localizations are available to the caller.
+  final String? reason;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
+    // This runs before the composition root exists, so there is no stored
+    // preference to read: it follows the device only. Without the delegates
+    // it rendered English left-to-right even on an Arabic phone.
+    supportedLocales: kSupportedLocales,
+    localeResolutionCallback: (device, _) =>
+        matchSupportedLocale(device == null ? null : [device]) ??
+        kFallbackLocale,
+    localizationsDelegates: _localizationsDelegates,
     home: ProductionReadinessBlockedPage(reason: reason),
   );
 }
 
 class ProductionReadinessBlockedPage extends StatelessWidget {
-  const ProductionReadinessBlockedPage({
-    super.key,
-    this.reason = 'Production access is blocked until security and data-integrity gates pass.',
-  });
+  const ProductionReadinessBlockedPage({super.key, this.reason});
 
-  final String reason;
+  /// An explicit reason, or null for the general one. Nullable rather than a
+  /// default string because the default has to come from the localizations,
+  /// which need a BuildContext.
+  final String? reason;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -264,8 +226,8 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
               children: [
                 const Icon(Icons.security_rounded, size: 54, color: navy),
                 const SizedBox(height: 18),
-                const Text(
-                  'Studafy is not production-ready',
+                Text(
+                  AppL10n.of(context).blockedTitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: ink,
@@ -275,14 +237,17 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  reason,
+                  reason ?? AppL10n.of(context).blockedDefaultReason,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: muted, height: 1.4),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Reference: SEC-001',
-                  style: TextStyle(color: muted, fontWeight: FontWeight.w700),
+                Text(
+                  AppL10n.of(context).blockedReference,
+                  style: const TextStyle(
+                    color: muted,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),

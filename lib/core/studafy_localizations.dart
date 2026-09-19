@@ -1,56 +1,11 @@
 import 'package:flutter/material.dart';
 
-enum StudafyCalendarPreference { gregorian, hijri }
-
-class StudafyLocaleController extends ChangeNotifier {
-  StudafyLocaleController._();
-  static final instance = StudafyLocaleController._();
-
-  Locale locale = const Locale('en');
-  StudafyCalendarPreference calendar = StudafyCalendarPreference.gregorian;
-
-  void setLocale(Locale value) {
-    if (locale == value) return;
-    locale = value;
-    notifyListeners();
-  }
-
-  void setCalendar(StudafyCalendarPreference value) {
-    if (calendar == value) return;
-    calendar = value;
-    notifyListeners();
-  }
-}
-
-Future<void> showStudafyLanguagePicker(BuildContext context) async {
-  final controller = StudafyLocaleController.instance;
-  final selection = await showModalBottomSheet<Locale>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: RadioGroup<Locale>(
-        groupValue: controller.locale,
-        onChanged: (value) => Navigator.pop(context, value),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                'App language',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              subtitle: Text('The interface direction changes automatically.'),
-            ),
-            RadioListTile<Locale>(value: Locale('en'), title: Text('English')),
-            RadioListTile<Locale>(value: Locale('ar'), title: Text('العربية')),
-          ],
-        ),
-      ),
-    ),
-  );
-  if (selection != null) controller.setLocale(selection);
-}
-
+/// Legacy per-key copy table (MOB-070).
+///
+/// Superseded by the generated `AppL10n` in `lib/l10n/generated/`. The
+/// remaining keys move there slice by slice; new copy goes straight into the
+/// `.arb` files, never here, because a typo in this lookup renders the key
+/// itself and it cannot express Arabic plurals.
 class StudafyLocalizations {
   StudafyLocalizations(this.locale);
 

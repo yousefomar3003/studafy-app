@@ -152,7 +152,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 96),
                 children: [
                   if (_approvals.isNotEmpty) ...[
                     _SectionTitle(t('approvals.title')),
@@ -261,7 +261,7 @@ class _ChildCard extends StatelessWidget {
           if (verified)
             Semantics(
               label: familyText(context, 'view'),
-              child: const Icon(Icons.chevron_right_rounded),
+              child: Icon(forwardChevron(context)),
             ),
         ],
       ),
@@ -377,7 +377,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
     final found = _found;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

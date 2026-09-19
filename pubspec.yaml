@@ -53,6 +53,11 @@ dependencies:
   flutter_secure_storage: ^11.1.1
   sign_in_with_apple: ^8.2.0
   crypto: ^3.0.7
+  # MOB-070: device-level settings that must outlive sign-out — today only the
+  # chosen interface language. Already present transitively via
+  # supabase_flutter, so promoting it adds no new native plugin surface.
+  # Session material stays in flutter_secure_storage; see lib/core/secure_storage.dart.
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +84,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Required by `flutter gen-l10n`, which refuses to run without it. The
+  # generated Dart is written into lib/l10n/ and checked in, so the build
+  # never depends on codegen having run; `bun run generate:check` catches
+  # drift the same way it does for the generated /v1 client.
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:

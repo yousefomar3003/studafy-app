@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
 
@@ -49,7 +51,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
     } catch (failure) {
       if (!mounted) return;
       setState(() {
-        error = 'Could not load your security settings. Try again.';
+        error = AppL10n.of(context).securityLoadFailed;
         loading = false;
       });
     }
@@ -68,7 +70,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       if (!mounted) return;
       if (!verified) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('That code did not match.')),
+          SnackBar(content: Text(AppL10n.of(context).securityCodeMismatch)),
         );
         return;
       }
@@ -76,7 +78,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not set up two-factor sign-in.')),
+        SnackBar(content: Text(AppL10n.of(context).securitySetupFailed)),
       );
     }
   }
@@ -85,18 +87,19 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign out this device?'),
+        title: Text(AppL10n.of(context).securitySignOutDeviceTitle),
         content: Text(
-          '${device.label ?? device.platform} will need to sign in again.',
+          AppL10n.of(context)
+              .securitySignOutDeviceBody(device.label ?? device.platform),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep it'),
+            child: Text(AppL10n.of(context).securityKeepIt),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign it out'),
+            child: Text(AppL10n.of(context).securitySignItOut),
           ),
         ],
       ),
@@ -108,7 +111,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not sign that device out.')),
+        SnackBar(content: Text(AppL10n.of(context).securityRevokeFailed)),
       );
     }
   }
@@ -117,22 +120,19 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign out everywhere?'),
-        content: const Text(
-          'Every device signed in to this account will be signed out, '
-          'including this one. Sessions stop working immediately.',
-        ),
+        title: Text(AppL10n.of(context).securitySignOutEverywhereTitle),
+        content: Text(AppL10n.of(context).securitySignOutEverywhereBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).securityCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFB42318),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign out everywhere'),
+            child: Text(AppL10n.of(context).securitySignOutEverywhere),
           ),
         ],
       ),
@@ -144,112 +144,134 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: studafyCanvas,
-    appBar: AppBar(
-      backgroundColor: Colors.white,
-      title: const Text('Account security'),
-    ),
-    body: loading
-        ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              if (error != null) ...[
-                Text(error!, style: const TextStyle(color: Color(0xFFB42318))),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: _load,
-                  child: const Text('Try again'),
-                ),
-                const SizedBox(height: 20),
-              ],
-              const _SectionLabel('TWO-FACTOR SIGN-IN'),
-              const SizedBox(height: 8),
-              FeatureCard(
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    mfaEnrolled ? Icons.verified_user : Icons.shield_outlined,
-                    color: mfaEnrolled ? studafyNavy : studafyMuted,
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Scaffold(
+      backgroundColor: studafyCanvas,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: Text(l10n.securityTitle),
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                if (error != null) ...[
+                  Text(
+                    error!,
+                    style: const TextStyle(color: Color(0xFFB42318)),
                   ),
-                  title: Text(mfaEnrolled ? 'Turned on' : 'Not set up'),
-                  subtitle: Text(
-                    mfaEnrolled
-                        ? 'You use an authenticator app when signing in.'
-                        : 'School administrators must turn this on before '
-                              'they can manage a school.',
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _load,
+                    child: Text(l10n.securityTryAgain),
                   ),
-                  trailing: mfaEnrolled
-                      ? null
-                      : FilledButton(
-                          onPressed: _enrolTotp,
-                          child: const Text('Set up'),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 22),
-              const _SectionLabel('WHERE YOU ARE SIGNED IN'),
-              const SizedBox(height: 8),
-              if (devices.isEmpty)
-                const FeatureCard(
+                  const SizedBox(height: 20),
+                ],
+                _SectionLabel(l10n.securityTwoFactorHeading),
+                const SizedBox(height: 8),
+                FeatureCard(
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text('No other devices'),
-                    subtitle: Text('Only this device is signed in.'),
+                    leading: Icon(
+                      mfaEnrolled ? Icons.verified_user : Icons.shield_outlined,
+                      color: mfaEnrolled ? studafyNavy : studafyMuted,
+                    ),
+                    title: Text(
+                      mfaEnrolled
+                          ? l10n.securityTwoFactorOn
+                          : l10n.securityTwoFactorOff,
+                    ),
+                    subtitle: Text(
+                      mfaEnrolled
+                          ? l10n.securityTwoFactorOnDetail
+                          : l10n.securityTwoFactorOffDetail,
+                    ),
+                    trailing: mfaEnrolled
+                        ? null
+                        : FilledButton(
+                            onPressed: _enrolTotp,
+                            child: Text(l10n.securitySetUp),
+                          ),
                   ),
-                )
-              else
-                for (final device in devices)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: FeatureCard(
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          device.platform == 'ios'
-                              ? Icons.phone_iphone
-                              : Icons.phone_android,
-                          color: device.revoked ? studafyMuted : studafyNavy,
+                ),
+                const SizedBox(height: 22),
+                _SectionLabel(l10n.securityDevicesHeading),
+                const SizedBox(height: 8),
+                if (devices.isEmpty)
+                  FeatureCard(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.securityNoOtherDevices),
+                      subtitle: Text(l10n.securityOnlyThisDevice),
+                    ),
+                  )
+                else
+                  for (final device in devices)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(bottom: 10),
+                      child: FeatureCard(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            device.platform == 'ios'
+                                ? Icons.phone_iphone
+                                : Icons.phone_android,
+                            color: device.revoked ? studafyMuted : studafyNavy,
+                          ),
+                          // The device name is whatever the owner called their
+                          // phone, so it renders verbatim in its own direction.
+                          title: UserContentText(
+                            device.isCurrent
+                                ? '${device.label ?? device.platform} · '
+                                      '${l10n.securityThisDevice}'
+                                : device.label ?? device.platform,
+                          ),
+                          subtitle: Text(
+                            device.revoked
+                                ? l10n.securityDeviceSignedOut
+                                : l10n.securityLastUsed(
+                                    _relative(context, device.lastSeenAt),
+                                  ),
+                          ),
+                          trailing: device.revoked
+                              ? null
+                              : TextButton(
+                                  onPressed: () => _revokeDevice(device),
+                                  child: Text(l10n.securitySignOut),
+                                ),
                         ),
-                        title: Text(
-                          '${device.label ?? device.platform}'
-                          '${device.isCurrent ? ' · this device' : ''}',
-                        ),
-                        subtitle: Text(
-                          device.revoked
-                              ? 'Signed out'
-                              : 'Last used ${_relative(device.lastSeenAt)}',
-                        ),
-                        trailing: device.revoked
-                            ? null
-                            : TextButton(
-                                onPressed: () => _revokeDevice(device),
-                                child: const Text('Sign out'),
-                              ),
                       ),
                     ),
+                const SizedBox(height: 22),
+                OutlinedButton.icon(
+                  onPressed: _signOutEverywhere,
+                  icon: const Icon(Icons.logout, color: Color(0xFFB42318)),
+                  label: Text(
+                    l10n.securitySignOutEverywhere,
+                    style: const TextStyle(color: Color(0xFFB42318)),
                   ),
-              const SizedBox(height: 22),
-              OutlinedButton.icon(
-                onPressed: _signOutEverywhere,
-                icon: const Icon(Icons.logout, color: Color(0xFFB42318)),
-                label: const Text(
-                  'Sign out everywhere',
-                  style: TextStyle(color: Color(0xFFB42318)),
                 ),
-              ),
-              const SizedBox(height: 28),
-            ],
-          ),
-  );
+                const SizedBox(height: 28),
+              ],
+            ),
+    );
+  }
 
-  static String _relative(DateTime when) {
+  /// Arabic has six plural categories, so "3 minutes ago" and "11 minutes
+  /// ago" take different forms. The generated plural lookups pick the right
+  /// one; the old string interpolation could not, and also read
+  /// "1 minutes ago" in English.
+  static String _relative(BuildContext context, DateTime when) {
+    final l10n = AppL10n.of(context);
     final difference = DateTime.now().difference(when);
-    if (difference.inMinutes < 1) return 'just now';
-    if (difference.inHours < 1) return '${difference.inMinutes} minutes ago';
-    if (difference.inDays < 1) return '${difference.inHours} hours ago';
-    return '${difference.inDays} days ago';
+    if (difference.inMinutes < 1) return l10n.securityJustNow;
+    if (difference.inHours < 1) {
+      return l10n.securityMinutesAgo(difference.inMinutes);
+    }
+    if (difference.inDays < 1) return l10n.securityHoursAgo(difference.inHours);
+    return l10n.securityDaysAgo(difference.inDays);
   }
 }
 
@@ -272,15 +294,12 @@ class _TotpEnrolmentDialogState extends State<_TotpEnrolmentDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Set up two-factor sign-in'),
+    title: Text(AppL10n.of(context).securityTotpTitle),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Add this key to your authenticator app, then enter the six-digit '
-          'code it shows.',
-        ),
+        Text(AppL10n.of(context).securityTotpBody),
         const SizedBox(height: 12),
         SelectableText(
           widget.provisioningUri,
@@ -300,13 +319,13 @@ class _TotpEnrolmentDialogState extends State<_TotpEnrolmentDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(AppL10n.of(context).securityCancel),
       ),
       FilledButton(
         onPressed: controller.text.trim().length < 6
             ? null
             : () => Navigator.pop(context, controller.text.trim()),
-        child: const Text('Verify'),
+        child: Text(AppL10n.of(context).securityVerify),
       ),
     ],
   );
