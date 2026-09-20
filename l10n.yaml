@@ -1,0 +1,18 @@
+# MOB-070 localization (ADR-0028).
+#
+# One generated class for the whole app. Keys are namespaced by slice
+# (messagingSendReport, familyLinkChild, sessionSignIn) so copy ownership
+# stays with the slice, while codegen stays a single configuration that
+# `flutter pub get` keeps in sync.
+#
+# The generated Dart is written into lib/l10n/generated and checked in, so a
+# build never depends on codegen having run and a reviewer can read the diff.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-dir: lib/l10n/generated
+output-localization-file: app_l10n.dart
+output-class: AppL10n
+nullable-getter: false
+# An Arabic key missing from app_ar.arb falls back to English silently, so
+# CI compares the two files directly instead of trusting this warning.
+untranslated-messages-file: lib/l10n/untranslated.json

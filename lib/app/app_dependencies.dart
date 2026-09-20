@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/device_settings.dart';
+import '../core/locale_controller.dart';
 import '../core/runtime_environment.dart';
 import '../core/studafy_domain.dart';
 import '../core/telemetry.dart';
+import '../data/settings/preferences_device_settings.dart';
+import 'locale_session_binder.dart';
 import '../data/backend.dart';
 import '../data/billing/v1_billing_api.dart';
 import '../data/contracts/v1_http_transport.dart';
@@ -13,6 +17,7 @@ import '../data/secure/keychain_secure_store.dart';
 import '../data/subscription_service.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/data/api_data_export_repository.dart';
+import '../features/account/data/api_profile_repository.dart';
 import '../features/account/data/session_account_repository.dart';
 import '../features/academic/data/api_academic_repository.dart';
 import '../features/academic/data/preview_academic_repository.dart';
@@ -66,6 +71,8 @@ class AppDependencies {
     required this.fileUploads,
     required this.messaging,
     required this.family,
+    required this.locale,
+    required this.localeSession,
   });
 
   final SessionInteractor session;
@@ -91,6 +98,15 @@ class AppDependencies {
   /// approvals (MOB-070 parent slice, DL-048/DL-050).
   final FamilyInteractor family;
 
+  /// The interface language (MOB-070, ADR-0028). Held here, like
+  /// [cacheBinder], because it must stay alive for the app's whole lifetime:
+  /// the root listens to it to rebuild on a language change.
+  final LocaleController locale;
+
+  /// Seeds the language from the profile on sign-in. Held so it keeps
+  /// listening; null in synthetic builds, which have no profile.
+  final LocaleSessionBinder? localeSession;
+
   static AppDependencies forPolicy(RuntimePolicy policy) {
     final telemetry = const DebugLogTelemetry();
     final context = ActiveContextController.instance;
@@ -109,6 +125,25 @@ class AppDependencies {
         ? const PreviewTeacherDashboardRepository()
         : const UnavailableTeacherDashboardRepository();
     final cacheBinder = SessionCacheBinder(context: context);
+    // A synthetic build has no profile to publish to, so it keeps the choice
+    // on the device only. Device settings are read in both, so a developer's
+    // language choice survives a restart the same way a user's does.
+    final DeviceSettingsStore deviceSettings =
+        const PreferencesDeviceSettings();
+    final profiles = remote == null ? null : ApiProfileRepository(remote.api);
+    final localeController = LocaleController(
+      settings: deviceSettings,
+      publishToServer: profiles?.updateLocale,
+    );
+    // Signing in on a new device adopts the language from the profile, but
+    // never overrides a choice already made on this one.
+    final localeSessionBinder = profiles == null
+        ? null
+        : LocaleSessionBinder(
+            controller: localeController,
+            profiles: profiles,
+            context: context,
+          );
     final NotificationsRepository notificationsRepository = policy.isSynthetic
         ? PreviewNotificationsRepository()
         : ApiNotificationsRepository(remote!.api, cacheBinder);
@@ -186,6 +221,8 @@ class AppDependencies {
         telemetry: telemetry,
       ),
       cacheBinder: cacheBinder,
+      locale: localeController,
+      localeSession: localeSessionBinder,
       // FILE-050 ships the typed client but does not activate remote bytes.
       // FILE-051 will replace this remote adapter only after scanning and
       // clean delivery pass their gate.

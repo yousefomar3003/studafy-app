@@ -58,6 +58,14 @@ jobs:
       - name: Verify generated Dart API client
         run: bun run generate:check
 
+      # MOB-070: the generated localizations are checked in so the build never
+      # depends on codegen having run and a reviewer can read the diff. This
+      # fails if someone edits an .arb without regenerating.
+      - name: Verify generated localizations
+        run: |
+          flutter gen-l10n
+          git diff --exit-code lib/l10n/
+
       - name: Enforce Dart architecture boundaries
         run: dart run tools/check_dart_bounds.dart
 

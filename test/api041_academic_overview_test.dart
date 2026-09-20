@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
 
+import 'support/localized_app.dart';
+
 class _FakeAcademicRepository implements AcademicRepository {
   _FakeAcademicRepository(List<AcademicRecord> records, {this.error})
     : records = List<AcademicRecord>.of(records);
@@ -174,7 +176,7 @@ void main() {
   ) async {
     final repository = _FakeAcademicRepository(records);
     await tester.pumpWidget(
-      MaterialApp(home: AcademicOverviewPage(repository: repository)),
+      localizedApp(home: AcademicOverviewPage(repository: repository)),
     );
     await tester.pumpAndSettle();
 
@@ -187,11 +189,11 @@ void main() {
   testWidgets('switching feeds reloads through the repository', (tester) async {
     final repository = _FakeAcademicRepository(records);
     await tester.pumpWidget(
-      MaterialApp(home: AcademicOverviewPage(repository: repository)),
+      localizedApp(home: AcademicOverviewPage(repository: repository)),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('grades'));
+    await tester.tap(find.text('Grades'));
     await tester.pumpAndSettle();
 
     expect(repository.loads, hasLength(2));
@@ -206,7 +208,7 @@ void main() {
       error: StateError('offline'),
     );
     await tester.pumpWidget(
-      MaterialApp(home: AcademicOverviewPage(repository: repository)),
+      localizedApp(home: AcademicOverviewPage(repository: repository)),
     );
     await tester.pumpAndSettle();
 
@@ -224,7 +226,7 @@ void main() {
   ) async {
     final repository = _FakeAcademicRepository(const []);
     await tester.pumpWidget(
-      MaterialApp(
+      localizedApp(
         home: AcademicOverviewPage(
           repository: repository,
           classroomId: '22222222-2222-4222-8222-222222222222',
@@ -234,7 +236,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('content'));
+    await tester.tap(find.text('Lessons'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('File text lesson note'));
     await tester.pumpAndSettle();
@@ -258,7 +260,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedApp(
         home: AcademicOverviewPage(
           repository: _FakeAcademicRepository(const []),
           teacherTools: true,
@@ -267,7 +269,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('content'));
+    await tester.tap(find.text('Lessons'));
     await tester.pumpAndSettle();
 
     final button = tester.widget<FilledButton>(

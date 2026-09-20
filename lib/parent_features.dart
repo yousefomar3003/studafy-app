@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'core/runtime_environment.dart';
 import 'core/studafy_design.dart';
+import 'core/language_picker.dart';
 import 'core/studafy_domain.dart';
 import 'core/studafy_localizations.dart';
 import 'student_linking.dart';

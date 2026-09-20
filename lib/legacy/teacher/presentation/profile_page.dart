@@ -443,8 +443,7 @@ class _ProfilePageState extends State<ProfilePage> {
     await showStudafyLanguagePicker(context);
     if (mounted) {
       setState(
-        () => language =
-            StudafyLocaleController.instance.locale.languageCode == 'ar'
+        () => language = Localizations.localeOf(context).languageCode == 'ar'
             ? 'العربية'
             : 'English',
       );

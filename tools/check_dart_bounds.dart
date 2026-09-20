@@ -44,6 +44,17 @@ const _coreAllowlist = <String>[
   'core/studafy_design.dart',
   'core/studafy_localizations.dart',
   'core/runtime_environment.dart',
+  // MOB-070 localization (ADR-0028). The generated localizations are the one
+  // source of interface copy, so every zone may read them; the port below is
+  // how the composition root injects device-scoped settings.
+  'l10n/generated/app_l10n.dart',
+  'core/device_settings.dart',
+  'core/locale_controller.dart',
+  'core/language_picker.dart',
+  // Renders text a person wrote, verbatim and in its own direction; every
+  // slice that shows user content needs it (ADR-0028).
+  'core/user_content_text.dart',
+  'core/studafy_formatting.dart',
 ];
 
 /// Data-layer-only imports: presentation and application may never touch
@@ -71,6 +82,9 @@ const _dataOnlyImports = <String>[
   'data/local_cache/offline_cache_store.dart',
   'data/local_cache/mutation_outbox_engine.dart',
   'data/local_cache/session_cache_binder.dart',
+  // MOB-070: the preference-store adapter. Presentation and application reach
+  // device settings through DeviceSettingsStore, never the plugin.
+  'data/settings/preferences_device_settings.dart',
 ];
 
 /// Provider/persistence symbols are forbidden even when a Dart `part` file

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'notifications_page.dart';
 import 'notifications_scope.dart';
+import '../../../core/studafy_formatting.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Unread-count badge over a bell icon, backed by the typed notifications
 /// interactor (MOB-070) instead of a direct SQLite call. Replaces the fake
@@ -24,10 +26,10 @@ class NotificationBadge extends StatelessWidget {
             0;
         return Badge(
           isLabelVisible: count > 0,
-          label: Text('$count'),
+          label: Text(studafyNumber(context, count)),
           backgroundColor: const Color(0xFFFF5D5D),
           child: IconButton(
-            tooltip: 'Notifications',
+            tooltip: AppL10n.of(context).dashNotifications,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(

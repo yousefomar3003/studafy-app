@@ -18,6 +18,10 @@ abstract final class AppBootstrap {
     if (policy.isSynthetic) {
       await StudafyDatabase.instance.database;
     }
-    return AppDependencies.forPolicy(policy);
+    final dependencies = AppDependencies.forPolicy(policy);
+    // Resolve the interface language before the first frame, so an Arabic
+    // user never sees the app paint in English and then flip (MOB-070).
+    await dependencies.locale.restore();
+    return dependencies;
   }
 }

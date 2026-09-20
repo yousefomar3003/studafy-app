@@ -17,7 +17,7 @@ class StudafyLogo extends StatelessWidget {
       Container(
         width: size * .56,
         height: size * .56,
-        margin: EdgeInsets.only(right: size * .05),
+        margin: EdgeInsetsDirectional.only(end: size * .05),
         decoration: BoxDecoration(
           color: studafyCyan.withValues(alpha: .14),
           borderRadius: BorderRadius.circular(size * .18),
@@ -168,3 +168,22 @@ class StudafyStatusCard extends StatelessWidget {
     ),
   );
 }
+
+/// Picks between a left-facing and a right-facing icon by the reading
+/// direction (MOB-070, ADR-0028).
+///
+/// Material mirrors `AppBar`'s automatic leading and `BackButton` for itself,
+/// but it does **not** mirror `Icons.chevron_right`, `Icons.arrow_forward` or
+/// `Icons.send`. In Arabic those point backwards unless chosen here.
+IconData directionalIcon(
+  BuildContext context, {
+  required IconData ltr,
+  required IconData rtl,
+}) => Directionality.of(context) == TextDirection.rtl ? rtl : ltr;
+
+/// The "go deeper" chevron on a row, pointing the way the reader reads.
+IconData forwardChevron(BuildContext context) => directionalIcon(
+  context,
+  ltr: Icons.chevron_right_rounded,
+  rtl: Icons.chevron_left_rounded,
+);

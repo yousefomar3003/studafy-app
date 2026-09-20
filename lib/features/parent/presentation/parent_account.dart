@@ -110,8 +110,7 @@ class _ParentAccountPageState extends State<ParentAccountPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      StudafyLocaleController.instance.locale.languageCode ==
-                              'ar'
+                      Localizations.localeOf(context).languageCode == 'ar'
                           ? 'العربية'
                           : 'English',
                       style: const TextStyle(color: _muted),

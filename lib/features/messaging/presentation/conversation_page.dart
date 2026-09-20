@@ -367,7 +367,7 @@ class _ConversationPageState extends State<ConversationPage> {
     top: false,
     child: Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 8, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

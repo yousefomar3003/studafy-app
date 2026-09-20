@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/studafy_localizations.dart';
+import '../../../core/language_picker.dart';
 import '../../../data/session_service.dart';
 import '../../../features/notifications/presentation/notification_badge.dart';
 import '../../../student_linking.dart';
@@ -252,7 +252,7 @@ class _StudentSettingsPageState extends State<StudentSettingsPage> {
                 onTap: () => showStudafyLanguagePicker(context),
                 title: const Text('Language'),
                 trailing: Text(
-                  StudafyLocaleController.instance.locale.languageCode == 'ar'
+                  Localizations.localeOf(context).languageCode == 'ar'
                       ? 'العربية'
                       : 'English',
                 ),

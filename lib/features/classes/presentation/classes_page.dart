@@ -6,6 +6,9 @@ import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
 import '../application/class_list_interactor.dart';
 import '../domain/classroom.dart';
+import '../../../core/studafy_formatting.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Typed teacher class list (ARC-011 classes slice).
 ///
@@ -67,10 +70,10 @@ class _ClassesPageState extends State<ClassesPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Flexible(
+                    Flexible(
                       child: Text(
-                        'My classes',
-                        style: TextStyle(
+                        AppL10n.of(context).classesTitle,
+                        style: const TextStyle(
                           color: studafyInk,
                           fontSize: 21,
                           fontWeight: FontWeight.w800,
@@ -81,7 +84,7 @@ class _ClassesPageState extends State<ClassesPage> {
                     FilledButton.icon(
                       onPressed: () => _createClass(context),
                       icon: const Icon(Icons.add),
-                      label: const Text('Create class'),
+                      label: Text(AppL10n.of(context).classesCreate),
                     ),
                   ],
                 ),
@@ -90,7 +93,7 @@ class _ClassesPageState extends State<ClassesPage> {
                   const Center(child: CircularProgressIndicator()),
                 if (result != null && result.isFailure)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsetsDirectional.only(bottom: 12),
                     child: Text(
                       result.fold(
                         onSuccess: (_) => '',
@@ -102,7 +105,7 @@ class _ClassesPageState extends State<ClassesPage> {
                 for (final classroom
                     in classrooms ?? const <ClassroomSummary>[])
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsetsDirectional.only(bottom: 12),
                     child: _ClassCard(
                       classroom: classroom,
                       onTap: () async {
@@ -130,24 +133,28 @@ class _ClassesPageState extends State<ClassesPage> {
     final sessions = <ClassSessionDraft>[
       ClassSessionDraft(weekday: 1, startTime: '08:00', endTime: '08:50'),
     ];
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final dayNames = studafyWeekdayNames(context);
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialog) => AlertDialog(
-          title: const Text('Create a new classroom'),
+          title: Text(AppL10n.of(dialogContext).classesCreateTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: name,
-                  decoration: const InputDecoration(labelText: 'Class name'),
+                  decoration: InputDecoration(
+                    labelText: AppL10n.of(dialogContext).classesNameLabel,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: room,
-                  decoration: const InputDecoration(labelText: 'Room'),
+                  decoration: InputDecoration(
+                    labelText: AppL10n.of(dialogContext).classesRoomLabel,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -155,12 +162,18 @@ class _ClassesPageState extends State<ClassesPage> {
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         initialValue: grade,
-                        decoration: const InputDecoration(labelText: 'Grade'),
+                        decoration: InputDecoration(
+                          labelText: AppL10n.of(dialogContext)
+                              .classesGradeLabel,
+                        ),
                         items: List.generate(
                           12,
                           (i) => DropdownMenuItem(
                             value: i + 1,
-                            child: Text('Grade ${i + 1}'),
+                            child: Text(
+                              AppL10n.of(dialogContext)
+                                  .classesGradeOption(i + 1),
+                            ),
                           ),
                         ),
                         onChanged: (v) => setDialog(() => grade = v!),
@@ -170,7 +183,10 @@ class _ClassesPageState extends State<ClassesPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: section,
-                        decoration: const InputDecoration(labelText: 'Section'),
+                        decoration: InputDecoration(
+                          labelText: AppL10n.of(dialogContext)
+                              .classesSectionLabel,
+                        ),
                         items: ['A', 'B', 'C', 'D']
                             .map(
                               (v) => DropdownMenuItem(value: v, child: Text(v)),
@@ -185,15 +201,17 @@ class _ClassesPageState extends State<ClassesPage> {
                 DropdownButtonFormField<int>(
                   isExpanded: true,
                   initialValue: weeklySessions,
-                  decoration: const InputDecoration(
-                    labelText: 'How many classes each week?',
-                    prefixIcon: Icon(Icons.event_repeat_rounded),
+                  decoration: InputDecoration(
+                    labelText: AppL10n.of(dialogContext).classesWeeklyLabel,
+                    prefixIcon: const Icon(Icons.event_repeat_rounded),
                   ),
                   items: List.generate(
                     14,
                     (i) => DropdownMenuItem(
                       value: i + 1,
-                      child: Text('${i + 1} ${i == 0 ? 'class' : 'classes'}'),
+                      child: Text(
+                        AppL10n.of(dialogContext).classesWeeklyOption(i + 1),
+                      ),
                     ),
                   ),
                   onChanged: (value) => setDialog(() {
@@ -213,17 +231,17 @@ class _ClassesPageState extends State<ClassesPage> {
                   }),
                 ),
                 const SizedBox(height: 18),
-                const Align(
-                  alignment: Alignment.centerLeft,
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
-                    'Choose the day and time for every class',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                    AppL10n.of(dialogContext).classesChooseTimes,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
                 const SizedBox(height: 8),
                 for (var i = 0; i < sessions.length; i++)
                   Container(
-                    margin: const EdgeInsets.only(bottom: 10),
+                    margin: const EdgeInsetsDirectional.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: [
@@ -239,7 +257,7 @@ class _ClassesPageState extends State<ClassesPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Class ${i + 1}',
+                          AppL10n.of(dialogContext).classesSessionNumber(i + 1),
                           style: const TextStyle(
                             color: studafyInk,
                             fontWeight: FontWeight.w800,
@@ -248,7 +266,10 @@ class _ClassesPageState extends State<ClassesPage> {
                         const SizedBox(height: 8),
                         DropdownButtonFormField<int>(
                           initialValue: sessions[i].weekday,
-                          decoration: const InputDecoration(labelText: 'Day'),
+                          decoration: InputDecoration(
+                            labelText: AppL10n.of(dialogContext)
+                                .classesDayLabel,
+                          ),
                           items: List.generate(
                             7,
                             (day) => DropdownMenuItem(
@@ -289,9 +310,11 @@ class _ClassesPageState extends State<ClassesPage> {
                                 child: Text(sessions[i].startTime),
                               ),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 6),
-                              child: Text('to'),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              child: Text(AppL10n.of(dialogContext).classesTo),
                             ),
                             Expanded(
                               child: OutlinedButton(
@@ -326,7 +349,7 @@ class _ClassesPageState extends State<ClassesPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: Text(AppL10n.of(dialogContext).classesCancel),
             ),
             FilledButton(
               onPressed: () async {
@@ -355,7 +378,7 @@ class _ClassesPageState extends State<ClassesPage> {
                     }
                 }
               },
-              child: const Text('Create classroom'),
+              child: Text(AppL10n.of(dialogContext).classesCreateAction),
             ),
           ],
         ),
@@ -386,14 +409,12 @@ class _ClassesPageState extends State<ClassesPage> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Invite students'),
+        title: Text(AppL10n.of(dialogContext).classesInviteTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Share this secure link. Students are added only after they open it and join the class.',
-            ),
+            Text(AppL10n.of(dialogContext).classesInviteBody),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(14),
@@ -417,19 +438,25 @@ class _ClassesPageState extends State<ClassesPage> {
               await Clipboard.setData(ClipboardData(text: link));
               if (dialogContext.mounted) {
                 ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(content: Text('Invite link copied.')),
+                  SnackBar(
+                    content: Text(
+                      AppL10n.of(dialogContext).classesInviteCopied,
+                    ),
+                  ),
                 );
               }
             },
             icon: const Icon(Icons.copy),
-            label: const Text('Copy'),
+            label: Text(AppL10n.of(dialogContext).classesCopy),
           ),
           FilledButton.icon(
             onPressed: () => SharePlus.instance.share(
-              ShareParams(text: 'Join my Studafy class: $link'),
+              ShareParams(
+                text: AppL10n.of(dialogContext).classesShareMessage(link),
+              ),
             ),
             icon: const Icon(Icons.ios_share),
-            label: const Text('Share link'),
+            label: Text(AppL10n.of(dialogContext).classesShareLink),
           ),
         ],
       ),
@@ -451,11 +478,12 @@ class _ClassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tint = Color(classroom.colorValue ?? 0xFF241D73);
+    final l10n = AppL10n.of(context);
     final detail = [
-      '${classroom.studentCount} students',
+      l10n.classesStudentCount(classroom.studentCount),
       if (classroom.weeklySessions != null)
-        '${classroom.weeklySessions} classes/week',
-      classroom.room ?? 'TBD',
+        l10n.classesPerWeek(classroom.weeklySessions!),
+      classroom.room ?? l10n.classesRoomTbd,
     ].join(' · ');
     return FeatureCard(
       tint: tint,
@@ -475,7 +503,8 @@ class _ClassCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                // The teacher named this class; it shows as they wrote it.
+                UserContentText(
                   classroom.name,
                   style: const TextStyle(
                     color: studafyInk,
@@ -484,7 +513,10 @@ class _ClassCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Grade ${classroom.grade} · Section ${classroom.section}',
+                  l10n.classesGradeSection(
+                    classroom.grade.toString(),
+                    classroom.section,
+                  ),
                   style: const TextStyle(color: studafyMuted),
                 ),
                 Text(
@@ -498,7 +530,7 @@ class _ClassCard extends StatelessWidget {
             onPressed: onInvite,
             icon: const Icon(Icons.person_add_alt_1_outlined),
           ),
-          const Icon(Icons.chevron_right, color: studafyMuted),
+          Icon(forwardChevron(context), color: studafyMuted),
         ],
       ),
     );
@@ -511,7 +543,7 @@ class _ClassesTitleHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     color: Colors.white,
-    padding: const EdgeInsets.fromLTRB(20, 12, 16, 14),
+    padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 16, 14),
     child: SafeArea(
       bottom: false,
       child: Row(

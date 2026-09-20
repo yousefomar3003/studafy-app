@@ -13,6 +13,7 @@ import 'package:studafy/features/notifications/application/notifications_interac
 import 'package:studafy/features/notifications/domain/notification.dart';
 import 'package:studafy/features/notifications/domain/notifications_repository.dart';
 import 'package:studafy/features/notifications/presentation/notifications_scope.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// The teacher home in real builds must show the signed-in teacher's own
 /// classes, never the demo greeting, lessons or student names.
@@ -66,6 +67,7 @@ void main() {
       MaterialApp(
         supportedLocales: StudafyLocalizations.supportedLocales,
         localizationsDelegates: const [
+          AppL10n.delegate,
           StudafyLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

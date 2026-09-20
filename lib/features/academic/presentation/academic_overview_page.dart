@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../domain/academic_repository.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;
@@ -55,7 +57,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Academic workspace'),
+      title: Text(AppL10n.of(context).academicTitle),
       actions: widget.actions,
     ),
     body: Column(
@@ -70,7 +72,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: ChoiceChip(
-                    label: Text(value.name),
+                    label: Text(_feedLabel(AppL10n.of(context), value)),
                     selected: feed == value,
                     onSelected: (_) => setState(() {
                       feed = value;
@@ -93,7 +95,9 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               }
               final items = snapshot.data ?? const <AcademicRecord>[];
               if (items.isEmpty) {
-                return const Center(child: Text('No records yet.'));
+                return Center(
+                  child: Text(AppL10n.of(context).academicNoRecords),
+                );
               }
               return RefreshIndicator(
                 onRefresh: () async => _refresh(),
@@ -101,9 +105,11 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final item = items[index];
+                    // Titles and details are school-authored content, so
+                    // they render verbatim in their own direction.
                     return ListTile(
-                      title: Text(item.title),
-                      subtitle: Text(item.detail),
+                      title: UserContentText(item.title),
+                      subtitle: UserContentText(item.detail),
                       trailing: Chip(label: Text(item.state)),
                     );
                   },
@@ -119,7 +125,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               child: FilledButton.icon(
                 onPressed: widget.classroomId == null ? null : _fileNote,
                 icon: const Icon(Icons.note_add_outlined),
-                label: const Text('File text lesson note'),
+                label: Text(AppL10n.of(context).academicFileNote),
               ),
             ),
           ),
@@ -135,21 +141,25 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Text lesson note'),
+          title: Text(AppL10n.of(context).academicNoteTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: title,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(
+                  labelText: AppL10n.of(context).academicNoteTitleLabel,
+                ),
               ),
               TextField(
                 controller: body,
                 maxLines: 5,
-                decoration: const InputDecoration(labelText: 'Note'),
+                decoration: InputDecoration(
+                  labelText: AppL10n.of(context).academicNoteBodyLabel,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text('Attachments are unavailable until FILE-050/051.'),
+              Text(AppL10n.of(context).academicAttachmentsUnavailable),
               if (error != null)
                 Text(error!, style: const TextStyle(color: Colors.red)),
             ],
@@ -157,7 +167,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text(AppL10n.of(context).academicCancel),
             ),
             FilledButton(
               onPressed: () async {
@@ -174,12 +184,11 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                   _refresh();
                 } catch (_) {
                   setDialogState(
-                    () => error =
-                        'Not saved. Your text is kept here so you can retry.',
+                    () => error = AppL10n.of(context).academicNoteNotSaved,
                   );
                 }
               },
-              child: const Text('Save to school'),
+              child: Text(AppL10n.of(context).academicSaveToSchool),
             ),
           ],
         ),
@@ -197,10 +206,24 @@ class _Unavailable extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('School data is unavailable. No local copy was saved.'),
+        Text(AppL10n.of(context).academicUnavailable),
         const SizedBox(height: 12),
-        OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+        OutlinedButton(
+          onPressed: onRetry,
+          child: Text(AppL10n.of(context).academicRetry),
+        ),
       ],
     ),
   );
 }
+
+/// The reader's name for a feed tab. The enum names are the app's vocabulary,
+/// never the user's.
+String _feedLabel(AppL10n l10n, AcademicFeed feed) => switch (feed) {
+  AcademicFeed.content => l10n.feedContent,
+  AcademicFeed.assignments => l10n.feedAssignments,
+  AcademicFeed.assessments => l10n.feedAssessments,
+  AcademicFeed.grades => l10n.feedGrades,
+  AcademicFeed.attendance => l10n.feedAttendance,
+  AcademicFeed.wellbeing => l10n.feedWellbeing,
+};

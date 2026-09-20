@@ -9,6 +9,7 @@ import 'package:studafy/features/notifications/domain/notification.dart';
 import 'package:studafy/features/notifications/domain/notifications_repository.dart';
 import 'package:studafy/features/notifications/presentation/notifications_page.dart';
 import 'package:studafy/features/notifications/presentation/notifications_scope.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// MOB-070 slice 1: proves the presentation layer never sees a transport
 /// map (every rendered string comes from a typed [NotificationItem]) and
@@ -21,6 +22,7 @@ void main() {
     locale: locale,
     supportedLocales: StudafyLocalizations.supportedLocales,
     localizationsDelegates: const [
+      AppL10n.delegate,
       StudafyLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,

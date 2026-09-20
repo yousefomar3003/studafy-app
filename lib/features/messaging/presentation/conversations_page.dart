@@ -130,7 +130,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 96),
                 children: [
                   if (!_enabled)
                     StudafyStatusCard(

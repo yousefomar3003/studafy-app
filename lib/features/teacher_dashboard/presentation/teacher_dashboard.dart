@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/studafy_design.dart';
 import '../domain/teacher_dashboard_repository.dart';
 import 'teacher_dashboard_repository_scope.dart';
+import '../../../core/studafy_formatting.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 part 'teacher_dashboard_components.dart';
 part 'teacher_dashboard_dialogs.dart';
@@ -37,7 +40,7 @@ class TeacherHeader extends StatelessWidget {
   @override
   Widget build(BuildContext c) => Container(
     color: Colors.white,
-    padding: const EdgeInsets.fromLTRB(20, 12, 16, 14),
+    padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 16, 14),
     child: SafeArea(
       bottom: false,
       child: Row(
@@ -53,7 +56,7 @@ class TeacherHeader extends StatelessWidget {
             ),
           ),
           Badge(
-            label: const Text('3'),
+            label: Text(studafyNumber(c, 3)),
             child: IconButton(
               onPressed: actions.openChats,
               icon: const Icon(Icons.chat_bubble_outline),
@@ -65,9 +68,9 @@ class TeacherHeader extends StatelessWidget {
             builder: (context, snapshot) => Badge(
               isLabelVisible: (snapshot.data ?? 0) > 0,
               backgroundColor: Colors.red,
-              label: Text('${snapshot.data ?? 0}'),
+              label: Text(studafyNumber(context, snapshot.data ?? 0)),
               child: IconButton(
-                tooltip: 'Notifications',
+                tooltip: AppL10n.of(context).dashNotifications,
                 onPressed: actions.openNotifications,
                 icon: const Icon(Icons.notifications_none),
               ),
@@ -127,7 +130,7 @@ class _TeacherHomeState extends State<TeacherHome> {
               parent: BouncingScrollPhysics(),
             ),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 48),
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 48),
             children: [
               Row(
                 children: [

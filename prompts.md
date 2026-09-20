@@ -337,8 +337,13 @@ Key requirements:
 - Eliminate hard-coded identities and the fake QR linking path.
 - Replace hard-coded parent/student account emails with authenticated profile
   data.
-- Complete English/Arabic localization and RTL. Prove VoiceOver/TalkBack,
-  dynamic text, contrast, focus order and touch targets on supported devices.
+- English/Arabic localization and RTL are done for the real-build surface
+  (ADR-0028/DL-055): copy is in lib/l10n/*.arb, the chosen language persists
+  and follows the device, and it reaches profiles.locale so email and push
+  match. Still open: a native-speaker review of the Arabic, the legacy and
+  synthetic-parent screens (deliberately still English until those modules
+  are removed), and VoiceOver/TalkBack, dynamic text, contrast, focus order
+  and touch targets on supported devices.
 - Implement claimed HTTPS deep links, notification navigation and safe
   background/termination recovery within platform limits.
 - Respect the existing analyzer boundary rules (bun run check:bounds).
