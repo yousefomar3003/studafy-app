@@ -167,7 +167,16 @@ async function drainBacklog(
       select private.api061_outbox_backlog() as backlog
     `;
     const backlog = rows[0]!.backlog;
-    if ((backlog.pending ?? 0) === 0 && (backlog.retry ?? 0) === 0) {
+    // `processing` matters as much as `pending`. Dispatching only *claims* a
+    // row and enqueues its job; the worker finishes it afterwards. Returning
+    // as soon as nothing was left pending meant callers could assert on rows
+    // the queue had not finished yet, which made this drain pass by timing
+    // rather than by construction.
+    if (
+      (backlog.pending ?? 0) === 0 &&
+      (backlog.retry ?? 0) === 0 &&
+      (backlog.processing ?? 0) === 0
+    ) {
       return backlog;
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -242,7 +251,16 @@ suite("OPS-061 notifications queue", () => {
     "failover: two concurrent processors of the same job still apply it once",
     async () => {
       const id = await seedAudienceRow("ops061-failover", { schoolId: SCHOOL });
-      await runtime.runDispatchOnce();
+      // Claim the row without going through the dispatcher. The dispatcher
+      // would also enqueue a job, and the shared runtime worker consumes that
+      // queue, so it could finish the row before the claim below is read —
+      // the same hazard the crash-mid-job test avoids with a scratch queue.
+      // Claiming is the only half this test needs: the failover shape it
+      // exercises is the two concurrent finishes, which never touch the queue.
+      const claimed = await sql<{ jobs: { outboxId: number }[] }[]>`
+        select private.api061_claim_outbox_dispatch(${WORKER}, 50) as jobs
+      `;
+      expect(claimed[0]!.jobs.some((j) => j.outboxId === id)).toBe(true);
       expect(await rowState(id)).toBe("processing");
       // Two worker instances re-run the finish concurrently (the shape a
       // failover produces); the deliveries unique constraint serializes them.
