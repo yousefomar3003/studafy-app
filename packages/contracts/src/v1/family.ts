@@ -4,6 +4,7 @@ const Id = z.string().uuid();
 
 export const V1LocateStudentRequest = z.strictObject({
   studafyId: z.string().trim().min(1).max(40),
+  captchaToken: z.string().min(1).max(2048).optional(),
 });
 export type V1LocateStudentRequest = z.infer<typeof V1LocateStudentRequest>;
 
@@ -67,3 +68,23 @@ export const V1MyGuardianLinksResponse = z.strictObject({
 export type V1MyGuardianLinksResponse = z.infer<
   typeof V1MyGuardianLinksResponse
 >;
+
+/** Only the authenticated student can read or decide these requests. */
+export const V1StudentFamily = z.strictObject({
+  studentIds: z.array(
+    z.strictObject({ id: Id, studafyId: z.string(), displayName: z.string() }),
+  ),
+  requests: z.array(
+    z.strictObject({
+      id: Id,
+      guardianId: Id,
+      guardianName: z.string(),
+      studentId: Id,
+      relationship: z.string().nullable(),
+      status: z.enum(["pending", "verified", "declined", "revoked"]),
+    }),
+  ),
+});
+export const V1DecideGuardianLinkRequest = z.strictObject({
+  decision: z.enum(["approve", "decline", "revoke"]),
+});

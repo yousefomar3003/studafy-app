@@ -193,4 +193,12 @@ class _FakeRepository implements NotificationsRepository {
 
   @override
   Future<void> syncPending() async {}
+
+  @override
+  Future<List<NotificationPreference>> preferences() async => const [];
+
+  @override
+  Future<NotificationPreference> updatePreference(
+    NotificationPreference preference,
+  ) async => preference;
 }

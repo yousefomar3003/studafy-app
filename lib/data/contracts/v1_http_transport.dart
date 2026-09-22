@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import '../../core/failures.dart';
 import 'v1_client.generated.dart';
 
 /// Raised when the API refuses a request. [code] is the stable machine code
 /// from the error envelope; the message is safe to show but deliberately
 /// uninformative about why authentication failed.
-class V1ApiException implements Exception {
+class V1ApiException implements Exception, FailureConvertible {
   const V1ApiException({
     required this.status,
     required this.code,
@@ -24,6 +25,26 @@ class V1ApiException implements Exception {
   bool get isUnauthenticated => code == 'UNAUTHENTICATED';
   bool get isReauthRequired => code == 'REAUTH_REQUIRED';
   bool get isMfaRequired => code == 'MFA_REQUIRED';
+
+  /// Places the refusal in the shared taxonomy.
+  ///
+  /// Without this every refusal reached the user as `UNKNOWN`, which named
+  /// neither the cause nor the fix. The envelope's own message is not shown:
+  /// it describes the request, while the taxonomy speaks to the person.
+  @override
+  Failure get failure => switch (status) {
+    401 => Failure.unauthorized,
+    403 => Failure.forbidden,
+    404 => Failure.notFound,
+    // A refused request is the client's to correct, so it is reported as
+    // such rather than as an unexplained error.
+    400 || 409 || 413 || 415 || 422 => const Failure.validation(
+      'Studafy could not complete that request. Please check the details '
+      'and try again.',
+    ),
+    429 || 503 || 504 => Failure.network,
+    _ => Failure.unknown,
+  };
 
   @override
   String toString() => 'V1ApiException($status $code)';
@@ -125,6 +146,27 @@ class V1HttpTransport implements V1JsonTransport {
   }
 
   Future<_RawResponse> _attempt(
+    String method,
+    String path,
+    Map<String, Object?>? body,
+    String? reauthGrant,
+    String? idempotencyKey,
+  ) async {
+    try {
+      return await _exchange(method, path, body, reauthGrant, idempotencyKey);
+    } on SocketException {
+      throw Failure.network;
+    } on TimeoutException {
+      throw Failure.network;
+    } on HttpException {
+      throw Failure.network;
+    }
+  }
+
+  /// Performs one request/response exchange. A transport-level failure here
+  /// means the school system was unreachable, which [_attempt] reports as
+  /// such rather than letting it surface as an unexplained error.
+  Future<_RawResponse> _exchange(
     String method,
     String path,
     Map<String, Object?>? body,

@@ -489,7 +489,7 @@ select is(private.api042_query('getContentControls', :'school_id', '{}'::jsonb)-
   'strict', 'default filter level is strict');
 -- The seed school opted in to messaging (DL-049), so the default is proven
 -- on the second seed school, which never did.
-select is(private.school_messaging_enabled('22222222-2222-2222-2222-222222222222'),
+select is(private.school_messaging_enabled('22222222-2222-4222-8222-222222222222'),
   false, 'messaging starts disabled by default');
 select is(private.api042_query('getContentControls', :'school_id', '{}'::jsonb)->>'version',
   '1', 'baseline controls version 1');

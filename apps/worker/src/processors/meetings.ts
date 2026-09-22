@@ -55,7 +55,7 @@ export function startMeetingProcessor(
     });
   };
 
-  const runOnce = async (): Promise<number> => {
+  const processBatch = async (): Promise<number> => {
     if (closed) return 0;
     const rows = await sql<{ jobs: MeetingJob[] }[]>`
       select private.meeting_claim(5) as jobs
@@ -94,14 +94,19 @@ export function startMeetingProcessor(
     return jobs.length;
   };
 
+  // Startup polling and explicit drains must share the same in-flight batch.
+  // Otherwise runOnce can resolve while the startup poll still owns leased jobs.
+  const runOnce = (): Promise<number> => {
+    if (closed) return Promise.resolve(0);
+    running ??= processBatch().finally(() => running = null);
+    return running;
+  };
   const tick = () => {
-    if (running) return;
-    running = runOnce().catch((error) => {
+    void runOnce().catch((error) => {
       logger.error("meeting_poll_failed", {
         error_name: error instanceof Error ? error.name : "unknown",
       });
-      return 0;
-    }).finally(() => running = null);
+    });
   };
   const timer = setInterval(tick, intervalMs);
   tick();

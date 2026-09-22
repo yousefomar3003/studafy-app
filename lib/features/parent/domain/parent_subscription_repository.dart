@@ -24,6 +24,14 @@ class PaywallOffer {
   /// paywall must still render (restore/cancel disclosures) but cannot show a
   /// price it has not verified with the store.
   final bool storeAvailable;
+
+  /// Never offer checkout before the store has supplied complete terms.
+  bool get canPurchase =>
+      storeAvailable &&
+      storeProductId.trim().isNotEmpty &&
+      price.trim().isNotEmpty &&
+      currencyCode.trim().isNotEmpty &&
+      periodLabel.trim().isNotEmpty;
   final String price;
   final String currencyCode;
 

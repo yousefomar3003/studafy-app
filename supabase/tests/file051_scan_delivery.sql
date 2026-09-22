@@ -6,8 +6,8 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select plan(99);
 
-\set school_id '11111111-1111-1111-1111-111111111111'
-\set other_school_id '22222222-2222-2222-2222-222222222222'
+\set school_id '11111111-1111-4111-8111-111111111111'
+\set other_school_id '22222222-2222-4222-8222-222222222222'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
 \set other_school_user 'eeee0000-0000-4000-8000-000000000005'
 \set unassigned_teacher_user 'ffff0000-0000-4000-8000-000000000005'

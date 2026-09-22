@@ -84,7 +84,8 @@ class ApiSessionRepository implements SessionRepository {
   @override
   bool supportsProvider(LoginProvider provider) {
     if (provider != LoginProvider.apple) return true;
-    return _isApplePlatform;
+    return _isApplePlatform &&
+        const bool.fromEnvironment('APPLE_SIGN_IN_ENABLED');
   }
 
   /// Guarded so widget tests, which run on the host platform, can construct
@@ -105,10 +106,13 @@ class ApiSessionRepository implements SessionRepository {
     }
     // The owned HTTPS callback is preferred; the custom scheme remains
     // registered as a fallback while domain verification is outstanding.
-    await _auth.auth.signInWithOAuth(
+    final launched = await _auth.auth.signInWithOAuth(
       _providerFor(provider),
       redirectTo: 'io.studafy.app://login-callback',
+      // Supabase needs Azure's email claim to establish the identity.
+      scopes: provider == LoginProvider.microsoft ? 'email' : null,
     );
+    if (!launched) throw StateError('Could not open the sign-in browser.');
   }
 
   /// Native Sign in with Apple (Apple guideline 4.8).
@@ -348,10 +352,10 @@ class ApiSessionRepository implements SessionRepository {
 
   /// Maps a server role onto the client's role vocabulary.
   ///
-  /// `school_admin` has no client shell, so an admin membership is dropped
-  /// from the client's role list rather than being coerced into `teacher`.
-  /// Administrative authority is exercised server-side, never inferred here.
+  /// Authority remains server-derived; this maps the signed membership onto
+  /// its matching client shell without widening any permissions locally.
   static StudafyRole? _roleFor(String role) => switch (role) {
+    'school_admin' => null, // Not a mobile role in the MVP.
     'teacher' => StudafyRole.teacher,
     'parent' || 'guardian' => StudafyRole.parent,
     'student' => StudafyRole.student,

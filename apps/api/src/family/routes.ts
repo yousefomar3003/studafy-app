@@ -1,4 +1,4 @@
-import type { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import type {
   AuthorizationDependencies,
@@ -6,10 +6,13 @@ import type {
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
 import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import type { TurnstileOptions } from "../turnstile/verification";
+import { requireStudentLookupChallenge } from "../turnstile/middleware";
 import type { FamilyRepository } from "./repository";
 
 export interface FamilyDependencies {
   repository: FamilyRepository;
+  turnstile?: TurnstileOptions;
   cursorSigningKey: string;
   enabledSlices?: Partial<Record<FamilySlice, boolean>>;
 }
@@ -38,9 +41,39 @@ export function createFamilyRoutes(
   authorization: AuthorizationDependencies,
   idempotencyDependencies: IdempotencyDependencies,
 ): Hono<AuthorizationEnv> {
+  const router = new Hono<AuthorizationEnv>();
+  if (deps.turnstile) {
+    router.use(
+      "/v1/students/locate",
+      requireStudentLookupChallenge(deps.turnstile),
+    );
+  }
+  router.route(
+    "/",
+    createCatalogueRoutes(
+      {
+        routes: FAMILY_ROUTES,
+        repository: deps.repository,
+        cursorSigningKey: deps.cursorSigningKey,
+        selector,
+        sliceFor,
+        enabledSlices: deps.enabledSlices,
+      },
+      authorization,
+      idempotencyDependencies,
+    ),
+  );
+  return router;
+}
+
+export function createFamilyReadRoutes(
+  deps: FamilyDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
   return createCatalogueRoutes(
     {
-      routes: FAMILY_ROUTES,
+      routes: FAMILY_READ_ROUTES,
       repository: deps.repository,
       cursorSigningKey: deps.cursorSigningKey,
       selector,
@@ -52,14 +85,16 @@ export function createFamilyRoutes(
   );
 }
 
-export function createFamilyReadRoutes(
+export function createStudentFamilyRoutes(
   deps: FamilyDependencies,
   authorization: AuthorizationDependencies,
   idempotencyDependencies: IdempotencyDependencies,
 ): Hono<AuthorizationEnv> {
   return createCatalogueRoutes(
     {
-      routes: FAMILY_READ_ROUTES,
+      routes: V1_ROUTE_CATALOGUE.filter((route) =>
+        ["getStudentFamily", "decideGuardianLink"].includes(route.operationId)
+      ),
       repository: deps.repository,
       cursorSigningKey: deps.cursorSigningKey,
       selector,

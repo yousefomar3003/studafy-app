@@ -34,6 +34,23 @@ class PreviewNotificationsRepository implements NotificationsRepository {
       ];
 
   final List<NotificationItem> _items;
+  final List<NotificationPreference> _preferences = [
+    const NotificationPreference(
+      channel: 'in_app',
+      category: 'academic',
+      enabled: true,
+    ),
+    const NotificationPreference(
+      channel: 'push',
+      category: 'academic',
+      enabled: true,
+    ),
+    const NotificationPreference(
+      channel: 'email',
+      category: 'communications',
+      enabled: true,
+    ),
+  ];
 
   @override
   Future<NotificationPage> list({String? cursor, int pageSize = 20}) async =>
@@ -60,4 +77,26 @@ class PreviewNotificationsRepository implements NotificationsRepository {
 
   @override
   Future<void> syncPending() async {}
+
+  @override
+  Future<List<NotificationPreference>> preferences() async =>
+      List.of(_preferences);
+
+  @override
+  Future<NotificationPreference> updatePreference(
+    NotificationPreference preference,
+  ) async {
+    final index = _preferences.indexWhere(
+      (item) =>
+          item.schoolId == preference.schoolId &&
+          item.channel == preference.channel &&
+          item.category == preference.category,
+    );
+    if (index == -1) {
+      _preferences.add(preference);
+    } else {
+      _preferences[index] = preference;
+    }
+    return preference;
+  }
 }

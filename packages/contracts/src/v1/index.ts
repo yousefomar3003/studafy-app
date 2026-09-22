@@ -88,3 +88,17 @@ export * from "./supportAccess";
 export * from "./safety";
 export * from "./files";
 export * from "./billing";
+export {
+  V1ClassJoinLink,
+  type V1ClassJoinLink as V1ClassJoinLinkType,
+  V1CreateClassJoinLinkRequest,
+  type V1CreateClassJoinLinkRequest as V1CreateClassJoinLinkRequestType,
+  V1CreateClassJoinLinkResponse,
+  type V1CreateClassJoinLinkResponse as V1CreateClassJoinLinkResponseType,
+  V1RedeemClassJoinLinkRequest,
+  type V1RedeemClassJoinLinkRequest as V1RedeemClassJoinLinkRequestType,
+  V1RedeemClassJoinLinkResponse,
+  type V1RedeemClassJoinLinkResponse as V1RedeemClassJoinLinkResponseType,
+  V1RevokeClassJoinLinkRequest,
+  type V1RevokeClassJoinLinkRequest as V1RevokeClassJoinLinkRequestType,
+} from "./classJoinLinks";

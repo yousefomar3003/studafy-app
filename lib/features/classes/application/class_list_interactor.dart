@@ -28,6 +28,28 @@ class ClassListInteractor {
   }
 
   Future<Result<String>> inviteLinkFor(ClassroomId id) {
-    return runCatching(() => repository.inviteLinkFor(id));
+    return runCatching(() async {
+      final link = await repository.inviteLinkFor(id);
+      telemetry.event('class_join_link_created');
+      return link;
+    });
+  }
+
+  Future<Result<ClassJoinLinkInfo?>> activeJoinLink(String classroomId) =>
+      runCatching(() => repository.activeJoinLink(classroomId));
+
+  Future<Result<void>> revokeJoinLink(String linkId) => runCatching(() async {
+    await repository.revokeJoinLink(linkId);
+    telemetry.event('class_join_link_revoked');
+  });
+
+  /// Redeems a shared class link. The caller is not a member yet, so this is
+  /// the one call here that does not presuppose a school.
+  Future<Result<JoinedClass>> joinWithLink(String token) {
+    return runCatching(() async {
+      final joined = await repository.joinWithLink(token);
+      telemetry.event('class_joined_via_link');
+      return joined;
+    });
   }
 }

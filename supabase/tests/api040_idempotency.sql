@@ -1,7 +1,7 @@
 -- API-040 durable idempotency, least-privilege, and lease assertions.
 -- Requires the deterministic DB-021 fixture (use api040_idempotency_seed.sql).
 
-\set school_id '11111111-1111-1111-1111-111111111111'
+\set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
 \set other_school_user 'eeee0000-0000-4000-8000-000000000005'
 

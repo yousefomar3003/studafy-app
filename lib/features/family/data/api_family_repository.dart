@@ -27,7 +27,10 @@ Future<T> _guard<T>(Future<T> Function() action) async {
 /// Authoritative `/v1` family reads and link requests for a guardian, plus
 /// the guardian side of purchase approvals.
 class ApiFamilyRepository
-    implements FamilyRepository, PurchaseApprovalRepository {
+    implements
+        FamilyRepository,
+        PurchaseApprovalRepository,
+        StudentFamilyRepository {
   ApiFamilyRepository(this._client, {V1BillingApi? billing})
     // ignore: prefer_initializing_formals
     : _billing = billing;
@@ -65,15 +68,19 @@ class ApiFamilyRepository
   });
 
   @override
-  Future<LocatedStudent?> locate(String studafyId) => _guard(() async {
-    final response = await _client.locateStudent(
-      V1LocateStudentRequestDto(studafyId: studafyId),
-    );
-    final id = response.studentId;
-    final name = response.displayName;
-    if (!response.found || id == null || name == null) return null;
-    return LocatedStudent(studentId: id, displayName: name);
-  });
+  Future<LocatedStudent?> locate(String studafyId, {String? captchaToken}) =>
+      _guard(() async {
+        final response = await _client.locateStudent(
+          V1LocateStudentRequestDto(
+            studafyId: studafyId,
+            captchaToken: captchaToken,
+          ),
+        );
+        final id = response.studentId;
+        final name = response.displayName;
+        if (!response.found || id == null || name == null) return null;
+        return LocatedStudent(studentId: id, displayName: name);
+      });
 
   @override
   Future<GuardianChild> requestLink(String studentId, {String? relationship}) =>
@@ -184,6 +191,37 @@ class ApiFamilyRepository
           approvalId: approvalId,
           approve: approve,
           idempotencyKey: 'approval:$approvalId:$approve',
+        );
+      });
+  @override
+  Future<StudentFamily> studentFamily() => _guard(() async {
+    final value = await _client.getStudentFamily();
+    return StudentFamily(
+      identities: [
+        for (final item in value.studentIds)
+          StudentIdentity(
+            id: item['id'] as String,
+            studafyId: item['studafyId'] as String,
+            name: item['displayName'] as String,
+          ),
+      ],
+      requests: [
+        for (final item in value.requests)
+          StudentGuardianRequest(
+            id: item['id'] as String,
+            guardianId: item['guardianId'] as String,
+            guardianName: item['guardianName'] as String,
+            status: guardianLinkStatusFromWire(item['status'] as String),
+          ),
+      ],
+    );
+  });
+  @override
+  Future<void> decideGuardian(String linkId, String decision) =>
+      _guard(() async {
+        await _client.decideGuardianLink(
+          V1DecideGuardianLinkRequestDto(decision: decision),
+          guardianLinkId: linkId,
         );
       });
 }

@@ -29,10 +29,7 @@ class _ParentShellState extends State<ParentShell> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      StudafyRuntime.policy.requiresRemoteBackend
-      ? _remote(context)
-      : _synthetic(context);
+  Widget build(BuildContext context) => _remote(context);
 
   /// Real builds: every tab is on authoritative /v1 data. Paid Insights+
   /// stays out until its legal sign-off (§29); free progress lives on each
@@ -77,56 +74,6 @@ class _ParentShellState extends State<ParentShell> {
           StudafyLocalizations.of(context).text('learning'),
           Icons.menu_book_outlined,
           Icons.menu_book_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(context).text('updates'),
-          Icons.notifications_outlined,
-          Icons.notifications_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(context).text('messages'),
-          Icons.forum_outlined,
-          Icons.forum_rounded,
-        ),
-      ],
-      accent: _navy,
-    ),
-  );
-
-  /// The synthetic demo keeps the legacy screens on preview data.
-  Widget _synthetic(BuildContext context) => Scaffold(
-    body: IndexedStack(
-      index: index,
-      children: [
-        ParentHomePage(key: homeKey),
-        AcademicOverviewPage(
-          repository: widget.academic,
-          studentId: ActiveContextController.instance.selectedStudent?.id,
-          initialFeed: AcademicFeed.grades,
-        ),
-        const ParentInsightsPage(),
-        const ParentMessagesPage(initialTab: 1, updatesOnly: true),
-        const ParentMessagesPage(),
-      ],
-    ),
-    bottomNavigationBar: StudafyNavigationBar(
-      selectedIndex: index,
-      onSelected: (value) => setState(() => index = value),
-      items: [
-        StudafyNavItem(
-          StudafyLocalizations.of(context).text('today'),
-          Icons.home_outlined,
-          Icons.home_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(context).text('learning'),
-          Icons.menu_book_outlined,
-          Icons.menu_book_rounded,
-        ),
-        StudafyNavItem(
-          StudafyLocalizations.of(context).text('insights'),
-          Icons.query_stats_outlined,
-          Icons.query_stats_rounded,
         ),
         StudafyNavItem(
           StudafyLocalizations.of(context).text('updates'),

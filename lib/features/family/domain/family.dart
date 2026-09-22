@@ -31,7 +31,9 @@ class GuardianChild {
   final GuardianLinkStatus status;
   final DateTime? expiresAt;
 
-  bool get isVerified => status == GuardianLinkStatus.verified;
+  bool get isVerified =>
+      status == GuardianLinkStatus.verified &&
+      (expiresAt == null || expiresAt!.isAfter(DateTime.now()));
 }
 
 /// The uniform answer to "who has this Studafy ID?". Not found and found
@@ -100,7 +102,7 @@ abstract interface class FamilyRepository {
   Future<List<GuardianChild>> children();
 
   /// Null when no student has that Studafy ID.
-  Future<LocatedStudent?> locate(String studafyId);
+  Future<LocatedStudent?> locate(String studafyId, {String? captchaToken});
 
   Future<GuardianChild> requestLink(String studentId, {String? relationship});
 
@@ -113,4 +115,39 @@ abstract interface class PurchaseApprovalRepository {
   Future<List<PurchaseApprovalRequest>> pending();
 
   Future<void> decide(String approvalId, {required bool approve});
+}
+
+class StudentIdentity {
+  const StudentIdentity({
+    required this.id,
+    required this.studafyId,
+    required this.name,
+  });
+  final String id;
+  final String studafyId;
+  final String name;
+}
+
+class StudentGuardianRequest {
+  const StudentGuardianRequest({
+    required this.id,
+    required this.guardianId,
+    required this.guardianName,
+    required this.status,
+  });
+  final String id;
+  final String guardianId;
+  final String guardianName;
+  final GuardianLinkStatus status;
+}
+
+class StudentFamily {
+  const StudentFamily({required this.identities, required this.requests});
+  final List<StudentIdentity> identities;
+  final List<StudentGuardianRequest> requests;
+}
+
+abstract interface class StudentFamilyRepository {
+  Future<StudentFamily> studentFamily();
+  Future<void> decideGuardian(String linkId, String decision);
 }

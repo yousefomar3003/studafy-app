@@ -1,5 +1,25 @@
 import 'notification.dart';
 
+class NotificationPreference {
+  const NotificationPreference({
+    required this.channel,
+    required this.category,
+    required this.enabled,
+    this.schoolId,
+  });
+  final String? schoolId;
+  final String channel;
+  final String category;
+  final bool enabled;
+
+  NotificationPreference copyWith({bool? enabled}) => NotificationPreference(
+    schoolId: schoolId,
+    channel: channel,
+    category: category,
+    enabled: enabled ?? this.enabled,
+  );
+}
+
 /// Typed mobile boundary for the notifications slice (MOB-070). Remote
 /// implementations must fail closed to the cache, never to a hard error, on
 /// a read; preview implementations are the only adapters allowed to be
@@ -22,4 +42,9 @@ abstract interface class NotificationsRepository {
   /// whenever the app suspects connectivity returned (pull-to-refresh, app
   /// resume); a no-op when nothing is queued.
   Future<void> syncPending();
+
+  Future<List<NotificationPreference>> preferences();
+  Future<NotificationPreference> updatePreference(
+    NotificationPreference preference,
+  );
 }

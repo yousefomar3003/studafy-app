@@ -336,5 +336,293 @@
   "blockedTitle": "Studafy is not production-ready",
   "blockedDefaultReason": "Production access is blocked until security and data-integrity gates pass.",
   "blockedReference": "Reference: SEC-001",
-  "blockedInvalidEnvironment": "Invalid APP_ENV. This build has been blocked for safety."
+  "blockedInvalidEnvironment": "Invalid APP_ENV. This build has been blocked for safety.",
+  "attendanceTitle": "Attendance · {className}",
+  "@attendanceTitle": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceAction": "Take attendance",
+  "attendanceWhichSession": "Which session?",
+  "attendanceNoSessionThatDay": "This class does not meet on the day you picked.",
+  "attendanceNoStudents": "No students are enrolled in this class.",
+  "attendanceSaving": "Saving…",
+  "attendanceMarkOne": "Mark at least one student first.",
+  "attendanceLoadFailed": "Could not load the register. Please try again.",
+  "attendanceReasonLabel": "Reason (optional)",
+  "rosterTitle": "Students · {className}",
+  "@rosterTitle": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "rosterAction": "Students",
+  "rosterNoGuardian": "No parent linked yet",
+  "rosterEmpty": "No students are enrolled in this class yet.",
+  "rosterLoadFailed": "Could not load the class list. Please try again.",
+  "rosterTryAgain": "Try again",
+  "attendanceSavedCount": "{count, plural, =1{Register saved for 1 student.} other{Register saved for {count} students.}}",
+  "@attendanceSavedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assignmentNewTitle": "New assignment",
+  "assignmentAction": "New assignment",
+  "assignmentClassLabel": "Class",
+  "assignmentTitleLabel": "Title",
+  "assignmentInstructionsLabel": "Instructions (optional)",
+  "assignmentDueLabel": "Due",
+  "assignmentPickDue": "Pick a due date",
+  "assignmentGradedLabel": "Graded",
+  "assignmentGradedOn": "Students receive a score out of the maximum you set.",
+  "assignmentGradedOff": "Students hand work in, with no score.",
+  "assignmentMaxScoreLabel": "Maximum score",
+  "assignmentCreate": "Create assignment",
+  "assignmentCreating": "Creating…",
+  "assignmentCreated": "Assignment created.",
+  "assignmentTitleRequired": "Give the assignment a title.",
+  "assignmentClassRequired": "Choose which class this is for.",
+  "assignmentDueRequired": "Choose when it is due.",
+  "assignmentMaxScoreRequired": "Set a maximum score above zero.",
+  "assignmentCreateFailed": "Could not create the assignment. Please try again.",
+  "announcementNewTitle": "New announcement",
+  "announcementAction": "Announce",
+  "announcementTitleLabel": "Title",
+  "announcementBodyLabel": "Message",
+  "announcementClassLabel": "Class",
+  "announcementAudienceLabel": "Who should see this",
+  "announcementAudienceStudents": "Students",
+  "announcementAudienceGuardians": "Parents and guardians",
+  "announcementAudienceBoth": "Everyone",
+  "announcementImportantLabel": "Mark as important",
+  "announcementImportantDetail": "Use this for things that change what someone does today.",
+  "announcementPost": "Post announcement",
+  "announcementPosting": "Posting…",
+  "announcementPosted": "Announcement posted.",
+  "announcementTitleRequired": "Give the announcement a title.",
+  "announcementBodyRequired": "Write the message.",
+  "announcementClassRequired": "Choose which class to announce to.",
+  "announcementFailed": "Could not post the announcement. Please try again.",
+  "gradebookTitle": "Gradebook · {className}",
+  "gradebookAction": "Gradebook",
+  "gradebookPickAssessment": "Choose what to mark",
+  "gradebookNoAssessments": "Nothing to mark yet. Create graded work first.",
+  "gradebookDraftNotice": "This is still a draft. Publish it to open the register of marks.",
+  "gradebookPublishAssessment": "Publish and start marking",
+  "gradebookNoStudents": "No students are enrolled in this class.",
+  "gradebookScoreOf": "out of {max}",
+  "@gradebookScoreOf": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "@gradebookTitle": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "gradebookSave": "Save marks",
+  "gradebookSaving": "Saving…",
+  "gradebookSaved": "Marks saved.",
+  "gradebookNothingChanged": "No marks were changed.",
+  "gradebookScoreTooHigh": "A mark cannot be above the maximum.",
+  "gradebookLoadFailed": "Could not load the gradebook. Please try again.",
+  "gradebookSaveFailed": "Could not save the marks. Please try again.",
+  "gradebookRelease": "Release to students",
+  "gradebookReleased": "Marks released.",
+  "sectionsTitle": "Sections · {className}",
+  "sectionsAction": "Lesson content",
+  "sectionsNone": "No sections have been taught yet. Take a register first.",
+  "sectionsOutstanding": "Content outstanding",
+  "sectionsFiled": "Closed",
+  "sectionsFileContent": "File content",
+  "sectionsClose": "Close section",
+  "sectionsClosed": "Section closed.",
+  "sectionsCloseBlocked": "File the content taught in this section before closing it.",
+  "sectionsContentTitle": "What was taught",
+  "sectionsContentTitleLabel": "Title",
+  "sectionsContentBodyLabel": "Summary of the section",
+  "sectionsContentSave": "File it",
+  "sectionsContentSaved": "Content filed.",
+  "sectionsContentRequired": "Write what was taught in this section.",
+  "sectionsLoadFailed": "Could not load the sections. Please try again.",
+  "sectionsSaveFailed": "Could not save. Please try again.",
+  "@sectionsTitle": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "examNewTitle": "New exam",
+  "examAction": "New exam",
+  "examClassLabel": "Class",
+  "examTitleLabel": "Title",
+  "examCategoryLabel": "Kind",
+  "examCategoryExam": "Exam",
+  "examCategoryQuiz": "Quiz",
+  "examCategoryMidterm": "Midterm",
+  "examCategoryFinal": "Final",
+  "examDeliveryLabel": "How it is taken",
+  "examDeliveryPaper": "On paper",
+  "examDeliveryPaperDetail": "Sat in class; you enter the marks yourself.",
+  "examDeliveryOnline": "In the app",
+  "examDeliveryOnlineDetail": "Students answer the questions in Studafy.",
+  "examDeliveryPractice": "Practice",
+  "examDeliveryPracticeDetail": "Students practise freely; it does not count.",
+  "examScheduleLabel": "When it is sat",
+  "examPickSchedule": "Pick a date and time",
+  "examQuestionsLabel": "Questions",
+  "examAddQuestion": "Add question",
+  "examQuestionPrompt": "Question {number}",
+  "@examQuestionPrompt": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "examQuestionMarks": "Marks",
+  "examQuestionAnswer": "Model answer (optional)",
+  "examRemoveQuestion": "Remove",
+  "examMoveUp": "Move up",
+  "examMoveDown": "Move down",
+  "examTotalFromQuestions": "Total: {total} marks, from {count} questions.",
+  "@examTotalFromQuestions": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "examTotalLabel": "Total marks",
+  "examNoQuestionsHint": "No questions listed. Add them, or set the total marks and mark it on paper.",
+  "examCreate": "Create exam",
+  "examCreating": "Creating…",
+  "examCreated": "Exam created as a draft. Publish it from the gradebook when you are ready.",
+  "examTitleRequired": "Give the exam a title.",
+  "examClassRequired": "Choose which class sits this exam.",
+  "examTotalRequired": "Set the total marks above zero.",
+  "examQuestionPromptRequired": "Every question needs its text.",
+  "examQuestionMarksRequired": "Every question needs marks above zero.",
+  "examOnlineNeedsQuestions": "An exam taken in the app needs at least one question.",
+  "examCreateFailed": "Could not create the exam. Please try again.",
+  "examTotalHint": "Students sit this outside the app. Enter the marks in the gradebook; each student sees their own.",
+  "gradeAwaiting": "Not marked yet",
+  "gradeScore": "{score} out of {max}",
+  "@gradeScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "submitTitle": "Hand in work",
+  "submitAnswerLabel": "Your work",
+  "submitAnswerHint": "Type or paste your answer.",
+  "submitSend": "Hand in",
+  "submitSending": "Handing in…",
+  "submitDone": "Work handed in.",
+  "submitEmpty": "Write your answer before handing it in.",
+  "submitFailed": "Could not hand in your work. Please try again.",
+  "submitClosed": "This assignment is not open for work.",
+  "submitAttachmentsSoon": "Attaching files is not available yet; paste a link if you need to share one.",
+  "submissionsTitle": "Handed in · {title}",
+  "@submissionsTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "submissionsAction": "Handed in",
+  "submissionsNone": "Nobody has handed anything in yet.",
+  "submissionsWaiting": "Not handed in",
+  "submissionsOn": "Handed in {when}",
+  "@submissionsOn": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "submissionsLoadFailed": "Could not load what was handed in. Please try again.",
+  "submissionsCount": "{done} of {total} handed in",
+  "@submissionsCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "scheduleTitle": "Timetable · {className}",
+  "@scheduleTitle": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleAction": "Timetable",
+  "scheduleHint": "The register follows this timetable, so a class that meets twice a week needs both here.",
+  "scheduleAddSlot": "Add a meeting",
+  "scheduleWeekday": "Day",
+  "scheduleStarts": "Starts",
+  "scheduleEnds": "Ends",
+  "scheduleRemove": "Remove",
+  "scheduleSave": "Save timetable",
+  "scheduleSaving": "Saving…",
+  "scheduleSaved": "Timetable saved.",
+  "scheduleEmpty": "No meetings yet. Add one so the register knows when this class meets.",
+  "scheduleEndBeforeStart": "A meeting cannot end before it starts.",
+  "scheduleSaveFailed": "Could not save the timetable. Please try again.",
+  "weekdayMon": "Monday",
+  "weekdayTue": "Tuesday",
+  "weekdayWed": "Wednesday",
+  "weekdayThu": "Thursday",
+  "weekdayFri": "Friday",
+  "weekdaySat": "Saturday",
+  "weekdaySun": "Sunday",
+  "joinLinkActive": "A join link is live for this class.",
+  "joinLinkUses": "Used {count} times",
+  "@joinLinkUses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "joinLinkExpires": "Expires {when}",
+  "@joinLinkExpires": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "joinLinkRevoke": "Revoke link",
+  "joinLinkRevoked": "Link revoked. It no longer works for anyone holding it.",
+  "joinLinkRevokeFailed": "Could not revoke the link. Please try again.",
+  "joinLinkNewReplaces": "Creating a new link replaces this one."
 }

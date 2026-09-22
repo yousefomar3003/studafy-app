@@ -141,6 +141,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1TermPageDto.fromJson(
@@ -152,6 +153,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -177,6 +179,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1ClassroomPageDto.fromJson(
@@ -186,6 +189,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -217,6 +221,7 @@ class V1ApiClient {
     String? schoolId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1ClassroomStaffPageDto.fromJson(
@@ -228,6 +233,7 @@ class V1ApiClient {
           'schoolId': schoolId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -270,6 +276,7 @@ class V1ApiClient {
     String? schoolId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1StudentPageDto.fromJson(
@@ -281,6 +288,7 @@ class V1ApiClient {
           'schoolId': schoolId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -293,6 +301,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1ResourcePageDto.fromJson(
@@ -302,6 +311,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -325,6 +335,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1LessonSessionPageDto.fromJson(
@@ -334,6 +345,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -390,6 +402,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AssignmentPageDto.fromJson(
@@ -399,6 +412,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -477,6 +491,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1SubmissionPageDto.fromJson(
@@ -489,6 +504,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -501,6 +517,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AssessmentPageDto.fromJson(
@@ -510,6 +527,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -564,6 +582,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AssessmentQuestionsResponseDto.fromJson(
@@ -576,6 +595,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -590,6 +610,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AssessmentAuthoringQuestionsResponseDto.fromJson(
@@ -602,6 +623,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -615,6 +637,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AssessmentAttemptPageDto.fromJson(
@@ -627,6 +650,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -654,6 +678,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1GradeResultPageDto.fromJson(
@@ -663,6 +688,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -734,6 +760,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AttendancePageDto.fromJson(
@@ -743,6 +770,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -754,6 +782,7 @@ class V1ApiClient {
     String? schoolId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AttendanceRosterPageDto.fromJson(
@@ -765,6 +794,7 @@ class V1ApiClient {
           'schoolId': schoolId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -789,6 +819,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1WellbeingPageDto.fromJson(
@@ -798,6 +829,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -994,6 +1026,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1InvitationPageDto.fromJson(
@@ -1005,6 +1038,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -1111,6 +1145,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1ConversationPageDto.fromJson(
@@ -1120,6 +1155,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -1144,6 +1180,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1MessagePageDto.fromJson(
@@ -1156,6 +1193,7 @@ class V1ApiClient {
           'classroomId': classroomId,
           'studentId': studentId,
           'date': date,
+          'startsAt': startsAt,
           'cursor': cursor,
           'pageSize': pageSize,
         },
@@ -1183,6 +1221,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1AnnouncementPageDto.fromJson(
@@ -1192,6 +1231,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -1251,6 +1291,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1NotificationPageDto.fromJson(
@@ -1260,6 +1301,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -1335,6 +1377,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1SupportAccessGrantPageDto.fromJson(
@@ -1344,6 +1387,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -1450,6 +1494,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1ReportPageDto.fromJson(
@@ -1459,6 +1504,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -1882,6 +1928,7 @@ class V1ApiClient {
     String? classroomId,
     String? studentId,
     String? date,
+    String? startsAt,
     String? cursor,
     int? pageSize,
   }) async => V1ContactPageDto.fromJson(
@@ -1891,6 +1938,7 @@ class V1ApiClient {
         'classroomId': classroomId,
         'studentId': studentId,
         'date': date,
+        'startsAt': startsAt,
         'cursor': cursor,
         'pageSize': pageSize,
       }),
@@ -1925,6 +1973,91 @@ class V1ApiClient {
   }) async => V1PushDeviceResponseDto.fromJson(
     await _transport.post(
       _v1Path('/v1/me/push-devices/unregister', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ClassJoinLinkDto> getClassJoinLink({
+    required String classroomId,
+  }) async => V1ClassJoinLinkDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/classrooms/{classroomId}/join-link', {
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1CreateClassJoinLinkResponseDto> createClassJoinLink(
+    V1CreateClassJoinLinkRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1CreateClassJoinLinkResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/join-link', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ClassJoinLinkDto> revokeClassJoinLink(
+    V1RevokeClassJoinLinkRequestDto request, {
+    required String linkId,
+    String? idempotencyKey,
+  }) async => V1ClassJoinLinkDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/class-join-links/{linkId}/revoke', {'linkId': linkId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1RedeemClassJoinLinkResponseDto> redeemClassJoinLink(
+    V1RedeemClassJoinLinkRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1RedeemClassJoinLinkResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/class-join-links/redeem', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1CloseLessonSessionResponseDto> closeLessonSession(
+    V1CloseLessonSessionRequestDto request, {
+    required String lessonSessionId,
+    String? idempotencyKey,
+  }) async => V1CloseLessonSessionResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/lesson-sessions/{lessonSessionId}/close', {
+        'lessonSessionId': lessonSessionId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1StudentFamilyDto> getStudentFamily() async =>
+      V1StudentFamilyDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/student-family', {}, {})),
+      );
+
+  Future<V1GuardianLinkDto> decideGuardianLink(
+    V1DecideGuardianLinkRequestDto request, {
+    required String guardianLinkId,
+    String? idempotencyKey,
+  }) async => V1GuardianLinkDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/guardian-links/{guardianLinkId}/student-decision', {
+        'guardianLinkId': guardianLinkId,
+      }, {}),
       request.toJson(),
       idempotencyKey: idempotencyKey,
       requiresIdempotency: true,
@@ -2735,6 +2868,7 @@ class V1AttendanceRosterItemDto {
 class V1AttendanceRosterPageDto {
   const V1AttendanceRosterPageDto({
     required this.items,
+    required this.session,
     required this.nextCursor,
   });
 
@@ -2744,16 +2878,38 @@ class V1AttendanceRosterPageDto {
           for (final item in json['items'] as List<dynamic>)
             V1AttendanceRosterItemDto.fromJson(item as Map<String, dynamic>),
         ],
+        session: json['session'] == null
+            ? null
+            : V1AttendanceRosterSessionDto.fromJson(
+                json['session'] as Map<String, dynamic>,
+              ),
         nextCursor: json['nextCursor'] as String?,
       );
 
   final List<V1AttendanceRosterItemDto> items;
+  final V1AttendanceRosterSessionDto? session;
   final String? nextCursor;
 
   Map<String, Object?> toJson() => {
     'items': [for (final item in items) item.toJson()],
+    'session': session?.toJson(),
     'nextCursor': nextCursor,
   };
+}
+
+class V1AttendanceRosterSessionDto {
+  const V1AttendanceRosterSessionDto({required this.id, required this.version});
+
+  factory V1AttendanceRosterSessionDto.fromJson(Map<String, dynamic> json) =>
+      V1AttendanceRosterSessionDto(
+        id: json['id'] as String,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final int version;
+
+  Map<String, Object?> toJson() => {'id': id, 'version': version};
 }
 
 class V1AuthContextResponseDto {
@@ -3092,6 +3248,59 @@ class V1CancelMeetingRequestDto {
   Map<String, Object?> toJson() => {'expectedVersion': expectedVersion};
 }
 
+class V1ClassJoinLinkDto {
+  const V1ClassJoinLinkDto({
+    required this.id,
+    required this.schoolId,
+    required this.classroomId,
+    required this.classroomName,
+    required this.status,
+    required this.expiresAt,
+    required this.maxUses,
+    required this.useCount,
+    required this.createdAt,
+    required this.version,
+  });
+
+  factory V1ClassJoinLinkDto.fromJson(Map<String, dynamic> json) =>
+      V1ClassJoinLinkDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        classroomId: json['classroomId'] as String,
+        classroomName: json['classroomName'] as String,
+        status: json['status'] as String,
+        expiresAt: json['expiresAt'] as String,
+        maxUses: json['maxUses'] as int?,
+        useCount: json['useCount'] as int,
+        createdAt: json['createdAt'] as String,
+        version: json['version'] as int,
+      );
+
+  final String id;
+  final String schoolId;
+  final String classroomId;
+  final String classroomName;
+  final String status;
+  final String expiresAt;
+  final int? maxUses;
+  final int useCount;
+  final String createdAt;
+  final int version;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'classroomId': classroomId,
+    'classroomName': classroomName,
+    'status': status,
+    'expiresAt': expiresAt,
+    'maxUses': maxUses,
+    'useCount': useCount,
+    'createdAt': createdAt,
+    'version': version,
+  };
+}
+
 class V1ClassroomDto {
   const V1ClassroomDto({
     required this.id,
@@ -3293,6 +3502,33 @@ class V1ClassroomStaffPageDto {
   };
 }
 
+class V1CloseLessonSessionRequestDto {
+  const V1CloseLessonSessionRequestDto();
+
+  factory V1CloseLessonSessionRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1CloseLessonSessionRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1CloseLessonSessionResponseDto {
+  const V1CloseLessonSessionResponseDto({
+    required this.id,
+    required this.filedAt,
+  });
+
+  factory V1CloseLessonSessionResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1CloseLessonSessionResponseDto(
+        id: json['id'] as String,
+        filedAt: json['filedAt'] as String,
+      );
+
+  final String id;
+  final String filedAt;
+
+  Map<String, Object?> toJson() => {'id': id, 'filedAt': filedAt};
+}
+
 class V1CompleteUploadRequestDto {
   const V1CompleteUploadRequestDto();
 
@@ -3331,6 +3567,7 @@ class V1ContactDto {
     required this.displayName,
     required this.role,
     required this.relatedStudentNames,
+    required this.relatedStudentIds,
   });
 
   factory V1ContactDto.fromJson(Map<String, dynamic> json) => V1ContactDto(
@@ -3339,18 +3576,22 @@ class V1ContactDto {
     role: json['role'] as String,
     relatedStudentNames: (json['relatedStudentNames'] as List<dynamic>)
         .cast<String>(),
+    relatedStudentIds: (json['relatedStudentIds'] as List<dynamic>)
+        .cast<String>(),
   );
 
   final String userId;
   final String displayName;
   final String role;
   final List<String> relatedStudentNames;
+  final List<String> relatedStudentIds;
 
   Map<String, Object?> toJson() => {
     'userId': userId,
     'displayName': displayName,
     'role': role,
     'relatedStudentNames': relatedStudentNames,
+    'relatedStudentIds': relatedStudentIds,
   };
 }
 
@@ -3723,6 +3964,82 @@ class V1CreateBlockRequestDto {
   };
 }
 
+class V1CreateClassJoinLinkRequestDto {
+  const V1CreateClassJoinLinkRequestDto({this.expiresAt, this.maxUses});
+
+  factory V1CreateClassJoinLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateClassJoinLinkRequestDto(
+        expiresAt: json['expiresAt'] as String?,
+        maxUses: json['maxUses'] as int?,
+      );
+
+  final String? expiresAt;
+  final int? maxUses;
+
+  Map<String, Object?> toJson() => {
+    'expiresAt': ?expiresAt,
+    'maxUses': ?maxUses,
+  };
+}
+
+class V1CreateClassJoinLinkResponseDto {
+  const V1CreateClassJoinLinkResponseDto({
+    required this.id,
+    required this.schoolId,
+    required this.classroomId,
+    required this.classroomName,
+    required this.status,
+    required this.expiresAt,
+    required this.maxUses,
+    required this.useCount,
+    required this.createdAt,
+    required this.version,
+    required this.token,
+  });
+
+  factory V1CreateClassJoinLinkResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1CreateClassJoinLinkResponseDto(
+    id: json['id'] as String,
+    schoolId: json['schoolId'] as String,
+    classroomId: json['classroomId'] as String,
+    classroomName: json['classroomName'] as String,
+    status: json['status'] as String,
+    expiresAt: json['expiresAt'] as String,
+    maxUses: json['maxUses'] as int?,
+    useCount: json['useCount'] as int,
+    createdAt: json['createdAt'] as String,
+    version: json['version'] as int,
+    token: json['token'] as String,
+  );
+
+  final String id;
+  final String schoolId;
+  final String classroomId;
+  final String classroomName;
+  final String status;
+  final String expiresAt;
+  final int? maxUses;
+  final int useCount;
+  final String createdAt;
+  final int version;
+  final String token;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'classroomId': classroomId,
+    'classroomName': classroomName,
+    'status': status,
+    'expiresAt': expiresAt,
+    'maxUses': maxUses,
+    'useCount': useCount,
+    'createdAt': createdAt,
+    'version': version,
+    'token': token,
+  };
+}
+
 class V1CreateClassroomRequestDto {
   const V1CreateClassroomRequestDto({
     required this.schoolId,
@@ -3846,6 +4163,7 @@ class V1CreateResourceRequestDto {
     required this.resourceType,
     required this.body,
     required this.audience,
+    this.lessonSessionId,
   });
 
   factory V1CreateResourceRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -3856,6 +4174,7 @@ class V1CreateResourceRequestDto {
         resourceType: json['resourceType'] as String,
         body: json['body'] as String?,
         audience: json['audience'] as String,
+        lessonSessionId: json['lessonSessionId'] as String?,
       );
 
   final String schoolId;
@@ -3864,6 +4183,7 @@ class V1CreateResourceRequestDto {
   final String resourceType;
   final String? body;
   final String audience;
+  final String? lessonSessionId;
 
   Map<String, Object?> toJson() => {
     'schoolId': schoolId,
@@ -3872,6 +4192,7 @@ class V1CreateResourceRequestDto {
     'resourceType': resourceType,
     'body': body,
     'audience': audience,
+    'lessonSessionId': ?lessonSessionId,
   };
 }
 
@@ -4107,6 +4428,17 @@ class V1DataExportRequestDto {
     'readyAt': readyAt,
     'expiresAt': expiresAt,
   };
+}
+
+class V1DecideGuardianLinkRequestDto {
+  const V1DecideGuardianLinkRequestDto({required this.decision});
+
+  factory V1DecideGuardianLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1DecideGuardianLinkRequestDto(decision: json['decision'] as String);
+
+  final String decision;
+
+  Map<String, Object?> toJson() => {'decision': decision};
 }
 
 class V1DecidePurchaseApprovalRequestDto {
@@ -4530,6 +4862,8 @@ class V1GradeResultDto {
     required this.id,
     required this.assessmentId,
     required this.studentId,
+    required this.assessmentTitle,
+    required this.category,
     required this.score,
     required this.maximumScore,
     required this.feedback,
@@ -4544,6 +4878,8 @@ class V1GradeResultDto {
         id: json['id'] as String,
         assessmentId: json['assessmentId'] as String,
         studentId: json['studentId'] as String,
+        assessmentTitle: json['assessmentTitle'] as String,
+        category: json['category'] as String,
         score: json['score'] as num?,
         maximumScore: json['maximumScore'] as num,
         feedback: json['feedback'] as String?,
@@ -4556,6 +4892,8 @@ class V1GradeResultDto {
   final String id;
   final String assessmentId;
   final String studentId;
+  final String assessmentTitle;
+  final String category;
   final num? score;
   final num maximumScore;
   final String? feedback;
@@ -4568,6 +4906,8 @@ class V1GradeResultDto {
     'id': id,
     'assessmentId': assessmentId,
     'studentId': studentId,
+    'assessmentTitle': assessmentTitle,
+    'category': category,
     'score': score,
     'maximumScore': maximumScore,
     'feedback': feedback,
@@ -4991,6 +5331,7 @@ class V1LessonSessionDto {
     required this.endsAt,
     required this.title,
     required this.status,
+    required this.filedAt,
     required this.version,
   });
 
@@ -5002,6 +5343,7 @@ class V1LessonSessionDto {
         endsAt: json['endsAt'] as String,
         title: json['title'] as String?,
         status: json['status'] as String,
+        filedAt: json['filedAt'] as String?,
         version: json['version'] as int,
       );
 
@@ -5011,6 +5353,7 @@ class V1LessonSessionDto {
   final String endsAt;
   final String? title;
   final String status;
+  final String? filedAt;
   final int version;
 
   Map<String, Object?> toJson() => {
@@ -5020,6 +5363,7 @@ class V1LessonSessionDto {
     'endsAt': endsAt,
     'title': title,
     'status': status,
+    'filedAt': filedAt,
     'version': version,
   };
 }
@@ -5046,14 +5390,21 @@ class V1LessonSessionPageDto {
 }
 
 class V1LocateStudentRequestDto {
-  const V1LocateStudentRequestDto({required this.studafyId});
+  const V1LocateStudentRequestDto({required this.studafyId, this.captchaToken});
 
   factory V1LocateStudentRequestDto.fromJson(Map<String, dynamic> json) =>
-      V1LocateStudentRequestDto(studafyId: json['studafyId'] as String);
+      V1LocateStudentRequestDto(
+        studafyId: json['studafyId'] as String,
+        captchaToken: json['captchaToken'] as String?,
+      );
 
   final String studafyId;
+  final String? captchaToken;
 
-  Map<String, Object?> toJson() => {'studafyId': studafyId};
+  Map<String, Object?> toJson() => {
+    'studafyId': studafyId,
+    'captchaToken': ?captchaToken,
+  };
 }
 
 class V1LocateStudentResponseDto {
@@ -5914,6 +6265,7 @@ class V1PageQueryDto {
     this.classroomId,
     this.studentId,
     this.date,
+    this.startsAt,
     this.cursor,
     required this.pageSize,
   });
@@ -5923,6 +6275,7 @@ class V1PageQueryDto {
     classroomId: json['classroomId'] as String?,
     studentId: json['studentId'] as String?,
     date: json['date'] as String?,
+    startsAt: json['startsAt'] as String?,
     cursor: json['cursor'] as String?,
     pageSize: json['pageSize'] as int,
   );
@@ -5931,6 +6284,7 @@ class V1PageQueryDto {
   final String? classroomId;
   final String? studentId;
   final String? date;
+  final String? startsAt;
   final String? cursor;
   final int pageSize;
 
@@ -5939,6 +6293,7 @@ class V1PageQueryDto {
     'classroomId': ?classroomId,
     'studentId': ?studentId,
     'date': ?date,
+    'startsAt': ?startsAt,
     'cursor': ?cursor,
     'pageSize': pageSize,
   };
@@ -6233,6 +6588,43 @@ class V1RecordAttendanceResponseDto {
     'sessionId': sessionId,
     'version': version,
     'recorded': recorded,
+  };
+}
+
+class V1RedeemClassJoinLinkRequestDto {
+  const V1RedeemClassJoinLinkRequestDto({required this.token});
+
+  factory V1RedeemClassJoinLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1RedeemClassJoinLinkRequestDto(token: json['token'] as String);
+
+  final String token;
+
+  Map<String, Object?> toJson() => {'token': token};
+}
+
+class V1RedeemClassJoinLinkResponseDto {
+  const V1RedeemClassJoinLinkResponseDto({
+    required this.schoolId,
+    required this.classroomId,
+    required this.classroomName,
+  });
+
+  factory V1RedeemClassJoinLinkResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RedeemClassJoinLinkResponseDto(
+    schoolId: json['schoolId'] as String,
+    classroomId: json['classroomId'] as String,
+    classroomName: json['classroomName'] as String,
+  );
+
+  final String schoolId;
+  final String classroomId;
+  final String classroomName;
+
+  Map<String, Object?> toJson() => {
+    'schoolId': schoolId,
+    'classroomId': classroomId,
+    'classroomName': classroomName,
   };
 }
 
@@ -6794,6 +7186,15 @@ class V1ReviseResourceRequestDto {
   };
 }
 
+class V1RevokeClassJoinLinkRequestDto {
+  const V1RevokeClassJoinLinkRequestDto();
+
+  factory V1RevokeClassJoinLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1RevokeClassJoinLinkRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
 class V1RevokeGuardianLinkRequestDto {
   const V1RevokeGuardianLinkRequestDto();
 
@@ -7141,6 +7542,26 @@ class V1SetSelfPurchaseResponseDto {
   Map<String, Object?> toJson() => {
     'schoolId': schoolId,
     'selfPurchaseEnabled': selfPurchaseEnabled,
+  };
+}
+
+class V1StudentFamilyDto {
+  const V1StudentFamilyDto({required this.studentIds, required this.requests});
+
+  factory V1StudentFamilyDto.fromJson(Map<String, dynamic> json) =>
+      V1StudentFamilyDto(
+        studentIds: (json['studentIds'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        requests: (json['requests'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> studentIds;
+  final List<Map<String, dynamic>> requests;
+
+  Map<String, Object?> toJson() => {
+    'studentIds': studentIds,
+    'requests': requests,
   };
 }
 

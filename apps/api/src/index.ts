@@ -1,3 +1,4 @@
+import { createTurnstilePage } from "./turnstile/page";
 import { Hono } from "hono";
 import { describeApiEnv, loadApiEnv } from "./bootstrap/config";
 import { createApp, type DependentCheck } from "./bootstrap/app";
@@ -18,7 +19,10 @@ import {
   rateLimitAuto,
   rateLimitEdge,
 } from "./platform/rate-limit/middleware";
-import { createAcademicRoutes } from "./academic/routes";
+import {
+  createAcademicAppendedRoutes,
+  createAcademicRoutes,
+} from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
 import {
   createSchoolAdminRoutes,
@@ -27,8 +31,14 @@ import {
 import { PostgresSchoolAdminRepository } from "./school-admin/repository";
 import { createInvitationsRoutes } from "./invitations/routes";
 import { PostgresInvitationsRepository } from "./invitations/repository";
-import { createFamilyReadRoutes, createFamilyRoutes } from "./family/routes";
+import {
+  createFamilyReadRoutes,
+  createFamilyRoutes,
+  createStudentFamilyRoutes,
+} from "./family/routes";
 import { PostgresFamilyRepository } from "./family/repository";
+import { createClassJoinRoutes } from "./class-join/routes";
+import { PostgresClassJoinRepository } from "./class-join/repository";
 import {
   createCommunicationsRoutes,
   createContactsRoutes,
@@ -171,6 +181,18 @@ const academic = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+const academicAppended = sql && env.API_CURSOR_SIGNING_KEY
+  ? createAcademicAppendedRoutes(
+    {
+      repository: new PostgresAcademicRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { classes: env.API041_CLASSES_ENABLED },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 const schoolAdmin = sql && env.API_CURSOR_SIGNING_KEY && authDependencies
   ? createSchoolAdminRoutes(
     {
@@ -201,9 +223,18 @@ const invitations = sql && env.API_CURSOR_SIGNING_KEY
   )
   : undefined;
 
+const turnstile = env.TURNSTILE_ENABLED
+  ? {
+    secret: env.TURNSTILE_SECRET!,
+    siteKey: env.TURNSTILE_SITE_KEY!,
+    hostnames: env.TURNSTILE_HOSTNAMES,
+  }
+  : undefined;
+
 const familyDependencies = sql && env.API_CURSOR_SIGNING_KEY
   ? {
     repository: new PostgresFamilyRepository(sql),
+    turnstile,
     cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
     enabledSlices: { family: env.API042_FAMILY_ENABLED },
   }
@@ -218,6 +249,18 @@ const family = familyDependencies
 const familyReads = familyDependencies
   ? createFamilyReadRoutes(
     familyDependencies,
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+const classJoin = sql && env.API_CURSOR_SIGNING_KEY
+  ? createClassJoinRoutes(
+    {
+      repository: new PostgresClassJoinRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { classJoin: true },
+    },
     authorization,
     idempotencyDependencies,
   )
@@ -475,6 +518,20 @@ const combinedRoutes =
       if (familyReads) combined.route("/", familyReads);
       if (accountReads) combined.route("/", accountReads);
       if (pushDevices) combined.route("/", pushDevices);
+      // Appended last: these routes sit at the end of the contract
+      // catalogue, and mount order is asserted to equal catalogue order.
+      if (classJoin) combined.route("/", classJoin);
+      if (academicAppended) combined.route("/", academicAppended);
+      if (familyDependencies) {
+        combined.route(
+          "/",
+          createStudentFamilyRoutes(
+            familyDependencies,
+            authorization,
+            idempotencyDependencies,
+          ),
+        );
+      }
       return combined;
     })()
     : undefined;
@@ -514,6 +571,7 @@ const app = createApp({
     ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }
     : {}),
   ...(auth ? { auth } : {}),
+  ...(turnstile ? { challengePage: createTurnstilePage(turnstile) } : {}),
   ...(billingWebhooks ? { webhooks: billingWebhooks } : {}),
 });
 

@@ -58,9 +58,12 @@ dependencies:
   # supabase_flutter, so promoting it adds no new native plugin surface.
   # Session material stays in flutter_secure_storage; see lib/core/secure_storage.dart.
   shared_preferences: ^2.5.5
+  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # Runs the real preview SQLite adapter in tests against an in-memory

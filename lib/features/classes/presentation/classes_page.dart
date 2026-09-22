@@ -392,12 +392,100 @@ class _ClassesPageState extends State<ClassesPage> {
   }
 
   Future<void> _invite(BuildContext context, ClassroomSummary classroom) async {
+    // A live link is shown for what it is before a new one is minted:
+    // creating another silently supersedes it, and a teacher who has already
+    // shared one should be told that rather than discovering it later.
+    final existing = await widget.classes.activeJoinLink(classroom.id.value);
+    if (!context.mounted) return;
+    final live = existing.fold(
+      onSuccess: (link) => link,
+      onFailure: (_) => null,
+    );
+    if (live != null) {
+      final replace = await _showLiveLinkSheet(context, live);
+      if (!context.mounted || !replace) return;
+    }
     final result = await widget.classes.inviteLinkFor(classroom.id);
     if (!context.mounted) return;
     result.fold(
       onSuccess: (link) => _showInviteDialog(context, link),
       onFailure: (failure) => _showFailure(context, failure.message),
     );
+  }
+
+  /// Shows the live link and offers to revoke it or replace it.
+  ///
+  /// Returns true when the teacher wants a new link minted.
+  Future<bool> _showLiveLinkSheet(
+    BuildContext context,
+    ClassJoinLinkInfo link,
+  ) async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.joinLinkActive,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(l10n.joinLinkUses(link.useCount)),
+              Text(
+                l10n.joinLinkExpires(
+                  '${link.expiresAt.year}-'
+                  '${link.expiresAt.month.toString().padLeft(2, '0')}-'
+                  '${link.expiresAt.day.toString().padLeft(2, '0')}',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.joinLinkNewReplaces,
+                style: Theme.of(sheetContext).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(sheetContext, 'revoke'),
+                      child: Text(l10n.joinLinkRevoke),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(sheetContext, 'replace'),
+                      child: Text(AppL10n.of(sheetContext).classesInviteTitle),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice == 'revoke') {
+      final revoked = await widget.classes.revokeJoinLink(link.id);
+      revoked.fold(
+        onSuccess: (_) => messenger.showSnackBar(
+          SnackBar(content: Text(l10n.joinLinkRevoked)),
+        ),
+        onFailure: (_) => messenger.showSnackBar(
+          SnackBar(content: Text(l10n.joinLinkRevokeFailed)),
+        ),
+      );
+      return false;
+    }
+    return choice == 'replace';
   }
 
   void _showFailure(BuildContext context, String message) {

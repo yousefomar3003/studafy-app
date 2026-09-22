@@ -28,21 +28,17 @@ const _strings = <String, Map<String, String>>{
     'title': 'My family',
     'children': 'My children',
     'empty.title': 'No children linked yet',
-    'empty.message':
-        'Ask your child\'s school for their Studafy ID, then link it here. '
-        'The school confirms every link.',
+    'empty.message': 'Ask your child for their Studafy ID. They approve your request before you can follow their progress.',
     'link': 'Link a child',
     'link.title': 'Link a child',
     'link.hint': 'Studafy ID',
     'link.find': 'Find',
     'link.notFound': 'No student has that Studafy ID. Check it and try again.',
     'link.confirm': 'Request link to {name}',
-    'link.sent':
-        'Request sent. The school will confirm it before you can see '
-        '{name}\'s records.',
-    'status.pending': 'Waiting for the school',
+    'link.sent': 'Request sent. {name} must approve it before you can see their records.',
+    'status.pending': 'Waiting for your child',
     'status.verified': 'Linked',
-    'status.declined': 'Declined by the school',
+    'status.declined': 'Request declined',
     'status.revoked': 'No longer linked',
     'view': 'View progress',
     'progress.title': '{name}\'s progress',
@@ -80,9 +76,7 @@ const _strings = <String, Map<String, String>>{
     'title': 'عائلتي',
     'children': 'أطفالي',
     'empty.title': 'لم يتم ربط أي طفل بعد',
-    'empty.message':
-        'اطلب من مدرسة طفلك رقم Studafy الخاص به، ثم اربطه هنا. تؤكد المدرسة '
-        'كل عملية ربط.',
+    'empty.message': 'اطلب من طفلك معرّف Studafy الخاص به. يجب أن يوافق على طلبك قبل أن تتمكن من متابعة تقدمه.',
     'link': 'ربط طفل',
     'link.title': 'ربط طفل',
     'link.hint': 'رقم Studafy',
@@ -90,10 +84,10 @@ const _strings = <String, Map<String, String>>{
     'link.notFound': 'لا يوجد طالب بهذا الرقم. تحقق منه وحاول مرة أخرى.',
     'link.confirm': 'طلب الربط مع {name}',
     'link.sent':
-        'تم إرسال الطلب. ستؤكده المدرسة قبل أن تتمكن من رؤية سجلات {name}.',
-    'status.pending': 'بانتظار المدرسة',
+        'تم إرسال الطلب. يجب أن يوافق {name} قبل أن تتمكن من رؤية سجلاته.',
+    'status.pending': 'بانتظار موافقة طفلك',
     'status.verified': 'مرتبط',
-    'status.declined': 'رفضته المدرسة',
+    'status.declined': 'تم رفض الطلب',
     'status.revoked': 'لم يعد مرتبطاً',
     'view': 'عرض التقدم',
     'progress.title': 'تقدم {name}',

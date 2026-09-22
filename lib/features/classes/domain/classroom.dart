@@ -17,6 +17,7 @@ class ClassroomSummary {
     required this.studentCount,
     this.weeklySessions,
     this.termName,
+    this.version = 1,
   });
 
   final ClassroomId id;
@@ -31,6 +32,10 @@ class ClassroomSummary {
   final int? colorValue;
 
   final int studentCount;
+
+  /// The classroom aggregate's version, needed to replace its timetable
+  /// without overwriting a colleague's edit.
+  final int version;
   final int? weeklySessions;
   final String? termName;
 }
@@ -75,4 +80,38 @@ class NewClassDraft {
   final String firstSessionEnd;
   final int weeklySessions;
   final List<ClassSessionDraft> sessions;
+}
+
+/// The class a student has just joined through a shared link.
+@immutable
+class JoinedClass {
+  const JoinedClass({
+    required this.schoolId,
+    required this.classroomId,
+    required this.classroomName,
+  });
+
+  final String schoolId;
+  final ClassroomId classroomId;
+  final String classroomName;
+}
+
+/// A class's live join link, as the teacher sees it after creation.
+///
+/// Carries no token: the server stores only a hash, so the shareable URL
+/// exists once, at creation. A teacher who no longer has it creates a new
+/// link, which supersedes this one.
+@immutable
+class ClassJoinLinkInfo {
+  const ClassJoinLinkInfo({
+    required this.id,
+    required this.useCount,
+    required this.expiresAt,
+    this.maxUses,
+  });
+
+  final String id;
+  final int useCount;
+  final DateTime expiresAt;
+  final int? maxUses;
 }

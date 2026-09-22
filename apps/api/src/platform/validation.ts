@@ -8,6 +8,33 @@ function issueCode(code: string): string {
   return code === "unrecognized_keys" ? "unknownField" : code;
 }
 
+/**
+ * Names the fields a schema rejected, for the `errors` array of the problem
+ * document. Only paths the schema itself declares are reported, and only the
+ * issue code: a rejected value is the client's input and never echoed back.
+ *
+ * Every rejection carries this, so a 400 says which field failed instead of
+ * leaving the caller to guess against the whole contract.
+ */
+function fieldErrors(
+  schema: unknown,
+  error: z.ZodError,
+): { path: string; code: string }[] {
+  const allowed = new Set(
+    schema instanceof Object && "shape" in schema
+      ? Object.keys((schema as z.ZodObject).shape)
+      : [],
+  );
+  return error.issues.flatMap((issue) => {
+    const first = String(issue.path[0] ?? "");
+    if (!first || !allowed.has(first)) return [];
+    return [{
+      path: issue.path.map(String).join("."),
+      code: issueCode(issue.code),
+    }];
+  });
+}
+
 export function validateRouteInput(
   route: V1RouteContract,
 ): MiddlewareHandler<PlatformEnv> {
@@ -22,13 +49,21 @@ export function validateRouteInput(
     }
     if (route.query) {
       const parsed = route.query.safeParse(rawQuery);
-      if (!parsed.success) return problem(c, "INVALID_REQUEST", 400);
+      if (!parsed.success) {
+        return problem(c, "INVALID_REQUEST", 400, {
+          errors: fieldErrors(route.query, parsed.error),
+        });
+      }
       c.set("validatedQuery", parsed.data);
     } else c.set("validatedQuery", undefined);
 
     if (route.params) {
       const parsed = route.params.safeParse(c.req.param());
-      if (!parsed.success) return problem(c, "INVALID_REQUEST", 400);
+      if (!parsed.success) {
+        return problem(c, "INVALID_REQUEST", 400, {
+          errors: fieldErrors(route.params, parsed.error),
+        });
+      }
       c.set("validatedParams", parsed.data);
     } else c.set("validatedParams", undefined);
 
@@ -49,20 +84,9 @@ export function validateRouteInput(
 
     const result = route.request.safeParse(raw);
     if (!result.success) {
-      const allowed = new Set(
-        route.request instanceof Object && "shape" in route.request
-          ? Object.keys((route.request as z.ZodObject).shape)
-          : [],
-      );
-      const errors = result.error.issues.flatMap((issue) => {
-        const first = String(issue.path[0] ?? "");
-        if (!first || !allowed.has(first)) return [];
-        return [{
-          path: issue.path.map(String).join("."),
-          code: issueCode(issue.code),
-        }];
+      return problem(c, "INVALID_REQUEST", 400, {
+        errors: fieldErrors(route.request, result.error),
       });
-      return problem(c, "INVALID_REQUEST", 400, { errors });
     }
     c.set("validatedBody", result.data);
     await next();

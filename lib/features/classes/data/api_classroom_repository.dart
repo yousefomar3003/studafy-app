@@ -1,3 +1,4 @@
+import '../../../core/class_join_link.dart';
 import '../../../core/failures.dart';
 import '../../../core/ids.dart';
 import '../../../core/studafy_domain.dart';
@@ -83,9 +84,72 @@ class ApiClassroomRepository implements ClassroomRepository {
   }
 
   @override
-  Future<String> inviteLinkFor(ClassroomId id) {
-    throw const Failure.unsupported(
-      'Invitations are unavailable until API-042.',
+  Future<String> inviteLinkFor(ClassroomId id) async {
+    // Each tap mints a fresh link, which supersedes whatever was live for
+    // this class, so the idempotency key is per-call rather than derived
+    // from the class: a teacher who taps twice means to replace the link,
+    // not to be handed the previous one.
+    final response = await _client.createClassJoinLink(
+      const V1CreateClassJoinLinkRequestDto(),
+      classroomId: id.value,
+      idempotencyKey:
+          'join-${DateTime.now().microsecondsSinceEpoch}-'
+                  '${id.value}'
+              .hashCode
+              .abs()
+              .toRadixString(36)
+              .padLeft(16, '0'),
+    );
+    return classJoinLinkUrl(response.token);
+  }
+
+  @override
+  Future<ClassJoinLinkInfo?> activeJoinLink(String classroomId) async {
+    try {
+      final link = await _client.getClassJoinLink(classroomId: classroomId);
+      return ClassJoinLinkInfo(
+        id: link.id,
+        useCount: link.useCount,
+        expiresAt:
+            DateTime.tryParse(link.expiresAt)?.toLocal() ?? DateTime.now(),
+        maxUses: link.maxUses,
+      );
+    } on Object {
+      // No live link is the ordinary case for a class nobody has shared yet,
+      // and the surface reports it as an absent resource.
+      return null;
+    }
+  }
+
+  @override
+  Future<void> revokeJoinLink(String linkId) async {
+    await _client.revokeClassJoinLink(
+      const V1RevokeClassJoinLinkRequestDto(),
+      linkId: linkId,
+      idempotencyKey: 'revoke-link-${DateTime.now().microsecondsSinceEpoch}'
+          .hashCode
+          .abs()
+          .toRadixString(36)
+          .padLeft(16, '0'),
+    );
+  }
+
+  @override
+  Future<JoinedClass> joinWithLink(String token) async {
+    // Deliberately does not read _schoolId: the joiner has no membership at
+    // this school yet, and the token is the whole credential.
+    final response = await _client.redeemClassJoinLink(
+      V1RedeemClassJoinLinkRequestDto(token: token),
+      idempotencyKey: 'join-redeem-${DateTime.now().microsecondsSinceEpoch}'
+          .hashCode
+          .abs()
+          .toRadixString(36)
+          .padLeft(16, '0'),
+    );
+    return JoinedClass(
+      schoolId: response.schoolId,
+      classroomId: ClassroomId(response.classroomId),
+      classroomName: response.classroomName,
     );
   }
 
@@ -98,6 +162,7 @@ class ApiClassroomRepository implements ClassroomRepository {
         room: value.room,
         colorValue: null,
         studentCount: value.studentCount,
+        version: value.version,
         weeklySessions: value.weeklySessions,
         termName: value.termName,
       );

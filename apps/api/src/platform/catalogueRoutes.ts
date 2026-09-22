@@ -1,4 +1,5 @@
 import { type Context, Hono, type MiddlewareHandler } from "hono";
+import type { Logger } from "@studafy/observability";
 import type {
   V1PageQuery as V1PageQueryType,
   V1RouteContract,
@@ -119,6 +120,7 @@ export function honoPath(path: string): string {
 function switchOutcome(
   c: Context<AuthorizationEnv>,
   outcome: string,
+  logger?: Logger,
 ): Response {
   switch (outcome) {
     case "not_found":
@@ -136,6 +138,15 @@ function switchOutcome(
     case "contact_not_allowed":
       return problem(c, "CONTACT_NOT_ALLOWED", 403);
     default:
+      // An outcome with no mapping is a server-side gap, not a malformed
+      // request, and the bare 400 it becomes says nothing about the cause.
+      // The outcome is a fixed vocabulary from the database, never account
+      // data, so it is safe to name here.
+      logger?.warn("catalogue_outcome_unmapped", {
+        request_id: c.get("requestId"),
+        operation_id: c.get("operationId"),
+        outcome,
+      });
       return problem(c, "INVALID_REQUEST", 400);
   }
 }
@@ -220,7 +231,11 @@ export function createCatalogueRoutes<Slice extends string>(
         if (
           typeof result["outcome"] === "string" && result["outcome"] !== "ok"
         ) {
-          return switchOutcome(c as never, result["outcome"] as string);
+          return switchOutcome(
+            c as never,
+            result["outcome"] as string,
+            authorization.logger,
+          );
         }
         const nextPosition = typeof result["nextPosition"] === "string"
           ? result["nextPosition"]
@@ -297,7 +312,11 @@ export function createCatalogueRoutes<Slice extends string>(
           reservation,
         );
         if (result.outcome !== "ok") {
-          return switchOutcome(c as never, result.outcome);
+          return switchOutcome(
+            c as never,
+            result.outcome,
+            authorization.logger,
+          );
         }
         const parsed = route.response.safeParse(result.response);
         if (!parsed.success) return problem(c, "INTERNAL_ERROR", 500);

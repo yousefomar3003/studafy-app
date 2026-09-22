@@ -9,6 +9,15 @@ three locally generated keys, are needed today.** Everything else is gathered
 when its integration is switched on, and a live credential sitting unused in a
 local file is a liability, not preparation.
 
+## Hosted development testing update — 2026-09-22
+
+The user explicitly authorized local storage for hosted testing. The supplied
+server credentials are now in ignored, owner-only `.env.hosted`; public mobile
+settings remain separate. Use `bun run dev:hosted` to prevent accidental loading
+of the local database configuration. See [setup status](../evidence/hosted-credentials-turnstile-2026-09-22.md)
+for validated services and the missing database/hostname setup. The local-stack
+instructions below remain applicable to local Supabase only.
+
 ## The four locations, and why they are separate
 
 | File | Holds | Committed? |

@@ -10,6 +10,19 @@ abstract interface class ClassroomRepository {
   /// Creates a classroom. Only implemented by the preview adapter today.
   Future<void> createClass(NewClassDraft draft);
 
-  /// Invite link for a classroom. Preview-only until the classes service.
+  /// Shareable join link for a classroom, replacing whatever was live.
   Future<String> inviteLinkFor(ClassroomId id);
+
+  /// The classroom's live join link, or null when none is active.
+  Future<ClassJoinLinkInfo?> activeJoinLink(String classroomId);
+
+  /// Revokes a join link, so the URL stops working for anyone holding it.
+  Future<void> revokeJoinLink(String linkId);
+
+  /// Joins a class from a shared link.
+  ///
+  /// The caller is not a member of that school yet, which is the whole point
+  /// of the link, so this must not depend on an active membership the way
+  /// every other call here does.
+  Future<JoinedClass> joinWithLink(String token);
 }

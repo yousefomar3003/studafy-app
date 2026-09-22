@@ -16,12 +16,17 @@ class AcademicOverviewPage extends StatefulWidget {
     this.teacherTools = false,
     this.initialFeed = AcademicFeed.assignments,
     this.actions = const [],
+    this.onOpenRecord,
   });
 
   final AcademicRepository repository;
   final String? classroomId;
   final String? studentId;
   final bool teacherTools;
+
+  /// Opens one row. A student taps an assignment to hand work in; nothing
+  /// opens where no handler is given, so other feeds stay read-only.
+  final void Function(AcademicRecord record)? onOpenRecord;
   final AcademicFeed initialFeed;
 
   /// App bar actions supplied by the host shell, such as its account entry.
@@ -56,12 +61,18 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(AppL10n.of(context).academicTitle),
-      actions: widget.actions,
-    ),
+    appBar: AppBar(title: Text(AppL10n.of(context).academicTitle)),
     body: Column(
       children: [
+        if (widget.actions.isNotEmpty)
+          SizedBox(
+            height: 56,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              children: widget.actions,
+            ),
+          ),
         SizedBox(
           height: 52,
           child: ListView(
@@ -107,10 +118,23 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     final item = items[index];
                     // Titles and details are school-authored content, so
                     // they render verbatim in their own direction.
-                    return ListTile(
-                      title: UserContentText(item.title),
-                      subtitle: UserContentText(item.detail),
-                      trailing: Chip(label: Text(item.state)),
+                    final onOpen = widget.onOpenRecord;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        leading: const Icon(Icons.auto_stories_outlined),
+                        title: UserContentText(item.title),
+                        subtitle: UserContentText(item.detail),
+                        trailing: Chip(label: Text(item.state)),
+                        onTap: onOpen == null ? null : () => onOpen(item),
+                      ),
                     );
                   },
                 ),

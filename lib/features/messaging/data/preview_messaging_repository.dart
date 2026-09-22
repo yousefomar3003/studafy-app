@@ -154,4 +154,12 @@ class PreviewMessagingRepository
 
   @override
   Future<List<BlockedPerson>> blocks(String schoolId) async => List.of(_blocks);
+
+  @override
+  Future<void> createAnnouncement(AnnouncementDraft draft) async =>
+      throw StateError('Announcements need the school service.');
+
+  @override
+  Future<List<Announcement>> announcements({String? classroomId}) async =>
+      const [];
 }

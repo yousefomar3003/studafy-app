@@ -5,9 +5,12 @@ import 'package:in_app_purchase_android/billing_client_wrappers.dart'
 import 'package:in_app_purchase_android/in_app_purchase_android.dart'
     show GooglePlayProductDetails;
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart'
-    show AppStoreProductDetails;
+    show AppStoreProductDetails, AppStoreProduct2Details;
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart'
     show SKProductDiscountPaymentMode, SKSubscriptionPeriodUnit;
+
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart'
+    show SK2SubscriptionPeriodUnit;
 
 /// Store-verified pricing and term strings for one paywall offer.
 ///
@@ -75,12 +78,33 @@ StoreOfferTerms _withBase(ProductDetails p) => StoreOfferTerms(
 /// iOS exposes the renewal price via [ProductDetails.price] plus an
 /// `introductoryPrice` whose payment mode is a free trial. Android exposes the
 /// subscription as an offer with pricing phases: the renewal phase is the
-/// recurring highest-price phase, the trial is a zero-priced finite phase
+/// infinite recurring phase of the selected offer, the trial is a zero-priced finite phase
 /// ahead of it (Google shows the first phase's price - "0.00" during a trial -
 /// so the base [ProductDetails.price] cannot be trusted on Android).
 StoreOfferTerms resolveStoreOfferTerms(ProductDetails product) {
   if (product is GooglePlayProductDetails) {
     return _fromGooglePlay(product);
+  }
+  if (product is AppStoreProduct2Details) {
+    final period = product.sk2Product.subscription?.subscriptionPeriod;
+    final unit = period?.unit;
+    return StoreOfferTerms(
+      price: product.price,
+      currencyCode: product.currencyCode,
+      periodLength: period == null || period.value <= 0
+          ? ''
+          : _countAndUnit(period.value, unit!.name),
+      periodAdjective: switch (unit) {
+        SK2SubscriptionPeriodUnit.day => 'daily',
+        SK2SubscriptionPeriodUnit.week => 'weekly',
+        SK2SubscriptionPeriodUnit.month => 'monthly',
+        SK2SubscriptionPeriodUnit.year => 'yearly',
+        null => '',
+      },
+      // Promotional offers do not prove introductory-offer eligibility.
+      hasTrial: false,
+      trialLength: '',
+    );
   }
   if (product is AppStoreProductDetails) {
     return _fromAppStore(product);
@@ -91,28 +115,23 @@ StoreOfferTerms resolveStoreOfferTerms(ProductDetails product) {
 StoreOfferTerms _fromGooglePlay(GooglePlayProductDetails product) {
   final offers = product.productDetails.subscriptionOfferDetails;
   if (offers == null || offers.isEmpty) return _withBase(product);
-  // Prefer the base plan (no offer id) when the plugin returned several rows.
-  var offer = offers.first;
-  for (final candidate in offers) {
-    if (candidate.offerId == null) {
-      offer = candidate;
-      break;
-    }
+  // Resolve the exact offer token passed to checkout, not another base plan.
+  final index = product.subscriptionIndex;
+  if (index == null || index < 0 || index >= offers.length) {
+    return _withBase(product);
   }
-  final phases = offer.pricingPhases;
-  if (phases.isEmpty) return _withBase(product);
-
-  PricingPhaseWrapper renewal = phases.first;
-  for (final phase in phases) {
-    if (phase.priceAmountMicros > renewal.priceAmountMicros) {
-      renewal = phase;
-    }
-  }
+  final phases = offers[index].pricingPhases;
+  final recurring = phases.where(
+    (phase) => phase.recurrenceMode == RecurrenceMode.infiniteRecurring,
+  );
+  if (recurring.length != 1) return _withBase(product);
+  final renewal = recurring.single;
   PricingPhaseWrapper? trial;
   for (final phase in phases) {
     if (phase != renewal &&
         phase.priceAmountMicros == 0 &&
-        phase.recurrenceMode == RecurrenceMode.finiteRecurring) {
+        phase.recurrenceMode == RecurrenceMode.finiteRecurring &&
+        phase.billingCycleCount == 1) {
       trial = phase;
       break;
     }
@@ -138,7 +157,8 @@ StoreOfferTerms _fromAppStore(AppStoreProductDetails product) {
   final hasTrial =
       intro != null &&
       intro.paymentMode == SKProductDiscountPaymentMode.freeTrail &&
-      intro.subscriptionPeriod.numberOfUnits > 0;
+      intro.subscriptionPeriod.numberOfUnits > 0 &&
+      intro.numberOfPeriods > 0;
   return StoreOfferTerms(
     price: product.price,
     currencyCode: product.currencyCode,
@@ -149,7 +169,7 @@ StoreOfferTerms _fromAppStore(AppStoreProductDetails product) {
     hasTrial: hasTrial,
     trialLength: hasTrial
         ? _periodFromIos(
-            intro.subscriptionPeriod.numberOfUnits,
+            intro.subscriptionPeriod.numberOfUnits * intro.numberOfPeriods,
             intro.subscriptionPeriod.unit,
           )
         : '',
@@ -191,8 +211,11 @@ String _adjectiveFromIso(String iso) {
   return null;
 }
 
-String _countAndUnit(int count, String unit) =>
-    count == 1 ? '1 $unit' : '$count $unit';
+String _countAndUnit(int count, String unit) => count <= 0
+    ? ''
+    : count == 1
+    ? '1 $unit'
+    : '$count ${unit}s';
 
 String _periodFromIos(int count, SKSubscriptionPeriodUnit unit) =>
     _countAndUnit(count, switch (unit) {

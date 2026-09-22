@@ -13,7 +13,7 @@ import 'package:studafy/features/family/presentation/family_strings.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// MOB-070 parent slice: a guardian's home runs on typed /v1 data, only a
-/// verified link opens a child, linking goes through the school, and
+/// verified link opens a child, linking requires student consent, and
 /// purchase approval proves a recent sign-in before deciding.
 class _Fake implements FamilyRepository, PurchaseApprovalRepository {
   _Fake(this.children_);
@@ -27,8 +27,10 @@ class _Fake implements FamilyRepository, PurchaseApprovalRepository {
   Future<List<GuardianChild>> children() async => List.of(children_);
 
   @override
-  Future<LocatedStudent?> locate(String studafyId) async =>
-      studafyId == 'STU-42'
+  Future<LocatedStudent?> locate(
+    String studafyId, {
+    String? captchaToken,
+  }) async => studafyId == 'STU-42'
       ? const LocatedStudent(studentId: 'student-42', displayName: 'Omar')
       : null;
 
@@ -113,6 +115,19 @@ Widget _app(
 );
 
 void main() {
+  test('expired parent links do not open child records', () {
+    final child = GuardianChild(
+      linkId: 'expired',
+      studentId: 'student-1',
+      studentName: 'Layla',
+      schoolId: 'school-1',
+      schoolName: 'Al-Noor',
+      status: GuardianLinkStatus.verified,
+      expiresAt: DateTime.utc(2000),
+    );
+    expect(child.isVerified, isFalse);
+  });
+
   setUp(() => ActiveContextController.instance.selectStudent(null));
 
   test('every family string exists in English and Arabic', () {
@@ -142,7 +157,7 @@ void main() {
     expect(find.text('Layla'), findsOneWidget);
     expect(find.text('Linked'), findsOneWidget);
     expect(find.text('Sami'), findsOneWidget);
-    expect(find.text('Waiting for the school'), findsOneWidget);
+    expect(find.text('Waiting for your child'), findsOneWidget);
     expect(selected?.studentId, 'student-1');
   });
 
@@ -173,7 +188,7 @@ void main() {
     final fake = _Fake([]);
     await tester.pumpWidget(_app(fake));
     await tester.pumpAndSettle();
-    expect(find.text('No children linked yet'), findsOneWidget);
+    expect(find.text('Start with their ID'), findsOneWidget);
     await tester.tap(find.text('Link a child'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'NOPE');
@@ -187,7 +202,7 @@ void main() {
     await tester.tap(find.text('Request link to Omar'));
     await tester.pumpAndSettle();
     expect(fake.requested, ['student-42']);
-    expect(find.text('Waiting for the school'), findsOneWidget);
+    expect(find.text('Waiting for your child'), findsOneWidget);
   });
 
   testWidgets('approving proves a recent sign-in first', (tester) async {

@@ -2,8 +2,8 @@
 -- first; this file adds the roles, states, sensitive columns, and command rows
 -- required by the complete policy matrix.
 
-\set school_id '11111111-1111-1111-1111-111111111111'
-\set other_school_id '22222222-2222-2222-2222-222222222222'
+\set school_id '11111111-1111-4111-8111-111111111111'
+\set other_school_id '22222222-2222-4222-8222-222222222222'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
 \set student_user 'bbbb0000-0000-4000-8000-000000000002'
 \set guardian_user 'cccc0000-0000-4000-8000-000000000003'

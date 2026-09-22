@@ -80,7 +80,7 @@ void main() {
   test('native release guards cover known prototype release risks', () {
     final android = source('android/app/build.gradle.kts');
     expect(android, contains('SEC-001: Android release builds are blocked'));
-    expect(android, contains('com.example.studafy'));
+    expect(android, contains('com.studafy.light'));
     expect(android, contains('signingConfigs.getByName("debug")'));
 
     final ios = source('ios/Runner.xcodeproj/project.pbxproj');
@@ -89,7 +89,7 @@ void main() {
       ios,
       contains('SEC-001: iOS archives and release builds are blocked'),
     );
-    expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.example.studafy'));
+    expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.studafy.light'));
   });
 
   test('environment files are ignored and examples contain no real values', () {

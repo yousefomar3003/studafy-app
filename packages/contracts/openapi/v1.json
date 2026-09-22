@@ -1545,6 +1545,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -1821,6 +1831,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -2204,6 +2224,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -2622,6 +2652,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -2775,6 +2815,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -3045,6 +3095,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -3576,6 +3636,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -4337,6 +4407,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -4490,6 +4570,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -5022,6 +5112,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -5187,6 +5287,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -5349,6 +5459,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -5630,6 +5750,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -6289,6 +6419,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -6451,6 +6591,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -6723,6 +6873,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -8619,6 +8779,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -9498,6 +9668,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -9774,6 +9954,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -10167,6 +10357,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -10677,6 +10877,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -11691,6 +11901,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -12685,6 +12905,16 @@
               "type": "string",
               "format": "date",
               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            }
+          },
+          {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -16734,6 +16964,16 @@
             }
           },
           {
+            "name": "startsAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -17161,6 +17401,817 @@
           }
         },
         "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/classrooms/{classroomId}/join-link": {
+      "get": {
+        "operationId": "getClassJoinLink",
+        "summary": "getClassJoinLink",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "classJoinLink.read",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "getClassJoinLink",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ClassJoinLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createClassJoinLink",
+        "summary": "createClassJoinLink",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "classJoinLink.create",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "createClassJoinLink",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1CreateClassJoinLinkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CreateClassJoinLinkRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/class-join-links/{linkId}/revoke": {
+      "post": {
+        "operationId": "revokeClassJoinLink",
+        "summary": "revokeClassJoinLink",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "classJoinLink.revoke",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "revokeClassJoinLink",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1ClassJoinLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1RevokeClassJoinLinkRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/class-join-links/redeem": {
+      "post": {
+        "operationId": "redeemClassJoinLink",
+        "summary": "redeemClassJoinLink",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "classJoinLink.redeem",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "redeemClassJoinLink",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1RedeemClassJoinLinkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1RedeemClassJoinLinkRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/lesson-sessions/{lessonSessionId}/close": {
+      "post": {
+        "operationId": "closeLessonSession",
+        "summary": "closeLessonSession",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "lesson_session.close",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "closeLessonSession",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1CloseLessonSessionResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1CloseLessonSessionRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lessonSessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/me/student-family": {
+      "get": {
+        "operationId": "getStudentFamily",
+        "summary": "getStudentFamily",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "guardian_link.student_own",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "getStudentFamily",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1StudentFamily"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/guardian-links/{guardianLinkId}/student-decision": {
+      "post": {
+        "operationId": "decideGuardianLink",
+        "summary": "decideGuardianLink",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "guardian_link.student_own",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "decideGuardianLink",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1GuardianLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1DecideGuardianLinkRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "guardianLinkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
           {
             "name": "Idempotency-Key",
             "in": "header",
@@ -18266,6 +19317,16 @@
               "$ref": "#/components/schemas/V1AttendanceRosterItem"
             }
           },
+          "session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/V1AttendanceRosterSession"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "nextCursor": {
             "type": [
               "string",
@@ -18275,7 +19336,28 @@
         },
         "required": [
           "items",
+          "session",
           "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "V1AttendanceRosterSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "version"
         ],
         "additionalProperties": false
       },
@@ -18727,6 +19809,84 @@
         ],
         "additionalProperties": false
       },
+      "V1ClassJoinLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked",
+              "expired"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "maxUses": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "useCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "schoolId",
+          "classroomId",
+          "classroomName",
+          "status",
+          "expiresAt",
+          "maxUses",
+          "useCount",
+          "createdAt",
+          "version"
+        ],
+        "additionalProperties": false
+      },
       "V1Classroom": {
         "type": "object",
         "properties": {
@@ -18944,6 +20104,31 @@
         ],
         "additionalProperties": false
       },
+      "V1CloseLessonSessionRequest": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "V1CloseLessonSessionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "filedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "filedAt"
+        ],
+        "additionalProperties": false
+      },
       "V1CompleteUploadRequest": {
         "type": "object",
         "properties": {},
@@ -18985,13 +20170,23 @@
             "items": {
               "type": "string"
             }
+          },
+          "relatedStudentIds": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
           }
         },
         "required": [
           "userId",
           "displayName",
           "role",
-          "relatedStudentNames"
+          "relatedStudentNames",
+          "relatedStudentIds"
         ],
         "additionalProperties": false
       },
@@ -19494,6 +20689,106 @@
         ],
         "additionalProperties": false
       },
+      "V1CreateClassJoinLinkRequest": {
+        "type": "object",
+        "properties": {
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "maxUses": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "V1CreateClassJoinLinkResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "revoked",
+              "expired"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "maxUses": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "useCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "token": {
+            "type": "string",
+            "minLength": 32,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "id",
+          "schoolId",
+          "classroomId",
+          "classroomName",
+          "status",
+          "expiresAt",
+          "maxUses",
+          "useCount",
+          "createdAt",
+          "version",
+          "token"
+        ],
+        "additionalProperties": false
+      },
       "V1CreateClassroomRequest": {
         "type": "object",
         "properties": {
@@ -19680,6 +20975,11 @@
               "guardians",
               "both"
             ]
+          },
+          "lessonSessionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
         "required": [
@@ -20011,6 +21311,23 @@
           "requestedAt",
           "readyAt",
           "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "V1DecideGuardianLinkRequest": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "decline",
+              "revoke"
+            ]
+          }
+        },
+        "required": [
+          "decision"
         ],
         "additionalProperties": false
       },
@@ -20528,6 +21845,14 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
+          "assessmentTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
           "score": {
             "type": [
               "number",
@@ -20587,6 +21912,8 @@
           "id",
           "assessmentId",
           "studentId",
+          "assessmentTitle",
+          "category",
           "score",
           "maximumScore",
           "feedback",
@@ -21215,6 +22542,18 @@
               "cancelled"
             ]
           },
+          "filedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "version": {
             "type": "integer",
             "exclusiveMinimum": 0,
@@ -21228,6 +22567,7 @@
           "endsAt",
           "title",
           "status",
+          "filedAt",
           "version"
         ],
         "additionalProperties": false
@@ -21261,6 +22601,11 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 40
+          },
+          "captchaToken": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
           }
         },
         "required": [
@@ -22474,6 +23819,11 @@
             "format": "date",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
           "cursor": {
             "type": "string",
             "minLength": 16,
@@ -22835,6 +24185,46 @@
           "sessionId",
           "version",
           "recorded"
+        ],
+        "additionalProperties": false
+      },
+      "V1RedeemClassJoinLinkRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 32,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "V1RedeemClassJoinLinkResponse": {
+        "type": "object",
+        "properties": {
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "classroomName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "schoolId",
+          "classroomId",
+          "classroomName"
         ],
         "additionalProperties": false
       },
@@ -23556,6 +24946,11 @@
         ],
         "additionalProperties": false
       },
+      "V1RevokeClassJoinLinkRequest": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
       "V1RevokeGuardianLinkRequest": {
         "type": "object",
         "properties": {},
@@ -23943,6 +25338,91 @@
         "required": [
           "schoolId",
           "selfPurchaseEnabled"
+        ],
+        "additionalProperties": false
+      },
+      "V1StudentFamily": {
+        "type": "object",
+        "properties": {
+          "studentIds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "studafyId": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "studafyId",
+                "displayName"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "guardianId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "guardianName": {
+                  "type": "string"
+                },
+                "studentId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "relationship": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "verified",
+                    "declined",
+                    "revoked"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "guardianId",
+                "guardianName",
+                "studentId",
+                "relationship",
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "studentIds",
+          "requests"
         ],
         "additionalProperties": false
       },

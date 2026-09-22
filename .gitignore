@@ -60,6 +60,7 @@ supabase/.temp/
 **/.env
 **/.env.*
 !.env.example
+!.env.hosted.example
 !**/.env.example
 
 # Credentials, signing material, and provider-specific configuration

@@ -91,8 +91,52 @@ flutter run --dart-define-from-file=config/dart-defines.development.json
 intentionally selects the isolated synthetic SQLite preview even when public
 Supabase values are present.
 
+### iPhone simulator and real provider login
+
+List simulator IDs with `flutter devices`, then launch the development build:
+
+```sh
+flutter run -d <iPhone-device-id> \
+  --dart-define-from-file=config/dart-defines.development.json
+```
+
+Google and Microsoft (including Outlook accounts supported by your Azure app
+registration) use the providers enabled in that Supabase project. Complete
+account verification in the provider browser. Supabase must allow
+`io.studafy.app://login-callback` as an app redirect; the provider console's
+callback remains `https://<project-ref>.supabase.co/auth/v1/callback`.
+
+Signing into the provider is only the identity step. `STUDAFY_API_URL` must
+reach a running Studafy API whose `SUPABASE_URL` and `DATABASE_URL` belong to
+the same project as the mobile build. The account also needs an active school
+membership matching the selected role. A local API configured for local
+Supabase cannot authorize accounts from a different, hosted Supabase project.
+
+To check all five main tabs for each preview role in English and Arabic on a
+simulator, run the native smoke test. It uses synthetic data and does not
+complete real OAuth or test purchases:
+
+```sh
+flutter drive -d <iPhone-device-id> \
+  --driver=test_driver/iphone_smoke.dart \
+  --target=integration_test/iphone_smoke_test.dart
+```
+
+Screenshots are written to `/tmp/studafy-smoke-screenshots`. Use a separate
+simulator if you are completing provider login in the development build.
+
 Never put a Supabase service-role key, Calendar credential, AI provider secret,
 or store verification secret in the application.
+
+## Hosted development credential setup
+
+The supplied testing credentials are separated into ignored server-only
+`.env.hosted` and public Flutter defines. Run
+`bun --no-env-file scripts/check-hosted-setup.ts` for redacted service checks.
+Use `bun run dev:hosted` once the hosted database connection and migrations are
+ready; this launcher prevents accidentally combining hosted login with the
+local database. See [current setup status](docs/evidence/hosted-credentials-turnstile-2026-09-22.md)
+for Turnstile, tunnel hostname, billing and remaining prerequisites.
 
 ## Future backend deployment (not currently authorized)
 

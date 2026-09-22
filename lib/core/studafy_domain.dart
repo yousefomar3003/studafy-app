@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'runtime_environment.dart';
 
-enum StudafyRole { teacher, parent, student }
+enum StudafyRole { schoolAdmin, teacher, parent, student }
 
 @immutable
 class SchoolMembership {
@@ -83,6 +83,7 @@ class ActiveContextController extends ChangeNotifier {
     profile = UserProfile(
       id: 'demo-user',
       displayName: switch (role) {
+        StudafyRole.schoolAdmin => 'School Administrator',
         StudafyRole.teacher => 'Rana Haddad',
         StudafyRole.parent => 'Nadia Hassan',
         StudafyRole.student => 'Layla Hassan',

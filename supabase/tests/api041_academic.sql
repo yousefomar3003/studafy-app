@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select plan(30);
 
-\set school_id '11111111-1111-1111-1111-111111111111'
+\set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
 \set student_user 'bbbb0000-0000-4000-8000-000000000002'
 \set other_school_user 'eeee0000-0000-4000-8000-000000000005'
@@ -136,7 +136,7 @@ select is((select count(*) from public.notification_outbox where source_event_id
 select is((select count(*) from public.notifications where entity_id='a0410000-0000-4000-8000-000000000051'),0::bigint,'grade publish does not call notification storage directly');
 
 select set_config('request.jwt.claim.sub',:'other_school_user',true);
-select set_config('studafy.school_id','22222222-2222-2222-2222-222222222222',true);
+select set_config('studafy.school_id','22222222-2222-4222-8222-222222222222',true);
 select is(private.api041_query('getClassroom',:'classroom_id','{}')->>'outcome','not_found','cross-school context is concealed by the query surface');
 
 select set_config('request.jwt.claim.sub',:'student_user',true);

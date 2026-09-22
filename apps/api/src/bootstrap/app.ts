@@ -49,6 +49,7 @@ export interface AppDependencies {
    * instead of a bearer token.
    */
   webhooks?: Hono<AppEnv>;
+  challengePage?: Hono<AppEnv>;
   platform?: {
     allowedOrigins?: readonly string[];
     limits?: Partial<PlatformLimits>;
@@ -126,6 +127,8 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
       version: deps.info.version,
       environment: deps.info.environment,
     }));
+
+  if (deps.challengePage) app.route("/", deps.challengePage);
 
   // AUTH-030 routes mount ahead of the catch-all so migrated paths are
   // served and everything else still fails closed below.

@@ -4,7 +4,10 @@ import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
 import { Hono } from "hono";
 import { createAuthRoutes } from "../../src/auth/routes";
-import { createAcademicRoutes } from "../../src/academic/routes";
+import {
+  createAcademicAppendedRoutes,
+  createAcademicRoutes,
+} from "../../src/academic/routes";
 import {
   createSchoolAdminRoutes,
   createSchoolRosterRoutes,
@@ -13,7 +16,9 @@ import { createInvitationsRoutes } from "../../src/invitations/routes";
 import {
   createFamilyReadRoutes,
   createFamilyRoutes,
+  createStudentFamilyRoutes,
 } from "../../src/family/routes";
+import { createClassJoinRoutes } from "../../src/class-join/routes";
 import {
   createCommunicationsRoutes,
   createContactsRoutes,
@@ -110,6 +115,17 @@ function routeTable() {
     idempotency,
   );
   const family = createFamilyRoutes(
+    {
+      cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: {
+        query: async () => null,
+        command: async () => ({ outcome: "invalid" as const }),
+      },
+    },
+    authorization,
+    idempotency,
+  );
+  const classJoin = createClassJoinRoutes(
     {
       cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       repository: {
@@ -318,6 +334,37 @@ function routeTable() {
       idempotency,
     ),
   );
+  // Last: these routes are appended at the end of the contract catalogue,
+  // and this suite asserts mount order equals catalogue order.
+  combined.route("/", classJoin);
+  combined.route(
+    "/",
+    createAcademicAppendedRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createStudentFamilyRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -382,13 +429,19 @@ describe("permission catalogue", () => {
     const file051Migration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609170004_file051_scan_delivery_publication.sql`,
     ).text();
+    const classJoinMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609200002_class_join_links.sql`,
+    ).text();
+    const contentPerSectionMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609210002_content_per_section.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}`,
       ).toContain(`'${permission}'`);
     }
   });
