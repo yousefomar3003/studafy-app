@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/studafy_design.dart';
@@ -116,6 +117,35 @@ class AccountHubPage extends StatelessWidget {
           Card(
             child: Column(
               children: [
+                if (profile != null)
+                  ListTile(
+                    leading: const Icon(Icons.badge_outlined),
+                    title: Text(t('accountId')),
+                    subtitle: Text(
+                      '${profile.id}\n${t('accountId.detail')}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    isThreeLine: true,
+                    trailing: const Icon(Icons.copy_rounded),
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      await Clipboard.setData(ClipboardData(text: profile.id));
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(t('accountId.copied'))),
+                      );
+                    },
+                  ),
+                // A teacher is often a parent at the same school. The domain
+                // has always supported holding both; this is the way to use
+                // the other one without signing out and back in.
+                if (_switchableRoles(context_).isNotEmpty)
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz_rounded),
+                    title: Text(t('switchRole')),
+                    subtitle: Text(t('switchRole.detail')),
+                    trailing: Icon(forwardChevron(context)),
+                    onTap: () => _showRoleSwitcher(context, context_),
+                  ),
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
                   title: Text(t('language')),
@@ -298,6 +328,64 @@ String _initials(String name) {
   return parts.take(2).map((p) => p.characters.first.toUpperCase()).join();
 }
 
+/// Roles this account holds at the active school, other than the current one.
+///
+/// Empty for the ordinary case of someone with a single role, so the switcher
+/// is offered only where there is something to switch to.
+List<StudafyRole> _switchableRoles(ActiveContextController context_) {
+  final current = context_.membership?.role;
+  final school = context_.membership?.schoolId;
+  final seen = <StudafyRole>{};
+  return [
+    for (final membership in context_.profile?.memberships ?? const [])
+      if (membership.active &&
+          membership.role != StudafyRole.schoolAdmin &&
+          membership.schoolId == school &&
+          membership.role != current &&
+          seen.add(membership.role))
+        membership.role,
+  ];
+}
+
+Future<void> _showRoleSwitcher(
+  BuildContext context,
+  ActiveContextController context_,
+) async {
+  String t(String key) => _accountText(context, key);
+  final chosen = await showModalBottomSheet<StudafyRole>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final role in _switchableRoles(context_))
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: Text(t('role.${role.name}')),
+              onTap: () => Navigator.pop(sheetContext, role),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (chosen == null) return;
+  // switchRole refuses a role the account does not actually hold, so the
+  // shell is only sent onward once the context really changed.
+  context_.switchRole(chosen);
+  if (!context.mounted) return;
+  final route = switch (context_.membership?.role) {
+    StudafyRole.schoolAdmin => null,
+    StudafyRole.teacher => '/teacher',
+    StudafyRole.parent => '/parent',
+    StudafyRole.student => '/student',
+    _ => null,
+  };
+  if (route != null) {
+    Navigator.of(context).pushNamedAndRemoveUntil(route, (_) => false);
+  }
+}
+
 String _accountText(BuildContext context, String key) {
   final code = StudafyLocalizations.of(context).locale.languageCode;
   return _strings[code]?[key] ?? _strings['en']![key] ?? key;
@@ -310,6 +398,11 @@ Map<String, Set<String>> accountHubStringKeys() => {
 
 const _strings = <String, Map<String, String>>{
   'en': {
+    'accountId': 'Account ID',
+    'accountId.detail': 'Share this with your school to link your account.',
+    'accountId.copied': 'Account ID copied',
+    'switchRole': 'Switch role',
+    'switchRole.detail': 'You belong to this school in more than one role.',
     'title': 'Account',
     'unknown': 'Your account',
     'language': 'Language',
@@ -317,6 +410,7 @@ const _strings = <String, Map<String, String>>{
     'security.detail': 'Devices, two-step verification, sign out everywhere',
     'signOut': 'Sign out',
     'delete': 'Delete account',
+    'role.schoolAdmin': 'School administrator',
     'role.teacher': 'Teacher',
     'role.parent': 'Parent or guardian',
     'role.student': 'Student',
@@ -333,6 +427,11 @@ const _strings = <String, Map<String, String>>{
     'export.failed': 'That did not work. Please try again.',
   },
   'ar': {
+    'accountId': 'معرّف الحساب',
+    'accountId.detail': 'شارك هذا المعرّف مع مدرستك لربط حسابك.',
+    'accountId.copied': 'تم نسخ معرّف الحساب',
+    'switchRole': 'تبديل الدور',
+    'switchRole.detail': 'أنت مرتبط بهذه المدرسة بأكثر من دور.',
     'title': 'الحساب',
     'unknown': 'حسابك',
     'language': 'اللغة',
@@ -340,6 +439,7 @@ const _strings = <String, Map<String, String>>{
     'security.detail': 'الأجهزة، التحقق بخطوتين، تسجيل الخروج من كل الأجهزة',
     'signOut': 'تسجيل الخروج',
     'delete': 'حذف الحساب',
+    'role.schoolAdmin': 'مسؤول المدرسة',
     'role.teacher': 'معلم',
     'role.parent': 'ولي أمر',
     'role.student': 'طالب',

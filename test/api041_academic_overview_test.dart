@@ -106,6 +106,34 @@ class _FakeAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<List<ClassSessionSlot>> classroomSchedule(String classroomId) async =>
+      const [];
+  @override
+  Future<List<SubmittedWork>> submissionsFor(String assignmentId) async =>
+      const [];
+  @override
+  Future<void> replaceSchedule(
+    String classroomId,
+    int expectedVersion,
+    List<ClassSessionSlot> slots,
+  ) async {}
+  @override
+  Future<List<LessonSession>> lessonSessions(String classroomId) async =>
+      const [];
+  @override
+  Future<void> closeLessonSession(String lessonSessionId) async {}
+  @override
+  Future<List<GradeEntry>> gradeEntries(String classroomId) async => const [];
+  @override
+  Future<List<ClassStudent>> classStudents(String classroomId) async =>
+      const [];
+  @override
+  Future<AttendanceRegister> attendanceRoster(
+    String classroomId,
+    DateTime date, {
+    DateTime? startsAt,
+  }) async => const AttendanceRegister(entries: [], version: 0);
+  @override
   Future<void> recordAttendance(
     String classroomId,
     DateTime startsAt,

@@ -35,6 +35,7 @@ const _legacyExemptFeatures = <String>{};
 /// Core modules every zone may import.
 const _coreAllowlist = <String>[
   'core/ids.dart',
+  'core/class_join_link.dart',
   'core/secure_storage.dart',
   'core/account_lifecycle.dart',
   'core/failures.dart',
@@ -235,6 +236,15 @@ String? _check({
           ? null
           : '$filePath: $zone imports provider package "$import" '
                 '(provider packages are data-zone only)';
+    }
+    // Reviewed native Turnstile host: only the family's challenge view may
+    // load the owned public widget page. API calls remain in the data layer.
+    if (import.startsWith('package:webview_flutter/')) {
+      return featureName == 'family' &&
+              zone == 'presentation' &&
+              filePath.endsWith('/family_challenge_page.dart')
+          ? null
+          : '$filePath: webview_flutter is restricted to the family challenge view';
     }
     if (import.startsWith('package:share_plus/') ||
         import.startsWith('package:intl/') ||

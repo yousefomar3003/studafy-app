@@ -34,7 +34,8 @@
     "check:bounds": "bun scripts/check-bounds.ts && bun scripts/check-file050-boundaries.ts",
     "build": "bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build",
     "dev:stack": "docker compose -f docker-compose.dev.yml up -d || docker-compose -f docker-compose.dev.yml up -d",
-    "check:migrations": "bun scripts/check-migration-immutability.ts"
+    "check:migrations": "bun scripts/check-migration-immutability.ts",
+    "dev:hosted": "bun --no-env-file scripts/start-hosted-api.ts"
   },
   "dependencies": {},
   "overrides": {

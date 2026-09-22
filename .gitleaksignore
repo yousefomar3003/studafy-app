@@ -65,3 +65,13 @@ f00e10cf0f7439bed4d0e35ad6254f919fa95f5c:supabase/tests/safe043_surface.sql:gene
 # same as the other entries above; the historical commit is not rewritten
 # per this repo's forward-only history policy.
 826b92e2316d1ad36addf3a00687f6e9a1c0f198:packages/domain/test/billing.test.ts:generic-api-key:169
+
+# JOIN-052 class join link fixtures in c405fa4 matched the generic-api-key
+# rule on entropy alone. The values are synthetic base64url round-trip inputs
+# for classJoinTokenFrom, never minted by the server and never a credential.
+# Fixed going forward by trailing-zero padding, same as the entries above;
+# the historical commit is not rewritten per this repo's forward-only history
+# policy, and the PR range CI scans still contains it.
+c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-api-key:23
+c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-api-key:33
+c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-api-key:38

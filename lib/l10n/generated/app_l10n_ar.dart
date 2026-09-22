@@ -654,4 +654,587 @@ class AppL10nAr extends AppL10n {
   @override
   String get blockedInvalidEnvironment =>
       'قيمة APP_ENV غير صحيحة. تم حظر هذه النسخة لدواعي السلامة.';
+
+  @override
+  String attendanceTitle(String className) {
+    return 'الحضور · $className';
+  }
+
+  @override
+  String get attendanceAction => 'تسجيل الحضور';
+
+  @override
+  String get attendanceWhichSession => 'أي حصة؟';
+
+  @override
+  String get attendanceNoSessionThatDay =>
+      'لا تُعقد هذه الحصة في اليوم الذي اخترته.';
+
+  @override
+  String get attendanceNoStudents => 'لا يوجد طلاب مسجّلون في هذا الفصل.';
+
+  @override
+  String get attendanceSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get attendanceMarkOne => 'حدّد طالبًا واحدًا على الأقل أولًا.';
+
+  @override
+  String get attendanceLoadFailed =>
+      'تعذّر تحميل سجل الحضور. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get attendanceReasonLabel => 'السبب (اختياري)';
+
+  @override
+  String rosterTitle(String className) {
+    return 'الطلاب · $className';
+  }
+
+  @override
+  String get rosterAction => 'الطلاب';
+
+  @override
+  String get rosterNoGuardian => 'لا يوجد وليّ أمر مرتبط بعد';
+
+  @override
+  String get rosterEmpty => 'لا يوجد طلاب مسجّلون في هذا الفصل بعد.';
+
+  @override
+  String get rosterLoadFailed =>
+      'تعذّر تحميل قائمة الفصل. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get rosterTryAgain => 'إعادة المحاولة';
+
+  @override
+  String attendanceSavedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم حفظ الحضور لـ$count طالبًا.',
+      few: 'تم حفظ الحضور لـ$count طلاب.',
+      two: 'تم حفظ الحضور لطالبين.',
+      one: 'تم حفظ الحضور لطالب واحد.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assignmentNewTitle => 'واجب جديد';
+
+  @override
+  String get assignmentAction => 'واجب جديد';
+
+  @override
+  String get assignmentClassLabel => 'الفصل';
+
+  @override
+  String get assignmentTitleLabel => 'العنوان';
+
+  @override
+  String get assignmentInstructionsLabel => 'التعليمات (اختياري)';
+
+  @override
+  String get assignmentDueLabel => 'تاريخ التسليم';
+
+  @override
+  String get assignmentPickDue => 'اختر تاريخ التسليم';
+
+  @override
+  String get assignmentGradedLabel => 'بدرجة';
+
+  @override
+  String get assignmentGradedOn =>
+      'يحصل الطلاب على درجة من الحد الأقصى الذي تحدده.';
+
+  @override
+  String get assignmentGradedOff => 'يسلّم الطلاب العمل بدون درجة.';
+
+  @override
+  String get assignmentMaxScoreLabel => 'الدرجة القصوى';
+
+  @override
+  String get assignmentCreate => 'إنشاء الواجب';
+
+  @override
+  String get assignmentCreating => 'جارٍ الإنشاء…';
+
+  @override
+  String get assignmentCreated => 'تم إنشاء الواجب.';
+
+  @override
+  String get assignmentTitleRequired => 'أدخل عنوانًا للواجب.';
+
+  @override
+  String get assignmentClassRequired => 'اختر الفصل المخصص له هذا الواجب.';
+
+  @override
+  String get assignmentDueRequired => 'اختر موعد التسليم.';
+
+  @override
+  String get assignmentMaxScoreRequired => 'حدد درجة قصوى أكبر من صفر.';
+
+  @override
+  String get assignmentCreateFailed =>
+      'تعذّر إنشاء الواجب. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get announcementNewTitle => 'إعلان جديد';
+
+  @override
+  String get announcementAction => 'إعلان';
+
+  @override
+  String get announcementTitleLabel => 'العنوان';
+
+  @override
+  String get announcementBodyLabel => 'الرسالة';
+
+  @override
+  String get announcementClassLabel => 'الفصل';
+
+  @override
+  String get announcementAudienceLabel => 'من يمكنه رؤية هذا';
+
+  @override
+  String get announcementAudienceStudents => 'الطلاب';
+
+  @override
+  String get announcementAudienceGuardians => 'أولياء الأمور';
+
+  @override
+  String get announcementAudienceBoth => 'الجميع';
+
+  @override
+  String get announcementImportantLabel => 'وضع علامة مهم';
+
+  @override
+  String get announcementImportantDetail =>
+      'استخدم هذا لما يغيّر ما يفعله الشخص اليوم.';
+
+  @override
+  String get announcementPost => 'نشر الإعلان';
+
+  @override
+  String get announcementPosting => 'جارٍ النشر…';
+
+  @override
+  String get announcementPosted => 'تم نشر الإعلان.';
+
+  @override
+  String get announcementTitleRequired => 'أدخل عنوانًا للإعلان.';
+
+  @override
+  String get announcementBodyRequired => 'اكتب نص الرسالة.';
+
+  @override
+  String get announcementClassRequired => 'اختر الفصل الذي تريد الإعلان فيه.';
+
+  @override
+  String get announcementFailed =>
+      'تعذّر نشر الإعلان. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String gradebookTitle(String className) {
+    return 'سجل الدرجات · $className';
+  }
+
+  @override
+  String get gradebookAction => 'سجل الدرجات';
+
+  @override
+  String get gradebookPickAssessment => 'اختر ما تريد تصحيحه';
+
+  @override
+  String get gradebookNoAssessments =>
+      'لا يوجد ما يُصحَّح بعد. أنشئ عملًا بدرجة أولًا.';
+
+  @override
+  String get gradebookDraftNotice =>
+      'لا يزال هذا مسودة. انشره لفتح سجل الدرجات.';
+
+  @override
+  String get gradebookPublishAssessment => 'نشر وبدء التصحيح';
+
+  @override
+  String get gradebookNoStudents => 'لا يوجد طلاب مسجّلون في هذا الفصل.';
+
+  @override
+  String gradebookScoreOf(String max) {
+    return 'من $max';
+  }
+
+  @override
+  String get gradebookSave => 'حفظ الدرجات';
+
+  @override
+  String get gradebookSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get gradebookSaved => 'تم حفظ الدرجات.';
+
+  @override
+  String get gradebookNothingChanged => 'لم تتغيّر أي درجة.';
+
+  @override
+  String get gradebookScoreTooHigh => 'لا يمكن أن تتجاوز الدرجة الحد الأقصى.';
+
+  @override
+  String get gradebookLoadFailed =>
+      'تعذّر تحميل سجل الدرجات. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get gradebookSaveFailed =>
+      'تعذّر حفظ الدرجات. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get gradebookRelease => 'إرسال الدرجات للطلاب';
+
+  @override
+  String get gradebookReleased => 'تم إرسال الدرجات.';
+
+  @override
+  String sectionsTitle(String className) {
+    return 'الحصص · $className';
+  }
+
+  @override
+  String get sectionsAction => 'محتوى الحصة';
+
+  @override
+  String get sectionsNone => 'لم تُعط أي حصة بعد. سجّل الحضور أولًا.';
+
+  @override
+  String get sectionsOutstanding => 'المحتوى غير مرفوع';
+
+  @override
+  String get sectionsFiled => 'مغلقة';
+
+  @override
+  String get sectionsFileContent => 'رفع المحتوى';
+
+  @override
+  String get sectionsClose => 'إغلاق الحصة';
+
+  @override
+  String get sectionsClosed => 'تم إغلاق الحصة.';
+
+  @override
+  String get sectionsCloseBlocked => 'ارفع محتوى هذه الحصة قبل إغلاقها.';
+
+  @override
+  String get sectionsContentTitle => 'ما تم تدريسه';
+
+  @override
+  String get sectionsContentTitleLabel => 'العنوان';
+
+  @override
+  String get sectionsContentBodyLabel => 'ملخّص الحصة';
+
+  @override
+  String get sectionsContentSave => 'رفع';
+
+  @override
+  String get sectionsContentSaved => 'تم رفع المحتوى.';
+
+  @override
+  String get sectionsContentRequired => 'اكتب ما تم تدريسه في هذه الحصة.';
+
+  @override
+  String get sectionsLoadFailed =>
+      'تعذّر تحميل الحصص. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get sectionsSaveFailed => 'تعذّر الحفظ. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get examNewTitle => 'اختبار جديد';
+
+  @override
+  String get examAction => 'اختبار جديد';
+
+  @override
+  String get examClassLabel => 'الفصل';
+
+  @override
+  String get examTitleLabel => 'العنوان';
+
+  @override
+  String get examCategoryLabel => 'النوع';
+
+  @override
+  String get examCategoryExam => 'اختبار';
+
+  @override
+  String get examCategoryQuiz => 'اختبار قصير';
+
+  @override
+  String get examCategoryMidterm => 'منتصف الفصل';
+
+  @override
+  String get examCategoryFinal => 'نهائي';
+
+  @override
+  String get examDeliveryLabel => 'طريقة الأداء';
+
+  @override
+  String get examDeliveryPaper => 'ورقي';
+
+  @override
+  String get examDeliveryPaperDetail => 'يُؤدّى في الصف، وتُدخل الدرجات بنفسك.';
+
+  @override
+  String get examDeliveryOnline => 'داخل التطبيق';
+
+  @override
+  String get examDeliveryOnlineDetail => 'يجيب الطلاب على الأسئلة في ستدفاي.';
+
+  @override
+  String get examDeliveryPractice => 'تدريب';
+
+  @override
+  String get examDeliveryPracticeDetail => 'يتدرّب الطلاب بحرية ولا يُحتسب.';
+
+  @override
+  String get examScheduleLabel => 'موعد الأداء';
+
+  @override
+  String get examPickSchedule => 'اختر التاريخ والوقت';
+
+  @override
+  String get examQuestionsLabel => 'الأسئلة';
+
+  @override
+  String get examAddQuestion => 'إضافة سؤال';
+
+  @override
+  String examQuestionPrompt(int number) {
+    return 'السؤال $number';
+  }
+
+  @override
+  String get examQuestionMarks => 'الدرجات';
+
+  @override
+  String get examQuestionAnswer => 'الإجابة النموذجية (اختياري)';
+
+  @override
+  String get examRemoveQuestion => 'حذف';
+
+  @override
+  String get examMoveUp => 'تحريك لأعلى';
+
+  @override
+  String get examMoveDown => 'تحريك لأسفل';
+
+  @override
+  String examTotalFromQuestions(String total, int count) {
+    return 'المجموع: $total درجة من $count سؤالًا.';
+  }
+
+  @override
+  String get examTotalLabel => 'مجموع الدرجات';
+
+  @override
+  String get examNoQuestionsHint =>
+      'لا توجد أسئلة. أضِف أسئلة، أو حدّد مجموع الدرجات وصحّحه ورقيًا.';
+
+  @override
+  String get examCreate => 'إنشاء الاختبار';
+
+  @override
+  String get examCreating => 'جارٍ الإنشاء…';
+
+  @override
+  String get examCreated =>
+      'تم إنشاء الاختبار كمسودة. انشره من سجل الدرجات عندما تكون جاهزًا.';
+
+  @override
+  String get examTitleRequired => 'أدخل عنوانًا للاختبار.';
+
+  @override
+  String get examClassRequired => 'اختر الفصل الذي سيؤدي هذا الاختبار.';
+
+  @override
+  String get examTotalRequired => 'حدّد مجموع درجات أكبر من صفر.';
+
+  @override
+  String get examQuestionPromptRequired => 'كل سؤال يحتاج إلى نصّه.';
+
+  @override
+  String get examQuestionMarksRequired =>
+      'كل سؤال يحتاج إلى درجات أكبر من صفر.';
+
+  @override
+  String get examOnlineNeedsQuestions =>
+      'الاختبار داخل التطبيق يحتاج إلى سؤال واحد على الأقل.';
+
+  @override
+  String get examCreateFailed =>
+      'تعذّر إنشاء الاختبار. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get examTotalHint =>
+      'يؤدي الطلاب هذا خارج التطبيق. أدخل الدرجات في سجل الدرجات، ويرى كل طالب درجته.';
+
+  @override
+  String get gradeAwaiting => 'لم تُصحَّح بعد';
+
+  @override
+  String gradeScore(String score, String max) {
+    return '$score من $max';
+  }
+
+  @override
+  String get submitTitle => 'تسليم العمل';
+
+  @override
+  String get submitAnswerLabel => 'عملك';
+
+  @override
+  String get submitAnswerHint => 'اكتب إجابتك أو الصقها.';
+
+  @override
+  String get submitSend => 'تسليم';
+
+  @override
+  String get submitSending => 'جارٍ التسليم…';
+
+  @override
+  String get submitDone => 'تم تسليم العمل.';
+
+  @override
+  String get submitEmpty => 'اكتب إجابتك قبل التسليم.';
+
+  @override
+  String get submitFailed => 'تعذّر تسليم العمل. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get submitClosed => 'هذا الواجب غير مفتوح للتسليم.';
+
+  @override
+  String get submitAttachmentsSoon =>
+      'إرفاق الملفات غير متاح بعد؛ الصق رابطًا إذا احتجت لمشاركة ملف.';
+
+  @override
+  String submissionsTitle(String title) {
+    return 'المُسلَّم · $title';
+  }
+
+  @override
+  String get submissionsAction => 'المُسلَّم';
+
+  @override
+  String get submissionsNone => 'لم يسلّم أحد شيئًا بعد.';
+
+  @override
+  String get submissionsWaiting => 'لم يُسلَّم';
+
+  @override
+  String submissionsOn(String when) {
+    return 'سُلّم $when';
+  }
+
+  @override
+  String get submissionsLoadFailed =>
+      'تعذّر تحميل ما تم تسليمه. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String submissionsCount(int done, int total) {
+    return '$done من $total سلّموا';
+  }
+
+  @override
+  String scheduleTitle(String className) {
+    return 'الجدول · $className';
+  }
+
+  @override
+  String get scheduleAction => 'الجدول';
+
+  @override
+  String get scheduleHint =>
+      'يتبع سجل الحضور هذا الجدول، فالفصل الذي يُعقد مرتين أسبوعيًا يحتاج إلى كليهما هنا.';
+
+  @override
+  String get scheduleAddSlot => 'إضافة حصة';
+
+  @override
+  String get scheduleWeekday => 'اليوم';
+
+  @override
+  String get scheduleStarts => 'تبدأ';
+
+  @override
+  String get scheduleEnds => 'تنتهي';
+
+  @override
+  String get scheduleRemove => 'حذف';
+
+  @override
+  String get scheduleSave => 'حفظ الجدول';
+
+  @override
+  String get scheduleSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get scheduleSaved => 'تم حفظ الجدول.';
+
+  @override
+  String get scheduleEmpty =>
+      'لا توجد حصص بعد. أضِف حصة ليعرف سجل الحضور موعد هذا الفصل.';
+
+  @override
+  String get scheduleEndBeforeStart => 'لا يمكن أن تنتهي الحصة قبل أن تبدأ.';
+
+  @override
+  String get scheduleSaveFailed => 'تعذّر حفظ الجدول. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get weekdayMon => 'الاثنين';
+
+  @override
+  String get weekdayTue => 'الثلاثاء';
+
+  @override
+  String get weekdayWed => 'الأربعاء';
+
+  @override
+  String get weekdayThu => 'الخميس';
+
+  @override
+  String get weekdayFri => 'الجمعة';
+
+  @override
+  String get weekdaySat => 'السبت';
+
+  @override
+  String get weekdaySun => 'الأحد';
+
+  @override
+  String get joinLinkActive => 'يوجد رابط انضمام فعّال لهذا الفصل.';
+
+  @override
+  String joinLinkUses(int count) {
+    return 'استُخدم $count مرة';
+  }
+
+  @override
+  String joinLinkExpires(String when) {
+    return 'ينتهي في $when';
+  }
+
+  @override
+  String get joinLinkRevoke => 'إلغاء الرابط';
+
+  @override
+  String get joinLinkRevoked => 'تم إلغاء الرابط، ولم يعد يعمل لأي شخص يملكه.';
+
+  @override
+  String get joinLinkRevokeFailed =>
+      'تعذّر إلغاء الرابط. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get joinLinkNewReplaces => 'إنشاء رابط جديد يحلّ محلّ هذا الرابط.';
 }

@@ -40,4 +40,19 @@ class NotificationsInteractor {
   }
 
   Future<Result<void>> syncPending() => runCatching(repository.syncPending);
+
+  Future<Result<List<NotificationPreference>>> loadPreferences() =>
+      runCatching(repository.preferences);
+
+  Future<Result<NotificationPreference>> updatePreference(
+    NotificationPreference preference,
+  ) => runCatching(() async {
+    final value = await repository.updatePreference(preference);
+    telemetry.event('notification_preference_updated', {
+      'channel': value.channel,
+      'category': value.category,
+      'enabled': value.enabled,
+    });
+    return value;
+  });
 }

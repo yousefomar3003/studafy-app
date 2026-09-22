@@ -1,3 +1,4 @@
+import '../../../core/failures.dart';
 import '../../../core/ids.dart';
 import '../../../studafy_database.dart';
 import '../domain/classroom.dart';
@@ -68,5 +69,19 @@ class PreviewClassroomRepository implements ClassroomRepository {
       throw StateError('Preview invite links need a local class id.');
     }
     return StudafyDatabase.instance.createInviteLink(localId);
+  }
+
+  @override
+  Future<ClassJoinLinkInfo?> activeJoinLink(String classroomId) async => null;
+
+  @override
+  Future<void> revokeJoinLink(String linkId) async =>
+      throw const Failure.unsupported('Join links need the school service.');
+
+  @override
+  Future<JoinedClass> joinWithLink(String token) {
+    throw const Failure.unsupported(
+      'Joining a class by link needs the school service.',
+    );
   }
 }

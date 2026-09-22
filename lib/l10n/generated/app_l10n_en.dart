@@ -625,4 +625,592 @@ class AppL10nEn extends AppL10n {
   @override
   String get blockedInvalidEnvironment =>
       'Invalid APP_ENV. This build has been blocked for safety.';
+
+  @override
+  String attendanceTitle(String className) {
+    return 'Attendance · $className';
+  }
+
+  @override
+  String get attendanceAction => 'Take attendance';
+
+  @override
+  String get attendanceWhichSession => 'Which session?';
+
+  @override
+  String get attendanceNoSessionThatDay =>
+      'This class does not meet on the day you picked.';
+
+  @override
+  String get attendanceNoStudents => 'No students are enrolled in this class.';
+
+  @override
+  String get attendanceSaving => 'Saving…';
+
+  @override
+  String get attendanceMarkOne => 'Mark at least one student first.';
+
+  @override
+  String get attendanceLoadFailed =>
+      'Could not load the register. Please try again.';
+
+  @override
+  String get attendanceReasonLabel => 'Reason (optional)';
+
+  @override
+  String rosterTitle(String className) {
+    return 'Students · $className';
+  }
+
+  @override
+  String get rosterAction => 'Students';
+
+  @override
+  String get rosterNoGuardian => 'No parent linked yet';
+
+  @override
+  String get rosterEmpty => 'No students are enrolled in this class yet.';
+
+  @override
+  String get rosterLoadFailed =>
+      'Could not load the class list. Please try again.';
+
+  @override
+  String get rosterTryAgain => 'Try again';
+
+  @override
+  String attendanceSavedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Register saved for $count students.',
+      one: 'Register saved for 1 student.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assignmentNewTitle => 'New assignment';
+
+  @override
+  String get assignmentAction => 'New assignment';
+
+  @override
+  String get assignmentClassLabel => 'Class';
+
+  @override
+  String get assignmentTitleLabel => 'Title';
+
+  @override
+  String get assignmentInstructionsLabel => 'Instructions (optional)';
+
+  @override
+  String get assignmentDueLabel => 'Due';
+
+  @override
+  String get assignmentPickDue => 'Pick a due date';
+
+  @override
+  String get assignmentGradedLabel => 'Graded';
+
+  @override
+  String get assignmentGradedOn =>
+      'Students receive a score out of the maximum you set.';
+
+  @override
+  String get assignmentGradedOff => 'Students hand work in, with no score.';
+
+  @override
+  String get assignmentMaxScoreLabel => 'Maximum score';
+
+  @override
+  String get assignmentCreate => 'Create assignment';
+
+  @override
+  String get assignmentCreating => 'Creating…';
+
+  @override
+  String get assignmentCreated => 'Assignment created.';
+
+  @override
+  String get assignmentTitleRequired => 'Give the assignment a title.';
+
+  @override
+  String get assignmentClassRequired => 'Choose which class this is for.';
+
+  @override
+  String get assignmentDueRequired => 'Choose when it is due.';
+
+  @override
+  String get assignmentMaxScoreRequired => 'Set a maximum score above zero.';
+
+  @override
+  String get assignmentCreateFailed =>
+      'Could not create the assignment. Please try again.';
+
+  @override
+  String get announcementNewTitle => 'New announcement';
+
+  @override
+  String get announcementAction => 'Announce';
+
+  @override
+  String get announcementTitleLabel => 'Title';
+
+  @override
+  String get announcementBodyLabel => 'Message';
+
+  @override
+  String get announcementClassLabel => 'Class';
+
+  @override
+  String get announcementAudienceLabel => 'Who should see this';
+
+  @override
+  String get announcementAudienceStudents => 'Students';
+
+  @override
+  String get announcementAudienceGuardians => 'Parents and guardians';
+
+  @override
+  String get announcementAudienceBoth => 'Everyone';
+
+  @override
+  String get announcementImportantLabel => 'Mark as important';
+
+  @override
+  String get announcementImportantDetail =>
+      'Use this for things that change what someone does today.';
+
+  @override
+  String get announcementPost => 'Post announcement';
+
+  @override
+  String get announcementPosting => 'Posting…';
+
+  @override
+  String get announcementPosted => 'Announcement posted.';
+
+  @override
+  String get announcementTitleRequired => 'Give the announcement a title.';
+
+  @override
+  String get announcementBodyRequired => 'Write the message.';
+
+  @override
+  String get announcementClassRequired => 'Choose which class to announce to.';
+
+  @override
+  String get announcementFailed =>
+      'Could not post the announcement. Please try again.';
+
+  @override
+  String gradebookTitle(String className) {
+    return 'Gradebook · $className';
+  }
+
+  @override
+  String get gradebookAction => 'Gradebook';
+
+  @override
+  String get gradebookPickAssessment => 'Choose what to mark';
+
+  @override
+  String get gradebookNoAssessments =>
+      'Nothing to mark yet. Create graded work first.';
+
+  @override
+  String get gradebookDraftNotice =>
+      'This is still a draft. Publish it to open the register of marks.';
+
+  @override
+  String get gradebookPublishAssessment => 'Publish and start marking';
+
+  @override
+  String get gradebookNoStudents => 'No students are enrolled in this class.';
+
+  @override
+  String gradebookScoreOf(String max) {
+    return 'out of $max';
+  }
+
+  @override
+  String get gradebookSave => 'Save marks';
+
+  @override
+  String get gradebookSaving => 'Saving…';
+
+  @override
+  String get gradebookSaved => 'Marks saved.';
+
+  @override
+  String get gradebookNothingChanged => 'No marks were changed.';
+
+  @override
+  String get gradebookScoreTooHigh => 'A mark cannot be above the maximum.';
+
+  @override
+  String get gradebookLoadFailed =>
+      'Could not load the gradebook. Please try again.';
+
+  @override
+  String get gradebookSaveFailed =>
+      'Could not save the marks. Please try again.';
+
+  @override
+  String get gradebookRelease => 'Release to students';
+
+  @override
+  String get gradebookReleased => 'Marks released.';
+
+  @override
+  String sectionsTitle(String className) {
+    return 'Sections · $className';
+  }
+
+  @override
+  String get sectionsAction => 'Lesson content';
+
+  @override
+  String get sectionsNone =>
+      'No sections have been taught yet. Take a register first.';
+
+  @override
+  String get sectionsOutstanding => 'Content outstanding';
+
+  @override
+  String get sectionsFiled => 'Closed';
+
+  @override
+  String get sectionsFileContent => 'File content';
+
+  @override
+  String get sectionsClose => 'Close section';
+
+  @override
+  String get sectionsClosed => 'Section closed.';
+
+  @override
+  String get sectionsCloseBlocked =>
+      'File the content taught in this section before closing it.';
+
+  @override
+  String get sectionsContentTitle => 'What was taught';
+
+  @override
+  String get sectionsContentTitleLabel => 'Title';
+
+  @override
+  String get sectionsContentBodyLabel => 'Summary of the section';
+
+  @override
+  String get sectionsContentSave => 'File it';
+
+  @override
+  String get sectionsContentSaved => 'Content filed.';
+
+  @override
+  String get sectionsContentRequired =>
+      'Write what was taught in this section.';
+
+  @override
+  String get sectionsLoadFailed =>
+      'Could not load the sections. Please try again.';
+
+  @override
+  String get sectionsSaveFailed => 'Could not save. Please try again.';
+
+  @override
+  String get examNewTitle => 'New exam';
+
+  @override
+  String get examAction => 'New exam';
+
+  @override
+  String get examClassLabel => 'Class';
+
+  @override
+  String get examTitleLabel => 'Title';
+
+  @override
+  String get examCategoryLabel => 'Kind';
+
+  @override
+  String get examCategoryExam => 'Exam';
+
+  @override
+  String get examCategoryQuiz => 'Quiz';
+
+  @override
+  String get examCategoryMidterm => 'Midterm';
+
+  @override
+  String get examCategoryFinal => 'Final';
+
+  @override
+  String get examDeliveryLabel => 'How it is taken';
+
+  @override
+  String get examDeliveryPaper => 'On paper';
+
+  @override
+  String get examDeliveryPaperDetail =>
+      'Sat in class; you enter the marks yourself.';
+
+  @override
+  String get examDeliveryOnline => 'In the app';
+
+  @override
+  String get examDeliveryOnlineDetail =>
+      'Students answer the questions in Studafy.';
+
+  @override
+  String get examDeliveryPractice => 'Practice';
+
+  @override
+  String get examDeliveryPracticeDetail =>
+      'Students practise freely; it does not count.';
+
+  @override
+  String get examScheduleLabel => 'When it is sat';
+
+  @override
+  String get examPickSchedule => 'Pick a date and time';
+
+  @override
+  String get examQuestionsLabel => 'Questions';
+
+  @override
+  String get examAddQuestion => 'Add question';
+
+  @override
+  String examQuestionPrompt(int number) {
+    return 'Question $number';
+  }
+
+  @override
+  String get examQuestionMarks => 'Marks';
+
+  @override
+  String get examQuestionAnswer => 'Model answer (optional)';
+
+  @override
+  String get examRemoveQuestion => 'Remove';
+
+  @override
+  String get examMoveUp => 'Move up';
+
+  @override
+  String get examMoveDown => 'Move down';
+
+  @override
+  String examTotalFromQuestions(String total, int count) {
+    return 'Total: $total marks, from $count questions.';
+  }
+
+  @override
+  String get examTotalLabel => 'Total marks';
+
+  @override
+  String get examNoQuestionsHint =>
+      'No questions listed. Add them, or set the total marks and mark it on paper.';
+
+  @override
+  String get examCreate => 'Create exam';
+
+  @override
+  String get examCreating => 'Creating…';
+
+  @override
+  String get examCreated =>
+      'Exam created as a draft. Publish it from the gradebook when you are ready.';
+
+  @override
+  String get examTitleRequired => 'Give the exam a title.';
+
+  @override
+  String get examClassRequired => 'Choose which class sits this exam.';
+
+  @override
+  String get examTotalRequired => 'Set the total marks above zero.';
+
+  @override
+  String get examQuestionPromptRequired => 'Every question needs its text.';
+
+  @override
+  String get examQuestionMarksRequired =>
+      'Every question needs marks above zero.';
+
+  @override
+  String get examOnlineNeedsQuestions =>
+      'An exam taken in the app needs at least one question.';
+
+  @override
+  String get examCreateFailed => 'Could not create the exam. Please try again.';
+
+  @override
+  String get examTotalHint =>
+      'Students sit this outside the app. Enter the marks in the gradebook; each student sees their own.';
+
+  @override
+  String get gradeAwaiting => 'Not marked yet';
+
+  @override
+  String gradeScore(String score, String max) {
+    return '$score out of $max';
+  }
+
+  @override
+  String get submitTitle => 'Hand in work';
+
+  @override
+  String get submitAnswerLabel => 'Your work';
+
+  @override
+  String get submitAnswerHint => 'Type or paste your answer.';
+
+  @override
+  String get submitSend => 'Hand in';
+
+  @override
+  String get submitSending => 'Handing in…';
+
+  @override
+  String get submitDone => 'Work handed in.';
+
+  @override
+  String get submitEmpty => 'Write your answer before handing it in.';
+
+  @override
+  String get submitFailed => 'Could not hand in your work. Please try again.';
+
+  @override
+  String get submitClosed => 'This assignment is not open for work.';
+
+  @override
+  String get submitAttachmentsSoon =>
+      'Attaching files is not available yet; paste a link if you need to share one.';
+
+  @override
+  String submissionsTitle(String title) {
+    return 'Handed in · $title';
+  }
+
+  @override
+  String get submissionsAction => 'Handed in';
+
+  @override
+  String get submissionsNone => 'Nobody has handed anything in yet.';
+
+  @override
+  String get submissionsWaiting => 'Not handed in';
+
+  @override
+  String submissionsOn(String when) {
+    return 'Handed in $when';
+  }
+
+  @override
+  String get submissionsLoadFailed =>
+      'Could not load what was handed in. Please try again.';
+
+  @override
+  String submissionsCount(int done, int total) {
+    return '$done of $total handed in';
+  }
+
+  @override
+  String scheduleTitle(String className) {
+    return 'Timetable · $className';
+  }
+
+  @override
+  String get scheduleAction => 'Timetable';
+
+  @override
+  String get scheduleHint =>
+      'The register follows this timetable, so a class that meets twice a week needs both here.';
+
+  @override
+  String get scheduleAddSlot => 'Add a meeting';
+
+  @override
+  String get scheduleWeekday => 'Day';
+
+  @override
+  String get scheduleStarts => 'Starts';
+
+  @override
+  String get scheduleEnds => 'Ends';
+
+  @override
+  String get scheduleRemove => 'Remove';
+
+  @override
+  String get scheduleSave => 'Save timetable';
+
+  @override
+  String get scheduleSaving => 'Saving…';
+
+  @override
+  String get scheduleSaved => 'Timetable saved.';
+
+  @override
+  String get scheduleEmpty =>
+      'No meetings yet. Add one so the register knows when this class meets.';
+
+  @override
+  String get scheduleEndBeforeStart => 'A meeting cannot end before it starts.';
+
+  @override
+  String get scheduleSaveFailed =>
+      'Could not save the timetable. Please try again.';
+
+  @override
+  String get weekdayMon => 'Monday';
+
+  @override
+  String get weekdayTue => 'Tuesday';
+
+  @override
+  String get weekdayWed => 'Wednesday';
+
+  @override
+  String get weekdayThu => 'Thursday';
+
+  @override
+  String get weekdayFri => 'Friday';
+
+  @override
+  String get weekdaySat => 'Saturday';
+
+  @override
+  String get weekdaySun => 'Sunday';
+
+  @override
+  String get joinLinkActive => 'A join link is live for this class.';
+
+  @override
+  String joinLinkUses(int count) {
+    return 'Used $count times';
+  }
+
+  @override
+  String joinLinkExpires(String when) {
+    return 'Expires $when';
+  }
+
+  @override
+  String get joinLinkRevoke => 'Revoke link';
+
+  @override
+  String get joinLinkRevoked =>
+      'Link revoked. It no longer works for anyone holding it.';
+
+  @override
+  String get joinLinkRevokeFailed =>
+      'Could not revoke the link. Please try again.';
+
+  @override
+  String get joinLinkNewReplaces => 'Creating a new link replaces this one.';
 }

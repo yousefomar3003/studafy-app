@@ -53,6 +53,39 @@ function sliceFor(operation: string): AcademicSlice {
   return "grades";
 }
 
+/// Academic operations appended after the index-based block above.
+///
+/// Selected by operation id: ACADEMIC_ROUTES is a positional slice, so a
+/// route appended at the end of the catalogue would never be picked up by it.
+const ACADEMIC_APPENDED_OPERATIONS = new Set(["closeLessonSession"]);
+const ACADEMIC_APPENDED_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  ACADEMIC_APPENDED_OPERATIONS.has(route.operationId)
+);
+
+function appendedSelector(c: Context<AuthorizationEnv>): string | null {
+  const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
+  return params["lessonSessionId"] ?? null;
+}
+
+export function createAcademicAppendedRoutes(
+  deps: AcademicDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: ACADEMIC_APPENDED_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: appendedSelector,
+      sliceFor: () => "classes" as AcademicSlice,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
 export function createAcademicRoutes(
   deps: AcademicDependencies,
   authorization: AuthorizationDependencies,

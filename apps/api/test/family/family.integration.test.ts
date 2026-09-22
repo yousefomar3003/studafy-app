@@ -20,6 +20,7 @@ import { PostgresFamilyRepository } from "../../src/family/repository";
 import {
   createFamilyReadRoutes,
   createFamilyRoutes,
+  createStudentFamilyRoutes,
 } from "../../src/family/routes";
 
 const databaseUrl = process.env["DATABASE_URL"];
@@ -150,6 +151,10 @@ suite("API-042 S3 family over the real /v1 stack", () => {
     app.route("/", createFamilyRoutes(familyDeps, authorization, idempotency));
     app.route(
       "/",
+      createStudentFamilyRoutes(familyDeps, authorization, idempotency),
+    );
+    app.route(
+      "/",
       createFamilyReadRoutes(familyDeps, authorization, idempotency),
     );
   });
@@ -198,15 +203,78 @@ suite("API-042 S3 family over the real /v1 stack", () => {
     guardianLinkId = body.id;
   });
 
-  test("a school admin verifies the pending link", async () => {
-    const res = await post(`/v1/guardian-links/${guardianLinkId}/verify`, {
-      subject: ADMIN,
-      body: { expiresInDays: 90 },
+  test("students see their ID and requests, while a guardian sees no student requests", async () => {
+    const mine = await app.request("/v1/me/student-family", {
+      headers: { "x-test-subject": STUDENT_USER },
+    });
+    expect(mine.status).toBe(200);
+    const body = await mine.json() as {
+      studentIds: { studafyId: string }[];
+      requests: { id: string }[];
+    };
+    expect(body.studentIds[0]?.studafyId).toBe("STU-API042-FAM");
+    expect(body.requests[0]?.id).toBe(guardianLinkId);
+    const other = await app.request("/v1/me/student-family", {
+      headers: { "x-test-subject": GUARDIAN },
+    });
+    expect((await other.json() as { requests: unknown[] }).requests).toEqual(
+      [],
+    );
+  });
+
+  test("guardians and unrelated accounts cannot approve a student link", async () => {
+    for (const subject of [GUARDIAN, ADMIN]) {
+      const response = await post(
+        `/v1/guardian-links/${guardianLinkId}/student-decision`,
+        { subject, body: { decision: "approve" } },
+      );
+      expect(response.status).toBe(404);
+    }
+    const [link] =
+      await sql`select status from public.guardian_links where id=${guardianLinkId}::uuid`;
+    expect(link?.status).toBe("pending");
+  });
+
+  test("the student can decline without granting access", async () => {
+    const res = await post(
+      `/v1/guardian-links/${guardianLinkId}/student-decision`,
+      { subject: STUDENT_USER, body: { decision: "decline" } },
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json() as { status: string }).status).toBe("declined");
+    const request = await post("/v1/guardian-links", {
+      subject: GUARDIAN,
+      body: { studentId: STUDENT_ROW, relationship: "parent" },
+    });
+    expect(request.status).toBe(201);
+  });
+
+  test("the owning student approves, duplicate replay is safe and stale decisions fail", async () => {
+    const key = crypto.randomUUID();
+    const path = `/v1/guardian-links/${guardianLinkId}/student-decision`;
+    const res = await post(path, {
+      subject: STUDENT_USER,
+      key,
+      body: { decision: "approve" },
     });
     expect(res.status).toBe(200);
     const body = await res.json() as { status: string; expiresAt: string };
     expect(body.status).toBe("verified");
     expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    const replay = await post(path, {
+      subject: STUDENT_USER,
+      key,
+      body: { decision: "approve" },
+    });
+    expect(replay.status).toBe(200);
+    const stale = await post(path, {
+      subject: STUDENT_USER,
+      body: { decision: "decline" },
+    });
+    expect(stale.status).toBe(409);
+    const [link] =
+      await sql`select verified_by from public.guardian_links where id=${guardianLinkId}::uuid`;
+    expect(link?.verified_by).toBe(STUDENT_USER);
   });
 
   test("the guardian lists their own children, and nobody else sees them", async () => {
@@ -234,10 +302,14 @@ suite("API-042 S3 family over the real /v1 stack", () => {
     expect(((await theirs.json()) as { items: unknown[] }).items).toEqual([]);
   });
 
-  test("the guardian revokes their own verified link", async () => {
-    const res = await post(`/v1/guardian-links/${guardianLinkId}/revoke`, {
-      subject: GUARDIAN,
-    });
+  test("the student can remove previously granted access", async () => {
+    const res = await post(
+      `/v1/guardian-links/${guardianLinkId}/student-decision`,
+      {
+        subject: STUDENT_USER,
+        body: { decision: "revoke" },
+      },
+    );
     expect(res.status).toBe(200);
     const body = await res.json() as { status: string };
     expect(body.status).toBe("revoked");

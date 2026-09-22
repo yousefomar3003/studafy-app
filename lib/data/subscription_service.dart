@@ -41,7 +41,7 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
 
   V1BillingProduct? _insightsProduct;
   bool _catalogueLoaded = false;
-  bool _catalogueError = false;
+  List<V1BillingProduct> _catalogueProducts = const [];
 
   bool get _isRemote => _billingApi != null;
 
@@ -64,18 +64,22 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
     _purchaseListener = null;
   }
 
-  String get _platformName =>
-      defaultTargetPlatform == TargetPlatform.iOS ? 'app_store' : 'play_store';
+  String get _platformName => switch (defaultTargetPlatform) {
+    TargetPlatform.iOS => 'app_store',
+    TargetPlatform.android => 'play_store',
+    _ => throw UnsupportedError(
+      'Subscriptions require the native mobile store',
+    ),
+  };
 
   /// Resolves this platform's product rows from the server catalogue (lazy,
   /// once). Store product ids and availability are server-authoritative; the
   /// store product query later supplies price/trial for display only.
   Future<List<V1BillingProduct>> _products() async {
     if (_catalogueLoaded) {
-      final insights = _insightsProduct;
-      return insights == null ? <V1BillingProduct>[] : [insights];
+      return _catalogueProducts;
     }
-    if (_catalogueError || !_isRemote) return <V1BillingProduct>[];
+    if (!_isRemote) return <V1BillingProduct>[];
     try {
       final catalogue = await _billingApi!.catalogue();
       _accountToken = catalogue.purchaseAccountToken;
@@ -86,10 +90,10 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
         (product) => product.featureKey == 'parent_insights',
       );
       _insightsProduct = matched < 0 ? null : products[matched];
+      _catalogueProducts = List.unmodifiable(products);
       _catalogueLoaded = true;
       return products;
     } catch (_) {
-      _catalogueError = true;
       rethrow;
     }
   }
@@ -189,6 +193,12 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
     if (response.error != null) throw StateError(response.error!.message);
     if (response.productDetails.isEmpty) {
       throw StateError('Insights+ is not available in this store region');
+    }
+    final terms = resolveStoreOfferTerms(response.productDetails.first);
+    if (terms.price.trim().isEmpty ||
+        terms.currencyCode.trim().isEmpty ||
+        terms.periodLength.trim().isEmpty) {
+      throw StateError('Subscription terms are unavailable in this store');
     }
     await _pending.write(
       _pendingKey(product.storeProductId),

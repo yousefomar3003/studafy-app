@@ -42,17 +42,14 @@ class _RolePageState extends State<RolePage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const StudafyLogo(size: 36),
-        const SizedBox(height: 44),
-        Text(
-          AppL10n.of(c).roleQuestion,
-          style: Theme.of(c).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          AppL10n.of(c).roleChoosePrompt,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: studafyMuted),
+        const SizedBox(height: 28),
+        StudafyHero(
+          eyebrow: Localizations.localeOf(c).languageCode == 'ar'
+              ? 'مساحتك للنمو'
+              : 'YOUR SPACE TO GROW',
+          title: AppL10n.of(c).roleQuestion,
+          subtitle: AppL10n.of(c).roleChoosePrompt,
+          icon: Icons.auto_awesome_rounded,
         ),
         const SizedBox(height: 32),
         ...UserRole.values.map(
@@ -129,13 +126,13 @@ class RoleTile extends StatelessWidget {
     };
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(17),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFFF0EFFF) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: selected ? studafyNavy : const Color(0xFFDCE0EE),
             width: selected ? 2 : 1,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-const studafyNavy = Color(0xFF241D73);
-const studafyCyan = Color(0xFF20C6E8);
-const studafyInk = Color(0xFF171441);
-const studafyMuted = Color(0xFF737B98);
-const studafyCanvas = Color(0xFFF7F6FE);
+const studafyNavy = Color(0xFF5146E5);
+const studafyCyan = Color(0xFF08A88A);
+const studafyInk = Color(0xFF192333);
+const studafyMuted = Color(0xFF69778C);
+const studafyCanvas = Color(0xFFF5F7FB);
 
 /// Brand lockup shared by the session flow and every shell.
 class StudafyLogo extends StatelessWidget {
@@ -46,19 +46,19 @@ class FeatureCard extends StatelessWidget {
   final Color? tint;
   @override
   Widget build(BuildContext c) => Card(
-    elevation: 1,
+    elevation: 0,
     shadowColor: const Color(0xFF7737EE).withValues(alpha: .12),
     color: tint == null
         ? Colors.white
         : Color.alphaBlend(tint!.withValues(alpha: .065), Colors.white),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       side: BorderSide(color: (tint ?? studafyCyan).withValues(alpha: .11)),
     ),
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(padding: const EdgeInsets.all(17), child: child),
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(padding: const EdgeInsets.all(20), child: child),
     ),
   );
 }
@@ -104,12 +104,13 @@ class StudafyNavigationBar extends StatelessWidget {
       ),
     ),
     child: NavigationBar(
-      height: 72,
+      height: 76,
       selectedIndex: selectedIndex,
       onDestinationSelected: onSelected,
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: accent.withValues(alpha: .12),
+      indicatorColor: accent.withValues(alpha: .10),
+      animationDuration: const Duration(milliseconds: 300),
       destinations: [
         for (final item in items)
           NavigationDestination(
@@ -187,3 +188,94 @@ IconData forwardChevron(BuildContext context) => directionalIcon(
   ltr: Icons.chevron_right_rounded,
   rtl: Icons.chevron_left_rounded,
 );
+
+/// Shared editorial header for each role. Motion respects device preferences.
+class StudafyHero extends StatelessWidget {
+  const StudafyHero({
+    super.key,
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+    this.icon = Icons.auto_awesome_rounded,
+    this.child,
+  });
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Widget? child;
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0, end: 1),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 450),
+    builder: (context, value, content) => Opacity(
+      opacity: value,
+      child: Transform.translate(
+        offset: Offset(0, 12 * (1 - value)),
+        child: content,
+      ),
+    ),
+    child: Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF252455), Color(0xFF5146E5)],
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
+        ),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  eyebrow,
+                  style: const TextStyle(
+                    color: Color(0xFFC7F9E8),
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: const Color(0xFFC7F9E8), size: 26),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 29,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.8,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Color(0xFFE0E2FF),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          if (child != null) ...[const SizedBox(height: 20), child!],
+        ],
+      ),
+    ),
+  );
+}

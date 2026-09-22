@@ -7,7 +7,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select plan(20);
 
-\set school_id '11111111-1111-1111-1111-111111111111'
+\set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
 \set student_user 'bbbb0000-0000-4000-8000-000000000002'
 \set other_school_user 'eeee0000-0000-4000-8000-000000000005'
@@ -53,13 +53,13 @@ values('a0720000-0000-4000-8000-000000000051',:'school_id','a0720000-0000-4000-8
 
 select throws_like($$
   insert into public.ai_grading_drafts(id,school_id,grade_result_id,private_scan_path,strictness,model_version,status,created_by,version)
-  values('a0720000-0000-4000-8000-000000000054','11111111-1111-1111-1111-111111111111','a0720000-0000-4000-8000-000000000051',
+  values('a0720000-0000-4000-8000-000000000054','11111111-1111-4111-8111-111111111111','a0720000-0000-4000-8000-000000000051',
     'papers/another-user/private.pdf','balanced','fixture','ready','aaaa0000-0000-4000-8000-000000000001',1)
 $$, '%ai072_retired%', 'no grading draft can be created, even with a substituted private path');
 select throws_like($$
   insert into public.practice_sessions(student_id,classroom_id,topic,kind,item_count,school_id)
   values('abcf0000-0000-4000-8000-000000000008','abcd0000-0000-4000-8000-000000000007','any','quiz',1,
-    '11111111-1111-1111-1111-111111111111')
+    '11111111-1111-4111-8111-111111111111')
 $$, '%ai072_retired%', 'no practice session can be recorded');
 
 -- 3. The API-041 draft branch is unreachable: a review naming any draft is
@@ -95,7 +95,7 @@ select is(private.api050_prepare_intent(jsonb_build_object(
   'an authorized student asking for a coach_attachment upload is refused');
 select throws_like($$
   insert into public.upload_sessions(school_id,uploader_id,purpose,expected_size_bytes,allowed_media_types,nonce_hash,expires_at,student_id)
-  values('11111111-1111-1111-1111-111111111111','bbbb0000-0000-4000-8000-000000000002','coach_attachment',1024,
+  values('11111111-1111-4111-8111-111111111111','bbbb0000-0000-4000-8000-000000000002','coach_attachment',1024,
     array['application/pdf'],repeat('b',64),now()+interval '1 hour','abcf0000-0000-4000-8000-000000000008')
 $$, '%ai072_coach_attachment_retired%', 'no upload session can carry the retired purpose');
 select ok((select count(*) from public.file_purpose_policies where enabled and purpose<>'coach_attachment')=5,

@@ -6,6 +6,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/studafy_localizations.dart';
 import '../domain/notification.dart';
 import 'notifications_scope.dart';
+import 'notification_preferences_page.dart';
 
 /// Real notifications feed, backed by the typed `/v1` notifications
 /// repository (MOB-070). Replaces the legacy `StudentNotificationsPage`,
@@ -101,6 +102,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
         backgroundColor: Colors.white,
         title: Text(t('notifications.title')),
         actions: [
+          IconButton(
+            tooltip: Localizations.localeOf(context).languageCode == 'ar'
+                ? 'تفضيلات الإشعارات'
+                : 'Notification preferences',
+            icon: const Icon(Icons.tune_rounded),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const NotificationPreferencesPage(),
+              ),
+            ),
+          ),
           TextButton(
             onPressed: _items.any((item) => !item.isRead) ? _markAllRead : null,
             child: Text(t('notifications.markAllRead')),

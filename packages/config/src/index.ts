@@ -46,6 +46,12 @@ const disabledSwitchFlag = z.enum(["true", "false"]).default("false")
 
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
+  TURNSTILE_ENABLED: disabledSwitchFlag,
+  TURNSTILE_SITE_KEY: z.string().regex(/^[A-Za-z0-9_-]+$/).optional(),
+  TURNSTILE_SECRET: z.string().min(1).optional(),
+  TURNSTILE_HOSTNAMES: z.string().default("").transform((value) =>
+    value.split(",").map((host) => host.trim()).filter(Boolean)
+  ),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   DATABASE_URL: url.optional(),
   REDIS_URL: url.optional(),
@@ -395,6 +401,24 @@ export function redisUrlPostureProblems(
 }
 
 export function enforceApiFailClosed(env: ApiEnv): void {
+  if (env.TURNSTILE_ENABLED) {
+    if (
+      !env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY ||
+      !env.TURNSTILE_HOSTNAMES.length ||
+      env.TURNSTILE_HOSTNAMES.some((host) =>
+        !/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(host)
+      ) ||
+      (env.ENVIRONMENT === "production" &&
+        env.TURNSTILE_HOSTNAMES.some((host) =>
+          host === "localhost" || host.endsWith(".localhost") ||
+          host === "127.0.0.1"
+        ))
+    ) {
+      throw new ConfigError(
+        "Turnstile requires its site key, server secret and exact approved hostnames.",
+      );
+    }
+  }
   if (env.ENVIRONMENT !== "production") return;
   const missing: string[] = [];
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
@@ -496,6 +520,7 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     auth_reauth_ttl_seconds: env.AUTH_REAUTH_TTL_SECONDS,
     auth_deletion_grace_days: env.AUTH_DELETION_GRACE_DAYS,
     cursor_signing_key_configured: Boolean(env.API_CURSOR_SIGNING_KEY),
+    turnstile_enabled: env.TURNSTILE_ENABLED,
     rate_limit_enabled: env.RATE_LIMIT_ENABLED,
     rate_limit_hmac_key_configured: Boolean(env.RATE_LIMIT_HMAC_SIGNING_KEY),
     api041_slices: {

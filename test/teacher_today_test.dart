@@ -12,6 +12,7 @@ import 'package:studafy/features/classes/domain/classroom_repository.dart';
 import 'package:studafy/features/notifications/application/notifications_interactor.dart';
 import 'package:studafy/features/notifications/domain/notification.dart';
 import 'package:studafy/features/notifications/domain/notifications_repository.dart';
+import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/notifications/presentation/notifications_scope.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
@@ -32,9 +33,22 @@ class _Classes implements ClassroomRepository {
   Future<void> createClass(NewClassDraft draft) async {}
   @override
   Future<String> inviteLinkFor(ClassroomId id) async => '';
+  @override
+  Future<ClassJoinLinkInfo?> activeJoinLink(String classroomId) async => null;
+  @override
+  Future<void> revokeJoinLink(String linkId) async {}
+  @override
+  Future<JoinedClass> joinWithLink(String token) async =>
+      throw UnimplementedError();
 }
 
 class _Notifications implements NotificationsRepository {
+  @override
+  Future<List<NotificationPreference>> preferences() async => const [];
+  @override
+  Future<NotificationPreference> updatePreference(
+    NotificationPreference preference,
+  ) async => preference;
   @override
   Future<NotificationPage> list({String? cursor, int pageSize = 20}) async =>
       const NotificationPage(items: [], nextCursor: null, isFromCache: false);
@@ -85,6 +99,7 @@ void main() {
             repository: _Classes(),
             telemetry: const NoopTelemetry(),
           ),
+          academic: _TodayAcademic(),
           onOpenClassroom: (_) async {},
           onOpenMessages: () {},
           onOpenNotifications: () {},
@@ -104,4 +119,23 @@ void main() {
       expect(find.textContaining(sample), findsNothing);
     }
   });
+}
+
+/// Today aggregates from the academic surface; this fake returns nothing, so
+/// the test still asserts the class list is the teacher's own.
+class _TodayAcademic implements AcademicRepository {
+  @override
+  Future<List<AcademicRecord>> load(
+    AcademicFeed feed, {
+    String? classroomId,
+    String? studentId,
+  }) async => const [];
+
+  @override
+  Future<List<LessonSession>> lessonSessions(String classroomId) async =>
+      const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} is not faked');
 }

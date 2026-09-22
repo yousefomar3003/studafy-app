@@ -262,6 +262,8 @@ class _RecordingTransport implements V1JsonTransport {
           {
             'id': '44444444-4444-4444-8444-444444444444',
             'assessmentId': '66666666-6666-4666-8666-666666666666',
+            'assessmentTitle': 'Unit 1 exam',
+            'category': 'exam',
             'studentId': studentId,
             'score': 8,
             'maximumScore': 10,
@@ -321,6 +323,8 @@ class _RecordingTransport implements V1JsonTransport {
       return {
         'id': '55555555-5555-4555-8555-555555555555',
         'assessmentId': '66666666-6666-4666-8666-666666666666',
+        'assessmentTitle': 'Unit 1 exam',
+        'category': 'exam',
         'studentId': studentId,
         'score': 7.5,
         'maximumScore': 10,

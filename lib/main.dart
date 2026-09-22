@@ -5,6 +5,9 @@ import 'app/app_bootstrap.dart';
 import 'app/account_hub_page.dart';
 import 'app/account_scope.dart';
 import 'app/app_dependencies.dart';
+import 'app/class_join_link_guard.dart';
+import 'app/class_join_link_listener.dart';
+import 'app/oauth_callback_guard.dart';
 import 'app/studafy_theme.dart';
 import 'app/teacher_shell.dart';
 import 'core/locale_controller.dart';
@@ -20,6 +23,11 @@ import 'features/session/presentation/splash_page.dart';
 import 'features/teacher_dashboard/presentation/teacher_dashboard_repository_scope.dart';
 import 'parent_features.dart';
 import 'student_features.dart';
+
+/// Holds a class join link tapped before the app had somewhere to show it.
+final classJoinLinks = ClassJoinLinkGuard();
+
+final _navigatorKey = GlobalKey<NavigatorState>();
 
 const navy = Color(0xFF241D73),
     cyan = Color(0xFF20C6E8),
@@ -39,6 +47,12 @@ const _localizationsDelegates = <LocalizationsDelegate<Object>>[
 ];
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Registered before runApp so it precedes the observer WidgetsApp installs
+  // and is offered the provider callback first.
+  WidgetsBinding.instance.addObserver(OAuthCallbackGuard());
+  // Same reason: nothing routes a class join link either, so it is claimed
+  // before WidgetsApp can try to push it as a named route.
+  WidgetsBinding.instance.addObserver(classJoinLinks);
   late final RuntimePolicy runtimePolicy;
   try {
     runtimePolicy = RuntimePolicy.fromEnvironment();
@@ -92,7 +106,8 @@ class StudafyApp extends StatelessWidget {
             '/roles': (_) => RolePage(session: deps.session),
             '/teacher': (_) => TeacherShell(dependencies: deps),
             '/parent': (_) => ParentShell(academic: deps.academic),
-            '/student': (_) => StudentShell(academic: deps.academic),
+            '/student': (_) =>
+                StudentShell(academic: deps.academic, classes: deps.classes),
           };
     // A blocked build has no composition root, so it has no locale controller
     // either; it still needs the delegates and the device's own language.
@@ -113,6 +128,7 @@ class StudafyApp extends StatelessWidget {
             matchSupportedLocale(device == null ? null : [device]) ??
             kFallbackLocale,
         localizationsDelegates: _localizationsDelegates,
+        navigatorKey: _navigatorKey,
         routes: routes,
         builder: (context, child) {
           Widget content = child ?? const SizedBox.shrink();
@@ -143,6 +159,13 @@ class StudafyApp extends StatelessWidget {
             );
           }
           if (deps == null) return content;
+          content = ClassJoinLinkListener(
+            guard: classJoinLinks,
+            classes: deps.classes,
+            session: deps.session,
+            navigatorKey: _navigatorKey,
+            child: content,
+          );
           // Outermost, because feature presentation opens the language picker
           // and must reach the controller from anywhere in the tree.
           return LocaleScope(

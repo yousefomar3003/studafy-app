@@ -1098,6 +1098,1050 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Invalid APP_ENV. This build has been blocked for safety.'**
   String get blockedInvalidEnvironment;
+
+  /// No description provided for @attendanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance · {className}'**
+  String attendanceTitle(String className);
+
+  /// No description provided for @attendanceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Take attendance'**
+  String get attendanceAction;
+
+  /// No description provided for @attendanceWhichSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Which session?'**
+  String get attendanceWhichSession;
+
+  /// No description provided for @attendanceNoSessionThatDay.
+  ///
+  /// In en, this message translates to:
+  /// **'This class does not meet on the day you picked.'**
+  String get attendanceNoSessionThatDay;
+
+  /// No description provided for @attendanceNoStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'No students are enrolled in this class.'**
+  String get attendanceNoStudents;
+
+  /// No description provided for @attendanceSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get attendanceSaving;
+
+  /// No description provided for @attendanceMarkOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark at least one student first.'**
+  String get attendanceMarkOne;
+
+  /// No description provided for @attendanceLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the register. Please try again.'**
+  String get attendanceLoadFailed;
+
+  /// No description provided for @attendanceReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get attendanceReasonLabel;
+
+  /// No description provided for @rosterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Students · {className}'**
+  String rosterTitle(String className);
+
+  /// No description provided for @rosterAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get rosterAction;
+
+  /// No description provided for @rosterNoGuardian.
+  ///
+  /// In en, this message translates to:
+  /// **'No parent linked yet'**
+  String get rosterNoGuardian;
+
+  /// No description provided for @rosterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No students are enrolled in this class yet.'**
+  String get rosterEmpty;
+
+  /// No description provided for @rosterLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the class list. Please try again.'**
+  String get rosterLoadFailed;
+
+  /// No description provided for @rosterTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get rosterTryAgain;
+
+  /// No description provided for @attendanceSavedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Register saved for 1 student.} other{Register saved for {count} students.}}'**
+  String attendanceSavedCount(int count);
+
+  /// No description provided for @assignmentNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New assignment'**
+  String get assignmentNewTitle;
+
+  /// No description provided for @assignmentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'New assignment'**
+  String get assignmentAction;
+
+  /// No description provided for @assignmentClassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get assignmentClassLabel;
+
+  /// No description provided for @assignmentTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get assignmentTitleLabel;
+
+  /// No description provided for @assignmentInstructionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions (optional)'**
+  String get assignmentInstructionsLabel;
+
+  /// No description provided for @assignmentDueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get assignmentDueLabel;
+
+  /// No description provided for @assignmentPickDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a due date'**
+  String get assignmentPickDue;
+
+  /// No description provided for @assignmentGradedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded'**
+  String get assignmentGradedLabel;
+
+  /// No description provided for @assignmentGradedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Students receive a score out of the maximum you set.'**
+  String get assignmentGradedOn;
+
+  /// No description provided for @assignmentGradedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Students hand work in, with no score.'**
+  String get assignmentGradedOff;
+
+  /// No description provided for @assignmentMaxScoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum score'**
+  String get assignmentMaxScoreLabel;
+
+  /// No description provided for @assignmentCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create assignment'**
+  String get assignmentCreate;
+
+  /// No description provided for @assignmentCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get assignmentCreating;
+
+  /// No description provided for @assignmentCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment created.'**
+  String get assignmentCreated;
+
+  /// No description provided for @assignmentTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the assignment a title.'**
+  String get assignmentTitleRequired;
+
+  /// No description provided for @assignmentClassRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which class this is for.'**
+  String get assignmentClassRequired;
+
+  /// No description provided for @assignmentDueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when it is due.'**
+  String get assignmentDueRequired;
+
+  /// No description provided for @assignmentMaxScoreRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a maximum score above zero.'**
+  String get assignmentMaxScoreRequired;
+
+  /// No description provided for @assignmentCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the assignment. Please try again.'**
+  String get assignmentCreateFailed;
+
+  /// No description provided for @announcementNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement'**
+  String get announcementNewTitle;
+
+  /// No description provided for @announcementAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Announce'**
+  String get announcementAction;
+
+  /// No description provided for @announcementTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get announcementTitleLabel;
+
+  /// No description provided for @announcementBodyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get announcementBodyLabel;
+
+  /// No description provided for @announcementClassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get announcementClassLabel;
+
+  /// No description provided for @announcementAudienceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Who should see this'**
+  String get announcementAudienceLabel;
+
+  /// No description provided for @announcementAudienceStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get announcementAudienceStudents;
+
+  /// No description provided for @announcementAudienceGuardians.
+  ///
+  /// In en, this message translates to:
+  /// **'Parents and guardians'**
+  String get announcementAudienceGuardians;
+
+  /// No description provided for @announcementAudienceBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get announcementAudienceBoth;
+
+  /// No description provided for @announcementImportantLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as important'**
+  String get announcementImportantLabel;
+
+  /// No description provided for @announcementImportantDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this for things that change what someone does today.'**
+  String get announcementImportantDetail;
+
+  /// No description provided for @announcementPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Post announcement'**
+  String get announcementPost;
+
+  /// No description provided for @announcementPosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting…'**
+  String get announcementPosting;
+
+  /// No description provided for @announcementPosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement posted.'**
+  String get announcementPosted;
+
+  /// No description provided for @announcementTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the announcement a title.'**
+  String get announcementTitleRequired;
+
+  /// No description provided for @announcementBodyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the message.'**
+  String get announcementBodyRequired;
+
+  /// No description provided for @announcementClassRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which class to announce to.'**
+  String get announcementClassRequired;
+
+  /// No description provided for @announcementFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not post the announcement. Please try again.'**
+  String get announcementFailed;
+
+  /// No description provided for @gradebookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradebook · {className}'**
+  String gradebookTitle(String className);
+
+  /// No description provided for @gradebookAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradebook'**
+  String get gradebookAction;
+
+  /// No description provided for @gradebookPickAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to mark'**
+  String get gradebookPickAssessment;
+
+  /// No description provided for @gradebookNoAssessments.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to mark yet. Create graded work first.'**
+  String get gradebookNoAssessments;
+
+  /// No description provided for @gradebookDraftNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This is still a draft. Publish it to open the register of marks.'**
+  String get gradebookDraftNotice;
+
+  /// No description provided for @gradebookPublishAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish and start marking'**
+  String get gradebookPublishAssessment;
+
+  /// No description provided for @gradebookNoStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'No students are enrolled in this class.'**
+  String get gradebookNoStudents;
+
+  /// No description provided for @gradebookScoreOf.
+  ///
+  /// In en, this message translates to:
+  /// **'out of {max}'**
+  String gradebookScoreOf(String max);
+
+  /// No description provided for @gradebookSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save marks'**
+  String get gradebookSave;
+
+  /// No description provided for @gradebookSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get gradebookSaving;
+
+  /// No description provided for @gradebookSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks saved.'**
+  String get gradebookSaved;
+
+  /// No description provided for @gradebookNothingChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No marks were changed.'**
+  String get gradebookNothingChanged;
+
+  /// No description provided for @gradebookScoreTooHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'A mark cannot be above the maximum.'**
+  String get gradebookScoreTooHigh;
+
+  /// No description provided for @gradebookLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the gradebook. Please try again.'**
+  String get gradebookLoadFailed;
+
+  /// No description provided for @gradebookSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the marks. Please try again.'**
+  String get gradebookSaveFailed;
+
+  /// No description provided for @gradebookRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to students'**
+  String get gradebookRelease;
+
+  /// No description provided for @gradebookReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks released.'**
+  String get gradebookReleased;
+
+  /// No description provided for @sectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections · {className}'**
+  String sectionsTitle(String className);
+
+  /// No description provided for @sectionsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson content'**
+  String get sectionsAction;
+
+  /// No description provided for @sectionsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No sections have been taught yet. Take a register first.'**
+  String get sectionsNone;
+
+  /// No description provided for @sectionsOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Content outstanding'**
+  String get sectionsOutstanding;
+
+  /// No description provided for @sectionsFiled.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get sectionsFiled;
+
+  /// No description provided for @sectionsFileContent.
+  ///
+  /// In en, this message translates to:
+  /// **'File content'**
+  String get sectionsFileContent;
+
+  /// No description provided for @sectionsClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close section'**
+  String get sectionsClose;
+
+  /// No description provided for @sectionsClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Section closed.'**
+  String get sectionsClosed;
+
+  /// No description provided for @sectionsCloseBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'File the content taught in this section before closing it.'**
+  String get sectionsCloseBlocked;
+
+  /// No description provided for @sectionsContentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What was taught'**
+  String get sectionsContentTitle;
+
+  /// No description provided for @sectionsContentTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get sectionsContentTitleLabel;
+
+  /// No description provided for @sectionsContentBodyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary of the section'**
+  String get sectionsContentBodyLabel;
+
+  /// No description provided for @sectionsContentSave.
+  ///
+  /// In en, this message translates to:
+  /// **'File it'**
+  String get sectionsContentSave;
+
+  /// No description provided for @sectionsContentSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Content filed.'**
+  String get sectionsContentSaved;
+
+  /// No description provided for @sectionsContentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write what was taught in this section.'**
+  String get sectionsContentRequired;
+
+  /// No description provided for @sectionsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the sections. Please try again.'**
+  String get sectionsLoadFailed;
+
+  /// No description provided for @sectionsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Please try again.'**
+  String get sectionsSaveFailed;
+
+  /// No description provided for @examNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New exam'**
+  String get examNewTitle;
+
+  /// No description provided for @examAction.
+  ///
+  /// In en, this message translates to:
+  /// **'New exam'**
+  String get examAction;
+
+  /// No description provided for @examClassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get examClassLabel;
+
+  /// No description provided for @examTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get examTitleLabel;
+
+  /// No description provided for @examCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Kind'**
+  String get examCategoryLabel;
+
+  /// No description provided for @examCategoryExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get examCategoryExam;
+
+  /// No description provided for @examCategoryQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get examCategoryQuiz;
+
+  /// No description provided for @examCategoryMidterm.
+  ///
+  /// In en, this message translates to:
+  /// **'Midterm'**
+  String get examCategoryMidterm;
+
+  /// No description provided for @examCategoryFinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Final'**
+  String get examCategoryFinal;
+
+  /// No description provided for @examDeliveryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'How it is taken'**
+  String get examDeliveryLabel;
+
+  /// No description provided for @examDeliveryPaper.
+  ///
+  /// In en, this message translates to:
+  /// **'On paper'**
+  String get examDeliveryPaper;
+
+  /// No description provided for @examDeliveryPaperDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat in class; you enter the marks yourself.'**
+  String get examDeliveryPaperDetail;
+
+  /// No description provided for @examDeliveryOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'In the app'**
+  String get examDeliveryOnline;
+
+  /// No description provided for @examDeliveryOnlineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Students answer the questions in Studafy.'**
+  String get examDeliveryOnlineDetail;
+
+  /// No description provided for @examDeliveryPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get examDeliveryPractice;
+
+  /// No description provided for @examDeliveryPracticeDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Students practise freely; it does not count.'**
+  String get examDeliveryPracticeDetail;
+
+  /// No description provided for @examScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'When it is sat'**
+  String get examScheduleLabel;
+
+  /// No description provided for @examPickSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date and time'**
+  String get examPickSchedule;
+
+  /// No description provided for @examQuestionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get examQuestionsLabel;
+
+  /// No description provided for @examAddQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add question'**
+  String get examAddQuestion;
+
+  /// No description provided for @examQuestionPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}'**
+  String examQuestionPrompt(int number);
+
+  /// No description provided for @examQuestionMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks'**
+  String get examQuestionMarks;
+
+  /// No description provided for @examQuestionAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Model answer (optional)'**
+  String get examQuestionAnswer;
+
+  /// No description provided for @examRemoveQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get examRemoveQuestion;
+
+  /// No description provided for @examMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get examMoveUp;
+
+  /// No description provided for @examMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get examMoveDown;
+
+  /// No description provided for @examTotalFromQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {total} marks, from {count} questions.'**
+  String examTotalFromQuestions(String total, int count);
+
+  /// No description provided for @examTotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total marks'**
+  String get examTotalLabel;
+
+  /// No description provided for @examNoQuestionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No questions listed. Add them, or set the total marks and mark it on paper.'**
+  String get examNoQuestionsHint;
+
+  /// No description provided for @examCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create exam'**
+  String get examCreate;
+
+  /// No description provided for @examCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get examCreating;
+
+  /// No description provided for @examCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam created as a draft. Publish it from the gradebook when you are ready.'**
+  String get examCreated;
+
+  /// No description provided for @examTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the exam a title.'**
+  String get examTitleRequired;
+
+  /// No description provided for @examClassRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which class sits this exam.'**
+  String get examClassRequired;
+
+  /// No description provided for @examTotalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the total marks above zero.'**
+  String get examTotalRequired;
+
+  /// No description provided for @examQuestionPromptRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Every question needs its text.'**
+  String get examQuestionPromptRequired;
+
+  /// No description provided for @examQuestionMarksRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Every question needs marks above zero.'**
+  String get examQuestionMarksRequired;
+
+  /// No description provided for @examOnlineNeedsQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'An exam taken in the app needs at least one question.'**
+  String get examOnlineNeedsQuestions;
+
+  /// No description provided for @examCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the exam. Please try again.'**
+  String get examCreateFailed;
+
+  /// No description provided for @examTotalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Students sit this outside the app. Enter the marks in the gradebook; each student sees their own.'**
+  String get examTotalHint;
+
+  /// No description provided for @gradeAwaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Not marked yet'**
+  String get gradeAwaiting;
+
+  /// No description provided for @gradeScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} out of {max}'**
+  String gradeScore(String score, String max);
+
+  /// No description provided for @submitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand in work'**
+  String get submitTitle;
+
+  /// No description provided for @submitAnswerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your work'**
+  String get submitAnswerLabel;
+
+  /// No description provided for @submitAnswerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type or paste your answer.'**
+  String get submitAnswerHint;
+
+  /// No description provided for @submitSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand in'**
+  String get submitSend;
+
+  /// No description provided for @submitSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Handing in…'**
+  String get submitSending;
+
+  /// No description provided for @submitDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Work handed in.'**
+  String get submitDone;
+
+  /// No description provided for @submitEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your answer before handing it in.'**
+  String get submitEmpty;
+
+  /// No description provided for @submitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not hand in your work. Please try again.'**
+  String get submitFailed;
+
+  /// No description provided for @submitClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This assignment is not open for work.'**
+  String get submitClosed;
+
+  /// No description provided for @submitAttachmentsSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Attaching files is not available yet; paste a link if you need to share one.'**
+  String get submitAttachmentsSoon;
+
+  /// No description provided for @submissionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed in · {title}'**
+  String submissionsTitle(String title);
+
+  /// No description provided for @submissionsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed in'**
+  String get submissionsAction;
+
+  /// No description provided for @submissionsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has handed anything in yet.'**
+  String get submissionsNone;
+
+  /// No description provided for @submissionsWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Not handed in'**
+  String get submissionsWaiting;
+
+  /// No description provided for @submissionsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed in {when}'**
+  String submissionsOn(String when);
+
+  /// No description provided for @submissionsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load what was handed in. Please try again.'**
+  String get submissionsLoadFailed;
+
+  /// No description provided for @submissionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} handed in'**
+  String submissionsCount(int done, int total);
+
+  /// No description provided for @scheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable · {className}'**
+  String scheduleTitle(String className);
+
+  /// No description provided for @scheduleAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable'**
+  String get scheduleAction;
+
+  /// No description provided for @scheduleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The register follows this timetable, so a class that meets twice a week needs both here.'**
+  String get scheduleHint;
+
+  /// No description provided for @scheduleAddSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a meeting'**
+  String get scheduleAddSlot;
+
+  /// No description provided for @scheduleWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get scheduleWeekday;
+
+  /// No description provided for @scheduleStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get scheduleStarts;
+
+  /// No description provided for @scheduleEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get scheduleEnds;
+
+  /// No description provided for @scheduleRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get scheduleRemove;
+
+  /// No description provided for @scheduleSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save timetable'**
+  String get scheduleSave;
+
+  /// No description provided for @scheduleSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get scheduleSaving;
+
+  /// No description provided for @scheduleSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable saved.'**
+  String get scheduleSaved;
+
+  /// No description provided for @scheduleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetings yet. Add one so the register knows when this class meets.'**
+  String get scheduleEmpty;
+
+  /// No description provided for @scheduleEndBeforeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'A meeting cannot end before it starts.'**
+  String get scheduleEndBeforeStart;
+
+  /// No description provided for @scheduleSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the timetable. Please try again.'**
+  String get scheduleSaveFailed;
+
+  /// No description provided for @weekdayMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get weekdayMon;
+
+  /// No description provided for @weekdayTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get weekdayTue;
+
+  /// No description provided for @weekdayWed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wednesday'**
+  String get weekdayWed;
+
+  /// No description provided for @weekdayThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thursday'**
+  String get weekdayThu;
+
+  /// No description provided for @weekdayFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Friday'**
+  String get weekdayFri;
+
+  /// No description provided for @weekdaySat.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get weekdaySat;
+
+  /// No description provided for @weekdaySun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get weekdaySun;
+
+  /// No description provided for @joinLinkActive.
+  ///
+  /// In en, this message translates to:
+  /// **'A join link is live for this class.'**
+  String get joinLinkActive;
+
+  /// No description provided for @joinLinkUses.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {count} times'**
+  String joinLinkUses(int count);
+
+  /// No description provided for @joinLinkExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {when}'**
+  String joinLinkExpires(String when);
+
+  /// No description provided for @joinLinkRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke link'**
+  String get joinLinkRevoke;
+
+  /// No description provided for @joinLinkRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Link revoked. It no longer works for anyone holding it.'**
+  String get joinLinkRevoked;
+
+  /// No description provided for @joinLinkRevokeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not revoke the link. Please try again.'**
+  String get joinLinkRevokeFailed;
+
+  /// No description provided for @joinLinkNewReplaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a new link replaces this one.'**
+  String get joinLinkNewReplaces;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

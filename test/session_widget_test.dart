@@ -79,8 +79,90 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(LoginPage), findsOneWidget);
+    expect(session.status, SessionStatus.signedOut);
     await repository.close();
   });
+
+  testWidgets('dismissing OAuth permits retry with another provider', (
+    tester,
+  ) async {
+    const policy = RuntimePolicy(StudafyEnvironment.development);
+    StudafyRuntime.initialize(policy);
+    final repository = _WidgetSessionRepository();
+    final session = _interactor(repository, policy);
+    await tester.pumpWidget(
+      localizedApp(
+        home: LoginPage(role: UserRole.student, session: session),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    await tester.tap(find.text('Continue with Microsoft'));
+    await tester.pumpAndSettle();
+    expect(repository.providerCalls, 2);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await session.dispose();
+      await repository.close();
+    });
+  });
+
+  testWidgets('restored session resolves after localizations are available', (
+    tester,
+  ) async {
+    const policy = RuntimePolicy(StudafyEnvironment.development);
+    StudafyRuntime.initialize(policy);
+    final repository = _WidgetSessionRepository(restoredSession: true);
+    final session = _interactor(repository, policy);
+    await tester.pumpWidget(
+      localizedApp(
+        home: LoginPage(role: UserRole.student, session: session),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      find.text('This account does not have the selected school role.'),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await session.dispose();
+      await repository.close();
+    });
+  });
+
+  testWidgets(
+    'auth stream errors are handled without exposing provider details',
+    (tester) async {
+      const policy = RuntimePolicy(StudafyEnvironment.development);
+      StudafyRuntime.initialize(policy);
+      final repository = _WidgetSessionRepository();
+      final session = _interactor(repository, policy);
+      await tester.pumpWidget(
+        localizedApp(
+          home: LoginPage(role: UserRole.student, session: session),
+        ),
+      );
+      await tester.pumpAndSettle();
+      repository._sessions.addError(StateError('private provider details'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Something went wrong. Please try again.'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.runAsync(() async {
+        await session.dispose();
+        await repository.close();
+      });
+    },
+  );
 }
 
 SessionInteractor _interactor(
@@ -94,14 +176,18 @@ SessionInteractor _interactor(
 );
 
 class _WidgetSessionRepository extends FakeSessionRepositoryBase {
-  _WidgetSessionRepository({this.failProvider = false});
+  _WidgetSessionRepository({
+    this.failProvider = false,
+    this.restoredSession = false,
+  });
 
   final bool failProvider;
+  final bool restoredSession;
   final StreamController<bool> _sessions = StreamController<bool>.broadcast();
   int providerCalls = 0;
 
   @override
-  bool get hasCurrentSession => false;
+  bool get hasCurrentSession => restoredSession;
 
   @override
   Stream<bool> get sessionChanges => _sessions.stream;

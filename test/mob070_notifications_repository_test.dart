@@ -9,6 +9,7 @@ import 'package:studafy/data/local_cache/cache_scope.dart';
 import 'package:studafy/data/local_cache/offline_cache_database.dart';
 import 'package:studafy/data/local_cache/session_cache_binder.dart';
 import 'package:studafy/features/notifications/data/api_notifications_repository.dart';
+import 'package:studafy/features/notifications/domain/notifications_repository.dart';
 
 /// MOB-070 slice 1 (student notifications): proves the repository built on
 /// the shared cache/outbox behaves correctly for the scenarios the roadmap
@@ -84,6 +85,41 @@ void main() {
       expect(page.items.single.isRead, isFalse);
     },
   );
+
+  test(
+    'preference on/off/on applies each new intent with a fresh key',
+    () async {
+      const preference = NotificationPreference(
+        channel: 'push',
+        category: 'academic',
+        enabled: true,
+      );
+      await repository.updatePreference(preference);
+      await repository.updatePreference(preference.copyWith(enabled: false));
+      await repository.updatePreference(preference);
+      expect(transport.idempotencyKeys.toSet(), hasLength(3));
+      expect(transport.postBodies.map((body) => body['enabled']), [
+        true,
+        false,
+        true,
+      ]);
+    },
+  );
+
+  test('lost preference response retries using the same key', () async {
+    const preference = NotificationPreference(
+      channel: 'email',
+      category: 'academic',
+      enabled: false,
+    );
+    transport.dropResponseOnNextPost = true;
+    await expectLater(
+      repository.updatePreference(preference),
+      throwsA(isA<SocketException>()),
+    );
+    await repository.updatePreference(preference);
+    expect(transport.idempotencyKeys[0], transport.idempotencyKeys[1]);
+  });
 
   test('airplane mode falls back to the cache instead of throwing', () async {
     transport.nextPage = _page([
@@ -317,6 +353,9 @@ class _ScriptedTransport implements V1JsonTransport {
     if (failNextPost) {
       failNextPost = false;
       throw const SocketException('offline');
+    }
+    if (path.endsWith('/preferences')) {
+      return {'schoolId': null, ...body};
     }
     return {
       'markedCount': (body['all'] == true) ? 1 : (body['ids'] as List).length,

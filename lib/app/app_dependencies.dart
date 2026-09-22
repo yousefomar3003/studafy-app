@@ -47,6 +47,9 @@ import '../features/session/application/session_interactor.dart';
 import '../features/session/data/demo_session_repository.dart';
 import '../features/session/data/api_session_repository.dart';
 import '../features/session/domain/session_repository.dart';
+import '../features/school_operations/data/api_school_operations_repository.dart';
+import '../features/school_operations/data/preview_school_operations_repository.dart';
+import '../features/school_operations/domain/school_operations_repository.dart';
 import '../features/teacher_dashboard/data/preview_teacher_dashboard_repository.dart';
 import '../features/teacher_dashboard/data/unavailable_teacher_dashboard_repository.dart';
 import '../features/teacher_dashboard/domain/teacher_dashboard_repository.dart';
@@ -66,6 +69,7 @@ class AppDependencies {
     required this.account,
     required this.academicApi,
     required this.academic,
+    required this.schoolOperations,
     required this.notifications,
     required this.cacheBinder,
     required this.fileUploads,
@@ -83,6 +87,7 @@ class AppDependencies {
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
+  final SchoolOperationsRepository? schoolOperations;
   final NotificationsInteractor notifications;
 
   /// Keeps the on-disk cache re-keyed and wiped as the session changes
@@ -216,6 +221,9 @@ class AppDependencies {
       academic: remote == null
           ? PreviewAcademicRepository()
           : ApiAcademicRepository(remote.api, context: context),
+      schoolOperations: remote == null
+          ? PreviewSchoolOperationsRepository()
+          : ApiSchoolOperationsRepository(remote.api, context: context),
       notifications: NotificationsInteractor(
         repository: notificationsRepository,
         telemetry: telemetry,

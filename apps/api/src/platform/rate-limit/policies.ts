@@ -309,6 +309,12 @@ export function flowFor(
   ) {
     return { flow: "auth", weight: 2 };
   }
+  // A class join link is one record, not a page. Its path ends in a literal
+  // segment, which the trailing-parameter heuristic below would otherwise
+  // read as a collection and charge double for.
+  if (method === "get" && /^\/v1\/classrooms\/[^/]+\/join-link$/.test(path)) {
+    return { flow: "authenticatedApi", weight: 1 };
+  }
   if (method === "post") {
     return { flow: "authenticatedApi", weight: 2 };
   }
@@ -326,6 +332,7 @@ export function flowFor(
  */
 export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/me",
+  "/v1/me/student-family",
   "/v1/auth/context",
   "/v1/account/deletion-impact",
   "/v1/account/export-status",

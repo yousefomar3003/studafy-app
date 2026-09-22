@@ -132,6 +132,55 @@ class BlockedPerson {
 }
 
 /// The `/v1` conversations and contacts port.
+/// Who an announcement is addressed to.
+enum AnnouncementAudience { students, guardians, both }
+
+/// An announcement a teacher is about to post.
+@immutable
+class AnnouncementDraft {
+  const AnnouncementDraft({
+    required this.schoolId,
+    required this.title,
+    required this.body,
+    this.classroomId,
+    this.audience = AnnouncementAudience.both,
+    this.important = false,
+  });
+
+  final String schoolId;
+  final String title;
+  final String body;
+
+  /// Null posts to the whole school, which only an administrator may do. A
+  /// teacher names one of their own classrooms.
+  final String? classroomId;
+  final AnnouncementAudience audience;
+
+  /// Marked important. Reserved for things that change what someone does
+  /// today, so that flag keeps meaning something.
+  final bool important;
+}
+
+/// An announcement already posted.
+@immutable
+class Announcement {
+  const Announcement({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.important,
+    required this.createdAt,
+    this.classroomId,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final bool important;
+  final DateTime createdAt;
+  final String? classroomId;
+}
+
 abstract interface class MessagingRepository {
   Future<bool> messagingEnabled(String schoolId);
 
@@ -147,6 +196,13 @@ abstract interface class MessagingRepository {
   });
 
   Future<List<MessagingContact>> contacts(String schoolId);
+
+  /// Posts an announcement. A teacher may post to a classroom they write;
+  /// a school-wide post is an administrator's to make.
+  Future<void> createAnnouncement(AnnouncementDraft draft);
+
+  /// Announcements visible to the caller, newest first.
+  Future<List<Announcement>> announcements({String? classroomId});
 
   Future<Conversation> startConversation({
     required String schoolId,

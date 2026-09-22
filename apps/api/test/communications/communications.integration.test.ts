@@ -251,6 +251,33 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     ).toEqual(["Comms Integration Student"]);
   });
 
+  test("staff see the child's id, not only their name", async () => {
+    // A roster maps a child to their guardians. Two children in one class can
+    // share a display name, so matching on name alone would attach one
+    // family's contact to the other child's record.
+    const res = await request(`/v1/contacts?schoolId=${SCHOOL}`, {
+      subject: TEACHER,
+    });
+    const body = await res.json() as {
+      items: { userId: string; relatedStudentIds: string[] }[];
+    };
+    expect(
+      body.items.find((item) => item.userId === GUARDIAN)?.relatedStudentIds,
+    ).toEqual([STUDENT_ROW]);
+  });
+
+  test("a guardian is told no student ids at all", async () => {
+    // The ids are a staff projection; nobody else learns about other families.
+    const res = await request(`/v1/contacts?schoolId=${SCHOOL}`, {
+      subject: GUARDIAN,
+    });
+    const body = await res.json() as {
+      items: { relatedStudentIds: string[] }[];
+    };
+    expect(body.items.every((item) => item.relatedStudentIds.length === 0))
+      .toBe(true);
+  });
+
   test("a teacher creates a conversation with a verified guardian", async () => {
     const res = await request("/v1/conversations", {
       method: "POST",

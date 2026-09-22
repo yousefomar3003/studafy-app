@@ -104,6 +104,11 @@ export const V1Contact = z.strictObject({
   role: V1MessagingRole,
   /** Populated only for a staff caller looking at a guardian. */
   relatedStudentNames: z.array(z.string()).max(20),
+  /**
+   * The same children by id. Names alone cannot identify a child: a class
+   * can hold two with the same display name.
+   */
+  relatedStudentIds: z.array(Id).max(20),
 });
 export type V1Contact = z.infer<typeof V1Contact>;
 

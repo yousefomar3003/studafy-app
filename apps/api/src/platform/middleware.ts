@@ -49,10 +49,10 @@ export function secureResponseHeaders(
       await next();
     } finally {
       c.header("Cache-Control", "no-store");
-      // FILE-051 delivery responses carry a stricter, sandboxed policy of
-      // their own; every other response gets the platform default.
+      // Owned HTML routes (file previews and the Turnstile page) define
+      // their own restrictive CSP; JSON responses use the platform default.
       if (
-        !c.res.headers.get("Content-Security-Policy")?.startsWith("sandbox")
+        !c.res.headers.get("Content-Security-Policy")
       ) {
         c.header(
           "Content-Security-Policy",

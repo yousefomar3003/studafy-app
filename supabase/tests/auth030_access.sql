@@ -14,7 +14,7 @@
 --
 -- Requires the db021_access_seed.sql fixture.
 
-\set school_id '11111111-1111-1111-1111-111111111111'
+\set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
 \set student_user 'bbbb0000-0000-4000-8000-000000000002'
 \set guardian_user 'cccc0000-0000-4000-8000-000000000003'
@@ -128,7 +128,7 @@ select isnt(
 select set_config('request.jwt.claim.sub', :'other_school_user', true);
 select is(
   private.auth_context() #>> '{memberships,0,school_id}',
-  '22222222-2222-2222-2222-222222222222',
+  '22222222-2222-4222-8222-222222222222',
   'a user in another school resolves only their own tenant'
 );
 

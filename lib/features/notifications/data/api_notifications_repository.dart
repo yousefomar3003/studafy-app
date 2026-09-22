@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import '../../../core/failures.dart';
 import '../../../data/contracts/v1_client.generated.dart';
@@ -21,6 +22,7 @@ class ApiNotificationsRepository implements NotificationsRepository {
 
   final V1ApiClient _client;
   final SessionCacheBinder _cache;
+  final Map<String, String> _preferenceKeys = {};
 
   Future<OfflineCacheStore> _store() async {
     final store = await _cache.currentStore();
@@ -171,6 +173,49 @@ class ApiNotificationsRepository implements NotificationsRepository {
   Future<void> syncPending() async {
     final store = await _store();
     await _engineFor(store).drain(force: true);
+  }
+
+  @override
+  Future<List<NotificationPreference>> preferences() async {
+    final response = await _client.getNotificationPreferences();
+    return [
+      for (final item in response.items)
+        NotificationPreference(
+          schoolId: item.schoolId,
+          channel: item.channel,
+          category: item.category,
+          enabled: item.enabled,
+        ),
+    ];
+  }
+
+  @override
+  Future<NotificationPreference> updatePreference(
+    NotificationPreference preference,
+  ) async {
+    final fingerprint =
+        '${preference.schoolId}|${preference.channel}|${preference.category}|${preference.enabled}';
+    final key = _preferenceKeys.putIfAbsent(
+      fingerprint,
+      () =>
+          'pref-${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}',
+    );
+    final value = await _client.updateNotificationPreferences(
+      V1UpdateNotificationPreferenceRequestDto(
+        schoolId: preference.schoolId,
+        channel: preference.channel,
+        category: preference.category,
+        enabled: preference.enabled,
+      ),
+      idempotencyKey: key,
+    );
+    _preferenceKeys.remove(fingerprint);
+    return NotificationPreference(
+      schoolId: value.schoolId,
+      channel: value.channel,
+      category: value.category,
+      enabled: value.enabled,
+    );
   }
 
   static NotificationItem _mapCached(CachedEntity entity) {

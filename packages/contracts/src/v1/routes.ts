@@ -30,6 +30,7 @@ import * as Communications from "./communications";
 import * as Meetings from "./meetings";
 import * as Notifications from "./notifications";
 import * as Account from "./account";
+import * as ClassJoinLinks from "./classJoinLinks";
 import * as SupportAccess from "./supportAccess";
 import * as Safety from "./safety";
 import * as Files from "./files";
@@ -1468,6 +1469,80 @@ export const V1_ROUTE_CATALOGUE = [
     Notifications.V1PushDeviceResponse,
     "V1PushDeviceResponse",
     200,
+  ),
+
+  // JOIN-052: shareable class join links. Appended, never inserted: the API
+  // mounts route groups by index into this array (see the slice() calls in
+  // apps/api/src/*/routes.ts), so inserting anywhere above silently remounts
+  // every group that follows.
+  academicGet(
+    "getClassJoinLink",
+    "/v1/classrooms/{classroomId}/join-link",
+    "classJoinLink.read",
+    ClassJoinLinks.V1ClassJoinLink,
+    "V1ClassJoinLink",
+    params("classroomId"),
+  ),
+  academicPost(
+    "createClassJoinLink",
+    "/v1/classrooms/{classroomId}/join-link",
+    "classJoinLink.create",
+    ClassJoinLinks.V1CreateClassJoinLinkRequest,
+    "V1CreateClassJoinLinkRequest",
+    ClassJoinLinks.V1CreateClassJoinLinkResponse,
+    "V1CreateClassJoinLinkResponse",
+    201,
+    params("classroomId"),
+  ),
+  academicPost(
+    "revokeClassJoinLink",
+    "/v1/class-join-links/{linkId}/revoke",
+    "classJoinLink.revoke",
+    ClassJoinLinks.V1RevokeClassJoinLinkRequest,
+    "V1RevokeClassJoinLinkRequest",
+    ClassJoinLinks.V1ClassJoinLink,
+    "V1ClassJoinLink",
+    200,
+    params("linkId"),
+  ),
+  academicPost(
+    "redeemClassJoinLink",
+    "/v1/class-join-links/redeem",
+    "classJoinLink.redeem",
+    ClassJoinLinks.V1RedeemClassJoinLinkRequest,
+    "V1RedeemClassJoinLinkRequest",
+    ClassJoinLinks.V1RedeemClassJoinLinkResponse,
+    "V1RedeemClassJoinLinkResponse",
+    200,
+  ),
+  academicPost(
+    "closeLessonSession",
+    "/v1/lesson-sessions/{lessonSessionId}/close",
+    "lesson_session.close",
+    Academic.V1CloseLessonSessionRequest,
+    "V1CloseLessonSessionRequest",
+    Academic.V1CloseLessonSessionResponse,
+    "V1CloseLessonSessionResponse",
+    200,
+    params("lessonSessionId"),
+  ),
+  academicGet(
+    "getStudentFamily",
+    "/v1/me/student-family",
+    "guardian_link.student_own",
+    Family.V1StudentFamily,
+    "V1StudentFamily",
+  ),
+  academicPost(
+    "decideGuardianLink",
+    "/v1/guardian-links/{guardianLinkId}/student-decision",
+    "guardian_link.student_own",
+    Family.V1DecideGuardianLinkRequest,
+    "V1DecideGuardianLinkRequest",
+    Family.V1GuardianLink,
+    "V1GuardianLink",
+    200,
+    guardianLinkParams(),
   ),
 ] as const satisfies readonly V1RouteContract[];
 

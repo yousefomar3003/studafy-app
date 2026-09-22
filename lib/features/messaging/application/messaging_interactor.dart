@@ -64,6 +64,19 @@ class MessagingInteractor {
     });
   }
 
+  Future<Result<void>> postAnnouncement(AnnouncementDraft draft) =>
+      runCatching(() async {
+        await messaging.createAnnouncement(draft);
+        telemetry.event('announcement_posted', {
+          'audience': draft.audience.name,
+          'important': draft.important,
+          'classroom_scoped': draft.classroomId != null,
+        });
+      });
+
+  Future<Result<List<Announcement>>> announcements({String? classroomId}) =>
+      runCatching(() => messaging.announcements(classroomId: classroomId));
+
   Future<Result<List<MessagingContact>>> contacts(String schoolId) =>
       runCatching(() => messaging.contacts(schoolId));
 

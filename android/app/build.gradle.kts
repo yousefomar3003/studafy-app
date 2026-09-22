@@ -15,7 +15,7 @@ gradle.taskGraph.whenReady {
 }
 
 android {
-    namespace = "com.example.studafy"
+    namespace = "com.studafy.light"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,8 +25,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.studafy"
+        applicationId = "com.studafy.light"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

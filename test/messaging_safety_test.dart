@@ -83,6 +83,11 @@ class _Fake implements MessagingRepository, SafetyRepository {
   }
 
   @override
+  Future<void> createAnnouncement(AnnouncementDraft draft) async {}
+  @override
+  Future<List<Announcement>> announcements({String? classroomId}) async =>
+      const [];
+  @override
   Future<List<MessagingContact>> contacts(String schoolId) async => const [];
   @override
   Future<Conversation> startConversation({

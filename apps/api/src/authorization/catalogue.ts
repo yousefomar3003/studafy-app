@@ -209,7 +209,7 @@ export const PERMISSION_CATALOGUE = {
   ),
   "classroom.create": resource(
     "school",
-    "Create a classroom as an active school administrator.",
+    "Create a classroom as an active teacher of the school.",
   ),
   "classroom.update": resource(
     "classroom",
@@ -434,6 +434,37 @@ export const PERMISSION_CATALOGUE = {
       "Accept an invitation by presenting its valid token. The token is the credential; no resourceId is resolved.",
   },
 
+  // TEACH-055: a section is closed once its content is filed.
+  "lesson_session.close": resource(
+    "lesson_session",
+    "Close a lesson session you teach, once its content has been filed.",
+  ),
+
+  // JOIN-052: shareable class join links.
+  "classJoinLink.create": resource(
+    "classroom",
+    "Create or replace the shareable join link for a classroom you teach.",
+  ),
+  "classJoinLink.read": resource(
+    "classroom",
+    "Read the active join link for a classroom you teach.",
+  ),
+  "classJoinLink.revoke": resource(
+    "class_join_link",
+    "Revoke a join link for a classroom you teach.",
+  ),
+  "classJoinLink.redeem": {
+    resource: "class_join_link",
+    scope: "self",
+    concealDeniedResource: false,
+    // Whoever holds the link is by definition not yet a member of the
+    // school, so no tenant can be required to reach this. The token is the
+    // credential, and it is expiring and use-budgeted for that reason.
+    tenantRequired: false,
+    description:
+      "Join a classroom by presenting a valid join link token. The token is the credential; no resourceId is resolved.",
+  },
+
   // API-042 S3: guarded student locator and guardian linking.
   "student.locate": {
     resource: "student_locate",
@@ -442,6 +473,14 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description:
       "Look up one student by its opaque studafyId. Rate-limited and audited per attempt; response shape is uniform whether found or not.",
+  },
+  "guardian_link.student_own": {
+    resource: "guardian_link",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Read or decide only links to student records owned by the authenticated actor; ownership is rechecked inside the database transaction.",
   },
   "guardian_link.list_own": {
     resource: "guardian_link",
@@ -457,7 +496,7 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: false,
     tenantRequired: false,
     description:
-      "Request a guardian link to a student as the authenticated actor. Starts pending; a school administrator must verify it.",
+      "Request a guardian link to a student as the authenticated actor. Starts pending; the student must approve it.",
   },
   "conversation.list": {
     resource: "conversation",

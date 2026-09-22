@@ -11,6 +11,7 @@ class _InsightsPaywall extends StatefulWidget {
 
 class _InsightsPaywallState extends State<_InsightsPaywall> {
   PaywallOffer? _offer;
+  bool _loadingOffer = true;
 
   @override
   void initState() {
@@ -27,13 +28,27 @@ class _InsightsPaywallState extends State<_InsightsPaywall> {
       offer = null;
     }
     if (!mounted) return;
-    setState(() => _offer = offer);
+    setState(() {
+      _offer = offer;
+      _loadingOffer = false;
+    });
   }
 
+  /// Checkout opens only on store-verified terms behind reachable policy
+  /// documents. Both stores treat a purchase button over unconfirmed pricing,
+  /// or over a dead terms link, as a review failure.
+  bool get _canCheckout =>
+      _offer?.canPurchase == true &&
+      _validPolicyUrl(_termsUrl) &&
+      _validPolicyUrl(_privacyUrl);
+
   String get _priceLine {
+    // While the catalogue and store product query are in flight nothing is
+    // known yet: say so rather than claiming subscriptions are unavailable.
+    if (_loadingOffer) return 'Checking store pricing';
     final offer = _offer;
-    if (offer == null || offer.storeAvailable != true) {
-      return 'Price is confirmed in your store before purchase';
+    if (offer == null || !offer.canPurchase) {
+      return 'Subscriptions are currently unavailable';
     }
     final period = offer.periodLabel.isEmpty ? 'month' : offer.periodLabel;
     return '${offer.price} / $period';
@@ -41,16 +56,21 @@ class _InsightsPaywallState extends State<_InsightsPaywall> {
 
   String get _trialLine {
     final offer = _offer;
-    if (offer == null || !offer.hasTrial || offer.trialLengthLabel.isEmpty) {
+    if (offer == null ||
+        !offer.canPurchase ||
+        !offer.hasTrial ||
+        offer.trialLengthLabel.isEmpty) {
       return '';
     }
     final period = offer.periodLabel.isEmpty ? 'month' : offer.periodLabel;
     // The price after the free trial is the store's recurring price.
-    return 'Free for ${offer.trialLengthLabel}, then ${offer.price} / $period';
+    return 'If eligible, free for ${offer.trialLengthLabel}, then ${offer.price} / $period';
   }
 
   Widget _policyLink(String label, String url) {
-    if (url.isEmpty) {
+    // Same test that gates checkout: a misconfigured build define must render
+    // as plain text, never as a tappable link to a non-HTTPS destination.
+    if (!_validPolicyUrl(url)) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text(label, style: const TextStyle(color: _muted, fontSize: 12)),
@@ -140,12 +160,12 @@ class _InsightsPaywallState extends State<_InsightsPaywall> {
               ),
             ),
             const Text(
-              'Monthly subscription',
+              'Auto-renewing subscription',
               style: TextStyle(color: _muted, fontSize: 12),
             ),
             const Divider(height: 20),
             _disclosureRow(
-              '$_priceLine · renews automatically each month until cancelled',
+              '$_priceLine · renews automatically until cancelled',
             ),
             if (_trialLine.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -161,7 +181,7 @@ class _InsightsPaywallState extends State<_InsightsPaywall> {
                   children: [
                     _disclosureRow(_trialLine),
                     _disclosureRow(
-                      'Your card is charged when the free trial ends.',
+                      'Your app store payment method is charged when the free trial ends.',
                     ),
                     _disclosureRow(
                       'Cancel at least 24 hours before the trial ends to avoid charge.',
@@ -191,15 +211,23 @@ class _InsightsPaywallState extends State<_InsightsPaywall> {
       ),
       const SizedBox(height: 18),
       FilledButton(
-        onPressed: widget.onPurchase,
-        child: const Text('Start Insights+'),
+        onPressed: _canCheckout ? widget.onPurchase : null,
+        child: Text(
+          _canCheckout
+              ? 'Start Insights+'
+              : _loadingOffer
+              ? 'Checking store pricing'
+              : 'Subscriptions currently unavailable',
+        ),
       ),
-      const SizedBox(height: 4),
-      const Text(
-        _priceLineInButton,
-        textAlign: TextAlign.center,
-        style: TextStyle(color: _muted, fontSize: 11),
-      ),
+      if (_canCheckout) ...[
+        const SizedBox(height: 4),
+        const Text(
+          _priceLineInButton,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: _muted, fontSize: 11),
+        ),
+      ],
       TextButton(
         onPressed: widget.onRestore,
         child: const Text('Restore purchase'),
@@ -211,6 +239,14 @@ class _InsightsPaywallState extends State<_InsightsPaywall> {
       ),
     ],
   );
+}
+
+bool _validPolicyUrl(String value) {
+  final uri = Uri.tryParse(value);
+  return uri != null &&
+      uri.scheme == 'https' &&
+      uri.host.isNotEmpty &&
+      uri.userInfo.isEmpty;
 }
 
 const _priceLineInButton = 'Prices and periods are confirmed in your store';

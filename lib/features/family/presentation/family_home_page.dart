@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
+import '../../../core/runtime_environment.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
 import '../domain/family.dart';
+import 'family_challenge_page.dart';
 import 'child_progress_page.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
@@ -128,17 +130,10 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: studafyCanvas,
         title: Text(t('title')),
         actions: widget.actions,
       ),
-      floatingActionButton: _loading || _failure != null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _linkChild,
-              icon: const Icon(Icons.person_add_alt_1_rounded),
-              label: Text(t('link')),
-            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _failure != null
@@ -164,21 +159,114 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                       ),
                     const SizedBox(height: 16),
                   ],
-                  _SectionTitle(t('children')),
-                  if (_children.isEmpty)
-                    StudafyStatusCard(
-                      icon: Icons.family_restroom_rounded,
-                      title: t('empty.title'),
-                      message: t('empty.message'),
+                  StudafyHero(
+                    eyebrow:
+                        Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'معًا، كل يوم'
+                        : 'TOGETHER, EVERY DAY',
+                    title: t('children'),
+                    subtitle:
+                        Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'عالمهم ينمو. كن جزءًا منه.'
+                        : 'Their world is growing. Be part of it.',
+                    icon: Icons.favorite_rounded,
+                  ),
+                  const SizedBox(height: 28),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth > 600 ? 3 : 2;
+                      final width =
+                          (constraints.maxWidth - (columns - 1) * 14) / columns;
+                      return Wrap(
+                        spacing: 14,
+                        runSpacing: 14,
+                        children: [
+                          for (final child in _children)
+                            SizedBox(
+                              width: width,
+                              child: _ChildCard(
+                                child: child,
+                                onOpen: child.isVerified
+                                    ? () => _open(child)
+                                    : null,
+                              ),
+                            ),
+                          SizedBox(
+                            width: width,
+                            child: Semantics(
+                              button: true,
+                              label: t('link'),
+                              child: Material(
+                                color: const Color(0xFFECEBFF),
+                                borderRadius: BorderRadius.circular(26),
+                                child: InkWell(
+                                  onTap: _linkChild,
+                                  borderRadius: BorderRadius.circular(26),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 30,
+                                      horizontal: 16,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: 76,
+                                          height: 76,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: .7,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              26,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.add_rounded,
+                                            size: 34,
+                                            color: studafyNavy,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 18),
+                                        Text(
+                                          t('link'),
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            color: studafyNavy,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          Localizations.localeOf(context)
+                                                      .languageCode ==
+                                                  'ar'
+                                              ? 'ابدأ بمعرّف طفلك'
+                                              : 'Start with their ID',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: studafyMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  if (_children.isEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      t('empty.message'),
+                      style: const TextStyle(color: studafyMuted),
+                      textAlign: TextAlign.center,
                     ),
-                  for (final child in _children)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _ChildCard(
-                        child: child,
-                        onOpen: child.isVerified ? () => _open(child) : null,
-                      ),
-                    ),
+                  ],
                 ],
               ),
             ),
@@ -216,54 +304,91 @@ class _ChildCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final verified = child.isVerified;
-    return FeatureCard(
-      tint: verified ? studafyCyan : null,
-      onTap: onOpen,
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: studafyNavy.withValues(alpha: .1),
-            child: Text(
-              child.studentName.isEmpty
-                  ? '?'
-                  : child.studentName.characters.first.toUpperCase(),
-              style: const TextStyle(color: studafyNavy),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  child.studentName,
-                  style: const TextStyle(
-                    color: studafyInk,
-                    fontWeight: FontWeight.w800,
+    final colors = [
+      const Color(0xFFDFF5EB),
+      const Color(0xFFFFEBD6),
+      const Color(0xFFE7E4FF),
+      const Color(0xFFDDEFFD),
+    ];
+    final tint =
+        colors[child.studentId.codeUnits.fold(0, (a, b) => a + b) %
+            colors.length];
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(26),
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(26),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 14),
+          child: Column(
+            children: [
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  color: tint,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Center(
+                  child: Text(
+                    child.studentName.isEmpty
+                        ? '?'
+                        : child.studentName.characters.first.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w800,
+                      color: studafyInk,
+                    ),
                   ),
                 ),
-                Text(
-                  child.schoolName,
-                  style: const TextStyle(color: studafyMuted, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                child.studentName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: studafyInk,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  familyText(context, 'status.${child.status.name}'),
-                  style: TextStyle(
-                    color: verified ? const Color(0xFF136F3A) : studafyMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                child.schoolName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: studafyMuted, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    verified
+                        ? Icons.check_circle_rounded
+                        : Icons.schedule_rounded,
+                    size: 14,
+                    color: verified ? const Color(0xFF087B61) : studafyMuted,
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      familyText(context, 'status.${child.status.name}'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: verified
+                            ? const Color(0xFF087B61)
+                            : studafyMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          if (verified)
-            Semantics(
-              label: familyText(context, 'view'),
-              child: Icon(forwardChevron(context)),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -340,7 +465,41 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
       _message = null;
       _found = null;
     });
-    final result = await FamilyScope.of(context).locate(_code.text);
+    String? captchaToken;
+    if (const bool.fromEnvironment('TURNSTILE_ENABLED') &&
+        !StudafyRuntime.policy.isSynthetic &&
+        _code.text.trim().isNotEmpty) {
+      final base = Uri.tryParse(
+        const String.fromEnvironment('STUDAFY_API_URL'),
+      );
+      if (base == null || !base.hasAuthority) {
+        setState(() {
+          _busy = false;
+          _message = familyText(context, 'error.title');
+        });
+        return;
+      }
+      captchaToken = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => FamilyChallengePage(
+            url: base.replace(
+              path: '/auth/bot-check',
+              queryParameters: {
+                'lang': Localizations.localeOf(context).languageCode,
+              },
+            ),
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (captchaToken == null) {
+        setState(() => _busy = false);
+        return;
+      }
+    }
+    if (!mounted) return;
+    final result = await FamilyScope.of(context)
+        .locate(_code.text, captchaToken: captchaToken);
     if (!mounted) return;
     setState(() {
       _busy = false;

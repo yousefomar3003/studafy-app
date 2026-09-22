@@ -42,5 +42,23 @@ class Failure {
 
   /// Maps an arbitrary caught error onto the taxonomy without leaking its
   /// text into user-presentable messages.
-  static Failure fromError(Object error) => error is Failure ? error : unknown;
+  ///
+  /// Errors that already know their own place in the taxonomy say so by
+  /// implementing [FailureConvertible]. The dependency points that way round
+  /// on purpose: a transport may name its failures in these terms, but this
+  /// file stays free of transport and platform imports.
+  static Failure fromError(Object error) => switch (error) {
+    Failure() => error,
+    FailureConvertible() => error.failure,
+    _ => unknown,
+  };
+}
+
+/// An error that carries its own taxonomy entry.
+///
+/// Implemented by errors raised outside this layer — an API envelope, a lost
+/// connection — so they reach the user as the right [Failure] instead of
+/// collapsing into [Failure.unknown] and saying nothing.
+abstract interface class FailureConvertible {
+  Failure get failure;
 }

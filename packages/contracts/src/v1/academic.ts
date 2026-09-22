@@ -9,6 +9,10 @@ export const V1PageQuery = z.strictObject({
   classroomId: Id.optional(),
   studentId: Id.optional(),
   date: z.string().date().optional(),
+  /// Names one meeting of a class. A register belongs to a session rather
+  /// than to a day, and a class commonly meets more than once a day, so a
+  /// date alone cannot say which lesson is being read.
+  startsAt: z.string().datetime({ offset: true }).optional(),
   cursor: z.string().min(16).max(2048).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
 });
@@ -137,6 +141,12 @@ export const V1LessonSession = z.strictObject({
   endsAt: Timestamp,
   title: z.string().nullable(),
   status: z.enum(["scheduled", "completed", "cancelled"]),
+  /**
+   * When the content taught in this section was filed, null while it is
+   * still outstanding. Status cannot stand in for it: recordAttendance also
+   * leaves a session 'completed'.
+   */
+  filedAt: Timestamp.nullable(),
   version: Version,
 });
 export type V1LessonSession = z.infer<typeof V1LessonSession>;
@@ -172,6 +182,12 @@ export const V1CreateResourceRequest = z.strictObject({
   resourceType: z.enum(["lesson_note", "text", "link"]),
   body: z.string().max(30_000).nullable(),
   audience: z.enum(["students", "guardians", "both"]),
+  /**
+   * The meeting this content was taught in. A section is not closeable
+   * until something is filed against it, so this is how the content and
+   * the lesson are tied together.
+   */
+  lessonSessionId: Id.optional(),
 });
 export type V1CreateResourceRequest = z.infer<typeof V1CreateResourceRequest>;
 
@@ -185,6 +201,20 @@ export type V1ReviseResourceRequest = z.infer<typeof V1ReviseResourceRequest>;
 export const V1VersionCommandRequest = z.strictObject({
   expectedVersion: Version,
 });
+
+export const V1CloseLessonSessionRequest = z.strictObject({});
+export type V1CloseLessonSessionRequest = z.infer<
+  typeof V1CloseLessonSessionRequest
+>;
+
+/// A closed section: the content taught in it has been filed.
+export const V1CloseLessonSessionResponse = z.strictObject({
+  id: Id,
+  filedAt: Timestamp,
+});
+export type V1CloseLessonSessionResponse = z.infer<
+  typeof V1CloseLessonSessionResponse
+>;
 export type V1VersionCommandRequest = z.infer<typeof V1VersionCommandRequest>;
 
 export const V1Assignment = z.strictObject({
@@ -346,6 +376,11 @@ export const V1GradeResult = z.strictObject({
   id: Id,
   assessmentId: Id,
   studentId: Id,
+  /// What the work was called, so a student's grades list names each piece
+  /// rather than repeating "Grade".
+  assessmentTitle: z.string().min(1),
+  /// exam, quiz, assignment and so on: how the gradebook groups it.
+  category: z.string().min(1),
   score: z.number().nullable(),
   maximumScore: z.number().positive(),
   feedback: z.string().nullable(),
@@ -402,8 +437,20 @@ export const V1AttendanceRosterItem = z.strictObject({
   record: V1AttendanceRecord.nullable(),
 });
 export type V1AttendanceRosterItem = z.infer<typeof V1AttendanceRosterItem>;
+/// The session a register was read from, absent when the lesson has not been
+/// recorded yet. Its version is what recordAttendance expects back: zero for
+/// a session that does not exist, the current version for one that does.
+export const V1AttendanceRosterSession = z.strictObject({
+  id: Id,
+  version: Version,
+});
+export type V1AttendanceRosterSession = z.infer<
+  typeof V1AttendanceRosterSession
+>;
+
 export const V1AttendanceRosterPage = z.strictObject({
   items: z.array(V1AttendanceRosterItem),
+  session: V1AttendanceRosterSession.nullable(),
   nextCursor: z.string().nullable(),
 });
 export type V1AttendanceRosterPage = z.infer<typeof V1AttendanceRosterPage>;

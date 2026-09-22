@@ -88,10 +88,14 @@ class SessionInteractor {
       repository.supportsProvider(provider);
 
   /// Opens the provider OAuth flow. Only valid outside synthetic builds.
-  Future<Result<void>> signInWithProvider(LoginProvider provider) {
+  Future<Result<void>> signInWithProvider(LoginProvider provider) async {
     telemetry.event('session_oauth_started', {'provider': provider.name});
     _setStatus(SessionStatus.authenticating);
-    return runCatching(() => repository.signInWithProvider(provider));
+    final result = await runCatching(
+      () => repository.signInWithProvider(provider),
+    );
+    if (result.isFailure) _setStatus(SessionStatus.signedOut);
+    return result;
   }
 
   /// Hydrates the authenticated context after a remote session appears:

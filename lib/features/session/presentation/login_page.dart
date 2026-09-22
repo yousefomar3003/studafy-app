@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 
+import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/studafy_domain.dart';
@@ -26,13 +28,39 @@ class _LoginPageState extends State<LoginPage> {
   bool completingRemoteLogin = false;
   String? error;
   StreamSubscription<bool>? sessionSubscription;
+  bool checkedRestoredSession = false;
+
+  /// Whether a provider browser is open and still owes this screen a callback.
+  /// Set only for a sign-in this screen launched, so a session restored at
+  /// startup never tries to close a browser that was never opened.
+  bool awaitingProviderCallback = false;
 
   @override
   void initState() {
     super.initState();
-    sessionSubscription = widget.session.sessionChanges.listen((hasSession) {
-      if (hasSession) _completeRemoteLogin();
-    });
+    sessionSubscription = widget.session.sessionChanges.listen(
+      (hasSession) {
+        if (hasSession) {
+          _dismissProviderBrowser();
+          _completeRemoteLogin();
+        }
+      },
+      onError: (Object failure) {
+        if (!mounted) return;
+        setState(() {
+          signingIn = false;
+          error = Failure.fromError(failure).message;
+        });
+      },
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (checkedRestoredSession) return;
+    checkedRestoredSession = true;
+    // Localizations is an inherited widget and cannot be read in initState.
     if (widget.session.hasCurrentSession) {
       _completeRemoteLogin();
     }
@@ -51,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
   };
 
   Future<void> login(LoginProvider provider) async {
-    if (!accepted) return;
+    if (!accepted || signingIn || completingRemoteLogin) return;
     if (widget.session.isDemoSession) {
       widget.session.startDemoSession(selectedRole);
       _openRole();
@@ -62,7 +90,13 @@ class _LoginPageState extends State<LoginPage> {
       error = null;
     });
     final result = await widget.session.signInWithProvider(provider);
-    if (!result.isSuccess && mounted) {
+    // Only ever set. A second attempt fails while the first browser is still
+    // on screen — iOS presents one at a time — and that first browser is the
+    // one holding the callback, so a failure here must not disown it.
+    if (result.isSuccess) awaitingProviderCallback = true;
+    // Opening the browser is not a completed login. Let the user retry when
+    // they dismiss it; sessionChanges handles the eventual OAuth callback.
+    if (mounted) {
       setState(() {
         signingIn = false;
         error = result.fold(
@@ -71,6 +105,19 @@ class _LoginPageState extends State<LoginPage> {
         );
       });
     }
+  }
+
+  /// Closes the provider browser once its callback has produced a session.
+  ///
+  /// supabase_flutter (2.17.2) consumes the deep link but leaves the browser
+  /// it opened on screen, so a completed sign-in stranded the user on a blank
+  /// page with the app already signed in behind it. Only a browser this
+  /// screen opened is closed, and only after a session exists, so a refused
+  /// sign-in still shows the provider's own message.
+  void _dismissProviderBrowser() {
+    if (!awaitingProviderCallback) return;
+    awaitingProviderCallback = false;
+    unawaited(closeInAppWebView());
   }
 
   Future<void> _completeRemoteLogin() async {

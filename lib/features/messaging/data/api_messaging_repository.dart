@@ -198,4 +198,53 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
     blockedId: dto.blockedId,
     createdAt: DateTime.parse(dto.createdAt),
   );
+
+  @override
+  Future<void> createAnnouncement(AnnouncementDraft draft) => _guard(() async {
+    await _client.createAnnouncement(
+      V1CreateAnnouncementRequestDto(
+        schoolId: draft.schoolId,
+        classroomId: draft.classroomId,
+        title: draft.title,
+        body: draft.body,
+        audience: draft.audience.name,
+        important: draft.important,
+      ),
+      idempotencyKey: 'announcement-${DateTime.now().microsecondsSinceEpoch}'
+          .hashCode
+          .abs()
+          .toRadixString(36)
+          .padLeft(16, '0'),
+    );
+  });
+
+  @override
+  Future<List<Announcement>> announcements({String? classroomId}) =>
+      _guard(() async {
+        final items = <Announcement>[];
+        String? cursor;
+        do {
+          final page = await _client.listAnnouncements(
+            classroomId: classroomId,
+            cursor: cursor,
+            pageSize: 50,
+          );
+          for (final item in page.items) {
+            items.add(
+              Announcement(
+                id: item.id,
+                title: item.title,
+                body: item.body,
+                important: item.important,
+                createdAt:
+                    DateTime.tryParse(item.publishedAt)?.toLocal() ??
+                    DateTime.now(),
+                classroomId: item.classroomId,
+              ),
+            );
+          }
+          cursor = page.nextCursor;
+        } while (cursor != null);
+        return items;
+      });
 }

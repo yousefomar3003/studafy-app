@@ -28,14 +28,17 @@ class FamilyInteractor {
     return list;
   });
 
-  Future<Result<LocatedStudent?>> locate(String studafyId) {
+  Future<Result<LocatedStudent?>> locate(
+    String studafyId, {
+    String? captchaToken,
+  }) {
     final code = studafyId.trim();
     if (code.isEmpty) {
       return Future.value(
         const Result.failure(Failure.validation('Enter the Studafy ID.')),
       );
     }
-    return runCatching(() => family.locate(code));
+    return runCatching(() => family.locate(code, captchaToken: captchaToken));
   }
 
   Future<Result<GuardianChild>> requestLink(String studentId) => runCatching(
@@ -68,5 +71,26 @@ class FamilyInteractor {
         await confirmRecentAuth();
         await approvals.decide(approvalId, approve: approve);
         telemetry.event('purchase_approval_decided', {'approved': approve});
+      });
+  Future<Result<StudentFamily>> studentFamily() => runCatching(() {
+    final repository = family;
+    if (repository is! StudentFamilyRepository) {
+      throw const Failure.unsupported('Family requests are unavailable.');
+    }
+    return (repository as StudentFamilyRepository).studentFamily();
+  });
+  Future<Result<void>> decideGuardian(String linkId, String decision) =>
+      runCatching(() {
+        if (!['approve', 'decline', 'revoke'].contains(decision)) {
+          throw const Failure.validation('Invalid decision.');
+        }
+        final repository = family;
+        if (repository is! StudentFamilyRepository) {
+          throw const Failure.unsupported('Family requests are unavailable.');
+        }
+        return (repository as StudentFamilyRepository).decideGuardian(
+          linkId,
+          decision,
+        );
       });
 }
