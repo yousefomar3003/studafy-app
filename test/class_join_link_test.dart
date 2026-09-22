@@ -20,7 +20,7 @@ Future<void> _pushRouteInformation(WidgetTester tester, String location) async {
 void main() {
   group('the link a teacher shares round-trips', () {
     test('a built link parses back to the same token', () {
-      const token = 'abcDEF123_-xyzABCdef456ghiJKL789mnoPQR';
+      const token = 'joinlink0000000000000000000000000000';
       final url = classJoinLinkUrl(token);
       expect(url, startsWith('$classJoinLinkScheme://$classJoinLinkHost'));
       expect(classJoinTokenFrom(url), token);
@@ -30,12 +30,14 @@ void main() {
     test('a token pasted on its own is accepted', () {
       // People paste the bare token out of the middle of a message; working
       // out which half of a link to copy is not the student's job.
-      const token = 'abcDEF123_-xyzABCdef456ghiJKL789mnoPQR';
+      const token = 'joinlink0000000000000000000000000000';
       expect(classJoinTokenFrom('  $token  '), token);
     });
 
     test('a token with url-safe characters survives the round trip', () {
-      const token = '__--abcDEF123456789_-ABCdefghiJKLmno--__';
+      // Deliberately low entropy, per .gitleaksignore: the generic-api-key
+      // rule fires on entropy alone and cannot tell a fixture from a key.
+      const token = '__--0000000000000000000000000000--__';
       expect(classJoinTokenFrom(classJoinLinkUrl(token)), token);
     });
 
@@ -68,14 +70,11 @@ void main() {
       await tester.pumpWidget(app());
       await _pushRouteInformation(
         tester,
-        'io.studafy.app://join?t=abcDEF123_-xyzABCdef456ghiJKL789mnoPQR',
+        'io.studafy.app://join?t=joinlink0000000000000000000000000000',
       );
 
       expect(tester.takeException(), isNull);
-      expect(
-        guard.pendingToken.value,
-        'abcDEF123_-xyzABCdef456ghiJKL789mnoPQR',
-      );
+      expect(guard.pendingToken.value, 'joinlink0000000000000000000000000000');
       expect(find.text('splash'), findsOneWidget);
     });
 
