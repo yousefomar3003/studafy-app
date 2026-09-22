@@ -1018,6 +1018,86 @@ export type Database = {
           },
         ];
       };
+      class_join_links: {
+        Row: {
+          classroom_id: string;
+          created_at: string;
+          created_by: string;
+          expires_at: string;
+          id: string;
+          max_uses: number | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          school_id: string;
+          status: Database["public"]["Enums"]["class_join_link_status"];
+          token_hash: string;
+          updated_at: string;
+          use_count: number;
+          version: number;
+        };
+        Insert: {
+          classroom_id: string;
+          created_at?: string;
+          created_by: string;
+          expires_at: string;
+          id?: string;
+          max_uses?: number | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          school_id: string;
+          status?: Database["public"]["Enums"]["class_join_link_status"];
+          token_hash: string;
+          updated_at?: string;
+          use_count?: number;
+          version?: number;
+        };
+        Update: {
+          classroom_id?: string;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string;
+          id?: string;
+          max_uses?: number | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          school_id?: string;
+          status?: Database["public"]["Enums"]["class_join_link_status"];
+          token_hash?: string;
+          updated_at?: string;
+          use_count?: number;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "class_join_links_classroom_school_fk";
+            columns: ["school_id", "classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "class_join_links_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_join_links_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_join_links_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       class_schedules: {
         Row: {
           classroom_id: string;
@@ -3995,6 +4075,7 @@ export type Database = {
           created_at: string;
           created_by: string;
           id: string;
+          lesson_session_id: string | null;
           published_at: string | null;
           resource_version_id: string;
           school_id: string;
@@ -4009,6 +4090,7 @@ export type Database = {
           created_at?: string;
           created_by: string;
           id?: string;
+          lesson_session_id?: string | null;
           published_at?: string | null;
           resource_version_id: string;
           school_id: string;
@@ -4023,6 +4105,7 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           id?: string;
+          lesson_session_id?: string | null;
           published_at?: string | null;
           resource_version_id?: string;
           school_id?: string;
@@ -4058,6 +4141,13 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_publications_lesson_session_fk";
+            columns: ["lesson_session_id"];
+            isOneToOne: false;
+            referencedRelation: "lesson_sessions";
             referencedColumns: ["id"];
           },
           {
@@ -5342,6 +5432,7 @@ export type Database = {
         | "declined"
         | "consumed"
         | "expired";
+      class_join_link_status: "active" | "revoked" | "expired";
       classroom_staff_role: "lead_teacher" | "co_teacher" | "assistant";
       classroom_status: "draft" | "active" | "archived";
       conversation_state: "active" | "archived" | "closed";
@@ -5603,6 +5694,7 @@ export const Constants = {
         "consumed",
         "expired",
       ],
+      class_join_link_status: ["active", "revoked", "expired"],
       classroom_staff_role: ["lead_teacher", "co_teacher", "assistant"],
       classroom_status: ["draft", "active", "archived"],
       conversation_state: ["active", "archived", "closed"],
