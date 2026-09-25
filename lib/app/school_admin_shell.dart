@@ -76,7 +76,9 @@ class _SchoolAdminShellState extends State<SchoolAdminShell> {
       ),
       TermsPage(repository: operations),
       GuardianVerificationPage(repository: operations),
-      const NotificationsPage(),
+      // Re-reads when its tab comes into view; an IndexedStack would
+      // otherwise hold the feed as it was at launch all session.
+      NotificationsPage(visible: _index == 3),
       const AccountHubPage(),
     ];
     return Scaffold(

@@ -60,7 +60,12 @@ class _ClassJoinLinkListenerState extends State<ClassJoinLinkListener> {
 
   Future<void> _open() async {
     if (_opening || widget.guard.pendingToken.value == null) return;
-    if (widget.session.status != SessionStatus.authenticated) return;
+    // `onboarding` counts as signed in here, and has to: a student who taps a
+    // link with a brand-new account has no membership yet, which is exactly
+    // the state the link exists to resolve. Requiring `authenticated` would
+    // deadlock the one person this whole flow was written for.
+    const usable = {SessionStatus.authenticated, SessionStatus.onboarding};
+    if (!usable.contains(widget.session.status)) return;
     final navigator = widget.navigatorKey.currentState;
     if (navigator == null) return;
     final token = widget.guard.consume();

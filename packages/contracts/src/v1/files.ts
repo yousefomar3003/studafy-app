@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { V1FileScanState } from "./attachments";
 import { V1Resource } from "./academic";
 
 const Id = z.string().uuid();
@@ -12,6 +13,8 @@ export const V1FilePurpose = z.enum([
   "assignment_submission",
   "paper_scan",
   "coach_attachment",
+  "message_attachment",
+  "announcement_attachment",
 ]);
 export type V1FilePurpose = z.infer<typeof V1FilePurpose>;
 
@@ -31,16 +34,6 @@ export const V1UploadSessionState = z.enum([
   "cancelled",
 ]);
 export type V1UploadSessionState = z.infer<typeof V1UploadSessionState>;
-
-export const V1FileScanState = z.enum([
-  "quarantined",
-  "scanning",
-  "clean",
-  "rejected",
-  "error",
-  "deleted",
-]);
-export type V1FileScanState = z.infer<typeof V1FileScanState>;
 
 /**
  * A single strict wire object is intentional: it gives the generated Dart
@@ -76,6 +69,12 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     assignment_material: ["assignmentId"],
     assignment_submission: ["assignmentId", "studentId"],
     paper_scan: ["gradeResultId"],
+    // No target at intent time. A chat or announcement attachment is bound to
+    // the message or announcement when that is created, and the binding gate
+    // authorises it there - naming a target here would be a second, weaker
+    // place to get that decision wrong.
+    message_attachment: [],
+    announcement_attachment: [],
   };
   const allowed = new Set(required[value.purpose]);
   for (const [key, isPresent] of Object.entries(present)) {

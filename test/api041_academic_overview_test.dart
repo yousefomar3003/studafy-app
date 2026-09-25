@@ -93,7 +93,12 @@ class _FakeAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> submitAssignment(String assignmentId, String answer) async {
+  Future<void> submitAssignment(
+    String assignmentId,
+    String answer, {
+    List<String> attachmentFileIds = const [],
+    String? studentId,
+  }) async {
     drafts.add(assignmentId);
   }
 

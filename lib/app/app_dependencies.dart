@@ -15,6 +15,7 @@ import '../data/local_cache/session_cache_binder.dart';
 import '../core/secure_storage.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/subscription_service.dart';
+import '../features/notebook/domain/notebook_subscription_repository.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/data/api_data_export_repository.dart';
 import '../features/account/data/api_profile_repository.dart';
@@ -33,12 +34,20 @@ import '../features/messaging/application/messaging_interactor.dart';
 import '../features/messaging/data/api_messaging_repository.dart';
 import '../features/messaging/data/preview_messaging_repository.dart';
 import '../features/notifications/application/notifications_interactor.dart';
+import '../features/onboarding/application/teacher_workspace_interactor.dart';
+import '../features/study_assistant/application/study_assistant_interactor.dart';
+import '../features/study_assistant/data/api_study_assistant_repository.dart';
+import '../features/family_insights/application/family_insights_interactor.dart';
+import '../features/family_insights/data/api_family_insights_repository.dart';
+import '../features/onboarding/data/api_teacher_workspace_repository.dart';
 import '../features/notifications/data/api_notifications_repository.dart';
 import '../features/notifications/data/preview_notifications_repository.dart';
 import '../features/notifications/domain/notifications_repository.dart';
+import '../features/files/data/api_file_upload_repository.dart';
 import '../features/files/data/preview_file_upload_repository.dart';
+import '../features/files/data/signed_upload_transport.dart';
 import '../features/files/data/unavailable_file_upload_repository.dart';
-import '../features/files/domain/file_upload_repository.dart';
+import '../core/file_upload_repository.dart';
 import '../features/parent/data/preview_parent_repository.dart';
 import '../features/parent/data/unavailable_parent_repository.dart';
 import '../features/parent/domain/parent_repository.dart';
@@ -63,9 +72,13 @@ class AppDependencies {
   const AppDependencies({
     required this.session,
     required this.classes,
+    this.teacherWorkspace,
+    this.studyAssistant,
+    this.familyInsights,
     required this.parent,
     required this.teacherDashboard,
     required this.parentSubscription,
+    this.notebookSubscription,
     required this.account,
     required this.academicApi,
     required this.academic,
@@ -81,9 +94,20 @@ class AppDependencies {
 
   final SessionInteractor session;
   final ClassListInteractor classes;
+
+  /// Null in synthetic and preview builds, which have no tenant to create.
+  final TeacherWorkspaceInteractor? teacherWorkspace;
+
+  /// Null when the build has no backend, and also when the server has no
+  /// AI provider configured - the tab is then absent rather than broken.
+  final StudyAssistantInteractor? studyAssistant;
+
+  /// Family+. Null without a backend; the paid tab is then absent.
+  final FamilyInsightsInteractor? familyInsights;
   final ParentRepository parent;
   final TeacherDashboardRepository teacherDashboard;
   final ParentSubscriptionRepository parentSubscription;
+  final NotebookSubscriptionRepository? notebookSubscription;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
@@ -168,6 +192,10 @@ class AppDependencies {
     final apiFamily = remote == null
         ? null
         : ApiFamilyRepository(remote.api, billing: billingApi);
+    final subscriptions = StoreSubscriptionRepository(
+      billingApi: billingApi,
+      pendingStore: remote?.secureStore,
+    );
     return AppDependencies(
       family: FamilyInteractor(
         family: previewFamily ?? apiFamily!,
@@ -192,12 +220,30 @@ class AppDependencies {
         repository: classroomRepository,
         telemetry: telemetry,
       ),
+      // Only a real backend can hand out a first membership; a synthetic
+      // build has no tenant to create and no server to refuse a second one.
+      teacherWorkspace: remote == null
+          ? null
+          : TeacherWorkspaceInteractor(
+              repository: ApiTeacherWorkspaceRepository(remote.api),
+              telemetry: telemetry,
+            ),
+      studyAssistant: remote == null
+          ? null
+          : StudyAssistantInteractor(
+              repository: ApiStudyAssistantRepository(remote.api),
+              telemetry: telemetry,
+            ),
+      familyInsights: remote == null
+          ? null
+          : FamilyInsightsInteractor(
+              repository: ApiFamilyInsightsRepository(remote.api),
+              telemetry: telemetry,
+            ),
       parent: parentRepository,
       teacherDashboard: teacherDashboardRepository,
-      parentSubscription: StoreSubscriptionRepository(
-        billingApi: billingApi,
-        pendingStore: remote?.secureStore,
-      ),
+      parentSubscription: subscriptions,
+      notebookSubscription: subscriptions,
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(
@@ -231,12 +277,18 @@ class AppDependencies {
       cacheBinder: cacheBinder,
       locale: localeController,
       localeSession: localeSessionBinder,
-      // FILE-050 ships the typed client but does not activate remote bytes.
-      // FILE-051 will replace this remote adapter only after scanning and
-      // clean delivery pass their gate.
+      // FILE-051's scanning and delivery gate has passed, so a remote build
+      // now sends real bytes through the real pipeline. A build with no API
+      // client still has nowhere to send them, and says so rather than
+      // pretending an upload succeeded.
       fileUploads: policy.isSynthetic
           ? const PreviewFileUploadRepository()
-          : const UnavailableFileUploadRepository(),
+          : (remote == null || !policy.allowsRemoteFileUploads
+                ? const UnavailableFileUploadRepository()
+                : ApiFileUploadRepository(
+                    remote.api,
+                    IoSignedUploadTransport(),
+                  )),
     );
   }
 

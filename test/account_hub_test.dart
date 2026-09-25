@@ -99,7 +99,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sara Al-Amin'), findsOneWidget);
     expect(find.text('sara@example.test'), findsOneWidget);
-    expect(find.text('Al-Noor International · Student'), findsOneWidget);
+    // The header shows these as separate chips now; both must still be the
+    // real school and role, not a sample.
+    expect(find.text('Al-Noor International'), findsOneWidget);
+    expect(find.text('Student'), findsOneWidget);
     expect(find.text('Delete account'), findsOneWidget);
     expect(find.text('Nadia Hassan'), findsNothing);
   });

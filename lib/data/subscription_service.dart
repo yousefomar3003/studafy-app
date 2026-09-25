@@ -2,14 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 
 import '../core/secure_storage.dart';
 import '../features/parent/domain/parent_subscription_repository.dart';
+import '../features/notebook/domain/notebook_subscription_repository.dart';
 import 'billing/store_offer_details.dart';
 import 'billing/v1_billing_api.dart';
 import 'contracts/v1_http_transport.dart';
 
-class StoreSubscriptionRepository implements ParentSubscriptionRepository {
+class StoreSubscriptionRepository
+    implements ParentSubscriptionRepository, NotebookSubscriptionRepository {
   StoreSubscriptionRepository({
     InAppPurchase? store,
     V1BillingApi? billingApi,
@@ -40,8 +46,9 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
   final List<EntitlementChanged> _entitlementListeners = [];
 
   V1BillingProduct? _insightsProduct;
-  bool _catalogueLoaded = false;
-  List<V1BillingProduct> _catalogueProducts = const [];
+  ProductDetails? _notebookSelection;
+  String? _notebookSelectionAccount;
+  String? _approvalRequestKey;
 
   bool get _isRemote => _billingApi != null;
 
@@ -72,13 +79,10 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
     ),
   };
 
-  /// Resolves this platform's product rows from the server catalogue (lazy,
-  /// once). Store product ids and availability are server-authoritative; the
+  /// Resolves this platform's current server catalogue. Product ids and
+  /// availability are server-authoritative; the
   /// store product query later supplies price/trial for display only.
   Future<List<V1BillingProduct>> _products() async {
-    if (_catalogueLoaded) {
-      return _catalogueProducts;
-    }
     if (!_isRemote) return <V1BillingProduct>[];
     try {
       final catalogue = await _billingApi!.catalogue();
@@ -90,11 +94,191 @@ class StoreSubscriptionRepository implements ParentSubscriptionRepository {
         (product) => product.featureKey == 'parent_insights',
       );
       _insightsProduct = matched < 0 ? null : products[matched];
-      _catalogueProducts = List.unmodifiable(products);
-      _catalogueLoaded = true;
       return products;
     } catch (_) {
       rethrow;
+    }
+  }
+
+  @override
+  Future<NotebookSubscription> notebookStatus() async {
+    if (!_isRemote) return const NotebookSubscription();
+    await initialize();
+    // Refresh authority on every read: a cached catalogue must never bind a
+    // purchase to the account which used the device before this student.
+    final catalogue = await _billingApi!.catalogue();
+    final rows = await _billingApi.entitlements();
+    final now = DateTime.now();
+    final active = rows.where(
+      (row) =>
+          row.featureKey == 'student_notebook' &&
+          row.beneficiaryStudentId == null &&
+          row.grantsAccess &&
+          !row.startsAt.isAfter(now) &&
+          row.endsAt != null &&
+          row.endsAt!.isAfter(now),
+    );
+    if (active.isNotEmpty) {
+      return NotebookSubscription(active: true, expiresAt: active.first.endsAt);
+    }
+    final approvals = await _billingApi.purchaseApprovals();
+    final current = approvals.where(
+      (row) =>
+          row.featureKey == 'student_notebook' &&
+          row.expiresAt.isAfter(now) &&
+          (row.isApproved || row.isPending),
+    );
+    final approval = current.any((row) => row.isApproved)
+        ? 'approved'
+        : current.isNotEmpty
+        ? 'requested'
+        : 'none';
+    final enabled =
+        catalogue.selfPurchase.isNotEmpty &&
+        catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled);
+    _notebookSelection = null;
+    _notebookSelectionAccount = null;
+    StoreOfferTerms terms = StoreOfferTerms.none;
+    var eligibleTrial = false;
+    try {
+      final products = catalogue.products.where(
+        (row) =>
+            row.featureKey == 'student_notebook' &&
+            row.platform == _platformName,
+      );
+      if (products.length == 1 && await _store.isAvailable()) {
+        final result = await _store.queryProductDetails({
+          products.single.storeProductId,
+        });
+        if (result.error == null) {
+          final candidates = result.productDetails
+              .where(
+                (p) =>
+                    p.id == products.single.storeProductId &&
+                    resolveStoreOfferTerms(p).periodLength == '1 month',
+              )
+              .toList();
+          // Google only returns offers available to this store account. Prefer
+          // the configured one-month trial, and keep its exact offer token.
+          candidates.sort(
+            (a, b) =>
+                (resolveStoreOfferTerms(b).trialLength == '1 month' ? 1 : 0)
+                    .compareTo(
+                      resolveStoreOfferTerms(a).trialLength == '1 month'
+                          ? 1
+                          : 0,
+                    ),
+          );
+          if (candidates.isNotEmpty) {
+            final selected = candidates.first;
+            terms = resolveStoreOfferTerms(selected);
+            eligibleTrial = terms.hasTrial && terms.trialLength == '1 month';
+            if (defaultTargetPlatform == TargetPlatform.iOS) {
+              // The plugin's StoreKit 2 model omits introductory terms. Read
+              // the same SKU's StoreKit metadata, then check eligibility in SK2.
+              final metadata = await SKRequestMaker().startProductRequest([
+                selected.id,
+              ]);
+              final matching = metadata.products.where(
+                (p) => p.productIdentifier == selected.id,
+              );
+              eligibleTrial = false;
+              if (matching.length == 1) {
+                final intro = resolveStoreOfferTerms(
+                  AppStoreProductDetails.fromSKProduct(matching.single),
+                );
+                eligibleTrial =
+                    intro.hasTrial &&
+                    intro.trialLength == '1 month' &&
+                    await SK2Product.isIntroductoryOfferEligible(selected.id);
+              }
+            }
+            _notebookSelection = selected;
+            _notebookSelectionAccount = catalogue.purchaseAccountToken;
+          }
+        }
+      }
+    } catch (_) {
+      // Store outages never hide restore or consent, and never invent terms.
+      _notebookSelection = null;
+    }
+    return NotebookSubscription(
+      price: terms.price,
+      currency: terms.currencyCode,
+      monthly: terms.periodLength == '1 month',
+      oneMonthTrial: eligibleTrial,
+      storeAvailable: _notebookSelection != null,
+      selfPurchaseEnabled: enabled,
+      approval: approval,
+    );
+  }
+
+  @override
+  Future<void> requestNotebookApproval() async {
+    if (!_isRemote) throw StateError('Billing is unavailable in preview');
+    _approvalRequestKey ??=
+        'notebook-approval:${DateTime.now().microsecondsSinceEpoch}';
+    await _billingApi!.requestPurchaseApproval(
+      featureKey: 'student_notebook',
+      idempotencyKey: _approvalRequestKey!,
+    );
+    _approvalRequestKey = null;
+  }
+
+  @override
+  Future<void> purchaseNotebook() async {
+    final selected = _notebookSelection;
+    final account = _notebookSelectionAccount;
+    if (!_isRemote || selected == null || account == null) {
+      throw StateError('Reload the subscription offer');
+    }
+    // Recheck account, consent and availability immediately before the store
+    // sheet, without silently substituting a different price or offer.
+    final catalogue = await _billingApi!.catalogue();
+    final approvals = await _billingApi.purchaseApprovals();
+    if (catalogue.purchaseAccountToken != account ||
+        (catalogue.selfPurchase.isEmpty ||
+            !catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled)) ||
+        !catalogue.products.any(
+          (row) =>
+              row.featureKey == 'student_notebook' &&
+              row.platform == _platformName &&
+              row.storeProductId == selected.id,
+        ) ||
+        !approvals.any(
+          (row) =>
+              row.featureKey == 'student_notebook' &&
+              row.isApproved &&
+              row.expiresAt.isAfter(DateTime.now()),
+        )) {
+      throw StateError('Purchase approval is no longer available');
+    }
+    final terms = resolveStoreOfferTerms(selected);
+    if (terms.periodLength != '1 month' ||
+        terms.price.isEmpty ||
+        terms.currencyCode.isEmpty) {
+      throw StateError('Subscription terms are unavailable');
+    }
+    await initialize();
+    final PurchaseParam param;
+    if (selected is GooglePlayProductDetails) {
+      final index = selected.subscriptionIndex!;
+      param = GooglePlayPurchaseParam(
+        productDetails: selected,
+        applicationUserName: account,
+        offerToken: selected
+            .productDetails
+            .subscriptionOfferDetails![index]
+            .offerIdToken,
+      );
+    } else {
+      param = PurchaseParam(
+        productDetails: selected,
+        applicationUserName: account,
+      );
+    }
+    if (!await _store.buyNonConsumable(purchaseParam: param)) {
+      throw StateError('The store did not start the purchase');
     }
   }
 

@@ -19,6 +19,9 @@ import {
   createStudentFamilyRoutes,
 } from "../../src/family/routes";
 import { createClassJoinRoutes } from "../../src/class-join/routes";
+import { createOnboardingRoutes } from "../../src/onboarding/routes";
+import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
+import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
 import {
   createCommunicationsRoutes,
   createContactsRoutes,
@@ -363,6 +366,37 @@ function routeTable() {
       },
       authorization,
       idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createOnboardingRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createStudyAssistantRoutes(
+      {
+        assistant: { ask: async () => ({ answer: "stub" }) },
+        quota: { consume: async () => 1 },
+      },
+      authorization,
+    ),
+  );
+  combined.route(
+    "/",
+    createFamilyInsightsRoutes(
+      { repository: { read: async () => null } },
+      authorization,
     ),
   );
   const routes = createAuthRoutes(

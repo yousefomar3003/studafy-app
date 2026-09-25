@@ -44,7 +44,24 @@ void main() {
     );
   });
 
-  test('no shipped source names an AI route, credential or AI control', () {
+  // SCOPE CHANGE, recorded rather than quietly made.
+  //
+  // This test used to ban the bare word "AI" anywhere in shipped source, as
+  // the belt-and-braces half of ADR-0026's "leave nothing a reviewer could
+  // find". A study assistant has since been added on the repository owner's
+  // explicit instruction, so that blanket ban no longer holds and only it
+  // has been lifted.
+  //
+  // Everything naming the REMOVED implementation stays forbidden, because
+  // that implementation was the SEC-001 critical vulnerability: it signed
+  // caller-selected storage paths with service-role credentials, and it
+  // forwarded lesson-material bodies to an unpinned URL. The new assistant
+  // shares none of it - it sends only the sentence a student typed, to one
+  // pinned origin, behind a daily cap.
+  //
+  // ADR-0026's other precondition is still outstanding: no DPA and no DPIA
+  // covering minors' data existed when this was written.
+  test('no shipped source names the removed AI route, credential or control', () {
     final forbidden = <Pattern>[
       'STUDY_COACH',
       'AI_GRADING',
@@ -59,7 +76,6 @@ void main() {
       'ai-grading-',
       'Study Coach',
       'coachAttachment',
-      RegExp(r'\bAI\b'),
     ];
     final files = [
       ...dartAndTs('lib'),
@@ -116,9 +132,14 @@ void main() {
     );
     await tester.pump();
 
-    // Today, Notebook, Work and Grades. Messages (DL-049) appears only when
-    // the app provides messaging, and nothing replaced the Study Coach.
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    // Today, Notebook and Work. Grades merged into Work - one screen over the
+    // same feeds - and Messages (DL-049) appears only when the app provides
+    // messaging. The count is only a proxy; what this test actually guards is
+    // that nothing has taken the Study Coach's place, which the two
+    // assertions below check directly. Re-adding an AI tab needs a DPA, a
+    // DPIA covering minors' data, and an ADR superseding ADR-0026 - not an
+    // edit to this number.
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
     expect(find.text('Study Coach'), findsNothing);
     expect(find.byIcon(Icons.auto_awesome_outlined), findsNothing);
   });

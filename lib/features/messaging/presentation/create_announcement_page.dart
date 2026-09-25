@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/messaging_interactor.dart';
 import '../domain/messaging.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/attachment_field.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
 
 /// One class a teacher may announce to.
 ///
@@ -27,12 +31,16 @@ class CreateAnnouncementPage extends StatefulWidget {
     required this.schoolId,
     required this.classes,
     this.initialClassroomId,
+    this.attachmentSource,
   });
 
   final MessagingInteractor messaging;
   final String schoolId;
   final List<AnnouncementTarget> classes;
   final String? initialClassroomId;
+
+  /// Overrides the platform picker. Tests supply their own.
+  final AttachmentSource? attachmentSource;
 
   @override
   State<CreateAnnouncementPage> createState() => _CreateAnnouncementPageState();
@@ -45,6 +53,10 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
   AnnouncementAudience _audience = AnnouncementAudience.both;
   bool _important = false;
   bool _posting = false;
+  List<Attachment> _attachments = const [];
+
+  bool get _uploading =>
+      _attachments.any((a) => a.stage == AttachmentStage.uploading);
   String? _error;
 
   @override
@@ -70,7 +82,8 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
       };
 
   Future<void> _post() async {
-    if (_posting) return;
+    // An attachment still in flight would be dropped from the post.
+    if (_posting || _uploading) return;
     final l10n = AppL10n.of(context);
     final classroomId = _classroomId;
     final String? problem = switch (null) {
@@ -97,6 +110,7 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
         body: _body.text.trim(),
         audience: _audience,
         important: _important,
+        attachmentFileIds: [for (final item in _attachments) ?item.fileId],
       ),
     );
     if (!mounted) return;
@@ -182,6 +196,16 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
               title: Text(l10n.announcementImportantLabel),
               subtitle: Text(l10n.announcementImportantDetail),
             ),
+            if (UploadsScope.maybeOf(context) case final uploads?)
+              AttachmentField(
+                purpose: FilePurpose.announcementAttachment,
+                schoolId: widget.schoolId,
+                classroomId: _classroomId,
+                uploads: uploads,
+                enabled: !_posting,
+                source: widget.attachmentSource ?? pickPlatformAttachment,
+                onChanged: (items) => setState(() => _attachments = items),
+              ),
             if (_error != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -191,7 +215,7 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
             ],
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _posting ? null : _post,
+              onPressed: _posting || _uploading ? null : _post,
               child: Text(
                 _posting ? l10n.announcementPosting : l10n.announcementPost,
               ),

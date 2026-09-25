@@ -45,6 +45,7 @@
   "securitySignOutEverywhereBody": "Every device signed in to this account will be signed out, including this one. Sessions stop working immediately.",
   "securityCancel": "Cancel",
   "securitySignOutEverywhere": "Sign out everywhere",
+  "securitySignOutEverywhereFailed": "This device is signed out, but your other devices could not be reached. Try again from a signed-in device.",
   "securityTwoFactorHeading": "TWO-FACTOR SIGN-IN",
   "securityTwoFactorOn": "Turned on",
   "securityTwoFactorOff": "Not set up",
@@ -130,9 +131,9 @@
   "loginAcceptFirst": "Please accept before signing in.",
   "loginChangeRole": "Change role",
   "loginClose": "Close",
-  "policyPrivacyBody": "Studafy uses account, school, class, attendance, and communication data only to provide and secure the service. Schools control student records. We do not sell personal data. Contact your school to access, correct, or delete eligible records.",
+  "policyPrivacyBody": "WHAT WE COLLECT\nYour name and email from the sign-in provider you choose; the school or class you belong to and your role in it; the work you are set and hand in, your marks, attendance and pastoral notes; messages, announcements and meetings inside the app; files you upload; and your notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nTHE STUDY HELPER\nIf you use the study helper, the question you type is sent to an AI company outside Studafy so it can answer. Your name, school, marks, work and messages are never sent. Answers can be wrong, so check anything you hand in. Using the helper is optional.\n\nWHO SEES YOUR WORK\nStaff at your school whose role requires it, and a parent linked to you. Other students cannot see your marks, your submitted work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent can follow progress; a parent is not given your private messages.\n\nPAYMENTS\nSubscriptions are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Resend sends email and Firebase sends push notifications. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion.\n\nHOW WE PROTECT IT\nAccess to a school's data is enforced in the database itself. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Administrator accounts require two-factor sign-in. Files are scanned before they can be downloaded.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.",
   "@policyPrivacyBody": {
-    "description": "Placeholder legal copy. REL-002 B5 replaces both policy bodies with hosted documents; this Arabic text has not been reviewed by counsel."
+    "description": "In-app summary of docs/legal/privacy-policy.md, which governs. Update both together: this text names the AI provider disclosure and the processor list, so it goes stale the moment either changes. Not reviewed by counsel; the Arabic translation has not been reviewed by a native legal translator."
   },
   "policyTermsBody": "Use Studafy only for authorized school communication. Keep accounts secure, respect students and staff, and do not upload harmful or unlawful content. School policies continue to apply. Misuse may lead to account suspension.",
   "@policyTermsBody": {
@@ -327,7 +328,7 @@
   "attendanceExcusedReason": "Reason for excused absence",
   "attendanceSaved": "Attendance saved successfully.",
   "attendanceSave": "Save attendance",
-  "notebookTitle": "Lesson notebook",
+  "notebookTitle": "My notebook",
   "notebookLessonLabel": "Lesson covered",
   "notebookLessonHint": "What did you teach today?",
   "notebookHomeworkLabel": "Homework (optional)",
@@ -556,6 +557,7 @@
   "submissionsAction": "Handed in",
   "submissionsNone": "Nobody has handed anything in yet.",
   "submissionsWaiting": "Not handed in",
+  "submissionsByGuardian": "Handed in by a parent",
   "submissionsOn": "Handed in {when}",
   "@submissionsOn": {
     "placeholders": {
@@ -624,5 +626,412 @@
   "joinLinkRevoke": "Revoke link",
   "joinLinkRevoked": "Link revoked. It no longer works for anyone holding it.",
   "joinLinkRevokeFailed": "Could not revoke the link. Please try again.",
-  "joinLinkNewReplaces": "Creating a new link replaces this one."
+  "joinLinkNewReplaces": "Creating a new link replaces this one.",
+  "@notebookTitle": {
+    "description": "Title of the student's Notebook tab and of its subscription screen."
+  },
+  "notebookActive": "Notebook is active",
+  "@notebookActive": {
+    "description": "Banner above the lesson content once a verified subscription is in force."
+  },
+  "notebookManage": "Manage",
+  "@notebookManage": {
+    "description": "Short link in the active-subscription banner, opens the store's subscription settings."
+  },
+  "notebookRefresh": "Refresh",
+  "@notebookRefresh": {
+    "description": "Tooltip on the button that rechecks subscription access with the server."
+  },
+  "notebookHeroEyebrow": "YOUR LEARNING, TOGETHER",
+  "@notebookHeroEyebrow": {
+    "description": "Small all-caps label above the Notebook paywall headline."
+  },
+  "notebookHeroTitle": "A home for every lesson.",
+  "@notebookHeroTitle": {
+    "description": "Headline of the Notebook paywall."
+  },
+  "notebookHeroSubtitle": "Keep your teachers’ lesson notes and learning materials close.",
+  "@notebookHeroSubtitle": {
+    "description": "Sentence under the Notebook paywall headline describing what the subscription covers."
+  },
+  "notebookPlanName": "Notebook · Monthly",
+  "@notebookPlanName": {
+    "description": "Name of the subscription plan on the Notebook paywall card."
+  },
+  "notebookPricePerMonth": "{price} / month",
+  "@notebookPricePerMonth": {
+    "description": "Recurring price line. The price already carries its own currency symbol exactly as the store formatted it for this storefront, so no currency code is added.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "notebookTrialThenPrice": "1 month free, then {price} each month.",
+  "@notebookTrialThenPrice": {
+    "description": "Shown only when the store reports this account is eligible for the introductory free month. The price is the store's formatted recurring price.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "notebookNoTrial": "Renews monthly. No free trial is confirmed for this store account.",
+  "@notebookNoTrial": {
+    "description": "Shown when the store offers no introductory trial to this account, so a free month must not be promised."
+  },
+  "notebookPriceUnconfirmed": "Your store confirms the price before you subscribe.",
+  "@notebookPriceUnconfirmed": {
+    "description": "Replaces the price line when the store query returned no usable terms. Never states a price the store has not confirmed, because tiers differ per storefront."
+  },
+  "notebookPriceUnconfirmedDetail": "A one-month free trial is planned for eligible new subscribers. The store must confirm local pricing and eligibility before you can subscribe.",
+  "@notebookPriceUnconfirmedDetail": {
+    "description": "Explains why checkout is unavailable while store terms are missing."
+  },
+  "notebookScope": "Only Notebook requires this subscription. Your assignments, grades and messages remain available.",
+  "@notebookScope": {
+    "description": "Reassures the student that schoolwork outside Notebook stays free."
+  },
+  "notebookStatusUnavailable": "We could not check your subscription. Retry to check access.",
+  "@notebookStatusUnavailable": {
+    "description": "Shown when the subscription status request failed."
+  },
+  "notebookSelfPurchaseDisabled": "Student purchasing is not enabled for your account yet.",
+  "@notebookSelfPurchaseDisabled": {
+    "description": "Shown when the school's student purchasing switch is off."
+  },
+  "notebookApprovalRequired": "A linked parent must approve before you subscribe. Approval does not start a trial or charge anyone.",
+  "@notebookApprovalRequired": {
+    "description": "Explains the guardian approval requirement and that approval alone never charges anyone."
+  },
+  "notebookApprovalRequestSent": "Request sent. Your parent can approve it from their home page.",
+  "@notebookApprovalRequestSent": {
+    "description": "Confirmation after the student asks a linked parent to approve."
+  },
+  "notebookApprovalWaiting": "Waiting for parent approval",
+  "@notebookApprovalWaiting": {
+    "description": "Button label while an approval request is outstanding."
+  },
+  "notebookApprovalAsk": "Ask my parent",
+  "@notebookApprovalAsk": {
+    "description": "Button that sends the guardian approval request."
+  },
+  "notebookPurchaseStarted": "Complete the store sheet. Access starts after your purchase is verified; refresh if needed.",
+  "@notebookPurchaseStarted": {
+    "description": "Shown after the store purchase sheet is opened."
+  },
+  "notebookStartFreeMonth": "Start my free month",
+  "@notebookStartFreeMonth": {
+    "description": "Checkout button when the store confirms this account is trial eligible."
+  },
+  "notebookSubscribeMonthly": "Subscribe monthly",
+  "@notebookSubscribeMonthly": {
+    "description": "Checkout button when no trial applies to this account."
+  },
+  "notebookCheckoutUnavailable": "Checkout opens once store terms, account approval and subscription policies are available.",
+  "@notebookCheckoutUnavailable": {
+    "description": "Explains why the checkout button is disabled."
+  },
+  "notebookRestoreRequested": "Restore requested. Access appears after store verification.",
+  "@notebookRestoreRequested": {
+    "description": "Confirmation after the student asks the store to restore purchases."
+  },
+  "notebookRestore": "Restore purchases",
+  "@notebookRestore": {
+    "description": "Button that asks the store to restore an existing subscription."
+  },
+  "notebookManageOrCancel": "Manage or cancel subscription",
+  "@notebookManageOrCancel": {
+    "description": "Link to the store's own subscription management page."
+  },
+  "notebookRenewalDisclosure": "Auto-renewing subscription. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal or the trial ends to avoid the next charge. Deleting the app does not cancel your subscription.",
+  "@notebookRenewalDisclosure": {
+    "description": "Auto-renewal disclosure required by both stores before purchase."
+  },
+  "notebookTermsOfUse": "Terms of Use",
+  "@notebookTermsOfUse": {
+    "description": "Link to the hosted terms document from the Notebook paywall."
+  },
+  "notebookPrivacyPolicy": "Privacy Policy",
+  "@notebookPrivacyPolicy": {
+    "description": "Link to the hosted privacy document from the Notebook paywall."
+  },
+  "notebookActionFailed": "Could not complete this step. Check your connection and your parent link, then try again.",
+  "@notebookActionFailed": {
+    "description": "Generic failure message for approval, purchase and restore actions."
+  },
+  "notebookOpenPageFailed": "Could not open the page.",
+  "@notebookOpenPageFailed": {
+    "description": "Shown when a policy or store management link could not be opened."
+  },
+  "joinClassTitle": "Join a class",
+  "@joinClassTitle": {
+    "description": "Title of the screen where a student enters a class link."
+  },
+  "joinClassPrompt": "Paste the class link your teacher shared with you.",
+  "@joinClassPrompt": {
+    "description": "Instruction above the class link field."
+  },
+  "joinClassField": "Class link",
+  "@joinClassField": {
+    "description": "Label of the text field that takes the class link or code."
+  },
+  "joinClassAction": "Join class",
+  "@joinClassAction": {
+    "description": "Button that redeems the pasted class link."
+  },
+  "joinClassBusy": "Joining…",
+  "@joinClassBusy": {
+    "description": "Label of the join button while the request is in flight."
+  },
+  "joinClassInvalid": "That does not look like a class link.",
+  "@joinClassInvalid": {
+    "description": "Shown when the pasted text contains no recognisable join token."
+  },
+  "joinClassDone": "You're in {className}",
+  "@joinClassDone": {
+    "description": "Confirmation after joining, naming the class.",
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "joinClassContinue": "Done",
+  "@joinClassContinue": {
+    "description": "Dismisses the confirmation after joining a class."
+  },
+  "onboardingStudentTitle": "Join your first class",
+  "@onboardingStudentTitle": {
+    "description": "Heading for a newly signed-in student who is in no class yet."
+  },
+  "onboardingStudentBody": "Ask your teacher for the class link, then paste it here to get started.",
+  "@onboardingStudentBody": {
+    "description": "Explains where a new student gets a class link."
+  },
+  "onboardingParentTitle": "Link to your child",
+  "@onboardingParentTitle": {
+    "description": "Heading for a newly signed-in parent who has no children linked."
+  },
+  "onboardingParentBody": "Ask your child for their Studafy ID. They approve the request on their own device, so nobody else can see their work.",
+  "@onboardingParentBody": {
+    "description": "Explains how a parent links to a student and that the student approves."
+  },
+  "onboardingParentAction": "Continue",
+  "@onboardingParentAction": {
+    "description": "Takes the parent to the screen where they look up their child."
+  },
+  "onboardingTeacherTitle": "Teacher accounts are almost ready",
+  "@onboardingTeacherTitle": {
+    "description": "Heading shown to a new teacher before teacher sign-up ships."
+  },
+  "onboardingTeacherBody": "Creating classes from a new teacher account is not switched on yet. Please check back shortly.",
+  "@onboardingTeacherBody": {
+    "description": "Explains that self-serve teacher sign-up is not available yet."
+  },
+  "onboardingTeacherReadyTitle": "Set up your teaching space",
+  "@onboardingTeacherReadyTitle": {
+    "description": "Heading for a new teacher who is about to get their workspace."
+  },
+  "onboardingTeacherReadyBody": "We'll get everything ready so you can create your first class and invite students to it.",
+  "@onboardingTeacherReadyBody": {
+    "description": "Explains what happens when a new teacher continues."
+  },
+  "onboardingTeacherReadyAction": "Get started",
+  "@onboardingTeacherReadyAction": {
+    "description": "Creates the teacher's workspace and opens the teacher home."
+  },
+  "onboardingNotReadyYet": "Your account is ready, but we couldn't open it just yet. Please try again.",
+  "@onboardingNotReadyYet": {
+    "description": "Shown when setup succeeded but the account's new access has not arrived yet."
+  },
+  "onboardingChangeRole": "Choose a different role",
+  "@onboardingChangeRole": {
+    "description": "Returns to the role picker from the onboarding screen."
+  },
+  "onboardingSignOut": "Sign out",
+  "@onboardingSignOut": {
+    "description": "Signs out from the onboarding screen."
+  },
+  "studyAssistantTitle": "Study helper",
+  "@studyAssistantTitle": {
+    "description": "Title of the student's AI study helper tab."
+  },
+  "studyAssistantIntro": "Ask about anything you are studying and get an explanation. Your question is sent to an AI service to answer it, so do not include your name, your school or anything private.",
+  "@studyAssistantIntro": {
+    "description": "Explains what the helper does and warns that questions leave the app."
+  },
+  "studyAssistantField": "Your question",
+  "@studyAssistantField": {
+    "description": "Label of the question field."
+  },
+  "studyAssistantAsk": "Ask",
+  "@studyAssistantAsk": {
+    "description": "Sends the question."
+  },
+  "studyAssistantBusy": "Thinking…",
+  "@studyAssistantBusy": {
+    "description": "Shown on the button while an answer is being fetched."
+  },
+  "studyAssistantCheckWork": "Answers can be wrong. Check anything you hand in.",
+  "@studyAssistantCheckWork": {
+    "description": "Reminder shown under every answer."
+  },
+  "studyAssistantRemaining": "{count, plural, =0{No questions left today} =1{1 question left today} other{{count} questions left today}}",
+  "@studyAssistantRemaining": {
+    "description": "How many questions remain in today's allowance.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "studyAssistantTab": "Helper",
+  "@studyAssistantTab": {
+    "description": "Short navigation label for the study helper tab."
+  },
+  "joinClassAlreadyStaff": "You already teach at this school, so you cannot join one of its classes as a student. Ask a student to open the link on their own account.",
+  "@joinClassAlreadyStaff": {
+    "description": "Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link."
+  },
+  "academicAllClasses": "All classes",
+  "@academicAllClasses": {
+    "description": "Chip that clears the class filter so every class is shown."
+  },
+  "insightsTitle": "Family+",
+  "@insightsTitle": {
+    "description": "Family+ insights: insightsTitle."
+  },
+  "insightsUnavailableTitle": "Insights are not available",
+  "@insightsUnavailableTitle": {
+    "description": "Family+ insights: insightsUnavailableTitle."
+  },
+  "insightsUnavailableBody": "Family+ is needed to see detailed insights, and the link to your child must be approved.",
+  "@insightsUnavailableBody": {
+    "description": "Family+ insights: insightsUnavailableBody."
+  },
+  "insightsNothingYetTitle": "Nothing to report yet",
+  "@insightsNothingYetTitle": {
+    "description": "Family+ insights: insightsNothingYetTitle."
+  },
+  "insightsNothingYetBody": "As your child's school records marks, attendance and work, insights will appear here. We only report what the records actually show.",
+  "@insightsNothingYetBody": {
+    "description": "Family+ insights: insightsNothingYetBody."
+  },
+  "insightsBySubject": "By subject",
+  "@insightsBySubject": {
+    "description": "Family+ insights: insightsBySubject."
+  },
+  "insightsComingUp": "Coming up",
+  "@insightsComingUp": {
+    "description": "Family+ insights: insightsComingUp."
+  },
+  "insightsFromSchool": "From the school",
+  "@insightsFromSchool": {
+    "description": "Family+ insights: insightsFromSchool."
+  },
+  "insightsAverage": "Average",
+  "@insightsAverage": {
+    "description": "Family+ insights: insightsAverage."
+  },
+  "insightsAttendance": "Attendance",
+  "@insightsAttendance": {
+    "description": "Family+ insights: insightsAttendance."
+  },
+  "insightsOnTime": "On time",
+  "@insightsOnTime": {
+    "description": "Family+ insights: insightsOnTime."
+  },
+  "insightSubjectFocus": "{subject} is their weakest subject right now",
+  "@insightSubjectFocus": {
+    "description": "Family+ insights: insightSubjectFocus."
+  },
+  "insightTrendDown": "{subject} marks are going down",
+  "@insightTrendDown": {
+    "description": "Family+ insights: insightTrendDown."
+  },
+  "insightTrendUp": "{subject} marks are going up",
+  "@insightTrendUp": {
+    "description": "Family+ insights: insightTrendUp."
+  },
+  "insightRecovery": "{subject} has recovered",
+  "@insightRecovery": {
+    "description": "Family+ insights: insightRecovery."
+  },
+  "insightHomework": "How reliably work is handed in",
+  "@insightHomework": {
+    "description": "Family+ insights: insightHomework."
+  },
+  "insightHomeworkSlipping": "Work is being handed in later than before",
+  "@insightHomeworkSlipping": {
+    "description": "Family+ insights: insightHomeworkSlipping."
+  },
+  "insightAttendancePattern": "Absences fall on the same day of the week",
+  "@insightAttendancePattern": {
+    "description": "Family+ insights: insightAttendancePattern."
+  },
+  "insightDueSoon": "Work due soon that has not been handed in",
+  "@insightDueSoon": {
+    "description": "Family+ insights: insightDueSoon."
+  },
+  "insightStrengthInsufficient": "Not enough records yet to be confident",
+  "@insightStrengthInsufficient": {
+    "description": "Family+ insights: insightStrengthInsufficient."
+  },
+  "insightStrengthLow": "Based on a small number of records",
+  "@insightStrengthLow": {
+    "description": "Family+ insights: insightStrengthLow."
+  },
+  "insightStrengthMedium": "Based on a reasonable number of records",
+  "@insightStrengthMedium": {
+    "description": "Family+ insights: insightStrengthMedium."
+  },
+  "insightStrengthHigh": "Based on a large number of records",
+  "@insightStrengthHigh": {
+    "description": "Family+ insights: insightStrengthHigh."
+  },
+  "insightsDueOn": "Due {date}",
+  "@insightsDueOn": {
+    "description": "Family+ insights: insightsDueOn.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsFromMarks": "{count, plural, =0{No marks yet} =1{From 1 mark} other{From {count} marks}}",
+  "@insightsFromMarks": {
+    "description": "Family+ insights: insightsFromMarks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsAbsences": "{count, plural, =0{No absences} =1{1 absence} other{{count} absences}}",
+  "@insightsAbsences": {
+    "description": "Family+ insights: insightsAbsences.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsOfTasks": "{count, plural, =0{No work set} =1{Of 1 task} other{Of {count} tasks}}",
+  "@insightsOfTasks": {
+    "description": "Family+ insights: insightsOfTasks.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsNoChildTitle": "Choose a child first",
+  "@insightsNoChildTitle": {
+    "description": "Family+ with no child selected."
+  },
+  "insightsNoChildBody": "Pick one of your children on the home tab to see their insights.",
+  "@insightsNoChildBody": {
+    "description": "Tells a parent how to select a child for Family+."
+  }
 }

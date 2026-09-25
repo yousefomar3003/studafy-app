@@ -1,30 +1,35 @@
-# Keep container build contexts minimal and free of local artifacts.
-.git
-.github
-.idea
-.vscode
-build
-.dart_tool
-node_modules
-**/node_modules
-**/dist
-**/coverage
-docs
-supabase
-config
-test
-ios
-android
-linux
-macos
-windows
-web
-*.db
-*.db-*
-*.sqlite
-*.sarif
+# Keep secrets and bulk out of the build context.
+#
+# The .env rules are the important ones: a build context is readable by
+# anyone who can pull the image layers, and SEC-001 keeps these files out of
+# git for the same reason.
 .env
 .env.*
 !.env.example
-.flutter-plugins-dependencies
+!.env.hosted.example
+config/dart-defines.*.json
+!config/dart-defines.*.example.json
+
+.git
+.github
+node_modules
+**/node_modules
+
+# The Flutter app is not part of the API image.
+lib
+test
+integration_test
+ios
+android
+build
+.dart_tool
 pubspec.lock
+
+supabase
+docs
+scripts/seed-reviewer-tenant.ts
+**/*.test.ts
+**/test/
+coverage
+*.log
+.DS_Store

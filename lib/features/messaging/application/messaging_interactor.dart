@@ -46,6 +46,7 @@ class MessagingInteractor {
     String conversationId,
     String body, {
     required String clientMessageId,
+    List<String> attachmentFileIds = const [],
   }) {
     final trimmed = body.trim();
     if (trimmed.isEmpty) {
@@ -58,6 +59,7 @@ class MessagingInteractor {
         conversationId,
         trimmed,
         clientMessageId: clientMessageId,
+        attachmentFileIds: attachmentFileIds,
       );
       telemetry.event('message_sent', const {});
       return message;

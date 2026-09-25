@@ -28,8 +28,24 @@ class RuntimePolicy {
 
   // SEC-001 containment is deliberately not controlled by an environment
   // variable. Re-enabling either capability requires a reviewed code change.
+  //
+  // AI grading stays hard-false: ADR-0026 removed it, and nothing here may
+  // bring it back as a side effect.
   bool get allowsAiGrading => false;
-  bool get allowsRemoteFileUploads => false;
+
+  /// Uploads are on everywhere the app actually runs.
+  ///
+  /// FILE-050/051 shipped the whole pipeline - per-purpose media allowlists
+  /// and size caps, quarantine, structural analysis, metadata stripping, and
+  /// single-use user-bound delivery grants - and the client adapter was
+  /// written but never wired. This is the reviewed change that wires it.
+  ///
+  /// Production is excluded and stays excluded: the worker refuses to run
+  /// without an external malware provider, and none is contracted, so a
+  /// production upload would fail closed anyway. Keeping it false here means
+  /// the app never even offers the control.
+  bool get allowsRemoteFileUploads =>
+      environment != StudafyEnvironment.production;
 
   // Production remains blocked while core repositories are local-only and the
   // native identity/signing work has not passed its later release gate.

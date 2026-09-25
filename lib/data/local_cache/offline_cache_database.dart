@@ -26,8 +26,7 @@ class OfflineCacheDatabase {
   /// Hash-prefixed files let sign-out erase every school, including scopes
   /// that are no longer present in the account's current memberships.
   static Future<void> wipeUser(String userId) async {
-    final prefix =
-        'studafy_cache_${CacheScope(userId: userId, schoolId: '').userFileKey}_';
+    final prefix = 'studafy_cache_${CacheScope(userId: userId).userFileKey}_';
     await Future.wait(_opening.values.toList());
     for (final db in _open.values.toList()) {
       if (db.scope.userId == userId) await db.close();

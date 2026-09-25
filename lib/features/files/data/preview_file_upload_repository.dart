@@ -1,4 +1,4 @@
-import '../domain/file_upload_repository.dart';
+import '../../../core/file_upload_repository.dart';
 
 /// Synthetic-only adapter. It has no SQLite or remote-storage side effects.
 class PreviewFileUploadRepository implements FileUploadRepository {
@@ -13,4 +13,10 @@ class PreviewFileUploadRepository implements FileUploadRepository {
         sizeBytes: command.bytes.length,
         scanState: 'quarantined',
       );
+
+  @override
+  Future<String> publishToClass({
+    required String fileId,
+    required FileAudience audience,
+  }) async => 'preview-resource-$fileId';
 }

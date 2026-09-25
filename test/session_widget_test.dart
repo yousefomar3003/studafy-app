@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/app_routes.dart';
 import 'package:studafy/core/ids.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_domain.dart';
@@ -125,10 +126,92 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(
-      find.text('This account does not have the selected school role.'),
-      findsOneWidget,
+    expect(find.text('This account could not be loaded.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await session.dispose();
+      await repository.close();
+    });
+  });
+
+  testWidgets('a student with no class still gets into the app', (
+    tester,
+  ) async {
+    const policy = RuntimePolicy(StudafyEnvironment.development);
+    StudafyRuntime.initialize(policy);
+    // The shape of every brand-new account: a real identity, no memberships.
+    final repository = _WidgetSessionRepository(
+      restoredSession: true,
+      profile: const UserProfile(
+        id: 'new-user',
+        displayName: 'New Student',
+        email: 'new@studafy.test',
+        memberships: [],
+      ),
     );
+    final session = _interactor(repository, policy);
+    await tester.pumpWidget(
+      localizedApp(
+        routes: {
+          onboardingRoute: (_) => const Text('Onboarding'),
+          studentRoute: (_) => const Text('Student home'),
+        },
+        home: LoginPage(role: UserRole.student, session: session),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // A student signs up before any teacher has sent them a link, so being
+    // in no class is an empty home, not a gate. The shell offers the join
+    // step; parking them outside it would make the link a precondition for
+    // having an account at all.
+    expect(find.text('Student home'), findsOneWidget);
+    expect(find.text('Onboarding'), findsNothing);
+    expect(session.status, SessionStatus.onboarding);
+    // The session has to survive: redeeming a class link is what creates the
+    // membership, and that call needs this very session to be signed in.
+    expect(repository.signOutScopes, isEmpty);
+    expect(ActiveContextController.instance.profile, isNotNull);
+    expect(ActiveContextController.instance.role, isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await session.dispose();
+      await repository.close();
+    });
+  });
+
+  testWidgets('a teacher with no workspace is still held at onboarding', (
+    tester,
+  ) async {
+    const policy = RuntimePolicy(StudafyEnvironment.development);
+    StudafyRuntime.initialize(policy);
+    final repository = _WidgetSessionRepository(
+      restoredSession: true,
+      profile: const UserProfile(
+        id: 'new-teacher',
+        displayName: 'New Teacher',
+        email: 'teacher@studafy.test',
+        memberships: [],
+      ),
+    );
+    final session = _interactor(repository, policy);
+    await tester.pumpWidget(
+      localizedApp(
+        routes: {
+          onboardingRoute: (_) => const Text('Onboarding'),
+          teacherRoute: (_) => const Text('Teacher home'),
+        },
+        home: LoginPage(role: UserRole.teacher, session: session),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Unlike a student, a teacher has nothing until their workspace exists,
+    // so every tab would fail. The one screen that can create it comes first.
+    expect(find.text('Onboarding'), findsOneWidget);
+    expect(find.text('Teacher home'), findsNothing);
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.runAsync(() async {
       await session.dispose();
@@ -179,10 +262,15 @@ class _WidgetSessionRepository extends FakeSessionRepositoryBase {
   _WidgetSessionRepository({
     this.failProvider = false,
     this.restoredSession = false,
+    this.profile,
   });
 
   final bool failProvider;
   final bool restoredSession;
+
+  /// Null stands for an identity that could not be loaded at all. A profile
+  /// with no memberships is the different, ordinary case: a new account.
+  final UserProfile? profile;
   final StreamController<bool> _sessions = StreamController<bool>.broadcast();
   int providerCalls = 0;
 
@@ -199,7 +287,7 @@ class _WidgetSessionRepository extends FakeSessionRepositoryBase {
   }
 
   @override
-  Future<UserProfile?> currentProfile() async => null;
+  Future<UserProfile?> currentProfile() async => profile;
 
   @override
   Future<TermInfo?> activeTermForSchool(SchoolId school) async => null;

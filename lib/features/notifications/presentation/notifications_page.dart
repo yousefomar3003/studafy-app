@@ -14,7 +14,17 @@ import 'notification_preferences_page.dart';
 /// whatever grades/notices/assignments/exams happened to be in local SQLite
 /// and never persisted read state anywhere.
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+  const NotificationsPage({super.key, this.visible = true});
+
+  /// Whether this tab is the one on screen.
+  ///
+  /// The shells keep every tab alive in an IndexedStack, so without this the
+  /// feed is read once at startup and never again: a notification that
+  /// arrived since launch stayed invisible until the app was killed. The
+  /// Messages tab carries the same flag for the same reason. Pushed routes
+  /// build fresh every time and leave it at its default.
+  final bool visible;
+
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
 }
@@ -23,14 +33,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<NotificationItem> _items = const [];
   String? _nextCursor;
   bool _isFromCache = false;
-  bool _loading = true;
+
+  /// False while this tab is off screen: nothing is loading, so a spinner
+  /// would be a lie and would never stop.
+  late bool _loading = widget.visible;
   bool _loadingMore = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_refresh());
+    if (widget.visible) unawaited(_refresh());
+  }
+
+  @override
+  void didUpdateWidget(NotificationsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-read on the transition into view, not on every rebuild while
+    // visible, which would reload on each keystroke elsewhere in the shell.
+    if (widget.visible && !oldWidget.visible) unawaited(_refresh());
   }
 
   Future<void> _refresh() async {

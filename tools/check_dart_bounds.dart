@@ -43,6 +43,10 @@ const _coreAllowlist = <String>[
   'core/telemetry.dart',
   'core/studafy_domain.dart',
   'core/studafy_design.dart',
+  // Named routes only - no widgets, no wiring. A screen must be able to say
+  // where it is navigating to without importing lib/app, which is what the
+  // composition-root rule below forbids.
+  'core/app_routes.dart',
   'core/studafy_localizations.dart',
   'core/runtime_environment.dart',
   // MOB-070 localization (ADR-0028). The generated localizations are the one
@@ -56,6 +60,17 @@ const _coreAllowlist = <String>[
   // slice that shows user content needs it (ADR-0028).
   'core/user_content_text.dart',
   'core/studafy_formatting.dart',
+  // Attaching a document or photo is not one slice's concern: work is handed
+  // in from academic, files ride along on a message or an announcement from
+  // messaging, and a teacher files class material from the shell. The port,
+  // the purpose policy, the shared control and its picker therefore live in
+  // core, like user_content_text.dart above, rather than in a `files` feature
+  // that every other feature would have to import.
+  'core/file_upload_repository.dart',
+  'core/attachment_policy.dart',
+  'core/attachment_field.dart',
+  'core/platform_attachment_source.dart',
+  'core/uploads_scope.dart',
 ];
 
 /// Data-layer-only imports: presentation and application may never touch

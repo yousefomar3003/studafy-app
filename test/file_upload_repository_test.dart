@@ -5,7 +5,7 @@ import 'package:studafy/data/contracts/v1_client.generated.dart';
 import 'package:studafy/features/files/data/api_file_upload_repository.dart';
 import 'package:studafy/features/files/data/preview_file_upload_repository.dart';
 import 'package:studafy/features/files/data/signed_upload_transport.dart';
-import 'package:studafy/features/files/domain/file_upload_repository.dart';
+import 'package:studafy/core/file_upload_repository.dart';
 
 void main() {
   const school = 'bbbbbbbb-0000-4000-8000-000000000001';

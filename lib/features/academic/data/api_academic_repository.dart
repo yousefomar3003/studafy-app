@@ -53,6 +53,7 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.body ?? '',
               state: x.state,
               version: x.version,
+              classroomId: x.classroomId,
             ),
         ];
       case AcademicFeed.assignments:
@@ -70,6 +71,7 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.instructions ?? '',
               state: x.state,
               version: x.version,
+              classroomId: x.classroomId,
             ),
         ];
       case AcademicFeed.assessments:
@@ -87,6 +89,7 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: '${x.maximumScore} points',
               state: x.state,
               version: x.version,
+              classroomId: x.classroomId,
             ),
         ];
       case AcademicFeed.grades:
@@ -307,10 +310,27 @@ class ApiAcademicRepository implements AcademicRepository {
       );
 
   @override
-  Future<void> submitAssignment(String assignmentId, String answer) =>
-      _done('assignment-submit:$assignmentId:$answer', (key) async {
+  Future<void> submitAssignment(
+    String assignmentId,
+    String answer, {
+    List<String> attachmentFileIds = const [],
+    String? studentId,
+  }) =>
+      // The attachments are part of the fingerprint: handing the same text in
+      // again with a different file is a different submission, and replaying
+      // the first key would silently drop the new one.
+      _done('assignment-submit:$assignmentId:$studentId:$answer'
+          ':${attachmentFileIds.join(",")}', (key) async {
         await _client.submitAssignment(
-          V1SubmitAssignmentRequestDto(answerText: answer),
+          V1SubmitAssignmentRequestDto(
+            answerText: answer,
+            attachmentFileIds: attachmentFileIds.isEmpty
+                ? null
+                : attachmentFileIds,
+            // Present only for a guardian handing work in for a child. A
+            // student omits it and the server files it against them.
+            studentId: studentId,
+          ),
           assignmentId: assignmentId,
           idempotencyKey: key,
         );
@@ -373,6 +393,7 @@ class ApiAcademicRepository implements AcademicRepository {
             submittedAt: item.submittedAt == null
                 ? null
                 : DateTime.tryParse(item.submittedAt!)?.toLocal(),
+            submittedByGuardianId: item.submittedByGuardianId,
           ),
         );
       }

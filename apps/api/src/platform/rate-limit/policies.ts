@@ -269,6 +269,14 @@ export function flowFor(
   if (path === "/v1/students/locate" || path.startsWith("/v1/guardian-links")) {
     return { flow: "linking", weight: 2 };
   }
+  // Self-serve sign-up creates a tenant, and any signed-in account may call
+  // it. Keyed by ip rather than account on purpose: an account-keyed budget
+  // is defeated by making more accounts, which is free. Placed above the
+  // /v1/schools rule below, which would otherwise hand it the far looser
+  // adminApi budget meant for an administrator editing one school.
+  if (path.startsWith("/v1/onboarding/")) {
+    return { flow: "registration", weight: 1 };
+  }
   // The RPC-equivalent write path (matches the public RPC budget).
   if (path === "/v1/notifications/mark-read") {
     return { flow: "rpc", weight: 1 };
@@ -341,6 +349,9 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/notifications/preferences",
   "/internal/moderation/overview",
   "/v1/billing/catalogue",
+  // One child's insights, not a page of them: the trailing literal would
+  // otherwise read as a collection.
+  "/v1/family/insights",
 ]);
 
 /** Matches both the canonical {param} segment and a real uuid value. */

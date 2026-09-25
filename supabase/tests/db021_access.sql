@@ -65,8 +65,8 @@ select is((select count(*) from public.classrooms where id=:'classroom_id'), 0::
   'cross-school classroom identifier substitution is denied');
 
 select set_config('request.jwt.claim.sub', :'student_user', true);
-select is((select count(*) from public.resources where id=:'clean_resource_id'), 1::bigint,
-  'student can read a clean published classroom resource');
+select is((select count(*) from public.resources where id=:'clean_resource_id'), 0::bigint,
+  'student needs a Notebook entitlement to read published classroom resources');
 select is((select count(*) from public.resources where id=:'dirty_resource_id'), 0::bigint,
   'quarantined resource remains unpublished to students');
 select throws_like(

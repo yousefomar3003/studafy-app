@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:studafy/core/studafy_domain.dart';
@@ -438,5 +441,54 @@ void main() {
         await OfflineCacheDatabase.wipe(scopeB);
       },
     );
+
+    test('someone with no membership still gets a cache', () async {
+      // A guardian is linked to a child, never enrolled, so they have no
+      // membership and never will. Refusing them a scope refused them every
+      // cached read: the notifications tab failed before it made a single
+      // request, which is what "updates do not work" looked like.
+      final context = ActiveContextController.instance;
+      context.hydrate(
+        authenticatedProfile: const UserProfile(
+          id: 'guardian-user',
+          displayName: 'Guardian',
+          email: 'guardian@example.test',
+          memberships: [],
+        ),
+      );
+      final binder = SessionCacheBinder(context: context);
+      addTearDown(binder.dispose);
+
+      final store = await binder.currentStore();
+      expect(store, isNotNull);
+      await store!.putEntities('notification', [
+        CachedEntity(entityId: '1', payload: const {}, updatedAt: 't'),
+      ]);
+      expect(await store.entitiesFor('notification'), hasLength(1));
+
+      // And sign-out still erases it, exactly as it does a school scope.
+      context.signOut();
+      await binder.settled;
+      const scope = CacheScope(userId: 'guardian-user');
+      final reopened = OfflineCacheStore(
+        await OfflineCacheDatabase.open(scope),
+      );
+      expect(await reopened.entitiesFor('notification'), isEmpty);
+      await OfflineCacheDatabase.wipe(scope);
+    });
+
+    test('a school scope keeps the file key it had before', () {
+      // The field became nullable after these files were already on real
+      // phones. If the hash changed, every cache would be silently orphaned
+      // and every user would look freshly signed out of their offline data.
+      expect(
+        const CacheScope(userId: 'u1', schoolId: 's1').fileKey,
+        sha256.convert(utf8.encode('u1::s1')).toString().substring(0, 32),
+      );
+      expect(
+        const CacheScope(userId: 'u1').fileKey,
+        isNot(const CacheScope(userId: 'u1', schoolId: 's1').fileKey),
+      );
+    });
   });
 }

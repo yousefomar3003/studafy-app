@@ -4,6 +4,7 @@ import '../../../core/failures.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/messaging.dart';
+import '../../../core/file_upload_repository.dart';
 
 /// Server error codes the messaging screens explain in their own words.
 /// Anything else becomes a generic failure, never raw server text.
@@ -72,9 +73,14 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
     String conversationId,
     String body, {
     required String clientMessageId,
+    List<String> attachmentFileIds = const [],
   }) => _guard(() async {
     final message = await _client.sendMessage(
-      V1SendMessageRequestDto(clientMessageId: clientMessageId, body: body),
+      V1SendMessageRequestDto(
+        clientMessageId: clientMessageId,
+        body: body,
+        attachmentFileIds: attachmentFileIds.isEmpty ? null : attachmentFileIds,
+      ),
       conversationId: conversationId,
       // The client message id doubles as the idempotency key, so a retry
       // after a dropped response replays instead of posting twice.
@@ -189,7 +195,17 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
     senderId: dto.senderId,
     body: dto.body,
     createdAt: DateTime.parse(dto.createdAt),
+    attachments: [for (final a in dto.attachments) _attachment(a)],
   );
+
+  static StoredAttachment _attachment(V1FileAttachmentDto dto) =>
+      StoredAttachment(
+        id: dto.id,
+        displayName: dto.displayName,
+        sizeBytes: dto.sizeBytes,
+        scanState: dto.scanState,
+        mediaType: dto.mediaType,
+      );
 
   static BlockedPerson _blocked(V1BlockDto dto) => BlockedPerson(
     blockId: dto.id,
@@ -209,6 +225,9 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
         body: draft.body,
         audience: draft.audience.name,
         important: draft.important,
+        attachmentFileIds: draft.attachmentFileIds.isEmpty
+            ? null
+            : draft.attachmentFileIds,
       ),
       idempotencyKey: 'announcement-${DateTime.now().microsecondsSinceEpoch}'
           .hashCode
@@ -240,6 +259,7 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
                     DateTime.tryParse(item.publishedAt)?.toLocal() ??
                     DateTime.now(),
                 classroomId: item.classroomId,
+                attachments: [for (final a in item.attachments) _attachment(a)],
               ),
             );
           }

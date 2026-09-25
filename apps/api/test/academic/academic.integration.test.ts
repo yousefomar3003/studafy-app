@@ -197,6 +197,11 @@ async function cleanup(): Promise<void> {
     await tx`delete from public.class_schedules where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.grade_result_events where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.grade_results where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
+    // Bindings first, then the objects: file_objects references memberships
+    // with ON DELETE RESTRICT, so a leftover attachment blocks the whole
+    // fixture teardown.
+    await tx`delete from public.file_bindings where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
+    await tx`delete from public.file_objects where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.resource_publications where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.resource_versions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.resources where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
@@ -463,8 +468,8 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       `/v1/resources?schoolId=${SCHOOL_A}&classroomId=${CLASS_A}`,
       { subject: STUDENT_USER },
     );
-    expect(learnerFeed.status).toBe(200);
-    expect(JSON.stringify(await learnerFeed.json())).toContain(
+    expect(learnerFeed.status).toBe(403);
+    expect(JSON.stringify(await learnerFeed.json())).not.toContain(
       "Cell lesson revised",
     );
 
@@ -1146,5 +1151,281 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         sql`select state::text as result from public.assignments where id = ${assignmentId}::uuid`,
       ),
     ).toBe("published");
+  });
+
+  // -------------------------------------------------------------------------
+  // Submission attachments.
+  //
+  // The binding is what grants other people access to an uploaded object, so
+  // these tests are about what private.file_attach_bind refuses, not only what
+  // it accepts.
+  // -------------------------------------------------------------------------
+  /** A completed, clean upload owned by `owner`, as the pipeline would leave it. */
+  async function seedFile(
+    id: string,
+    owner: string,
+    purpose: string,
+    school = SCHOOL_A,
+  ): Promise<string> {
+    const membership = await scalar(
+      sql`select id as result from public.memberships
+          where school_id = ${school}::uuid and user_id = ${owner}::uuid limit 1`,
+    ) as string;
+    await sql`
+      insert into public.file_objects(
+        id, school_id, bucket, object_key, uploader_id, owner_id,
+        owner_membership_id, purpose, display_name, size_bytes, sha256,
+        declared_media_type, scan_state, policy_version, scanned_at,
+        scan_policy_version)
+      values (
+        ${id}::uuid, ${school}::uuid, 'private-school-files',
+        ${"quarantine/v1/" + id + "/" + id.replace(/-/g, "") + "aaaaaa"},
+        ${owner}::uuid, ${owner}::uuid, ${membership}::uuid,
+        ${purpose}::public.file_purpose, 'diagram.pdf', 2048,
+        ${"a".repeat(64)}, 'application/pdf', 'clean', 'file-attach-v1',
+        now(), 'file051-test')`;
+    return id;
+  }
+
+  const OWN_FILE = "5f410000-0000-4000-8000-0000000000f1";
+  const SECOND_FILE = "5f410000-0000-4000-8000-0000000000f2";
+  const TEACHER_FILE = "5f410000-0000-4000-8000-0000000000f3";
+  const WRONG_PURPOSE_FILE = "5f410000-0000-4000-8000-0000000000f4";
+
+  test("a student hands work in with their own attachment", async () => {
+    await seedFile(OWN_FILE, STUDENT_USER, "assignment_submission");
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: STUDENT_USER,
+      key: "api041-it-attach-1",
+      body: {
+        answerText: "Diagram attached.",
+        attachmentFileIds: [OWN_FILE],
+      },
+    });
+    expect(submit.status).toBe(201);
+    const body = await submit.json() as {
+      attachments: { id: string; scanState: string }[];
+    };
+    expect(body.attachments.map((a) => a.id)).toEqual([OWN_FILE]);
+    // The binding is the record that grants access; it must exist.
+    expect(
+      await scalar(
+        sql`select count(*)::int as result from public.file_bindings
+            where file_object_id = ${OWN_FILE}::uuid
+              and submission_attempt_id is not null`,
+      ),
+    ).toBe(1);
+  });
+
+  test("the teacher sees the attachment on the roster read", async () => {
+    const page = await request(
+      `/v1/assignments/${assignmentId}/submissions?pageSize=10`,
+      { subject: TEACHER_A },
+    );
+    expect(page.status).toBe(200);
+    const body = await page.json() as {
+      items: { attachments: { id: string }[] }[];
+    };
+    expect(body.items[0]?.attachments.map((a) => a.id)).toEqual([OWN_FILE]);
+  });
+
+  test("the marking teacher may download it; an unrelated teacher may not", async () => {
+    // Asked of the database directly: the rule is a SECURITY DEFINER function
+    // reading auth.uid(), so it has to be evaluated as each actor. Both
+    // set_config and the call must share one connection, hence the
+    // single-statement form.
+    const allowedFor = async (subject: string) =>
+      await scalar(
+        sql`select (
+              select (private.file051_authorize_download(${OWN_FILE}::uuid))->>'allowed'
+              from (select set_config('request.jwt.claim.sub', ${subject}, true)) as _
+            ) as result`,
+      );
+    expect(await allowedFor(TEACHER_A)).toBe("true");
+    expect(await allowedFor(TEACHER_B)).toBe("false");
+    // The student who handed it in keeps access through own_submission.
+    expect(await allowedFor(STUDENT_USER)).toBe("true");
+  });
+
+  test("a student cannot attach a file they do not own", async () => {
+    await seedFile(TEACHER_FILE, TEACHER_A, "assignment_submission");
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: STUDENT_USER,
+      key: "api041-it-attach-2",
+      body: {
+        answerText: "Not mine.",
+        attachmentFileIds: [TEACHER_FILE],
+      },
+    });
+    expect(submit.status).toBe(403);
+    expect(
+      await scalar(
+        sql`select count(*)::int as result from public.file_bindings
+            where file_object_id = ${TEACHER_FILE}::uuid
+              and submission_attempt_id is not null`,
+      ),
+    ).toBe(0);
+  });
+
+  test("an already attached file cannot be attached again", async () => {
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: STUDENT_USER,
+      key: "api041-it-attach-3",
+      body: {
+        answerText: "Reusing the same upload.",
+        attachmentFileIds: [OWN_FILE],
+      },
+    });
+    expect(submit.status).toBe(400);
+  });
+
+  test("a file of the wrong purpose is refused", async () => {
+    await seedFile(WRONG_PURPOSE_FILE, STUDENT_USER, "message_attachment");
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: STUDENT_USER,
+      key: "api041-it-attach-4",
+      body: {
+        answerText: "Wrong purpose.",
+        attachmentFileIds: [WRONG_PURPOSE_FILE],
+      },
+    });
+    expect(submit.status).toBe(400);
+  });
+
+  test("a duplicated id in one request is refused", async () => {
+    await seedFile(SECOND_FILE, STUDENT_USER, "assignment_submission");
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: STUDENT_USER,
+      key: "api041-it-attach-5",
+      body: {
+        answerText: "Same file twice.",
+        attachmentFileIds: [SECOND_FILE, SECOND_FILE],
+      },
+    });
+    expect(submit.status).toBe(400);
+  });
+
+  // -------------------------------------------------------------------------
+  // A guardian hands work in for a child with no device of their own.
+  //
+  // students.user_id is nullable and `provisional` defaults true, so this is
+  // the ordinary shape for a young child, not an edge case. Nothing here
+  // impersonates the child: the guardian is the actor and is recorded as such.
+  // -------------------------------------------------------------------------
+  test("a linked guardian hands work in for their child", async () => {
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: GUARDIAN,
+      key: "api041-it-guardian-1",
+      body: {
+        answerText: "Photographed her working and typed it up.",
+        studentId: STUDENT_ROW,
+      },
+    });
+    expect(submit.status).toBe(201);
+    const body = await submit.json() as {
+      studentId: string;
+      submittedByGuardianId: string | null;
+    };
+    // Filed against the child, credited to the guardian who acted.
+    expect(body.studentId).toBe(STUDENT_ROW);
+    expect(body.submittedByGuardianId).toBe(GUARDIAN);
+  });
+
+  test("the teacher sees that a guardian handed it in", async () => {
+    const page = await request(
+      `/v1/assignments/${assignmentId}/submissions?pageSize=10`,
+      { subject: TEACHER_A },
+    );
+    expect(page.status).toBe(200);
+    const body = await page.json() as {
+      items: { submittedByGuardianId: string | null }[];
+    };
+    expect(body.items[0]?.submittedByGuardianId).toBe(GUARDIAN);
+  });
+
+  test("a guardian audit row is distinct from a student hand-in", async () => {
+    expect(
+      await scalar(
+        sql`select count(*)::int as result from public.audit_events
+            where action = 'assignment_submitted_by_guardian'
+              and actor_id = ${GUARDIAN}::uuid`,
+      ),
+    ).toBe(1);
+  });
+
+  test("an unrelated adult cannot hand work in for a child", async () => {
+    // TEACHER_B is in the school but holds no guardian link to this child.
+    // 404 rather than 403 is deliberate: assignment.submit conceals a denied
+    // resource, so a refusal must not confirm the assignment exists.
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: TEACHER_B,
+      key: "api041-it-guardian-2",
+      body: { answerText: "Not my child.", studentId: STUDENT_ROW },
+    });
+    expect(submit.status).toBe(404);
+  });
+
+  test("a revoked link ends the guardian's ability to hand work in", async () => {
+    await sql`
+      update public.guardian_links set status = 'revoked'
+      where student_id = ${STUDENT_ROW}::uuid
+        and guardian_id = ${GUARDIAN}::uuid`;
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: GUARDIAN,
+      key: "api041-it-guardian-3",
+      body: { answerText: "After revocation.", studentId: STUDENT_ROW },
+    });
+    expect(submit.status).toBe(404);
+    await sql`
+      update public.guardian_links set status = 'verified'
+      where student_id = ${STUDENT_ROW}::uuid
+        and guardian_id = ${GUARDIAN}::uuid`;
+  });
+
+  test("an expired link ends it too", async () => {
+    // verified_at moves with it: the schema requires an expiry after the
+    // verification, so a link cannot be backdated by expiry alone.
+    await sql`
+      update public.guardian_links
+      set verified_at = now() - interval '30 days',
+          expires_at = now() - interval '1 day'
+      where student_id = ${STUDENT_ROW}::uuid
+        and guardian_id = ${GUARDIAN}::uuid`;
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: GUARDIAN,
+      key: "api041-it-guardian-4",
+      body: { answerText: "After expiry.", studentId: STUDENT_ROW },
+    });
+    expect(submit.status).toBe(404);
+    await sql`
+      update public.guardian_links set expires_at = null, verified_at = now()
+      where student_id = ${STUDENT_ROW}::uuid
+        and guardian_id = ${GUARDIAN}::uuid`;
+  });
+
+  test("a guardian may upload for their child", async () => {
+    // The blocker before this change: an upload intent required the actor to
+    // hold a memberships row, and a guardian may hold none. Run in one
+    // transaction so set_config and the call share a connection.
+    const allowed = await sql.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claim.sub', ${GUARDIAN}, true)`;
+      const rows = await tx`
+        select (private.file050_authorize_target(jsonb_build_object(
+          'schoolId', ${SCHOOL_A}::text,
+          'purpose', 'assignment_submission',
+          'assignmentId', ${assignmentId}::text,
+          'studentId', ${STUDENT_ROW}::text)))->>'allowed' as result`;
+      return (rows as unknown as Record<string, unknown>[])[0]?.["result"];
+    });
+    expect(allowed).toBe("true");
   });
 });

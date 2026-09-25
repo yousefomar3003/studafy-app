@@ -207,7 +207,7 @@ void main() {
       expect(context.membership!.schoolId, 'school-2');
     });
 
-    test('a role the account does not hold is denied and signs out', () async {
+    test('a role the account does not hold grants no role', () async {
       interactor = build(const RuntimePolicy(StudafyEnvironment.development));
       repository.profile = _teacher();
 
@@ -217,6 +217,40 @@ void main() {
         locale: 'en',
       );
 
+      // The session survives so onboarding can use it - a teacher choosing
+      // Student is the same shape as a brand-new account - but no role is
+      // conferred and no school is in scope, which is the part that matters.
+      expect(result.require, LoginOutcome.needsOnboarding);
+      expect(interactor.status, SessionStatus.onboarding);
+      expect(context.membership, isNull);
+      expect(context.role, isNull);
+      expect(repository.signOutScopes, isEmpty);
+    });
+
+    test('a withdrawn membership is denied and signs out', () async {
+      interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+      repository.profile = const UserProfile(
+        id: 'user-4',
+        displayName: 'Removed Teacher',
+        email: 'removed@alnoor.edu',
+        memberships: [
+          SchoolMembership(
+            id: 'membership-4',
+            schoolId: 'school-1',
+            schoolName: 'Al-Noor International',
+            role: StudafyRole.teacher,
+            active: false,
+          ),
+        ],
+      );
+
+      final result = await interactor.completeRemoteLogin(
+        role: StudafyRole.teacher,
+        consentAccepted: true,
+        locale: 'en',
+      );
+
+      // Losing access must not be reinterpreted as never having had it.
       expect(result.isSuccess, isFalse);
       expect(context.profile, isNull);
       expect(repository.signOutScopes, isNotEmpty);

@@ -109,6 +109,14 @@ class ApiSessionRepository implements SessionRepository {
     final launched = await _auth.auth.signInWithOAuth(
       _providerFor(provider),
       redirectTo: 'io.studafy.app://login-callback',
+      // The browser keeps the provider's own cookies, so without this the
+      // provider silently reuses whichever account signed in last and never
+      // shows a chooser. A phone shared by a parent and a student - the
+      // normal case here - would then be locked to one of them, and the only
+      // symptom is this app's "wrong role" error, which reads as a bug in
+      // Studafy rather than an account it picked. Supabase forwards the
+      // parameter unchanged to Google and Azure, which both honour it.
+      queryParams: const {'prompt': 'select_account'},
       // Supabase needs Azure's email claim to establish the identity.
       scopes: provider == LoginProvider.microsoft ? 'email' : null,
     );
@@ -214,15 +222,43 @@ class ApiSessionRepository implements SessionRepository {
     if (scope == SignOutScope.allDevices) {
       // Tell the server first: it sets the watermark that stops access tokens
       // already in flight on other devices. Doing it after the local sign-out
-      // would leave no token to authorize the call.
-      await _client.signOut(const V1AuthSignOutRequestDto(scope: 'all'));
-      await _auth.auth.signOut(scope: supabase.SignOutScope.global);
+      // would leave no token to authorize the call. A failure here is not
+      // swallowed - the other devices really are still live, and the screen
+      // says so - but this device is signed out either way, below.
+      try {
+        await _client.signOut(const V1AuthSignOutRequestDto(scope: 'all'));
+      } finally {
+        await _endLocalSession(global: true);
+      }
     } else {
-      await _client.signOut(const V1AuthSignOutRequestDto(scope: 'current'));
-      await _auth.auth.signOut();
+      // For the current device the server call only records an audit event;
+      // the session itself ends locally. So it is advisory, and must never be
+      // able to keep someone signed in: an offline device, an expired token
+      // or a 5xx once left the button doing nothing at all, which is both a
+      // dead end for the person and an Apple 5.1.1(v) failure.
+      try {
+        await _client.signOut(const V1AuthSignOutRequestDto(scope: 'current'));
+      } catch (_) {
+        // Deliberately ignored. The local sign-out below is the one that
+        // decides whether this device is still signed in.
+      }
+      await _endLocalSession(global: false);
     }
-    // Erase locally cached session material regardless of what the SDK did.
-    await _secureStore.deleteAll();
+  }
+
+  /// Ends the session on this device, whatever the server said.
+  ///
+  /// The secure store is erased even when the Supabase SDK throws: cached
+  /// tokens outliving a sign-out is the worse of the two failures, and it is
+  /// the one nothing else would clean up.
+  Future<void> _endLocalSession({required bool global}) async {
+    try {
+      await (global
+          ? _auth.auth.signOut(scope: supabase.SignOutScope.global)
+          : _auth.auth.signOut());
+    } finally {
+      await _secureStore.deleteAll();
+    }
   }
 
   @override

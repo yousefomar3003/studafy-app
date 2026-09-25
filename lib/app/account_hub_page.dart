@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/data_export.dart';
 import '../features/account/presentation/delete_account_page.dart';
 import '../features/session/application/session_interactor.dart';
+import '../features/family/presentation/family_scope.dart';
 import '../features/session/presentation/account_security_page.dart';
 import 'account_scope.dart';
 
@@ -64,56 +66,24 @@ class AccountHubPage extends StatelessWidget {
       backgroundColor: studafyCanvas,
       appBar: AppBar(backgroundColor: Colors.white, title: Text(t('title'))),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 32),
         children: [
-          FeatureCard(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: studafyNavy,
-                  child: Text(
-                    _initials(profile?.displayName ?? ''),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile?.displayName ?? t('unknown'),
-                        style: const TextStyle(
-                          color: studafyInk,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if ((profile?.email ?? '').isNotEmpty)
-                        Text(
-                          profile!.email,
-                          style: const TextStyle(color: studafyMuted),
-                        ),
-                      if (membership != null)
-                        Text(
-                          '${membership.schoolName} · '
-                          '${t('role.${membership.role.name}')}',
-                          style: const TextStyle(
-                            color: studafyMuted,
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          _ProfileHeader(
+            name: profile?.displayName ?? t('unknown'),
+            email: profile?.email ?? '',
+            membership: membership,
+            roleLabel: membership == null
+                ? null
+                : t('role.${membership.role.name}'),
           ),
-          const SizedBox(height: 16),
+          // A student has to hand this to a parent before a link request can
+          // be made, and there was nowhere in the app to read it.
+          if (membership?.role == StudafyRole.student) ...[
+            const SizedBox(height: 12),
+            const _StudafyIdCard(),
+          ],
+          const SizedBox(height: 24),
+          _SectionLabel(t('section.account')),
           Card(
             child: Column(
               children: [
@@ -146,13 +116,20 @@ class AccountHubPage extends StatelessWidget {
                     trailing: Icon(forwardChevron(context)),
                     onTap: () => _showRoleSwitcher(context, context_),
                   ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _SectionLabel(t('section.preferences')),
+          Card(
+            child: Column(
+              children: [
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
                   title: Text(t('language')),
                   trailing: Icon(forwardChevron(context)),
                   onTap: () => showStudafyLanguagePicker(context),
                 ),
-                _DataExportTile(account: AccountScope.of(context)),
                 if (session != null)
                   ListTile(
                     leading: const Icon(Icons.shield_outlined),
@@ -169,11 +146,27 @@ class AccountHubPage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+          _SectionLabel(t('section.privacy')),
+          Card(
+            child: Column(
+              children: [_DataExportTile(account: AccountScope.of(context))],
+            ),
+          ),
+          const SizedBox(height: 28),
           if (session != null)
             OutlinedButton(
               onPressed: () async {
-                await session.signOut();
+                // Leaving is not allowed to fail. The interactor clears this
+                // device in a finally, so the only thing left to guarantee is
+                // that the person actually lands back on the role screen.
+                try {
+                  await session.signOut();
+                } catch (_) {
+                  // Swallowed on purpose. This device is already cleared by
+                  // the interactor's finally, so there is nothing left to
+                  // tell the person and nothing they could do about it.
+                }
                 if (context.mounted) {
                   Navigator.of(context)
                       .pushNamedAndRemoveUntil('/roles', (_) => false);
@@ -404,6 +397,13 @@ const _strings = <String, Map<String, String>>{
     'switchRole': 'Switch role',
     'switchRole.detail': 'You belong to this school in more than one role.',
     'title': 'Account',
+    'section.account': 'Account',
+    'section.preferences': 'Preferences',
+    'section.privacy': 'Privacy and data',
+    'studafyId': 'Your Studafy ID',
+    'studafyId.detail': 'Give this to a parent so they can ask to link.',
+    'studafyId.copy': 'Copy your Studafy ID',
+    'studafyId.copied': 'Studafy ID copied.',
     'unknown': 'Your account',
     'language': 'Language',
     'security': 'Sign-in and security',
@@ -433,6 +433,13 @@ const _strings = <String, Map<String, String>>{
     'switchRole': 'تبديل الدور',
     'switchRole.detail': 'أنت مرتبط بهذه المدرسة بأكثر من دور.',
     'title': 'الحساب',
+    'section.account': 'الحساب',
+    'section.preferences': 'التفضيلات',
+    'section.privacy': 'الخصوصية والبيانات',
+    'studafyId': 'معرّف ستودافاي الخاص بك',
+    'studafyId.detail': 'أعطِ هذا لولي أمرك ليتمكن من طلب الارتباط.',
+    'studafyId.copy': 'نسخ معرّف ستودافاي',
+    'studafyId.copied': 'تم نسخ معرّف ستودافاي.',
     'unknown': 'حسابك',
     'language': 'اللغة',
     'security': 'تسجيل الدخول والأمان',
@@ -456,3 +463,246 @@ const _strings = <String, Map<String, String>>{
     'export.failed': 'لم ينجح ذلك. يرجى المحاولة مرة أخرى.',
   },
 };
+
+/// A small uppercase heading that groups the settings below it.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
+    child: Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        color: studafyMuted,
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        letterSpacing: .8,
+      ),
+    ),
+  );
+}
+
+/// Who you are, at the top of your own profile.
+///
+/// The name and email come from the sign-in provider and the school and role
+/// from the server, so nothing here is editable and nothing is invented: an
+/// account with no school shows no school rather than a placeholder one.
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.name,
+    required this.email,
+    required this.membership,
+    required this.roleLabel,
+  });
+
+  final String name;
+  final String email;
+  final SchoolMembership? membership;
+  final String? roleLabel;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(22),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(28),
+      // Directional so the gradient runs the same way the text does.
+      gradient: const LinearGradient(
+        begin: AlignmentDirectional.topStart,
+        end: AlignmentDirectional.bottomEnd,
+        colors: [studafyNavy, Color(0xFF2F2A9E)],
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: Colors.white.withValues(alpha: .18),
+              child: Text(
+                _initials(name),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .82),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (membership != null && roleLabel != null) ...[
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _HeaderChip(icon: Icons.badge_outlined, label: roleLabel!),
+              _HeaderChip(
+                icon: Icons.apartment_rounded,
+                label: membership!.schoolName,
+              ),
+            ],
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+class _HeaderChip extends StatelessWidget {
+  const _HeaderChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .16),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: Colors.white),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// The student's own Studafy ID.
+///
+/// A parent cannot ask to be linked without it, and until now the only place
+/// it appeared was inside the family screen - so a student being asked for it
+/// by a parent had nowhere obvious to look. Shown only to students, because
+/// it identifies one and nobody else needs to read it here.
+class _StudafyIdCard extends StatefulWidget {
+  const _StudafyIdCard();
+
+  @override
+  State<_StudafyIdCard> createState() => _StudafyIdCardState();
+}
+
+class _StudafyIdCardState extends State<_StudafyIdCard> {
+  String? _id;
+  bool _loaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loaded) return;
+    _loaded = true;
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    // Absent in shells that install no family scope, and in widget tests
+    // that pump this page alone. The card is an extra, so it disappears
+    // rather than taking the profile down with it.
+    final family = FamilyScope.maybeOf(context);
+    if (family == null) return;
+    final result = await family.studentFamily();
+    if (!mounted) return;
+    setState(() {
+      _id = result.fold(
+        onSuccess: (family) => family.identities.firstOrNull?.studafyId,
+        // A missing id is not worth an error on a profile screen; the card
+        // simply does not appear.
+        onFailure: (_) => null,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final id = _id;
+    if (id == null) return const SizedBox.shrink();
+    return FeatureCard(
+      tint: studafyCyan,
+      child: Row(
+        children: [
+          const Icon(Icons.qr_code_rounded, color: studafyCyan),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _accountText(context, 'studafyId'),
+                  style: const TextStyle(
+                    color: studafyInk,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  id,
+                  style: const TextStyle(
+                    color: studafyInk,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                Text(
+                  _accountText(context, 'studafyId.detail'),
+                  style: const TextStyle(color: studafyMuted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: _accountText(context, 'studafyId.copy'),
+            icon: const Icon(Icons.copy_rounded),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final copied = _accountText(context, 'studafyId.copied');
+              await Clipboard.setData(ClipboardData(text: id));
+              messenger.showSnackBar(SnackBar(content: Text(copied)));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}

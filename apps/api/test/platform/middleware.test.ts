@@ -33,6 +33,7 @@ function harness(options: {
   maxJsonDepth?: number;
   maxJsonKeys?: number;
   requestTimeoutMs?: number;
+  hmacKey?: string;
 } = {}) {
   const collector = new LogCollector();
   const logger = createJsonLogger(
@@ -48,6 +49,9 @@ function harness(options: {
     platform: {
       allowedOrigins: options.allowedOrigins,
       limits: options,
+      ...(options.hmacKey
+        ? { identity: { hmacKey: options.hmacKey, trustCloudflare: false } }
+        : {}),
     },
   };
   const app = createApp(deps);
@@ -242,6 +246,7 @@ describe("API-040 response controls", () => {
     expect(Object.keys(completed[0]!).sort()).toEqual([
       "duration_ms",
       "event",
+      "ip_hash",
       "level",
       "method",
       "outcome",
@@ -250,8 +255,57 @@ describe("API-040 response controls", () => {
       "service",
       "status",
       "timestamp",
+      "ua_family",
+      "user_id",
       "version",
     ]);
     expect(JSON.stringify(completed)).not.toContain("secret-body-value");
+  });
+
+  test("hashes the client address and never logs it raw", async () => {
+    const { app, collector } = harness({ hmacKey: "k".repeat(32) });
+    await app.request("/platform-test", {
+      headers: { "x-forwarded-for": "203.0.113.7, 70.41.3.18" },
+    });
+    const completed = collector.parsed().find((entry) =>
+      entry.event === "http_request_completed"
+    );
+    expect(completed?.ip_hash).toBeTruthy();
+    expect(JSON.stringify(completed)).not.toContain("203.0.113.7");
+  });
+
+  test("omits the address hash when no signing key is configured", async () => {
+    const { app, collector } = harness();
+    await app.request("/platform-test", {
+      headers: { "x-forwarded-for": "203.0.113.7" },
+    });
+    const completed = collector.parsed().find((entry) =>
+      entry.event === "http_request_completed"
+    );
+    // An unkeyed digest of an address is reversible, so null is the only
+    // safe answer here.
+    expect(completed?.ip_hash).toBeNull();
+    expect(JSON.stringify(completed)).not.toContain("203.0.113.7");
+  });
+
+  test("records the user agent family, never the full header", async () => {
+    const { app, collector } = harness();
+    await app.request("/platform-test", {
+      headers: { "user-agent": "Dart/3.5 (dart:io) Flutter/3.24 iPhone17,1" },
+    });
+    const completed = collector.parsed().find((entry) =>
+      entry.event === "http_request_completed"
+    );
+    expect(completed?.ua_family).toBe("flutter");
+    expect(JSON.stringify(completed)).not.toContain("iPhone17,1");
+  });
+
+  test("user_id is null for an unauthenticated request", async () => {
+    const { app, collector } = harness();
+    await app.request("/platform-test");
+    const completed = collector.parsed().find((entry) =>
+      entry.event === "http_request_completed"
+    );
+    expect(completed?.user_id).toBeNull();
   });
 });

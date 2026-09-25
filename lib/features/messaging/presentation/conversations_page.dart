@@ -13,7 +13,16 @@ import 'messaging_strings.dart';
 /// Conversation list for every role, backed by authoritative `/v1`
 /// messaging (MOB-070, SAFE-043). Replaces the legacy SQLite chat screens.
 class ConversationsPage extends StatefulWidget {
-  const ConversationsPage({super.key});
+  const ConversationsPage({super.key, this.visible = true});
+
+  /// Whether this tab is the one on screen.
+  ///
+  /// The shells keep every tab alive in an IndexedStack, so without this the
+  /// page loads once at startup and never again: a conversation started on
+  /// another device, or a school switching messaging on, stayed invisible
+  /// until the app was killed and relaunched. The Notebook tab carries the
+  /// same flag for the same reason.
+  final bool visible;
 
   @override
   State<ConversationsPage> createState() => _ConversationsPageState();
@@ -21,14 +30,25 @@ class ConversationsPage extends StatefulWidget {
 
 class _ConversationsPageState extends State<ConversationsPage> {
   List<Conversation> _conversations = const [];
-  bool _loading = true;
+
+  /// False while this tab is off screen: nothing is loading, so a spinner
+  /// would be a lie and would never stop.
+  late bool _loading = widget.visible;
   bool _enabled = true;
   Failure? _failure;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    if (widget.visible) unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(ConversationsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-read on the transition into view, not on every rebuild while
+    // visible, which would reload on each keystroke elsewhere in the shell.
+    if (widget.visible && !oldWidget.visible) unawaited(_load());
   }
 
   Future<void> _load() async {
@@ -39,14 +59,23 @@ class _ConversationsPageState extends State<ConversationsPage> {
     }
     setState(() => _loading = true);
     final interactor = MessagingScope.of(context);
-    final enabled = await interactor.messagingEnabled(identity.schoolId);
+    final schoolId = identity.schoolId;
+    // Whether a school has messaging switched on is a question about that
+    // school. Someone acting in none - a guardian before their first link is
+    // verified - has no school to ask about, and is not blocked by one
+    // either: their conversation list spans every school they are a
+    // participant in.
+    final enabled = schoolId == null
+        ? null
+        : await interactor.messagingEnabled(schoolId);
     final list = await interactor.conversations();
     if (!mounted) return;
     setState(() {
       _loading = false;
       // A school that has not switched messaging on still shows existing
       // conversations read-only, but offers no way to start a new one.
-      _enabled = enabled.fold(onSuccess: (v) => v, onFailure: (_) => true);
+      _enabled =
+          enabled?.fold(onSuccess: (v) => v, onFailure: (_) => true) ?? true;
       list.fold(
         onSuccess: (items) {
           _conversations = items;
@@ -82,13 +111,17 @@ class _ConversationsPageState extends State<ConversationsPage> {
   Widget build(BuildContext context) {
     String t(String key) => messagingText(context, key);
     final identity = messagingIdentity();
+    // Picking recipients and blocking are both per school, because the
+    // contact policy is. Starting a conversation therefore waits on a
+    // school; reading the ones already going does not.
+    final schoolId = identity?.schoolId;
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text(t('title')),
         actions: [
-          if (identity != null)
+          if (identity != null && schoolId != null)
             IconButton(
               tooltip: t('menu.blocked'),
               icon: const Icon(Icons.block_rounded),
@@ -96,7 +129,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 context,
                 MaterialPageRoute<void>(
                   builder: (_) => BlockedPeoplePage(
-                    schoolId: identity.schoolId,
+                    schoolId: schoolId,
                     myUserId: identity.userId,
                   ),
                 ),
@@ -104,9 +137,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
             ),
         ],
       ),
-      floatingActionButton: identity != null && _enabled && !_loading
+      floatingActionButton:
+          identity != null && schoolId != null && _enabled && !_loading
           ? FloatingActionButton.extended(
-              onPressed: () => _startNew(identity.schoolId, identity.userId),
+              onPressed: () => _startNew(schoolId, identity.userId),
               icon: const Icon(Icons.edit_rounded),
               label: Text(t('new')),
             )
@@ -142,7 +176,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     StudafyStatusCard(
                       icon: Icons.forum_outlined,
                       title: t('empty.title'),
-                      message: t('empty.message'),
+                      message: schoolId == null
+                          ? t('empty.awaitingLink')
+                          : t('empty.message'),
                     ),
                   for (final conversation in _conversations)
                     Padding(

@@ -464,6 +464,40 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Join a classroom by presenting a valid join link token. The token is the credential; no resourceId is resolved.",
   },
+  "family_insights.read": {
+    resource: "family_insights",
+    scope: "self",
+    concealDeniedResource: false,
+    // A guardian holds no membership scoped to this read - the verified
+    // guardian link is the authorization, and the SQL checks both it and the
+    // entitlement. There is no tenant to require and no resource to resolve.
+    tenantRequired: false,
+    description:
+      "Read Family+ insights for a linked child. Requires a verified guardian link and a live parent_insights entitlement, both enforced in SQL.",
+  },
+  "study_assistant.ask": {
+    resource: "study_assistant",
+    scope: "self",
+    concealDeniedResource: false,
+    // Reads nothing that belongs to a school - the question is the entire
+    // input - so there is no tenant to require, and a student who has not
+    // joined a class yet can still use it.
+    tenantRequired: false,
+    description:
+      "Ask the study assistant a question. The request body is the whole prompt; no school data is read.",
+  },
+  "onboarding.teacher_workspace": {
+    resource: "teacher_workspace",
+    scope: "self",
+    concealDeniedResource: false,
+    // The caller has no membership anywhere - that is what this creates - so
+    // there is no tenant to require and no resource to resolve. Being signed
+    // in is the whole permission; the SQL command is what refuses a second
+    // workspace for an account that already has one.
+    tenantRequired: false,
+    description:
+      "Create the calling teacher's own workspace on first sign-in. Refused for any account that already holds a membership.",
+  },
 
   // API-042 S3: guarded student locator and guardian linking.
   "student.locate": {

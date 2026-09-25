@@ -131,10 +131,27 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
                                   : Theme.of(context).colorScheme.primary,
                             ),
                             title: Text(student.displayName),
-                            subtitle: Text(
-                              submittedAt == null
-                                  ? l10n.submissionsWaiting
-                                  : l10n.submissionsOn(_when(submittedAt)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  submittedAt == null
+                                      ? l10n.submissionsWaiting
+                                      : l10n.submissionsOn(_when(submittedAt)),
+                                ),
+                                // Young children hand work in from a parent's
+                                // phone. Marking it without knowing that is
+                                // marking work without knowing whose it is.
+                                if (work?.submittedByGuardianId != null)
+                                  Text(
+                                    l10n.submissionsByGuardian,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                              ],
                             ),
                             onTap: work?.answerText == null
                                 ? null

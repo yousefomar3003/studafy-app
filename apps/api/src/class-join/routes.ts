@@ -12,6 +12,8 @@ export interface ClassJoinDependencies {
   repository: ClassJoinRepository;
   cursorSigningKey: string;
   enabledSlices?: Partial<Record<ClassJoinSlice, boolean>>;
+  /** Clears the joiner's cached session context once they are a member. */
+  invalidateActorContext?: (subject: string) => Promise<void>;
 }
 
 export type ClassJoinSlice = "classJoin";
@@ -54,6 +56,17 @@ export function createClassJoinRoutes(
       selector,
       sliceFor,
       enabledSlices: deps.enabledSlices,
+      // Redeeming is how a student gets their membership, so the context
+      // cached a moment earlier - when they still belonged nowhere - would
+      // otherwise answer the read that immediately follows.
+      ...(deps.invalidateActorContext
+        ? {
+          actorContextChangedBy: {
+            operations: new Set(["redeemClassJoinLink"]),
+            invalidate: deps.invalidateActorContext,
+          },
+        }
+        : {}),
     },
     authorization,
     idempotencyDependencies,

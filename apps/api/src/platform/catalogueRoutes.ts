@@ -111,6 +111,21 @@ export interface CatalogueRoutesOptions<Slice extends string> {
     dependencies: AuthDependencies;
     requirements: Partial<Record<string, ReauthRequirement>>;
   };
+  /**
+   * Operations whose success changes the CALLER's own session context.
+   *
+   * That context - memberships included - is cached per account behind a
+   * generation counter, so a command that gives an account its first
+   * membership leaves the very next /v1/me telling the client it still
+   * belongs nowhere. Naming the operation here bumps the generation the
+   * moment it succeeds. Only commands that change the caller's own
+   * memberships belong here; changing somebody else's is not this account's
+   * context.
+   */
+  actorContextChangedBy?: {
+    operations: ReadonlySet<string>;
+    invalidate: (subject: string) => Promise<void>;
+  };
 }
 
 export function honoPath(path: string): string {
@@ -137,6 +152,12 @@ function switchOutcome(
       return problem(c, "MESSAGING_DISABLED", 403);
     case "contact_not_allowed":
       return problem(c, "CONTACT_NOT_ALLOWED", 403);
+    // A request the database understood and rejected on its own rules - an
+    // attachment that is not the caller's to attach, a question set whose
+    // scores do not sum. Mapped explicitly so it stops being logged as an
+    // unmapped outcome, which reads as a server-side gap when it is not.
+    case "invalid":
+      return problem(c, "INVALID_REQUEST", 400);
     default:
       // An outcome with no mapping is a server-side gap, not a malformed
       // request, and the bare 400 it becomes says nothing about the cause.
@@ -320,6 +341,19 @@ export function createCatalogueRoutes<Slice extends string>(
         }
         const parsed = route.response.safeParse(result.response);
         if (!parsed.success) return problem(c, "INTERNAL_ERROR", 500);
+        const contextChange = options.actorContextChangedBy;
+        if (contextChange?.operations.has(route.operationId)) {
+          try {
+            await contextChange.invalidate(c.get("actor").token.subject);
+          } catch (error) {
+            // The write already committed. A stale cache corrects itself
+            // within the entry's TTL, so this must never fail the command.
+            authorization.logger?.warn("actor_context_invalidate_failed", {
+              operation: route.operationId,
+              error_kind: error instanceof Error ? error.name : "unknown",
+            });
+          }
+        }
         c.set("idempotencyCompleted", true);
         return c.json(parsed.data as never, successStatus as never);
       },

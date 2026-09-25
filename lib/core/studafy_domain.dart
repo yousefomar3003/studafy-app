@@ -43,12 +43,20 @@ class StudentSummary {
     required this.studafyId,
     required this.displayName,
     required this.verified,
+    this.schoolId,
   });
 
   final String id;
   final String studafyId;
   final String displayName;
   final bool verified;
+
+  /// The school this child is enrolled in, where the caller knows it.
+  ///
+  /// It is how a guardian gets a school at all: they hold no membership, so
+  /// without their child's school nothing school-scoped - messaging contacts
+  /// above all - has anywhere to point.
+  final String? schoolId;
 }
 
 /// The single source of truth for role, school, term, and selected child.
@@ -67,6 +75,15 @@ class ActiveContextController extends ChangeNotifier {
   String? activeTermId;
 
   StudafyRole? get role => membership?.role;
+
+  /// The school the app is acting in, or null when there is none.
+  ///
+  /// Not the same thing as [membership]. A guardian has no membership and
+  /// never will, so anything school-scoped that reads `membership.schoolId`
+  /// is permanently null for them; their school is whichever child they are
+  /// looking at. Staff have no selected child, so this is their membership.
+  String? get activeSchoolId =>
+      membership?.schoolId ?? selectedStudent?.schoolId;
 
   void startDemoRole(StudafyRole role) {
     // SEC-001/ARC-011: demo identities exist only in synthetic builds. Any
@@ -96,7 +113,13 @@ class ActiveContextController extends ChangeNotifier {
   }
 
   void selectStudent(StudentSummary? student) {
-    if (selectedStudent?.id == student?.id) return;
+    // The school is part of the comparison, not just the id: re-selecting
+    // the same child with their school now known is a real change, and
+    // skipping it would leave a guardian without one.
+    if (selectedStudent?.id == student?.id &&
+        selectedStudent?.schoolId == student?.schoolId) {
+      return;
+    }
     selectedStudent = student;
     notifyListeners();
   }
@@ -124,9 +147,20 @@ class ActiveContextController extends ChangeNotifier {
     switchMembership(next);
   }
 
+  /// Publishes the signed-in identity.
+  ///
+  /// [activeMembership] is nullable because signing in and belonging somewhere
+  /// are separate facts. A brand-new account has proved who it is and has no
+  /// class yet; that is the state onboarding runs in, and it is the normal
+  /// first minute for every real user rather than an error. A parent stays in
+  /// it permanently - guardians are linked to a student, never enrolled - so
+  /// nothing here may treat a null membership as a failed login.
+  ///
+  /// [role] is derived from the membership, so it too is null until then, and
+  /// every reader of [membership] already guards for that.
   void hydrate({
     required UserProfile authenticatedProfile,
-    required SchoolMembership activeMembership,
+    SchoolMembership? activeMembership,
     StudentSummary? student,
     String? termId,
   }) {

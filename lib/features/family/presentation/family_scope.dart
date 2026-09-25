@@ -12,6 +12,11 @@ class FamilyScope extends InheritedWidget {
 
   final FamilyInteractor interactor;
 
+  /// Null when no scope is installed, for screens that show a family
+  /// detail as an extra rather than depending on one.
+  static FamilyInteractor? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<FamilyScope>()?.interactor;
+
   static FamilyInteractor of(BuildContext context) {
     final scope = context.getInheritedWidgetOfExactType<FamilyScope>();
     if (scope == null) throw StateError('FamilyScope is missing.');

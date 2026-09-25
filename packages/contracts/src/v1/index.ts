@@ -76,6 +76,7 @@ export {
 } from "./auth";
 export * from "./platform";
 export * from "./routes";
+export * from "./attachments";
 export * from "./academic";
 export * from "./schoolAdmin";
 export * from "./invitations";
@@ -102,3 +103,16 @@ export {
   V1RevokeClassJoinLinkRequest,
   type V1RevokeClassJoinLinkRequest as V1RevokeClassJoinLinkRequestType,
 } from "./classJoinLinks";
+export {
+  V1CreateTeacherWorkspaceRequest,
+  type V1CreateTeacherWorkspaceRequest as V1CreateTeacherWorkspaceRequestType,
+  V1CreateTeacherWorkspaceResponse,
+  type V1CreateTeacherWorkspaceResponse as V1CreateTeacherWorkspaceResponseType,
+} from "./onboarding";
+export {
+  V1StudyAssistantAskRequest,
+  type V1StudyAssistantAskRequest as V1StudyAssistantAskRequestType,
+  V1StudyAssistantAskResponse,
+  type V1StudyAssistantAskResponse as V1StudyAssistantAskResponseType,
+} from "./studyAssistant";
+export * from "./familyInsights";

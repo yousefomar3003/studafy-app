@@ -30,6 +30,11 @@ const _strings = <String, Map<String, String>>{
     'title': 'Messages',
     'empty.title': 'No conversations yet',
     'empty.message': 'Start a conversation with your school.',
+    // A guardian whose link is still pending belongs to no school yet, so
+    // there is nobody they are allowed to write to. Saying why beats an
+    // empty list that looks broken.
+    'empty.awaitingLink':
+        'Once a child is linked to you, you can message their teachers here.',
     'new': 'New message',
     'noSchool': 'Choose a school to see messages.',
     'retry': 'Try again',
@@ -108,6 +113,7 @@ const _strings = <String, Map<String, String>>{
     'title': 'الرسائل',
     'empty.title': 'لا توجد محادثات بعد',
     'empty.message': 'ابدأ محادثة مع مدرستك.',
+    'empty.awaitingLink': 'عند ربط طفل بك، يمكنك مراسلة معلميه من هنا.',
     'new': 'رسالة جديدة',
     'noSchool': 'اختر مدرسة لعرض الرسائل.',
     'retry': 'حاول مرة أخرى',
