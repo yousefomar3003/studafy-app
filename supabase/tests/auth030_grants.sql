@@ -58,6 +58,14 @@ select is(
     'api041_query',
     'api042_command',
     'api042_query',
+    -- JOIN-052. The class join-link surface: a teacher mints a link, a
+    -- student redeems one. Both re-derive the school and the actor's standing
+    -- from current state (202609200002).
+    'api044_command',
+    'api044_query',
+    -- Self-serve teacher sign-up, which creates the first workspace and its
+    -- owning membership in one audited command (202609230001).
+    'api045_command',
     -- FILE-050. Five narrow upload/file commands; each independently
     -- re-validates actor, tenant, membership, relationship, purpose and state.
     'api050_complete_upload',
@@ -98,7 +106,11 @@ select is(
     'billing_restore',
     'billing_self_purchase_status',
     'billing_set_self_purchase',
-    'billing_submit_verification'
+    'billing_submit_verification',
+    -- Family+ gate: a verified guardian link plus a live parent_insights
+    -- entitlement, with the store environment read from the server's own
+    -- single-row table rather than the request (202609240002).
+    'parent_insights_has_access'
   ],
   'API runtime role executes exactly the reviewed auth, idempotency, academic, file, and billing surface'
 );
