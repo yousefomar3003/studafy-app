@@ -17,12 +17,31 @@ class AcademicRecord {
     required this.detail,
     required this.state,
     required this.version,
+    this.classroomId,
   });
   final String id;
   final String title;
   final String detail;
   final String state;
   final int version;
+
+  /// The class this record belongs to, so a list spanning several classes can
+  /// say which one each row came from. Null where the record has no class -
+  /// school-wide content, and feeds that are already pinned to one class.
+  final String? classroomId;
+}
+
+/// One class a feed can be narrowed to.
+///
+/// Deliberately a plain pair rather than the classes slice's own summary
+/// type: this page must not import another feature, so the shell that owns
+/// both supplies the list.
+@immutable
+class ClassChoice {
+  const ClassChoice({required this.id, required this.name});
+
+  final String id;
+  final String name;
 }
 
 @immutable
@@ -148,6 +167,7 @@ class SubmittedWork {
     required this.status,
     this.answerText,
     this.submittedAt,
+    this.submittedByGuardianId,
   });
 
   final String id;
@@ -158,6 +178,11 @@ class SubmittedWork {
   final String status;
   final String? answerText;
   final DateTime? submittedAt;
+
+  /// The guardian who handed this in for the child, if one did. Young children
+  /// have no device of their own, so a teacher needs to know whose work they
+  /// are marking.
+  final String? submittedByGuardianId;
 }
 
 /// One meeting of a class that has taken place.
@@ -332,7 +357,16 @@ abstract interface class AcademicRepository {
   Future<void> createAssessment(AssessmentDraft draft);
   Future<void> publishAssessment(String assessmentId, int expectedVersion);
   Future<void> withdrawAssessment(String assessmentId, int expectedVersion);
-  Future<void> submitAssignment(String assignmentId, String answer);
+
+  /// Hands work in. [attachmentFileIds] are the student's own completed
+  /// uploads of purpose `assignment_submission`; the server binds them to the
+  /// attempt this creates and refuses any that are not theirs to attach.
+  Future<void> submitAssignment(
+    String assignmentId,
+    String answer, {
+    List<String> attachmentFileIds = const [],
+    String? studentId,
+  });
   Future<void> submitAssessment(
     String assessmentId,
     Map<String, String> answers,

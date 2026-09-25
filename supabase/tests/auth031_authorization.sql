@@ -175,6 +175,34 @@ select ok(:'guardian_api'::boolean and not :'expired_api'::boolean,
   'guardian verification expiry is enforced');
 
 -- Publication safety is a relationship/state decision, not tenant membership.
+--
+-- The student needs a live Student Notebook entitlement to reach published
+-- content at all: 202609220001 put private.notebook_reader_allowed in front
+-- of can_view_resource_publication, and notebook_subscription.sql asserts the
+-- unpaid denial on this same fixture. Granting it here keeps this assertion
+-- about what AUTH-031 owns - that a clean publication is visible and an
+-- unsafe one is not - rather than about whether the student has paid.
+update private.notebook_runtime set environment = 'synthetic';
+insert into public.store_transactions(
+  platform, environment, purchaser_id, product_id, original_transaction_id,
+  transaction_id, signed_data_hash, state, purchased_at, effective_until,
+  beneficiary_id)
+select 'play_store', 'synthetic',
+  'bbbb0000-0000-4000-8000-000000000002'::uuid, sp.id,
+  'auth031-notebook-lineage', 'auth031-notebook-txn', repeat('d', 64),
+  'active', now() - interval '1 day', now() + interval '30 days',
+  'bbbb0000-0000-4000-8000-000000000002'::uuid
+from public.store_products sp
+where sp.feature_key = 'student_notebook' order by sp.id limit 1;
+insert into public.entitlements(
+  user_id, feature_key, source, source_transaction_id, status, starts_at,
+  ends_at)
+select 'bbbb0000-0000-4000-8000-000000000002'::uuid, 'student_notebook',
+  'play_store', st.id, 'active', now() - interval '1 day',
+  now() + interval '30 days'
+from public.store_transactions st
+where st.transaction_id = 'auth031-notebook-txn';
+
 set local role studafy_api_runtime;
 select set_config(
   'request.jwt.claim.sub', 'bbbb0000-0000-4000-8000-000000000002', true

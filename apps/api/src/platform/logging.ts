@@ -1,6 +1,10 @@
 import type { Logger } from "@studafy/observability";
 
-const SAFE_KEYS = new Set(["requestid", "route"]);
+// `errorkind` is allowlisted because the SECRET_KEYS match is a substring test:
+// without this, `error_kind` (a bounded enum like "timeout"/"unexpected", never
+// exception text) matches "error" and every http_error line loses the only
+// diagnostic it carries.
+const SAFE_KEYS = new Set(["requestid", "route", "errorkind"]);
 const SECRET_KEYS = [
   "authorization",
   "cookie",

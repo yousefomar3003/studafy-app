@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/device_settings.dart';
+import 'package:studafy/core/failures.dart';
 import 'package:studafy/app/locale_session_binder.dart';
 import 'package:studafy/core/locale_controller.dart';
 import 'package:studafy/core/studafy_domain.dart';
@@ -167,6 +168,29 @@ void main() {
   });
 
   group('server sync', () {
+    test('API failure allows startup and retries the saved choice', () async {
+      final settings = InMemoryDeviceSettings();
+      final controller = build(
+        settings: settings,
+        publish: (_) async => throw Failure.network,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.restore();
+      await controller.setLocale(const Locale('ar'));
+      expect(controller.resolvedLocale, const Locale('ar'));
+      expect(await settings.read(DeviceSettingKeys.publishedLocale), isNull);
+
+      final published = <String>[];
+      final next = build(
+        settings: settings,
+        publish: (code) async => published.add(code),
+      );
+      addTearDown(next.dispose);
+      await next.restore();
+      expect(published, ['ar']);
+    });
+
     test('publishes the chosen locale so email and push match', () async {
       final published = <String>[];
       final controller = build(publish: (code) async => published.add(code));

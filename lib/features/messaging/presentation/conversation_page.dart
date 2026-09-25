@@ -9,6 +9,10 @@ import 'blocked_people_page.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 import 'safety_sheets.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/attachment_field.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
 
 /// One conversation. Report and block controls are always one tap away in
 /// the app bar, and any message can be reported with a long press.
@@ -17,10 +21,19 @@ class ConversationPage extends StatefulWidget {
     super.key,
     required this.conversation,
     required this.myUserId,
+    this.uploads,
+    this.attachmentSource,
   });
 
   final Conversation conversation;
   final String myUserId;
+
+  /// Lets people attach documents and photos. Null in builds with no upload
+  /// pipeline, and the control is then absent rather than present and failing.
+  final FileUploadRepository? uploads;
+
+  /// Overrides the platform picker. Tests supply their own.
+  final AttachmentSource? attachmentSource;
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -35,6 +48,14 @@ class _ConversationPageState extends State<ConversationPage> {
   bool _sending = false;
   String? _loadError;
   String? _sendError;
+  List<Attachment> _attachments = const [];
+
+  /// Replaced after a send so the field rebuilds empty: it owns its own list
+  /// of staged files, and those have just been handed to a message.
+  Key _attachmentsKey = UniqueKey();
+
+  bool get _uploading =>
+      _attachments.any((a) => a.stage == AttachmentStage.uploading);
 
   /// People in this school I have blocked, and people who blocked me.
   Set<String> _blockedByMe = const {};
@@ -112,7 +133,9 @@ class _ConversationPageState extends State<ConversationPage> {
 
   Future<void> _send() async {
     final text = _composer.text;
-    if (text.trim().isEmpty || _sending) return;
+    // An attachment still uploading would be dropped from the message, so the
+    // send waits for it rather than sending half of what was meant.
+    if (text.trim().isEmpty || _sending || _uploading) return;
     final interactor = MessagingScope.of(context);
     final clientId = _pendingClientId ??= interactor.newClientMessageId();
     setState(() {
@@ -123,6 +146,7 @@ class _ConversationPageState extends State<ConversationPage> {
       _conversation.id,
       text,
       clientMessageId: clientId,
+      attachmentFileIds: [for (final item in _attachments) ?item.fileId],
     );
     if (!mounted) return;
     setState(() {
@@ -132,6 +156,11 @@ class _ConversationPageState extends State<ConversationPage> {
           _messages.insert(0, message);
           _composer.clear();
           _pendingClientId = null;
+          // The files now belong to the sent message; keeping them staged
+          // would attach them again on the next send, which the server
+          // refuses anyway.
+          _attachments = const [];
+          _attachmentsKey = UniqueKey();
         },
         onFailure: (failure) => _sendError = failure.code == Failure.networkCode
             ? messagingText(context, 'sendFailed')
@@ -353,6 +382,34 @@ class _ConversationPageState extends State<ConversationPage> {
                       message.body,
                       style: TextStyle(color: mine ? Colors.white : studafyInk),
                     ),
+                    for (final file in message.attachments)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              file.isReady
+                                  ? Icons.description_outlined
+                                  : Icons.hourglass_empty_rounded,
+                              size: 16,
+                              color: mine ? Colors.white70 : studafyMuted,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                file.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: mine ? Colors.white70 : studafyMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -380,6 +437,23 @@ class _ConversationPageState extends State<ConversationPage> {
                 style: const TextStyle(color: Color(0xFFB3261E), fontSize: 12),
               ),
             ),
+          // The attachment control sits above the input so a long filename
+          // does not squeeze the text field.
+          // The constructor argument wins so a test can inject a fake; the
+          // scope is how the real app supplies it.
+          if (widget.uploads ?? UploadsScope.maybeOf(context)
+              case final uploads?)
+            if (_conversation.schoolId case final schoolId)
+              AttachmentField(
+                key: _attachmentsKey,
+                purpose: FilePurpose.messageAttachment,
+                schoolId: schoolId,
+                uploads: uploads,
+                enabled: !_sending,
+                maximumCount: 3,
+                source: widget.attachmentSource ?? pickPlatformAttachment,
+                onChanged: (items) => setState(() => _attachments = items),
+              ),
           Row(
             children: [
               Expanded(
@@ -401,7 +475,7 @@ class _ConversationPageState extends State<ConversationPage> {
               const SizedBox(width: 8),
               IconButton.filled(
                 tooltip: messagingText(context, 'send'),
-                onPressed: _sending ? null : _send,
+                onPressed: _sending || _uploading ? null : _send,
                 icon: const Icon(Icons.send_rounded),
               ),
             ],

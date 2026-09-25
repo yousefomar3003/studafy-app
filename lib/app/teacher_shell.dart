@@ -61,6 +61,19 @@ class _TeacherShellState extends State<TeacherShell> {
     );
   }
 
+  /// Supplies the class filter its options, so every feed a teacher reads
+  /// can be narrowed to one of their classes.
+  Future<List<ClassChoice>> _classChoices() async {
+    final result = await widget.dependencies.classes.loadClasses();
+    return result.fold(
+      onSuccess: (items) => [
+        for (final item in items)
+          ClassChoice(id: item.id.value, name: item.name),
+      ],
+      onFailure: (_) => const [],
+    );
+  }
+
   /// Opens the announcement composer for one of this teacher's classes.
   Future<void> _newAnnouncement(BuildContext context) async {
     final schoolId = ActiveContextController.instance.membership?.schoolId;
@@ -160,6 +173,8 @@ class _TeacherShellState extends State<TeacherShell> {
           repository: academic,
           classroomId: classroom.id.value,
           teacherTools: true,
+          uploads: widget.dependencies.fileUploads,
+          schoolId: ActiveContextController.instance.membership?.schoolId,
           // Tapping a piece of work shows who has handed it in. Students
           // can submit now, so without this the loop has no other end.
           onOpenRecord: (record) => Navigator.of(context).push(
@@ -344,16 +359,20 @@ class _TeacherShellState extends State<TeacherShell> {
         repository: widget.dependencies.academic,
         teacherTools: true,
         initialFeed: AcademicFeed.content,
+        loadClassChoices: _classChoices,
+        uploads: widget.dependencies.fileUploads,
+        schoolId: ActiveContextController.instance.membership?.schoolId,
       ),
       AcademicOverviewPage(
         repository: widget.dependencies.academic,
         teacherTools: true,
         initialFeed: AcademicFeed.grades,
+        loadClassChoices: _classChoices,
       ),
       // Real builds message through /v1 with report and block controls.
       // The legacy inbox stays only for the synthetic demo, where its
       // announcement and meeting forms have no replacement yet.
-      const ConversationsPage(),
+      ConversationsPage(visible: index == 4),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),

@@ -53,6 +53,7 @@ class PreviewMessagingRepository
     String conversationId,
     String body, {
     required String clientMessageId,
+    List<String> attachmentFileIds = const [],
   }) async {
     final existing = _messages[conversationId]?.where(
       (message) => message.id == clientMessageId,

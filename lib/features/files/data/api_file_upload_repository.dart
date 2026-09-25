@@ -1,7 +1,7 @@
 import 'package:crypto/crypto.dart';
 
 import '../../../data/contracts/v1_client.generated.dart';
-import '../domain/file_upload_repository.dart';
+import '../../../core/file_upload_repository.dart';
 import 'signed_upload_transport.dart';
 
 class ApiFileUploadRepository implements FileUploadRepository {
@@ -58,5 +58,21 @@ class ApiFileUploadRepository implements FileUploadRepository {
       sizeBytes: completed.file.sizeBytes,
       scanState: completed.file.scanState,
     );
+  }
+
+  @override
+  Future<String> publishToClass({
+    required String fileId,
+    required FileAudience audience,
+  }) async {
+    final published = await _api.publishFile(
+      V1PublishFileRequestDto(audience: audience.wireValue),
+      fileId: fileId,
+      // Keyed on the file and the audience so a retry after a dropped
+      // response republishes nothing, and a deliberate change of audience is
+      // still a distinct command.
+      idempotencyKey: 'file-publish-$fileId-${audience.wireValue}',
+    );
+    return published.resource.id;
   }
 }

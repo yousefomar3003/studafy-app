@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { attachmentFileIds, V1FileAttachment } from "./attachments";
 
 const Id = z.string().uuid();
 const Timestamp = z.string().datetime({ offset: true });
@@ -250,6 +251,22 @@ export type V1CreateAssignmentRequest = z.infer<
 
 export const V1SubmitAssignmentRequest = z.strictObject({
   answerText: z.string().trim().min(1).max(100_000),
+  /**
+   * The child this hand-in is for.
+   *
+   * Omitted when a student submits their own work. A guardian names the child
+   * they are acting for, and the server authorises it on the verified
+   * guardian link - so this field cannot be used to submit for a child the
+   * caller is not linked to.
+   */
+  studentId: Id.optional(),
+  /**
+   * Uploads of purpose `assignment_submission`, owned by the student.
+   *
+   * Bound to the attempt this request creates, so a resubmission carries its
+   * own files and the previous attempt keeps the ones it was handed in with.
+   */
+  attachmentFileIds: attachmentFileIds(),
 });
 export type V1SubmitAssignmentRequest = z.infer<
   typeof V1SubmitAssignmentRequest
@@ -263,6 +280,14 @@ export const V1Submission = z.strictObject({
   version: Version,
   answerText: z.string().nullable(),
   submittedAt: Timestamp.nullable(),
+  attachments: z.array(V1FileAttachment).max(5),
+  /**
+   * Set when a verified guardian handed this attempt in for the child, which
+   * young children without a device of their own rely on. Null when the
+   * student submitted it themselves - the ordinary case, and one that stays
+   * distinguishable from a guardian hand-in for as long as the record exists.
+   */
+  submittedByGuardianId: Id.nullable(),
 });
 export type V1Submission = z.infer<typeof V1Submission>;
 

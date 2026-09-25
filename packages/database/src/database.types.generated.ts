@@ -1728,6 +1728,7 @@ export type Database = {
       file_bindings: {
         Row: {
           ai_grading_draft_id: string | null;
+          announcement_id: string | null;
           created_at: string;
           file_object_id: string;
           id: string;
@@ -1739,6 +1740,7 @@ export type Database = {
         };
         Insert: {
           ai_grading_draft_id?: string | null;
+          announcement_id?: string | null;
           created_at?: string;
           file_object_id: string;
           id?: string;
@@ -1750,6 +1752,7 @@ export type Database = {
         };
         Update: {
           ai_grading_draft_id?: string | null;
+          announcement_id?: string | null;
           created_at?: string;
           file_object_id?: string;
           id?: string;
@@ -1793,6 +1796,13 @@ export type Database = {
             columns: ["school_id", "submission_attempt_id"];
             isOneToOne: false;
             referencedRelation: "submission_attempts";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_attach_binding_announcement_school_fk";
+            columns: ["school_id", "announcement_id"];
+            isOneToOne: false;
+            referencedRelation: "announcements";
             referencedColumns: ["school_id", "id"];
           },
           {
@@ -1991,6 +2001,7 @@ export type Database = {
           id: string;
           legal_hold: boolean;
           object_key: string;
+          owner_guardian_link_id: string | null;
           owner_id: string | null;
           owner_membership_id: string | null;
           physical_deleted_at: string | null;
@@ -2022,6 +2033,7 @@ export type Database = {
           id?: string;
           legal_hold?: boolean;
           object_key: string;
+          owner_guardian_link_id?: string | null;
           owner_id?: string | null;
           owner_membership_id?: string | null;
           physical_deleted_at?: string | null;
@@ -2053,6 +2065,7 @@ export type Database = {
           id?: string;
           legal_hold?: boolean;
           object_key?: string;
+          owner_guardian_link_id?: string | null;
           owner_id?: string | null;
           owner_membership_id?: string | null;
           physical_deleted_at?: string | null;
@@ -2073,6 +2086,13 @@ export type Database = {
           uploader_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "file_objects_owner_guardian_link_id_fkey";
+            columns: ["owner_guardian_link_id"];
+            isOneToOne: false;
+            referencedRelation: "guardian_links";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "file_objects_owner_id_fkey";
             columns: ["owner_id"];
@@ -4800,6 +4820,7 @@ export type Database = {
           school_id: string;
           submission_id: string;
           submitted_at: string;
+          submitted_by_guardian_id: string | null;
         };
         Insert: {
           answer_text?: string | null;
@@ -4809,6 +4830,7 @@ export type Database = {
           school_id: string;
           submission_id: string;
           submitted_at: string;
+          submitted_by_guardian_id?: string | null;
         };
         Update: {
           answer_text?: string | null;
@@ -4818,6 +4840,7 @@ export type Database = {
           school_id?: string;
           submission_id?: string;
           submitted_at?: string;
+          submitted_by_guardian_id?: string | null;
         };
         Relationships: [
           {
@@ -4839,6 +4862,13 @@ export type Database = {
             columns: ["submission_id"];
             isOneToOne: false;
             referencedRelation: "submissions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "submission_attempts_submitted_by_guardian_id_fkey";
+            columns: ["submitted_by_guardian_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -5119,6 +5149,7 @@ export type Database = {
           id: string;
           nonce_hash: string;
           object_key: string | null;
+          owner_guardian_link_id: string | null;
           owner_id: string | null;
           owner_membership_id: string | null;
           policy_version: string;
@@ -5148,6 +5179,7 @@ export type Database = {
           id?: string;
           nonce_hash: string;
           object_key?: string | null;
+          owner_guardian_link_id?: string | null;
           owner_id?: string | null;
           owner_membership_id?: string | null;
           policy_version?: string;
@@ -5177,6 +5209,7 @@ export type Database = {
           id?: string;
           nonce_hash?: string;
           object_key?: string | null;
+          owner_guardian_link_id?: string | null;
           owner_id?: string | null;
           owner_membership_id?: string | null;
           policy_version?: string;
@@ -5235,6 +5268,13 @@ export type Database = {
             columns: ["file_object_id"];
             isOneToOne: false;
             referencedRelation: "file_objects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "upload_sessions_owner_guardian_link_id_fkey";
+            columns: ["owner_guardian_link_id"];
+            isOneToOne: false;
+            referencedRelation: "guardian_links";
             referencedColumns: ["id"];
           },
           {
@@ -5451,7 +5491,9 @@ export type Database = {
         | "assignment_material"
         | "assignment_submission"
         | "paper_scan"
-        | "coach_attachment";
+        | "coach_attachment"
+        | "message_attachment"
+        | "announcement_attachment";
       file_scan_state:
         | "quarantined"
         | "scanning"
@@ -5715,6 +5757,8 @@ export const Constants = {
         "assignment_submission",
         "paper_scan",
         "coach_attachment",
+        "message_attachment",
+        "announcement_attachment",
       ],
       file_scan_state: [
         "quarantined",

@@ -6,10 +6,12 @@ import 'app/account_hub_page.dart';
 import 'app/account_scope.dart';
 import 'app/app_dependencies.dart';
 import 'app/class_join_link_guard.dart';
+import 'app/onboarding_page.dart';
 import 'app/class_join_link_listener.dart';
 import 'app/oauth_callback_guard.dart';
 import 'app/studafy_theme.dart';
 import 'app/teacher_shell.dart';
+import 'core/app_routes.dart';
 import 'core/locale_controller.dart';
 import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
@@ -23,6 +25,7 @@ import 'features/session/presentation/splash_page.dart';
 import 'features/teacher_dashboard/presentation/teacher_dashboard_repository_scope.dart';
 import 'parent_features.dart';
 import 'student_features.dart';
+import 'core/uploads_scope.dart';
 
 /// Holds a class join link tapped before the app had somewhere to show it.
 final classJoinLinks = ClassJoinLinkGuard();
@@ -103,11 +106,30 @@ class StudafyApp extends StatelessWidget {
     final routes = deps == null
         ? <String, WidgetBuilder>{}
         : <String, WidgetBuilder>{
-            '/roles': (_) => RolePage(session: deps.session),
-            '/teacher': (_) => TeacherShell(dependencies: deps),
-            '/parent': (_) => ParentShell(academic: deps.academic),
-            '/student': (_) =>
-                StudentShell(academic: deps.academic, classes: deps.classes),
+            rolesRoute: (_) => RolePage(session: deps.session),
+            // The role arrives as a route argument because the person already
+            // chose it on RolePage; onboarding only has to explain one step.
+            onboardingRoute: (context) => OnboardingPage(
+              role:
+                  ModalRoute.of(context)?.settings.arguments as UserRole? ??
+                  UserRole.student,
+              session: deps.session,
+              classes: deps.classes,
+              teacherWorkspace: deps.teacherWorkspace,
+            ),
+            teacherRoute: (_) => TeacherShell(dependencies: deps),
+            parentRoute: (_) => ParentShell(
+              academic: deps.academic,
+              insights: deps.familyInsights,
+            ),
+            studentRoute: (_) => StudentShell(
+              academic: deps.academic,
+              classes: deps.classes,
+              notebookSubscription: deps.notebookSubscription,
+              session: deps.session,
+              studyAssistant: deps.studyAssistant,
+              fileUploads: deps.fileUploads,
+            ),
           };
     // A blocked build has no composition root, so it has no locale controller
     // either; it still needs the delegates and the device's own language.
@@ -174,20 +196,25 @@ class StudafyApp extends StatelessWidget {
               session: deps.session,
               child: AccountScope(
                 account: deps.account,
-                child: NotificationsScope(
-                  interactor: deps.notifications,
-                  child: MessagingScope(
-                    interactor: deps.messaging,
-                    child: FamilyScope(
-                      interactor: deps.family,
-                      child: ParentRepositoryScope(
-                        repository: deps.parent,
-                        subscription: deps.parentSubscription,
-                        signOut: deps.session.signOut,
-                        isRemote: runtimePolicy.requiresRemoteBackend,
-                        child: TeacherDashboardRepositoryScope(
-                          repository: deps.teacherDashboard,
-                          child: content,
+                // Above the Navigator, so a pushed conversation or hand-in
+                // screen can still reach the upload pipeline.
+                child: UploadsScope(
+                  uploads: deps.fileUploads,
+                  child: NotificationsScope(
+                    interactor: deps.notifications,
+                    child: MessagingScope(
+                      interactor: deps.messaging,
+                      child: FamilyScope(
+                        interactor: deps.family,
+                        child: ParentRepositoryScope(
+                          repository: deps.parent,
+                          subscription: deps.parentSubscription,
+                          signOut: deps.session.signOut,
+                          isRemote: runtimePolicy.requiresRemoteBackend,
+                          child: TeacherDashboardRepositoryScope(
+                            repository: deps.teacherDashboard,
+                            child: content,
+                          ),
                         ),
                       ),
                     ),

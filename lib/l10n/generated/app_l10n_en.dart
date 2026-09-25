@@ -75,6 +75,10 @@ class AppL10nEn extends AppL10n {
   String get securitySignOutEverywhere => 'Sign out everywhere';
 
   @override
+  String get securitySignOutEverywhereFailed =>
+      'This device is signed out, but your other devices could not be reached. Try again from a signed-in device.';
+
+  @override
   String get securityTwoFactorHeading => 'TWO-FACTOR SIGN-IN';
 
   @override
@@ -231,7 +235,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get policyPrivacyBody =>
-      'Studafy uses account, school, class, attendance, and communication data only to provide and secure the service. Schools control student records. We do not sell personal data. Contact your school to access, correct, or delete eligible records.';
+      'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose; the school or class you belong to and your role in it; the work you are set and hand in, your marks, attendance and pastoral notes; messages, announcements and meetings inside the app; files you upload; and your notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nTHE STUDY HELPER\nIf you use the study helper, the question you type is sent to an AI company outside Studafy so it can answer. Your name, school, marks, work and messages are never sent. Answers can be wrong, so check anything you hand in. Using the helper is optional.\n\nWHO SEES YOUR WORK\nStaff at your school whose role requires it, and a parent linked to you. Other students cannot see your marks, your submitted work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent can follow progress; a parent is not given your private messages.\n\nPAYMENTS\nSubscriptions are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Resend sends email and Firebase sends push notifications. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion.\n\nHOW WE PROTECT IT\nAccess to a school\'s data is enforced in the database itself. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Administrator accounts require two-factor sign-in. Files are scanned before they can be downloaded.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.';
 
   @override
   String get policyTermsBody =>
@@ -595,7 +599,7 @@ class AppL10nEn extends AppL10n {
   String get attendanceSave => 'Save attendance';
 
   @override
-  String get notebookTitle => 'Lesson notebook';
+  String get notebookTitle => 'My notebook';
 
   @override
   String get notebookLessonLabel => 'Lesson covered';
@@ -1106,6 +1110,9 @@ class AppL10nEn extends AppL10n {
   String get submissionsWaiting => 'Not handed in';
 
   @override
+  String get submissionsByGuardian => 'Handed in by a parent';
+
+  @override
   String submissionsOn(String when) {
     return 'Handed in $when';
   }
@@ -1213,4 +1220,358 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get joinLinkNewReplaces => 'Creating a new link replaces this one.';
+
+  @override
+  String get notebookActive => 'Notebook is active';
+
+  @override
+  String get notebookManage => 'Manage';
+
+  @override
+  String get notebookRefresh => 'Refresh';
+
+  @override
+  String get notebookHeroEyebrow => 'YOUR LEARNING, TOGETHER';
+
+  @override
+  String get notebookHeroTitle => 'A home for every lesson.';
+
+  @override
+  String get notebookHeroSubtitle =>
+      'Keep your teachers’ lesson notes and learning materials close.';
+
+  @override
+  String get notebookPlanName => 'Notebook · Monthly';
+
+  @override
+  String notebookPricePerMonth(String price) {
+    return '$price / month';
+  }
+
+  @override
+  String notebookTrialThenPrice(String price) {
+    return '1 month free, then $price each month.';
+  }
+
+  @override
+  String get notebookNoTrial =>
+      'Renews monthly. No free trial is confirmed for this store account.';
+
+  @override
+  String get notebookPriceUnconfirmed =>
+      'Your store confirms the price before you subscribe.';
+
+  @override
+  String get notebookPriceUnconfirmedDetail =>
+      'A one-month free trial is planned for eligible new subscribers. The store must confirm local pricing and eligibility before you can subscribe.';
+
+  @override
+  String get notebookScope =>
+      'Only Notebook requires this subscription. Your assignments, grades and messages remain available.';
+
+  @override
+  String get notebookStatusUnavailable =>
+      'We could not check your subscription. Retry to check access.';
+
+  @override
+  String get notebookSelfPurchaseDisabled =>
+      'Student purchasing is not enabled for your account yet.';
+
+  @override
+  String get notebookApprovalRequired =>
+      'A linked parent must approve before you subscribe. Approval does not start a trial or charge anyone.';
+
+  @override
+  String get notebookApprovalRequestSent =>
+      'Request sent. Your parent can approve it from their home page.';
+
+  @override
+  String get notebookApprovalWaiting => 'Waiting for parent approval';
+
+  @override
+  String get notebookApprovalAsk => 'Ask my parent';
+
+  @override
+  String get notebookPurchaseStarted =>
+      'Complete the store sheet. Access starts after your purchase is verified; refresh if needed.';
+
+  @override
+  String get notebookStartFreeMonth => 'Start my free month';
+
+  @override
+  String get notebookSubscribeMonthly => 'Subscribe monthly';
+
+  @override
+  String get notebookCheckoutUnavailable =>
+      'Checkout opens once store terms, account approval and subscription policies are available.';
+
+  @override
+  String get notebookRestoreRequested =>
+      'Restore requested. Access appears after store verification.';
+
+  @override
+  String get notebookRestore => 'Restore purchases';
+
+  @override
+  String get notebookManageOrCancel => 'Manage or cancel subscription';
+
+  @override
+  String get notebookRenewalDisclosure =>
+      'Auto-renewing subscription. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal or the trial ends to avoid the next charge. Deleting the app does not cancel your subscription.';
+
+  @override
+  String get notebookTermsOfUse => 'Terms of Use';
+
+  @override
+  String get notebookPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get notebookActionFailed =>
+      'Could not complete this step. Check your connection and your parent link, then try again.';
+
+  @override
+  String get notebookOpenPageFailed => 'Could not open the page.';
+
+  @override
+  String get joinClassTitle => 'Join a class';
+
+  @override
+  String get joinClassPrompt =>
+      'Paste the class link your teacher shared with you.';
+
+  @override
+  String get joinClassField => 'Class link';
+
+  @override
+  String get joinClassAction => 'Join class';
+
+  @override
+  String get joinClassBusy => 'Joining…';
+
+  @override
+  String get joinClassInvalid => 'That does not look like a class link.';
+
+  @override
+  String joinClassDone(String className) {
+    return 'You\'re in $className';
+  }
+
+  @override
+  String get joinClassContinue => 'Done';
+
+  @override
+  String get onboardingStudentTitle => 'Join your first class';
+
+  @override
+  String get onboardingStudentBody =>
+      'Ask your teacher for the class link, then paste it here to get started.';
+
+  @override
+  String get onboardingParentTitle => 'Link to your child';
+
+  @override
+  String get onboardingParentBody =>
+      'Ask your child for their Studafy ID. They approve the request on their own device, so nobody else can see their work.';
+
+  @override
+  String get onboardingParentAction => 'Continue';
+
+  @override
+  String get onboardingTeacherTitle => 'Teacher accounts are almost ready';
+
+  @override
+  String get onboardingTeacherBody =>
+      'Creating classes from a new teacher account is not switched on yet. Please check back shortly.';
+
+  @override
+  String get onboardingTeacherReadyTitle => 'Set up your teaching space';
+
+  @override
+  String get onboardingTeacherReadyBody =>
+      'We\'ll get everything ready so you can create your first class and invite students to it.';
+
+  @override
+  String get onboardingTeacherReadyAction => 'Get started';
+
+  @override
+  String get onboardingNotReadyYet =>
+      'Your account is ready, but we couldn\'t open it just yet. Please try again.';
+
+  @override
+  String get onboardingChangeRole => 'Choose a different role';
+
+  @override
+  String get onboardingSignOut => 'Sign out';
+
+  @override
+  String get studyAssistantTitle => 'Study helper';
+
+  @override
+  String get studyAssistantIntro =>
+      'Ask about anything you are studying and get an explanation. Your question is sent to an AI service to answer it, so do not include your name, your school or anything private.';
+
+  @override
+  String get studyAssistantField => 'Your question';
+
+  @override
+  String get studyAssistantAsk => 'Ask';
+
+  @override
+  String get studyAssistantBusy => 'Thinking…';
+
+  @override
+  String get studyAssistantCheckWork =>
+      'Answers can be wrong. Check anything you hand in.';
+
+  @override
+  String studyAssistantRemaining(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions left today',
+      one: '1 question left today',
+      zero: 'No questions left today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studyAssistantTab => 'Helper';
+
+  @override
+  String get joinClassAlreadyStaff =>
+      'You already teach at this school, so you cannot join one of its classes as a student. Ask a student to open the link on their own account.';
+
+  @override
+  String get academicAllClasses => 'All classes';
+
+  @override
+  String get insightsTitle => 'Family+';
+
+  @override
+  String get insightsUnavailableTitle => 'Insights are not available';
+
+  @override
+  String get insightsUnavailableBody =>
+      'Family+ is needed to see detailed insights, and the link to your child must be approved.';
+
+  @override
+  String get insightsNothingYetTitle => 'Nothing to report yet';
+
+  @override
+  String get insightsNothingYetBody =>
+      'As your child\'s school records marks, attendance and work, insights will appear here. We only report what the records actually show.';
+
+  @override
+  String get insightsBySubject => 'By subject';
+
+  @override
+  String get insightsComingUp => 'Coming up';
+
+  @override
+  String get insightsFromSchool => 'From the school';
+
+  @override
+  String get insightsAverage => 'Average';
+
+  @override
+  String get insightsAttendance => 'Attendance';
+
+  @override
+  String get insightsOnTime => 'On time';
+
+  @override
+  String insightSubjectFocus(Object subject) {
+    return '$subject is their weakest subject right now';
+  }
+
+  @override
+  String insightTrendDown(Object subject) {
+    return '$subject marks are going down';
+  }
+
+  @override
+  String insightTrendUp(Object subject) {
+    return '$subject marks are going up';
+  }
+
+  @override
+  String insightRecovery(Object subject) {
+    return '$subject has recovered';
+  }
+
+  @override
+  String get insightHomework => 'How reliably work is handed in';
+
+  @override
+  String get insightHomeworkSlipping =>
+      'Work is being handed in later than before';
+
+  @override
+  String get insightAttendancePattern =>
+      'Absences fall on the same day of the week';
+
+  @override
+  String get insightDueSoon => 'Work due soon that has not been handed in';
+
+  @override
+  String get insightStrengthInsufficient =>
+      'Not enough records yet to be confident';
+
+  @override
+  String get insightStrengthLow => 'Based on a small number of records';
+
+  @override
+  String get insightStrengthMedium => 'Based on a reasonable number of records';
+
+  @override
+  String get insightStrengthHigh => 'Based on a large number of records';
+
+  @override
+  String insightsDueOn(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String insightsFromMarks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'From $count marks',
+      one: 'From 1 mark',
+      zero: 'No marks yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsAbsences(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count absences',
+      one: '1 absence',
+      zero: 'No absences',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsOfTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Of $count tasks',
+      one: 'Of 1 task',
+      zero: 'No work set',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get insightsNoChildTitle => 'Choose a child first';
+
+  @override
+  String get insightsNoChildBody =>
+      'Pick one of your children on the home tab to see their insights.';
 }

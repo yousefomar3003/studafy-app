@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { attachmentFileIds, V1FileAttachment } from "./attachments";
 
 const Id = z.string().uuid();
 
@@ -48,6 +49,7 @@ export const V1Message = z.strictObject({
   clientMessageId: Id,
   body: z.string(),
   createdAt: z.string().datetime({ offset: true }),
+  attachments: z.array(V1FileAttachment).max(5),
 });
 export type V1Message = z.infer<typeof V1Message>;
 
@@ -60,6 +62,8 @@ export type V1MessagePage = z.infer<typeof V1MessagePage>;
 export const V1SendMessageRequest = z.strictObject({
   clientMessageId: Id,
   body: z.string().trim().min(1).max(4000),
+  /** Uploads of purpose `message_attachment`, owned by the sender. */
+  attachmentFileIds: attachmentFileIds(),
 });
 export type V1SendMessageRequest = z.infer<typeof V1SendMessageRequest>;
 
@@ -72,6 +76,7 @@ export const V1Announcement = z.strictObject({
   audience: z.enum(["students", "guardians", "both"]),
   important: z.boolean(),
   publishedAt: z.string().datetime({ offset: true }),
+  attachments: z.array(V1FileAttachment).max(5),
 });
 export type V1Announcement = z.infer<typeof V1Announcement>;
 
@@ -88,6 +93,8 @@ export const V1CreateAnnouncementRequest = z.strictObject({
   body: z.string().trim().min(1).max(4000),
   audience: z.enum(["students", "guardians", "both"]).default("both"),
   important: z.boolean().default(false),
+  /** Uploads of purpose `announcement_attachment`, owned by the author. */
+  attachmentFileIds: attachmentFileIds(),
 });
 export type V1CreateAnnouncementRequest = z.infer<
   typeof V1CreateAnnouncementRequest

@@ -38,6 +38,12 @@ import {
 } from "./family/routes";
 import { PostgresFamilyRepository } from "./family/repository";
 import { createClassJoinRoutes } from "./class-join/routes";
+import { createOnboardingRoutes } from "./onboarding/routes";
+import { createStudyAssistantRoutes } from "./study-assistant/routes";
+import { createStudyAssistantQuota } from "./study-assistant/quota";
+import { createFamilyInsightsRoutes } from "./family-insights/routes";
+import { PostgresFamilyInsightsRepository } from "./family-insights/repository";
+import { PostgresOnboardingRepository } from "./onboarding/repository";
 import { PostgresClassJoinRepository } from "./class-join/repository";
 import {
   createCommunicationsRoutes,
@@ -70,7 +76,13 @@ import {
   closeDatabase,
   createDatabase,
 } from "@studafy/database";
-import { checkRedis, closeRedis, createRedis } from "@studafy/infrastructure";
+import {
+  checkRedis,
+  closeRedis,
+  createCloudWatchSink,
+  createRedis,
+  createStudyAssistant,
+} from "@studafy/infrastructure";
 import {
   createJsonLogger,
   installGracefulShutdown,
@@ -80,8 +92,23 @@ import {
 import { version as apiVersion } from "../package.json";
 
 const env = loadApiEnv();
+
+// CloudWatch is an additional destination, never a replacement: stdout stays
+// authoritative so a transport outage cannot blind the container logs. The
+// redacting logger wraps the JSON logger, so the sink only ever sees lines
+// that have already been through `redactApiFields`.
+const cloudwatch = env.AWS_REGION && env.AWS_LOG_GROUP
+  ? createCloudWatchSink({
+    region: env.AWS_REGION,
+    logGroupName: env.AWS_LOG_GROUP,
+  })
+  : undefined;
+
 const logger = createRedactingLogger(
-  createJsonLogger("api", apiVersion, env.LOG_LEVEL),
+  createJsonLogger("api", apiVersion, env.LOG_LEVEL, (line) => {
+    console.log(line);
+    cloudwatch?.record(line);
+  }),
 );
 
 logStartup(logger, {
@@ -161,6 +188,14 @@ const authDependencies = sql && env.SUPABASE_URL
     deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
   }
   : undefined;
+// Commands that hand an account its first membership live in other
+// dispatchers, so they need this to clear the session context cached while
+// that account still belonged nowhere. Undefined without an auth repository,
+// in which case nothing is cached either.
+const invalidateActorContext = authDependencies
+  ? (subject: string) => authDependencies.repository.invalidateContext(subject)
+  : undefined;
+
 const academic = sql && env.API_CURSOR_SIGNING_KEY
   ? createAcademicRoutes(
     {
@@ -260,9 +295,53 @@ const classJoin = sql && env.API_CURSOR_SIGNING_KEY
       repository: new PostgresClassJoinRepository(sql),
       cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
       enabledSlices: { classJoin: true },
+      invalidateActorContext: invalidateActorContext,
     },
     authorization,
     idempotencyDependencies,
+  )
+  : undefined;
+
+const onboarding = sql && env.API_CURSOR_SIGNING_KEY
+  ? createOnboardingRoutes(
+    {
+      repository: new PostgresOnboardingRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { onboarding: true },
+      invalidateActorContext: invalidateActorContext,
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+// The study assistant needs three things at once: a provider key, the single
+// origin it is allowed to reach, and Redis for the daily spend ceiling. Any
+// missing and the route is simply absent - the app then shows no AI tab,
+// which is the honest state rather than a tab that always errors.
+const studyAssistant =
+  env.AI_API_KEY && env.AI_BASE_URL && redis && env.RATE_LIMIT_HMAC_SIGNING_KEY
+    ? createStudyAssistantRoutes(
+      {
+        assistant: createStudyAssistant({
+          apiKey: env.AI_API_KEY,
+          baseUrl: env.AI_BASE_URL,
+          model: env.AI_MODEL,
+        }),
+        quota: createStudyAssistantQuota({
+          redis,
+          signingKey: env.RATE_LIMIT_HMAC_SIGNING_KEY,
+          dailyLimit: env.AI_DAILY_QUESTION_LIMIT,
+        }),
+      },
+      authorization,
+    )
+    : undefined;
+
+const familyInsights = sql
+  ? createFamilyInsightsRoutes(
+    { repository: new PostgresFamilyInsightsRepository(sql) },
+    authorization,
   )
   : undefined;
 
@@ -532,6 +611,10 @@ const combinedRoutes =
           ),
         );
       }
+      // Last of all, matching their position at the end of the catalogue.
+      if (onboarding) combined.route("/", onboarding);
+      if (studyAssistant) combined.route("/", studyAssistant);
+      if (familyInsights) combined.route("/", familyInsights);
       return combined;
     })()
     : undefined;
@@ -566,6 +649,14 @@ const app = createApp({
       maxBodyBytes: env.API_MAX_BODY_BYTES,
       requestTimeoutMs: env.API_REQUEST_TIMEOUT_MS,
     },
+    identity: {
+      // Same key and trust posture the rate limiter already uses, so one
+      // client hashes identically in both places.
+      ...(env.RATE_LIMIT_HMAC_SIGNING_KEY
+        ? { hmacKey: env.RATE_LIMIT_HMAC_SIGNING_KEY }
+        : {}),
+      trustCloudflare: env.ENVIRONMENT === "production",
+    },
   },
   ...(env.RATE_LIMIT_ENABLED
     ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }
@@ -589,5 +680,11 @@ installGracefulShutdown({
     server.stop(false);
     if (sql) await closeDatabase(sql);
     if (redis) await closeRedis(redis);
+    // Last, so shutdown logging from the steps above is included in the final
+    // batch rather than lost with the process.
+    if (cloudwatch) {
+      cloudwatch.close();
+      await cloudwatch.flush();
+    }
   },
 });

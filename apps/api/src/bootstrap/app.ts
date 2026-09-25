@@ -9,6 +9,7 @@ import type { AuthorizationEnv } from "../authorization/middleware";
 import {
   protocolControls,
   requestContext,
+  type RequestIdentityOptions,
   requestTelemetry,
   secureResponseHeaders,
   totalTimeout,
@@ -54,6 +55,8 @@ export interface AppDependencies {
     allowedOrigins?: readonly string[];
     limits?: Partial<PlatformLimits>;
     now?: () => number;
+    /** Identity fields for the access log. Omitted leaves `ip_hash` null. */
+    identity?: RequestIdentityOptions;
   };
 }
 
@@ -83,7 +86,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   // controls run before authentication, validation, authorization and use cases.
   app.use("*", requestContext(now));
   app.use("*", secureResponseHeaders(deps.info.environment));
-  app.use("*", requestTelemetry(deps.logger, now));
+  app.use("*", requestTelemetry(deps.logger, now, deps.platform?.identity));
   app.use(
     "*",
     protocolControls({

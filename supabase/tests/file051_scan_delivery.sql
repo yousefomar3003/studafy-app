@@ -283,6 +283,34 @@ select is((select count(*) from public.file_bindings
 select is((pg_temp.publish(:'teacher_user', :'school_id', pg_temp.id('F1'), 5))->>'outcome',
   'invalid_state', 'the same object cannot be published twice');
 
+-- Reading published class material needs a live Student Notebook
+-- entitlement: 202609220001 put private.notebook_reader_allowed in front of
+-- can_view_resource_publication, and notebook_subscription.sql asserts the
+-- unpaid denial. FILE-051 is proving that one publication derives access for
+-- every enrolled reader, not who has paid, so the fixture's students are
+-- entitled here.
+update private.notebook_runtime set environment = 'synthetic';
+insert into public.store_transactions(
+  platform, environment, purchaser_id, product_id, original_transaction_id,
+  transaction_id, signed_data_hash, state, purchased_at, effective_until,
+  beneficiary_id)
+select 'play_store', 'synthetic', pg_temp.student(n), sp.id,
+  'file051-notebook-' || n, 'file051-notebook-txn-' || n, repeat('e', 64),
+  'active', now() - interval '1 day', now() + interval '30 days',
+  pg_temp.student(n)
+from generate_series(1, 30) n
+cross join lateral (
+  select id from public.store_products
+  where feature_key = 'student_notebook' order by id limit 1) sp;
+insert into public.entitlements(
+  user_id, feature_key, source, source_transaction_id, status, starts_at,
+  ends_at)
+select pg_temp.student(n), 'student_notebook', 'play_store', st.id, 'active',
+  now() - interval '1 day', now() + interval '30 days'
+from generate_series(1, 30) n
+join public.store_transactions st
+  on st.transaction_id = 'file051-notebook-txn-' || n;
+
 create temporary table f051_access (n integer primary key, decision jsonb);
 do $$
 begin

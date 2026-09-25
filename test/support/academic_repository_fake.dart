@@ -134,12 +134,22 @@ class SubmitFake implements AcademicRepository {
   SubmitFake({this.fail = false});
 
   final bool fail;
-  final submitted = <({String assignmentId, String answer})>[];
+  final submitted =
+      <({String assignmentId, String answer, List<String> attachments})>[];
 
   @override
-  Future<void> submitAssignment(String assignmentId, String answer) async {
+  Future<void> submitAssignment(
+    String assignmentId,
+    String answer, {
+    List<String> attachmentFileIds = const [],
+    String? studentId,
+  }) async {
     if (fail) throw StateError('synthetic submit failure');
-    submitted.add((assignmentId: assignmentId, answer: answer));
+    submitted.add((
+      assignmentId: assignmentId,
+      answer: answer,
+      attachments: attachmentFileIds,
+    ));
   }
 
   @override

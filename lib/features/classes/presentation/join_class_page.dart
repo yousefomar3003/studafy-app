@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/class_join_link.dart';
+import '../../../core/failures.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../application/class_list_interactor.dart';
 import '../domain/classroom.dart';
 
@@ -49,7 +51,7 @@ class _JoinClassPageState extends State<JoinClassPage> {
     // working out which half to copy is not the student's job.
     final token = classJoinTokenFrom(_controller.text);
     if (token == null) {
-      setState(() => _error = 'That does not look like a class link.');
+      setState(() => _error = AppL10n.of(context).joinClassInvalid);
       return;
     }
     setState(() {
@@ -68,7 +70,15 @@ class _JoinClassPageState extends State<JoinClassPage> {
       },
       onFailure: (failure) => setState(() {
         _joining = false;
-        _error = failure.message;
+        // Redeeming refuses with FORBIDDEN for exactly one reason: this
+        // account already teaches at, or otherwise staffs, the school the
+        // link belongs to, and opening your own link must not move you into
+        // your own class roster. The generic "no access" wording sent a
+        // teacher checking their own link looking for a permissions fault
+        // that does not exist, so it is named here.
+        _error = failure.code == Failure.forbiddenCode
+            ? AppL10n.of(context).joinClassAlreadyStaff
+            : failure.message;
       }),
     );
   }
@@ -76,8 +86,9 @@ class _JoinClassPageState extends State<JoinClassPage> {
   @override
   Widget build(BuildContext context) {
     final joined = _joined;
+    final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Join a class')),
+      appBar: AppBar(title: Text(l10n.joinClassTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -86,17 +97,15 @@ class _JoinClassPageState extends State<JoinClassPage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Paste the class link your teacher shared with you.',
-                    ),
+                    Text(l10n.joinClassPrompt),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _controller,
                       autofocus: widget.initialToken == null,
                       enabled: !_joining,
-                      decoration: const InputDecoration(
-                        labelText: 'Class link',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.joinClassField,
+                        border: const OutlineInputBorder(),
                       ),
                       onSubmitted: (_) => _join(),
                     ),
@@ -112,7 +121,9 @@ class _JoinClassPageState extends State<JoinClassPage> {
                     const SizedBox(height: 24),
                     FilledButton(
                       onPressed: _joining ? null : _join,
-                      child: Text(_joining ? 'Joining…' : 'Join class'),
+                      child: Text(
+                        _joining ? l10n.joinClassBusy : l10n.joinClassAction,
+                      ),
                     ),
                   ],
                 ),
@@ -134,14 +145,14 @@ class _JoinedView extends StatelessWidget {
       const Icon(Icons.check_circle_outline, size: 56),
       const SizedBox(height: 16),
       Text(
-        "You're in ${joined.classroomName}",
+        AppL10n.of(context).joinClassDone(joined.classroomName),
         style: Theme.of(context).textTheme.titleLarge,
         textAlign: TextAlign.center,
       ),
       const SizedBox(height: 24),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(joined),
-        child: const Text('Done'),
+        child: Text(AppL10n.of(context).joinClassContinue),
       ),
     ],
   );

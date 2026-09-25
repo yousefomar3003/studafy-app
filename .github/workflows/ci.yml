@@ -265,6 +265,46 @@ jobs:
           bunx supabase test db --local
           supabase/tests/pay071_billing_seed.sql
 
+      # Student Notebook entitlement gate: no local trial, a sandbox receipt
+      # cannot unlock production reads, revocation/expiry lock immediately,
+      # billing grace still reads, and one student's purchase never unlocks
+      # another's. This file seeds its own fixtures, so it has no separate
+      # _seed.sql wrapper and is run directly.
+      - name: Verify Student Notebook subscription gate
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/notebook_subscription.sql
+
+      # Self-serve teacher sign-up is the only path to a first membership that
+      # does not start from a platform operator, so what it refuses matters as
+      # much as what it creates: one workspace per account, revoked members
+      # included, and the teacher role rather than a school_admin one that
+      # would demand MFA on the first screen after sign-up. Seeds its own
+      # fixtures, so it is run directly like the file above.
+      - name: Verify self-serve teacher sign-up
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/teacher_self_signup.sql
+
+      # Family+ returns one child's record to whoever paid for it, so the
+      # refusals are the point: no subscription, no link, another parent's
+      # child, and a safeguarding-restricted note that must never surface at
+      # any subscription level. Seeds its own fixtures.
+      - name: Verify Family+ entitlement gate
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/family_insights.sql
+
+      # Notifications name the people an event is about, so the audience is
+      # a disclosure decision: a mark reaches one child's guardian and not
+      # the class, a safeguarding-restricted note reaches no family at all,
+      # an expired link is not a link, and everything that was staff-only
+      # stays staff-only. Seeds its own fixtures.
+      - name: Verify notification audiences
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/notification_audiences.sql
+
       # DL-051: account deletion executes as de-identification that keeps
       # retained records intact and never while held, early or cancelled;
       # data exports contain only the requester's own data.

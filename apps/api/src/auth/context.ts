@@ -162,6 +162,22 @@ export class AuthContextRepository {
   }
 
   /**
+   * Bumps the generation for a mutation made outside this repository.
+   *
+   * The cached context carries the caller's memberships, so any command that
+   * gives an account its first one - redeeming a class join link, accepting
+   * an invitation, creating a teacher's workspace - leaves the client being
+   * told it still belongs nowhere until the entry expires. Those commands
+   * live in other dispatchers, so they need a way in here.
+   *
+   * Best effort by the same rule as the private path: a failed bump is
+   * bounded by the TTL and must never fail the command that succeeded.
+   */
+  async invalidateContext(subject: string | null | undefined): Promise<void> {
+    await this.#invalidate(subject);
+  }
+
+  /**
    * Bumps the account's cache generation after a mutation changes session
    * state, so the next load keys a fresh entry immediately. Best effort:
    * a failed bump is bounded by the cache TTL.

@@ -13,7 +13,25 @@ import '../domain/session_repository.dart';
 /// The previous boolean could not express the state that matters most: a
 /// session whose refresh has failed. That is [reauthRequired] — an explicit
 /// signed-out-and-say-so state, never a silent downgrade to demo data.
-enum SessionStatus { signedOut, authenticating, authenticated, reauthRequired }
+enum SessionStatus {
+  signedOut,
+  authenticating,
+  authenticated,
+  reauthRequired,
+
+  /// Signed in and proven, but not yet part of anything: no membership for the
+  /// chosen role. Every new account starts here. It is deliberately distinct
+  /// from [signedOut] - the session is real and the API accepts it, which is
+  /// what lets the holder redeem a class link or ask to be linked to a child.
+  onboarding,
+}
+
+/// What [SessionInteractor.completeRemoteLogin] resolved to.
+///
+/// Returned as a value rather than signalled by a failure message, because
+/// "you have no class yet" is an ordinary first-run state that the login
+/// screen routes on, not an error to render in red.
+enum LoginOutcome { ready, needsOnboarding }
 
 /// Drives the session state machine (ARC-011 session slice, AUTH-030).
 ///
@@ -100,7 +118,7 @@ class SessionInteractor {
 
   /// Hydrates the authenticated context after a remote session appears:
   /// consent, profile, matching membership, and the school's active term.
-  Future<Result<StudafyRole>> completeRemoteLogin({
+  Future<Result<LoginOutcome>> completeRemoteLogin({
     required StudafyRole role,
     required bool consentAccepted,
     required String locale,
@@ -110,14 +128,32 @@ class SessionInteractor {
         await repository.recordTermsConsent(locale: locale);
       }
       final profile = await repository.currentProfile();
-      final membership = profile?.memberships
+      // No profile at all means the identity itself did not resolve, which is
+      // a real failure. No membership does not: it is what every account looks
+      // like before its first class, and the session must survive so that
+      // onboarding can use it.
+      if (profile == null) {
+        await repository.signOut();
+        throw Failure.validation('This account could not be loaded.');
+      }
+      final membership = profile.memberships
           .where((item) => item.active && item.role == role)
           .firstOrNull;
-      if (profile == null || membership == null) {
-        await repository.signOut();
-        throw Failure.validation(
-          'This account does not have the selected school role.',
+      if (membership == null) {
+        // Having no row for this role and having a withdrawn one are opposite
+        // situations. The first is every new account, and onboarding is the
+        // answer. The second is a suspension or a revocation - somebody
+        // decided this person is out - and keeping a live session for them
+        // would turn a moderation decision into a way back in. Deny it.
+        final withdrawn = profile.memberships.any(
+          (item) => !item.active && item.role == role,
         );
+        if (withdrawn) {
+          await repository.signOut();
+          throw Failure.validation('This account no longer has access.');
+        }
+        context.hydrate(authenticatedProfile: profile);
+        return LoginOutcome.needsOnboarding;
       }
       final term = await repository.activeTermForSchool(
         SchoolId(membership.schoolId),
@@ -127,14 +163,18 @@ class SessionInteractor {
         activeMembership: membership,
         termId: term?.id.value,
       );
-      return role;
+      return LoginOutcome.ready;
     });
     result.fold(
-      onSuccess: (authenticatedRole) {
-        _setStatus(SessionStatus.authenticated);
-        telemetry.event('session_authenticated', {
-          'role': authenticatedRole.name,
-        });
+      onSuccess: (outcome) {
+        switch (outcome) {
+          case LoginOutcome.ready:
+            _setStatus(SessionStatus.authenticated);
+            telemetry.event('session_authenticated', {'role': role.name});
+          case LoginOutcome.needsOnboarding:
+            _setStatus(SessionStatus.onboarding);
+            telemetry.event('session_onboarding_required', {'role': role.name});
+        }
       },
       onFailure: (failure) {
         _setStatus(SessionStatus.signedOut);
@@ -165,10 +205,16 @@ class SessionInteractor {
   Future<void> signOut({
     SignOutScope scope = SignOutScope.currentDevice,
   }) async {
-    await repository.signOut(scope: scope);
-    context.signOut();
-    _setStatus(SessionStatus.signedOut);
-    telemetry.event('session_signed_out', {'scope': scope.name});
+    // The local clearing is in a finally because an all-device sign-out
+    // rethrows when the server never set the watermark. This device is signed
+    // out regardless; the caller decides how to report the rest.
+    try {
+      await repository.signOut(scope: scope);
+    } finally {
+      context.signOut();
+      _setStatus(SessionStatus.signedOut);
+      telemetry.event('session_signed_out', {'scope': scope.name});
+    }
   }
 
   // --------------------------------------------------------------------

@@ -73,6 +73,10 @@ class AppL10nAr extends AppL10n {
   String get securitySignOutEverywhere => 'تسجيل الخروج من كل الأجهزة';
 
   @override
+  String get securitySignOutEverywhereFailed =>
+      'تم تسجيل الخروج من هذا الجهاز، لكن تعذّر الوصول إلى أجهزتك الأخرى. حاول مرة أخرى من جهاز مسجَّل الدخول.';
+
+  @override
   String get securityTwoFactorHeading => 'تسجيل الدخول بخطوتين';
 
   @override
@@ -239,7 +243,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get policyPrivacyBody =>
-      'تستخدم ستودافاي بيانات الحساب والمدرسة والفصل والحضور والتواصل لتقديم الخدمة وتأمينها فقط. تتحكم المدارس في سجلات الطلاب. لا نبيع البيانات الشخصية. تواصل مع مدرستك للاطلاع على السجلات المؤهَّلة أو تصحيحها أو حذفها.';
+      'ما الذي نجمعه\nاسمك وبريدك الإلكتروني من مزوّد تسجيل الدخول الذي تختاره؛ المدرسة أو الصف الذي تنتمي إليه ودورك فيه؛ الواجبات المطلوبة منك وما تسلّمه، ودرجاتك وحضورك وملاحظات الرعاية؛ الرسائل والإعلانات والاجتماعات داخل التطبيق؛ والملفات التي ترفعها؛ وإعدادات الإشعارات.\n\nلماذا\nلتشغيل صفوفك، وحماية حسابك، وإدارة الاشتراكات، والوفاء بالالتزامات القانونية. لا نبيع البيانات الشخصية. لا نعرض أي إعلانات. ولا نستخدم بياناتك لتدريب أي نموذج ذكاء اصطناعي.\n\nمساعد الدراسة\nإذا استخدمت مساعد الدراسة، يُرسل السؤال الذي تكتبه إلى شركة ذكاء اصطناعي خارج ستودافاي للإجابة عليه. لا يُرسل اسمك ولا مدرستك ولا درجاتك ولا أعمالك ولا رسائلك. قد تكون الإجابات خاطئة، فتحقق من أي شيء تسلّمه. استخدام المساعد اختياري.\n\nمن يرى أعمالك\nالعاملون في مدرستك ممن يقتضي دورهم ذلك، وولي الأمر المرتبط بك. لا يستطيع الطلاب الآخرون الاطلاع على درجاتك أو أعمالك المسلَّمة أو رسائلك الخاصة. تُخزَّن الرسائل على خوادمنا وليست مشفّرة طرفًا إلى طرف.\n\nأولياء الأمور والأبناء\nيطلب ولي الأمر الارتباط بالطالب، ويوافق الطالب أو يرفض من جهازه. يستطيع ولي الأمر متابعة التقدّم، ولا يُمنح رسائلك الخاصة.\n\nالمدفوعات\nتُحصَّل الاشتراكات عبر Apple أو Google وفق شروطهما. لا نطّلع على بطاقتك إطلاقًا.\n\nمن يعالج البيانات أيضًا\nتستضيف Supabase قاعدة البيانات وتسجيل الدخول والملفات؛ وتستضيف Amazon Web Services التطبيق وسجلاته التقنية؛ ويحفظ Redis عدادات قصيرة الأجل؛ وتتحقق Google وMicrosoft وApple من تسجيل الدخول؛ وتشغّل Cloudflare فحص الروبوتات؛ وترسل Resend البريد وترسل Firebase الإشعارات. ويعمل كل منهم وفق تعليماتنا فقط.\n\nأين تُعالَج بياناتك\nقد تُعالَج بياناتك خارج بلدك، بما في ذلك خارج المنطقة الاقتصادية الأوروبية، محميةً بالبنود التعاقدية القياسية أو بقرار كفاية.\n\nما لا يمكننا حذفه\nسجلات الإجراءات المهمة تُضاف ولا تُعدَّل ولا تُحذف، ولا حتى من قِبلنا. وكثيرًا ما تكون المدارس ملزمة بالاحتفاظ بسجلات الحضور والتقييم وحماية الطفل. يعرض التطبيق السجلات التي تبقى لدى مدرستك قبل تأكيد الحذف.\n\nكيف نحميها\nيُفرض الوصول إلى بيانات كل مدرسة داخل قاعدة البيانات نفسها. وتُزال الأسرار من السجلات. وتُخزَّن عناوين IP كبصمة أحادية الاتجاه فقط. وتتطلب حسابات المسؤولين تسجيل دخول بخطوتين. وتُفحص الملفات قبل السماح بتنزيلها.\n\nحقوقك\nيمكنك طلب نسخة من بياناتك أو تصحيحها أو حذف حسابك أو تقييد المعالجة أو الاعتراض عليها أو سحب موافقتك. يوجد حذف الحساب وتصدير البيانات في إعدادات الحساب، ويمكن إلغاء الحذف خلال ١٤ يومًا. ويمكنك تقديم شكوى إلى لجنة حماية البيانات في أيرلندا في أي وقت.\n\nإذا كانت مدرستك هي المتحكم في سجلاتك، فاسأل مدرستك أولًا؛ وسننقل طلبك إليها ونخبرك بذلك.';
 
   @override
   String get policyTermsBody =>
@@ -623,7 +627,7 @@ class AppL10nAr extends AppL10n {
   String get attendanceSave => 'حفظ الحضور';
 
   @override
-  String get notebookTitle => 'دفتر الدرس';
+  String get notebookTitle => 'دفتر دروسي';
 
   @override
   String get notebookLessonLabel => 'الدرس الذي شُرح';
@@ -1132,6 +1136,9 @@ class AppL10nAr extends AppL10n {
   String get submissionsWaiting => 'لم يُسلَّم';
 
   @override
+  String get submissionsByGuardian => 'سلّمه أحد الوالدين';
+
+  @override
   String submissionsOn(String when) {
     return 'سُلّم $when';
   }
@@ -1237,4 +1244,366 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get joinLinkNewReplaces => 'إنشاء رابط جديد يحلّ محلّ هذا الرابط.';
+
+  @override
+  String get notebookActive => 'اشتراك الدفتر مفعّل';
+
+  @override
+  String get notebookManage => 'إدارة';
+
+  @override
+  String get notebookRefresh => 'تحديث';
+
+  @override
+  String get notebookHeroEyebrow => 'كل ما تتعلمه في مكان واحد';
+
+  @override
+  String get notebookHeroTitle => 'مساحة لكل درس.';
+
+  @override
+  String get notebookHeroSubtitle =>
+      'احتفظ بملاحظات معلميك ومواد دروسك في متناولك.';
+
+  @override
+  String get notebookPlanName => 'الدفتر · اشتراك شهري';
+
+  @override
+  String notebookPricePerMonth(String price) {
+    return '$price / شهر';
+  }
+
+  @override
+  String notebookTrialThenPrice(String price) {
+    return 'شهر مجاني، ثم $price شهريًا.';
+  }
+
+  @override
+  String get notebookNoTrial =>
+      'يتجدد شهريًا. لم يتم تأكيد فترة مجانية لحساب المتجر هذا.';
+
+  @override
+  String get notebookPriceUnconfirmed => 'يؤكّد متجرك السعر قبل الاشتراك.';
+
+  @override
+  String get notebookPriceUnconfirmedDetail =>
+      'شهر تجريبي مجاني مقرر للمشتركين الجدد المؤهلين. يجب أن يؤكد المتجر السعر المحلي والأهلية قبل الاشتراك.';
+
+  @override
+  String get notebookScope =>
+      'هذا الاشتراك مطلوب للدفتر فقط. تبقى واجباتك ودرجاتك ورسائلك متاحة.';
+
+  @override
+  String get notebookStatusUnavailable =>
+      'تعذّر التحقق من اشتراكك. أعد المحاولة للتحقق من الوصول.';
+
+  @override
+  String get notebookSelfPurchaseDisabled =>
+      'شراء الاشتراكات غير مفعّل لحسابك حتى الآن.';
+
+  @override
+  String get notebookApprovalRequired =>
+      'يجب أن يوافق ولي أمرك المرتبط قبل الاشتراك. الموافقة لا تبدأ التجربة ولا تخصم أي مبلغ.';
+
+  @override
+  String get notebookApprovalRequestSent =>
+      'أُرسل الطلب. يمكن لولي أمرك الموافقة من صفحته الرئيسية.';
+
+  @override
+  String get notebookApprovalWaiting => 'بانتظار موافقة ولي الأمر';
+
+  @override
+  String get notebookApprovalAsk => 'طلب موافقة ولي أمري';
+
+  @override
+  String get notebookPurchaseStarted =>
+      'أكمل خطوات المتجر. يبدأ الوصول بعد التحقق من الشراء؛ حدّث الصفحة عند الحاجة.';
+
+  @override
+  String get notebookStartFreeMonth => 'ابدأ شهري المجاني';
+
+  @override
+  String get notebookSubscribeMonthly => 'اشترك شهريًا';
+
+  @override
+  String get notebookCheckoutUnavailable =>
+      'يتاح الدفع بعد توفر شروط المتجر والموافقة وسياسات الاشتراك.';
+
+  @override
+  String get notebookRestoreRequested =>
+      'طُلبت استعادة المشتريات. يظهر الوصول بعد تحقق المتجر.';
+
+  @override
+  String get notebookRestore => 'استعادة المشتريات';
+
+  @override
+  String get notebookManageOrCancel => 'إدارة الاشتراك أو إلغاؤه';
+
+  @override
+  String get notebookRenewalDisclosure =>
+      'اشتراك يتجدد تلقائيًا. تُحصّل الدفعات عبر حساب Apple أو Google. عند توفر تجربة مجانية، يبدأ الدفع بعد انتهائها. ألغِ من إعدادات المتجر قبل التجديد أو نهاية التجربة بـ٢٤ ساعة على الأقل لتجنب الدفعة التالية. حذف التطبيق لا يلغي الاشتراك.';
+
+  @override
+  String get notebookTermsOfUse => 'شروط الاستخدام';
+
+  @override
+  String get notebookPrivacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get notebookActionFailed =>
+      'تعذّر إكمال هذه الخطوة. تحقق من اتصالك وربط ولي أمرك ثم حاول مجددًا.';
+
+  @override
+  String get notebookOpenPageFailed => 'تعذّر فتح الصفحة.';
+
+  @override
+  String get joinClassTitle => 'الانضمام إلى صف';
+
+  @override
+  String get joinClassPrompt => 'الصق رابط الصف الذي شاركه معك معلمك.';
+
+  @override
+  String get joinClassField => 'رابط الصف';
+
+  @override
+  String get joinClassAction => 'انضم إلى الصف';
+
+  @override
+  String get joinClassBusy => 'جارٍ الانضمام…';
+
+  @override
+  String get joinClassInvalid => 'لا يبدو هذا رابط صف صحيحًا.';
+
+  @override
+  String joinClassDone(String className) {
+    return 'أنت الآن في $className';
+  }
+
+  @override
+  String get joinClassContinue => 'تم';
+
+  @override
+  String get onboardingStudentTitle => 'انضم إلى صفك الأول';
+
+  @override
+  String get onboardingStudentBody =>
+      'اطلب رابط الصف من معلمك، ثم الصقه هنا للبدء.';
+
+  @override
+  String get onboardingParentTitle => 'اربط حسابك بابنك';
+
+  @override
+  String get onboardingParentBody =>
+      'اطلب من ابنك معرّف Studafy الخاص به. سيوافق على الطلب من جهازه، فلا يطّلع أحد غيره على أعماله.';
+
+  @override
+  String get onboardingParentAction => 'متابعة';
+
+  @override
+  String get onboardingTeacherTitle => 'حسابات المعلمين على وشك الجاهزية';
+
+  @override
+  String get onboardingTeacherBody =>
+      'إنشاء الصفوف من حساب معلم جديد غير مفعّل بعد. يرجى المحاولة بعد قليل.';
+
+  @override
+  String get onboardingTeacherReadyTitle => 'جهّز مساحتك للتدريس';
+
+  @override
+  String get onboardingTeacherReadyBody =>
+      'سنجهّز كل شيء لتتمكن من إنشاء صفك الأول ودعوة الطلاب إليه.';
+
+  @override
+  String get onboardingTeacherReadyAction => 'لنبدأ';
+
+  @override
+  String get onboardingNotReadyYet =>
+      'حسابك جاهز، لكن تعذّر فتحه الآن. حاول مرة أخرى من فضلك.';
+
+  @override
+  String get onboardingChangeRole => 'اختر دورًا آخر';
+
+  @override
+  String get onboardingSignOut => 'تسجيل الخروج';
+
+  @override
+  String get studyAssistantTitle => 'مساعد الدراسة';
+
+  @override
+  String get studyAssistantIntro =>
+      'اسأل عن أي شيء تدرسه واحصل على شرح. يُرسل سؤالك إلى خدمة ذكاء اصطناعي للإجابة عليه، لذا لا تذكر اسمك أو مدرستك أو أي معلومات خاصة.';
+
+  @override
+  String get studyAssistantField => 'سؤالك';
+
+  @override
+  String get studyAssistantAsk => 'اسأل';
+
+  @override
+  String get studyAssistantBusy => 'جارٍ التفكير…';
+
+  @override
+  String get studyAssistantCheckWork =>
+      'قد تكون الإجابات خاطئة. تحقق من أي شيء تسلّمه.';
+
+  @override
+  String studyAssistantRemaining(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بقي $count سؤال اليوم',
+      many: 'بقي $count سؤالًا اليوم',
+      few: 'بقيت $count أسئلة اليوم',
+      two: 'بقي سؤالان اليوم',
+      one: 'بقي سؤال واحد اليوم',
+      zero: 'لم تتبقَ أسئلة اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studyAssistantTab => 'المساعد';
+
+  @override
+  String get joinClassAlreadyStaff =>
+      'أنت معلم في هذه المدرسة، لذا لا يمكنك الانضمام إلى أحد صفوفها كطالب. اطلب من طالب فتح الرابط من حسابه.';
+
+  @override
+  String get academicAllClasses => 'كل الصفوف';
+
+  @override
+  String get insightsTitle => 'العائلة+';
+
+  @override
+  String get insightsUnavailableTitle => 'التحليلات غير متاحة';
+
+  @override
+  String get insightsUnavailableBody =>
+      'تحتاج إلى اشتراك العائلة+ لعرض التحليلات التفصيلية، ويجب أن يكون ارتباطك بابنك مُعتمدًا.';
+
+  @override
+  String get insightsNothingYetTitle => 'لا يوجد ما نعرضه بعد';
+
+  @override
+  String get insightsNothingYetBody =>
+      'مع تسجيل المدرسة للدرجات والحضور والأعمال، ستظهر التحليلات هنا. نعرض ما تُظهره السجلات فعلًا فقط.';
+
+  @override
+  String get insightsBySubject => 'حسب المادة';
+
+  @override
+  String get insightsComingUp => 'القادم';
+
+  @override
+  String get insightsFromSchool => 'من المدرسة';
+
+  @override
+  String get insightsAverage => 'المعدل';
+
+  @override
+  String get insightsAttendance => 'الحضور';
+
+  @override
+  String get insightsOnTime => 'في الوقت';
+
+  @override
+  String insightSubjectFocus(Object subject) {
+    return '$subject هي أضعف مواده حاليًا';
+  }
+
+  @override
+  String insightTrendDown(Object subject) {
+    return 'درجات $subject في تراجع';
+  }
+
+  @override
+  String insightTrendUp(Object subject) {
+    return 'درجات $subject في تحسّن';
+  }
+
+  @override
+  String insightRecovery(Object subject) {
+    return 'تحسّنت $subject من جديد';
+  }
+
+  @override
+  String get insightHomework => 'مدى الالتزام بتسليم الأعمال';
+
+  @override
+  String get insightHomeworkSlipping => 'يتأخر تسليم الأعمال أكثر من السابق';
+
+  @override
+  String get insightAttendancePattern =>
+      'تتكرر الغيابات في اليوم نفسه من الأسبوع';
+
+  @override
+  String get insightDueSoon => 'أعمال يقترب موعدها ولم تُسلَّم';
+
+  @override
+  String get insightStrengthInsufficient => 'السجلات غير كافية بعد للتأكيد';
+
+  @override
+  String get insightStrengthLow => 'بناءً على عدد قليل من السجلات';
+
+  @override
+  String get insightStrengthMedium => 'بناءً على عدد معقول من السجلات';
+
+  @override
+  String get insightStrengthHigh => 'بناءً على عدد كبير من السجلات';
+
+  @override
+  String insightsDueOn(String date) {
+    return 'الموعد $date';
+  }
+
+  @override
+  String insightsFromMarks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count درجة',
+      many: 'من $count درجة',
+      few: 'من $count درجات',
+      two: 'من درجتين',
+      one: 'من درجة واحدة',
+      zero: 'لا توجد درجات بعد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsAbsences(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count غياب',
+      many: '$count غيابًا',
+      few: '$count غيابات',
+      two: 'غيابان',
+      one: 'غياب واحد',
+      zero: 'لا غيابات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsOfTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count عمل',
+      many: 'من $count عملًا',
+      few: 'من $count أعمال',
+      two: 'من عملين',
+      one: 'من عمل واحد',
+      zero: 'لا توجد أعمال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get insightsNoChildTitle => 'اختر ابنًا أولًا';
+
+  @override
+  String get insightsNoChildBody =>
+      'اختر أحد أبنائك من الصفحة الرئيسية لعرض تحليلاته.';
 }

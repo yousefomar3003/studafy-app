@@ -22,7 +22,12 @@ import {
 } from "./verify";
 import { type AuthDenialReason, denyUnauthenticated } from "./errors";
 import { problem } from "../platform/errors";
+// Defined at the platform layer because the access log needs it too; re-exported
+// here so the auth call sites and their tests keep their existing import path.
+import { userAgentFamily } from "../platform/middleware";
 import type { PlatformEnv } from "../platform/types";
+
+export { userAgentFamily };
 
 export interface Actor {
   token: VerifiedToken;
@@ -97,16 +102,6 @@ function tokenRejectionReason(error: unknown): AuthDenialReason {
     }
   }
   return "jwks_unavailable";
-}
-
-/** Coarse client family. Never the full user-agent, which is identifying. */
-export function userAgentFamily(header: string | undefined | null): string {
-  if (!header) return "unknown";
-  if (/Dart|Flutter/i.test(header)) return "flutter";
-  if (/Android/i.test(header)) return "android";
-  if (/iPhone|iPad|CFNetwork|Darwin/i.test(header)) return "ios";
-  if (/Mozilla/i.test(header)) return "browser";
-  return "other";
 }
 
 export function createAuthMiddleware(

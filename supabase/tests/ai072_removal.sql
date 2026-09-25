@@ -98,8 +98,15 @@ select throws_like($$
   values('11111111-1111-4111-8111-111111111111','bbbb0000-0000-4000-8000-000000000002','coach_attachment',1024,
     array['application/pdf'],repeat('b',64),now()+interval '1 hour','abcf0000-0000-4000-8000-000000000008')
 $$, '%ai072_coach_attachment_retired%', 'no upload session can carry the retired purpose');
-select ok((select count(*) from public.file_purpose_policies where enabled and purpose<>'coach_attachment')=5,
-  'the five non-AI upload purposes are unaffected');
+-- The enabled set by name rather than by count: the point is that AI-072
+-- retired exactly one purpose and disturbed no other, which a bare number
+-- stops proving the moment a new upload purpose is added.
+select set_eq(
+  $$ select purpose::text from public.file_purpose_policies where enabled $$,
+  $$ values ('profile_image'),('lesson_resource'),('assignment_material'),
+            ('assignment_submission'),('paper_scan'),
+            ('message_attachment'),('announcement_attachment') $$,
+  'every non-AI upload purpose stays enabled and coach_attachment does not');
 
 -- 5. Neither AI product can be offered or re-activated.
 select is((select count(*) from public.store_products

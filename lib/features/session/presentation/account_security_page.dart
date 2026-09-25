@@ -138,7 +138,19 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    await widget.session.signOut(scope: SignOutScope.allDevices);
+    final messenger = ScaffoldMessenger.of(context);
+    final failedText = AppL10n.of(context).securitySignOutEverywhereFailed;
+    // This device is cleared either way. Only the other devices are in doubt,
+    // and saying so is better than a button that looks like it did nothing.
+    var reachedServer = true;
+    try {
+      await widget.session.signOut(scope: SignOutScope.allDevices);
+    } catch (_) {
+      reachedServer = false;
+    }
+    if (!reachedServer) {
+      messenger.showSnackBar(SnackBar(content: Text(failedText)));
+    }
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }

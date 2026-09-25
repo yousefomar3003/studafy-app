@@ -18,6 +18,7 @@ void main() {
   Widget harness(
     NotificationsRepository repository, {
     Locale locale = const Locale('en'),
+    bool visible = true,
   }) => MaterialApp(
     locale: locale,
     supportedLocales: StudafyLocalizations.supportedLocales,
@@ -33,9 +34,34 @@ void main() {
         repository: repository,
         telemetry: const NoopTelemetry(),
       ),
-      child: const NotificationsPage(),
+      child: NotificationsPage(visible: visible),
     ),
   );
+
+  testWidgets('a hidden tab does not load, and loads when it is shown', (
+    tester,
+  ) async {
+    // The shells keep every tab alive in an IndexedStack, so a page that
+    // only loads in initState shows whatever was true when the app started:
+    // a notification that arrived since launch stayed invisible until the
+    // app was killed.
+    final repository = _FakeRepository(items: []);
+
+    await tester.pumpWidget(harness(repository, visible: false));
+    await tester.pumpAndSettle();
+    expect(repository.loads, 0);
+    // Not a spinner: nothing is loading, so one would never stop.
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    await tester.pumpWidget(harness(repository, visible: true));
+    await tester.pumpAndSettle();
+    expect(repository.loads, 1);
+
+    // Staying visible must not re-request on every rebuild elsewhere.
+    await tester.pumpWidget(harness(repository, visible: true));
+    await tester.pumpAndSettle();
+    expect(repository.loads, 1);
+  });
 
   testWidgets('an empty feed shows the empty state, not a blank screen', (
     tester,
@@ -169,13 +195,18 @@ class _FakeRepository implements NotificationsRepository {
   final bool isFromCache;
   final markReadCalls = <({List<String> ids, bool all})>[];
 
+  /// First-page reads only, so a test can tell a reload from a rebuild.
+  int loads = 0;
+
   @override
-  Future<NotificationPage> list({String? cursor, int pageSize = 20}) async =>
-      NotificationPage(
-        items: List.of(_items),
-        nextCursor: null,
-        isFromCache: isFromCache,
-      );
+  Future<NotificationPage> list({String? cursor, int pageSize = 20}) async {
+    if (cursor == null) loads++;
+    return NotificationPage(
+      items: List.of(_items),
+      nextCursor: null,
+      isFromCache: isFromCache,
+    );
+  }
 
   @override
   Future<int> unreadCount() async =>

@@ -56,6 +56,23 @@ export const apiEnvSchema = z.object({
   DATABASE_URL: url.optional(),
   REDIS_URL: url.optional(),
   LOG_LEVEL: LogLevelSchema.default("info"),
+  // CloudWatch shipping is opt-in: both must be set or the API logs only to
+  // stdout. Credentials are never configuration — the AWS SDK resolves them
+  // from the task/instance role.
+  AWS_REGION: z.string().min(1).optional(),
+  AWS_LOG_GROUP: z.string().min(1).optional(),
+  // The study assistant. Off unless the key is present, so a build without
+  // one simply has no AI surface rather than a broken tab.
+  //
+  // AI_BASE_URL is an allowlist of exactly one origin, not a convenience.
+  // ADR-0026 records what the previous integration did without one: it
+  // forwarded lesson material to whatever a URL variable happened to name.
+  // Validated as a URL here so a typo cannot silently redirect egress.
+  AI_API_KEY: z.string().min(1).optional(),
+  AI_BASE_URL: z.url().optional(),
+  AI_MODEL: z.string().min(1).default("Qwen/Qwen3.5-9B"),
+  /** Questions one student may ask per day. */
+  AI_DAILY_QUESTION_LIMIT: z.coerce.number().int().min(1).max(500).default(30),
   API_ALLOWED_ORIGINS: origins,
   API_MAX_BODY_BYTES: z.coerce.number().int().min(1024).max(1024 * 1024)
     .default(64 * 1024),
@@ -514,6 +531,15 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
     redis_url: env.REDIS_URL ? redactUrl(env.REDIS_URL) : null,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
+    aws_region: env.AWS_REGION ?? null,
+    cloudwatch_configured: Boolean(env.AWS_REGION && env.AWS_LOG_GROUP),
+    ai: {
+      // Never the key itself, and never the model's own output.
+      enabled: Boolean(env.AI_API_KEY && env.AI_BASE_URL),
+      base_url: env.AI_BASE_URL ?? null,
+      model: env.AI_MODEL,
+      daily_question_limit: env.AI_DAILY_QUESTION_LIMIT,
+    },
     auth_jwt_audience: env.AUTH_JWT_AUDIENCE,
     auth_clock_skew_seconds: env.AUTH_CLOCK_SKEW_SECONDS,
     auth_revocation_budget_seconds: env.AUTH_REVOCATION_BUDGET_SECONDS,

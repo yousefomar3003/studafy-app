@@ -67,6 +67,7 @@ class _Fake implements MessagingRepository, SafetyRepository {
     String conversationId,
     String body, {
     required String clientMessageId,
+    List<String> attachmentFileIds = const [],
   }) async {
     sentClientIds.add(clientMessageId);
     if (failNextSend) {

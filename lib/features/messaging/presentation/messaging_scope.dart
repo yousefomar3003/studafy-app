@@ -30,11 +30,20 @@ class MessagingScope extends InheritedWidget {
       interactor != oldWidget.interactor;
 }
 
-/// The signed-in person and their active school, from the session context.
-({String userId, String schoolId})? messagingIdentity() {
+/// The signed-in person and the school they are acting in, if any.
+///
+/// The school is nullable on purpose. Listing and reading conversations is
+/// self-scoped and spans every school (`conversation.list` is not tenant
+/// bound), so it needs no school at all; only picking new recipients and
+/// starting a conversation do, because the contact policy is per school.
+///
+/// Requiring a school here is what made messaging dead for guardians: they
+/// hold no membership, so this returned null and the page rendered "no
+/// school" instead of the conversations the server was perfectly willing to
+/// serve them.
+({String userId, String? schoolId})? messagingIdentity() {
   final context = ActiveContextController.instance;
   final userId = context.profile?.id;
-  final schoolId = context.membership?.schoolId;
-  if (userId == null || schoolId == null) return null;
-  return (userId: userId, schoolId: schoolId);
+  if (userId == null) return null;
+  return (userId: userId, schoolId: context.activeSchoolId);
 }

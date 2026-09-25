@@ -1,7 +1,8 @@
-import type { MiddlewareHandler } from "hono";
+import type { Context, MiddlewareHandler } from "hono";
 import type { EnvironmentType } from "@studafy/config";
 import type { Logger } from "@studafy/observability";
 import { problem } from "./errors";
+import { hmacSubject } from "./rate-limit/policies";
 import {
   DEFAULT_PLATFORM_LIMITS,
   type PlatformEnv,
@@ -236,9 +237,53 @@ export function totalTimeout(
   };
 }
 
+/** Coarse client family. Never the full user-agent, which is identifying. */
+export function userAgentFamily(header: string | undefined | null): string {
+  if (!header) return "unknown";
+  if (/Dart|Flutter/i.test(header)) return "flutter";
+  if (/Android/i.test(header)) return "android";
+  if (/iPhone|iPad|CFNetwork|Darwin/i.test(header)) return "ios";
+  if (/Mozilla/i.test(header)) return "browser";
+  return "other";
+}
+
+/**
+ * Identity fields added to the access log.
+ *
+ * The address is never logged raw. It is keyed-HMAC'd exactly as
+ * `auth_security_events.ip_hash` is, so one client stays correlatable across
+ * requests without the log carrying network-level personal data.
+ */
+export interface RequestIdentityOptions {
+  /** Absent disables `ip_hash`; an unkeyed digest would be reversible. */
+  hmacKey?: string;
+  /** Production sits behind Cloudflare, where only its header is trustworthy. */
+  trustCloudflare?: boolean;
+}
+
+/** The authenticated actor, read defensively: `PlatformEnv` does not type it. */
+function subjectOf(c: Context<PlatformEnv>): string | null {
+  const actor = (c as unknown as Context).get("actor") as
+    | { token?: { subject?: unknown } }
+    | undefined;
+  const subject = actor?.token?.subject;
+  return typeof subject === "string" && subject.length > 0 ? subject : null;
+}
+
+function clientAddress(
+  c: Context<PlatformEnv>,
+  trustCloudflare: boolean,
+): string | null {
+  const cloudflare = c.req.header("cf-connecting-ip");
+  if (trustCloudflare) return cloudflare ?? null;
+  return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? cloudflare ??
+    null;
+}
+
 export function requestTelemetry(
   logger: Logger,
   now: () => number = Date.now,
+  identity: RequestIdentityOptions = {},
 ): MiddlewareHandler<PlatformEnv> {
   return async (c, next) => {
     let threw = false;
@@ -249,6 +294,10 @@ export function requestTelemetry(
       throw error;
     } finally {
       const status = threw ? 500 : c.res.status;
+      // Read after next(): authentication runs downstream, so the actor only
+      // exists by the time the response is being logged.
+      const subject = subjectOf(c);
+      const address = clientAddress(c, identity.trustCloudflare ?? false);
       logger.info("http_request_completed", {
         request_id: c.get("requestId"),
         method: c.req.method,
@@ -256,6 +305,11 @@ export function requestTelemetry(
         status,
         duration_ms: Math.max(0, now() - c.get("requestStartedAt")),
         outcome: status >= 500 ? "error" : status >= 400 ? "denied" : "ok",
+        user_id: subject,
+        ip_hash: address && identity.hmacKey
+          ? hmacSubject(identity.hmacKey, "log_ip", address)
+          : null,
+        ua_family: userAgentFamily(c.req.header("user-agent")),
       });
     }
   };

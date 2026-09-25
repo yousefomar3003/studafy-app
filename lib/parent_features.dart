@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'core/studafy_design.dart';
 import 'core/language_picker.dart';
 import 'core/studafy_domain.dart';
+import 'l10n/generated/app_l10n.dart';
+import 'features/family_insights/application/family_insights_interactor.dart';
+import 'features/family_insights/presentation/family_insights_page.dart';
 import 'core/studafy_localizations.dart';
 import 'student_linking.dart';
 import 'app/account_hub_page.dart';
@@ -17,6 +20,7 @@ import 'features/messaging/presentation/conversations_page.dart';
 import 'features/notifications/presentation/notifications_page.dart';
 import 'features/parent/domain/parent_subscription_repository.dart';
 import 'features/parent/presentation/parent_repository_scope.dart';
+import 'features/academic/presentation/submit_work_page.dart';
 
 part 'features/parent/presentation/parent_shell.dart';
 part 'features/parent/presentation/parent_home.dart';

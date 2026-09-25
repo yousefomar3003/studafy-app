@@ -35,6 +35,9 @@ import * as SupportAccess from "./supportAccess";
 import * as Safety from "./safety";
 import * as Files from "./files";
 import * as Billing from "./billing";
+import * as Onboarding from "./onboarding";
+import * as StudyAssistant from "./studyAssistant";
+import * as FamilyInsights from "./familyInsights";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -1543,6 +1546,55 @@ export const V1_ROUTE_CATALOGUE = [
     "V1GuardianLink",
     200,
     guardianLinkParams(),
+  ),
+  // Self-serve teacher sign-up. Appended for the reason stated above the
+  // JOIN-052 block: groups are mounted by index into this array, so an
+  // insertion anywhere higher silently remounts everything after it.
+  //
+  // Mounted under /v1/onboarding rather than /v1/schools deliberately. The
+  // rate-limit registry maps POSTs beginning /v1/schools to the adminApi
+  // flow - 120 per five minutes, keyed by account - which is a sensible
+  // budget for an administrator editing their own school and far too loose
+  // for an endpoint that mints tenants and that any signed-in account may
+  // call. Its own path keeps it on its own, stricter, ip-keyed budget.
+  academicPost(
+    "createTeacherWorkspace",
+    "/v1/onboarding/teacher-workspace",
+    "onboarding.teacher_workspace",
+    Onboarding.V1CreateTeacherWorkspaceRequest,
+    "V1CreateTeacherWorkspaceRequest",
+    Onboarding.V1CreateTeacherWorkspaceResponse,
+    "V1CreateTeacherWorkspaceResponse",
+    201,
+  ),
+  // The study assistant. Appended for the same reason as everything above it.
+  //
+  // scope "self" and no tenant: a student who has not joined a class yet can
+  // still study, and the endpoint reads nothing that belongs to a school.
+  academicPost(
+    "askStudyAssistant",
+    "/v1/study-assistant/ask",
+    "study_assistant.ask",
+    StudyAssistant.V1StudyAssistantAskRequest,
+    "V1StudyAssistantAskRequest",
+    StudyAssistant.V1StudyAssistantAskResponse,
+    "V1StudyAssistantAskResponse",
+    200,
+  ),
+  // Family+ : paid insights about a linked child. Appended, never inserted -
+  // route groups are mounted by index into this array.
+  //
+  // One request replaces the twenty round trips the client used to make, and
+  // the entitlement is checked in SQL so the paywall cannot be removed by
+  // editing the app.
+  academicGet(
+    "getFamilyInsights",
+    "/v1/family/insights",
+    "family_insights.read",
+    FamilyInsights.V1FamilyInsightsResponse,
+    "V1FamilyInsightsResponse",
+    undefined,
+    FamilyInsights.V1FamilyInsightsQuery,
   ),
 ] as const satisfies readonly V1RouteContract[];
 

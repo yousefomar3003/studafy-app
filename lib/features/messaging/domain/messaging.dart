@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/file_upload_repository.dart';
+
 /// Coarse role of a person in a school conversation. Display-only: the
 /// server decides who may contact whom (DL-049 contact policy).
 enum MessagingRole { staff, student, guardian }
@@ -65,6 +67,7 @@ class ChatMessage {
     required this.senderId,
     required this.body,
     required this.createdAt,
+    this.attachments = const [],
   });
 
   final String id;
@@ -72,6 +75,10 @@ class ChatMessage {
   final String senderId;
   final String body;
   final DateTime createdAt;
+
+  /// Files sent with this message. Readable by whoever is still in the
+  /// conversation, and by nobody else.
+  final List<StoredAttachment> attachments;
 }
 
 /// One page of messages, newest first; [nextCursor] loads older ones.
@@ -145,11 +152,17 @@ class AnnouncementDraft {
     this.classroomId,
     this.audience = AnnouncementAudience.both,
     this.important = false,
+    this.attachmentFileIds = const [],
   });
 
   final String schoolId;
   final String title;
   final String body;
+
+  /// The author's own completed uploads of purpose
+  /// `announcement_attachment`. The server binds them to the announcement and
+  /// refuses any that are not theirs.
+  final List<String> attachmentFileIds;
 
   /// Null posts to the whole school, which only an administrator may do. A
   /// teacher names one of their own classrooms.
@@ -171,6 +184,7 @@ class Announcement {
     required this.important,
     required this.createdAt,
     this.classroomId,
+    this.attachments = const [],
   });
 
   final String id;
@@ -178,6 +192,9 @@ class Announcement {
   final String body;
   final bool important;
   final DateTime createdAt;
+
+  /// Files posted with it, readable by anyone who can see the announcement.
+  final List<StoredAttachment> attachments;
   final String? classroomId;
 }
 
@@ -193,6 +210,7 @@ abstract interface class MessagingRepository {
     String conversationId,
     String body, {
     required String clientMessageId,
+    List<String> attachmentFileIds = const [],
   });
 
   Future<List<MessagingContact>> contacts(String schoolId);

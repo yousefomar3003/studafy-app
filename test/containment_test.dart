@@ -30,11 +30,25 @@ void main() {
       expect(() => RuntimePolicy.parse(''), throwsFormatException);
     });
 
-    test('capabilities fail closed in every environment', () {
+    test('AI grading stays off in every environment', () {
+      // ADR-0026 removed it. No later change may turn this on as a side
+      // effect of enabling something else.
       for (final environment in StudafyEnvironment.values) {
-        final policy = RuntimePolicy(environment);
-        expect(policy.allowsAiGrading, isFalse);
-        expect(policy.allowsRemoteFileUploads, isFalse);
+        expect(RuntimePolicy(environment).allowsAiGrading, isFalse);
+      }
+    });
+
+    test('uploads are on everywhere except production', () {
+      // FILE-050/051 shipped the scanning and delivery pipeline, so the
+      // client adapter is wired. Production stays off until an external
+      // malware provider is contracted - the worker fails closed without
+      // one, and the app should not offer a control that cannot work.
+      for (final environment in StudafyEnvironment.values) {
+        expect(
+          RuntimePolicy(environment).allowsRemoteFileUploads,
+          environment != StudafyEnvironment.production,
+          reason: 'environment: ${environment.name}',
+        );
       }
     });
 

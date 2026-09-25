@@ -14,7 +14,7 @@ The former `aiCoach` and `aiGrading` flows were retired by AI-072
 | Flow | Subject | Policy | Fail closed | Covers today |
 |---|---|---|---|---|
 | `auth` | account | sliding window, 30 events / 5 min, cost ×2 per op | yes | `/v1/auth/*` and `/v1/account/*` POSTs (device revoke, sign-out, reauth, identity link/unlink, deletion request/cancel, profile write, export request) |
-| `registration` | ip | sliding window, 5 / hour | yes | declared — Supabase-side; edge rule at Phase 8 |
+| `registration` | ip | sliding window, 5 / hour | yes | `POST /v1/onboarding/*` (self-serve teacher sign-up, which creates a tenant); account creation itself stays Supabase-side, edge rule at Phase 8 |
 | `passwordReset` | ip | sliding window, 5 / hour | yes | declared — Supabase-side; edge rule at Phase 8 |
 | `verification` | ip | sliding window, 10 / hour | yes | declared — Supabase-side; edge rule at Phase 8 |
 | `rpc` | account | fixed window, 60 / 5 min | yes | `/v1/notifications/mark-read` (the public RPC equivalent); raw PostgREST path is an edge rule at Phase 8 |

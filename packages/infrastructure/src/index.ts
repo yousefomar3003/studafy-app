@@ -1,5 +1,11 @@
 export { backoffOptions, type BackoffPolicy, maxDelayMs } from "./backoff";
 export {
+  type CloudWatchLogsSender,
+  type CloudWatchSink,
+  type CloudWatchSinkOptions,
+  createCloudWatchSink,
+} from "./cloudwatchLogs";
+export {
   assertQueueRedisPosture,
   QueuePostureError,
   queuePostureProblems,
@@ -107,3 +113,11 @@ export {
   type ResendConfig,
   ResendEmailSender,
 } from "./notifications/channelSenders";
+export {
+  createStudyAssistant,
+  redactForProvider,
+  type StudyAssistant,
+  StudyAssistantError,
+  type StudyAssistantOptions,
+  type StudyAssistantReply,
+} from "./studyAssistant";

@@ -23,11 +23,25 @@ class SessionCacheBinder {
 
   Future<void> get settled => _tail;
 
+  /// Null only when nobody is signed in.
+  ///
+  /// This used to require a membership as well, which quietly denied a cache
+  /// to every guardian: they are linked to a child, never enrolled, so they
+  /// have no membership row and never will. Every cached read starts by
+  /// asking for the store, so refusing it here failed the notifications tab
+  /// before it made a single request.
+  ///
+  /// The school comes from the membership alone, never from the selected
+  /// child: a guardian switching between two children must not re-key their
+  /// cache underneath them, which would close the open file and wipe the
+  /// pending mutation outbox with it.
   static CacheScope? _scopeFor(ActiveContextController context) {
     final profile = context.profile;
-    final membership = context.membership;
-    if (profile == null || membership == null) return null;
-    return CacheScope(userId: profile.id, schoolId: membership.schoolId);
+    if (profile == null) return null;
+    return CacheScope(
+      userId: profile.id,
+      schoolId: context.membership?.schoolId,
+    );
   }
 
   void _onContextChanged() {

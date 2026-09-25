@@ -7,6 +7,7 @@ import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../core/app_routes.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
 import 'role_page.dart';
@@ -132,8 +133,14 @@ class _LoginPageState extends State<LoginPage> {
     );
     completingRemoteLogin = false;
     result.fold(
-      onSuccess: (_) {
-        if (mounted) _openRole();
+      onSuccess: (outcome) {
+        if (!mounted) return;
+        switch (outcome) {
+          case LoginOutcome.ready:
+            _openRole();
+          case LoginOutcome.needsOnboarding:
+            _openOnboarding();
+        }
       },
       onFailure: (failure) {
         if (mounted) {
@@ -146,13 +153,34 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  /// Sends an account that belongs to nothing yet where it can act.
+  ///
+  /// Only a teacher is held back, and only because their workspace has to be
+  /// created before any screen has data to show. A student signs up before a
+  /// teacher has sent them anything, and a parent never gets a membership at
+  /// all, so for both of them having nothing yet is an empty home rather than
+  /// a locked door: they go straight in, and their shell offers the one step
+  /// that fills it - join a class, or link to a child.
+  void _openOnboarding() {
+    if (widget.role != UserRole.teacher) {
+      _openRole();
+      return;
+    }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      onboardingRoute,
+      (_) => false,
+      arguments: widget.role,
+    );
+  }
+
   void _openRole() {
     // The shells are registered as named routes by the app; the session
     // feature never imports the role shells directly.
     final route = switch (widget.role) {
-      UserRole.teacher => '/teacher',
-      UserRole.parent => '/parent',
-      UserRole.student => '/student',
+      UserRole.teacher => teacherRoute,
+      UserRole.parent => parentRoute,
+      UserRole.student => studentRoute,
     };
     Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
   }

@@ -27,6 +27,7 @@ const ALLOWED: Record<string, string[]> = {
     "@studafy/observability",
   ],
   "@studafy/infrastructure": [
+    "@aws-sdk/client-cloudwatch-logs",
     "@supabase/supabase-js",
     "ioredis",
     "bullmq",

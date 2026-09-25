@@ -3,6 +3,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/widgets.dart';
 
 import 'device_settings.dart';
+import 'failures.dart';
 
 /// The languages Studafy ships. Must stay in step with `lib/l10n/*.arb`,
 /// `CFBundleLocalizations` in `ios/Runner/Info.plist`, and
@@ -168,6 +169,9 @@ class LocaleController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await publish(code);
       await settings.write(DeviceSettingKeys.publishedLocale, code);
+    } on Failure {
+      // API failures are domain values, not Exceptions. Keep the locale
+      // pending for the next launch without preventing the first frame.
     } on Exception {
       // Signed out, offline, or the server refused. The interface has already
       // changed; restore() retries on the next launch.

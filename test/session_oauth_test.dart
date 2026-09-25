@@ -78,6 +78,21 @@ void main() {
     expect(launched?.queryParameters['code_challenge'], isNotEmpty);
   });
 
+  test('both providers are asked to show the account chooser', () async {
+    // Without this the browser's own cookies decide the account, so a phone
+    // shared by a parent and a student silently signs in as whoever went
+    // last and the app reports a wrong-role error it did not cause.
+    for (final provider in LoginProvider.values) {
+      if (provider == LoginProvider.apple) continue;
+      await repository.signInWithProvider(provider);
+      expect(
+        launched?.queryParameters['prompt'],
+        'select_account',
+        reason: '${provider.name} must offer an account chooser',
+      );
+    }
+  });
+
   test('failure to open the browser is reported', () async {
     canLaunch = false;
     await expectLater(

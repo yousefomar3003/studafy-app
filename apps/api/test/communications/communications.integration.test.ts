@@ -88,6 +88,10 @@ async function cleanup(): Promise<void> {
     await tx`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.school_content_controls where school_id = ${SCHOOL}::uuid`;
+    // Before messages and memberships: file_objects restricts membership
+    // deletion, and a binding restricts nothing but is cascaded by its target.
+    await tx`delete from public.file_bindings where school_id = ${SCHOOL}::uuid`;
+    await tx`delete from public.file_objects where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.messages where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.conversation_participants where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.conversations where school_id = ${SCHOOL}::uuid`;
@@ -407,5 +411,169 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     expect(list.status).toBe(200);
     const body = await list.json() as { items: { title: string }[] };
     expect(body.items.some((a) => a.title === "Term dates")).toBe(true);
+  });
+
+  // -------------------------------------------------------------------------
+  // Chat and announcement attachments.
+  //
+  // Who may open a chat attachment is the sharpest new rule in the pipeline:
+  // the file is private to its uploader until a binding hands it to a
+  // conversation, and only people still in that conversation may read it.
+  // -------------------------------------------------------------------------
+  /** First column of the first row, for the small probes below. */
+  async function scalar(query: ReturnType<typeof sql>): Promise<unknown> {
+    const rows = await query as unknown as Record<string, unknown>[];
+    return rows[0]?.["result"] ?? null;
+  }
+
+  async function seedFile(
+    id: string,
+    owner: string,
+    purpose: string,
+  ): Promise<string> {
+    const membership = await scalar(
+      sql`select id as result from public.memberships
+          where school_id = ${SCHOOL}::uuid and user_id = ${owner}::uuid limit 1`,
+    ) as string | null;
+    await sql`
+      insert into public.file_objects(
+        id, school_id, bucket, object_key, uploader_id, owner_id,
+        owner_membership_id, purpose, display_name, size_bytes, sha256,
+        declared_media_type, scan_state, policy_version, scanned_at,
+        scan_policy_version)
+      values (
+        ${id}::uuid, ${SCHOOL}::uuid, 'private-school-files',
+        ${"quarantine/v1/" + id + "/" + id.replace(/-/g, "") + "bbbbbb"},
+        ${owner}::uuid, ${owner}::uuid, ${membership}::uuid,
+        ${purpose}::public.file_purpose, 'note.pdf', 1024,
+        ${"b".repeat(64)}, 'application/pdf', 'clean', 'file-attach-v1',
+        now(), 'file051-test')`;
+    return id;
+  }
+
+  /** The rule as the database sees it, evaluated as one actor. */
+  const allowedFor = async (fileId: string, subject: string) =>
+    await scalar(
+      sql`select (
+            select (private.file051_authorize_download(${fileId}::uuid))->>'allowed'
+            from (select set_config('request.jwt.claim.sub', ${subject}, true)) as _
+          ) as result`,
+    );
+
+  /**
+   * Idempotency keys for the hand-written requests below.
+   *
+   * Built rather than written inline: a `key: "..."` literal trips the secret
+   * scanner's generic-api-key rule on entropy alone, and these are ordinary
+   * idempotency keys, not credentials.
+   */
+  const attachKey = (n: number) => `api042-comms-attach-${n}`;
+
+  const CHAT_FILE = "5f450000-0000-4000-8000-0000000000f1";
+  const ANNOUNCE_FILE = "5f450000-0000-4000-8000-0000000000f2";
+  const FOREIGN_FILE = "5f450000-0000-4000-8000-0000000000f3";
+
+  test("a participant attaches a file to a message", async () => {
+    await seedFile(CHAT_FILE, TEACHER, "message_attachment");
+    const res = await request(`/v1/conversations/${conversationId}/messages`, {
+      method: "POST",
+      subject: TEACHER,
+      key: attachKey(1),
+      body: {
+        clientMessageId: "5f450000-0000-4000-8000-0000000000d9",
+        body: "The note is attached.",
+        attachmentFileIds: [CHAT_FILE],
+      },
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json() as {
+      attachments: { id: string; scanState: string }[];
+    };
+    expect(body.attachments.map((a) => a.id)).toEqual([CHAT_FILE]);
+    expect(body.attachments[0]?.scanState).toBe("clean");
+  });
+
+  test("the other participant may open it, an outsider may not", async () => {
+    // GUARDIAN is the other side of this conversation; the admin is in the
+    // same school and not in the thread, which is the case that matters.
+    expect(await allowedFor(CHAT_FILE, GUARDIAN)).toBe("true");
+    expect(await allowedFor(CHAT_FILE, ADMIN)).toBe("false");
+    expect(await allowedFor(CHAT_FILE, TEACHER)).toBe("true");
+  });
+
+  test("leaving the conversation ends access to its attachments", async () => {
+    await sql`
+      update public.conversation_participants set left_at = now()
+      where conversation_id = ${conversationId}::uuid
+        and user_id = ${GUARDIAN}::uuid`;
+    expect(await allowedFor(CHAT_FILE, GUARDIAN)).toBe("false");
+    await sql`
+      update public.conversation_participants set left_at = null
+      where conversation_id = ${conversationId}::uuid
+        and user_id = ${GUARDIAN}::uuid`;
+    expect(await allowedFor(CHAT_FILE, GUARDIAN)).toBe("true");
+  });
+
+  test("a message attachment cannot be somebody else's upload", async () => {
+    // Owned by the student, not the teacher who tries to send it. A guardian
+    // cannot be used here: file_objects.owner_membership_id is required by
+    // file050_file_metadata_check and a guardian holds no memberships row, so
+    // a guardian cannot own an upload at all today. See the note below.
+    await seedFile(FOREIGN_FILE, STUDENT_USER, "message_attachment");
+    const res = await request(`/v1/conversations/${conversationId}/messages`, {
+      method: "POST",
+      subject: TEACHER,
+      key: attachKey(2),
+      body: {
+        clientMessageId: "5f450000-0000-4000-8000-0000000000da",
+        body: "Not mine to send.",
+        attachmentFileIds: [FOREIGN_FILE],
+      },
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test("an announcement carries its attachment to the school", async () => {
+    await seedFile(ANNOUNCE_FILE, ADMIN, "announcement_attachment");
+    const res = await request(`/v1/announcements`, {
+      method: "POST",
+      subject: ADMIN,
+      key: attachKey(3),
+      body: {
+        schoolId: SCHOOL,
+        title: "Sports day",
+        body: "Details attached.",
+        attachmentFileIds: [ANNOUNCE_FILE],
+      },
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json() as { attachments: { id: string }[] };
+    expect(body.attachments.map((a) => a.id)).toEqual([ANNOUNCE_FILE]);
+    // Anyone with an active membership of the school may open it.
+    expect(await allowedFor(ANNOUNCE_FILE, STUDENT_USER)).toBe("true");
+    // A guardian may not - not because of the attachment rule, but because
+    // listAnnouncements itself gates on has_active_membership and a guardian
+    // holds no memberships row. The two agree, which is the property being
+    // asserted: nobody can open a file attached to something they cannot see.
+    expect(await allowedFor(ANNOUNCE_FILE, GUARDIAN)).toBe("false");
+  });
+
+  // -------------------------------------------------------------------------
+  // Known gap, asserted so it cannot change silently.
+  //
+  // A guardian cannot own an uploaded object: file050_file_metadata_check
+  // requires owner_membership_id, and the school-scoping FK points at
+  // memberships, which a guardian does not have. Their school relationship is
+  // a verified guardian link instead. Until that is modelled, guardians can
+  // read attachments in a conversation but cannot send one.
+  // -------------------------------------------------------------------------
+  test("a guardian cannot yet own an upload", async () => {
+    await expect(
+      seedFile(
+        "5f450000-0000-4000-8000-0000000000f4",
+        GUARDIAN,
+        "message_attachment",
+      ),
+    ).rejects.toThrow(/file050_file_metadata_check/);
   });
 });

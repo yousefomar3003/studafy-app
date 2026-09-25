@@ -361,6 +361,34 @@ async function seed(admin: Sql): Promise<void> {
     insert into public.enrollments (classroom_id, student_id, active)
     values (${IDS.classroom}::uuid, ${IDS.studentRecord}::uuid, true)
   `;
+
+  // Reading published class material needs a live Student Notebook
+  // entitlement: 202609220001 put private.notebook_reader_allowed in front
+  // of can_view_resource_publication. FILE-051 is verifying delivery, not
+  // who has paid, so the fixture student is entitled here - otherwise every
+  // delivery assertion below is really asserting the paywall.
+  await admin`update private.notebook_runtime set environment = 'synthetic'`;
+  await admin`
+    insert into public.store_transactions (
+      platform, environment, purchaser_id, product_id,
+      original_transaction_id, transaction_id, signed_data_hash, state,
+      purchased_at, effective_until, beneficiary_id)
+    select 'play_store', 'synthetic', ${IDS.student}::uuid, sp.id,
+      'file051-e2e-lineage', 'file051-e2e-txn', repeat('f', 64), 'active',
+      now() - interval '1 day', now() + interval '30 days',
+      ${IDS.student}::uuid
+    from public.store_products sp
+    where sp.feature_key = 'student_notebook' order by sp.id limit 1
+  `;
+  await admin`
+    insert into public.entitlements (
+      user_id, feature_key, source, source_transaction_id, status,
+      starts_at, ends_at)
+    select ${IDS.student}::uuid, 'student_notebook', 'play_store', st.id,
+      'active', now() - interval '1 day', now() + interval '30 days'
+    from public.store_transactions st
+    where st.transaction_id = 'file051-e2e-txn'
+  `;
 }
 
 async function cleanup(
@@ -377,6 +405,10 @@ async function cleanup(
   }
   await admin.begin(async (tx) => {
     await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
+    // The ledger is append-only by trigger, and the fixture's receipt
+    // references a profile this teardown removes, so the row has to go
+    // with it. Same disable/enable shape as the two relations above.
+    await tx`alter table public.store_transactions disable trigger pay071_reject_delete`;
     await tx`alter table public.resource_versions disable trigger db020_reject_mutation`;
     await tx`delete from public.file_delivery_grants where school_id in ${
       tx(schools)
@@ -405,6 +437,14 @@ async function cleanup(
       tx(schools)
     }`;
     await tx`delete from public.audit_events where school_id in ${tx(schools)}`;
+    await tx`
+      delete from public.entitlements
+      where source_transaction_id in (
+        select id from public.store_transactions
+        where transaction_id = 'file051-e2e-txn')`;
+    await tx`
+      delete from public.store_transactions
+      where transaction_id = 'file051-e2e-txn'`;
     await tx`delete from public.enrollments where school_id in ${tx(schools)}`;
     await tx`delete from public.students where school_id in ${tx(schools)}`;
     await tx`delete from public.classroom_staff where school_id in ${
@@ -419,6 +459,7 @@ async function cleanup(
     await tx`delete from public.schools where id in ${tx(schools)}`;
     await tx`delete from auth.users where id in ${tx(USERS.map(([id]) => id))}`;
     await tx`alter table public.resource_versions enable trigger db020_reject_mutation`;
+    await tx`alter table public.store_transactions enable trigger pay071_reject_delete`;
     await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
   });
 }

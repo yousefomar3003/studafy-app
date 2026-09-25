@@ -258,6 +258,39 @@ describe("rate limiting configuration (OPS-060)", () => {
     expect(described).toContain('"rate_limit_hmac_key_configured":true');
     expect(described).not.toContain("a-development-test-key-with-32-bytes");
   });
+
+  test("CloudWatch is off unless both region and log group are set", () => {
+    const off = parseEnv(apiEnvSchema, { ENVIRONMENT: "development" });
+    expect(off.AWS_REGION).toBeUndefined();
+    expect(off.AWS_LOG_GROUP).toBeUndefined();
+    expect(describeApiEnv(off)["cloudwatch_configured"]).toBe(false);
+
+    // A half-configured transport must not look enabled.
+    const partial = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      AWS_REGION: "il-central-1",
+    });
+    expect(describeApiEnv(partial)["cloudwatch_configured"]).toBe(false);
+
+    const on = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      AWS_REGION: "il-central-1",
+      AWS_LOG_GROUP: "/studafy/application",
+    });
+    expect(on.AWS_REGION).toBe("il-central-1");
+    expect(on.AWS_LOG_GROUP).toBe("/studafy/application");
+    expect(describeApiEnv(on)["cloudwatch_configured"]).toBe(true);
+  });
+
+  test("an empty AWS value is rejected rather than silently ignored", () => {
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        AWS_REGION: "",
+        AWS_LOG_GROUP: "/studafy/application",
+      })
+    ).toThrow();
+  });
 });
 
 describe("redaction", () => {

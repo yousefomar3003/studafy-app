@@ -217,6 +217,12 @@ abstract class AppL10n {
   /// **'Sign out everywhere'**
   String get securitySignOutEverywhere;
 
+  /// No description provided for @securitySignOutEverywhereFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is signed out, but your other devices could not be reached. Try again from a signed-in device.'**
+  String get securitySignOutEverywhereFailed;
+
   /// No description provided for @securityTwoFactorHeading.
   ///
   /// In en, this message translates to:
@@ -457,10 +463,10 @@ abstract class AppL10n {
   /// **'Close'**
   String get loginClose;
 
-  /// Placeholder legal copy. REL-002 B5 replaces both policy bodies with hosted documents; this Arabic text has not been reviewed by counsel.
+  /// In-app summary of docs/legal/privacy-policy.md, which governs. Update both together: this text names the AI provider disclosure and the processor list, so it goes stale the moment either changes. Not reviewed by counsel; the Arabic translation has not been reviewed by a native legal translator.
   ///
   /// In en, this message translates to:
-  /// **'Studafy uses account, school, class, attendance, and communication data only to provide and secure the service. Schools control student records. We do not sell personal data. Contact your school to access, correct, or delete eligible records.'**
+  /// **'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose; the school or class you belong to and your role in it; the work you are set and hand in, your marks, attendance and pastoral notes; messages, announcements and meetings inside the app; files you upload; and your notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nTHE STUDY HELPER\nIf you use the study helper, the question you type is sent to an AI company outside Studafy so it can answer. Your name, school, marks, work and messages are never sent. Answers can be wrong, so check anything you hand in. Using the helper is optional.\n\nWHO SEES YOUR WORK\nStaff at your school whose role requires it, and a parent linked to you. Other students cannot see your marks, your submitted work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent can follow progress; a parent is not given your private messages.\n\nPAYMENTS\nSubscriptions are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Resend sends email and Firebase sends push notifications. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion.\n\nHOW WE PROTECT IT\nAccess to a school\'s data is enforced in the database itself. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Administrator accounts require two-factor sign-in. Files are scanned before they can be downloaded.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.'**
   String get policyPrivacyBody;
 
   /// Placeholder legal copy. See policyPrivacyBody.
@@ -1039,10 +1045,10 @@ abstract class AppL10n {
   /// **'Save attendance'**
   String get attendanceSave;
 
-  /// No description provided for @notebookTitle.
+  /// Title of the student's Notebook tab and of its subscription screen.
   ///
   /// In en, this message translates to:
-  /// **'Lesson notebook'**
+  /// **'My notebook'**
   String get notebookTitle;
 
   /// No description provided for @notebookLessonLabel.
@@ -1957,6 +1963,12 @@ abstract class AppL10n {
   /// **'Not handed in'**
   String get submissionsWaiting;
 
+  /// No description provided for @submissionsByGuardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed in by a parent'**
+  String get submissionsByGuardian;
+
   /// No description provided for @submissionsOn.
   ///
   /// In en, this message translates to:
@@ -2142,6 +2154,552 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Creating a new link replaces this one.'**
   String get joinLinkNewReplaces;
+
+  /// Banner above the lesson content once a verified subscription is in force.
+  ///
+  /// In en, this message translates to:
+  /// **'Notebook is active'**
+  String get notebookActive;
+
+  /// Short link in the active-subscription banner, opens the store's subscription settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get notebookManage;
+
+  /// Tooltip on the button that rechecks subscription access with the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get notebookRefresh;
+
+  /// Small all-caps label above the Notebook paywall headline.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR LEARNING, TOGETHER'**
+  String get notebookHeroEyebrow;
+
+  /// Headline of the Notebook paywall.
+  ///
+  /// In en, this message translates to:
+  /// **'A home for every lesson.'**
+  String get notebookHeroTitle;
+
+  /// Sentence under the Notebook paywall headline describing what the subscription covers.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your teachers’ lesson notes and learning materials close.'**
+  String get notebookHeroSubtitle;
+
+  /// Name of the subscription plan on the Notebook paywall card.
+  ///
+  /// In en, this message translates to:
+  /// **'Notebook · Monthly'**
+  String get notebookPlanName;
+
+  /// Recurring price line. The price already carries its own currency symbol exactly as the store formatted it for this storefront, so no currency code is added.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / month'**
+  String notebookPricePerMonth(String price);
+
+  /// Shown only when the store reports this account is eligible for the introductory free month. The price is the store's formatted recurring price.
+  ///
+  /// In en, this message translates to:
+  /// **'1 month free, then {price} each month.'**
+  String notebookTrialThenPrice(String price);
+
+  /// Shown when the store offers no introductory trial to this account, so a free month must not be promised.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews monthly. No free trial is confirmed for this store account.'**
+  String get notebookNoTrial;
+
+  /// Replaces the price line when the store query returned no usable terms. Never states a price the store has not confirmed, because tiers differ per storefront.
+  ///
+  /// In en, this message translates to:
+  /// **'Your store confirms the price before you subscribe.'**
+  String get notebookPriceUnconfirmed;
+
+  /// Explains why checkout is unavailable while store terms are missing.
+  ///
+  /// In en, this message translates to:
+  /// **'A one-month free trial is planned for eligible new subscribers. The store must confirm local pricing and eligibility before you can subscribe.'**
+  String get notebookPriceUnconfirmedDetail;
+
+  /// Reassures the student that schoolwork outside Notebook stays free.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Notebook requires this subscription. Your assignments, grades and messages remain available.'**
+  String get notebookScope;
+
+  /// Shown when the subscription status request failed.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not check your subscription. Retry to check access.'**
+  String get notebookStatusUnavailable;
+
+  /// Shown when the school's student purchasing switch is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Student purchasing is not enabled for your account yet.'**
+  String get notebookSelfPurchaseDisabled;
+
+  /// Explains the guardian approval requirement and that approval alone never charges anyone.
+  ///
+  /// In en, this message translates to:
+  /// **'A linked parent must approve before you subscribe. Approval does not start a trial or charge anyone.'**
+  String get notebookApprovalRequired;
+
+  /// Confirmation after the student asks a linked parent to approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent. Your parent can approve it from their home page.'**
+  String get notebookApprovalRequestSent;
+
+  /// Button label while an approval request is outstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for parent approval'**
+  String get notebookApprovalWaiting;
+
+  /// Button that sends the guardian approval request.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask my parent'**
+  String get notebookApprovalAsk;
+
+  /// Shown after the store purchase sheet is opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the store sheet. Access starts after your purchase is verified; refresh if needed.'**
+  String get notebookPurchaseStarted;
+
+  /// Checkout button when the store confirms this account is trial eligible.
+  ///
+  /// In en, this message translates to:
+  /// **'Start my free month'**
+  String get notebookStartFreeMonth;
+
+  /// Checkout button when no trial applies to this account.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe monthly'**
+  String get notebookSubscribeMonthly;
+
+  /// Explains why the checkout button is disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout opens once store terms, account approval and subscription policies are available.'**
+  String get notebookCheckoutUnavailable;
+
+  /// Confirmation after the student asks the store to restore purchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore requested. Access appears after store verification.'**
+  String get notebookRestoreRequested;
+
+  /// Button that asks the store to restore an existing subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get notebookRestore;
+
+  /// Link to the store's own subscription management page.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage or cancel subscription'**
+  String get notebookManageOrCancel;
+
+  /// Auto-renewal disclosure required by both stores before purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-renewing subscription. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal or the trial ends to avoid the next charge. Deleting the app does not cancel your subscription.'**
+  String get notebookRenewalDisclosure;
+
+  /// Link to the hosted terms document from the Notebook paywall.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use'**
+  String get notebookTermsOfUse;
+
+  /// Link to the hosted privacy document from the Notebook paywall.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get notebookPrivacyPolicy;
+
+  /// Generic failure message for approval, purchase and restore actions.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete this step. Check your connection and your parent link, then try again.'**
+  String get notebookActionFailed;
+
+  /// Shown when a policy or store management link could not be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the page.'**
+  String get notebookOpenPageFailed;
+
+  /// Title of the screen where a student enters a class link.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a class'**
+  String get joinClassTitle;
+
+  /// Instruction above the class link field.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the class link your teacher shared with you.'**
+  String get joinClassPrompt;
+
+  /// Label of the text field that takes the class link or code.
+  ///
+  /// In en, this message translates to:
+  /// **'Class link'**
+  String get joinClassField;
+
+  /// Button that redeems the pasted class link.
+  ///
+  /// In en, this message translates to:
+  /// **'Join class'**
+  String get joinClassAction;
+
+  /// Label of the join button while the request is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining…'**
+  String get joinClassBusy;
+
+  /// Shown when the pasted text contains no recognisable join token.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like a class link.'**
+  String get joinClassInvalid;
+
+  /// Confirmation after joining, naming the class.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re in {className}'**
+  String joinClassDone(String className);
+
+  /// Dismisses the confirmation after joining a class.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get joinClassContinue;
+
+  /// Heading for a newly signed-in student who is in no class yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Join your first class'**
+  String get onboardingStudentTitle;
+
+  /// Explains where a new student gets a class link.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your teacher for the class link, then paste it here to get started.'**
+  String get onboardingStudentBody;
+
+  /// Heading for a newly signed-in parent who has no children linked.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to your child'**
+  String get onboardingParentTitle;
+
+  /// Explains how a parent links to a student and that the student approves.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your child for their Studafy ID. They approve the request on their own device, so nobody else can see their work.'**
+  String get onboardingParentBody;
+
+  /// Takes the parent to the screen where they look up their child.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onboardingParentAction;
+
+  /// Heading shown to a new teacher before teacher sign-up ships.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher accounts are almost ready'**
+  String get onboardingTeacherTitle;
+
+  /// Explains that self-serve teacher sign-up is not available yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating classes from a new teacher account is not switched on yet. Please check back shortly.'**
+  String get onboardingTeacherBody;
+
+  /// Heading for a new teacher who is about to get their workspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your teaching space'**
+  String get onboardingTeacherReadyTitle;
+
+  /// Explains what happens when a new teacher continues.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll get everything ready so you can create your first class and invite students to it.'**
+  String get onboardingTeacherReadyBody;
+
+  /// Creates the teacher's workspace and opens the teacher home.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get onboardingTeacherReadyAction;
+
+  /// Shown when setup succeeded but the account's new access has not arrived yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is ready, but we couldn\'t open it just yet. Please try again.'**
+  String get onboardingNotReadyYet;
+
+  /// Returns to the role picker from the onboarding screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a different role'**
+  String get onboardingChangeRole;
+
+  /// Signs out from the onboarding screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get onboardingSignOut;
+
+  /// Title of the student's AI study helper tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Study helper'**
+  String get studyAssistantTitle;
+
+  /// Explains what the helper does and warns that questions leave the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about anything you are studying and get an explanation. Your question is sent to an AI service to answer it, so do not include your name, your school or anything private.'**
+  String get studyAssistantIntro;
+
+  /// Label of the question field.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question'**
+  String get studyAssistantField;
+
+  /// Sends the question.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get studyAssistantAsk;
+
+  /// Shown on the button while an answer is being fetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get studyAssistantBusy;
+
+  /// Reminder shown under every answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers can be wrong. Check anything you hand in.'**
+  String get studyAssistantCheckWork;
+
+  /// How many questions remain in today's allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No questions left today} =1{1 question left today} other{{count} questions left today}}'**
+  String studyAssistantRemaining(int count);
+
+  /// Short navigation label for the study helper tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Helper'**
+  String get studyAssistantTab;
+
+  /// Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link.
+  ///
+  /// In en, this message translates to:
+  /// **'You already teach at this school, so you cannot join one of its classes as a student. Ask a student to open the link on their own account.'**
+  String get joinClassAlreadyStaff;
+
+  /// Chip that clears the class filter so every class is shown.
+  ///
+  /// In en, this message translates to:
+  /// **'All classes'**
+  String get academicAllClasses;
+
+  /// Family+ insights: insightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Family+'**
+  String get insightsTitle;
+
+  /// Family+ insights: insightsUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights are not available'**
+  String get insightsUnavailableTitle;
+
+  /// Family+ insights: insightsUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Family+ is needed to see detailed insights, and the link to your child must be approved.'**
+  String get insightsUnavailableBody;
+
+  /// Family+ insights: insightsNothingYetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to report yet'**
+  String get insightsNothingYetTitle;
+
+  /// Family+ insights: insightsNothingYetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'As your child\'s school records marks, attendance and work, insights will appear here. We only report what the records actually show.'**
+  String get insightsNothingYetBody;
+
+  /// Family+ insights: insightsBySubject.
+  ///
+  /// In en, this message translates to:
+  /// **'By subject'**
+  String get insightsBySubject;
+
+  /// Family+ insights: insightsComingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming up'**
+  String get insightsComingUp;
+
+  /// Family+ insights: insightsFromSchool.
+  ///
+  /// In en, this message translates to:
+  /// **'From the school'**
+  String get insightsFromSchool;
+
+  /// Family+ insights: insightsAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get insightsAverage;
+
+  /// Family+ insights: insightsAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get insightsAttendance;
+
+  /// Family+ insights: insightsOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'On time'**
+  String get insightsOnTime;
+
+  /// Family+ insights: insightSubjectFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'{subject} is their weakest subject right now'**
+  String insightSubjectFocus(Object subject);
+
+  /// Family+ insights: insightTrendDown.
+  ///
+  /// In en, this message translates to:
+  /// **'{subject} marks are going down'**
+  String insightTrendDown(Object subject);
+
+  /// Family+ insights: insightTrendUp.
+  ///
+  /// In en, this message translates to:
+  /// **'{subject} marks are going up'**
+  String insightTrendUp(Object subject);
+
+  /// Family+ insights: insightRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'{subject} has recovered'**
+  String insightRecovery(Object subject);
+
+  /// Family+ insights: insightHomework.
+  ///
+  /// In en, this message translates to:
+  /// **'How reliably work is handed in'**
+  String get insightHomework;
+
+  /// Family+ insights: insightHomeworkSlipping.
+  ///
+  /// In en, this message translates to:
+  /// **'Work is being handed in later than before'**
+  String get insightHomeworkSlipping;
+
+  /// Family+ insights: insightAttendancePattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Absences fall on the same day of the week'**
+  String get insightAttendancePattern;
+
+  /// Family+ insights: insightDueSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Work due soon that has not been handed in'**
+  String get insightDueSoon;
+
+  /// Family+ insights: insightStrengthInsufficient.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough records yet to be confident'**
+  String get insightStrengthInsufficient;
+
+  /// Family+ insights: insightStrengthLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on a small number of records'**
+  String get insightStrengthLow;
+
+  /// Family+ insights: insightStrengthMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on a reasonable number of records'**
+  String get insightStrengthMedium;
+
+  /// Family+ insights: insightStrengthHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on a large number of records'**
+  String get insightStrengthHigh;
+
+  /// Family+ insights: insightsDueOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String insightsDueOn(String date);
+
+  /// Family+ insights: insightsFromMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No marks yet} =1{From 1 mark} other{From {count} marks}}'**
+  String insightsFromMarks(int count);
+
+  /// Family+ insights: insightsAbsences.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No absences} =1{1 absence} other{{count} absences}}'**
+  String insightsAbsences(int count);
+
+  /// Family+ insights: insightsOfTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No work set} =1{Of 1 task} other{Of {count} tasks}}'**
+  String insightsOfTasks(int count);
+
+  /// Family+ with no child selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a child first'**
+  String get insightsNoChildTitle;
+
+  /// Tells a parent how to select a child for Family+.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one of your children on the home tab to see their insights.'**
+  String get insightsNoChildBody;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
