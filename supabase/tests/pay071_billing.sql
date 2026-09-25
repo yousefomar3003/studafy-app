@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(40);
+select plan(41);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set student_user 'bbbb0000-0000-4000-8000-000000000002'
@@ -80,12 +80,33 @@ select set_config('request.jwt.claim.sub', :'expired_guardian_user', true);
 select is(private.billing_submit_verification((select body || '{"originalTransactionId":"pay071-lineage-4","transactionId":"pay071-txn-4"}'::jsonb from pay071_body where name='insights'))->>'outcome',
   'beneficiary_link_invalid', 'an expired guardian link cannot purchase for the child');
 
--- 6. The storefront gate (audit H2): Parent Insights is unlisted outside
--- synthetic, so a first-seen receipt cannot grant it by submit or restore.
+-- 6. The storefront gate (audit H2): an unlisted product cannot be granted by
+-- a first-seen receipt, by submit or by restore.
+--
+-- Aimed at student_ai rather than Parent Insights. Parent Insights was the
+-- unlisted product when this was written, but 202609240002 listed it once the
+-- owner took the ADR-0009/§29 decision, which left these two assertions
+-- testing nothing. student_ai is retired by ADR-0026 and cannot be listed
+-- again without a new migration, so the gate is proved against something that
+-- stays unlisted rather than against whichever product is awaiting a
+-- commercial decision this month.
 select set_config('request.jwt.claim.sub', :'guardian_user', true);
-select is(private.billing_submit_verification((select body || '{"environment":"production","originalTransactionId":"pay071-lineage-5","transactionId":"pay071-txn-5"}'::jsonb from pay071_body where name='insights'))->>'outcome',
+select ok((select not storefront_listed from public.store_products
+  where feature_key = 'student_ai' and platform = 'play_store' limit 1),
+  'the product behind the gate assertions is genuinely unlisted');
+select is(private.billing_submit_verification(
+  (select body || jsonb_build_object(
+    'environment','production','productFeatureKey','student_ai',
+    'storeProductId','studafy_student_ai_monthly',
+    'originalTransactionId','pay071-lineage-5','transactionId','pay071-txn-5')
+   from pay071_body where name='insights'))->>'outcome',
   'product_not_found', 'an unlisted product cannot be purchased with a valid production receipt');
-select is(private.billing_restore((select body || '{"environment":"production","originalTransactionId":"pay071-lineage-6","transactionId":"pay071-txn-6"}'::jsonb from pay071_body where name='insights'))->>'outcome',
+select is(private.billing_restore(
+  (select body || jsonb_build_object(
+    'environment','production','productFeatureKey','student_ai',
+    'storeProductId','studafy_student_ai_monthly',
+    'originalTransactionId','pay071-lineage-6','transactionId','pay071-txn-6')
+   from pay071_body where name='insights'))->>'outcome',
   'product_not_found', 'a first-seen receipt cannot bypass the storefront gate by calling itself a restore');
 
 -- 7. Student self-purchase needs the per-school switch and a real guardian
