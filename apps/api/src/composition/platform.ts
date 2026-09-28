@@ -13,6 +13,7 @@ import {
   checkRedis,
   createCloudWatchSink,
   createRedis,
+  SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { checkDatabase, createDatabase } from "@studafy/database";
 import { createJsonLogger, logStartup } from "@studafy/observability";
@@ -135,6 +136,20 @@ export function buildPlatform() {
       authDependencies.repository.invalidateContext(subject)
     : undefined;
 
+  // FILE-050 uses the service role only inside the isolated storage adapter.
+  // Database authorization and mutation still run as studafy_api_runtime via
+  // the narrow private.api050_* surface. With no key the routes do not mount.
+  // STORAGE_URL and its key only in the development split; everywhere else
+  // they are unset and the files live in the SUPABASE_URL project.
+  const storageUrl = env.STORAGE_URL ?? env.SUPABASE_URL;
+  const storageKey = env.STORAGE_SERVICE_ROLE_KEY ??
+    env.SUPABASE_SERVICE_ROLE_KEY;
+  // One client for every module that reads private files (uploads and
+  // whiteboard photos); null when no storage credential is configured.
+  const privateStorage = storageUrl && storageKey
+    ? new SupabasePrivateFileStorage(storageUrl, storageKey)
+    : null;
+
   return {
     env,
     cloudwatch,
@@ -149,6 +164,7 @@ export function buildPlatform() {
     idempotencyDependencies,
     authDependencies,
     invalidateActorContext,
+    privateStorage,
   };
 }
 

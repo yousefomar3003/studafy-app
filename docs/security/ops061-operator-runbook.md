@@ -17,7 +17,7 @@ holds the per-queue policy table, `docs/adr/ADR-0025` the architecture.
 | Notifications worker | `apps/worker/src/processors/notifications.ts` | Expands an audience row into in-app deliveries and completes the row in one transaction |
 | Queue inventory | `apps/worker/src/platform/queueInventory.ts` | Per-queue policy (attempts/backoff/timeout/concurrency) and wiring status |
 | Dispatch SQL | `private.api061_*` (migration `202609170005`) | Claim / record / release / fail / reclaim / finish / backlog / DLQ list / redrive |
-| DLQ tooling | `bun run ops061:redrive` (`scripts/redrive-ops061-dlq.ts`) | Operator list/redrive, audited in `audit_events` |
+| DLQ tooling | `bun run ops:outbox-redrive` (`scripts/redrive-outbox-dlq.ts`) | Operator list/redrive, audited in `audit_events` |
 
 The drain is enabled with `OPS061_NOTIFICATIONS_ENABLED=true` (requires
 `DATABASE_URL`; off by default so a queue outage can never silently become a
@@ -91,7 +91,7 @@ normalized error code.
 
 ```sh
 # list dead letters (id, school, template, attempts, error code, timestamps)
-DATABASE_URL=… bun run ops061:redrive
+DATABASE_URL=… bun run ops:outbox-redrive
 ```
 
 Error codes and their meaning:
@@ -110,8 +110,8 @@ Error codes and their meaning:
 ### Re-drive (audited)
 
 ```sh
-DATABASE_URL=… bun run ops061:redrive -- --id 42   # one row
-DATABASE_URL=… bun run ops061:redrive -- --all     # all listed rows
+DATABASE_URL=… bun run ops:outbox-redrive -- --id 42   # one row
+DATABASE_URL=… bun run ops:outbox-redrive -- --all     # all listed rows
 ```
 
 `private.api061_redrive_dlq` returns the row to `retry`, clears the lease,
@@ -144,7 +144,7 @@ failover, duplicate delivery, poison, backlog drain):
 4. Poison: deterministic failure dead-letters once, unrelated work continues.
 5. Backlog: N rows drain to completed with `pending`/`retry` at zero.
 
-To rehearse: run the e2e suite locally (`bun run test:ops061:e2e`) against
+To rehearse: run the e2e suite locally (`bun run test:outbox:e2e`) against
 the dev stack; it asserts each of these directly.
 
 ## 7. Where NOT to intervene

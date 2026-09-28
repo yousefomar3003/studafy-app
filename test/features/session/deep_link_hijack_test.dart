@@ -6,7 +6,7 @@ import 'package:studafy/features/session/domain/auth_callback.dart';
 /// The guard is wired into the Supabase SDK as its
 /// `detectSessionInUriPredicate`, so everything refused here never reaches a
 /// code exchange. `state` and PKCE enforcement belong to the SDK and GoTrue
-/// and are proven end to end by scripts/verify-auth030-lifecycle.ts; this file
+/// and are proven end to end by scripts/verify-auth-lifecycle.ts; this file
 /// covers the part the SDK's default does not do at all — checking that the
 /// link points at a target this app actually claims.
 void main() {

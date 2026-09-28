@@ -59,8 +59,10 @@ for (const base of roots) {
     if (/quarantine\/v1\//.test(source)) {
       violations.push(`${relative(root, file)} constructs a quarantine path`);
     }
+    // Credentials are read once, where the process is composed.
     if (
-      /SUPABASE_SERVICE_ROLE_KEY/.test(source) && !file.endsWith("index.ts")
+      /SUPABASE_SERVICE_ROLE_KEY/.test(source) && !file.endsWith("index.ts") &&
+      !file.endsWith("composition/platform.ts")
     ) {
       violations.push(
         `${relative(root, file)} references the service-role credential`,

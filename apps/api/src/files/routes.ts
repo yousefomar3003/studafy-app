@@ -24,7 +24,7 @@ import {
   validatedParams,
   validateRouteInput,
 } from "../platform/validation";
-import type { File050Result, FileRepository } from "./repository";
+import type { FileCommandResult, FileRepository } from "./repository";
 import {
   normalizeDisplayName,
   type PrivateFileStorage,
@@ -446,7 +446,7 @@ const FILE_OUTCOMES: OutcomeTable = {
 
 function mapOutcome(
   c: Context<AuthorizationEnv>,
-  result: File050Result,
+  result: FileCommandResult,
 ): Response | null {
   return result.outcome === "ok"
     ? null

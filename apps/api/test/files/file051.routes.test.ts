@@ -18,7 +18,7 @@ import {
 import type {
   DownloadGrantInternal,
   EffectiveObject,
-  File051DeliveryResult,
+  FileDeliveryResult,
   FileRepository,
 } from "../../src/files/repository";
 import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
@@ -145,7 +145,7 @@ async function harness(options: HarnessOptions = {}) {
       events.push("consume");
       const grant = grants.get(nonceHash);
       if (!grant || grant.used || grant.fileId !== fileId) {
-        return { outcome: "grant_invalid" } as File051DeliveryResult;
+        return { outcome: "grant_invalid" } as FileDeliveryResult;
       }
       grant.used = true;
       if (!state.allowed) return { outcome: "not_found" };

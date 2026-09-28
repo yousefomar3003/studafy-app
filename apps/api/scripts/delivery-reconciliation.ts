@@ -79,7 +79,7 @@ export function hasDrift(report: ReconciliationReport): boolean {
 
 if (import.meta.main) {
   const { createDatabase } = await import("@studafy/database");
-  const { localSupabase } = await import("./file051-harness");
+  const { localSupabase } = await import("./delivery-harness");
   const local = await localSupabase();
   const sql = createDatabase(local.dbUrl, { max: 1 });
   try {

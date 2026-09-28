@@ -6,9 +6,9 @@
  * the audit row, not this script, is the durable record.
  *
  * Run order (disposable local stack only):
- *   DATABASE_URL=… bun scripts/redrive-ops061-dlq.ts           # list
- *   DATABASE_URL=… bun scripts/redrive-ops061-dlq.ts --id 42   # redrive one
- *   DATABASE_URL=… bun scripts/redrive-ops061-dlq.ts --all     # redrive all
+ *   DATABASE_URL=… bun scripts/redrive-outbox-dlq.ts           # list
+ *   DATABASE_URL=… bun scripts/redrive-outbox-dlq.ts --id 42   # redrive one
+ *   DATABASE_URL=… bun scripts/redrive-outbox-dlq.ts --all     # redrive all
  */
 import postgres from "postgres";
 

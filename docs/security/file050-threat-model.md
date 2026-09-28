@@ -54,7 +54,7 @@ structural rather than validating.
   and `delete`; a foreign or malformed location throws.
 - Completion resolves the path through a private owner-only query. The client
   cannot pass a path or URL at completion either.
-- `scripts/check-file050-boundaries.ts` fails CI if any handler or Flutter
+- `scripts/check-file-boundaries.ts` fails CI if any handler or Flutter
   file calls storage directly, constructs a `quarantine/v1/` path, or
   references the service-role credential outside the composition roots.
 

@@ -10,8 +10,8 @@ import {
   IDS,
   jpegWithExif,
   openHarness,
-} from "./file051-harness";
-import { hasDrift, reconcile } from "./file051-reconciliation";
+} from "./delivery-harness";
+import { hasDrift, reconcile } from "./delivery-reconciliation";
 
 const h = await openHarness();
 let ok = false;

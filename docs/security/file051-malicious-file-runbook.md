@@ -13,8 +13,8 @@ from the legal work in §15.
 
 Owner: repository owner (`@yousefomar3003`), single-owner project.
 
-The procedure is rehearsed end to end by `bun run test:file051:drill`
-(`apps/api/scripts/file051-malware-drill.ts`), which must report `passed: true`.
+The procedure is rehearsed end to end by `bun run test:delivery:malware-drill`
+(`apps/api/scripts/delivery-malware-drill.ts`), which must report `passed: true`.
 
 ## Vocabulary
 
@@ -37,7 +37,7 @@ The procedure is rehearsed end to end by `bun run test:file051:drill`
 | `file_scan_failed` audit event | `public.audit_events` | The scanner was unavailable ten times in a row. The file is now `error`, never `clean`. |
 | Scanner provider advisory | the provider | New signatures may flag a file that was already scanned clean. |
 | A user or safeguarding report | SAFE-043 queue | A person reported a file. |
-| Reconciliation drift | `bun run test:file051:reconcile` | Bytes exist with no row behind them, or a row exists whose bytes are gone. |
+| Reconciliation drift | `bun run test:delivery:reconcile` | Bytes exist with no row behind them, or a row exists whose bytes are gone. |
 
 There is no alerting pipeline yet (OPS-090). Until there is, these signals
 are found by query and by reading logs, not by being paged.
@@ -158,7 +158,7 @@ only after storage confirms the deletion.
 
 ## 7. Verify and record
 
-1. Run `bun run test:file051:reconcile`. Every count must be `0`.
+1. Run `bun run test:delivery:reconcile`. Every count must be `0`.
 2. Read the audit trail and confirm it is complete:
 
    ```sql

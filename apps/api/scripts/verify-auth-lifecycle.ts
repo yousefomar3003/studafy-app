@@ -8,7 +8,7 @@
  *
  * Usage:
  *   bunx supabase start
- *   bun run test:auth030:lifecycle
+ *   bun run test:auth:lifecycle
  *
  * It lives inside apps/api rather than the repository root because it imports
  * workspace packages. Bun links those per workspace, not into the root

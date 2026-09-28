@@ -59,7 +59,6 @@ import {
   createStudyAssistant,
   RealAppleTransactionVerifier,
   RealGooglePurchaseVerifier,
-  SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { createBillingRoutes } from "../billing/routes";
 import { createBillingWebhookRoutes } from "../billing/webhookRoutes";
@@ -81,6 +80,7 @@ export function buildRoutes(platform: Platform) {
     idempotencyDependencies,
     authDependencies,
     invalidateActorContext,
+    privateStorage,
   } = platform;
 
   const academic = sql && env.API_CURSOR_SIGNING_KEY
@@ -391,19 +391,11 @@ export function buildRoutes(platform: Platform) {
     )
     : undefined;
 
-  // FILE-050 uses the service role only inside the isolated storage adapter.
-  // Database authorization and mutation still run as studafy_api_runtime via
-  // the narrow private.api050_* surface. With no key the routes do not mount.
-  // STORAGE_URL and its key only in the development split; everywhere else
-  // they are unset and the files live in the SUPABASE_URL project.
-  const storageUrl = env.STORAGE_URL ?? env.SUPABASE_URL;
-  const storageKey = env.STORAGE_SERVICE_ROLE_KEY ??
-    env.SUPABASE_SERVICE_ROLE_KEY;
-  const files = sql && storageUrl && storageKey
+  const files = sql && privateStorage
     ? createFileRoutes(
       {
         repository: new PostgresFileRepository(sql),
-        storage: new SupabasePrivateFileStorage(storageUrl, storageKey),
+        storage: privateStorage,
         newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
         // FILE-051 switches default off; delivery also needs its own signing
         // key and public origin (production refuses to start without them).
@@ -432,9 +424,7 @@ export function buildRoutes(platform: Platform) {
         prices: aiPrices,
         assistant: aiAssistant,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
-        storage: storageUrl && storageKey
-          ? new SupabasePrivateFileStorage(storageUrl, storageKey)
-          : null,
+        storage: privateStorage,
       },
       authorization,
       idempotencyDependencies,

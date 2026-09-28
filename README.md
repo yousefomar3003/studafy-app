@@ -208,7 +208,7 @@ bunx supabase test db --local supabase/tests/db020_constraints.sql
 bunx supabase test db --local supabase/tests/db021_access_seed.sql
 bunx supabase test db --local supabase/tests/db021_grants.sql
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
-  bun run test:db020:plans
+  bun run test:plans:tenancy
 ```
 
 CI (`.github/workflows/ci.yml`) runs on pushes to `main`, pull requests targeting
