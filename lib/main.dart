@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/app_bootstrap.dart';
-import 'app/account_hub_page.dart';
 import 'app/account_scope.dart';
 import 'app/app_dependencies.dart';
 import 'app/class_join_link_guard.dart';
@@ -24,7 +23,8 @@ import 'features/session/presentation/splash_page.dart';
 import 'app/parent_shell.dart';
 import 'app/student_shell.dart';
 import 'core/uploads_scope.dart';
-import 'features/meetings/presentation/upcoming_meetings_section.dart';
+import 'app/session_scope.dart';
+import 'features/meetings/presentation/meetings_scope.dart';
 
 /// Holds a class join link tapped before the app had somewhere to show it.
 final classJoinLinks = ClassJoinLinkGuard();

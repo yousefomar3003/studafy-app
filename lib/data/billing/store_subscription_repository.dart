@@ -7,12 +7,12 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 
-import '../core/secure_storage.dart';
-import '../features/parent/domain/parent_subscription_repository.dart';
-import '../features/study/domain/study.dart';
-import 'billing/store_offer_details.dart';
-import 'billing/v1_billing_api.dart';
-import 'contracts/v1_http_transport.dart';
+import '../../core/secure_storage.dart';
+import '../../features/family_insights/domain/parent_subscription_repository.dart';
+import '../../features/study/domain/study.dart';
+import 'store_offer_details.dart';
+import 'v1_billing_api.dart';
+import '../contracts/v1_http_transport.dart';
 
 class StoreSubscriptionRepository
     implements ParentSubscriptionRepository, StudyPlanSubscriptionRepository {

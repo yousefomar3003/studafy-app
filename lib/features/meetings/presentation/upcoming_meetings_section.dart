@@ -7,24 +7,7 @@ import '../domain/meetings.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/feedback.dart';
 import '../../../core/studafy_formatting.dart';
-
-/// Makes the meetings list reachable from any home screen that shows it.
-class MeetingsScope extends InheritedWidget {
-  const MeetingsScope({
-    super.key,
-    required this.repository,
-    required super.child,
-  });
-
-  final MeetingsRepository repository;
-
-  static MeetingsRepository? maybeOf(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<MeetingsScope>()?.repository;
-
-  @override
-  bool updateShouldNotify(MeetingsScope oldWidget) =>
-      repository != oldWidget.repository;
-}
+import 'meetings_scope.dart';
 
 /// Opens [url] in Google Meet, or the browser where the app is not installed.
 typedef MeetingLauncher = Future<bool> Function(Uri url);

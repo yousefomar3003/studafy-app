@@ -14,7 +14,7 @@ import '../data/contracts/v1_client.generated.dart';
 import '../data/local_cache/session_cache_binder.dart';
 import '../core/secure_storage.dart';
 import '../data/secure/keychain_secure_store.dart';
-import '../data/subscription_service.dart';
+import '../data/billing/store_subscription_repository.dart';
 import '../features/study/data/api_study_repository.dart';
 import '../features/study/domain/study.dart';
 import '../features/account/application/account_interactor.dart';
@@ -58,6 +58,8 @@ import '../features/school_operations/data/preview_school_operations_repository.
 import '../features/school_operations/domain/school_operations_repository.dart';
 import '../features/meetings/data/api_meetings_repository.dart';
 import '../features/meetings/domain/meetings.dart';
+import '../features/study/data/preview_study_repository.dart';
+import '../features/meetings/data/preview_meetings_repository.dart';
 
 /// Composition root (ARC-011). Builds the interactors once, choosing
 /// adapters by runtime policy: synthetic builds get the demo/preview pair;

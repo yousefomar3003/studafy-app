@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:studafy/app/account_hub_page.dart';
 import 'package:studafy/app/account_scope.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_domain.dart';
@@ -18,6 +17,8 @@ import 'package:studafy/features/session/domain/session_repository.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 import 'support/session_repository_fake.dart';
+
+import 'package:studafy/app/session_scope.dart';
 
 /// Apple 5.1.1(v) / Google Play: sign-out must be reachable in every role
 /// shell, guardians included.

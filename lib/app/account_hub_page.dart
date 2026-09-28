@@ -12,27 +12,12 @@ import '../core/failures.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/data_export.dart';
 import '../features/account/presentation/delete_account_page.dart';
-import '../features/session/application/session_interactor.dart';
 import '../features/family/presentation/family_scope.dart';
 import '../features/session/presentation/account_security_page.dart';
 import 'account_scope.dart';
 import '../l10n/generated/app_l10n.dart';
 import '../core/feedback.dart';
-
-/// Provides the session interactor to shared account screens. Composed at
-/// the app root, above the Navigator, beside [AccountScope].
-class SessionScope extends InheritedWidget {
-  const SessionScope({super.key, required this.session, required super.child});
-
-  final SessionInteractor session;
-
-  static SessionInteractor? maybeOf(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<SessionScope>()?.session;
-
-  @override
-  bool updateShouldNotify(SessionScope oldWidget) =>
-      session != oldWidget.session;
-}
+import 'session_scope.dart';
 
 /// Opens the shared account screen. Every role shell shows it, because
 /// sign-out and in-app account deletion must be reachable for everyone

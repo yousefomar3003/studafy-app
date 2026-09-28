@@ -7,7 +7,7 @@ import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:studafy/features/study/domain/study.dart';
 import 'package:studafy/data/billing/v1_billing_api.dart';
-import 'package:studafy/data/subscription_service.dart';
+import 'package:studafy/data/billing/store_subscription_repository.dart';
 
 const sku = 'studafy_plus_monthly';
 

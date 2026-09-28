@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:studafy/features/parent/domain/parent_subscription_repository.dart';
+import 'package:studafy/features/family_insights/domain/parent_subscription_repository.dart';
 
 void main() {
   test('checkout requires store availability and complete pricing terms', () {
