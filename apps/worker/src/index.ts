@@ -79,10 +79,19 @@ const runtime = buildSmokeRuntime(env.REDIS_URL, logger, {
 await runtime.worker.waitUntilReady();
 logger.info("worker_ready", { queue: "smoke" });
 
+// One pool for every job that needs the database, opened on first use: the
+// jobs run on one process against one database, and one pool is one thing to
+// size and to close.
+let sharedSql: Sql | undefined;
+function database(): Sql {
+  sharedSql ??= createDatabase(env.DATABASE_URL!);
+  return sharedSql;
+}
+
 const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
     env.FILE051_RETENTION_ENABLED || env.OPS061_NOTIFICATIONS_ENABLED ||
     env.PAY071_BILLING_ENABLED
-  ? createDatabase(env.DATABASE_URL!)
+  ? database()
   : undefined;
 const storage = fileWorkerSql && (env.STORAGE_URL ?? env.SUPABASE_URL) &&
     (env.STORAGE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY)
@@ -120,7 +129,7 @@ const retention = fileWorkerSql && storage && env.FILE051_RETENTION_ENABLED
 // notification outbox on an interval; the notifications worker processes the
 // BullMQ jobs it produces.
 const outboxSql: Sql | undefined = env.OPS061_NOTIFICATIONS_ENABLED
-  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  ? database()
   : undefined;
 const notifications = outboxSql
   ? buildNotificationRuntime(env.REDIS_URL, outboxSql, logger, {
@@ -154,7 +163,7 @@ if (notifications) {
 // reconciliation sweep is the loss backstop (re-verify open transactions +
 // the Google 3-day acknowledgement window).
 const billingSql: Sql | undefined = env.PAY071_BILLING_ENABLED
-  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  ? database()
   : undefined;
 const billing = billingSql
   ? buildBillingRuntime(env.REDIS_URL, billingSql, logger, env)
@@ -184,7 +193,7 @@ if (billing && env.PAY071_RECONCILIATION_ENABLED) {
 // build requested data exports. The request rows are the durable queue.
 const accountRightsSql: Sql | undefined =
   env.ACCOUNT_DELETION_EXECUTOR_ENABLED || env.DATA_EXPORT_EXECUTOR_ENABLED
-    ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+    ? database()
     : undefined;
 const accountDeletion =
   accountRightsSql && env.ACCOUNT_DELETION_EXECUTOR_ENABLED
@@ -204,7 +213,7 @@ const dataExport = accountRightsSql && env.DATA_EXPORT_EXECUTOR_ENABLED
 
 // DL-052: schedule requested meetings with the conferencing provider.
 const meetingsSql: Sql | undefined = env.MEETINGS_PROCESSOR_ENABLED
-  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  ? database()
   : undefined;
 const meetings = meetingsSql
   ? startMeetingProcessor(
@@ -219,7 +228,7 @@ const meetings = meetingsSql
 
 // DL-053: email and push delivery for channels with a configured provider.
 const channelsSql: Sql | undefined = env.NOTIFICATION_CHANNELS_ENABLED
-  ? (fileWorkerSql ?? createDatabase(env.DATABASE_URL!))
+  ? database()
   : undefined;
 const channels = channelsSql
   ? startChannelDelivery(
@@ -258,22 +267,7 @@ installGracefulShutdown({
     await dataExport?.close();
     await meetings?.close();
     await channels?.close();
-    if (channelsSql && channelsSql !== fileWorkerSql) {
-      await closeDatabase(channelsSql);
-    }
-    if (meetingsSql && meetingsSql !== fileWorkerSql) {
-      await closeDatabase(meetingsSql);
-    }
-    if (accountRightsSql && accountRightsSql !== fileWorkerSql) {
-      await closeDatabase(accountRightsSql);
-    }
-    if (billingSql && billingSql !== fileWorkerSql) {
-      await closeDatabase(billingSql);
-    }
-    if (outboxSql && outboxSql !== fileWorkerSql) {
-      await closeDatabase(outboxSql);
-    }
-    if (fileWorkerSql) await closeDatabase(fileWorkerSql);
+    if (sharedSql) await closeDatabase(sharedSql);
     await runtime.close();
   },
 });
