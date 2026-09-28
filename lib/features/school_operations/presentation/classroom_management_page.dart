@@ -9,6 +9,7 @@ import '../../../core/studafy_domain.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/school_operations_repository.dart';
+import 'schedule_meeting_dialog.dart';
 
 class ClassroomManagementPage extends StatefulWidget {
   const ClassroomManagementPage({
@@ -40,11 +41,6 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
   RosterStudent? _pendingEnrollment;
   String? _error;
   List<ManagedMeeting> _meetings = const [];
-
-  /// The shape of a Google Meet link; the server enforces the same.
-  static final _meetLink = RegExp(
-    r'^https://meet\.google\.com/[A-Za-z0-9-]{3,64}(\?[A-Za-z0-9=&._-]{0,200})?$',
-  );
 
   Future<bool> _open(Uri url) =>
       (widget.openLink ??
@@ -556,191 +552,20 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
   }
 
   Future<void> _requestMeeting(AppL10n l10n) async {
-    final title = TextEditingController();
-    var starts = DateTime.now().add(const Duration(days: 1));
-    var duration = 30;
-    var audience = 'guardians';
-    final link = TextEditingController();
-    String? linkError;
-    final ok =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => StatefulBuilder(
-            builder: (context, setDialog) => AlertDialog(
-              title: Text(l10n.classroomAdminScheduleMeeting),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: title,
-                      decoration: InputDecoration(
-                        labelText: l10n.announcementTitleLabel,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.classroomAdminStarts),
-                      subtitle: Text(
-                        MaterialLocalizations.of(context)
-                            .formatFullDate(starts),
-                      ),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final d = await showDatePicker(
-                          context: context,
-                          initialDate: starts,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 730),
-                          ),
-                        );
-                        if (d != null) {
-                          setDialog(
-                            () => starts = DateTime(
-                              d.year,
-                              d.month,
-                              d.day,
-                              starts.hour,
-                              starts.minute,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    ListTile(
-                      title: Text(l10n.classroomAdminTime),
-                      subtitle: Text(
-                        TimeOfDay.fromDateTime(starts).format(context),
-                      ),
-                      onTap: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(starts),
-                        );
-                        if (time != null && context.mounted) {
-                          setDialog(
-                            () => starts = DateTime(
-                              starts.year,
-                              starts.month,
-                              starts.day,
-                              time.hour,
-                              time.minute,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    DropdownButtonFormField<int>(
-                      initialValue: duration,
-                      decoration: InputDecoration(
-                        labelText: l10n.classroomAdminDuration,
-                      ),
-                      items: [30, 45, 60, 90]
-                          .map(
-                            (v) => DropdownMenuItem(
-                              value: v,
-                              child: Text('$v ${l10n.classroomAdminMinutes}'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setDialog(() => duration = v!),
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: audience,
-                      decoration: InputDecoration(
-                        labelText: l10n.classroomAdminAudience,
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'guardians',
-                          child: Text(l10n.schoolAdminGuardians),
-                        ),
-                        DropdownMenuItem(
-                          value: 'students',
-                          child: Text(l10n.announcementAudienceStudents),
-                        ),
-                        DropdownMenuItem(
-                          value: 'both',
-                          child: Text(l10n.classroomAdminWholeClass),
-                        ),
-                      ],
-                      onChanged: (v) => setDialog(() => audience = v!),
-                    ),
-                    const SizedBox(height: 12),
-                    // Studafy does not host the call. The teacher makes it in
-                    // Google Meet and hands over the link.
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: TextButton.icon(
-                        onPressed: () =>
-                            _open(Uri.parse('https://meet.google.com/new')),
-                        icon: const Icon(Icons.open_in_new_rounded),
-                        label: Text(l10n.classroomAdminCreateItInGoogleMeet),
-                      ),
-                    ),
-                    TextField(
-                      controller: link,
-                      keyboardType: TextInputType.url,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: l10n.classroomAdminGoogleMeetLink,
-                        hintText: 'https://meet.google.com/abc-defg-hij',
-                        errorText: linkError,
-                        suffixIcon: IconButton(
-                          tooltip: l10n.joinClassPaste,
-                          icon: const Icon(Icons.content_paste_rounded),
-                          onPressed: () async {
-                            final data = await Clipboard.getData(
-                              Clipboard.kTextPlain,
-                            );
-                            final text = data?.text?.trim();
-                            if (text != null && text.isNotEmpty) {
-                              setDialog(() => link.text = text);
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(l10n.academicCancel),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    // Checked here, not only by the server, so the teacher
-                    // fixes the link without losing the rest of the form.
-                    if (!_meetLink.hasMatch(link.text.trim())) {
-                      setDialog(
-                        () =>
-                            linkError = l10n.classroomAdminPasteALinkThatStarts,
-                      );
-                      return;
-                    }
-                    Navigator.pop(context, true);
-                  },
-                  child: Text(l10n.classroomAdminSchedule),
-                ),
-              ],
-            ),
-          ),
-        ) ??
-        false;
-    if (!ok || title.text.trim().isEmpty) return;
+    final draft = await showScheduleMeetingDialog(
+      context,
+      l10n,
+      openLink: _open,
+    );
+    if (draft == null) return;
     await _run(() async {
       await widget.repository.requestMeeting(
         classroomId: widget.classroom.id,
-        title: title.text,
-        startsAt: starts,
-        endsAt: starts.add(Duration(minutes: duration)),
-        audience: audience,
-        meetUrl: Uri.parse(link.text.trim()),
+        title: draft.title,
+        startsAt: draft.startsAt,
+        endsAt: draft.endsAt,
+        audience: draft.audience,
+        meetUrl: draft.meetUrl,
       );
       await _loadMeetings();
     }, l10n.classroomAdminMeetingScheduledEveryoneInvitedHas);
