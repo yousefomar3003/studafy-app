@@ -30,7 +30,10 @@ void main() {
 
   test('term reads are scoped to the authenticated school', () async {
     final transport = _Transport();
-    final repository = ApiSchoolOperationsRepository(V1ApiClient(transport));
+    final repository = ApiSchoolOperationsRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
 
     final terms = await repository.listTerms();
 
@@ -40,7 +43,10 @@ void main() {
 
   test('a retried term creation keeps one idempotency key', () async {
     final transport = _Transport()..failFirstPost = true;
-    final repository = ApiSchoolOperationsRepository(V1ApiClient(transport));
+    final repository = ApiSchoolOperationsRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     final starts = DateTime(2026, 9, 1);
     final ends = DateTime(2026, 12, 20);
 
@@ -56,7 +62,10 @@ void main() {
 
   test('invalid meeting times are rejected before network access', () async {
     final transport = _Transport();
-    final repository = ApiSchoolOperationsRepository(V1ApiClient(transport));
+    final repository = ApiSchoolOperationsRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     final starts = DateTime(2026, 9, 21, 10);
 
     await expectLater(
@@ -74,7 +83,10 @@ void main() {
 
   test('transfer sends only record IDs and the target classroom', () async {
     final transport = _Transport();
-    final repository = ApiSchoolOperationsRepository(V1ApiClient(transport));
+    final repository = ApiSchoolOperationsRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
 
     await repository.transferStudent(
       classroomId: classroomId,

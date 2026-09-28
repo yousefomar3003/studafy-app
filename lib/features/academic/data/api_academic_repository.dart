@@ -6,8 +6,12 @@ import '../domain/academic_repository.dart';
 import '../../../core/idempotency.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
-  ApiAcademicRepository(this._client, {ActiveContextController? context})
-    : _context = context ?? ActiveContextController.instance;
+  /// [context] is the signed-in person's active school and child; it is
+  /// passed in so the repository never reaches for a global.
+  ApiAcademicRepository(
+    this._client, {
+    required ActiveContextController context,
+  }) : _context = context;
 
   final V1ApiClient _client;
   final ActiveContextController _context;

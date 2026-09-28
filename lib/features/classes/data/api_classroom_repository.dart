@@ -10,8 +10,10 @@ import '../../../core/idempotency.dart';
 /// Authoritative API-041 classroom adapter. It never reads or writes the
 /// local preview database and never falls back when the service is offline.
 class ApiClassroomRepository implements ClassroomRepository {
-  ApiClassroomRepository(this._client, {ActiveContextController? context})
-    : _context = context ?? ActiveContextController.instance;
+  ApiClassroomRepository(
+    this._client, {
+    required ActiveContextController context,
+  }) : _context = context;
 
   final V1ApiClient _client;
   final ActiveContextController _context;

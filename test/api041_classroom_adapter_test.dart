@@ -39,7 +39,10 @@ void main() {
     'remote list maps typed authoritative DTOs and sends school context',
     () async {
       final transport = _AcademicTransport();
-      final repository = ApiClassroomRepository(V1ApiClient(transport));
+      final repository = ApiClassroomRepository(
+        V1ApiClient(transport),
+        context: ActiveContextController.instance,
+      );
       final classes = await repository.listClasses();
       expect(classes.single.name, 'Biology');
       expect(classes.single.id.value, '22222222-2222-4222-8222-222222222222');
@@ -49,7 +52,10 @@ void main() {
 
   test('explicit retry preserves one idempotency key until success', () async {
     final transport = _AcademicTransport()..failFirstPost = true;
-    final repository = ApiClassroomRepository(V1ApiClient(transport));
+    final repository = ApiClassroomRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     const draft = NewClassDraft(
       name: 'Biology',
       grade: 10,

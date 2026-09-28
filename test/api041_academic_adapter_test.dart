@@ -43,7 +43,10 @@ void main() {
     'every feed calls its authoritative list route with school context',
     () async {
       final transport = _RecordingTransport();
-      final repository = ApiAcademicRepository(V1ApiClient(transport));
+      final repository = ApiAcademicRepository(
+        V1ApiClient(transport),
+        context: ActiveContextController.instance,
+      );
 
       for (final feed in AcademicFeed.values) {
         final records = await repository.load(
@@ -69,7 +72,10 @@ void main() {
 
   test('records are mapped from typed DTOs without local fallbacks', () async {
     final transport = _RecordingTransport();
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     final records = await repository.load(AcademicFeed.assignments);
     expect(records.single.id, '44444444-4444-4444-8444-444444444444');
     expect(records.single.title, 'Atomic models');
@@ -79,7 +85,10 @@ void main() {
 
   test('createAssignment sends the authoritative body once per key', () async {
     final transport = _RecordingTransport();
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     final draft = AssignmentDraft(
       classroomId: classroomId,
       title: 'Atomic models',
@@ -102,7 +111,10 @@ void main() {
     // Nothing a student or guardian reads shows a draft. Before this, every
     // assignment a teacher set from the app stayed invisible to the class.
     final transport = _RecordingTransport()..createAsDraft = true;
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     await repository.createAssignment(
       AssignmentDraft(
         classroomId: classroomId,
@@ -121,7 +133,10 @@ void main() {
 
   test('graded work creates its mark, linked to the assignment', () async {
     final transport = _RecordingTransport()..createAsDraft = true;
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     await repository.createAssignment(
       AssignmentDraft(
         classroomId: classroomId,
@@ -144,7 +159,10 @@ void main() {
 
   test('a draft asked to stay a draft is not published', () async {
     final transport = _RecordingTransport()..createAsDraft = true;
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     await repository.createAssignment(
       AssignmentDraft(
         classroomId: classroomId,
@@ -159,7 +177,10 @@ void main() {
 
   test('the class list names the school when it asks for guardians', () async {
     final transport = _RecordingTransport();
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     await repository.classStudents(classroomId);
     final contacts = transport.getPaths.singleWhere(
       (path) => path.startsWith('/v1/contacts'),
@@ -171,7 +192,10 @@ void main() {
     // The teacher's hand-in list is built on this roster; a contacts read
     // that fails used to take the whole page down with it.
     final transport = _RecordingTransport()..failContacts = true;
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     final students = await repository.classStudents(classroomId);
     expect(students.single.displayName, 'Amal');
     expect(students.single.guardians, isEmpty);
@@ -181,7 +205,10 @@ void main() {
     'an explicit retry preserves one idempotency key until success',
     () async {
       final transport = _RecordingTransport()..failNextPost = true;
-      final repository = ApiAcademicRepository(V1ApiClient(transport));
+      final repository = ApiAcademicRepository(
+        V1ApiClient(transport),
+        context: ActiveContextController.instance,
+      );
       final draft = AssignmentDraft(
         classroomId: classroomId,
         title: 'Retry essay',
@@ -197,7 +224,10 @@ void main() {
 
   test('attendance and grade commands map their domain drafts', () async {
     final transport = _RecordingTransport();
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
 
     await repository.recordAttendance(
       classroomId,
@@ -272,7 +302,10 @@ void main() {
         ),
       );
       final transport = _RecordingTransport();
-      final repository = ApiAcademicRepository(V1ApiClient(transport));
+      final repository = ApiAcademicRepository(
+        V1ApiClient(transport),
+        context: ActiveContextController.instance,
+      );
       await repository.load(AcademicFeed.grades, studentId: studentId);
       expect(transport.getPaths.single, contains('schoolId=$schoolId'));
       expect(transport.getPaths.single, contains('studentId=$studentId'));
@@ -282,7 +315,10 @@ void main() {
   test('no active membership fails closed before any request', () async {
     ActiveContextController.instance.signOut();
     final transport = _RecordingTransport();
-    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final repository = ApiAcademicRepository(
+      V1ApiClient(transport),
+      context: ActiveContextController.instance,
+    );
     await expectLater(
       repository.load(AcademicFeed.assignments),
       throwsA(isA<Failure>()),

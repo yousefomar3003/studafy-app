@@ -7,8 +7,8 @@ import '../../../core/idempotency.dart';
 class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
   ApiSchoolOperationsRepository(
     this._client, {
-    ActiveContextController? context,
-  }) : _context = context ?? ActiveContextController.instance;
+    required ActiveContextController context,
+  }) : _context = context;
 
   final V1ApiClient _client;
   final ActiveContextController _context;
