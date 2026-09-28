@@ -17,7 +17,7 @@ keep their own toolchain (`deno.json` scoped to `supabase/functions`).
    root devDependency for CI/local use. Flutter remains at the repository
    root; the mechanical move to `apps/mobile` is **deferred to its own
    reviewed change** after CI proves Flutter commands run from both locations
-   (instructions.md:287; DL-017).
+   (docs/planning/instructions.md:287; DL-017).
 2. **Pinned runtime libraries** (exact versions, no ranges, lockfile frozen in
    CI): `hono` 4.13.7, `zod` 4.6.1, `postgres` (postgres.js) 3.4.9,
    `ioredis` 6.0.0, `bullmq` 6.3.4; dev tooling `typescript` 7.0.2,

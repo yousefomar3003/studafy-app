@@ -48,7 +48,7 @@ export function createAccountRoutes(
       selector,
       sliceFor,
       enabledSlices: deps.enabledSlices,
-      // instructions.md section 7: a data export is sensitive enough to need
+      // docs/planning/instructions.md section 7: a data export is sensitive enough to need
       // the same fresh re-confirmation account deletion already requires
       // (AUTH-030's account_deletion purpose, apps/api/src/auth/routes.ts) -
       // a standing second factor is not additionally required here, matching

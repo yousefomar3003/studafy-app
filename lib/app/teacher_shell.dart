@@ -24,7 +24,7 @@ import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/school_operations/presentation/classroom_management_page.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
-import '../teacher_features.dart';
+import '../features/notifications/presentation/notifications_page.dart';
 import 'teacher_today_page.dart';
 import 'app_dependencies.dart';
 

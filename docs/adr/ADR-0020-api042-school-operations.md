@@ -14,7 +14,7 @@ staff a classroom, enroll a student, link a guardian, send a message,
 schedule a meeting, read a notification, or correct/export a profile through
 the authoritative API. That work was either local-only Flutter state or two
 legacy Deno Edge Functions (`create-google-meet`, `request-account-deletion`)
-carrying the exact defects `instructions.md` names — meeting recipient N+1
+carrying the exact defects `docs/planning/instructions.md` names — meeting recipient N+1
 and a JWT-`iat`-as-recent-auth check that Supabase's own refresh behavior
 makes meaningless.
 
@@ -52,7 +52,7 @@ testing the reauth requirement below against real HTTP — not the SQL
 dispatcher directly, which the existing pgTAP suite already exercised and
 which is exactly why this was invisible there — surfaced it.
 
-**MFA/recent-auth for the mutations `instructions.md` section 7 names by
+**MFA/recent-auth for the mutations `docs/planning/instructions.md` section 7 names by
 name.** Support access requires AAL2 *unconditionally*, checked from
 `RequestDbContext.aal2` (sourced from the verified session, never a client
 claim) inside the SQL dispatcher itself, because role-policy-gated

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io' show File;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:studafy/data/contracts/v1_dto.dart';
+import 'package:studafy/data/contracts/v1_client.generated.dart';
 
 /// ARC-011 contract drift test: the Dart DTOs must parse the shared fixture
 /// that the TypeScript contracts package (packages/contracts/src/v1) also

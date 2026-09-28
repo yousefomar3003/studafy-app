@@ -4,7 +4,7 @@
 - Date: 2026-09-20
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Decision log: DL-055
-- Part of: MOB-070 (bilingual and accessibility acceptance, `instructions.md` §20 Part 7A)
+- Part of: MOB-070 (bilingual and accessibility acceptance, `docs/planning/instructions.md` §20 Part 7A)
 
 ## Context
 

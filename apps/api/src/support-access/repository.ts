@@ -10,7 +10,7 @@ export type SupportAccessRepository = CatalogueRepository;
 
 /**
  * The only module that needs the actor's real AAL2 status inside the SQL
- * dispatcher: instructions.md section 7 requires MFA for support access
+ * dispatcher: docs/planning/instructions.md section 7 requires MFA for support access
  * unconditionally, not by role policy like requireAal2() elsewhere. context
  * carries it (RequestDbContext.aal2); this repository is what actually
  * forwards it into the command input, since the generic dispatcher only

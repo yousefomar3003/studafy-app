@@ -50,7 +50,7 @@ Date: 2026-09-17 · ADR-0024 · DL-045 · Runbook:
 | `bun run check:bounds` | passed — 9 members, 82 source files, 0 violations |
 | `bun run generate:check` | passed (no contract change: no new routes) |
 
-## Acceptance evidence per instructions.md (OPS-060)
+## Acceptance evidence per docs/planning/instructions.md (OPS-060)
 
 **Limit enforcement, uniform responses, no false positives.**
 

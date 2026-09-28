@@ -787,7 +787,7 @@ export const PERMISSION_CATALOGUE = {
   // resolved school and gets the usual tenant context, but the linked
   // guardian revoking their own link often has no memberships row at all -
   // guardian membership is "if required by school policy" per
-  // instructions.md section 6, not universal, and a guardian_links row is
+  // docs/planning/instructions.md section 6, not universal, and a guardian_links row is
   // not a membership. The SQL command's own
   // is_school_admin(tenant) or guardian_id = auth.uid() check is the real
   // guard either way; this only stops the tenant-cache lookup from denying

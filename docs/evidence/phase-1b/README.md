@@ -67,7 +67,7 @@ Hotspot follow-up evidence: `hotspot-refactor-2026-09-11.md`.
 | Synthetic debug build | ✓ Built |
 | `dart format` | Clean (99 files) |
 
-## Acceptance criteria (instructions.md:1058) — met
+## Acceptance criteria (docs/planning/instructions.md:1058) — met
 
 - **"Slice contains no widget SQL/provider call/dynamic transport cast"**:
   the session and classes presentation/application layers import zero

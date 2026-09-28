@@ -16,11 +16,11 @@ by the SEC-001 controls described in `docs/security/sec-001-containment.md`.
 - Phase 0 evidence (schema reconciliation, scans, baselines, smoke):
   `docs/evidence/`
 - Current cross-phase verification and remaining gates:
-  `docs/evidence/closing-verification-2026-09-10.md`
+  `docs/evidence/launch-readiness/2026-09-10-closing-verification.md`
 - Whole-repository launch-readiness audit and corrected roadmap gaps:
   `docs/evidence/launch-readiness/2026-09-13-repository-audit.md`
 - Ordered implementation prompts and external input/secret-handling checklist:
-  `prompts.md`, `inputs.md`
+  `docs/planning/prompts.md`, `docs/planning/inputs.md`
 - Phase gates: `docs/security/sec-001-containment.md`,
   `docs/security/phase-0b-gate.md`
 
@@ -135,7 +135,7 @@ The supplied testing credentials are separated into ignored server-only
 `bun --no-env-file scripts/check-hosted-setup.ts` for redacted service checks.
 Use `bun run dev:hosted` once the hosted database connection and migrations are
 ready; this launcher prevents accidentally combining hosted login with the
-local database. See [current setup status](docs/evidence/hosted-credentials-turnstile-2026-09-22.md)
+local database. See [current setup status](docs/evidence/hosted/2026-09-22-credentials-turnstile.md)
 for Turnstile, tunnel hostname, billing and remaining prerequisites.
 
 ## Future backend deployment (not currently authorized)

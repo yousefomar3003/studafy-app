@@ -12,7 +12,7 @@ blocked.
 
 This is not a recommendation to remove the guards. The correct next
 engineering task remains AUTH-030, followed by AUTH-031 and the complete API
-sequence in `instructions.md`.
+sequence in `docs/planning/instructions.md`.
 
 ## Scope and method
 

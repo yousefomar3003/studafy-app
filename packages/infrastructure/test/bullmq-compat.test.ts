@@ -1,5 +1,5 @@
 /**
- * Bun/Redis/BullMQ compatibility gate (OPS-061, instructions.md §10).
+ * Bun/Redis/BullMQ compatibility gate (OPS-061, docs/planning/instructions.md §10).
  *
  * §10 pins the stack and requires the pinned Bun runtime + BullMQ + Redis
  * versions to be proven against each other before any queue guarantee is

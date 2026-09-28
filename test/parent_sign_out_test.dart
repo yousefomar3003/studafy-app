@@ -13,7 +13,7 @@ import 'package:studafy/features/academic/data/preview_academic_repository.dart'
 import 'package:studafy/features/family/application/family_interactor.dart';
 import 'package:studafy/features/family/domain/family.dart';
 import 'package:studafy/features/family/presentation/family_scope.dart';
-import 'package:studafy/parent_features.dart';
+import 'package:studafy/app/parent_shell.dart';
 import 'package:studafy/features/session/application/session_interactor.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';

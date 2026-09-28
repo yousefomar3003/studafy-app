@@ -8,7 +8,7 @@
 
 API-042 made communications authoritative (`conversations`, `messages`,
 `announcements`), and every prior evidence document (AUTH-031, API-040,
-API-041, API-042, the launch-readiness audit, and `instructions.md`) recorded
+API-041, API-042, the launch-readiness audit, and `docs/planning/instructions.md`) recorded
 the same explicit dependency: **SAFE-043 is a mandatory gate before the
 communications surface can be considered launchable.** The launch audit
 (DL-030) named it for store-approval UGC/safeguarding reasons; the app's

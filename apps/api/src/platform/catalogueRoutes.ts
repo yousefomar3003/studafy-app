@@ -58,7 +58,7 @@ export interface RequestDbContext {
   /**
    * Whether this session actually presented a second factor (AAL2), not
    * just whether MFA is enrolled. Most modules ignore this; support-access
-   * requires it unconditionally, matching instructions.md section 7's
+   * requires it unconditionally, matching docs/planning/instructions.md section 7's
    * "MFA, ticket/reason, ... full audit" requirement.
    */
   aal2: boolean;
@@ -86,7 +86,7 @@ export type CatalogueSelector = (
 ) => string | null;
 
 /**
- * instructions.md section 7's route table calls out MFA/recent-auth for
+ * docs/planning/instructions.md section 7's route table calls out MFA/recent-auth for
  * specific admin mutations by name (school closure, data export) - the same
  * short-lived re-confirmation AUTH-030's account-linking/deletion routes
  * already require, just reachable from the generic catalogue dispatcher

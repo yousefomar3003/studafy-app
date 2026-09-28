@@ -91,7 +91,7 @@ export function createSchoolAdminRoutes(
       selector,
       sliceFor,
       enabledSlices: deps.enabledSlices,
-      // instructions.md section 7: school closure/suspension are admin
+      // docs/planning/instructions.md section 7: school closure/suspension are admin
       // mutations sensitive enough to require a fresh re-confirmation, not
       // just the platform-operator/school-admin role check the SQL
       // dispatcher already enforces. Both reuse AUTH-030's

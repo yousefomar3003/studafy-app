@@ -35,7 +35,10 @@ const CO_TEACHER = "61061000-0000-4000-8000-0000000000c3";
 const SUSPENDED_TEACHER = "61061000-0000-4000-8000-0000000000c4";
 const OTHER_SCHOOL_ADMIN = "61061000-0000-4000-8000-0000000000d1";
 const WORKER = "ops061-worker";
-const PREFIX = "studafy-development";
+// A queue namespace of its own, so a dev worker on the same Redis cannot
+// take this suite's jobs.
+const ENVIRONMENT = `test-${crypto.randomUUID()}`;
+const PREFIX = `studafy-${ENVIRONMENT}`;
 
 let sql: Sql;
 let runtime: NotificationRuntime;
@@ -194,7 +197,7 @@ suite("OPS-061 notifications queue", () => {
       new LogCollector().sink,
     );
     runtime = buildNotificationRuntime(redisUrl!, sql, logger, {
-      environment: "development",
+      environment: ENVIRONMENT,
       concurrency: 3,
     });
     await runtime.worker.waitUntilReady();

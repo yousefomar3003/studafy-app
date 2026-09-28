@@ -49,10 +49,6 @@ import '../features/files/data/preview_file_upload_repository.dart';
 import '../features/files/data/signed_upload_transport.dart';
 import '../features/files/data/unavailable_file_upload_repository.dart';
 import '../core/file_upload_repository.dart';
-import '../features/parent/data/preview_parent_repository.dart';
-import '../features/parent/data/unavailable_parent_repository.dart';
-import '../features/parent/domain/parent_repository.dart';
-import '../features/parent/domain/parent_subscription_repository.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/session/data/demo_session_repository.dart';
 import '../features/session/data/api_session_repository.dart';
@@ -60,9 +56,6 @@ import '../features/session/domain/session_repository.dart';
 import '../features/school_operations/data/api_school_operations_repository.dart';
 import '../features/school_operations/data/preview_school_operations_repository.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
-import '../features/teacher_dashboard/data/preview_teacher_dashboard_repository.dart';
-import '../features/teacher_dashboard/data/unavailable_teacher_dashboard_repository.dart';
-import '../features/teacher_dashboard/domain/teacher_dashboard_repository.dart';
 import '../features/meetings/data/api_meetings_repository.dart';
 import '../features/meetings/domain/meetings.dart';
 
@@ -78,9 +71,6 @@ class AppDependencies {
     this.teacherWorkspace,
     this.studyAssistant,
     this.familyInsights,
-    required this.parent,
-    required this.teacherDashboard,
-    required this.parentSubscription,
     this.studyPlans,
     required this.study,
     required this.account,
@@ -109,9 +99,6 @@ class AppDependencies {
 
   /// Family+. Null without a backend; the paid tab is then absent.
   final FamilyInsightsInteractor? familyInsights;
-  final ParentRepository parent;
-  final TeacherDashboardRepository teacherDashboard;
-  final ParentSubscriptionRepository parentSubscription;
 
   /// Buying Studafy Plus / Max through the store. Null without billing.
   final StudyPlanSubscriptionRepository? studyPlans;
@@ -159,13 +146,6 @@ class AppDependencies {
     final ClassroomRepository classroomRepository = policy.isSynthetic
         ? const PreviewClassroomRepository()
         : ApiClassroomRepository(remote!.api, context: context);
-    final ParentRepository parentRepository = policy.isSynthetic
-        ? const PreviewParentRepository()
-        : const UnavailableParentRepository();
-    final TeacherDashboardRepository teacherDashboardRepository =
-        policy.isSynthetic
-        ? const PreviewTeacherDashboardRepository()
-        : const UnavailableTeacherDashboardRepository();
     final cacheBinder = SessionCacheBinder(context: context);
     // A synthetic build has no profile to publish to, so it keeps the choice
     // on the device only. Device settings are read in both, so a developer's
@@ -253,9 +233,6 @@ class AppDependencies {
               repository: ApiFamilyInsightsRepository(remote.api),
               telemetry: telemetry,
             ),
-      parent: parentRepository,
-      teacherDashboard: teacherDashboardRepository,
-      parentSubscription: subscriptions,
       studyPlans: subscriptions,
       study: remote == null
           ? PreviewStudyRepository()

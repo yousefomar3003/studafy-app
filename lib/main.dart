@@ -19,12 +19,10 @@ import 'l10n/generated/app_l10n.dart';
 import 'features/family/presentation/family_scope.dart';
 import 'features/messaging/presentation/messaging_scope.dart';
 import 'features/notifications/presentation/notifications_scope.dart';
-import 'features/parent/presentation/parent_repository_scope.dart';
 import 'features/session/presentation/role_page.dart';
 import 'features/session/presentation/splash_page.dart';
-import 'features/teacher_dashboard/presentation/teacher_dashboard_repository_scope.dart';
-import 'parent_features.dart';
-import 'student_features.dart';
+import 'app/parent_shell.dart';
+import 'app/student_shell.dart';
 import 'core/uploads_scope.dart';
 import 'features/meetings/presentation/upcoming_meetings_section.dart';
 
@@ -210,16 +208,7 @@ class StudafyApp extends StatelessWidget {
                         interactor: deps.messaging,
                         child: FamilyScope(
                           interactor: deps.family,
-                          child: ParentRepositoryScope(
-                            repository: deps.parent,
-                            subscription: deps.parentSubscription,
-                            signOut: deps.session.signOut,
-                            isRemote: runtimePolicy.requiresRemoteBackend,
-                            child: TeacherDashboardRepositoryScope(
-                              repository: deps.teacherDashboard,
-                              child: content,
-                            ),
-                          ),
+                          child: content,
                         ),
                       ),
                     ),

@@ -80,6 +80,22 @@ async function cleanup(): Promise<void> {
   await sql`delete from public.memberships where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
 }
 
+/**
+ * Removes the fixture school and users too, so a run against a developer's
+ * database leaves nothing behind. Audit events are append-only, so their
+ * guard is lifted for this one transaction only.
+ */
+async function teardown(): Promise<void> {
+  await cleanup();
+  await sql.begin(async (tx) => {
+    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
+    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid or actor_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
+    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
+    await tx`delete from auth.users where id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
+  });
+}
+
 function tokenFor(issuedAtSeconds: number): VerifiedToken {
   return {
     subject: USER,
@@ -102,7 +118,7 @@ suite("AuthContextRepository against Postgres", () => {
 
   afterAll(async () => {
     if (!sql) return;
-    await cleanup();
+    await teardown();
     await sql.end({ timeout: 5 });
   });
 

@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/account_hub_page.dart';
-import '../../../app/student_today_page.dart';
-import '../../../app/student_lessons_page.dart';
-import '../../../features/study/domain/study.dart';
-import '../../../features/study/presentation/study_plans_page.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../features/classes/application/class_list_interactor.dart';
-import '../../../features/classes/presentation/join_class_page.dart';
-import '../../../features/academic/presentation/submit_work_page.dart';
-import '../../../core/file_upload_repository.dart';
+import 'account_hub_page.dart';
+import 'student_today_page.dart';
+import 'student_lessons_page.dart';
+import '../features/study/domain/study.dart';
+import '../features/study/presentation/study_plans_page.dart';
+import '../l10n/generated/app_l10n.dart';
+import '../features/classes/application/class_list_interactor.dart';
+import '../features/classes/presentation/join_class_page.dart';
+import '../features/academic/presentation/submit_work_page.dart';
+import '../core/file_upload_repository.dart';
 
-import '../../../core/studafy_design.dart';
-import '../../../core/studafy_localizations.dart';
-import '../../../core/studafy_domain.dart';
-import '../../../features/academic/domain/academic_repository.dart';
-import '../../../features/academic/presentation/academic_overview_page.dart';
-import '../../../features/messaging/domain/messaging.dart';
-import '../../../features/messaging/presentation/conversations_page.dart';
-import '../../../features/messaging/presentation/messaging_scope.dart';
-import '../../../features/session/application/session_interactor.dart';
-import '../../../features/study_assistant/application/study_assistant_interactor.dart';
-import '../../../features/study_assistant/presentation/study_assistant_page.dart';
-import 'student_shared.dart';
+import '../core/studafy_design.dart';
+import '../core/studafy_localizations.dart';
+import '../core/studafy_domain.dart';
+import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/presentation/academic_overview_page.dart';
+import '../features/messaging/domain/messaging.dart';
+import '../features/messaging/presentation/conversations_page.dart';
+import '../features/messaging/presentation/messaging_scope.dart';
+import '../features/session/application/session_interactor.dart';
+import '../features/study_assistant/application/study_assistant_interactor.dart';
+import '../features/study_assistant/presentation/study_assistant_page.dart';
 
 class StudentShell extends StatefulWidget {
   const StudentShell({
@@ -270,7 +269,7 @@ class _StudentShellState extends State<StudentShell> {
               Icons.forum_rounded,
             ),
         ],
-        accent: studentNavy,
+        accent: studafyNavy,
       ),
     );
   }

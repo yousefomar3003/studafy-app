@@ -10,8 +10,8 @@ Date: 2026-09-18 · Decision: **REMOVE** · Owner: repository owner (GitHub
 
 | Precondition for enabling | Status | Reference |
 |---|---|---|
-| Signed DPA with an AI provider | **Absent.** Confirmed by the owner 2026-09-18; the repository records it as outstanding | `inputs.md`, `instructions.md` §22.6, `docs/security/credentials-map.md`, ADR-0009 |
-| DPIA extended to AI processing of minors' data | **Absent.** Confirmed by the owner 2026-09-18 | `instructions.md` §15, §20 Part 7C |
+| Signed DPA with an AI provider | **Absent.** Confirmed by the owner 2026-09-18; the repository records it as outstanding | `docs/planning/inputs.md`, `docs/planning/instructions.md` §22.6, `docs/security/credentials-map.md`, ADR-0009 |
+| DPIA extended to AI processing of minors' data | **Absent.** Confirmed by the owner 2026-09-18 | `docs/planning/instructions.md` §15, §20 Part 7C |
 
 With either one missing, removal is the only lawful outcome (§20 Part 7C).
 

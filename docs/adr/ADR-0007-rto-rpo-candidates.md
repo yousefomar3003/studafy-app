@@ -7,7 +7,7 @@ commitment. Decision-log: DL-010. Date: 2026-09-10.
 
 ARC-001 requires SLO/RTO/RPO targets to be approved or explicitly recorded.
 Product/operations approval does not exist yet (single-owner project, no
-production environment). instructions.md §"Resilience targets" supplies
+production environment). docs/planning/instructions.md §"Resilience targets" supplies
 planning candidates.
 
 ## Decision

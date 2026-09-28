@@ -113,7 +113,7 @@ its commit message; summarized here:
 4. **School closure/suspension and account data export had no MFA/recent-auth
    gate at all.** `requireRecentAuth`/`requireAal2` existed only as
    hand-written middleware in `auth/routes.ts`, unreachable from the generic
-   catalogue dispatcher every API-042 module uses. `instructions.md` section
+   catalogue dispatcher every API-042 module uses. `docs/planning/instructions.md` section
    7 names both explicitly. Fixed by adding an optional `reauth` option to
    `createCatalogueRoutes`.
 5. **`createClassroom`/`enrollStudent` were unreachable for a fresh school.**

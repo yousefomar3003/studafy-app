@@ -145,7 +145,7 @@ None of these were caused by FILE-050; all are diagnosed in the transcript.
 ## Still blocking Phase 5 and launch
 
 - An independent file penetration test and security review.
-- A real malware-scanner vendor and credential (inputs.md A6).
+- A real malware-scanner vendor and credential (docs/planning/inputs.md A6).
 - Approved retention periods (§29).
 - OPS-061/090.
 - Production end-to-end testing.

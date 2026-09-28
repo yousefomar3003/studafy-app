@@ -1,5 +1,5 @@
 /**
- * Queue inventory (OPS-061, instructions.md §10 "Queue inventory and
+ * Queue inventory (OPS-061, docs/planning/instructions.md §10 "Queue inventory and
  * contracts"). One definition per §10 queue: the retry/timeout/concurrency
  * policy, the BullMQ key prefix, and the wiring status.
  *

@@ -82,7 +82,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   const now = deps.platform?.now ?? Date.now;
 
   // Extend the existing request-id skeleton with the API-040 platform stack.
-  // Ordering follows instructions.md section 7: correlation and protocol
+  // Ordering follows docs/planning/instructions.md section 7: correlation and protocol
   // controls run before authentication, validation, authorization and use cases.
   app.use("*", requestContext(now));
   app.use("*", secureResponseHeaders(deps.info.environment));

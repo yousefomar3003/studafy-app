@@ -602,21 +602,6 @@ class AppL10nAr extends AppL10n {
   String get classesRoomTbd => 'القاعة لم تُحدَّد';
 
   @override
-  String get dashNotifications => 'الإشعارات';
-
-  @override
-  String get dashTakeAttendance => 'تسجيل الحضور';
-
-  @override
-  String get dashAddNotebook => 'إضافة دفتر الدرس';
-
-  @override
-  String get dashAttendanceRecorded => 'تم تسجيل الحضور';
-
-  @override
-  String get dashNotebookMissing => 'دفتر الدرس ناقص';
-
-  @override
   String get attendancePresent => 'حاضر';
 
   @override
@@ -636,21 +621,6 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get attendanceSave => 'حفظ الحضور';
-
-  @override
-  String get notebookTitle => 'دفتر دروسي';
-
-  @override
-  String get notebookLessonLabel => 'الدرس الذي شُرح';
-
-  @override
-  String get notebookLessonHint => 'ماذا درّست اليوم؟';
-
-  @override
-  String get notebookHomeworkLabel => 'الواجب المنزلي (اختياري)';
-
-  @override
-  String get notebookSave => 'حفظ الدفتر';
 
   @override
   String get syntheticBanner =>
@@ -1258,116 +1228,6 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get joinLinkNewReplaces => 'إنشاء رابط جديد يحلّ محلّ هذا الرابط.';
-
-  @override
-  String get notebookActive => 'اشتراك الدفتر مفعّل';
-
-  @override
-  String get notebookManage => 'إدارة';
-
-  @override
-  String get notebookRefresh => 'تحديث';
-
-  @override
-  String get notebookHeroEyebrow => 'كل ما تتعلمه في مكان واحد';
-
-  @override
-  String get notebookHeroTitle => 'مساحة لكل درس.';
-
-  @override
-  String get notebookHeroSubtitle =>
-      'احتفظ بملاحظات معلميك ومواد دروسك في متناولك.';
-
-  @override
-  String get notebookPlanName => 'الدفتر · اشتراك شهري';
-
-  @override
-  String notebookPricePerMonth(String price) {
-    return '$price / شهر';
-  }
-
-  @override
-  String notebookTrialThenPrice(String price) {
-    return 'شهر مجاني، ثم $price شهريًا.';
-  }
-
-  @override
-  String get notebookNoTrial =>
-      'يتجدد شهريًا. لم يتم تأكيد فترة مجانية لحساب المتجر هذا.';
-
-  @override
-  String get notebookPriceUnconfirmed => 'يؤكّد متجرك السعر قبل الاشتراك.';
-
-  @override
-  String get notebookPriceUnconfirmedDetail =>
-      'شهر تجريبي مجاني مقرر للمشتركين الجدد المؤهلين. يجب أن يؤكد المتجر السعر المحلي والأهلية قبل الاشتراك.';
-
-  @override
-  String get notebookScope =>
-      'هذا الاشتراك مطلوب للدفتر فقط. تبقى واجباتك ودرجاتك ورسائلك متاحة.';
-
-  @override
-  String get notebookStatusUnavailable =>
-      'تعذّر التحقق من اشتراكك. أعد المحاولة للتحقق من الوصول.';
-
-  @override
-  String get notebookSelfPurchaseDisabled =>
-      'شراء الاشتراكات غير مفعّل لحسابك حتى الآن.';
-
-  @override
-  String get notebookApprovalRequired =>
-      'يجب أن يوافق ولي أمرك المرتبط قبل الاشتراك. الموافقة لا تبدأ التجربة ولا تخصم أي مبلغ.';
-
-  @override
-  String get notebookApprovalRequestSent =>
-      'أُرسل الطلب. يمكن لولي أمرك الموافقة من صفحته الرئيسية.';
-
-  @override
-  String get notebookApprovalWaiting => 'بانتظار موافقة ولي الأمر';
-
-  @override
-  String get notebookApprovalAsk => 'طلب موافقة ولي أمري';
-
-  @override
-  String get notebookPurchaseStarted =>
-      'أكمل خطوات المتجر. يبدأ الوصول بعد التحقق من الشراء؛ حدّث الصفحة عند الحاجة.';
-
-  @override
-  String get notebookStartFreeMonth => 'ابدأ شهري المجاني';
-
-  @override
-  String get notebookSubscribeMonthly => 'اشترك شهريًا';
-
-  @override
-  String get notebookCheckoutUnavailable =>
-      'يتاح الدفع بعد توفر شروط المتجر والموافقة وسياسات الاشتراك.';
-
-  @override
-  String get notebookRestoreRequested =>
-      'طُلبت استعادة المشتريات. يظهر الوصول بعد تحقق المتجر.';
-
-  @override
-  String get notebookRestore => 'استعادة المشتريات';
-
-  @override
-  String get notebookManageOrCancel => 'إدارة الاشتراك أو إلغاؤه';
-
-  @override
-  String get notebookRenewalDisclosure =>
-      'اشتراك يتجدد تلقائيًا. تُحصّل الدفعات عبر حساب Apple أو Google. عند توفر تجربة مجانية، يبدأ الدفع بعد انتهائها. ألغِ من إعدادات المتجر قبل التجديد أو نهاية التجربة بـ٢٤ ساعة على الأقل لتجنب الدفعة التالية. حذف التطبيق لا يلغي الاشتراك.';
-
-  @override
-  String get notebookTermsOfUse => 'شروط الاستخدام';
-
-  @override
-  String get notebookPrivacyPolicy => 'سياسة الخصوصية';
-
-  @override
-  String get notebookActionFailed =>
-      'تعذّر إكمال هذه الخطوة. تحقق من اتصالك وربط ولي أمرك ثم حاول مجددًا.';
-
-  @override
-  String get notebookOpenPageFailed => 'تعذّر فتح الصفحة.';
 
   @override
   String get joinClassTitle => 'الانضمام إلى صف';

@@ -102,7 +102,7 @@ export class ExternalScannerUnavailableError extends Error {
  * response shape, and every non-authoritative answer — network error,
  * timeout, non-2xx, malformed body — becomes an infrastructure failure so
  * the pipeline retries rather than guessing. The provider API contract is
- * provisional until a real scanner service is selected (inputs.md Group 3);
+ * provisional until a real scanner service is selected (docs/planning/inputs.md Group 3);
  * wiring the real one is a reviewed change to this adapter only.
  */
 export class ExternalMalwareScannerClient {

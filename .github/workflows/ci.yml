@@ -265,15 +265,30 @@ jobs:
           bunx supabase test db --local
           supabase/tests/pay071_billing_seed.sql
 
-      # Student Notebook entitlement gate: no local trial, a sandbox receipt
-      # cannot unlock production reads, revocation/expiry lock immediately,
-      # billing grace still reads, and one student's purchase never unlocks
-      # another's. This file seeds its own fixtures, so it has no separate
-      # _seed.sql wrapper and is run directly.
-      - name: Verify Student Notebook subscription gate
+      # ADR-0029: Lessons are free; Studafy Plus / Max are decided on the
+      # server from store entitlements and grants; the AI ledger refuses a
+      # call that would pass a plan's monthly cap before any provider is
+      # called. Seeds its own fixtures, so it is run directly.
+      - name: Verify free Lessons, study plans, and the AI spending ledger
         run: >-
           bunx supabase test db --local
-          supabase/tests/notebook_subscription.sql
+          supabase/tests/study_plans.sql
+
+      # API-042: every school-operations slice - account, communications,
+      # family, invitations, meetings, notifications, roster, school
+      # operations and support access.
+      - name: Verify API-042 school operations surface
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/api042_account_seed.sql
+          supabase/tests/api042_communications_seed.sql
+          supabase/tests/api042_family_seed.sql
+          supabase/tests/api042_invitations_seed.sql
+          supabase/tests/api042_meetings_seed.sql
+          supabase/tests/api042_notifications_seed.sql
+          supabase/tests/api042_roster_seed.sql
+          supabase/tests/api042_school_operations_seed.sql
+          supabase/tests/api042_support_access_seed.sql
 
       # Self-serve teacher sign-up is the only path to a first membership that
       # does not start from a platform operator, so what it refuses matters as
@@ -339,44 +354,24 @@ jobs:
       - name: Run database package connectivity smoke
         run: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres bun test packages/database
 
-      # AUTH-030: the repository suite exercises the real SQL through
-      # postgres.js, which the fake-backed route tests cannot cover.
-      - name: Run AUTH-030 repository integration suite
-        run: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres bun test apps/api/test/auth
-
-      - name: Run AUTH-031 real /v1 and RLS parity integration suite
+      # Every API and worker integration suite, found by name rather than
+      # listed, so a new suite runs in CI the day it is added. Each exercises
+      # the real SQL through postgres.js - route stacks, transactions, outbox
+      # and idempotent replays - which the fake-backed unit tests cannot.
+      # The OPS-061 outbox suite runs later, after its drain state machine is
+      # verified, as its own step.
+      - name: Run every API and worker integration suite
         run: >-
-          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-          bun test apps/api/test/authorization/parity.integration.test.ts
-
-      - name: Run API-040 concurrent PostgreSQL idempotency integration suite
-        run: >-
-          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-          bun test apps/api/test/platform/idempotency.integration.test.ts
-
-      # API-041: the real /v1 academic route stack over the real database —
-      # teacher/student/guardian slices, transactions, outbox and idempotent
-      # replays end to end. This is the parity proof behind removing the
-      # approve-paper-grade and publish-grade-result Edge Functions.
-      - name: Run API-041 academic /v1 integration suite
-        run: >-
-          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-          bun test apps/api/test/academic/academic.integration.test.ts
+          REDIS_URL=redis://127.0.0.1:6379
+          bun test apps/api/test/auth
+          $(find apps packages -name '*.integration.test.ts'
+          -not -path '*/node_modules/*'
+          -not -name 'outbox.integration.test.ts' | sort)
 
       # FILE-050: use a real local signed capability and prove the token cannot
       # be redirected to a substituted object key.
       - name: Run FILE-050 signed-upload path-binding integration suite
         run: bun run test:file050:storage
-
-      # FILE-050: the pgTAP suite runs in one transaction and can only prove
-      # sequential quota enforcement. These cases race two real connections for
-      # the last session slot and the last quota byte, race two completions of
-      # one session, and force an outbox failure to prove the registration
-      # transaction rolls back whole.
-      - name: Run FILE-050 quota-race and atomicity integration suite
-        run: >-
-          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-          bun test apps/api/test/files/quota.integration.test.ts
 
       # FILE-051: the whole lifecycle over real Storage with the API and
       # worker connected as their least-privilege runtime roles — transform,
@@ -400,11 +395,6 @@ jobs:
 
       - name: Verify SAFE-043 reporting, moderation, holds, and blocks surface
         run: bunx supabase test db --local supabase/tests/safe043_surface_seed.sql
-
-      - name: Run SAFE-043 /v1 integration suite
-        run: >-
-          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-          bun test apps/api/test/safety/safety.integration.test.ts
 
       # On call: the drill drives the real SQL dispatcher through the whole
       # safeguarding lifecycle and exits non-zero on any step failing.

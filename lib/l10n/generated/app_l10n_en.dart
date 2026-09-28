@@ -574,21 +574,6 @@ class AppL10nEn extends AppL10n {
   String get classesRoomTbd => 'Room to be decided';
 
   @override
-  String get dashNotifications => 'Notifications';
-
-  @override
-  String get dashTakeAttendance => 'Take attendance';
-
-  @override
-  String get dashAddNotebook => 'Add lesson notebook';
-
-  @override
-  String get dashAttendanceRecorded => 'Attendance recorded';
-
-  @override
-  String get dashNotebookMissing => 'Notebook missing';
-
-  @override
   String get attendancePresent => 'Present';
 
   @override
@@ -608,21 +593,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get attendanceSave => 'Save attendance';
-
-  @override
-  String get notebookTitle => 'My notebook';
-
-  @override
-  String get notebookLessonLabel => 'Lesson covered';
-
-  @override
-  String get notebookLessonHint => 'What did you teach today?';
-
-  @override
-  String get notebookHomeworkLabel => 'Homework (optional)';
-
-  @override
-  String get notebookSave => 'Save notebook';
 
   @override
   String get syntheticBanner => 'SYNTHETIC DATA — NOT FOR REAL SCHOOL USE';
@@ -1234,117 +1204,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get joinLinkNewReplaces => 'Creating a new link replaces this one.';
-
-  @override
-  String get notebookActive => 'Notebook is active';
-
-  @override
-  String get notebookManage => 'Manage';
-
-  @override
-  String get notebookRefresh => 'Refresh';
-
-  @override
-  String get notebookHeroEyebrow => 'YOUR LEARNING, TOGETHER';
-
-  @override
-  String get notebookHeroTitle => 'A home for every lesson.';
-
-  @override
-  String get notebookHeroSubtitle =>
-      'Keep your teachers’ lesson notes and learning materials close.';
-
-  @override
-  String get notebookPlanName => 'Notebook · Monthly';
-
-  @override
-  String notebookPricePerMonth(String price) {
-    return '$price / month';
-  }
-
-  @override
-  String notebookTrialThenPrice(String price) {
-    return '1 month free, then $price each month.';
-  }
-
-  @override
-  String get notebookNoTrial =>
-      'Renews monthly. No free trial is confirmed for this store account.';
-
-  @override
-  String get notebookPriceUnconfirmed =>
-      'Your store confirms the price before you subscribe.';
-
-  @override
-  String get notebookPriceUnconfirmedDetail =>
-      'A one-month free trial is planned for eligible new subscribers. The store must confirm local pricing and eligibility before you can subscribe.';
-
-  @override
-  String get notebookScope =>
-      'Only Notebook requires this subscription. Your assignments, grades and messages remain available.';
-
-  @override
-  String get notebookStatusUnavailable =>
-      'We could not check your subscription. Retry to check access.';
-
-  @override
-  String get notebookSelfPurchaseDisabled =>
-      'Student purchasing is not enabled for your account yet.';
-
-  @override
-  String get notebookApprovalRequired =>
-      'A linked parent must approve before you subscribe. Approval does not start a trial or charge anyone.';
-
-  @override
-  String get notebookApprovalRequestSent =>
-      'Request sent. Your parent can approve it from their home page.';
-
-  @override
-  String get notebookApprovalWaiting => 'Waiting for parent approval';
-
-  @override
-  String get notebookApprovalAsk => 'Ask my parent';
-
-  @override
-  String get notebookPurchaseStarted =>
-      'Complete the store sheet. Access starts after your purchase is verified; refresh if needed.';
-
-  @override
-  String get notebookStartFreeMonth => 'Start my free month';
-
-  @override
-  String get notebookSubscribeMonthly => 'Subscribe monthly';
-
-  @override
-  String get notebookCheckoutUnavailable =>
-      'Checkout opens once store terms, account approval and subscription policies are available.';
-
-  @override
-  String get notebookRestoreRequested =>
-      'Restore requested. Access appears after store verification.';
-
-  @override
-  String get notebookRestore => 'Restore purchases';
-
-  @override
-  String get notebookManageOrCancel => 'Manage or cancel subscription';
-
-  @override
-  String get notebookRenewalDisclosure =>
-      'Auto-renewing subscription. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal or the trial ends to avoid the next charge. Deleting the app does not cancel your subscription.';
-
-  @override
-  String get notebookTermsOfUse => 'Terms of Use';
-
-  @override
-  String get notebookPrivacyPolicy => 'Privacy Policy';
-
-  @override
-  String get notebookActionFailed =>
-      'Could not complete this step. Check your connection and your parent link, then try again.';
-
-  @override
-  String get notebookOpenPageFailed => 'Could not open the page.';
 
   @override
   String get joinClassTitle => 'Join a class';

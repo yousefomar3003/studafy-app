@@ -1,5 +1,25 @@
-part of '../../../parent_features.dart';
+import 'package:flutter/material.dart';
 
+import '../core/studafy_design.dart';
+import '../core/studafy_domain.dart';
+import '../core/studafy_localizations.dart';
+import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/presentation/academic_overview_page.dart';
+import '../features/academic/presentation/submit_work_page.dart';
+import '../features/family/domain/family.dart';
+import '../features/family/presentation/family_home_page.dart';
+import '../features/family/presentation/linked_child_switcher.dart';
+import '../features/family_insights/application/family_insights_interactor.dart';
+import '../features/family_insights/presentation/family_insights_page.dart';
+import '../features/meetings/presentation/upcoming_meetings_section.dart';
+import '../features/messaging/domain/messaging.dart';
+import '../features/messaging/presentation/conversations_page.dart';
+import '../features/notifications/presentation/notifications_page.dart';
+import '../l10n/generated/app_l10n.dart';
+import 'account_hub_page.dart';
+
+/// The parent's app: their children's day, schoolwork, Family+ insights,
+/// updates and messages. Composed here because it draws on several features.
 class ParentShell extends StatefulWidget {
   const ParentShell({super.key, required this.academic, this.insights});
   final AcademicRepository academic;
@@ -13,7 +33,6 @@ class ParentShell extends StatefulWidget {
 
 class _ParentShellState extends State<ParentShell> {
   int index = 0;
-  final homeKey = GlobalKey<ParentHomePageState>();
 
   @override
   void initState() {
@@ -164,7 +183,7 @@ class _ParentShellState extends State<ParentShell> {
           Icons.forum_rounded,
         ),
       ],
-      accent: _navy,
+      accent: studafyNavy,
     ),
   );
 }
@@ -189,7 +208,7 @@ class _InsightsTab extends StatelessWidget {
     final id = studentId;
     if (id == null) {
       return Scaffold(
-        backgroundColor: _canvas,
+        backgroundColor: studafyCanvas,
         appBar: AppBar(
           backgroundColor: Colors.white,
           title: Text(AppL10n.of(context).insightsTitle),

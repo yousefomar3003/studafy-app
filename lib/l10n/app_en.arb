@@ -336,11 +336,6 @@
     }
   },
   "classesRoomTbd": "Room to be decided",
-  "dashNotifications": "Notifications",
-  "dashTakeAttendance": "Take attendance",
-  "dashAddNotebook": "Add lesson notebook",
-  "dashAttendanceRecorded": "Attendance recorded",
-  "dashNotebookMissing": "Notebook missing",
   "attendancePresent": "Present",
   "attendanceAbsent": "Absent",
   "attendanceTardy": "Tardy",
@@ -348,11 +343,6 @@
   "attendanceExcusedReason": "Reason for excused absence",
   "attendanceSaved": "Attendance saved successfully.",
   "attendanceSave": "Save attendance",
-  "notebookTitle": "My notebook",
-  "notebookLessonLabel": "Lesson covered",
-  "notebookLessonHint": "What did you teach today?",
-  "notebookHomeworkLabel": "Homework (optional)",
-  "notebookSave": "Save notebook",
   "syntheticBanner": "SYNTHETIC DATA — NOT FOR REAL SCHOOL USE",
   "blockedTitle": "Studafy is not production-ready",
   "blockedDefaultReason": "Production access is blocked until security and data-integrity gates pass.",
@@ -651,143 +641,6 @@
   "joinLinkRevoked": "Link revoked. It no longer works for anyone holding it.",
   "joinLinkRevokeFailed": "Could not revoke the link. Please try again.",
   "joinLinkNewReplaces": "Creating a new link replaces this one.",
-  "@notebookTitle": {
-    "description": "Title of the student's Notebook tab and of its subscription screen."
-  },
-  "notebookActive": "Notebook is active",
-  "@notebookActive": {
-    "description": "Banner above the lesson content once a verified subscription is in force."
-  },
-  "notebookManage": "Manage",
-  "@notebookManage": {
-    "description": "Short link in the active-subscription banner, opens the store's subscription settings."
-  },
-  "notebookRefresh": "Refresh",
-  "@notebookRefresh": {
-    "description": "Tooltip on the button that rechecks subscription access with the server."
-  },
-  "notebookHeroEyebrow": "YOUR LEARNING, TOGETHER",
-  "@notebookHeroEyebrow": {
-    "description": "Small all-caps label above the Notebook paywall headline."
-  },
-  "notebookHeroTitle": "A home for every lesson.",
-  "@notebookHeroTitle": {
-    "description": "Headline of the Notebook paywall."
-  },
-  "notebookHeroSubtitle": "Keep your teachers’ lesson notes and learning materials close.",
-  "@notebookHeroSubtitle": {
-    "description": "Sentence under the Notebook paywall headline describing what the subscription covers."
-  },
-  "notebookPlanName": "Notebook · Monthly",
-  "@notebookPlanName": {
-    "description": "Name of the subscription plan on the Notebook paywall card."
-  },
-  "notebookPricePerMonth": "{price} / month",
-  "@notebookPricePerMonth": {
-    "description": "Recurring price line. The price already carries its own currency symbol exactly as the store formatted it for this storefront, so no currency code is added.",
-    "placeholders": {
-      "price": {
-        "type": "String"
-      }
-    }
-  },
-  "notebookTrialThenPrice": "1 month free, then {price} each month.",
-  "@notebookTrialThenPrice": {
-    "description": "Shown only when the store reports this account is eligible for the introductory free month. The price is the store's formatted recurring price.",
-    "placeholders": {
-      "price": {
-        "type": "String"
-      }
-    }
-  },
-  "notebookNoTrial": "Renews monthly. No free trial is confirmed for this store account.",
-  "@notebookNoTrial": {
-    "description": "Shown when the store offers no introductory trial to this account, so a free month must not be promised."
-  },
-  "notebookPriceUnconfirmed": "Your store confirms the price before you subscribe.",
-  "@notebookPriceUnconfirmed": {
-    "description": "Replaces the price line when the store query returned no usable terms. Never states a price the store has not confirmed, because tiers differ per storefront."
-  },
-  "notebookPriceUnconfirmedDetail": "A one-month free trial is planned for eligible new subscribers. The store must confirm local pricing and eligibility before you can subscribe.",
-  "@notebookPriceUnconfirmedDetail": {
-    "description": "Explains why checkout is unavailable while store terms are missing."
-  },
-  "notebookScope": "Only Notebook requires this subscription. Your assignments, grades and messages remain available.",
-  "@notebookScope": {
-    "description": "Reassures the student that schoolwork outside Notebook stays free."
-  },
-  "notebookStatusUnavailable": "We could not check your subscription. Retry to check access.",
-  "@notebookStatusUnavailable": {
-    "description": "Shown when the subscription status request failed."
-  },
-  "notebookSelfPurchaseDisabled": "Student purchasing is not enabled for your account yet.",
-  "@notebookSelfPurchaseDisabled": {
-    "description": "Shown when the school's student purchasing switch is off."
-  },
-  "notebookApprovalRequired": "A linked parent must approve before you subscribe. Approval does not start a trial or charge anyone.",
-  "@notebookApprovalRequired": {
-    "description": "Explains the guardian approval requirement and that approval alone never charges anyone."
-  },
-  "notebookApprovalRequestSent": "Request sent. Your parent can approve it from their home page.",
-  "@notebookApprovalRequestSent": {
-    "description": "Confirmation after the student asks a linked parent to approve."
-  },
-  "notebookApprovalWaiting": "Waiting for parent approval",
-  "@notebookApprovalWaiting": {
-    "description": "Button label while an approval request is outstanding."
-  },
-  "notebookApprovalAsk": "Ask my parent",
-  "@notebookApprovalAsk": {
-    "description": "Button that sends the guardian approval request."
-  },
-  "notebookPurchaseStarted": "Complete the store sheet. Access starts after your purchase is verified; refresh if needed.",
-  "@notebookPurchaseStarted": {
-    "description": "Shown after the store purchase sheet is opened."
-  },
-  "notebookStartFreeMonth": "Start my free month",
-  "@notebookStartFreeMonth": {
-    "description": "Checkout button when the store confirms this account is trial eligible."
-  },
-  "notebookSubscribeMonthly": "Subscribe monthly",
-  "@notebookSubscribeMonthly": {
-    "description": "Checkout button when no trial applies to this account."
-  },
-  "notebookCheckoutUnavailable": "Checkout opens once store terms, account approval and subscription policies are available.",
-  "@notebookCheckoutUnavailable": {
-    "description": "Explains why the checkout button is disabled."
-  },
-  "notebookRestoreRequested": "Restore requested. Access appears after store verification.",
-  "@notebookRestoreRequested": {
-    "description": "Confirmation after the student asks the store to restore purchases."
-  },
-  "notebookRestore": "Restore purchases",
-  "@notebookRestore": {
-    "description": "Button that asks the store to restore an existing subscription."
-  },
-  "notebookManageOrCancel": "Manage or cancel subscription",
-  "@notebookManageOrCancel": {
-    "description": "Link to the store's own subscription management page."
-  },
-  "notebookRenewalDisclosure": "Auto-renewing subscription. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal or the trial ends to avoid the next charge. Deleting the app does not cancel your subscription.",
-  "@notebookRenewalDisclosure": {
-    "description": "Auto-renewal disclosure required by both stores before purchase."
-  },
-  "notebookTermsOfUse": "Terms of Use",
-  "@notebookTermsOfUse": {
-    "description": "Link to the hosted terms document from the Notebook paywall."
-  },
-  "notebookPrivacyPolicy": "Privacy Policy",
-  "@notebookPrivacyPolicy": {
-    "description": "Link to the hosted privacy document from the Notebook paywall."
-  },
-  "notebookActionFailed": "Could not complete this step. Check your connection and your parent link, then try again.",
-  "@notebookActionFailed": {
-    "description": "Generic failure message for approval, purchase and restore actions."
-  },
-  "notebookOpenPageFailed": "Could not open the page.",
-  "@notebookOpenPageFailed": {
-    "description": "Shown when a policy or store management link could not be opened."
-  },
   "joinClassTitle": "Join a class",
   "@joinClassTitle": {
     "description": "Title of the screen where a student enters a class link."

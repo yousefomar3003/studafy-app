@@ -30,19 +30,15 @@ void main() {
   });
 
   test('direct mobile storage uploads are absent', () {
-    expect(
-      source('lib/teacher_features.dart'),
-      isNot(contains('uploadBinary')),
-    );
-    final studentPresentation = <String>[
-      source('lib/student_features.dart'),
-      ...Directory('lib/legacy/student/presentation')
-          .listSync()
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.dart'))
-          .map((file) => file.readAsStringSync()),
-    ].join('\n');
-    expect(studentPresentation, isNot(contains('uploadBinary')));
+    // Every upload goes through the quarantined /v1 intent pipeline.
+    final offenders = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .where((file) => file.readAsStringSync().contains('uploadBinary'))
+        .map((file) => file.path)
+        .toList();
+    expect(offenders, isEmpty);
   });
 
   test('forward migration removes the direct upload policy', () {

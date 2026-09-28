@@ -10,7 +10,7 @@ export type SafetyRepository = CatalogueRepository;
 
 /**
  * SAFE-043's moderation-access and legal-hold commands are MFA-gated like the
- * support-access ones (instructions.md section 7: platform-operator actions
+ * support-access ones (docs/planning/instructions.md section 7: platform-operator actions
  * carry MFA and a ticket reference). The generic dispatcher only sends
  * {body, params, responseStatus} and does not know the actor's real AAL2
  * status; this repository is the one place that forwards it, exactly like

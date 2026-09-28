@@ -178,7 +178,7 @@ any client API.
 ## Known residual risk
 
 - No real malware engine has been exercised. The provider adapter's API
-  shape is provisional until a vendor is chosen (inputs.md Group 3, A6).
+  shape is provisional until a vendor is chosen (docs/planning/inputs.md Group 3, A6).
 - Image cleaning removes metadata but does not re-encode pixels. There is no
   PDF content disarm and reconstruction.
 - Any active teacher or admin in a school can view any publication in that

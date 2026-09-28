@@ -26,10 +26,10 @@ insert into pay071_body values
     'signedDataHash', repeat('a',64), 'state','active',
     'purchasedAt', now()::text, 'effectiveUntil', (now()+interval '30 days')::text,
     'beneficiaryStudentId','abcf0000-0000-4000-8000-000000000008')),
-  ('notebook', jsonb_build_object(
+  ('plus', jsonb_build_object(
     'platform','play_store','environment','synthetic',
-    'productFeatureKey','student_notebook',
-    'storeProductId','studafy_student_notebook_monthly',
+    'productFeatureKey','studafy_plus',
+    'storeProductId','studafy_plus_monthly',
     'originalTransactionId','pay071-lineage-2','transactionId','pay071-txn-2',
     'signedDataHash', repeat('b',64), 'state','active',
     'purchasedAt', now()::text, 'effectiveUntil', (now()+interval '30 days')::text));
@@ -112,16 +112,16 @@ select is(private.billing_restore(
 -- 7. Student self-purchase needs the per-school switch and a real guardian
 -- approval. A caller-asserted confirmation flag is ignored entirely.
 select set_config('request.jwt.claim.sub', :'student_user', true);
-select is(private.billing_request_purchase_approval('student_notebook')->>'outcome',
+select is(private.billing_request_purchase_approval('studafy_plus')->>'outcome',
   'student_purchase_disabled', 'no approval can be requested while the school switch is off (the default)');
 insert into public.school_billing_settings(school_id, self_purchase_enabled) values (:'school_id', true)
   on conflict (school_id) do update set self_purchase_enabled = true;
 select is(private.billing_submit_verification((select body || '{"parentalGateConfirmed":true}'::jsonb
-    from pay071_body where name='notebook'))->>'outcome', 'parental_gate_required',
+    from pay071_body where name='plus'))->>'outcome', 'parental_gate_required',
   'a client-asserted gate confirmation is ignored without a guardian approval');
 select is(private.billing_request_purchase_approval('student_ai')->>'outcome', 'product_not_found',
   'approval cannot be requested for the retired AI product');
-select is(private.billing_request_purchase_approval('student_notebook')->>'outcome', 'ok',
+select is(private.billing_request_purchase_approval('studafy_plus')->>'outcome', 'ok',
   'a student with a verified guardian can request approval');
 select is((select count(*) from public.notification_outbox o
   where o.template_key = 'billing.purchase_approval_requested'
@@ -131,7 +131,7 @@ select is((select count(*) from public.notification_outbox o
   where o.template_key = 'billing.purchase_approval_requested'
     and o.recipient_id in (:'unverified_guardian', :'expired_guardian_user')), 0::bigint,
   'pending and expired guardians are not notified');
-select is(private.billing_request_purchase_approval('student_notebook')->'response'->>'id',
+select is(private.billing_request_purchase_approval('studafy_plus')->'response'->>'id',
   (select id::text from public.billing_purchase_approvals where student_user_id = :'student_user'),
   'a repeated request returns the same open approval');
 select is(private.billing_decide_purchase_approval(
@@ -155,21 +155,21 @@ select is(private.billing_decide_purchase_approval(
     (select id from public.billing_purchase_approvals where student_user_id = :'student_user'), false)->>'outcome',
   'invalid_state', 'a decided approval cannot be flipped');
 select set_config('request.jwt.claim.sub', :'student_user', true);
-select is(private.billing_submit_verification((select body from pay071_body where name='notebook'))->>'outcome',
+select is(private.billing_submit_verification((select body from pay071_body where name='plus'))->>'outcome',
   'ok', 'the approved student purchase verifies');
 select is((select status::text from public.billing_purchase_approvals where student_user_id = :'student_user'),
   'consumed', 'the approval is consumed by the first ledger row');
 select ok((select purchase_approval_id is not null and parental_gate_confirmed_at is not null
     from public.store_transactions where transaction_id = 'pay071-txn-2'),
   'the ledger records which approval authorised the purchase');
-select is(private.billing_submit_verification((select body from pay071_body where name='notebook')
+select is(private.billing_submit_verification((select body from pay071_body where name='plus')
     || '{"transactionId":"pay071-txn-2-renewal"}'::jsonb)->>'outcome', 'ok',
   'a renewal of the approved lineage needs no second approval');
-select is(private.billing_submit_verification((select body from pay071_body where name='notebook')
+select is(private.billing_submit_verification((select body from pay071_body where name='plus')
     || '{"originalTransactionId":"pay071-lineage-7","transactionId":"pay071-txn-7"}'::jsonb)->>'outcome',
   'parental_gate_required', 'a consumed approval cannot fund a second subscription');
 select set_config('request.jwt.claim.sub', :'second_student_user', true);
-select is(private.billing_request_purchase_approval('student_notebook')->>'outcome',
+select is(private.billing_request_purchase_approval('studafy_plus')->>'outcome',
   'guardian_link_required', 'a student with no verified guardian cannot request approval');
 
 -- 8. Lifecycle changes are recorded, identity is pinned, nothing is deleted.

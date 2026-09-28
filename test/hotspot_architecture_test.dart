@@ -15,55 +15,73 @@ void main() {
     expect(_source(path), isNot(contains('rawQuery(')));
   });
 
-  test('student presentation is split into bounded independent libraries', () {
-    const barrelPath = 'lib/student_features.dart';
-    final barrel = _source(barrelPath);
-    expect(_lines(barrelPath), lessThan(40));
-    expect(barrel, isNot(contains('StudafyDatabase')));
-    expect(barrel, isNot(contains('part ')));
-
-    final modules = Directory('lib/legacy/student/presentation')
-        .listSync()
+  test('legacy presentation stays deleted', () {
+    // The legacy teacher/student/parent libraries were removed once every
+    // role shell ran on /v1 features. Nothing may bring them back, and no
+    // screen may be split with `part` again: parts hide cross-feature
+    // imports from tools/check_dart_bounds.dart.
+    expect(Directory('lib/legacy').existsSync(), isFalse);
+    for (final barrel in const [
+      'lib/teacher_features.dart',
+      'lib/student_features.dart',
+      'lib/parent_features.dart',
+    ]) {
+      expect(File(barrel).existsSync(), isFalse, reason: barrel);
+    }
+    final parts = Directory('lib')
+        .listSync(recursive: true)
         .whereType<File>()
         .where((file) => file.path.endsWith('.dart'))
+        .where((file) => !file.path.contains('/generated/'))
+        .where((file) => !file.path.startsWith('lib/data/local/'))
+        .where((file) => file.path != 'lib/studafy_database.dart')
+        .where(
+          (file) => file.readAsStringSync().contains(
+            RegExp(r'^part ', multiLine: true),
+          ),
+        )
+        .map((file) => file.path)
         .toList();
-    // 15 before AI-072 deleted the four student AI modules (ADR-0026).
-    expect(modules.length, greaterThanOrEqualTo(11));
-
-    var previewDatabaseCalls = 0;
-    for (final module in modules) {
-      final source = module.readAsStringSync();
-      expect(_lines(module.path), lessThan(650), reason: module.path);
-      expect(source, isNot(contains('part of ')), reason: module.path);
-      previewDatabaseCalls += 'StudafyDatabase.instance'
-          .allMatches(source)
-          .length;
-    }
-
-    // Structural extraction must not increase preview persistence coupling.
-    // MOB-070 replaces these calls with server-backed repository ports.
-    expect(previewDatabaseCalls, lessThanOrEqualTo(32));
+    expect(parts, isEmpty);
   });
 
-  test(
-    'parent feature is split and presentation has no persistence access',
-    () {
-      expect(_lines('lib/parent_features.dart'), lessThan(100));
-      final modules = Directory('lib/features/parent/presentation')
-          .listSync()
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.dart'))
-          .toList();
-      expect(modules.length, greaterThanOrEqualTo(12));
-      for (final module in modules) {
-        final source = module.readAsStringSync();
-        expect(_lines(module.path), lessThan(650), reason: module.path);
-        expect(source, isNot(contains('StudafyDatabase')), reason: module.path);
-        expect(source, isNot(contains('StudafyBackend')), reason: module.path);
-        expect(source, isNot(contains('.rawQuery(')), reason: module.path);
+  test('every public class name is defined once', () {
+    // Two NotificationsPage classes once let the teacher shell open the
+    // legacy offline page instead of the real one, silently, through an
+    // import that happened to win. A name means one thing in this app.
+    final definitions = <String, List<String>>{};
+    final pattern = RegExp(
+      r'^(?:abstract |sealed |final |base |interface )*(?:class|mixin|enum|extension type) ([A-Z]\w*)',
+      multiLine: true,
+    );
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((file) => file.path.endsWith('.dart'))) {
+      for (final match in pattern.allMatches(file.readAsStringSync())) {
+        definitions.putIfAbsent(match.group(1)!, () => []).add(file.path);
       }
-    },
-  );
+    }
+    final duplicated = {
+      for (final entry in definitions.entries)
+        if (entry.value.length > 1) entry.key: entry.value,
+    };
+    expect(duplicated, isEmpty);
+  });
+
+  test('role shells never touch the preview database', () {
+    for (final path in const [
+      'lib/app/teacher_shell.dart',
+      'lib/app/student_shell.dart',
+      'lib/app/parent_shell.dart',
+    ]) {
+      final source = _source(path);
+      expect(_lines(path), lessThan(600), reason: path);
+      expect(source, isNot(contains('StudafyDatabase')), reason: path);
+      expect(source, isNot(contains('StudafyBackend')), reason: path);
+    }
+  });
 
   test('preview database facade delegates to bounded modules', () {
     expect(_lines('lib/studafy_database.dart'), lessThan(150));
@@ -79,45 +97,6 @@ void main() {
       expect(_lines(module.path), lessThan(500), reason: module.path);
     }
   });
-
-  test('teacher dashboard presentation is bounded and persistence-free', () {
-    final modules = Directory('lib/features/teacher_dashboard/presentation')
-        .listSync()
-        .whereType<File>()
-        .where((file) => file.path.endsWith('.dart'));
-    for (final module in modules) {
-      final source = module.readAsStringSync();
-      expect(_lines(module.path), lessThan(500), reason: module.path);
-      expect(source, isNot(contains('StudafyDatabase')), reason: module.path);
-      expect(source, isNot(contains('StudafyBackend')), reason: module.path);
-    }
-  });
-
-  test(
-    'legacy teacher screens are split into bounded responsibility modules',
-    () {
-      expect(_lines('lib/teacher_features.dart'), lessThan(75));
-      final modules = Directory('lib/legacy/teacher/presentation')
-          .listSync()
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.dart'))
-          .toList();
-      expect(modules, hasLength(14));
-
-      var previewDatabaseCalls = 0;
-      for (final module in modules) {
-        final source = module.readAsStringSync();
-        expect(_lines(module.path), lessThan(600), reason: module.path);
-        previewDatabaseCalls += 'StudafyDatabase.instance'
-            .allMatches(source)
-            .length;
-      }
-
-      // This legacy debt must fall as API-backed vertical slices replace it;
-      // decomposition alone must never introduce more widget/database calls.
-      expect(previewDatabaseCalls, lessThanOrEqualTo(62));
-    },
-  );
 
   test(
     'API-041 production academic boundary has no local or Supabase data calls',
@@ -160,10 +139,6 @@ void main() {
       expect(
         _source('lib/app/teacher_shell.dart'),
         isNot(contains('ClassWorkspacePage')),
-      );
-      expect(
-        _source('lib/legacy/student/presentation/student_shell.dart'),
-        isNot(contains('StudentClassworkPage')),
       );
     },
   );

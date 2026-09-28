@@ -19,7 +19,7 @@ Phase 5B (§11, §20) is that exit. Four requirements drive it:
    file.
 4. The malicious-file response must be documented and rehearsed.
 
-There is no malware scanning vendor yet (inputs.md Group 3, A6), no approved
+There is no malware scanning vendor yet (docs/planning/inputs.md Group 3, A6), no approved
 retention schedule (§29), and no production environment.
 
 ## Decision
