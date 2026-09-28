@@ -1,47 +1,14 @@
 import type { Sql } from "@studafy/database";
-import { withRequestContext } from "../platform/dbContext";
-import type {
-  CatalogueCommandResult,
-  CatalogueRepository,
+import {
+  type CatalogueRepository,
+  PostgresDispatchRepository,
+  SCHOOL_OPERATIONS,
 } from "../platform/dispatchRepository";
-import type { RequestDbContext } from "../platform/dbContext";
 
 export type MeetingsRepository = CatalogueRepository;
 
-export class PostgresMeetingsRepository implements CatalogueRepository {
-  constructor(readonly sql: Sql) {}
-
-  async query(
-    context: RequestDbContext,
-    operation: string,
-    resourceId: string | null,
-    input: unknown,
-  ): Promise<unknown> {
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx<{ result: unknown }[]>`
-        select private.api042_query(
-          ${operation}, ${resourceId}::uuid, ${tx.json(input as never)}
-        ) as result
-      `;
-      return rows[0]?.result ?? null;
-    });
-  }
-
-  async command(
-    context: RequestDbContext,
-    operation: string,
-    resourceId: string | null,
-    input: unknown,
-    reservation: { id: string; generation: number },
-  ): Promise<CatalogueCommandResult> {
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx<{ result: CatalogueCommandResult }[]>`
-        select private.api042_command(
-          ${operation}, ${resourceId}::uuid, ${tx.json(input as never)},
-          ${reservation.id}::uuid, ${reservation.generation}
-        ) as result
-      `;
-      return rows[0]?.result ?? { outcome: "invalid" };
-    });
+export class PostgresMeetingsRepository extends PostgresDispatchRepository {
+  constructor(sql: Sql) {
+    super(sql, SCHOOL_OPERATIONS);
   }
 }
