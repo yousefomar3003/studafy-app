@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'attachment_policy.dart';
 import 'file_upload_repository.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'feedback.dart';
 
 /// What the person chose, before anything has been sent.
 @immutable
@@ -193,8 +194,7 @@ class _AttachmentFieldState extends State<AttachmentField> {
   }
 
   void _say(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showMessage(message);
 
   String _refusalText(AttachmentRefusal refusal) => switch (refusal) {
     AttachmentRefusal.empty => AppL10n.of(context).attachmentThatFileIsEmpty,

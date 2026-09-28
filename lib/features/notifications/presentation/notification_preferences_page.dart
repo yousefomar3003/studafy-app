@@ -5,6 +5,7 @@ import '../../../core/studafy_domain.dart';
 import '../domain/notifications_repository.dart';
 import 'notifications_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 class NotificationPreferencesPage extends StatefulWidget {
   const NotificationPreferencesPage({super.key});
@@ -66,8 +67,7 @@ class _NotificationPreferencesPageState
             for (final value in _items) value == updated ? item : value,
           ],
         );
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(failure.message)));
+        ScaffoldMessenger.of(context).showMessage(failure.message);
       },
     );
   }
@@ -188,8 +188,7 @@ class _NotificationPreferencesPageState
     result.fold(
       onSuccess: (value) => setState(() => _items = [..._items, value]),
       onFailure: (failure) =>
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(failure.message))),
+          ScaffoldMessenger.of(context).showMessage(failure.message),
     );
   }
 

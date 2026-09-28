@@ -4,6 +4,8 @@ import '../../../core/studafy_design.dart';
 import '../../../core/failures.dart';
 import '../domain/school_operations_repository.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
+import '../../../core/studafy_formatting.dart';
 
 class TermsPage extends StatefulWidget {
   const TermsPage({super.key, required this.repository});
@@ -77,7 +79,7 @@ class _TermsPageState extends State<TermsPage> {
                       leading: const Icon(Icons.date_range_outlined),
                       title: Text(term.name),
                       subtitle: Text(
-                        '${_date(term.startsOn)} – ${_date(term.endsOn)}',
+                        '${studafyShortDate(context, term.startsOn)} – ${studafyShortDate(context, term.endsOn)}',
                       ),
                       trailing: Chip(label: Text(term.status)),
                     ),
@@ -109,7 +111,7 @@ class _TermsPageState extends State<TermsPage> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(AppL10n.of(context).termsStarts),
-                    subtitle: Text(_date(starts)),
+                    subtitle: Text(studafyShortDate(context, starts)),
                     onTap: () async {
                       final value = await showDatePicker(
                         context: context,
@@ -130,7 +132,7 @@ class _TermsPageState extends State<TermsPage> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(AppL10n.of(context).termsEnds),
-                    subtitle: Text(_date(ends)),
+                    subtitle: Text(studafyShortDate(context, ends)),
                     onTap: () async {
                       final value = await showDatePicker(
                         context: context,
@@ -165,20 +167,15 @@ class _TermsPageState extends State<TermsPage> {
         endsOn: ends,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppL10n.of(context).termsTermCreated)),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(AppL10n.of(context).termsTermCreated);
         await _load();
       }
     } on Object catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Failure.fromError(error).message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(Failure.fromError(error).message);
       }
     }
   }
-
-  static String _date(DateTime value) =>
-      '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }

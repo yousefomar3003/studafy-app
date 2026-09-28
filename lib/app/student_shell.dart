@@ -21,6 +21,7 @@ import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study_assistant/application/study_assistant_interactor.dart';
 import '../features/study_assistant/presentation/study_assistant_page.dart';
+import '../core/feedback.dart';
 
 class StudentShell extends StatefulWidget {
   const StudentShell({
@@ -175,7 +176,7 @@ class _StudentShellState extends State<StudentShell> {
             ),
           );
           if (done != null) {
-            messenger.showSnackBar(SnackBar(content: Text(done)));
+            messenger.showMessage(done);
           }
         },
       ),

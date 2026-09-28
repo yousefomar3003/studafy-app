@@ -9,6 +9,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../domain/study.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// A student's own notebook for one class, newest first, grouped by day.
 ///
@@ -93,8 +94,7 @@ class _NotebookViewState extends State<NotebookView> {
   }
 
   void _say(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showMessage(message);
 
   String _refusalText(StudyRefusal refusal) => switch (refusal) {
     StudyRefusal.planRequired => AppL10n.of(

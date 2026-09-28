@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../core/file_upload_repository.dart';
 import 'signed_upload_transport.dart';
+import '../../../core/idempotency.dart';
 
 /// Fetches a delivery link's bytes with the caller's session attached.
 typedef DeliveryFetcher = Future<Uint8List> Function(Uri url);
@@ -96,9 +97,7 @@ class ApiFileUploadRepository implements FileUploadRepository {
       fileId: fileId,
       // Fresh every time: a grant is single-use, so replaying an earlier
       // response would hand back a link that has already been spent.
-      idempotencyKey:
-          'file-download-$fileId-'
-          '${DateTime.now().microsecondsSinceEpoch}',
+      idempotencyKey: newIdempotencyKey('file-download'),
     );
     final bytes = await fetch(Uri.parse(grant.downloadUrl));
     return DownloadedFile(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/user_content_text.dart';
 import '../domain/study.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Quiz and Flashcards buttons under a lesson. Studafy Max; on any other plan
 /// they show a lock and open the Plans screen.
@@ -52,25 +53,21 @@ class _StudySetButtonsState extends State<StudySetButtons> {
     } on StudyException catch (error) {
       if (!mounted) return;
       if (error.refusal == StudyRefusal.planRequired) widget.onOpenPlans();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(switch (error.refusal) {
-            StudyRefusal.planRequired => AppL10n.of(
-              context,
-            ).studySetQuizzesAndFlashcardsComeWith,
-            StudyRefusal.allowanceUsed => AppL10n.of(
-              context,
-            ).studySetThisMonthSAiAllowance,
-            StudyRefusal.lessonHasNoText => AppL10n.of(
-              context,
-            ).studySetThisLessonHasNoText,
-            StudyRefusal.unavailable => AppL10n.of(
-              context,
-            ).studySetThisIsNotAvailableYet,
-            _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
-          }),
-        ),
-      );
+      messenger.showMessage(switch (error.refusal) {
+        StudyRefusal.planRequired => AppL10n.of(
+          context,
+        ).studySetQuizzesAndFlashcardsComeWith,
+        StudyRefusal.allowanceUsed => AppL10n.of(
+          context,
+        ).studySetThisMonthSAiAllowance,
+        StudyRefusal.lessonHasNoText => AppL10n.of(
+          context,
+        ).studySetThisLessonHasNoText,
+        StudyRefusal.unavailable => AppL10n.of(
+          context,
+        ).studySetThisIsNotAvailableYet,
+        _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
+      });
     } finally {
       if (mounted) setState(() => _making = null);
     }

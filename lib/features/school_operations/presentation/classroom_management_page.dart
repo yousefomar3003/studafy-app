@@ -7,6 +7,8 @@ import '../../../core/studafy_domain.dart';
 import '../../../core/failures.dart';
 import '../domain/school_operations_repository.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
+import '../../../core/studafy_formatting.dart';
 
 class ClassroomManagementPage extends StatefulWidget {
   const ClassroomManagementPage({
@@ -107,13 +109,11 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     try {
       await action();
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(success)));
+      messenger.showMessage(success);
       await _load();
     } on Object catch (error) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(Failure.fromError(error).message)),
-        );
+        messenger.showMessage(Failure.fromError(error).message);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -274,12 +274,6 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     ),
   );
 
-  String _when(DateTime start) {
-    final l = MaterialLocalizations.of(context);
-    return '${l.formatMediumDate(start)} · '
-        '${l.formatTimeOfDay(TimeOfDay.fromDateTime(start))}';
-  }
-
   String _audience(String value, AppL10n l10n) => switch (value) {
     'guardians' => l10n.schoolAdminGuardians,
     'students' => l10n.announcementAudienceStudents,
@@ -322,7 +316,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
                     meeting.title,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  Text(_when(meeting.startsAt)),
+                  Text(studafyDateTime(context, meeting.startsAt)),
                   Text(
                     '${_audience(meeting.audience, l10n)} · '
                     '${meeting.state == 'cancelled' ? l10n.meetingsCancelled : l10n.classroomAdminRecipientcountInvited(meeting.recipientCount)}',
@@ -344,11 +338,8 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
                                 ClipboardData(text: url.toString()),
                               );
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.classroomAdminLinkCopied),
-                                ),
-                              );
+                              ScaffoldMessenger.of(context)
+                                  .showMessage(l10n.classroomAdminLinkCopied);
                             },
                             icon: const Icon(Icons.copy_rounded),
                             label: Text(l10n.classroomAdminCopyLink),

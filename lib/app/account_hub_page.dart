@@ -17,6 +17,7 @@ import '../features/family/presentation/family_scope.dart';
 import '../features/session/presentation/account_security_page.dart';
 import 'account_scope.dart';
 import '../l10n/generated/app_l10n.dart';
+import '../core/feedback.dart';
 
 /// Provides the session interactor to shared account screens. Composed at
 /// the app root, above the Navigator, beside [AccountScope].
@@ -104,7 +105,7 @@ class AccountHubPage extends StatelessWidget {
                       final messenger = ScaffoldMessenger.of(context);
                       final copied = AppL10n.of(context).accountAccountIdCopied;
                       await Clipboard.setData(ClipboardData(text: profile.id));
-                      messenger.showSnackBar(SnackBar(content: Text(copied)));
+                      messenger.showMessage(copied);
                     },
                   ),
                 // A teacher is often a parent at the same school. The domain
@@ -228,8 +229,7 @@ class _DataExportTileState extends State<_DataExportTile> {
   }
 
   void _say(String key) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_accountText(context, key))));
+      ScaffoldMessenger.of(context).showMessage(_accountText(context, key));
 
   Future<void> _request() async {
     setState(() => _busy = true);
@@ -658,7 +658,7 @@ class _StudafyIdCardState extends State<_StudafyIdCard> {
               final messenger = ScaffoldMessenger.of(context);
               final copied = AppL10n.of(context).accountStudafyIdCopied;
               await Clipboard.setData(ClipboardData(text: id));
-              messenger.showSnackBar(SnackBar(content: Text(copied)));
+              messenger.showMessage(copied);
             },
           ),
         ],

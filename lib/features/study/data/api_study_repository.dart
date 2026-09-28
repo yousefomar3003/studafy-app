@@ -2,6 +2,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/study.dart';
+import '../../../core/idempotency.dart';
 
 class ApiStudyRepository implements StudyRepository {
   const ApiStudyRepository(this._client);
@@ -10,8 +11,7 @@ class ApiStudyRepository implements StudyRepository {
 
   /// A per-call key: each of these is a new act, and a retry after a lost
   /// response is the user pressing again.
-  static String _key(String what) =>
-      'study-$what-${DateTime.now().microsecondsSinceEpoch}';
+  static String _key(String what) => newIdempotencyKey('study-$what');
 
   static StudyRefusal _refusal(Object error) {
     if (error is! V1ApiException) return StudyRefusal.failed;

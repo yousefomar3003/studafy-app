@@ -10,6 +10,7 @@ import 'conversation_page.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Conversation list for every role, backed by authoritative `/v1`
 /// messaging (MOB-070, SAFE-043). Replaces the legacy SQLite chat screens.
@@ -386,9 +387,8 @@ class _NewConversationPageState extends State<NewConversationPage> {
       onSuccess: (conversation) => Navigator.pop(context, conversation),
       onFailure: (failure) {
         setState(() => _starting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(messagingFailureText(context, failure))),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(messagingFailureText(context, failure));
       },
     );
   }

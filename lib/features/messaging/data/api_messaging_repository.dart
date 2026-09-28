@@ -5,6 +5,7 @@ import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/messaging.dart';
 import '../../../core/file_upload_repository.dart';
+import '../../../core/idempotency.dart';
 
 /// Server error codes the messaging screens explain in their own words.
 /// Anything else becomes a generic failure, never raw server text.
@@ -250,11 +251,7 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
             ? null
             : draft.attachmentFileIds,
       ),
-      idempotencyKey: 'announcement-${DateTime.now().microsecondsSinceEpoch}'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('announcement'),
     );
   });
 

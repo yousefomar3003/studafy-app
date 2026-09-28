@@ -5,6 +5,8 @@ import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../domain/meetings.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
+import '../../../core/studafy_formatting.dart';
 
 /// Makes the meetings list reachable from any home screen that shows it.
 class MeetingsScope extends InheritedWidget {
@@ -66,19 +68,13 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
         : Future.sync(repository.upcoming);
   }
 
-  String _when(DateTime start) {
-    final localizations = MaterialLocalizations.of(context);
-    return '${localizations.formatMediumDate(start)} · '
-        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(start))}';
-  }
-
   Future<void> _join(UpcomingMeeting meeting) async {
     final url = meeting.meetUrl;
     if (url == null) return;
     final messenger = ScaffoldMessenger.of(context);
     final failed = AppL10n.of(context).meetingsGoogleMeetCouldNotBe;
     final opened = await widget.launch(url);
-    if (!opened) messenger.showSnackBar(SnackBar(content: Text(failed)));
+    if (!opened) messenger.showMessage(failed);
   }
 
   @override
@@ -122,7 +118,7 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       UserContentText(meeting.classroomName),
-                      Text(_when(meeting.startsAt)),
+                      Text(studafyDateTime(context, meeting.startsAt)),
                       if (meeting.isCancelled)
                         Text(
                           AppL10n.of(context).meetingsCancelled,

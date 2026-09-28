@@ -5,6 +5,7 @@ import '../domain/messaging.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Opens the report sheet. Returns true once a report was accepted.
 ///
@@ -242,15 +243,11 @@ Future<bool> confirmBlock(
   final messenger = ScaffoldMessenger.of(context);
   return result.fold(
     onSuccess: (_) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(AppL10n.of(context).msgBlockDone(name))),
-      );
+      messenger.showMessage(AppL10n.of(context).msgBlockDone(name));
       return true;
     },
     onFailure: (failure) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(messagingFailureText(context, failure))),
-      );
+      messenger.showMessage(messagingFailureText(context, failure));
       return false;
     },
   );

@@ -54,7 +54,11 @@ void main() {
         expect(refreshes, 1);
         expect(keys, hasLength(2));
         expect(keys.first, isNotNull);
-        expect(keys.first, hasLength(32));
+        // The format the server accepts (API-040).
+        expect(
+          keys.first,
+          matches(RegExp(r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')),
+        );
         expect(keys.last, keys.first);
       } finally {
         transport.close();

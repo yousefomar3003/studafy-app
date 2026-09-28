@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/failures.dart';
 import 'v1_client.generated.dart';
+import '../../core/idempotency.dart' as ids;
 
 /// Raised when the API refuses a request. [code] is the stable machine code
 /// from the error envelope; the message is safe to show but deliberately
@@ -280,14 +280,7 @@ class V1HttpTransport implements V1JsonTransport {
   /// server refused that request outright - an intermittent failure of any
   /// command that let the transport pick its key.
   @visibleForTesting
-  static String newIdempotencyKey() {
-    final random = Random.secure();
-    const first =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const rest = '$first-_';
-    return first[random.nextInt(first.length)] +
-        List.generate(31, (_) => rest[random.nextInt(rest.length)]).join();
-  }
+  static String newIdempotencyKey() => ids.newIdempotencyKey('request');
 }
 
 class _RawResponse {

@@ -40,6 +40,10 @@ const _coreAllowlist = <String>[
   'core/account_lifecycle.dart',
   'core/failures.dart',
   'core/result.dart',
+  // UUIDs and idempotency keys: one secure generator for every command.
+  'core/idempotency.dart',
+  // One way to show a short confirmation or error.
+  'core/feedback.dart',
   'core/telemetry.dart',
   'core/studafy_domain.dart',
   'core/studafy_design.dart',

@@ -15,6 +15,7 @@ import '../../../core/attachment_opener.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// One conversation. Report and block controls are always one tap away in
 /// the app bar, and any message can be reported with a long press.
@@ -278,9 +279,8 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _confirmReport() {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(AppL10n.of(context).msgReportSent)));
+    ScaffoldMessenger.of(context)
+        .showMessage(AppL10n.of(context).msgReportSent);
   }
 
   Future<void> _block(ConversationParticipant person) async {

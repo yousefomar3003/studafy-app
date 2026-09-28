@@ -7,6 +7,7 @@ import '../../../core/attachment_opener.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;
@@ -137,11 +138,9 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
       } else {
         await widget.repository.publishAssessment(record.id, record.version);
       }
-      messenger.showSnackBar(SnackBar(content: Text(l10n.academicPublished)));
+      messenger.showMessage(l10n.academicPublished);
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.academicPublishFailed)),
-      );
+      messenger.showMessage(l10n.academicPublishFailed);
     }
     if (mounted) _refresh();
   }

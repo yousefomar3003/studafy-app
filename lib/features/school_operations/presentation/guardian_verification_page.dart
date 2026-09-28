@@ -4,6 +4,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/failures.dart';
 import '../domain/school_operations_repository.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 class GuardianVerificationPage extends StatefulWidget {
   const GuardianVerificationPage({super.key, required this.repository});
@@ -65,19 +66,14 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
             )
           : await widget.repository.revokeGuardianLink(_linkId.text);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppL10n.of(context).guardianVerifyLinkStatus}: $status',
-            ),
-          ),
+        ScaffoldMessenger.of(context).showMessage(
+          '${AppL10n.of(context).guardianVerifyLinkStatus}: $status',
         );
       }
     } on Object catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Failure.fromError(error).message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(Failure.fromError(error).message);
       }
     } finally {
       if (mounted) setState(() => _busy = false);

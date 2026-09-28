@@ -5,6 +5,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import '../../../core/studafy_formatting.dart';
 
 /// Every attempt one student made at one piece of work, newest first.
 ///
@@ -62,12 +63,6 @@ class SubmissionHistoryViewState extends State<SubmissionHistoryView> {
     await next.then((_) {}, onError: (_) {});
   }
 
-  static String _when(DateTime value) =>
-      '${value.year}-${value.month.toString().padLeft(2, '0')}-'
-      '${value.day.toString().padLeft(2, '0')} '
-      '${value.hour.toString().padLeft(2, '0')}:'
-      '${value.minute.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -109,7 +104,7 @@ class SubmissionHistoryViewState extends State<SubmissionHistoryView> {
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (context, i) => _AttemptCard(
             attempt: attempts[i],
-            when: _when(attempts[i].submittedAt),
+            when: studafyDateTime(context, attempts[i].submittedAt),
             uploads: widget.uploads,
           ),
         );

@@ -6,6 +6,7 @@ import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/account_lifecycle.dart';
 import '../application/account_interactor.dart';
+import '../../../core/feedback.dart';
 
 /// In-app account deletion (AUTH-030, Apple 5.1.1(v), Google Play).
 ///
@@ -330,8 +331,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     result.fold(
       onSuccess: (request) => setState(() => scheduled = request),
       onFailure: (failure) =>
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(failure.message))),
+          ScaffoldMessenger.of(context).showMessage(failure.message),
     );
   }
 
@@ -342,14 +342,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       onSuccess: (cancelled) {
         if (cancelled) {
           setState(() => scheduled = null);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppL10n.of(context).deleteKeptSnack)),
-          );
+          ScaffoldMessenger.of(context)
+              .showMessage(AppL10n.of(context).deleteKeptSnack);
         }
       },
       onFailure: (failure) =>
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(failure.message))),
+          ScaffoldMessenger.of(context).showMessage(failure.message),
     );
   }
 

@@ -9,6 +9,7 @@ import '../domain/classroom.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Typed teacher class list (ARC-011 classes slice).
 ///
@@ -523,12 +524,8 @@ class _ClassesPageState extends State<ClassesPage> {
     if (choice == 'revoke') {
       final revoked = await widget.classes.revokeJoinLink(link.id);
       revoked.fold(
-        onSuccess: (_) => messenger.showSnackBar(
-          SnackBar(content: Text(l10n.joinLinkRevoked)),
-        ),
-        onFailure: (_) => messenger.showSnackBar(
-          SnackBar(content: Text(l10n.joinLinkRevokeFailed)),
-        ),
+        onSuccess: (_) => messenger.showMessage(l10n.joinLinkRevoked),
+        onFailure: (_) => messenger.showMessage(l10n.joinLinkRevokeFailed),
       );
       return false;
     }
@@ -536,8 +533,7 @@ class _ClassesPageState extends State<ClassesPage> {
   }
 
   void _showFailure(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showMessage(message);
   }
 
   Future<void> _showInviteDialog(
@@ -619,13 +615,8 @@ class _ClassesPageState extends State<ClassesPage> {
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: link));
               if (dialogContext.mounted) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppL10n.of(dialogContext).classesInviteCopied,
-                    ),
-                  ),
-                );
+                ScaffoldMessenger.of(dialogContext)
+                    .showMessage(AppL10n.of(dialogContext).classesInviteCopied);
               }
             },
             icon: const Icon(Icons.copy),

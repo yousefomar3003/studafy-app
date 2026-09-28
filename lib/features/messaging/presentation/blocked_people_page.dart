@@ -7,6 +7,7 @@ import '../domain/messaging.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Everyone the user has blocked in one school, each with an Unblock
 /// control. A block the user cannot see or undo would be a trap.
@@ -82,13 +83,12 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
               if (b.blockId != block.blockId) b,
           ],
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppL10n.of(context).msgUnblockDone)),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(AppL10n.of(context).msgUnblockDone);
       },
-      onFailure: (failure) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(messagingFailureText(context, failure))),
-      ),
+      onFailure: (failure) =>
+          ScaffoldMessenger.of(context)
+              .showMessage(messagingFailureText(context, failure)),
     );
   }
 

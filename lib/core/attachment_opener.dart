@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'file_upload_repository.dart';
 import 'uploads_scope.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'feedback.dart';
 
 /// Shows [file] to the person who tapped it.
 ///
@@ -89,11 +90,7 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
     if (uploads == null || _opening != null) return;
     final messenger = ScaffoldMessenger.of(context);
     if (!item.isReady) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(AppL10n.of(context).attachmentThisFileIsStillBeing),
-        ),
-      );
+      messenger.showMessage(AppL10n.of(context).attachmentThisFileIsStillBeing);
       return;
     }
     setState(() => _opening = item.id);
@@ -105,7 +102,7 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
     } on Object {
       // As with uploads, the reason stays on the server: what the person can
       // do about it is the same whatever it was.
-      messenger.showSnackBar(SnackBar(content: Text(failed)));
+      messenger.showMessage(failed);
     } finally {
       if (mounted) setState(() => _opening = null);
     }

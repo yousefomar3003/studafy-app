@@ -12,6 +12,7 @@ import 'child_progress_page.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 /// Guardian home on authoritative `/v1` data (MOB-070 parent slice).
 /// Replaces the legacy SQLite home in real builds: children come from the
@@ -107,11 +108,8 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
       ),
     );
     if (linked == null || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppL10n.of(context).famLinkSent(linked.studentName)),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+        .showMessage(AppL10n.of(context).famLinkSent(linked.studentName));
     await _load();
   }
 
@@ -123,8 +121,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
       onSuccess: (_) => AppL10n.of(context).famApprovalsDone,
       onFailure: (failure) => familyFailureText(context, failure),
     );
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showMessage(message);
     await _load();
   }
 

@@ -12,6 +12,7 @@ import 'app/oauth_callback_guard.dart';
 import 'app/studafy_theme.dart';
 import 'app/teacher_shell.dart';
 import 'core/app_routes.dart';
+import 'core/studafy_design.dart';
 import 'core/locale_controller.dart';
 import 'core/runtime_environment.dart';
 import 'l10n/generated/app_l10n.dart';
@@ -29,12 +30,6 @@ import 'features/meetings/presentation/upcoming_meetings_section.dart';
 final classJoinLinks = ClassJoinLinkGuard();
 
 final _navigatorKey = GlobalKey<NavigatorState>();
-
-const navy = Color(0xFF241D73),
-    cyan = Color(0xFF20C6E8),
-    ink = Color(0xFF171441),
-    muted = Color(0xFF8D94AF),
-    canvas = Color(0xFFF7F6FE);
 
 /// Locale delegates every entry point needs: Studafy's own generated copy,
 /// plus Material, Widgets and Cupertino, which supply the built-in component
@@ -266,13 +261,17 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.security_rounded, size: 54, color: navy),
+                const Icon(
+                  Icons.security_rounded,
+                  size: 54,
+                  color: studafyNavy,
+                ),
                 const SizedBox(height: 18),
                 Text(
                   AppL10n.of(context).blockedTitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: ink,
+                    color: studafyInk,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                   ),
@@ -281,13 +280,13 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
                 Text(
                   reason ?? AppL10n.of(context).blockedDefaultReason,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: muted, height: 1.4),
+                  style: const TextStyle(color: studafyMuted, height: 1.4),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   AppL10n.of(context).blockedReference,
                   style: const TextStyle(
-                    color: muted,
+                    color: studafyMuted,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

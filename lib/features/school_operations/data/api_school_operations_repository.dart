@@ -1,9 +1,8 @@
-import 'dart:math';
-
 import '../../../core/failures.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/school_operations_repository.dart';
+import '../../../core/idempotency.dart';
 
 class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
   ApiSchoolOperationsRepository(
@@ -13,7 +12,7 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
 
   final V1ApiClient _client;
   final ActiveContextController _context;
-  final Map<String, String> _pendingKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   String get _schoolId {
     final membership = _context.membership;
@@ -21,14 +20,11 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     return membership.schoolId;
   }
 
-  String _key(String operation, String fingerprint) => _pendingKeys.putIfAbsent(
-    '$operation|$fingerprint',
-    () =>
-        '$operation-${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}',
-  );
+  String _key(String operation, String fingerprint) =>
+      _keys.keyFor(operation, fingerprint);
 
   void _done(String operation, String fingerprint) =>
-      _pendingKeys.remove('$operation|$fingerprint');
+      _keys.completed(operation, fingerprint);
 
   @override
   Future<List<SchoolTerm>> listTerms() async {

@@ -5,6 +5,7 @@ import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'gradebook_page.dart';
 import 'submission_history_view.dart';
+import '../../../core/studafy_formatting.dart';
 
 /// What students have handed in for one assignment.
 ///
@@ -79,12 +80,6 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
 
   SubmittedWork? _forStudent(String studentId) =>
       _work.where((item) => item.studentId == studentId).firstOrNull;
-
-  static String _when(DateTime value) =>
-      '${value.year}-${value.month.toString().padLeft(2, '0')}-'
-      '${value.day.toString().padLeft(2, '0')} '
-      '${value.hour.toString().padLeft(2, '0')}:'
-      '${value.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +157,9 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
                                 Text(
                                   submittedAt == null
                                       ? l10n.submissionsWaiting
-                                      : l10n.submissionsOn(_when(submittedAt)),
+                                      : l10n.submissionsOn(
+                                          studafyDateTime(context, submittedAt),
+                                        ),
                                 ),
                                 // Young children hand work in from a parent's
                                 // phone. Marking it without knowing that is

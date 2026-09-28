@@ -5,6 +5,7 @@ import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
+import '../../../core/feedback.dart';
 
 /// Account security: second factor, active devices, and sign out everywhere
 /// (AUTH-030).
@@ -69,17 +70,15 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       final verified = await widget.session.verifyTotp(code);
       if (!mounted) return;
       if (!verified) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppL10n.of(context).securityCodeMismatch)),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(AppL10n.of(context).securityCodeMismatch);
         return;
       }
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppL10n.of(context).securitySetupFailed)),
-      );
+      ScaffoldMessenger.of(context)
+          .showMessage(AppL10n.of(context).securitySetupFailed);
     }
   }
 
@@ -110,9 +109,8 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppL10n.of(context).securityRevokeFailed)),
-      );
+      ScaffoldMessenger.of(context)
+          .showMessage(AppL10n.of(context).securityRevokeFailed);
     }
   }
 
@@ -149,7 +147,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
       reachedServer = false;
     }
     if (!reachedServer) {
-      messenger.showSnackBar(SnackBar(content: Text(failedText)));
+      messenger.showMessage(failedText);
     }
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);

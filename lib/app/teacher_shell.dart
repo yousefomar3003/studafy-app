@@ -26,6 +26,7 @@ import '../features/school_operations/domain/school_operations_repository.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import 'teacher_today_page.dart';
 import 'app_dependencies.dart';
+import '../core/feedback.dart';
 
 class TeacherShell extends StatefulWidget {
   const TeacherShell({super.key, required this.dependencies});
@@ -60,8 +61,7 @@ class _TeacherShellState extends State<TeacherShell> {
           builder: (_) => const ConversationsPage(asRole: MessagingRole.staff),
         ),
       ),
-      onFailure: (failure) =>
-          messenger.showSnackBar(SnackBar(content: Text(failure.message))),
+      onFailure: (failure) => messenger.showMessage(failure.message),
     );
   }
 
@@ -103,7 +103,7 @@ class _TeacherShellState extends State<TeacherShell> {
       ),
     );
     if (posted != null) {
-      messenger.showSnackBar(SnackBar(content: Text(posted)));
+      messenger.showMessage(posted);
     }
   }
 
@@ -130,7 +130,7 @@ class _TeacherShellState extends State<TeacherShell> {
       ),
     );
     if (created != null) {
-      messenger.showSnackBar(SnackBar(content: Text(created)));
+      messenger.showMessage(created);
     }
   }
 
@@ -165,7 +165,7 @@ class _TeacherShellState extends State<TeacherShell> {
       ),
     );
     if (created != null) {
-      messenger.showSnackBar(SnackBar(content: Text(created)));
+      messenger.showMessage(created);
     }
   }
 

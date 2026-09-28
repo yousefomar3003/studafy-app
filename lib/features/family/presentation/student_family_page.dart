@@ -6,6 +6,7 @@ import '../domain/family.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../../../core/feedback.dart';
 
 class StudentFamilyPage extends StatefulWidget {
   const StudentFamilyPage({super.key});
@@ -77,9 +78,9 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
     setState(() => _busy = false);
     result.fold(
       onSuccess: (_) => _load(),
-      onFailure: (failure) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(familyFailureText(context, failure))),
-      ),
+      onFailure: (failure) =>
+          ScaffoldMessenger.of(context)
+              .showMessage(familyFailureText(context, failure)),
     );
   }
 
@@ -143,12 +144,8 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                               ClipboardData(text: identity.studafyId),
                             );
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    AppL10n.of(context).studentFamilyIdCopied,
-                                  ),
-                                ),
+                              ScaffoldMessenger.of(context).showMessage(
+                                AppL10n.of(context).studentFamilyIdCopied,
                               );
                             }
                           },

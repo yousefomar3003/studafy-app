@@ -5,6 +5,7 @@ import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/classroom.dart';
 import '../domain/classroom_repository.dart';
+import '../../../core/idempotency.dart';
 
 /// Authoritative API-041 classroom adapter. It never reads or writes the
 /// local preview database and never falls back when the service is offline.
@@ -14,7 +15,7 @@ class ApiClassroomRepository implements ClassroomRepository {
 
   final V1ApiClient _client;
   final ActiveContextController _context;
-  final Map<String, String> _pendingKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   String get _schoolId {
     final membership = _context.membership;
@@ -49,14 +50,7 @@ class ApiClassroomRepository implements ClassroomRepository {
       for (final item in draft.sessions)
         '${item.weekday}:${item.startTime}:${item.endTime}',
     ].join('|');
-    final key = _pendingKeys.putIfAbsent(
-      fingerprint,
-      () => 'class-${DateTime.now().microsecondsSinceEpoch}-$fingerprint'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
-    );
+    final key = _keys.keyFor('class', fingerprint);
     final today = DateTime.now();
     final effectiveFrom =
         '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -80,7 +74,7 @@ class ApiClassroomRepository implements ClassroomRepository {
       ),
       idempotencyKey: key,
     );
-    _pendingKeys.remove(fingerprint);
+    _keys.completed('class', fingerprint);
   }
 
   @override
@@ -98,13 +92,7 @@ class ApiClassroomRepository implements ClassroomRepository {
             .toIso8601String(),
       ),
       classroomId: id.value,
-      idempotencyKey:
-          'join-${DateTime.now().microsecondsSinceEpoch}-'
-                  '${id.value}'
-              .hashCode
-              .abs()
-              .toRadixString(36)
-              .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('join-link'),
     );
     return ClassInvite(
       link: classJoinLinkUrl(response.token),
@@ -138,11 +126,7 @@ class ApiClassroomRepository implements ClassroomRepository {
     await _client.revokeClassJoinLink(
       const V1RevokeClassJoinLinkRequestDto(),
       linkId: linkId,
-      idempotencyKey: 'revoke-link-${DateTime.now().microsecondsSinceEpoch}'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('revoke-link'),
     );
   }
 
@@ -152,11 +136,7 @@ class ApiClassroomRepository implements ClassroomRepository {
     // this school yet, and the token is the whole credential.
     final response = await _client.redeemClassJoinLink(
       V1RedeemClassJoinLinkRequestDto(token: token),
-      idempotencyKey: 'join-redeem-${DateTime.now().microsecondsSinceEpoch}'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('join-redeem'),
     );
     return JoinedClass(
       schoolId: response.schoolId,
@@ -172,11 +152,7 @@ class ApiClassroomRepository implements ClassroomRepository {
     // and resolves it to exactly one live link, or refuses.
     final response = await _client.redeemClassJoinLink(
       V1RedeemClassJoinLinkRequestDto(code: code),
-      idempotencyKey: 'join-code-${DateTime.now().microsecondsSinceEpoch}'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('join-code'),
     );
     return JoinedClass(
       schoolId: response.schoolId,

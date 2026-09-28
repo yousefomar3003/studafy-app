@@ -3,6 +3,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/academic_repository.dart';
+import '../../../core/idempotency.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
   ApiAcademicRepository(this._client, {ActiveContextController? context})
@@ -10,7 +11,7 @@ class ApiAcademicRepository implements AcademicRepository {
 
   final V1ApiClient _client;
   final ActiveContextController _context;
-  final Map<String, String> _pendingKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   String get _schoolId {
     final value = _context.membership;
@@ -22,19 +23,11 @@ class ApiAcademicRepository implements AcademicRepository {
     throw Failure.unauthorized;
   }
 
-  String _key(String fingerprint) => _pendingKeys.putIfAbsent(
-    fingerprint,
-    () =>
-        'academic-${DateTime.now().microsecondsSinceEpoch}-${fingerprint.hashCode.abs()}',
-  );
-
+  /// Runs a command under one key until it succeeds, so a retry replays it.
   Future<void> _done(
     String fingerprint,
     Future<void> Function(String key) command,
-  ) async {
-    await command(_key(fingerprint));
-    _pendingKeys.remove(fingerprint);
-  }
+  ) => _keys.run('academic', fingerprint, command);
 
   @override
   Future<List<AcademicRecord>> load(
