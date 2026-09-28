@@ -74,7 +74,7 @@ export function createBillingRoutes(
   // replaces the arithmetic challenge a child could answer unaided.
   routes.post(
     "/v1/billing/purchase-approvals",
-    validateRouteInput(requestApproval) as never,
+    validateRouteInput(requestApproval),
     requirePermission(authorization, "billing.purchase_approval.request"),
     idempotency(
       idempotencyDependencies,
@@ -100,7 +100,7 @@ export function createBillingRoutes(
 
   routes.get(
     "/v1/billing/purchase-approvals",
-    validateRouteInput(listApprovals) as never,
+    validateRouteInput(listApprovals),
     requirePermission(authorization, "billing.purchase_approval.read"),
     async (c) => {
       const approvals = await deps.repository.listPurchaseApprovals(
@@ -112,7 +112,7 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/purchase-approvals/:approvalId/decision",
-    validateRouteInput(decideApproval) as never,
+    validateRouteInput(decideApproval),
     requirePermission(authorization, "billing.purchase_approval.decide"),
     idempotency(
       idempotencyDependencies,
@@ -146,7 +146,7 @@ export function createBillingRoutes(
 
   routes.get(
     "/v1/billing/catalogue",
-    validateRouteInput(catalogue) as never,
+    validateRouteInput(catalogue),
     requirePermission(authorization, "billing.catalogue.read"),
     async (c) => {
       const [products, selfPurchase] = await Promise.all([
@@ -163,7 +163,7 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/purchases",
-    validateRouteInput(submit) as never,
+    validateRouteInput(submit),
     requirePermission(authorization, "billing.purchase.submit"),
     idempotency(idempotencyDependencies, submit.operationId, "required"),
     async (c) => {
@@ -217,7 +217,7 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/restore",
-    validateRouteInput(restore) as never,
+    validateRouteInput(restore),
     requirePermission(authorization, "billing.restore"),
     idempotency(idempotencyDependencies, restore.operationId, "required"),
     async (c) => {
@@ -260,7 +260,7 @@ export function createBillingRoutes(
 
   routes.get(
     "/v1/billing/entitlements",
-    validateRouteInput(entitlements) as never,
+    validateRouteInput(entitlements),
     requirePermission(authorization, "billing.entitlement.read"),
     async (c) => {
       const rows = await deps.repository.listEntitlements(
@@ -273,7 +273,7 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/school-settings/self-purchase",
-    validateRouteInput(setSelfPurchase) as never,
+    validateRouteInput(setSelfPurchase),
     requirePermission(authorization, "billing.school_settings.write"),
     idempotency(
       idempotencyDependencies,

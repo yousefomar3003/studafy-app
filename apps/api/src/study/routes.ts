@@ -83,7 +83,7 @@ export function createStudyRoutes(
   const planRoute = v1Route("getStudyPlan");
   routes.get(
     "/v1/me/study-plan",
-    validateRouteInput(planRoute) as never,
+    validateRouteInput(planRoute),
     requirePermission(authorization, "study_plan.read"),
     async (c) => {
       const summary = await deps.repository.usage(
@@ -117,7 +117,7 @@ export function createStudyRoutes(
   const listRoute = v1Route("listNotebookEntries");
   routes.get(
     "/v1/classrooms/:classroomId/notebook",
-    validateRouteInput(listRoute) as never,
+    validateRouteInput(listRoute),
     requirePermission(
       authorization,
       "notebook.read",
@@ -171,7 +171,7 @@ export function createStudyRoutes(
   const createRoute = v1Route("createNotebookEntry");
   routes.post(
     "/v1/classrooms/:classroomId/notebook",
-    validateRouteInput(createRoute) as never,
+    validateRouteInput(createRoute),
     requirePermission(
       authorization,
       "notebook.write",
@@ -199,7 +199,7 @@ export function createStudyRoutes(
   const whiteboardRoute = v1Route("createWhiteboardNote");
   routes.post(
     "/v1/classrooms/:classroomId/notebook/whiteboard",
-    validateRouteInput(whiteboardRoute) as never,
+    validateRouteInput(whiteboardRoute),
     requirePermission(
       authorization,
       "notebook.write",
@@ -280,7 +280,7 @@ export function createStudyRoutes(
   const deleteRoute = v1Route("deleteNotebookEntry");
   routes.post(
     "/v1/notebook-entries/:entryId/delete",
-    validateRouteInput(deleteRoute) as never,
+    validateRouteInput(deleteRoute),
     requirePermission(
       authorization,
       "notebook_entry.delete",
@@ -304,7 +304,7 @@ export function createStudyRoutes(
   const studyRoute = v1Route("generateStudySet");
   routes.post(
     "/v1/resources/:resourceId/study-set",
-    validateRouteInput(studyRoute) as never,
+    validateRouteInput(studyRoute),
     requirePermission(
       authorization,
       "study_set.generate",

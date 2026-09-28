@@ -44,7 +44,7 @@ export function createStudyAssistantRoutes(
 
   routes.post(
     "/v1/study-assistant/ask",
-    validateRouteInput(route) as never,
+    validateRouteInput(route),
     requirePermission(authorization, "study_assistant.ask"),
     async (c: Context<AuthorizationEnv>) => {
       const body = validatedBody<{ question: string }>(c);

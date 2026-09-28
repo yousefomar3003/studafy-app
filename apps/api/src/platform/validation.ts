@@ -35,10 +35,17 @@ function fieldErrors(
   });
 }
 
-export function validateRouteInput(
+/**
+ * Validates a route's query, params and body against its contract, and
+ * records the operation for the middleware after it.
+ *
+ * Generic in the route environment so it slots into an authenticated or
+ * authorized router without a cast; it only touches PlatformEnv's variables.
+ */
+export function validateRouteInput<E extends PlatformEnv = PlatformEnv>(
   route: V1RouteContract,
-): MiddlewareHandler<PlatformEnv> {
-  return async (c, next) => {
+): MiddlewareHandler<E> {
+  const handler: MiddlewareHandler<PlatformEnv> = async (c, next) => {
     c.set("operationId", route.operationId as never);
     c.set("idempotencyMode", route.idempotency);
 
@@ -91,6 +98,7 @@ export function validateRouteInput(
     c.set("validatedBody", result.data);
     await next();
   };
+  return handler as unknown as MiddlewareHandler<E>;
 }
 
 /**

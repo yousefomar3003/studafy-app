@@ -124,11 +124,11 @@ export function createCatalogueRoutes<Slice extends string>(
       }
       await next();
     };
-    const validate = validateRouteInput(route) as never;
+    const validate = validateRouteInput<AuthorizationEnv>(route);
     const authorize = requirePermission(
       authorization,
       permission,
-      (c) => selector(c as never, route),
+      (c) => selector(c, route),
     );
 
     if (route.method === "get") {
@@ -162,9 +162,9 @@ export function createCatalogueRoutes<Slice extends string>(
           position = decoded.position;
         }
         const result = await repository.query(
-          membershipDbContext(c as never),
+          membershipDbContext(c),
           route.operationId,
-          selector(c as never, route),
+          selector(c, route),
           { ...filters, position },
         ) as Record<string, unknown> | null;
         if (!result) return problem(c, "NOT_FOUND", 404);
@@ -235,9 +235,9 @@ export function createCatalogueRoutes<Slice extends string>(
         const reservation = c.get("idempotencyReservation");
         if (!reservation) return problem(c, "FORBIDDEN", 403);
         const result = await repository.command(
-          membershipDbContext(c as never),
+          membershipDbContext(c),
           route.operationId,
-          selector(c as never, route),
+          selector(c, route),
           {
             body: validatedBody(c),
             params: validatedParams(c),

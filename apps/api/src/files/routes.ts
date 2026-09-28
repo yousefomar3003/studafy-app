@@ -73,7 +73,7 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/uploads",
-    validateRouteInput(create) as never,
+    validateRouteInput(create),
     requirePermission(
       authorization,
       "upload.intent.create",
@@ -125,7 +125,7 @@ export function createFileRoutes(
 
   routes.get(
     "/v1/uploads/:uploadId",
-    validateRouteInput(uploadStatus) as never,
+    validateRouteInput(uploadStatus),
     requirePermission(
       authorization,
       "upload.read",
@@ -149,7 +149,7 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/uploads/:uploadId/complete",
-    validateRouteInput(complete) as never,
+    validateRouteInput(complete),
     requirePermission(
       authorization,
       "upload.complete",
@@ -199,7 +199,7 @@ export function createFileRoutes(
 
   routes.get(
     "/v1/files/:fileId",
-    validateRouteInput(fileStatus) as never,
+    validateRouteInput(fileStatus),
     requirePermission(
       authorization,
       "file.read",
@@ -223,7 +223,7 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/files/:fileId/download-intent",
-    validateRouteInput(download) as never,
+    validateRouteInput(download),
     requirePermission(
       authorization,
       "file.download",
@@ -281,7 +281,7 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/files/:fileId/publish",
-    validateRouteInput(publish) as never,
+    validateRouteInput(publish),
     requirePermission(
       authorization,
       "file.publish",
