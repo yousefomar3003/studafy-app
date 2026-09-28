@@ -1,10 +1,12 @@
 import { Hono } from "hono";
-import { sha256Hex } from "@studafy/infrastructure";
+import {
+  type AppleTransactionVerifier,
+  type GooglePurchaseVerifier,
+  sha256Hex,
+} from "@studafy/infrastructure";
 import type { Logger } from "@studafy/observability";
 import type { AppEnv } from "../bootstrap/app";
 import { problem } from "../platform/errors";
-import type { AppleTransactionVerifier } from "./appleVerifier";
-import type { GooglePurchaseVerifier } from "./googleVerifier";
 import type { BillingRepository } from "./repository";
 
 /**

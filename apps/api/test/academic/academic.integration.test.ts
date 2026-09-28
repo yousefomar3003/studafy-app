@@ -17,10 +17,8 @@ import { testAssurance } from "../support/assurance";
 import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
-import {
-  AuthContextRepository,
-  withRequestContext,
-} from "../../src/auth/context";
+import { AuthContextRepository } from "../../src/auth/context";
+import { withRequestContext } from "../../src/platform/dbContext";
 import type { Actor } from "../../src/auth/middleware";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import { createAuthorizationDependencies } from "../../src/authorization/middleware";

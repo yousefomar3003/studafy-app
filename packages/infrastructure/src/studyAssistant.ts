@@ -18,11 +18,18 @@
  * secret it holds, and it is used for exactly one host.
  */
 
-/** Obvious identifiers are stripped before anything leaves the building. */
-const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
-// Long digit runs: phone numbers, national ids, anything that looks like one.
-const LONG_NUMBER = /\b\d{7,}\b/g;
-const URL_LIKE = /\bhttps?:\/\/\S+/gi;
+import {
+  type Flashcard,
+  isUnreadableReply,
+  lessonPrompt,
+  parseFlashcards,
+  parseQuiz,
+  type QuizQuestion,
+  redactForProvider,
+  STUDY_PROMPTS,
+  type StudySetKind,
+  type StudyUsage,
+} from "@studafy/domain";
 
 export interface StudyAssistantOptions {
   apiKey: string;
@@ -37,29 +44,10 @@ export interface StudyAssistantOptions {
   fetchImpl?: typeof fetch;
 }
 
-/** What the provider reported one call cost, in tokens. */
-export interface StudyUsage {
-  inputTokens: number;
-  outputTokens: number;
-  model: string;
-}
-
 export interface StudyAssistantReply {
   answer: string;
   /** Absent only if the provider omitted it; callers then charge the hold. */
   usage?: StudyUsage;
-}
-
-export interface QuizQuestion {
-  question: string;
-  options: string[];
-  answerIndex: number;
-  explanation: string;
-}
-
-export interface Flashcard {
-  front: string;
-  back: string;
 }
 
 export type StudySetResult =
@@ -75,58 +63,6 @@ export class StudyAssistantError extends Error {
   }
 }
 
-/**
- * Removes what a student might paste in without thinking.
- *
- * Not a guarantee - free text can always carry something - but it keeps the
- * obvious identifiers out of an outbound request, which is the difference
- * between a best effort and no effort.
- */
-export function redactForProvider(text: string): string {
-  return text
-    .replace(EMAIL, "[email]")
-    .replace(URL_LIKE, "[link]")
-    .replace(LONG_NUMBER, "[number]");
-}
-
-const SYSTEM_PROMPT = [
-  "You are a study helper for school students.",
-  "Explain clearly and briefly, at the level of the question,",
-  "in no more than about 250 words.",
-  "Help the student understand and practise; do not simply hand over answers",
-  "to what is obviously graded homework - walk through the method instead.",
-  "If a question is not about schoolwork, say so and stop.",
-  "Never ask for personal details.",
-].join(" ");
-
-const WHITEBOARD_PROMPT = [
-  "You turn a photo of a classroom whiteboard into clear study notes in",
-  "Markdown for a school student. Transcribe what is written faithfully and",
-  "organise it with a title, short headings and bullet points. Keep formulas",
-  "exact. Do not add facts that are not on the board. If the photo shows no",
-  "readable writing, reply with exactly: UNREADABLE",
-].join(" ");
-
-const STUDY_SET_PROMPT = {
-  quiz: [
-    "You write a short multiple-choice quiz for a school student from the",
-    "lesson below. Use only what the lesson says. Reply with JSON only, no",
-    'prose: {"questions":[{"question":"...","options":["...","...","...","..."],',
-    '"answerIndex":0,"explanation":"..."}]}. Exactly 4 options each, one',
-    "correct. Exactly 6 questions. Keep each explanation to one short",
-    "sentence.",
-  ].join(" "),
-  flashcards: [
-    "You write revision flashcards for a school student from the lesson",
-    "below. Use only what the lesson says. Reply with JSON only, no prose:",
-    '{"cards":[{"front":"...","back":"..."}]}. Between 6 and 12 cards; a',
-    "front is a term or question, a back is a short answer.",
-  ].join(" "),
-} as const;
-
-/** The longest lesson text sent for a study set, in characters. */
-export const STUDY_LESSON_MAX_CHARS = 16000;
-
 export interface StudyAssistant {
   ask(question: string): Promise<StudyAssistantReply>;
   /** Notes from a whiteboard photo. Throws "unreadable" for a blank one. */
@@ -135,7 +71,7 @@ export interface StudyAssistant {
     mediaType: string,
   ): Promise<StudyAssistantReply>;
   studySet(
-    kind: "quiz" | "flashcards",
+    kind: StudySetKind,
     title: string,
     lessonText: string,
   ): Promise<StudySetResult>;
@@ -155,66 +91,6 @@ function base64(bytes: Uint8Array): string {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
   return btoa(binary);
-}
-
-/** A reply's JSON, tolerating a fenced code block around it. */
-function parseJsonReply(text: string): unknown {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = (fenced ? fenced[1]! : text).trim();
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new StudyAssistantError("empty");
-  return JSON.parse(raw.slice(start, end + 1));
-}
-
-function clip(value: unknown, max: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length === 0 ? null : trimmed.slice(0, max);
-}
-
-/**
- * Keeps only well-formed items. A model's JSON is untrusted input: anything
- * missing a field, with the wrong number of options or an answer index out
- * of range is dropped rather than shown to a student as a broken question.
- */
-function cleanQuiz(value: unknown): QuizQuestion[] {
-  const list = (value as { questions?: unknown })?.questions;
-  if (!Array.isArray(list)) return [];
-  const out: QuizQuestion[] = [];
-  for (const item of list.slice(0, 30)) {
-    const q = item as Record<string, unknown>;
-    const question = clip(q["question"], 500);
-    const options = Array.isArray(q["options"])
-      ? (q["options"] as unknown[]).map((o) => clip(o, 200))
-      : [];
-    const answerIndex = q["answerIndex"];
-    if (
-      !question || options.length !== 4 || options.some((o) => o === null) ||
-      typeof answerIndex !== "number" || !Number.isInteger(answerIndex) ||
-      answerIndex < 0 || answerIndex > 3
-    ) continue;
-    out.push({
-      question,
-      options: options as string[],
-      answerIndex,
-      explanation: clip(q["explanation"], 600) ?? "",
-    });
-  }
-  return out;
-}
-
-function cleanCards(value: unknown): Flashcard[] {
-  const list = (value as { cards?: unknown })?.cards;
-  if (!Array.isArray(list)) return [];
-  const out: Flashcard[] = [];
-  for (const item of list.slice(0, 30)) {
-    const c = item as Record<string, unknown>;
-    const front = clip(c["front"], 300);
-    const back = clip(c["back"], 600);
-    if (front && back) out.push({ front, back });
-  }
-  return out;
 }
 
 export function createStudyAssistant(
@@ -301,7 +177,7 @@ export function createStudyAssistant(
   return {
     async ask(question: string): Promise<StudyAssistantReply> {
       const { text, usage } = await complete(
-        SYSTEM_PROMPT,
+        STUDY_PROMPTS.ask,
         redactForProvider(question),
         maxOutputTokens,
       );
@@ -318,7 +194,7 @@ export function createStudyAssistant(
       // Only the image, and only the cleaned copy the pipeline stored: no
       // name, class or school travels with it.
       const { text, usage } = await complete(
-        WHITEBOARD_PROMPT,
+        STUDY_PROMPTS.whiteboard,
         [
           { type: "text", text: "Make study notes from this whiteboard." },
           {
@@ -328,33 +204,24 @@ export function createStudyAssistant(
         ],
         maxLongOutputTokens,
       );
-      if (/^\s*UNREADABLE\s*$/.test(text)) {
+      if (isUnreadableReply(text)) {
         throw new StudyAssistantError("unreadable");
       }
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
     async studySet(kind, title, lessonText): Promise<StudySetResult> {
-      const lesson = `Lesson: ${redactForProvider(title)}\n\n${
-        redactForProvider(lessonText).slice(0, STUDY_LESSON_MAX_CHARS)
-      }`;
       const { text, usage } = await complete(
-        STUDY_SET_PROMPT[kind],
-        lesson,
+        STUDY_PROMPTS[kind],
+        lessonPrompt(title, lessonText),
         maxLongOutputTokens,
       );
-      let parsed: unknown;
-      try {
-        parsed = parseJsonReply(text);
-      } catch {
-        throw new StudyAssistantError("empty");
-      }
       if (kind === "quiz") {
-        const questions = cleanQuiz(parsed);
+        const questions = parseQuiz(text);
         if (questions.length === 0) throw new StudyAssistantError("empty");
         return { kind, questions, ...(usage ? { usage } : {}) };
       }
-      const cards = cleanCards(parsed);
+      const cards = parseFlashcards(text);
       if (cards.length === 0) throw new StudyAssistantError("empty");
       return { kind, cards, ...(usage ? { usage } : {}) };
     },

@@ -115,14 +115,9 @@ export {
 } from "./notifications/channelSenders";
 export {
   createStudyAssistant,
-  type Flashcard,
-  type QuizQuestion,
-  redactForProvider,
-  STUDY_LESSON_MAX_CHARS,
   type StudyAssistant,
   StudyAssistantError,
   type StudyAssistantOptions,
   type StudyAssistantReply,
   type StudySetResult,
-  type StudyUsage,
 } from "./studyAssistant";

@@ -5,10 +5,17 @@ import { StudyAssistantError } from "@studafy/infrastructure";
 import type { AuthorizationDependencies } from "../authorization/middleware";
 import type { AuthorizationEnv } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
-import { validateRouteInput } from "../platform/validation";
+import { validatedBody, validateRouteInput } from "../platform/validation";
 import { problem } from "../platform/errors";
 import type { StudyRepository } from "../study/repository";
-import { costMicroUsd, holdFor, type ModelPrices } from "../study/routes";
+import {
+  AI_REFUSALS,
+  AiMeter,
+  holdFor,
+  type ModelPrices,
+} from "../study/metering";
+import { outcomeProblem } from "../platform/outcomes";
+import { membershipDbContext } from "../platform/dbContext";
 
 export interface StudyAssistantDependencies {
   assistant: Pick<StudyAssistant, "ask">;
@@ -33,59 +40,26 @@ export function createStudyAssistantRoutes(
 ): Hono<AuthorizationEnv> {
   const routes = new Hono<AuthorizationEnv>();
   const route = v1Route("askStudyAssistant");
+  const meter = new AiMeter(deps.repository, deps.prices);
 
   routes.post(
     "/v1/study-assistant/ask",
     validateRouteInput(route) as never,
     requirePermission(authorization, "study_assistant.ask"),
     async (c: Context<AuthorizationEnv>) => {
-      const actor = c.get("actor");
-      // Read straight from the context rather than through validatedBody(),
-      // whose Context<PlatformEnv> parameter is invariant in Hono and so does
-      // not accept this route's authorization-aware environment. The schema
-      // has already validated it by the time this runs.
-      const body = c.get("validatedBody") as { question: string };
+      const body = validatedBody<{ question: string }>(c);
 
-      const context = {
-        subject: actor.token.subject,
-        schoolId: null,
-        requestId: c.get("requestId"),
-        aal2: actor.aal2,
-      };
-      const hold = holdFor(deps.prices, "ask");
-      const reserved = await deps.repository.usage(context, "reserve", {
-        feature: "ask",
-        estimateMicroUsd: hold,
-      });
-      if (reserved["outcome"] === "daily_limit") {
-        return problem(c, "AI_DAILY_LIMIT", 429);
-      }
-      if (reserved["outcome"] === "monthly_cap") {
-        return problem(c, "AI_ALLOWANCE_USED", 429);
-      }
-      if (reserved["outcome"] !== "ok") return problem(c, "FORBIDDEN", 403);
-      const usageId = reserved["usageId"];
-
+      // A question belongs to the student, not to a school.
+      const context = { ...membershipDbContext(c), schoolId: null };
+      let reply;
       try {
-        const reply = await deps.assistant.ask(body.question);
-        const usage = reply.usage;
-        await deps.repository.usage(context, "settle", {
-          usageId,
-          costMicroUsd: usage
-            ? costMicroUsd(deps.prices, usage.inputTokens, usage.outputTokens)
-            : hold,
-          inputTokens: usage?.inputTokens ?? null,
-          outputTokens: usage?.outputTokens ?? null,
-          model: usage?.model ?? null,
-        });
-        const summary = await deps.repository.usage(context, "summary", {});
-        const remaining = Math.max(
-          0,
-          Number(summary["askPerDay"] ?? 0) - Number(summary["askToday"] ?? 0),
+        reply = await meter.run(
+          context,
+          "ask",
+          holdFor(deps.prices, "ask"),
+          () => deps.assistant.ask(body.question),
         );
-        return c.json({ answer: reply.answer, remainingToday: remaining });
       } catch (error) {
-        await deps.repository.usage(context, "release", { usageId });
         // The question and the answer are both deliberately absent from this
         // log line: one is a child's words, the other is what a third party
         // said back, and neither belongs in an operational log.
@@ -96,6 +70,14 @@ export function createStudyAssistantRoutes(
         });
         return problem(c, "SERVICE_UNAVAILABLE", 503);
       }
+      if (!reply.ok) return outcomeProblem(c, reply.outcome, AI_REFUSALS);
+
+      const summary = await deps.repository.usage(context, "summary", {});
+      const remaining = Math.max(
+        0,
+        Number(summary["askPerDay"] ?? 0) - Number(summary["askToday"] ?? 0),
+      );
+      return c.json({ answer: reply.value.answer, remainingToday: remaining });
     },
   );
 

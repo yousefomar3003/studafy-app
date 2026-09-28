@@ -14,23 +14,18 @@ import type { LogLevel } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import type { StudyAssistant } from "@studafy/infrastructure";
-import {
-  AuthContextRepository,
-  withRequestContext,
-} from "../../src/auth/context";
+import { AuthContextRepository } from "../../src/auth/context";
+import { withRequestContext } from "../../src/platform/dbContext";
 import type { Actor } from "../../src/auth/middleware";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import { createAuthorizationDependencies } from "../../src/authorization/middleware";
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresStudyRepository } from "../../src/study/repository";
-import {
-  costMicroUsd,
-  createStudyRoutes,
-  holdFor,
-} from "../../src/study/routes";
+import { createStudyRoutes } from "../../src/study/routes";
+import { costMicroUsd, holdFor } from "../../src/study/metering";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
-import { sha256Hex } from "../../src/files/storage";
+import { sha256Hex } from "@studafy/infrastructure";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;

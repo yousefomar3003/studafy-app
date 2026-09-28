@@ -1,9 +1,7 @@
 import type { Sql } from "@studafy/database";
-import { withRequestContext } from "../auth/context";
-import type {
-  CatalogueCommandResult,
-  RequestDbContext,
-} from "../platform/catalogueRoutes";
+import { withRequestContext } from "../platform/dbContext";
+import type { CatalogueCommandResult } from "../platform/dispatchRepository";
+import type { RequestDbContext } from "../platform/dbContext";
 
 export type StudyFeature = "ask" | "whiteboard" | "quiz" | "flashcards";
 

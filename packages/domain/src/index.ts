@@ -83,3 +83,16 @@ export {
   isGooglePackageNameTrusted,
   mapGoogleSubscriptionStateToTransactionState,
 } from "./billing/googlePurchase";
+export {
+  type Flashcard,
+  isUnreadableReply,
+  lessonPrompt,
+  parseFlashcards,
+  parseQuiz,
+  type QuizQuestion,
+  redactForProvider,
+  STUDY_LESSON_MAX_CHARS,
+  STUDY_PROMPTS,
+  type StudySetKind,
+  type StudyUsage,
+} from "./study/studyContent";

@@ -1,5 +1,4 @@
 import { type Context, Hono, type MiddlewareHandler } from "hono";
-import type { Logger } from "@studafy/observability";
 import type {
   V1PageQuery as V1PageQueryType,
   V1RouteContract,
@@ -12,7 +11,7 @@ import { requirePermission } from "../authorization/middleware";
 import type { AuthDependencies } from "../auth/middleware";
 import { requireAal2, requireRecentAuth } from "../auth/middleware";
 import type { IdempotencyDependencies } from "./idempotency";
-import { idempotency } from "./idempotency";
+import { committedJson, idempotency } from "./idempotency";
 import { problem } from "./errors";
 import {
   validatedBody,
@@ -21,7 +20,10 @@ import {
   validateRouteInput,
 } from "./validation";
 import { filterHash, signCursor, verifyCursor } from "./cursor";
+import type { CatalogueRepository } from "./dispatchRepository";
+import { membershipDbContext } from "./dbContext";
 import type { Permission } from "../authorization/catalogue";
+import { outcomeProblem, type OutcomeTable } from "./outcomes";
 
 /**
  * Generic dispatcher shared by every `/v1` domain module (API-041 academic,
@@ -33,52 +35,6 @@ import type { Permission } from "../authorization/catalogue";
  * `sliceFor` functions each caller supplies — this file has no domain
  * knowledge of its own.
  */
-
-export interface CatalogueCommandResult {
-  outcome:
-    | "ok"
-    | "not_found"
-    | "forbidden"
-    | "version_conflict"
-    | "invalid_state"
-    | "window_closed"
-    | "invalid";
-  response?: unknown;
-}
-
-export interface RequestDbContext {
-  subject: string;
-  /**
-   * Null only for self-scoped permissions (e.g. platform-operator school
-   * provisioning) that have no resolved tenant to check. Every
-   * resource/tenant-scoped permission always resolves a school here.
-   */
-  schoolId: string | null;
-  requestId: string;
-  /**
-   * Whether this session actually presented a second factor (AAL2), not
-   * just whether MFA is enrolled. Most modules ignore this; support-access
-   * requires it unconditionally, matching docs/planning/instructions.md section 7's
-   * "MFA, ticket/reason, ... full audit" requirement.
-   */
-  aal2: boolean;
-}
-
-export interface CatalogueRepository {
-  query(
-    context: RequestDbContext,
-    operation: string,
-    resourceId: string | null,
-    input: unknown,
-  ): Promise<unknown>;
-  command(
-    context: RequestDbContext,
-    operation: string,
-    resourceId: string | null,
-    input: unknown,
-    reservation: { id: string; generation: number },
-  ): Promise<CatalogueCommandResult>;
-}
 
 export type CatalogueSelector = (
   c: Context<AuthorizationEnv>,
@@ -132,45 +88,11 @@ export function honoPath(path: string): string {
   return path.replaceAll(/\{([^}]+)\}/g, ":$1");
 }
 
-function switchOutcome(
-  c: Context<AuthorizationEnv>,
-  outcome: string,
-  logger?: Logger,
-): Response {
-  switch (outcome) {
-    case "not_found":
-      return problem(c, "NOT_FOUND", 404);
-    case "forbidden":
-      return problem(c, "FORBIDDEN", 403);
-    case "version_conflict":
-      return problem(c, "VERSION_CONFLICT", 409);
-    case "invalid_state":
-      return problem(c, "INVALID_STATE", 409);
-    case "window_closed":
-      return problem(c, "WINDOW_CLOSED", 409);
-    case "messaging_disabled":
-      return problem(c, "MESSAGING_DISABLED", 403);
-    case "contact_not_allowed":
-      return problem(c, "CONTACT_NOT_ALLOWED", 403);
-    // A request the database understood and rejected on its own rules - an
-    // attachment that is not the caller's to attach, a question set whose
-    // scores do not sum. Mapped explicitly so it stops being logged as an
-    // unmapped outcome, which reads as a server-side gap when it is not.
-    case "invalid":
-      return problem(c, "INVALID_REQUEST", 400);
-    default:
-      // An outcome with no mapping is a server-side gap, not a malformed
-      // request, and the bare 400 it becomes says nothing about the cause.
-      // The outcome is a fixed vocabulary from the database, never account
-      // data, so it is safe to name here.
-      logger?.warn("catalogue_outcome_unmapped", {
-        request_id: c.get("requestId"),
-        operation_id: c.get("operationId"),
-        outcome,
-      });
-      return problem(c, "INVALID_REQUEST", 400);
-  }
-}
+/** Refusals particular to catalogue modules; the rest are common. */
+const CATALOGUE_OUTCOMES: OutcomeTable = {
+  messaging_disabled: ["MESSAGING_DISABLED", 403],
+  contact_not_allowed: ["CONTACT_NOT_ALLOWED", 403],
+};
 
 export function createCatalogueRoutes<Slice extends string>(
   options: CatalogueRoutesOptions<Slice>,
@@ -217,7 +139,7 @@ export function createCatalogueRoutes<Slice extends string>(
         // SQL function re-authorizes the resource on every page regardless.
         const cursorBinding = tenant?.schoolId ??
           `actor:${actor.token.subject}`;
-        const query = (validatedQuery<V1PageQueryType>(c as never) ??
+        const query = (validatedQuery<V1PageQueryType>(c) ??
           {}) as V1PageQueryType;
         const filters = { ...query, cursor: undefined };
         const digest = await filterHash(filters);
@@ -238,12 +160,7 @@ export function createCatalogueRoutes<Slice extends string>(
           position = decoded.position;
         }
         const result = await repository.query(
-          {
-            subject: actor.token.subject,
-            schoolId: tenant?.schoolId ?? null,
-            requestId: c.get("requestId"),
-            aal2: actor.aal2,
-          },
+          membershipDbContext(c as never),
           route.operationId,
           selector(c as never, route),
           { ...filters, position },
@@ -252,9 +169,10 @@ export function createCatalogueRoutes<Slice extends string>(
         if (
           typeof result["outcome"] === "string" && result["outcome"] !== "ok"
         ) {
-          return switchOutcome(
-            c as never,
+          return outcomeProblem(
+            c,
             result["outcome"] as string,
+            CATALOGUE_OUTCOMES,
             authorization.logger,
           );
         }
@@ -312,30 +230,24 @@ export function createCatalogueRoutes<Slice extends string>(
         const successStatus = "successStatus" in route
           ? route.successStatus ?? 200
           : 200;
-        const actor = c.get("actor");
-        const tenant = c.get("authorization").tenant;
         const reservation = c.get("idempotencyReservation");
         if (!reservation) return problem(c, "FORBIDDEN", 403);
         const result = await repository.command(
-          {
-            subject: actor.token.subject,
-            schoolId: tenant?.schoolId ?? null,
-            requestId: c.get("requestId"),
-            aal2: actor.aal2,
-          },
+          membershipDbContext(c as never),
           route.operationId,
           selector(c as never, route),
           {
-            body: validatedBody(c as never),
-            params: validatedParams(c as never),
+            body: validatedBody(c),
+            params: validatedParams(c),
             responseStatus: successStatus,
           },
           reservation,
         );
         if (result.outcome !== "ok") {
-          return switchOutcome(
-            c as never,
+          return outcomeProblem(
+            c,
             result.outcome,
+            CATALOGUE_OUTCOMES,
             authorization.logger,
           );
         }
@@ -354,8 +266,7 @@ export function createCatalogueRoutes<Slice extends string>(
             });
           }
         }
-        c.set("idempotencyCompleted", true);
-        return c.json(parsed.data as never, successStatus as never);
+        return committedJson(c, parsed.data as never, successStatus as never);
       },
     );
   }

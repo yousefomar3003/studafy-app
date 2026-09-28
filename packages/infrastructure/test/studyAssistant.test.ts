@@ -7,9 +7,9 @@
  * properties that stop that recurring, so neither can be quietly lost.
  */
 import { describe, expect, test } from "bun:test";
+import { redactForProvider } from "@studafy/domain";
 import {
   createStudyAssistant,
-  redactForProvider,
   StudyAssistantError,
 } from "../src/studyAssistant";
 

@@ -5,6 +5,9 @@ import type { IdempotencyModeType, V1OperationId } from "@studafy/contracts";
 import { withVerifiedActor } from "../auth/context";
 import type { AuthorizationEnv } from "../authorization/middleware";
 import { problem } from "./errors";
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { PlatformEnv, RouteContext } from "./types";
 
 export type Reservation =
   | { outcome: "reserved"; id: string; generation: number }
@@ -231,4 +234,23 @@ export function idempotency(
       ).catch(() => false);
     }
   };
+}
+
+/**
+ * Answers a command whose SQL transaction already recorded this response
+ * against the idempotency key.
+ *
+ * The domain functions complete the idempotency record inside their own
+ * transaction, so the middleware must not store the response a second time.
+ * Returning through here marks that, which a hand-written flag could forget.
+ */
+export function committedJson(
+  c: RouteContext,
+  body: unknown,
+  status: ContentfulStatusCode = 200,
+  headers?: Record<string, string>,
+): Response {
+  const context = c as unknown as Context<PlatformEnv>;
+  context.set("idempotencyCompleted", true);
+  return context.json(body as never, status, headers);
 }

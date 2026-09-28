@@ -1,10 +1,11 @@
 import { type Context, Hono } from "hono";
-import { type ErrorCodeType, v1Route } from "@studafy/contracts";
+import { v1Route } from "@studafy/contracts";
 import {
-  STUDY_LESSON_MAX_CHARS,
+  type PrivateFileStorage,
+  sha256Hex,
+  StorageUnavailableError,
   type StudyAssistant,
   StudyAssistantError,
-  type StudyUsage,
 } from "@studafy/infrastructure";
 import type {
   AuthorizationDependencies,
@@ -12,22 +13,18 @@ import type {
 } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { idempotency } from "../platform/idempotency";
+import { committedJson, idempotency } from "../platform/idempotency";
 import { problem } from "../platform/errors";
-import { validatedParams, validateRouteInput } from "../platform/validation";
-import type { RequestDbContext } from "../platform/catalogueRoutes";
 import {
-  type PrivateFileStorage,
-  sha256Hex,
-  StorageUnavailableError,
-} from "../files/storage";
-import type { StudyFeature, StudyRepository } from "./repository";
-
-/** The model's prices, US dollars per million tokens. */
-export interface ModelPrices {
-  inputUsdPerMTok: number;
-  outputUsdPerMTok: number;
-}
+  routeParam,
+  validatedBody,
+  validatedParams,
+  validateRouteInput,
+} from "../platform/validation";
+import type { StudyRepository } from "./repository";
+import { resolvedSchoolDbContext } from "../platform/dbContext";
+import { outcomeProblem } from "../platform/outcomes";
+import { AI_REFUSALS, AiMeter, holdFor, type ModelPrices } from "./metering";
 
 export interface StudyRoutesDependencies {
   repository: StudyRepository;
@@ -40,98 +37,8 @@ export interface StudyRoutesDependencies {
   storage: PrivateFileStorage | null;
 }
 
-/**
- * Worst-case input tokens per call, used to size the hold taken against a
- * student's cap before the provider is called. Generous on purpose: the hold
- * must never be smaller than what the call can cost, or the cap could be
- * passed. The actual cost replaces it as soon as the provider answers.
- */
-const INPUT_BOUND_TOKENS = {
-  ask: 1_200,
-  // A full-resolution phone photo is ~15k image tokens on Qwen3.5.
-  whiteboard: 16_000,
-} as const;
-const ASK_OUTPUT_TOKENS = 500;
-const LONG_OUTPUT_TOKENS = 1_400;
-
-/** Millionths of a dollar for this many tokens. */
-export function costMicroUsd(
-  prices: ModelPrices,
-  inputTokens: number,
-  outputTokens: number,
-): number {
-  // USD per million tokens is exactly micro-USD per token.
-  return Math.ceil(
-    inputTokens * prices.inputUsdPerMTok +
-      outputTokens * prices.outputUsdPerMTok,
-  );
-}
-
-function holdFor(
-  prices: ModelPrices,
-  feature: StudyFeature,
-  lessonChars = 0,
-): number {
-  switch (feature) {
-    case "ask":
-      return costMicroUsd(prices, INPUT_BOUND_TOKENS.ask, ASK_OUTPUT_TOKENS);
-    case "whiteboard":
-      return costMicroUsd(
-        prices,
-        INPUT_BOUND_TOKENS.whiteboard,
-        LONG_OUTPUT_TOKENS,
-      );
-    default: {
-      // Roughly three characters a token, plus the instructions.
-      const input = Math.ceil(
-        Math.min(lessonChars, STUDY_LESSON_MAX_CHARS) / 3,
-      ) + 600;
-      return costMicroUsd(prices, input, LONG_OUTPUT_TOKENS);
-    }
-  }
-}
-
-function requestContext(c: Context<AuthorizationEnv>): RequestDbContext {
-  return {
-    subject: c.get("actor").token.subject,
-    schoolId: c.get("authorization").tenant?.schoolId ??
-      c.get("authorization").decisionSchoolId ?? null,
-    requestId: c.get("requestId"),
-    aal2: c.get("actor").aal2,
-  };
-}
-
-function body<T>(c: Context<AuthorizationEnv>): T {
-  // Read from the context: validatedBody() is typed for PlatformEnv, which
-  // Hono's invariant Context does not accept here. The schema has already
-  // validated it by the time a handler runs.
-  return c.get("validatedBody") as T;
-}
-
-function param(c: Context<AuthorizationEnv>, name: string): string {
-  const value = validatedParams<Record<string, string>>(c as never)[name];
-  if (!value) throw new Error(`validated route parameter missing: ${name}`);
-  return value;
-}
-
-/** The refusals a paid call can meet before anything is spent. */
-function refusal(
-  c: Context<AuthorizationEnv>,
-  outcome: string,
-): Response {
-  const mapped: Record<
-    string,
-    [ErrorCodeType, 400 | 403 | 404 | 409 | 422 | 429]
-  > = {
-    plan_required: ["PLAN_REQUIRED", 403],
-    monthly_cap: ["AI_ALLOWANCE_USED", 429],
-    daily_limit: ["AI_DAILY_LIMIT", 429],
-    not_found: ["NOT_FOUND", 404],
-    forbidden: ["FORBIDDEN", 403],
-    invalid: ["INVALID_REQUEST", 400],
-  };
-  const entry = mapped[outcome] ?? ["INVALID_REQUEST", 400];
-  return problem(c, entry[0], entry[1]);
+function refusal(c: Context<AuthorizationEnv>, outcome: string): Response {
+  return outcomeProblem(c, outcome, AI_REFUSALS);
 }
 
 /**
@@ -151,45 +58,7 @@ export function createStudyRoutes(
   const routes = new Hono<AuthorizationEnv>();
   const log = authorization.logger;
 
-  /**
-   * Runs one metered provider call: hold the worst case, call, then settle
-   * to what the provider reported - or release the hold if nothing came
-   * back. Returns the outcome of the hold when it was refused.
-   */
-  async function metered<T extends { usage?: StudyUsage }>(
-    context: RequestDbContext,
-    feature: StudyFeature,
-    hold: number,
-    call: () => Promise<T>,
-  ): Promise<{ ok: true; value: T } | { ok: false; outcome: string }> {
-    const reserved = await deps.repository.usage(context, "reserve", {
-      feature,
-      estimateMicroUsd: hold,
-    });
-    if (reserved["outcome"] !== "ok") {
-      return { ok: false, outcome: String(reserved["outcome"]) };
-    }
-    const usageId = reserved["usageId"];
-    let value: T;
-    try {
-      value = await call();
-    } catch (error) {
-      await deps.repository.usage(context, "release", { usageId });
-      throw error;
-    }
-    const usage = value.usage;
-    await deps.repository.usage(context, "settle", {
-      usageId,
-      // No usage reported: charge the hold, which is the upper bound.
-      costMicroUsd: usage
-        ? costMicroUsd(deps.prices, usage.inputTokens, usage.outputTokens)
-        : hold,
-      inputTokens: usage?.inputTokens ?? null,
-      outputTokens: usage?.outputTokens ?? null,
-      model: usage?.model ?? null,
-    });
-    return { ok: true, value };
-  }
+  const meter = new AiMeter(deps.repository, deps.prices);
 
   function providerFailure(
     c: Context<AuthorizationEnv>,
@@ -218,7 +87,7 @@ export function createStudyRoutes(
     requirePermission(authorization, "study_plan.read"),
     async (c) => {
       const summary = await deps.repository.usage(
-        requestContext(c),
+        resolvedSchoolDbContext(c),
         "summary",
         {},
       );
@@ -252,14 +121,13 @@ export function createStudyRoutes(
     requirePermission(
       authorization,
       "notebook.read",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).classroomId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).classroomId ?? null,
     ),
     async (c) => {
       const result = await deps.repository.query(
-        requestContext(c),
+        resolvedSchoolDbContext(c),
         "listNotebookEntries",
-        param(c, "classroomId"),
+        routeParam(c, "classroomId"),
         {},
       );
       if (!result || typeof result["outcome"] === "string") {
@@ -288,7 +156,7 @@ export function createStudyRoutes(
     const reservation = c.get("idempotencyReservation");
     if (!reservation) return problem(c, "FORBIDDEN", 403);
     const result = await deps.repository.command(
-      requestContext(c),
+      resolvedSchoolDbContext(c),
       operation,
       resourceId,
       entry,
@@ -297,8 +165,7 @@ export function createStudyRoutes(
     if (result.outcome !== "ok") return refusal(c, result.outcome);
     const parsed = responseSchema.safeParse(result.response);
     if (!parsed.success) return problem(c, "INTERNAL_ERROR", 500);
-    c.set("idempotencyCompleted", true);
-    return c.json(parsed.data as never, status);
+    return committedJson(c, parsed.data as never, status);
   }
 
   const createRoute = v1Route("createNotebookEntry");
@@ -308,18 +175,17 @@ export function createStudyRoutes(
     requirePermission(
       authorization,
       "notebook.write",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).classroomId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).classroomId ?? null,
     ),
     idempotency(idempotencyDependencies, createRoute.operationId, "required"),
     async (c) => {
-      const input = body<{ title: string; body: string }>(c);
+      const input = validatedBody<{ title: string; body: string }>(c);
       // Typed notes are always 'typed'; only the whiteboard route writes
       // 'whiteboard', after it has run the model.
       return await saveEntry(
         c,
         "createNotebookEntry",
-        param(c, "classroomId"),
+        routeParam(c, "classroomId"),
         { title: input.title, body: input.body, source: "typed" },
         createRoute.response,
         201,
@@ -337,8 +203,7 @@ export function createStudyRoutes(
     requirePermission(
       authorization,
       "notebook.write",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).classroomId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).classroomId ?? null,
     ),
     idempotency(
       idempotencyDependencies,
@@ -350,9 +215,9 @@ export function createStudyRoutes(
       if (!assistant || !deps.lessonToolsEnabled || !deps.storage) {
         return problem(c, "AI_FEATURE_DISABLED", 409);
       }
-      const context = requestContext(c);
-      const classroomId = param(c, "classroomId");
-      const input = body<{ photoFileId: string; title?: string }>(c);
+      const context = resolvedSchoolDbContext(c);
+      const classroomId = routeParam(c, "classroomId");
+      const input = validatedBody<{ photoFileId: string; title?: string }>(c);
 
       const photo = await deps.repository.query(
         context,
@@ -381,7 +246,7 @@ export function createStudyRoutes(
 
       let notes;
       try {
-        notes = await metered(
+        notes = await meter.run(
           context,
           "whiteboard",
           holdFor(deps.prices, "whiteboard"),
@@ -419,15 +284,14 @@ export function createStudyRoutes(
     requirePermission(
       authorization,
       "notebook_entry.delete",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).entryId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).entryId ?? null,
     ),
     idempotency(idempotencyDependencies, deleteRoute.operationId, "required"),
     async (c) =>
       await saveEntry(
         c,
         "deleteNotebookEntry",
-        param(c, "entryId"),
+        routeParam(c, "entryId"),
         {},
         deleteRoute.response,
         200,
@@ -444,8 +308,7 @@ export function createStudyRoutes(
     requirePermission(
       authorization,
       "study_set.generate",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).resourceId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).resourceId ?? null,
     ),
     idempotency(idempotencyDependencies, studyRoute.operationId, "required"),
     async (c) => {
@@ -453,9 +316,9 @@ export function createStudyRoutes(
       if (!assistant || !deps.lessonToolsEnabled) {
         return problem(c, "AI_FEATURE_DISABLED", 409);
       }
-      const context = requestContext(c);
-      const resourceId = param(c, "resourceId");
-      const { kind } = body<{ kind: "quiz" | "flashcards" }>(c);
+      const context = resolvedSchoolDbContext(c);
+      const resourceId = routeParam(c, "resourceId");
+      const { kind } = validatedBody<{ kind: "quiz" | "flashcards" }>(c);
 
       const found = await deps.repository.query(
         context,
@@ -494,7 +357,7 @@ export function createStudyRoutes(
 
       let generated;
       try {
-        generated = await metered(
+        generated = await meter.run(
           context,
           kind,
           holdFor(deps.prices, kind, text.length),
@@ -525,12 +388,9 @@ export function createStudyRoutes(
         toResponse(saved.response as Record<string, unknown>),
       );
       if (!parsed.success) return problem(c, "INTERNAL_ERROR", 500);
-      c.set("idempotencyCompleted", true);
-      return c.json(parsed.data, 201);
+      return committedJson(c, parsed.data, 201);
     },
   );
 
   return routes;
 }
-
-export { holdFor };

@@ -11,7 +11,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createDatabase, type Sql } from "@studafy/database";
-import { withRequestContext } from "../../src/auth/context";
+import { withRequestContext } from "../../src/platform/dbContext";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;

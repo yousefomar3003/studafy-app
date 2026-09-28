@@ -1,6 +1,6 @@
 import type { Sql } from "@studafy/database";
-import { withRequestContext } from "../auth/context";
-import type { RequestDbContext } from "../platform/catalogueRoutes";
+import { withRequestContext } from "../platform/dbContext";
+import type { RequestDbContext } from "../platform/dbContext";
 
 export interface BillingReservation {
   id: string;
