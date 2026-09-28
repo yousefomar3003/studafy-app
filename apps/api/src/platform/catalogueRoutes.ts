@@ -1,7 +1,8 @@
 import { type Context, Hono, type MiddlewareHandler } from "hono";
-import type {
-  V1PageQuery as V1PageQueryType,
-  V1RouteContract,
+import {
+  V1_ROUTE_CATALOGUE,
+  type V1PageQuery as V1PageQueryType,
+  type V1RouteContract,
 } from "@studafy/contracts";
 import type {
   AuthorizationDependencies,
@@ -269,6 +270,27 @@ export function createCatalogueRoutes<Slice extends string>(
         return committedJson(c, parsed.data as never, successStatus as never);
       },
     );
+  }
+  return routes;
+}
+
+/**
+ * A module's routes, by name, in catalogue order.
+ *
+ * Modules used to take a positional slice of the catalogue
+ * (`V1_ROUTE_CATALOGUE.slice(52, 64)`), so adding a route anywhere but the end
+ * silently moved routes between modules. Naming them makes a module's surface
+ * explicit and fails at startup if a name is wrong.
+ */
+export function catalogueRoutesNamed(
+  operationIds: readonly string[],
+): readonly V1RouteContract[] {
+  const wanted = new Set(operationIds);
+  const routes = (V1_ROUTE_CATALOGUE as readonly V1RouteContract[]).filter((
+    route,
+  ) => wanted.delete(route.operationId));
+  if (wanted.size > 0) {
+    throw new Error(`unknown catalogue operations: ${[...wanted].join(", ")}`);
   }
   return routes;
 }

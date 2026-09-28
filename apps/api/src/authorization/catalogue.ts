@@ -1,5 +1,21 @@
 import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 
+/** The auth and account routes declared by hand below, not from the catalogue. */
+const HAND_DECLARED_OPERATIONS: ReadonlySet<string> = new Set([
+  "getMe",
+  "getAuthContext",
+  "listAuthDevices",
+  "revokeAuthDevice",
+  "signOut",
+  "challengeReauth",
+  "verifyReauth",
+  "linkIdentity",
+  "unlinkIdentity",
+  "getDeletionImpact",
+  "requestAccountDeletion",
+  "cancelAccountDeletion",
+]);
+
 /**
  * AUTH-031 permission catalogue.
  *
@@ -1177,7 +1193,11 @@ export const AUTH_HANDLER_PERMISSIONS = Object.freeze(
       path: "/v1/account/deletion-cancel",
       permission: "account.deletion.cancel",
     },
-    ...V1_ROUTE_CATALOGUE.slice(12).map((route) => ({
+    // Everything else the catalogue declares; the account and auth routes
+    // above are hand-written.
+    ...V1_ROUTE_CATALOGUE.filter((route) =>
+      !HAND_DECLARED_OPERATIONS.has(route.operationId)
+    ).map((route) => ({
       method: route.method.toUpperCase() as "GET" | "POST",
       path: route.path.replaceAll(/\{([^}]+)\}/g, ":$1"),
       permission: route.permission as Permission,

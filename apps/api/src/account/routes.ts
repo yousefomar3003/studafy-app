@@ -6,7 +6,10 @@ import type {
 } from "../authorization/middleware";
 import type { AuthDependencies } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { AccountRepository } from "./repository";
 
 export interface AccountDependencies {
@@ -18,7 +21,11 @@ export interface AccountDependencies {
 export type AccountSlice = "account";
 
 // Appended after notifications' 5 entries (indices [81, 86)).
-const ACCOUNT_ROUTES = V1_ROUTE_CATALOGUE.slice(86, 89);
+const ACCOUNT_ROUTES = catalogueRoutesNamed([
+  "updateProfile",
+  "requestDataExport",
+  "getExportStatus",
+]);
 // DL-051 appended downloadDataExport at the end of the catalogue; it mounts
 // in its own router so handler order stays equal to the contract.
 const ACCOUNT_READ_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>

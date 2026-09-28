@@ -5,7 +5,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { CommunicationsRepository } from "./repository";
 
 export interface CommunicationsDependencies {
@@ -17,7 +20,14 @@ export interface CommunicationsDependencies {
 export type CommunicationsSlice = "conversations" | "announcements";
 
 // Appended after family's 4 entries (indices [68, 72)).
-const COMMUNICATIONS_ROUTES = V1_ROUTE_CATALOGUE.slice(72, 78);
+const COMMUNICATIONS_ROUTES = catalogueRoutesNamed([
+  "listConversations",
+  "createConversation",
+  "listMessages",
+  "sendMessage",
+  "createAnnouncement",
+  "listAnnouncements",
+]);
 // DL-049 appended listContacts at the end of the catalogue, so it mounts in
 // its own router after billing to keep handler order equal to the contract.
 const CONTACT_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>

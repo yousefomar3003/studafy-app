@@ -5,7 +5,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { AcademicRepository } from "./repository";
 
 export interface AcademicDependencies {
@@ -25,7 +28,48 @@ export type AcademicSlice =
 
 // Bounded, not open-ended: entries after index 51 belong to school-admin
 // (API-042 S1) and are mounted by createSchoolAdminRoutes instead.
-const ACADEMIC_ROUTES = V1_ROUTE_CATALOGUE.slice(12, 52);
+const ACADEMIC_ROUTES = catalogueRoutesNamed([
+  "getSchool",
+  "listTerms",
+  "listClassrooms",
+  "createClassroom",
+  "getClassroom",
+  "listClassroomStaff",
+  "updateClassroom",
+  "replaceClassroomSchedule",
+  "listClassroomStudents",
+  "listResources",
+  "listLessonSessions",
+  "createResource",
+  "reviseResource",
+  "publishResource",
+  "withdrawResource",
+  "listAssignments",
+  "createAssignment",
+  "publishAssignment",
+  "withdrawAssignment",
+  "submitAssignment",
+  "getAssignment",
+  "listAssignmentSubmissions",
+  "listAssessments",
+  "createAssessment",
+  "publishAssessment",
+  "withdrawAssessment",
+  "listAssessmentQuestions",
+  "listAssessmentAuthoringQuestions",
+  "listAssessmentAttempts",
+  "submitAssessment",
+  "listGradeResults",
+  "reviewGradeResult",
+  "publishGradeResult",
+  "correctGradeResult",
+  "withdrawGradeResult",
+  "listAttendance",
+  "listAttendanceRoster",
+  "recordAttendance",
+  "listWellbeing",
+  "createWellbeing",
+]);
 
 function selector(
   c: Context<AuthorizationEnv>,
