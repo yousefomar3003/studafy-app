@@ -218,10 +218,74 @@ DartBoundaryReport checkDartBoundaries(String rootPath) {
     }
   }
 
+  checkedFiles += _checkLayers(root.path, violations);
+
   return DartBoundaryReport(
     checkedFiles: checkedFiles,
     violations: List.unmodifiable(violations),
   );
+}
+
+/// The layers outside lib/features.
+///
+/// - `lib/core` is the innermost ring: it may import nothing from features,
+///   data or app.
+/// - `lib/data` adapts providers and may implement a feature's domain port,
+///   but never reaches a feature's presentation or application code, or the
+///   composition root.
+/// - A `part` file inherits its library's imports, so the checker cannot see
+///   what it uses; the old parent screens hid cross-feature imports that way.
+///   Only generated code and the preview database may be split into parts.
+int _checkLayers(String rootPath, List<String> violations) {
+  var checked = 0;
+  const partsAllowed = ['lib/l10n/generated/', 'lib/data/local/'];
+  const partLibrariesAllowed = ['lib/studafy_database.dart'];
+  final lib = Directory('$rootPath/lib');
+  for (final entry in lib.listSync(recursive: true)) {
+    if (entry is! File || !entry.path.endsWith('.dart')) continue;
+    final path = entry.path.substring(rootPath.length + 1);
+    final source = entry.readAsStringSync();
+    if (RegExp(r'^part (of )?', multiLine: true).hasMatch(source) &&
+        !partsAllowed.any(path.startsWith) &&
+        !partLibrariesAllowed.contains(path)) {
+      violations.add('$path: uses `part`, which hides its imports');
+    }
+    if (path.startsWith('lib/features/')) continue;
+    checked++;
+    for (final match in _importPattern.allMatches(source)) {
+      final import = match.group(1)!;
+      final target = _resolveLibPath(import, entry.path, rootPath);
+      if (target == null) continue;
+      if (path.startsWith('lib/core/') &&
+          (target.startsWith('lib/features/') ||
+              target.startsWith('lib/data/') ||
+              target.startsWith('lib/app/'))) {
+        violations.add('$path: core imports "$import" (core imports no layer)');
+      }
+      if (path.startsWith('lib/data/') &&
+          (target.startsWith('lib/app/') ||
+              (target.startsWith('lib/features/') &&
+                  !target.contains('/domain/')))) {
+        violations.add(
+          '$path: data imports "$import" (data may use only feature domains)',
+        );
+      }
+    }
+  }
+  return checked;
+}
+
+/// The lib-relative path an import points at, or null for packages/dart:.
+String? _resolveLibPath(String import, String fromFile, String rootPath) {
+  if (import.startsWith('package:studafy/')) {
+    return 'lib/${import.substring('package:studafy/'.length)}';
+  }
+  if (import.startsWith('package:') || import.startsWith('dart:')) return null;
+  final resolved = File('${File(fromFile).parent.path}/$import').absolute.uri
+      .normalizePath()
+      .toFilePath();
+  if (!resolved.startsWith(rootPath)) return null;
+  return resolved.substring(rootPath.length + 1);
 }
 
 String? _zoneFor(String path) {

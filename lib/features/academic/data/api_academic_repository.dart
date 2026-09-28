@@ -8,10 +8,7 @@ import '../../../core/idempotency.dart';
 class ApiAcademicRepository implements AcademicRepository {
   /// [context] is the signed-in person's active school and child; it is
   /// passed in so the repository never reaches for a global.
-  ApiAcademicRepository(
-    this._client, {
-    required ActiveContextController context,
-  }) : _context = context;
+  ApiAcademicRepository(this._client, {required this._context});
 
   final V1ApiClient _client;
   final ActiveContextController _context;

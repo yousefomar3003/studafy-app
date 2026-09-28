@@ -5,10 +5,7 @@ import '../domain/school_operations_repository.dart';
 import '../../../core/idempotency.dart';
 
 class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
-  ApiSchoolOperationsRepository(
-    this._client, {
-    required ActiveContextController context,
-  }) : _context = context;
+  ApiSchoolOperationsRepository(this._client, {required this._context});
 
   final V1ApiClient _client;
   final ActiveContextController _context;

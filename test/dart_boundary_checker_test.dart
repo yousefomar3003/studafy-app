@@ -80,10 +80,43 @@ void main() {
       );
 
       final result = bounds.checkDartBoundaries(fixture.path);
-      expect(result.violations, hasLength(1));
-      expect(result.violations.single, contains('data-layer symbol'));
+      // Both the hidden call and the part file that hid it are reported.
+      expect(result.violations, hasLength(2));
+      expect(result.violations, contains(contains('data-layer symbol')));
+      expect(result.violations, contains(contains('uses `part`')));
     },
   );
+
+  test('core imports no layer and data reaches only feature domains', () async {
+    await _write(
+      fixture,
+      'lib/features/study/domain/study.dart',
+      'class Study {}\n',
+    );
+    await _write(
+      fixture,
+      'lib/core/helper.dart',
+      "import '../features/study/presentation/notebook_view.dart';\n",
+    );
+    await _write(
+      fixture,
+      'lib/data/adapter.dart',
+      "import '../features/study/domain/study.dart';\n"
+          "import '../features/study/application/planner.dart';\n"
+          "import '../app/app_dependencies.dart';\n",
+    );
+
+    final result = bounds.checkDartBoundaries(fixture.path);
+    expect(
+      result.violations.where((v) => v.contains('core imports')),
+      hasLength(1),
+    );
+    // The domain import is fine; the application and app imports are not.
+    expect(
+      result.violations.where((v) => v.contains('data imports')),
+      hasLength(2),
+    );
+  });
 }
 
 Future<void> _write(Directory root, String relative, String content) async {
