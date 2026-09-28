@@ -25,7 +25,7 @@ class CreateAssignmentPage extends StatefulWidget {
     this.attachmentSource,
   });
 
-  final AcademicRepository repository;
+  final AssignmentRepository repository;
 
   /// Classes this teacher can set work for. A single-entry list still shows
   /// the field, so the teacher can see which class they are setting work for.

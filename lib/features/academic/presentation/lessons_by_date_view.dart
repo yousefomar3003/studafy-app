@@ -21,7 +21,7 @@ class LessonsByDateView extends StatefulWidget {
     this.actionsFor,
   });
 
-  final AcademicRepository repository;
+  final AcademicContentRepository repository;
   final String classroomId;
   final String? studentId;
   final FileUploadRepository? uploads;

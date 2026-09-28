@@ -19,7 +19,7 @@ class StudentTodayPage extends StatelessWidget {
     required this.onNotebook,
     this.classes,
   });
-  final AcademicRepository academic;
+  final AcademicContentRepository academic;
   final VoidCallback onWork;
   final VoidCallback onNotebook;
 

@@ -410,10 +410,8 @@ class WellbeingDraft {
   final String? context;
 }
 
-/// Typed mobile boundary for every API-041 slice. Remote implementations must
-/// fail closed; preview implementations are the only adapters allowed to use
-/// SQLite.
-abstract interface class AcademicRepository {
+/// Lessons and class material: the content feed and its lifecycle.
+abstract interface class AcademicContentRepository {
   Future<List<AcademicRecord>> load(
     AcademicFeed feed, {
     String? classroomId,
@@ -428,12 +426,13 @@ abstract interface class AcademicRepository {
   );
   Future<void> publishResource(String resourceId, int expectedVersion);
   Future<void> withdrawResource(String resourceId, int expectedVersion);
+}
+
+/// Assignments: setting work, handing it in and reviewing what came back.
+abstract interface class AssignmentRepository {
   Future<void> createAssignment(AssignmentDraft draft);
   Future<void> publishAssignment(String assignmentId, int expectedVersion);
   Future<void> withdrawAssignment(String assignmentId, int expectedVersion);
-  Future<void> createAssessment(AssessmentDraft draft);
-  Future<void> publishAssessment(String assessmentId, int expectedVersion);
-  Future<void> withdrawAssessment(String assessmentId, int expectedVersion);
 
   /// Hands work in. [attachmentFileIds] are the student's own completed
   /// uploads of purpose `assignment_submission`; the server binds them to the
@@ -444,35 +443,6 @@ abstract interface class AcademicRepository {
     List<String> attachmentFileIds = const [],
     String? studentId,
   });
-  Future<void> submitAssessment(
-    String assessmentId,
-    Map<String, String> answers,
-  );
-
-  /// The class's weekly meetings, so the teacher can pick which one they are
-  /// taking the register for.
-  Future<List<ClassSessionSlot>> classroomSchedule(String classroomId);
-
-  /// Children enrolled in [classroomId], each with their verified guardians.
-  Future<List<ClassStudent>> classStudents(String classroomId);
-
-  /// The register for one meeting of [classroomId].
-  ///
-  /// [startsAt] names the meeting; a class that meets twice in a day has two
-  /// separate registers, and a date alone cannot tell them apart.
-  Future<AttendanceRegister> attendanceRoster(
-    String classroomId,
-    DateTime date, {
-    DateTime? startsAt,
-  });
-
-  Future<void> recordAttendance(
-    String classroomId,
-    DateTime startsAt,
-    DateTime endsAt,
-    int expectedVersion,
-    List<AttendanceDraft> entries,
-  );
 
   /// What students have handed in for [assignmentId].
   Future<List<SubmittedWork>> submissionsFor(String assignmentId);
@@ -486,6 +456,24 @@ abstract interface class AcademicRepository {
     String assignmentId, {
     String? studentId,
   });
+}
+
+/// Assessments and exams.
+abstract interface class AssessmentRepository {
+  Future<void> createAssessment(AssessmentDraft draft);
+  Future<void> publishAssessment(String assessmentId, int expectedVersion);
+  Future<void> withdrawAssessment(String assessmentId, int expectedVersion);
+  Future<void> submitAssessment(
+    String assessmentId,
+    Map<String, String> answers,
+  );
+}
+
+/// A class's timetable, its lessons as taught, and who is in it.
+abstract interface class ClassTimetableRepository {
+  /// The class's weekly meetings, so the teacher can pick which one they are
+  /// taking the register for.
+  Future<List<ClassSessionSlot>> classroomSchedule(String classroomId);
 
   /// Replaces a classroom's weekly schedule.
   ///
@@ -503,9 +491,34 @@ abstract interface class AcademicRepository {
   /// Closes a section. Refused while nothing has been filed against it.
   Future<void> closeLessonSession(String lessonSessionId);
 
+  /// Children enrolled in [classroomId], each with their verified guardians.
+  Future<List<ClassStudent>> classStudents(String classroomId);
+}
+
+/// Attendance registers.
+abstract interface class AttendanceRepository {
+  /// The register for one meeting of [classroomId].
+  ///
+  /// [startsAt] names the meeting; a class that meets twice in a day has two
+  /// separate registers, and a date alone cannot tell them apart.
+  Future<AttendanceRegister> attendanceRoster(
+    String classroomId,
+    DateTime date, {
+    DateTime? startsAt,
+  });
+  Future<void> recordAttendance(
+    String classroomId,
+    DateTime startsAt,
+    DateTime endsAt,
+    int expectedVersion,
+    List<AttendanceDraft> entries,
+  );
+}
+
+/// Grades: review, publication and corrections.
+abstract interface class GradeRepository {
   /// Every mark for [classroomId], across its assessments.
   Future<List<GradeEntry>> gradeEntries(String classroomId);
-
   Future<void> reviewGrade(
     String gradeId,
     int expectedVersion,
@@ -521,5 +534,25 @@ abstract interface class AcademicRepository {
     String? feedback,
   });
   Future<void> withdrawGrade(String gradeId, int expectedVersion);
+}
+
+/// Wellbeing notes.
+abstract interface class WellbeingRepository {
   Future<void> createWellbeing(WellbeingDraft draft);
 }
+
+/// Typed mobile boundary for every API-041 slice. Remote implementations must
+/// fail closed; preview implementations are the only adapters allowed to use
+/// SQLite.
+///
+/// The union of the slice interfaces above. A screen that needs one slice
+/// asks for that interface, so its tests fake only what it uses.
+abstract interface class AcademicRepository
+    implements
+        AcademicContentRepository,
+        AssignmentRepository,
+        AssessmentRepository,
+        ClassTimetableRepository,
+        AttendanceRepository,
+        GradeRepository,
+        WellbeingRepository {}

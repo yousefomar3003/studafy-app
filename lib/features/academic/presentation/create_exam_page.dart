@@ -21,7 +21,7 @@ class CreateExamPage extends StatefulWidget {
     this.initialClassroomId,
   });
 
-  final AcademicRepository repository;
+  final AssessmentRepository repository;
   final List<ClassOption> classes;
   final String? initialClassroomId;
 

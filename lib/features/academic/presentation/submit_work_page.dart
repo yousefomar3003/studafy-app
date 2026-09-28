@@ -29,7 +29,7 @@ class SubmitWorkPage extends StatefulWidget {
     this.instructions,
   });
 
-  final AcademicRepository repository;
+  final AssignmentRepository repository;
   final String assignmentId;
   final String assignmentTitle;
 

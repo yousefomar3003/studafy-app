@@ -24,7 +24,7 @@ class SubmissionHistoryView extends StatefulWidget {
     this.title,
   });
 
-  final AcademicRepository repository;
+  final AssignmentRepository repository;
   final String assignmentId;
 
   /// Left out by a student reading their own work.
@@ -205,7 +205,7 @@ class SubmissionHistoryPage extends StatelessWidget {
     required this.studentName,
   });
 
-  final AcademicRepository repository;
+  final AssignmentRepository repository;
   final String assignmentId;
   final String studentId;
   final String studentName;
