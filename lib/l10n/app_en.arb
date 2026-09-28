@@ -1052,12 +1052,7 @@
   "teacherShellManageRosterStaffAndMeetings": "Manage roster, staff and meetings",
   "teacherShellClasses": "Classes",
   "teacherShellMessages": "Messages",
-  "schoolAdminAdministrationRequiresTheRemoteBackend": "Administration requires the remote backend.",
-  "schoolAdminSchoolAdministration": "School administration",
-  "schoolAdminTerms": "Terms",
   "schoolAdminGuardians": "Guardians",
-  "schoolAdminUpdates": "Updates",
-  "schoolAdminAccount": "Account",
   "teacherTodaySpaceToInspireADay": "Space to inspire. A day to make a difference.",
   "studentLessonsPlans": "Plans",
   "studentLessonsYourClassesCouldNotBe": "Your classes could not be loaded. Try again",
@@ -1331,27 +1326,6 @@
   "classroomAdminPasteALinkThatStarts": "Paste a link that starts with https://meet.google.com/",
   "classroomAdminSchedule": "Schedule",
   "classroomAdminMeetingScheduledEveryoneInvitedHas": "Meeting scheduled. Everyone invited has been told.",
-  "guardianVerifyConfirmGuardianVerification": "Confirm guardian verification",
-  "guardianVerifyRevokeGuardianAccess": "Revoke guardian access?",
-  "guardianVerifyVerifyOnlyAfterCheckingThe": "Verify only after checking the guardian’s identity and relationship with the student.",
-  "guardianVerifyThisRemovesAccessGrantedBy": "This removes access granted by this family link.",
-  "guardianVerifyLinkStatus": "Link status",
-  "guardianVerifyGuardianVerification": "Guardian verification",
-  "guardianVerifyEnterTheLinkIdSupplied": "Enter the link ID supplied with the verification request.",
-  "guardianVerifyGuardianLinkId": "Guardian link ID",
-  "guardianVerifyVerificationPeriod": "Verification period",
-  "guardianVerifyDays": "days",
-  "guardianVerifyVerifyLink": "Verify link",
-  "guardianVerifyRevokeLink": "Revoke link",
-  "termsAcademicTerms": "Academic terms",
-  "termsCreateTerm": "Create term",
-  "termsNoTermsCreated": "No terms created.",
-  "termsCreateAcademicTerm": "Create academic term",
-  "termsName": "Name",
-  "termsStarts": "Starts",
-  "termsEnds": "Ends",
-  "termsCreate": "Create",
-  "termsTermCreated": "Term created.",
   "rolesYourSpaceToGrow": "YOUR SPACE TO GROW",
   "studyPlansFeatureLessons": "Lessons from every class, by date",
   "studyPlansFeatureNotebook": "Your own notebook for each class",
@@ -1728,5 +1702,66 @@
   "notificationCopySupportAccessStartedTitle": "Support session started",
   "notificationCopySupportAccessStartedDetail": "A support session has started.",
   "notificationCopyGenericTitle": "Notification",
-  "notificationCopyGenericDetail": "You have a new update."
+  "notificationCopyGenericDetail": "You have a new update.",
+  "familyPlusHeadline": "Family+ for {name}",
+  "@familyPlusHeadline": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusIntro": "See how your child is really doing, and one useful thing to do this week.",
+  "familyPlusFeatureTrends": "What changed this term, with the records behind every claim",
+  "familyPlusFeatureDue": "Work due this week, so nothing slips",
+  "familyPlusFeatureSubjects": "Marks by subject and attendance at a glance",
+  "familyPlusFeatureSchool": "Notes the school chose to share with you",
+  "familyPlusPrice": "{price} / month",
+  "@familyPlusPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusUsPrice": "US$1.99 / month in the US - the store shows your price",
+  "familyPlusTrial": "If eligible, free for {trial}, then {price} / month",
+  "@familyPlusTrial": {
+    "placeholders": {
+      "trial": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusOneChild": "Covers {name} only. Each child has their own Family+.",
+  "@familyPlusOneChild": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusStartTrial": "Start free trial",
+  "familyPlusSubscribe": "Subscribe for {name}",
+  "@familyPlusSubscribe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusCheckingStore": "Checking the store price...",
+  "familyPlusStoreUnavailable": "The store could not be reached. Try again later.",
+  "familyPlusNotInThisBuild": "Family+ cannot be bought in this version of the app.",
+  "familyPlusOpeningStore": "Opening the store...",
+  "familyPlusRestore": "Restore purchases",
+  "familyPlusRestoring": "Checking your purchases...",
+  "familyPlusFailed": "That did not work. Please try again.",
+  "familyPlusManage": "Manage or cancel",
+  "familyPlusDisclosure": "Auto-renewing monthly subscription, paid through your app store account. It renews unless cancelled at least 24 hours before the end of the period; cancel any time in your store subscription settings. Studafy never sees your card details.",
+  "familyPlusTerms": "Terms of use",
+  "familyPlusPrivacy": "Privacy policy"
 }

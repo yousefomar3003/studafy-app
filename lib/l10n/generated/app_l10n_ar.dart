@@ -1654,23 +1654,7 @@ class AppL10nAr extends AppL10n {
   String get teacherShellMessages => 'الرسائل';
 
   @override
-  String get schoolAdminAdministrationRequiresTheRemoteBackend =>
-      'تتطلب الإدارة الاتصال بالخادم.';
-
-  @override
-  String get schoolAdminSchoolAdministration => 'إدارة المدرسة';
-
-  @override
-  String get schoolAdminTerms => 'الفصول الدراسية';
-
-  @override
   String get schoolAdminGuardians => 'أولياء الأمور';
-
-  @override
-  String get schoolAdminUpdates => 'التحديثات';
-
-  @override
-  String get schoolAdminAccount => 'الحساب';
 
   @override
   String get teacherTodaySpaceToInspireADay =>
@@ -2223,73 +2207,6 @@ class AppL10nAr extends AppL10n {
   @override
   String get classroomAdminMeetingScheduledEveryoneInvitedHas =>
       'تمت جدولة الاجتماع وإبلاغ المدعوين.';
-
-  @override
-  String get guardianVerifyConfirmGuardianVerification =>
-      'تأكيد التحقق من ولي الأمر';
-
-  @override
-  String get guardianVerifyRevokeGuardianAccess => 'إلغاء وصول ولي الأمر؟';
-
-  @override
-  String get guardianVerifyVerifyOnlyAfterCheckingThe =>
-      'أكد الربط بعد التحقق من هوية ولي الأمر وصلته بالطالب فقط.';
-
-  @override
-  String get guardianVerifyThisRemovesAccessGrantedBy =>
-      'سيؤدي هذا إلى إزالة الوصول الممنوح بواسطة هذا الربط العائلي.';
-
-  @override
-  String get guardianVerifyLinkStatus => 'حالة الربط';
-
-  @override
-  String get guardianVerifyGuardianVerification => 'التحقق من ولي الأمر';
-
-  @override
-  String get guardianVerifyEnterTheLinkIdSupplied =>
-      'أدخل معرّف الربط المرفق بطلب التحقق. لا يوفر الخادم قائمة بالطلبات المعلقة حاليًا.';
-
-  @override
-  String get guardianVerifyGuardianLinkId => 'معرّف ربط ولي الأمر';
-
-  @override
-  String get guardianVerifyVerificationPeriod => 'مدة التحقق';
-
-  @override
-  String get guardianVerifyDays => 'يومًا';
-
-  @override
-  String get guardianVerifyVerifyLink => 'تأكيد الربط';
-
-  @override
-  String get guardianVerifyRevokeLink => 'إلغاء الربط';
-
-  @override
-  String get termsAcademicTerms => 'الفصول الدراسية';
-
-  @override
-  String get termsCreateTerm => 'إنشاء فصل دراسي';
-
-  @override
-  String get termsNoTermsCreated => 'لم يتم إنشاء فصول دراسية.';
-
-  @override
-  String get termsCreateAcademicTerm => 'إنشاء فصل دراسي';
-
-  @override
-  String get termsName => 'الاسم';
-
-  @override
-  String get termsStarts => 'البداية';
-
-  @override
-  String get termsEnds => 'النهاية';
-
-  @override
-  String get termsCreate => 'إنشاء';
-
-  @override
-  String get termsTermCreated => 'تم إنشاء الفصل الدراسي.';
 
   @override
   String get rolesYourSpaceToGrow => 'مساحتك للنمو';
@@ -3150,4 +3067,91 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopyGenericDetail => 'لديك تحديث جديد.';
+
+  @override
+  String familyPlusHeadline(String name) {
+    return 'Family+ لـ $name';
+  }
+
+  @override
+  String get familyPlusIntro =>
+      'اعرف كيف يسير طفلك فعلًا، وما الخطوة المفيدة التي يمكنك القيام بها هذا الأسبوع.';
+
+  @override
+  String get familyPlusFeatureTrends =>
+      'ما الذي تغيّر هذا الفصل، مع السجلات التي تثبت كل ملاحظة';
+
+  @override
+  String get familyPlusFeatureDue =>
+      'الواجبات المطلوبة هذا الأسبوع حتى لا يفوت شيء';
+
+  @override
+  String get familyPlusFeatureSubjects =>
+      'الدرجات حسب المادة والحضور بلمحة سريعة';
+
+  @override
+  String get familyPlusFeatureSchool => 'ملاحظات اختارت المدرسة مشاركتها معك';
+
+  @override
+  String familyPlusPrice(String price) {
+    return '$price شهريًا';
+  }
+
+  @override
+  String get familyPlusUsPrice =>
+      '1.99 دولار أمريكي شهريًا في الولايات المتحدة - يعرض المتجر سعرك';
+
+  @override
+  String familyPlusTrial(String trial, String price) {
+    return 'إن كنت مؤهلًا، مجانًا لمدة $trial، ثم $price شهريًا';
+  }
+
+  @override
+  String familyPlusOneChild(String name) {
+    return 'يشمل $name فقط. لكل طفل اشتراك Family+ خاص به.';
+  }
+
+  @override
+  String get familyPlusStartTrial => 'ابدأ الفترة التجريبية المجانية';
+
+  @override
+  String familyPlusSubscribe(String name) {
+    return 'اشترك لـ $name';
+  }
+
+  @override
+  String get familyPlusCheckingStore => 'جارٍ التحقق من سعر المتجر...';
+
+  @override
+  String get familyPlusStoreUnavailable =>
+      'تعذّر الوصول إلى المتجر. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get familyPlusNotInThisBuild =>
+      'لا يمكن شراء Family+ في هذا الإصدار من التطبيق.';
+
+  @override
+  String get familyPlusOpeningStore => 'جارٍ فتح المتجر...';
+
+  @override
+  String get familyPlusRestore => 'استعادة المشتريات';
+
+  @override
+  String get familyPlusRestoring => 'جارٍ التحقق من مشترياتك...';
+
+  @override
+  String get familyPlusFailed => 'لم تنجح العملية. حاول مرة أخرى.';
+
+  @override
+  String get familyPlusManage => 'إدارة الاشتراك أو إلغاؤه';
+
+  @override
+  String get familyPlusDisclosure =>
+      'اشتراك شهري يتجدد تلقائيًا ويُدفع عبر حسابك في متجر التطبيقات. يتجدد ما لم يُلغَ قبل 24 ساعة على الأقل من نهاية الفترة، ويمكنك الإلغاء في أي وقت من إعدادات الاشتراكات في المتجر. لا يطّلع Studafy على بيانات بطاقتك أبدًا.';
+
+  @override
+  String get familyPlusTerms => 'شروط الاستخدام';
+
+  @override
+  String get familyPlusPrivacy => 'سياسة الخصوصية';
 }

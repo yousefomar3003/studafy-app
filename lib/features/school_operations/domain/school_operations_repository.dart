@@ -7,22 +7,6 @@ class ManagedClassroom {
 }
 
 @immutable
-class SchoolTerm {
-  const SchoolTerm({
-    required this.id,
-    required this.name,
-    required this.startsOn,
-    required this.endsOn,
-    required this.status,
-  });
-  final String id;
-  final String name;
-  final DateTime startsOn;
-  final DateTime endsOn;
-  final String status;
-}
-
-@immutable
 class RosterStudent {
   const RosterStudent({
     required this.id,
@@ -75,13 +59,6 @@ class ManagedMeeting {
 }
 
 abstract interface class SchoolOperationsRepository {
-  Future<List<SchoolTerm>> listTerms();
-  Future<SchoolTerm> createTerm({
-    required String name,
-    required DateTime startsOn,
-    required DateTime endsOn,
-  });
-
   Future<List<RosterStudent>> listStudents(String classroomId);
   Future<RosterStudent> createStudent({
     required String displayName,
@@ -111,12 +88,6 @@ abstract interface class SchoolOperationsRepository {
     required String classroomId,
     required String assignmentId,
   });
-
-  Future<String> verifyGuardianLink({
-    required String linkId,
-    int? expiresInDays,
-  });
-  Future<String> revokeGuardianLink(String linkId);
 
   /// Schedules a meeting. With [meetUrl] - a Google Meet link the teacher
   /// created - it is scheduled at once and its audience is told in the app.

@@ -28,34 +28,22 @@ void main() {
 
   tearDown(ActiveContextController.instance.signOut);
 
-  test('term reads are scoped to the authenticated school', () async {
-    final transport = _Transport();
-    final repository = ApiSchoolOperationsRepository(
-      V1ApiClient(transport),
-      context: ActiveContextController.instance,
-    );
-
-    final terms = await repository.listTerms();
-
-    expect(terms.single.name, 'Term 1');
-    expect(transport.getPaths.single, contains('/schools/$schoolId/terms'));
-  });
-
-  test('a retried term creation keeps one idempotency key', () async {
+  test('a retried student creation keeps one idempotency key', () async {
     final transport = _Transport()..failFirstPost = true;
     final repository = ApiSchoolOperationsRepository(
       V1ApiClient(transport),
       context: ActiveContextController.instance,
     );
-    final starts = DateTime(2026, 9, 1);
-    final ends = DateTime(2026, 12, 20);
 
     await expectLater(
-      repository.createTerm(name: 'Term 1', startsOn: starts, endsOn: ends),
+      repository.createStudent(displayName: 'Sara Ali'),
       throwsStateError,
     );
-    await repository.createTerm(name: 'Term 1', startsOn: starts, endsOn: ends);
+    final student = await repository.createStudent(displayName: 'Sara Ali');
 
+    expect(student.displayName, 'Sara Ali');
+    expect(transport.postPaths.first, contains('/schools/$schoolId/students'));
+    // The lost response is replayed, not repeated: both attempts share a key.
     expect(transport.keys, hasLength(2));
     expect(transport.keys.first, transport.keys.last);
   });
@@ -103,29 +91,14 @@ void main() {
 }
 
 class _Transport implements V1JsonTransport {
-  final getPaths = <String>[];
   final postPaths = <String>[];
   final postBodies = <Map<String, Object?>>[];
   final keys = <String?>[];
   bool failFirstPost = false;
 
   @override
-  Future<Map<String, dynamic>> get(String path) async {
-    getPaths.add(path);
-    return {
-      'items': [
-        {
-          'id': '55555555-5555-4555-8555-555555555555',
-          'schoolId': '11111111-1111-4111-8111-111111111111',
-          'name': 'Term 1',
-          'startsOn': '2026-09-01',
-          'endsOn': '2026-12-20',
-          'status': 'active',
-        },
-      ],
-      'nextCursor': null,
-    };
-  }
+  Future<Map<String, dynamic>> get(String path) async =>
+      throw UnimplementedError('no reads in these tests');
 
   @override
   Future<Map<String, dynamic>> post(
@@ -141,14 +114,14 @@ class _Transport implements V1JsonTransport {
       failFirstPost = false;
       throw StateError('response lost');
     }
-    if (path.contains('/terms')) {
+    if (path.endsWith('/students')) {
       return {
         'id': '55555555-5555-4555-8555-555555555555',
         'schoolId': '11111111-1111-4111-8111-111111111111',
-        'name': body['name'],
-        'startsOn': body['startsOn'],
-        'endsOn': body['endsOn'],
-        'status': 'active',
+        'userId': null,
+        'studafyId': 'STU-0001',
+        'displayName': body['displayName'],
+        'provisional': true,
       };
     }
     return {

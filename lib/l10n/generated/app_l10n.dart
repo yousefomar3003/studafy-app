@@ -2785,41 +2785,11 @@ abstract class AppL10n {
   /// **'Messages'**
   String get teacherShellMessages;
 
-  /// No description provided for @schoolAdminAdministrationRequiresTheRemoteBackend.
-  ///
-  /// In en, this message translates to:
-  /// **'Administration requires the remote backend.'**
-  String get schoolAdminAdministrationRequiresTheRemoteBackend;
-
-  /// No description provided for @schoolAdminSchoolAdministration.
-  ///
-  /// In en, this message translates to:
-  /// **'School administration'**
-  String get schoolAdminSchoolAdministration;
-
-  /// No description provided for @schoolAdminTerms.
-  ///
-  /// In en, this message translates to:
-  /// **'Terms'**
-  String get schoolAdminTerms;
-
   /// No description provided for @schoolAdminGuardians.
   ///
   /// In en, this message translates to:
   /// **'Guardians'**
   String get schoolAdminGuardians;
-
-  /// No description provided for @schoolAdminUpdates.
-  ///
-  /// In en, this message translates to:
-  /// **'Updates'**
-  String get schoolAdminUpdates;
-
-  /// No description provided for @schoolAdminAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Account'**
-  String get schoolAdminAccount;
 
   /// No description provided for @teacherTodaySpaceToInspireADay.
   ///
@@ -3807,132 +3777,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Meeting scheduled. Everyone invited has been told.'**
   String get classroomAdminMeetingScheduledEveryoneInvitedHas;
-
-  /// No description provided for @guardianVerifyConfirmGuardianVerification.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm guardian verification'**
-  String get guardianVerifyConfirmGuardianVerification;
-
-  /// No description provided for @guardianVerifyRevokeGuardianAccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Revoke guardian access?'**
-  String get guardianVerifyRevokeGuardianAccess;
-
-  /// No description provided for @guardianVerifyVerifyOnlyAfterCheckingThe.
-  ///
-  /// In en, this message translates to:
-  /// **'Verify only after checking the guardian’s identity and relationship with the student.'**
-  String get guardianVerifyVerifyOnlyAfterCheckingThe;
-
-  /// No description provided for @guardianVerifyThisRemovesAccessGrantedBy.
-  ///
-  /// In en, this message translates to:
-  /// **'This removes access granted by this family link.'**
-  String get guardianVerifyThisRemovesAccessGrantedBy;
-
-  /// No description provided for @guardianVerifyLinkStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Link status'**
-  String get guardianVerifyLinkStatus;
-
-  /// No description provided for @guardianVerifyGuardianVerification.
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian verification'**
-  String get guardianVerifyGuardianVerification;
-
-  /// No description provided for @guardianVerifyEnterTheLinkIdSupplied.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter the link ID supplied with the verification request.'**
-  String get guardianVerifyEnterTheLinkIdSupplied;
-
-  /// No description provided for @guardianVerifyGuardianLinkId.
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian link ID'**
-  String get guardianVerifyGuardianLinkId;
-
-  /// No description provided for @guardianVerifyVerificationPeriod.
-  ///
-  /// In en, this message translates to:
-  /// **'Verification period'**
-  String get guardianVerifyVerificationPeriod;
-
-  /// No description provided for @guardianVerifyDays.
-  ///
-  /// In en, this message translates to:
-  /// **'days'**
-  String get guardianVerifyDays;
-
-  /// No description provided for @guardianVerifyVerifyLink.
-  ///
-  /// In en, this message translates to:
-  /// **'Verify link'**
-  String get guardianVerifyVerifyLink;
-
-  /// No description provided for @guardianVerifyRevokeLink.
-  ///
-  /// In en, this message translates to:
-  /// **'Revoke link'**
-  String get guardianVerifyRevokeLink;
-
-  /// No description provided for @termsAcademicTerms.
-  ///
-  /// In en, this message translates to:
-  /// **'Academic terms'**
-  String get termsAcademicTerms;
-
-  /// No description provided for @termsCreateTerm.
-  ///
-  /// In en, this message translates to:
-  /// **'Create term'**
-  String get termsCreateTerm;
-
-  /// No description provided for @termsNoTermsCreated.
-  ///
-  /// In en, this message translates to:
-  /// **'No terms created.'**
-  String get termsNoTermsCreated;
-
-  /// No description provided for @termsCreateAcademicTerm.
-  ///
-  /// In en, this message translates to:
-  /// **'Create academic term'**
-  String get termsCreateAcademicTerm;
-
-  /// No description provided for @termsName.
-  ///
-  /// In en, this message translates to:
-  /// **'Name'**
-  String get termsName;
-
-  /// No description provided for @termsStarts.
-  ///
-  /// In en, this message translates to:
-  /// **'Starts'**
-  String get termsStarts;
-
-  /// No description provided for @termsEnds.
-  ///
-  /// In en, this message translates to:
-  /// **'Ends'**
-  String get termsEnds;
-
-  /// No description provided for @termsCreate.
-  ///
-  /// In en, this message translates to:
-  /// **'Create'**
-  String get termsCreate;
-
-  /// No description provided for @termsTermCreated.
-  ///
-  /// In en, this message translates to:
-  /// **'Term created.'**
-  String get termsTermCreated;
 
   /// No description provided for @rolesYourSpaceToGrow.
   ///
@@ -5456,6 +5300,144 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'You have a new update.'**
   String get notificationCopyGenericDetail;
+
+  /// No description provided for @familyPlusHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Family+ for {name}'**
+  String familyPlusHeadline(String name);
+
+  /// No description provided for @familyPlusIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'See how your child is really doing, and one useful thing to do this week.'**
+  String get familyPlusIntro;
+
+  /// No description provided for @familyPlusFeatureTrends.
+  ///
+  /// In en, this message translates to:
+  /// **'What changed this term, with the records behind every claim'**
+  String get familyPlusFeatureTrends;
+
+  /// No description provided for @familyPlusFeatureDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Work due this week, so nothing slips'**
+  String get familyPlusFeatureDue;
+
+  /// No description provided for @familyPlusFeatureSubjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks by subject and attendance at a glance'**
+  String get familyPlusFeatureSubjects;
+
+  /// No description provided for @familyPlusFeatureSchool.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes the school chose to share with you'**
+  String get familyPlusFeatureSchool;
+
+  /// No description provided for @familyPlusPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / month'**
+  String familyPlusPrice(String price);
+
+  /// No description provided for @familyPlusUsPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'US\$1.99 / month in the US - the store shows your price'**
+  String get familyPlusUsPrice;
+
+  /// No description provided for @familyPlusTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'If eligible, free for {trial}, then {price} / month'**
+  String familyPlusTrial(String trial, String price);
+
+  /// No description provided for @familyPlusOneChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Covers {name} only. Each child has their own Family+.'**
+  String familyPlusOneChild(String name);
+
+  /// No description provided for @familyPlusStartTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'Start free trial'**
+  String get familyPlusStartTrial;
+
+  /// No description provided for @familyPlusSubscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe for {name}'**
+  String familyPlusSubscribe(String name);
+
+  /// No description provided for @familyPlusCheckingStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the store price...'**
+  String get familyPlusCheckingStore;
+
+  /// No description provided for @familyPlusStoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The store could not be reached. Try again later.'**
+  String get familyPlusStoreUnavailable;
+
+  /// No description provided for @familyPlusNotInThisBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Family+ cannot be bought in this version of the app.'**
+  String get familyPlusNotInThisBuild;
+
+  /// No description provided for @familyPlusOpeningStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the store...'**
+  String get familyPlusOpeningStore;
+
+  /// No description provided for @familyPlusRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get familyPlusRestore;
+
+  /// No description provided for @familyPlusRestoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your purchases...'**
+  String get familyPlusRestoring;
+
+  /// No description provided for @familyPlusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That did not work. Please try again.'**
+  String get familyPlusFailed;
+
+  /// No description provided for @familyPlusManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage or cancel'**
+  String get familyPlusManage;
+
+  /// No description provided for @familyPlusDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-renewing monthly subscription, paid through your app store account. It renews unless cancelled at least 24 hours before the end of the period; cancel any time in your store subscription settings. Studafy never sees your card details.'**
+  String get familyPlusDisclosure;
+
+  /// No description provided for @familyPlusTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of use'**
+  String get familyPlusTerms;
+
+  /// No description provided for @familyPlusPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get familyPlusPrivacy;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

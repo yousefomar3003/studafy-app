@@ -10,7 +10,9 @@ import '../features/family/domain/family.dart';
 import '../features/family/presentation/family_home_page.dart';
 import '../features/family/presentation/linked_child_switcher.dart';
 import '../features/family_insights/application/family_insights_interactor.dart';
+import '../features/family_insights/domain/parent_subscription_repository.dart';
 import '../features/family_insights/presentation/family_insights_page.dart';
+import '../features/family_insights/presentation/family_plus_gate.dart';
 import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
@@ -21,8 +23,17 @@ import 'account_hub_page.dart';
 /// The parent's app: their children's day, schoolwork, Family+ insights,
 /// updates and messages. Composed here because it draws on several features.
 class ParentShell extends StatefulWidget {
-  const ParentShell({super.key, required this.academic, this.insights});
+  const ParentShell({
+    super.key,
+    required this.academic,
+    this.insights,
+    this.familyPlus,
+  });
   final AcademicRepository academic;
+
+  /// Buying Family+ for a child. Null in builds with no store; the offer is
+  /// then described but cannot be bought.
+  final ParentSubscriptionRepository? familyPlus;
 
   /// Family+. Null in builds with no backend, and the tab is then absent
   /// rather than present and always failing.
@@ -137,6 +148,10 @@ class _ParentShellState extends State<ParentShell> {
         if (widget.insights != null)
           _InsightsTab(
             insights: widget.insights!,
+            familyPlus: widget.familyPlus,
+            childName:
+                ActiveContextController.instance.selectedStudent?.displayName ??
+                '',
             onSelectChild: _selectChild,
             // Keyed so switching child reloads rather than showing the
             // previous child's record under the new name.
@@ -195,11 +210,15 @@ class _ParentShellState extends State<ParentShell> {
 class _InsightsTab extends StatelessWidget {
   const _InsightsTab({
     required this.insights,
+    required this.familyPlus,
+    required this.childName,
     required this.studentId,
     required this.onSelectChild,
   });
 
   final FamilyInsightsInteractor insights;
+  final ParentSubscriptionRepository? familyPlus;
+  final String childName;
   final String? studentId;
   final ValueChanged<GuardianChild> onSelectChild;
 
@@ -226,14 +245,22 @@ class _InsightsTab extends StatelessWidget {
         ),
       );
     }
-    return FamilyInsightsPage(
+    final actions = [
+      LinkedChildSwitcher(onSelect: onSelectChild),
+      const AccountButton(),
+    ];
+    // Keyed by child, so switching child checks that child's Family+.
+    return FamilyPlusGate(
       key: ValueKey(id),
-      insights: insights,
+      subscriptions: familyPlus,
       studentId: id,
-      actions: [
-        LinkedChildSwitcher(onSelect: onSelectChild),
-        const AccountButton(),
-      ],
+      childName: childName,
+      actions: actions,
+      insights: FamilyInsightsPage(
+        insights: insights,
+        studentId: id,
+        actions: actions,
+      ),
     );
   }
 }

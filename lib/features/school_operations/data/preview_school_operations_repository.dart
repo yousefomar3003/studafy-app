@@ -2,41 +2,12 @@ import '../domain/school_operations_repository.dart';
 
 /// In-memory data used only by the explicitly labelled synthetic build.
 class PreviewSchoolOperationsRepository implements SchoolOperationsRepository {
-  final List<SchoolTerm> _terms = [
-    SchoolTerm(
-      id: 'demo-term-2026',
-      name: 'Term 1',
-      startsOn: DateTime(2026, 9, 1),
-      endsOn: DateTime(2026, 12, 20),
-      status: 'active',
-    ),
-  ];
   final Map<String, List<RosterStudent>> _students = {};
   final Map<String, List<ClassroomStaffMember>> _staff = {};
   final Map<String, ManagedMeeting> _meetings = {};
   int _sequence = 0;
 
   String _id(String kind) => 'demo-$kind-${++_sequence}';
-
-  @override
-  Future<List<SchoolTerm>> listTerms() async => List.of(_terms);
-
-  @override
-  Future<SchoolTerm> createTerm({
-    required String name,
-    required DateTime startsOn,
-    required DateTime endsOn,
-  }) async {
-    final value = SchoolTerm(
-      id: _id('term'),
-      name: name,
-      startsOn: startsOn,
-      endsOn: endsOn,
-      status: 'planned',
-    );
-    _terms.add(value);
-    return value;
-  }
 
   @override
   Future<List<RosterStudent>> listStudents(String classroomId) async =>
@@ -115,15 +86,6 @@ class PreviewSchoolOperationsRepository implements SchoolOperationsRepository {
   }) async => _staff[classroomId]?.removeWhere(
     (item) => item.assignmentId == assignmentId,
   );
-
-  @override
-  Future<String> verifyGuardianLink({
-    required String linkId,
-    int? expiresInDays,
-  }) async => 'verified';
-
-  @override
-  Future<String> revokeGuardianLink(String linkId) async => 'revoked';
 
   @override
   Future<ManagedMeeting> requestMeeting({

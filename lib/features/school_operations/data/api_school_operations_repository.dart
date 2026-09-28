@@ -24,45 +24,6 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
       _keys.completed(operation, fingerprint);
 
   @override
-  Future<List<SchoolTerm>> listTerms() async {
-    final result = <SchoolTerm>[];
-    String? cursor;
-    do {
-      final page = await _client.listTerms(
-        schoolId: _schoolId,
-        cursor: cursor,
-        pageSize: 100,
-      );
-      result.addAll(page.items.map(_term));
-      cursor = page.nextCursor;
-    } while (cursor != null);
-    return result;
-  }
-
-  @override
-  Future<SchoolTerm> createTerm({
-    required String name,
-    required DateTime startsOn,
-    required DateTime endsOn,
-  }) async {
-    if (!endsOn.isAfter(startsOn)) {
-      throw const FormatException('The end date must be after the start date.');
-    }
-    final fingerprint = '$name|${_date(startsOn)}|${_date(endsOn)}';
-    final value = await _client.createTerm(
-      V1CreateTermRequestDto(
-        name: name.trim(),
-        startsOn: _date(startsOn),
-        endsOn: _date(endsOn),
-      ),
-      schoolId: _schoolId,
-      idempotencyKey: _key('term', fingerprint),
-    );
-    _done('term', fingerprint);
-    return _term(value);
-  }
-
-  @override
   Future<List<RosterStudent>> listStudents(String classroomId) async {
     final result = <RosterStudent>[];
     String? cursor;
@@ -213,31 +174,6 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
   );
 
   @override
-  Future<String> verifyGuardianLink({
-    required String linkId,
-    int? expiresInDays,
-  }) async {
-    final value = await _client.verifyGuardianLink(
-      V1VerifyGuardianLinkRequestDto(expiresInDays: expiresInDays),
-      guardianLinkId: linkId.trim(),
-      idempotencyKey: _key('guardian-verify', linkId),
-    );
-    _done('guardian-verify', linkId);
-    return value.status;
-  }
-
-  @override
-  Future<String> revokeGuardianLink(String linkId) async {
-    final value = await _client.revokeGuardianLink(
-      const V1RevokeGuardianLinkRequestDto(),
-      guardianLinkId: linkId.trim(),
-      idempotencyKey: _key('guardian-revoke', linkId),
-    );
-    _done('guardian-revoke', linkId);
-    return value.status;
-  }
-
-  @override
   Future<ManagedMeeting> requestMeeting({
     required String classroomId,
     required String title,
@@ -313,13 +249,6 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     _done(operation, fingerprint);
   }
 
-  static SchoolTerm _term(V1TermDto v) => SchoolTerm(
-    id: v.id,
-    name: v.name,
-    startsOn: DateTime.parse(v.startsOn),
-    endsOn: DateTime.parse(v.endsOn),
-    status: v.status,
-  );
   static ManagedMeeting _meeting(V1MeetingDto v) => ManagedMeeting(
     id: v.id,
     classroomId: v.classroomId,
@@ -332,6 +261,4 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     recipientCount: v.recipientCount,
     meetUrl: v.meetUrl == null ? null : Uri.tryParse(v.meetUrl!),
   );
-  static String _date(DateTime value) =>
-      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }

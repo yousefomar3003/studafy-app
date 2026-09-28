@@ -113,6 +113,7 @@ class StudafyApp extends StatelessWidget {
             parentRoute: (_) => ParentShell(
               academic: deps.academic,
               insights: deps.familyInsights,
+              familyPlus: deps.familyPlus,
             ),
             studentRoute: (_) => StudentShell(
               academic: deps.academic,

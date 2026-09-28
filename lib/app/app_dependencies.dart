@@ -31,6 +31,7 @@ import '../features/family/data/api_family_repository.dart';
 import '../features/family/data/preview_family_repository.dart';
 import '../features/family_insights/application/family_insights_interactor.dart';
 import '../features/family_insights/data/api_family_insights_repository.dart';
+import '../features/family_insights/domain/parent_subscription_repository.dart';
 import '../features/files/data/api_file_upload_repository.dart';
 import '../features/files/data/preview_file_upload_repository.dart';
 import '../features/files/data/signed_upload_transport.dart';
@@ -74,6 +75,7 @@ class AppDependencies {
     this.studyAssistant,
     this.familyInsights,
     this.studyPlans,
+    this.familyPlus,
     required this.study,
     required this.account,
     required this.academicApi,
@@ -104,6 +106,9 @@ class AppDependencies {
 
   /// Buying Studafy Plus / Max through the store. Null without billing.
   final StudyPlanSubscriptionRepository? studyPlans;
+
+  /// Buying Family+ for a linked child through the store.
+  final ParentSubscriptionRepository? familyPlus;
 
   /// Plans, the student's notebook, and quizzes and flashcards.
   final StudyRepository study;
@@ -236,6 +241,7 @@ class AppDependencies {
               telemetry: telemetry,
             ),
       studyPlans: subscriptions,
+      familyPlus: subscriptions,
       study: remote == null
           ? PreviewStudyRepository()
           : ApiStudyRepository(remote.api),

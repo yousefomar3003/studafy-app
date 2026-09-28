@@ -1624,23 +1624,7 @@ class AppL10nEn extends AppL10n {
   String get teacherShellMessages => 'Messages';
 
   @override
-  String get schoolAdminAdministrationRequiresTheRemoteBackend =>
-      'Administration requires the remote backend.';
-
-  @override
-  String get schoolAdminSchoolAdministration => 'School administration';
-
-  @override
-  String get schoolAdminTerms => 'Terms';
-
-  @override
   String get schoolAdminGuardians => 'Guardians';
-
-  @override
-  String get schoolAdminUpdates => 'Updates';
-
-  @override
-  String get schoolAdminAccount => 'Account';
 
   @override
   String get teacherTodaySpaceToInspireADay =>
@@ -2201,73 +2185,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get classroomAdminMeetingScheduledEveryoneInvitedHas =>
       'Meeting scheduled. Everyone invited has been told.';
-
-  @override
-  String get guardianVerifyConfirmGuardianVerification =>
-      'Confirm guardian verification';
-
-  @override
-  String get guardianVerifyRevokeGuardianAccess => 'Revoke guardian access?';
-
-  @override
-  String get guardianVerifyVerifyOnlyAfterCheckingThe =>
-      'Verify only after checking the guardian’s identity and relationship with the student.';
-
-  @override
-  String get guardianVerifyThisRemovesAccessGrantedBy =>
-      'This removes access granted by this family link.';
-
-  @override
-  String get guardianVerifyLinkStatus => 'Link status';
-
-  @override
-  String get guardianVerifyGuardianVerification => 'Guardian verification';
-
-  @override
-  String get guardianVerifyEnterTheLinkIdSupplied =>
-      'Enter the link ID supplied with the verification request.';
-
-  @override
-  String get guardianVerifyGuardianLinkId => 'Guardian link ID';
-
-  @override
-  String get guardianVerifyVerificationPeriod => 'Verification period';
-
-  @override
-  String get guardianVerifyDays => 'days';
-
-  @override
-  String get guardianVerifyVerifyLink => 'Verify link';
-
-  @override
-  String get guardianVerifyRevokeLink => 'Revoke link';
-
-  @override
-  String get termsAcademicTerms => 'Academic terms';
-
-  @override
-  String get termsCreateTerm => 'Create term';
-
-  @override
-  String get termsNoTermsCreated => 'No terms created.';
-
-  @override
-  String get termsCreateAcademicTerm => 'Create academic term';
-
-  @override
-  String get termsName => 'Name';
-
-  @override
-  String get termsStarts => 'Starts';
-
-  @override
-  String get termsEnds => 'Ends';
-
-  @override
-  String get termsCreate => 'Create';
-
-  @override
-  String get termsTermCreated => 'Term created.';
 
   @override
   String get rolesYourSpaceToGrow => 'YOUR SPACE TO GROW';
@@ -3147,4 +3064,91 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get notificationCopyGenericDetail => 'You have a new update.';
+
+  @override
+  String familyPlusHeadline(String name) {
+    return 'Family+ for $name';
+  }
+
+  @override
+  String get familyPlusIntro =>
+      'See how your child is really doing, and one useful thing to do this week.';
+
+  @override
+  String get familyPlusFeatureTrends =>
+      'What changed this term, with the records behind every claim';
+
+  @override
+  String get familyPlusFeatureDue => 'Work due this week, so nothing slips';
+
+  @override
+  String get familyPlusFeatureSubjects =>
+      'Marks by subject and attendance at a glance';
+
+  @override
+  String get familyPlusFeatureSchool =>
+      'Notes the school chose to share with you';
+
+  @override
+  String familyPlusPrice(String price) {
+    return '$price / month';
+  }
+
+  @override
+  String get familyPlusUsPrice =>
+      'US\$1.99 / month in the US - the store shows your price';
+
+  @override
+  String familyPlusTrial(String trial, String price) {
+    return 'If eligible, free for $trial, then $price / month';
+  }
+
+  @override
+  String familyPlusOneChild(String name) {
+    return 'Covers $name only. Each child has their own Family+.';
+  }
+
+  @override
+  String get familyPlusStartTrial => 'Start free trial';
+
+  @override
+  String familyPlusSubscribe(String name) {
+    return 'Subscribe for $name';
+  }
+
+  @override
+  String get familyPlusCheckingStore => 'Checking the store price...';
+
+  @override
+  String get familyPlusStoreUnavailable =>
+      'The store could not be reached. Try again later.';
+
+  @override
+  String get familyPlusNotInThisBuild =>
+      'Family+ cannot be bought in this version of the app.';
+
+  @override
+  String get familyPlusOpeningStore => 'Opening the store...';
+
+  @override
+  String get familyPlusRestore => 'Restore purchases';
+
+  @override
+  String get familyPlusRestoring => 'Checking your purchases...';
+
+  @override
+  String get familyPlusFailed => 'That did not work. Please try again.';
+
+  @override
+  String get familyPlusManage => 'Manage or cancel';
+
+  @override
+  String get familyPlusDisclosure =>
+      'Auto-renewing monthly subscription, paid through your app store account. It renews unless cancelled at least 24 hours before the end of the period; cancel any time in your store subscription settings. Studafy never sees your card details.';
+
+  @override
+  String get familyPlusTerms => 'Terms of use';
+
+  @override
+  String get familyPlusPrivacy => 'Privacy policy';
 }
