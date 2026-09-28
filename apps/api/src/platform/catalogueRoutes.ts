@@ -1,8 +1,9 @@
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import {
   V1_ROUTE_CATALOGUE,
+  type V1CatalogueRoute,
+  type V1OperationId,
   type V1PageQuery as V1PageQueryType,
-  type V1RouteContract,
 } from "@studafy/contracts";
 import type {
   AuthorizationDependencies,
@@ -39,7 +40,7 @@ import { outcomeProblem, type OutcomeTable } from "./outcomes";
 
 export type CatalogueSelector = (
   c: Context<AuthorizationEnv>,
-  route: V1RouteContract,
+  route: V1CatalogueRoute,
 ) => string | null;
 
 /**
@@ -58,7 +59,7 @@ export interface ReauthRequirement {
 }
 
 export interface CatalogueRoutesOptions<Slice extends string> {
-  routes: readonly V1RouteContract[];
+  routes: readonly V1CatalogueRoute[];
   repository: CatalogueRepository;
   cursorSigningKey: string;
   selector: CatalogueSelector;
@@ -283,12 +284,12 @@ export function createCatalogueRoutes<Slice extends string>(
  * explicit and fails at startup if a name is wrong.
  */
 export function catalogueRoutesNamed(
-  operationIds: readonly string[],
-): readonly V1RouteContract[] {
-  const wanted = new Set(operationIds);
-  const routes = (V1_ROUTE_CATALOGUE as readonly V1RouteContract[]).filter((
-    route,
-  ) => wanted.delete(route.operationId));
+  operationIds: readonly V1OperationId[],
+): readonly V1CatalogueRoute[] {
+  const wanted = new Set<string>(operationIds);
+  const routes = V1_ROUTE_CATALOGUE.filter((route) =>
+    wanted.delete(route.operationId)
+  );
   if (wanted.size > 0) {
     throw new Error(`unknown catalogue operations: ${[...wanted].join(", ")}`);
   }

@@ -16,6 +16,7 @@ import {
   V1Membership,
   V1MeResponse,
   V1ReauthVerifyResponse,
+  v1Route,
 } from "../src";
 
 describe("readiness contract", () => {
@@ -408,4 +409,12 @@ describe("/v1 typed contracts (ARC-011)", () => {
       ).toHaveLength(2);
     },
   );
+});
+
+describe("operation ids are checked at compile time", () => {
+  test("a known id resolves and an unknown one does not compile", () => {
+    expect(v1Route("getStudyPlan").path).toBe("/v1/me/study-plan");
+    // @ts-expect-error: not an operation in the catalogue.
+    expect(() => v1Route("getStudyPlann")).toThrow();
+  });
 });

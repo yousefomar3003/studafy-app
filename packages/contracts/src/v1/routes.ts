@@ -196,7 +196,7 @@ export const V1_ROUTE_CATALOGUE = [
     response: V1DeletionCancelResponse,
     responseSchema: "V1DeletionCancelResponse",
   },
-  academicGet(
+  catalogueGet(
     "getSchool",
     "/v1/schools/{schoolId}",
     "school.read",
@@ -204,7 +204,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1School",
     schoolParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listTerms",
     "/v1/schools/{schoolId}/terms",
     "term.list",
@@ -213,7 +213,7 @@ export const V1_ROUTE_CATALOGUE = [
     schoolParams(),
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listClassrooms",
     "/v1/classrooms",
     "classroom.list",
@@ -222,7 +222,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "createClassroom",
     "/v1/classrooms",
     "classroom.create",
@@ -232,7 +232,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1AcademicClassroom",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "getClassroom",
     "/v1/classrooms/{classroomId}",
     "classroom.read",
@@ -240,7 +240,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1ClassroomDetail",
     classroomParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listClassroomStaff",
     "/v1/classrooms/{classroomId}/staff",
     "classroom.staff.read",
@@ -249,7 +249,7 @@ export const V1_ROUTE_CATALOGUE = [
     classroomParams(),
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "updateClassroom",
     "/v1/classrooms/{classroomId}/update",
     "classroom.update",
@@ -260,7 +260,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "replaceClassroomSchedule",
     "/v1/classrooms/{classroomId}/schedule/replace",
     "classroom.schedule.write",
@@ -271,7 +271,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listClassroomStudents",
     "/v1/classrooms/{classroomId}/students",
     "classroom.roster.read",
@@ -280,7 +280,7 @@ export const V1_ROUTE_CATALOGUE = [
     classroomParams(),
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listResources",
     "/v1/resources",
     "resource.list",
@@ -289,7 +289,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listLessonSessions",
     "/v1/lesson-sessions",
     "lesson_session.list",
@@ -298,7 +298,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "createResource",
     "/v1/resources",
     "resource.create",
@@ -308,7 +308,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Resource",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "reviseResource",
     "/v1/resources/{resourceId}/revise",
     "resource.revise",
@@ -319,7 +319,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     resourceParams(),
   ),
-  academicPost(
+  cataloguePost(
     "publishResource",
     "/v1/resources/{resourceId}/publish",
     "resource.publish",
@@ -330,7 +330,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     resourceParams(),
   ),
-  academicPost(
+  cataloguePost(
     "withdrawResource",
     "/v1/resources/{resourceId}/withdraw",
     "resource.withdraw",
@@ -341,7 +341,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     resourceParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listAssignments",
     "/v1/assignments",
     "assignment.list",
@@ -350,7 +350,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "createAssignment",
     "/v1/assignments",
     "assignment.create",
@@ -360,7 +360,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Assignment",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "publishAssignment",
     "/v1/assignments/{assignmentId}/publish",
     "assignment.publish",
@@ -371,7 +371,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     assignmentParams(),
   ),
-  academicPost(
+  cataloguePost(
     "withdrawAssignment",
     "/v1/assignments/{assignmentId}/withdraw",
     "assignment.withdraw",
@@ -382,7 +382,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     assignmentParams(),
   ),
-  academicPost(
+  cataloguePost(
     "submitAssignment",
     "/v1/assignments/{assignmentId}/submit",
     "assignment.submit",
@@ -393,7 +393,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     assignmentParams(),
   ),
-  academicGet(
+  catalogueGet(
     "getAssignment",
     "/v1/assignments/{assignmentId}",
     "assignment.read",
@@ -401,7 +401,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Assignment",
     assignmentParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listAssignmentSubmissions",
     "/v1/assignments/{assignmentId}/submissions",
     "submission.list",
@@ -410,7 +410,7 @@ export const V1_ROUTE_CATALOGUE = [
     assignmentParams(),
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listAssessments",
     "/v1/assessments",
     "assessment.list",
@@ -419,7 +419,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "createAssessment",
     "/v1/assessments",
     "assessment.create",
@@ -429,7 +429,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Assessment",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "publishAssessment",
     "/v1/assessments/{assessmentId}/publish",
     "assessment.publish",
@@ -440,7 +440,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     assessmentParams(),
   ),
-  academicPost(
+  cataloguePost(
     "withdrawAssessment",
     "/v1/assessments/{assessmentId}/withdraw",
     "assessment.withdraw",
@@ -451,7 +451,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     assessmentParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listAssessmentQuestions",
     "/v1/assessments/{assessmentId}/questions",
     "assessment_question.list",
@@ -460,7 +460,7 @@ export const V1_ROUTE_CATALOGUE = [
     assessmentParams(),
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listAssessmentAuthoringQuestions",
     "/v1/assessments/{assessmentId}/authoring-questions",
     "assessment_question.authoring.list",
@@ -469,7 +469,7 @@ export const V1_ROUTE_CATALOGUE = [
     assessmentParams(),
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listAssessmentAttempts",
     "/v1/assessments/{assessmentId}/attempts",
     "assessment_attempt.list",
@@ -478,7 +478,7 @@ export const V1_ROUTE_CATALOGUE = [
     assessmentParams(),
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "submitAssessment",
     "/v1/assessments/{assessmentId}/submit",
     "assessment.submit",
@@ -489,7 +489,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     assessmentParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listGradeResults",
     "/v1/grade-results",
     "grade_result.list",
@@ -498,7 +498,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "reviewGradeResult",
     "/v1/grade-results/{gradeResultId}/review",
     "grade_result.review",
@@ -509,7 +509,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     gradeParams(),
   ),
-  academicPost(
+  cataloguePost(
     "publishGradeResult",
     "/v1/grade-results/{gradeResultId}/publish",
     "grade_result.publish",
@@ -520,7 +520,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     gradeParams(),
   ),
-  academicPost(
+  cataloguePost(
     "correctGradeResult",
     "/v1/grade-results/{gradeResultId}/correct",
     "grade_result.correct",
@@ -531,7 +531,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     gradeParams(),
   ),
-  academicPost(
+  cataloguePost(
     "withdrawGradeResult",
     "/v1/grade-results/{gradeResultId}/withdraw",
     "grade_result.withdraw",
@@ -542,7 +542,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     gradeParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listAttendance",
     "/v1/attendance",
     "attendance_record.list",
@@ -551,7 +551,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "listAttendanceRoster",
     "/v1/classrooms/{classroomId}/attendance-roster",
     "attendance_roster.read",
@@ -560,7 +560,7 @@ export const V1_ROUTE_CATALOGUE = [
     classroomParams(),
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "recordAttendance",
     "/v1/attendance/record",
     "attendance_record.write",
@@ -570,7 +570,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1RecordAttendanceResponse",
     200,
   ),
-  academicGet(
+  catalogueGet(
     "listWellbeing",
     "/v1/wellbeing",
     "wellbeing_event.list",
@@ -579,7 +579,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "createWellbeing",
     "/v1/wellbeing",
     "wellbeing_event.create",
@@ -589,7 +589,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1WellbeingEvent",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "provisionSchool",
     "/v1/schools",
     "school.provision",
@@ -599,7 +599,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1SchoolAdmin",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "suspendSchool",
     "/v1/schools/{schoolId}/suspend",
     "school.suspend",
@@ -610,7 +610,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     schoolParams(),
   ),
-  academicPost(
+  cataloguePost(
     "closeSchool",
     "/v1/schools/{schoolId}/close",
     "school.close",
@@ -621,7 +621,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     schoolParams(),
   ),
-  academicPost(
+  cataloguePost(
     "grantMembership",
     "/v1/schools/{schoolId}/memberships/grant",
     "membership.grant",
@@ -632,7 +632,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     schoolParams(),
   ),
-  academicPost(
+  cataloguePost(
     "activateMembership",
     "/v1/memberships/{membershipId}/activate",
     "membership.activate",
@@ -643,7 +643,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     membershipParams(),
   ),
-  academicPost(
+  cataloguePost(
     "suspendMembership",
     "/v1/memberships/{membershipId}/suspend",
     "membership.suspend",
@@ -654,7 +654,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     membershipParams(),
   ),
-  academicPost(
+  cataloguePost(
     "revokeMembership",
     "/v1/memberships/{membershipId}/revoke",
     "membership.revoke",
@@ -665,7 +665,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     membershipParams(),
   ),
-  academicPost(
+  cataloguePost(
     "assignClassroomStaff",
     "/v1/classrooms/{classroomId}/staff/assign",
     "classroom_staff.write",
@@ -676,7 +676,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "removeClassroomStaff",
     "/v1/classrooms/{classroomId}/staff/remove",
     "classroom_staff.write",
@@ -687,7 +687,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "enrollStudent",
     "/v1/classrooms/{classroomId}/enrollments/enroll",
     "enrollment.write",
@@ -698,7 +698,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "withdrawStudent",
     "/v1/classrooms/{classroomId}/enrollments/withdraw",
     "enrollment.write",
@@ -709,7 +709,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "transferEnrollment",
     "/v1/classrooms/{classroomId}/enrollments/transfer",
     "enrollment.write",
@@ -720,7 +720,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "issueInvitation",
     "/v1/schools/{schoolId}/invitations",
     "invitation.issue",
@@ -731,7 +731,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     schoolParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listInvitations",
     "/v1/schools/{schoolId}/invitations",
     "invitation.list",
@@ -740,7 +740,7 @@ export const V1_ROUTE_CATALOGUE = [
     schoolParams(),
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "revokeInvitation",
     "/v1/invitations/{invitationId}/revoke",
     "invitation.revoke",
@@ -751,7 +751,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     invitationParams(),
   ),
-  academicPost(
+  cataloguePost(
     "acceptInvitation",
     "/v1/invitations/accept",
     "invitation.accept",
@@ -761,7 +761,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1AcceptInvitationResponse",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "locateStudent",
     "/v1/students/locate",
     "student.locate",
@@ -771,7 +771,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1LocateStudentResponse",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "requestGuardianLink",
     "/v1/guardian-links",
     "guardian_link.request",
@@ -781,7 +781,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1GuardianLink",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "verifyGuardianLink",
     "/v1/guardian-links/{guardianLinkId}/verify",
     "guardian_link.verify",
@@ -792,7 +792,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     guardianLinkParams(),
   ),
-  academicPost(
+  cataloguePost(
     "revokeGuardianLink",
     "/v1/guardian-links/{guardianLinkId}/revoke",
     "guardian_link.revoke",
@@ -803,7 +803,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     guardianLinkParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listConversations",
     "/v1/conversations",
     "conversation.list",
@@ -812,7 +812,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "createConversation",
     "/v1/conversations",
     "conversation.create",
@@ -822,7 +822,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Conversation",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "listMessages",
     "/v1/conversations/{conversationId}/messages",
     "message.list",
@@ -831,7 +831,7 @@ export const V1_ROUTE_CATALOGUE = [
     conversationParams(),
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "sendMessage",
     "/v1/conversations/{conversationId}/messages",
     "message.send",
@@ -842,7 +842,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     conversationParams(),
   ),
-  academicPost(
+  cataloguePost(
     "createAnnouncement",
     "/v1/announcements",
     "announcement.create",
@@ -852,7 +852,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Announcement",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "listAnnouncements",
     "/v1/announcements",
     "announcement.list",
@@ -861,7 +861,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicPost(
+  cataloguePost(
     "requestMeeting",
     "/v1/classrooms/{classroomId}/meetings",
     "meeting.request",
@@ -872,7 +872,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     classroomParams(),
   ),
-  academicPost(
+  cataloguePost(
     "cancelMeeting",
     "/v1/meetings/{meetingId}/cancel",
     "meeting.cancel",
@@ -883,7 +883,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     meetingParams(),
   ),
-  academicGet(
+  catalogueGet(
     "getMeetingStatus",
     "/v1/meetings/{meetingId}",
     "meeting.status",
@@ -891,7 +891,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1MeetingStatusResponse",
     meetingParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listNotifications",
     "/v1/notifications",
     "notification.list",
@@ -900,14 +900,14 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "getUnreadCount",
     "/v1/notifications/unread-count",
     "notification.list",
     Notifications.V1UnreadCountResponse,
     "V1UnreadCountResponse",
   ),
-  academicPost(
+  cataloguePost(
     "markNotificationsRead",
     "/v1/notifications/mark-read",
     "notification.mark_read",
@@ -917,14 +917,14 @@ export const V1_ROUTE_CATALOGUE = [
     "V1MarkNotificationsReadResponse",
     200,
   ),
-  academicGet(
+  catalogueGet(
     "getNotificationPreferences",
     "/v1/notifications/preferences",
     "notification.preferences.read",
     Notifications.V1NotificationPreferencesResponse,
     "V1NotificationPreferencesResponse",
   ),
-  academicPost(
+  cataloguePost(
     "updateNotificationPreferences",
     "/v1/notifications/preferences",
     "notification.preferences.write",
@@ -934,7 +934,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1NotificationPreference",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "updateProfile",
     "/v1/account/profile",
     "account.profile.write",
@@ -944,7 +944,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1ProfileResponse",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "requestDataExport",
     "/v1/account/export-request",
     "account.export.request",
@@ -954,14 +954,14 @@ export const V1_ROUTE_CATALOGUE = [
     "V1DataExportRequest",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "getExportStatus",
     "/v1/account/export-status",
     "account.export.status",
     Account.V1ExportStatusResponse,
     "V1ExportStatusResponse",
   ),
-  academicPost(
+  cataloguePost(
     "requestSupportAccess",
     "/internal/support-access",
     "support_access.request",
@@ -971,7 +971,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1SupportAccessGrant",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "approveSupportAccess",
     "/internal/support-access/{supportGrantId}/approve",
     "support_access.approve",
@@ -982,7 +982,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     supportGrantParams(),
   ),
-  academicPost(
+  cataloguePost(
     "startSupportAccess",
     "/internal/support-access/{supportGrantId}/start",
     "support_access.start",
@@ -993,7 +993,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     supportGrantParams(),
   ),
-  academicPost(
+  cataloguePost(
     "revokeSupportAccess",
     "/internal/support-access/{supportGrantId}/revoke",
     "support_access.revoke",
@@ -1004,7 +1004,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     supportGrantParams(),
   ),
-  academicGet(
+  catalogueGet(
     "listSupportAccessGrants",
     "/internal/support-access",
     "support_access.list",
@@ -1023,7 +1023,7 @@ export const V1_ROUTE_CATALOGUE = [
   // a working classroom. Found writing the S9 reviewer-tenant seed script,
   // which is exactly the "fresh school, real commands, no local-only state"
   // path this gap would otherwise have hidden from indefinitely.
-  academicPost(
+  cataloguePost(
     "createTerm",
     "/v1/schools/{schoolId}/terms",
     "term.create",
@@ -1034,7 +1034,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     schoolParams(),
   ),
-  academicPost(
+  cataloguePost(
     "createStudent",
     "/v1/schools/{schoolId}/students",
     "student.create",
@@ -1053,7 +1053,7 @@ export const V1_ROUTE_CATALOGUE = [
   // moderation read/write is additionally school-scoped and enforcement of
   // that scope lives in the SQL dispatcher's safe043_can_access_* guards.
   // -----------------------------------------------------------------------
-  academicGet(
+  catalogueGet(
     "getContentControls",
     "/v1/control-panel/content-controls/{schoolId}",
     "content_controls.read",
@@ -1061,7 +1061,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1ContentControls",
     schoolParams(),
   ),
-  academicPost(
+  cataloguePost(
     "updateContentControls",
     "/v1/control-panel/content-controls/{schoolId}",
     "content_controls.write",
@@ -1072,7 +1072,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     schoolParams(),
   ),
-  academicPost(
+  cataloguePost(
     "createReport",
     "/v1/reports",
     "report.create",
@@ -1082,7 +1082,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Report",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "listReports",
     "/v1/reports",
     "report.read",
@@ -1091,7 +1091,7 @@ export const V1_ROUTE_CATALOGUE = [
     undefined,
     Academic.V1PageQuery,
   ),
-  academicGet(
+  catalogueGet(
     "getReport",
     "/v1/reports/{reportId}",
     "report.read",
@@ -1099,7 +1099,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1Report",
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "appealReport",
     "/v1/reports/{reportId}/appeal",
     "report.appeal",
@@ -1110,7 +1110,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "createBlock",
     "/v1/blocks",
     "block.manage",
@@ -1132,7 +1132,7 @@ export const V1_ROUTE_CATALOGUE = [
     query: Safety.V1SchoolScopeQuery,
     querySchema: "V1SchoolScopeQuery",
   },
-  academicPost(
+  cataloguePost(
     "unblockUser",
     "/v1/blocks/{blockId}/unblock",
     "block.manage",
@@ -1167,7 +1167,7 @@ export const V1_ROUTE_CATALOGUE = [
     query: Safety.V1ModerationQueueQuery,
     querySchema: "V1ModerationQueueQuery",
   },
-  academicGet(
+  catalogueGet(
     "getModerationReport",
     "/internal/moderation/reports/{reportId}",
     "moderation.report.read",
@@ -1175,7 +1175,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1ModerationReport",
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "triageReport",
     "/internal/moderation/reports/{reportId}/triage",
     "moderation.triage",
@@ -1186,7 +1186,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "resolveReport",
     "/internal/moderation/reports/{reportId}/resolve",
     "moderation.resolve",
@@ -1197,7 +1197,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "escalateReport",
     "/internal/moderation/reports/{reportId}/escalate",
     "moderation.escalate",
@@ -1208,7 +1208,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "addReportEvidence",
     "/internal/moderation/reports/{reportId}/evidence",
     "moderation.evidence.write",
@@ -1219,7 +1219,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "holdReport",
     "/internal/moderation/reports/{reportId}/hold",
     "moderation.hold",
@@ -1230,7 +1230,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     reportParams(),
   ),
-  academicPost(
+  cataloguePost(
     "releaseLegalHold",
     "/internal/legal-holds/{legalHoldId}/release",
     "moderation.hold",
@@ -1241,7 +1241,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     legalHoldParams(),
   ),
-  academicPost(
+  cataloguePost(
     "requestModerationAccess",
     "/internal/moderation/access",
     "moderation.access.request",
@@ -1251,7 +1251,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1ModerationAccessGrant",
     201,
   ),
-  academicPost(
+  cataloguePost(
     "approveModerationAccess",
     "/internal/moderation/access/{moderationGrantId}/approve",
     "moderation.access.approve",
@@ -1262,7 +1262,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     moderationGrantParams(),
   ),
-  academicPost(
+  cataloguePost(
     "startModerationAccess",
     "/internal/moderation/access/{moderationGrantId}/start",
     "moderation.access.start",
@@ -1273,7 +1273,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     moderationGrantParams(),
   ),
-  academicPost(
+  cataloguePost(
     "revokeModerationAccess",
     "/internal/moderation/access/{moderationGrantId}/revoke",
     "moderation.access.revoke",
@@ -1296,7 +1296,7 @@ export const V1_ROUTE_CATALOGUE = [
     query: Safety.V1ModerationAccessQuery,
     querySchema: "V1ModerationAccessQuery",
   },
-  academicPost(
+  cataloguePost(
     "createUploadIntent",
     "/v1/uploads",
     "upload.intent.create",
@@ -1306,7 +1306,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1CreateUploadIntentResponse",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "getUploadStatus",
     "/v1/uploads/{uploadId}",
     "upload.read",
@@ -1314,7 +1314,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1UploadSession",
     uploadParams(),
   ),
-  academicPost(
+  cataloguePost(
     "completeUpload",
     "/v1/uploads/{uploadId}/complete",
     "upload.complete",
@@ -1325,7 +1325,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     uploadParams(),
   ),
-  academicGet(
+  catalogueGet(
     "getFileStatus",
     "/v1/files/{fileId}",
     "file.read",
@@ -1333,7 +1333,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1File",
     fileParams(),
   ),
-  academicPost(
+  cataloguePost(
     "createFileDownloadIntent",
     "/v1/files/{fileId}/download-intent",
     "file.download",
@@ -1344,7 +1344,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     fileParams(),
   ),
-  academicPost(
+  cataloguePost(
     "publishFile",
     "/v1/files/{fileId}/publish",
     "file.publish",
@@ -1355,7 +1355,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     fileParams(),
   ),
-  academicPost(
+  cataloguePost(
     "requestPurchaseApproval",
     "/v1/billing/purchase-approvals",
     "billing.purchase_approval.request",
@@ -1365,14 +1365,14 @@ export const V1_ROUTE_CATALOGUE = [
     "V1PurchaseApproval",
     201,
   ),
-  academicGet(
+  catalogueGet(
     "listPurchaseApprovals",
     "/v1/billing/purchase-approvals",
     "billing.purchase_approval.read",
     Billing.V1PurchaseApprovalsResponse,
     "V1PurchaseApprovalsResponse",
   ),
-  academicPost(
+  cataloguePost(
     "decidePurchaseApproval",
     "/v1/billing/purchase-approvals/{approvalId}/decision",
     "billing.purchase_approval.decide",
@@ -1383,14 +1383,14 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     params("approvalId"),
   ),
-  academicGet(
+  catalogueGet(
     "getBillingCatalogue",
     "/v1/billing/catalogue",
     "billing.catalogue.read",
     Billing.V1BillingCatalogueResponse,
     "V1BillingCatalogueResponse",
   ),
-  academicPost(
+  cataloguePost(
     "submitPurchase",
     "/v1/billing/purchases",
     "billing.purchase.submit",
@@ -1400,7 +1400,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1SubmitPurchaseResponse",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "restorePurchase",
     "/v1/billing/restore",
     "billing.restore",
@@ -1410,14 +1410,14 @@ export const V1_ROUTE_CATALOGUE = [
     "V1RestorePurchaseResponse",
     200,
   ),
-  academicGet(
+  catalogueGet(
     "listEntitlements",
     "/v1/billing/entitlements",
     "billing.entitlement.read",
     Billing.V1EntitlementsResponse,
     "V1EntitlementsResponse",
   ),
-  academicPost(
+  cataloguePost(
     "setSelfPurchase",
     "/v1/billing/school-settings/self-purchase",
     "billing.school_settings.write",
@@ -1428,7 +1428,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
   ),
   // DL-049. Appended so no existing module's catalogue slice shifts.
-  academicGet(
+  catalogueGet(
     "listContacts",
     "/v1/contacts",
     "contact.list",
@@ -1438,7 +1438,7 @@ export const V1_ROUTE_CATALOGUE = [
     Academic.V1PageQuery,
   ),
   // DL-050. A guardian's own links and the children they concern.
-  academicGet(
+  catalogueGet(
     "listMyGuardianLinks",
     "/v1/me/guardian-links",
     "guardian_link.list_own",
@@ -1446,7 +1446,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1MyGuardianLinksResponse",
   ),
   // DL-051. The caller's own finished data export.
-  academicGet(
+  catalogueGet(
     "downloadDataExport",
     "/v1/account/export-download",
     "account.export.download",
@@ -1454,7 +1454,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1DataExportDocument",
   ),
   // DL-053. Push registration for the signed-in person's device.
-  academicPost(
+  cataloguePost(
     "registerPushDevice",
     "/v1/me/push-devices",
     "push_device.manage",
@@ -1464,7 +1464,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1PushDeviceResponse",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "unregisterPushDevice",
     "/v1/me/push-devices/unregister",
     "push_device.manage",
@@ -1479,7 +1479,7 @@ export const V1_ROUTE_CATALOGUE = [
   // mounts route groups by index into this array (see the slice() calls in
   // apps/api/src/*/routes.ts), so inserting anywhere above silently remounts
   // every group that follows.
-  academicGet(
+  catalogueGet(
     "getClassJoinLink",
     "/v1/classrooms/{classroomId}/join-link",
     "classJoinLink.read",
@@ -1487,7 +1487,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1ClassJoinLink",
     params("classroomId"),
   ),
-  academicPost(
+  cataloguePost(
     "createClassJoinLink",
     "/v1/classrooms/{classroomId}/join-link",
     "classJoinLink.create",
@@ -1498,7 +1498,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     params("classroomId"),
   ),
-  academicPost(
+  cataloguePost(
     "revokeClassJoinLink",
     "/v1/class-join-links/{linkId}/revoke",
     "classJoinLink.revoke",
@@ -1509,7 +1509,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     params("linkId"),
   ),
-  academicPost(
+  cataloguePost(
     "redeemClassJoinLink",
     "/v1/class-join-links/redeem",
     "classJoinLink.redeem",
@@ -1519,7 +1519,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1RedeemClassJoinLinkResponse",
     200,
   ),
-  academicPost(
+  cataloguePost(
     "closeLessonSession",
     "/v1/lesson-sessions/{lessonSessionId}/close",
     "lesson_session.close",
@@ -1530,14 +1530,14 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     params("lessonSessionId"),
   ),
-  academicGet(
+  catalogueGet(
     "getStudentFamily",
     "/v1/me/student-family",
     "guardian_link.student_own",
     Family.V1StudentFamily,
     "V1StudentFamily",
   ),
-  academicPost(
+  cataloguePost(
     "decideGuardianLink",
     "/v1/guardian-links/{guardianLinkId}/student-decision",
     "guardian_link.student_own",
@@ -1558,7 +1558,7 @@ export const V1_ROUTE_CATALOGUE = [
   // budget for an administrator editing their own school and far too loose
   // for an endpoint that mints tenants and that any signed-in account may
   // call. Its own path keeps it on its own, stricter, ip-keyed budget.
-  academicPost(
+  cataloguePost(
     "createTeacherWorkspace",
     "/v1/onboarding/teacher-workspace",
     "onboarding.teacher_workspace",
@@ -1572,7 +1572,7 @@ export const V1_ROUTE_CATALOGUE = [
   //
   // scope "self" and no tenant: a student who has not joined a class yet can
   // still study, and the endpoint reads nothing that belongs to a school.
-  academicPost(
+  cataloguePost(
     "askStudyAssistant",
     "/v1/study-assistant/ask",
     "study_assistant.ask",
@@ -1588,7 +1588,7 @@ export const V1_ROUTE_CATALOGUE = [
   // One request replaces the twenty round trips the client used to make, and
   // the entitlement is checked in SQL so the paywall cannot be removed by
   // editing the app.
-  academicGet(
+  catalogueGet(
     "getFamilyInsights",
     "/v1/family/insights",
     "family_insights.read",
@@ -1599,7 +1599,7 @@ export const V1_ROUTE_CATALOGUE = [
   ),
   // Every attempt at a piece of work, for the student, their guardian and
   // the class's staff. Appended, never inserted.
-  academicGet(
+  catalogueGet(
     "listSubmissionHistory",
     "/v1/assignments/{assignmentId}/history",
     "submission.history",
@@ -1610,7 +1610,7 @@ export const V1_ROUTE_CATALOGUE = [
   ),
   // Meetings someone was invited to. Until this, a meeting could only be
   // fetched by id, so nobody but its creator could find one. Appended.
-  academicGet(
+  catalogueGet(
     "listMeetings",
     "/v1/meetings",
     "meeting.list",
@@ -1620,7 +1620,7 @@ export const V1_ROUTE_CATALOGUE = [
     Academic.V1PageQuery,
   ),
   // Message receipts - delivered and read ticks. Appended.
-  academicPost(
+  cataloguePost(
     "markConversationRead",
     "/v1/conversations/{conversationId}/read",
     "conversation.mark_read",
@@ -1631,7 +1631,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     conversationParams(),
   ),
-  academicPost(
+  cataloguePost(
     "acknowledgeMessageDelivery",
     "/v1/me/message-deliveries",
     "message.acknowledge_delivery",
@@ -1642,14 +1642,14 @@ export const V1_ROUTE_CATALOGUE = [
     200,
   ),
   // Studafy Plus / Max and the student's Notebook (2026-09-27). Appended.
-  academicGet(
+  catalogueGet(
     "getStudyPlan",
     "/v1/me/study-plan",
     "study_plan.read",
     StudyPlans.V1StudyPlanSummary,
     "V1StudyPlanSummary",
   ),
-  academicGet(
+  catalogueGet(
     "listNotebookEntries",
     "/v1/classrooms/{classroomId}/notebook",
     "notebook.read",
@@ -1657,7 +1657,7 @@ export const V1_ROUTE_CATALOGUE = [
     "V1NotebookPage",
     params("classroomId"),
   ),
-  academicPost(
+  cataloguePost(
     "createNotebookEntry",
     "/v1/classrooms/{classroomId}/notebook",
     "notebook.write",
@@ -1668,7 +1668,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     params("classroomId"),
   ),
-  academicPost(
+  cataloguePost(
     "createWhiteboardNote",
     "/v1/classrooms/{classroomId}/notebook/whiteboard",
     "notebook.write",
@@ -1679,7 +1679,7 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     params("classroomId"),
   ),
-  academicPost(
+  cataloguePost(
     "deleteNotebookEntry",
     "/v1/notebook-entries/{entryId}/delete",
     "notebook_entry.delete",
@@ -1690,7 +1690,7 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     params("entryId"),
   ),
-  academicPost(
+  cataloguePost(
     "generateStudySet",
     "/v1/resources/{resourceId}/study-set",
     "study_set.generate",
@@ -1761,15 +1761,19 @@ function fileParams() {
   return params("fileId");
 }
 
-function academicGet(
-  operationId: string,
+/**
+ * A GET route in the catalogue. Generic in its operation id so the catalogue
+ * keeps every id as a literal, and `v1Route("typo")` fails to compile.
+ */
+function catalogueGet<const Id extends string>(
+  operationId: Id,
   path: string,
   permission: string,
   response: z.ZodType,
   responseSchema: string,
   paramsSchema?: z.ZodType,
   query?: z.ZodType,
-): V1RouteContract {
+): V1RouteContract & { readonly operationId: Id } {
   return {
     method: "get",
     path,
@@ -1784,8 +1788,9 @@ function academicGet(
   };
 }
 
-function academicPost(
-  operationId: string,
+/** A POST route in the catalogue; idempotency keys are always required. */
+function cataloguePost<const Id extends string>(
+  operationId: Id,
   path: string,
   permission: string,
   request: z.ZodType,
@@ -1794,7 +1799,7 @@ function academicPost(
   responseSchema: string,
   successStatus: 200 | 201,
   paramsSchema?: z.ZodType,
-): V1RouteContract {
+): V1RouteContract & { readonly operationId: Id } {
   return {
     method: "post",
     path,
@@ -1811,7 +1816,10 @@ function academicPost(
   };
 }
 
-export type V1OperationId = (typeof V1_ROUTE_CATALOGUE)[number]["operationId"];
+/** One route of the catalogue, with its literal operation id. */
+export type V1CatalogueRoute = (typeof V1_ROUTE_CATALOGUE)[number];
+
+export type V1OperationId = V1CatalogueRoute["operationId"];
 
 export function v1Route(
   operationId: V1OperationId,
