@@ -4,6 +4,11 @@
  * renamed or deleted, and every new migration must sort after the newest
  * migration already on the base, so replay order never changes.
  *
+ * It also refuses the rename-and-wrap pattern in new migrations (ADR-0030):
+ * extending a SQL function by renaming it to `<name>_pre_<change>` and
+ * delegating to it grew private.authz_authorize to twenty nested calls.
+ * Change a function by replacing it, or add a named handler it dispatches to.
+ *
  * Usage: bun scripts/check-migration-immutability.ts [baseRef]
  */
 import { $ } from "bun";
@@ -46,6 +51,21 @@ for (const file of current) {
   if (file <= newestOnBase) {
     violations.push(
       `${file}: sorts before ${newestOnBase}; new migrations must come last`,
+    );
+  }
+}
+
+// Migrations from before the chains were flattened are history; only new
+// ones are held to the rule.
+const WRAPPING_BANNED_AFTER = `${dir}202609280001_flatten_authorization.sql`;
+const WRAP_RENAME =
+  /\balter\s+function\s+private\.[a-z0-9_]+\s*\([^)]*\)\s+rename\s+to\s+[a-z0-9_]*_(?:pre|before)_[a-z0-9_]*/i;
+for (const file of current) {
+  if (file <= WRAPPING_BANNED_AFTER) continue;
+  const text = await Bun.file(file).text();
+  if (WRAP_RENAME.test(text)) {
+    violations.push(
+      `${file}: renames a function to wrap it; replace it or add a named handler instead (ADR-0030)`,
     );
   }
 }
