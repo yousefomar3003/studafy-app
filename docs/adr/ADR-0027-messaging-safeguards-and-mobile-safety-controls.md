@@ -84,5 +84,5 @@ The mobile app had no report or block control at all, which Apple guideline
 - `apps/api/test/communications/communications.integration.test.ts`
   (switch, policy, contacts, participant-only content-free notifications,
   newest-first paging across a page boundary for a guardian)
-- `test/messaging_safety_test.dart` (labelled controls, long-press report,
+- `test/features/messaging/messaging_safety_test.dart` (labelled controls, long-press report,
   block and unblock, other-party blocks hidden, idempotent retry, Arabic)
