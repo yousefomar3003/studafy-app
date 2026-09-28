@@ -20,9 +20,10 @@ import {
   requirePermission,
 } from "../../src/authorization/middleware";
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const USER_A = "4f310000-0000-4000-8000-0000000000a1";
 const USER_B = "4f310000-0000-4000-8000-0000000000a2";
@@ -97,12 +98,10 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql`delete from public.classroom_staff where classroom_id = ${CLASS_A}::uuid`;
-  await sql`delete from public.classrooms where id = ${CLASS_A}::uuid`;
-  await sql`delete from public.terms where id = ${TERM_A}::uuid`;
-  await sql`delete from public.memberships where user_id in (${USER_A}::uuid, ${USER_B}::uuid)`;
-  await sql`delete from public.schools where id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-  await sql`delete from auth.users where id in (${USER_A}::uuid, ${USER_B}::uuid)`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL_A, SCHOOL_B],
+    userIds: [USER_A, USER_B],
+  });
 }
 
 async function directRls(subject: string): Promise<boolean> {

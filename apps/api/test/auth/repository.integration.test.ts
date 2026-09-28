@@ -12,14 +12,17 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createDatabase, type Sql } from "@studafy/database";
 import { AuthContextRepository, evaluateSession } from "../../src/auth/context";
 import type { VerifiedToken } from "../../src/auth/verify";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const USER = "3f000000-0000-4000-8000-0000000000a1";
 const OTHER_USER = "3f000000-0000-4000-8000-0000000000a2";
 const SCHOOL = "3f000000-0000-4000-8000-0000000000b1";
 const SESSION = "3f000000-0000-4000-8000-0000000000c1";
+/** The failed sign-in recorded below, which has no account to hang from. */
+const SIGN_IN_REQUEST = "3f000000-0000-4000-8000-0000000000d1";
 
 let sql: Sql;
 let repository: AuthContextRepository;
@@ -72,27 +75,10 @@ async function seed(): Promise<void> {
  * reused rather than recreated.
  */
 async function cleanup(): Promise<void> {
-  await sql`delete from public.auth_reauth_grants where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.auth_identity_links where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.auth_devices where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.auth_session_revocations where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.account_deletion_requests where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.memberships where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-}
-
-/**
- * Removes the fixture school and users too, so a run against a developer's
- * database leaves nothing behind. Audit events are append-only, so their
- * guard is lifted for this one transaction only.
- */
-async function teardown(): Promise<void> {
-  await cleanup();
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid or actor_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [USER, OTHER_USER],
+    requestIds: [SIGN_IN_REQUEST],
   });
 }
 
@@ -118,7 +104,7 @@ suite("AuthContextRepository against Postgres", () => {
 
   afterAll(async () => {
     if (!sql) return;
-    await teardown();
+    await cleanup();
     await sql.end({ timeout: 5 });
   });
 
@@ -273,7 +259,7 @@ suite("AuthContextRepository against Postgres", () => {
       accountIdentifier: email,
       ip: "203.0.113.10",
       userAgentFamily: "flutter",
-      requestId: crypto.randomUUID(),
+      requestId: SIGN_IN_REQUEST,
     });
 
     const rows = await sql<{ account_hash: string; ip_hash: string }[]>`
@@ -286,8 +272,8 @@ suite("AuthContextRepository against Postgres", () => {
     expect(rows[0]!.account_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(rows[0]!.account_hash).not.toContain("@");
     expect(rows[0]!.ip_hash).not.toBe("203.0.113.10");
-    // Left in place deliberately: the relation is append-only, and proving
-    // the row cannot be removed is part of what this suite asserts.
+    // The relation is append-only, and proving the row cannot be removed is
+    // part of what this suite asserts; only the teardown lifts that guard.
   });
 
   test("a recorded security event cannot be altered or removed", async () => {

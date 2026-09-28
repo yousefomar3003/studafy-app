@@ -38,7 +38,8 @@ const ALLOWED: Record<string, string[]> = {
     "@studafy/domain",
     "@studafy/observability",
   ],
-  "@studafy/test-support": [],
+  // Test-only: fixture helpers run SQL against the disposable database.
+  "@studafy/test-support": ["@studafy/database"],
   "@studafy/api": [
     "hono",
     "zod",

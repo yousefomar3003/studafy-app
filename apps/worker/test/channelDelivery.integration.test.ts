@@ -16,9 +16,10 @@ import {
   channelCopy,
   channelCopyCategories,
 } from "../src/processors/notificationCopy";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const SCHOOL = "d1053000-0000-4000-8000-0000000000b1";
 const EMAIL_USER = "d1053000-0000-4000-8000-0000000000a1";
@@ -29,12 +30,10 @@ const logger = createJsonLogger("worker", "test", "error", () => undefined);
 let sql: Sql;
 
 async function cleanup(): Promise<void> {
-  await sql`delete from public.push_devices where user_id in (${EMAIL_USER}::uuid, ${PUSH_USER}::uuid)`;
-  await sql`delete from public.notification_preferences where user_id in (${EMAIL_USER}::uuid, ${PUSH_USER}::uuid)`;
-  await sql`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
-  await sql`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
-  await sql`delete from public.schools where id = ${SCHOOL}::uuid`;
-  await sql`delete from auth.users where id in (${EMAIL_USER}::uuid, ${PUSH_USER}::uuid)`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [EMAIL_USER, PUSH_USER],
+  });
 }
 
 test("channel copy exists in both languages and carries no placeholders", () => {

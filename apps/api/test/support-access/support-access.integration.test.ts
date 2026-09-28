@@ -19,9 +19,10 @@ import { PostgresAuthorizationRepository } from "../../src/authorization/reposit
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresSupportAccessRepository } from "../../src/support-access/repository";
 import { createSupportAccessRoutes } from "../../src/support-access/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const OPERATOR_A = "5f490000-0000-4000-8000-0000000000a1";
 const OPERATOR_B = "5f490000-0000-4000-8000-0000000000a2";
@@ -68,15 +69,9 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.support_access_grants where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.platform_operators where user_id in (${OPERATOR_A}::uuid, ${OPERATOR_B}::uuid)`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${OPERATOR_A}::uuid, ${OPERATOR_B}::uuid, ${ADMIN}::uuid, ${TEACHER}::uuid)`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [OPERATOR_A, OPERATOR_B, ADMIN, TEACHER],
   });
 }
 

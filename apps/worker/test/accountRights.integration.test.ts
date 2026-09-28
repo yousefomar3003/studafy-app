@@ -8,9 +8,10 @@ import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import { startAccountDeletionExecutor } from "../src/processors/accountDeletion";
 import { startDataExportExecutor } from "../src/processors/dataExport";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const LEAVER = "d1051000-0000-4000-8000-0000000000a1";
 const EXPORTER = "d1051000-0000-4000-8000-0000000000a2";
@@ -34,9 +35,7 @@ async function seedUser(id: string, name: string): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql`delete from public.data_export_requests where user_id in (${LEAVER}::uuid, ${EXPORTER}::uuid)`;
-  await sql`delete from public.account_deletion_requests where user_id in (${LEAVER}::uuid, ${EXPORTER}::uuid)`;
-  await sql`delete from auth.users where id in (${LEAVER}::uuid, ${EXPORTER}::uuid)`;
+  await removeFixtures(sql, { userIds: [LEAVER, EXPORTER] });
 }
 
 suite("DL-051 account rights executors", () => {

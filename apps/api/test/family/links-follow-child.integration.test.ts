@@ -7,9 +7,10 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createDatabase, type Sql } from "@studafy/database";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const P = "f07a0000-0000-4000-8000-0000000000";
 const SCHOOL_A = `${P}01`;
@@ -44,10 +45,10 @@ async function user(id: string): Promise<void> {
 
 async function cleanup(): Promise<void> {
   const schools = [SCHOOL_A, SCHOOL_B, SCHOOL_C];
-  await sql`delete from public.guardian_links where school_id = any(${schools}::uuid[])`;
-  await sql`delete from public.students where school_id = any(${schools}::uuid[])`;
-  await sql`delete from public.schools where id = any(${schools}::uuid[])`;
-  await sql`delete from auth.users where id in (${CHILD}::uuid, ${PARENT}::uuid, ${OTHER_PARENT}::uuid, ${STAFF}::uuid)`;
+  await removeFixtures(sql, {
+    schoolIds: [...schools],
+    userIds: [CHILD, PARENT, OTHER_PARENT, STAFF],
+  });
 }
 
 async function link(student: string, guardian: string) {

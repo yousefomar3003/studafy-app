@@ -22,9 +22,10 @@ import {
   createContactsRoutes,
   createMessageReceiptRoutes,
 } from "../../src/communications/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const ADMIN = "5f450000-0000-4000-8000-0000000000a1";
 const TEACHER = "5f450000-0000-4000-8000-0000000000a2";
@@ -83,28 +84,9 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.messages disable trigger db020_reject_mutation`;
-    await tx`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.school_content_controls where school_id = ${SCHOOL}::uuid`;
-    // Before messages and memberships: file_objects restricts membership
-    // deletion, and a binding restricts nothing but is cascaded by its target.
-    await tx`delete from public.file_bindings where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.file_objects where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.messages where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.conversation_participants where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.conversations where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.announcements where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.guardian_links where student_id in (${STUDENT_ROW}::uuid, ${OTHER_STUDENT_ROW}::uuid)`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.students where id in (${STUDENT_ROW}::uuid, ${OTHER_STUDENT_ROW}::uuid)`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${ADMIN}::uuid, ${TEACHER}::uuid, ${GUARDIAN}::uuid, ${STUDENT_USER}::uuid, ${OTHER_STUDENT_USER}::uuid)`;
-    await tx`alter table public.messages enable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [ADMIN, TEACHER, GUARDIAN, STUDENT_USER, OTHER_STUDENT_USER],
   });
 }
 

@@ -22,9 +22,10 @@ import { PostgresAuthorizationRepository } from "../../src/authorization/reposit
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresAcademicRepository } from "../../src/academic/repository";
 import { createAcademicRoutes } from "../../src/academic/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const TEACHER = "5f410000-0000-4000-8000-0000000000a1";
 const PARENT = "5f410000-0000-4000-8000-0000000000a2";
@@ -74,21 +75,9 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.membership_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.class_schedules where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.classroom_staff where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.classrooms where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.terms where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.membership_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.idempotency_records where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${TEACHER}::uuid, ${PARENT}::uuid)`;
-    await tx`alter table public.membership_events enable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [TEACHER, PARENT],
   });
 }
 

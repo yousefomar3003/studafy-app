@@ -29,9 +29,10 @@ import {
   createAcademicRoutes,
   createSubmissionHistoryRoutes,
 } from "../../src/academic/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const TEACHER_A = "5f410000-0000-4000-8000-0000000000a1";
 const STUDENT_USER = "5f410000-0000-4000-8000-0000000000a2";
@@ -185,55 +186,18 @@ async function seed(): Promise<void> {
  * to fully guarded tables, and the re-enable runs before commit.
  */
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.grade_result_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.submission_attempts disable trigger db020_reject_mutation`;
-    await tx`alter table public.resource_versions disable trigger db020_reject_mutation`;
-    await tx`alter table public.assessment_attempts disable trigger api041_immutable_assessment_attempt`;
-    await tx`alter table public.assessment_answers disable trigger api041_immutable_assessment_answer`;
-    await tx`delete from public.notification_outbox where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.notifications where user_id in (${TEACHER_A}::uuid, ${STUDENT_USER}::uuid, ${GUARDIAN}::uuid, ${TEACHER_B}::uuid)`;
-    await tx`delete from public.audit_events where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.idempotency_records where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.wellbeing_events where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.attendance_records where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.lesson_sessions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.class_schedules where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.grade_result_events where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.grade_results where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    // Bindings first, then the objects: file_objects references memberships
-    // with ON DELETE RESTRICT, so a leftover attachment blocks the whole
-    // fixture teardown.
-    await tx`delete from public.file_bindings where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.upload_sessions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.file_objects where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.resource_publications where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.resource_versions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.resources where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.assessment_answers where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.assessment_attempts where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.assessment_questions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.assessments where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.submissions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.submission_attempts where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.assignments where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.enrollments where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.classroom_staff where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.classrooms where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.terms where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.guardian_links where student_id = ${STUDENT_ROW}::uuid`;
-    await tx`delete from public.students where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.memberships where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`delete from public.schools where id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
-    await tx`alter table public.assessment_answers enable trigger api041_immutable_assessment_answer`;
-    await tx`alter table public.assessment_attempts enable trigger api041_immutable_assessment_attempt`;
-    await tx`alter table public.submission_attempts enable trigger db020_reject_mutation`;
-    await tx`alter table public.resource_versions enable trigger db020_reject_mutation`;
-    await tx`alter table public.grade_result_events enable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL_A, SCHOOL_B],
+    userIds: [
+      TEACHER_A,
+      STUDENT_USER,
+      GUARDIAN,
+      TEACHER_B,
+      ADMIN,
+      ASSISTANT,
+      LINKED_PARENT,
+    ],
   });
-  await sql`delete from auth.users where id in (${TEACHER_A}::uuid, ${STUDENT_USER}::uuid, ${GUARDIAN}::uuid, ${TEACHER_B}::uuid, ${ADMIN}::uuid, ${ASSISTANT}::uuid, ${LINKED_PARENT}::uuid)`;
 }
 
 interface RequestInput {
