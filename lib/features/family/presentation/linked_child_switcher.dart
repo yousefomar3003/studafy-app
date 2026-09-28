@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/studafy_domain.dart';
 import '../domain/family.dart';
 import 'family_scope.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Which of a guardian's children the other tabs are showing, and a way to
 /// change it without going back to Home.
@@ -108,9 +109,7 @@ class _LinkedChildSwitcherState extends State<LinkedChildSwitcher> {
     }
     return Center(
       child: PopupMenuButton<GuardianChild>(
-        tooltip: Localizations.localeOf(context).languageCode == 'ar'
-            ? 'اختر الطفل'
-            : 'Choose child',
+        tooltip: AppL10n.of(context).childSwitcherChooseChild,
         onSelected: widget.onSelect,
         itemBuilder: (_) => [
           for (final child in _children)

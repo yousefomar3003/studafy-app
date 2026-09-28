@@ -11,6 +11,7 @@ import 'family_challenge_page.dart';
 import 'child_progress_page.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Guardian home on authoritative `/v1` data (MOB-070 parent slice).
 /// Replaces the legacy SQLite home in real builds: children come from the
@@ -108,9 +109,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
     if (linked == null || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          familyText(context, 'link.sent', {'name': linked.studentName}),
-        ),
+        content: Text(AppL10n.of(context).famLinkSent(linked.studentName)),
       ),
     );
     await _load();
@@ -121,7 +120,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
         .decide(request.id, approve: approve);
     if (!mounted) return;
     final message = result.fold(
-      onSuccess: (_) => familyText(context, 'approvals.done'),
+      onSuccess: (_) => AppL10n.of(context).famApprovalsDone,
       onFailure: (failure) => familyFailureText(context, failure),
     );
     ScaffoldMessenger.of(context)
@@ -139,12 +138,11 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => familyText(context, key);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: studafyCanvas,
-        title: Text(t('title')),
+        title: Text(AppL10n.of(context).famTitle),
         actions: widget.actions,
       ),
       body: _loading
@@ -152,9 +150,9 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
           : _failure != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).famErrorTitle,
               message: familyFailureText(context, _failure!),
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).famRetry,
               onAction: _load,
             )
           : RefreshIndicator(
@@ -163,7 +161,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 96),
                 children: [
                   if (_approvals.isNotEmpty) ...[
-                    _SectionTitle(t('approvals.title')),
+                    _SectionTitle(AppL10n.of(context).famApprovalsTitle),
                     for (final request in _approvals)
                       _ApprovalCard(
                         request: request,
@@ -173,15 +171,10 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                     const SizedBox(height: 16),
                   ],
                   StudafyHero(
-                    eyebrow:
-                        Localizations.localeOf(context).languageCode == 'ar'
-                        ? 'معًا، كل يوم'
-                        : 'TOGETHER, EVERY DAY',
-                    title: t('children'),
-                    subtitle:
-                        Localizations.localeOf(context).languageCode == 'ar'
-                        ? 'عالمهم ينمو. كن جزءًا منه.'
-                        : 'Their world is growing. Be part of it.',
+                    eyebrow: AppL10n.of(context).familyHomeTogetherEveryDay,
+                    title: AppL10n.of(context).famChildren,
+                    subtitle: AppL10n.of(context)
+                        .familyHomeTheirWorldIsGrowingBe,
                     icon: Icons.favorite_rounded,
                   ),
                   const SizedBox(height: 28),
@@ -208,7 +201,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                             width: width,
                             child: Semantics(
                               button: true,
-                              label: t('link'),
+                              label: AppL10n.of(context).famLink,
                               child: Material(
                                 color: const Color(0xFFECEBFF),
                                 borderRadius: BorderRadius.circular(26),
@@ -241,7 +234,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                                         ),
                                         const SizedBox(height: 18),
                                         Text(
-                                          t('link'),
+                                          AppL10n.of(context).famLink,
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w800,
@@ -275,7 +268,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                   if (_children.isEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      t('empty.message'),
+                      AppL10n.of(context).famEmptyMessage,
                       style: const TextStyle(color: studafyMuted),
                       textAlign: TextAlign.center,
                     ),
@@ -428,9 +421,7 @@ class _ApprovalCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            familyText(context, 'approvals.detail', {
-              'name': request.studentName,
-            }),
+            AppL10n.of(context).famApprovalsDetail(request.studentName),
             style: const TextStyle(color: studafyInk),
           ),
           const SizedBox(height: 8),
@@ -439,12 +430,12 @@ class _ApprovalCard extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: onDecline,
-                child: Text(familyText(context, 'approvals.decline')),
+                child: Text(AppL10n.of(context).famApprovalsDecline),
               ),
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: onApprove,
-                child: Text(familyText(context, 'approvals.approve')),
+                child: Text(AppL10n.of(context).famApprovalsApprove),
               ),
             ],
           ),
@@ -504,7 +495,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
         onSuccess: (student) {
           _found = student;
           if (student == null) {
-            _message = familyText(context, 'link.notFound');
+            _message = AppL10n.of(context).famLinkNotFound;
           }
         },
         onFailure: (failure) => _message = familyFailureText(context, failure),
@@ -517,7 +508,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
   Future<String?> _challenge() async {
     final base = Uri.tryParse(const String.fromEnvironment('STUDAFY_API_URL'));
     if (base == null || !base.hasAuthority) {
-      setState(() => _message = familyText(context, 'error.title'));
+      setState(() => _message = AppL10n.of(context).famErrorTitle);
       return null;
     }
     return await Navigator.of(context).push<String>(
@@ -551,7 +542,6 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => familyText(context, key);
     final found = _found;
     return SafeArea(
       child: Padding(
@@ -561,7 +551,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              t('link.title'),
+              AppL10n.of(context).famLinkTitle,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
@@ -572,7 +562,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                     controller: _code,
                     textCapitalization: TextCapitalization.characters,
                     decoration: InputDecoration(
-                      labelText: t('link.hint'),
+                      labelText: AppL10n.of(context).famLinkHint,
                       border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _find(),
@@ -581,7 +571,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                 const SizedBox(width: 8),
                 OutlinedButton(
                   onPressed: _busy ? null : _find,
-                  child: Text(t('link.find')),
+                  child: Text(AppL10n.of(context).famLinkFind),
                 ),
               ],
             ),
@@ -596,9 +586,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                 child: FilledButton(
                   onPressed: _busy ? null : _request,
                   child: Text(
-                    familyText(context, 'link.confirm', {
-                      'name': found.displayName,
-                    }),
+                    AppL10n.of(context).famLinkConfirm(found.displayName),
                   ),
                 ),
               ),

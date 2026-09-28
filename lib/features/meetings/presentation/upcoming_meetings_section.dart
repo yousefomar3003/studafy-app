@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../domain/meetings.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Makes the meetings list reachable from any home screen that shows it.
 class MeetingsScope extends InheritedWidget {
@@ -56,9 +57,6 @@ class UpcomingMeetingsSection extends StatefulWidget {
 class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
   Future<List<UpcomingMeeting>>? _meetings;
 
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -78,10 +76,7 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
     final url = meeting.meetUrl;
     if (url == null) return;
     final messenger = ScaffoldMessenger.of(context);
-    final failed = _t(
-      'Google Meet could not be opened.',
-      'تعذّر فتح Google Meet.',
-    );
+    final failed = AppL10n.of(context).meetingsGoogleMeetCouldNotBe;
     final opened = await widget.launch(url);
     if (!opened) messenger.showSnackBar(SnackBar(content: Text(failed)));
   }
@@ -103,7 +98,7 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
             Semantics(
               header: true,
               child: Text(
-                _t('Upcoming meetings', 'الاجتماعات القادمة'),
+                AppL10n.of(context).meetingsUpcomingMeetings,
                 style: const TextStyle(
                   color: studafyInk,
                   fontSize: 16,
@@ -130,23 +125,21 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
                       Text(_when(meeting.startsAt)),
                       if (meeting.isCancelled)
                         Text(
-                          _t('Cancelled', 'أُلغي'),
+                          AppL10n.of(context).meetingsCancelled,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
                             fontWeight: FontWeight.w700,
                           ),
                         )
                       else if (meeting.meetUrl == null)
-                        Text(
-                          _t('The link will appear here.', 'سيظهر الرابط هنا.'),
-                        ),
+                        Text(AppL10n.of(context).meetingsTheLinkWillAppearHere),
                     ],
                   ),
                   isThreeLine: true,
                   trailing: meeting.canJoin(now)
                       ? FilledButton(
                           onPressed: () => _join(meeting),
-                          child: Text(_t('Join', 'انضمام')),
+                          child: Text(AppL10n.of(context).meetingsJoin),
                         )
                       : null,
                 ),

@@ -12,7 +12,6 @@ import '../features/academic/presentation/submit_work_page.dart';
 import '../core/file_upload_repository.dart';
 
 import '../core/studafy_design.dart';
-import '../core/studafy_localizations.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
@@ -186,9 +185,7 @@ class _StudentShellState extends State<StudentShell> {
           actions: [
             if (widget.study case final study?)
               IconButton(
-                tooltip: Localizations.localeOf(context).languageCode == 'ar'
-                    ? 'الخطط'
-                    : 'Plans',
+                tooltip: AppL10n.of(context).studentLessonsPlans,
                 icon: const Icon(Icons.workspace_premium_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -240,19 +237,17 @@ class _StudentShellState extends State<StudentShell> {
         onSelected: (value) => setState(() => index = value),
         items: [
           StudafyNavItem(
-            StudafyLocalizations.of(context).text('today'),
+            AppL10n.of(context).navToday,
             Icons.home_outlined,
             Icons.home_rounded,
           ),
           StudafyNavItem(
-            Localizations.localeOf(context).languageCode == 'ar'
-                ? 'الدروس'
-                : 'Lessons',
+            AppL10n.of(context).feedContent,
             Icons.menu_book_outlined,
             Icons.menu_book_rounded,
           ),
           StudafyNavItem(
-            StudafyLocalizations.of(context).text('work'),
+            AppL10n.of(context).navWork,
             Icons.assignment_outlined,
             Icons.assignment_rounded,
           ),
@@ -264,7 +259,7 @@ class _StudentShellState extends State<StudentShell> {
             ),
           if (messaging)
             StudafyNavItem(
-              StudafyLocalizations.of(context).text('messages'),
+              AppL10n.of(context).navMessages,
               Icons.forum_outlined,
               Icons.forum_rounded,
             ),

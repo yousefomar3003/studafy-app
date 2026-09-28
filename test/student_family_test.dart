@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/family/application/family_interactor.dart';
 import 'package:studafy/features/family/data/preview_family_repository.dart';
 import 'package:studafy/features/family/presentation/family_scope.dart';
 import 'package:studafy/features/family/presentation/student_family_page.dart';
+
+import 'support/localized_app.dart';
 
 class _Repository extends PreviewFamilyRepository {
   final decisions = <(String, String)>[];
@@ -16,20 +17,17 @@ class _Repository extends PreviewFamilyRepository {
   }
 }
 
-Widget _app(_Repository repository, String locale) => MaterialApp(
+Widget _app(_Repository repository, String locale) => localizedApp(
   locale: Locale(locale),
-  supportedLocales: const [Locale('en'), Locale('ar')],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
-  builder: (context, child) => FamilyScope(
+  home: FamilyScope(
     interactor: FamilyInteractor(
       family: repository,
       approvals: repository,
       confirmRecentAuth: () async {},
       telemetry: const NoopTelemetry(),
     ),
-    child: child!,
+    child: const StudentFamilyPage(),
   ),
-  home: const StudentFamilyPage(),
 );
 
 void main() {

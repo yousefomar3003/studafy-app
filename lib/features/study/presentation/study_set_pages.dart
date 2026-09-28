@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/user_content_text.dart';
 import '../domain/study.dart';
-
-String _tr(BuildContext context, String en, String ar) =>
-    Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Quiz and Flashcards buttons under a lesson. Studafy Max; on any other plan
 /// they show a lock and open the Plans screen.
@@ -57,31 +55,19 @@ class _StudySetButtonsState extends State<StudySetButtons> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(switch (error.refusal) {
-            StudyRefusal.planRequired => _tr(
+            StudyRefusal.planRequired => AppL10n.of(
               context,
-              'Quizzes and flashcards come with Studafy Max.',
-              'الاختبارات والبطاقات متاحة مع Studafy Max.',
-            ),
-            StudyRefusal.allowanceUsed => _tr(
+            ).studySetQuizzesAndFlashcardsComeWith,
+            StudyRefusal.allowanceUsed => AppL10n.of(
               context,
-              "This month's AI allowance is used. It renews on the 1st.",
-              'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر. يتجدد في أول الشهر.',
-            ),
-            StudyRefusal.lessonHasNoText => _tr(
+            ).studySetThisMonthSAiAllowance,
+            StudyRefusal.lessonHasNoText => AppL10n.of(
               context,
-              'This lesson has no text to study from.',
-              'لا يحتوي هذا الدرس على نص للمراجعة.',
-            ),
-            StudyRefusal.unavailable => _tr(
+            ).studySetThisLessonHasNoText,
+            StudyRefusal.unavailable => AppL10n.of(
               context,
-              'This is not available yet.',
-              'هذه الميزة غير متاحة بعد.',
-            ),
-            _ => _tr(
-              context,
-              'That did not work. Please try again.',
-              'لم تنجح العملية. حاول مرة أخرى.',
-            ),
+            ).studySetThisIsNotAvailableYet,
+            _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
           }),
         ),
       );
@@ -93,7 +79,7 @@ class _StudySetButtonsState extends State<StudySetButtons> {
   @override
   Widget build(BuildContext context) {
     final locked = !(widget.plan?.canMakeStudySets ?? false);
-    Widget button(StudySetKind kind, IconData icon, String en, String ar) =>
+    Widget button(StudySetKind kind, IconData icon, String label) =>
         OutlinedButton.icon(
           onPressed: _making != null ? null : () => _open(kind),
           icon: _making == kind
@@ -103,7 +89,7 @@ class _StudySetButtonsState extends State<StudySetButtons> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(locked ? Icons.lock_outline_rounded : icon, size: 18),
-          label: Text(_tr(context, en, ar)),
+          label: Text(label),
         );
     return Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -111,12 +97,15 @@ class _StudySetButtonsState extends State<StudySetButtons> {
         spacing: 8,
         runSpacing: 6,
         children: [
-          button(StudySetKind.quiz, Icons.quiz_outlined, 'Quiz', 'اختبار'),
+          button(
+            StudySetKind.quiz,
+            Icons.quiz_outlined,
+            AppL10n.of(context).studySetQuiz,
+          ),
           button(
             StudySetKind.flashcards,
             Icons.style_outlined,
-            'Flashcards',
-            'بطاقات مراجعة',
+            AppL10n.of(context).studySetFlashcards,
           ),
         ],
       ),
@@ -154,16 +143,15 @@ class _QuizPageState extends State<QuizPage> {
         children: [
           Text(
             done
-                ? _tr(
-                    context,
-                    'You scored $_score of ${widget.questions.length}',
-                    'نتيجتك $_score من ${widget.questions.length}',
+                ? AppL10n.of(context).studySetYouScoredScoreOfQuestionscount(
+                    _score,
+                    widget.questions.length,
                   )
-                : _tr(
-                    context,
-                    '${_answers.length} of ${widget.questions.length} answered',
-                    'أُجيب ${_answers.length} من ${widget.questions.length}',
-                  ),
+                : AppL10n.of(context)
+                      .studySetAnswerscountOfQuestionscountAnswered(
+                        _answers.length,
+                        widget.questions.length,
+                      ),
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
@@ -207,7 +195,7 @@ class _QuizPageState extends State<QuizPage> {
             FilledButton.icon(
               onPressed: () => setState(_answers.clear),
               icon: const Icon(Icons.refresh_rounded),
-              label: Text(_tr(context, 'Try again', 'حاول مرة أخرى')),
+              label: Text(AppL10n.of(context).studySetTryAgain),
             ),
         ],
       ),
@@ -303,11 +291,9 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(
-              _tr(
+              AppL10n.of(
                 context,
-                'Card ${_page + 1} of ${widget.cards.length} - tap to turn over',
-                'البطاقة ${_page + 1} من ${widget.cards.length} - اضغط لقلبها',
-              ),
+              ).studySetCardPageOfCardscountTap(_page + 1, widget.cards.length),
             ),
           ),
           Expanded(

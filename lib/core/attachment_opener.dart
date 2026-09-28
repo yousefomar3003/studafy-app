@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'file_upload_repository.dart';
 import 'uploads_scope.dart';
+import '../l10n/generated/app_l10n.dart';
 
 /// Shows [file] to the person who tapped it.
 ///
@@ -83,9 +84,6 @@ class StoredAttachmentList extends StatefulWidget {
 class _StoredAttachmentListState extends State<StoredAttachmentList> {
   String? _opening;
 
-  String _text(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   Future<void> _open(StoredAttachment item) async {
     final uploads = widget.uploads ?? UploadsScope.maybeOf(context);
     if (uploads == null || _opening != null) return;
@@ -93,21 +91,13 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
     if (!item.isReady) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            _text(
-              'This file is still being checked. Try again shortly.',
-              'لا يزال هذا الملف قيد الفحص. حاول مرة أخرى بعد قليل.',
-            ),
-          ),
+          content: Text(AppL10n.of(context).attachmentThisFileIsStillBeing),
         ),
       );
       return;
     }
     setState(() => _opening = item.id);
-    final failed = _text(
-      'That file could not be opened.',
-      'تعذّر فتح هذا الملف.',
-    );
+    final failed = AppL10n.of(context).attachmentThatFileCouldNotBe2;
     try {
       final file = await uploads.download(item.id);
       if (!mounted) return;

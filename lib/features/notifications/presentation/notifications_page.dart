@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
-import '../../../core/studafy_localizations.dart';
+import 'notification_copy.dart';
 import '../domain/notification.dart';
 import 'notifications_scope.dart';
 import 'notification_preferences_page.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Real notifications feed, backed by the typed `/v1` notifications
 /// repository (MOB-070). Replaces the legacy `StudentNotificationsPage`,
@@ -116,17 +117,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final t = StudafyLocalizations.of(context).text;
+    final l10n = AppL10n.of(context);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(t('notifications.title')),
+        title: Text(l10n.notificationsFeedTitle),
         actions: [
           IconButton(
-            tooltip: Localizations.localeOf(context).languageCode == 'ar'
-                ? 'تفضيلات الإشعارات'
-                : 'Notification preferences',
+            tooltip: AppL10n.of(context).notificationsNotificationPreferences,
             icon: const Icon(Icons.tune_rounded),
             onPressed: () => Navigator.push(
               context,
@@ -137,7 +136,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           TextButton(
             onPressed: _items.any((item) => !item.isRead) ? _markAllRead : null,
-            child: Text(t('notifications.markAllRead')),
+            child: Text(l10n.notificationsFeedMarkAllRead),
           ),
         ],
       ),
@@ -146,9 +145,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
           : _error != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('notifications.errorTitle'),
+              title: l10n.notificationsFeedErrorTitle,
               message: _error!,
-              actionLabel: t('notifications.retry'),
+              actionLabel: l10n.notificationsFeedRetry,
               onAction: _refresh,
             )
           : RefreshIndicator(
@@ -175,7 +174,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                t('notifications.offlineBanner'),
+                                l10n.notificationsFeedOfflineBanner,
                                 style: const TextStyle(
                                   color: Color(0xFF8A7650),
                                   fontSize: 11,
@@ -189,8 +188,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   if (_items.isEmpty)
                     StudafyStatusCard(
                       icon: Icons.notifications_none_rounded,
-                      title: t('notifications.emptyTitle'),
-                      message: t('notifications.emptyMessage'),
+                      title: l10n.notificationsFeedEmptyTitle,
+                      message: l10n.notificationsFeedEmptyMessage,
                     )
                   else
                     for (final item in _items)
@@ -214,7 +213,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      t(item.title),
+                                      notificationCopy(l10n, item.title),
                                       style: TextStyle(
                                         color: studafyInk,
                                         fontWeight: item.isRead
@@ -224,7 +223,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
-                                      t(item.detail),
+                                      notificationCopy(l10n, item.detail),
                                       style: const TextStyle(
                                         color: studafyMuted,
                                         fontSize: 12,
@@ -244,8 +243,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         onPressed: _loadingMore ? null : _loadMore,
                         child: Text(
                           _loadingMore
-                              ? t('notifications.loading')
-                              : t('notifications.loadMore'),
+                              ? l10n.notificationsFeedLoading
+                              : l10n.notificationsFeedLoadMore,
                         ),
                       ),
                     ),

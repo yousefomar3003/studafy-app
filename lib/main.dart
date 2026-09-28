@@ -13,7 +13,6 @@ import 'app/studafy_theme.dart';
 import 'app/teacher_shell.dart';
 import 'core/app_routes.dart';
 import 'core/locale_controller.dart';
-import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
 import 'l10n/generated/app_l10n.dart';
 import 'features/family/presentation/family_scope.dart';
@@ -42,7 +41,6 @@ const navy = Color(0xFF241D73),
 /// strings and the right-to-left direction for Arabic.
 const _localizationsDelegates = <LocalizationsDelegate<Object>>[
   AppL10n.delegate,
-  StudafyLocalizations.delegate,
   GlobalMaterialLocalizations.delegate,
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,

@@ -6,6 +6,7 @@ import '../../../core/studafy_design.dart';
 import '../domain/messaging.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Everyone the user has blocked in one school, each with an Unblock
 /// control. A block the user cannot see or undo would be a trap.
@@ -82,7 +83,7 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
           ],
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(messagingText(context, 'unblock.done'))),
+          SnackBar(content: Text(AppL10n.of(context).msgUnblockDone)),
         );
       },
       onFailure: (failure) => ScaffoldMessenger.of(context).showSnackBar(
@@ -93,28 +94,27 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => messagingText(context, key);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(t('blocked.title')),
+        title: Text(AppL10n.of(context).msgBlockedTitle),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).msgErrorTitle,
               message: _error!,
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).msgRetry,
               onAction: _load,
             )
           : _blocks.isEmpty
           ? StudafyStatusCard(
               icon: Icons.block_rounded,
-              title: t('blocked.title'),
-              message: t('blocked.empty'),
+              title: AppL10n.of(context).msgBlockedTitle,
+              message: AppL10n.of(context).msgBlockedEmpty,
             )
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -127,13 +127,14 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _names[block.blockedId] ?? t('unknownPerson'),
+                            _names[block.blockedId] ??
+                                AppL10n.of(context).msgUnknownPerson,
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                         TextButton(
                           onPressed: () => _unblock(block),
-                          child: Text(t('unblock')),
+                          child: Text(AppL10n.of(context).msgUnblock),
                         ),
                       ],
                     ),

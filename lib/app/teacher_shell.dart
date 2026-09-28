@@ -3,7 +3,6 @@ import 'account_hub_page.dart';
 import 'package:flutter/material.dart';
 
 import '../core/studafy_design.dart';
-import '../core/studafy_localizations.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
@@ -198,10 +197,8 @@ class _TeacherShellState extends State<TeacherShell> {
             if (widget.dependencies.schoolOperations != null)
               Builder(
                 builder: (pageContext) => _ClassToolButton(
-                  tooltip:
-                      Localizations.localeOf(pageContext).languageCode == 'ar'
-                      ? 'إدارة الطلاب والمعلمين والاجتماعات'
-                      : 'Manage roster, staff and meetings',
+                  tooltip: AppL10n.of(pageContext)
+                      .teacherShellManageRosterStaffAndMeetings,
                   icon: const Icon(Icons.tune_rounded),
                   onPressed: () async {
                     final result = await widget.dependencies.classes
@@ -381,9 +378,7 @@ class _TeacherShellState extends State<TeacherShell> {
         // account. The legacy FeatureHeader it replaces showed a demo
         // teacher's initials and fake counts, and opened the demo screens.
         header: _TabHeader(
-          title: Localizations.localeOf(c).languageCode == 'ar'
-              ? 'الفصول'
-              : 'Classes',
+          title: AppL10n.of(c).teacherShellClasses,
           onOpenMessages: () =>
               open(const ConversationsPage(asRole: MessagingRole.staff)),
           onOpenNotifications: () => open(const NotificationsPage()),
@@ -457,27 +452,27 @@ class _TeacherShellState extends State<TeacherShell> {
         onSelected: (value) => setState(() => index = value),
         items: [
           StudafyNavItem(
-            StudafyLocalizations.of(c).text('today'),
+            AppL10n.of(c).navToday,
             Icons.home_outlined,
             Icons.home_rounded,
           ),
           StudafyNavItem(
-            StudafyLocalizations.of(c).text('classes'),
+            AppL10n.of(c).navClasses,
             Icons.diversity_3_outlined,
             Icons.diversity_3_rounded,
           ),
           StudafyNavItem(
-            StudafyLocalizations.of(c).text('teaching'),
+            AppL10n.of(c).navTeaching,
             Icons.auto_stories_outlined,
             Icons.auto_stories_rounded,
           ),
           StudafyNavItem(
-            StudafyLocalizations.of(c).text('gradebook'),
+            AppL10n.of(c).navGradebook,
             Icons.fact_check_outlined,
             Icons.fact_check_rounded,
           ),
           StudafyNavItem(
-            StudafyLocalizations.of(c).text('inbox'),
+            AppL10n.of(c).navInbox,
             Icons.forum_outlined,
             Icons.forum_rounded,
           ),
@@ -534,16 +529,12 @@ class _TabHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: Localizations.localeOf(context).languageCode == 'ar'
-                ? 'الرسائل'
-                : 'Messages',
+            tooltip: AppL10n.of(context).teacherShellMessages,
             onPressed: onOpenMessages,
             icon: const Icon(Icons.chat_bubble_outline_rounded),
           ),
           IconButton(
-            tooltip: Localizations.localeOf(context).languageCode == 'ar'
-                ? 'الإشعارات'
-                : 'Notifications',
+            tooltip: AppL10n.of(context).recordNotifications,
             onPressed: onOpenNotifications,
             icon: const Icon(Icons.notifications_none_rounded),
           ),

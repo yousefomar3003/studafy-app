@@ -4,6 +4,7 @@ import '../../../core/attachment_opener.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../domain/academic_repository.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// One class's lessons, newest first, under a heading for each day.
 ///
@@ -42,18 +43,15 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
     ),
   );
 
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   static DateTime _day(DateTime value) =>
       DateTime(value.year, value.month, value.day);
 
   String _heading(DateTime? day) {
-    if (day == null) return _t('Undated', 'بدون تاريخ');
+    if (day == null) return AppL10n.of(context).lessonsUndated;
     final today = _day(DateTime.now());
-    if (day == today) return _t('Today', 'اليوم');
+    if (day == today) return AppL10n.of(context).notebookToday;
     if (day == today.subtract(const Duration(days: 1))) {
-      return _t('Yesterday', 'أمس');
+      return AppL10n.of(context).notebookYesterday;
     }
     return MaterialLocalizations.of(context).formatFullDate(day);
   }
@@ -72,10 +70,10 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_t('Lessons could not be loaded.', 'تعذّر تحميل الدروس.')),
+                Text(AppL10n.of(context).lessonsLessonsCouldNotBeLoaded),
                 TextButton(
                   onPressed: () => setState(() => _lessons = _load()),
-                  child: Text(_t('Try again', 'حاول مرة أخرى')),
+                  child: Text(AppL10n.of(context).studySetTryAgain),
                 ),
               ],
             ),
@@ -95,10 +93,7 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              _t(
-                'No lessons yet. They appear here as your teacher shares them.',
-                'لا توجد دروس بعد. ستظهر هنا عندما يشاركها معلمك.',
-              ),
+              AppL10n.of(context).lessonsNoLessonsYetTheyAppear,
               textAlign: TextAlign.center,
             ),
           ),

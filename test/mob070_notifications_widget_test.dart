@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/notifications/application/notifications_interactor.dart';
 import 'package:studafy/features/notifications/domain/notification.dart';
@@ -21,10 +20,9 @@ void main() {
     bool visible = true,
   }) => MaterialApp(
     locale: locale,
-    supportedLocales: StudafyLocalizations.supportedLocales,
+    supportedLocales: AppL10n.supportedLocales,
     localizationsDelegates: const [
       AppL10n.delegate,
-      StudafyLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,

@@ -47,7 +47,6 @@ const _coreAllowlist = <String>[
   // where it is navigating to without importing lib/app, which is what the
   // composition-root rule below forbids.
   'core/app_routes.dart',
-  'core/studafy_localizations.dart',
   'core/runtime_environment.dart',
   // MOB-070 localization (ADR-0028). The generated localizations are the one
   // source of interface copy, so every zone may read them; the port below is

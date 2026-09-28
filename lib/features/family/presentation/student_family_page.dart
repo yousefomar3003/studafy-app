@@ -5,6 +5,7 @@ import '../../../core/studafy_design.dart';
 import '../domain/family.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 class StudentFamilyPage extends StatefulWidget {
   const StudentFamilyPage({super.key});
@@ -16,8 +17,6 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
   StudentFamily? _family;
   String? _error;
   bool _busy = false;
-  String t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
   @override
   void initState() {
     super.initState();
@@ -46,28 +45,25 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
           builder: (context) => AlertDialog(
             title: Text(
               decision == 'approve'
-                  ? t('Is this your parent?', 'هل هذا ولي أمرك؟')
-                  : t('Confirm your choice', 'تأكيد اختيارك'),
+                  ? AppL10n.of(context).studentFamilyIsThisYourParent
+                  : AppL10n.of(context).studentFamilyConfirmYourChoice,
             ),
             content: Text(
               decision == 'approve'
-                  ? t(
-                      'Only approve ${request.guardianName} if you know this is your parent or guardian. They will be able to see your grades, attendance and shared school updates.',
-                      'وافق على ${request.guardianName} فقط إذا كنت تعرف أنه ولي أمرك. سيتمكن من الاطلاع على درجاتك وحضورك وتحديثاتك الدراسية المشتركة.',
-                    )
-                  : t(
-                      'This person will not have access through this family link.',
-                      'لن يتمكن هذا الشخص من الوصول عبر هذا الربط العائلي.',
-                    ),
+                  ? AppL10n.of(context)
+                        .studentFamilyOnlyApproveGuardiannameIfYou(
+                          request.guardianName,
+                        )
+                  : AppL10n.of(context).studentFamilyThisPersonWillNotHave,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text(t('Cancel', 'إلغاء')),
+                child: Text(AppL10n.of(context).academicCancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: Text(t('Confirm', 'تأكيد')),
+                child: Text(AppL10n.of(context).studentFamilyConfirm),
               ),
             ],
           ),
@@ -89,28 +85,25 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(t('My family', 'عائلتي'))),
+    appBar: AppBar(title: Text(AppL10n.of(context).studentFamilyMyFamily)),
     body: RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           StudafyHero(
-            eyebrow: t('YOUR CONNECTIONS', 'روابطك'),
-            title: t('Your family.\nYour choice.', 'عائلتك.\nقرارك.'),
-            subtitle: t(
-              'Share your Studafy ID with your parent. You decide who can follow your progress.',
-              'شارك معرّف Studafy مع ولي أمرك. أنت تقرر من يمكنه متابعة تقدمك.',
-            ),
+            eyebrow: AppL10n.of(context).studentFamilyYourConnections,
+            title: AppL10n.of(context).studentFamilyYourFamilyYourChoice,
+            subtitle: AppL10n.of(context).studentFamilyShareYourStudafyIdWith,
             icon: Icons.favorite_outline_rounded,
           ),
           const SizedBox(height: 24),
           if (_error != null)
             StudafyStatusCard(
               icon: Icons.wifi_off_rounded,
-              title: t('Could not load requests', 'تعذر تحميل الطلبات'),
+              title: AppL10n.of(context).studentFamilyCouldNotLoadRequests,
               message: _error!,
-              actionLabel: t('Try again', 'إعادة المحاولة'),
+              actionLabel: AppL10n.of(context).securityTryAgain,
               onAction: _load,
             )
           else if (_family == null)
@@ -122,7 +115,7 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      t('MY STUDAFY ID', 'معرّف STUDAFY'),
+                      AppL10n.of(context).studentFamilyMyStudafyId,
                       style: const TextStyle(
                         color: studafyMuted,
                         fontWeight: FontWeight.w700,
@@ -143,7 +136,7 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                           ),
                         ),
                         IconButton(
-                          tooltip: t('Copy ID', 'نسخ المعرّف'),
+                          tooltip: AppL10n.of(context).studentFamilyCopyId,
                           icon: const Icon(Icons.copy_rounded),
                           onPressed: () async {
                             await Clipboard.setData(
@@ -153,7 +146,7 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    t('ID copied', 'تم نسخ المعرّف'),
+                                    AppL10n.of(context).studentFamilyIdCopied,
                                   ),
                                 ),
                               );
@@ -166,26 +159,19 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                 ),
               ),
             if (_family!.identities.isEmpty)
-              Text(
-                t(
-                  'Join a class to activate your student ID.',
-                  'انضم إلى فصل لتفعيل معرّف الطالب.',
-                ),
-              ),
+              Text(AppL10n.of(context).studentFamilyJoinAClassToActivate),
             const SizedBox(height: 24),
             Text(
-              t('Parent requests', 'طلبات أولياء الأمور'),
+              AppL10n.of(context).studentFamilyParentRequests,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
             if (_family!.requests.isEmpty)
               StudafyStatusCard(
                 icon: Icons.mark_email_read_outlined,
-                title: t('All caught up', 'أنت على اطلاع'),
-                message: t(
-                  'New parent requests will appear here.',
-                  'ستظهر طلبات أولياء الأمور الجديدة هنا.',
-                ),
+                title: AppL10n.of(context).studentFamilyAllCaughtUp,
+                message: AppL10n.of(context)
+                    .studentFamilyNewParentRequestsWillAppear,
               ),
             for (final request in _family!.requests)
               FeatureCard(
@@ -212,7 +198,7 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                     ),
                     const SizedBox(height: 8),
                     SelectableText(
-                      '${t('Account ID', 'معرّف الحساب')}: ${request.guardianId}',
+                      '${AppL10n.of(context).studentFamilyAccountId}: ${request.guardianId}',
                       style: const TextStyle(fontSize: 12, color: studafyMuted),
                     ),
                     const SizedBox(height: 12),
@@ -225,13 +211,17 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                             onPressed: _busy
                                 ? null
                                 : () => _decide(request, 'approve'),
-                            child: Text(t('This is my parent', 'هذا ولي أمري')),
+                            child: Text(
+                              AppL10n.of(context).studentFamilyThisIsMyParent,
+                            ),
                           ),
                           OutlinedButton(
                             onPressed: _busy
                                 ? null
                                 : () => _decide(request, 'decline'),
-                            child: Text(t('Decline', 'رفض')),
+                            child: Text(
+                              AppL10n.of(context).studentFamilyDecline,
+                            ),
                           ),
                         ],
                       )
@@ -240,7 +230,7 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                         children: [
                           Expanded(
                             child: Text(
-                              t('Connected', 'مرتبط'),
+                              AppL10n.of(context).studentFamilyConnected,
                               style: const TextStyle(color: studafyCyan),
                             ),
                           ),
@@ -248,15 +238,17 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
                             onPressed: _busy
                                 ? null
                                 : () => _decide(request, 'revoke'),
-                            child: Text(t('Remove access', 'إزالة الوصول')),
+                            child: Text(
+                              AppL10n.of(context).studentFamilyRemoveAccess,
+                            ),
                           ),
                         ],
                       )
                     else
                       Text(
                         request.status == GuardianLinkStatus.declined
-                            ? t('Declined', 'مرفوض')
-                            : t('Access removed', 'تمت إزالة الوصول'),
+                            ? AppL10n.of(context).studentFamilyDeclined
+                            : AppL10n.of(context).studentFamilyAccessRemoved,
                       ),
                   ],
                 ),

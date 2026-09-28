@@ -10,6 +10,7 @@ import '../features/school_operations/presentation/terms_page.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
 import 'account_hub_page.dart';
 import 'app_dependencies.dart';
+import '../l10n/generated/app_l10n.dart';
 
 class SchoolAdminShell extends StatefulWidget {
   const SchoolAdminShell({super.key, required this.dependencies});
@@ -20,8 +21,6 @@ class SchoolAdminShell extends StatefulWidget {
 
 class _SchoolAdminShellState extends State<SchoolAdminShell> {
   int _index = 0;
-  String _t(BuildContext context, String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
 
   Future<void> _openClassroom(ClassroomSummary classroom) async {
     final repository = widget.dependencies.schoolOperations;
@@ -57,11 +56,8 @@ class _SchoolAdminShellState extends State<SchoolAdminShell> {
       return Scaffold(
         body: Center(
           child: Text(
-            _t(
-              context,
-              'Administration requires the remote backend.',
-              'تتطلب الإدارة الاتصال بالخادم.',
-            ),
+            AppL10n.of(context)
+                .schoolAdminAdministrationRequiresTheRemoteBackend,
           ),
         ),
       );
@@ -71,7 +67,7 @@ class _SchoolAdminShellState extends State<SchoolAdminShell> {
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
         header: _AdminHeader(
-          title: _t(context, 'School administration', 'إدارة المدرسة'),
+          title: AppL10n.of(context).schoolAdminSchoolAdministration,
         ),
       ),
       TermsPage(repository: operations),
@@ -90,27 +86,27 @@ class _SchoolAdminShellState extends State<SchoolAdminShell> {
           NavigationDestination(
             icon: const Icon(Icons.groups_outlined),
             selectedIcon: const Icon(Icons.groups),
-            label: _t(context, 'Classes', 'الفصول'),
+            label: AppL10n.of(context).teacherShellClasses,
           ),
           NavigationDestination(
             icon: const Icon(Icons.date_range_outlined),
             selectedIcon: const Icon(Icons.date_range),
-            label: _t(context, 'Terms', 'الفصول الدراسية'),
+            label: AppL10n.of(context).schoolAdminTerms,
           ),
           NavigationDestination(
             icon: const Icon(Icons.verified_user_outlined),
             selectedIcon: const Icon(Icons.verified_user),
-            label: _t(context, 'Guardians', 'أولياء الأمور'),
+            label: AppL10n.of(context).schoolAdminGuardians,
           ),
           NavigationDestination(
             icon: const Icon(Icons.notifications_outlined),
             selectedIcon: const Icon(Icons.notifications),
-            label: _t(context, 'Updates', 'التحديثات'),
+            label: AppL10n.of(context).schoolAdminUpdates,
           ),
           NavigationDestination(
             icon: const Icon(Icons.account_circle_outlined),
             selectedIcon: const Icon(Icons.account_circle),
-            label: _t(context, 'Account', 'الحساب'),
+            label: AppL10n.of(context).schoolAdminAccount,
           ),
         ],
       ),

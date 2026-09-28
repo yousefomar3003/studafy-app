@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/failures.dart';
 import '../domain/school_operations_repository.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 class TermsPage extends StatefulWidget {
   const TermsPage({super.key, required this.repository});
@@ -46,19 +47,16 @@ class _TermsPageState extends State<TermsPage> {
     }
   }
 
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: studafyCanvas,
     appBar: AppBar(
-      title: Text(_t('Academic terms', 'الفصول الدراسية')),
+      title: Text(AppL10n.of(context).termsAcademicTerms),
       actions: [
         IconButton(
           onPressed: _create,
           icon: const Icon(Icons.add),
-          tooltip: _t('Create term', 'إنشاء فصل دراسي'),
+          tooltip: AppL10n.of(context).termsCreateTerm,
         ),
       ],
     ),
@@ -72,7 +70,7 @@ class _TermsPageState extends State<TermsPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 if (_terms.isEmpty)
-                  Text(_t('No terms created.', 'لم يتم إنشاء فصول دراسية.')),
+                  Text(AppL10n.of(context).termsNoTermsCreated),
                 for (final term in _terms)
                   Card(
                     child: ListTile(
@@ -98,17 +96,19 @@ class _TermsPageState extends State<TermsPage> {
           context: context,
           builder: (context) => StatefulBuilder(
             builder: (context, setDialog) => AlertDialog(
-              title: Text(_t('Create academic term', 'إنشاء فصل دراسي')),
+              title: Text(AppL10n.of(context).termsCreateAcademicTerm),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: name,
-                    decoration: InputDecoration(labelText: _t('Name', 'الاسم')),
+                    decoration: InputDecoration(
+                      labelText: AppL10n.of(context).termsName,
+                    ),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(_t('Starts', 'البداية')),
+                    title: Text(AppL10n.of(context).termsStarts),
                     subtitle: Text(_date(starts)),
                     onTap: () async {
                       final value = await showDatePicker(
@@ -129,7 +129,7 @@ class _TermsPageState extends State<TermsPage> {
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(_t('Ends', 'النهاية')),
+                    title: Text(AppL10n.of(context).termsEnds),
                     subtitle: Text(_date(ends)),
                     onTap: () async {
                       final value = await showDatePicker(
@@ -146,11 +146,11 @@ class _TermsPageState extends State<TermsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: Text(_t('Cancel', 'إلغاء')),
+                  child: Text(AppL10n.of(context).academicCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: Text(_t('Create', 'إنشاء')),
+                  child: Text(AppL10n.of(context).termsCreate),
                 ),
               ],
             ),
@@ -166,9 +166,7 @@ class _TermsPageState extends State<TermsPage> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_t('Term created.', 'تم إنشاء الفصل الدراسي.')),
-          ),
+          SnackBar(content: Text(AppL10n.of(context).termsTermCreated)),
         );
         await _load();
       }

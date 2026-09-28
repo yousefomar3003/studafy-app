@@ -1008,5 +1008,725 @@
   "submissionsGrade": "Grade",
   "@submissionsGrade": {
     "description": "Button on a graded assignment's hand-ins: open the gradebook to mark it."
-  }
+  },
+  "attachmentThatFileCouldNotBe": "That file could not be uploaded.",
+  "attachmentThatFileIsEmpty": "That file is empty.",
+  "attachmentOnlyPdfAndPhotosCan": "Only PDF and photos can be attached.",
+  "attachmentThatFileIsLargerThan": "That file is larger than {maximumSizeBytes} MB.",
+  "@attachmentThatFileIsLargerThan": {
+    "placeholders": {
+      "maximumSizeBytes": {
+        "type": "Object"
+      }
+    }
+  },
+  "attachmentAttachFile": "Attach file",
+  "attachmentPhoto": "Photo",
+  "attachmentUpToMaximumcountAttachments": "Up to {maximumCount} attachments.",
+  "@attachmentUpToMaximumcountAttachments": {
+    "placeholders": {
+      "maximumCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "attachmentUploading": "Uploading",
+  "attachmentChecking": "Checking",
+  "attachmentReady": "Ready",
+  "attachmentFailed": "Failed",
+  "attachmentThisFileIsStillBeing": "This file is still being checked. Try again shortly.",
+  "attachmentThatFileCouldNotBe2": "That file could not be opened.",
+  "studentTodayALittleProgressEveryDay": "A LITTLE PROGRESS, EVERY DAY",
+  "studentTodayYourClassesYourIdeasYour": "Your classes, your ideas, your next big thing.",
+  "studentTodayMyNotebook": "My notebook",
+  "studentTodayLessonNotesSubscription": "Lesson notes · Subscription",
+  "studentTodayMyWork": "My work",
+  "studentTodayTakeTheNextStep": "Take the next step",
+  "studentTodayMyIdFamily": "My ID & family",
+  "studentTodayShareYourIdReviewParent": "Share your ID. Review parent requests.",
+  "studentTodayYourClasses": "Your classes",
+  "studentTodayReadyWhenYouAre": "Ready when you are",
+  "studentTodayYourWorkCouldNotLoad": "Your work could not load. Open My work to retry.",
+  "studentTodayALittleBreathingRoom": "A little breathing room",
+  "studentTodayNewAssignmentsWillAppearHere": "New assignments will appear here when your teacher shares them.",
+  "teacherShellManageRosterStaffAndMeetings": "Manage roster, staff and meetings",
+  "teacherShellClasses": "Classes",
+  "teacherShellMessages": "Messages",
+  "schoolAdminAdministrationRequiresTheRemoteBackend": "Administration requires the remote backend.",
+  "schoolAdminSchoolAdministration": "School administration",
+  "schoolAdminTerms": "Terms",
+  "schoolAdminGuardians": "Guardians",
+  "schoolAdminUpdates": "Updates",
+  "schoolAdminAccount": "Account",
+  "teacherTodaySpaceToInspireADay": "Space to inspire. A day to make a difference.",
+  "studentLessonsPlans": "Plans",
+  "studentLessonsYourClassesCouldNotBe": "Your classes could not be loaded. Try again",
+  "studentLessonsJoinAClassToSee": "Join a class to see its lessons here.",
+  "studentLessonsLessonsAndYourNotebook": "Lessons and your notebook",
+  "studentLessonsMyNotebook": "My notebook",
+  "studySetQuizzesAndFlashcardsComeWith": "Quizzes and flashcards come with Studafy Max.",
+  "studySetThisMonthSAiAllowance": "This month's AI allowance is used. It renews on the 1st.",
+  "studySetThisLessonHasNoText": "This lesson has no text to study from.",
+  "studySetThisIsNotAvailableYet": "This is not available yet.",
+  "studySetThatDidNotWorkPlease": "That did not work. Please try again.",
+  "studySetYouScoredScoreOfQuestionscount": "You scored {score} of {questionsCount}",
+  "@studySetYouScoredScoreOfQuestionscount": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "questionsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "studySetAnswerscountOfQuestionscountAnswered": "{answersCount} of {questionsCount} answered",
+  "@studySetAnswerscountOfQuestionscountAnswered": {
+    "placeholders": {
+      "answersCount": {
+        "type": "Object"
+      },
+      "questionsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "studySetTryAgain": "Try again",
+  "studySetCardPageOfCardscountTap": "Card {page} of {cardsCount} - tap to turn over",
+  "@studySetCardPageOfCardscountTap": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      },
+      "cardsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansQuestionsTodayAsktodayOfAskperday": "Questions today: {askToday} of {askPerDay}",
+  "@studyPlansQuestionsTodayAsktodayOfAskperday": {
+    "placeholders": {
+      "askToday": {
+        "type": "Object"
+      },
+      "askPerDay": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansAiUsedThisMonthRound": "AI used this month: {round}%",
+  "@studyPlansAiUsedThisMonthRound": {
+    "placeholders": {
+      "round": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansRenewsRenews": "Renews {renews}",
+  "@studyPlansRenewsRenews": {
+    "placeholders": {
+      "renews": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansTheStoreCouldNotBe": "The store could not be reached. Try again later.",
+  "studyPlansBuyingIsNotEnabledFor": "Buying is not enabled for your account yet.",
+  "studyPlansWeAskedYourParentTo": "We asked your parent to approve.",
+  "studyPlansWaitingForAParent": "Waiting for a parent",
+  "studyPlansAskAParentToApprove": "Ask a parent to approve",
+  "studyPlansOpeningTheStore": "Opening the store…",
+  "studyPlansStartAFreeMonth": "Start a free month",
+  "studyPlansSubscribeToName": "Subscribe to {name}",
+  "@studyPlansSubscribeToName": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansFree": "Free",
+  "studyPlansPriceMonth": "{price} / month",
+  "@studyPlansPriceMonth": {
+    "placeholders": {
+      "price": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansUspriceMonthInTheUs": "{usPrice} / month in the US - the store shows your price",
+  "@studyPlansUspriceMonthInTheUs": {
+    "placeholders": {
+      "usPrice": {
+        "type": "Object"
+      }
+    }
+  },
+  "studyPlansYourPlan": "Your plan",
+  "studyPlansManageOrCancel": "Manage or cancel",
+  "studyPlansRestoringPurchases": "Restoring purchases…",
+  "studyPlansRestorePurchases": "Restore purchases",
+  "studyPlansAutoRenewingMonthlySubscriptionsPayment": "Auto-renewing monthly subscriptions. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal to avoid the next charge. Deleting the app does not cancel a subscription.",
+  "studyPlansTermsOfUse": "Terms of use",
+  "studyPlansPrivacyPolicy": "Privacy policy",
+  "notebookThisNeedsStudafyPlus": "This needs Studafy Plus.",
+  "notebookNoWritingCouldBeRead": "No writing could be read in that photo. Try a clearer one.",
+  "notebookThePhotoIsTakingLonger": "The photo is taking longer than usual to check. Try again shortly.",
+  "notebookNewNote": "New note",
+  "notebookSave": "Save",
+  "notebookAddATitleAndSome": "Add a title and some text.",
+  "notebookChooseAJpegOrPng": "Choose a JPEG or PNG photo under 10 MB.",
+  "notebookUploadingThePhoto": "Uploading the photo…",
+  "notebookReadingTheWhiteboard": "Reading the whiteboard…",
+  "notebookNotesAddedToYourNotebook": "Notes added to your notebook.",
+  "notebookThePhotoCouldNotBe": "The photo could not be uploaded.",
+  "notebookDeleteThisNote": "Delete this note?",
+  "notebookDelete": "Delete",
+  "notebookToday": "Today",
+  "notebookYesterday": "Yesterday",
+  "notebookAddNote": "Add note",
+  "notebookSnapTheWhiteboard": "Snap the whiteboard",
+  "notebookFromPhotos": "From photos",
+  "notebookWhiteboardNotesComeWithStudafy": "Whiteboard notes come with Studafy Plus.",
+  "notebookTheNotebookCouldNotBe": "The notebook could not be loaded. Try again",
+  "notebookYourNotebookForThisClass": "Your notebook for this class is empty. Add a note, or snap the whiteboard.",
+  "notebookFromTheWhiteboard": "From the whiteboard",
+  "familyHomeTogetherEveryDay": "TOGETHER, EVERY DAY",
+  "familyHomeTheirWorldIsGrowingBe": "Their world is growing. Be part of it.",
+  "childSwitcherChooseChild": "Choose child",
+  "familyChallengeSecurityCheck": "Security check",
+  "familyChallengeTheCheckCouldNotLoad": "The check could not load. Go back and try again.",
+  "studentFamilyIsThisYourParent": "Is this your parent?",
+  "studentFamilyConfirmYourChoice": "Confirm your choice",
+  "studentFamilyOnlyApproveGuardiannameIfYou": "Only approve {guardianName} if you know this is your parent or guardian. They will be able to see your grades, attendance and shared school updates.",
+  "@studentFamilyOnlyApproveGuardiannameIfYou": {
+    "placeholders": {
+      "guardianName": {
+        "type": "Object"
+      }
+    }
+  },
+  "studentFamilyThisPersonWillNotHave": "This person will not have access through this family link.",
+  "studentFamilyConfirm": "Confirm",
+  "studentFamilyMyFamily": "My family",
+  "studentFamilyYourConnections": "YOUR CONNECTIONS",
+  "studentFamilyYourFamilyYourChoice": "Your family.\nYour choice.",
+  "studentFamilyShareYourStudafyIdWith": "Share your Studafy ID with your parent. You decide who can follow your progress.",
+  "studentFamilyCouldNotLoadRequests": "Could not load requests",
+  "studentFamilyMyStudafyId": "MY STUDAFY ID",
+  "studentFamilyCopyId": "Copy ID",
+  "studentFamilyIdCopied": "ID copied",
+  "studentFamilyJoinAClassToActivate": "Join a class to activate your student ID.",
+  "studentFamilyParentRequests": "Parent requests",
+  "studentFamilyAllCaughtUp": "All caught up",
+  "studentFamilyNewParentRequestsWillAppear": "New parent requests will appear here.",
+  "studentFamilyAccountId": "Account ID",
+  "studentFamilyThisIsMyParent": "This is my parent",
+  "studentFamilyDecline": "Decline",
+  "studentFamilyConnected": "Connected",
+  "studentFamilyRemoveAccess": "Remove access",
+  "studentFamilyDeclined": "Declined",
+  "studentFamilyAccessRemoved": "Access removed",
+  "lessonsUndated": "Undated",
+  "lessonsLessonsCouldNotBeLoaded": "Lessons could not be loaded.",
+  "lessonsNoLessonsYetTheyAppear": "No lessons yet. They appear here as your teacher shares them.",
+  "meetingsGoogleMeetCouldNotBe": "Google Meet could not be opened.",
+  "meetingsUpcomingMeetings": "Upcoming meetings",
+  "meetingsCancelled": "Cancelled",
+  "meetingsTheLinkWillAppearHere": "The link will appear here.",
+  "meetingsJoin": "Join",
+  "conversationSent": "Sent",
+  "conversationDelivered": "Delivered",
+  "conversationRead": "Read",
+  "notificationsNotificationPreferences": "Notification preferences",
+  "notificationPrefsAddPreference": "Add preference",
+  "notificationPrefsChannel": "Channel",
+  "notificationPrefsInApp": "In app",
+  "notificationPrefsEmail": "Email",
+  "notificationPrefsPush": "Push",
+  "notificationPrefsCategory": "Category",
+  "notificationPrefsAcademic": "Academic",
+  "notificationPrefsMessagesAndAnnouncements": "Messages and announcements",
+  "notificationPrefsMeetings": "Meetings",
+  "notificationPrefsFamily": "Family",
+  "notificationPrefsBilling": "Billing",
+  "notificationPrefsAdd": "Add",
+  "notificationPrefsPushPreferencesAreSavedBut": "Push preferences are saved, but push delivery is not available on this device yet.",
+  "notificationPrefsNoPreferencesSavedAddOne": "No preferences saved. Add one to choose a channel and category.",
+  "classroomAdminStaff": "Staff",
+  "classroomAdminCreateAndEnrolStudent": "Create and enrol student",
+  "classroomAdminCreatedStudentAwaitingEnrolment": "Created student awaiting enrolment",
+  "classroomAdminStudentEnrolled": "Student enrolled.",
+  "classroomAdminRetryEnrolment": "Retry enrolment",
+  "classroomAdminEnrolByStudentId": "Enrol by student ID",
+  "classroomAdminNoEnrolledStudents": "No enrolled students.",
+  "classroomAdminTransfer": "Transfer",
+  "classroomAdminWithdraw": "Withdraw",
+  "classroomAdminAssignStaff": "Assign staff",
+  "classroomAdminNoStaffAssignments": "No staff assignments.",
+  "classroomAdminRemove": "Remove",
+  "classroomAdminRemoveDisplaynameFromThisClass": "Remove {displayName} from this class?",
+  "@classroomAdminRemoveDisplaynameFromThisClass": {
+    "placeholders": {
+      "displayName": {
+        "type": "Object"
+      }
+    }
+  },
+  "classroomAdminStaffRemoved": "Staff removed.",
+  "classroomAdminWholeClass": "Whole class",
+  "classroomAdminScheduleMeeting": "Schedule meeting",
+  "classroomAdminCreateTheMeetingInGoogle": "Create the meeting in Google Meet, then paste its link here. Everyone invited is told in the app and can join from it.",
+  "classroomAdminNoUpcomingMeetings": "No upcoming meetings.",
+  "classroomAdminRecipientcountInvited": "{recipientCount} invited",
+  "@classroomAdminRecipientcountInvited": {
+    "placeholders": {
+      "recipientCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "classroomAdminLinkCopied": "Link copied.",
+  "classroomAdminCopyLink": "Copy link",
+  "classroomAdminMeetingCancelled": "Meeting cancelled.",
+  "classroomAdminCancelMeeting": "Cancel meeting",
+  "classroomAdminCreateStudent": "Create student",
+  "classroomAdminDisplayName": "Display name",
+  "classroomAdminAccountUuidOptional": "Account UUID (optional)",
+  "classroomAdminStudentCreatedAndEnrolled": "Student created and enrolled.",
+  "classroomAdminEnrolStudent": "Enrol student",
+  "classroomAdminStudentRecordId": "Student record ID",
+  "classroomAdminWithdrawDisplaynameFromThisClass": "Withdraw {displayName} from this class?",
+  "@classroomAdminWithdrawDisplaynameFromThisClass": {
+    "placeholders": {
+      "displayName": {
+        "type": "Object"
+      }
+    }
+  },
+  "classroomAdminStudentWithdrawn": "Student withdrawn.",
+  "classroomAdminTransferDisplayname": "Transfer {displayName}",
+  "@classroomAdminTransferDisplayname": {
+    "placeholders": {
+      "displayName": {
+        "type": "Object"
+      }
+    }
+  },
+  "classroomAdminTargetClass": "Target class",
+  "classroomAdminStudentTransferred": "Student transferred.",
+  "classroomAdminTeacherAccountUuid": "Teacher account UUID",
+  "classroomAdminRole": "Role",
+  "classroomAdminCoTeacher": "Co-teacher",
+  "classroomAdminLeadTeacher": "Lead teacher",
+  "classroomAdminAssign": "Assign",
+  "classroomAdminStaffAssigned": "Staff assigned.",
+  "classroomAdminStarts": "Starts",
+  "classroomAdminTime": "Time",
+  "classroomAdminDuration": "Duration",
+  "classroomAdminMinutes": "minutes",
+  "classroomAdminAudience": "Audience",
+  "classroomAdminCreateItInGoogleMeet": "Create it in Google Meet",
+  "classroomAdminGoogleMeetLink": "Google Meet link",
+  "classroomAdminPasteALinkThatStarts": "Paste a link that starts with https://meet.google.com/",
+  "classroomAdminSchedule": "Schedule",
+  "classroomAdminMeetingScheduledEveryoneInvitedHas": "Meeting scheduled. Everyone invited has been told.",
+  "guardianVerifyConfirmGuardianVerification": "Confirm guardian verification",
+  "guardianVerifyRevokeGuardianAccess": "Revoke guardian access?",
+  "guardianVerifyVerifyOnlyAfterCheckingThe": "Verify only after checking the guardian’s identity and relationship with the student.",
+  "guardianVerifyThisRemovesAccessGrantedBy": "This removes access granted by this family link.",
+  "guardianVerifyLinkStatus": "Link status",
+  "guardianVerifyGuardianVerification": "Guardian verification",
+  "guardianVerifyEnterTheLinkIdSupplied": "Enter the link ID supplied with the verification request.",
+  "guardianVerifyGuardianLinkId": "Guardian link ID",
+  "guardianVerifyVerificationPeriod": "Verification period",
+  "guardianVerifyDays": "days",
+  "guardianVerifyVerifyLink": "Verify link",
+  "guardianVerifyRevokeLink": "Revoke link",
+  "termsAcademicTerms": "Academic terms",
+  "termsCreateTerm": "Create term",
+  "termsNoTermsCreated": "No terms created.",
+  "termsCreateAcademicTerm": "Create academic term",
+  "termsName": "Name",
+  "termsStarts": "Starts",
+  "termsEnds": "Ends",
+  "termsCreate": "Create",
+  "termsTermCreated": "Term created.",
+  "rolesYourSpaceToGrow": "YOUR SPACE TO GROW",
+  "studyPlansFeatureLessons": "Lessons from every class, by date",
+  "studyPlansFeatureNotebook": "Your own notebook for each class",
+  "studyPlansFeatureTenQuestions": "10 questions a day to the study helper",
+  "studyPlansFeatureEverythingInFree": "Everything in Free",
+  "studyPlansFeatureWhiteboard": "Snap the whiteboard - get real notebook notes",
+  "studyPlansFeatureFortyQuestions": "40 questions a day",
+  "studyPlansFeatureEverythingInPlus": "Everything in Plus",
+  "studyPlansFeatureQuizzes": "Quizzes made from your lessons",
+  "studyPlansFeatureFlashcards": "Flashcards made from your lessons",
+  "studyPlansFeatureSixtyQuestions": "60 questions a day",
+  "studentTodayMakeTodayYours": "Make today yours.",
+  "studentTodayMakeTodayYoursName": "Make today yours, {name}.",
+  "@studentTodayMakeTodayYoursName": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "studySetQuiz": "Quiz",
+  "studySetFlashcards": "Flashcards",
+  "studentTodayClassesCouldNotLoad": "Your classes could not load. Pull down to retry.",
+  "studentTodayNoClassesYet": "No classes yet",
+  "studentTodayPasteClassLink": "Paste the class link your teacher shared to join your first class.",
+  "studentTodayGradeSection": "Grade {grade} · {section}",
+  "@studentTodayGradeSection": {
+    "placeholders": {
+      "grade": {
+        "type": "Object"
+      },
+      "section": {
+        "type": "Object"
+      }
+    }
+  },
+  "msgTitle": "Messages",
+  "msgEmptyTitle": "No conversations yet",
+  "msgEmptyMessage": "Start a conversation with your school.",
+  "msgEmptyAwaitingLink": "Once a child is linked to you, you can message their teachers here.",
+  "msgNew": "New message",
+  "msgNoSchool": "Choose a school to see messages.",
+  "msgRetry": "Try again",
+  "msgErrorTitle": "Messages could not load",
+  "msgComposeHint": "Write a message",
+  "msgSend": "Send",
+  "msgSendFailed": "Not sent. Tap send to try again.",
+  "msgLoadOlder": "Load earlier messages",
+  "msgYou": "You",
+  "msgUnknownPerson": "Someone",
+  "msgMenuReportConversation": "Report conversation",
+  "msgMenuReportPerson": "Report {name}",
+  "@msgMenuReportPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgMenuBlockPerson": "Block {name}",
+  "@msgMenuBlockPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgMenuBlocked": "Blocked people",
+  "msgMessageReport": "Report message",
+  "msgReportTitle": "Report",
+  "msgReportIntro": "Your report goes to your school's safeguarding team. The person you report is not told who reported them.",
+  "msgReportReason": "What is the problem?",
+  "msgReasonHarassment": "Bullying or harassment",
+  "msgReasonInappropriate": "Inappropriate content",
+  "msgReasonSafety": "I am worried about someone's safety",
+  "msgReasonSpam": "Spam",
+  "msgReasonOther": "Something else",
+  "msgReportDetails": "Tell us more (optional)",
+  "msgReportConsent": "The school may contact me about this report",
+  "msgReportAlsoBlock": "Also block this person",
+  "msgReportSubmit": "Send report",
+  "msgReportSent": "Report sent. Thank you for telling us.",
+  "msgReportUrgent": "If someone is in immediate danger, contact emergency services or a trusted adult now.",
+  "msgBlockTitle": "Block {name}?",
+  "@msgBlockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgBlockMessage": "You will not be able to message each other. Messages already sent stay visible to the school.",
+  "msgBlockConfirm": "Block",
+  "msgBlockDone": "{name} is blocked.",
+  "@msgBlockDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "msgCancel": "Cancel",
+  "msgBlockedTitle": "Blocked people",
+  "msgBlockedEmpty": "You have not blocked anyone.",
+  "msgUnblock": "Unblock",
+  "msgUnblockDone": "Unblocked.",
+  "msgBlockedBanner": "You blocked someone in this conversation. Unblock them to send messages.",
+  "msgNewTitle": "New message",
+  "msgNewEmpty": "No one is available to message.",
+  "msgNewSearch": "Search people",
+  "msgSubjectHint": "Subject (optional)",
+  "msgStart": "Start conversation",
+  "msgRoleStaff": "School staff",
+  "msgRoleStudent": "Student",
+  "msgRoleGuardian": "Parent or guardian",
+  "msgGuardianOf": "Guardian of {names}",
+  "@msgGuardianOf": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "msgErrorMessagingDisabled": "Your school has not turned on messaging yet.",
+  "msgErrorContactNotAllowed": "You cannot message this person.",
+  "msgErrorForbidden": "You cannot send messages here. You may have blocked someone, or someone may have blocked you.",
+  "msgErrorNotFound": "This conversation is no longer available.",
+  "msgErrorInvalidState": "You already reported this in the last day. The school has it.",
+  "msgErrorWindowClosed": "You have sent many reports today. Please contact the school directly.",
+  "msgErrorRateLimited": "Too many attempts. Wait a moment and try again.",
+  "msgErrorNetwork": "Studafy could not reach the school. Check your connection.",
+  "msgErrorUnauthorized": "Please sign in again.",
+  "msgErrorValidation": "Write a message first.",
+  "msgErrorUnknown": "Something went wrong. Please try again.",
+  "famTitle": "My family",
+  "famChildren": "My children",
+  "famEmptyTitle": "No children linked yet",
+  "famEmptyMessage": "Ask your child for their Studafy ID. They approve your request before you can follow their progress.",
+  "famLink": "Link a child",
+  "famLinkTitle": "Link a child",
+  "famLinkHint": "Studafy ID",
+  "famLinkFind": "Find",
+  "famLinkNotFound": "No student has that Studafy ID. Check it and try again.",
+  "famLinkConfirm": "Request link to {name}",
+  "@famLinkConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "famLinkSent": "Request sent. {name} must approve it before you can see their records.",
+  "@famLinkSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "famStatusPending": "Waiting for your child",
+  "famStatusVerified": "Linked",
+  "famStatusDeclined": "Request declined",
+  "famStatusRevoked": "No longer linked",
+  "famView": "View progress",
+  "famProgressTitle": "{name}'s progress",
+  "@famProgressTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "famProgressAverage": "Average of published grades",
+  "famProgressGraded": "{count} published grades",
+  "@famProgressGraded": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "famProgressAttendance": "Attendance",
+  "famProgressSessions": "{count} recorded sessions",
+  "@famProgressSessions": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "famProgressNone": "No data yet",
+  "famProgressBreakdown": "Present {present} · Late {late} · Absent {absent} · Excused {excused}",
+  "@famProgressBreakdown": {
+    "placeholders": {
+      "present": {
+        "type": "String"
+      },
+      "late": {
+        "type": "String"
+      },
+      "absent": {
+        "type": "String"
+      },
+      "excused": {
+        "type": "String"
+      }
+    }
+  },
+  "famProgressSource": "Calculated from grades the school has published and attendance it has recorded. Ask the school if something looks wrong.",
+  "famApprovalsTitle": "Waiting for your approval",
+  "famApprovalsDetail": "{name} asked to subscribe to Student Notebook.",
+  "@famApprovalsDetail": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "famApprovalsApprove": "Approve",
+  "famApprovalsDecline": "Decline",
+  "famApprovalsDone": "Your decision was sent.",
+  "famRetry": "Try again",
+  "famCancel": "Cancel",
+  "famErrorTitle": "Your family could not load",
+  "famErrorReauthRequired": "For your security, sign out and sign in again, then approve.",
+  "famErrorForbidden": "You do not have access to this.",
+  "famErrorNotFound": "This is no longer available.",
+  "famErrorInvalidState": "This request has already been decided.",
+  "famErrorRateLimited": "Too many attempts. Wait a moment and try again.",
+  "famErrorNetwork": "Studafy could not reach the school. Check your connection.",
+  "famErrorUnauthorized": "Please sign in again.",
+  "famErrorValidation": "Enter the Studafy ID.",
+  "famErrorUnknown": "Something went wrong. Please try again.",
+  "accountAccountId": "Account ID",
+  "accountAccountIdDetail": "Share this with your school to link your account.",
+  "accountAccountIdCopied": "Account ID copied",
+  "accountSwitchRole": "Switch role",
+  "accountSwitchRoleDetail": "You belong to this school in more than one role.",
+  "accountTitle": "Account",
+  "accountSectionAccount": "Account",
+  "accountSectionPreferences": "Preferences",
+  "accountSectionPrivacy": "Privacy and data",
+  "accountStudafyId": "Your Studafy ID",
+  "accountStudafyIdDetail": "Give this to a parent so they can ask to link.",
+  "accountStudafyIdCopy": "Copy your Studafy ID",
+  "accountStudafyIdCopied": "Studafy ID copied.",
+  "accountUnknown": "Your account",
+  "accountLanguage": "Language",
+  "accountSecurity": "Sign-in and security",
+  "accountSecurityDetail": "Devices, two-step verification, sign out everywhere",
+  "accountSignOut": "Sign out",
+  "accountDelete": "Delete account",
+  "accountRoleSchoolAdmin": "School administrator",
+  "accountRoleTeacher": "Teacher",
+  "accountRoleParent": "Parent or guardian",
+  "accountRoleStudent": "Student",
+  "accountExport": "Download my data",
+  "accountExportDetail": "Get a copy of the information Studafy holds about you.",
+  "accountExportRequest": "Request",
+  "accountExportPending": "Preparing your copy. This can take a few minutes.",
+  "accountExportCheck": "Check",
+  "accountExportReady": "Your copy is ready for 7 days.",
+  "accountExportDownload": "Download",
+  "accountExportRequested": "Request received. We are preparing your copy.",
+  "accountExportReauth": "For your security, sign out and sign in again first.",
+  "accountExportExpired": "That copy has expired. Request a new one.",
+  "accountExportFailed": "That did not work. Please try again.",
+  "todayWork": "Work you have set",
+  "todayWorkEmpty": "You have not set any work yet.",
+  "todaySections": "Sections needing content",
+  "todaySectionsEmpty": "Every section you have taught has its content filed.",
+  "todaySectionsOutstanding": "Content outstanding",
+  "todayTitle": "Today",
+  "todayHello": "Hello",
+  "todayHelloName": "Hello, {name}",
+  "@todayHelloName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todayClasses": "My classes",
+  "todayStudents": "{count} students",
+  "@todayStudents": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEmpty": "No classes yet",
+  "todayEmptyDetail": "Create your first class from the Classes tab.",
+  "todayError": "Classes could not load",
+  "todayErrorDetail": "Check your connection and try again.",
+  "todayRetry": "Try again",
+  "todayMessages": "Messages",
+  "todayNotifications": "Notifications",
+  "navToday": "Today",
+  "navClasses": "Classes",
+  "navTeaching": "Teaching",
+  "navGradebook": "Gradebook",
+  "navInbox": "Inbox",
+  "navLearning": "Learning",
+  "navInsights": "Insights+",
+  "navUpdates": "Updates",
+  "navMessages": "Messages",
+  "navNotebook": "Notebook",
+  "navWork": "Work",
+  "navGrades": "Grades",
+  "notificationsFeedTitle": "Notifications",
+  "notificationsFeedMarkAllRead": "Mark all read",
+  "notificationsFeedErrorTitle": "Couldn't load notifications",
+  "notificationsFeedRetry": "Try again",
+  "notificationsFeedOfflineBanner": "Showing your last saved notifications — reconnect to update.",
+  "notificationsFeedEmptyTitle": "No notifications yet",
+  "notificationsFeedEmptyMessage": "You'll see updates here as they happen.",
+  "notificationsFeedLoading": "Loading…",
+  "notificationsFeedLoadMore": "Load more",
+  "notificationCopyAcademicAssessmentPublishedTitle": "Assessment published",
+  "notificationCopyAcademicAssessmentPublishedDetail": "A new assessment is ready for one of your classes.",
+  "notificationCopyAcademicAssignmentPublishedTitle": "Assignment published",
+  "notificationCopyAcademicAssignmentPublishedDetail": "A new assignment is ready for one of your classes.",
+  "notificationCopyAcademicGradePublishedTitle": "New grade",
+  "notificationCopyAcademicGradePublishedDetail": "A grade was published. Open Grades to view it.",
+  "notificationCopyAcademicResourcePublishedTitle": "New class material",
+  "notificationCopyAcademicResourcePublishedDetail": "Your teacher shared new material for one of your classes.",
+  "notificationCopyAcademicWellbeingSharedTitle": "Wellbeing note shared",
+  "notificationCopyAcademicWellbeingSharedDetail": "A wellbeing note was shared with you.",
+  "notificationCopyBillingPurchaseApprovalRequestedTitle": "Purchase approval needed",
+  "notificationCopyBillingPurchaseApprovalRequestedDetail": "Your child asked you to approve a subscription.",
+  "notificationCopyBillingPurchaseApprovalApprovedTitle": "Purchase approved",
+  "notificationCopyBillingPurchaseApprovalApprovedDetail": "A guardian approved your subscription request.",
+  "notificationCopyBillingPurchaseApprovalDeclinedTitle": "Purchase declined",
+  "notificationCopyBillingPurchaseApprovalDeclinedDetail": "A guardian declined your subscription request.",
+  "notificationCopyMeetingsScheduledTitle": "Meeting confirmed",
+  "notificationCopyMeetingsScheduledDetail": "A meeting was scheduled. Check your calendar for the invitation.",
+  "notificationCopyMeetingsFailedTitle": "Meeting not scheduled",
+  "notificationCopyMeetingsFailedDetail": "A meeting you requested could not be scheduled. Please try again.",
+  "notificationCopyCommunicationsAnnouncementCreatedTitle": "New announcement",
+  "notificationCopyCommunicationsAnnouncementCreatedDetail": "A new announcement was posted.",
+  "notificationCopyCommunicationsMessageSentTitle": "New message",
+  "notificationCopyCommunicationsMessageSentDetail": "You received a new message.",
+  "notificationCopyFamilyGuardianLinkRequestedTitle": "Connection request",
+  "notificationCopyFamilyGuardianLinkRequestedDetail": "Someone requested to connect as a guardian.",
+  "notificationCopyFamilyGuardianLinkRevokedTitle": "Connection removed",
+  "notificationCopyFamilyGuardianLinkRevokedDetail": "A family connection was removed.",
+  "notificationCopyFamilyGuardianLinkVerifiedTitle": "Connection verified",
+  "notificationCopyFamilyGuardianLinkVerifiedDetail": "A family connection was verified.",
+  "notificationCopyInvitationsIssuedTitle": "Invitation sent",
+  "notificationCopyInvitationsIssuedDetail": "An invitation was issued.",
+  "notificationCopyMeetingsCancelledTitle": "Meeting cancelled",
+  "notificationCopyMeetingsCancelledDetail": "A scheduled meeting was cancelled.",
+  "notificationCopyMeetingsRequestedTitle": "Meeting requested",
+  "notificationCopyMeetingsRequestedDetail": "A meeting was requested.",
+  "notificationCopySchoolAdminClassroomStaffAssignedTitle": "Staff assigned",
+  "notificationCopySchoolAdminClassroomStaffAssignedDetail": "A staff member was assigned to a class.",
+  "notificationCopySchoolAdminClassroomStaffRemovedTitle": "Staff removed",
+  "notificationCopySchoolAdminClassroomStaffRemovedDetail": "A staff member was removed from a class.",
+  "notificationCopySchoolAdminMembershipGrantedTitle": "Access granted",
+  "notificationCopySchoolAdminMembershipGrantedDetail": "School access was granted.",
+  "notificationCopySchoolAdminStudentEnrolledTitle": "Student enrolled",
+  "notificationCopySchoolAdminStudentEnrolledDetail": "A student was enrolled.",
+  "notificationCopySchoolAdminStudentTransferredTitle": "Student transferred",
+  "notificationCopySchoolAdminStudentTransferredDetail": "A student was transferred between classes.",
+  "notificationCopySchoolAdminStudentWithdrawnTitle": "Student withdrawn",
+  "notificationCopySchoolAdminStudentWithdrawnDetail": "A student was withdrawn.",
+  "notificationCopySupportAccessApprovedTitle": "Support access approved",
+  "notificationCopySupportAccessApprovedDetail": "A support access request was approved.",
+  "notificationCopySupportAccessRequestedTitle": "Support access requested",
+  "notificationCopySupportAccessRequestedDetail": "Support access was requested.",
+  "notificationCopySupportAccessRevokedTitle": "Support access revoked",
+  "notificationCopySupportAccessRevokedDetail": "Support access was revoked.",
+  "notificationCopySupportAccessStartedTitle": "Support session started",
+  "notificationCopySupportAccessStartedDetail": "A support session has started.",
+  "notificationCopyGenericTitle": "Notification",
+  "notificationCopyGenericDetail": "You have a new update."
 }

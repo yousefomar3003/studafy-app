@@ -8,7 +8,6 @@ import 'package:studafy/features/account/application/account_interactor.dart';
 import 'package:studafy/features/account/domain/account_repository.dart';
 import 'package:studafy/features/account/domain/data_export.dart';
 import 'package:studafy/core/studafy_domain.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/features/academic/data/preview_academic_repository.dart';
 import 'package:studafy/app/student_shell.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
@@ -50,10 +49,9 @@ class _Exports implements DataExportRepository {
 }
 
 Widget _app(Widget home, {DataExportRepository? exports}) => MaterialApp(
-  supportedLocales: StudafyLocalizations.supportedLocales,
+  supportedLocales: AppL10n.supportedLocales,
   localizationsDelegates: const [
     AppL10n.delegate,
-    StudafyLocalizations.delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -70,11 +68,6 @@ void main() {
     ActiveContextController.instance
       ..profile = null
       ..membership = null;
-  });
-
-  test('every account string exists in English and Arabic', () {
-    final keys = accountHubStringKeys();
-    expect(keys['ar'], keys['en']);
   });
 
   testWidgets('the account screen shows the signed-in person, not a sample', (

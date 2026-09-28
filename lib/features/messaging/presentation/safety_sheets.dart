@@ -4,6 +4,7 @@ import '../../../core/studafy_design.dart';
 import '../domain/messaging.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// Opens the report sheet. Returns true once a report was accepted.
 ///
@@ -122,10 +123,9 @@ class _ReportSheetState extends State<_ReportSheet> {
           children: [
             Text(
               widget.subjectName == null
-                  ? t('report.title')
-                  : messagingText(context, 'menu.reportPerson', {
-                      'name': widget.subjectName!,
-                    }),
+                  ? AppL10n.of(context).msgReportTitle
+                  : AppL10n.of(context)
+                        .msgMenuReportPerson(widget.subjectName!),
               style: const TextStyle(
                 color: studafyInk,
                 fontSize: 18,
@@ -134,12 +134,12 @@ class _ReportSheetState extends State<_ReportSheet> {
             ),
             const SizedBox(height: 8),
             Text(
-              t('report.intro'),
+              AppL10n.of(context).msgReportIntro,
               style: const TextStyle(color: studafyMuted),
             ),
             const SizedBox(height: 16),
             Text(
-              t('report.reason'),
+              AppL10n.of(context).msgReportReason,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             RadioGroup<ReportReason>(
@@ -165,7 +165,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  t('report.urgent'),
+                  AppL10n.of(context).msgReportUrgent,
                   style: const TextStyle(color: Color(0xFF8A1C12)),
                 ),
               ),
@@ -174,7 +174,7 @@ class _ReportSheetState extends State<_ReportSheet> {
               maxLength: 1000,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: t('report.details'),
+                labelText: AppL10n.of(context).msgReportDetails,
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -182,7 +182,7 @@ class _ReportSheetState extends State<_ReportSheet> {
               value: _consent,
               contentPadding: EdgeInsets.zero,
               onChanged: (value) => setState(() => _consent = value ?? false),
-              title: Text(t('report.consent')),
+              title: Text(AppL10n.of(context).msgReportConsent),
             ),
             if (widget.subjectUserId != null)
               CheckboxListTile(
@@ -190,7 +190,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                 contentPadding: EdgeInsets.zero,
                 onChanged: (value) =>
                     setState(() => _alsoBlock = value ?? false),
-                title: Text(t('report.alsoBlock')),
+                title: Text(AppL10n.of(context).msgReportAlsoBlock),
               ),
             if (_error != null)
               Padding(
@@ -202,7 +202,7 @@ class _ReportSheetState extends State<_ReportSheet> {
               ),
             FilledButton(
               onPressed: _reason == null || _sending ? null : _submit,
-              child: Text(t('report.submit')),
+              child: Text(AppL10n.of(context).msgReportSubmit),
             ),
           ],
         ),
@@ -221,16 +221,16 @@ Future<bool> confirmBlock(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: Text(messagingText(dialogContext, 'block.title', {'name': name})),
-      content: Text(messagingText(dialogContext, 'block.message')),
+      title: Text(AppL10n.of(dialogContext).msgBlockTitle(name)),
+      content: Text(AppL10n.of(dialogContext).msgBlockMessage),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: Text(messagingText(dialogContext, 'cancel')),
+          child: Text(AppL10n.of(dialogContext).msgCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(messagingText(dialogContext, 'block.confirm')),
+          child: Text(AppL10n.of(dialogContext).msgBlockConfirm),
         ),
       ],
     ),
@@ -243,9 +243,7 @@ Future<bool> confirmBlock(
   return result.fold(
     onSuccess: (_) {
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(messagingText(context, 'block.done', {'name': name})),
-        ),
+        SnackBar(content: Text(AppL10n.of(context).msgBlockDone(name))),
       );
       return true;
     },

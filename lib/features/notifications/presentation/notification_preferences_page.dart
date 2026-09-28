@@ -4,6 +4,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
 import '../domain/notifications_repository.dart';
 import 'notifications_scope.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 class NotificationPreferencesPage extends StatefulWidget {
   const NotificationPreferencesPage({super.key});
@@ -18,9 +19,6 @@ class _NotificationPreferencesPageState
   bool _loading = true;
   bool _saving = false;
   String? _error;
-
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
 
   @override
   void initState() {
@@ -83,27 +81,27 @@ class _NotificationPreferencesPageState
           context: context,
           builder: (context) => StatefulBuilder(
             builder: (context, setDialog) => AlertDialog(
-              title: Text(_t('Add preference', 'إضافة تفضيل')),
+              title: Text(AppL10n.of(context).notificationPrefsAddPreference),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
                     initialValue: channel,
                     decoration: InputDecoration(
-                      labelText: _t('Channel', 'القناة'),
+                      labelText: AppL10n.of(context).notificationPrefsChannel,
                     ),
                     items: [
                       DropdownMenuItem(
                         value: 'in_app',
-                        child: Text(_t('In app', 'داخل التطبيق')),
+                        child: Text(AppL10n.of(context).notificationPrefsInApp),
                       ),
                       DropdownMenuItem(
                         value: 'email',
-                        child: Text(_t('Email', 'البريد الإلكتروني')),
+                        child: Text(AppL10n.of(context).notificationPrefsEmail),
                       ),
                       DropdownMenuItem(
                         value: 'push',
-                        child: Text(_t('Push', 'إشعار فوري')),
+                        child: Text(AppL10n.of(context).notificationPrefsPush),
                       ),
                     ],
                     onChanged: (value) => setDialog(() => channel = value!),
@@ -112,33 +110,39 @@ class _NotificationPreferencesPageState
                   DropdownButtonFormField<String>(
                     initialValue: category,
                     decoration: InputDecoration(
-                      labelText: _t('Category', 'الفئة'),
+                      labelText: AppL10n.of(context).notificationPrefsCategory,
                     ),
                     items: [
                       DropdownMenuItem(
                         value: 'academic',
-                        child: Text(_t('Academic', 'أكاديمي')),
+                        child: Text(
+                          AppL10n.of(context).notificationPrefsAcademic,
+                        ),
                       ),
                       DropdownMenuItem(
                         value: 'communications',
                         child: Text(
-                          _t(
-                            'Messages and announcements',
-                            'الرسائل والإعلانات',
-                          ),
+                          AppL10n.of(context)
+                              .notificationPrefsMessagesAndAnnouncements,
                         ),
                       ),
                       DropdownMenuItem(
                         value: 'meetings',
-                        child: Text(_t('Meetings', 'الاجتماعات')),
+                        child: Text(
+                          AppL10n.of(context).notificationPrefsMeetings,
+                        ),
                       ),
                       DropdownMenuItem(
                         value: 'family',
-                        child: Text(_t('Family', 'العائلة')),
+                        child: Text(
+                          AppL10n.of(context).notificationPrefsFamily,
+                        ),
                       ),
                       DropdownMenuItem(
                         value: 'billing',
-                        child: Text(_t('Billing', 'الفوترة')),
+                        child: Text(
+                          AppL10n.of(context).notificationPrefsBilling,
+                        ),
                       ),
                     ],
                     onChanged: (value) => setDialog(() => category = value!),
@@ -148,11 +152,11 @@ class _NotificationPreferencesPageState
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: Text(_t('Cancel', 'إلغاء')),
+                  child: Text(AppL10n.of(context).academicCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: Text(_t('Add', 'إضافة')),
+                  child: Text(AppL10n.of(context).notificationPrefsAdd),
                 ),
               ],
             ),
@@ -193,12 +197,12 @@ class _NotificationPreferencesPageState
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: studafyCanvas,
     appBar: AppBar(
-      title: Text(_t('Notification preferences', 'تفضيلات الإشعارات')),
+      title: Text(AppL10n.of(context).notificationsNotificationPreferences),
       actions: [
         IconButton(
           onPressed: _add,
           icon: const Icon(Icons.add),
-          tooltip: _t('Add preference', 'إضافة تفضيل'),
+          tooltip: AppL10n.of(context).notificationPrefsAddPreference,
         ),
       ],
     ),
@@ -218,20 +222,16 @@ class _NotificationPreferencesPageState
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
-                    _t(
-                      'Push preferences are saved, but push delivery is not available on this device yet.',
-                      'يتم حفظ تفضيلات الإشعارات الفورية، لكن استقبالها غير متاح على هذا الجهاز بعد.',
-                    ),
+                    AppL10n.of(context)
+                        .notificationPrefsPushPreferencesAreSavedBut,
                     style: const TextStyle(color: Color(0xFF8A7650)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 if (_items.isEmpty)
                   Text(
-                    _t(
-                      'No preferences saved. Add one to choose a channel and category.',
-                      'لا توجد تفضيلات محفوظة. أضف تفضيلًا لاختيار القناة والفئة.',
-                    ),
+                    AppL10n.of(context)
+                        .notificationPrefsNoPreferencesSavedAddOne,
                   ),
                 for (final item in _items)
                   Card(
@@ -248,17 +248,19 @@ class _NotificationPreferencesPageState
   );
 
   String _channel(String value) => switch (value) {
-    'in_app' => _t('In app', 'داخل التطبيق'),
-    'email' => _t('Email', 'البريد الإلكتروني'),
-    'push' => _t('Push', 'إشعار فوري'),
+    'in_app' => AppL10n.of(context).notificationPrefsInApp,
+    'email' => AppL10n.of(context).notificationPrefsEmail,
+    'push' => AppL10n.of(context).notificationPrefsPush,
     _ => value,
   };
   String _category(String value) => switch (value) {
-    'academic' => _t('Academic', 'أكاديمي'),
-    'communications' => _t('Messages and announcements', 'الرسائل والإعلانات'),
-    'meetings' => _t('Meetings', 'الاجتماعات'),
-    'family' => _t('Family', 'العائلة'),
-    'billing' => _t('Billing', 'الفوترة'),
+    'academic' => AppL10n.of(context).notificationPrefsAcademic,
+    'communications' => AppL10n.of(
+      context,
+    ).notificationPrefsMessagesAndAnnouncements,
+    'meetings' => AppL10n.of(context).notificationPrefsMeetings,
+    'family' => AppL10n.of(context).notificationPrefsFamily,
+    'billing' => AppL10n.of(context).notificationPrefsBilling,
     _ => value,
   };
 }

@@ -1554,4 +1554,1600 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get submissionsGrade => 'وضع الدرجات';
+
+  @override
+  String get attachmentThatFileCouldNotBe => 'تعذّر رفع هذا الملف.';
+
+  @override
+  String get attachmentThatFileIsEmpty => 'هذا الملف فارغ.';
+
+  @override
+  String get attachmentOnlyPdfAndPhotosCan =>
+      'يمكن إرفاق ملفات PDF والصور فقط.';
+
+  @override
+  String attachmentThatFileIsLargerThan(Object maximumSizeBytes) {
+    return 'حجم الملف أكبر من $maximumSizeBytes ميغابايت.';
+  }
+
+  @override
+  String get attachmentAttachFile => 'إرفاق ملف';
+
+  @override
+  String get attachmentPhoto => 'صورة';
+
+  @override
+  String attachmentUpToMaximumcountAttachments(Object maximumCount) {
+    return 'حتى $maximumCount مرفقات.';
+  }
+
+  @override
+  String get attachmentUploading => 'جارٍ الرفع';
+
+  @override
+  String get attachmentChecking => 'قيد الفحص';
+
+  @override
+  String get attachmentReady => 'جاهز';
+
+  @override
+  String get attachmentFailed => 'فشل';
+
+  @override
+  String get attachmentThisFileIsStillBeing =>
+      'لا يزال هذا الملف قيد الفحص. حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get attachmentThatFileCouldNotBe2 => 'تعذّر فتح هذا الملف.';
+
+  @override
+  String get studentTodayALittleProgressEveryDay => 'خطوة صغيرة كل يوم';
+
+  @override
+  String get studentTodayYourClassesYourIdeasYour =>
+      'فصولك، أفكارك، وإنجازك القادم.';
+
+  @override
+  String get studentTodayMyNotebook => 'دفتر دروسي';
+
+  @override
+  String get studentTodayLessonNotesSubscription => 'ملاحظات الدروس · اشتراك';
+
+  @override
+  String get studentTodayMyWork => 'أعمالي';
+
+  @override
+  String get studentTodayTakeTheNextStep => 'خطوتك القادمة';
+
+  @override
+  String get studentTodayMyIdFamily => 'معرّفي وعائلتي';
+
+  @override
+  String get studentTodayShareYourIdReviewParent =>
+      'شارك معرّفك وراجع طلبات أولياء الأمور.';
+
+  @override
+  String get studentTodayYourClasses => 'صفوفي';
+
+  @override
+  String get studentTodayReadyWhenYouAre => 'جاهز عندما تكون مستعدًا';
+
+  @override
+  String get studentTodayYourWorkCouldNotLoad =>
+      'تعذر تحميل أعمالك. افتح أعمالي لإعادة المحاولة.';
+
+  @override
+  String get studentTodayALittleBreathingRoom => 'وقت لالتقاط الأنفاس';
+
+  @override
+  String get studentTodayNewAssignmentsWillAppearHere =>
+      'ستظهر الواجبات الجديدة هنا عندما يشاركها معلمك.';
+
+  @override
+  String get teacherShellManageRosterStaffAndMeetings =>
+      'إدارة الطلاب والمعلمين والاجتماعات';
+
+  @override
+  String get teacherShellClasses => 'الفصول';
+
+  @override
+  String get teacherShellMessages => 'الرسائل';
+
+  @override
+  String get schoolAdminAdministrationRequiresTheRemoteBackend =>
+      'تتطلب الإدارة الاتصال بالخادم.';
+
+  @override
+  String get schoolAdminSchoolAdministration => 'إدارة المدرسة';
+
+  @override
+  String get schoolAdminTerms => 'الفصول الدراسية';
+
+  @override
+  String get schoolAdminGuardians => 'أولياء الأمور';
+
+  @override
+  String get schoolAdminUpdates => 'التحديثات';
+
+  @override
+  String get schoolAdminAccount => 'الحساب';
+
+  @override
+  String get teacherTodaySpaceToInspireADay =>
+      'مساحة للإلهام. ويوم لصنع الفرق.';
+
+  @override
+  String get studentLessonsPlans => 'الخطط';
+
+  @override
+  String get studentLessonsYourClassesCouldNotBe =>
+      'تعذّر تحميل صفوفك. حاول مرة أخرى';
+
+  @override
+  String get studentLessonsJoinAClassToSee => 'انضم إلى صف لترى دروسه هنا.';
+
+  @override
+  String get studentLessonsLessonsAndYourNotebook => 'الدروس ودفترك';
+
+  @override
+  String get studentLessonsMyNotebook => 'دفتري';
+
+  @override
+  String get studySetQuizzesAndFlashcardsComeWith =>
+      'الاختبارات والبطاقات متاحة مع Studafy Max.';
+
+  @override
+  String get studySetThisMonthSAiAllowance =>
+      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر. يتجدد في أول الشهر.';
+
+  @override
+  String get studySetThisLessonHasNoText =>
+      'لا يحتوي هذا الدرس على نص للمراجعة.';
+
+  @override
+  String get studySetThisIsNotAvailableYet => 'هذه الميزة غير متاحة بعد.';
+
+  @override
+  String get studySetThatDidNotWorkPlease => 'لم تنجح العملية. حاول مرة أخرى.';
+
+  @override
+  String studySetYouScoredScoreOfQuestionscount(
+    Object score,
+    Object questionsCount,
+  ) {
+    return 'نتيجتك $score من $questionsCount';
+  }
+
+  @override
+  String studySetAnswerscountOfQuestionscountAnswered(
+    Object answersCount,
+    Object questionsCount,
+  ) {
+    return 'أُجيب $answersCount من $questionsCount';
+  }
+
+  @override
+  String get studySetTryAgain => 'حاول مرة أخرى';
+
+  @override
+  String studySetCardPageOfCardscountTap(Object page, Object cardsCount) {
+    return 'البطاقة $page من $cardsCount - اضغط لقلبها';
+  }
+
+  @override
+  String studyPlansQuestionsTodayAsktodayOfAskperday(
+    Object askToday,
+    Object askPerDay,
+  ) {
+    return 'أسئلة اليوم: $askToday من $askPerDay';
+  }
+
+  @override
+  String studyPlansAiUsedThisMonthRound(Object round) {
+    return 'الاستخدام هذا الشهر: $round٪';
+  }
+
+  @override
+  String studyPlansRenewsRenews(Object renews) {
+    return 'يتجدد في $renews';
+  }
+
+  @override
+  String get studyPlansTheStoreCouldNotBe =>
+      'تعذّر الوصول إلى المتجر. حاول لاحقًا.';
+
+  @override
+  String get studyPlansBuyingIsNotEnabledFor => 'الشراء غير مفعّل لحسابك بعد.';
+
+  @override
+  String get studyPlansWeAskedYourParentTo => 'طلبنا موافقة ولي أمرك.';
+
+  @override
+  String get studyPlansWaitingForAParent => 'بانتظار موافقة ولي الأمر';
+
+  @override
+  String get studyPlansAskAParentToApprove => 'اطلب موافقة ولي الأمر';
+
+  @override
+  String get studyPlansOpeningTheStore => 'جارٍ فتح المتجر…';
+
+  @override
+  String get studyPlansStartAFreeMonth => 'ابدأ شهرًا مجانيًا';
+
+  @override
+  String studyPlansSubscribeToName(Object name) {
+    return 'اشترك في $name';
+  }
+
+  @override
+  String get studyPlansFree => 'مجانًا';
+
+  @override
+  String studyPlansPriceMonth(Object price) {
+    return '$price / شهريًا';
+  }
+
+  @override
+  String studyPlansUspriceMonthInTheUs(Object usPrice) {
+    return '$usPrice شهريًا في الولايات المتحدة - يعرض المتجر سعرك';
+  }
+
+  @override
+  String get studyPlansYourPlan => 'خطتك الحالية';
+
+  @override
+  String get studyPlansManageOrCancel => 'إدارة أو إلغاء';
+
+  @override
+  String get studyPlansRestoringPurchases => 'جارٍ استعادة المشتريات…';
+
+  @override
+  String get studyPlansRestorePurchases => 'استعادة المشتريات';
+
+  @override
+  String get studyPlansAutoRenewingMonthlySubscriptionsPayment =>
+      'اشتراكات شهرية تتجدد تلقائيًا. يُحصَّل المبلغ من حسابك في Apple أو Google. إذا كانت هناك فترة تجربة، يبدأ الدفع عند انتهائها. ألغِ من إعدادات المتجر قبل التجديد بـ 24 ساعة على الأقل لتجنب الدفعة التالية. حذف التطبيق لا يلغي الاشتراك.';
+
+  @override
+  String get studyPlansTermsOfUse => 'شروط الاستخدام';
+
+  @override
+  String get studyPlansPrivacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get notebookThisNeedsStudafyPlus => 'هذه الميزة تتطلب Studafy Plus.';
+
+  @override
+  String get notebookNoWritingCouldBeRead =>
+      'تعذّرت قراءة أي كتابة في الصورة. جرّب صورة أوضح.';
+
+  @override
+  String get notebookThePhotoIsTakingLonger =>
+      'فحص الصورة يستغرق وقتًا أطول من المعتاد. حاول بعد قليل.';
+
+  @override
+  String get notebookNewNote => 'ملاحظة جديدة';
+
+  @override
+  String get notebookSave => 'حفظ';
+
+  @override
+  String get notebookAddATitleAndSome => 'أضف عنوانًا ونصًا.';
+
+  @override
+  String get notebookChooseAJpegOrPng =>
+      'اختر صورة JPEG أو PNG أقل من 10 ميغابايت.';
+
+  @override
+  String get notebookUploadingThePhoto => 'جارٍ رفع الصورة…';
+
+  @override
+  String get notebookReadingTheWhiteboard => 'جارٍ قراءة السبورة…';
+
+  @override
+  String get notebookNotesAddedToYourNotebook => 'أُضيفت الملاحظات إلى دفترك.';
+
+  @override
+  String get notebookThePhotoCouldNotBe => 'تعذّر رفع الصورة.';
+
+  @override
+  String get notebookDeleteThisNote => 'حذف هذه الملاحظة؟';
+
+  @override
+  String get notebookDelete => 'حذف';
+
+  @override
+  String get notebookToday => 'اليوم';
+
+  @override
+  String get notebookYesterday => 'أمس';
+
+  @override
+  String get notebookAddNote => 'أضف ملاحظة';
+
+  @override
+  String get notebookSnapTheWhiteboard => 'صوّر السبورة';
+
+  @override
+  String get notebookFromPhotos => 'من الصور';
+
+  @override
+  String get notebookWhiteboardNotesComeWithStudafy =>
+      'ملاحظات السبورة متاحة مع Studafy Plus.';
+
+  @override
+  String get notebookTheNotebookCouldNotBe =>
+      'تعذّر تحميل الدفتر. حاول مرة أخرى';
+
+  @override
+  String get notebookYourNotebookForThisClass =>
+      'دفترك لهذا الصف فارغ. أضف ملاحظة أو صوّر السبورة.';
+
+  @override
+  String get notebookFromTheWhiteboard => 'من السبورة';
+
+  @override
+  String get familyHomeTogetherEveryDay => 'معًا، كل يوم';
+
+  @override
+  String get familyHomeTheirWorldIsGrowingBe => 'عالمهم ينمو. كن جزءًا منه.';
+
+  @override
+  String get childSwitcherChooseChild => 'اختر الطفل';
+
+  @override
+  String get familyChallengeSecurityCheck => 'تحقق سريع';
+
+  @override
+  String get familyChallengeTheCheckCouldNotLoad =>
+      'تعذر تحميل التحقق. ارجع وحاول مرة أخرى.';
+
+  @override
+  String get studentFamilyIsThisYourParent => 'هل هذا ولي أمرك؟';
+
+  @override
+  String get studentFamilyConfirmYourChoice => 'تأكيد اختيارك';
+
+  @override
+  String studentFamilyOnlyApproveGuardiannameIfYou(Object guardianName) {
+    return 'وافق على $guardianName فقط إذا كنت تعرف أنه ولي أمرك. سيتمكن من الاطلاع على درجاتك وحضورك وتحديثاتك الدراسية المشتركة.';
+  }
+
+  @override
+  String get studentFamilyThisPersonWillNotHave =>
+      'لن يتمكن هذا الشخص من الوصول عبر هذا الربط العائلي.';
+
+  @override
+  String get studentFamilyConfirm => 'تأكيد';
+
+  @override
+  String get studentFamilyMyFamily => 'عائلتي';
+
+  @override
+  String get studentFamilyYourConnections => 'روابطك';
+
+  @override
+  String get studentFamilyYourFamilyYourChoice => 'عائلتك.\nقرارك.';
+
+  @override
+  String get studentFamilyShareYourStudafyIdWith =>
+      'شارك معرّف Studafy مع ولي أمرك. أنت تقرر من يمكنه متابعة تقدمك.';
+
+  @override
+  String get studentFamilyCouldNotLoadRequests => 'تعذر تحميل الطلبات';
+
+  @override
+  String get studentFamilyMyStudafyId => 'معرّف STUDAFY';
+
+  @override
+  String get studentFamilyCopyId => 'نسخ المعرّف';
+
+  @override
+  String get studentFamilyIdCopied => 'تم نسخ المعرّف';
+
+  @override
+  String get studentFamilyJoinAClassToActivate =>
+      'انضم إلى فصل لتفعيل معرّف الطالب.';
+
+  @override
+  String get studentFamilyParentRequests => 'طلبات أولياء الأمور';
+
+  @override
+  String get studentFamilyAllCaughtUp => 'أنت على اطلاع';
+
+  @override
+  String get studentFamilyNewParentRequestsWillAppear =>
+      'ستظهر طلبات أولياء الأمور الجديدة هنا.';
+
+  @override
+  String get studentFamilyAccountId => 'معرّف الحساب';
+
+  @override
+  String get studentFamilyThisIsMyParent => 'هذا ولي أمري';
+
+  @override
+  String get studentFamilyDecline => 'رفض';
+
+  @override
+  String get studentFamilyConnected => 'مرتبط';
+
+  @override
+  String get studentFamilyRemoveAccess => 'إزالة الوصول';
+
+  @override
+  String get studentFamilyDeclined => 'مرفوض';
+
+  @override
+  String get studentFamilyAccessRemoved => 'تمت إزالة الوصول';
+
+  @override
+  String get lessonsUndated => 'بدون تاريخ';
+
+  @override
+  String get lessonsLessonsCouldNotBeLoaded => 'تعذّر تحميل الدروس.';
+
+  @override
+  String get lessonsNoLessonsYetTheyAppear =>
+      'لا توجد دروس بعد. ستظهر هنا عندما يشاركها معلمك.';
+
+  @override
+  String get meetingsGoogleMeetCouldNotBe => 'تعذّر فتح Google Meet.';
+
+  @override
+  String get meetingsUpcomingMeetings => 'الاجتماعات القادمة';
+
+  @override
+  String get meetingsCancelled => 'أُلغي';
+
+  @override
+  String get meetingsTheLinkWillAppearHere => 'سيظهر الرابط هنا.';
+
+  @override
+  String get meetingsJoin => 'انضمام';
+
+  @override
+  String get conversationSent => 'أُرسلت';
+
+  @override
+  String get conversationDelivered => 'وصلت';
+
+  @override
+  String get conversationRead => 'قُرئت';
+
+  @override
+  String get notificationsNotificationPreferences => 'تفضيلات الإشعارات';
+
+  @override
+  String get notificationPrefsAddPreference => 'إضافة تفضيل';
+
+  @override
+  String get notificationPrefsChannel => 'القناة';
+
+  @override
+  String get notificationPrefsInApp => 'داخل التطبيق';
+
+  @override
+  String get notificationPrefsEmail => 'البريد الإلكتروني';
+
+  @override
+  String get notificationPrefsPush => 'إشعار فوري';
+
+  @override
+  String get notificationPrefsCategory => 'الفئة';
+
+  @override
+  String get notificationPrefsAcademic => 'أكاديمي';
+
+  @override
+  String get notificationPrefsMessagesAndAnnouncements => 'الرسائل والإعلانات';
+
+  @override
+  String get notificationPrefsMeetings => 'الاجتماعات';
+
+  @override
+  String get notificationPrefsFamily => 'العائلة';
+
+  @override
+  String get notificationPrefsBilling => 'الفوترة';
+
+  @override
+  String get notificationPrefsAdd => 'إضافة';
+
+  @override
+  String get notificationPrefsPushPreferencesAreSavedBut =>
+      'يتم حفظ تفضيلات الإشعارات الفورية، لكن استقبالها غير متاح على هذا الجهاز بعد.';
+
+  @override
+  String get notificationPrefsNoPreferencesSavedAddOne =>
+      'لا توجد تفضيلات محفوظة. أضف تفضيلًا لاختيار القناة والفئة.';
+
+  @override
+  String get classroomAdminStaff => 'المعلمون';
+
+  @override
+  String get classroomAdminCreateAndEnrolStudent => 'إنشاء طالب وتسجيله';
+
+  @override
+  String get classroomAdminCreatedStudentAwaitingEnrolment =>
+      'طالب تم إنشاؤه بانتظار التسجيل';
+
+  @override
+  String get classroomAdminStudentEnrolled => 'تم تسجيل الطالب.';
+
+  @override
+  String get classroomAdminRetryEnrolment => 'إعادة محاولة التسجيل';
+
+  @override
+  String get classroomAdminEnrolByStudentId => 'تسجيل باستخدام معرّف الطالب';
+
+  @override
+  String get classroomAdminNoEnrolledStudents => 'لا يوجد طلاب مسجلون.';
+
+  @override
+  String get classroomAdminTransfer => 'نقل';
+
+  @override
+  String get classroomAdminWithdraw => 'سحب';
+
+  @override
+  String get classroomAdminAssignStaff => 'تعيين معلم';
+
+  @override
+  String get classroomAdminNoStaffAssignments => 'لا توجد تعيينات للمعلمين.';
+
+  @override
+  String get classroomAdminRemove => 'إزالة';
+
+  @override
+  String classroomAdminRemoveDisplaynameFromThisClass(Object displayName) {
+    return 'إزالة $displayName من هذا الفصل؟';
+  }
+
+  @override
+  String get classroomAdminStaffRemoved => 'تمت إزالة المعلم.';
+
+  @override
+  String get classroomAdminWholeClass => 'الفصل بالكامل';
+
+  @override
+  String get classroomAdminScheduleMeeting => 'جدولة اجتماع';
+
+  @override
+  String get classroomAdminCreateTheMeetingInGoogle =>
+      'أنشئ الاجتماع في Google Meet ثم الصق رابطه هنا. سيُبلَّغ المدعوون في التطبيق ويمكنهم الانضمام منه.';
+
+  @override
+  String get classroomAdminNoUpcomingMeetings => 'لا توجد اجتماعات قادمة.';
+
+  @override
+  String classroomAdminRecipientcountInvited(Object recipientCount) {
+    return 'المدعوون: $recipientCount';
+  }
+
+  @override
+  String get classroomAdminLinkCopied => 'تم نسخ الرابط.';
+
+  @override
+  String get classroomAdminCopyLink => 'نسخ الرابط';
+
+  @override
+  String get classroomAdminMeetingCancelled => 'تم إلغاء الاجتماع.';
+
+  @override
+  String get classroomAdminCancelMeeting => 'إلغاء الاجتماع';
+
+  @override
+  String get classroomAdminCreateStudent => 'إنشاء طالب';
+
+  @override
+  String get classroomAdminDisplayName => 'الاسم الظاهر';
+
+  @override
+  String get classroomAdminAccountUuidOptional => 'معرّف الحساب UUID (اختياري)';
+
+  @override
+  String get classroomAdminStudentCreatedAndEnrolled =>
+      'تم إنشاء الطالب وتسجيله.';
+
+  @override
+  String get classroomAdminEnrolStudent => 'تسجيل طالب';
+
+  @override
+  String get classroomAdminStudentRecordId => 'معرّف سجل الطالب';
+
+  @override
+  String classroomAdminWithdrawDisplaynameFromThisClass(Object displayName) {
+    return 'سحب $displayName من هذا الفصل؟';
+  }
+
+  @override
+  String get classroomAdminStudentWithdrawn => 'تم سحب الطالب.';
+
+  @override
+  String classroomAdminTransferDisplayname(Object displayName) {
+    return 'نقل $displayName';
+  }
+
+  @override
+  String get classroomAdminTargetClass => 'الفصل المستهدف';
+
+  @override
+  String get classroomAdminStudentTransferred => 'تم نقل الطالب.';
+
+  @override
+  String get classroomAdminTeacherAccountUuid => 'معرّف حساب المعلم UUID';
+
+  @override
+  String get classroomAdminRole => 'الدور';
+
+  @override
+  String get classroomAdminCoTeacher => 'معلم مشارك';
+
+  @override
+  String get classroomAdminLeadTeacher => 'المعلم الرئيسي';
+
+  @override
+  String get classroomAdminAssign => 'تعيين';
+
+  @override
+  String get classroomAdminStaffAssigned => 'تم تعيين المعلم.';
+
+  @override
+  String get classroomAdminStarts => 'يبدأ';
+
+  @override
+  String get classroomAdminTime => 'الوقت';
+
+  @override
+  String get classroomAdminDuration => 'المدة';
+
+  @override
+  String get classroomAdminMinutes => 'دقيقة';
+
+  @override
+  String get classroomAdminAudience => 'الحضور';
+
+  @override
+  String get classroomAdminCreateItInGoogleMeet => 'أنشئه في Google Meet';
+
+  @override
+  String get classroomAdminGoogleMeetLink => 'رابط Google Meet';
+
+  @override
+  String get classroomAdminPasteALinkThatStarts =>
+      'الصق رابطًا يبدأ بـ https://meet.google.com/';
+
+  @override
+  String get classroomAdminSchedule => 'جدولة';
+
+  @override
+  String get classroomAdminMeetingScheduledEveryoneInvitedHas =>
+      'تمت جدولة الاجتماع وإبلاغ المدعوين.';
+
+  @override
+  String get guardianVerifyConfirmGuardianVerification =>
+      'تأكيد التحقق من ولي الأمر';
+
+  @override
+  String get guardianVerifyRevokeGuardianAccess => 'إلغاء وصول ولي الأمر؟';
+
+  @override
+  String get guardianVerifyVerifyOnlyAfterCheckingThe =>
+      'أكد الربط بعد التحقق من هوية ولي الأمر وصلته بالطالب فقط.';
+
+  @override
+  String get guardianVerifyThisRemovesAccessGrantedBy =>
+      'سيؤدي هذا إلى إزالة الوصول الممنوح بواسطة هذا الربط العائلي.';
+
+  @override
+  String get guardianVerifyLinkStatus => 'حالة الربط';
+
+  @override
+  String get guardianVerifyGuardianVerification => 'التحقق من ولي الأمر';
+
+  @override
+  String get guardianVerifyEnterTheLinkIdSupplied =>
+      'أدخل معرّف الربط المرفق بطلب التحقق. لا يوفر الخادم قائمة بالطلبات المعلقة حاليًا.';
+
+  @override
+  String get guardianVerifyGuardianLinkId => 'معرّف ربط ولي الأمر';
+
+  @override
+  String get guardianVerifyVerificationPeriod => 'مدة التحقق';
+
+  @override
+  String get guardianVerifyDays => 'يومًا';
+
+  @override
+  String get guardianVerifyVerifyLink => 'تأكيد الربط';
+
+  @override
+  String get guardianVerifyRevokeLink => 'إلغاء الربط';
+
+  @override
+  String get termsAcademicTerms => 'الفصول الدراسية';
+
+  @override
+  String get termsCreateTerm => 'إنشاء فصل دراسي';
+
+  @override
+  String get termsNoTermsCreated => 'لم يتم إنشاء فصول دراسية.';
+
+  @override
+  String get termsCreateAcademicTerm => 'إنشاء فصل دراسي';
+
+  @override
+  String get termsName => 'الاسم';
+
+  @override
+  String get termsStarts => 'البداية';
+
+  @override
+  String get termsEnds => 'النهاية';
+
+  @override
+  String get termsCreate => 'إنشاء';
+
+  @override
+  String get termsTermCreated => 'تم إنشاء الفصل الدراسي.';
+
+  @override
+  String get rolesYourSpaceToGrow => 'مساحتك للنمو';
+
+  @override
+  String get studyPlansFeatureLessons => 'دروس كل صف مرتبة حسب التاريخ';
+
+  @override
+  String get studyPlansFeatureNotebook => 'دفتر خاص بك لكل صف';
+
+  @override
+  String get studyPlansFeatureTenQuestions => '10 أسئلة يوميًا للمساعد الدراسي';
+
+  @override
+  String get studyPlansFeatureEverythingInFree => 'كل ما في الخطة المجانية';
+
+  @override
+  String get studyPlansFeatureWhiteboard =>
+      'صوّر السبورة واحصل على ملاحظات حقيقية في دفترك';
+
+  @override
+  String get studyPlansFeatureFortyQuestions => '40 سؤالًا يوميًا';
+
+  @override
+  String get studyPlansFeatureEverythingInPlus => 'كل ما في Plus';
+
+  @override
+  String get studyPlansFeatureQuizzes => 'اختبارات من دروسك';
+
+  @override
+  String get studyPlansFeatureFlashcards => 'بطاقات مراجعة من دروسك';
+
+  @override
+  String get studyPlansFeatureSixtyQuestions => '60 سؤالًا يوميًا';
+
+  @override
+  String get studentTodayMakeTodayYours => 'اجعل اليوم يومك.';
+
+  @override
+  String studentTodayMakeTodayYoursName(Object name) {
+    return 'اجعل اليوم يومك، $name.';
+  }
+
+  @override
+  String get studySetQuiz => 'اختبار';
+
+  @override
+  String get studySetFlashcards => 'بطاقات مراجعة';
+
+  @override
+  String get studentTodayClassesCouldNotLoad =>
+      'تعذّر تحميل صفوفك. اسحب للأسفل لإعادة المحاولة.';
+
+  @override
+  String get studentTodayNoClassesYet => 'لا توجد صفوف بعد';
+
+  @override
+  String get studentTodayPasteClassLink =>
+      'الصق رابط الصف الذي شاركه معلمك للانضمام إلى صفك الأول.';
+
+  @override
+  String studentTodayGradeSection(Object grade, Object section) {
+    return 'الصف $grade · $section';
+  }
+
+  @override
+  String get msgTitle => 'الرسائل';
+
+  @override
+  String get msgEmptyTitle => 'لا توجد محادثات بعد';
+
+  @override
+  String get msgEmptyMessage => 'ابدأ محادثة مع مدرستك.';
+
+  @override
+  String get msgEmptyAwaitingLink =>
+      'عند ربط طفل بك، يمكنك مراسلة معلميه من هنا.';
+
+  @override
+  String get msgNew => 'رسالة جديدة';
+
+  @override
+  String get msgNoSchool => 'اختر مدرسة لعرض الرسائل.';
+
+  @override
+  String get msgRetry => 'حاول مرة أخرى';
+
+  @override
+  String get msgErrorTitle => 'تعذر تحميل الرسائل';
+
+  @override
+  String get msgComposeHint => 'اكتب رسالة';
+
+  @override
+  String get msgSend => 'إرسال';
+
+  @override
+  String get msgSendFailed => 'لم يتم الإرسال. اضغط إرسال للمحاولة مرة أخرى.';
+
+  @override
+  String get msgLoadOlder => 'تحميل الرسائل السابقة';
+
+  @override
+  String get msgYou => 'أنت';
+
+  @override
+  String get msgUnknownPerson => 'شخص ما';
+
+  @override
+  String get msgMenuReportConversation => 'الإبلاغ عن المحادثة';
+
+  @override
+  String msgMenuReportPerson(String name) {
+    return 'الإبلاغ عن $name';
+  }
+
+  @override
+  String msgMenuBlockPerson(String name) {
+    return 'حظر $name';
+  }
+
+  @override
+  String get msgMenuBlocked => 'الأشخاص المحظورون';
+
+  @override
+  String get msgMessageReport => 'الإبلاغ عن الرسالة';
+
+  @override
+  String get msgReportTitle => 'إبلاغ';
+
+  @override
+  String get msgReportIntro =>
+      'يصل بلاغك إلى فريق الحماية في مدرستك. لن يعرف الشخص المبلَّغ عنه هوية المبلِّغ.';
+
+  @override
+  String get msgReportReason => 'ما المشكلة؟';
+
+  @override
+  String get msgReasonHarassment => 'تنمر أو مضايقة';
+
+  @override
+  String get msgReasonInappropriate => 'محتوى غير لائق';
+
+  @override
+  String get msgReasonSafety => 'أنا قلق على سلامة شخص ما';
+
+  @override
+  String get msgReasonSpam => 'رسائل مزعجة';
+
+  @override
+  String get msgReasonOther => 'سبب آخر';
+
+  @override
+  String get msgReportDetails => 'أخبرنا بالمزيد (اختياري)';
+
+  @override
+  String get msgReportConsent => 'يمكن للمدرسة التواصل معي بشأن هذا البلاغ';
+
+  @override
+  String get msgReportAlsoBlock => 'حظر هذا الشخص أيضاً';
+
+  @override
+  String get msgReportSubmit => 'إرسال البلاغ';
+
+  @override
+  String get msgReportSent => 'تم إرسال البلاغ. شكراً لإخبارنا.';
+
+  @override
+  String get msgReportUrgent =>
+      'إذا كان أحد في خطر مباشر، اتصل بخدمات الطوارئ أو بشخص بالغ تثق به الآن.';
+
+  @override
+  String msgBlockTitle(String name) {
+    return 'حظر $name؟';
+  }
+
+  @override
+  String get msgBlockMessage =>
+      'لن تتمكنا من مراسلة بعضكما. تبقى الرسائل المرسلة سابقاً مرئية للمدرسة.';
+
+  @override
+  String get msgBlockConfirm => 'حظر';
+
+  @override
+  String msgBlockDone(String name) {
+    return 'تم حظر $name.';
+  }
+
+  @override
+  String get msgCancel => 'إلغاء';
+
+  @override
+  String get msgBlockedTitle => 'الأشخاص المحظورون';
+
+  @override
+  String get msgBlockedEmpty => 'لم تقم بحظر أي شخص.';
+
+  @override
+  String get msgUnblock => 'إلغاء الحظر';
+
+  @override
+  String get msgUnblockDone => 'تم إلغاء الحظر.';
+
+  @override
+  String get msgBlockedBanner =>
+      'لقد حظرت شخصاً في هذه المحادثة. ألغِ الحظر لإرسال الرسائل.';
+
+  @override
+  String get msgNewTitle => 'رسالة جديدة';
+
+  @override
+  String get msgNewEmpty => 'لا يوجد أحد متاح للمراسلة.';
+
+  @override
+  String get msgNewSearch => 'ابحث عن الأشخاص';
+
+  @override
+  String get msgSubjectHint => 'الموضوع (اختياري)';
+
+  @override
+  String get msgStart => 'بدء المحادثة';
+
+  @override
+  String get msgRoleStaff => 'طاقم المدرسة';
+
+  @override
+  String get msgRoleStudent => 'طالب';
+
+  @override
+  String get msgRoleGuardian => 'ولي أمر';
+
+  @override
+  String msgGuardianOf(String names) {
+    return 'ولي أمر $names';
+  }
+
+  @override
+  String get msgErrorMessagingDisabled => 'لم تقم مدرستك بتفعيل المراسلة بعد.';
+
+  @override
+  String get msgErrorContactNotAllowed => 'لا يمكنك مراسلة هذا الشخص.';
+
+  @override
+  String get msgErrorForbidden =>
+      'لا يمكنك إرسال رسائل هنا. ربما قمت بحظر شخص ما، أو قام أحدهم بحظرك.';
+
+  @override
+  String get msgErrorNotFound => 'هذه المحادثة لم تعد متاحة.';
+
+  @override
+  String get msgErrorInvalidState =>
+      'لقد أبلغت عن هذا خلال اليوم الماضي. المدرسة تتابعه.';
+
+  @override
+  String get msgErrorWindowClosed =>
+      'أرسلت عدداً كبيراً من البلاغات اليوم. يرجى التواصل مع المدرسة مباشرة.';
+
+  @override
+  String get msgErrorRateLimited =>
+      'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.';
+
+  @override
+  String get msgErrorNetwork =>
+      'تعذر على Studafy الوصول إلى المدرسة. تحقق من اتصالك.';
+
+  @override
+  String get msgErrorUnauthorized => 'يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get msgErrorValidation => 'اكتب رسالة أولاً.';
+
+  @override
+  String get msgErrorUnknown => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get famTitle => 'عائلتي';
+
+  @override
+  String get famChildren => 'أطفالي';
+
+  @override
+  String get famEmptyTitle => 'لم يتم ربط أي طفل بعد';
+
+  @override
+  String get famEmptyMessage =>
+      'اطلب من طفلك معرّف Studafy الخاص به. يجب أن يوافق على طلبك قبل أن تتمكن من متابعة تقدمه.';
+
+  @override
+  String get famLink => 'ربط طفل';
+
+  @override
+  String get famLinkTitle => 'ربط طفل';
+
+  @override
+  String get famLinkHint => 'رقم Studafy';
+
+  @override
+  String get famLinkFind => 'بحث';
+
+  @override
+  String get famLinkNotFound =>
+      'لا يوجد طالب بهذا الرقم. تحقق منه وحاول مرة أخرى.';
+
+  @override
+  String famLinkConfirm(String name) {
+    return 'طلب الربط مع $name';
+  }
+
+  @override
+  String famLinkSent(String name) {
+    return 'تم إرسال الطلب. يجب أن يوافق $name قبل أن تتمكن من رؤية سجلاته.';
+  }
+
+  @override
+  String get famStatusPending => 'بانتظار موافقة طفلك';
+
+  @override
+  String get famStatusVerified => 'مرتبط';
+
+  @override
+  String get famStatusDeclined => 'تم رفض الطلب';
+
+  @override
+  String get famStatusRevoked => 'لم يعد مرتبطاً';
+
+  @override
+  String get famView => 'عرض التقدم';
+
+  @override
+  String famProgressTitle(String name) {
+    return 'تقدم $name';
+  }
+
+  @override
+  String get famProgressAverage => 'متوسط الدرجات المنشورة';
+
+  @override
+  String famProgressGraded(String count) {
+    return '$count درجات منشورة';
+  }
+
+  @override
+  String get famProgressAttendance => 'الحضور';
+
+  @override
+  String famProgressSessions(String count) {
+    return '$count حصص مسجلة';
+  }
+
+  @override
+  String get famProgressNone => 'لا توجد بيانات بعد';
+
+  @override
+  String famProgressBreakdown(
+    String present,
+    String late,
+    String absent,
+    String excused,
+  ) {
+    return 'حاضر $present · متأخر $late · غائب $absent · بعذر $excused';
+  }
+
+  @override
+  String get famProgressSource =>
+      'محسوب من الدرجات التي نشرتها المدرسة والحضور الذي سجلته. تواصل مع المدرسة إذا بدا شيء غير صحيح.';
+
+  @override
+  String get famApprovalsTitle => 'بانتظار موافقتك';
+
+  @override
+  String famApprovalsDetail(String name) {
+    return 'طلب $name الاشتراك في دفتر الطالب.';
+  }
+
+  @override
+  String get famApprovalsApprove => 'موافقة';
+
+  @override
+  String get famApprovalsDecline => 'رفض';
+
+  @override
+  String get famApprovalsDone => 'تم إرسال قرارك.';
+
+  @override
+  String get famRetry => 'حاول مرة أخرى';
+
+  @override
+  String get famCancel => 'إلغاء';
+
+  @override
+  String get famErrorTitle => 'تعذر تحميل بيانات العائلة';
+
+  @override
+  String get famErrorReauthRequired =>
+      'لحمايتك، سجّل الخروج ثم سجّل الدخول مرة أخرى، ثم وافق.';
+
+  @override
+  String get famErrorForbidden => 'ليس لديك صلاحية الوصول إلى هذا.';
+
+  @override
+  String get famErrorNotFound => 'لم يعد هذا متاحاً.';
+
+  @override
+  String get famErrorInvalidState => 'تم البت في هذا الطلب مسبقاً.';
+
+  @override
+  String get famErrorRateLimited =>
+      'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.';
+
+  @override
+  String get famErrorNetwork =>
+      'تعذر على Studafy الوصول إلى المدرسة. تحقق من اتصالك.';
+
+  @override
+  String get famErrorUnauthorized => 'يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get famErrorValidation => 'أدخل رقم Studafy.';
+
+  @override
+  String get famErrorUnknown => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get accountAccountId => 'معرّف الحساب';
+
+  @override
+  String get accountAccountIdDetail => 'شارك هذا المعرّف مع مدرستك لربط حسابك.';
+
+  @override
+  String get accountAccountIdCopied => 'تم نسخ معرّف الحساب';
+
+  @override
+  String get accountSwitchRole => 'تبديل الدور';
+
+  @override
+  String get accountSwitchRoleDetail => 'أنت مرتبط بهذه المدرسة بأكثر من دور.';
+
+  @override
+  String get accountTitle => 'الحساب';
+
+  @override
+  String get accountSectionAccount => 'الحساب';
+
+  @override
+  String get accountSectionPreferences => 'التفضيلات';
+
+  @override
+  String get accountSectionPrivacy => 'الخصوصية والبيانات';
+
+  @override
+  String get accountStudafyId => 'معرّف ستودافاي الخاص بك';
+
+  @override
+  String get accountStudafyIdDetail =>
+      'أعطِ هذا لولي أمرك ليتمكن من طلب الارتباط.';
+
+  @override
+  String get accountStudafyIdCopy => 'نسخ معرّف ستودافاي';
+
+  @override
+  String get accountStudafyIdCopied => 'تم نسخ معرّف ستودافاي.';
+
+  @override
+  String get accountUnknown => 'حسابك';
+
+  @override
+  String get accountLanguage => 'اللغة';
+
+  @override
+  String get accountSecurity => 'تسجيل الدخول والأمان';
+
+  @override
+  String get accountSecurityDetail =>
+      'الأجهزة، التحقق بخطوتين، تسجيل الخروج من كل الأجهزة';
+
+  @override
+  String get accountSignOut => 'تسجيل الخروج';
+
+  @override
+  String get accountDelete => 'حذف الحساب';
+
+  @override
+  String get accountRoleSchoolAdmin => 'مسؤول المدرسة';
+
+  @override
+  String get accountRoleTeacher => 'معلم';
+
+  @override
+  String get accountRoleParent => 'ولي أمر';
+
+  @override
+  String get accountRoleStudent => 'طالب';
+
+  @override
+  String get accountExport => 'تنزيل بياناتي';
+
+  @override
+  String get accountExportDetail =>
+      'احصل على نسخة من المعلومات التي يحتفظ بها Studafy عنك.';
+
+  @override
+  String get accountExportRequest => 'طلب';
+
+  @override
+  String get accountExportPending => 'نجهّز نسختك. قد يستغرق ذلك بضع دقائق.';
+
+  @override
+  String get accountExportCheck => 'تحقق';
+
+  @override
+  String get accountExportReady => 'نسختك جاهزة لمدة 7 أيام.';
+
+  @override
+  String get accountExportDownload => 'تنزيل';
+
+  @override
+  String get accountExportRequested => 'تم استلام الطلب. نجهّز نسختك الآن.';
+
+  @override
+  String get accountExportReauth =>
+      'لحمايتك، سجّل الخروج ثم سجّل الدخول مرة أخرى أولاً.';
+
+  @override
+  String get accountExportExpired =>
+      'انتهت صلاحية تلك النسخة. اطلب نسخة جديدة.';
+
+  @override
+  String get accountExportFailed => 'لم ينجح ذلك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get todayWork => 'الأعمال التي أسندتها';
+
+  @override
+  String get todayWorkEmpty => 'لم تُسند أي عمل بعد.';
+
+  @override
+  String get todaySections => 'حصص تنتظر المحتوى';
+
+  @override
+  String get todaySectionsEmpty => 'كل حصة درّستها تم رفع محتواها.';
+
+  @override
+  String get todaySectionsOutstanding => 'المحتوى غير مرفوع';
+
+  @override
+  String get todayTitle => 'اليوم';
+
+  @override
+  String get todayHello => 'مرحباً';
+
+  @override
+  String todayHelloName(String name) {
+    return 'مرحباً، $name';
+  }
+
+  @override
+  String get todayClasses => 'فصولي';
+
+  @override
+  String todayStudents(String count) {
+    return '$count طلاب';
+  }
+
+  @override
+  String get todayEmpty => 'لا توجد فصول بعد';
+
+  @override
+  String get todayEmptyDetail => 'أنشئ فصلك الأول من تبويب الفصول.';
+
+  @override
+  String get todayError => 'تعذر تحميل الفصول';
+
+  @override
+  String get todayErrorDetail => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get todayRetry => 'حاول مرة أخرى';
+
+  @override
+  String get todayMessages => 'الرسائل';
+
+  @override
+  String get todayNotifications => 'الإشعارات';
+
+  @override
+  String get navToday => 'اليوم';
+
+  @override
+  String get navClasses => 'الفصول';
+
+  @override
+  String get navTeaching => 'التدريس';
+
+  @override
+  String get navGradebook => 'سجل الدرجات';
+
+  @override
+  String get navInbox => 'الوارد';
+
+  @override
+  String get navLearning => 'التعلّم';
+
+  @override
+  String get navInsights => 'رؤى+';
+
+  @override
+  String get navUpdates => 'التحديثات';
+
+  @override
+  String get navMessages => 'الرسائل';
+
+  @override
+  String get navNotebook => 'دفتر الدروس';
+
+  @override
+  String get navWork => 'الأعمال';
+
+  @override
+  String get navGrades => 'الدرجات';
+
+  @override
+  String get notificationsFeedTitle => 'الإشعارات';
+
+  @override
+  String get notificationsFeedMarkAllRead => 'تعليم الكل كمقروء';
+
+  @override
+  String get notificationsFeedErrorTitle => 'تعذّر تحميل الإشعارات';
+
+  @override
+  String get notificationsFeedRetry => 'إعادة المحاولة';
+
+  @override
+  String get notificationsFeedOfflineBanner =>
+      'يتم عرض آخر الإشعارات المحفوظة — أعد الاتصال للتحديث.';
+
+  @override
+  String get notificationsFeedEmptyTitle => 'لا توجد إشعارات بعد';
+
+  @override
+  String get notificationsFeedEmptyMessage => 'ستظهر هنا التحديثات فور حدوثها.';
+
+  @override
+  String get notificationsFeedLoading => 'جارٍ التحميل…';
+
+  @override
+  String get notificationsFeedLoadMore => 'تحميل المزيد';
+
+  @override
+  String get notificationCopyAcademicAssessmentPublishedTitle =>
+      'تم نشر التقييم';
+
+  @override
+  String get notificationCopyAcademicAssessmentPublishedDetail =>
+      'أصبح تقييم جديد متاحًا لأحد فصولك.';
+
+  @override
+  String get notificationCopyAcademicAssignmentPublishedTitle =>
+      'تم نشر الواجب';
+
+  @override
+  String get notificationCopyAcademicAssignmentPublishedDetail =>
+      'أصبح واجب جديد متاحًا لأحد فصولك.';
+
+  @override
+  String get notificationCopyAcademicGradePublishedTitle => 'درجة جديدة';
+
+  @override
+  String get notificationCopyAcademicGradePublishedDetail =>
+      'تم نشر درجة جديدة. افتح الدرجات للاطلاع عليها.';
+
+  @override
+  String get notificationCopyAcademicResourcePublishedTitle =>
+      'مادة دراسية جديدة';
+
+  @override
+  String get notificationCopyAcademicResourcePublishedDetail =>
+      'شارك معلمك مادة جديدة لأحد فصولك.';
+
+  @override
+  String get notificationCopyAcademicWellbeingSharedTitle => 'ملاحظة رفاهية';
+
+  @override
+  String get notificationCopyAcademicWellbeingSharedDetail =>
+      'تمت مشاركة ملاحظة متعلقة بالرفاهية معك.';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalRequestedTitle =>
+      'مطلوب الموافقة على شراء';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalRequestedDetail =>
+      'طلب طفلك موافقتك على اشتراك.';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalApprovedTitle =>
+      'تمت الموافقة على الشراء';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalApprovedDetail =>
+      'وافق ولي الأمر على طلب اشتراكك.';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalDeclinedTitle =>
+      'تم رفض الشراء';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalDeclinedDetail =>
+      'رفض ولي الأمر طلب اشتراكك.';
+
+  @override
+  String get notificationCopyMeetingsScheduledTitle => 'تم تأكيد الاجتماع';
+
+  @override
+  String get notificationCopyMeetingsScheduledDetail =>
+      'تمت جدولة اجتماع. تحقق من تقويمك لرؤية الدعوة.';
+
+  @override
+  String get notificationCopyMeetingsFailedTitle => 'لم تتم جدولة الاجتماع';
+
+  @override
+  String get notificationCopyMeetingsFailedDetail =>
+      'تعذرت جدولة اجتماع طلبته. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get notificationCopyCommunicationsAnnouncementCreatedTitle =>
+      'إعلان جديد';
+
+  @override
+  String get notificationCopyCommunicationsAnnouncementCreatedDetail =>
+      'تم نشر إعلان جديد.';
+
+  @override
+  String get notificationCopyCommunicationsMessageSentTitle => 'رسالة جديدة';
+
+  @override
+  String get notificationCopyCommunicationsMessageSentDetail =>
+      'وصلتك رسالة جديدة.';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRequestedTitle =>
+      'طلب ربط عائلي';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRequestedDetail =>
+      'طلب أحدهم الربط كولي أمر.';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRevokedTitle =>
+      'إزالة ربط عائلي';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRevokedDetail =>
+      'تمت إزالة ربط عائلي.';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkVerifiedTitle =>
+      'تم تأكيد الربط العائلي';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkVerifiedDetail =>
+      'تم تأكيد ربط عائلي.';
+
+  @override
+  String get notificationCopyInvitationsIssuedTitle => 'تم إرسال دعوة';
+
+  @override
+  String get notificationCopyInvitationsIssuedDetail => 'تم إصدار دعوة.';
+
+  @override
+  String get notificationCopyMeetingsCancelledTitle => 'تم إلغاء الاجتماع';
+
+  @override
+  String get notificationCopyMeetingsCancelledDetail =>
+      'تم إلغاء اجتماع مجدول.';
+
+  @override
+  String get notificationCopyMeetingsRequestedTitle => 'طلب اجتماع';
+
+  @override
+  String get notificationCopyMeetingsRequestedDetail => 'تم طلب اجتماع.';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffAssignedTitle =>
+      'تعيين موظف';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffAssignedDetail =>
+      'تم تعيين موظف لأحد الفصول.';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffRemovedTitle =>
+      'إزالة موظف';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffRemovedDetail =>
+      'تمت إزالة موظف من أحد الفصول.';
+
+  @override
+  String get notificationCopySchoolAdminMembershipGrantedTitle =>
+      'تم منح الصلاحية';
+
+  @override
+  String get notificationCopySchoolAdminMembershipGrantedDetail =>
+      'تم منح صلاحية الوصول للمدرسة.';
+
+  @override
+  String get notificationCopySchoolAdminStudentEnrolledTitle => 'تسجيل طالب';
+
+  @override
+  String get notificationCopySchoolAdminStudentEnrolledDetail =>
+      'تم تسجيل طالب جديد.';
+
+  @override
+  String get notificationCopySchoolAdminStudentTransferredTitle => 'نقل طالب';
+
+  @override
+  String get notificationCopySchoolAdminStudentTransferredDetail =>
+      'تم نقل طالب بين الفصول.';
+
+  @override
+  String get notificationCopySchoolAdminStudentWithdrawnTitle => 'انسحاب طالب';
+
+  @override
+  String get notificationCopySchoolAdminStudentWithdrawnDetail =>
+      'تم سحب طالب.';
+
+  @override
+  String get notificationCopySupportAccessApprovedTitle =>
+      'تمت الموافقة على الدعم';
+
+  @override
+  String get notificationCopySupportAccessApprovedDetail =>
+      'تمت الموافقة على طلب وصول الدعم.';
+
+  @override
+  String get notificationCopySupportAccessRequestedTitle => 'طلب وصول للدعم';
+
+  @override
+  String get notificationCopySupportAccessRequestedDetail =>
+      'تم طلب وصول الدعم الفني.';
+
+  @override
+  String get notificationCopySupportAccessRevokedTitle => 'تم إلغاء وصول الدعم';
+
+  @override
+  String get notificationCopySupportAccessRevokedDetail =>
+      'تم إلغاء وصول الدعم الفني.';
+
+  @override
+  String get notificationCopySupportAccessStartedTitle => 'بدأت جلسة الدعم';
+
+  @override
+  String get notificationCopySupportAccessStartedDetail => 'بدأت جلسة دعم فني.';
+
+  @override
+  String get notificationCopyGenericTitle => 'إشعار';
+
+  @override
+  String get notificationCopyGenericDetail => 'لديك تحديث جديد.';
 }

@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/app/teacher_today_page.dart';
 import 'package:studafy/core/ids.dart';
 import 'package:studafy/core/studafy_domain.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/classes/application/class_list_interactor.dart';
 import 'package:studafy/features/classes/domain/classroom.dart';
@@ -67,11 +66,6 @@ class _Notifications implements NotificationsRepository {
 void main() {
   tearDown(() => ActiveContextController.instance.profile = null);
 
-  test('every teacher home string exists in English and Arabic', () {
-    final keys = teacherTodayStringKeys();
-    expect(keys['ar'], keys['en']);
-  });
-
   testWidgets('shows the real teacher and classes, never the demo content', (
     tester,
   ) async {
@@ -83,10 +77,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        supportedLocales: StudafyLocalizations.supportedLocales,
+        supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const [
           AppL10n.delegate,
-          StudafyLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

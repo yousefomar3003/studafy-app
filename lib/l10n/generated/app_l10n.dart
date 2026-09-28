@@ -2610,6 +2610,2852 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Grade'**
   String get submissionsGrade;
+
+  /// No description provided for @attachmentThatFileCouldNotBe.
+  ///
+  /// In en, this message translates to:
+  /// **'That file could not be uploaded.'**
+  String get attachmentThatFileCouldNotBe;
+
+  /// No description provided for @attachmentThatFileIsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is empty.'**
+  String get attachmentThatFileIsEmpty;
+
+  /// No description provided for @attachmentOnlyPdfAndPhotosCan.
+  ///
+  /// In en, this message translates to:
+  /// **'Only PDF and photos can be attached.'**
+  String get attachmentOnlyPdfAndPhotosCan;
+
+  /// No description provided for @attachmentThatFileIsLargerThan.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is larger than {maximumSizeBytes} MB.'**
+  String attachmentThatFileIsLargerThan(Object maximumSizeBytes);
+
+  /// No description provided for @attachmentAttachFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach file'**
+  String get attachmentAttachFile;
+
+  /// No description provided for @attachmentPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get attachmentPhoto;
+
+  /// No description provided for @attachmentUpToMaximumcountAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {maximumCount} attachments.'**
+  String attachmentUpToMaximumcountAttachments(Object maximumCount);
+
+  /// No description provided for @attachmentUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading'**
+  String get attachmentUploading;
+
+  /// No description provided for @attachmentChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking'**
+  String get attachmentChecking;
+
+  /// No description provided for @attachmentReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get attachmentReady;
+
+  /// No description provided for @attachmentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get attachmentFailed;
+
+  /// No description provided for @attachmentThisFileIsStillBeing.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is still being checked. Try again shortly.'**
+  String get attachmentThisFileIsStillBeing;
+
+  /// No description provided for @attachmentThatFileCouldNotBe2.
+  ///
+  /// In en, this message translates to:
+  /// **'That file could not be opened.'**
+  String get attachmentThatFileCouldNotBe2;
+
+  /// No description provided for @studentTodayALittleProgressEveryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'A LITTLE PROGRESS, EVERY DAY'**
+  String get studentTodayALittleProgressEveryDay;
+
+  /// No description provided for @studentTodayYourClassesYourIdeasYour.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes, your ideas, your next big thing.'**
+  String get studentTodayYourClassesYourIdeasYour;
+
+  /// No description provided for @studentTodayMyNotebook.
+  ///
+  /// In en, this message translates to:
+  /// **'My notebook'**
+  String get studentTodayMyNotebook;
+
+  /// No description provided for @studentTodayLessonNotesSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson notes · Subscription'**
+  String get studentTodayLessonNotesSubscription;
+
+  /// No description provided for @studentTodayMyWork.
+  ///
+  /// In en, this message translates to:
+  /// **'My work'**
+  String get studentTodayMyWork;
+
+  /// No description provided for @studentTodayTakeTheNextStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the next step'**
+  String get studentTodayTakeTheNextStep;
+
+  /// No description provided for @studentTodayMyIdFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'My ID & family'**
+  String get studentTodayMyIdFamily;
+
+  /// No description provided for @studentTodayShareYourIdReviewParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your ID. Review parent requests.'**
+  String get studentTodayShareYourIdReviewParent;
+
+  /// No description provided for @studentTodayYourClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes'**
+  String get studentTodayYourClasses;
+
+  /// No description provided for @studentTodayReadyWhenYouAre.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready when you are'**
+  String get studentTodayReadyWhenYouAre;
+
+  /// No description provided for @studentTodayYourWorkCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Your work could not load. Open My work to retry.'**
+  String get studentTodayYourWorkCouldNotLoad;
+
+  /// No description provided for @studentTodayALittleBreathingRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'A little breathing room'**
+  String get studentTodayALittleBreathingRoom;
+
+  /// No description provided for @studentTodayNewAssignmentsWillAppearHere.
+  ///
+  /// In en, this message translates to:
+  /// **'New assignments will appear here when your teacher shares them.'**
+  String get studentTodayNewAssignmentsWillAppearHere;
+
+  /// No description provided for @teacherShellManageRosterStaffAndMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage roster, staff and meetings'**
+  String get teacherShellManageRosterStaffAndMeetings;
+
+  /// No description provided for @teacherShellClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get teacherShellClasses;
+
+  /// No description provided for @teacherShellMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get teacherShellMessages;
+
+  /// No description provided for @schoolAdminAdministrationRequiresTheRemoteBackend.
+  ///
+  /// In en, this message translates to:
+  /// **'Administration requires the remote backend.'**
+  String get schoolAdminAdministrationRequiresTheRemoteBackend;
+
+  /// No description provided for @schoolAdminSchoolAdministration.
+  ///
+  /// In en, this message translates to:
+  /// **'School administration'**
+  String get schoolAdminSchoolAdministration;
+
+  /// No description provided for @schoolAdminTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms'**
+  String get schoolAdminTerms;
+
+  /// No description provided for @schoolAdminGuardians.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardians'**
+  String get schoolAdminGuardians;
+
+  /// No description provided for @schoolAdminUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get schoolAdminUpdates;
+
+  /// No description provided for @schoolAdminAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get schoolAdminAccount;
+
+  /// No description provided for @teacherTodaySpaceToInspireADay.
+  ///
+  /// In en, this message translates to:
+  /// **'Space to inspire. A day to make a difference.'**
+  String get teacherTodaySpaceToInspireADay;
+
+  /// No description provided for @studentLessonsPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get studentLessonsPlans;
+
+  /// No description provided for @studentLessonsYourClassesCouldNotBe.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes could not be loaded. Try again'**
+  String get studentLessonsYourClassesCouldNotBe;
+
+  /// No description provided for @studentLessonsJoinAClassToSee.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a class to see its lessons here.'**
+  String get studentLessonsJoinAClassToSee;
+
+  /// No description provided for @studentLessonsLessonsAndYourNotebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons and your notebook'**
+  String get studentLessonsLessonsAndYourNotebook;
+
+  /// No description provided for @studentLessonsMyNotebook.
+  ///
+  /// In en, this message translates to:
+  /// **'My notebook'**
+  String get studentLessonsMyNotebook;
+
+  /// No description provided for @studySetQuizzesAndFlashcardsComeWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes and flashcards come with Studafy Max.'**
+  String get studySetQuizzesAndFlashcardsComeWith;
+
+  /// No description provided for @studySetThisMonthSAiAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'This month\'s AI allowance is used. It renews on the 1st.'**
+  String get studySetThisMonthSAiAllowance;
+
+  /// No description provided for @studySetThisLessonHasNoText.
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson has no text to study from.'**
+  String get studySetThisLessonHasNoText;
+
+  /// No description provided for @studySetThisIsNotAvailableYet.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not available yet.'**
+  String get studySetThisIsNotAvailableYet;
+
+  /// No description provided for @studySetThatDidNotWorkPlease.
+  ///
+  /// In en, this message translates to:
+  /// **'That did not work. Please try again.'**
+  String get studySetThatDidNotWorkPlease;
+
+  /// No description provided for @studySetYouScoredScoreOfQuestionscount.
+  ///
+  /// In en, this message translates to:
+  /// **'You scored {score} of {questionsCount}'**
+  String studySetYouScoredScoreOfQuestionscount(
+    Object score,
+    Object questionsCount,
+  );
+
+  /// No description provided for @studySetAnswerscountOfQuestionscountAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'{answersCount} of {questionsCount} answered'**
+  String studySetAnswerscountOfQuestionscountAnswered(
+    Object answersCount,
+    Object questionsCount,
+  );
+
+  /// No description provided for @studySetTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get studySetTryAgain;
+
+  /// No description provided for @studySetCardPageOfCardscountTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Card {page} of {cardsCount} - tap to turn over'**
+  String studySetCardPageOfCardscountTap(Object page, Object cardsCount);
+
+  /// No description provided for @studyPlansQuestionsTodayAsktodayOfAskperday.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions today: {askToday} of {askPerDay}'**
+  String studyPlansQuestionsTodayAsktodayOfAskperday(
+    Object askToday,
+    Object askPerDay,
+  );
+
+  /// No description provided for @studyPlansAiUsedThisMonthRound.
+  ///
+  /// In en, this message translates to:
+  /// **'AI used this month: {round}%'**
+  String studyPlansAiUsedThisMonthRound(Object round);
+
+  /// No description provided for @studyPlansRenewsRenews.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews {renews}'**
+  String studyPlansRenewsRenews(Object renews);
+
+  /// No description provided for @studyPlansTheStoreCouldNotBe.
+  ///
+  /// In en, this message translates to:
+  /// **'The store could not be reached. Try again later.'**
+  String get studyPlansTheStoreCouldNotBe;
+
+  /// No description provided for @studyPlansBuyingIsNotEnabledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Buying is not enabled for your account yet.'**
+  String get studyPlansBuyingIsNotEnabledFor;
+
+  /// No description provided for @studyPlansWeAskedYourParentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'We asked your parent to approve.'**
+  String get studyPlansWeAskedYourParentTo;
+
+  /// No description provided for @studyPlansWaitingForAParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for a parent'**
+  String get studyPlansWaitingForAParent;
+
+  /// No description provided for @studyPlansAskAParentToApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a parent to approve'**
+  String get studyPlansAskAParentToApprove;
+
+  /// No description provided for @studyPlansOpeningTheStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the store…'**
+  String get studyPlansOpeningTheStore;
+
+  /// No description provided for @studyPlansStartAFreeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a free month'**
+  String get studyPlansStartAFreeMonth;
+
+  /// No description provided for @studyPlansSubscribeToName.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to {name}'**
+  String studyPlansSubscribeToName(Object name);
+
+  /// No description provided for @studyPlansFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get studyPlansFree;
+
+  /// No description provided for @studyPlansPriceMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} / month'**
+  String studyPlansPriceMonth(Object price);
+
+  /// No description provided for @studyPlansUspriceMonthInTheUs.
+  ///
+  /// In en, this message translates to:
+  /// **'{usPrice} / month in the US - the store shows your price'**
+  String studyPlansUspriceMonthInTheUs(Object usPrice);
+
+  /// No description provided for @studyPlansYourPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan'**
+  String get studyPlansYourPlan;
+
+  /// No description provided for @studyPlansManageOrCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage or cancel'**
+  String get studyPlansManageOrCancel;
+
+  /// No description provided for @studyPlansRestoringPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring purchases…'**
+  String get studyPlansRestoringPurchases;
+
+  /// No description provided for @studyPlansRestorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get studyPlansRestorePurchases;
+
+  /// No description provided for @studyPlansAutoRenewingMonthlySubscriptionsPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-renewing monthly subscriptions. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal to avoid the next charge. Deleting the app does not cancel a subscription.'**
+  String get studyPlansAutoRenewingMonthlySubscriptionsPayment;
+
+  /// No description provided for @studyPlansTermsOfUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of use'**
+  String get studyPlansTermsOfUse;
+
+  /// No description provided for @studyPlansPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get studyPlansPrivacyPolicy;
+
+  /// No description provided for @notebookThisNeedsStudafyPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'This needs Studafy Plus.'**
+  String get notebookThisNeedsStudafyPlus;
+
+  /// No description provided for @notebookNoWritingCouldBeRead.
+  ///
+  /// In en, this message translates to:
+  /// **'No writing could be read in that photo. Try a clearer one.'**
+  String get notebookNoWritingCouldBeRead;
+
+  /// No description provided for @notebookThePhotoIsTakingLonger.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo is taking longer than usual to check. Try again shortly.'**
+  String get notebookThePhotoIsTakingLonger;
+
+  /// No description provided for @notebookNewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'New note'**
+  String get notebookNewNote;
+
+  /// No description provided for @notebookSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get notebookSave;
+
+  /// No description provided for @notebookAddATitleAndSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a title and some text.'**
+  String get notebookAddATitleAndSome;
+
+  /// No description provided for @notebookChooseAJpegOrPng.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a JPEG or PNG photo under 10 MB.'**
+  String get notebookChooseAJpegOrPng;
+
+  /// No description provided for @notebookUploadingThePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading the photo…'**
+  String get notebookUploadingThePhoto;
+
+  /// No description provided for @notebookReadingTheWhiteboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the whiteboard…'**
+  String get notebookReadingTheWhiteboard;
+
+  /// No description provided for @notebookNotesAddedToYourNotebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes added to your notebook.'**
+  String get notebookNotesAddedToYourNotebook;
+
+  /// No description provided for @notebookThePhotoCouldNotBe.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo could not be uploaded.'**
+  String get notebookThePhotoCouldNotBe;
+
+  /// No description provided for @notebookDeleteThisNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this note?'**
+  String get notebookDeleteThisNote;
+
+  /// No description provided for @notebookDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get notebookDelete;
+
+  /// No description provided for @notebookToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notebookToday;
+
+  /// No description provided for @notebookYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notebookYesterday;
+
+  /// No description provided for @notebookAddNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add note'**
+  String get notebookAddNote;
+
+  /// No description provided for @notebookSnapTheWhiteboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap the whiteboard'**
+  String get notebookSnapTheWhiteboard;
+
+  /// No description provided for @notebookFromPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'From photos'**
+  String get notebookFromPhotos;
+
+  /// No description provided for @notebookWhiteboardNotesComeWithStudafy.
+  ///
+  /// In en, this message translates to:
+  /// **'Whiteboard notes come with Studafy Plus.'**
+  String get notebookWhiteboardNotesComeWithStudafy;
+
+  /// No description provided for @notebookTheNotebookCouldNotBe.
+  ///
+  /// In en, this message translates to:
+  /// **'The notebook could not be loaded. Try again'**
+  String get notebookTheNotebookCouldNotBe;
+
+  /// No description provided for @notebookYourNotebookForThisClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notebook for this class is empty. Add a note, or snap the whiteboard.'**
+  String get notebookYourNotebookForThisClass;
+
+  /// No description provided for @notebookFromTheWhiteboard.
+  ///
+  /// In en, this message translates to:
+  /// **'From the whiteboard'**
+  String get notebookFromTheWhiteboard;
+
+  /// No description provided for @familyHomeTogetherEveryDay.
+  ///
+  /// In en, this message translates to:
+  /// **'TOGETHER, EVERY DAY'**
+  String get familyHomeTogetherEveryDay;
+
+  /// No description provided for @familyHomeTheirWorldIsGrowingBe.
+  ///
+  /// In en, this message translates to:
+  /// **'Their world is growing. Be part of it.'**
+  String get familyHomeTheirWorldIsGrowingBe;
+
+  /// No description provided for @childSwitcherChooseChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose child'**
+  String get childSwitcherChooseChild;
+
+  /// No description provided for @familyChallengeSecurityCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Security check'**
+  String get familyChallengeSecurityCheck;
+
+  /// No description provided for @familyChallengeTheCheckCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'The check could not load. Go back and try again.'**
+  String get familyChallengeTheCheckCouldNotLoad;
+
+  /// No description provided for @studentFamilyIsThisYourParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this your parent?'**
+  String get studentFamilyIsThisYourParent;
+
+  /// No description provided for @studentFamilyConfirmYourChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your choice'**
+  String get studentFamilyConfirmYourChoice;
+
+  /// No description provided for @studentFamilyOnlyApproveGuardiannameIfYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Only approve {guardianName} if you know this is your parent or guardian. They will be able to see your grades, attendance and shared school updates.'**
+  String studentFamilyOnlyApproveGuardiannameIfYou(Object guardianName);
+
+  /// No description provided for @studentFamilyThisPersonWillNotHave.
+  ///
+  /// In en, this message translates to:
+  /// **'This person will not have access through this family link.'**
+  String get studentFamilyThisPersonWillNotHave;
+
+  /// No description provided for @studentFamilyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get studentFamilyConfirm;
+
+  /// No description provided for @studentFamilyMyFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'My family'**
+  String get studentFamilyMyFamily;
+
+  /// No description provided for @studentFamilyYourConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR CONNECTIONS'**
+  String get studentFamilyYourConnections;
+
+  /// No description provided for @studentFamilyYourFamilyYourChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your family.\nYour choice.'**
+  String get studentFamilyYourFamilyYourChoice;
+
+  /// No description provided for @studentFamilyShareYourStudafyIdWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your Studafy ID with your parent. You decide who can follow your progress.'**
+  String get studentFamilyShareYourStudafyIdWith;
+
+  /// No description provided for @studentFamilyCouldNotLoadRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load requests'**
+  String get studentFamilyCouldNotLoadRequests;
+
+  /// No description provided for @studentFamilyMyStudafyId.
+  ///
+  /// In en, this message translates to:
+  /// **'MY STUDAFY ID'**
+  String get studentFamilyMyStudafyId;
+
+  /// No description provided for @studentFamilyCopyId.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy ID'**
+  String get studentFamilyCopyId;
+
+  /// No description provided for @studentFamilyIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ID copied'**
+  String get studentFamilyIdCopied;
+
+  /// No description provided for @studentFamilyJoinAClassToActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a class to activate your student ID.'**
+  String get studentFamilyJoinAClassToActivate;
+
+  /// No description provided for @studentFamilyParentRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent requests'**
+  String get studentFamilyParentRequests;
+
+  /// No description provided for @studentFamilyAllCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'All caught up'**
+  String get studentFamilyAllCaughtUp;
+
+  /// No description provided for @studentFamilyNewParentRequestsWillAppear.
+  ///
+  /// In en, this message translates to:
+  /// **'New parent requests will appear here.'**
+  String get studentFamilyNewParentRequestsWillAppear;
+
+  /// No description provided for @studentFamilyAccountId.
+  ///
+  /// In en, this message translates to:
+  /// **'Account ID'**
+  String get studentFamilyAccountId;
+
+  /// No description provided for @studentFamilyThisIsMyParent.
+  ///
+  /// In en, this message translates to:
+  /// **'This is my parent'**
+  String get studentFamilyThisIsMyParent;
+
+  /// No description provided for @studentFamilyDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get studentFamilyDecline;
+
+  /// No description provided for @studentFamilyConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get studentFamilyConnected;
+
+  /// No description provided for @studentFamilyRemoveAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove access'**
+  String get studentFamilyRemoveAccess;
+
+  /// No description provided for @studentFamilyDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get studentFamilyDeclined;
+
+  /// No description provided for @studentFamilyAccessRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Access removed'**
+  String get studentFamilyAccessRemoved;
+
+  /// No description provided for @lessonsUndated.
+  ///
+  /// In en, this message translates to:
+  /// **'Undated'**
+  String get lessonsUndated;
+
+  /// No description provided for @lessonsLessonsCouldNotBeLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons could not be loaded.'**
+  String get lessonsLessonsCouldNotBeLoaded;
+
+  /// No description provided for @lessonsNoLessonsYetTheyAppear.
+  ///
+  /// In en, this message translates to:
+  /// **'No lessons yet. They appear here as your teacher shares them.'**
+  String get lessonsNoLessonsYetTheyAppear;
+
+  /// No description provided for @meetingsGoogleMeetCouldNotBe.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Meet could not be opened.'**
+  String get meetingsGoogleMeetCouldNotBe;
+
+  /// No description provided for @meetingsUpcomingMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming meetings'**
+  String get meetingsUpcomingMeetings;
+
+  /// No description provided for @meetingsCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get meetingsCancelled;
+
+  /// No description provided for @meetingsTheLinkWillAppearHere.
+  ///
+  /// In en, this message translates to:
+  /// **'The link will appear here.'**
+  String get meetingsTheLinkWillAppearHere;
+
+  /// No description provided for @meetingsJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get meetingsJoin;
+
+  /// No description provided for @conversationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get conversationSent;
+
+  /// No description provided for @conversationDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get conversationDelivered;
+
+  /// No description provided for @conversationRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get conversationRead;
+
+  /// No description provided for @notificationsNotificationPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification preferences'**
+  String get notificationsNotificationPreferences;
+
+  /// No description provided for @notificationPrefsAddPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Add preference'**
+  String get notificationPrefsAddPreference;
+
+  /// No description provided for @notificationPrefsChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get notificationPrefsChannel;
+
+  /// No description provided for @notificationPrefsInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'In app'**
+  String get notificationPrefsInApp;
+
+  /// No description provided for @notificationPrefsEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get notificationPrefsEmail;
+
+  /// No description provided for @notificationPrefsPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get notificationPrefsPush;
+
+  /// No description provided for @notificationPrefsCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get notificationPrefsCategory;
+
+  /// No description provided for @notificationPrefsAcademic.
+  ///
+  /// In en, this message translates to:
+  /// **'Academic'**
+  String get notificationPrefsAcademic;
+
+  /// No description provided for @notificationPrefsMessagesAndAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages and announcements'**
+  String get notificationPrefsMessagesAndAnnouncements;
+
+  /// No description provided for @notificationPrefsMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetings'**
+  String get notificationPrefsMeetings;
+
+  /// No description provided for @notificationPrefsFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'Family'**
+  String get notificationPrefsFamily;
+
+  /// No description provided for @notificationPrefsBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing'**
+  String get notificationPrefsBilling;
+
+  /// No description provided for @notificationPrefsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get notificationPrefsAdd;
+
+  /// No description provided for @notificationPrefsPushPreferencesAreSavedBut.
+  ///
+  /// In en, this message translates to:
+  /// **'Push preferences are saved, but push delivery is not available on this device yet.'**
+  String get notificationPrefsPushPreferencesAreSavedBut;
+
+  /// No description provided for @notificationPrefsNoPreferencesSavedAddOne.
+  ///
+  /// In en, this message translates to:
+  /// **'No preferences saved. Add one to choose a channel and category.'**
+  String get notificationPrefsNoPreferencesSavedAddOne;
+
+  /// No description provided for @classroomAdminStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get classroomAdminStaff;
+
+  /// No description provided for @classroomAdminCreateAndEnrolStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and enrol student'**
+  String get classroomAdminCreateAndEnrolStudent;
+
+  /// No description provided for @classroomAdminCreatedStudentAwaitingEnrolment.
+  ///
+  /// In en, this message translates to:
+  /// **'Created student awaiting enrolment'**
+  String get classroomAdminCreatedStudentAwaitingEnrolment;
+
+  /// No description provided for @classroomAdminStudentEnrolled.
+  ///
+  /// In en, this message translates to:
+  /// **'Student enrolled.'**
+  String get classroomAdminStudentEnrolled;
+
+  /// No description provided for @classroomAdminRetryEnrolment.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry enrolment'**
+  String get classroomAdminRetryEnrolment;
+
+  /// No description provided for @classroomAdminEnrolByStudentId.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol by student ID'**
+  String get classroomAdminEnrolByStudentId;
+
+  /// No description provided for @classroomAdminNoEnrolledStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'No enrolled students.'**
+  String get classroomAdminNoEnrolledStudents;
+
+  /// No description provided for @classroomAdminTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get classroomAdminTransfer;
+
+  /// No description provided for @classroomAdminWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get classroomAdminWithdraw;
+
+  /// No description provided for @classroomAdminAssignStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign staff'**
+  String get classroomAdminAssignStaff;
+
+  /// No description provided for @classroomAdminNoStaffAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'No staff assignments.'**
+  String get classroomAdminNoStaffAssignments;
+
+  /// No description provided for @classroomAdminRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get classroomAdminRemove;
+
+  /// No description provided for @classroomAdminRemoveDisplaynameFromThisClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {displayName} from this class?'**
+  String classroomAdminRemoveDisplaynameFromThisClass(Object displayName);
+
+  /// No description provided for @classroomAdminStaffRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff removed.'**
+  String get classroomAdminStaffRemoved;
+
+  /// No description provided for @classroomAdminWholeClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole class'**
+  String get classroomAdminWholeClass;
+
+  /// No description provided for @classroomAdminScheduleMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule meeting'**
+  String get classroomAdminScheduleMeeting;
+
+  /// No description provided for @classroomAdminCreateTheMeetingInGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the meeting in Google Meet, then paste its link here. Everyone invited is told in the app and can join from it.'**
+  String get classroomAdminCreateTheMeetingInGoogle;
+
+  /// No description provided for @classroomAdminNoUpcomingMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming meetings.'**
+  String get classroomAdminNoUpcomingMeetings;
+
+  /// No description provided for @classroomAdminRecipientcountInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'{recipientCount} invited'**
+  String classroomAdminRecipientcountInvited(Object recipientCount);
+
+  /// No description provided for @classroomAdminLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied.'**
+  String get classroomAdminLinkCopied;
+
+  /// No description provided for @classroomAdminCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get classroomAdminCopyLink;
+
+  /// No description provided for @classroomAdminMeetingCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting cancelled.'**
+  String get classroomAdminMeetingCancelled;
+
+  /// No description provided for @classroomAdminCancelMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel meeting'**
+  String get classroomAdminCancelMeeting;
+
+  /// No description provided for @classroomAdminCreateStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Create student'**
+  String get classroomAdminCreateStudent;
+
+  /// No description provided for @classroomAdminDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get classroomAdminDisplayName;
+
+  /// No description provided for @classroomAdminAccountUuidOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Account UUID (optional)'**
+  String get classroomAdminAccountUuidOptional;
+
+  /// No description provided for @classroomAdminStudentCreatedAndEnrolled.
+  ///
+  /// In en, this message translates to:
+  /// **'Student created and enrolled.'**
+  String get classroomAdminStudentCreatedAndEnrolled;
+
+  /// No description provided for @classroomAdminEnrolStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol student'**
+  String get classroomAdminEnrolStudent;
+
+  /// No description provided for @classroomAdminStudentRecordId.
+  ///
+  /// In en, this message translates to:
+  /// **'Student record ID'**
+  String get classroomAdminStudentRecordId;
+
+  /// No description provided for @classroomAdminWithdrawDisplaynameFromThisClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw {displayName} from this class?'**
+  String classroomAdminWithdrawDisplaynameFromThisClass(Object displayName);
+
+  /// No description provided for @classroomAdminStudentWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Student withdrawn.'**
+  String get classroomAdminStudentWithdrawn;
+
+  /// No description provided for @classroomAdminTransferDisplayname.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer {displayName}'**
+  String classroomAdminTransferDisplayname(Object displayName);
+
+  /// No description provided for @classroomAdminTargetClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Target class'**
+  String get classroomAdminTargetClass;
+
+  /// No description provided for @classroomAdminStudentTransferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Student transferred.'**
+  String get classroomAdminStudentTransferred;
+
+  /// No description provided for @classroomAdminTeacherAccountUuid.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher account UUID'**
+  String get classroomAdminTeacherAccountUuid;
+
+  /// No description provided for @classroomAdminRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get classroomAdminRole;
+
+  /// No description provided for @classroomAdminCoTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Co-teacher'**
+  String get classroomAdminCoTeacher;
+
+  /// No description provided for @classroomAdminLeadTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead teacher'**
+  String get classroomAdminLeadTeacher;
+
+  /// No description provided for @classroomAdminAssign.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign'**
+  String get classroomAdminAssign;
+
+  /// No description provided for @classroomAdminStaffAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff assigned.'**
+  String get classroomAdminStaffAssigned;
+
+  /// No description provided for @classroomAdminStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get classroomAdminStarts;
+
+  /// No description provided for @classroomAdminTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get classroomAdminTime;
+
+  /// No description provided for @classroomAdminDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get classroomAdminDuration;
+
+  /// No description provided for @classroomAdminMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'minutes'**
+  String get classroomAdminMinutes;
+
+  /// No description provided for @classroomAdminAudience.
+  ///
+  /// In en, this message translates to:
+  /// **'Audience'**
+  String get classroomAdminAudience;
+
+  /// No description provided for @classroomAdminCreateItInGoogleMeet.
+  ///
+  /// In en, this message translates to:
+  /// **'Create it in Google Meet'**
+  String get classroomAdminCreateItInGoogleMeet;
+
+  /// No description provided for @classroomAdminGoogleMeetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Meet link'**
+  String get classroomAdminGoogleMeetLink;
+
+  /// No description provided for @classroomAdminPasteALinkThatStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a link that starts with https://meet.google.com/'**
+  String get classroomAdminPasteALinkThatStarts;
+
+  /// No description provided for @classroomAdminSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get classroomAdminSchedule;
+
+  /// No description provided for @classroomAdminMeetingScheduledEveryoneInvitedHas.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting scheduled. Everyone invited has been told.'**
+  String get classroomAdminMeetingScheduledEveryoneInvitedHas;
+
+  /// No description provided for @guardianVerifyConfirmGuardianVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm guardian verification'**
+  String get guardianVerifyConfirmGuardianVerification;
+
+  /// No description provided for @guardianVerifyRevokeGuardianAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke guardian access?'**
+  String get guardianVerifyRevokeGuardianAccess;
+
+  /// No description provided for @guardianVerifyVerifyOnlyAfterCheckingThe.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify only after checking the guardian’s identity and relationship with the student.'**
+  String get guardianVerifyVerifyOnlyAfterCheckingThe;
+
+  /// No description provided for @guardianVerifyThisRemovesAccessGrantedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes access granted by this family link.'**
+  String get guardianVerifyThisRemovesAccessGrantedBy;
+
+  /// No description provided for @guardianVerifyLinkStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Link status'**
+  String get guardianVerifyLinkStatus;
+
+  /// No description provided for @guardianVerifyGuardianVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian verification'**
+  String get guardianVerifyGuardianVerification;
+
+  /// No description provided for @guardianVerifyEnterTheLinkIdSupplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the link ID supplied with the verification request.'**
+  String get guardianVerifyEnterTheLinkIdSupplied;
+
+  /// No description provided for @guardianVerifyGuardianLinkId.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian link ID'**
+  String get guardianVerifyGuardianLinkId;
+
+  /// No description provided for @guardianVerifyVerificationPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification period'**
+  String get guardianVerifyVerificationPeriod;
+
+  /// No description provided for @guardianVerifyDays.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get guardianVerifyDays;
+
+  /// No description provided for @guardianVerifyVerifyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify link'**
+  String get guardianVerifyVerifyLink;
+
+  /// No description provided for @guardianVerifyRevokeLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke link'**
+  String get guardianVerifyRevokeLink;
+
+  /// No description provided for @termsAcademicTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Academic terms'**
+  String get termsAcademicTerms;
+
+  /// No description provided for @termsCreateTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Create term'**
+  String get termsCreateTerm;
+
+  /// No description provided for @termsNoTermsCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'No terms created.'**
+  String get termsNoTermsCreated;
+
+  /// No description provided for @termsCreateAcademicTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Create academic term'**
+  String get termsCreateAcademicTerm;
+
+  /// No description provided for @termsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get termsName;
+
+  /// No description provided for @termsStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get termsStarts;
+
+  /// No description provided for @termsEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get termsEnds;
+
+  /// No description provided for @termsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get termsCreate;
+
+  /// No description provided for @termsTermCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Term created.'**
+  String get termsTermCreated;
+
+  /// No description provided for @rolesYourSpaceToGrow.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR SPACE TO GROW'**
+  String get rolesYourSpaceToGrow;
+
+  /// No description provided for @studyPlansFeatureLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons from every class, by date'**
+  String get studyPlansFeatureLessons;
+
+  /// No description provided for @studyPlansFeatureNotebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own notebook for each class'**
+  String get studyPlansFeatureNotebook;
+
+  /// No description provided for @studyPlansFeatureTenQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'10 questions a day to the study helper'**
+  String get studyPlansFeatureTenQuestions;
+
+  /// No description provided for @studyPlansFeatureEverythingInFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Free'**
+  String get studyPlansFeatureEverythingInFree;
+
+  /// No description provided for @studyPlansFeatureWhiteboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap the whiteboard - get real notebook notes'**
+  String get studyPlansFeatureWhiteboard;
+
+  /// No description provided for @studyPlansFeatureFortyQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'40 questions a day'**
+  String get studyPlansFeatureFortyQuestions;
+
+  /// No description provided for @studyPlansFeatureEverythingInPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Plus'**
+  String get studyPlansFeatureEverythingInPlus;
+
+  /// No description provided for @studyPlansFeatureQuizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes made from your lessons'**
+  String get studyPlansFeatureQuizzes;
+
+  /// No description provided for @studyPlansFeatureFlashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards made from your lessons'**
+  String get studyPlansFeatureFlashcards;
+
+  /// No description provided for @studyPlansFeatureSixtyQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'60 questions a day'**
+  String get studyPlansFeatureSixtyQuestions;
+
+  /// No description provided for @studentTodayMakeTodayYours.
+  ///
+  /// In en, this message translates to:
+  /// **'Make today yours.'**
+  String get studentTodayMakeTodayYours;
+
+  /// No description provided for @studentTodayMakeTodayYoursName.
+  ///
+  /// In en, this message translates to:
+  /// **'Make today yours, {name}.'**
+  String studentTodayMakeTodayYoursName(Object name);
+
+  /// No description provided for @studySetQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get studySetQuiz;
+
+  /// No description provided for @studySetFlashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards'**
+  String get studySetFlashcards;
+
+  /// No description provided for @studentTodayClassesCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes could not load. Pull down to retry.'**
+  String get studentTodayClassesCouldNotLoad;
+
+  /// No description provided for @studentTodayNoClassesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No classes yet'**
+  String get studentTodayNoClassesYet;
+
+  /// No description provided for @studentTodayPasteClassLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the class link your teacher shared to join your first class.'**
+  String get studentTodayPasteClassLink;
+
+  /// No description provided for @studentTodayGradeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade {grade} · {section}'**
+  String studentTodayGradeSection(Object grade, Object section);
+
+  /// No description provided for @msgTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get msgTitle;
+
+  /// No description provided for @msgEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get msgEmptyTitle;
+
+  /// No description provided for @msgEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation with your school.'**
+  String get msgEmptyMessage;
+
+  /// No description provided for @msgEmptyAwaitingLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Once a child is linked to you, you can message their teachers here.'**
+  String get msgEmptyAwaitingLink;
+
+  /// No description provided for @msgNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get msgNew;
+
+  /// No description provided for @msgNoSchool.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a school to see messages.'**
+  String get msgNoSchool;
+
+  /// No description provided for @msgRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get msgRetry;
+
+  /// No description provided for @msgErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages could not load'**
+  String get msgErrorTitle;
+
+  /// No description provided for @msgComposeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a message'**
+  String get msgComposeHint;
+
+  /// No description provided for @msgSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get msgSend;
+
+  /// No description provided for @msgSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent. Tap send to try again.'**
+  String get msgSendFailed;
+
+  /// No description provided for @msgLoadOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier messages'**
+  String get msgLoadOlder;
+
+  /// No description provided for @msgYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get msgYou;
+
+  /// No description provided for @msgUnknownPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get msgUnknownPerson;
+
+  /// No description provided for @msgMenuReportConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Report conversation'**
+  String get msgMenuReportConversation;
+
+  /// No description provided for @msgMenuReportPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name}'**
+  String msgMenuReportPerson(String name);
+
+  /// No description provided for @msgMenuBlockPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}'**
+  String msgMenuBlockPerson(String name);
+
+  /// No description provided for @msgMenuBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked people'**
+  String get msgMenuBlocked;
+
+  /// No description provided for @msgMessageReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report message'**
+  String get msgMessageReport;
+
+  /// No description provided for @msgReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get msgReportTitle;
+
+  /// No description provided for @msgReportIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Your report goes to your school\'s safeguarding team. The person you report is not told who reported them.'**
+  String get msgReportIntro;
+
+  /// No description provided for @msgReportReason.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the problem?'**
+  String get msgReportReason;
+
+  /// No description provided for @msgReasonHarassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Bullying or harassment'**
+  String get msgReasonHarassment;
+
+  /// No description provided for @msgReasonInappropriate.
+  ///
+  /// In en, this message translates to:
+  /// **'Inappropriate content'**
+  String get msgReasonInappropriate;
+
+  /// No description provided for @msgReasonSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'I am worried about someone\'s safety'**
+  String get msgReasonSafety;
+
+  /// No description provided for @msgReasonSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get msgReasonSpam;
+
+  /// No description provided for @msgReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get msgReasonOther;
+
+  /// No description provided for @msgReportDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us more (optional)'**
+  String get msgReportDetails;
+
+  /// No description provided for @msgReportConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'The school may contact me about this report'**
+  String get msgReportConsent;
+
+  /// No description provided for @msgReportAlsoBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Also block this person'**
+  String get msgReportAlsoBlock;
+
+  /// No description provided for @msgReportSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get msgReportSubmit;
+
+  /// No description provided for @msgReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent. Thank you for telling us.'**
+  String get msgReportSent;
+
+  /// No description provided for @msgReportUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'If someone is in immediate danger, contact emergency services or a trusted adult now.'**
+  String get msgReportUrgent;
+
+  /// No description provided for @msgBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String msgBlockTitle(String name);
+
+  /// No description provided for @msgBlockMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You will not be able to message each other. Messages already sent stay visible to the school.'**
+  String get msgBlockMessage;
+
+  /// No description provided for @msgBlockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get msgBlockConfirm;
+
+  /// No description provided for @msgBlockDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is blocked.'**
+  String msgBlockDone(String name);
+
+  /// No description provided for @msgCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get msgCancel;
+
+  /// No description provided for @msgBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked people'**
+  String get msgBlockedTitle;
+
+  /// No description provided for @msgBlockedEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not blocked anyone.'**
+  String get msgBlockedEmpty;
+
+  /// No description provided for @msgUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get msgUnblock;
+
+  /// No description provided for @msgUnblockDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked.'**
+  String get msgUnblockDone;
+
+  /// No description provided for @msgBlockedBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked someone in this conversation. Unblock them to send messages.'**
+  String get msgBlockedBanner;
+
+  /// No description provided for @msgNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get msgNewTitle;
+
+  /// No description provided for @msgNewEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is available to message.'**
+  String get msgNewEmpty;
+
+  /// No description provided for @msgNewSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people'**
+  String get msgNewSearch;
+
+  /// No description provided for @msgSubjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject (optional)'**
+  String get msgSubjectHint;
+
+  /// No description provided for @msgStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start conversation'**
+  String get msgStart;
+
+  /// No description provided for @msgRoleStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'School staff'**
+  String get msgRoleStaff;
+
+  /// No description provided for @msgRoleStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get msgRoleStudent;
+
+  /// No description provided for @msgRoleGuardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent or guardian'**
+  String get msgRoleGuardian;
+
+  /// No description provided for @msgGuardianOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian of {names}'**
+  String msgGuardianOf(String names);
+
+  /// No description provided for @msgErrorMessagingDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Your school has not turned on messaging yet.'**
+  String get msgErrorMessagingDisabled;
+
+  /// No description provided for @msgErrorContactNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot message this person.'**
+  String get msgErrorContactNotAllowed;
+
+  /// No description provided for @msgErrorForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot send messages here. You may have blocked someone, or someone may have blocked you.'**
+  String get msgErrorForbidden;
+
+  /// No description provided for @msgErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation is no longer available.'**
+  String get msgErrorNotFound;
+
+  /// No description provided for @msgErrorInvalidState.
+  ///
+  /// In en, this message translates to:
+  /// **'You already reported this in the last day. The school has it.'**
+  String get msgErrorInvalidState;
+
+  /// No description provided for @msgErrorWindowClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'You have sent many reports today. Please contact the school directly.'**
+  String get msgErrorWindowClosed;
+
+  /// No description provided for @msgErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a moment and try again.'**
+  String get msgErrorRateLimited;
+
+  /// No description provided for @msgErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy could not reach the school. Check your connection.'**
+  String get msgErrorNetwork;
+
+  /// No description provided for @msgErrorUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again.'**
+  String get msgErrorUnauthorized;
+
+  /// No description provided for @msgErrorValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a message first.'**
+  String get msgErrorValidation;
+
+  /// No description provided for @msgErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get msgErrorUnknown;
+
+  /// No description provided for @famTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My family'**
+  String get famTitle;
+
+  /// No description provided for @famChildren.
+  ///
+  /// In en, this message translates to:
+  /// **'My children'**
+  String get famChildren;
+
+  /// No description provided for @famEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No children linked yet'**
+  String get famEmptyTitle;
+
+  /// No description provided for @famEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your child for their Studafy ID. They approve your request before you can follow their progress.'**
+  String get famEmptyMessage;
+
+  /// No description provided for @famLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a child'**
+  String get famLink;
+
+  /// No description provided for @famLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a child'**
+  String get famLinkTitle;
+
+  /// No description provided for @famLinkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy ID'**
+  String get famLinkHint;
+
+  /// No description provided for @famLinkFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find'**
+  String get famLinkFind;
+
+  /// No description provided for @famLinkNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No student has that Studafy ID. Check it and try again.'**
+  String get famLinkNotFound;
+
+  /// No description provided for @famLinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Request link to {name}'**
+  String famLinkConfirm(String name);
+
+  /// No description provided for @famLinkSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent. {name} must approve it before you can see their records.'**
+  String famLinkSent(String name);
+
+  /// No description provided for @famStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your child'**
+  String get famStatusPending;
+
+  /// No description provided for @famStatusVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get famStatusVerified;
+
+  /// No description provided for @famStatusDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get famStatusDeclined;
+
+  /// No description provided for @famStatusRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer linked'**
+  String get famStatusRevoked;
+
+  /// No description provided for @famView.
+  ///
+  /// In en, this message translates to:
+  /// **'View progress'**
+  String get famView;
+
+  /// No description provided for @famProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s progress'**
+  String famProgressTitle(String name);
+
+  /// No description provided for @famProgressAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average of published grades'**
+  String get famProgressAverage;
+
+  /// No description provided for @famProgressGraded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} published grades'**
+  String famProgressGraded(String count);
+
+  /// No description provided for @famProgressAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get famProgressAttendance;
+
+  /// No description provided for @famProgressSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} recorded sessions'**
+  String famProgressSessions(String count);
+
+  /// No description provided for @famProgressNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No data yet'**
+  String get famProgressNone;
+
+  /// No description provided for @famProgressBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Present {present} · Late {late} · Absent {absent} · Excused {excused}'**
+  String famProgressBreakdown(
+    String present,
+    String late,
+    String absent,
+    String excused,
+  );
+
+  /// No description provided for @famProgressSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculated from grades the school has published and attendance it has recorded. Ask the school if something looks wrong.'**
+  String get famProgressSource;
+
+  /// No description provided for @famApprovalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your approval'**
+  String get famApprovalsTitle;
+
+  /// No description provided for @famApprovalsDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} asked to subscribe to Student Notebook.'**
+  String famApprovalsDetail(String name);
+
+  /// No description provided for @famApprovalsApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get famApprovalsApprove;
+
+  /// No description provided for @famApprovalsDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get famApprovalsDecline;
+
+  /// No description provided for @famApprovalsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your decision was sent.'**
+  String get famApprovalsDone;
+
+  /// No description provided for @famRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get famRetry;
+
+  /// No description provided for @famCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get famCancel;
+
+  /// No description provided for @famErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your family could not load'**
+  String get famErrorTitle;
+
+  /// No description provided for @famErrorReauthRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, sign out and sign in again, then approve.'**
+  String get famErrorReauthRequired;
+
+  /// No description provided for @famErrorForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have access to this.'**
+  String get famErrorForbidden;
+
+  /// No description provided for @famErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This is no longer available.'**
+  String get famErrorNotFound;
+
+  /// No description provided for @famErrorInvalidState.
+  ///
+  /// In en, this message translates to:
+  /// **'This request has already been decided.'**
+  String get famErrorInvalidState;
+
+  /// No description provided for @famErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a moment and try again.'**
+  String get famErrorRateLimited;
+
+  /// No description provided for @famErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy could not reach the school. Check your connection.'**
+  String get famErrorNetwork;
+
+  /// No description provided for @famErrorUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again.'**
+  String get famErrorUnauthorized;
+
+  /// No description provided for @famErrorValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the Studafy ID.'**
+  String get famErrorValidation;
+
+  /// No description provided for @famErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get famErrorUnknown;
+
+  /// No description provided for @accountAccountId.
+  ///
+  /// In en, this message translates to:
+  /// **'Account ID'**
+  String get accountAccountId;
+
+  /// No description provided for @accountAccountIdDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this with your school to link your account.'**
+  String get accountAccountIdDetail;
+
+  /// No description provided for @accountAccountIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Account ID copied'**
+  String get accountAccountIdCopied;
+
+  /// No description provided for @accountSwitchRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch role'**
+  String get accountSwitchRole;
+
+  /// No description provided for @accountSwitchRoleDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'You belong to this school in more than one role.'**
+  String get accountSwitchRoleDetail;
+
+  /// No description provided for @accountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountTitle;
+
+  /// No description provided for @accountSectionAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountSectionAccount;
+
+  /// No description provided for @accountSectionPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get accountSectionPreferences;
+
+  /// No description provided for @accountSectionPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy and data'**
+  String get accountSectionPrivacy;
+
+  /// No description provided for @accountStudafyId.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Studafy ID'**
+  String get accountStudafyId;
+
+  /// No description provided for @accountStudafyIdDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Give this to a parent so they can ask to link.'**
+  String get accountStudafyIdDetail;
+
+  /// No description provided for @accountStudafyIdCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy your Studafy ID'**
+  String get accountStudafyIdCopy;
+
+  /// No description provided for @accountStudafyIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy ID copied.'**
+  String get accountStudafyIdCopied;
+
+  /// No description provided for @accountUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account'**
+  String get accountUnknown;
+
+  /// No description provided for @accountLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get accountLanguage;
+
+  /// No description provided for @accountSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in and security'**
+  String get accountSecurity;
+
+  /// No description provided for @accountSecurityDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices, two-step verification, sign out everywhere'**
+  String get accountSecurityDetail;
+
+  /// No description provided for @accountSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get accountSignOut;
+
+  /// No description provided for @accountDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDelete;
+
+  /// No description provided for @accountRoleSchoolAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'School administrator'**
+  String get accountRoleSchoolAdmin;
+
+  /// No description provided for @accountRoleTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get accountRoleTeacher;
+
+  /// No description provided for @accountRoleParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent or guardian'**
+  String get accountRoleParent;
+
+  /// No description provided for @accountRoleStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get accountRoleStudent;
+
+  /// No description provided for @accountExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Download my data'**
+  String get accountExport;
+
+  /// No description provided for @accountExportDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a copy of the information Studafy holds about you.'**
+  String get accountExportDetail;
+
+  /// No description provided for @accountExportRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get accountExportRequest;
+
+  /// No description provided for @accountExportPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your copy. This can take a few minutes.'**
+  String get accountExportPending;
+
+  /// No description provided for @accountExportCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get accountExportCheck;
+
+  /// No description provided for @accountExportReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Your copy is ready for 7 days.'**
+  String get accountExportReady;
+
+  /// No description provided for @accountExportDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get accountExportDownload;
+
+  /// No description provided for @accountExportRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Request received. We are preparing your copy.'**
+  String get accountExportRequested;
+
+  /// No description provided for @accountExportReauth.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, sign out and sign in again first.'**
+  String get accountExportReauth;
+
+  /// No description provided for @accountExportExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'That copy has expired. Request a new one.'**
+  String get accountExportExpired;
+
+  /// No description provided for @accountExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That did not work. Please try again.'**
+  String get accountExportFailed;
+
+  /// No description provided for @todayWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work you have set'**
+  String get todayWork;
+
+  /// No description provided for @todayWorkEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not set any work yet.'**
+  String get todayWorkEmpty;
+
+  /// No description provided for @todaySections.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections needing content'**
+  String get todaySections;
+
+  /// No description provided for @todaySectionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Every section you have taught has its content filed.'**
+  String get todaySectionsEmpty;
+
+  /// No description provided for @todaySectionsOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Content outstanding'**
+  String get todaySectionsOutstanding;
+
+  /// No description provided for @todayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get todayTitle;
+
+  /// No description provided for @todayHello.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello'**
+  String get todayHello;
+
+  /// No description provided for @todayHelloName.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}'**
+  String todayHelloName(String name);
+
+  /// No description provided for @todayClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'My classes'**
+  String get todayClasses;
+
+  /// No description provided for @todayStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} students'**
+  String todayStudents(String count);
+
+  /// No description provided for @todayEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No classes yet'**
+  String get todayEmpty;
+
+  /// No description provided for @todayEmptyDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first class from the Classes tab.'**
+  String get todayEmptyDetail;
+
+  /// No description provided for @todayError.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes could not load'**
+  String get todayError;
+
+  /// No description provided for @todayErrorDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get todayErrorDetail;
+
+  /// No description provided for @todayRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get todayRetry;
+
+  /// No description provided for @todayMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get todayMessages;
+
+  /// No description provided for @todayNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get todayNotifications;
+
+  /// No description provided for @navToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get navToday;
+
+  /// No description provided for @navClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get navClasses;
+
+  /// No description provided for @navTeaching.
+  ///
+  /// In en, this message translates to:
+  /// **'Teaching'**
+  String get navTeaching;
+
+  /// No description provided for @navGradebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradebook'**
+  String get navGradebook;
+
+  /// No description provided for @navInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get navInbox;
+
+  /// No description provided for @navLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get navLearning;
+
+  /// No description provided for @navInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights+'**
+  String get navInsights;
+
+  /// No description provided for @navUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get navUpdates;
+
+  /// No description provided for @navMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get navMessages;
+
+  /// No description provided for @navNotebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Notebook'**
+  String get navNotebook;
+
+  /// No description provided for @navWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get navWork;
+
+  /// No description provided for @navGrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades'**
+  String get navGrades;
+
+  /// No description provided for @notificationsFeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsFeedTitle;
+
+  /// No description provided for @notificationsFeedMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notificationsFeedMarkAllRead;
+
+  /// No description provided for @notificationsFeedErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notifications'**
+  String get notificationsFeedErrorTitle;
+
+  /// No description provided for @notificationsFeedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get notificationsFeedRetry;
+
+  /// No description provided for @notificationsFeedOfflineBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing your last saved notifications — reconnect to update.'**
+  String get notificationsFeedOfflineBanner;
+
+  /// No description provided for @notificationsFeedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notificationsFeedEmptyTitle;
+
+  /// No description provided for @notificationsFeedEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll see updates here as they happen.'**
+  String get notificationsFeedEmptyMessage;
+
+  /// No description provided for @notificationsFeedLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get notificationsFeedLoading;
+
+  /// No description provided for @notificationsFeedLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get notificationsFeedLoadMore;
+
+  /// No description provided for @notificationCopyAcademicAssessmentPublishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assessment published'**
+  String get notificationCopyAcademicAssessmentPublishedTitle;
+
+  /// No description provided for @notificationCopyAcademicAssessmentPublishedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A new assessment is ready for one of your classes.'**
+  String get notificationCopyAcademicAssessmentPublishedDetail;
+
+  /// No description provided for @notificationCopyAcademicAssignmentPublishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment published'**
+  String get notificationCopyAcademicAssignmentPublishedTitle;
+
+  /// No description provided for @notificationCopyAcademicAssignmentPublishedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A new assignment is ready for one of your classes.'**
+  String get notificationCopyAcademicAssignmentPublishedDetail;
+
+  /// No description provided for @notificationCopyAcademicGradePublishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New grade'**
+  String get notificationCopyAcademicGradePublishedTitle;
+
+  /// No description provided for @notificationCopyAcademicGradePublishedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A grade was published. Open Grades to view it.'**
+  String get notificationCopyAcademicGradePublishedDetail;
+
+  /// No description provided for @notificationCopyAcademicResourcePublishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New class material'**
+  String get notificationCopyAcademicResourcePublishedTitle;
+
+  /// No description provided for @notificationCopyAcademicResourcePublishedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher shared new material for one of your classes.'**
+  String get notificationCopyAcademicResourcePublishedDetail;
+
+  /// No description provided for @notificationCopyAcademicWellbeingSharedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wellbeing note shared'**
+  String get notificationCopyAcademicWellbeingSharedTitle;
+
+  /// No description provided for @notificationCopyAcademicWellbeingSharedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A wellbeing note was shared with you.'**
+  String get notificationCopyAcademicWellbeingSharedDetail;
+
+  /// No description provided for @notificationCopyBillingPurchaseApprovalRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase approval needed'**
+  String get notificationCopyBillingPurchaseApprovalRequestedTitle;
+
+  /// No description provided for @notificationCopyBillingPurchaseApprovalRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your child asked you to approve a subscription.'**
+  String get notificationCopyBillingPurchaseApprovalRequestedDetail;
+
+  /// No description provided for @notificationCopyBillingPurchaseApprovalApprovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase approved'**
+  String get notificationCopyBillingPurchaseApprovalApprovedTitle;
+
+  /// No description provided for @notificationCopyBillingPurchaseApprovalApprovedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A guardian approved your subscription request.'**
+  String get notificationCopyBillingPurchaseApprovalApprovedDetail;
+
+  /// No description provided for @notificationCopyBillingPurchaseApprovalDeclinedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase declined'**
+  String get notificationCopyBillingPurchaseApprovalDeclinedTitle;
+
+  /// No description provided for @notificationCopyBillingPurchaseApprovalDeclinedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A guardian declined your subscription request.'**
+  String get notificationCopyBillingPurchaseApprovalDeclinedDetail;
+
+  /// No description provided for @notificationCopyMeetingsScheduledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting confirmed'**
+  String get notificationCopyMeetingsScheduledTitle;
+
+  /// No description provided for @notificationCopyMeetingsScheduledDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A meeting was scheduled. Check your calendar for the invitation.'**
+  String get notificationCopyMeetingsScheduledDetail;
+
+  /// No description provided for @notificationCopyMeetingsFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting not scheduled'**
+  String get notificationCopyMeetingsFailedTitle;
+
+  /// No description provided for @notificationCopyMeetingsFailedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A meeting you requested could not be scheduled. Please try again.'**
+  String get notificationCopyMeetingsFailedDetail;
+
+  /// No description provided for @notificationCopyCommunicationsAnnouncementCreatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement'**
+  String get notificationCopyCommunicationsAnnouncementCreatedTitle;
+
+  /// No description provided for @notificationCopyCommunicationsAnnouncementCreatedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A new announcement was posted.'**
+  String get notificationCopyCommunicationsAnnouncementCreatedDetail;
+
+  /// No description provided for @notificationCopyCommunicationsMessageSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get notificationCopyCommunicationsMessageSentTitle;
+
+  /// No description provided for @notificationCopyCommunicationsMessageSentDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'You received a new message.'**
+  String get notificationCopyCommunicationsMessageSentDetail;
+
+  /// No description provided for @notificationCopyFamilyGuardianLinkRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection request'**
+  String get notificationCopyFamilyGuardianLinkRequestedTitle;
+
+  /// No description provided for @notificationCopyFamilyGuardianLinkRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone requested to connect as a guardian.'**
+  String get notificationCopyFamilyGuardianLinkRequestedDetail;
+
+  /// No description provided for @notificationCopyFamilyGuardianLinkRevokedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection removed'**
+  String get notificationCopyFamilyGuardianLinkRevokedTitle;
+
+  /// No description provided for @notificationCopyFamilyGuardianLinkRevokedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A family connection was removed.'**
+  String get notificationCopyFamilyGuardianLinkRevokedDetail;
+
+  /// No description provided for @notificationCopyFamilyGuardianLinkVerifiedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection verified'**
+  String get notificationCopyFamilyGuardianLinkVerifiedTitle;
+
+  /// No description provided for @notificationCopyFamilyGuardianLinkVerifiedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A family connection was verified.'**
+  String get notificationCopyFamilyGuardianLinkVerifiedDetail;
+
+  /// No description provided for @notificationCopyInvitationsIssuedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent'**
+  String get notificationCopyInvitationsIssuedTitle;
+
+  /// No description provided for @notificationCopyInvitationsIssuedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'An invitation was issued.'**
+  String get notificationCopyInvitationsIssuedDetail;
+
+  /// No description provided for @notificationCopyMeetingsCancelledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting cancelled'**
+  String get notificationCopyMeetingsCancelledTitle;
+
+  /// No description provided for @notificationCopyMeetingsCancelledDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A scheduled meeting was cancelled.'**
+  String get notificationCopyMeetingsCancelledDetail;
+
+  /// No description provided for @notificationCopyMeetingsRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting requested'**
+  String get notificationCopyMeetingsRequestedTitle;
+
+  /// No description provided for @notificationCopyMeetingsRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A meeting was requested.'**
+  String get notificationCopyMeetingsRequestedDetail;
+
+  /// No description provided for @notificationCopySchoolAdminClassroomStaffAssignedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff assigned'**
+  String get notificationCopySchoolAdminClassroomStaffAssignedTitle;
+
+  /// No description provided for @notificationCopySchoolAdminClassroomStaffAssignedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A staff member was assigned to a class.'**
+  String get notificationCopySchoolAdminClassroomStaffAssignedDetail;
+
+  /// No description provided for @notificationCopySchoolAdminClassroomStaffRemovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff removed'**
+  String get notificationCopySchoolAdminClassroomStaffRemovedTitle;
+
+  /// No description provided for @notificationCopySchoolAdminClassroomStaffRemovedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A staff member was removed from a class.'**
+  String get notificationCopySchoolAdminClassroomStaffRemovedDetail;
+
+  /// No description provided for @notificationCopySchoolAdminMembershipGrantedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access granted'**
+  String get notificationCopySchoolAdminMembershipGrantedTitle;
+
+  /// No description provided for @notificationCopySchoolAdminMembershipGrantedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'School access was granted.'**
+  String get notificationCopySchoolAdminMembershipGrantedDetail;
+
+  /// No description provided for @notificationCopySchoolAdminStudentEnrolledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Student enrolled'**
+  String get notificationCopySchoolAdminStudentEnrolledTitle;
+
+  /// No description provided for @notificationCopySchoolAdminStudentEnrolledDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A student was enrolled.'**
+  String get notificationCopySchoolAdminStudentEnrolledDetail;
+
+  /// No description provided for @notificationCopySchoolAdminStudentTransferredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Student transferred'**
+  String get notificationCopySchoolAdminStudentTransferredTitle;
+
+  /// No description provided for @notificationCopySchoolAdminStudentTransferredDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A student was transferred between classes.'**
+  String get notificationCopySchoolAdminStudentTransferredDetail;
+
+  /// No description provided for @notificationCopySchoolAdminStudentWithdrawnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Student withdrawn'**
+  String get notificationCopySchoolAdminStudentWithdrawnTitle;
+
+  /// No description provided for @notificationCopySchoolAdminStudentWithdrawnDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A student was withdrawn.'**
+  String get notificationCopySchoolAdminStudentWithdrawnDetail;
+
+  /// No description provided for @notificationCopySupportAccessApprovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support access approved'**
+  String get notificationCopySupportAccessApprovedTitle;
+
+  /// No description provided for @notificationCopySupportAccessApprovedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A support access request was approved.'**
+  String get notificationCopySupportAccessApprovedDetail;
+
+  /// No description provided for @notificationCopySupportAccessRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support access requested'**
+  String get notificationCopySupportAccessRequestedTitle;
+
+  /// No description provided for @notificationCopySupportAccessRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Support access was requested.'**
+  String get notificationCopySupportAccessRequestedDetail;
+
+  /// No description provided for @notificationCopySupportAccessRevokedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support access revoked'**
+  String get notificationCopySupportAccessRevokedTitle;
+
+  /// No description provided for @notificationCopySupportAccessRevokedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Support access was revoked.'**
+  String get notificationCopySupportAccessRevokedDetail;
+
+  /// No description provided for @notificationCopySupportAccessStartedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support session started'**
+  String get notificationCopySupportAccessStartedTitle;
+
+  /// No description provided for @notificationCopySupportAccessStartedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A support session has started.'**
+  String get notificationCopySupportAccessStartedDetail;
+
+  /// No description provided for @notificationCopyGenericTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification'**
+  String get notificationCopyGenericTitle;
+
+  /// No description provided for @notificationCopyGenericDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'You have a new update.'**
+  String get notificationCopyGenericDetail;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -5,7 +5,6 @@ import 'package:studafy/app/account_hub_page.dart';
 import 'package:studafy/app/account_scope.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_domain.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/account/application/account_interactor.dart';
 import 'package:studafy/features/account/domain/account_repository.dart';
@@ -91,10 +90,9 @@ Future<void> _pumpParentShell(WidgetTester tester, _Session repository) async {
   await tester.pumpWidget(
     MaterialApp(
       locale: const Locale('en'),
-      supportedLocales: StudafyLocalizations.supportedLocales,
+      supportedLocales: AppL10n.supportedLocales,
       localizationsDelegates: const [
         AppL10n.delegate,
-        StudafyLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

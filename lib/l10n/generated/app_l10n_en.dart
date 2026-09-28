@@ -1522,4 +1522,1629 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get submissionsGrade => 'Grade';
+
+  @override
+  String get attachmentThatFileCouldNotBe => 'That file could not be uploaded.';
+
+  @override
+  String get attachmentThatFileIsEmpty => 'That file is empty.';
+
+  @override
+  String get attachmentOnlyPdfAndPhotosCan =>
+      'Only PDF and photos can be attached.';
+
+  @override
+  String attachmentThatFileIsLargerThan(Object maximumSizeBytes) {
+    return 'That file is larger than $maximumSizeBytes MB.';
+  }
+
+  @override
+  String get attachmentAttachFile => 'Attach file';
+
+  @override
+  String get attachmentPhoto => 'Photo';
+
+  @override
+  String attachmentUpToMaximumcountAttachments(Object maximumCount) {
+    return 'Up to $maximumCount attachments.';
+  }
+
+  @override
+  String get attachmentUploading => 'Uploading';
+
+  @override
+  String get attachmentChecking => 'Checking';
+
+  @override
+  String get attachmentReady => 'Ready';
+
+  @override
+  String get attachmentFailed => 'Failed';
+
+  @override
+  String get attachmentThisFileIsStillBeing =>
+      'This file is still being checked. Try again shortly.';
+
+  @override
+  String get attachmentThatFileCouldNotBe2 => 'That file could not be opened.';
+
+  @override
+  String get studentTodayALittleProgressEveryDay =>
+      'A LITTLE PROGRESS, EVERY DAY';
+
+  @override
+  String get studentTodayYourClassesYourIdeasYour =>
+      'Your classes, your ideas, your next big thing.';
+
+  @override
+  String get studentTodayMyNotebook => 'My notebook';
+
+  @override
+  String get studentTodayLessonNotesSubscription =>
+      'Lesson notes · Subscription';
+
+  @override
+  String get studentTodayMyWork => 'My work';
+
+  @override
+  String get studentTodayTakeTheNextStep => 'Take the next step';
+
+  @override
+  String get studentTodayMyIdFamily => 'My ID & family';
+
+  @override
+  String get studentTodayShareYourIdReviewParent =>
+      'Share your ID. Review parent requests.';
+
+  @override
+  String get studentTodayYourClasses => 'Your classes';
+
+  @override
+  String get studentTodayReadyWhenYouAre => 'Ready when you are';
+
+  @override
+  String get studentTodayYourWorkCouldNotLoad =>
+      'Your work could not load. Open My work to retry.';
+
+  @override
+  String get studentTodayALittleBreathingRoom => 'A little breathing room';
+
+  @override
+  String get studentTodayNewAssignmentsWillAppearHere =>
+      'New assignments will appear here when your teacher shares them.';
+
+  @override
+  String get teacherShellManageRosterStaffAndMeetings =>
+      'Manage roster, staff and meetings';
+
+  @override
+  String get teacherShellClasses => 'Classes';
+
+  @override
+  String get teacherShellMessages => 'Messages';
+
+  @override
+  String get schoolAdminAdministrationRequiresTheRemoteBackend =>
+      'Administration requires the remote backend.';
+
+  @override
+  String get schoolAdminSchoolAdministration => 'School administration';
+
+  @override
+  String get schoolAdminTerms => 'Terms';
+
+  @override
+  String get schoolAdminGuardians => 'Guardians';
+
+  @override
+  String get schoolAdminUpdates => 'Updates';
+
+  @override
+  String get schoolAdminAccount => 'Account';
+
+  @override
+  String get teacherTodaySpaceToInspireADay =>
+      'Space to inspire. A day to make a difference.';
+
+  @override
+  String get studentLessonsPlans => 'Plans';
+
+  @override
+  String get studentLessonsYourClassesCouldNotBe =>
+      'Your classes could not be loaded. Try again';
+
+  @override
+  String get studentLessonsJoinAClassToSee =>
+      'Join a class to see its lessons here.';
+
+  @override
+  String get studentLessonsLessonsAndYourNotebook =>
+      'Lessons and your notebook';
+
+  @override
+  String get studentLessonsMyNotebook => 'My notebook';
+
+  @override
+  String get studySetQuizzesAndFlashcardsComeWith =>
+      'Quizzes and flashcards come with Studafy Max.';
+
+  @override
+  String get studySetThisMonthSAiAllowance =>
+      'This month\'s AI allowance is used. It renews on the 1st.';
+
+  @override
+  String get studySetThisLessonHasNoText =>
+      'This lesson has no text to study from.';
+
+  @override
+  String get studySetThisIsNotAvailableYet => 'This is not available yet.';
+
+  @override
+  String get studySetThatDidNotWorkPlease =>
+      'That did not work. Please try again.';
+
+  @override
+  String studySetYouScoredScoreOfQuestionscount(
+    Object score,
+    Object questionsCount,
+  ) {
+    return 'You scored $score of $questionsCount';
+  }
+
+  @override
+  String studySetAnswerscountOfQuestionscountAnswered(
+    Object answersCount,
+    Object questionsCount,
+  ) {
+    return '$answersCount of $questionsCount answered';
+  }
+
+  @override
+  String get studySetTryAgain => 'Try again';
+
+  @override
+  String studySetCardPageOfCardscountTap(Object page, Object cardsCount) {
+    return 'Card $page of $cardsCount - tap to turn over';
+  }
+
+  @override
+  String studyPlansQuestionsTodayAsktodayOfAskperday(
+    Object askToday,
+    Object askPerDay,
+  ) {
+    return 'Questions today: $askToday of $askPerDay';
+  }
+
+  @override
+  String studyPlansAiUsedThisMonthRound(Object round) {
+    return 'AI used this month: $round%';
+  }
+
+  @override
+  String studyPlansRenewsRenews(Object renews) {
+    return 'Renews $renews';
+  }
+
+  @override
+  String get studyPlansTheStoreCouldNotBe =>
+      'The store could not be reached. Try again later.';
+
+  @override
+  String get studyPlansBuyingIsNotEnabledFor =>
+      'Buying is not enabled for your account yet.';
+
+  @override
+  String get studyPlansWeAskedYourParentTo =>
+      'We asked your parent to approve.';
+
+  @override
+  String get studyPlansWaitingForAParent => 'Waiting for a parent';
+
+  @override
+  String get studyPlansAskAParentToApprove => 'Ask a parent to approve';
+
+  @override
+  String get studyPlansOpeningTheStore => 'Opening the store…';
+
+  @override
+  String get studyPlansStartAFreeMonth => 'Start a free month';
+
+  @override
+  String studyPlansSubscribeToName(Object name) {
+    return 'Subscribe to $name';
+  }
+
+  @override
+  String get studyPlansFree => 'Free';
+
+  @override
+  String studyPlansPriceMonth(Object price) {
+    return '$price / month';
+  }
+
+  @override
+  String studyPlansUspriceMonthInTheUs(Object usPrice) {
+    return '$usPrice / month in the US - the store shows your price';
+  }
+
+  @override
+  String get studyPlansYourPlan => 'Your plan';
+
+  @override
+  String get studyPlansManageOrCancel => 'Manage or cancel';
+
+  @override
+  String get studyPlansRestoringPurchases => 'Restoring purchases…';
+
+  @override
+  String get studyPlansRestorePurchases => 'Restore purchases';
+
+  @override
+  String get studyPlansAutoRenewingMonthlySubscriptionsPayment =>
+      'Auto-renewing monthly subscriptions. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal to avoid the next charge. Deleting the app does not cancel a subscription.';
+
+  @override
+  String get studyPlansTermsOfUse => 'Terms of use';
+
+  @override
+  String get studyPlansPrivacyPolicy => 'Privacy policy';
+
+  @override
+  String get notebookThisNeedsStudafyPlus => 'This needs Studafy Plus.';
+
+  @override
+  String get notebookNoWritingCouldBeRead =>
+      'No writing could be read in that photo. Try a clearer one.';
+
+  @override
+  String get notebookThePhotoIsTakingLonger =>
+      'The photo is taking longer than usual to check. Try again shortly.';
+
+  @override
+  String get notebookNewNote => 'New note';
+
+  @override
+  String get notebookSave => 'Save';
+
+  @override
+  String get notebookAddATitleAndSome => 'Add a title and some text.';
+
+  @override
+  String get notebookChooseAJpegOrPng =>
+      'Choose a JPEG or PNG photo under 10 MB.';
+
+  @override
+  String get notebookUploadingThePhoto => 'Uploading the photo…';
+
+  @override
+  String get notebookReadingTheWhiteboard => 'Reading the whiteboard…';
+
+  @override
+  String get notebookNotesAddedToYourNotebook =>
+      'Notes added to your notebook.';
+
+  @override
+  String get notebookThePhotoCouldNotBe => 'The photo could not be uploaded.';
+
+  @override
+  String get notebookDeleteThisNote => 'Delete this note?';
+
+  @override
+  String get notebookDelete => 'Delete';
+
+  @override
+  String get notebookToday => 'Today';
+
+  @override
+  String get notebookYesterday => 'Yesterday';
+
+  @override
+  String get notebookAddNote => 'Add note';
+
+  @override
+  String get notebookSnapTheWhiteboard => 'Snap the whiteboard';
+
+  @override
+  String get notebookFromPhotos => 'From photos';
+
+  @override
+  String get notebookWhiteboardNotesComeWithStudafy =>
+      'Whiteboard notes come with Studafy Plus.';
+
+  @override
+  String get notebookTheNotebookCouldNotBe =>
+      'The notebook could not be loaded. Try again';
+
+  @override
+  String get notebookYourNotebookForThisClass =>
+      'Your notebook for this class is empty. Add a note, or snap the whiteboard.';
+
+  @override
+  String get notebookFromTheWhiteboard => 'From the whiteboard';
+
+  @override
+  String get familyHomeTogetherEveryDay => 'TOGETHER, EVERY DAY';
+
+  @override
+  String get familyHomeTheirWorldIsGrowingBe =>
+      'Their world is growing. Be part of it.';
+
+  @override
+  String get childSwitcherChooseChild => 'Choose child';
+
+  @override
+  String get familyChallengeSecurityCheck => 'Security check';
+
+  @override
+  String get familyChallengeTheCheckCouldNotLoad =>
+      'The check could not load. Go back and try again.';
+
+  @override
+  String get studentFamilyIsThisYourParent => 'Is this your parent?';
+
+  @override
+  String get studentFamilyConfirmYourChoice => 'Confirm your choice';
+
+  @override
+  String studentFamilyOnlyApproveGuardiannameIfYou(Object guardianName) {
+    return 'Only approve $guardianName if you know this is your parent or guardian. They will be able to see your grades, attendance and shared school updates.';
+  }
+
+  @override
+  String get studentFamilyThisPersonWillNotHave =>
+      'This person will not have access through this family link.';
+
+  @override
+  String get studentFamilyConfirm => 'Confirm';
+
+  @override
+  String get studentFamilyMyFamily => 'My family';
+
+  @override
+  String get studentFamilyYourConnections => 'YOUR CONNECTIONS';
+
+  @override
+  String get studentFamilyYourFamilyYourChoice => 'Your family.\nYour choice.';
+
+  @override
+  String get studentFamilyShareYourStudafyIdWith =>
+      'Share your Studafy ID with your parent. You decide who can follow your progress.';
+
+  @override
+  String get studentFamilyCouldNotLoadRequests => 'Could not load requests';
+
+  @override
+  String get studentFamilyMyStudafyId => 'MY STUDAFY ID';
+
+  @override
+  String get studentFamilyCopyId => 'Copy ID';
+
+  @override
+  String get studentFamilyIdCopied => 'ID copied';
+
+  @override
+  String get studentFamilyJoinAClassToActivate =>
+      'Join a class to activate your student ID.';
+
+  @override
+  String get studentFamilyParentRequests => 'Parent requests';
+
+  @override
+  String get studentFamilyAllCaughtUp => 'All caught up';
+
+  @override
+  String get studentFamilyNewParentRequestsWillAppear =>
+      'New parent requests will appear here.';
+
+  @override
+  String get studentFamilyAccountId => 'Account ID';
+
+  @override
+  String get studentFamilyThisIsMyParent => 'This is my parent';
+
+  @override
+  String get studentFamilyDecline => 'Decline';
+
+  @override
+  String get studentFamilyConnected => 'Connected';
+
+  @override
+  String get studentFamilyRemoveAccess => 'Remove access';
+
+  @override
+  String get studentFamilyDeclined => 'Declined';
+
+  @override
+  String get studentFamilyAccessRemoved => 'Access removed';
+
+  @override
+  String get lessonsUndated => 'Undated';
+
+  @override
+  String get lessonsLessonsCouldNotBeLoaded => 'Lessons could not be loaded.';
+
+  @override
+  String get lessonsNoLessonsYetTheyAppear =>
+      'No lessons yet. They appear here as your teacher shares them.';
+
+  @override
+  String get meetingsGoogleMeetCouldNotBe => 'Google Meet could not be opened.';
+
+  @override
+  String get meetingsUpcomingMeetings => 'Upcoming meetings';
+
+  @override
+  String get meetingsCancelled => 'Cancelled';
+
+  @override
+  String get meetingsTheLinkWillAppearHere => 'The link will appear here.';
+
+  @override
+  String get meetingsJoin => 'Join';
+
+  @override
+  String get conversationSent => 'Sent';
+
+  @override
+  String get conversationDelivered => 'Delivered';
+
+  @override
+  String get conversationRead => 'Read';
+
+  @override
+  String get notificationsNotificationPreferences => 'Notification preferences';
+
+  @override
+  String get notificationPrefsAddPreference => 'Add preference';
+
+  @override
+  String get notificationPrefsChannel => 'Channel';
+
+  @override
+  String get notificationPrefsInApp => 'In app';
+
+  @override
+  String get notificationPrefsEmail => 'Email';
+
+  @override
+  String get notificationPrefsPush => 'Push';
+
+  @override
+  String get notificationPrefsCategory => 'Category';
+
+  @override
+  String get notificationPrefsAcademic => 'Academic';
+
+  @override
+  String get notificationPrefsMessagesAndAnnouncements =>
+      'Messages and announcements';
+
+  @override
+  String get notificationPrefsMeetings => 'Meetings';
+
+  @override
+  String get notificationPrefsFamily => 'Family';
+
+  @override
+  String get notificationPrefsBilling => 'Billing';
+
+  @override
+  String get notificationPrefsAdd => 'Add';
+
+  @override
+  String get notificationPrefsPushPreferencesAreSavedBut =>
+      'Push preferences are saved, but push delivery is not available on this device yet.';
+
+  @override
+  String get notificationPrefsNoPreferencesSavedAddOne =>
+      'No preferences saved. Add one to choose a channel and category.';
+
+  @override
+  String get classroomAdminStaff => 'Staff';
+
+  @override
+  String get classroomAdminCreateAndEnrolStudent => 'Create and enrol student';
+
+  @override
+  String get classroomAdminCreatedStudentAwaitingEnrolment =>
+      'Created student awaiting enrolment';
+
+  @override
+  String get classroomAdminStudentEnrolled => 'Student enrolled.';
+
+  @override
+  String get classroomAdminRetryEnrolment => 'Retry enrolment';
+
+  @override
+  String get classroomAdminEnrolByStudentId => 'Enrol by student ID';
+
+  @override
+  String get classroomAdminNoEnrolledStudents => 'No enrolled students.';
+
+  @override
+  String get classroomAdminTransfer => 'Transfer';
+
+  @override
+  String get classroomAdminWithdraw => 'Withdraw';
+
+  @override
+  String get classroomAdminAssignStaff => 'Assign staff';
+
+  @override
+  String get classroomAdminNoStaffAssignments => 'No staff assignments.';
+
+  @override
+  String get classroomAdminRemove => 'Remove';
+
+  @override
+  String classroomAdminRemoveDisplaynameFromThisClass(Object displayName) {
+    return 'Remove $displayName from this class?';
+  }
+
+  @override
+  String get classroomAdminStaffRemoved => 'Staff removed.';
+
+  @override
+  String get classroomAdminWholeClass => 'Whole class';
+
+  @override
+  String get classroomAdminScheduleMeeting => 'Schedule meeting';
+
+  @override
+  String get classroomAdminCreateTheMeetingInGoogle =>
+      'Create the meeting in Google Meet, then paste its link here. Everyone invited is told in the app and can join from it.';
+
+  @override
+  String get classroomAdminNoUpcomingMeetings => 'No upcoming meetings.';
+
+  @override
+  String classroomAdminRecipientcountInvited(Object recipientCount) {
+    return '$recipientCount invited';
+  }
+
+  @override
+  String get classroomAdminLinkCopied => 'Link copied.';
+
+  @override
+  String get classroomAdminCopyLink => 'Copy link';
+
+  @override
+  String get classroomAdminMeetingCancelled => 'Meeting cancelled.';
+
+  @override
+  String get classroomAdminCancelMeeting => 'Cancel meeting';
+
+  @override
+  String get classroomAdminCreateStudent => 'Create student';
+
+  @override
+  String get classroomAdminDisplayName => 'Display name';
+
+  @override
+  String get classroomAdminAccountUuidOptional => 'Account UUID (optional)';
+
+  @override
+  String get classroomAdminStudentCreatedAndEnrolled =>
+      'Student created and enrolled.';
+
+  @override
+  String get classroomAdminEnrolStudent => 'Enrol student';
+
+  @override
+  String get classroomAdminStudentRecordId => 'Student record ID';
+
+  @override
+  String classroomAdminWithdrawDisplaynameFromThisClass(Object displayName) {
+    return 'Withdraw $displayName from this class?';
+  }
+
+  @override
+  String get classroomAdminStudentWithdrawn => 'Student withdrawn.';
+
+  @override
+  String classroomAdminTransferDisplayname(Object displayName) {
+    return 'Transfer $displayName';
+  }
+
+  @override
+  String get classroomAdminTargetClass => 'Target class';
+
+  @override
+  String get classroomAdminStudentTransferred => 'Student transferred.';
+
+  @override
+  String get classroomAdminTeacherAccountUuid => 'Teacher account UUID';
+
+  @override
+  String get classroomAdminRole => 'Role';
+
+  @override
+  String get classroomAdminCoTeacher => 'Co-teacher';
+
+  @override
+  String get classroomAdminLeadTeacher => 'Lead teacher';
+
+  @override
+  String get classroomAdminAssign => 'Assign';
+
+  @override
+  String get classroomAdminStaffAssigned => 'Staff assigned.';
+
+  @override
+  String get classroomAdminStarts => 'Starts';
+
+  @override
+  String get classroomAdminTime => 'Time';
+
+  @override
+  String get classroomAdminDuration => 'Duration';
+
+  @override
+  String get classroomAdminMinutes => 'minutes';
+
+  @override
+  String get classroomAdminAudience => 'Audience';
+
+  @override
+  String get classroomAdminCreateItInGoogleMeet => 'Create it in Google Meet';
+
+  @override
+  String get classroomAdminGoogleMeetLink => 'Google Meet link';
+
+  @override
+  String get classroomAdminPasteALinkThatStarts =>
+      'Paste a link that starts with https://meet.google.com/';
+
+  @override
+  String get classroomAdminSchedule => 'Schedule';
+
+  @override
+  String get classroomAdminMeetingScheduledEveryoneInvitedHas =>
+      'Meeting scheduled. Everyone invited has been told.';
+
+  @override
+  String get guardianVerifyConfirmGuardianVerification =>
+      'Confirm guardian verification';
+
+  @override
+  String get guardianVerifyRevokeGuardianAccess => 'Revoke guardian access?';
+
+  @override
+  String get guardianVerifyVerifyOnlyAfterCheckingThe =>
+      'Verify only after checking the guardian’s identity and relationship with the student.';
+
+  @override
+  String get guardianVerifyThisRemovesAccessGrantedBy =>
+      'This removes access granted by this family link.';
+
+  @override
+  String get guardianVerifyLinkStatus => 'Link status';
+
+  @override
+  String get guardianVerifyGuardianVerification => 'Guardian verification';
+
+  @override
+  String get guardianVerifyEnterTheLinkIdSupplied =>
+      'Enter the link ID supplied with the verification request.';
+
+  @override
+  String get guardianVerifyGuardianLinkId => 'Guardian link ID';
+
+  @override
+  String get guardianVerifyVerificationPeriod => 'Verification period';
+
+  @override
+  String get guardianVerifyDays => 'days';
+
+  @override
+  String get guardianVerifyVerifyLink => 'Verify link';
+
+  @override
+  String get guardianVerifyRevokeLink => 'Revoke link';
+
+  @override
+  String get termsAcademicTerms => 'Academic terms';
+
+  @override
+  String get termsCreateTerm => 'Create term';
+
+  @override
+  String get termsNoTermsCreated => 'No terms created.';
+
+  @override
+  String get termsCreateAcademicTerm => 'Create academic term';
+
+  @override
+  String get termsName => 'Name';
+
+  @override
+  String get termsStarts => 'Starts';
+
+  @override
+  String get termsEnds => 'Ends';
+
+  @override
+  String get termsCreate => 'Create';
+
+  @override
+  String get termsTermCreated => 'Term created.';
+
+  @override
+  String get rolesYourSpaceToGrow => 'YOUR SPACE TO GROW';
+
+  @override
+  String get studyPlansFeatureLessons => 'Lessons from every class, by date';
+
+  @override
+  String get studyPlansFeatureNotebook => 'Your own notebook for each class';
+
+  @override
+  String get studyPlansFeatureTenQuestions =>
+      '10 questions a day to the study helper';
+
+  @override
+  String get studyPlansFeatureEverythingInFree => 'Everything in Free';
+
+  @override
+  String get studyPlansFeatureWhiteboard =>
+      'Snap the whiteboard - get real notebook notes';
+
+  @override
+  String get studyPlansFeatureFortyQuestions => '40 questions a day';
+
+  @override
+  String get studyPlansFeatureEverythingInPlus => 'Everything in Plus';
+
+  @override
+  String get studyPlansFeatureQuizzes => 'Quizzes made from your lessons';
+
+  @override
+  String get studyPlansFeatureFlashcards => 'Flashcards made from your lessons';
+
+  @override
+  String get studyPlansFeatureSixtyQuestions => '60 questions a day';
+
+  @override
+  String get studentTodayMakeTodayYours => 'Make today yours.';
+
+  @override
+  String studentTodayMakeTodayYoursName(Object name) {
+    return 'Make today yours, $name.';
+  }
+
+  @override
+  String get studySetQuiz => 'Quiz';
+
+  @override
+  String get studySetFlashcards => 'Flashcards';
+
+  @override
+  String get studentTodayClassesCouldNotLoad =>
+      'Your classes could not load. Pull down to retry.';
+
+  @override
+  String get studentTodayNoClassesYet => 'No classes yet';
+
+  @override
+  String get studentTodayPasteClassLink =>
+      'Paste the class link your teacher shared to join your first class.';
+
+  @override
+  String studentTodayGradeSection(Object grade, Object section) {
+    return 'Grade $grade · $section';
+  }
+
+  @override
+  String get msgTitle => 'Messages';
+
+  @override
+  String get msgEmptyTitle => 'No conversations yet';
+
+  @override
+  String get msgEmptyMessage => 'Start a conversation with your school.';
+
+  @override
+  String get msgEmptyAwaitingLink =>
+      'Once a child is linked to you, you can message their teachers here.';
+
+  @override
+  String get msgNew => 'New message';
+
+  @override
+  String get msgNoSchool => 'Choose a school to see messages.';
+
+  @override
+  String get msgRetry => 'Try again';
+
+  @override
+  String get msgErrorTitle => 'Messages could not load';
+
+  @override
+  String get msgComposeHint => 'Write a message';
+
+  @override
+  String get msgSend => 'Send';
+
+  @override
+  String get msgSendFailed => 'Not sent. Tap send to try again.';
+
+  @override
+  String get msgLoadOlder => 'Load earlier messages';
+
+  @override
+  String get msgYou => 'You';
+
+  @override
+  String get msgUnknownPerson => 'Someone';
+
+  @override
+  String get msgMenuReportConversation => 'Report conversation';
+
+  @override
+  String msgMenuReportPerson(String name) {
+    return 'Report $name';
+  }
+
+  @override
+  String msgMenuBlockPerson(String name) {
+    return 'Block $name';
+  }
+
+  @override
+  String get msgMenuBlocked => 'Blocked people';
+
+  @override
+  String get msgMessageReport => 'Report message';
+
+  @override
+  String get msgReportTitle => 'Report';
+
+  @override
+  String get msgReportIntro =>
+      'Your report goes to your school\'s safeguarding team. The person you report is not told who reported them.';
+
+  @override
+  String get msgReportReason => 'What is the problem?';
+
+  @override
+  String get msgReasonHarassment => 'Bullying or harassment';
+
+  @override
+  String get msgReasonInappropriate => 'Inappropriate content';
+
+  @override
+  String get msgReasonSafety => 'I am worried about someone\'s safety';
+
+  @override
+  String get msgReasonSpam => 'Spam';
+
+  @override
+  String get msgReasonOther => 'Something else';
+
+  @override
+  String get msgReportDetails => 'Tell us more (optional)';
+
+  @override
+  String get msgReportConsent => 'The school may contact me about this report';
+
+  @override
+  String get msgReportAlsoBlock => 'Also block this person';
+
+  @override
+  String get msgReportSubmit => 'Send report';
+
+  @override
+  String get msgReportSent => 'Report sent. Thank you for telling us.';
+
+  @override
+  String get msgReportUrgent =>
+      'If someone is in immediate danger, contact emergency services or a trusted adult now.';
+
+  @override
+  String msgBlockTitle(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String get msgBlockMessage =>
+      'You will not be able to message each other. Messages already sent stay visible to the school.';
+
+  @override
+  String get msgBlockConfirm => 'Block';
+
+  @override
+  String msgBlockDone(String name) {
+    return '$name is blocked.';
+  }
+
+  @override
+  String get msgCancel => 'Cancel';
+
+  @override
+  String get msgBlockedTitle => 'Blocked people';
+
+  @override
+  String get msgBlockedEmpty => 'You have not blocked anyone.';
+
+  @override
+  String get msgUnblock => 'Unblock';
+
+  @override
+  String get msgUnblockDone => 'Unblocked.';
+
+  @override
+  String get msgBlockedBanner =>
+      'You blocked someone in this conversation. Unblock them to send messages.';
+
+  @override
+  String get msgNewTitle => 'New message';
+
+  @override
+  String get msgNewEmpty => 'No one is available to message.';
+
+  @override
+  String get msgNewSearch => 'Search people';
+
+  @override
+  String get msgSubjectHint => 'Subject (optional)';
+
+  @override
+  String get msgStart => 'Start conversation';
+
+  @override
+  String get msgRoleStaff => 'School staff';
+
+  @override
+  String get msgRoleStudent => 'Student';
+
+  @override
+  String get msgRoleGuardian => 'Parent or guardian';
+
+  @override
+  String msgGuardianOf(String names) {
+    return 'Guardian of $names';
+  }
+
+  @override
+  String get msgErrorMessagingDisabled =>
+      'Your school has not turned on messaging yet.';
+
+  @override
+  String get msgErrorContactNotAllowed => 'You cannot message this person.';
+
+  @override
+  String get msgErrorForbidden =>
+      'You cannot send messages here. You may have blocked someone, or someone may have blocked you.';
+
+  @override
+  String get msgErrorNotFound => 'This conversation is no longer available.';
+
+  @override
+  String get msgErrorInvalidState =>
+      'You already reported this in the last day. The school has it.';
+
+  @override
+  String get msgErrorWindowClosed =>
+      'You have sent many reports today. Please contact the school directly.';
+
+  @override
+  String get msgErrorRateLimited =>
+      'Too many attempts. Wait a moment and try again.';
+
+  @override
+  String get msgErrorNetwork =>
+      'Studafy could not reach the school. Check your connection.';
+
+  @override
+  String get msgErrorUnauthorized => 'Please sign in again.';
+
+  @override
+  String get msgErrorValidation => 'Write a message first.';
+
+  @override
+  String get msgErrorUnknown => 'Something went wrong. Please try again.';
+
+  @override
+  String get famTitle => 'My family';
+
+  @override
+  String get famChildren => 'My children';
+
+  @override
+  String get famEmptyTitle => 'No children linked yet';
+
+  @override
+  String get famEmptyMessage =>
+      'Ask your child for their Studafy ID. They approve your request before you can follow their progress.';
+
+  @override
+  String get famLink => 'Link a child';
+
+  @override
+  String get famLinkTitle => 'Link a child';
+
+  @override
+  String get famLinkHint => 'Studafy ID';
+
+  @override
+  String get famLinkFind => 'Find';
+
+  @override
+  String get famLinkNotFound =>
+      'No student has that Studafy ID. Check it and try again.';
+
+  @override
+  String famLinkConfirm(String name) {
+    return 'Request link to $name';
+  }
+
+  @override
+  String famLinkSent(String name) {
+    return 'Request sent. $name must approve it before you can see their records.';
+  }
+
+  @override
+  String get famStatusPending => 'Waiting for your child';
+
+  @override
+  String get famStatusVerified => 'Linked';
+
+  @override
+  String get famStatusDeclined => 'Request declined';
+
+  @override
+  String get famStatusRevoked => 'No longer linked';
+
+  @override
+  String get famView => 'View progress';
+
+  @override
+  String famProgressTitle(String name) {
+    return '$name\'s progress';
+  }
+
+  @override
+  String get famProgressAverage => 'Average of published grades';
+
+  @override
+  String famProgressGraded(String count) {
+    return '$count published grades';
+  }
+
+  @override
+  String get famProgressAttendance => 'Attendance';
+
+  @override
+  String famProgressSessions(String count) {
+    return '$count recorded sessions';
+  }
+
+  @override
+  String get famProgressNone => 'No data yet';
+
+  @override
+  String famProgressBreakdown(
+    String present,
+    String late,
+    String absent,
+    String excused,
+  ) {
+    return 'Present $present · Late $late · Absent $absent · Excused $excused';
+  }
+
+  @override
+  String get famProgressSource =>
+      'Calculated from grades the school has published and attendance it has recorded. Ask the school if something looks wrong.';
+
+  @override
+  String get famApprovalsTitle => 'Waiting for your approval';
+
+  @override
+  String famApprovalsDetail(String name) {
+    return '$name asked to subscribe to Student Notebook.';
+  }
+
+  @override
+  String get famApprovalsApprove => 'Approve';
+
+  @override
+  String get famApprovalsDecline => 'Decline';
+
+  @override
+  String get famApprovalsDone => 'Your decision was sent.';
+
+  @override
+  String get famRetry => 'Try again';
+
+  @override
+  String get famCancel => 'Cancel';
+
+  @override
+  String get famErrorTitle => 'Your family could not load';
+
+  @override
+  String get famErrorReauthRequired =>
+      'For your security, sign out and sign in again, then approve.';
+
+  @override
+  String get famErrorForbidden => 'You do not have access to this.';
+
+  @override
+  String get famErrorNotFound => 'This is no longer available.';
+
+  @override
+  String get famErrorInvalidState => 'This request has already been decided.';
+
+  @override
+  String get famErrorRateLimited =>
+      'Too many attempts. Wait a moment and try again.';
+
+  @override
+  String get famErrorNetwork =>
+      'Studafy could not reach the school. Check your connection.';
+
+  @override
+  String get famErrorUnauthorized => 'Please sign in again.';
+
+  @override
+  String get famErrorValidation => 'Enter the Studafy ID.';
+
+  @override
+  String get famErrorUnknown => 'Something went wrong. Please try again.';
+
+  @override
+  String get accountAccountId => 'Account ID';
+
+  @override
+  String get accountAccountIdDetail =>
+      'Share this with your school to link your account.';
+
+  @override
+  String get accountAccountIdCopied => 'Account ID copied';
+
+  @override
+  String get accountSwitchRole => 'Switch role';
+
+  @override
+  String get accountSwitchRoleDetail =>
+      'You belong to this school in more than one role.';
+
+  @override
+  String get accountTitle => 'Account';
+
+  @override
+  String get accountSectionAccount => 'Account';
+
+  @override
+  String get accountSectionPreferences => 'Preferences';
+
+  @override
+  String get accountSectionPrivacy => 'Privacy and data';
+
+  @override
+  String get accountStudafyId => 'Your Studafy ID';
+
+  @override
+  String get accountStudafyIdDetail =>
+      'Give this to a parent so they can ask to link.';
+
+  @override
+  String get accountStudafyIdCopy => 'Copy your Studafy ID';
+
+  @override
+  String get accountStudafyIdCopied => 'Studafy ID copied.';
+
+  @override
+  String get accountUnknown => 'Your account';
+
+  @override
+  String get accountLanguage => 'Language';
+
+  @override
+  String get accountSecurity => 'Sign-in and security';
+
+  @override
+  String get accountSecurityDetail =>
+      'Devices, two-step verification, sign out everywhere';
+
+  @override
+  String get accountSignOut => 'Sign out';
+
+  @override
+  String get accountDelete => 'Delete account';
+
+  @override
+  String get accountRoleSchoolAdmin => 'School administrator';
+
+  @override
+  String get accountRoleTeacher => 'Teacher';
+
+  @override
+  String get accountRoleParent => 'Parent or guardian';
+
+  @override
+  String get accountRoleStudent => 'Student';
+
+  @override
+  String get accountExport => 'Download my data';
+
+  @override
+  String get accountExportDetail =>
+      'Get a copy of the information Studafy holds about you.';
+
+  @override
+  String get accountExportRequest => 'Request';
+
+  @override
+  String get accountExportPending =>
+      'Preparing your copy. This can take a few minutes.';
+
+  @override
+  String get accountExportCheck => 'Check';
+
+  @override
+  String get accountExportReady => 'Your copy is ready for 7 days.';
+
+  @override
+  String get accountExportDownload => 'Download';
+
+  @override
+  String get accountExportRequested =>
+      'Request received. We are preparing your copy.';
+
+  @override
+  String get accountExportReauth =>
+      'For your security, sign out and sign in again first.';
+
+  @override
+  String get accountExportExpired =>
+      'That copy has expired. Request a new one.';
+
+  @override
+  String get accountExportFailed => 'That did not work. Please try again.';
+
+  @override
+  String get todayWork => 'Work you have set';
+
+  @override
+  String get todayWorkEmpty => 'You have not set any work yet.';
+
+  @override
+  String get todaySections => 'Sections needing content';
+
+  @override
+  String get todaySectionsEmpty =>
+      'Every section you have taught has its content filed.';
+
+  @override
+  String get todaySectionsOutstanding => 'Content outstanding';
+
+  @override
+  String get todayTitle => 'Today';
+
+  @override
+  String get todayHello => 'Hello';
+
+  @override
+  String todayHelloName(String name) {
+    return 'Hello, $name';
+  }
+
+  @override
+  String get todayClasses => 'My classes';
+
+  @override
+  String todayStudents(String count) {
+    return '$count students';
+  }
+
+  @override
+  String get todayEmpty => 'No classes yet';
+
+  @override
+  String get todayEmptyDetail =>
+      'Create your first class from the Classes tab.';
+
+  @override
+  String get todayError => 'Classes could not load';
+
+  @override
+  String get todayErrorDetail => 'Check your connection and try again.';
+
+  @override
+  String get todayRetry => 'Try again';
+
+  @override
+  String get todayMessages => 'Messages';
+
+  @override
+  String get todayNotifications => 'Notifications';
+
+  @override
+  String get navToday => 'Today';
+
+  @override
+  String get navClasses => 'Classes';
+
+  @override
+  String get navTeaching => 'Teaching';
+
+  @override
+  String get navGradebook => 'Gradebook';
+
+  @override
+  String get navInbox => 'Inbox';
+
+  @override
+  String get navLearning => 'Learning';
+
+  @override
+  String get navInsights => 'Insights+';
+
+  @override
+  String get navUpdates => 'Updates';
+
+  @override
+  String get navMessages => 'Messages';
+
+  @override
+  String get navNotebook => 'Notebook';
+
+  @override
+  String get navWork => 'Work';
+
+  @override
+  String get navGrades => 'Grades';
+
+  @override
+  String get notificationsFeedTitle => 'Notifications';
+
+  @override
+  String get notificationsFeedMarkAllRead => 'Mark all read';
+
+  @override
+  String get notificationsFeedErrorTitle => 'Couldn\'t load notifications';
+
+  @override
+  String get notificationsFeedRetry => 'Try again';
+
+  @override
+  String get notificationsFeedOfflineBanner =>
+      'Showing your last saved notifications — reconnect to update.';
+
+  @override
+  String get notificationsFeedEmptyTitle => 'No notifications yet';
+
+  @override
+  String get notificationsFeedEmptyMessage =>
+      'You\'ll see updates here as they happen.';
+
+  @override
+  String get notificationsFeedLoading => 'Loading…';
+
+  @override
+  String get notificationsFeedLoadMore => 'Load more';
+
+  @override
+  String get notificationCopyAcademicAssessmentPublishedTitle =>
+      'Assessment published';
+
+  @override
+  String get notificationCopyAcademicAssessmentPublishedDetail =>
+      'A new assessment is ready for one of your classes.';
+
+  @override
+  String get notificationCopyAcademicAssignmentPublishedTitle =>
+      'Assignment published';
+
+  @override
+  String get notificationCopyAcademicAssignmentPublishedDetail =>
+      'A new assignment is ready for one of your classes.';
+
+  @override
+  String get notificationCopyAcademicGradePublishedTitle => 'New grade';
+
+  @override
+  String get notificationCopyAcademicGradePublishedDetail =>
+      'A grade was published. Open Grades to view it.';
+
+  @override
+  String get notificationCopyAcademicResourcePublishedTitle =>
+      'New class material';
+
+  @override
+  String get notificationCopyAcademicResourcePublishedDetail =>
+      'Your teacher shared new material for one of your classes.';
+
+  @override
+  String get notificationCopyAcademicWellbeingSharedTitle =>
+      'Wellbeing note shared';
+
+  @override
+  String get notificationCopyAcademicWellbeingSharedDetail =>
+      'A wellbeing note was shared with you.';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalRequestedTitle =>
+      'Purchase approval needed';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalRequestedDetail =>
+      'Your child asked you to approve a subscription.';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalApprovedTitle =>
+      'Purchase approved';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalApprovedDetail =>
+      'A guardian approved your subscription request.';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalDeclinedTitle =>
+      'Purchase declined';
+
+  @override
+  String get notificationCopyBillingPurchaseApprovalDeclinedDetail =>
+      'A guardian declined your subscription request.';
+
+  @override
+  String get notificationCopyMeetingsScheduledTitle => 'Meeting confirmed';
+
+  @override
+  String get notificationCopyMeetingsScheduledDetail =>
+      'A meeting was scheduled. Check your calendar for the invitation.';
+
+  @override
+  String get notificationCopyMeetingsFailedTitle => 'Meeting not scheduled';
+
+  @override
+  String get notificationCopyMeetingsFailedDetail =>
+      'A meeting you requested could not be scheduled. Please try again.';
+
+  @override
+  String get notificationCopyCommunicationsAnnouncementCreatedTitle =>
+      'New announcement';
+
+  @override
+  String get notificationCopyCommunicationsAnnouncementCreatedDetail =>
+      'A new announcement was posted.';
+
+  @override
+  String get notificationCopyCommunicationsMessageSentTitle => 'New message';
+
+  @override
+  String get notificationCopyCommunicationsMessageSentDetail =>
+      'You received a new message.';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRequestedTitle =>
+      'Connection request';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRequestedDetail =>
+      'Someone requested to connect as a guardian.';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRevokedTitle =>
+      'Connection removed';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkRevokedDetail =>
+      'A family connection was removed.';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkVerifiedTitle =>
+      'Connection verified';
+
+  @override
+  String get notificationCopyFamilyGuardianLinkVerifiedDetail =>
+      'A family connection was verified.';
+
+  @override
+  String get notificationCopyInvitationsIssuedTitle => 'Invitation sent';
+
+  @override
+  String get notificationCopyInvitationsIssuedDetail =>
+      'An invitation was issued.';
+
+  @override
+  String get notificationCopyMeetingsCancelledTitle => 'Meeting cancelled';
+
+  @override
+  String get notificationCopyMeetingsCancelledDetail =>
+      'A scheduled meeting was cancelled.';
+
+  @override
+  String get notificationCopyMeetingsRequestedTitle => 'Meeting requested';
+
+  @override
+  String get notificationCopyMeetingsRequestedDetail =>
+      'A meeting was requested.';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffAssignedTitle =>
+      'Staff assigned';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffAssignedDetail =>
+      'A staff member was assigned to a class.';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffRemovedTitle =>
+      'Staff removed';
+
+  @override
+  String get notificationCopySchoolAdminClassroomStaffRemovedDetail =>
+      'A staff member was removed from a class.';
+
+  @override
+  String get notificationCopySchoolAdminMembershipGrantedTitle =>
+      'Access granted';
+
+  @override
+  String get notificationCopySchoolAdminMembershipGrantedDetail =>
+      'School access was granted.';
+
+  @override
+  String get notificationCopySchoolAdminStudentEnrolledTitle =>
+      'Student enrolled';
+
+  @override
+  String get notificationCopySchoolAdminStudentEnrolledDetail =>
+      'A student was enrolled.';
+
+  @override
+  String get notificationCopySchoolAdminStudentTransferredTitle =>
+      'Student transferred';
+
+  @override
+  String get notificationCopySchoolAdminStudentTransferredDetail =>
+      'A student was transferred between classes.';
+
+  @override
+  String get notificationCopySchoolAdminStudentWithdrawnTitle =>
+      'Student withdrawn';
+
+  @override
+  String get notificationCopySchoolAdminStudentWithdrawnDetail =>
+      'A student was withdrawn.';
+
+  @override
+  String get notificationCopySupportAccessApprovedTitle =>
+      'Support access approved';
+
+  @override
+  String get notificationCopySupportAccessApprovedDetail =>
+      'A support access request was approved.';
+
+  @override
+  String get notificationCopySupportAccessRequestedTitle =>
+      'Support access requested';
+
+  @override
+  String get notificationCopySupportAccessRequestedDetail =>
+      'Support access was requested.';
+
+  @override
+  String get notificationCopySupportAccessRevokedTitle =>
+      'Support access revoked';
+
+  @override
+  String get notificationCopySupportAccessRevokedDetail =>
+      'Support access was revoked.';
+
+  @override
+  String get notificationCopySupportAccessStartedTitle =>
+      'Support session started';
+
+  @override
+  String get notificationCopySupportAccessStartedDetail =>
+      'A support session has started.';
+
+  @override
+  String get notificationCopyGenericTitle => 'Notification';
+
+  @override
+  String get notificationCopyGenericDetail => 'You have a new update.';
 }

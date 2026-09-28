@@ -8,6 +8,7 @@ import '../../../core/attachment_policy.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../domain/study.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// A student's own notebook for one class, newest first, grouped by day.
 ///
@@ -56,9 +57,6 @@ class _NotebookViewState extends State<NotebookView> {
   bool _failed = false;
   String? _working;
 
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   @override
   void initState() {
     super.initState();
@@ -99,30 +97,22 @@ class _NotebookViewState extends State<NotebookView> {
           .showSnackBar(SnackBar(content: Text(message)));
 
   String _refusalText(StudyRefusal refusal) => switch (refusal) {
-    StudyRefusal.planRequired => _t(
-      'This needs Studafy Plus.',
-      'هذه الميزة تتطلب Studafy Plus.',
-    ),
-    StudyRefusal.allowanceUsed => _t(
-      "This month's AI allowance is used. It renews on the 1st.",
-      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر. يتجدد في أول الشهر.',
-    ),
-    StudyRefusal.photoUnreadable => _t(
-      'No writing could be read in that photo. Try a clearer one.',
-      'تعذّرت قراءة أي كتابة في الصورة. جرّب صورة أوضح.',
-    ),
-    StudyRefusal.photoNotReady => _t(
-      'The photo is taking longer than usual to check. Try again shortly.',
-      'فحص الصورة يستغرق وقتًا أطول من المعتاد. حاول بعد قليل.',
-    ),
-    StudyRefusal.unavailable => _t(
-      'This is not available yet.',
-      'هذه الميزة غير متاحة بعد.',
-    ),
-    _ => _t(
-      'That did not work. Please try again.',
-      'لم تنجح العملية. حاول مرة أخرى.',
-    ),
+    StudyRefusal.planRequired => AppL10n.of(
+      context,
+    ).notebookThisNeedsStudafyPlus,
+    StudyRefusal.allowanceUsed => AppL10n.of(
+      context,
+    ).studySetThisMonthSAiAllowance,
+    StudyRefusal.photoUnreadable => AppL10n.of(
+      context,
+    ).notebookNoWritingCouldBeRead,
+    StudyRefusal.photoNotReady => AppL10n.of(
+      context,
+    ).notebookThePhotoIsTakingLonger,
+    StudyRefusal.unavailable => AppL10n.of(
+      context,
+    ).studySetThisIsNotAvailableYet,
+    _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
   };
 
   Future<void> _addNote() async {
@@ -131,7 +121,7 @@ class _NotebookViewState extends State<NotebookView> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(_t('New note', 'ملاحظة جديدة')),
+        title: Text(AppL10n.of(context).notebookNewNote),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -139,14 +129,18 @@ class _NotebookViewState extends State<NotebookView> {
               TextField(
                 controller: title,
                 maxLength: 200,
-                decoration: InputDecoration(labelText: _t('Title', 'العنوان')),
+                decoration: InputDecoration(
+                  labelText: AppL10n.of(context).announcementTitleLabel,
+                ),
               ),
               TextField(
                 controller: body,
                 minLines: 4,
                 maxLines: 10,
                 maxLength: 20000,
-                decoration: InputDecoration(labelText: _t('Note', 'الملاحظة')),
+                decoration: InputDecoration(
+                  labelText: AppL10n.of(context).academicNoteBodyLabel,
+                ),
               ),
             ],
           ),
@@ -160,17 +154,17 @@ class _NotebookViewState extends State<NotebookView> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(_t('Save', 'حفظ')),
+            child: Text(AppL10n.of(context).notebookSave),
           ),
         ],
       ),
     );
     if (saved != true || !mounted) return;
     if (title.text.trim().isEmpty || body.text.trim().isEmpty) {
-      _say(_t('Add a title and some text.', 'أضف عنوانًا ونصًا.'));
+      _say(AppL10n.of(context).notebookAddATitleAndSome);
       return;
     }
-    setState(() => _working = _t('Saving…', 'جارٍ الحفظ…'));
+    setState(() => _working = AppL10n.of(context).scheduleSaving);
     try {
       await widget.study.addNote(
         widget.classroomId,
@@ -186,6 +180,8 @@ class _NotebookViewState extends State<NotebookView> {
   }
 
   Future<void> _snapWhiteboard(AttachmentKind kind) async {
+    // Read before the first await: the messages below are shown after one.
+    final l10n = AppL10n.of(context);
     final plan = _plan;
     if (plan == null || !plan.canSnapWhiteboard) {
       widget.onOpenPlans();
@@ -204,16 +200,11 @@ class _NotebookViewState extends State<NotebookView> {
           sizeBytes: picked.bytes.length,
         ) !=
         null) {
-      _say(
-        _t(
-          'Choose a JPEG or PNG photo under 10 MB.',
-          'اختر صورة JPEG أو PNG أقل من 10 ميغابايت.',
-        ),
-      );
+      _say(l10n.notebookChooseAJpegOrPng);
       return;
     }
 
-    setState(() => _working = _t('Uploading the photo…', 'جارٍ رفع الصورة…'));
+    setState(() => _working = l10n.notebookUploadingThePhoto);
     try {
       final stored = await uploads.upload(
         FileUploadCommand(
@@ -227,9 +218,7 @@ class _NotebookViewState extends State<NotebookView> {
         ),
       );
       if (!mounted) return;
-      setState(
-        () => _working = _t('Reading the whiteboard…', 'جارٍ قراءة السبورة…'),
-      );
+      setState(() => _working = l10n.notebookReadingTheWhiteboard);
       // A new photo is checked before anything may read it; ask until it is.
       final deadline = DateTime.now().add(widget.readyTimeout);
       while (true) {
@@ -245,13 +234,13 @@ class _NotebookViewState extends State<NotebookView> {
           if (!mounted) return;
         }
       }
-      _say(_t('Notes added to your notebook.', 'أُضيفت الملاحظات إلى دفترك.'));
+      _say(l10n.notebookNotesAddedToYourNotebook);
       await _load();
     } on StudyException catch (error) {
       if (error.refusal == StudyRefusal.planRequired) widget.onOpenPlans();
       _say(_refusalText(error.refusal));
     } on Object {
-      _say(_t('The photo could not be uploaded.', 'تعذّر رفع الصورة.'));
+      _say(l10n.notebookThePhotoCouldNotBe);
     } finally {
       if (mounted) setState(() => _working = null);
     }
@@ -261,7 +250,7 @@ class _NotebookViewState extends State<NotebookView> {
     final sure = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(_t('Delete this note?', 'حذف هذه الملاحظة؟')),
+        title: Text(AppL10n.of(context).notebookDeleteThisNote),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -271,7 +260,7 @@ class _NotebookViewState extends State<NotebookView> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(_t('Delete', 'حذف')),
+            child: Text(AppL10n.of(context).notebookDelete),
           ),
         ],
       ),
@@ -290,9 +279,9 @@ class _NotebookViewState extends State<NotebookView> {
 
   String _heading(DateTime day) {
     final today = _day(DateTime.now());
-    if (day == today) return _t('Today', 'اليوم');
+    if (day == today) return AppL10n.of(context).notebookToday;
     if (day == today.subtract(const Duration(days: 1))) {
-      return _t('Yesterday', 'أمس');
+      return AppL10n.of(context).notebookYesterday;
     }
     return MaterialLocalizations.of(context).formatFullDate(day);
   }
@@ -309,7 +298,7 @@ class _NotebookViewState extends State<NotebookView> {
           FilledButton.tonalIcon(
             onPressed: _working != null ? null : _addNote,
             icon: const Icon(Icons.edit_note_rounded),
-            label: Text(_t('Add note', 'أضف ملاحظة')),
+            label: Text(AppL10n.of(context).notebookAddNote),
           ),
           if (canUpload)
             FilledButton.icon(
@@ -321,7 +310,7 @@ class _NotebookViewState extends State<NotebookView> {
                     ? Icons.lock_outline_rounded
                     : Icons.photo_camera_outlined,
               ),
-              label: Text(_t('Snap the whiteboard', 'صوّر السبورة')),
+              label: Text(AppL10n.of(context).notebookSnapTheWhiteboard),
             ),
           if (canUpload && !locked)
             OutlinedButton.icon(
@@ -329,16 +318,13 @@ class _NotebookViewState extends State<NotebookView> {
                   ? null
                   : () => _snapWhiteboard(AttachmentKind.photo),
               icon: const Icon(Icons.photo_library_outlined),
-              label: Text(_t('From photos', 'من الصور')),
+              label: Text(AppL10n.of(context).notebookFromPhotos),
             ),
           if (locked)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                _t(
-                  'Whiteboard notes come with Studafy Plus.',
-                  'ملاحظات السبورة متاحة مع Studafy Plus.',
-                ),
+                AppL10n.of(context).notebookWhiteboardNotesComeWithStudafy,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -354,12 +340,7 @@ class _NotebookViewState extends State<NotebookView> {
       return Center(
         child: TextButton(
           onPressed: _load,
-          child: Text(
-            _t(
-              'The notebook could not be loaded. Try again',
-              'تعذّر تحميل الدفتر. حاول مرة أخرى',
-            ),
-          ),
+          child: Text(AppL10n.of(context).notebookTheNotebookCouldNotBe),
         ),
       );
     }
@@ -384,10 +365,7 @@ class _NotebookViewState extends State<NotebookView> {
         Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            _t(
-              'Your notebook for this class is empty. Add a note, or snap the whiteboard.',
-              'دفترك لهذا الصف فارغ. أضف ملاحظة أو صوّر السبورة.',
-            ),
+            AppL10n.of(context).notebookYourNotebookForThisClass,
             textAlign: TextAlign.center,
           ),
         ),
@@ -426,7 +404,8 @@ class _NotebookViewState extends State<NotebookView> {
                       Padding(
                         padding: const EdgeInsetsDirectional.only(end: 6),
                         child: Tooltip(
-                          message: _t('From the whiteboard', 'من السبورة'),
+                          message: AppL10n.of(context)
+                              .notebookFromTheWhiteboard,
                           child: const Icon(
                             Icons.auto_awesome_rounded,
                             size: 18,
@@ -446,7 +425,7 @@ class _NotebookViewState extends State<NotebookView> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     IconButton(
-                      tooltip: _t('Delete', 'حذف'),
+                      tooltip: AppL10n.of(context).notebookDelete,
                       onPressed: () => _delete(entry),
                       icon: const Icon(Icons.delete_outline_rounded),
                     ),

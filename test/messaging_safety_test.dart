@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/failures.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/messaging/application/messaging_interactor.dart';
 import 'package:studafy/features/messaging/domain/messaging.dart';
 import 'package:studafy/features/messaging/presentation/blocked_people_page.dart';
 import 'package:studafy/features/messaging/presentation/conversation_page.dart';
 import 'package:studafy/features/messaging/presentation/messaging_scope.dart';
-import 'package:studafy/features/messaging/presentation/messaging_strings.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// SAFE-043 / store UGC requirements: labelled report-content,
@@ -148,10 +146,9 @@ class _Fake implements MessagingRepository, SafetyRepository {
 Widget _app(_Fake fake, Widget home, {Locale locale = const Locale('en')}) =>
     MaterialApp(
       locale: locale,
-      supportedLocales: StudafyLocalizations.supportedLocales,
+      supportedLocales: AppL10n.supportedLocales,
       localizationsDelegates: const [
         AppL10n.delegate,
-        StudafyLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -176,11 +173,6 @@ Future<void> _openMenu(WidgetTester tester) async {
 
 void main() {
   const page = ConversationPage(conversation: _conversationRef, myUserId: _me);
-
-  test('every messaging string exists in English and Arabic', () {
-    final keys = messagingStringKeys();
-    expect(keys['ar'], keys['en']);
-  });
 
   testWidgets('report and block controls are labelled in the conversation', (
     tester,

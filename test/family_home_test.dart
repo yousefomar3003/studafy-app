@@ -3,13 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/studafy_domain.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/family/application/family_interactor.dart';
 import 'package:studafy/features/family/domain/family.dart';
 import 'package:studafy/features/family/presentation/family_home_page.dart';
 import 'package:studafy/features/family/presentation/family_scope.dart';
-import 'package:studafy/features/family/presentation/family_strings.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// MOB-070 parent slice: a guardian's home runs on typed /v1 data, only a
@@ -98,10 +96,9 @@ Widget _app(
   Locale locale = const Locale('en'),
 }) => MaterialApp(
   locale: locale,
-  supportedLocales: StudafyLocalizations.supportedLocales,
+  supportedLocales: AppL10n.supportedLocales,
   localizationsDelegates: const [
     AppL10n.delegate,
-    StudafyLocalizations.delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -133,11 +130,6 @@ void main() {
   });
 
   setUp(() => ActiveContextController.instance.selectStudent(null));
-
-  test('every family string exists in English and Arabic', () {
-    final keys = familyStringKeys();
-    expect(keys['ar'], keys['en']);
-  });
 
   test('attendance ignores excused sessions and counts late as present', () {
     const progress = ChildProgress(

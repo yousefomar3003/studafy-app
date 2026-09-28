@@ -14,6 +14,7 @@ import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// One conversation. Report and block controls are always one tap away in
 /// the app bar, and any message can be reported with a long press.
@@ -221,16 +222,16 @@ class _ConversationPageState extends State<ConversationPage> {
           _attachmentsKey = UniqueKey();
         },
         onFailure: (failure) => _sendError = failure.code == Failure.networkCode
-            ? messagingText(context, 'sendFailed')
+            ? AppL10n.of(context).msgSendFailed
             : messagingFailureText(context, failure),
       );
     });
   }
 
   String _nameOf(String userId) {
-    if (userId == widget.myUserId) return messagingText(context, 'you');
+    if (userId == widget.myUserId) return AppL10n.of(context).msgYou;
     return _conversation.participantName(userId) ??
-        messagingText(context, 'unknownPerson');
+        AppL10n.of(context).msgUnknownPerson;
   }
 
   Future<void> _reportConversation() async {
@@ -277,9 +278,9 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _confirmReport() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(messagingText(context, 'report.sent'))),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(AppL10n.of(context).msgReportSent)));
   }
 
   Future<void> _block(ConversationParticipant person) async {
@@ -309,30 +310,27 @@ class _ConversationPageState extends State<ConversationPage> {
         title: Text(title, overflow: TextOverflow.ellipsis),
         actions: [
           PopupMenuButton<VoidCallback>(
-            tooltip: t('report.title'),
+            tooltip: AppL10n.of(context).msgReportTitle,
             icon: const Icon(Icons.flag_outlined),
             onSelected: (action) => action(),
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: _reportConversation,
-                child: Text(t('menu.reportConversation')),
+                child: Text(AppL10n.of(context).msgMenuReportConversation),
               ),
               for (final person in others) ...[
                 PopupMenuItem(
                   value: () => _reportPerson(person),
                   child: Text(
-                    messagingText(context, 'menu.reportPerson', {
-                      'name': person.displayName,
-                    }),
+                    AppL10n.of(context).msgMenuReportPerson(person.displayName),
                   ),
                 ),
                 if (!_blockedByMe.contains(person.userId))
                   PopupMenuItem(
                     value: () => _block(person),
                     child: Text(
-                      messagingText(context, 'menu.blockPerson', {
-                        'name': person.displayName,
-                      }),
+                      AppL10n.of(context)
+                          .msgMenuBlockPerson(person.displayName),
                     ),
                   ),
               ],
@@ -353,7 +351,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   );
                   if (mounted) await _load();
                 },
-                child: Text(t('menu.blocked')),
+                child: Text(AppL10n.of(context).msgMenuBlocked),
               ),
             ],
           ),
@@ -382,9 +380,9 @@ class _ConversationPageState extends State<ConversationPage> {
     if (_loadError != null) {
       return StudafyStatusCard(
         icon: Icons.error_outline_rounded,
-        title: messagingText(context, 'error.title'),
+        title: AppL10n.of(context).msgErrorTitle,
         message: _loadError!,
-        actionLabel: messagingText(context, 'retry'),
+        actionLabel: AppL10n.of(context).msgRetry,
         onAction: _load,
       );
     }
@@ -397,7 +395,7 @@ class _ConversationPageState extends State<ConversationPage> {
           return Center(
             child: TextButton(
               onPressed: _loadingOlder ? null : _loadOlder,
-              child: Text(messagingText(context, 'loadOlder')),
+              child: Text(AppL10n.of(context).msgLoadOlder),
             ),
           );
         }
@@ -411,7 +409,7 @@ class _ConversationPageState extends State<ConversationPage> {
             onLongPress: () => _reportMessage(message),
             child: Semantics(
               label: '${_nameOf(message.senderId)}: ${message.body}',
-              hint: messagingText(context, 'message.report'),
+              hint: AppL10n.of(context).msgMessageReport,
               onLongPress: () => _reportMessage(message),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -522,7 +520,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   maxLength: 4000,
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
-                    hintText: messagingText(context, 'compose.hint'),
+                    hintText: AppL10n.of(context).msgComposeHint,
                     counterText: '',
                     border: const OutlineInputBorder(),
                   ),
@@ -532,7 +530,7 @@ class _ConversationPageState extends State<ConversationPage> {
               ),
               const SizedBox(width: 8),
               IconButton.filled(
-                tooltip: messagingText(context, 'send'),
+                tooltip: AppL10n.of(context).msgSend,
                 onPressed: _sending || _uploading ? null : _send,
                 icon: const Icon(Icons.send_rounded),
               ),
@@ -556,22 +554,21 @@ class MessageTicks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ar = Localizations.localeOf(context).languageCode == 'ar';
     final (icon, color, label) = switch (status) {
       MessageStatus.sent => (
         Icons.done_rounded,
         Colors.white70,
-        ar ? 'أُرسلت' : 'Sent',
+        AppL10n.of(context).conversationSent,
       ),
       MessageStatus.delivered => (
         Icons.done_all_rounded,
         Colors.white70,
-        ar ? 'وصلت' : 'Delivered',
+        AppL10n.of(context).conversationDelivered,
       ),
       MessageStatus.read => (
         Icons.done_all_rounded,
         readColor,
-        ar ? 'قُرئت' : 'Read',
+        AppL10n.of(context).conversationRead,
       ),
     };
     return Semantics(

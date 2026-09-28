@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/studafy_design.dart';
 import '../domain/study.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 /// The three plans, what each unlocks, and where the student stands.
 ///
@@ -34,7 +35,9 @@ class _PlanCopy {
   const _PlanCopy(this.name, this.usPrice, this.features);
   final String name;
   final String usPrice;
-  final List<(String, String)> features;
+
+  /// What the plan includes, in the reader's language.
+  final List<String Function(AppL10n)> features;
 }
 
 class _StudyPlansPageState extends State<StudyPlansPage> {
@@ -47,33 +50,24 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
   static const _terms = String.fromEnvironment('STUDAFY_TERMS_URL');
   static const _privacy = String.fromEnvironment('STUDAFY_PRIVACY_URL');
 
-  static const _copy = {
+  static final _copy = {
     StudyPlanTier.free: _PlanCopy('Studafy Free', '', [
-      ('Lessons from every class, by date', 'دروس كل صف مرتبة حسب التاريخ'),
-      ('Your own notebook for each class', 'دفتر خاص بك لكل صف'),
-      (
-        '10 questions a day to the study helper',
-        '10 أسئلة يوميًا للمساعد الدراسي',
-      ),
+      (l) => l.studyPlansFeatureLessons,
+      (l) => l.studyPlansFeatureNotebook,
+      (l) => l.studyPlansFeatureTenQuestions,
     ]),
     StudyPlanTier.plus: _PlanCopy('Studafy Plus', r'US$3.99', [
-      ('Everything in Free', 'كل ما في الخطة المجانية'),
-      (
-        'Snap the whiteboard - get real notebook notes',
-        'صوّر السبورة واحصل على ملاحظات حقيقية في دفترك',
-      ),
-      ('40 questions a day', '40 سؤالًا يوميًا'),
+      (l) => l.studyPlansFeatureEverythingInFree,
+      (l) => l.studyPlansFeatureWhiteboard,
+      (l) => l.studyPlansFeatureFortyQuestions,
     ]),
     StudyPlanTier.max: _PlanCopy('Studafy Max', r'US$5.99', [
-      ('Everything in Plus', 'كل ما في Plus'),
-      ('Quizzes made from your lessons', 'اختبارات من دروسك'),
-      ('Flashcards made from your lessons', 'بطاقات مراجعة من دروسك'),
-      ('60 questions a day', '60 سؤالًا يوميًا'),
+      (l) => l.studyPlansFeatureEverythingInPlus,
+      (l) => l.studyPlansFeatureQuizzes,
+      (l) => l.studyPlansFeatureFlashcards,
+      (l) => l.studyPlansFeatureSixtyQuestions,
     ]),
   };
-
-  bool get _ar => Localizations.localeOf(context).languageCode == 'ar';
-  String _t(String en, String ar) => _ar ? ar : en;
 
   @override
   void initState() {
@@ -132,10 +126,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     } on Object {
       if (mounted) {
         setState(
-          () => _message = _t(
-            'That did not work. Please try again.',
-            'لم تنجح العملية. حاول مرة أخرى.',
-          ),
+          () => _message = AppL10n.of(context).studySetThatDidNotWorkPlease,
         );
       }
     } finally {
@@ -167,9 +158,9 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     final theme = Theme.of(context);
     if (plan.tier == StudyPlanTier.free) {
       return Text(
-        _t(
-          'Questions today: ${plan.askToday} of ${plan.askPerDay}',
-          'أسئلة اليوم: ${plan.askToday} من ${plan.askPerDay}',
+        AppL10n.of(context).studyPlansQuestionsTodayAsktodayOfAskperday(
+          plan.askToday,
+          plan.askPerDay,
         ),
       );
     }
@@ -179,10 +170,9 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _t(
-            'AI used this month: ${(plan.allowanceUsed * 100).round()}%',
-            'الاستخدام هذا الشهر: ${(plan.allowanceUsed * 100).round()}٪',
-          ),
+          AppL10n.of(
+            context,
+          ).studyPlansAiUsedThisMonthRound((plan.allowanceUsed * 100).round()),
         ),
         const SizedBox(height: 6),
         ClipRRect(
@@ -195,7 +185,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         ),
         const SizedBox(height: 6),
         Text(
-          _t('Renews $renews', 'يتجدد في $renews'),
+          AppL10n.of(context).studyPlansRenewsRenews(renews),
           style: theme.textTheme.bodySmall,
         ),
       ],
@@ -213,35 +203,22 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     if (tier != StudyPlanTier.free && !current && subscriptions != null) {
       final links = _validUrl(_terms) && _validUrl(_privacy);
       if (offer == null) {
-        action = Text(
-          _t(
-            'The store could not be reached. Try again later.',
-            'تعذّر الوصول إلى المتجر. حاول لاحقًا.',
-          ),
-        );
+        action = Text(AppL10n.of(context).studyPlansTheStoreCouldNotBe);
       } else if (!offer.selfPurchaseEnabled) {
-        action = Text(
-          _t(
-            'Buying is not enabled for your account yet.',
-            'الشراء غير مفعّل لحسابك بعد.',
-          ),
-        );
+        action = Text(AppL10n.of(context).studyPlansBuyingIsNotEnabledFor);
       } else if (offer.approval != 'approved') {
         action = OutlinedButton.icon(
           onPressed: _busy || offer.approval == 'requested'
               ? null
               : () => _perform(
                   () => subscriptions.requestApproval(tier),
-                  _t(
-                    'We asked your parent to approve.',
-                    'طلبنا موافقة ولي أمرك.',
-                  ),
+                  AppL10n.of(context).studyPlansWeAskedYourParentTo,
                 ),
           icon: const Icon(Icons.family_restroom_rounded),
           label: Text(
             offer.approval == 'requested'
-                ? _t('Waiting for a parent', 'بانتظار موافقة ولي الأمر')
-                : _t('Ask a parent to approve', 'اطلب موافقة ولي الأمر'),
+                ? AppL10n.of(context).studyPlansWaitingForAParent
+                : AppL10n.of(context).studyPlansAskAParentToApprove,
           ),
         );
       } else {
@@ -250,26 +227,23 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
               ? null
               : () => _perform(
                   () => subscriptions.purchase(tier),
-                  _t('Opening the store…', 'جارٍ فتح المتجر…'),
+                  AppL10n.of(context).studyPlansOpeningTheStore,
                 ),
           icon: const Icon(Icons.lock_open_rounded),
           label: Text(
             offer.oneMonthTrial
-                ? _t('Start a free month', 'ابدأ شهرًا مجانيًا')
-                : _t('Subscribe to ${copy.name}', 'اشترك في ${copy.name}'),
+                ? AppL10n.of(context).studyPlansStartAFreeMonth
+                : AppL10n.of(context).studyPlansSubscribeToName(copy.name),
           ),
         );
       }
     }
 
     final price = tier == StudyPlanTier.free
-        ? _t('Free', 'مجانًا')
+        ? AppL10n.of(context).studyPlansFree
         : (offer != null && offer.storeAvailable && offer.price.isNotEmpty)
-        ? _t('${offer.price} / month', '${offer.price} / شهريًا')
-        : _t(
-            '${copy.usPrice} / month in the US - the store shows your price',
-            '${copy.usPrice} شهريًا في الولايات المتحدة - يعرض المتجر سعرك',
-          );
+        ? AppL10n.of(context).studyPlansPriceMonth(offer.price)
+        : AppL10n.of(context).studyPlansUspriceMonthInTheUs(copy.usPrice);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -294,12 +268,13 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                     ),
                   ),
                 ),
-                if (current) Chip(label: Text(_t('Your plan', 'خطتك الحالية'))),
+                if (current)
+                  Chip(label: Text(AppL10n.of(context).studyPlansYourPlan)),
               ],
             ),
             Text(price, style: theme.textTheme.titleMedium),
             const SizedBox(height: 10),
-            for (final (en, ar) in copy.features)
+            for (final feature in copy.features)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
@@ -311,7 +286,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                       color: studafyCyan,
                     ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(_t(en, ar))),
+                    Expanded(child: Text(feature(AppL10n.of(context)))),
                   ],
                 ),
               ),
@@ -319,7 +294,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => _open(_manageUrl),
-                child: Text(_t('Manage or cancel', 'إدارة أو إلغاء')),
+                child: Text(AppL10n.of(context).studyPlansManageOrCancel),
               ),
             ] else if (action != null) ...[
               const SizedBox(height: 12),
@@ -336,7 +311,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     final plan = _plan;
     final subscriptions = widget.subscriptions;
     return Scaffold(
-      appBar: AppBar(title: Text(_t('Plans', 'الخطط'))),
+      appBar: AppBar(title: Text(AppL10n.of(context).studentLessonsPlans)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -365,19 +340,16 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                           ? null
                           : () => _perform(
                               subscriptions.restorePurchases,
-                              _t(
-                                'Restoring purchases…',
-                                'جارٍ استعادة المشتريات…',
-                              ),
+                              AppL10n.of(context).studyPlansRestoringPurchases,
                             ),
-                      child: Text(_t('Restore purchases', 'استعادة المشتريات')),
+                      child: Text(
+                        AppL10n.of(context).studyPlansRestorePurchases,
+                      ),
                     ),
                   const SizedBox(height: 8),
                   Text(
-                    _t(
-                      'Auto-renewing monthly subscriptions. Payment is charged to your Apple or Google account. If a trial applies, billing starts when it ends. Cancel in store settings at least 24 hours before renewal to avoid the next charge. Deleting the app does not cancel a subscription.',
-                      'اشتراكات شهرية تتجدد تلقائيًا. يُحصَّل المبلغ من حسابك في Apple أو Google. إذا كانت هناك فترة تجربة، يبدأ الدفع عند انتهائها. ألغِ من إعدادات المتجر قبل التجديد بـ 24 ساعة على الأقل لتجنب الدفعة التالية. حذف التطبيق لا يلغي الاشتراك.',
-                    ),
+                    AppL10n.of(context)
+                        .studyPlansAutoRenewingMonthlySubscriptionsPayment,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   Wrap(
@@ -386,13 +358,15 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                         onPressed: _validUrl(_terms)
                             ? () => _open(_terms)
                             : null,
-                        child: Text(_t('Terms of use', 'شروط الاستخدام')),
+                        child: Text(AppL10n.of(context).studyPlansTermsOfUse),
                       ),
                       TextButton(
                         onPressed: _validUrl(_privacy)
                             ? () => _open(_privacy)
                             : null,
-                        child: Text(_t('Privacy policy', 'سياسة الخصوصية')),
+                        child: Text(
+                          AppL10n.of(context).studyPlansPrivacyPolicy,
+                        ),
                       ),
                     ],
                   ),

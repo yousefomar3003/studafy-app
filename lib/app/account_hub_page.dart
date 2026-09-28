@@ -8,7 +8,6 @@ import 'package:share_plus/share_plus.dart';
 import '../core/studafy_design.dart';
 import '../core/language_picker.dart';
 import '../core/studafy_domain.dart';
-import '../core/studafy_localizations.dart';
 import '../core/failures.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/data_export.dart';
@@ -17,6 +16,7 @@ import '../features/session/application/session_interactor.dart';
 import '../features/family/presentation/family_scope.dart';
 import '../features/session/presentation/account_security_page.dart';
 import 'account_scope.dart';
+import '../l10n/generated/app_l10n.dart';
 
 /// Provides the session interactor to shared account screens. Composed at
 /// the app root, above the Navigator, beside [AccountScope].
@@ -41,7 +41,7 @@ class AccountButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-    tooltip: _accountText(context, 'title'),
+    tooltip: AppL10n.of(context).accountTitle,
     icon: const Icon(Icons.account_circle_outlined),
     onPressed: () => Navigator.push(
       context,
@@ -64,12 +64,15 @@ class AccountHubPage extends StatelessWidget {
     final session = SessionScope.maybeOf(context);
     return Scaffold(
       backgroundColor: studafyCanvas,
-      appBar: AppBar(backgroundColor: Colors.white, title: Text(t('title'))),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: Text(AppL10n.of(context).accountTitle),
+      ),
       body: ListView(
         padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 32),
         children: [
           _ProfileHeader(
-            name: profile?.displayName ?? t('unknown'),
+            name: profile?.displayName ?? AppL10n.of(context).accountUnknown,
             email: profile?.email ?? '',
             membership: membership,
             roleLabel: membership == null
@@ -83,26 +86,25 @@ class AccountHubPage extends StatelessWidget {
             const _StudafyIdCard(),
           ],
           const SizedBox(height: 24),
-          _SectionLabel(t('section.account')),
+          _SectionLabel(AppL10n.of(context).accountSectionAccount),
           Card(
             child: Column(
               children: [
                 if (profile != null)
                   ListTile(
                     leading: const Icon(Icons.badge_outlined),
-                    title: Text(t('accountId')),
+                    title: Text(AppL10n.of(context).accountAccountId),
                     subtitle: Text(
-                      '${profile.id}\n${t('accountId.detail')}',
+                      '${profile.id}\n${AppL10n.of(context).accountAccountIdDetail}',
                       style: const TextStyle(fontSize: 12),
                     ),
                     isThreeLine: true,
                     trailing: const Icon(Icons.copy_rounded),
                     onTap: () async {
                       final messenger = ScaffoldMessenger.of(context);
+                      final copied = AppL10n.of(context).accountAccountIdCopied;
                       await Clipboard.setData(ClipboardData(text: profile.id));
-                      messenger.showSnackBar(
-                        SnackBar(content: Text(t('accountId.copied'))),
-                      );
+                      messenger.showSnackBar(SnackBar(content: Text(copied)));
                     },
                   ),
                 // A teacher is often a parent at the same school. The domain
@@ -111,8 +113,8 @@ class AccountHubPage extends StatelessWidget {
                 if (_switchableRoles(context_).isNotEmpty)
                   ListTile(
                     leading: const Icon(Icons.swap_horiz_rounded),
-                    title: Text(t('switchRole')),
-                    subtitle: Text(t('switchRole.detail')),
+                    title: Text(AppL10n.of(context).accountSwitchRole),
+                    subtitle: Text(AppL10n.of(context).accountSwitchRoleDetail),
                     trailing: Icon(forwardChevron(context)),
                     onTap: () => _showRoleSwitcher(context, context_),
                   ),
@@ -120,21 +122,21 @@ class AccountHubPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _SectionLabel(t('section.preferences')),
+          _SectionLabel(AppL10n.of(context).accountSectionPreferences),
           Card(
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
-                  title: Text(t('language')),
+                  title: Text(AppL10n.of(context).accountLanguage),
                   trailing: Icon(forwardChevron(context)),
                   onTap: () => showStudafyLanguagePicker(context),
                 ),
                 if (session != null)
                   ListTile(
                     leading: const Icon(Icons.shield_outlined),
-                    title: Text(t('security')),
-                    subtitle: Text(t('security.detail')),
+                    title: Text(AppL10n.of(context).accountSecurity),
+                    subtitle: Text(AppL10n.of(context).accountSecurityDetail),
                     trailing: Icon(forwardChevron(context)),
                     onTap: () => Navigator.push(
                       context,
@@ -147,7 +149,7 @@ class AccountHubPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _SectionLabel(t('section.privacy')),
+          _SectionLabel(AppL10n.of(context).accountSectionPrivacy),
           Card(
             child: Column(
               children: [_DataExportTile(account: AccountScope.of(context))],
@@ -172,7 +174,7 @@ class AccountHubPage extends StatelessWidget {
                       .pushNamedAndRemoveUntil('/roles', (_) => false);
                 }
               },
-              child: Text(t('signOut')),
+              child: Text(AppL10n.of(context).accountSignOut),
             ),
           const SizedBox(height: 8),
           TextButton(
@@ -186,7 +188,7 @@ class AccountHubPage extends StatelessWidget {
               ),
             ),
             child: Text(
-              t('delete'),
+              AppL10n.of(context).accountDelete,
               style: const TextStyle(color: Color(0xFFB3261E)),
             ),
           ),
@@ -281,19 +283,18 @@ class _DataExportTileState extends State<_DataExportTile> {
   @override
   Widget build(BuildContext context) {
     if (!widget.account.exportAvailable) return const SizedBox.shrink();
-    String t(String key) => _accountText(context, key);
     final state = _status?.state;
     final ready = state == DataExportState.ready;
     final pending = state == DataExportState.pending;
     return ListTile(
       leading: const Icon(Icons.download_rounded),
-      title: Text(t('export')),
+      title: Text(AppL10n.of(context).accountExport),
       subtitle: Text(
         ready
-            ? t('export.ready')
+            ? AppL10n.of(context).accountExportReady
             : pending
-            ? t('export.pending')
-            : t('export.detail'),
+            ? AppL10n.of(context).accountExportPending
+            : AppL10n.of(context).accountExportDetail,
       ),
       trailing: _busy
           ? const SizedBox(
@@ -305,10 +306,10 @@ class _DataExportTileState extends State<_DataExportTile> {
               onPressed: ready ? _download : (pending ? _refresh : _request),
               child: Text(
                 ready
-                    ? t('export.download')
+                    ? AppL10n.of(context).accountExportDownload
                     : pending
-                    ? t('export.check')
-                    : t('export.request'),
+                    ? AppL10n.of(context).accountExportCheck
+                    : AppL10n.of(context).accountExportRequest,
               ),
             ),
     );
@@ -379,90 +380,49 @@ Future<void> _showRoleSwitcher(
   }
 }
 
+/// A table key looked up at runtime (an error code, a role, a status),
+/// resolved against the app's translations. Literal keys are read from
+/// AppL10n directly.
 String _accountText(BuildContext context, String key) {
-  final code = StudafyLocalizations.of(context).locale.languageCode;
-  return _strings[code]?[key] ?? _strings['en']![key] ?? key;
+  final l = AppL10n.of(context);
+  return switch (key) {
+    'accountId' => l.accountAccountId,
+    'accountId.detail' => l.accountAccountIdDetail,
+    'accountId.copied' => l.accountAccountIdCopied,
+    'switchRole' => l.accountSwitchRole,
+    'switchRole.detail' => l.accountSwitchRoleDetail,
+    'title' => l.accountTitle,
+    'section.account' => l.accountSectionAccount,
+    'section.preferences' => l.accountSectionPreferences,
+    'section.privacy' => l.accountSectionPrivacy,
+    'studafyId' => l.accountStudafyId,
+    'studafyId.detail' => l.accountStudafyIdDetail,
+    'studafyId.copy' => l.accountStudafyIdCopy,
+    'studafyId.copied' => l.accountStudafyIdCopied,
+    'unknown' => l.accountUnknown,
+    'language' => l.accountLanguage,
+    'security' => l.accountSecurity,
+    'security.detail' => l.accountSecurityDetail,
+    'signOut' => l.accountSignOut,
+    'delete' => l.accountDelete,
+    'role.schoolAdmin' => l.accountRoleSchoolAdmin,
+    'role.teacher' => l.accountRoleTeacher,
+    'role.parent' => l.accountRoleParent,
+    'role.student' => l.accountRoleStudent,
+    'export' => l.accountExport,
+    'export.detail' => l.accountExportDetail,
+    'export.request' => l.accountExportRequest,
+    'export.pending' => l.accountExportPending,
+    'export.check' => l.accountExportCheck,
+    'export.ready' => l.accountExportReady,
+    'export.download' => l.accountExportDownload,
+    'export.requested' => l.accountExportRequested,
+    'export.reauth' => l.accountExportReauth,
+    'export.expired' => l.accountExportExpired,
+    'export.failed' => l.accountExportFailed,
+    _ => key,
+  };
 }
-
-/// Every key in both locales, for the parity test.
-Map<String, Set<String>> accountHubStringKeys() => {
-  for (final entry in _strings.entries) entry.key: entry.value.keys.toSet(),
-};
-
-const _strings = <String, Map<String, String>>{
-  'en': {
-    'accountId': 'Account ID',
-    'accountId.detail': 'Share this with your school to link your account.',
-    'accountId.copied': 'Account ID copied',
-    'switchRole': 'Switch role',
-    'switchRole.detail': 'You belong to this school in more than one role.',
-    'title': 'Account',
-    'section.account': 'Account',
-    'section.preferences': 'Preferences',
-    'section.privacy': 'Privacy and data',
-    'studafyId': 'Your Studafy ID',
-    'studafyId.detail': 'Give this to a parent so they can ask to link.',
-    'studafyId.copy': 'Copy your Studafy ID',
-    'studafyId.copied': 'Studafy ID copied.',
-    'unknown': 'Your account',
-    'language': 'Language',
-    'security': 'Sign-in and security',
-    'security.detail': 'Devices, two-step verification, sign out everywhere',
-    'signOut': 'Sign out',
-    'delete': 'Delete account',
-    'role.schoolAdmin': 'School administrator',
-    'role.teacher': 'Teacher',
-    'role.parent': 'Parent or guardian',
-    'role.student': 'Student',
-    'export': 'Download my data',
-    'export.detail': 'Get a copy of the information Studafy holds about you.',
-    'export.request': 'Request',
-    'export.pending': 'Preparing your copy. This can take a few minutes.',
-    'export.check': 'Check',
-    'export.ready': 'Your copy is ready for 7 days.',
-    'export.download': 'Download',
-    'export.requested': 'Request received. We are preparing your copy.',
-    'export.reauth': 'For your security, sign out and sign in again first.',
-    'export.expired': 'That copy has expired. Request a new one.',
-    'export.failed': 'That did not work. Please try again.',
-  },
-  'ar': {
-    'accountId': 'معرّف الحساب',
-    'accountId.detail': 'شارك هذا المعرّف مع مدرستك لربط حسابك.',
-    'accountId.copied': 'تم نسخ معرّف الحساب',
-    'switchRole': 'تبديل الدور',
-    'switchRole.detail': 'أنت مرتبط بهذه المدرسة بأكثر من دور.',
-    'title': 'الحساب',
-    'section.account': 'الحساب',
-    'section.preferences': 'التفضيلات',
-    'section.privacy': 'الخصوصية والبيانات',
-    'studafyId': 'معرّف ستودافاي الخاص بك',
-    'studafyId.detail': 'أعطِ هذا لولي أمرك ليتمكن من طلب الارتباط.',
-    'studafyId.copy': 'نسخ معرّف ستودافاي',
-    'studafyId.copied': 'تم نسخ معرّف ستودافاي.',
-    'unknown': 'حسابك',
-    'language': 'اللغة',
-    'security': 'تسجيل الدخول والأمان',
-    'security.detail': 'الأجهزة، التحقق بخطوتين، تسجيل الخروج من كل الأجهزة',
-    'signOut': 'تسجيل الخروج',
-    'delete': 'حذف الحساب',
-    'role.schoolAdmin': 'مسؤول المدرسة',
-    'role.teacher': 'معلم',
-    'role.parent': 'ولي أمر',
-    'role.student': 'طالب',
-    'export': 'تنزيل بياناتي',
-    'export.detail': 'احصل على نسخة من المعلومات التي يحتفظ بها Studafy عنك.',
-    'export.request': 'طلب',
-    'export.pending': 'نجهّز نسختك. قد يستغرق ذلك بضع دقائق.',
-    'export.check': 'تحقق',
-    'export.ready': 'نسختك جاهزة لمدة 7 أيام.',
-    'export.download': 'تنزيل',
-    'export.requested': 'تم استلام الطلب. نجهّز نسختك الآن.',
-    'export.reauth': 'لحمايتك، سجّل الخروج ثم سجّل الدخول مرة أخرى أولاً.',
-    'export.expired': 'انتهت صلاحية تلك النسخة. اطلب نسخة جديدة.',
-    'export.failed': 'لم ينجح ذلك. يرجى المحاولة مرة أخرى.',
-  },
-};
 
 /// A small uppercase heading that groups the settings below it.
 class _SectionLabel extends StatelessWidget {
@@ -668,7 +628,7 @@ class _StudafyIdCardState extends State<_StudafyIdCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _accountText(context, 'studafyId'),
+                  AppL10n.of(context).accountStudafyId,
                   style: const TextStyle(
                     color: studafyInk,
                     fontWeight: FontWeight.w800,
@@ -685,18 +645,18 @@ class _StudafyIdCardState extends State<_StudafyIdCard> {
                   ),
                 ),
                 Text(
-                  _accountText(context, 'studafyId.detail'),
+                  AppL10n.of(context).accountStudafyIdDetail,
                   style: const TextStyle(color: studafyMuted, fontSize: 12),
                 ),
               ],
             ),
           ),
           IconButton(
-            tooltip: _accountText(context, 'studafyId.copy'),
+            tooltip: AppL10n.of(context).accountStudafyIdCopy,
             icon: const Icon(Icons.copy_rounded),
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
-              final copied = _accountText(context, 'studafyId.copied');
+              final copied = AppL10n.of(context).accountStudafyIdCopied;
               await Clipboard.setData(ClipboardData(text: id));
               messenger.showSnackBar(SnackBar(content: Text(copied)));
             },

@@ -3,7 +3,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/device_settings.dart';
 import 'package:studafy/core/locale_controller.dart';
-import 'package:studafy/core/studafy_localizations.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// The localization scaffold every widget test needs, in one place (MOB-070).
@@ -38,7 +37,6 @@ Widget localizedApp({
           kFallbackLocale,
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
         AppL10n.delegate,
-        StudafyLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

@@ -12,6 +12,7 @@ import '../features/study/presentation/notebook_view.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
 import 'account_hub_page.dart';
+import '../l10n/generated/app_l10n.dart';
 
 /// The student's Lessons tab: their classes, and in each class its lessons by
 /// date and their own notebook for it.
@@ -44,9 +45,6 @@ class StudentLessonsPage extends StatefulWidget {
 class _StudentLessonsPageState extends State<StudentLessonsPage> {
   late Future<List<ClassroomSummary>> _classes = _load();
 
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   Future<List<ClassroomSummary>> _load() async {
     final result = await widget.classes.loadClasses();
     return result.fold(
@@ -65,12 +63,12 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(_t('Lessons', 'الدروس')),
+      title: Text(AppL10n.of(context).feedContent),
       actions: [
         TextButton.icon(
           onPressed: _openPlans,
           icon: const Icon(Icons.workspace_premium_outlined),
-          label: Text(_t('Plans', 'الخطط')),
+          label: Text(AppL10n.of(context).studentLessonsPlans),
         ),
         const AccountButton(),
       ],
@@ -86,10 +84,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             child: TextButton(
               onPressed: () => setState(() => _classes = _load()),
               child: Text(
-                _t(
-                  'Your classes could not be loaded. Try again',
-                  'تعذّر تحميل صفوفك. حاول مرة أخرى',
-                ),
+                AppL10n.of(context).studentLessonsYourClassesCouldNotBe,
               ),
             ),
           );
@@ -100,10 +95,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                _t(
-                  'Join a class to see its lessons here.',
-                  'انضم إلى صف لترى دروسه هنا.',
-                ),
+                AppL10n.of(context).studentLessonsJoinAClassToSee,
                 textAlign: TextAlign.center,
               ),
             ),
@@ -134,7 +126,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   subtitle: Text(
-                    _t('Lessons and your notebook', 'الدروس ودفترك'),
+                    AppL10n.of(context).studentLessonsLessonsAndYourNotebook,
                   ),
                   trailing: Icon(forwardChevron(context)),
                   onTap: () => Navigator.of(context).push(
@@ -184,9 +176,6 @@ class StudentClassPage extends StatefulWidget {
 class _StudentClassPageState extends State<StudentClassPage> {
   StudyPlan? _plan;
 
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   @override
   void initState() {
     super.initState();
@@ -224,8 +213,8 @@ class _StudentClassPageState extends State<StudentClassPage> {
         title: Text(widget.classroom.name),
         bottom: TabBar(
           tabs: [
-            Tab(text: _t('Lessons', 'الدروس')),
-            Tab(text: _t('My notebook', 'دفتري')),
+            Tab(text: AppL10n.of(context).feedContent),
+            Tab(text: AppL10n.of(context).studentLessonsMyNotebook),
           ],
         ),
       ),

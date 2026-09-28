@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
-import '../core/studafy_localizations.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
 import '../features/academic/presentation/submit_work_page.dart';
@@ -157,12 +156,12 @@ class _ParentShellState extends State<ParentShell> {
       onSelected: (value) => setState(() => index = value),
       items: [
         StudafyNavItem(
-          StudafyLocalizations.of(context).text('today'),
+          AppL10n.of(context).navToday,
           Icons.home_outlined,
           Icons.home_rounded,
         ),
         StudafyNavItem(
-          StudafyLocalizations.of(context).text('learning'),
+          AppL10n.of(context).navLearning,
           Icons.menu_book_outlined,
           Icons.menu_book_rounded,
         ),
@@ -173,12 +172,12 @@ class _ParentShellState extends State<ParentShell> {
             Icons.insights_rounded,
           ),
         StudafyNavItem(
-          StudafyLocalizations.of(context).text('updates'),
+          AppL10n.of(context).navUpdates,
           Icons.notifications_outlined,
           Icons.notifications_rounded,
         ),
         StudafyNavItem(
-          StudafyLocalizations.of(context).text('messages'),
+          AppL10n.of(context).navMessages,
           Icons.forum_outlined,
           Icons.forum_rounded,
         ),

@@ -70,6 +70,26 @@ void main() {
     expect(duplicated, isEmpty);
   });
 
+  test('interface copy lives in the ARB files', () {
+    // Screens used to carry their own English/Arabic pairs behind a
+    // `languageCode == 'ar'` check, which skipped the translation parity
+    // test and could not express Arabic plurals. All copy is AppL10n now.
+    final offenders = <String>[];
+    for (final file
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((file) => file.path.endsWith('.dart'))
+            .where((file) => !file.path.contains('/generated/'))) {
+      final source = file.readAsStringSync();
+      if (source.contains("languageCode == 'ar'") ||
+          RegExp(r'String \w+\(String en, String ar').hasMatch(source)) {
+        offenders.add(file.path);
+      }
+    }
+    expect(offenders, isEmpty);
+  });
+
   test('role shells never touch the preview database', () {
     for (final path in const [
       'lib/app/teacher_shell.dart',

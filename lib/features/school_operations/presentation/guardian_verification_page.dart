@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/failures.dart';
 import '../domain/school_operations_repository.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 class GuardianVerificationPage extends StatefulWidget {
   const GuardianVerificationPage({super.key, required this.repository});
@@ -16,9 +17,6 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
   final _linkId = TextEditingController();
   int _expiresInDays = 365;
   bool _busy = false;
-
-  String _t(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
 
   @override
   void dispose() {
@@ -34,31 +32,24 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
           builder: (context) => AlertDialog(
             title: Text(
               verify
-                  ? _t(
-                      'Confirm guardian verification',
-                      'تأكيد التحقق من ولي الأمر',
-                    )
-                  : _t('Revoke guardian access?', 'إلغاء وصول ولي الأمر؟'),
+                  ? AppL10n.of(context)
+                        .guardianVerifyConfirmGuardianVerification
+                  : AppL10n.of(context).guardianVerifyRevokeGuardianAccess,
             ),
             content: Text(
               verify
-                  ? _t(
-                      'Verify only after checking the guardian’s identity and relationship with the student.',
-                      'أكد الربط بعد التحقق من هوية ولي الأمر وصلته بالطالب فقط.',
-                    )
-                  : _t(
-                      'This removes access granted by this family link.',
-                      'سيؤدي هذا إلى إزالة الوصول الممنوح بواسطة هذا الربط العائلي.',
-                    ),
+                  ? AppL10n.of(context).guardianVerifyVerifyOnlyAfterCheckingThe
+                  : AppL10n.of(context)
+                        .guardianVerifyThisRemovesAccessGrantedBy,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text(_t('Cancel', 'إلغاء')),
+                child: Text(AppL10n.of(context).academicCancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: Text(_t('Confirm', 'تأكيد')),
+                child: Text(AppL10n.of(context).studentFamilyConfirm),
               ),
             ],
           ),
@@ -76,7 +67,9 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_t('Link status', 'حالة الربط')}: $status'),
+            content: Text(
+              '${AppL10n.of(context).guardianVerifyLinkStatus}: $status',
+            ),
           ),
         );
       }
@@ -95,7 +88,7 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: studafyCanvas,
     appBar: AppBar(
-      title: Text(_t('Guardian verification', 'التحقق من ولي الأمر')),
+      title: Text(AppL10n.of(context).guardianVerifyGuardianVerification),
     ),
     body: ListView(
       padding: const EdgeInsets.all(20),
@@ -105,10 +98,7 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                _t(
-                  'Enter the link ID supplied with the verification request.',
-                  'أدخل معرّف الربط المرفق بطلب التحقق. لا يوفر الخادم قائمة بالطلبات المعلقة حاليًا.',
-                ),
+                AppL10n.of(context).guardianVerifyEnterTheLinkIdSupplied,
                 style: const TextStyle(color: studafyMuted),
               ),
               const SizedBox(height: 16),
@@ -116,20 +106,23 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
                 controller: _linkId,
                 autocorrect: false,
                 decoration: InputDecoration(
-                  labelText: _t('Guardian link ID', 'معرّف ربط ولي الأمر'),
+                  labelText: AppL10n.of(context).guardianVerifyGuardianLinkId,
                 ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 initialValue: _expiresInDays,
                 decoration: InputDecoration(
-                  labelText: _t('Verification period', 'مدة التحقق'),
+                  labelText: AppL10n.of(context)
+                      .guardianVerifyVerificationPeriod,
                 ),
                 items: [30, 90, 180, 365]
                     .map(
                       (days) => DropdownMenuItem(
                         value: days,
-                        child: Text('$days ${_t('days', 'يومًا')}'),
+                        child: Text(
+                          '$days ${AppL10n.of(context).guardianVerifyDays}',
+                        ),
                       ),
                     )
                     .toList(),
@@ -139,12 +132,12 @@ class _GuardianVerificationPageState extends State<GuardianVerificationPage> {
               FilledButton.icon(
                 onPressed: _busy ? null : () => _act(true),
                 icon: const Icon(Icons.verified_user_outlined),
-                label: Text(_t('Verify link', 'تأكيد الربط')),
+                label: Text(AppL10n.of(context).guardianVerifyVerifyLink),
               ),
               TextButton(
                 onPressed: _busy ? null : () => _act(false),
                 child: Text(
-                  _t('Revoke link', 'إلغاء الربط'),
+                  AppL10n.of(context).guardianVerifyRevokeLink,
                   style: const TextStyle(color: Color(0xFFB42318)),
                 ),
               ),
