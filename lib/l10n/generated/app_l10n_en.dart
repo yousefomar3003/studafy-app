@@ -518,6 +518,12 @@ class AppL10nEn extends AppL10n {
       'Share this secure link. Students are added only after they open it and join the class.';
 
   @override
+  String get classesInviteCodeLabel => 'Class code';
+
+  @override
+  String get classesInviteLinkLabel => 'Or send this link';
+
+  @override
   String get classesInviteCopied => 'Invite link copied.';
 
   @override
@@ -529,6 +535,11 @@ class AppL10nEn extends AppL10n {
   @override
   String classesShareMessage(String link) {
     return 'Join my Studafy class: $link';
+  }
+
+  @override
+  String classesShareMessageWithCode(String link, String code) {
+    return 'Join my Studafy class: $link\nOr type the class code: $code';
   }
 
   @override
@@ -1068,6 +1079,9 @@ class AppL10nEn extends AppL10n {
   String get submitTitle => 'Hand in work';
 
   @override
+  String get submitMaterialHeading => 'From your teacher';
+
+  @override
   String get submitAnswerLabel => 'Your work';
 
   @override
@@ -1337,10 +1351,17 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get joinClassPrompt =>
-      'Paste the class link your teacher shared with you.';
+      'Type the class code your teacher gave you, or paste the class link.';
 
   @override
-  String get joinClassField => 'Class link';
+  String get joinClassField => 'Class code or link';
+
+  @override
+  String get joinClassPaste => 'Paste';
+
+  @override
+  String get joinClassNothingToPaste =>
+      'Nothing has been copied. Type the class code, or open the link from your teacher\'s message - the app fills it in for you.';
 
   @override
   String get joinClassAction => 'Join class';
@@ -1349,7 +1370,8 @@ class AppL10nEn extends AppL10n {
   String get joinClassBusy => 'Joining…';
 
   @override
-  String get joinClassInvalid => 'That does not look like a class link.';
+  String get joinClassInvalid =>
+      'That is not a class code or link. A code looks like K7QM-4XTR.';
 
   @override
   String joinClassDone(String className) {
@@ -1574,4 +1596,71 @@ class AppL10nEn extends AppL10n {
   @override
   String get insightsNoChildBody =>
       'Pick one of your children on the home tab to see their insights.';
+
+  @override
+  String get historyTitle => 'Hand-in history';
+
+  @override
+  String get historyYours => 'Hand-in history';
+
+  @override
+  String get historyLatest => 'Latest';
+
+  @override
+  String get historyEarlier => 'Earlier';
+
+  @override
+  String historyByGuardian(String name) {
+    return 'Handed in by $name';
+  }
+
+  @override
+  String get historyByParent => 'Handed in by a parent';
+
+  @override
+  String get historyNone => 'Nothing handed in yet.';
+
+  @override
+  String get historyLoadFailed =>
+      'The history could not be loaded. Please try again.';
+
+  @override
+  String get historyNoText => 'No written answer.';
+
+  @override
+  String get academicPublish => 'Publish';
+
+  @override
+  String get academicPublished => 'Published. The class can see it now.';
+
+  @override
+  String get academicPublishFailed =>
+      'That could not be published. Please try again.';
+
+  @override
+  String academicGradedOutOf(String score) {
+    return 'Graded · out of $score';
+  }
+
+  @override
+  String get classesNewCode => 'New code';
+
+  @override
+  String get classesNewCodeTitle => 'Make a new code?';
+
+  @override
+  String get classesNewCodeBody =>
+      'The current code and link will stop working. Anyone who has not joined yet will need the new one.';
+
+  @override
+  String get classesNewCodeConfirm => 'Make new code';
+
+  @override
+  String get attendancePreviousLesson => 'Previous lesson';
+
+  @override
+  String get attendanceNextLesson => 'Next lesson';
+
+  @override
+  String get submissionsGrade => 'Grade';
 }

@@ -111,4 +111,54 @@ void main() {
       expect(tester.takeException(), isNotNull);
     });
   });
+
+  // JOIN-053: the same link, spelled short enough to type.
+  group('class codes', () {
+    test('a code is recognised however loosely it is typed', () {
+      for (final typed in [
+        'K7QM-4XTR',
+        'k7qm-4xtr',
+        'K7QM 4XTR',
+        ' k7qm4xtr ',
+      ]) {
+        final credential = classJoinCredentialFrom(typed);
+        expect(credential, isA<ClassJoinCode>(), reason: typed);
+        expect((credential! as ClassJoinCode).code, 'K7QM4XTR');
+      }
+    });
+
+    test('a link and a bare token still redeem by token', () {
+      final token = 'a' * 43;
+      expect(
+        classJoinCredentialFrom(classJoinLinkUrl(token)),
+        isA<ClassJoinToken>(),
+      );
+      expect(classJoinCredentialFrom(token), isA<ClassJoinToken>());
+    });
+
+    test('a code and a token can never be mistaken for each other', () {
+      // A token is at least 32 characters; a code is eight, nine with its
+      // dash. Nothing is both.
+      expect(classJoinCredentialFrom('A' * 32), isA<ClassJoinToken>());
+      expect(classJoinCredentialFrom('ABCDEFGH'), isA<ClassJoinCode>());
+    });
+
+    test('misreadable and foreign characters are refused', () {
+      for (final bad in ['K7QM-4XT0', 'K7QM-4XTO', 'K7QM-4XT1', 'K7QM-4XTI']) {
+        expect(classJoinCredentialFrom(bad), isNull, reason: bad);
+      }
+      expect(classJoinCredentialFrom('K7QM-4XT'), isNull); // short
+      expect(classJoinCredentialFrom('K7QM-4XTRR'), isNull); // long
+      expect(classJoinCredentialFrom(''), isNull);
+    });
+
+    test('the alphabet matches the server, which mints the codes', () {
+      expect(classCodeAlphabet, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789');
+      expect(classCodeAlphabet.length, 32);
+    });
+
+    test('it is shown as two groups of four', () {
+      expect(formatClassCode('K7QM4XTR'), 'K7QM-4XTR');
+    });
+  });
 }

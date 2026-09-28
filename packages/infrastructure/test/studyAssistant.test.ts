@@ -78,6 +78,20 @@ describe("study assistant egress", () => {
     }
   });
 
+  test("asks for an answer without a reasoning trace", async () => {
+    // A thinking model spends the token budget on its reasoning; with it on,
+    // students got cut-off or empty answers.
+    const sent: Record<string, unknown>[] = [];
+    const assistant = assistantWith(
+      (async (_input, init) => {
+        sent.push(JSON.parse((init as RequestInit).body as string));
+        return reply("ok");
+      }) as typeof fetch,
+    );
+    await assistant.ask("What is photosynthesis?");
+    expect(sent[0]?.["reasoning"]).toEqual({ enabled: false });
+  });
+
   test("obvious identifiers are stripped before egress", () => {
     const redacted = redactForProvider(
       "I am rara@gmail.com, id 1234567890, see https://drive.example/mine",

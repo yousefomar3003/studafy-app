@@ -388,3 +388,45 @@ describe("outbox drain configuration (OPS-061)", () => {
     });
   });
 });
+
+describe("JOIN-053 class code key", () => {
+  const shared = "s".repeat(40);
+
+  test("must not double as the cursor signing key, in any environment", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      API_CURSOR_SIGNING_KEY: shared,
+      CLASS_JOIN_CODE_KEY: shared,
+    });
+    expect(() => enforceApiFailClosed(env)).toThrow(ConfigError);
+  });
+
+  test("must not double as the rate-limit key", () => {
+    const env = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      RATE_LIMIT_HMAC_SIGNING_KEY: shared,
+      CLASS_JOIN_CODE_KEY: shared,
+    });
+    expect(() => enforceApiFailClosed(env)).toThrow(ConfigError);
+  });
+
+  test("a distinct key is accepted, and absence just means links only", () => {
+    const distinct = parseEnv(apiEnvSchema, {
+      ENVIRONMENT: "development",
+      API_CURSOR_SIGNING_KEY: shared,
+      CLASS_JOIN_CODE_KEY: "c".repeat(40),
+    });
+    expect(() => enforceApiFailClosed(distinct)).not.toThrow();
+    const absent = parseEnv(apiEnvSchema, { ENVIRONMENT: "development" });
+    expect(() => enforceApiFailClosed(absent)).not.toThrow();
+  });
+
+  test("a key too short to resist guessing is rejected", () => {
+    expect(() =>
+      parseEnv(apiEnvSchema, {
+        ENVIRONMENT: "development",
+        CLASS_JOIN_CODE_KEY: "short",
+      })
+    ).toThrow(ConfigError);
+  });
+});

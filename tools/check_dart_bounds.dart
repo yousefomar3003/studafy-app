@@ -71,6 +71,8 @@ const _coreAllowlist = <String>[
   'core/attachment_field.dart',
   'core/platform_attachment_source.dart',
   'core/uploads_scope.dart',
+  // Opening what was attached is the other half of the same concern.
+  'core/attachment_opener.dart',
 ];
 
 /// Data-layer-only imports: presentation and application may never touch

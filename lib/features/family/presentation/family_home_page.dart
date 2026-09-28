@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
-import '../../../core/runtime_environment.dart';
+import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
 import '../domain/family.dart';
@@ -15,11 +15,24 @@ import 'family_strings.dart';
 /// Guardian home on authoritative `/v1` data (MOB-070 parent slice).
 /// Replaces the legacy SQLite home in real builds: children come from the
 /// guardian's own links, and only a verified link opens a child's records.
+
+/// The server's request for a bot check, as opposed to a refusal.
+const captchaRequiredCode = 'CAPTCHA_REQUIRED';
+
 class FamilyHomePage extends StatefulWidget {
-  const FamilyHomePage({super.key, this.onOpenChild, this.actions = const []});
+  const FamilyHomePage({
+    super.key,
+    this.onOpenChild,
+    this.actions = const [],
+    this.sections = const [],
+  });
 
   /// App bar actions supplied by the host shell, such as its account entry.
   final List<Widget> actions;
+
+  /// Further sections under the children, supplied by the host shell - such
+  /// as upcoming meetings, which belong to another feature.
+  final List<Widget> sections;
 
   /// Called when a guardian opens a verified child, so the shell can make
   /// that child the active one for the other tabs.
@@ -267,6 +280,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                       textAlign: TextAlign.center,
                     ),
                   ],
+                  ...widget.sections,
                 ],
               ),
             ),
@@ -465,42 +479,25 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
       _message = null;
       _found = null;
     });
-    String? captchaToken;
-    if (const bool.fromEnvironment('TURNSTILE_ENABLED') &&
-        !StudafyRuntime.policy.isSynthetic &&
-        _code.text.trim().isNotEmpty) {
-      final base = Uri.tryParse(
-        const String.fromEnvironment('STUDAFY_API_URL'),
-      );
-      if (base == null || !base.hasAuthority) {
-        setState(() {
-          _busy = false;
-          _message = familyText(context, 'error.title');
-        });
-        return;
-      }
-      captchaToken = await Navigator.of(context).push<String>(
-        MaterialPageRoute(
-          builder: (_) => FamilyChallengePage(
-            url: base.replace(
-              path: '/auth/bot-check',
-              queryParameters: {
-                'lang': Localizations.localeOf(context).languageCode,
-              },
-            ),
-          ),
-        ),
-      );
+    // Ask first, and prove a person is asking only when the server says so.
+    // This used to decide from a build flag, and a flag that disagreed with
+    // the server opened a challenge page the server did not serve - which is
+    // how a parent linking a child ended up looking at a raw error.
+    var result = await FamilyScope.of(context).locate(_code.text);
+    if (!mounted) return;
+    if (result case FailureResult(
+      failure: Failure(code: captchaRequiredCode),
+    )) {
+      final captchaToken = await _challenge();
       if (!mounted) return;
       if (captchaToken == null) {
         setState(() => _busy = false);
         return;
       }
+      result = await FamilyScope.of(context)
+          .locate(_code.text, captchaToken: captchaToken);
+      if (!mounted) return;
     }
-    if (!mounted) return;
-    final result = await FamilyScope.of(context)
-        .locate(_code.text, captchaToken: captchaToken);
-    if (!mounted) return;
     setState(() {
       _busy = false;
       result.fold(
@@ -513,6 +510,28 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
         onFailure: (failure) => _message = familyFailureText(context, failure),
       );
     });
+  }
+
+  /// Opens the server's own bot-check page and returns the token it issues,
+  /// or null when the parent backs out or no API address is configured.
+  Future<String?> _challenge() async {
+    final base = Uri.tryParse(const String.fromEnvironment('STUDAFY_API_URL'));
+    if (base == null || !base.hasAuthority) {
+      setState(() => _message = familyText(context, 'error.title'));
+      return null;
+    }
+    return await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => FamilyChallengePage(
+          url: base.replace(
+            path: '/auth/bot-check',
+            queryParameters: {
+              'lang': Localizations.localeOf(context).languageCode,
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _request() async {

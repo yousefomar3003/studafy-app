@@ -98,6 +98,85 @@ void main() {
     expect(post.body, containsPair('classroomId', classroomId));
   });
 
+  test('a created assignment is published so the class can see it', () async {
+    // Nothing a student or guardian reads shows a draft. Before this, every
+    // assignment a teacher set from the app stayed invisible to the class.
+    final transport = _RecordingTransport()..createAsDraft = true;
+    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    await repository.createAssignment(
+      AssignmentDraft(
+        classroomId: classroomId,
+        title: 'Atomic models',
+        instructions: '',
+        dueAt: DateTime.parse('2026-10-01T10:00:00Z'),
+      ),
+    );
+
+    expect(transport.posts.map((p) => p.path), [
+      '/v1/assignments',
+      '/v1/assignments/44444444-4444-4444-8444-444444444444/publish',
+    ]);
+    expect(transport.posts[1].body, containsPair('expectedVersion', 1));
+  });
+
+  test('graded work creates its mark, linked to the assignment', () async {
+    final transport = _RecordingTransport()..createAsDraft = true;
+    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    await repository.createAssignment(
+      AssignmentDraft(
+        classroomId: classroomId,
+        title: 'Lab report',
+        instructions: '',
+        dueAt: DateTime.parse('2026-10-01T10:00:00Z'),
+        maximumScore: 25,
+      ),
+    );
+    final assessment = transport.posts.singleWhere(
+      (p) => p.path == '/v1/assessments',
+    );
+    expect(
+      assessment.body,
+      containsPair('assignmentId', '44444444-4444-4444-8444-444444444444'),
+    );
+    expect(assessment.body, containsPair('maximumScore', 25));
+    expect(assessment.body, containsPair('category', 'assignment'));
+  });
+
+  test('a draft asked to stay a draft is not published', () async {
+    final transport = _RecordingTransport()..createAsDraft = true;
+    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    await repository.createAssignment(
+      AssignmentDraft(
+        classroomId: classroomId,
+        title: 'Held back',
+        instructions: '',
+        dueAt: DateTime.parse('2026-10-01T10:00:00Z'),
+        publish: false,
+      ),
+    );
+    expect(transport.posts, hasLength(1));
+  });
+
+  test('the class list names the school when it asks for guardians', () async {
+    final transport = _RecordingTransport();
+    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    await repository.classStudents(classroomId);
+    final contacts = transport.getPaths.singleWhere(
+      (path) => path.startsWith('/v1/contacts'),
+    );
+    expect(contacts, contains('schoolId=$schoolId'));
+  });
+
+  test('a refused guardian lookup still returns the class', () async {
+    // The teacher's hand-in list is built on this roster; a contacts read
+    // that fails used to take the whole page down with it.
+    final transport = _RecordingTransport()..failContacts = true;
+    final repository = ApiAcademicRepository(V1ApiClient(transport));
+    final students = await repository.classStudents(classroomId);
+    expect(students.single.displayName, 'Amal');
+    expect(students.single.guardians, isEmpty);
+  });
+
   test(
     'an explicit retry preserves one idempotency key until success',
     () async {
@@ -169,6 +248,37 @@ void main() {
     expect(publish.body, containsPair('expectedVersion', 4));
   });
 
+  test(
+    'a guardian with no membership reads under the child\'s school',
+    () async {
+      // Parents link by the child's ID and hold no membership. Their school is
+      // the child's; the server authorizes each read on the guardian link.
+      ActiveContextController.instance.signOut();
+      ActiveContextController.instance.hydrate(
+        authenticatedProfile: const UserProfile(
+          id: 'parent',
+          displayName: 'Parent',
+          email: 'parent@example.test',
+          memberships: [],
+        ),
+      );
+      ActiveContextController.instance.selectStudent(
+        const StudentSummary(
+          id: studentId,
+          studafyId: '',
+          displayName: 'Child',
+          verified: true,
+          schoolId: schoolId,
+        ),
+      );
+      final transport = _RecordingTransport();
+      final repository = ApiAcademicRepository(V1ApiClient(transport));
+      await repository.load(AcademicFeed.grades, studentId: studentId);
+      expect(transport.getPaths.single, contains('schoolId=$schoolId'));
+      expect(transport.getPaths.single, contains('studentId=$studentId'));
+    },
+  );
+
   test('no active membership fails closed before any request', () async {
     ActiveContextController.instance.signOut();
     final transport = _RecordingTransport();
@@ -214,6 +324,10 @@ class _RecordingTransport implements V1JsonTransport {
   final posts = <_RecordedPost>[];
   bool failNextPost = false;
 
+  /// Answer a create the way the server does: as a new draft.
+  bool createAsDraft = false;
+  bool failContacts = false;
+
   static const _assignment = {
     'id': '44444444-4444-4444-8444-444444444444',
     'classroomId': classroomId,
@@ -230,6 +344,18 @@ class _RecordingTransport implements V1JsonTransport {
   @override
   Future<Map<String, dynamic>> get(String path) async {
     getPaths.add(path);
+    if (path.startsWith('/v1/contacts')) {
+      if (failContacts) throw StateError('contacts refused');
+      return {'items': <Object?>[], 'nextCursor': null};
+    }
+    if (path.contains('/students')) {
+      return {
+        'items': [
+          {'id': studentId, 'displayName': 'Amal', 'studafyId': 'SJ-1'},
+        ],
+        'nextCursor': null,
+      };
+    }
     return {
       'items': [
         if (path.startsWith('/v1/resources'))
@@ -334,6 +460,36 @@ class _RecordingTransport implements V1JsonTransport {
         'reviewedAt': '2026-09-15T08:00:00Z',
         'publishedAt': null,
       };
+    }
+    if (path == '/v1/assessments') {
+      return {
+        'id': '66666666-6666-4666-8666-666666666666',
+        'classroomId': classroomId,
+        'title': body['title'],
+        'category': body['category'],
+        'maximumScore': body['maximumScore'],
+        'scheduledAt': body['scheduledAt'],
+        'delivery': body['delivery'],
+        'state': 'draft',
+        'version': 1,
+        'assignmentId': body['assignmentId'],
+      };
+    }
+    if (path.startsWith('/v1/assessments/')) {
+      return {
+        'id': '66666666-6666-4666-8666-666666666666',
+        'classroomId': classroomId,
+        'title': 'Lab report',
+        'category': 'assignment',
+        'maximumScore': 25,
+        'scheduledAt': null,
+        'delivery': 'paper',
+        'state': 'published',
+        'version': 2,
+      };
+    }
+    if (createAsDraft && path == '/v1/assignments') {
+      return {..._assignment, 'state': 'draft', 'version': 1};
     }
     return Map<String, Object?>.from(_assignment);
   }

@@ -159,6 +159,41 @@ void main() {
     // Only the chip is left.
     expect(find.text('Maths'), findsOneWidget);
   });
+
+  testWidgets('only an assignment row opens anything', (tester) async {
+    // Every caller hands the record to an assignment screen, so a grade or
+    // an assessment row must not be tappable at all.
+    const record = AcademicRecord(
+      id: 'r1',
+      title: 'Algebra quiz',
+      detail: '8 / 10',
+      state: 'published',
+      version: 1,
+    );
+    final opened = <String>[];
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _RecordingRepository(records: const [record]),
+          availableFeeds: const [AcademicFeed.assignments, AcademicFeed.grades],
+          onOpenRecord: (r) => opened.add(r.id),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Grades'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Algebra quiz'));
+    await tester.pumpAndSettle();
+    expect(opened, isEmpty);
+
+    await tester.tap(find.text('Assignments'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Algebra quiz'));
+    await tester.pumpAndSettle();
+    expect(opened, ['r1']);
+  });
 }
 
 class _RecordingRepository implements AcademicRepository {

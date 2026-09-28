@@ -15,7 +15,8 @@ import '../data/local_cache/session_cache_binder.dart';
 import '../core/secure_storage.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/subscription_service.dart';
-import '../features/notebook/domain/notebook_subscription_repository.dart';
+import '../features/study/data/api_study_repository.dart';
+import '../features/study/domain/study.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/data/api_data_export_repository.dart';
 import '../features/account/data/api_profile_repository.dart';
@@ -62,6 +63,8 @@ import '../features/school_operations/domain/school_operations_repository.dart';
 import '../features/teacher_dashboard/data/preview_teacher_dashboard_repository.dart';
 import '../features/teacher_dashboard/data/unavailable_teacher_dashboard_repository.dart';
 import '../features/teacher_dashboard/domain/teacher_dashboard_repository.dart';
+import '../features/meetings/data/api_meetings_repository.dart';
+import '../features/meetings/domain/meetings.dart';
 
 /// Composition root (ARC-011). Builds the interactors once, choosing
 /// adapters by runtime policy: synthetic builds get the demo/preview pair;
@@ -78,7 +81,8 @@ class AppDependencies {
     required this.parent,
     required this.teacherDashboard,
     required this.parentSubscription,
-    this.notebookSubscription,
+    this.studyPlans,
+    required this.study,
     required this.account,
     required this.academicApi,
     required this.academic,
@@ -86,6 +90,7 @@ class AppDependencies {
     required this.notifications,
     required this.cacheBinder,
     required this.fileUploads,
+    required this.meetings,
     required this.messaging,
     required this.family,
     required this.locale,
@@ -107,7 +112,12 @@ class AppDependencies {
   final ParentRepository parent;
   final TeacherDashboardRepository teacherDashboard;
   final ParentSubscriptionRepository parentSubscription;
-  final NotebookSubscriptionRepository? notebookSubscription;
+
+  /// Buying Studafy Plus / Max through the store. Null without billing.
+  final StudyPlanSubscriptionRepository? studyPlans;
+
+  /// Plans, the student's notebook, and quizzes and flashcards.
+  final StudyRepository study;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
@@ -119,6 +129,9 @@ class AppDependencies {
   /// alive and listening for the app's whole lifetime.
   final SessionCacheBinder cacheBinder;
   final FileUploadRepository fileUploads;
+
+  /// Meetings the signed-in person was invited to (Google Meet links).
+  final MeetingsRepository meetings;
 
   /// Conversations with report and block controls (MOB-070, SAFE-043).
   final MessagingInteractor messaging;
@@ -243,7 +256,10 @@ class AppDependencies {
       parent: parentRepository,
       teacherDashboard: teacherDashboardRepository,
       parentSubscription: subscriptions,
-      notebookSubscription: subscriptions,
+      studyPlans: subscriptions,
+      study: remote == null
+          ? PreviewStudyRepository()
+          : ApiStudyRepository(remote.api),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(
@@ -281,6 +297,9 @@ class AppDependencies {
       // now sends real bytes through the real pipeline. A build with no API
       // client still has nowhere to send them, and says so rather than
       // pretending an upload succeeded.
+      meetings: remote == null
+          ? const PreviewMeetingsRepository()
+          : ApiMeetingsRepository(remote.api),
       fileUploads: policy.isSynthetic
           ? const PreviewFileUploadRepository()
           : (remote == null || !policy.allowsRemoteFileUploads
@@ -288,6 +307,7 @@ class AppDependencies {
                 : ApiFileUploadRepository(
                     remote.api,
                     IoSignedUploadTransport(),
+                    fetch: remote.transport.getBytes,
                   )),
     );
   }
@@ -344,7 +364,7 @@ class _RemoteClients {
     required this.session,
   });
   final V1ApiClient api;
-  final V1JsonTransport transport;
+  final V1HttpTransport transport;
   final SecureStore secureStore;
   final SessionRepository session;
 }

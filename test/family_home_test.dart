@@ -26,11 +26,15 @@ class _Fake implements FamilyRepository, PurchaseApprovalRepository {
   @override
   Future<List<GuardianChild>> children() async => List.of(children_);
 
+  /// Every captcha token a lookup carried, null when none was sent.
+  final List<String?> captchaTokens = [];
+
   @override
   Future<LocatedStudent?> locate(
     String studafyId, {
     String? captchaToken,
-  }) async => studafyId == 'STU-42'
+  }) async =>
+      (captchaTokens..add(captchaToken)).isNotEmpty && studafyId == 'STU-42'
       ? const LocatedStudent(studentId: 'student-42', displayName: 'Omar')
       : null;
 
@@ -203,6 +207,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(fake.requested, ['student-42']);
     expect(find.text('Waiting for your child'), findsOneWidget);
+    // A server that asks for no check gets none: the lookup goes straight
+    // through, and no bot-check page is opened. That page is the server's to
+    // serve, and opening it unasked is how a parent once saw a raw error.
+    expect(fake.captchaTokens, everyElement(isNull));
+    expect(find.text('Security check'), findsNothing);
   });
 
   testWidgets('approving proves a recent sign-in first', (tester) async {

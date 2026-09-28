@@ -63,12 +63,16 @@ class PreviewClassroomRepository implements ClassroomRepository {
   }
 
   @override
-  Future<String> inviteLinkFor(ClassroomId id) {
+  Future<ClassInvite> inviteLinkFor(ClassroomId id) async {
     final localId = int.tryParse(id.value);
     if (localId == null) {
       throw StateError('Preview invite links need a local class id.');
     }
-    return StudafyDatabase.instance.createInviteLink(localId);
+    // The preview has no server to mint or hash a code, so it offers the link
+    // alone - the same shape a server without a code key returns.
+    return ClassInvite(
+      link: await StudafyDatabase.instance.createInviteLink(localId),
+    );
   }
 
   @override
@@ -82,6 +86,13 @@ class PreviewClassroomRepository implements ClassroomRepository {
   Future<JoinedClass> joinWithLink(String token) {
     throw const Failure.unsupported(
       'Joining a class by link needs the school service.',
+    );
+  }
+
+  @override
+  Future<JoinedClass> joinWithCode(String code) {
+    throw const Failure.unsupported(
+      'Joining a class by code needs the school service.',
     );
   }
 }

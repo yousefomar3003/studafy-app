@@ -84,13 +84,15 @@ const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
     env.PAY071_BILLING_ENABLED
   ? createDatabase(env.DATABASE_URL!)
   : undefined;
-const storage =
-  fileWorkerSql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
-    ? new SupabasePrivateFileStorage(
-      env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY,
-    )
-    : undefined;
+const storage = fileWorkerSql && (env.STORAGE_URL ?? env.SUPABASE_URL) &&
+    (env.STORAGE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY)
+  // The same storage the API issued upload capabilities for, or the scan
+  // would look for bytes in a project that never received them.
+  ? new SupabasePrivateFileStorage(
+    (env.STORAGE_URL ?? env.SUPABASE_URL)!,
+    (env.STORAGE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY)!,
+  )
+  : undefined;
 
 // Production refuses to start with scanning enabled but no external scanner
 // (worker schema fail-closed); local/disposable runs use the deterministic

@@ -19,7 +19,13 @@ class PickedAttachment {
   final Uint8List bytes;
 }
 
-enum AttachmentKind { photo, document }
+enum AttachmentKind {
+  photo,
+  document,
+
+  /// A new photo taken with the camera, for a whiteboard.
+  camera,
+}
 
 /// Opens the platform picker. Injected so a test never touches a channel.
 typedef AttachmentSource = Future<PickedAttachment?> Function(

@@ -46,3 +46,29 @@ export function createMeetingsRoutes(
     idempotencyDependencies,
   );
 }
+
+/// The meeting list sits at the very end of the contract catalogue, so it is
+/// its own group, mounted last: mount order is asserted to equal catalogue
+/// order.
+const MEETING_LIST_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "listMeetings"
+);
+
+export function createMeetingListRoutes(
+  deps: MeetingsDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: MEETING_LIST_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: () => null,
+      sliceFor,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}

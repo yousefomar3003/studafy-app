@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../app/account_hub_page.dart';
 import '../../../app/student_today_page.dart';
-import '../../../app/student_notebook_subscription_page.dart';
-import '../../../features/notebook/domain/notebook_subscription_repository.dart';
+import '../../../app/student_lessons_page.dart';
+import '../../../features/study/domain/study.dart';
+import '../../../features/study/presentation/study_plans_page.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../../../features/classes/application/class_list_interactor.dart';
 import '../../../features/classes/presentation/join_class_page.dart';
@@ -15,6 +16,7 @@ import '../../../core/studafy_localizations.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../features/academic/domain/academic_repository.dart';
 import '../../../features/academic/presentation/academic_overview_page.dart';
+import '../../../features/messaging/domain/messaging.dart';
 import '../../../features/messaging/presentation/conversations_page.dart';
 import '../../../features/messaging/presentation/messaging_scope.dart';
 import '../../../features/session/application/session_interactor.dart';
@@ -27,12 +29,18 @@ class StudentShell extends StatefulWidget {
     super.key,
     required this.academic,
     this.classes,
-    this.notebookSubscription,
+    this.studyPlans,
+    this.study,
     this.session,
     this.studyAssistant,
     this.fileUploads,
   });
-  final NotebookSubscriptionRepository? notebookSubscription;
+
+  /// Buying Studafy Plus / Max. Null without billing.
+  final StudyPlanSubscriptionRepository? studyPlans;
+
+  /// Plans, notebooks and study sets. Null in the preview shell.
+  final StudyRepository? study;
   final AcademicRepository academic;
 
   /// Lets a student join a class from a link they were sent. Optional so the
@@ -107,7 +115,7 @@ class _StudentShellState extends State<StudentShell> {
     final studentId = ActiveContextController.instance.selectedStudent?.id;
     final messaging = MessagingScope.isAvailable(context);
     final assistant = widget.studyAssistant;
-    // Today, Notebook, Work, then the two optional tabs in that order.
+    // Today, Lessons, Work, then the two optional tabs in that order.
     final messagesIndex = 3 + (assistant == null ? 0 : 1);
     final pages = <Widget>[
       StudentTodayPage(
@@ -116,25 +124,26 @@ class _StudentShellState extends State<StudentShell> {
         onNotebook: () => setState(() => index = 1),
         classes: widget.classes,
       ),
-      StudentNotebookSubscriptionPage(
-        subscription: widget.notebookSubscription,
-        visible: index == 1,
-        contentBuilder: (_) => AcademicOverviewPage(
+      // Lessons are free (2026-09-27): every class, its lessons by date and
+      // the student's own notebook for it.
+      if (widget.study != null && widget.classes != null)
+        StudentLessonsPage(
+          classes: widget.classes!,
+          academic: repository,
+          study: widget.study!,
+          studyPlans: widget.studyPlans,
+          uploads: widget.fileUploads,
+          schoolId: ActiveContextController.instance.membership?.schoolId,
+        )
+      else
+        AcademicOverviewPage(
           repository: repository,
           studentId: studentId,
-          title: AppL10n.of(context).notebookTitle,
           initialFeed: AcademicFeed.content,
           availableFeeds: const [AcademicFeed.content],
           actions: const [AccountButton()],
-          // Material belongs to the class it was taught in, and a student
-          // taking six subjects was reading one undivided list of all of
-          // them. Every other feed already offered this chooser.
           loadClassChoices: widget.classes == null ? null : _classChoices,
         ),
-      ),
-      // My work and Grades were two tabs over the same screen, differing only
-      // in which feeds they offered - and a student looking at an assignment
-      // wants its mark in the same place. One tab, every feed.
       AcademicOverviewPage(
         repository: repository,
         studentId: studentId,
@@ -159,6 +168,8 @@ class _StudentShellState extends State<StudentShell> {
                 assignmentId: record.id,
                 assignmentTitle: record.title,
                 canSubmit: record.state == 'published',
+                instructions: record.detail,
+                material: record.attachments,
                 uploads: widget.fileUploads,
                 schoolId: ActiveContextController.instance.membership?.schoolId,
                 studentId: studentId,
@@ -173,9 +184,30 @@ class _StudentShellState extends State<StudentShell> {
       if (assistant != null)
         StudyAssistantPage(
           assistant: assistant,
-          actions: const [AccountButton()],
+          actions: [
+            if (widget.study case final study?)
+              IconButton(
+                tooltip: Localizations.localeOf(context).languageCode == 'ar'
+                    ? 'الخطط'
+                    : 'Plans',
+                icon: const Icon(Icons.workspace_premium_outlined),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => StudyPlansPage(
+                      study: study,
+                      subscriptions: widget.studyPlans,
+                    ),
+                  ),
+                ),
+              ),
+            const AccountButton(),
+          ],
         ),
-      if (messaging) ConversationsPage(visible: index == messagesIndex),
+      if (messaging)
+        ConversationsPage(
+          visible: index == messagesIndex,
+          asRole: MessagingRole.student,
+        ),
     ];
     final classes = widget.classes;
     if (_hasNoClassYet && classes != null) {
@@ -196,6 +228,10 @@ class _StudentShellState extends State<StudentShell> {
       floatingActionButton: classes == null || index != 0
           ? null
           : FloatingActionButton.extended(
+              // Every tab stays alive in the shell's IndexedStack, so two
+              // buttons with the default hero tag coexist and break the
+              // transition of every screen pushed from any tab.
+              heroTag: null,
               onPressed: _joinClass,
               icon: const Icon(Icons.group_add_outlined),
               label: Text(AppL10n.of(context).joinClassAction),
@@ -210,9 +246,11 @@ class _StudentShellState extends State<StudentShell> {
             Icons.home_rounded,
           ),
           StudafyNavItem(
-            StudafyLocalizations.of(context).text('notebook'),
-            Icons.library_books_outlined,
-            Icons.library_books_rounded,
+            Localizations.localeOf(context).languageCode == 'ar'
+                ? 'الدروس'
+                : 'Lessons',
+            Icons.menu_book_outlined,
+            Icons.menu_book_rounded,
           ),
           StudafyNavItem(
             StudafyLocalizations.of(context).text('work'),

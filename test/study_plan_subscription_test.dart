@@ -5,10 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:studafy/features/study/domain/study.dart';
 import 'package:studafy/data/billing/v1_billing_api.dart';
 import 'package:studafy/data/subscription_service.dart';
 
-const sku = 'studafy_student_notebook_monthly';
+const sku = 'studafy_plus_monthly';
 
 class Billing extends Fake implements V1BillingApi {
   String account = 'student-a';
@@ -20,7 +21,7 @@ class Billing extends Fake implements V1BillingApi {
     purchaseAccountToken: account,
     products: const [
       V1BillingProduct(
-        featureKey: 'student_notebook',
+        featureKey: 'studafy_plus',
         platform: 'play_store',
         storeProductId: sku,
       ),
@@ -41,7 +42,7 @@ class Billing extends Fake implements V1BillingApi {
             id: 'approval',
             studentId: 'student',
             studentName: 'Student',
-            featureKey: 'student_notebook',
+            featureKey: 'studafy_plus',
             status: 'approved',
             requestedAt: DateTime.now(),
             expiresAt: DateTime.now().add(const Duration(hours: 1)),
@@ -128,41 +129,47 @@ void main() {
   test(
     'shows renewal price and selects exact one-month trial at checkout',
     () async {
-      final status = await repository.notebookStatus();
+      final status = await repository.offer(StudyPlanTier.plus);
       expect(status.price, '\$2.49');
       expect(status.oneMonthTrial, isTrue);
       expect(status.canPurchase, isTrue);
-      await repository.purchaseNotebook();
+      await repository.purchase(StudyPlanTier.plus);
       expect((store.bought as GooglePlayPurchaseParam).offerToken, 'trial');
       expect(store.bought!.applicationUserName, 'student-a');
       expect(
-        (await repository.notebookStatus()).active,
+        (await repository.offer(StudyPlanTier.plus)).active,
         isFalse,
         reason: 'opening the store must not grant access',
       );
     },
   );
   test('rechecks consent and account before charging', () async {
-    await repository.notebookStatus();
+    await repository.offer(StudyPlanTier.plus);
     billing.approved = false;
-    await expectLater(repository.purchaseNotebook(), throwsStateError);
+    await expectLater(
+      repository.purchase(StudyPlanTier.plus),
+      throwsStateError,
+    );
     expect(store.bought, isNull);
     billing.approved = true;
     billing.account = 'different-account';
-    await expectLater(repository.purchaseNotebook(), throwsStateError);
+    await expectLater(
+      repository.purchase(StudyPlanTier.plus),
+      throwsStateError,
+    );
     expect(store.bought, isNull);
   });
   test('school switch and store outage fail closed', () async {
     billing.enabled = false;
-    expect((await repository.notebookStatus()).canPurchase, isFalse);
+    expect((await repository.offer(StudyPlanTier.plus)).canPurchase, isFalse);
     store.available = false;
-    final status = await repository.notebookStatus();
+    final status = await repository.offer(StudyPlanTier.plus);
     expect(status.storeAvailable, isFalse);
     expect(status.price, isEmpty);
   });
-  test('only current own Notebook entitlement unlocks', () async {
+  test('only a current, own Studafy Plus entitlement unlocks', () async {
     V1EntitlementRow row({
-      String feature = 'student_notebook',
+      String feature = 'studafy_plus',
       String state = 'active',
       DateTime? endsAt,
       String? beneficiary,
@@ -181,11 +188,11 @@ void main() {
       row(endsAt: DateTime.now().subtract(const Duration(seconds: 1))),
     ]) {
       billing.rows = [invalid];
-      expect((await repository.notebookStatus()).active, isFalse);
+      expect((await repository.offer(StudyPlanTier.plus)).active, isFalse);
     }
     billing.rows = [row()];
-    expect((await repository.notebookStatus()).active, isTrue);
+    expect((await repository.offer(StudyPlanTier.plus)).active, isTrue);
     billing.rows = [row(state: 'grace_period')];
-    expect((await repository.notebookStatus()).active, isTrue);
+    expect((await repository.offer(StudyPlanTier.plus)).active, isTrue);
   });
 }

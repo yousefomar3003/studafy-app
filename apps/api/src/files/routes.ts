@@ -441,7 +441,12 @@ export function contentDisposition(displayName: string): string {
 function requestContext(c: Context<AuthorizationEnv>): RequestDbContext {
   return {
     subject: c.get("actor").token.subject,
-    schoolId: c.get("authorization").tenant?.schoolId ?? null,
+    // A guardian holds no membership, so has no tenant. The upload and
+    // delivery functions re-authorize against the school themselves (a
+    // guardian through their link to a child enrolled there), so the school
+    // the decision resolved is what they are handed.
+    schoolId: c.get("authorization").tenant?.schoolId ??
+      c.get("authorization").decisionSchoolId ?? null,
     requestId: c.get("requestId"),
     aal2: c.get("actor").aal2,
   };

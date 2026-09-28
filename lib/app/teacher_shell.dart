@@ -1,3 +1,5 @@
+import 'account_hub_page.dart';
+
 import 'package:flutter/material.dart';
 
 import '../core/studafy_design.dart';
@@ -18,6 +20,7 @@ import '../features/messaging/presentation/create_announcement_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/school_operations/presentation/classroom_management_page.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
@@ -54,7 +57,9 @@ class _TeacherShellState extends State<TeacherShell> {
     ).startConversation(schoolId: schoolId, participantIds: [guardian.userId]);
     result.fold(
       onSuccess: (_) => navigator.push(
-        MaterialPageRoute<void>(builder: (_) => const ConversationsPage()),
+        MaterialPageRoute<void>(
+          builder: (_) => const ConversationsPage(asRole: MessagingRole.staff),
+        ),
       ),
       onFailure: (failure) =>
           messenger.showSnackBar(SnackBar(content: Text(failure.message))),
@@ -156,6 +161,7 @@ class _TeacherShellState extends State<TeacherShell> {
           repository: widget.dependencies.academic,
           classes: options,
           initialClassroomId: classroomId,
+          schoolId: ActiveContextController.instance.membership?.schoolId,
         ),
       ),
     );
@@ -184,6 +190,7 @@ class _TeacherShellState extends State<TeacherShell> {
                 assignmentId: record.id,
                 assignmentTitle: record.title,
                 classroomId: classroom.id.value,
+                graded: record.maximumScore != null,
               ),
             ),
           ),
@@ -336,6 +343,22 @@ class _TeacherShellState extends State<TeacherShell> {
     );
   }
 
+  void _openSubmissions(AcademicRecord record) {
+    final classroomId = record.classroomId;
+    if (classroomId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SubmissionsPage(
+          repository: widget.dependencies.academic,
+          assignmentId: record.id,
+          assignmentTitle: record.title,
+          classroomId: classroomId,
+          graded: record.maximumScore != null,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext c) {
     void open(Widget page) {
@@ -347,13 +370,24 @@ class _TeacherShellState extends State<TeacherShell> {
         classes: widget.dependencies.classes,
         academic: widget.dependencies.academic,
         onOpenClassroom: _openClassroom,
-        onOpenMessages: () => open(const ConversationsPage()),
+        onOpenMessages: () =>
+            open(const ConversationsPage(asRole: MessagingRole.staff)),
         onOpenNotifications: () => open(const NotificationsPage()),
       ),
       ClassesPage(
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
-        header: const FeatureHeader('Classes'),
+        // The real header: this teacher's own messages, notifications and
+        // account. The legacy FeatureHeader it replaces showed a demo
+        // teacher's initials and fake counts, and opened the demo screens.
+        header: _TabHeader(
+          title: Localizations.localeOf(c).languageCode == 'ar'
+              ? 'الفصول'
+              : 'Classes',
+          onOpenMessages: () =>
+              open(const ConversationsPage(asRole: MessagingRole.staff)),
+          onOpenNotifications: () => open(const NotificationsPage()),
+        ),
       ),
       AcademicOverviewPage(
         repository: widget.dependencies.academic,
@@ -362,6 +396,9 @@ class _TeacherShellState extends State<TeacherShell> {
         loadClassChoices: _classChoices,
         uploads: widget.dependencies.fileUploads,
         schoolId: ActiveContextController.instance.membership?.schoolId,
+        // Tapping a piece of work opens what the class handed in. Without
+        // this the Teaching tab listed assignments that led nowhere.
+        onOpenRecord: _openSubmissions,
       ),
       AcademicOverviewPage(
         repository: widget.dependencies.academic,
@@ -372,7 +409,7 @@ class _TeacherShellState extends State<TeacherShell> {
       // Real builds message through /v1 with report and block controls.
       // The legacy inbox stays only for the synthetic demo, where its
       // announcement and meeting forms have no replacement yet.
-      ConversationsPage(visible: index == 4),
+      ConversationsPage(visible: index == 4, asRole: MessagingRole.staff),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
@@ -404,6 +441,10 @@ class _TeacherShellState extends State<TeacherShell> {
         ),
         4 when MessagingScope.isAvailable(c) => Builder(
           builder: (tabContext) => FloatingActionButton.extended(
+            // Every tab stays alive in the shell's IndexedStack, so two
+            // buttons with the default hero tag coexist and break the
+            // transition of every screen pushed from any tab.
+            heroTag: null,
             onPressed: () => _newAnnouncement(tabContext),
             icon: const Icon(Icons.campaign_outlined),
             label: Text(AppL10n.of(tabContext).announcementAction),
@@ -463,6 +504,52 @@ class _ClassToolButton extends StatelessWidget {
       onPressed: onPressed,
       icon: icon,
       label: Text(tooltip),
+    ),
+  );
+}
+
+class _TabHeader extends StatelessWidget {
+  const _TabHeader({
+    required this.title,
+    required this.onOpenMessages,
+    required this.onOpenNotifications,
+  });
+
+  final String title;
+  final VoidCallback onOpenMessages;
+  final VoidCallback onOpenNotifications;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    bottom: false,
+    child: Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800, color: studafyInk),
+            ),
+          ),
+          IconButton(
+            tooltip: Localizations.localeOf(context).languageCode == 'ar'
+                ? 'الرسائل'
+                : 'Messages',
+            onPressed: onOpenMessages,
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+          ),
+          IconButton(
+            tooltip: Localizations.localeOf(context).languageCode == 'ar'
+                ? 'الإشعارات'
+                : 'Notifications',
+            onPressed: onOpenNotifications,
+            icon: const Icon(Icons.notifications_none_rounded),
+          ),
+          const AccountButton(),
+        ],
+      ),
     ),
   );
 }

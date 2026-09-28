@@ -13,7 +13,22 @@ import 'messaging_strings.dart';
 /// Conversation list for every role, backed by authoritative `/v1`
 /// messaging (MOB-070, SAFE-043). Replaces the legacy SQLite chat screens.
 class ConversationsPage extends StatefulWidget {
-  const ConversationsPage({super.key, this.visible = true});
+  const ConversationsPage({
+    super.key,
+    this.visible = true,
+    this.acknowledgeEvery = const Duration(seconds: 30),
+    this.asRole,
+  });
+
+  /// The role this inbox belongs to. One account can be a teacher at one
+  /// school and a parent at another; each interface then lists only the
+  /// conversations it takes part in that way, so the parent's inbox does not
+  /// fill with the same person's teaching conversations. Null lists all.
+  final MessagingRole? asRole;
+
+  /// How often, while the app is in the foreground, this device tells the
+  /// server it has received its conversations - the second grey tick.
+  final Duration acknowledgeEvery;
 
   /// Whether this tab is the one on screen.
   ///
@@ -28,7 +43,8 @@ class ConversationsPage extends StatefulWidget {
   State<ConversationsPage> createState() => _ConversationsPageState();
 }
 
-class _ConversationsPageState extends State<ConversationsPage> {
+class _ConversationsPageState extends State<ConversationsPage>
+    with WidgetsBindingObserver {
   List<Conversation> _conversations = const [];
 
   /// False while this tab is off screen: nothing is loading, so a spinner
@@ -37,10 +53,53 @@ class _ConversationsPageState extends State<ConversationsPage> {
   bool _enabled = true;
   Failure? _failure;
 
+  /// Every shell keeps this page alive in its IndexedStack, so it is where
+  /// the app says "delivered" for the whole signed-in session - the way a
+  /// phone that is on receives messages whichever screen is open.
+  Timer? _acknowledger;
+  bool _foreground = true;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.visible) unawaited(_load());
+    // After the first frame: the scope is an inherited widget.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _acknowledge());
+    _acknowledger = Timer.periodic(
+      widget.acknowledgeEvery,
+      (_) => _acknowledge(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _acknowledger?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (_foreground) _acknowledge();
+  }
+
+  bool _acknowledging = false;
+
+  Future<void> _acknowledge() async {
+    // One at a time: the timer, a resume and a finished load can all ask at
+    // once, and overlapping requests only race each other.
+    if (_acknowledging || !mounted || !_foreground) return;
+    if (messagingIdentity() == null) return;
+    _acknowledging = true;
+    try {
+      // Silent either way: a failure only means the sender's second tick
+      // arrives on the next try.
+      await MessagingScope.of(context).acknowledgeDelivery();
+    } finally {
+      _acknowledging = false;
+    }
   }
 
   @override
@@ -78,8 +137,19 @@ class _ConversationsPageState extends State<ConversationsPage> {
           enabled?.fold(onSuccess: (v) => v, onFailure: (_) => true) ?? true;
       list.fold(
         onSuccess: (items) {
-          _conversations = items;
+          final role = widget.asRole;
+          final me = identity.userId;
+          _conversations = role == null
+              ? items
+              : [
+                  for (final item in items)
+                    if (item.participants.any(
+                      (p) => p.userId == me && p.role == role,
+                    ))
+                      item,
+                ];
           _failure = null;
+          _acknowledge();
         },
         onFailure: (failure) => _failure = failure,
       );
@@ -140,6 +210,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
       floatingActionButton:
           identity != null && schoolId != null && _enabled && !_loading
           ? FloatingActionButton.extended(
+              // Every tab stays alive in the shell's IndexedStack, so two
+              // buttons with the default hero tag coexist and break the
+              // transition of every screen pushed from any tab.
+              heroTag: null,
               onPressed: () => _startNew(schoolId, identity.userId),
               icon: const Icon(Icons.edit_rounded),
               label: Text(t('new')),

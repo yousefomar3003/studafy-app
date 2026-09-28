@@ -22,6 +22,7 @@ import {
 import {
   createAcademicAppendedRoutes,
   createAcademicRoutes,
+  createSubmissionHistoryRoutes,
 } from "./academic/routes";
 import { PostgresAcademicRepository } from "./academic/repository";
 import {
@@ -40,7 +41,8 @@ import { PostgresFamilyRepository } from "./family/repository";
 import { createClassJoinRoutes } from "./class-join/routes";
 import { createOnboardingRoutes } from "./onboarding/routes";
 import { createStudyAssistantRoutes } from "./study-assistant/routes";
-import { createStudyAssistantQuota } from "./study-assistant/quota";
+import { PostgresStudyRepository } from "./study/repository";
+import { createStudyRoutes } from "./study/routes";
 import { createFamilyInsightsRoutes } from "./family-insights/routes";
 import { PostgresFamilyInsightsRepository } from "./family-insights/repository";
 import { PostgresOnboardingRepository } from "./onboarding/repository";
@@ -48,9 +50,13 @@ import { PostgresClassJoinRepository } from "./class-join/repository";
 import {
   createCommunicationsRoutes,
   createContactsRoutes,
+  createMessageReceiptRoutes,
 } from "./communications/routes";
 import { PostgresCommunicationsRepository } from "./communications/repository";
-import { createMeetingsRoutes } from "./meetings/routes";
+import {
+  createMeetingListRoutes,
+  createMeetingsRoutes,
+} from "./meetings/routes";
 import { PostgresMeetingsRepository } from "./meetings/repository";
 import {
   createNotificationsRoutes,
@@ -186,6 +192,11 @@ const authDependencies = sql && env.SUPABASE_URL
     revocationBudgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
     reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
     deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
+    // Development alone signs in against the hosted project while keeping
+    // DATABASE_URL on local Postgres, so it alone needs profiles created on
+    // first sight. Staging and production read the issuer's own database,
+    // where the signup trigger has already done it.
+    provisionUnknownSubjects: env.ENVIRONMENT === "development",
   }
   : undefined;
 // Commands that hand an account its first membership live in other
@@ -222,6 +233,18 @@ const academicAppended = sql && env.API_CURSOR_SIGNING_KEY
       repository: new PostgresAcademicRepository(sql),
       cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
       enabledSlices: { classes: env.API041_CLASSES_ENABLED },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+const submissionHistory = sql && env.API_CURSOR_SIGNING_KEY
+  ? createSubmissionHistoryRoutes(
+    {
+      repository: new PostgresAcademicRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { assignments: env.API041_ASSIGNMENTS_ENABLED },
     },
     authorization,
     idempotencyDependencies,
@@ -292,7 +315,10 @@ const familyReads = familyDependencies
 const classJoin = sql && env.API_CURSOR_SIGNING_KEY
   ? createClassJoinRoutes(
     {
-      repository: new PostgresClassJoinRepository(sql),
+      repository: new PostgresClassJoinRepository(
+        sql,
+        env.CLASS_JOIN_CODE_KEY,
+      ),
       cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
       enabledSlices: { classJoin: true },
       invalidateActorContext: invalidateActorContext,
@@ -319,24 +345,34 @@ const onboarding = sql && env.API_CURSOR_SIGNING_KEY
 // origin it is allowed to reach, and Redis for the daily spend ceiling. Any
 // missing and the route is simply absent - the app then shows no AI tab,
 // which is the honest state rather than a tab that always errors.
-const studyAssistant =
-  env.AI_API_KEY && env.AI_BASE_URL && redis && env.RATE_LIMIT_HMAC_SIGNING_KEY
-    ? createStudyAssistantRoutes(
-      {
-        assistant: createStudyAssistant({
-          apiKey: env.AI_API_KEY,
-          baseUrl: env.AI_BASE_URL,
-          model: env.AI_MODEL,
-        }),
-        quota: createStudyAssistantQuota({
-          redis,
-          signingKey: env.RATE_LIMIT_HMAC_SIGNING_KEY,
-          dailyLimit: env.AI_DAILY_QUESTION_LIMIT,
-        }),
-      },
-      authorization,
-    )
-    : undefined;
+const aiPrices = {
+  inputUsdPerMTok: env.AI_PRICE_INPUT_USD_PER_MTOK,
+  outputUsdPerMTok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
+};
+const aiAssistant = env.AI_API_KEY && env.AI_BASE_URL
+  ? createStudyAssistant({
+    apiKey: env.AI_API_KEY,
+    baseUrl: env.AI_BASE_URL,
+    model: env.AI_MODEL,
+    // Inside the API's own request limit, so a slow answer fails as
+    // "unavailable" rather than as a gateway timeout. 500 tokens is a full
+    // explanation for a student and comes back in ~3-4s.
+    maxOutputTokens: 500,
+    maxLongOutputTokens: 1_100,
+    timeoutMs: 8_500,
+  })
+  : null;
+const studyRepository = sql ? new PostgresStudyRepository(sql) : null;
+
+// The question box needs the provider and the cost ledger. Without either
+// the route is absent and the app shows no AI tab, which is the honest state
+// rather than a tab that always errors.
+const studyAssistant = aiAssistant && studyRepository
+  ? createStudyAssistantRoutes(
+    { assistant: aiAssistant, repository: studyRepository, prices: aiPrices },
+    authorization,
+  )
+  : undefined;
 
 const familyInsights = sql
   ? createFamilyInsightsRoutes(
@@ -370,8 +406,28 @@ const contacts = communicationsDependencies
   )
   : undefined;
 
+const messageReceipts = communicationsDependencies
+  ? createMessageReceiptRoutes(
+    communicationsDependencies,
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
 const meetings = sql && env.API_CURSOR_SIGNING_KEY
   ? createMeetingsRoutes(
+    {
+      repository: new PostgresMeetingsRepository(sql),
+      cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+      enabledSlices: { meetings: env.API042_MEETINGS_ENABLED },
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+const meetingList = sql && env.API_CURSOR_SIGNING_KEY
+  ? createMeetingListRoutes(
     {
       repository: new PostgresMeetingsRepository(sql),
       cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
@@ -462,14 +518,16 @@ const safety = sql && env.API_CURSOR_SIGNING_KEY
 // FILE-050 uses the service role only inside the isolated storage adapter.
 // Database authorization and mutation still run as studafy_api_runtime via
 // the narrow private.api050_* surface. With no key the routes do not mount.
-const files = sql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
+// STORAGE_URL and its key only in the development split; everywhere else
+// they are unset and the files live in the SUPABASE_URL project.
+const storageUrl = env.STORAGE_URL ?? env.SUPABASE_URL;
+const storageKey = env.STORAGE_SERVICE_ROLE_KEY ??
+  env.SUPABASE_SERVICE_ROLE_KEY;
+const files = sql && storageUrl && storageKey
   ? createFileRoutes(
     {
       repository: new PostgresFileRepository(sql),
-      storage: new SupabasePrivateFileStorage(
-        env.SUPABASE_URL,
-        env.SUPABASE_SERVICE_ROLE_KEY,
-      ),
+      storage: new SupabasePrivateFileStorage(storageUrl, storageKey),
       newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
       // FILE-051 switches default off; delivery also needs its own signing
       // key and public origin (production refuses to start without them).
@@ -481,6 +539,25 @@ const files = sql && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
           signingKey: env.FILE051_DELIVERY_SIGNING_KEY,
           publicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL,
         }
+        : null,
+    },
+    authorization,
+    idempotencyDependencies,
+  )
+  : undefined;
+
+// Studafy Plus / Max and the Notebook. Present whenever there is a database:
+// the notebook and the plan summary need no AI; the AI routes answer
+// AI_FEATURE_DISABLED until a provider and the lesson-tools switch are set.
+const study = studyRepository && idempotencyDependencies
+  ? createStudyRoutes(
+    {
+      repository: studyRepository,
+      prices: aiPrices,
+      assistant: aiAssistant,
+      lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      storage: storageUrl && storageKey
+        ? new SupabasePrivateFileStorage(storageUrl, storageKey)
         : null,
     },
     authorization,
@@ -615,6 +692,10 @@ const combinedRoutes =
       if (onboarding) combined.route("/", onboarding);
       if (studyAssistant) combined.route("/", studyAssistant);
       if (familyInsights) combined.route("/", familyInsights);
+      if (submissionHistory) combined.route("/", submissionHistory);
+      if (meetingList) combined.route("/", meetingList);
+      if (messageReceipts) combined.route("/", messageReceipts);
+      if (study) combined.route("/", study);
       return combined;
     })()
     : undefined;

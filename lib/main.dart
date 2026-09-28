@@ -26,6 +26,7 @@ import 'features/teacher_dashboard/presentation/teacher_dashboard_repository_sco
 import 'parent_features.dart';
 import 'student_features.dart';
 import 'core/uploads_scope.dart';
+import 'features/meetings/presentation/upcoming_meetings_section.dart';
 
 /// Holds a class join link tapped before the app had somewhere to show it.
 final classJoinLinks = ClassJoinLinkGuard();
@@ -125,7 +126,8 @@ class StudafyApp extends StatelessWidget {
             studentRoute: (_) => StudentShell(
               academic: deps.academic,
               classes: deps.classes,
-              notebookSubscription: deps.notebookSubscription,
+              studyPlans: deps.studyPlans,
+              study: deps.study,
               session: deps.session,
               studyAssistant: deps.studyAssistant,
               fileUploads: deps.fileUploads,
@@ -200,20 +202,23 @@ class StudafyApp extends StatelessWidget {
                 // screen can still reach the upload pipeline.
                 child: UploadsScope(
                   uploads: deps.fileUploads,
-                  child: NotificationsScope(
-                    interactor: deps.notifications,
-                    child: MessagingScope(
-                      interactor: deps.messaging,
-                      child: FamilyScope(
-                        interactor: deps.family,
-                        child: ParentRepositoryScope(
-                          repository: deps.parent,
-                          subscription: deps.parentSubscription,
-                          signOut: deps.session.signOut,
-                          isRemote: runtimePolicy.requiresRemoteBackend,
-                          child: TeacherDashboardRepositoryScope(
-                            repository: deps.teacherDashboard,
-                            child: content,
+                  child: MeetingsScope(
+                    repository: deps.meetings,
+                    child: NotificationsScope(
+                      interactor: deps.notifications,
+                      child: MessagingScope(
+                        interactor: deps.messaging,
+                        child: FamilyScope(
+                          interactor: deps.family,
+                          child: ParentRepositoryScope(
+                            repository: deps.parent,
+                            subscription: deps.parentSubscription,
+                            signOut: deps.session.signOut,
+                            isRemote: runtimePolicy.requiresRemoteBackend,
+                            child: TeacherDashboardRepositoryScope(
+                              repository: deps.teacherDashboard,
+                              child: content,
+                            ),
                           ),
                         ),
                       ),

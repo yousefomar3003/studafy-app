@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/file_upload_repository.dart';
+
 enum AcademicFeed {
   content,
   assignments,
@@ -18,12 +20,31 @@ class AcademicRecord {
     required this.state,
     required this.version,
     this.classroomId,
+    this.attachments = const [],
+    this.maximumScore,
+    this.markedAssignmentId,
+    this.date,
   });
   final String id;
   final String title;
   final String detail;
   final String state;
   final int version;
+
+  /// Set on graded assignments: what the work is marked out of.
+  final double? maximumScore;
+
+  /// Set on an assessment that is the mark for an assignment: which one.
+  /// Such an assessment is listed with its assignment, not among the tests,
+  /// but the gradebook still needs it - it is where the mark is entered.
+  final String? markedAssignmentId;
+
+  /// When the record was published - a lesson's date. Null where the feed
+  /// does not carry one.
+  final DateTime? date;
+
+  /// Files the teacher attached to the work. Empty for every other feed.
+  final List<StoredAttachment> attachments;
 
   /// The class this record belongs to, so a list spanning several classes can
   /// say which one each row came from. Null where the record has no class -
@@ -70,12 +91,27 @@ class AssignmentDraft {
     required this.instructions,
     required this.dueAt,
     this.closesAt,
+    this.attachmentFileIds = const [],
+    this.publish = true,
+    this.maximumScore,
   });
   final String classroomId;
   final String title;
   final String instructions;
   final DateTime dueAt;
   final DateTime? closesAt;
+
+  /// Completed `assignment_material` uploads for [classroomId]. The server
+  /// binds them when the assignment is created, or creates nothing.
+  final List<String> attachmentFileIds;
+
+  /// Publish as soon as it is created, so the class can see it. Work is
+  /// stored as a draft first; nothing a student can reach shows a draft.
+  final bool publish;
+
+  /// Set for graded work: what it is marked out of. The student still hands
+  /// in this assignment; the mark is kept on a linked assessment.
+  final double? maximumScore;
 }
 
 @immutable
@@ -88,11 +124,25 @@ class AssessmentDraft {
     this.category = 'assessment',
     this.delivery = 'online',
     this.scheduledAt,
+    this.attachmentFileIds = const [],
+    this.publish = false,
+    this.assignmentId,
   });
   final String classroomId;
   final String title;
   final double maximumScore;
   final List<AssessmentQuestionDraft> questions;
+
+  /// As on [AssignmentDraft]: material bound when the work is created.
+  final List<String> attachmentFileIds;
+
+  /// Publish on creation. Off by default: an exam is written, checked and
+  /// released later. Graded coursework set from the assignment form is
+  /// published at once, like any other assignment.
+  final bool publish;
+
+  /// The assignment this is the mark for, when it is graded coursework.
+  final String? assignmentId;
 
   /// Free-text grouping the gradebook reads. A graded assignment is filed
   /// under 'assignment': the schema already separates work that earns a
@@ -183,6 +233,33 @@ class SubmittedWork {
   /// have no device of their own, so a teacher needs to know whose work they
   /// are marking.
   final String? submittedByGuardianId;
+}
+
+/// One hand-in of a piece of work. A resubmission is a new attempt; the
+/// earlier ones stay exactly as they were handed in.
+@immutable
+class SubmissionAttempt {
+  const SubmissionAttempt({
+    required this.id,
+    required this.submittedAt,
+    required this.current,
+    this.answerText,
+    this.submittedByGuardianId,
+    this.submittedByGuardianName,
+    this.attachments = const [],
+  });
+
+  final String id;
+  final DateTime submittedAt;
+
+  /// The attempt being marked: the latest.
+  final bool current;
+  final String? answerText;
+
+  /// Set when a guardian handed this attempt in for the child.
+  final String? submittedByGuardianId;
+  final String? submittedByGuardianName;
+  final List<StoredAttachment> attachments;
 }
 
 /// One meeting of a class that has taken place.
@@ -399,6 +476,16 @@ abstract interface class AcademicRepository {
 
   /// What students have handed in for [assignmentId].
   Future<List<SubmittedWork>> submissionsFor(String assignmentId);
+
+  /// Every attempt one student made at [assignmentId], newest first.
+  ///
+  /// A student leaves [studentId] out and gets their own. A guardian names
+  /// their child and a teacher names the student; the server refuses anyone
+  /// who is none of those.
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  });
 
   /// Replaces a classroom's weekly schedule.
   ///

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'gradebook_page.dart';
+import 'submission_history_view.dart';
 
 /// What students have handed in for one assignment.
 ///
@@ -15,12 +18,16 @@ class SubmissionsPage extends StatefulWidget {
     required this.assignmentId,
     required this.assignmentTitle,
     required this.classroomId,
+    this.graded = false,
   });
 
   final AcademicRepository repository;
   final String assignmentId;
   final String assignmentTitle;
   final String classroomId;
+
+  /// Graded work is marked in the gradebook; this offers the way there.
+  final bool graded;
 
   @override
   State<SubmissionsPage> createState() => _SubmissionsPageState();
@@ -88,6 +95,23 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.submissionsTitle(widget.assignmentTitle)),
+        actions: [
+          if (widget.graded)
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ClassGradebookPage(
+                    repository: widget.repository,
+                    classroomId: widget.classroomId,
+                    classroomName: widget.assignmentTitle,
+                    focusAssignmentId: widget.assignmentId,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.grade_outlined),
+              label: Text(l10n.submissionsGrade),
+            ),
+        ],
       ),
       body: SafeArea(
         child: _loading
@@ -153,28 +177,23 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
                                   ),
                               ],
                             ),
-                            onTap: work?.answerText == null
+                            // Every attempt, not only the latest: what was
+                            // replaced, when, and which a parent filed.
+                            onTap: submittedAt == null
                                 ? null
-                                : () => showDialog<void>(
-                                    context: context,
-                                    builder: (dialogContext) => AlertDialog(
-                                      title: Text(student.displayName),
-                                      content: SingleChildScrollView(
-                                        child: Text(work!.answerText!),
+                                : () => Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => SubmissionHistoryPage(
+                                        repository: widget.repository,
+                                        assignmentId: widget.assignmentId,
+                                        studentId: student.id,
+                                        studentName: student.displayName,
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(dialogContext),
-                                          child: Text(
-                                            MaterialLocalizations.of(
-                                              dialogContext,
-                                            ).closeButtonLabel,
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ),
+                            trailing: submittedAt == null
+                                ? null
+                                : Icon(forwardChevron(context)),
                           );
                         },
                       ),

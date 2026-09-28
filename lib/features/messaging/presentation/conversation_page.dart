@@ -11,6 +11,7 @@ import 'messaging_strings.dart';
 import 'safety_sheets.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/attachment_field.dart';
+import '../../../core/attachment_opener.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
 
@@ -23,6 +24,7 @@ class ConversationPage extends StatefulWidget {
     required this.myUserId,
     this.uploads,
     this.attachmentSource,
+    this.refreshEvery = const Duration(seconds: 4),
   });
 
   final Conversation conversation;
@@ -34,6 +36,9 @@ class ConversationPage extends StatefulWidget {
 
   /// Overrides the platform picker. Tests supply their own.
   final AttachmentSource? attachmentSource;
+
+  /// How often an open chat re-reads its newest messages.
+  final Duration refreshEvery;
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -66,16 +71,68 @@ class _ConversationPageState extends State<ConversationPage> {
 
   Conversation get _conversation => widget.conversation;
 
+  /// Re-reads the newest messages while the chat is open, so replies appear
+  /// and my ticks move from one to two to blue without leaving the screen.
+  Timer? _refresher;
+
   @override
   void initState() {
     super.initState();
     unawaited(_load());
+    _refresher = Timer.periodic(widget.refreshEvery, (_) => _refreshLatest());
   }
 
   @override
   void dispose() {
+    _refresher?.cancel();
     _composer.dispose();
     super.dispose();
+  }
+
+  /// Opening the chat is reading it. Failure is silent: the only effect is
+  /// that the sender's ticks stay grey a little longer.
+  void _markRead() =>
+      unawaited(MessagingScope.of(context).markRead(_conversation.id));
+
+  bool _refreshing = false;
+
+  Future<void> _refreshLatest() async {
+    if (_refreshing || _loading || _sending || !mounted) return;
+    _refreshing = true;
+    try {
+      final page = await MessagingScope.of(context).messages(_conversation.id);
+      if (!mounted) return;
+      page.fold(
+        onSuccess: (value) {
+          final known = {for (final m in _messages) m.id};
+          final arrived = value.items.any(
+            (m) => !known.contains(m.id) && m.senderId != widget.myUserId,
+          );
+          final fresh = {for (final m in value.items) m.id};
+          // The newest page replaces its own slice (which carries the latest
+          // ticks); anything older that was already loaded stays below it.
+          final oldestFresh = value.items.isEmpty
+              ? null
+              : value.items.last.createdAt;
+          setState(() {
+            final older = [
+              for (final m in _messages)
+                if (!fresh.contains(m.id) &&
+                    (oldestFresh == null || m.createdAt.isBefore(oldestFresh)))
+                  m,
+            ];
+            _messages
+              ..clear()
+              ..addAll(value.items)
+              ..addAll(older);
+          });
+          if (arrived) _markRead();
+        },
+        onFailure: (_) {},
+      );
+    } finally {
+      _refreshing = false;
+    }
   }
 
   Future<void> _load() async {
@@ -93,6 +150,7 @@ class _ConversationPageState extends State<ConversationPage> {
             ..addAll(value.items);
           _olderCursor = value.nextCursor;
           _loadError = null;
+          _markRead();
         },
         onFailure: (failure) =>
             _loadError = messagingFailureText(context, failure),
@@ -382,34 +440,34 @@ class _ConversationPageState extends State<ConversationPage> {
                       message.body,
                       style: TextStyle(color: mine ? Colors.white : studafyInk),
                     ),
-                    for (final file in message.attachments)
+                    if (message.attachments.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              file.isReady
-                                  ? Icons.description_outlined
-                                  : Icons.hourglass_empty_rounded,
-                              size: 16,
-                              color: mine ? Colors.white70 : studafyMuted,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                file.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: mine ? Colors.white70 : studafyMuted,
-                                ),
-                              ),
-                            ),
-                          ],
+                        padding: const EdgeInsets.only(top: 4),
+                        child: StoredAttachmentList(
+                          attachments: message.attachments,
+                          dense: true,
+                          color: mine ? Colors.white70 : studafyMuted,
                         ),
                       ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          MaterialLocalizations.of(context).formatTimeOfDay(
+                            TimeOfDay.fromDateTime(message.createdAt.toLocal()),
+                          ),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: mine ? Colors.white70 : studafyMuted,
+                          ),
+                        ),
+                        if (mine && message.status != null) ...[
+                          const SizedBox(width: 4),
+                          MessageTicks(status: message.status!),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -484,4 +542,41 @@ class _ConversationPageState extends State<ConversationPage> {
       ),
     ),
   );
+}
+
+/// WhatsApp's ticks on one of my messages: one grey when sent, two grey when
+/// it has reached everyone, two blue once everyone has read it.
+class MessageTicks extends StatelessWidget {
+  const MessageTicks({super.key, required this.status});
+
+  final MessageStatus status;
+
+  /// Readable on the navy bubble, and close to the blue people know.
+  static const readColor = Color(0xFF53BDEB);
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    final (icon, color, label) = switch (status) {
+      MessageStatus.sent => (
+        Icons.done_rounded,
+        Colors.white70,
+        ar ? 'أُرسلت' : 'Sent',
+      ),
+      MessageStatus.delivered => (
+        Icons.done_all_rounded,
+        Colors.white70,
+        ar ? 'وصلت' : 'Delivered',
+      ),
+      MessageStatus.read => (
+        Icons.done_all_rounded,
+        readColor,
+        ar ? 'قُرئت' : 'Read',
+      ),
+    };
+    return Semantics(
+      label: label,
+      child: Icon(icon, size: 16, color: color),
+    );
+  }
 }

@@ -38,6 +38,7 @@ import * as Billing from "./billing";
 import * as Onboarding from "./onboarding";
 import * as StudyAssistant from "./studyAssistant";
 import * as FamilyInsights from "./familyInsights";
+import * as StudyPlans from "./studyPlans";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -1595,6 +1596,110 @@ export const V1_ROUTE_CATALOGUE = [
     "V1FamilyInsightsResponse",
     undefined,
     FamilyInsights.V1FamilyInsightsQuery,
+  ),
+  // Every attempt at a piece of work, for the student, their guardian and
+  // the class's staff. Appended, never inserted.
+  academicGet(
+    "listSubmissionHistory",
+    "/v1/assignments/{assignmentId}/history",
+    "submission.history",
+    Academic.V1SubmissionHistory,
+    "V1SubmissionHistory",
+    assignmentParams(),
+    Academic.V1PageQuery,
+  ),
+  // Meetings someone was invited to. Until this, a meeting could only be
+  // fetched by id, so nobody but its creator could find one. Appended.
+  academicGet(
+    "listMeetings",
+    "/v1/meetings",
+    "meeting.list",
+    Meetings.V1MeetingList,
+    "V1MeetingList",
+    undefined,
+    Academic.V1PageQuery,
+  ),
+  // Message receipts - delivered and read ticks. Appended.
+  academicPost(
+    "markConversationRead",
+    "/v1/conversations/{conversationId}/read",
+    "conversation.mark_read",
+    Communications.V1MarkConversationReadRequest,
+    "V1MarkConversationReadRequest",
+    Communications.V1MarkConversationReadResponse,
+    "V1MarkConversationReadResponse",
+    200,
+    conversationParams(),
+  ),
+  academicPost(
+    "acknowledgeMessageDelivery",
+    "/v1/me/message-deliveries",
+    "message.acknowledge_delivery",
+    Communications.V1AcknowledgeDeliveryRequest,
+    "V1AcknowledgeDeliveryRequest",
+    Communications.V1AcknowledgeDeliveryResponse,
+    "V1AcknowledgeDeliveryResponse",
+    200,
+  ),
+  // Studafy Plus / Max and the student's Notebook (2026-09-27). Appended.
+  academicGet(
+    "getStudyPlan",
+    "/v1/me/study-plan",
+    "study_plan.read",
+    StudyPlans.V1StudyPlanSummary,
+    "V1StudyPlanSummary",
+  ),
+  academicGet(
+    "listNotebookEntries",
+    "/v1/classrooms/{classroomId}/notebook",
+    "notebook.read",
+    StudyPlans.V1NotebookPage,
+    "V1NotebookPage",
+    params("classroomId"),
+  ),
+  academicPost(
+    "createNotebookEntry",
+    "/v1/classrooms/{classroomId}/notebook",
+    "notebook.write",
+    StudyPlans.V1CreateNotebookEntryRequest,
+    "V1CreateNotebookEntryRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    201,
+    params("classroomId"),
+  ),
+  academicPost(
+    "createWhiteboardNote",
+    "/v1/classrooms/{classroomId}/notebook/whiteboard",
+    "notebook.write",
+    StudyPlans.V1WhiteboardNoteRequest,
+    "V1WhiteboardNoteRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    201,
+    params("classroomId"),
+  ),
+  academicPost(
+    "deleteNotebookEntry",
+    "/v1/notebook-entries/{entryId}/delete",
+    "notebook_entry.delete",
+    StudyPlans.V1DeleteNotebookEntryRequest,
+    "V1DeleteNotebookEntryRequest",
+    StudyPlans.V1DeleteNotebookEntryResponse,
+    "V1DeleteNotebookEntryResponse",
+    200,
+    params("entryId"),
+  ),
+  academicPost(
+    "generateStudySet",
+    "/v1/resources/{resourceId}/study-set",
+    "study_set.generate",
+    StudyPlans.V1GenerateStudySetRequest,
+    "V1GenerateStudySetRequest",
+    StudyPlans.V1StudySet,
+    "V1StudySet",
+    201,
+    params("resourceId"),
   ),
 ] as const satisfies readonly V1RouteContract[];
 

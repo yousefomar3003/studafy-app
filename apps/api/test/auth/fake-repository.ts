@@ -85,6 +85,25 @@ export class FakeAuthRepository {
     return Promise.resolve(this.contexts.get(subject) ?? null);
   }
 
+  /** Subjects provisionIdentity was asked to create, in order. */
+  provisioned: string[] = [];
+
+  /**
+   * What the SQL does through the signup trigger: a fresh, active profile
+   * with no memberships. Leaves an existing row untouched, as `on conflict do
+   * nothing` does.
+   */
+  provisionIdentity(token: { subject: string }): Promise<void> {
+    this.provisioned.push(token.subject);
+    if (!this.contexts.has(token.subject)) {
+      this.contexts.set(
+        token.subject,
+        baseContext({ userId: token.subject, memberships: [] }),
+      );
+    }
+    return Promise.resolve();
+  }
+
   listDevices(subject: string) {
     return Promise.resolve(
       [...this.devices.values()]

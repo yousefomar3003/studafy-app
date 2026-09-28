@@ -17,8 +17,11 @@ Future<PickedAttachment?> pickPlatformAttachment(
 ) async {
   switch (kind) {
     case AttachmentKind.photo:
+    case AttachmentKind.camera:
       final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
+        source: kind == AttachmentKind.camera
+            ? ImageSource.camera
+            : ImageSource.gallery,
         // Re-encoding at pick time drops most camera metadata before the
         // bytes ever leave the device. The server strips it again; this just
         // means the original was never sent.

@@ -104,3 +104,34 @@ export function createAcademicRoutes(
     idempotencyDependencies,
   );
 }
+
+/// Submission history: every attempt at one assignment.
+///
+/// Its own group because it sits at the very end of the contract catalogue,
+/// and mount order is asserted to equal catalogue order - it must be mounted
+/// after everything the catalogue lists before it.
+const SUBMISSION_HISTORY_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "listSubmissionHistory"
+);
+
+export function createSubmissionHistoryRoutes(
+  deps: AcademicDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: SUBMISSION_HISTORY_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: (c) =>
+        ((c.get("validatedParams") ?? {}) as Record<string, string>)[
+          "assignmentId"
+        ] ?? null,
+      sliceFor: () => "assignments" as AcademicSlice,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}

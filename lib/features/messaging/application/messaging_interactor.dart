@@ -32,6 +32,15 @@ class MessagingInteractor {
     String? cursor,
   }) => runCatching(() => messaging.messages(conversationId, cursor: cursor));
 
+  /// Tells the server I have opened [conversationId], so the sender's ticks
+  /// turn blue. A failure changes nothing on screen and is not reported.
+  Future<Result<void>> markRead(String conversationId) =>
+      runCatching(() => messaging.markRead(conversationId));
+
+  /// Tells the server my app has my conversations, so senders see two ticks.
+  Future<Result<void>> acknowledgeDelivery() =>
+      runCatching(messaging.acknowledgeDelivery);
+
   /// A fresh id per compose; pass the same id again to retry that message.
   String newClientMessageId() {
     final bytes = List<int>.generate(16, (_) => _random.nextInt(256));

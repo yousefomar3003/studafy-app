@@ -51,11 +51,12 @@ void main() {
     expect(fake.assignments.single.classroomId, 'c1');
   });
 
-  testWidgets('graded work is filed as an assessment a grade can attach to', (
+  testWidgets('graded work is an assignment the class hands in, with a mark', (
     tester,
   ) async {
-    // grade_results.assessment_id is NOT NULL, so graded work has to be an
-    // assessment or it could never be marked.
+    // It used to become an assessment instead, which students could not see
+    // among their assignments or hand in. It is an assignment now; the mark
+    // out of 25 is recorded on a linked assessment by the repository.
     final fake = CreateWorkFake();
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
@@ -67,16 +68,21 @@ void main() {
     await tester.tap(find.text('Create assignment'));
     await tester.pumpAndSettle();
 
-    expect(fake.assessments, hasLength(1));
-    expect(fake.assignments, isEmpty);
-    final created = fake.assessments.single;
+    expect(fake.assessments, isEmpty);
+    final created = fake.assignments.single;
     expect(created.title, 'Lab report');
     expect(created.maximumScore, 25);
-    // Grouped with coursework rather than among exams, and marked by the
-    // teacher rather than answered in the app.
-    expect(created.category, 'assignment');
-    expect(created.delivery, 'paper');
-    expect(created.scheduledAt, isNotNull);
+    expect(created.publish, isTrue);
+  });
+
+  testWidgets('ungraded work carries no mark', (tester) async {
+    final fake = CreateWorkFake();
+    await tester.pumpWidget(_page(fake));
+    await tester.pumpAndSettle();
+    await _fillTitleAndDue(tester, 'Reading');
+    await tester.tap(find.text('Create assignment'));
+    await tester.pumpAndSettle();
+    expect(fake.assignments.single.maximumScore, isNull);
   });
 
   testWidgets('the maximum score is only asked for when graded', (

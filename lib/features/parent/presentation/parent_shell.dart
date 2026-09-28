@@ -36,6 +36,20 @@ class _ParentShellState extends State<ParentShell> {
   int get _updatesIndex => widget.insights == null ? 2 : 3;
   int get _messagesIndex => _updatesIndex + 1;
 
+  void _selectChild(GuardianChild child) =>
+      ActiveContextController.instance.selectStudent(
+        StudentSummary(
+          id: child.studentId,
+          studafyId: '',
+          displayName: child.studentName,
+          verified: child.isVerified,
+          // A guardian holds no membership, so this is the only school the
+          // app ever learns for them. Messaging needs it to know whose
+          // teachers they may write to.
+          schoolId: child.schoolId,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) => _remote(context);
 
@@ -50,30 +64,27 @@ class _ParentShellState extends State<ParentShell> {
       children: [
         FamilyHomePage(
           actions: const [AccountButton()],
-          onOpenChild: (child) =>
-              ActiveContextController.instance.selectStudent(
-                StudentSummary(
-                  id: child.studentId,
-                  studafyId: '',
-                  displayName: child.studentName,
-                  verified: child.isVerified,
-                  // A guardian holds no membership, so this is the only
-                  // school the app ever learns for them. Messaging needs it
-                  // to know whose teachers they may write to.
-                  schoolId: child.schoolId,
-                ),
-              ),
+          // Meetings with the teacher, on Google Meet.
+          sections: const [UpcomingMeetingsSection()],
+          onOpenChild: _selectChild,
         ),
         AcademicOverviewPage(
           key: ValueKey(ActiveContextController.instance.selectedStudent?.id),
-          actions: const [AccountButton()],
+          // Which child this is about, and a way to switch to another.
+          actions: [
+            LinkedChildSwitcher(onSelect: _selectChild),
+            const AccountButton(),
+          ],
           repository: widget.academic,
           studentId: ActiveContextController.instance.selectedStudent?.id,
           initialFeed: AcademicFeed.assignments,
           // Work comes first now: a guardian of a young child is not only
           // reading the record, they are the one handing the work in.
+          // What the child sees, bar wellbeing: those notes can record
+          // concerns about the home, and are not shared with guardians.
           availableFeeds: const [
             AcademicFeed.assignments,
+            AcademicFeed.assessments,
             AcademicFeed.content,
             AcademicFeed.grades,
             AcademicFeed.attendance,
@@ -92,6 +103,8 @@ class _ParentShellState extends State<ParentShell> {
                   assignmentId: record.id,
                   assignmentTitle: record.title,
                   canSubmit: record.state == 'published',
+                  instructions: record.detail,
+                  material: record.attachments,
                   schoolId: child.schoolId,
                   studentId: child.id,
                 ),
@@ -105,6 +118,7 @@ class _ParentShellState extends State<ParentShell> {
         if (widget.insights != null)
           _InsightsTab(
             insights: widget.insights!,
+            onSelectChild: _selectChild,
             // Keyed so switching child reloads rather than showing the
             // previous child's record under the new name.
             studentId: ActiveContextController.instance.selectedStudent?.id,
@@ -113,7 +127,10 @@ class _ParentShellState extends State<ParentShell> {
         // every page alive, so a page that only loads in initState shows
         // whatever was true at launch for the rest of the session.
         NotificationsPage(visible: index == _updatesIndex),
-        ConversationsPage(visible: index == _messagesIndex),
+        ConversationsPage(
+          visible: index == _messagesIndex,
+          asRole: MessagingRole.guardian,
+        ),
       ],
     ),
     bottomNavigationBar: StudafyNavigationBar(
@@ -157,10 +174,15 @@ class _ParentShellState extends State<ParentShell> {
 /// With no child selected there is nothing to report on, which is a different
 /// state from "you have not paid" and says so.
 class _InsightsTab extends StatelessWidget {
-  const _InsightsTab({required this.insights, required this.studentId});
+  const _InsightsTab({
+    required this.insights,
+    required this.studentId,
+    required this.onSelectChild,
+  });
 
   final FamilyInsightsInteractor insights;
   final String? studentId;
+  final ValueChanged<GuardianChild> onSelectChild;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +211,10 @@ class _InsightsTab extends StatelessWidget {
       key: ValueKey(id),
       insights: insights,
       studentId: id,
-      actions: const [AccountButton()],
+      actions: [
+        LinkedChildSwitcher(onSelect: onSelectChild),
+        const AccountButton(),
+      ],
     );
   }
 }

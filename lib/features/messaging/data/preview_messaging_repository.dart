@@ -157,6 +157,12 @@ class PreviewMessagingRepository
   Future<List<BlockedPerson>> blocks(String schoolId) async => List.of(_blocks);
 
   @override
+  Future<void> markRead(String conversationId) async {}
+
+  @override
+  Future<void> acknowledgeDelivery() async {}
+
+  @override
   Future<void> createAnnouncement(AnnouncementDraft draft) async =>
       throw StateError('Announcements need the school service.');
 

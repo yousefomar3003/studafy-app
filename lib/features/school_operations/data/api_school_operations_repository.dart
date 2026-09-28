@@ -251,24 +251,47 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     required DateTime startsAt,
     required DateTime endsAt,
     required String audience,
+    Uri? meetUrl,
   }) async {
     if (!endsAt.isAfter(startsAt)) {
       throw const FormatException('The meeting end must be after its start.');
     }
     final fingerprint =
-        '$classroomId|$title|${startsAt.toUtc()}|${endsAt.toUtc()}|$audience';
+        '$classroomId|$title|${startsAt.toUtc()}|${endsAt.toUtc()}|$audience|'
+        '${meetUrl ?? ''}';
     final value = await _client.requestMeeting(
       V1RequestMeetingRequestDto(
         title: title.trim(),
         startsAt: startsAt.toUtc().toIso8601String(),
         endsAt: endsAt.toUtc().toIso8601String(),
         audience: audience,
+        meetUrl: meetUrl?.toString(),
       ),
       classroomId: classroomId,
       idempotencyKey: _key('meeting', fingerprint),
     );
     _done('meeting', fingerprint);
     return _meeting(value);
+  }
+
+  @override
+  Future<List<ManagedMeeting>> listMeetings(String classroomId) async {
+    final page = await _client.listMeetings(classroomId: classroomId);
+    return [
+      for (final v in page.items)
+        ManagedMeeting(
+          id: v.id,
+          classroomId: v.classroomId,
+          title: v.title,
+          startsAt: DateTime.parse(v.startsAt).toLocal(),
+          endsAt: DateTime.parse(v.endsAt).toLocal(),
+          audience: v.audience,
+          state: v.state,
+          version: v.version,
+          recipientCount: v.recipientCount,
+          meetUrl: v.meetUrl == null ? null : Uri.tryParse(v.meetUrl!),
+        ),
+    ];
   }
 
   @override

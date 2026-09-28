@@ -269,6 +269,13 @@ export function flowFor(
   if (path === "/v1/students/locate" || path.startsWith("/v1/guardian-links")) {
     return { flow: "linking", weight: 2 };
   }
+  // JOIN-053: redemption accepts an eight-character class code, which is a
+  // guessable secret in a way the 43-character link token is not. Every
+  // redemption is charged against the code-probing budget rather than the
+  // general one, so trying codes is bounded whichever credential is sent.
+  if (method === "post" && path === "/v1/class-join-links/redeem") {
+    return { flow: "linking", weight: 2 };
+  }
   // Self-serve sign-up creates a tenant, and any signed-in account may call
   // it. Keyed by ip rather than account on purpose: an account-keyed budget
   // is defeated by making more accounts, which is free. Placed above the
@@ -341,6 +348,7 @@ export function flowFor(
 export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/me",
   "/v1/me/student-family",
+  "/v1/me/study-plan",
   "/v1/auth/context",
   "/v1/account/deletion-impact",
   "/v1/account/export-status",

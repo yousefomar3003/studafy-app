@@ -72,6 +72,14 @@ class AttachmentPolicy {
     allowedMediaTypes: {..._document, ..._image},
   );
 
+  /// Photos only: the model reads images, and a PDF of a board is not a
+  /// photo of one.
+  static const notebookPhoto = AttachmentPolicy(
+    purpose: FilePurpose.notebookPhoto,
+    maximumSizeBytes: 10 * 1024 * 1024,
+    allowedMediaTypes: _image,
+  );
+
   static AttachmentPolicy of(FilePurpose purpose) => switch (purpose) {
     FilePurpose.profileImage => profileImage,
     FilePurpose.lessonResource => lessonResource,
@@ -80,6 +88,7 @@ class AttachmentPolicy {
     FilePurpose.paperScan => paperScan,
     FilePurpose.messageAttachment => messageAttachment,
     FilePurpose.announcementAttachment => announcementAttachment,
+    FilePurpose.notebookPhoto => notebookPhoto,
   };
 
   /// The extensions to hand a file picker, derived from the media types so

@@ -176,6 +176,42 @@ const DEFINITIONS: Record<
     title: "Contact not allowed",
     detail: "You cannot message this person in this school.",
   },
+  // Distinct from FORBIDDEN so the app can tell "prove you are a person" from
+  // "you may not", and show the check only when this server wants one. The
+  // app used to decide from a build flag, and a flag that disagreed with the
+  // server opened a challenge page that did not exist.
+  CAPTCHA_REQUIRED: {
+    title: "Security check required",
+    detail: "Complete the security check, then try again.",
+  },
+  PLAN_REQUIRED: {
+    title: "Plan required",
+    detail: "This needs Studafy Plus or Studafy Max.",
+  },
+  AI_ALLOWANCE_USED: {
+    title: "Monthly allowance used",
+    detail: "This month's AI allowance is used. It renews on the 1st.",
+  },
+  AI_DAILY_LIMIT: {
+    title: "Daily limit reached",
+    detail: "You have asked all of today's questions. Try again tomorrow.",
+  },
+  AI_FEATURE_DISABLED: {
+    title: "Not available",
+    detail: "This feature is not available yet.",
+  },
+  PHOTO_NOT_READY: {
+    title: "Photo still being checked",
+    detail: "The photo is still being checked. Try again in a moment.",
+  },
+  PHOTO_UNREADABLE: {
+    title: "Nothing to read",
+    detail: "No writing could be read in that photo. Try a clearer one.",
+  },
+  LESSON_HAS_NO_TEXT: {
+    title: "Nothing to study from",
+    detail: "This lesson has no text to make a quiz or flashcards from.",
+  },
   GUARDIAN_LINK_REQUIRED: {
     title: "Guardian link required",
     detail:

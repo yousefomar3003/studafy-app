@@ -32,13 +32,17 @@ class _Classes implements ClassroomRepository {
   @override
   Future<void> createClass(NewClassDraft draft) async {}
   @override
-  Future<String> inviteLinkFor(ClassroomId id) async => '';
+  Future<ClassInvite> inviteLinkFor(ClassroomId id) async =>
+      const ClassInvite(link: '');
   @override
   Future<ClassJoinLinkInfo?> activeJoinLink(String classroomId) async => null;
   @override
   Future<void> revokeJoinLink(String linkId) async {}
   @override
   Future<JoinedClass> joinWithLink(String token) async =>
+      throw UnimplementedError();
+  @override
+  Future<JoinedClass> joinWithCode(String code) async =>
       throw UnimplementedError();
 }
 

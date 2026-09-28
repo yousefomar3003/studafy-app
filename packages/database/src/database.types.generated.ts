@@ -1021,6 +1021,7 @@ export type Database = {
       class_join_links: {
         Row: {
           classroom_id: string;
+          code_hash: string | null;
           created_at: string;
           created_by: string;
           expires_at: string;
@@ -1037,6 +1038,7 @@ export type Database = {
         };
         Insert: {
           classroom_id: string;
+          code_hash?: string | null;
           created_at?: string;
           created_by: string;
           expires_at: string;
@@ -1053,6 +1055,7 @@ export type Database = {
         };
         Update: {
           classroom_id?: string;
+          code_hash?: string | null;
           created_at?: string;
           created_by?: string;
           expires_at?: string;

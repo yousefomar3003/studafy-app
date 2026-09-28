@@ -296,4 +296,46 @@ suite("AuthContextRepository against Postgres", () => {
       await attempt(() => sql`delete from public.auth_security_events`),
     ).toMatch(/Append-only/);
   });
+
+  // First sign-in in the development split. The signup trigger is what builds
+  // the profile, so this is proved against the real database rather than the
+  // fake: a wrong column or a skipped trigger would pass there and fail here.
+  test("provisionIdentity creates a usable, membership-less profile", async () => {
+    // Fresh per run. Nothing below writes an audit row, so the auth.users row
+    // stays deletable and the cascade takes the profile with it.
+    const subject = crypto.randomUUID();
+    const token: VerifiedToken = {
+      subject,
+      sessionId: SESSION,
+      issuedAt: Math.floor(Date.now() / 1000),
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      assuranceLevel: "aal1",
+      authMethods: [],
+      claims: {
+        email: "provisioned@synthetic.studafy.test",
+        user_metadata: { full_name: "First Sign In" },
+      },
+    };
+    try {
+      expect(await repository.load(subject)).toBeNull();
+
+      await repository.provisionIdentity(token);
+      const context = await repository.load(subject);
+      expect(context?.userId).toBe(subject);
+      expect(context?.displayName).toBe("First Sign In");
+      expect(context?.profileStatus).toBe("active");
+      // A profile is not school access.
+      expect(context?.memberships).toEqual([]);
+      expect(evaluateSession(token, context, 0).allowed).toBe(true);
+
+      // A second sign-in leaves the existing row alone.
+      await repository.provisionIdentity(token);
+      const count = await sql<{ n: number }[]>`
+        select count(*)::int as n from public.profiles where id = ${subject}::uuid
+      `;
+      expect(count[0]?.n).toBe(1);
+    } finally {
+      await sql`delete from auth.users where id = ${subject}::uuid`;
+    }
+  });
 });

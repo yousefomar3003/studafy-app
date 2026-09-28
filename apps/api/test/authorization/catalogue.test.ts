@@ -7,6 +7,7 @@ import { createAuthRoutes } from "../../src/auth/routes";
 import {
   createAcademicAppendedRoutes,
   createAcademicRoutes,
+  createSubmissionHistoryRoutes,
 } from "../../src/academic/routes";
 import {
   createSchoolAdminRoutes,
@@ -21,12 +22,17 @@ import {
 import { createClassJoinRoutes } from "../../src/class-join/routes";
 import { createOnboardingRoutes } from "../../src/onboarding/routes";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
+import { createStudyRoutes } from "../../src/study/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
 import {
   createCommunicationsRoutes,
   createContactsRoutes,
+  createMessageReceiptRoutes,
 } from "../../src/communications/routes";
-import { createMeetingsRoutes } from "../../src/meetings/routes";
+import {
+  createMeetingListRoutes,
+  createMeetingsRoutes,
+} from "../../src/meetings/routes";
 import {
   createNotificationsRoutes,
   createPushDeviceRoutes,
@@ -387,7 +393,12 @@ function routeTable() {
     createStudyAssistantRoutes(
       {
         assistant: { ask: async () => ({ answer: "stub" }) },
-        quota: { consume: async () => 1 },
+        repository: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
       },
       authorization,
     ),
@@ -397,6 +408,66 @@ function routeTable() {
     createFamilyInsightsRoutes(
       { repository: { read: async () => null } },
       authorization,
+    ),
+  );
+  combined.route(
+    "/",
+    createSubmissionHistoryRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createMeetingListRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createMessageReceiptRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createStudyRoutes(
+      {
+        repository: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        assistant: null,
+        lessonToolsEnabled: false,
+        storage: null,
+      },
+      authorization,
+      idempotency,
     ),
   );
   const routes = createAuthRoutes(
@@ -469,13 +540,22 @@ describe("permission catalogue", () => {
     const contentPerSectionMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609210002_content_per_section.sql`,
     ).text();
+    const notebookMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609270010_notebook_and_study_sets.sql`,
+    ).text();
+    const receiptsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609270001_message_receipts.sql`,
+    ).text();
+    const submissionHistoryMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609260002_submission_history.sql`,
+    ).text();
     const cataloguedResourceActions = PERMISSIONS.filter((permission) =>
       PERMISSION_CATALOGUE[permission].scope === "resource"
     ).sort();
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}\n${submissionHistoryMigration}\n${receiptsMigration}\n${notebookMigration}`,
       ).toContain(`'${permission}'`);
     }
   });

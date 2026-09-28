@@ -68,7 +68,11 @@ describe("problem details contract", () => {
 
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
+      "AI_ALLOWANCE_USED",
+      "AI_DAILY_LIMIT",
+      "AI_FEATURE_DISABLED",
       "BENEFICIARY_LINK_INVALID",
+      "CAPTCHA_REQUIRED",
       "CONFLICT",
       "CONTACT_NOT_ALLOWED",
       "CURSOR_INVALID",
@@ -87,6 +91,7 @@ describe("problem details contract", () => {
       "INVALID_HEADER",
       "INVALID_REQUEST",
       "INVALID_STATE",
+      "LESSON_HAS_NO_TEXT",
       "MESSAGING_DISABLED",
       "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
@@ -94,6 +99,9 @@ describe("problem details contract", () => {
       "NOT_IMPLEMENTED",
       "PARENTAL_GATE_REQUIRED",
       "PAYLOAD_TOO_LARGE",
+      "PHOTO_NOT_READY",
+      "PHOTO_UNREADABLE",
+      "PLAN_REQUIRED",
       "PRODUCT_NOT_FOUND",
       "RATE_LIMITED",
       "REAUTH_REQUIRED",

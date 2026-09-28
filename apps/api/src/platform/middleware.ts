@@ -310,6 +310,14 @@ export function requestTelemetry(
           ? hmacSubject(identity.hmacKey, "log_ip", address)
           : null,
         ua_family: userAgentFamily(c.req.header("user-agent")),
+        // A request no route matched is logged under the wildcard it fell
+        // through to, which says nothing about what was asked for. The path
+        // carries only ids, never a query string, so it is safe to record
+        // and it is the one thing that makes a client/route mismatch
+        // diagnosable.
+        ...(c.req.routePath.endsWith("*") && status === 404
+          ? { unmatched_path: c.req.path }
+          : {}),
       });
     }
   };

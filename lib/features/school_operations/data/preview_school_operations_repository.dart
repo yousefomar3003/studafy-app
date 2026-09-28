@@ -132,6 +132,7 @@ class PreviewSchoolOperationsRepository implements SchoolOperationsRepository {
     required DateTime startsAt,
     required DateTime endsAt,
     required String audience,
+    Uri? meetUrl,
   }) async {
     final value = ManagedMeeting(
       id: _id('meeting'),
@@ -140,13 +141,20 @@ class PreviewSchoolOperationsRepository implements SchoolOperationsRepository {
       startsAt: startsAt,
       endsAt: endsAt,
       audience: audience,
-      state: 'requested',
+      state: meetUrl == null ? 'requested' : 'scheduled',
       version: 1,
       recipientCount: 12,
+      meetUrl: meetUrl,
     );
     _meetings[value.id] = value;
     return value;
   }
+
+  @override
+  Future<List<ManagedMeeting>> listMeetings(String classroomId) async => [
+    for (final meeting in _meetings.values)
+      if (meeting.classroomId == classroomId) meeting,
+  ];
 
   @override
   Future<ManagedMeeting> getMeeting(String meetingId) async =>

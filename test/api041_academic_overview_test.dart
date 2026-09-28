@@ -117,6 +117,11 @@ class _FakeAcademicRepository implements AcademicRepository {
   Future<List<SubmittedWork>> submissionsFor(String assignmentId) async =>
       const [];
   @override
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  }) async => const [];
+  @override
   Future<void> replaceSchedule(
     String classroomId,
     int expectedVersion,

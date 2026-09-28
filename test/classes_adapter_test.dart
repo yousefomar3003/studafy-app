@@ -120,8 +120,10 @@ void main() {
       final classes = await repository.listClasses();
       final first = classes.first;
 
-      final link = await repository.inviteLinkFor(first.id);
-      expect(link, isNotEmpty);
+      final invite = await repository.inviteLinkFor(first.id);
+      expect(invite.link, isNotEmpty);
+      // No server to mint or key a code, so the preview offers the link alone.
+      expect(invite.code, isNull);
     });
   });
 }

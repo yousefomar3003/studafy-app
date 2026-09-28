@@ -49,6 +49,10 @@ class _Uploads implements FileUploadRepository {
     published.add(fileId);
     return 'resource-$fileId';
   }
+
+  @override
+  Future<DownloadedFile> download(String fileId) async =>
+      throw StateError('not used here');
 }
 
 PickedAttachment _picked({

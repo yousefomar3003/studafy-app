@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/failures.dart';
 import 'v1_client.generated.dart';
@@ -115,7 +118,7 @@ class V1HttpTransport implements V1JsonTransport {
     path,
     body,
     idempotencyKey: requiresIdempotency
-        ? idempotencyKey ?? _newIdempotencyKey()
+        ? idempotencyKey ?? newIdempotencyKey()
         : idempotencyKey,
   );
 
@@ -210,6 +213,48 @@ class V1HttpTransport implements V1JsonTransport {
     return _RawResponse(response.statusCode, decoded);
   }
 
+  /// Fetches file bytes from a delivery link the API issued (FILE-051).
+  ///
+  /// The link is single-use and bound to the signed-in person, so it has to
+  /// carry the session - which is why this lives on the transport rather than
+  /// being handed to a browser. The bearer token goes only to the API's own
+  /// origin: a link that points anywhere else is refused before any request,
+  /// so a tampered or misconfigured URL cannot collect the token.
+  Future<Uint8List> getBytes(Uri url) async {
+    if (url.scheme != _baseUri.scheme ||
+        url.host != _baseUri.host ||
+        url.port != _baseUri.port) {
+      throw Failure.forbidden;
+    }
+    try {
+      final request = await _client.getUrl(url).timeout(_timeout);
+      request.followRedirects = false;
+      final token = await _accessToken();
+      if (token != null) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      }
+      if (deviceId != null) {
+        request.headers.set('X-Studafy-Device', deviceId!);
+      }
+      final response = await request.close().timeout(_timeout);
+      final builder = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        builder.add(chunk);
+      }
+      // No refresh-and-retry: the grant was spent by this request whatever
+      // its outcome, so a second attempt needs a new link, not a new token.
+      if (response.statusCode == 401) throw Failure.unauthorized;
+      if (response.statusCode != 200) throw Failure.notFound;
+      return builder.takeBytes();
+    } on SocketException {
+      throw Failure.network;
+    } on TimeoutException {
+      throw Failure.network;
+    } on HttpException {
+      throw Failure.network;
+    }
+  }
+
   V1ApiException _exceptionFrom(_RawResponse response) {
     if (response.body['code'] is String) {
       return V1ApiException(
@@ -228,14 +273,20 @@ class V1HttpTransport implements V1JsonTransport {
 
   void close() => _client.close(force: true);
 
-  static String _newIdempotencyKey() {
+  /// A fresh key the server accepts: `^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$`.
+  ///
+  /// The first character must be a letter or digit. Drawing it from the full
+  /// alphabet, as this did, started one key in 32 with `-` or `_`, and the
+  /// server refused that request outright - an intermittent failure of any
+  /// command that let the transport pick its key.
+  @visibleForTesting
+  static String newIdempotencyKey() {
     final random = Random.secure();
-    const alphabet =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    return List.generate(
-      32,
-      (_) => alphabet[random.nextInt(alphabet.length)],
-    ).join();
+    const first =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const rest = '$first-_';
+    return first[random.nextInt(first.length)] +
+        List.generate(31, (_) => rest[random.nextInt(rest.length)]).join();
   }
 }
 

@@ -71,8 +71,26 @@ export const apiEnvSchema = z.object({
   AI_API_KEY: z.string().min(1).optional(),
   AI_BASE_URL: z.url().optional(),
   AI_MODEL: z.string().min(1).default("Qwen/Qwen3.5-9B"),
-  /** Questions one student may ask per day. */
-  AI_DAILY_QUESTION_LIMIT: z.coerce.number().int().min(1).max(500).default(30),
+  /**
+   * The model's prices in US dollars per million tokens, as the provider
+   * lists them. Every AI call's cost is computed from these and the
+   * provider's own token counts, and is what the Studafy Plus / Max monthly
+   * caps are enforced against - so they must match the provider's price
+   * list. Defaults are Together.ai's for Qwen/Qwen3.5-9B (2026-09-27).
+   */
+  AI_PRICE_INPUT_USD_PER_MTOK: z.coerce.number().positive().max(100).default(
+    0.17,
+  ),
+  AI_PRICE_OUTPUT_USD_PER_MTOK: z.coerce.number().positive().max(100).default(
+    0.25,
+  ),
+  /**
+   * Whiteboard-to-notes and lesson quizzes/flashcards send a student's photo
+   * or a lesson's text to the provider - the path ADR-0026 closed. Off unless
+   * set: turning it on for real students needs the provider DPA and the
+   * minors' DPIA (docs/adr/ADR-0029-study-plans-and-ai-lesson-tools.md).
+   */
+  AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
   API_ALLOWED_ORIGINS: origins,
   API_MAX_BODY_BYTES: z.coerce.number().int().min(1024).max(1024 * 1024)
     .default(64 * 1024),
@@ -80,6 +98,12 @@ export const apiEnvSchema = z.object({
     10_000,
   ),
   API_CURSOR_SIGNING_KEY: z.string().min(32).optional(),
+  // JOIN-053 short class codes. An eight-character code carries about 40
+  // bits, which an unkeyed hash would not protect: anyone who could read the
+  // table could recover every live code offline in minutes. Codes are stored
+  // as an HMAC under this key, which lives outside the database. Without it
+  // the API mints links only, and a code cannot be redeemed.
+  CLASS_JOIN_CODE_KEY: z.string().min(32).optional(),
   // OPS-060. The HMAC key is the only place account identifiers exist before
   // they enter a Redis key: every limiter/cache key carries HMAC(subject)
   // instead, so the key namespace itself is not an enumeration side channel.
@@ -123,6 +147,14 @@ export const apiEnvSchema = z.object({
   // separately, so a misconfiguration cannot leave the API trusting one
   // origin's keys to authenticate another origin's tokens.
   SUPABASE_URL: url.optional(),
+  // Where uploaded objects live, when that is not the Supabase project that
+  // issues sign-in tokens. Development signs people in against the hosted
+  // project but keeps DATABASE_URL on local Postgres, so file rows are local;
+  // their bytes must be local too, or a row and its object sit in different
+  // projects. Unset means SUPABASE_URL and its key, as in every deployed
+  // environment, where production refuses the override.
+  STORAGE_URL: url.optional(),
+  STORAGE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   AUTH_JWT_AUDIENCE: z.string().min(1).default("authenticated"),
   // Bounded clock skew. Generous enough for real device clocks, small enough
   // that it does not meaningfully extend the life of an expired token.
@@ -182,6 +214,14 @@ export const workerEnvSchema = z.object({
   DATABASE_URL: url.optional(),
   SUPABASE_URL: url.optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  // Where uploaded objects live, when that is not the Supabase project that
+  // issues sign-in tokens. Development signs people in against the hosted
+  // project but keeps DATABASE_URL on local Postgres, so file rows are local;
+  // their bytes must be local too, or a row and its object sit in different
+  // projects. Unset means SUPABASE_URL and its key, as in every deployed
+  // environment, where production refuses the override.
+  STORAGE_URL: url.optional(),
+  STORAGE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   FILE050_CLEANUP_ENABLED: disabledSwitchFlag,
   // FILE-051 scan/retention workers stay off unless explicitly enabled.
   FILE051_SCAN_ENABLED: disabledSwitchFlag,
@@ -417,7 +457,39 @@ export function redisUrlPostureProblems(
   return problems;
 }
 
+/**
+ * Production keeps a file's bytes in the same project as its row and its
+ * owner's sign-in. The storage override exists for the development split and
+ * nowhere else, so a production config that points it elsewhere is a mistake
+ * that would scatter children's files across projects.
+ */
+function refuseStorageSplit(env: {
+  SUPABASE_URL?: string | undefined;
+  STORAGE_URL?: string | undefined;
+  STORAGE_SERVICE_ROLE_KEY?: string | undefined;
+}): void {
+  if (
+    (env.STORAGE_URL && env.STORAGE_URL !== env.SUPABASE_URL) ||
+    env.STORAGE_SERVICE_ROLE_KEY
+  ) {
+    throw new ConfigError(
+      "Production stores files in the SUPABASE_URL project; unset STORAGE_URL and STORAGE_SERVICE_ROLE_KEY.",
+    );
+  }
+}
+
 export function enforceApiFailClosed(env: ApiEnv): void {
+  // One key per purpose, in every environment: a key that can also sign a
+  // cursor or a rate-limit bucket would let one leak compromise the others.
+  if (
+    env.CLASS_JOIN_CODE_KEY &&
+    (env.CLASS_JOIN_CODE_KEY === env.API_CURSOR_SIGNING_KEY ||
+      env.CLASS_JOIN_CODE_KEY === env.RATE_LIMIT_HMAC_SIGNING_KEY)
+  ) {
+    throw new ConfigError(
+      "CLASS_JOIN_CODE_KEY must differ from API_CURSOR_SIGNING_KEY and RATE_LIMIT_HMAC_SIGNING_KEY.",
+    );
+  }
   if (env.TURNSTILE_ENABLED) {
     if (
       !env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY ||
@@ -437,6 +509,7 @@ export function enforceApiFailClosed(env: ApiEnv): void {
     }
   }
   if (env.ENVIRONMENT !== "production") return;
+  refuseStorageSplit(env);
   const missing: string[] = [];
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
   if (!env.REDIS_URL) missing.push("REDIS_URL");
@@ -487,6 +560,7 @@ export function enforceApiFailClosed(env: ApiEnv): void {
 
 export function enforceWorkerFailClosed(env: WorkerEnv): void {
   if (env.ENVIRONMENT !== "production") return;
+  refuseStorageSplit(env);
   const posture = redisUrlPostureProblems(env.REDIS_URL);
   if (posture.length > 0) {
     throw new ConfigError(
@@ -538,7 +612,9 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       enabled: Boolean(env.AI_API_KEY && env.AI_BASE_URL),
       base_url: env.AI_BASE_URL ?? null,
       model: env.AI_MODEL,
-      daily_question_limit: env.AI_DAILY_QUESTION_LIMIT,
+      lesson_tools_enabled: env.AI_LESSON_TOOLS_ENABLED,
+      price_input_usd_per_mtok: env.AI_PRICE_INPUT_USD_PER_MTOK,
+      price_output_usd_per_mtok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
     },
     auth_jwt_audience: env.AUTH_JWT_AUDIENCE,
     auth_clock_skew_seconds: env.AUTH_CLOCK_SKEW_SECONDS,
@@ -546,6 +622,7 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     auth_reauth_ttl_seconds: env.AUTH_REAUTH_TTL_SECONDS,
     auth_deletion_grace_days: env.AUTH_DELETION_GRACE_DAYS,
     cursor_signing_key_configured: Boolean(env.API_CURSOR_SIGNING_KEY),
+    class_join_codes_enabled: Boolean(env.CLASS_JOIN_CODE_KEY),
     turnstile_enabled: env.TURNSTILE_ENABLED,
     rate_limit_enabled: env.RATE_LIMIT_ENABLED,
     rate_limit_hmac_key_configured: Boolean(env.RATE_LIMIT_HMAC_SIGNING_KEY),

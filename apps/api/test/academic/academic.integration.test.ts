@@ -27,7 +27,10 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresAcademicRepository } from "../../src/academic/repository";
-import { createAcademicRoutes } from "../../src/academic/routes";
+import {
+  createAcademicRoutes,
+  createSubmissionHistoryRoutes,
+} from "../../src/academic/routes";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;
@@ -38,6 +41,8 @@ const GUARDIAN = "5f410000-0000-4000-8000-0000000000a3";
 const TEACHER_B = "5f410000-0000-4000-8000-0000000000a4";
 const ADMIN = "5f410000-0000-4000-8000-0000000000a5";
 const ASSISTANT = "5f410000-0000-4000-8000-0000000000a6";
+/** A parent linked by the child's ID: a verified link and no membership. */
+const LINKED_PARENT = "5f410000-0000-4000-8000-0000000000a7";
 const SCHOOL_A = "5f410000-0000-4000-8000-0000000000b1";
 const SCHOOL_B = "5f410000-0000-4000-8000-0000000000b2";
 const TERM_A = "5f410000-0000-4000-8000-0000000000c1";
@@ -98,7 +103,8 @@ async function seed(): Promise<void> {
       (${GUARDIAN}::uuid, 'api041.g@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-041 Guardian"}'::jsonb),
       (${TEACHER_B}::uuid, 'api041.b@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-041 Teacher B"}'::jsonb),
       (${ADMIN}::uuid, 'api041.admin@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-041 Admin"}'::jsonb),
-      (${ASSISTANT}::uuid, 'api041.assistant@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-041 Assistant"}'::jsonb)
+      (${ASSISTANT}::uuid, 'api041.assistant@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-041 Assistant"}'::jsonb),
+      (${LINKED_PARENT}::uuid, 'api041.parent@synthetic.studafy.test', 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"API-041 Linked Parent"}'::jsonb)
     on conflict (id) do nothing
   `;
   await sql`
@@ -148,7 +154,8 @@ async function seed(): Promise<void> {
   `;
   await sql`
     insert into public.guardian_links (student_id, guardian_id, status, relationship, verified_by, verified_at) values
-      (${STUDENT_ROW}::uuid, ${GUARDIAN}::uuid, 'verified', 'parent', ${TEACHER_A}::uuid, now())
+      (${STUDENT_ROW}::uuid, ${GUARDIAN}::uuid, 'verified', 'parent', ${TEACHER_A}::uuid, now()),
+      (${STUDENT_ROW}::uuid, ${LINKED_PARENT}::uuid, 'verified', 'parent', ${TEACHER_A}::uuid, now())
     on conflict (student_id, guardian_id) do nothing
   `;
   await sql`
@@ -201,6 +208,7 @@ async function cleanup(): Promise<void> {
     // with ON DELETE RESTRICT, so a leftover attachment blocks the whole
     // fixture teardown.
     await tx`delete from public.file_bindings where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
+    await tx`delete from public.upload_sessions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.file_objects where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.resource_publications where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
     await tx`delete from public.resource_versions where school_id in (${SCHOOL_A}::uuid, ${SCHOOL_B}::uuid)`;
@@ -227,7 +235,7 @@ async function cleanup(): Promise<void> {
     await tx`alter table public.grade_result_events enable trigger db020_reject_mutation`;
     await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
   });
-  await sql`delete from auth.users where id in (${TEACHER_A}::uuid, ${STUDENT_USER}::uuid, ${GUARDIAN}::uuid, ${TEACHER_B}::uuid, ${ADMIN}::uuid, ${ASSISTANT}::uuid)`;
+  await sql`delete from auth.users where id in (${TEACHER_A}::uuid, ${STUDENT_USER}::uuid, ${GUARDIAN}::uuid, ${TEACHER_B}::uuid, ${ADMIN}::uuid, ${ASSISTANT}::uuid, ${LINKED_PARENT}::uuid)`;
 }
 
 interface RequestInput {
@@ -305,6 +313,20 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     app.route(
       "/",
       createAcademicRoutes(
+        {
+          repository: new PostgresAcademicRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
+        createAuthorizationDependencies(
+          logger,
+          new PostgresAuthorizationRepository(sql),
+        ),
+        { logger, repository: new PostgresIdempotencyRepository(sql) },
+      ),
+    );
+    app.route(
+      "/",
+      createSubmissionHistoryRoutes(
         {
           repository: new PostgresAcademicRepository(sql),
           cursorSigningKey: CURSOR_KEY,
@@ -468,8 +490,8 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       `/v1/resources?schoolId=${SCHOOL_A}&classroomId=${CLASS_A}`,
       { subject: STUDENT_USER },
     );
-    expect(learnerFeed.status).toBe(403);
-    expect(JSON.stringify(await learnerFeed.json())).not.toContain(
+    expect(learnerFeed.status).toBe(200);
+    expect(JSON.stringify(await learnerFeed.json())).toContain(
       "Cell lesson revised",
     );
 
@@ -1052,6 +1074,57 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     );
   });
 
+  test("the register loads through the real API", async () => {
+    // It answered 500 for every class: each row carried a stray id field the
+    // response schema refuses. Only a request through the real route shows it.
+    const date = lessonStartsAt.slice(0, 10);
+    const res = await request(
+      `/v1/classrooms/${CLASS_A}/attendance-roster?date=${date}&startsAt=${
+        encodeURIComponent(lessonStartsAt)
+      }`,
+      { subject: TEACHER_A },
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json() as {
+      items: { student: { id: string }; record: { state: string } | null }[];
+      session: { id: string; version: number } | null;
+    };
+    const row = body.items.find((i) => i.student.id === STUDENT_ROW);
+    expect(row?.record?.state).toBe("present");
+    expect(body.session?.version).toBe(1);
+  });
+
+  test("a register already taken can be changed", async () => {
+    const change = await request("/v1/attendance/record", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-attendance-000002",
+      body: {
+        classroomId: CLASS_A,
+        startsAt: lessonStartsAt,
+        endsAt: lessonEndsAt,
+        expectedVersion: 1,
+        entries: [
+          { studentId: STUDENT_ROW, state: "late", reason: "bus" },
+        ],
+      },
+    });
+    expect(change.status).toBe(200);
+    const date = lessonStartsAt.slice(0, 10);
+    const res = await request(
+      `/v1/classrooms/${CLASS_A}/attendance-roster?date=${date}&startsAt=${
+        encodeURIComponent(lessonStartsAt)
+      }`,
+      { subject: TEACHER_A },
+    );
+    const body = await res.json() as {
+      items: { student: { id: string }; record: { state: string } | null }[];
+    };
+    expect(
+      body.items.find((i) => i.student.id === STUDENT_ROW)?.record?.state,
+    ).toBe("late");
+  });
+
   test("wellbeing events record without outbox side effects unless shared", async () => {
     const create = await request("/v1/wellbeing", {
       method: "POST",
@@ -1427,5 +1500,436 @@ suite("API-041 academic slices over the real /v1 stack", () => {
       return (rows as unknown as Record<string, unknown>[])[0]?.["result"];
     });
     expect(allowed).toBe("true");
+  });
+
+  // -------------------------------------------------------------------------
+  // Material a teacher attaches to the work they set.
+  //
+  // Uploaded while the assignment is still being written, so the upload is
+  // scoped to the class; bound when the work is created; opened by whoever
+  // may see the work.
+  // -------------------------------------------------------------------------
+  const OTHER_CLASS = "5f410000-0000-4000-8000-0000000000d9";
+
+  /** A clean material upload started for [classroom], as the pipeline leaves it. */
+  async function seedMaterial(id: string, classroom: string): Promise<string> {
+    await seedFile(id, TEACHER_A, "assignment_material");
+    const session = crypto.randomUUID();
+    await sql`
+      insert into public.upload_sessions(
+        id, school_id, uploader_id, owner_id, purpose, expected_size_bytes,
+        allowed_media_types, nonce_hash, expires_at, classroom_id)
+      values (
+        ${session}::uuid, ${SCHOOL_A}::uuid, ${TEACHER_A}::uuid,
+        ${TEACHER_A}::uuid, 'assignment_material', 2048,
+        array['application/pdf'], ${crypto.randomUUID()},
+        now() + interval '1 hour', ${classroom}::uuid)`;
+    await sql`
+      insert into public.file_bindings(school_id, file_object_id, upload_session_id)
+      values (${SCHOOL_A}::uuid, ${id}::uuid, ${session}::uuid)`;
+    return id;
+  }
+
+  async function mayStartMaterial(subject: string, classroom: string) {
+    return await sql.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claim.sub', ${subject}, true)`;
+      const rows = await tx`
+        select (private.file050_authorize_target(jsonb_build_object(
+          'schoolId', ${SCHOOL_A}::text,
+          'purpose', 'assignment_material',
+          'classroomId', ${classroom}::text)))->>'allowed' as result`;
+      return (rows as unknown as Record<string, unknown>[])[0]?.["result"];
+    });
+  }
+
+  async function mayOpen(subject: string, file: string) {
+    return await scalar(
+      sql`select (
+            select (private.file051_authorize_download(${file}::uuid))->>'allowed'
+            from (select set_config('request.jwt.claim.sub', ${subject}, true)) as _
+          ) as result`,
+    );
+  }
+
+  const MATERIAL = "5f410000-0000-4000-8000-0000000000f7";
+  const FOREIGN_MATERIAL = "5f410000-0000-4000-8000-0000000000f8";
+  const EXAM_MATERIAL = "5f410000-0000-4000-8000-0000000000f9";
+  let materialAssignment = "";
+
+  test("only the class's teacher may start a material upload for it", async () => {
+    expect(await mayStartMaterial(TEACHER_A, CLASS_A)).toBe("true");
+    expect(await mayStartMaterial(TEACHER_B, CLASS_A)).toBe("false");
+    expect(await mayStartMaterial(STUDENT_USER, CLASS_A)).toBe("false");
+  });
+
+  test("a teacher sets work with a worksheet attached", async () => {
+    await seedMaterial(MATERIAL, CLASS_A);
+    const body = {
+      classroomId: CLASS_A,
+      title: "Worksheet homework",
+      instructions: "Use the attached sheet.",
+      dueAt: FIRST_DUE_AT,
+      closesAt: FIRST_CLOSES_AT,
+      attachmentFileIds: [MATERIAL],
+    };
+    const create = await request("/v1/assignments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-material-1",
+      body,
+    });
+    expect(create.status).toBe(201);
+    const created = await create.json() as {
+      id: string;
+      attachments: { id: string }[];
+    };
+    materialAssignment = created.id;
+    expect(created.attachments.map((a) => a.id)).toEqual([MATERIAL]);
+
+    // A replay describes the same work, files included.
+    const replay = await request("/v1/assignments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-material-1",
+      body,
+    });
+    expect(replay.status).toBe(201);
+    expect(
+      (await replay.json() as { attachments: { id: string }[] }).attachments
+        .map((a) => a.id),
+    ).toEqual([MATERIAL]);
+  });
+
+  test("students open material only once the work is published", async () => {
+    expect(await mayOpen(TEACHER_A, MATERIAL)).toBe("true");
+    expect(await mayOpen(STUDENT_USER, MATERIAL)).toBe("false");
+
+    const publish = await request(
+      `/v1/assignments/${materialAssignment}/publish`,
+      {
+        method: "POST",
+        subject: TEACHER_A,
+        key: "api041-it-material-publish", // gitleaks:allow (synthetic idempotency key)
+        body: { expectedVersion: 1 },
+      },
+    );
+    expect(publish.status).toBe(200);
+
+    expect(await mayOpen(STUDENT_USER, MATERIAL)).toBe("true");
+    // A verified guardian sees what their child sees.
+    expect(await mayOpen(GUARDIAN, MATERIAL)).toBe("true");
+    // Another school's teacher sees nothing.
+    expect(await mayOpen(TEACHER_B, MATERIAL)).toBe("false");
+  });
+
+  test("the student's read of the work lists its material", async () => {
+    const read = await request(`/v1/assignments/${materialAssignment}`, {
+      subject: STUDENT_USER,
+    });
+    expect(read.status).toBe(200);
+    const body = await read.json() as { attachments: { id: string }[] };
+    expect(body.attachments.map((a) => a.id)).toEqual([MATERIAL]);
+  });
+
+  test("material uploaded for another class is refused, and the work with it", async () => {
+    await sql`
+      insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id, status, version)
+      values (${OTHER_CLASS}::uuid, ${SCHOOL_A}::uuid, ${TERM_A}::uuid,
+              'Other class', '8', 'B', ${TEACHER_A}::uuid, 'active', 1)
+      on conflict (id) do nothing`;
+    await seedMaterial(FOREIGN_MATERIAL, OTHER_CLASS);
+    const create = await request("/v1/assignments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-material-2", // gitleaks:allow (synthetic idempotency key)
+      body: {
+        classroomId: CLASS_A,
+        title: "Smuggled sheet",
+        instructions: null,
+        dueAt: FIRST_DUE_AT,
+        closesAt: FIRST_CLOSES_AT,
+        attachmentFileIds: [FOREIGN_MATERIAL],
+      },
+    });
+    expect(create.status).not.toBe(201);
+    // Rolled back together: no work was created without its file.
+    expect(
+      await scalar(
+        sql`select count(*)::int as result from public.assignments
+            where title = 'Smuggled sheet'`,
+      ),
+    ).toBe(0);
+    expect(
+      await scalar(
+        sql`select count(*)::int as result from public.file_bindings
+            where file_object_id = ${FOREIGN_MATERIAL}::uuid
+              and assignment_id is not null`,
+      ),
+    ).toBe(0);
+  });
+
+  test("graded work carries material too", async () => {
+    await seedMaterial(EXAM_MATERIAL, CLASS_A);
+    const create = await request("/v1/assessments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-material-3", // gitleaks:allow (synthetic idempotency key)
+      body: {
+        classroomId: CLASS_A,
+        title: "Graded worksheet",
+        category: "assignment",
+        maximumScore: 10,
+        scheduledAt: null,
+        delivery: "paper",
+        questions: [],
+        attachmentFileIds: [EXAM_MATERIAL],
+      },
+    });
+    expect(create.status).toBe(201);
+    const body = await create.json() as { attachments: { id: string }[] };
+    expect(body.attachments.map((a) => a.id)).toEqual([EXAM_MATERIAL]);
+  });
+
+  // -------------------------------------------------------------------------
+  // Submission history. By now the student has handed the first assignment
+  // in more than once - on their own, with an attachment, and through their
+  // guardian - so every attempt should be readable, newest first.
+  // -------------------------------------------------------------------------
+  interface HistoryItem {
+    id: string;
+    current: boolean;
+    submittedAt: string;
+    submittedByGuardianId: string | null;
+    attachments: { id: string }[];
+  }
+
+  async function history(subject: string, studentId?: string) {
+    const query = studentId ? `?studentId=${studentId}` : "";
+    const res = await request(
+      `/v1/assignments/${assignmentId}/history${query}`,
+      { subject },
+    );
+    return {
+      status: res.status,
+      items: res.status === 200
+        ? (await res.json() as { items: HistoryItem[] }).items
+        : [],
+    };
+  }
+
+  test("a student reads every attempt at their own work, newest first", async () => {
+    const own = await history(STUDENT_USER);
+    expect(own.status).toBe(200);
+    const attempts = await scalar(
+      sql`select count(*)::int as result from public.submission_attempts sa
+          join public.submissions s on s.id = sa.submission_id
+          where s.assignment_id = ${assignmentId}::uuid
+            and s.student_id = ${STUDENT_ROW}::uuid`,
+    );
+    expect(own.items.length).toBe(attempts as number);
+    expect(own.items.length).toBeGreaterThan(1);
+    // Only the newest is the one being marked.
+    expect(own.items.map((i) => i.current)).toEqual(
+      own.items.map((_, index) => index === 0),
+    );
+    const times = own.items.map((i) => Date.parse(i.submittedAt));
+    expect([...times].sort((a, b) => b - a)).toEqual(times);
+    // Earlier attempts keep what they were handed in with.
+    expect(own.items.some((i) => i.attachments.some((a) => a.id === OWN_FILE)))
+      .toBe(true);
+    // And say who handed each in.
+    expect(own.items.some((i) => i.submittedByGuardianId === GUARDIAN))
+      .toBe(true);
+  });
+
+  test("a guardian and the class teacher read the same history", async () => {
+    const own = await history(STUDENT_USER);
+    const guardian = await history(GUARDIAN, STUDENT_ROW);
+    const teacher = await history(TEACHER_A, STUDENT_ROW);
+    expect(guardian.status).toBe(200);
+    expect(teacher.status).toBe(200);
+    expect(guardian.items.map((i) => i.id)).toEqual(own.items.map((i) => i.id));
+    expect(teacher.items.map((i) => i.id)).toEqual(own.items.map((i) => i.id));
+  });
+
+  test("history is concealed from anyone else", async () => {
+    // Another school's teacher.
+    expect((await history(TEACHER_B, STUDENT_ROW)).status).toBe(404);
+    // A teacher must say which student; they have no work of their own.
+    expect((await history(TEACHER_A)).status).toBe(404);
+    // A student naming someone who is not them.
+    expect((await history(STUDENT_USER, crypto.randomUUID())).status).toBe(404);
+    // A guardian naming a child they are not linked to.
+    expect((await history(GUARDIAN, crypto.randomUUID())).status).toBe(404);
+  });
+
+  test("a guardian may open the files on their child's work", async () => {
+    expect(await mayOpen(GUARDIAN, OWN_FILE)).toBe("true");
+    expect(await mayOpen(TEACHER_B, OWN_FILE)).toBe("false");
+  });
+
+  // -------------------------------------------------------------------------
+  // A parent who linked by the child's ID holds no membership. Every feed
+  // their Learning tab shows, and handing work in, must work on the link.
+  // -------------------------------------------------------------------------
+  test("the linked parent really has no membership", async () => {
+    expect(
+      await scalar(
+        sql`select count(*)::int as result from public.memberships
+            where user_id = ${LINKED_PARENT}::uuid`,
+      ),
+    ).toBe(0);
+  });
+
+  test("a parent with no membership reads the child's published work", async () => {
+    const res = await request(
+      `/v1/assignments?schoolId=${SCHOOL_A}&studentId=${STUDENT_ROW}`,
+      { subject: LINKED_PARENT },
+    );
+    expect(res.status).toBe(200);
+    const items = (await res.json() as {
+      items: { id: string; state: string; submissionId: string | null }[];
+    }).items;
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((i) => i.state === "published")).toBe(true);
+    // The child's own hand-in, not the parent's (who has none).
+    expect(items.find((i) => i.id === assignmentId)?.submissionId)
+      .not.toBeNull();
+  });
+
+  test("a parent with no membership reads every Learning feed", async () => {
+    for (
+      const path of [
+        "/v1/assessments",
+        "/v1/grade-results",
+        "/v1/attendance",
+        "/v1/resources",
+      ]
+    ) {
+      const res = await request(
+        `${path}?schoolId=${SCHOOL_A}&studentId=${STUDENT_ROW}`,
+        { subject: LINKED_PARENT },
+      );
+      expect({ path, status: res.status }).toEqual({ path, status: 200 });
+    }
+    const grades = (await (await request(
+      `/v1/grade-results?schoolId=${SCHOOL_A}&studentId=${STUDENT_ROW}`,
+      { subject: LINKED_PARENT },
+    )).json() as { items: { studentId: string; state: string }[] }).items;
+    // Only the child's, and only what the teacher released.
+    expect(grades.every((g) => g.studentId === STUDENT_ROW)).toBe(true);
+    expect(grades.every((g) => g.state === "published")).toBe(true);
+  });
+
+  test("a parent cannot read a child they are not linked to", async () => {
+    const res = await request(
+      `/v1/grade-results?schoolId=${SCHOOL_A}&studentId=${crypto.randomUUID()}`,
+      { subject: LINKED_PARENT },
+    );
+    expect(res.status).toBe(404);
+    // Nor a whole school's feed without naming their child.
+    const school = await request(`/v1/assignments?schoolId=${SCHOOL_A}`, {
+      subject: LINKED_PARENT,
+    });
+    expect(school.status).toBe(404);
+  });
+
+  test("a parent with no membership hands work in for the child", async () => {
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: LINKED_PARENT,
+      key: "api041-it-linked-parent-1",
+      body: {
+        answerText: "Filed from a parent's phone.",
+        studentId: STUDENT_ROW,
+      },
+    });
+    expect(submit.status).toBe(201);
+    const body = await submit.json() as { submittedByGuardianId: string };
+    expect(body.submittedByGuardianId).toBe(LINKED_PARENT);
+  });
+
+  // -------------------------------------------------------------------------
+  // Graded assignments: the work is an assignment the class hands in, and
+  // its mark is an assessment linked to it.
+  // -------------------------------------------------------------------------
+  let gradedAssignment = "";
+
+  test("graded work is an assignment with a linked mark", async () => {
+    const create = await request("/v1/assignments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-graded-1",
+      body: {
+        classroomId: CLASS_A,
+        title: "Graded lab report",
+        instructions: null,
+        dueAt: FIRST_DUE_AT,
+        closesAt: FIRST_CLOSES_AT,
+      },
+    });
+    expect(create.status).toBe(201);
+    gradedAssignment = (await create.json() as { id: string }).id;
+
+    const mark = await request("/v1/assessments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-graded-2", // gitleaks:allow (synthetic idempotency key)
+      body: {
+        classroomId: CLASS_A,
+        title: "Graded lab report",
+        category: "assignment",
+        maximumScore: 25,
+        scheduledAt: FIRST_DUE_AT,
+        delivery: "paper",
+        questions: [],
+        assignmentId: gradedAssignment,
+      },
+    });
+    expect(mark.status).toBe(201);
+    expect((await mark.json() as { assignmentId: string }).assignmentId)
+      .toBe(gradedAssignment);
+
+    const read = await request(`/v1/assignments/${gradedAssignment}`, {
+      subject: TEACHER_A,
+    });
+    expect((await read.json() as { maximumScore: number }).maximumScore)
+      .toBe(25);
+  });
+
+  test("a piece of work has one mark, in its own class", async () => {
+    const again = await request("/v1/assessments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-graded-3", // gitleaks:allow (synthetic idempotency key)
+      body: {
+        classroomId: CLASS_A,
+        title: "Second mark",
+        category: "assignment",
+        maximumScore: 10,
+        scheduledAt: null,
+        delivery: "paper",
+        questions: [],
+        assignmentId: gradedAssignment,
+      },
+    });
+    expect(again.status).not.toBe(201);
+
+    const elsewhere = await request("/v1/assessments", {
+      method: "POST",
+      subject: TEACHER_A,
+      key: "api041-it-graded-4",
+      body: {
+        classroomId: OTHER_CLASS,
+        title: "Wrong class",
+        category: "assignment",
+        maximumScore: 10,
+        scheduledAt: null,
+        delivery: "paper",
+        questions: [],
+        assignmentId: gradedAssignment,
+      },
+    });
+    expect(elsewhere.status).not.toBe(201);
   });
 });

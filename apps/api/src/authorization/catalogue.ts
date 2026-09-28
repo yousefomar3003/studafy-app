@@ -231,7 +231,7 @@ export const PERMISSION_CATALOGUE = {
     "school_or_classroom",
     "List relationship-visible lesson sessions.",
   ),
-  "resource.list": resource(
+  "resource.list": guardianResource(
     "school_or_classroom",
     "List relationship-visible learning resources.",
   ),
@@ -251,7 +251,7 @@ export const PERMISSION_CATALOGUE = {
     "resource",
     "Withdraw a resource publication as assigned staff.",
   ),
-  "assignment.list": resource(
+  "assignment.list": guardianResource(
     "school_or_classroom",
     "List relationship-visible assignments.",
   ),
@@ -267,7 +267,7 @@ export const PERMISSION_CATALOGUE = {
     "assignment",
     "Withdraw a published assignment as assigned staff.",
   ),
-  "assignment.submit": resource(
+  "assignment.submit": guardianResource(
     "assignment",
     "Submit work as the exact enrolled student.",
   ),
@@ -275,7 +275,13 @@ export const PERMISSION_CATALOGUE = {
     "assignment",
     "List submissions as exact class staff.",
   ),
-  "assessment.list": resource(
+  // No tenant required: a guardian reading their child's history may hold no
+  // membership. The SQL read re-checks the exact student on every call.
+  "submission.history": globalResource(
+    "assignment",
+    "Read every attempt at a piece of work as the student, a verified guardian of theirs, or class staff.",
+  ),
+  "assessment.list": guardianResource(
     "school_or_classroom",
     "List relationship-visible assessments.",
   ),
@@ -307,7 +313,7 @@ export const PERMISSION_CATALOGUE = {
     "assessment",
     "List assessment attempts as exact class staff.",
   ),
-  "grade_result.list": resource(
+  "grade_result.list": guardianResource(
     "school_class_or_student",
     "List relationship-visible grade results.",
   ),
@@ -327,7 +333,7 @@ export const PERMISSION_CATALOGUE = {
     "grade_result",
     "Withdraw a grade as exact class staff.",
   ),
-  "attendance_record.list": resource(
+  "attendance_record.list": guardianResource(
     "school_class_or_student",
     "List relationship-visible attendance.",
   ),
@@ -531,6 +537,52 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description:
       "Request a guardian link to a student as the authenticated actor. Starts pending; the student must approve it.",
+  },
+  // Receipts. No tenant: a guardian in a conversation may hold no
+  // membership, and the SQL checks participation itself.
+  "conversation.mark_read": globalResource(
+    "conversation",
+    "Mark a conversation read as one of its active participants.",
+  ),
+  "message.acknowledge_delivery": {
+    resource: "conversation",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Record that the actor's app has received their conversations.",
+  },
+  // Studafy Plus / Max and the student's Notebook (2026-09-27).
+  "study_plan.read": {
+    resource: "study_plan",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Read the actor's own study plan and AI allowance.",
+  },
+  "notebook.read": resource(
+    "classroom",
+    "Read one's own notebook for a class one is enrolled in.",
+  ),
+  "notebook.write": resource(
+    "classroom",
+    "Add to one's own notebook for a class one is enrolled in.",
+  ),
+  "notebook_entry.delete": resource(
+    "notebook_entry",
+    "Delete an entry from one's own notebook.",
+  ),
+  "study_set.generate": resource(
+    "resource",
+    "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max.",
+  ),
+  "meeting.list": {
+    resource: "meeting",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List meetings the authenticated actor was invited to, or runs as class staff.",
   },
   "conversation.list": {
     resource: "conversation",
@@ -905,23 +957,23 @@ export const PERMISSION_CATALOGUE = {
     "school",
     "List moderation-access grants for a school as a platform operator or that school's administrator.",
   ),
-  "upload.intent.create": resource(
+  "upload.intent.create": guardianResource(
     "school",
     "Create a purpose-bound upload reservation in an active school.",
   ),
-  "upload.read": resource(
+  "upload.read": guardianResource(
     "upload_session",
     "Read an upload session owned by the authenticated actor.",
   ),
-  "upload.complete": resource(
+  "upload.complete": guardianResource(
     "upload_session",
     "Complete an upload session owned by the authenticated actor.",
   ),
-  "file.read": resource(
+  "file.read": guardianResource(
     "file_object",
     "Read safe metadata for a file owned by the authenticated actor.",
   ),
-  "file.download": resource(
+  "file.download": guardianResource(
     "file_object",
     "Request delivery only for a currently authorized clean file.",
   ),
@@ -1011,6 +1063,26 @@ function resource(resourceName: string, description: string) {
     scope: "resource",
     concealDeniedResource: true,
     tenantRequired: true,
+    description,
+  } as const;
+}
+
+/**
+ * A resource a verified guardian may reach on the strength of their link to
+ * a child, with no membership of the school. Most guardians link by the
+ * child's Studafy ID and never hold one.
+ *
+ * Not "any authenticated user": the SQL decision still has to allow the
+ * request, and for a guardian it does so only through the link. What this
+ * drops is the extra requirement that the actor also be a school member,
+ * which a member still satisfies exactly as before.
+ */
+function guardianResource(resourceName: string, description: string) {
+  return {
+    resource: resourceName,
+    scope: "resource",
+    concealDeniedResource: true,
+    tenantRequired: false,
     description,
   } as const;
 }

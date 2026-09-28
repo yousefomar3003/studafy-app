@@ -75,3 +75,32 @@ export function createContactsRoutes(
     idempotencyDependencies,
   );
 }
+
+/// Delivered and read receipts. Appended at the very end of the catalogue,
+/// so their own group, mounted last.
+const RECEIPT_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "markConversationRead" ||
+  route.operationId === "acknowledgeMessageDelivery"
+);
+
+export function createMessageReceiptRoutes(
+  deps: CommunicationsDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: RECEIPT_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: (c) =>
+        ((c.get("validatedParams") ?? {}) as Record<string, string>)[
+          "conversationId"
+        ] ?? null,
+      sliceFor: () => "conversations" as CommunicationsSlice,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}

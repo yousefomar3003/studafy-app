@@ -539,6 +539,12 @@ class AppL10nAr extends AppL10n {
       'شارك هذا الرابط الآمن. لا يُضاف الطلاب إلا بعد فتحه والانضمام إلى الفصل.';
 
   @override
+  String get classesInviteCodeLabel => 'رمز الصف';
+
+  @override
+  String get classesInviteLinkLabel => 'أو أرسل هذا الرابط';
+
+  @override
   String get classesInviteCopied => 'تم نسخ رابط الدعوة.';
 
   @override
@@ -550,6 +556,11 @@ class AppL10nAr extends AppL10n {
   @override
   String classesShareMessage(String link) {
     return 'انضم إلى فصلي في ستودافاي: $link';
+  }
+
+  @override
+  String classesShareMessageWithCode(String link, String code) {
+    return 'انضم إلى فصلي في ستودافاي: $link\nأو اكتب رمز الصف: $code';
   }
 
   @override
@@ -1094,6 +1105,9 @@ class AppL10nAr extends AppL10n {
   String get submitTitle => 'تسليم العمل';
 
   @override
+  String get submitMaterialHeading => 'من المعلّم';
+
+  @override
   String get submitAnswerLabel => 'عملك';
 
   @override
@@ -1359,10 +1373,18 @@ class AppL10nAr extends AppL10n {
   String get joinClassTitle => 'الانضمام إلى صف';
 
   @override
-  String get joinClassPrompt => 'الصق رابط الصف الذي شاركه معك معلمك.';
+  String get joinClassPrompt =>
+      'اكتب رمز الصف الذي أعطاك إياه معلمك، أو الصق رابط الصف.';
 
   @override
-  String get joinClassField => 'رابط الصف';
+  String get joinClassField => 'رمز الصف أو رابطه';
+
+  @override
+  String get joinClassPaste => 'لصق';
+
+  @override
+  String get joinClassNothingToPaste =>
+      'لم يُنسخ شيء. اكتب رمز الصف، أو افتح الرابط من رسالة معلمك وسيملؤه التطبيق تلقائيًا.';
 
   @override
   String get joinClassAction => 'انضم إلى الصف';
@@ -1371,7 +1393,8 @@ class AppL10nAr extends AppL10n {
   String get joinClassBusy => 'جارٍ الانضمام…';
 
   @override
-  String get joinClassInvalid => 'لا يبدو هذا رابط صف صحيحًا.';
+  String get joinClassInvalid =>
+      'هذا ليس رمز صف ولا رابطه. يبدو الرمز هكذا: K7QM-4XTR.';
 
   @override
   String joinClassDone(String className) {
@@ -1606,4 +1629,69 @@ class AppL10nAr extends AppL10n {
   @override
   String get insightsNoChildBody =>
       'اختر أحد أبنائك من الصفحة الرئيسية لعرض تحليلاته.';
+
+  @override
+  String get historyTitle => 'سجل التسليم';
+
+  @override
+  String get historyYours => 'سجل التسليم';
+
+  @override
+  String get historyLatest => 'الأحدث';
+
+  @override
+  String get historyEarlier => 'سابق';
+
+  @override
+  String historyByGuardian(String name) {
+    return 'سلّمه $name';
+  }
+
+  @override
+  String get historyByParent => 'سلّمه أحد الوالدين';
+
+  @override
+  String get historyNone => 'لم يُسلَّم شيء بعد.';
+
+  @override
+  String get historyLoadFailed => 'تعذّر تحميل السجل. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get historyNoText => 'لا توجد إجابة مكتوبة.';
+
+  @override
+  String get academicPublish => 'نشر';
+
+  @override
+  String get academicPublished => 'تم النشر. يمكن للصف رؤيته الآن.';
+
+  @override
+  String get academicPublishFailed => 'تعذّر النشر. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String academicGradedOutOf(String score) {
+    return 'بدرجة · من $score';
+  }
+
+  @override
+  String get classesNewCode => 'رمز جديد';
+
+  @override
+  String get classesNewCodeTitle => 'إنشاء رمز جديد؟';
+
+  @override
+  String get classesNewCodeBody =>
+      'سيتوقف الرمز والرابط الحاليان عن العمل. من لم ينضم بعد سيحتاج إلى الرمز الجديد.';
+
+  @override
+  String get classesNewCodeConfirm => 'إنشاء رمز جديد';
+
+  @override
+  String get attendancePreviousLesson => 'الحصة السابقة';
+
+  @override
+  String get attendanceNextLesson => 'الحصة التالية';
+
+  @override
+  String get submissionsGrade => 'وضع الدرجات';
 }

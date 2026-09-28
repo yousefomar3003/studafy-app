@@ -59,6 +59,18 @@ class Conversation {
   }
 }
 
+/// How far one of my own messages has got - WhatsApp's ticks.
+enum MessageStatus {
+  /// On the server: one tick.
+  sent,
+
+  /// Reached every other participant's app: two ticks.
+  delivered,
+
+  /// Every other participant has opened the chat since: two coloured ticks.
+  read,
+}
+
 @immutable
 class ChatMessage {
   const ChatMessage({
@@ -68,6 +80,7 @@ class ChatMessage {
     required this.body,
     required this.createdAt,
     this.attachments = const [],
+    this.status,
   });
 
   final String id;
@@ -79,6 +92,10 @@ class ChatMessage {
   /// Files sent with this message. Readable by whoever is still in the
   /// conversation, and by nobody else.
   final List<StoredAttachment> attachments;
+
+  /// Set on my own messages only; nobody is told whether a third person has
+  /// read someone else's message.
+  final MessageStatus? status;
 }
 
 /// One page of messages, newest first; [nextCursor] loads older ones.
@@ -227,6 +244,12 @@ abstract interface class MessagingRepository {
     required List<String> participantIds,
     String? subject,
   });
+
+  /// I have opened [conversationId]: everything in it so far is read.
+  Future<void> markRead(String conversationId);
+
+  /// My app has fetched my conversations: everything so far is delivered.
+  Future<void> acknowledgeDelivery();
 }
 
 /// The SAFE-043 reporting and blocking port.

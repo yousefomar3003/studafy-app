@@ -6,6 +6,7 @@ import '../features/academic/domain/academic_repository.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/family/presentation/student_family_page.dart';
+import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import 'account_hub_page.dart';
 
@@ -65,6 +66,8 @@ class StudentTodayPage extends StatelessWidget {
             ),
             icon: Icons.bolt_rounded,
           ),
+          // A class meeting the teacher set up in Google Meet.
+          const UpcomingMeetingsSection(),
           const SizedBox(height: 24),
           Row(
             children: [

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../domain/academic_repository.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/attachment_field.dart';
+import '../../../core/attachment_opener.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -42,8 +43,8 @@ class AcademicOverviewPage extends StatefulWidget {
   final Future<List<ClassChoice>> Function()? loadClassChoices;
   final bool teacherTools;
 
-  /// Opens one row. A student taps an assignment to hand work in; nothing
-  /// opens where no handler is given, so other feeds stay read-only.
+  /// Opens one assignment row. A student taps one to hand work in; the other
+  /// feeds never call it, since every handler expects an assignment.
   final void Function(AcademicRecord record)? onOpenRecord;
   final AcademicFeed initialFeed;
 
@@ -106,11 +107,44 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     return null;
   }
 
-  Future<List<AcademicRecord>> _load() => widget.repository.load(
-    feed,
-    classroomId: widget.classroomId ?? selectedClassId,
-    studentId: widget.studentId,
-  );
+  Future<List<AcademicRecord>> _load() async {
+    final records = await widget.repository.load(
+      feed,
+      classroomId: widget.classroomId ?? selectedClassId,
+      studentId: widget.studentId,
+    );
+    // Graded coursework is listed with the assignment it marks, not a second
+    // time among the tests.
+    return feed == AcademicFeed.assessments
+        ? [
+            for (final record in records)
+              if (record.markedAssignmentId == null) record,
+          ]
+        : records;
+  }
+
+  bool _canPublish(AcademicRecord record) =>
+      widget.teacherTools &&
+      record.state == 'draft' &&
+      (feed == AcademicFeed.assignments || feed == AcademicFeed.assessments);
+
+  Future<void> _publish(AcademicRecord record) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppL10n.of(context);
+    try {
+      if (feed == AcademicFeed.assignments) {
+        await widget.repository.publishAssignment(record.id, record.version);
+      } else {
+        await widget.repository.publishAssessment(record.id, record.version);
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.academicPublished)));
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.academicPublishFailed)),
+      );
+    }
+    if (mounted) _refresh();
+  }
 
   void _refresh() {
     setState(() {
@@ -215,7 +249,14 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     final item = items[index];
                     // Titles and details are school-authored content, so
                     // they render verbatim in their own direction.
-                    final onOpen = widget.onOpenRecord;
+                    // Only an assignment opens anything. Every caller hands the
+                    // record to an assignment screen - hand-in for a student
+                    // or guardian, the roster for a teacher - so a grade or an
+                    // assessment tapped here used to open "hand in work" with
+                    // an id that is not an assignment's.
+                    final onOpen = feed == AcademicFeed.assignments
+                        ? widget.onOpenRecord
+                        : null;
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -233,6 +274,23 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             UserContentText(item.detail),
+                            if (item.maximumScore case final score?)
+                              Text(
+                                AppL10n.of(context).academicGradedOutOf(
+                                  score == score.roundToDouble()
+                                      ? score.toInt().toString()
+                                      : score.toString(),
+                                ),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            // The teacher's material, openable from the list
+                            // itself - the only place graded work is shown.
+                            StoredAttachmentList(
+                              attachments: item.attachments,
+                              uploads: widget.uploads,
+                              dense: true,
+                            ),
                             // Only while the list spans classes. Once it is
                             // narrowed the chip would repeat the chosen chip
                             // above on every row.
@@ -247,8 +305,20 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                               ),
                           ],
                         ),
-                        isThreeLine: _className(item) != null,
-                        trailing: Chip(label: Text(item.state)),
+                        isThreeLine:
+                            _className(item) != null ||
+                            item.attachments.isNotEmpty,
+                        // Work a teacher has created but not released is
+                        // invisible to the class; say so and offer the fix
+                        // right where the teacher is looking.
+                        trailing: _canPublish(item)
+                            ? TextButton(
+                                onPressed: () => _publish(item),
+                                child: Text(
+                                  AppL10n.of(context).academicPublish,
+                                ),
+                              )
+                            : Chip(label: Text(item.state)),
                         onTap: onOpen == null ? null : () => onOpen(item),
                       ),
                     );

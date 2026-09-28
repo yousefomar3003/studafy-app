@@ -401,16 +401,63 @@ class _ClassesPageState extends State<ClassesPage> {
       onSuccess: (link) => link,
       onFailure: (_) => null,
     );
+    // The code already shared is the one shown: a teacher writes it on the
+    // board once, and looking it up again must not replace it.
+    if (live?.invite case final invite?) {
+      await _showInviteDialog(context, invite, classroom: classroom);
+      return;
+    }
+    // A live link whose code cannot be shown again - made before codes were
+    // re-derivable - is described, with the choice to replace it.
     if (live != null) {
       final replace = await _showLiveLinkSheet(context, live);
       if (!context.mounted || !replace) return;
     }
+    await _mintAndShow(context, classroom);
+  }
+
+  Future<void> _mintAndShow(
+    BuildContext context,
+    ClassroomSummary classroom,
+  ) async {
     final result = await widget.classes.inviteLinkFor(classroom.id);
     if (!context.mounted) return;
     result.fold(
-      onSuccess: (link) => _showInviteDialog(context, link),
+      onSuccess: (invite) =>
+          _showInviteDialog(context, invite, classroom: classroom),
       onFailure: (failure) => _showFailure(context, failure.message),
     );
+  }
+
+  /// Replaces the code, after saying what that does to the old one.
+  Future<void> _newCode(
+    BuildContext dialogContext,
+    ClassroomSummary classroom,
+  ) async {
+    final l10n = AppL10n.of(dialogContext);
+    final sure = await showDialog<bool>(
+      context: dialogContext,
+      builder: (confirmContext) => AlertDialog(
+        title: Text(l10n.classesNewCodeTitle),
+        content: Text(l10n.classesNewCodeBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(confirmContext, false),
+            child: Text(
+              MaterialLocalizations.of(confirmContext).cancelButtonLabel,
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(confirmContext, true),
+            child: Text(l10n.classesNewCodeConfirm),
+          ),
+        ],
+      ),
+    );
+    if (sure != true || !dialogContext.mounted) return;
+    Navigator.pop(dialogContext);
+    if (!mounted) return;
+    await _mintAndShow(context, classroom);
   }
 
   /// Shows the live link and offers to revoke it or replace it.
@@ -493,7 +540,13 @@ class _ClassesPageState extends State<ClassesPage> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _showInviteDialog(BuildContext context, String link) async {
+  Future<void> _showInviteDialog(
+    BuildContext context,
+    ClassInvite invite, {
+    required ClassroomSummary classroom,
+  }) async {
+    final link = invite.link;
+    final code = invite.code;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -504,6 +557,43 @@ class _ClassesPageState extends State<ClassesPage> {
           children: [
             Text(AppL10n.of(dialogContext).classesInviteBody),
             const SizedBox(height: 16),
+            // The code first and large: it is what a teacher reads out or
+            // writes on the board, and what a young child types on a
+            // parent's phone. The link below is for sending in a message.
+            if (code != null) ...[
+              Text(
+                AppL10n.of(dialogContext).classesInviteCodeLabel,
+                style: Theme.of(dialogContext).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: studafyNavy.withValues(alpha: .06),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: SelectableText(
+                  code,
+                  textAlign: TextAlign.center,
+                  // Left to right even in Arabic: a code is read character
+                  // by character in the order it was minted.
+                  textDirection: TextDirection.ltr,
+                  style: const TextStyle(
+                    color: studafyNavy,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 4,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                AppL10n.of(dialogContext).classesInviteLinkLabel,
+                style: Theme.of(dialogContext).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 6),
+            ],
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -521,6 +611,10 @@ class _ClassesPageState extends State<ClassesPage> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => _newCode(dialogContext, classroom),
+            child: Text(AppL10n.of(dialogContext).classesNewCode),
+          ),
           TextButton.icon(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: link));
@@ -540,7 +634,10 @@ class _ClassesPageState extends State<ClassesPage> {
           FilledButton.icon(
             onPressed: () => SharePlus.instance.share(
               ShareParams(
-                text: AppL10n.of(dialogContext).classesShareMessage(link),
+                text: code == null
+                    ? AppL10n.of(dialogContext).classesShareMessage(link)
+                    : AppL10n.of(dialogContext)
+                          .classesShareMessageWithCode(link, code),
               ),
             ),
             icon: const Icon(Icons.ios_share),

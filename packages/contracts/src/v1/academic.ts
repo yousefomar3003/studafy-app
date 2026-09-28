@@ -229,6 +229,17 @@ export const V1Assignment = z.strictObject({
   version: Version,
   submissionId: Id.nullable(),
   submittedAt: Timestamp.nullable(),
+  /**
+   * Set when the work is graded: what it is marked out of. The mark itself
+   * lives on the linked assessment, which the gradebook reads.
+   */
+  maximumScore: z.number().positive().nullable().optional(),
+  /**
+   * Files the teacher attached when setting the work. Optional only because
+   * an idempotent replay of work created before material existed carries
+   * none; every current read includes it.
+   */
+  attachments: z.array(V1FileAttachment).max(5).optional(),
 });
 export type V1Assignment = z.infer<typeof V1Assignment>;
 
@@ -244,6 +255,12 @@ export const V1CreateAssignmentRequest = z.strictObject({
   instructions: z.string().max(30_000).nullable(),
   dueAt: Timestamp,
   closesAt: Timestamp.nullable(),
+  /**
+   * Uploads of purpose `assignment_material`, started for this class. Bound
+   * when the work is created, in the same transaction: a refused file means
+   * the work is not created either.
+   */
+  attachmentFileIds: attachmentFileIds(),
 });
 export type V1CreateAssignmentRequest = z.infer<
   typeof V1CreateAssignmentRequest
@@ -297,6 +314,36 @@ export const V1SubmissionPage = z.strictObject({
 });
 export type V1SubmissionPage = z.infer<typeof V1SubmissionPage>;
 
+/**
+ * One hand-in of a piece of work. Every resubmission is a new attempt, and
+ * the earlier ones are kept exactly as they were handed in.
+ */
+export const V1SubmissionAttempt = z.strictObject({
+  id: Id,
+  submittedAt: Timestamp,
+  answerText: z.string().nullable(),
+  /** True for the attempt that is marked: the latest one. */
+  current: z.boolean(),
+  /** The guardian who handed this attempt in for the child, if one did. */
+  submittedByGuardianId: Id.nullable(),
+  submittedByGuardianName: z.string().nullable(),
+  attachments: z.array(V1FileAttachment).max(5),
+});
+export type V1SubmissionAttempt = z.infer<typeof V1SubmissionAttempt>;
+
+/**
+ * Every attempt one student made at one assignment, newest first.
+ *
+ * Readable by that student, a verified guardian of theirs, and the class's
+ * staff. A student leaves `studentId` out and gets their own; anyone else
+ * names the student.
+ */
+export const V1SubmissionHistory = z.strictObject({
+  items: z.array(V1SubmissionAttempt),
+  nextCursor: z.string().nullable(),
+});
+export type V1SubmissionHistory = z.infer<typeof V1SubmissionHistory>;
+
 export const V1AssessmentQuestion = z.strictObject({
   id: Id,
   position: z.number().int().positive(),
@@ -332,6 +379,14 @@ export const V1Assessment = z.strictObject({
   delivery: z.enum(["paper", "online", "practice"]),
   state: z.enum(["draft", "published", "withdrawn"]),
   version: Version,
+  /** The assignment this is the mark for, when it is graded coursework. */
+  assignmentId: Id.nullable().optional(),
+  /**
+   * Files the teacher attached when setting the work. Optional only because
+   * an idempotent replay of work created before material existed carries
+   * none; every current read includes it.
+   */
+  attachments: z.array(V1FileAttachment).max(5).optional(),
 });
 export type V1Assessment = z.infer<typeof V1Assessment>;
 
@@ -349,6 +404,17 @@ export const V1CreateAssessmentRequest = z.strictObject({
   scheduledAt: Timestamp.nullable(),
   delivery: z.enum(["paper", "online"]),
   questions: z.array(V1AssessmentQuestionDraft).max(100),
+  /**
+   * Makes this the mark for an existing assignment in the same class: the
+   * student hands the assignment in, and the grade is recorded here.
+   */
+  assignmentId: Id.optional(),
+  /**
+   * Uploads of purpose `assignment_material`, started for this class. Bound
+   * when the work is created, in the same transaction: a refused file means
+   * the work is not created either.
+   */
+  attachmentFileIds: attachmentFileIds(),
 });
 export type V1CreateAssessmentRequest = z.infer<
   typeof V1CreateAssessmentRequest

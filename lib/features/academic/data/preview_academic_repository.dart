@@ -156,6 +156,12 @@ class PreviewAcademicRepository implements AcademicRepository {
       const [];
 
   @override
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  }) async => const [];
+
+  @override
   Future<void> replaceSchedule(
     String classroomId,
     int expectedVersion,

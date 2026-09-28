@@ -7,7 +7,10 @@ enum FilePurpose {
   assignmentSubmission('assignment_submission'),
   paperScan('paper_scan'),
   messageAttachment('message_attachment'),
-  announcementAttachment('announcement_attachment');
+  announcementAttachment('announcement_attachment'),
+
+  /// A photo of the lesson whiteboard, for Studafy Plus to turn into notes.
+  notebookPhoto('notebook_photo');
 
   const FilePurpose(this.wireValue);
   final String wireValue;
@@ -79,8 +82,30 @@ class StoredAttachment {
   bool get isReady => scanState == 'clean';
 }
 
+/// A file's bytes, fetched for the person who asked and nobody else.
+class DownloadedFile {
+  const DownloadedFile({
+    required this.displayName,
+    required this.mediaType,
+    required this.bytes,
+  });
+
+  final String displayName;
+  final String mediaType;
+  final Uint8List bytes;
+
+  bool get isImage => mediaType.startsWith('image/');
+}
+
 abstract interface class FileUploadRepository {
   Future<QuarantinedFile> upload(FileUploadCommand command);
+
+  /// Fetches an attachment the caller may open.
+  ///
+  /// Asks for a single-use delivery grant and spends it at once, so nothing
+  /// that could be replayed is ever kept. Throws when the caller may not open
+  /// the file, or when it has not cleared the scan yet.
+  Future<DownloadedFile> download(String fileId);
 
   /// Turns an uploaded `lesson_resource` into class material.
   ///

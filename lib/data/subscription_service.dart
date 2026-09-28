@@ -9,13 +9,13 @@ import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 
 import '../core/secure_storage.dart';
 import '../features/parent/domain/parent_subscription_repository.dart';
-import '../features/notebook/domain/notebook_subscription_repository.dart';
+import '../features/study/domain/study.dart';
 import 'billing/store_offer_details.dart';
 import 'billing/v1_billing_api.dart';
 import 'contracts/v1_http_transport.dart';
 
 class StoreSubscriptionRepository
-    implements ParentSubscriptionRepository, NotebookSubscriptionRepository {
+    implements ParentSubscriptionRepository, StudyPlanSubscriptionRepository {
   StoreSubscriptionRepository({
     InAppPurchase? store,
     V1BillingApi? billingApi,
@@ -46,8 +46,12 @@ class StoreSubscriptionRepository
   final List<EntitlementChanged> _entitlementListeners = [];
 
   V1BillingProduct? _insightsProduct;
-  ProductDetails? _notebookSelection;
-  String? _notebookSelectionAccount;
+
+  /// The store offer each plan's purchase will use, and the billing account
+  /// it was read for: a purchase must never bind to a different account than
+  /// the one whose offer was shown.
+  final Map<StudyPlanTier, ProductDetails> _planSelection = {};
+  final Map<StudyPlanTier, String> _planSelectionAccount = {};
   String? _approvalRequestKey;
 
   bool get _isRemote => _billingApi != null;
@@ -101,8 +105,9 @@ class StoreSubscriptionRepository
   }
 
   @override
-  Future<NotebookSubscription> notebookStatus() async {
-    if (!_isRemote) return const NotebookSubscription();
+  Future<StudyPlanOffer> offer(StudyPlanTier tier) async {
+    final featureKey = tier.featureKey;
+    if (!_isRemote || featureKey == null) return StudyPlanOffer(tier: tier);
     await initialize();
     // Refresh authority on every read: a cached catalogue must never bind a
     // purchase to the account which used the device before this student.
@@ -111,7 +116,7 @@ class StoreSubscriptionRepository
     final now = DateTime.now();
     final active = rows.where(
       (row) =>
-          row.featureKey == 'student_notebook' &&
+          row.featureKey == featureKey &&
           row.beneficiaryStudentId == null &&
           row.grantsAccess &&
           !row.startsAt.isAfter(now) &&
@@ -119,12 +124,12 @@ class StoreSubscriptionRepository
           row.endsAt!.isAfter(now),
     );
     if (active.isNotEmpty) {
-      return NotebookSubscription(active: true, expiresAt: active.first.endsAt);
+      return StudyPlanOffer(tier: tier, active: true);
     }
     final approvals = await _billingApi.purchaseApprovals();
     final current = approvals.where(
       (row) =>
-          row.featureKey == 'student_notebook' &&
+          row.featureKey == featureKey &&
           row.expiresAt.isAfter(now) &&
           (row.isApproved || row.isPending),
     );
@@ -136,15 +141,13 @@ class StoreSubscriptionRepository
     final enabled =
         catalogue.selfPurchase.isNotEmpty &&
         catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled);
-    _notebookSelection = null;
-    _notebookSelectionAccount = null;
+    _planSelection.remove(tier);
+    _planSelectionAccount.remove(tier);
     StoreOfferTerms terms = StoreOfferTerms.none;
     var eligibleTrial = false;
     try {
       final products = catalogue.products.where(
-        (row) =>
-            row.featureKey == 'student_notebook' &&
-            row.platform == _platformName,
+        (row) => row.featureKey == featureKey && row.platform == _platformName,
       );
       if (products.length == 1 && await _store.isAvailable()) {
         final result = await _store.queryProductDetails({
@@ -193,43 +196,50 @@ class StoreSubscriptionRepository
                     await SK2Product.isIntroductoryOfferEligible(selected.id);
               }
             }
-            _notebookSelection = selected;
-            _notebookSelectionAccount = catalogue.purchaseAccountToken;
+            _planSelection[tier] = selected;
+            _planSelectionAccount[tier] = catalogue.purchaseAccountToken;
           }
         }
       }
     } catch (_) {
       // Store outages never hide restore or consent, and never invent terms.
-      _notebookSelection = null;
+      _planSelection.remove(tier);
     }
-    return NotebookSubscription(
+    return StudyPlanOffer(
+      tier: tier,
       price: terms.price,
-      currency: terms.currencyCode,
       monthly: terms.periodLength == '1 month',
       oneMonthTrial: eligibleTrial,
-      storeAvailable: _notebookSelection != null,
+      storeAvailable: _planSelection[tier] != null,
       selfPurchaseEnabled: enabled,
       approval: approval,
     );
   }
 
   @override
-  Future<void> requestNotebookApproval() async {
-    if (!_isRemote) throw StateError('Billing is unavailable in preview');
+  Future<void> requestApproval(StudyPlanTier tier) async {
+    final featureKey = tier.featureKey;
+    if (!_isRemote || featureKey == null) {
+      throw StateError('Billing is unavailable in preview');
+    }
     _approvalRequestKey ??=
-        'notebook-approval:${DateTime.now().microsecondsSinceEpoch}';
+        'plan-approval-${tier.name}-${DateTime.now().microsecondsSinceEpoch}';
     await _billingApi!.requestPurchaseApproval(
-      featureKey: 'student_notebook',
+      featureKey: featureKey,
       idempotencyKey: _approvalRequestKey!,
     );
     _approvalRequestKey = null;
   }
 
   @override
-  Future<void> purchaseNotebook() async {
-    final selected = _notebookSelection;
-    final account = _notebookSelectionAccount;
-    if (!_isRemote || selected == null || account == null) {
+  Future<void> purchase(StudyPlanTier tier) async {
+    final featureKey = tier.featureKey;
+    final selected = _planSelection[tier];
+    final account = _planSelectionAccount[tier];
+    if (!_isRemote ||
+        featureKey == null ||
+        selected == null ||
+        account == null) {
       throw StateError('Reload the subscription offer');
     }
     // Recheck account, consent and availability immediately before the store
@@ -241,13 +251,13 @@ class StoreSubscriptionRepository
             !catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled)) ||
         !catalogue.products.any(
           (row) =>
-              row.featureKey == 'student_notebook' &&
+              row.featureKey == featureKey &&
               row.platform == _platformName &&
               row.storeProductId == selected.id,
         ) ||
         !approvals.any(
           (row) =>
-              row.featureKey == 'student_notebook' &&
+              row.featureKey == featureKey &&
               row.isApproved &&
               row.expiresAt.isAfter(DateTime.now()),
         )) {

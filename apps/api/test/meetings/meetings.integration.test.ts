@@ -17,7 +17,10 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { PostgresAuthorizationRepository } from "../../src/authorization/repository";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresMeetingsRepository } from "../../src/meetings/repository";
-import { createMeetingsRoutes } from "../../src/meetings/routes";
+import {
+  createMeetingListRoutes,
+  createMeetingsRoutes,
+} from "../../src/meetings/routes";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = databaseUrl ? describe : describe.skip;
@@ -97,6 +100,9 @@ async function seed(): Promise<void> {
 async function cleanup(): Promise<void> {
   await sql.begin(async (tx) => {
     await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
+    // A meeting scheduled with a link notifies its recipients in the app.
+    await tx`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
+    await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.meeting_deliveries where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.meetings where school_id = ${SCHOOL}::uuid`;
     await tx`delete from public.enrollments where classroom_id = ${CLASSROOM}::uuid`;
@@ -191,6 +197,17 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
         idempotency,
       ),
     );
+    app.route(
+      "/",
+      createMeetingListRoutes(
+        {
+          repository: new PostgresMeetingsRepository(sql),
+          cursorSigningKey: CURSOR_KEY,
+        },
+        authorization,
+        idempotency,
+      ),
+    );
   });
 
   afterAll(async () => {
@@ -256,5 +273,120 @@ suite("API-042 S5 meetings over the real /v1 stack", () => {
       where meeting_id = ${meetingId}::uuid and state <> 'cancelled'
     `;
     expect(row?.remaining).toBe(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // Meetings hosted on Google Meet: the teacher supplies the link, Studafy
+  // schedules and notifies, and everyone invited can find it.
+  // -------------------------------------------------------------------------
+  const MEET = "https://meet.google.com/abc-defg-hij";
+  let linkedMeeting = "";
+
+  function soon(hours: number): string {
+    return new Date(Date.now() + hours * 3_600_000).toISOString();
+  }
+
+  test("a meeting with a Google Meet link is scheduled at once", async () => {
+    const res = await request(`/v1/classrooms/${CLASSROOM}/meetings`, {
+      method: "POST",
+      subject: TEACHER,
+      body: {
+        title: "Parents' evening",
+        startsAt: soon(24),
+        endsAt: soon(25),
+        audience: "guardians",
+        meetUrl: MEET,
+      },
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json() as {
+      id: string;
+      state: string;
+      meetUrl: string | null;
+    };
+    expect(body.state).toBe("scheduled");
+    expect(body.meetUrl).toBe(MEET);
+    linkedMeeting = body.id;
+    // The guardian was told, in the app.
+    const [row] = await sql<{ told: number }[]>`
+      select count(*)::int as told from public.notification_deliveries
+      where school_id = ${SCHOOL}::uuid and recipient_id = ${GUARDIAN}::uuid`;
+    expect(row?.told).toBeGreaterThan(0);
+  });
+
+  test("any link that is not Google Meet is refused", async () => {
+    for (
+      const meetUrl of [
+        "https://meet.google.com.evil.example/abc",
+        "http://meet.google.com/abc-defg-hij",
+        "https://example.com/meet",
+      ]
+    ) {
+      const res = await request(`/v1/classrooms/${CLASSROOM}/meetings`, {
+        method: "POST",
+        subject: TEACHER,
+        body: {
+          title: "Bad link",
+          startsAt: soon(24),
+          endsAt: soon(25),
+          audience: "both",
+          meetUrl,
+        },
+      });
+      expect({ meetUrl, status: res.status }).toEqual({ meetUrl, status: 400 });
+    }
+  });
+
+  test("the guardian, with no membership, finds the meeting and its link", async () => {
+    const res = await request("/v1/meetings", { subject: GUARDIAN });
+    expect(res.status).toBe(200);
+    const items = (await res.json() as {
+      items: { id: string; meetUrl: string | null; classroomName: string }[];
+    }).items;
+    const found = items.find((m) => m.id === linkedMeeting);
+    expect(found?.meetUrl).toBe(MEET);
+    expect(found?.classroomName).toBe("Meetings Classroom");
+  });
+
+  test("a meeting for guardians is not listed to the student", async () => {
+    const res = await request("/v1/meetings", { subject: STUDENT_USER });
+    expect(res.status).toBe(200);
+    const items = (await res.json() as { items: { id: string }[] }).items;
+    expect(items.some((m) => m.id === linkedMeeting)).toBe(false);
+  });
+
+  test("the teacher lists their class's meetings", async () => {
+    const res = await request(`/v1/meetings?classroomId=${CLASSROOM}`, {
+      subject: TEACHER,
+    });
+    expect(res.status).toBe(200);
+    const items = (await res.json() as { items: { id: string }[] }).items;
+    expect(items.some((m) => m.id === linkedMeeting)).toBe(true);
+  });
+
+  test("someone with no part in it sees nothing", async () => {
+    // The admin here holds no role in this meeting's delivery and is not
+    // class staff; admins do see their school's meetings, so use a stranger.
+    const stranger = crypto.randomUUID();
+    await sql`
+      insert into auth.users (id, email, encrypted_password, aud, role,
+        email_confirmed_at, created_at, updated_at, instance_id,
+        confirmation_token, recovery_token, email_change,
+        email_change_token_new, email_change_token_current,
+        phone_change_token, raw_app_meta_data, raw_user_meta_data)
+      values (${stranger}::uuid, ${`stranger.${
+      stranger.slice(0, 8)
+    }@synthetic.studafy.test`},
+        'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(),
+        now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '',
+        '{}'::jsonb, '{"full_name":"Stranger"}'::jsonb)`;
+    try {
+      const res = await request("/v1/meetings", { subject: stranger });
+      expect(res.status).toBe(200);
+      expect((await res.json() as { items: unknown[] }).items).toEqual([]);
+    } finally {
+      await sql`delete from public.profiles where id = ${stranger}::uuid`;
+      await sql`delete from auth.users where id = ${stranger}::uuid`;
+    }
   });
 });

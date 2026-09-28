@@ -1,14 +1,23 @@
+import 'dart:typed_data';
+
 import 'package:crypto/crypto.dart';
 
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../core/file_upload_repository.dart';
 import 'signed_upload_transport.dart';
 
+/// Fetches a delivery link's bytes with the caller's session attached.
+typedef DeliveryFetcher = Future<Uint8List> Function(Uri url);
+
 class ApiFileUploadRepository implements FileUploadRepository {
-  ApiFileUploadRepository(this._api, this._uploads);
+  ApiFileUploadRepository(this._api, this._uploads, {this.fetch});
 
   final V1ApiClient _api;
   final SignedUploadTransport _uploads;
+
+  /// Null in a build that cannot fetch delivered bytes; opening then fails
+  /// with a clear error rather than a silent no-op.
+  final DeliveryFetcher? fetch;
   final Map<String, ({String intent, String complete})> _keys = {};
 
   @override
@@ -74,5 +83,28 @@ class ApiFileUploadRepository implements FileUploadRepository {
       idempotencyKey: 'file-publish-$fileId-${audience.wireValue}',
     );
     return published.resource.id;
+  }
+
+  @override
+  Future<DownloadedFile> download(String fileId) async {
+    final fetch = this.fetch;
+    if (fetch == null) {
+      throw StateError('File delivery is not configured in this build.');
+    }
+    final grant = await _api.createFileDownloadIntent(
+      const V1DownloadIntentRequestDto(),
+      fileId: fileId,
+      // Fresh every time: a grant is single-use, so replaying an earlier
+      // response would hand back a link that has already been spent.
+      idempotencyKey:
+          'file-download-$fileId-'
+          '${DateTime.now().microsecondsSinceEpoch}',
+    );
+    final bytes = await fetch(Uri.parse(grant.downloadUrl));
+    return DownloadedFile(
+      displayName: grant.displayName,
+      mediaType: grant.mediaType,
+      bytes: bytes,
+    );
   }
 }

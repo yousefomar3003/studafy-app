@@ -19,4 +19,9 @@ class PreviewFileUploadRepository implements FileUploadRepository {
     required String fileId,
     required FileAudience audience,
   }) async => 'preview-resource-$fileId';
+
+  /// Preview uploads never reach a scanner, so nothing is ever openable.
+  @override
+  Future<DownloadedFile> download(String fileId) =>
+      throw StateError('Preview files cannot be opened.');
 }

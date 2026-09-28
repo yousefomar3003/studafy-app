@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_field.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 
@@ -16,6 +20,9 @@ class CreateAssignmentPage extends StatefulWidget {
     required this.repository,
     required this.classes,
     this.initialClassroomId,
+    this.schoolId,
+    this.uploads,
+    this.attachmentSource,
   });
 
   final AcademicRepository repository;
@@ -26,6 +33,16 @@ class CreateAssignmentPage extends StatefulWidget {
 
   /// Preselected when opened from inside a class.
   final String? initialClassroomId;
+
+  /// The school the material is filed under. Without one there is nowhere
+  /// to upload to, and the attach control is not offered.
+  final String? schoolId;
+
+  /// Falls back to the app's [UploadsScope].
+  final FileUploadRepository? uploads;
+
+  /// Overrides the platform picker. Tests supply their own.
+  final AttachmentSource? attachmentSource;
 
   @override
   State<CreateAssignmentPage> createState() => _CreateAssignmentPageState();
@@ -40,6 +57,17 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
   bool _graded = false;
   bool _saving = false;
   String? _error;
+  List<Attachment> _attachments = const [];
+
+  /// Rebuilt when the class changes. Material is uploaded for one class and
+  /// the server refuses to bind it to another, so switching class starts the
+  /// attachments over rather than letting a doomed create be attempted.
+  Key _attachmentsKey = UniqueKey();
+
+  bool get _uploading =>
+      _attachments.any((a) => a.stage == AttachmentStage.uploading);
+
+  List<String> get _fileIds => [for (final item in _attachments) ?item.fileId];
 
   @override
   void initState() {
@@ -83,7 +111,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
   }
 
   Future<void> _create() async {
-    if (_saving) return;
+    if (_saving || _uploading) return;
     final l10n = AppL10n.of(context);
     final classroomId = _classroomId;
     final dueAt = _dueAt;
@@ -111,31 +139,19 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
     final created = l10n.assignmentCreated;
     final failed = l10n.assignmentCreateFailed;
     try {
-      if (_graded) {
-        await widget.repository.createAssessment(
-          AssessmentDraft(
-            classroomId: classroomId!,
-            title: _title.text.trim(),
-            maximumScore: score!,
-            questions: const [],
-            // Filed as an assignment so the gradebook groups it with the
-            // rest of the coursework rather than among exams.
-            category: 'assignment',
-            // The teacher marks it themselves; nothing is answered in-app.
-            delivery: 'paper',
-            scheduledAt: dueAt,
-          ),
-        );
-      } else {
-        await widget.repository.createAssignment(
-          AssignmentDraft(
-            classroomId: classroomId!,
-            title: _title.text.trim(),
-            instructions: _instructions.text.trim(),
-            dueAt: dueAt!,
-          ),
-        );
-      }
+      // Graded or not, it is an assignment the class opens and hands in.
+      // Graded work also gets a mark, out of [score], that the gradebook
+      // records against it.
+      await widget.repository.createAssignment(
+        AssignmentDraft(
+          classroomId: classroomId!,
+          title: _title.text.trim(),
+          instructions: _instructions.text.trim(),
+          dueAt: dueAt!,
+          attachmentFileIds: _fileIds,
+          maximumScore: _graded ? score : null,
+        ),
+      );
       if (!mounted) return;
       Navigator.of(context).pop(created);
     } on Object {
@@ -172,7 +188,12 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
               ],
               onChanged: _saving
                   ? null
-                  : (value) => setState(() => _classroomId = value),
+                  : (value) => setState(() {
+                      if (value == _classroomId) return;
+                      _classroomId = value;
+                      _attachments = const [];
+                      _attachmentsKey = UniqueKey();
+                    }),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -194,6 +215,22 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
                 border: const OutlineInputBorder(),
               ),
             ),
+            if (widget.uploads ?? UploadsScope.maybeOf(context)
+                case final uploads?)
+              if ((widget.schoolId, _classroomId) case (
+                final schoolId?,
+                final classroomId?,
+              ))
+                AttachmentField(
+                  key: _attachmentsKey,
+                  purpose: FilePurpose.assignmentMaterial,
+                  schoolId: schoolId,
+                  classroomId: classroomId,
+                  uploads: uploads,
+                  enabled: !_saving,
+                  source: widget.attachmentSource ?? pickPlatformAttachment,
+                  onChanged: (items) => setState(() => _attachments = items),
+                ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _saving ? null : _pickDue,
@@ -240,7 +277,9 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
             ],
             const SizedBox(height: 20),
             FilledButton(
-              onPressed: _saving ? null : _create,
+              // Held while a file is uploading, so the work is never created
+              // without the sheet the teacher is still attaching.
+              onPressed: _saving || _uploading ? null : _create,
               child: Text(
                 _saving ? l10n.assignmentCreating : l10n.assignmentCreate,
               ),

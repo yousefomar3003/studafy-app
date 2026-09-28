@@ -925,6 +925,18 @@ abstract class AppL10n {
   /// **'Share this secure link. Students are added only after they open it and join the class.'**
   String get classesInviteBody;
 
+  /// Label above the short class code a teacher reads out or writes on the board.
+  ///
+  /// In en, this message translates to:
+  /// **'Class code'**
+  String get classesInviteCodeLabel;
+
+  /// Label above the class join link, shown when a code is also available.
+  ///
+  /// In en, this message translates to:
+  /// **'Or send this link'**
+  String get classesInviteLinkLabel;
+
   /// No description provided for @classesInviteCopied.
   ///
   /// In en, this message translates to:
@@ -948,6 +960,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Join my Studafy class: {link}'**
   String classesShareMessage(String link);
+
+  /// Message shared with students when the class has both a link and a code.
+  ///
+  /// In en, this message translates to:
+  /// **'Join my Studafy class: {link}\nOr type the class code: {code}'**
+  String classesShareMessageWithCode(String link, String code);
 
   /// No description provided for @classesGradeSection.
   ///
@@ -1885,6 +1903,12 @@ abstract class AppL10n {
   /// **'Hand in work'**
   String get submitTitle;
 
+  /// Heading above the files a teacher attached to an assignment, on the hand-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'From your teacher'**
+  String get submitMaterialHeading;
+
   /// No description provided for @submitAnswerLabel.
   ///
   /// In en, this message translates to:
@@ -2350,14 +2374,26 @@ abstract class AppL10n {
   /// Instruction above the class link field.
   ///
   /// In en, this message translates to:
-  /// **'Paste the class link your teacher shared with you.'**
+  /// **'Type the class code your teacher gave you, or paste the class link.'**
   String get joinClassPrompt;
 
   /// Label of the text field that takes the class link or code.
   ///
   /// In en, this message translates to:
-  /// **'Class link'**
+  /// **'Class code or link'**
   String get joinClassField;
+
+  /// Button beside the class code field that pastes from the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get joinClassPaste;
+
+  /// Shown when the student taps Paste and the clipboard is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has been copied. Type the class code, or open the link from your teacher\'s message - the app fills it in for you.'**
+  String get joinClassNothingToPaste;
 
   /// Button that redeems the pasted class link.
   ///
@@ -2374,7 +2410,7 @@ abstract class AppL10n {
   /// Shown when the pasted text contains no recognisable join token.
   ///
   /// In en, this message translates to:
-  /// **'That does not look like a class link.'**
+  /// **'That is not a class code or link. A code looks like K7QM-4XTR.'**
   String get joinClassInvalid;
 
   /// Confirmation after joining, naming the class.
@@ -2700,6 +2736,126 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Pick one of your children on the home tab to see their insights.'**
   String get insightsNoChildBody;
+
+  /// Title of the screen listing every attempt a student made at one assignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-in history'**
+  String get historyTitle;
+
+  /// Heading above earlier hand-ins on the hand-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-in history'**
+  String get historyYours;
+
+  /// Chip on the attempt that is being marked.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest'**
+  String get historyLatest;
+
+  /// Chip on an attempt that has been replaced by a later one.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get historyEarlier;
+
+  /// Which parent handed this attempt in for the child.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed in by {name}'**
+  String historyByGuardian(String name);
+
+  /// Shown when a parent handed it in but their name is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed in by a parent'**
+  String get historyByParent;
+
+  /// Empty history.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing handed in yet.'**
+  String get historyNone;
+
+  /// History failed to load.
+  ///
+  /// In en, this message translates to:
+  /// **'The history could not be loaded. Please try again.'**
+  String get historyLoadFailed;
+
+  /// An attempt with no text.
+  ///
+  /// In en, this message translates to:
+  /// **'No written answer.'**
+  String get historyNoText;
+
+  /// Button on a draft assignment that makes it visible to the class.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get academicPublish;
+
+  /// Shown after publishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Published. The class can see it now.'**
+  String get academicPublished;
+
+  /// Shown when publishing fails.
+  ///
+  /// In en, this message translates to:
+  /// **'That could not be published. Please try again.'**
+  String get academicPublishFailed;
+
+  /// Label on a graded assignment: what it is marked out of.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded · out of {score}'**
+  String academicGradedOutOf(String score);
+
+  /// Button in the class invite that replaces the class code.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get classesNewCode;
+
+  /// Title of the confirmation before replacing a class code.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a new code?'**
+  String get classesNewCodeTitle;
+
+  /// Explains what replacing the class code does.
+  ///
+  /// In en, this message translates to:
+  /// **'The current code and link will stop working. Anyone who has not joined yet will need the new one.'**
+  String get classesNewCodeBody;
+
+  /// Confirms replacing the class code.
+  ///
+  /// In en, this message translates to:
+  /// **'Make new code'**
+  String get classesNewCodeConfirm;
+
+  /// Button: go to the class's previous lesson day in the register.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous lesson'**
+  String get attendancePreviousLesson;
+
+  /// Button: go to the class's next lesson day in the register.
+  ///
+  /// In en, this message translates to:
+  /// **'Next lesson'**
+  String get attendanceNextLesson;
+
+  /// Button on a graded assignment's hand-ins: open the gradebook to mark it.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get submissionsGrade;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

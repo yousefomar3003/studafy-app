@@ -118,13 +118,19 @@ abstract interface class SchoolOperationsRepository {
   });
   Future<String> revokeGuardianLink(String linkId);
 
+  /// Schedules a meeting. With [meetUrl] - a Google Meet link the teacher
+  /// created - it is scheduled at once and its audience is told in the app.
   Future<ManagedMeeting> requestMeeting({
     required String classroomId,
     required String title,
     required DateTime startsAt,
     required DateTime endsAt,
     required String audience,
+    Uri? meetUrl,
   });
+
+  /// The class's meetings that have not yet ended, soonest first.
+  Future<List<ManagedMeeting>> listMeetings(String classroomId);
   Future<ManagedMeeting> getMeeting(String meetingId);
   Future<ManagedMeeting> cancelMeeting({
     required String meetingId,

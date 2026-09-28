@@ -19,4 +19,8 @@ class UnavailableFileUploadRepository implements FileUploadRepository {
     required FileAudience audience,
   }) =>
       throw StateError('Remote file publishing is unavailable in this build.');
+
+  @override
+  Future<DownloadedFile> download(String fileId) =>
+      throw StateError('Remote file delivery is unavailable in this build.');
 }

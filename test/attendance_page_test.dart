@@ -273,4 +273,49 @@ void main() {
       TextDirection.rtl,
     );
   });
+
+  group('choosing the lesson', () {
+    // A class that meets once a week, on the day after today - so today is
+    // never a lesson day, which is exactly when the register used to open on
+    // "no lesson" with Save disabled.
+    final tomorrow = DateTime.now().add(const Duration(days: 1)).weekday;
+    final weekly = [
+      ClassSessionSlot(weekday: tomorrow, startsAt: '08:00', endsAt: '08:50'),
+    ];
+    const roster = [
+      AttendanceRosterEntry(studentId: 's1', displayName: 'Amal'),
+    ];
+
+    testWidgets('opened on a day without a lesson, it goes to the last one', (
+      tester,
+    ) async {
+      final fake = AttendanceFake(schedule: weekly, roster: roster);
+      await tester.pumpWidget(_page(fake));
+      await tester.pumpAndSettle();
+
+      final opened = fake.rosterCalls.last;
+      expect(opened, isNotNull);
+      expect(opened!.weekday, tomorrow);
+      expect(opened.isBefore(DateTime.now()), isTrue);
+      expect(find.text('Amal'), findsOne);
+    });
+
+    testWidgets('the arrows step from lesson to lesson', (tester) async {
+      final fake = AttendanceFake(schedule: weekly, roster: roster);
+      final start = _nextWeekday(tomorrow);
+      await tester.pumpWidget(_page(fake, on: start));
+      await tester.pumpAndSettle();
+      final first = fake.rosterCalls.last!;
+
+      await tester.tap(find.byTooltip('Next lesson'));
+      await tester.pumpAndSettle();
+      expect(fake.rosterCalls.last!.difference(first).inDays, 7);
+
+      await tester.tap(find.byTooltip('Previous lesson'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Previous lesson'));
+      await tester.pumpAndSettle();
+      expect(first.difference(fake.rosterCalls.last!).inDays, 7);
+    });
+  });
 }

@@ -277,6 +277,14 @@
   "classesCreateAction": "Create classroom",
   "classesInviteTitle": "Invite students",
   "classesInviteBody": "Share this secure link. Students are added only after they open it and join the class.",
+  "classesInviteCodeLabel": "Class code",
+  "@classesInviteCodeLabel": {
+    "description": "Label above the short class code a teacher reads out or writes on the board."
+  },
+  "classesInviteLinkLabel": "Or send this link",
+  "@classesInviteLinkLabel": {
+    "description": "Label above the class join link, shown when a code is also available."
+  },
   "classesInviteCopied": "Invite link copied.",
   "classesCopy": "Copy",
   "classesShareLink": "Share link",
@@ -284,6 +292,18 @@
   "@classesShareMessage": {
     "placeholders": {
       "link": {
+        "type": "String"
+      }
+    }
+  },
+  "classesShareMessageWithCode": "Join my Studafy class: {link}\nOr type the class code: {code}",
+  "@classesShareMessageWithCode": {
+    "description": "Message shared with students when the class has both a link and a code.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      },
+      "code": {
         "type": "String"
       }
     }
@@ -537,6 +557,10 @@
     }
   },
   "submitTitle": "Hand in work",
+  "submitMaterialHeading": "From your teacher",
+  "@submitMaterialHeading": {
+    "description": "Heading above the files a teacher attached to an assignment, on the hand-in screen."
+  },
   "submitAnswerLabel": "Your work",
   "submitAnswerHint": "Type or paste your answer.",
   "submitSend": "Hand in",
@@ -768,13 +792,21 @@
   "@joinClassTitle": {
     "description": "Title of the screen where a student enters a class link."
   },
-  "joinClassPrompt": "Paste the class link your teacher shared with you.",
+  "joinClassPrompt": "Type the class code your teacher gave you, or paste the class link.",
   "@joinClassPrompt": {
     "description": "Instruction above the class link field."
   },
-  "joinClassField": "Class link",
+  "joinClassField": "Class code or link",
   "@joinClassField": {
     "description": "Label of the text field that takes the class link or code."
+  },
+  "joinClassPaste": "Paste",
+  "@joinClassPaste": {
+    "description": "Button beside the class code field that pastes from the clipboard."
+  },
+  "joinClassNothingToPaste": "Nothing has been copied. Type the class code, or open the link from your teacher's message - the app fills it in for you.",
+  "@joinClassNothingToPaste": {
+    "description": "Shown when the student taps Paste and the clipboard is empty."
   },
   "joinClassAction": "Join class",
   "@joinClassAction": {
@@ -784,7 +816,7 @@
   "@joinClassBusy": {
     "description": "Label of the join button while the request is in flight."
   },
-  "joinClassInvalid": "That does not look like a class link.",
+  "joinClassInvalid": "That is not a class code or link. A code looks like K7QM-4XTR.",
   "@joinClassInvalid": {
     "description": "Shown when the pasted text contains no recognisable join token."
   },
@@ -1033,5 +1065,95 @@
   "insightsNoChildBody": "Pick one of your children on the home tab to see their insights.",
   "@insightsNoChildBody": {
     "description": "Tells a parent how to select a child for Family+."
+  },
+  "historyTitle": "Hand-in history",
+  "@historyTitle": {
+    "description": "Title of the screen listing every attempt a student made at one assignment."
+  },
+  "historyYours": "Hand-in history",
+  "@historyYours": {
+    "description": "Heading above earlier hand-ins on the hand-in screen."
+  },
+  "historyLatest": "Latest",
+  "@historyLatest": {
+    "description": "Chip on the attempt that is being marked."
+  },
+  "historyEarlier": "Earlier",
+  "@historyEarlier": {
+    "description": "Chip on an attempt that has been replaced by a later one."
+  },
+  "historyByGuardian": "Handed in by {name}",
+  "@historyByGuardian": {
+    "description": "Which parent handed this attempt in for the child.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "historyByParent": "Handed in by a parent",
+  "@historyByParent": {
+    "description": "Shown when a parent handed it in but their name is unknown."
+  },
+  "historyNone": "Nothing handed in yet.",
+  "@historyNone": {
+    "description": "Empty history."
+  },
+  "historyLoadFailed": "The history could not be loaded. Please try again.",
+  "@historyLoadFailed": {
+    "description": "History failed to load."
+  },
+  "historyNoText": "No written answer.",
+  "@historyNoText": {
+    "description": "An attempt with no text."
+  },
+  "academicPublish": "Publish",
+  "@academicPublish": {
+    "description": "Button on a draft assignment that makes it visible to the class."
+  },
+  "academicPublished": "Published. The class can see it now.",
+  "@academicPublished": {
+    "description": "Shown after publishing."
+  },
+  "academicPublishFailed": "That could not be published. Please try again.",
+  "@academicPublishFailed": {
+    "description": "Shown when publishing fails."
+  },
+  "academicGradedOutOf": "Graded · out of {score}",
+  "@academicGradedOutOf": {
+    "description": "Label on a graded assignment: what it is marked out of.",
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "classesNewCode": "New code",
+  "@classesNewCode": {
+    "description": "Button in the class invite that replaces the class code."
+  },
+  "classesNewCodeTitle": "Make a new code?",
+  "@classesNewCodeTitle": {
+    "description": "Title of the confirmation before replacing a class code."
+  },
+  "classesNewCodeBody": "The current code and link will stop working. Anyone who has not joined yet will need the new one.",
+  "@classesNewCodeBody": {
+    "description": "Explains what replacing the class code does."
+  },
+  "classesNewCodeConfirm": "Make new code",
+  "@classesNewCodeConfirm": {
+    "description": "Confirms replacing the class code."
+  },
+  "attendancePreviousLesson": "Previous lesson",
+  "@attendancePreviousLesson": {
+    "description": "Button: go to the class's previous lesson day in the register."
+  },
+  "attendanceNextLesson": "Next lesson",
+  "@attendanceNextLesson": {
+    "description": "Button: go to the class's next lesson day in the register."
+  },
+  "submissionsGrade": "Grade",
+  "@submissionsGrade": {
+    "description": "Button on a graded assignment's hand-ins: open the gradebook to mark it."
   }
 }

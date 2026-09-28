@@ -168,6 +168,21 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
   });
 
   @override
+  Future<void> markRead(String conversationId) => _guard(() async {
+    await _client.markConversationRead(
+      const V1MarkConversationReadRequestDto(),
+      conversationId: conversationId,
+    );
+  });
+
+  @override
+  Future<void> acknowledgeDelivery() => _guard(() async {
+    await _client.acknowledgeMessageDelivery(
+      const V1AcknowledgeDeliveryRequestDto(),
+    );
+  });
+
+  @override
   Future<List<BlockedPerson>> blocks(String schoolId) => _guard(() async {
     final page = await _client.listBlocks(schoolId: schoolId, pageSize: 100);
     return [for (final item in page.items) _blocked(item)];
@@ -196,6 +211,12 @@ class ApiMessagingRepository implements MessagingRepository, SafetyRepository {
     body: dto.body,
     createdAt: DateTime.parse(dto.createdAt),
     attachments: [for (final a in dto.attachments) _attachment(a)],
+    status: switch (dto.status) {
+      'sent' => MessageStatus.sent,
+      'delivered' => MessageStatus.delivered,
+      'read' => MessageStatus.read,
+      _ => null,
+    },
   );
 
   static StoredAttachment _attachment(V1FileAttachmentDto dto) =>

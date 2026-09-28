@@ -133,6 +133,16 @@ class _Fake implements MessagingRepository, SafetyRepository {
   @override
   Future<List<BlockedPerson>> blocks(String schoolId) async =>
       List.of(blockList);
+
+  final List<String> readConversations = [];
+  int deliveryAcks = 0;
+
+  @override
+  Future<void> markRead(String conversationId) async =>
+      readConversations.add(conversationId);
+
+  @override
+  Future<void> acknowledgeDelivery() async => deliveryAcks++;
 }
 
 Widget _app(_Fake fake, Widget home, {Locale locale = const Locale('en')}) =>

@@ -116,3 +116,4 @@ export {
   type V1StudyAssistantAskResponse as V1StudyAssistantAskResponseType,
 } from "./studyAssistant";
 export * from "./familyInsights";
+export * from "./studyPlans";

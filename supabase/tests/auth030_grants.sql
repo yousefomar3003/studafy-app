@@ -66,6 +66,14 @@ select is(
     -- Self-serve teacher sign-up, which creates the first workspace and its
     -- owning membership in one audited command (202609230001).
     'api045_command',
+    -- The student's Notebook and lesson study sets (202609270010): owner-only
+    -- notebook reads and writes, and study sets re-checked against the Max
+    -- plan and the lesson's visibility on every call.
+    'api046_command',
+    'api046_query',
+    -- The AI cost ledger (202609270009): reserve/settle/release against the
+    -- caller's own monthly cap, and their own usage summary.
+    'api047_ai_usage',
     -- FILE-050. Five narrow upload/file commands; each independently
     -- re-validates actor, tenant, membership, relationship, purpose and state.
     'api050_complete_upload',

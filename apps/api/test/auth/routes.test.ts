@@ -861,3 +861,83 @@ describe("unmigrated paths still fail closed", () => {
     expect((await h.request("/healthz")).status).toBe(200);
   });
 });
+
+// ---------------------------------------------------------------------------
+// First sign-in in the development split: hosted issuer, local database.
+//
+// Every role hit this: a verified Google or Microsoft token for someone the
+// local database had never seen came back as no_profile, which the app shows
+// as "Please sign in again" with nothing the person can do about it.
+// ---------------------------------------------------------------------------
+describe("unknown verified subjects", () => {
+  const NEWCOMER = "99999999-8888-4777-8666-555555555555";
+
+  test("development creates the profile and lets the person in", async () => {
+    const h = await harness({ provisionUnknownSubjects: true });
+    const response = await h.request("/v1/me", {
+      token: await validToken({
+        subject: NEWCOMER,
+        extraClaims: {
+          email: "newcomer@example.test",
+          user_metadata: { full_name: "New Comer" },
+        },
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect(h.repository.provisioned).toEqual([NEWCOMER]);
+    // Enrolled as nobody's member: a profile grants no school access.
+    const body = await response.json() as { memberships: unknown[] };
+    expect(body.memberships).toEqual([]);
+  });
+
+  test("elsewhere an unknown subject is still refused, and nothing is created", async () => {
+    const h = await harness({ provisionUnknownSubjects: false });
+    const response = await h.request("/v1/me", {
+      token: await validToken({ subject: NEWCOMER }),
+    });
+    expect(response.status).toBe(401);
+    expect(h.repository.provisioned).toEqual([]);
+    expect(h.repository.contexts.has(NEWCOMER)).toBe(false);
+  });
+
+  test("a deleted account is refused, never re-enrolled", async () => {
+    const h = await harness({ provisionUnknownSubjects: true });
+    h.repository.contexts.set(
+      NEWCOMER,
+      baseContext({
+        userId: NEWCOMER,
+        profileDeletedAt: new Date().toISOString(),
+      }),
+    );
+    const response = await h.request("/v1/me", {
+      token: await validToken({ subject: NEWCOMER }),
+    });
+    expect(response.status).toBe(401);
+    expect(h.repository.provisioned).toEqual([]);
+  });
+
+  test("a suspended account is refused, never re-enrolled", async () => {
+    const h = await harness({ provisionUnknownSubjects: true });
+    h.repository.contexts.set(
+      NEWCOMER,
+      baseContext({ userId: NEWCOMER, profileStatus: "suspended" }),
+    );
+    const response = await h.request("/v1/me", {
+      token: await validToken({ subject: NEWCOMER }),
+    });
+    expect(response.status).toBe(401);
+    expect(h.repository.provisioned).toEqual([]);
+  });
+
+  test("an unverifiable token never reaches provisioning", async () => {
+    const h = await harness({ provisionUnknownSubjects: true });
+    const response = await h.request("/v1/me", {
+      token: await validToken({
+        subject: NEWCOMER,
+        issuer: "https://evil.test",
+      }),
+    });
+    expect(response.status).toBe(401);
+    expect(h.repository.provisioned).toEqual([]);
+  });
+});
