@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../domain/academic_repository.dart';
-import '../../../core/file_upload_repository.dart';
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
+import '../../../core/feedback.dart';
+import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
+import '../domain/academic_repository.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;

@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
-import '../../../l10n/generated/app_l10n.dart';
 
 /// A child's progress from published grades and recorded attendance. Every
 /// figure says where it comes from; nothing is inferred or predicted.

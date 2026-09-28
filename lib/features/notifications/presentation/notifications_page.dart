@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
-import 'notification_copy.dart';
-import '../domain/notification.dart';
-import 'notifications_scope.dart';
-import 'notification_preferences_page.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../domain/notification.dart';
+import 'notification_copy.dart';
+import 'notification_preferences_page.dart';
+import 'notifications_scope.dart';
 
 /// Real notifications feed, backed by the typed `/v1` notifications
 /// repository (MOB-070). Replaces the legacy `StudentNotificationsPage`,

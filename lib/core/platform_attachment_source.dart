@@ -1,8 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'attachment_policy.dart';
 import 'attachment_field.dart';
+import 'attachment_policy.dart';
 
 /// The real picker.
 ///

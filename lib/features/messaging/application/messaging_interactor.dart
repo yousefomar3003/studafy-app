@@ -1,10 +1,10 @@
 import 'dart:math';
 
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/result.dart';
 import '../../../core/telemetry.dart';
 import '../domain/messaging.dart';
-import '../../../core/idempotency.dart';
 
 /// Messaging use cases. Presentation calls this, never a repository or the
 /// transport directly (ARC-011). Telemetry records counts and outcomes only:

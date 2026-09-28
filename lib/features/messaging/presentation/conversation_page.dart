@@ -2,20 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_field.dart';
+import '../../../core/attachment_opener.dart';
 import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/uploads_scope.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'blocked_people_page.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 import 'safety_sheets.dart';
-import '../../../core/file_upload_repository.dart';
-import '../../../core/attachment_field.dart';
-import '../../../core/attachment_opener.dart';
-import '../../../core/platform_attachment_source.dart';
-import '../../../core/uploads_scope.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
 
 /// One conversation. Report and block controls are always one tap away in
 /// the app bar, and any message can be reported with a long press.

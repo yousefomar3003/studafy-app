@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
-import '../../../core/failures.dart';
-import '../domain/school_operations_repository.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../l10n/generated/app_l10n.dart';
+import '../domain/school_operations_repository.dart';
 
 class ClassroomManagementPage extends StatefulWidget {
   const ClassroomManagementPage({

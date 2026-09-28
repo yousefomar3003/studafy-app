@@ -9,12 +9,11 @@ import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/session/application/session_interactor.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
+import 'package:studafy/features/session/presentation/login_page.dart';
+import 'package:studafy/features/session/presentation/role_page.dart';
 
 import 'support/localized_app.dart';
 import 'support/session_repository_fake.dart';
-
-import 'package:studafy/features/session/presentation/login_page.dart';
-import 'package:studafy/features/session/presentation/role_page.dart';
 
 void main() {
   tearDown(() => ActiveContextController.instance.signOut());

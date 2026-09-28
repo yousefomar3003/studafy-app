@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'app/app_bootstrap.dart';
 import 'app/account_scope.dart';
+import 'app/app_bootstrap.dart';
 import 'app/app_dependencies.dart';
 import 'app/class_join_link_guard.dart';
-import 'app/onboarding_page.dart';
 import 'app/class_join_link_listener.dart';
 import 'app/oauth_callback_guard.dart';
+import 'app/onboarding_page.dart';
+import 'app/parent_shell.dart';
+import 'app/session_scope.dart';
 import 'app/studafy_theme.dart';
+import 'app/student_shell.dart';
 import 'app/teacher_shell.dart';
 import 'core/app_routes.dart';
-import 'core/studafy_design.dart';
 import 'core/locale_controller.dart';
 import 'core/runtime_environment.dart';
-import 'l10n/generated/app_l10n.dart';
+import 'core/studafy_design.dart';
+import 'core/uploads_scope.dart';
 import 'features/family/presentation/family_scope.dart';
+import 'features/meetings/presentation/meetings_scope.dart';
 import 'features/messaging/presentation/messaging_scope.dart';
 import 'features/notifications/presentation/notifications_scope.dart';
 import 'features/session/presentation/role_page.dart';
 import 'features/session/presentation/splash_page.dart';
-import 'app/parent_shell.dart';
-import 'app/student_shell.dart';
-import 'core/uploads_scope.dart';
-import 'app/session_scope.dart';
-import 'features/meetings/presentation/meetings_scope.dart';
+import 'l10n/generated/app_l10n.dart';
 
 /// Holds a class join link tapped before the app had somewhere to show it.
 final classJoinLinks = ClassJoinLinkGuard();

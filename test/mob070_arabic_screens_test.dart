@@ -4,10 +4,10 @@ import 'package:studafy/core/ids.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
-import 'package:studafy/features/session/application/session_interactor.dart';
-import 'package:studafy/features/session/domain/session_repository.dart';
 import 'package:studafy/features/academic/data/preview_academic_repository.dart';
 import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
+import 'package:studafy/features/session/application/session_interactor.dart';
+import 'package:studafy/features/session/domain/session_repository.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
 
 import 'support/localized_app.dart';

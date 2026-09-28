@@ -1,9 +1,9 @@
 import '../../../core/failures.dart';
 import '../../../core/file_upload_repository.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/academic_repository.dart';
-import '../../../core/idempotency.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
   /// [context] is the signed-in person's active school and child; it is

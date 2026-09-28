@@ -1,5 +1,5 @@
-import '../../../core/result.dart';
 import '../../../core/account_lifecycle.dart';
+import '../../../core/result.dart';
 import '../domain/account_repository.dart';
 import '../domain/data_export.dart';
 

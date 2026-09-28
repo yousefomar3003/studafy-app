@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
 
 /// Everyone the user has blocked in one school, each with an Unblock
 /// control. A block the user cannot see or undo would be a trap.

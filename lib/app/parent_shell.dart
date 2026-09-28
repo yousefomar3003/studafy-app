@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/feedback.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -16,7 +17,6 @@ import '../features/messaging/presentation/conversations_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
-import '../core/feedback.dart';
 
 /// The parent's app: their children's day, schoolwork, Family+ insights,
 /// updates and messages. Composed here because it draws on several features.

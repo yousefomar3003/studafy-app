@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/studafy_design.dart';
-import '../domain/study.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../domain/study.dart';
 
 /// The three plans, what each unlocks, and where the student stands.
 ///

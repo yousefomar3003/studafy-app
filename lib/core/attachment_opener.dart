@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'file_upload_repository.dart';
-import 'uploads_scope.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'feedback.dart';
+import 'file_upload_repository.dart';
+import 'uploads_scope.dart';
 
 /// Shows [file] to the person who tapped it.
 ///

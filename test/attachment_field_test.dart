@@ -3,11 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
 import 'package:studafy/features/academic/presentation/submit_work_page.dart';
-import 'package:studafy/core/attachment_field.dart';
 
 import 'support/localized_app.dart';
 

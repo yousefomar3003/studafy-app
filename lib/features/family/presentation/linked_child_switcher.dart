@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_domain.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
 import 'family_scope.dart';
-import '../../../l10n/generated/app_l10n.dart';
 
 /// Which of a guardian's children the other tabs are showing, and a way to
 /// change it without going back to Home.

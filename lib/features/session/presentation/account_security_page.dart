@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
-import '../../../core/feedback.dart';
 
 /// Account security: second factor, active devices, and sign out everywhere
 /// (AUTH-030).

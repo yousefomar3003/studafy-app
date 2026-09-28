@@ -5,13 +5,13 @@ import 'package:studafy/app/teacher_today_page.dart';
 import 'package:studafy/core/ids.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
+import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/classes/application/class_list_interactor.dart';
 import 'package:studafy/features/classes/domain/classroom.dart';
 import 'package:studafy/features/classes/domain/classroom_repository.dart';
 import 'package:studafy/features/notifications/application/notifications_interactor.dart';
 import 'package:studafy/features/notifications/domain/notification.dart';
 import 'package:studafy/features/notifications/domain/notifications_repository.dart';
-import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/notifications/presentation/notifications_scope.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 

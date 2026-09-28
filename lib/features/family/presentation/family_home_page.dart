@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
 import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
-import 'family_challenge_page.dart';
 import 'child_progress_page.dart';
+import 'family_challenge_page.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
 
 /// Guardian home on authoritative `/v1` data (MOB-070 parent slice).
 /// Replaces the legacy SQLite home in real builds: children come from the

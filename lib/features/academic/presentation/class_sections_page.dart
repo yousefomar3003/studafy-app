@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
-import '../../../core/studafy_formatting.dart';
 
 /// The sections of a class that have been taught, and what was taught in them.
 ///

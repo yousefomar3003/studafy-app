@@ -6,11 +6,10 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart'
     show GooglePlayProductDetails;
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart'
     show AppStoreProductDetails, AppStoreProduct2Details;
-import 'package:in_app_purchase_storekit/store_kit_wrappers.dart'
-    show SKProductDiscountPaymentMode, SKSubscriptionPeriodUnit;
-
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart'
     show SK2SubscriptionPeriodUnit;
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart'
+    show SKProductDiscountPaymentMode, SKSubscriptionPeriodUnit;
 
 /// Store-verified pricing and term strings for one paywall offer.
 ///

@@ -5,18 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../core/studafy_design.dart';
-import '../core/language_picker.dart';
-import '../core/studafy_domain.dart';
 import '../core/failures.dart';
+import '../core/feedback.dart';
+import '../core/language_picker.dart';
+import '../core/studafy_design.dart';
+import '../core/studafy_domain.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/data_export.dart';
 import '../features/account/presentation/delete_account_page.dart';
 import '../features/family/presentation/family_scope.dart';
 import '../features/session/presentation/account_security_page.dart';
-import 'account_scope.dart';
 import '../l10n/generated/app_l10n.dart';
-import '../core/feedback.dart';
+import 'account_scope.dart';
 import 'session_scope.dart';
 
 /// Opens the shared account screen. Every role shell shows it, because
@@ -316,7 +316,8 @@ List<StudafyRole> _switchableRoles(ActiveContextController context_) {
   final school = context_.membership?.schoolId;
   final seen = <StudafyRole>{};
   return [
-    for (final membership in context_.profile?.memberships ?? const [])
+    for (final membership
+        in context_.profile?.memberships ?? const <SchoolMembership>[])
       if (membership.active &&
           membership.role != StudafyRole.schoolAdmin &&
           membership.schoolId == school &&

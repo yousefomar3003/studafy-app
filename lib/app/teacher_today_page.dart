@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
-import '../features/classes/application/class_list_interactor.dart';
+import '../core/studafy_formatting.dart';
 import '../core/user_content_text.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
-import 'account_hub_page.dart';
-import '../core/studafy_formatting.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'account_hub_page.dart';
 
 /// Teacher home for real builds. Everything on it comes from the signed-in
 /// profile and the server: the legacy home was fixed demo content, with a

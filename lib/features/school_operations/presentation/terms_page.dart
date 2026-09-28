@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/studafy_design.dart';
 import '../../../core/failures.dart';
-import '../domain/school_operations_repository.dart';
-import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/feedback.dart';
+import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../l10n/generated/app_l10n.dart';
+import '../domain/school_operations_repository.dart';
 
 class TermsPage extends StatefulWidget {
   const TermsPage({super.key, required this.repository});

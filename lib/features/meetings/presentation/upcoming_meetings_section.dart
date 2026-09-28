@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/studafy_design.dart';
-import '../../../core/user_content_text.dart';
-import '../domain/meetings.dart';
-import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/feedback.dart';
+import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
+import '../domain/meetings.dart';
 import 'meetings_scope.dart';
 
 /// Opens [url] in Google Meet, or the browser where the app is not installed.

@@ -8,8 +8,8 @@ import '../features/classes/domain/classroom.dart';
 import '../features/family/presentation/student_family_page.dart';
 import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/notifications/presentation/notifications_page.dart';
-import 'account_hub_page.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'account_hub_page.dart';
 
 class StudentTodayPage extends StatelessWidget {
   const StudentTodayPage({

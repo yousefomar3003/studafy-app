@@ -1,11 +1,11 @@
 import '../../../core/class_join_link.dart';
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/ids.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/classroom.dart';
 import '../domain/classroom_repository.dart';
-import '../../../core/idempotency.dart';
 
 /// Authoritative API-041 classroom adapter. It never reads or writes the
 /// local preview database and never falls back when the service is offline.

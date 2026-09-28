@@ -6,8 +6,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/failures.dart';
-import 'v1_client.generated.dart';
 import '../../core/idempotency.dart' as ids;
+import 'v1_client.generated.dart';
 
 /// Raised when the API refuses a request. [code] is the stable machine code
 /// from the error envelope; the message is safe to show but deliberately

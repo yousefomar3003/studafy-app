@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'blocked_people_page.dart';
 import 'conversation_page.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
 
 /// Conversation list for every role, backed by authoritative `/v1`
 /// messaging (MOB-070, SAFE-043). Replaces the legacy SQLite chat screens.

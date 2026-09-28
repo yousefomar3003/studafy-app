@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
-import '../application/class_list_interactor.dart';
-import '../domain/classroom.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
+import '../application/class_list_interactor.dart';
+import '../domain/classroom.dart';
 
 /// Typed teacher class list (ARC-011 classes slice).
 ///

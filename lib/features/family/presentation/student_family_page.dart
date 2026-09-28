@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
 
 class StudentFamilyPage extends StatefulWidget {
   const StudentFamilyPage({super.key});

@@ -68,7 +68,12 @@ class ApiSessionRepository implements SessionRepository {
       onError: (Object _) =>
           controller.add(SessionLifecycleEvent.refreshFailed),
     );
-    controller.onCancel = subscription.cancel;
+    // One controller per listener set: when the last listener goes, the
+    // auth subscription and the controller both close.
+    controller.onCancel = () async {
+      await subscription.cancel();
+      await controller.close();
+    };
     return controller.stream;
   }
 

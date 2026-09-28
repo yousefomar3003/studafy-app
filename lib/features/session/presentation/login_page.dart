@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 
+import '../../../core/app_routes.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
-import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/studafy_domain.dart';
-import '../../../core/app_routes.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
 import 'role_page.dart';

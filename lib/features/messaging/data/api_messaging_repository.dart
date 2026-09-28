@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import '../../../core/failures.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/idempotency.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/messaging.dart';
-import '../../../core/file_upload_repository.dart';
-import '../../../core/idempotency.dart';
 
 /// Server error codes the messaging screens explain in their own words.
 /// Anything else becomes a generic failure, never raw server text.

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/user_content_text.dart';
-import '../domain/study.dart';
-import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/feedback.dart';
+import '../../../core/user_content_text.dart';
+import '../../../l10n/generated/app_l10n.dart';
+import '../domain/study.dart';
 
 /// Quiz and Flashcards buttons under a lesson. Studafy Max; on any other plan
 /// they show a lock and open the Plans screen.

@@ -69,7 +69,7 @@ mixin _StudafyTeachingQueries on _StudafyDatabaseAccess {
 
   Future<List<Map<String, Object?>>> chats([String query = '']) async =>
       (await database).rawQuery(
-        "SELECT c.*, (SELECT body FROM messages WHERE chat_id=c.id ORDER BY id DESC LIMIT 1) last_message FROM chats c WHERE contact_name LIKE ? OR context LIKE ? ORDER BY updated_at DESC",
+        'SELECT c.*, (SELECT body FROM messages WHERE chat_id=c.id ORDER BY id DESC LIMIT 1) last_message FROM chats c WHERE contact_name LIKE ? OR context LIKE ? ORDER BY updated_at DESC',
         ['%$query%', '%$query%'],
       );
   Future<List<Map<String, Object?>>> messages(int chatId) async =>

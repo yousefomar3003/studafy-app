@@ -1,5 +1,5 @@
-import '../contracts/v1_client.generated.dart';
 import '../../core/runtime_environment.dart';
+import '../contracts/v1_client.generated.dart';
 
 String billingEnvironmentName(StudafyEnvironment environment) =>
     switch (environment) {

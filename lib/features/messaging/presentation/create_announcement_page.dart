@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_field.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/messaging_interactor.dart';
 import '../domain/messaging.dart';
-import '../../../core/file_upload_repository.dart';
-import '../../../core/attachment_field.dart';
-import '../../../core/platform_attachment_source.dart';
-import '../../../core/uploads_scope.dart';
 
 /// One class a teacher may announce to.
 ///

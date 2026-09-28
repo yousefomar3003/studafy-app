@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/attachment_opener.dart';
 import '../../../core/file_upload_repository.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
-import '../../../core/studafy_formatting.dart';
 
 /// Every attempt one student made at one piece of work, newest first.
 ///

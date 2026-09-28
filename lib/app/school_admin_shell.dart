@@ -4,13 +4,13 @@ import '../core/studafy_design.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
+import '../features/school_operations/domain/school_operations_repository.dart';
 import '../features/school_operations/presentation/classroom_management_page.dart';
 import '../features/school_operations/presentation/guardian_verification_page.dart';
 import '../features/school_operations/presentation/terms_page.dart';
-import '../features/school_operations/domain/school_operations_repository.dart';
+import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 import 'app_dependencies.dart';
-import '../l10n/generated/app_l10n.dart';
 
 class SchoolAdminShell extends StatefulWidget {
   const SchoolAdminShell({super.key, required this.dependencies});

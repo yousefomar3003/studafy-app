@@ -11,8 +11,8 @@ import '../features/study/domain/study.dart';
 import '../features/study/presentation/notebook_view.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
-import 'account_hub_page.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'account_hub_page.dart';
 
 /// The student's Lessons tab: their classes, and in each class its lessons by
 /// date and their own notebook for it.

@@ -2,10 +2,10 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import 'attachment_policy.dart';
-import 'file_upload_repository.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'attachment_policy.dart';
 import 'feedback.dart';
+import 'file_upload_repository.dart';
 
 /// What the person chose, before anything has been sent.
 @immutable

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../../../data/local_cache/mutation_outbox_engine.dart';
@@ -8,7 +9,6 @@ import '../../../data/local_cache/offline_cache_store.dart';
 import '../../../data/local_cache/session_cache_binder.dart';
 import '../domain/notification.dart';
 import '../domain/notifications_repository.dart';
-import '../../../core/idempotency.dart';
 
 const _entityType = 'notification';
 

@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
-import 'package:studafy/features/study/domain/study.dart';
-import 'package:studafy/data/billing/v1_billing_api.dart';
 import 'package:studafy/data/billing/store_subscription_repository.dart';
+import 'package:studafy/data/billing/v1_billing_api.dart';
+import 'package:studafy/features/study/domain/study.dart';
 
 const sku = 'studafy_plus_monthly';
 
@@ -62,6 +62,7 @@ PricingPhaseWrapper phase(int micros, String price, RecurrenceMode mode) =>
     );
 
 class Store extends Fake implements InAppPurchase {
+  // ignore: close_sinks - a fake store lives for one test.
   final events = StreamController<List<PurchaseDetails>>.broadcast();
   PurchaseParam? bought;
   bool available = true;

@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
 import '../../../core/attachment_policy.dart';
+import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
-import '../domain/study.dart';
 import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/feedback.dart';
+import '../domain/study.dart';
 
 /// A student's own notebook for one class, newest first, grouped by day.
 ///

@@ -1,32 +1,31 @@
-import 'account_hub_page.dart';
-
 import 'package:flutter/material.dart';
 
+import '../core/feedback.dart';
 import '../core/studafy_design.dart';
-import '../features/classes/domain/classroom.dart';
-import '../features/classes/presentation/classes_page.dart';
-import '../features/academic/presentation/academic_overview_page.dart';
-import '../l10n/generated/app_l10n.dart';
-import '../features/academic/presentation/attendance_page.dart';
-import '../features/academic/presentation/class_roster_page.dart';
-import '../features/academic/presentation/create_assignment_page.dart';
-import '../features/academic/presentation/create_exam_page.dart';
-import '../features/academic/presentation/class_sections_page.dart';
-import '../features/academic/presentation/class_schedule_page.dart';
-import '../features/academic/presentation/submissions_page.dart';
-import '../features/academic/presentation/gradebook_page.dart';
-import '../features/messaging/presentation/create_announcement_page.dart';
-import '../features/messaging/presentation/messaging_scope.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/presentation/academic_overview_page.dart';
+import '../features/academic/presentation/attendance_page.dart';
+import '../features/academic/presentation/class_roster_page.dart';
+import '../features/academic/presentation/class_schedule_page.dart';
+import '../features/academic/presentation/class_sections_page.dart';
+import '../features/academic/presentation/create_assignment_page.dart';
+import '../features/academic/presentation/create_exam_page.dart';
+import '../features/academic/presentation/gradebook_page.dart';
+import '../features/academic/presentation/submissions_page.dart';
+import '../features/classes/domain/classroom.dart';
+import '../features/classes/presentation/classes_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
-import '../features/school_operations/presentation/classroom_management_page.dart';
-import '../features/school_operations/domain/school_operations_repository.dart';
+import '../features/messaging/presentation/create_announcement_page.dart';
+import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/notifications/presentation/notifications_page.dart';
-import 'teacher_today_page.dart';
+import '../features/school_operations/domain/school_operations_repository.dart';
+import '../features/school_operations/presentation/classroom_management_page.dart';
+import '../l10n/generated/app_l10n.dart';
+import 'account_hub_page.dart';
 import 'app_dependencies.dart';
-import '../core/feedback.dart';
+import 'teacher_today_page.dart';
 
 class TeacherShell extends StatefulWidget {
   const TeacherShell({super.key, required this.dependencies});

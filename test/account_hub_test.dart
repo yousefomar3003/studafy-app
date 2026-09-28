@@ -3,13 +3,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/app/account_hub_page.dart';
 import 'package:studafy/app/account_scope.dart';
+import 'package:studafy/app/student_shell.dart';
 import 'package:studafy/core/account_lifecycle.dart';
+import 'package:studafy/core/studafy_domain.dart';
+import 'package:studafy/features/academic/data/preview_academic_repository.dart';
 import 'package:studafy/features/account/application/account_interactor.dart';
 import 'package:studafy/features/account/domain/account_repository.dart';
 import 'package:studafy/features/account/domain/data_export.dart';
-import 'package:studafy/core/studafy_domain.dart';
-import 'package:studafy/features/academic/data/preview_academic_repository.dart';
-import 'package:studafy/app/student_shell.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// Apple 5.1.1(v) / Google Play: sign-out and in-app account deletion must

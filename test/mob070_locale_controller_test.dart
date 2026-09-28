@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/app/locale_session_binder.dart';
 import 'package:studafy/core/device_settings.dart';
 import 'package:studafy/core/failures.dart';
-import 'package:studafy/app/locale_session_binder.dart';
 import 'package:studafy/core/locale_controller.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/features/account/domain/profile_repository.dart';

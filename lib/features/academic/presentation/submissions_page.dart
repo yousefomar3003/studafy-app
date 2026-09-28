@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'gradebook_page.dart';
 import 'submission_history_view.dart';
-import '../../../core/studafy_formatting.dart';
 
 /// What students have handed in for one assignment.
 ///

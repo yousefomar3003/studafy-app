@@ -2,10 +2,10 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 
-import '../../../data/contracts/v1_client.generated.dart';
 import '../../../core/file_upload_repository.dart';
-import 'signed_upload_transport.dart';
 import '../../../core/idempotency.dart';
+import '../../../data/contracts/v1_client.generated.dart';
+import 'signed_upload_transport.dart';
 
 /// Fetches a delivery link's bytes with the caller's session attached.
 typedef DeliveryFetcher = Future<Uint8List> Function(Uri url);

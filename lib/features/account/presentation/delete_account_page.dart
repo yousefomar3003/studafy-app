@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/account_lifecycle.dart';
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/account_lifecycle.dart';
 import '../application/account_interactor.dart';
-import '../../../core/feedback.dart';
 
 /// In-app account deletion (AUTH-030, Apple 5.1.1(v), Google Play).
 ///

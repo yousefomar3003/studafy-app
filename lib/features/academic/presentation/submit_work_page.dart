@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/file_upload_repository.dart';
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
-import '../../../core/uploads_scope.dart';
+import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'submission_history_view.dart';
 
