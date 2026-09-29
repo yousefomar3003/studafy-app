@@ -43,6 +43,7 @@ class ApiStudyRepository implements StudyRepository {
     title: dto.title,
     body: dto.body,
     fromWhiteboard: dto.source == 'whiteboard',
+    fromLesson: dto.source == 'lesson',
     createdAt: DateTime.parse(dto.createdAt).toLocal(),
     photo: dto.photo == null
         ? null
@@ -64,6 +65,35 @@ class ApiStudyRepository implements StudyRepository {
       resetsAt: DateTime.parse(dto.resetsAt).toLocal(),
       askToday: dto.askToday,
       askPerDay: dto.askPerDay,
+      available: dto.available?.toSet(),
+    );
+  });
+
+  @override
+  Future<List<NotebookGroup>> myNotebooks() => _guard(() async {
+    final page = await _client.listMyNotebooks();
+    return [
+      for (final group in page.classes)
+        NotebookGroup(
+          classroomId: group['classroomId'] as String,
+          className: group['name'] as String,
+          classGone: group['archived'] as bool,
+          entries: [
+            for (final item in group['entries'] as List<dynamic>)
+              _entry(V1NotebookEntryDto.fromJson(item as Map<String, dynamic>)),
+          ],
+        ),
+    ];
+  });
+
+  @override
+  Future<NotebookEntry> lessonNotes(String resourceId) => _guard(() async {
+    return _entry(
+      await _client.createLessonNotes(
+        const V1CreateLessonNotesRequestDto(),
+        resourceId: resourceId,
+        idempotencyKey: newIdempotencyKey('lesson-notes'),
+      ),
     );
   });
 

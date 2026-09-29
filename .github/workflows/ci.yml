@@ -274,6 +274,56 @@ jobs:
           bunx supabase test db --local
           supabase/tests/study_plans.sql
 
+      # Store webhook events are claimed and finished, each event lands on
+      # the transaction it names (an Android upgrade's old token cannot
+      # expire the new plan), lost renewals are re-verified, and only
+      # verified entitlement changes notify the payer. Transactional.
+      # Lesson notes are made once per lesson version and shared; the same
+      # whiteboard photo returns the note already made while it exists.
+      - name: Verify AI output is made once and reused
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/ai_output_cache.sql
+
+      # A parent links only to a student: never a teacher's or other staff
+      # account, never their own. Transactional.
+      - name: Verify guardian links reach students only
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/guardian_links_students_only.sql
+
+      # Expired idempotency records are pruned by the worker; live and
+      # in-flight ones are kept. Transactional.
+      - name: Verify housekeeping
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/housekeeping.sql
+
+      - name: Verify the subscription lifecycle
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/subscription_lifecycle.sql
+
+      - name: Verify managed child accounts
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/managed_accounts.sql
+
+      - name: Verify first-sign-in profile setup
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/profile_setup.sql
+
+      - name: Verify deleting a class keeps students' notebooks
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/archive_classes.sql
+
+      - name: Verify what the study helper may read
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/assistant_material.sql
+
       # API-042: every school-operations slice - account, communications,
       # family, invitations, meetings, notifications, roster, school
       # operations and support access.

@@ -1,4 +1,5 @@
 import type { Sql } from "@studafy/database";
+import type { RenewalStatus } from "@studafy/domain";
 import { withRequestContext } from "../platform/dbContext";
 import type { RequestDbContext } from "../platform/dbContext";
 
@@ -30,6 +31,8 @@ export interface NormalizedTransaction {
     | "expired";
   purchasedAt: string;
   effectiveUntil: string | null;
+  /** What happens at the end of the period; display only, never access. */
+  renewalStatus: RenewalStatus | null;
   beneficiaryStudentId?: string | null;
 }
 

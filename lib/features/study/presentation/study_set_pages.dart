@@ -4,9 +4,13 @@ import '../../../core/feedback.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
+import 'upgrade_prompt.dart';
 
 /// Quiz and Flashcards buttons under a lesson. Studafy Max; on any other plan
-/// they show a lock and open the Plans screen.
+/// they still show, with a lock and a "Studafy Max" badge, and explain what
+/// Max adds with an Upgrade button to the Plans screen - a student should
+/// see what the plan would give them. On a server with study sets switched
+/// off they show and say so.
 class StudySetButtons extends StatefulWidget {
   const StudySetButtons({
     super.key,
@@ -32,13 +36,29 @@ class StudySetButtons extends StatefulWidget {
 class _StudySetButtonsState extends State<StudySetButtons> {
   StudySetKind? _making;
 
+  /// The server has study sets switched off. Only a plan that says so counts:
+  /// without one the server is asked, and it is the authority.
+  bool get _switchedOff => !(widget.plan?.studySetsOn ?? true);
+
+  bool get _locked => !(widget.plan?.canMakeStudySets ?? false);
+
   Future<void> _open(StudySetKind kind) async {
-    if (!(widget.plan?.canMakeStudySets ?? false)) {
-      widget.onOpenPlans();
+    final messenger = ScaffoldMessenger.of(context);
+    if (_switchedOff) {
+      messenger.showMessage(AppL10n.of(context).studySetSwitchedOff);
+      return;
+    }
+    if (_locked) {
+      await showUpgradePrompt(
+        context,
+        reason: UpgradeReason.feature,
+        plan: widget.plan,
+        needs: StudyPlanTier.max,
+        onUpgrade: widget.onOpenPlans,
+      );
       return;
     }
     setState(() => _making = kind);
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
       final set = await widget.study.studySet(widget.resourceId, kind);
@@ -52,7 +72,17 @@ class _StudySetButtonsState extends State<StudySetButtons> {
       );
     } on StudyException catch (error) {
       if (!mounted) return;
-      if (error.refusal == StudyRefusal.planRequired) widget.onOpenPlans();
+      final reason = upgradeReasonFor(error.refusal);
+      if (reason != null) {
+        await showUpgradePrompt(
+          context,
+          reason: reason,
+          plan: widget.plan,
+          needs: StudyPlanTier.max,
+          onUpgrade: widget.onOpenPlans,
+        );
+        return;
+      }
       messenger.showMessage(switch (error.refusal) {
         StudyRefusal.planRequired => AppL10n.of(
           context,
@@ -63,9 +93,7 @@ class _StudySetButtonsState extends State<StudySetButtons> {
         StudyRefusal.lessonHasNoText => AppL10n.of(
           context,
         ).studySetThisLessonHasNoText,
-        StudyRefusal.unavailable => AppL10n.of(
-          context,
-        ).studySetThisIsNotAvailableYet,
+        StudyRefusal.unavailable => AppL10n.of(context).studySetSwitchedOff,
         _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
       });
     } finally {
@@ -75,10 +103,19 @@ class _StudySetButtonsState extends State<StudySetButtons> {
 
   @override
   Widget build(BuildContext context) {
-    final locked = !(widget.plan?.canMakeStudySets ?? false);
+    final off = _switchedOff;
+    final locked = !off && _locked;
+    final scheme = Theme.of(context).colorScheme;
     Widget button(StudySetKind kind, IconData icon, String label) =>
         OutlinedButton.icon(
           onPressed: _making != null ? null : () => _open(kind),
+          // Shown, not usable: dimmed rather than disabled, so a tap can
+          // still say why.
+          style: off
+              ? OutlinedButton.styleFrom(
+                  foregroundColor: scheme.onSurface.withValues(alpha: .45),
+                )
+              : null,
           icon: _making == kind
               ? const SizedBox(
                   width: 16,
@@ -93,6 +130,7 @@ class _StudySetButtonsState extends State<StudySetButtons> {
       child: Wrap(
         spacing: 8,
         runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           button(
             StudySetKind.quiz,
@@ -104,7 +142,68 @@ class _StudySetButtonsState extends State<StudySetButtons> {
             Icons.style_outlined,
             AppL10n.of(context).studySetFlashcards,
           ),
+          if (locked)
+            ActionChip(
+              avatar: const Icon(Icons.workspace_premium_outlined, size: 16),
+              label: Text(AppL10n.of(context).studySetMaxBadge),
+              tooltip: AppL10n.of(context).studySetQuizzesAndFlashcardsComeWith,
+              onPressed: widget.onOpenPlans,
+              visualDensity: VisualDensity.compact,
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Quizzes and flashcards, named at the top of a class's lessons so a
+/// student sees them before there is a lesson to make one from - and sees
+/// that they come with Studafy Max, when their plan does not include them.
+class StudyToolsCard extends StatelessWidget {
+  const StudyToolsCard({
+    super.key,
+    required this.plan,
+    required this.hasLessons,
+    required this.onOpenPlans,
+  });
+
+  final StudyPlan? plan;
+  final bool hasLessons;
+  final VoidCallback onOpenPlans;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final plan = this.plan;
+    final off = plan != null && !plan.studySetsOn;
+    final locked = !off && !(plan?.canMakeStudySets ?? false);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: Icon(
+          locked ? Icons.lock_outline_rounded : Icons.style_outlined,
+        ),
+        title: Text(
+          l10n.studyToolsTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          off
+              ? l10n.studySetSwitchedOff
+              : locked
+              ? l10n.studyToolsLocked
+              : hasLessons
+              ? l10n.studyToolsReady
+              : l10n.studyToolsNoLessons,
+        ),
+        trailing: locked
+            ? ActionChip(
+                avatar: const Icon(Icons.workspace_premium_outlined, size: 16),
+                label: Text(l10n.studySetMaxBadge),
+                onPressed: onOpenPlans,
+              )
+            : null,
+        onTap: locked ? onOpenPlans : null,
       ),
     );
   }

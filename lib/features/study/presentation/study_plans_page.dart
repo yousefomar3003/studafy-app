@@ -1,16 +1,23 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
+import 'cancel_subscription_sheet.dart';
+import 'study_plan_copy.dart';
 
 /// The three plans, what each unlocks, and where the student stands.
 ///
 /// Prices come from the store listing, in the student's own currency. When
 /// the store cannot be reached the US list price is shown, labelled as such:
 /// the store is always what confirms the price (App Review 3.1.2).
+///
+/// Payment happens only in the App Store or Google Play sheet, with the
+/// payment methods of the student's store account. There is no card form
+/// and no wallet button here, and on the web and desktop, where there is
+/// no store, plans are described but bought in the mobile app.
 class StudyPlansPage extends StatefulWidget {
   const StudyPlansPage({
     super.key,
@@ -31,17 +38,9 @@ class StudyPlansPage extends StatefulWidget {
   State<StudyPlansPage> createState() => _StudyPlansPageState();
 }
 
-class _PlanCopy {
-  const _PlanCopy(this.name, this.usPrice, this.features);
-  final String name;
-  final String usPrice;
-
-  /// What the plan includes, in the reader's language.
-  final List<String Function(AppL10n)> features;
-}
-
 class _StudyPlansPageState extends State<StudyPlansPage> {
   StudyPlan? _plan;
+  StudyPlanSubscription? _subscription;
   final Map<StudyPlanTier, StudyPlanOffer> _offers = {};
   bool _loading = true;
   bool _busy = false;
@@ -50,24 +49,14 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
   static const _terms = String.fromEnvironment('STUDAFY_TERMS_URL');
   static const _privacy = String.fromEnvironment('STUDAFY_PRIVACY_URL');
 
-  static final _copy = {
-    StudyPlanTier.free: _PlanCopy('Studafy Free', '', [
-      (l) => l.studyPlansFeatureLessons,
-      (l) => l.studyPlansFeatureNotebook,
-      (l) => l.studyPlansFeatureTenQuestions,
-    ]),
-    StudyPlanTier.plus: _PlanCopy('Studafy Plus', r'US$3.99', [
-      (l) => l.studyPlansFeatureEverythingInFree,
-      (l) => l.studyPlansFeatureWhiteboard,
-      (l) => l.studyPlansFeatureFortyQuestions,
-    ]),
-    StudyPlanTier.max: _PlanCopy('Studafy Max', r'US$5.99', [
-      (l) => l.studyPlansFeatureEverythingInPlus,
-      (l) => l.studyPlansFeatureQuizzes,
-      (l) => l.studyPlansFeatureFlashcards,
-      (l) => l.studyPlansFeatureSixtyQuestions,
-    ]),
-  };
+  /// The Android application id, for Google Play's link straight to this
+  /// app's subscription. Matches android/app/build.gradle.kts.
+  static const _androidPackage = String.fromEnvironment(
+    'STUDAFY_ANDROID_PACKAGE',
+    defaultValue: 'com.studafy.light',
+  );
+
+  SubscriptionStore? get _store => widget.subscriptions?.purchaseStore;
 
   @override
   void initState() {
@@ -91,21 +80,30 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     } on Object {
       plan = null;
     }
+    StudyPlanSubscription? subscription;
     final offers = <StudyPlanTier, StudyPlanOffer>{};
     final subscriptions = widget.subscriptions;
     if (subscriptions != null) {
-      for (final tier in [StudyPlanTier.plus, StudyPlanTier.max]) {
-        try {
-          offers[tier] = await subscriptions.offer(tier);
-        } on Object {
-          // A store outage never hides the plans; the card says the store
-          // could not be reached.
+      try {
+        subscription = await subscriptions.subscription();
+      } on Object {
+        subscription = null;
+      }
+      if (_store != null) {
+        for (final tier in [StudyPlanTier.plus, StudyPlanTier.max]) {
+          try {
+            offers[tier] = await subscriptions.offer(tier);
+          } on Object {
+            // A store outage never hides the plans; the card says the store
+            // could not be reached.
+          }
         }
       }
     }
     if (!mounted) return;
     setState(() {
       _plan = plan;
+      _subscription = subscription;
       _offers
         ..clear()
         ..addAll(offers);
@@ -113,8 +111,19 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     });
   }
 
+  String _blockedText(AppL10n l10n, PurchaseBlock reason) => switch (reason) {
+    PurchaseBlock.alreadySubscribed => l10n.studyPlansBlockedAlready,
+    PurchaseBlock.paidByParent => l10n.studyPlansBlockedParent,
+    PurchaseBlock.otherStore => l10n.studyPlansBlockedOtherStore(
+      storeName(_subscription?.store ?? SubscriptionStore.appStore),
+    ),
+    PurchaseBlock.upgradeNeedsOriginalAccount =>
+      l10n.studyPlansBlockedOriginalAccount,
+  };
+
   Future<void> _perform(Future<void> Function() action, String done) async {
     if (_busy) return;
+    final l10n = AppL10n.of(context);
     setState(() {
       _busy = true;
       _message = null;
@@ -123,12 +132,12 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
       await action();
       if (mounted) setState(() => _message = done);
       await _load();
-    } on Object {
+    } on PurchaseBlockedException catch (blocked) {
       if (mounted) {
-        setState(
-          () => _message = AppL10n.of(context).studySetThatDidNotWorkPlease,
-        );
+        setState(() => _message = _blockedText(l10n, blocked.reason));
       }
+    } on Object {
+      if (mounted) setState(() => _message = l10n.studySetThatDidNotWorkPlease);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -142,17 +151,23 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         uri.userInfo.isEmpty;
   }
 
-  Future<void> _open(String value) async {
-    if (!_validUrl(value)) return;
+  Future<void> _openUri(Uri uri) async {
+    if (!_validUrl(uri.toString())) return;
     final open =
         widget.openLink ??
         (Uri u) => launchUrl(u, mode: LaunchMode.externalApplication);
-    await open(Uri.parse(value));
+    await open(uri);
   }
 
-  String get _manageUrl => defaultTargetPlatform == TargetPlatform.iOS
-      ? 'https://apps.apple.com/account/subscriptions'
-      : 'https://play.google.com/store/account/subscriptions';
+  Future<void> _open(String value) async {
+    if (_validUrl(value)) await _openUri(Uri.parse(value));
+  }
+
+  Uri _manageUri(StudyPlanSubscription subscription) => manageSubscriptionUri(
+    subscription.store ?? _store ?? SubscriptionStore.appStore,
+    storeProductId: subscription.storeProductId,
+    androidPackage: _androidPackage,
+  );
 
   Widget _usage(StudyPlan plan) {
     final theme = Theme.of(context);
@@ -192,58 +207,169 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     );
   }
 
-  Widget _planCard(StudyPlanTier tier) {
+  /// The paid plan as the store bills it: when it renews or ends, a payment
+  /// problem, and the way to manage, pause or cancel it.
+  Widget _subscriptionCard(StudyPlanSubscription subscription) {
+    final l10n = AppL10n.of(context);
     final theme = Theme.of(context);
-    final copy = _copy[tier]!;
-    final current = (_plan?.tier ?? StudyPlanTier.free) == tier;
+    final plan = studyPlanCopy[subscription.tier]!.name;
+    final store = storeName(
+      subscription.store ?? _store ?? SubscriptionStore.appStore,
+    );
+    final ends = subscription.endsAt;
+    final date = ends == null
+        ? l10n.studyPlansEndOfPeriod
+        : studafyShortDate(context, ends.toLocal());
+    final manage = _manageUri(subscription);
+
+    final String status;
+    if (!subscription.paidByMe) {
+      status = l10n.studyPlansPaidByParent(store);
+    } else {
+      status = switch (subscription.renewal) {
+        RenewalStatus.cancelled => l10n.studyPlansCancelledUntil(plan, date),
+        RenewalStatus.paused => l10n.studyPlansPausedNote,
+        RenewalStatus.paymentIssue => l10n.studyPlansPaymentIssue(store, plan),
+        _ => l10n.studyPlansRenewsOn(date),
+      };
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 18),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              plan,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              status,
+              style: subscription.renewal == RenewalStatus.paymentIssue
+                  ? TextStyle(color: theme.colorScheme.error)
+                  : null,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.studyPlansBilledBy(store),
+              style: theme.textTheme.bodySmall,
+            ),
+            if (subscription.paidByMe) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (subscription.renewal == RenewalStatus.paymentIssue)
+                    FilledButton.icon(
+                      onPressed: () => _openUri(manage),
+                      icon: const Icon(Icons.credit_card_rounded),
+                      label: Text(l10n.studyPlansUpdatePayment),
+                    ),
+                  OutlinedButton(
+                    onPressed: () => _openUri(manage),
+                    child: Text(l10n.studyPlansManageSubscription),
+                  ),
+                  if (subscription.renewal != RenewalStatus.cancelled)
+                    TextButton(
+                      onPressed: () => showCancelSubscriptionSheet(
+                        context,
+                        subscription: subscription,
+                        manageUri: manage,
+                        openStore: _openUri,
+                      ),
+                      child: Text(l10n.studyPlansCancelSubscription),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _planCard(StudyPlanTier tier) {
+    final l10n = AppL10n.of(context);
+    final theme = Theme.of(context);
+    final copy = studyPlanCopy[tier]!;
+    final held = _plan?.tier ?? StudyPlanTier.free;
+    final current = held == tier;
+    // Max includes Plus: a Max student is never offered Plus as well.
+    final included =
+        !current && tier != StudyPlanTier.free && held.includes(tier);
     final offer = _offers[tier];
     final subscriptions = widget.subscriptions;
+    final upgrading = held != StudyPlanTier.free;
 
     Widget? action;
-    if (tier != StudyPlanTier.free && !current && subscriptions != null) {
+    if (tier != StudyPlanTier.free &&
+        !current &&
+        !included &&
+        subscriptions != null &&
+        _store != null) {
       final links = _validUrl(_terms) && _validUrl(_privacy);
       if (offer == null) {
-        action = Text(AppL10n.of(context).studyPlansTheStoreCouldNotBe);
+        action = Text(l10n.studyPlansTheStoreCouldNotBe);
       } else if (!offer.selfPurchaseEnabled) {
-        action = Text(AppL10n.of(context).studyPlansBuyingIsNotEnabledFor);
+        action = Text(l10n.studyPlansBuyingIsNotEnabledFor);
       } else if (offer.approval != 'approved') {
         action = OutlinedButton.icon(
           onPressed: _busy || offer.approval == 'requested'
               ? null
               : () => _perform(
                   () => subscriptions.requestApproval(tier),
-                  AppL10n.of(context).studyPlansWeAskedYourParentTo,
+                  l10n.studyPlansWeAskedYourParentTo,
                 ),
           icon: const Icon(Icons.family_restroom_rounded),
           label: Text(
             offer.approval == 'requested'
-                ? AppL10n.of(context).studyPlansWaitingForAParent
-                : AppL10n.of(context).studyPlansAskAParentToApprove,
+                ? l10n.studyPlansWaitingForAParent
+                : l10n.studyPlansAskAParentToApprove,
           ),
         );
       } else {
-        action = FilledButton.icon(
-          onPressed: _busy || !offer.canPurchase || !links
-              ? null
-              : () => _perform(
-                  () => subscriptions.purchase(tier),
-                  AppL10n.of(context).studyPlansOpeningTheStore,
-                ),
-          icon: const Icon(Icons.lock_open_rounded),
-          label: Text(
-            offer.oneMonthTrial
-                ? AppL10n.of(context).studyPlansStartAFreeMonth
-                : AppL10n.of(context).studyPlansSubscribeToName(copy.name),
-          ),
+        action = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FilledButton.icon(
+              onPressed: _busy || !offer.canPurchase || !links
+                  ? null
+                  : () => _perform(
+                      () => subscriptions.purchase(tier),
+                      l10n.studyPlansOpeningTheStore,
+                    ),
+              icon: const Icon(Icons.lock_open_rounded),
+              label: Text(
+                upgrading
+                    ? l10n.studyPlansUpgradeToName(copy.name)
+                    : offer.oneMonthTrial
+                    ? l10n.studyPlansStartAFreeMonth
+                    : l10n.studyPlansSubscribeToName(copy.name),
+              ),
+            ),
+            if (upgrading) ...[
+              const SizedBox(height: 6),
+              Text(
+                l10n.studyPlansUpgradeReplaces(studyPlanCopy[held]!.name),
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ],
         );
       }
     }
 
     final price = tier == StudyPlanTier.free
-        ? AppL10n.of(context).studyPlansFree
+        ? l10n.studyPlansFree
         : (offer != null && offer.storeAvailable && offer.price.isNotEmpty)
-        ? AppL10n.of(context).studyPlansPriceMonth(offer.price)
-        : AppL10n.of(context).studyPlansUspriceMonthInTheUs(copy.usPrice);
+        ? l10n.studyPlansPriceMonth(offer.price)
+        : l10n.studyPlansUspriceMonthInTheUs(copy.usPrice);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -269,7 +395,9 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                   ),
                 ),
                 if (current)
-                  Chip(label: Text(AppL10n.of(context).studyPlansYourPlan)),
+                  Chip(label: Text(l10n.studyPlansYourPlan))
+                else if (included)
+                  Chip(label: Text(l10n.studyPlansIncludedInYourPlan)),
               ],
             ),
             Text(price, style: theme.textTheme.titleMedium),
@@ -286,20 +414,11 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                       color: studafyCyan,
                     ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(feature(AppL10n.of(context)))),
+                    Expanded(child: Text(feature(l10n))),
                   ],
                 ),
               ),
-            if (current && tier != StudyPlanTier.free) ...[
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => _open(_manageUrl),
-                child: Text(AppL10n.of(context).studyPlansManageOrCancel),
-              ),
-            ] else if (action != null) ...[
-              const SizedBox(height: 12),
-              action,
-            ],
+            if (action != null) ...[const SizedBox(height: 12), action],
           ],
         ),
       ),
@@ -308,10 +427,14 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     final plan = _plan;
+    final subscription = _subscription;
     final subscriptions = widget.subscriptions;
+    final store = _store;
+    final small = Theme.of(context).textTheme.bodySmall;
     return Scaffold(
-      appBar: AppBar(title: Text(AppL10n.of(context).studentLessonsPlans)),
+      appBar: AppBar(title: Text(l10n.studentLessonsPlans)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -327,6 +450,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                         child: _usage(plan),
                       ),
                     ),
+                  if (subscription != null) _subscriptionCard(subscription),
                   for (final tier in StudyPlanTier.values) _planCard(tier),
                   if (_busy) const LinearProgressIndicator(),
                   if (_message != null)
@@ -334,23 +458,35 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(_message!),
                     ),
-                  if (subscriptions != null)
+                  if (subscriptions != null && store == null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(l10n.studyPlansBuyInMobileApp),
+                    ),
+                  if (subscriptions != null && store != null)
                     TextButton(
                       onPressed: _busy
                           ? null
                           : () => _perform(
                               subscriptions.restorePurchases,
-                              AppL10n.of(context).studyPlansRestoringPurchases,
+                              l10n.studyPlansRestoringPurchases,
                             ),
-                      child: Text(
-                        AppL10n.of(context).studyPlansRestorePurchases,
-                      ),
+                      child: Text(l10n.studyPlansRestorePurchases),
                     ),
                   const SizedBox(height: 8),
+                  if (store != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        store == SubscriptionStore.appStore
+                            ? l10n.studyPlansPayWithApple
+                            : l10n.studyPlansPayWithGoogle,
+                        style: small,
+                      ),
+                    ),
                   Text(
-                    AppL10n.of(context)
-                        .studyPlansAutoRenewingMonthlySubscriptionsPayment,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    l10n.studyPlansAutoRenewingMonthlySubscriptionsPayment,
+                    style: small,
                   ),
                   Wrap(
                     children: [
@@ -358,15 +494,13 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                         onPressed: _validUrl(_terms)
                             ? () => _open(_terms)
                             : null,
-                        child: Text(AppL10n.of(context).studyPlansTermsOfUse),
+                        child: Text(l10n.studyPlansTermsOfUse),
                       ),
                       TextButton(
                         onPressed: _validUrl(_privacy)
                             ? () => _open(_privacy)
                             : null,
-                        child: Text(
-                          AppL10n.of(context).studyPlansPrivacyPolicy,
-                        ),
+                        child: Text(l10n.studyPlansPrivacyPolicy),
                       ),
                     ],
                   ),

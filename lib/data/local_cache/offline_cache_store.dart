@@ -105,6 +105,24 @@ class OfflineCacheStore {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  /// One cached entity, or null when none is kept under that id.
+  Future<CachedEntity?> entity(String entityType, String entityId) async {
+    final rows = await _db.query(
+      'cache_entries',
+      where: 'entity_type = ? AND entity_id = ? AND tombstoned = 0',
+      whereArgs: [entityType, entityId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return CachedEntity(
+      entityId: row['entity_id'] as String,
+      version: row['version'] as String?,
+      payload: jsonDecode(row['payload'] as String) as Map<String, dynamic>,
+      updatedAt: row['updated_at'] as String,
+    );
+  }
+
   Future<List<CachedEntity>> entitiesFor(
     String entityType, {
     bool includeTombstoned = false,

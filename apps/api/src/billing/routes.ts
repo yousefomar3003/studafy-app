@@ -8,10 +8,12 @@ import {
   V1SubmitPurchaseRequest,
 } from "@studafy/contracts";
 import {
+  appleRenewalStatus,
+  googleRenewalStatus,
   isAppleTransactionTrusted,
   isGooglePackageNameTrusted,
-  mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
+  resolveAppleSubscriptionState,
 } from "@studafy/domain";
 import {
   type AppleTransactionVerifier,
@@ -353,12 +355,15 @@ async function verifyAndNormalize(
         "bundle, environment or product mismatch",
       );
     }
-    const state = mapAppleTransactionTypeToState(
-      null,
-      decoded.revocationReason,
-      decoded.expiresDate,
-      Date.now(),
-    );
+    // Apple's own status, not the expiry alone: a subscription in its
+    // billing grace period has an expired transaction but keeps access.
+    const { state, effectiveUntil } = resolveAppleSubscriptionState({
+      subscriptionStatus: decoded.subscriptionStatus,
+      revocationReason: decoded.revocationReason,
+      expiresDate: decoded.expiresDate,
+      gracePeriodExpiresDate: decoded.gracePeriodExpiresDate,
+      nowMillis: Date.now(),
+    });
     return {
       platform: "app_store",
       environment: deps.environment,
@@ -369,9 +374,13 @@ async function verifyAndNormalize(
       signedDataHash,
       state,
       purchasedAt: new Date(decoded.purchaseDate).toISOString(),
-      effectiveUntil: decoded.expiresDate
-        ? new Date(decoded.expiresDate).toISOString()
+      effectiveUntil: effectiveUntil
+        ? new Date(effectiveUntil).toISOString()
         : null,
+      renewalStatus: appleRenewalStatus(
+        decoded.subscriptionStatus,
+        decoded.autoRenewing,
+      ),
     };
   }
 
@@ -405,6 +414,10 @@ async function verifyAndNormalize(
     state,
     purchasedAt: verified.startTime ?? new Date().toISOString(),
     effectiveUntil: verified.expiryTime,
+    renewalStatus: googleRenewalStatus(
+      verified.subscriptionState,
+      verified.autoRenewEnabled,
+    ),
   };
 }
 

@@ -45,6 +45,10 @@ Before listing them in `staging` or `production`, do both of these:
 
 ## Turning on real (sandbox) purchases
 
+The full setup - both store consoles, webhooks, every credential and the
+sandbox test checklist - is in [subscriptions.md](subscriptions.md). In
+short:
+
 The API needs these settings. The names are in `.env.example`; keep the values
 in the secret manager, never in the repo.
 

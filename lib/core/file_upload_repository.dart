@@ -10,7 +10,10 @@ enum FilePurpose {
   announcementAttachment('announcement_attachment'),
 
   /// A photo of the lesson whiteboard, for Studafy Plus to turn into notes.
-  notebookPhoto('notebook_photo');
+  notebookPhoto('notebook_photo'),
+
+  /// A photo a student sends the study helper (Studafy Plus).
+  assistantAttachment('assistant_attachment');
 
   const FilePurpose(this.wireValue);
   final String wireValue;

@@ -11,8 +11,22 @@ class StudyAssistantInteractor {
   final StudyAssistantRepository repository;
   final Telemetry telemetry;
 
-  Future<Result<StudyAnswer>> ask(String question) async {
-    final result = await runCatching(() => repository.ask(question));
+  /// [history] is the chat so far, oldest first; the repository sends only
+  /// its last few turns.
+  Future<Result<StudyAnswer>> ask(
+    String question, {
+    List<ChatTurn> history = const [],
+    List<ChatReference> references = const [],
+    List<String> photoFileIds = const [],
+  }) async {
+    final result = await runCatching(
+      () => repository.ask(
+        question,
+        history: history,
+        references: references,
+        photoFileIds: photoFileIds,
+      ),
+    );
     // The question and the answer are both deliberately absent: one is a
     // child's words, the other is what a third party said back.
     result.fold(

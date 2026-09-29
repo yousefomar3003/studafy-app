@@ -24,6 +24,13 @@ enum StudyPlanTier {
   };
 
   bool includes(StudyPlanTier other) => index >= other.index;
+
+  /// The plan above this one, or null for Max.
+  StudyPlanTier? get next => switch (this) {
+    StudyPlanTier.free => StudyPlanTier.plus,
+    StudyPlanTier.plus => StudyPlanTier.max,
+    StudyPlanTier.max => null,
+  };
 }
 
 /// The caller's plan and how much of this month's AI allowance is used.
@@ -35,6 +42,7 @@ class StudyPlan {
     required this.resetsAt,
     required this.askToday,
     required this.askPerDay,
+    this.available,
   });
 
   static final free = StudyPlan(
@@ -44,6 +52,26 @@ class StudyPlan {
     askToday: 0,
     askPerDay: 10,
   );
+
+  /// What the server can do right now, whatever the plan: 'ask',
+  /// 'whiteboard', 'quiz', 'flashcards'. Null from a server that does not
+  /// say, which is then trusted to have everything.
+  final Set<String>? available;
+
+  bool _on(String feature) => available?.contains(feature) ?? true;
+
+  /// The question box has an AI provider behind it.
+  bool get assistantOn => _on('ask');
+
+  /// Quizzes and flashcards are switched on for this server.
+  bool get studySetsOn => _on('quiz') && _on('flashcards');
+
+  /// Class material may be shared with the helper: the same switch that
+  /// sends lessons to the AI for quizzes.
+  bool get classMaterialOn => _on('quiz');
+
+  /// Photos may be sent to the helper: Studafy Plus, and the switch.
+  bool get helperPhotosOn => canSnapWhiteboard && _on('whiteboard');
 
   final StudyPlanTier tier;
 
@@ -67,6 +95,7 @@ class NotebookEntry {
     required this.fromWhiteboard,
     required this.createdAt,
     this.photo,
+    this.fromLesson = false,
   });
 
   final String id;
@@ -76,6 +105,9 @@ class NotebookEntry {
 
   /// Written by Studafy Plus from a whiteboard photo.
   final bool fromWhiteboard;
+
+  /// Made from one of the class's lessons.
+  final bool fromLesson;
   final DateTime createdAt;
   final StoredAttachment? photo;
 }
@@ -153,6 +185,38 @@ class StudyException implements Exception {
   String toString() => 'StudyException($refusal)';
 }
 
+/// A lesson a student can turn into notes.
+@immutable
+class LessonChoice {
+  const LessonChoice({
+    required this.id,
+    required this.title,
+    required this.text,
+  });
+
+  final String id;
+  final String title;
+  final String text;
+}
+
+/// One class's notebook in the list of all of them.
+@immutable
+class NotebookGroup {
+  const NotebookGroup({
+    required this.classroomId,
+    required this.className,
+    required this.classGone,
+    required this.entries,
+  });
+
+  final String classroomId;
+  final String className;
+
+  /// The class was deleted; the notes are still the student's.
+  final bool classGone;
+  final List<NotebookEntry> entries;
+}
+
 abstract interface class StudyRepository {
   Future<StudyPlan> plan();
   Future<List<NotebookEntry>> notebook(String classroomId);
@@ -168,6 +232,12 @@ abstract interface class StudyRepository {
 
   /// Studafy Max: a quiz or flashcards from a lesson.
   Future<StudySet> studySet(String resourceId, StudySetKind kind);
+
+  /// Every notebook the student has, by class, deleted classes included.
+  Future<List<NotebookGroup>> myNotebooks();
+
+  /// Studafy Plus: study notes made from a lesson, filed in its class.
+  Future<NotebookEntry> lessonNotes(String resourceId);
 }
 
 /// A plan as the store offers it, for the Plans screen.
@@ -207,8 +277,126 @@ class StudyPlanOffer {
       approval == 'approved';
 }
 
+/// Where a subscription is billed.
+enum SubscriptionStore {
+  appStore,
+  playStore;
+
+  static SubscriptionStore? parse(String? value) => switch (value) {
+    'app_store' => SubscriptionStore.appStore,
+    'play_store' => SubscriptionStore.playStore,
+    _ => null,
+  };
+
+  /// Google Play lets a subscriber pause; the App Store does not.
+  bool get canPause => this == SubscriptionStore.playStore;
+}
+
+/// What happens at the end of the current period, as the store reports it.
+enum RenewalStatus {
+  renewing,
+
+  /// Auto-renew is off: access lasts until [StudyPlanSubscription.endsAt].
+  cancelled,
+
+  /// Paused in Google Play: no access and no charge until it resumes.
+  paused,
+
+  /// The store could not take the payment and is retrying.
+  paymentIssue,
+
+  /// The store has not said.
+  unknown;
+
+  static RenewalStatus parse(String? value) => switch (value) {
+    'renewing' => RenewalStatus.renewing,
+    'cancelled' => RenewalStatus.cancelled,
+    'paused' => RenewalStatus.paused,
+    'payment_issue' => RenewalStatus.paymentIssue,
+    _ => RenewalStatus.unknown,
+  };
+}
+
+/// A student's paid plan as the store bills it, for the Plans screen. It
+/// describes; the server's [StudyPlan] decides access.
+@immutable
+class StudyPlanSubscription {
+  const StudyPlanSubscription({
+    required this.tier,
+    required this.renewal,
+    this.endsAt,
+    this.store,
+    this.storeProductId,
+    this.paidByMe = true,
+  });
+
+  final StudyPlanTier tier;
+  final RenewalStatus renewal;
+
+  /// When the paid-for period (or a payment grace period) ends.
+  final DateTime? endsAt;
+  final SubscriptionStore? store;
+  final String? storeProductId;
+
+  /// False when a parent pays: only they can change or cancel it.
+  final bool paidByMe;
+}
+
+/// The store's own page for changing, pausing or cancelling a subscription.
+/// Stores do not let an app cancel on the subscriber's behalf, so the app
+/// sends them here. Google Play opens straight on the plan when it knows
+/// the product and the app's package.
+Uri manageSubscriptionUri(
+  SubscriptionStore store, {
+  String? storeProductId,
+  String? androidPackage,
+}) => switch (store) {
+  SubscriptionStore.appStore => Uri.parse(
+    'https://apps.apple.com/account/subscriptions',
+  ),
+  SubscriptionStore.playStore =>
+    storeProductId != null && androidPackage != null
+        ? Uri.https('play.google.com', '/store/account/subscriptions', {
+            'sku': storeProductId,
+            'package': androidPackage,
+          })
+        : Uri.parse('https://play.google.com/store/account/subscriptions'),
+};
+
+/// Why a purchase was stopped before the store sheet, to prevent a second
+/// subscription and a second charge.
+enum PurchaseBlock {
+  /// This plan, or one that includes it, is already active.
+  alreadySubscribed,
+
+  /// A parent pays for the current plan; only they can change it.
+  paidByParent,
+
+  /// The current plan is billed by the other store; change it there.
+  otherStore,
+
+  /// Google Play can only upgrade a subscription bought with the Google
+  /// account on this phone.
+  upgradeNeedsOriginalAccount,
+}
+
+class PurchaseBlockedException implements Exception {
+  const PurchaseBlockedException(this.reason);
+  final PurchaseBlock reason;
+
+  @override
+  String toString() => 'PurchaseBlockedException($reason)';
+}
+
 /// Buying a plan through the App Store or Google Play (PAY-071).
 abstract interface class StudyPlanSubscriptionRepository {
+  /// The store this device buys through, or null where there is none (web,
+  /// desktop): plans are then described but bought in the mobile app.
+  SubscriptionStore? get purchaseStore;
+
+  /// The student's current paid subscription, or null.
+  Future<StudyPlanSubscription?> subscription();
+
   Future<StudyPlanOffer> offer(StudyPlanTier tier);
   Future<void> requestApproval(StudyPlanTier tier);
   Future<void> purchase(StudyPlanTier tier);

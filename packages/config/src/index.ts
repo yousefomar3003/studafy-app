@@ -43,6 +43,8 @@ const switchFlag = z.enum(["true", "false"]).default("true").transform(
 );
 const disabledSwitchFlag = z.enum(["true", "false"]).default("false")
   .transform((value) => value === "true");
+const enabledSwitchFlag = z.enum(["true", "false"]).default("true")
+  .transform((value) => value === "true");
 
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
@@ -54,6 +56,12 @@ export const apiEnvSchema = z.object({
   ),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   DATABASE_URL: url.optional(),
+  // Connections one API instance holds (docs/operations/capacity.md). Every
+  // request runs two or three short transactions, so this - not the
+  // database - capped a single instance at the old fixed 5. Keep instances
+  // x this under the database's connection limit (Supabase's pooler for the
+  // plan, less the worker's).
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(200).default(20),
   REDIS_URL: url.optional(),
   LOG_LEVEL: LogLevelSchema.default("info"),
   // CloudWatch shipping is opt-in: both must be set or the API logs only to
@@ -91,6 +99,17 @@ export const apiEnvSchema = z.object({
    * minors' DPIA (docs/adr/ADR-0029-study-plans-and-ai-lesson-tools.md).
    */
   AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
+  // How much of a chat the helper remembers, in tokens. The model's context
+  // window is the ceiling (Qwen3.5-9B on Together: 262,144); each plan's
+  // budget sits inside it, because every remembered token is paid for on
+  // every question. Paid plans are also held to their monthly cap in
+  // dollars; the free plan only to a daily count, so its budget is smaller.
+  AI_CONTEXT_WINDOW_TOKENS: z.coerce.number().int().min(4_096).max(2_000_000)
+    .default(262_144),
+  AI_CHAT_MEMORY_TOKENS_FREE: z.coerce.number().int().min(0).max(2_000_000)
+    .default(4_000),
+  AI_CHAT_MEMORY_TOKENS_PAID: z.coerce.number().int().min(0).max(2_000_000)
+    .default(32_000),
   API_ALLOWED_ORIGINS: origins,
   API_MAX_BODY_BYTES: z.coerce.number().int().min(1024).max(1024 * 1024)
     .default(64 * 1024),
@@ -212,6 +231,10 @@ export const workerEnvSchema = z.object({
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
   DATABASE_URL: url.optional(),
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
+  // Removes rows that already count as gone (expired idempotency records).
+  // On by default whenever the worker has a database.
+  DB_HOUSEKEEPING_ENABLED: enabledSwitchFlag,
   SUPABASE_URL: url.optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
   // Where uploaded objects live, when that is not the Supabase project that
@@ -603,6 +626,7 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     max_body_bytes: env.API_MAX_BODY_BYTES,
     request_timeout_ms: env.API_REQUEST_TIMEOUT_MS,
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
+    database_pool_max: env.DATABASE_POOL_MAX,
     redis_url: env.REDIS_URL ? redactUrl(env.REDIS_URL) : null,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
     aws_region: env.AWS_REGION ?? null,
@@ -613,6 +637,9 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       base_url: env.AI_BASE_URL ?? null,
       model: env.AI_MODEL,
       lesson_tools_enabled: env.AI_LESSON_TOOLS_ENABLED,
+      context_window_tokens: env.AI_CONTEXT_WINDOW_TOKENS,
+      chat_memory_tokens_free: env.AI_CHAT_MEMORY_TOKENS_FREE,
+      chat_memory_tokens_paid: env.AI_CHAT_MEMORY_TOKENS_PAID,
       price_input_usd_per_mtok: env.AI_PRICE_INPUT_USD_PER_MTOK,
       price_output_usd_per_mtok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
     },
@@ -687,6 +714,7 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     log_level: env.LOG_LEVEL,
     redis_url: redactUrl(env.REDIS_URL),
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
+    database_pool_max: env.DATABASE_POOL_MAX,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
     file050_cleanup_enabled: env.FILE050_CLEANUP_ENABLED,
     service_role_configured: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),

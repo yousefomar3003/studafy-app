@@ -69,9 +69,18 @@ export type V1MessagePage = z.infer<typeof V1MessagePage>;
 
 export const V1SendMessageRequest = z.strictObject({
   clientMessageId: Id,
-  body: z.string().trim().min(1).max(4000),
+  /** May be empty when something is attached - a voice note needs no text. */
+  body: z.string().trim().max(4000),
   /** Uploads of purpose `message_attachment`, owned by the sender. */
   attachmentFileIds: attachmentFileIds(),
+}).superRefine((value, context) => {
+  if (value.body.length === 0 && (value.attachmentFileIds ?? []).length === 0) {
+    context.addIssue({
+      code: "custom",
+      path: ["body"],
+      message: "A message needs text or an attachment.",
+    });
+  }
 });
 export type V1SendMessageRequest = z.infer<typeof V1SendMessageRequest>;
 

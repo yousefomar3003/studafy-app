@@ -412,10 +412,10 @@ function deliveryUrl(base: string, fileId: string, token: string): string {
   return url.toString();
 }
 
-/** Only the four scanned types are ever served; anything else is opaque. */
+/** Only the scanned types are ever served; anything else is opaque. */
 function safeMediaType(value: string | null | undefined): string {
   return value === "application/pdf" || value === "image/jpeg" ||
-      value === "image/png" || value === "image/webp"
+      value === "image/png" || value === "image/webp" || value === "audio/mp4"
     ? value
     : "application/octet-stream";
 }

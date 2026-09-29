@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'app/account/account_switching.dart';
 import 'app/account_scope.dart';
 import 'app/app_bootstrap.dart';
 import 'app/app_dependencies.dart';
@@ -9,6 +10,7 @@ import 'app/class_join_link_listener.dart';
 import 'app/oauth_callback_guard.dart';
 import 'app/onboarding_page.dart';
 import 'app/parent_shell.dart';
+import 'app/profile_setup_gate.dart';
 import 'app/session_scope.dart';
 import 'app/studafy_theme.dart';
 import 'app/student_shell.dart';
@@ -109,20 +111,30 @@ class StudafyApp extends StatelessWidget {
               classes: deps.classes,
               teacherWorkspace: deps.teacherWorkspace,
             ),
-            teacherRoute: (_) => TeacherShell(dependencies: deps),
-            parentRoute: (_) => ParentShell(
-              academic: deps.academic,
-              insights: deps.familyInsights,
-              familyPlus: deps.familyPlus,
+            teacherRoute: (_) => ProfileSetupGate(
+              repository: deps.profileSetup,
+              child: TeacherShell(dependencies: deps),
             ),
-            studentRoute: (_) => StudentShell(
-              academic: deps.academic,
-              classes: deps.classes,
-              studyPlans: deps.studyPlans,
-              study: deps.study,
-              session: deps.session,
-              studyAssistant: deps.studyAssistant,
-              fileUploads: deps.fileUploads,
+            parentRoute: (_) => ProfileSetupGate(
+              repository: deps.profileSetup,
+              child: ParentShell(
+                academic: deps.academic,
+                insights: deps.familyInsights,
+                familyPlus: deps.familyPlus,
+              ),
+            ),
+            studentRoute: (_) => ProfileSetupGate(
+              repository: deps.profileSetup,
+              child: StudentShell(
+                academic: deps.academic,
+                classes: deps.classes,
+                studyPlans: deps.studyPlans,
+                study: deps.study,
+                session: deps.session,
+                studyAssistant: deps.studyAssistant,
+                studyChats: deps.studyChats,
+                fileUploads: deps.fileUploads,
+              ),
             ),
           };
     // A blocked build has no composition root, so it has no locale controller
@@ -175,6 +187,19 @@ class StudafyApp extends StatelessWidget {
             );
           }
           if (deps == null) return content;
+          final deviceAccounts = deps.deviceAccounts;
+          if (deviceAccounts != null) {
+            content = DeviceAccountsFrame(
+              switcher: deviceAccounts,
+              onSwitch: () {
+                final navigatorContext = _navigatorKey.currentContext;
+                if (navigatorContext != null) {
+                  openAccountSwitcher(navigatorContext);
+                }
+              },
+              child: content,
+            );
+          }
           content = ClassJoinLinkListener(
             guard: classJoinLinks,
             classes: deps.classes,

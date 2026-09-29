@@ -12,6 +12,8 @@ import '../data/billing/store_subscription_repository.dart';
 import '../data/billing/v1_billing_api.dart';
 import '../data/contracts/v1_client.generated.dart';
 import '../data/contracts/v1_http_transport.dart';
+import '../data/local_cache/offline_file_cache.dart';
+import '../data/local_cache/offline_response_cache.dart';
 import '../data/local_cache/session_cache_binder.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/settings/preferences_device_settings.dart';
@@ -22,6 +24,9 @@ import '../features/account/application/account_interactor.dart';
 import '../features/account/data/api_data_export_repository.dart';
 import '../features/account/data/api_profile_repository.dart';
 import '../features/account/data/session_account_repository.dart';
+import '../features/account/domain/profile_setup.dart';
+import '../features/accounts/data/api_managed_children_repository.dart';
+import '../features/accounts/data/secure_account_vault.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/data/api_classroom_repository.dart';
 import '../features/classes/data/preview_classroom_repository.dart';
@@ -44,8 +49,10 @@ import '../features/messaging/data/api_messaging_repository.dart';
 import '../features/messaging/data/preview_messaging_repository.dart';
 import '../features/notifications/application/notifications_interactor.dart';
 import '../features/notifications/data/api_notifications_repository.dart';
+import '../features/notifications/data/firebase_push_registrar.dart';
 import '../features/notifications/data/preview_notifications_repository.dart';
 import '../features/notifications/domain/notifications_repository.dart';
+import '../features/notifications/domain/push_registrar.dart';
 import '../features/onboarding/application/teacher_workspace_interactor.dart';
 import '../features/onboarding/data/api_teacher_workspace_repository.dart';
 import '../features/school_operations/data/api_school_operations_repository.dart';
@@ -60,7 +67,13 @@ import '../features/study/data/preview_study_repository.dart';
 import '../features/study/domain/study.dart';
 import '../features/study_assistant/application/study_assistant_interactor.dart';
 import '../features/study_assistant/data/api_study_assistant_repository.dart';
+import '../features/study_assistant/data/cached_study_assistant_repository.dart';
+import '../features/study_assistant/data/file_study_chat_store.dart';
+import '../features/study_assistant/domain/study_assistant_repository.dart';
+import 'account/device_account_switcher.dart';
 import 'locale_session_binder.dart';
+import 'push_binder.dart';
+import 'store_sync_binder.dart';
 
 /// Composition root (ARC-011). Builds the interactors once, choosing
 /// adapters by runtime policy: synthetic builds get the demo/preview pair;
@@ -70,9 +83,14 @@ import 'locale_session_binder.dart';
 class AppDependencies {
   const AppDependencies({
     required this.session,
+    this.deviceAccounts,
     required this.classes,
     this.teacherWorkspace,
     this.studyAssistant,
+    this.studyChats,
+    this.profileSetup,
+    this.push,
+    this.storeSync,
     this.familyInsights,
     this.studyPlans,
     this.familyPlus,
@@ -92,6 +110,10 @@ class AppDependencies {
   });
 
   final SessionInteractor session;
+
+  /// The accounts kept on this device and a parent's child accounts. Null
+  /// in synthetic builds, which have one demo identity and no sessions.
+  final DeviceAccountSwitcher? deviceAccounts;
   final ClassListInteractor classes;
 
   /// Null in synthetic and preview builds, which have no tenant to create.
@@ -100,6 +122,20 @@ class AppDependencies {
   /// Null when the build has no backend, and also when the server has no
   /// AI provider configured - the tab is then absent rather than broken.
   final StudyAssistantInteractor? studyAssistant;
+
+  /// The student's chats with the helper, on this device only.
+  final StudyChatStore? studyChats;
+
+  /// First-sign-in setup: name and gender. Null in synthetic builds.
+  final ProfileSetupRepository? profileSetup;
+
+  /// Registers the phone for push as accounts sign in. Held so it keeps
+  /// listening; null in synthetic builds.
+  final PushBinder? push;
+
+  /// Picks up store purchases as accounts sign in. Held so it keeps
+  /// listening; null in synthetic builds.
+  final StoreSyncBinder? storeSync;
 
   /// Family+. Null without a backend; the paid tab is then absent.
   final FamilyInsightsInteractor? familyInsights;
@@ -154,6 +190,10 @@ class AppDependencies {
         ? const PreviewClassroomRepository()
         : ApiClassroomRepository(remote!.api, context: context);
     final cacheBinder = SessionCacheBinder(context: context);
+    // Everything the app reads is kept on the device for the account signed
+    // in, and shown when the server cannot be reached.
+    final responseCache = OfflineResponseCache(cacheBinder);
+    remote?.transport.responseCache = responseCache;
     // A synthetic build has no profile to publish to, so it keeps the choice
     // on the device only. Device settings are read in both, so a developer's
     // language choice survives a restart the same way a user's does.
@@ -192,6 +232,18 @@ class AppDependencies {
     final apiFamily = remote == null
         ? null
         : ApiFamilyRepository(remote.api, billing: billingApi);
+    final studyChats = remote == null
+        ? null
+        : FileStudyChatStore(currentUserId: () => context.profile?.id);
+    final PushRegistrar pushRegistrar = remote == null
+        ? const NoPushRegistrar()
+        : FirebasePushRegistrar(remote.api);
+    final session = SessionInteractor(
+      repository: sessionRepository,
+      context: context,
+      telemetry: telemetry,
+      runtimePolicy: policy,
+    );
     final subscriptions = StoreSubscriptionRepository(
       billingApi: billingApi,
       pendingStore: remote?.secureStore,
@@ -210,12 +262,17 @@ class AppDependencies {
         safety: messagingAdapter ?? apiMessaging!,
         telemetry: telemetry,
       ),
-      session: SessionInteractor(
-        repository: sessionRepository,
-        context: context,
-        telemetry: telemetry,
-        runtimePolicy: policy,
-      ),
+      session: session,
+      deviceAccounts: remote == null
+          ? null
+          : DeviceAccountSwitcher(
+              session: session,
+              vault: SecureAccountVault(remote.secureStore),
+              managedChildren: ApiManagedChildrenRepository(remote.api),
+              forgetAccount: studyChats?.forgetUser,
+              beforeSignOut: pushRegistrar.unregister,
+              context: context,
+            ),
       classes: ClassListInteractor(
         repository: classroomRepository,
         telemetry: telemetry,
@@ -231,8 +288,22 @@ class AppDependencies {
       studyAssistant: remote == null
           ? null
           : StudyAssistantInteractor(
-              repository: ApiStudyAssistantRepository(remote.api),
+              repository: CachedStudyAssistantRepository(
+                ApiStudyAssistantRepository(remote.api),
+                responseCache,
+              ),
               telemetry: telemetry,
+            ),
+      studyChats: studyChats,
+      profileSetup: profiles,
+      push: remote == null
+          ? null
+          : PushBinder(registrar: pushRegistrar, context: context),
+      storeSync: remote == null
+          ? null
+          : StoreSyncBinder(
+              resume: subscriptions.resumeForAccount,
+              context: context,
             ),
       familyInsights: remote == null
           ? null
@@ -289,10 +360,13 @@ class AppDependencies {
           ? const PreviewFileUploadRepository()
           : (remote == null || !policy.allowsRemoteFileUploads
                 ? const UnavailableFileUploadRepository()
-                : ApiFileUploadRepository(
-                    remote.api,
-                    IoSignedUploadTransport(),
-                    fetch: remote.transport.getBytes,
+                : CachingFileRepository(
+                    ApiFileUploadRepository(
+                      remote.api,
+                      IoSignedUploadTransport(),
+                      fetch: remote.transport.getBytes,
+                    ),
+                    OfflineFileCache(cacheBinder),
                   )),
     );
   }

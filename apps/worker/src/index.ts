@@ -30,6 +30,7 @@ import { startAccountDeletionExecutor } from "./processors/accountDeletion";
 import { startDataExportExecutor } from "./processors/dataExport";
 import { startMeetingProcessor } from "./processors/meetings";
 import { startChannelDelivery } from "./processors/channelDelivery";
+import { startHousekeeping } from "./processors/housekeeping";
 
 const env = loadWorkerEnv();
 const logger = createJsonLogger("worker", workerVersion, env.LOG_LEVEL);
@@ -84,7 +85,9 @@ logger.info("worker_ready", { queue: "smoke" });
 // size and to close.
 let sharedSql: Sql | undefined;
 function database(): Sql {
-  sharedSql ??= createDatabase(env.DATABASE_URL!);
+  sharedSql ??= createDatabase(env.DATABASE_URL!, {
+    max: env.DATABASE_POOL_MAX,
+  });
   return sharedSql;
 }
 
@@ -251,6 +254,11 @@ const channels = channelsSql
   )
   : undefined;
 
+// Tables that grow with every request are kept to their live rows.
+const housekeeping = env.DB_HOUSEKEEPING_ENABLED && env.DATABASE_URL
+  ? startHousekeeping(database(), logger)
+  : undefined;
+
 installGracefulShutdown({
   logger,
   onClose: async () => {
@@ -267,6 +275,7 @@ installGracefulShutdown({
     await dataExport?.close();
     await meetings?.close();
     await channels?.close();
+    await housekeeping?.close();
     if (sharedSql) await closeDatabase(sharedSql);
     await runtime.close();
   },

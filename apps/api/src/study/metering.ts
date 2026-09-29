@@ -53,7 +53,13 @@ export function holdFor(
 ): number {
   switch (feature) {
     case "ask":
-      return costMicroUsd(prices, INPUT_BOUND_TOKENS.ask, ASK_OUTPUT_TOKENS);
+      // [lessonChars] is the chat history sent with a question. Two
+      // characters a token is pessimistic for Arabic and English alike.
+      return costMicroUsd(
+        prices,
+        INPUT_BOUND_TOKENS.ask + Math.ceil(lessonChars / 2),
+        ASK_OUTPUT_TOKENS,
+      );
     case "whiteboard":
       return costMicroUsd(
         prices,

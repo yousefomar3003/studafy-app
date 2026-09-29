@@ -9,15 +9,12 @@ import '../features/academic/presentation/attendance_page.dart';
 import '../features/academic/presentation/class_roster_page.dart';
 import '../features/academic/presentation/class_schedule_page.dart';
 import '../features/academic/presentation/class_sections_page.dart';
-import '../features/academic/presentation/create_assignment_page.dart';
-import '../features/academic/presentation/create_exam_page.dart';
 import '../features/academic/presentation/gradebook_page.dart';
 import '../features/academic/presentation/submissions_page.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
-import '../features/messaging/presentation/create_announcement_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
@@ -25,6 +22,7 @@ import '../features/school_operations/presentation/classroom_management_page.dar
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 import 'app_dependencies.dart';
+import 'teacher_create_actions.dart';
 import 'teacher_today_page.dart';
 
 class TeacherShell extends StatefulWidget {
@@ -77,96 +75,7 @@ class _TeacherShellState extends State<TeacherShell> {
     );
   }
 
-  /// Opens the announcement composer for one of this teacher's classes.
-  Future<void> _newAnnouncement(BuildContext context) async {
-    final schoolId = ActiveContextController.instance.membership?.schoolId;
-    if (schoolId == null) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final classes = await widget.dependencies.classes.loadClasses();
-    if (!context.mounted) return;
-    final targets = classes.fold<List<AnnouncementTarget>>(
-      onSuccess: (list) => [
-        for (final classroom in list)
-          AnnouncementTarget(id: classroom.id.value, name: classroom.name),
-      ],
-      onFailure: (_) => const <AnnouncementTarget>[],
-    );
-    if (targets.isEmpty) return;
-    final posted = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(
-        builder: (_) => CreateAnnouncementPage(
-          messaging: MessagingScope.of(context),
-          schoolId: schoolId,
-          classes: targets,
-        ),
-      ),
-    );
-    if (posted != null) {
-      messenger.showMessage(posted);
-    }
-  }
-
-  /// Opens the exam authoring screen.
-  Future<void> _newExam(BuildContext context, {String? classroomId}) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final classes = await widget.dependencies.classes.loadClasses();
-    if (!context.mounted) return;
-    final options = classes.fold<List<ClassOption>>(
-      onSuccess: (list) => [
-        for (final classroom in list)
-          ClassOption(id: classroom.id.value, name: classroom.name),
-      ],
-      onFailure: (_) => const <ClassOption>[],
-    );
-    if (options.isEmpty) return;
-    final created = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(
-        builder: (_) => CreateExamPage(
-          repository: widget.dependencies.academic,
-          classes: options,
-          initialClassroomId: classroomId,
-        ),
-      ),
-    );
-    if (created != null) {
-      messenger.showMessage(created);
-    }
-  }
-
-  /// Opens the "new assignment" form.
-  ///
-  /// [classroomId] is preselected when the teacher is already inside a class;
-  /// from the Teaching tab they pick the class in the form, because that tab
-  /// is not scoped to one.
-  Future<void> _newAssignment(
-    BuildContext context, {
-    String? classroomId,
-  }) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final classes = await widget.dependencies.classes.loadClasses();
-    if (!context.mounted) return;
-    final options = classes.fold<List<ClassOption>>(
-      onSuccess: (list) => [
-        for (final classroom in list)
-          ClassOption(id: classroom.id.value, name: classroom.name),
-      ],
-      onFailure: (_) => const <ClassOption>[],
-    );
-    if (options.isEmpty) return;
-    final created = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(
-        builder: (_) => CreateAssignmentPage(
-          repository: widget.dependencies.academic,
-          classes: options,
-          initialClassroomId: classroomId,
-          schoolId: ActiveContextController.instance.membership?.schoolId,
-        ),
-      ),
-    );
-    if (created != null) {
-      messenger.showMessage(created);
-    }
-  }
+  late final _create = TeacherCreateActions(widget.dependencies);
 
   Future<void> _openClassroom(ClassroomSummary classroom) async {
     final academic = widget.dependencies.academic;
@@ -176,6 +85,7 @@ class _TeacherShellState extends State<TeacherShell> {
         builder: (_) => AcademicOverviewPage(
           repository: academic,
           classroomId: classroom.id.value,
+          title: classroom.name,
           teacherTools: true,
           uploads: widget.dependencies.fileUploads,
           schoolId: ActiveContextController.instance.membership?.schoolId,
@@ -302,17 +212,29 @@ class _TeacherShellState extends State<TeacherShell> {
             ),
             Builder(
               builder: (pageContext) => _ClassToolButton(
+                tooltip: AppL10n.of(pageContext).academicAddLesson,
+                icon: const Icon(Icons.note_add_outlined),
+                onPressed: () => _create.newLesson(
+                  pageContext,
+                  classroomId: classroom.id.value,
+                ),
+              ),
+            ),
+            Builder(
+              builder: (pageContext) => _ClassToolButton(
                 tooltip: AppL10n.of(pageContext).examAction,
                 icon: const Icon(Icons.quiz_outlined),
-                onPressed: () =>
-                    _newExam(pageContext, classroomId: classroom.id.value),
+                onPressed: () => _create.newExam(
+                  pageContext,
+                  classroomId: classroom.id.value,
+                ),
               ),
             ),
             Builder(
               builder: (pageContext) => _ClassToolButton(
                 tooltip: AppL10n.of(pageContext).assignmentAction,
                 icon: const Icon(Icons.assignment_add),
-                onPressed: () => _newAssignment(
+                onPressed: () => _create.newAssignment(
                   pageContext,
                   classroomId: classroom.id.value,
                 ),
@@ -333,10 +255,64 @@ class _TeacherShellState extends State<TeacherShell> {
                 ),
               ),
             ),
+            Builder(
+              builder: (pageContext) => _ClassToolButton(
+                tooltip: AppL10n.of(pageContext).classDeleteAction,
+                icon: const Icon(Icons.delete_outline_rounded),
+                onPressed: () => _deleteClass(pageContext, classroom),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Bumped after a class is deleted, so the class lists read again.
+  Key _classesKey = UniqueKey();
+
+  /// Deletes (archives) a class, after saying what that does - and does not
+  /// do: students keep every note they wrote for it.
+  Future<void> _deleteClass(
+    BuildContext pageContext,
+    ClassroomSummary classroom,
+  ) async {
+    final l10n = AppL10n.of(pageContext);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(pageContext);
+    final confirmed = await showDialog<bool>(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.classDeleteTitle(classroom.name)),
+        content: Text(l10n.classDeleteBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.classDeleteCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.classDeleteConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.dependencies.academic.archiveClassroom(
+        classroom.id.value,
+        classroom.version,
+      );
+    } on Object {
+      messenger.showMessage(l10n.classDeleteFailed);
+      return;
+    }
+    navigator.pop();
+    messenger.showMessage(l10n.classDeleted);
+    if (mounted) setState(() => _classesKey = UniqueKey());
   }
 
   void _openSubmissions(AcademicRecord record) {
@@ -363,23 +339,21 @@ class _TeacherShellState extends State<TeacherShell> {
 
     final pages = [
       TeacherTodayPage(
+        key: ValueKey(('today', _classesKey)),
         classes: widget.dependencies.classes,
         academic: widget.dependencies.academic,
         onOpenClassroom: _openClassroom,
-        onOpenMessages: () =>
-            open(const ConversationsPage(asRole: MessagingRole.staff)),
+        // No messages button here: the Inbox tab is the one way in.
         onOpenNotifications: () => open(const NotificationsPage()),
       ),
       ClassesPage(
+        key: ValueKey(('classes', _classesKey)),
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
-        // The real header: this teacher's own messages, notifications and
-        // account. The legacy FeatureHeader it replaces showed a demo
-        // teacher's initials and fake counts, and opened the demo screens.
+        // The real header: this teacher's notifications and account.
+        // Messages are the Inbox tab, not a second button up here.
         header: _TabHeader(
           title: AppL10n.of(c).teacherShellClasses,
-          onOpenMessages: () =>
-              open(const ConversationsPage(asRole: MessagingRole.staff)),
           onOpenNotifications: () => open(const NotificationsPage()),
         ),
       ),
@@ -410,36 +384,24 @@ class _TeacherShellState extends State<TeacherShell> {
       // Teaching is where a teacher sets work, but that tab is not scoped to
       // a class, so the form asks which one. Index 2 is Teaching; the other
       // tabs have their own actions.
+      // One "Create" everywhere a teacher works - lessons, assignments,
+      // exams, announcements and attendance - and Announce in the Inbox.
       floatingActionButton: switch (index) {
-        // Teaching sets work; the Inbox is where a teacher announces.
-        2 => Builder(
-          builder: (tabContext) => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              FloatingActionButton.extended(
-                heroTag: 'newExam',
-                onPressed: () => _newExam(tabContext),
-                icon: const Icon(Icons.quiz_outlined),
-                label: Text(AppL10n.of(tabContext).examAction),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton.extended(
-                heroTag: 'newAssignment',
-                onPressed: () => _newAssignment(tabContext),
-                icon: const Icon(Icons.assignment_add),
-                label: Text(AppL10n.of(tabContext).assignmentAction),
-              ),
-            ],
-          ),
-        ),
-        4 when MessagingScope.isAvailable(c) => Builder(
+        0 || 1 || 2 || 3 => Builder(
           builder: (tabContext) => FloatingActionButton.extended(
             // Every tab stays alive in the shell's IndexedStack, so two
             // buttons with the default hero tag coexist and break the
             // transition of every screen pushed from any tab.
             heroTag: null,
-            onPressed: () => _newAnnouncement(tabContext),
+            onPressed: () => _create.openCreateMenu(tabContext),
+            icon: const Icon(Icons.add_rounded),
+            label: Text(AppL10n.of(tabContext).teacherCreateAction),
+          ),
+        ),
+        4 when MessagingScope.isAvailable(c) => Builder(
+          builder: (tabContext) => FloatingActionButton.extended(
+            heroTag: null,
+            onPressed: () => _create.newAnnouncement(tabContext),
             icon: const Icon(Icons.campaign_outlined),
             label: Text(AppL10n.of(tabContext).announcementAction),
           ),
@@ -503,14 +465,9 @@ class _ClassToolButton extends StatelessWidget {
 }
 
 class _TabHeader extends StatelessWidget {
-  const _TabHeader({
-    required this.title,
-    required this.onOpenMessages,
-    required this.onOpenNotifications,
-  });
+  const _TabHeader({required this.title, required this.onOpenNotifications});
 
   final String title;
-  final VoidCallback onOpenMessages;
   final VoidCallback onOpenNotifications;
 
   @override
@@ -526,11 +483,6 @@ class _TabHeader extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w800, color: studafyInk),
             ),
-          ),
-          IconButton(
-            tooltip: AppL10n.of(context).teacherShellMessages,
-            onPressed: onOpenMessages,
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
           ),
           IconButton(
             tooltip: AppL10n.of(context).recordNotifications,

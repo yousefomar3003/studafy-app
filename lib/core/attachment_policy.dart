@@ -61,10 +61,11 @@ class AttachmentPolicy {
 
   /// Deliberately the smallest ceiling: chat is the least supervised place
   /// anything is uploaded, and the migration sets the same 5 MB server-side.
+  /// The only purpose that takes audio: voice notes (`audio/mp4`).
   static const messageAttachment = AttachmentPolicy(
     purpose: FilePurpose.messageAttachment,
     maximumSizeBytes: 5 * 1024 * 1024,
-    allowedMediaTypes: {..._document, ..._image},
+    allowedMediaTypes: {..._document, ..._image, 'audio/mp4'},
   );
   static const announcementAttachment = AttachmentPolicy(
     purpose: FilePurpose.announcementAttachment,
@@ -80,6 +81,13 @@ class AttachmentPolicy {
     allowedMediaTypes: _image,
   );
 
+  /// Photos only, like a whiteboard photo: the model reads images.
+  static const assistantAttachment = AttachmentPolicy(
+    purpose: FilePurpose.assistantAttachment,
+    maximumSizeBytes: 10 * 1024 * 1024,
+    allowedMediaTypes: _image,
+  );
+
   static AttachmentPolicy of(FilePurpose purpose) => switch (purpose) {
     FilePurpose.profileImage => profileImage,
     FilePurpose.lessonResource => lessonResource,
@@ -89,6 +97,7 @@ class AttachmentPolicy {
     FilePurpose.messageAttachment => messageAttachment,
     FilePurpose.announcementAttachment => announcementAttachment,
     FilePurpose.notebookPhoto => notebookPhoto,
+    FilePurpose.assistantAttachment => assistantAttachment,
   };
 
   /// The extensions to hand a file picker, derived from the media types so
@@ -100,6 +109,7 @@ class AttachmentPolicy {
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'image/webp' => 'webp',
+        'audio/mp4' => 'm4a',
         _ => '',
       },
   ]..removeWhere((value) => value.isEmpty);

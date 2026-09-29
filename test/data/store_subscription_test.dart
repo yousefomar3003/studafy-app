@@ -10,12 +10,14 @@ import 'package:studafy/data/billing/v1_billing_api.dart';
 import 'package:studafy/features/study/domain/study.dart';
 
 const sku = 'studafy_plus_monthly';
+const maxSku = 'studafy_max_monthly';
 
 class Billing extends Fake implements V1BillingApi {
   String account = 'student-a';
   bool approved = true;
   bool enabled = true;
   List<V1EntitlementRow> rows = [];
+  Set<String> approvedKeys = {'studafy_plus'};
   @override
   Future<V1BillingCatalogue> catalogue() async => V1BillingCatalogue(
     purchaseAccountToken: account,
@@ -24,6 +26,11 @@ class Billing extends Fake implements V1BillingApi {
         featureKey: 'studafy_plus',
         platform: 'play_store',
         storeProductId: sku,
+      ),
+      V1BillingProduct(
+        featureKey: 'studafy_max',
+        platform: 'play_store',
+        storeProductId: maxSku,
       ),
     ],
     selfPurchase: [
@@ -38,15 +45,16 @@ class Billing extends Fake implements V1BillingApi {
   @override
   Future<List<V1PurchaseApproval>> purchaseApprovals() async => approved
       ? [
-          V1PurchaseApproval(
-            id: 'approval',
-            studentId: 'student',
-            studentName: 'Student',
-            featureKey: 'studafy_plus',
-            status: 'approved',
-            requestedAt: DateTime.now(),
-            expiresAt: DateTime.now().add(const Duration(hours: 1)),
-          ),
+          for (final key in approvedKeys)
+            V1PurchaseApproval(
+              id: 'approval-$key',
+              studentId: 'student',
+              studentName: 'Student',
+              featureKey: key,
+              status: 'approved',
+              requestedAt: DateTime.now(),
+              expiresAt: DateTime.now().add(const Duration(hours: 1)),
+            ),
         ]
       : [];
 }
@@ -66,6 +74,10 @@ class Store extends Fake implements InAppPurchase {
   final events = StreamController<List<PurchaseDetails>>.broadcast();
   PurchaseParam? bought;
   bool available = true;
+
+  /// Google Play's record of the subscriptions this phone's Google account
+  /// bought, which an upgrade must name.
+  List<GooglePlayPurchaseDetails> owned = [];
   @override
   Stream<List<PurchaseDetails>> get purchaseStream => events.stream;
   @override
@@ -78,7 +90,7 @@ class Store extends Fake implements InAppPurchase {
       ProductDetailsWrapper(
         description: 'Notebook',
         name: 'Notebook',
-        productId: sku,
+        productId: identifiers.single,
         productType: ProductType.subs,
         title: 'Notebook',
         subscriptionOfferDetails: [
@@ -111,6 +123,42 @@ class Store extends Fake implements InAppPurchase {
   }
 }
 
+List<GooglePlayPurchaseDetails> ownedOnThisPhone(String product) =>
+    GooglePlayPurchaseDetails.fromPurchase(
+      PurchaseWrapper(
+        orderId: 'GPA.1',
+        packageName: 'com.studafy.light',
+        purchaseTime: 0,
+        purchaseToken: 'plus-token',
+        signature: 'signature',
+        products: [product],
+        isAutoRenewing: true,
+        originalJson: '{}',
+        isAcknowledged: true,
+        purchaseState: PurchaseStateWrapper.purchased,
+      ),
+    );
+
+V1EntitlementRow held(
+  String feature, {
+  String platform = 'play_store',
+  bool mine = true,
+  String status = 'active',
+  String? renewal,
+  DateTime? endsAt,
+  String? beneficiary,
+}) => V1EntitlementRow(
+  featureKey: feature,
+  status: status,
+  startsAt: DateTime.now().subtract(const Duration(days: 3)),
+  endsAt: endsAt ?? DateTime.now().add(const Duration(days: 27)),
+  beneficiaryStudentId: beneficiary,
+  renewalStatus: renewal,
+  platform: platform,
+  storeProductId: feature == 'studafy_max' ? maxSku : sku,
+  purchasedByMe: mine,
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Store store;
@@ -120,7 +168,12 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     store = Store();
     billing = Billing();
-    repository = StoreSubscriptionRepository(store: store, billingApi: billing);
+    repository = StoreSubscriptionRepository(
+      store: store,
+      billingApi: billing,
+      playPurchases: (_) async =>
+          QueryPurchaseDetailsResponse(pastPurchases: store.owned),
+    );
   });
   tearDown(() async {
     await repository.dispose();
@@ -195,5 +248,143 @@ void main() {
     expect((await repository.offer(StudyPlanTier.plus)).active, isTrue);
     billing.rows = [row(state: 'grace_period')];
     expect((await repository.offer(StudyPlanTier.plus)).active, isTrue);
+  });
+
+  group('never a second subscription or a second charge', () {
+    test('Plus upgrades to Max by replacing Plus on Google Play', () async {
+      billing
+        ..approvedKeys = {'studafy_max'}
+        ..rows = [held('studafy_plus')];
+      store.owned = ownedOnThisPhone(sku);
+      expect((await repository.offer(StudyPlanTier.max)).canPurchase, isTrue);
+      await repository.purchase(StudyPlanTier.max);
+      final change =
+          (store.bought! as GooglePlayPurchaseParam).changeSubscriptionParam!;
+      expect(change.oldPurchaseDetails.productID, sku);
+      // At once, keeping the billing date; only the difference is charged.
+      expect(change.replacementMode, ReplacementMode.chargeProratedPrice);
+    });
+
+    test('an upgrade needs the Google account that bought Plus', () async {
+      billing
+        ..approvedKeys = {'studafy_max'}
+        ..rows = [held('studafy_plus')];
+      await repository.offer(StudyPlanTier.max);
+      await expectLater(
+        repository.purchase(StudyPlanTier.max),
+        throwsA(
+          isA<PurchaseBlockedException>().having(
+            (e) => e.reason,
+            'reason',
+            PurchaseBlock.upgradeNeedsOriginalAccount,
+          ),
+        ),
+      );
+      expect(store.bought, isNull);
+    });
+
+    for (final (name, rows, tier, reason) in [
+      (
+        'Max already includes Plus',
+        [held('studafy_max')],
+        StudyPlanTier.plus,
+        PurchaseBlock.alreadySubscribed,
+      ),
+      (
+        'a plan a parent pays for is theirs to change',
+        [held('studafy_plus', mine: false)],
+        StudyPlanTier.max,
+        PurchaseBlock.paidByParent,
+      ),
+      (
+        'a plan billed by the App Store is changed there',
+        [held('studafy_plus', platform: 'app_store')],
+        StudyPlanTier.max,
+        PurchaseBlock.otherStore,
+      ),
+    ]) {
+      test(name, () async {
+        billing
+          ..approvedKeys = {'studafy_plus', 'studafy_max'}
+          ..rows = rows;
+        await repository.offer(tier);
+        await expectLater(
+          repository.purchase(tier),
+          throwsA(
+            isA<PurchaseBlockedException>().having(
+              (e) => e.reason,
+              'reason',
+              reason,
+            ),
+          ),
+        );
+        expect(store.bought, isNull);
+      });
+    }
+  });
+
+  group('the current subscription', () {
+    final now = DateTime.now();
+
+    test('the highest own plan, with its renewal and store', () {
+      final current = currentStudyPlanSubscription([
+        held('studafy_plus'),
+        held('studafy_max', renewal: 'cancelled'),
+        held('studafy_max', beneficiary: 'a-child'),
+      ], now)!;
+      expect(current.tier, StudyPlanTier.max);
+      expect(current.renewal, RenewalStatus.cancelled);
+      expect(current.store, SubscriptionStore.playStore);
+      expect(current.storeProductId, maxSku);
+    });
+
+    test('a grace period or failed renewal is a payment problem', () {
+      expect(
+        currentStudyPlanSubscription([
+          held('studafy_plus', status: 'grace_period', renewal: 'renewing'),
+        ], now)!.renewal,
+        RenewalStatus.paymentIssue,
+      );
+      expect(
+        currentStudyPlanSubscription([
+          held(
+            'studafy_plus',
+            status: 'on_hold',
+            endsAt: now.subtract(const Duration(days: 2)),
+          ),
+        ], now)!.renewal,
+        RenewalStatus.paymentIssue,
+      );
+    });
+
+    test('a pause is shown as a pause, not a payment problem', () {
+      expect(
+        currentStudyPlanSubscription([
+          held(
+            'studafy_plus',
+            status: 'on_hold',
+            renewal: 'paused',
+            endsAt: now.subtract(const Duration(days: 20)),
+          ),
+        ], now)!.renewal,
+        RenewalStatus.paused,
+      );
+    });
+
+    test('ended, refunded and other people\'s plans are no subscription', () {
+      expect(
+        currentStudyPlanSubscription([
+          held('studafy_plus', status: 'expired'),
+          held('studafy_plus', status: 'revoked'),
+          held('studafy_max', beneficiary: 'a-child'),
+          held('parent_insights'),
+          held(
+            'studafy_plus',
+            endsAt: now.subtract(const Duration(minutes: 1)),
+          ),
+        ], now),
+        isNull,
+      );
+    });
   });
 }

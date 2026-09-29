@@ -7,6 +7,7 @@ import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/lessons_by_date_view.dart';
 import 'package:studafy/features/study/domain/study.dart';
+import 'package:studafy/features/study/presentation/my_notebooks_page.dart';
 import 'package:studafy/features/study/presentation/notebook_view.dart';
 import 'package:studafy/features/study/presentation/study_plans_page.dart';
 import 'package:studafy/features/study/presentation/study_set_pages.dart';
@@ -17,12 +18,13 @@ import '../../support/localized_app.dart';
 /// rules, caps and costs are enforced by the server and proven in
 /// apps/api/test/study; this is what the screens do.
 void main() {
-  StudyPlan planOf(StudyPlanTier tier) => StudyPlan(
+  StudyPlan planOf(StudyPlanTier tier, {Set<String>? available}) => StudyPlan(
     tier: tier,
     allowanceUsed: 0.25,
     resetsAt: DateTime(2026, 10, 1),
     askToday: 2,
     askPerDay: 10,
+    available: available,
   );
 
   void tall(WidgetTester tester) {
@@ -192,7 +194,9 @@ void main() {
           ),
         );
 
-    testWidgets('without Max they lead to the plans', (tester) async {
+    testWidgets('without Max they explain Max, then lead to the plans', (
+      tester,
+    ) async {
       final opened = <String>[];
       final study = _Study();
       await tester.pumpWidget(
@@ -201,8 +205,55 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Quiz'));
       await tester.pumpAndSettle();
+      // Why it is locked and what the plan adds, before any store.
+      expect(find.text('This comes with Studafy Max'), findsOne);
+      expect(find.text('What Studafy Max unlocks'), findsOne);
+      expect(find.text('Quizzes made from your lessons'), findsOne);
+      expect(opened, isEmpty);
+      await tester.tap(find.text('Upgrade'));
+      await tester.pumpAndSettle();
       expect(opened, ['plans']);
       expect(study.setsRequested, isEmpty);
+    });
+
+    testWidgets('without Max they still show, locked, naming the plan', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await tester.pumpWidget(
+        buttons(_Study(), planOf(StudyPlanTier.free), opened),
+      );
+      await tester.pumpAndSettle();
+
+      // Seen, not usable: both buttons, a lock on each, and the plan's name.
+      expect(find.text('Quiz'), findsOne);
+      expect(find.text('Flashcards'), findsOne);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNWidgets(2));
+      await tester.tap(find.text('Studafy Max'));
+      await tester.pumpAndSettle();
+      expect(opened, ['plans']);
+    });
+
+    testWidgets('switched off on this server: shown, and a tap says so', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      final study = _Study();
+      await tester.pumpWidget(
+        buttons(study, planOf(StudyPlanTier.max, available: {'ask'}), opened),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quiz'));
+      await tester.pump();
+
+      // Not the plans screen: buying Max would not switch the server on.
+      expect(opened, isEmpty);
+      expect(study.setsRequested, isEmpty);
+      expect(
+        find.text('Quizzes and flashcards are not switched on yet.'),
+        findsOne,
+      );
+      expect(find.text('Studafy Max'), findsNothing);
     });
 
     testWidgets('on Max, a quiz marks each answer', (tester) async {
@@ -231,6 +282,121 @@ void main() {
       await tester.tap(find.text('Chlorophyll'));
       await tester.pumpAndSettle();
       expect(find.text('The green pigment'), findsOne);
+    });
+  });
+
+  group('lessons into the notebook', () {
+    const lesson = LessonChoice(
+      id: 'lesson-1',
+      title: 'Photosynthesis',
+      text: 'Plants turn light into sugar.',
+    );
+
+    Widget notebook(_Study study, {List<String>? plansOpened}) => localizedApp(
+      home: Scaffold(
+        body: NotebookView(
+          study: study,
+          classroomId: 'c1',
+          onOpenPlans: () => plansOpened?.add('plans'),
+          pickLesson: (_) async => lesson,
+        ),
+      ),
+    );
+
+    testWidgets('a lesson is copied into the notebook as it is', (
+      tester,
+    ) async {
+      tall(tester);
+      final study = _Study();
+      await tester.pumpWidget(notebook(study));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('From a lesson'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Copy into my notebook'));
+      await tester.pumpAndSettle();
+
+      expect(study.added.single, (
+        'c1',
+        'Photosynthesis',
+        'Plants turn light into sugar.',
+      ));
+    });
+
+    testWidgets('study notes from a lesson are Studafy Plus', (tester) async {
+      tall(tester);
+      final plansOpened = <String>[];
+      final free = _Study();
+      await tester.pumpWidget(notebook(free, plansOpened: plansOpened));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('From a lesson'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Turn into study notes'));
+      await tester.pumpAndSettle();
+      expect(plansOpened, ['plans']);
+      expect(free.lessonNotesRequested, isEmpty);
+
+      final plus = _Study(tier: StudyPlanTier.plus);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(notebook(plus));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('From a lesson'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Turn into study notes'));
+      await tester.pumpAndSettle();
+      expect(plus.lessonNotesRequested, ['lesson-1']);
+    });
+
+    testWidgets('every notebook is listed by class, a deleted one marked', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        localizedApp(home: MyNotebooksPage(study: _Study())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Biology'), findsOne);
+      expect(find.text('Old chemistry class'), findsOne);
+      expect(find.textContaining('no longer exists'), findsOne);
+    });
+  });
+
+  group('the quizzes and flashcards card', () {
+    Widget card(StudyPlan plan, {required bool hasLessons}) => localizedApp(
+      home: Scaffold(
+        body: StudyToolsCard(
+          plan: plan,
+          hasLessons: hasLessons,
+          onOpenPlans: () {},
+        ),
+      ),
+    );
+
+    testWidgets('shows before any lesson exists, naming the plan', (
+      tester,
+    ) async {
+      // Reported: with no lesson yet, quizzes and flashcards were nowhere.
+      await tester.pumpWidget(
+        card(planOf(StudyPlanTier.free), hasLessons: false),
+      );
+      expect(find.text('Quizzes & flashcards'), findsOne);
+      expect(find.text('Studafy Max'), findsOne);
+    });
+
+    testWidgets('on Max with no lessons, says where they will appear', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        card(planOf(StudyPlanTier.max), hasLessons: false),
+      );
+      expect(find.textContaining('once your teacher adds one'), findsOne);
+    });
+
+    testWidgets('on Max with lessons, points to them', (tester) async {
+      await tester.pumpWidget(
+        card(planOf(StudyPlanTier.max), hasLessons: true),
+      );
+      expect(find.textContaining('from any lesson below'), findsOne);
     });
   });
 
@@ -284,6 +450,211 @@ void main() {
       await tester.pumpWidget(plans(_Study(), _Store()..approved = true));
       await tester.pumpAndSettle();
       expect(find.text('Subscribe to Studafy Max'), findsOne);
+    });
+
+    Widget plansWith(_Study study, _Store store, [List<Uri>? opened]) =>
+        localizedApp(
+          home: StudyPlansPage(
+            study: study,
+            subscriptions: store,
+            openLink: (uri) async {
+              opened?.add(uri);
+              return true;
+            },
+          ),
+        );
+
+    StudyPlanSubscription plus({
+      RenewalStatus renewal = RenewalStatus.renewing,
+      SubscriptionStore store = SubscriptionStore.playStore,
+      bool paidByMe = true,
+    }) => StudyPlanSubscription(
+      tier: StudyPlanTier.plus,
+      renewal: renewal,
+      endsAt: DateTime.utc(2026, 11, 3, 12),
+      store: store,
+      storeProductId: 'studafy_plus_monthly',
+      paidByMe: paidByMe,
+    );
+
+    testWidgets('Max includes Plus, so Plus is never sold to a Max student', (
+      tester,
+    ) async {
+      tall(tester);
+      await tester.pumpWidget(
+        plansWith(_Study(tier: StudyPlanTier.max), _Store()..approved = true),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Included in your plan'), findsOne);
+      expect(find.text('Subscribe to Studafy Plus'), findsNothing);
+      expect(find.text('Upgrade to Studafy Plus'), findsNothing);
+    });
+
+    testWidgets('a Plus student upgrades, told Plus is replaced', (
+      tester,
+    ) async {
+      tall(tester);
+      await tester.pumpWidget(
+        plansWith(
+          _Study(tier: StudyPlanTier.plus),
+          _Store()
+            ..approved = true
+            ..current = plus(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Upgrade to Studafy Max'), findsOne);
+      expect(
+        find.textContaining('Your Studafy Plus subscription is replaced'),
+        findsOne,
+      );
+    });
+
+    testWidgets('shows the renewal date; cancelling offers a pause first', (
+      tester,
+    ) async {
+      tall(tester);
+      final opened = <Uri>[];
+      await tester.pumpWidget(
+        plansWith(
+          _Study(tier: StudyPlanTier.plus),
+          _Store()..current = plus(),
+          opened,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Renews on Nov 3, 2026'), findsOne);
+      expect(find.text('Billed monthly through Google Play'), findsOne);
+
+      await tester.tap(find.text('Cancel subscription'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pause instead'), findsOne);
+      expect(
+        find.textContaining('You keep Studafy Plus until Nov 3, 2026'),
+        findsNWidgets(2),
+      );
+      expect(find.text('Cancel in Google Play'), findsOne);
+
+      await tester.tap(find.text('Pause in Google Play'));
+      await tester.pumpAndSettle();
+      // Google Play's own page for this subscription: the store pauses it.
+      expect(opened.single.host, 'play.google.com');
+      expect(opened.single.queryParameters['sku'], 'studafy_plus_monthly');
+      expect(opened.single.queryParameters['package'], 'com.studafy.light');
+    });
+
+    testWidgets('the App Store has no pause; cancelling opens its page', (
+      tester,
+    ) async {
+      tall(tester);
+      final opened = <Uri>[];
+      await tester.pumpWidget(
+        plansWith(
+          _Study(tier: StudyPlanTier.plus),
+          _Store()
+            ..store = SubscriptionStore.appStore
+            ..current = plus(store: SubscriptionStore.appStore),
+          opened,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel subscription'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pause instead'), findsNothing);
+      await tester.tap(find.text('Cancel in App Store'));
+      await tester.pumpAndSettle();
+      expect(
+        opened.single.toString(),
+        'https://apps.apple.com/account/subscriptions',
+      );
+    });
+
+    testWidgets('a cancelled plan says until when, with no second cancel', (
+      tester,
+    ) async {
+      tall(tester);
+      await tester.pumpWidget(
+        plansWith(
+          _Study(tier: StudyPlanTier.plus),
+          _Store()..current = plus(renewal: RenewalStatus.cancelled),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          "Cancelled. You keep Studafy Plus until Nov 3, 2026 and won't "
+          'be charged again.',
+        ),
+        findsOne,
+      );
+      expect(find.text('Cancel subscription'), findsNothing);
+      expect(find.text('Manage subscription'), findsOne);
+    });
+
+    testWidgets('a payment problem offers the fix in the store', (
+      tester,
+    ) async {
+      tall(tester);
+      final opened = <Uri>[];
+      await tester.pumpWidget(
+        plansWith(
+          _Study(tier: StudyPlanTier.plus),
+          _Store()..current = plus(renewal: RenewalStatus.paymentIssue),
+          opened,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining("couldn't take the payment"), findsOne);
+      await tester.tap(find.text('Update payment method'));
+      await tester.pumpAndSettle();
+      expect(opened.single.host, 'play.google.com');
+    });
+
+    testWidgets('a plan a parent pays for is theirs to change', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(
+        plansWith(
+          _Study(tier: StudyPlanTier.plus),
+          _Store()..current = plus(paidByMe: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('A parent pays for this plan'), findsOne);
+      expect(find.text('Cancel subscription'), findsNothing);
+      expect(find.text('Manage subscription'), findsNothing);
+    });
+
+    testWidgets('without a store, plans are described and bought on a phone', (
+      tester,
+    ) async {
+      tall(tester);
+      await tester.pumpWidget(
+        plansWith(
+          _Study(),
+          _Store()
+            ..approved = true
+            ..store = null,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('bought in the Studafy app'), findsOne);
+      expect(find.text('Subscribe to Studafy Plus'), findsNothing);
+      expect(find.text('Ask a parent to approve'), findsNothing);
+      expect(find.text('Restore purchases'), findsNothing);
+      // No card, no wallet: nothing here takes a payment.
+      expect(find.textContaining('Apple Pay'), findsNothing);
+      expect(find.textContaining('Google Pay'), findsNothing);
+    });
+
+    testWidgets('the store names its own payment methods', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(plansWith(_Study(), _Store()));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('payment method in your Google Play account'),
+        findsOne,
+      );
+      expect(find.textContaining('Studafy never sees your card'), findsOne);
     });
   });
 }
@@ -381,6 +752,43 @@ class _Study implements StudyRepository {
             cards: [Flashcard(front: 'Chlorophyll', back: 'The green pigment')],
           );
   }
+
+  final lessonNotesRequested = <String>[];
+
+  @override
+  Future<List<NotebookGroup>> myNotebooks() async => [
+    NotebookGroup(
+      classroomId: 'c1',
+      className: 'Biology',
+      classGone: false,
+      entries: List.of(entries),
+    ),
+    const NotebookGroup(
+      classroomId: 'c-old',
+      className: 'Old chemistry class',
+      classGone: true,
+      entries: [],
+    ),
+  ];
+
+  @override
+  Future<NotebookEntry> lessonNotes(String resourceId) async {
+    if (!tier.includes(StudyPlanTier.plus)) {
+      throw const StudyException(StudyRefusal.planRequired);
+    }
+    lessonNotesRequested.add(resourceId);
+    final entry = NotebookEntry(
+      id: 'lesson-note',
+      classroomId: 'c1',
+      title: 'Photosynthesis',
+      body: '# Photosynthesis',
+      fromWhiteboard: false,
+      fromLesson: true,
+      createdAt: DateTime(2026, 9, 29),
+    );
+    entries.insert(0, entry);
+    return entry;
+  }
 }
 
 class _Uploads implements FileUploadRepository {
@@ -420,6 +828,14 @@ class _Lessons implements AcademicRepository {
 class _Store implements StudyPlanSubscriptionRepository {
   bool approved = false;
   final approvalsRequested = <StudyPlanTier>[];
+  SubscriptionStore? store = SubscriptionStore.playStore;
+  StudyPlanSubscription? current;
+
+  @override
+  SubscriptionStore? get purchaseStore => store;
+
+  @override
+  Future<StudyPlanSubscription?> subscription() async => current;
 
   @override
   Future<StudyPlanOffer> offer(StudyPlanTier tier) async => StudyPlanOffer(

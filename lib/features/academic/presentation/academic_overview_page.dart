@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
-import '../../../core/platform_attachment_source.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'create_lesson_page.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;
@@ -127,7 +128,11 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
   bool _canPublish(AcademicRecord record) =>
       widget.teacherTools &&
       record.state == 'draft' &&
-      (feed == AcademicFeed.assignments || feed == AcademicFeed.assessments);
+      (feed == AcademicFeed.assignments ||
+          feed == AcademicFeed.assessments ||
+          // A lesson filed before lessons were published on creation, or
+          // by any other path, would otherwise sit unseen forever.
+          feed == AcademicFeed.content);
 
   Future<void> _publish(AcademicRecord record) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -135,6 +140,8 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     try {
       if (feed == AcademicFeed.assignments) {
         await widget.repository.publishAssignment(record.id, record.version);
+      } else if (feed == AcademicFeed.content) {
+        await widget.repository.publishResource(record.id, record.version);
       } else {
         await widget.repository.publishAssessment(record.id, record.version);
       }
@@ -272,7 +279,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            UserContentText(item.detail),
+                            LinkedText(item.detail),
                             if (item.maximumScore case final score?)
                               Text(
                                 AppL10n.of(context).academicGradedOutOf(
@@ -332,9 +339,13 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: FilledButton.icon(
-                onPressed: widget.classroomId == null ? null : _fileNote,
+                // Needs a class to file into: this page's own, or one of the
+                // teacher's to choose from.
+                onPressed: widget.classroomId == null && choices.isEmpty
+                    ? null
+                    : _addLesson,
                 icon: const Icon(Icons.note_add_outlined),
-                label: Text(AppL10n.of(context).academicFileNote),
+                label: Text(AppL10n.of(context).academicAddLesson),
               ),
             ),
           ),
@@ -342,105 +353,39 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     ),
   );
 
-  Future<void> _fileNote() async {
-    final title = TextEditingController();
-    final body = TextEditingController();
-    String? error;
-    var attachments = const <Attachment>[];
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(AppL10n.of(context).academicNoteTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: title,
-                decoration: InputDecoration(
-                  labelText: AppL10n.of(context).academicNoteTitleLabel,
-                ),
-              ),
-              TextField(
-                controller: body,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: AppL10n.of(context).academicNoteBodyLabel,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Each attached file becomes class material in its own right
-              // once published, which is how the server models it - the note
-              // above is a separate resource, not a carrier for them.
-              if (widget.uploads case final uploads?)
-                if (widget.schoolId case final schoolId?)
-                  AttachmentField(
-                    purpose: FilePurpose.lessonResource,
-                    schoolId: schoolId,
-                    classroomId: widget.classroomId,
-                    uploads: uploads,
-                    source: widget.attachmentSource ?? pickPlatformAttachment,
-                    onChanged: (items) =>
-                        setDialogState(() => attachments = items),
-                  )
-                else
-                  Text(AppL10n.of(context).academicAttachmentsUnavailable)
-              else
-                Text(AppL10n.of(context).academicAttachmentsUnavailable),
-              if (error != null)
-                Text(error!, style: const TextStyle(color: Colors.red)),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(AppL10n.of(context).academicCancel),
+  /// Opens the new-lesson form. Inside a class it is for that class; on the
+  /// all-classes Teaching tab the teacher picks one, starting from the class
+  /// they are filtering by.
+  Future<void> _addLesson() async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final classroomId = widget.classroomId;
+    final classes = classroomId != null
+        ? [
+            ClassOption(
+              id: classroomId,
+              name: widget.title ?? l10n.academicThisClass,
             ),
-            FilledButton(
-              // Refused while anything is still in flight: a note saved now
-              // would be filed without the file the teacher is waiting on.
-              onPressed:
-                  attachments.any((a) => a.stage == AttachmentStage.uploading)
-                  ? null
-                  : () async {
-                      try {
-                        await widget.repository.createResource(
-                          TextResourceDraft(
-                            classroomId: widget.classroomId!,
-                            title: title.text,
-                            body: body.text,
-                          ),
-                        );
-                        // Each upload becomes its own piece of class
-                        // material. A file that failed or was refused is
-                        // simply not among them.
-                        final uploads = widget.uploads;
-                        if (uploads != null) {
-                          for (final item in attachments) {
-                            final fileId = item.fileId;
-                            if (fileId == null) continue;
-                            await uploads.publishToClass(
-                              fileId: fileId,
-                              audience: FileAudience.students,
-                            );
-                          }
-                        }
-                        if (!dialogContext.mounted) return;
-                        Navigator.pop(dialogContext);
-                        _refresh();
-                      } catch (_) {
-                        setDialogState(
-                          () =>
-                              error = AppL10n.of(context).academicNoteNotSaved,
-                        );
-                      }
-                    },
-              child: Text(AppL10n.of(context).academicSaveToSchool),
-            ),
-          ],
+          ]
+        : [
+            for (final choice in choices)
+              ClassOption(id: choice.id, name: choice.name),
+          ];
+    final added = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => CreateLessonPage(
+          repository: widget.repository,
+          classes: classes,
+          initialClassroomId: classroomId ?? selectedClassId,
+          schoolId: widget.schoolId,
+          uploads: widget.uploads,
+          attachmentSource: widget.attachmentSource,
         ),
       ),
     );
+    if (added == null || !mounted) return;
+    messenger.showMessage(added);
+    _refresh();
   }
 }
 

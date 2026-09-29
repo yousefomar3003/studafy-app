@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
+import '../core/platform_attachment_source.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -15,12 +16,15 @@ import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study/domain/study.dart';
 import '../features/study/presentation/study_plans_page.dart';
+import '../features/study/presentation/upgrade_prompt.dart';
 import '../features/study_assistant/application/study_assistant_interactor.dart';
+import '../features/study_assistant/domain/study_assistant_repository.dart';
 import '../features/study_assistant/presentation/study_assistant_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 import 'student_lessons_page.dart';
 import 'student_today_page.dart';
+import 'study_reference_picker.dart';
 
 class StudentShell extends StatefulWidget {
   const StudentShell({
@@ -31,6 +35,7 @@ class StudentShell extends StatefulWidget {
     this.study,
     this.session,
     this.studyAssistant,
+    this.studyChats,
     this.fileUploads,
   });
 
@@ -53,6 +58,9 @@ class StudentShell extends StatefulWidget {
   /// The study helper. Null when the server has no AI provider configured,
   /// and the tab is then absent rather than present and always failing.
   final StudyAssistantInteractor? studyAssistant;
+
+  /// Where the helper's chats are kept, on this device.
+  final StudyChatStore? studyChats;
 
   /// Lets a student attach documents and photos to the work they hand in.
   /// Null in builds with no upload pipeline, and the control is then absent.
@@ -182,6 +190,65 @@ class _StudentShellState extends State<StudentShell> {
       if (assistant != null)
         StudyAssistantPage(
           assistant: assistant,
+          chats: widget.studyChats,
+          switchedOn: switch (widget.study) {
+            final study? => () async => (await study.plan()).assistantOn,
+            null => null,
+          },
+          abilities: switch (widget.study) {
+            final study? => () async {
+              final plan = await study.plan();
+              return HelperAbilities(
+                ask: plan.assistantOn,
+                classMaterial: plan.classMaterialOn,
+                photos: plan.helperPhotosOn,
+              );
+            },
+            null => null,
+          },
+          pickReferences: switch ((widget.classes, widget.study)) {
+            (final classes?, final study?) =>
+              (context, current) => pickStudyReferences(
+                context,
+                classes: classes,
+                academic: repository,
+                study: study,
+                current: current,
+              ),
+            _ => null,
+          },
+          uploads: widget.fileUploads,
+          schoolId: ActiveContextController.instance.membership?.schoolId,
+          attachmentSource: pickPlatformAttachment,
+          onPlanLimit: switch (widget.study) {
+            final study? => (context, code) async {
+              StudyPlan? plan;
+              try {
+                plan = await study.plan();
+              } on Object {
+                plan = null;
+              }
+              if (!context.mounted) return;
+              await showUpgradePrompt(
+                context,
+                reason: code == StudyAssistantFailure.dailyLimit
+                    ? UpgradeReason.dailyQuestions
+                    : UpgradeReason.feature,
+                plan: plan,
+                // Photos to the helper are Studafy Plus.
+                needs: StudyPlanTier.plus,
+                onUpgrade: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => StudyPlansPage(
+                      study: study,
+                      subscriptions: widget.studyPlans,
+                    ),
+                  ),
+                ),
+              );
+            },
+            null => null,
+          },
           actions: [
             if (widget.study case final study?)
               IconButton(

@@ -39,6 +39,7 @@ import * as Onboarding from "./onboarding";
 import * as StudyAssistant from "./studyAssistant";
 import * as FamilyInsights from "./familyInsights";
 import * as StudyPlans from "./studyPlans";
+import * as ManagedAccounts from "./managedAccounts";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -1698,6 +1699,80 @@ export const V1_ROUTE_CATALOGUE = [
     "V1GenerateStudySetRequest",
     StudyPlans.V1StudySet,
     "V1StudySet",
+    201,
+    params("resourceId"),
+  ),
+  // Managed child accounts (2026-09-28). Appended.
+  catalogueGet(
+    "listManagedChildren",
+    "/v1/me/managed-children",
+    "managed_child.list",
+    ManagedAccounts.V1ManagedChildList,
+    "V1ManagedChildList",
+  ),
+  cataloguePost(
+    "createManagedChild",
+    "/v1/me/managed-children",
+    "managed_child.create",
+    ManagedAccounts.V1CreateManagedChildRequest,
+    "V1CreateManagedChildRequest",
+    ManagedAccounts.V1ManagedChild,
+    "V1ManagedChild",
+    201,
+  ),
+  // A one-time sign-in, like verifyReauth's grant: idempotency is forbidden
+  // so the token is never stored for replay.
+  {
+    method: "post",
+    path: "/v1/me/managed-children/{childId}/session",
+    operationId: "createManagedChildSession",
+    summary: "Issue a one-time sign-in for a managed child account",
+    permission: "managed_child.session",
+    idempotency: "forbidden",
+    successStatus: 200,
+    params: params("childId"),
+    request: ManagedAccounts.V1ManagedChildSessionRequest,
+    requestSchema: "V1ManagedChildSessionRequest",
+    response: ManagedAccounts.V1ManagedChildSession,
+    responseSchema: "V1ManagedChildSession",
+  },
+  // The caller's own profile, read fresh (not from the cached session
+  // context), so first-sign-in setup is never asked twice. Appended.
+  catalogueGet(
+    "getProfile",
+    "/v1/account/profile",
+    "account.profile.read",
+    Account.V1ProfileResponse,
+    "V1ProfileResponse",
+  ),
+  // Deleting a class (it is archived). Appended.
+  cataloguePost(
+    "archiveClassroom",
+    "/v1/classrooms/{classroomId}/archive",
+    "classroom.update",
+    Academic.V1ArchiveClassroomRequest,
+    "V1ArchiveClassroomRequest",
+    Academic.V1AcademicClassroom,
+    "V1AcademicClassroom",
+    200,
+    classroomParams(),
+  ),
+  // Every notebook a student has, and study notes made from a lesson.
+  catalogueGet(
+    "listMyNotebooks",
+    "/v1/me/notebooks",
+    "notebook.list_own",
+    StudyPlans.V1MyNotebooks,
+    "V1MyNotebooks",
+  ),
+  cataloguePost(
+    "createLessonNotes",
+    "/v1/resources/{resourceId}/lesson-notes",
+    "study_set.generate",
+    StudyPlans.V1CreateLessonNotesRequest,
+    "V1CreateLessonNotesRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
     201,
     params("resourceId"),
   ),

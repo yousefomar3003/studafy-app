@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/failures.dart';
 import '../../core/idempotency.dart' as ids;
+import 'response_cache.dart';
 import 'v1_client.generated.dart';
 
 /// Raised when the API refuses a request. [code] is the stable machine code
@@ -100,12 +101,70 @@ class V1HttpTransport implements V1JsonTransport {
   /// Set for the next privileged request only, then cleared.
   String? _pendingReauthGrant;
 
+  /// Keeps answers on the device for when the server cannot be reached.
+  /// Null keeps nothing (synthetic builds, tests).
+  ResponseCache? responseCache;
+
+  /// Reads that are never kept: sign-in and account authority, billing
+  /// (always the store's current word), single-use file and export links,
+  /// upload progress, a class's join link, and the safeguarding records
+  /// (wellbeing, reports, content controls), which must not sit on a phone
+  /// a family shares.
+  static final _neverKept = RegExp(
+    r'^/v1/(auth|billing|files|uploads|reports|wellbeing|control-panel)(/|\?|$)'
+    r'|^/v1/me(\?|$)'
+    r'|^/v1/account/export-'
+    r'|/join-link(\?|$)',
+  );
+
+  /// Commands that only read something the server made once and keeps: a
+  /// lesson's quiz or flashcards. Kept like a read.
+  static final _keptCommands = RegExp(r'^/v1/resources/[^/?]+/study-set$');
+
+  @visibleForTesting
+  static bool keeps(String method, String path) => method == 'GET'
+      ? !_neverKept.hasMatch(path)
+      : _keptCommands.hasMatch(path);
+
+  /// Network first. A good answer is kept; when the server cannot be
+  /// reached (no connection, a timeout, 429/503/504) the kept answer is
+  /// returned instead. Every other failure - a refusal, a lost session - is
+  /// the server's word and is never covered up by a kept copy.
+  Future<Map<String, dynamic>> _keeping(
+    String key,
+    Future<Map<String, dynamic>> Function() send,
+  ) async {
+    final cache = responseCache;
+    if (cache == null) return send();
+    try {
+      final body = await send();
+      try {
+        await cache.write(key, body);
+      } on Object {
+        // A full or closed cache never fails the request it would have kept.
+      }
+      return body;
+    } on Object catch (error) {
+      if (Failure.fromError(error).code != Failure.networkCode) rethrow;
+      Map<String, dynamic>? kept;
+      try {
+        kept = await cache.read(key);
+      } on Object {
+        kept = null;
+      }
+      if (kept == null) rethrow;
+      return kept;
+    }
+  }
+
   /// Presents [grant] on the next request and forgets it afterwards, so a
   /// single-use grant cannot be accidentally replayed by a later call.
   void useReauthGrant(String grant) => _pendingReauthGrant = grant;
 
   @override
-  Future<Map<String, dynamic>> get(String path) => _send('GET', path, null);
+  Future<Map<String, dynamic>> get(String path) => keeps('GET', path)
+      ? _keeping('GET $path', () => _send('GET', path, null))
+      : _send('GET', path, null);
 
   @override
   Future<Map<String, dynamic>> post(
@@ -113,14 +172,19 @@ class V1HttpTransport implements V1JsonTransport {
     Map<String, Object?> body, {
     String? idempotencyKey,
     bool requiresIdempotency = false,
-  }) => _send(
-    'POST',
-    path,
-    body,
-    idempotencyKey: requiresIdempotency
-        ? idempotencyKey ?? newIdempotencyKey()
-        : idempotencyKey,
-  );
+  }) {
+    Future<Map<String, dynamic>> send() => _send(
+      'POST',
+      path,
+      body,
+      idempotencyKey: requiresIdempotency
+          ? idempotencyKey ?? newIdempotencyKey()
+          : idempotencyKey,
+    );
+    return keeps('POST', path)
+        ? _keeping('POST $path ${jsonEncode(body)}', send)
+        : send();
+  }
 
   Future<Map<String, dynamic>> _send(
     String method,

@@ -128,6 +128,11 @@ class _FakeAcademicRepository implements AcademicRepository {
     List<ClassSessionSlot> slots,
   ) async {}
   @override
+  Future<void> archiveClassroom(
+    String classroomId,
+    int expectedVersion,
+  ) async {}
+  @override
   Future<List<LessonSession>> lessonSessions(String classroomId) async =>
       const [];
   @override
@@ -259,15 +264,14 @@ void main() {
     expect(find.text('Atomic models'), findsOneWidget);
   });
 
-  testWidgets('teacher tools file a text note and keep input on failure', (
-    tester,
-  ) async {
+  testWidgets('inside a class, a teacher adds a lesson to it', (tester) async {
     final repository = _FakeAcademicRepository(const []);
     await tester.pumpWidget(
       localizedApp(
         home: AcademicOverviewPage(
           repository: repository,
           classroomId: '22222222-2222-4222-8222-222222222222',
+          title: 'Biology 7A',
           teacherTools: true,
         ),
       ),
@@ -276,25 +280,77 @@ void main() {
 
     await tester.tap(find.text('Lessons'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('File text lesson note'));
+    await tester.tap(find.text('Add lesson'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Title'),
+      find.widgetWithText(TextField, 'Lesson title'),
       'Photosynthesis',
     );
-    await tester.enterText(find.widgetWithText(TextField, 'Note'), 'Light in.');
-    await tester.tap(find.text('Save to school'));
-    await tester.pump();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Lesson notes'),
+      'Light in.',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add lesson'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add lesson'));
+    await tester.pumpAndSettle();
 
-    expect(repository.drafts.single, isA<TextResourceDraft>());
     final draft = repository.drafts.single as TextResourceDraft;
     expect(draft.title, 'Photosynthesis');
     expect(draft.body, 'Light in.');
     expect(draft.classroomId, '22222222-2222-4222-8222-222222222222');
+    expect(draft.audience, 'both');
+    expect(find.text('Lesson added.'), findsOne);
   });
 
-  testWidgets('the note control is disabled without a classroom', (
+  testWidgets('on the all-classes tab, the class being viewed is preselected', (
+    tester,
+  ) async {
+    // The reported bug: here the button was always disabled, so a teacher
+    // had nowhere to add a lesson at all.
+    final repository = _FakeAcademicRepository(const []);
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: repository,
+          teacherTools: true,
+          initialFeed: AcademicFeed.content,
+          loadClassChoices: () async => const [
+            ClassChoice(
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Maths',
+            ),
+            ClassChoice(
+              id: '44444444-4444-4444-8444-444444444444',
+              name: 'Art',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Art'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add lesson'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Lesson title'),
+      'Colour wheel',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Lesson notes'),
+      'Primary colours.',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add lesson'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add lesson'));
+    await tester.pumpAndSettle();
+
+    final draft = repository.drafts.single as TextResourceDraft;
+    expect(draft.classroomId, '44444444-4444-4444-8444-444444444444');
+  });
+
+  testWidgets('with no class at all, the lesson control is disabled', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -311,7 +367,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'File text lesson note'),
+      find.widgetWithText(FilledButton, 'Add lesson'),
     );
     expect(button.onPressed, isNull);
   });

@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
+  appleRenewalStatus,
+  googleRenewalStatus,
   isAppleTransactionTrusted,
   isGooglePackageNameTrusted,
   mapAppleNotificationToTransactionState,
   mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
+  resolveAppleSubscriptionState,
 } from "../src";
 
 describe("mapAppleNotificationToTransactionState", () => {
@@ -162,5 +165,113 @@ describe("isGooglePackageNameTrusted", () => {
   test("a different package name is never trusted", () => {
     expect(isGooglePackageNameTrusted("com.attacker.app", "io.studafy.app"))
       .toBe(false);
+  });
+});
+
+describe("resolveAppleSubscriptionState", () => {
+  const now = Date.UTC(2026, 8, 29);
+  const past = now - 86_400_000;
+  const future = now + 86_400_000;
+  const graceEnd = now + 6 * 86_400_000;
+
+  test("a billing grace period keeps access until the grace end", () => {
+    // The renewal failed, so the transaction's own expiry is already past.
+    expect(
+      resolveAppleSubscriptionState({
+        subscriptionStatus: 4,
+        expiresDate: past,
+        gracePeriodExpiresDate: graceEnd,
+        nowMillis: now,
+      }),
+    ).toEqual({ state: "grace_period", effectiveUntil: graceEnd });
+  });
+
+  test("billing retry without grace removes access", () => {
+    expect(
+      resolveAppleSubscriptionState({
+        subscriptionStatus: 3,
+        expiresDate: past,
+        nowMillis: now,
+      }).state,
+    ).toBe("on_hold");
+  });
+
+  test("the grace notification signal is honoured when status is unknown", () => {
+    expect(
+      resolveAppleSubscriptionState({
+        expiresDate: past,
+        gracePeriodExpiresDate: graceEnd,
+        notificationSignal: "grace_period",
+        nowMillis: now,
+      }),
+    ).toEqual({ state: "grace_period", effectiveUntil: graceEnd });
+  });
+
+  test("a refund notification wins over an active status", () => {
+    expect(
+      resolveAppleSubscriptionState({
+        subscriptionStatus: 1,
+        expiresDate: future,
+        notificationSignal: "refunded",
+        nowMillis: now,
+      }).state,
+    ).toBe("refunded");
+  });
+
+  test("a revocation reason always revokes", () => {
+    expect(
+      resolveAppleSubscriptionState({
+        subscriptionStatus: 1,
+        revocationReason: 0,
+        expiresDate: future,
+        nowMillis: now,
+      }).state,
+    ).toBe("revoked");
+  });
+
+  test("without status or signal the expiry decides", () => {
+    expect(
+      resolveAppleSubscriptionState({ expiresDate: future, nowMillis: now })
+        .state,
+    ).toBe("active");
+    expect(
+      resolveAppleSubscriptionState({ expiresDate: past, nowMillis: now })
+        .state,
+    ).toBe("expired");
+  });
+});
+
+describe("renewal status", () => {
+  test("Apple: billing retry and grace are payment issues", () => {
+    expect(appleRenewalStatus(3, true)).toBe("payment_issue");
+    expect(appleRenewalStatus(4, true)).toBe("payment_issue");
+  });
+
+  test("Apple: auto-renew off is cancelled, on is renewing", () => {
+    expect(appleRenewalStatus(1, false)).toBe("cancelled");
+    expect(appleRenewalStatus(1, true)).toBe("renewing");
+    expect(appleRenewalStatus(null, null)).toBeNull();
+  });
+
+  test("Google: pause, payment problems and cancellation", () => {
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_PAUSED", true)).toBe(
+      "paused",
+    );
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_ON_HOLD", true)).toBe(
+      "payment_issue",
+    );
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_IN_GRACE_PERIOD", true))
+      .toBe("payment_issue");
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_CANCELED", false)).toBe(
+      "cancelled",
+    );
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_ACTIVE", false)).toBe(
+      "cancelled",
+    );
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_ACTIVE", true)).toBe(
+      "renewing",
+    );
+    expect(googleRenewalStatus("SUBSCRIPTION_STATE_EXPIRED", false))
+      .toBeNull();
   });
 });

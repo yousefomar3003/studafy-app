@@ -34,6 +34,19 @@ export type V1StudyFeature = z.infer<typeof V1StudyFeature>;
 export const V1StudyPlanSummary = z.strictObject({
   plan: V1StudyPlanId,
   features: z.array(V1StudyFeature).max(8),
+  /**
+   * What this server can do right now, whatever the plan: the question box
+   * needs an AI provider, and whiteboard notes and study sets also need the
+   * lesson-tools switch (ADR-0029). The app hides or explains a feature that
+   * is not here instead of offering one that always fails. Absent from
+   * servers older than 2026-09-28.
+   */
+  available: z.array(V1StudyFeature).max(8).optional(),
+  /**
+   * How much of a chat the helper remembers on this plan, in characters.
+   * The app sends no more than this with a question.
+   */
+  chatMemoryChars: z.number().int().nonnegative().optional(),
   /** 0 to 1. Always 0 on the free plan, which has no monthly allowance. */
   allowanceUsed: z.number().min(0).max(1),
   resetsAt: Timestamp,
@@ -48,13 +61,32 @@ export const V1NotebookEntry = z.strictObject({
   classroomId: Id,
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(20000),
-  /** 'whiteboard' when Studafy Plus wrote it from a photo. */
-  source: z.enum(["typed", "whiteboard"]),
+  /** 'whiteboard' when Studafy Plus wrote it from a photo; 'lesson' when it
+   * was made from one of the class's lessons. */
+  source: z.enum(["typed", "whiteboard", "lesson"]),
   createdAt: Timestamp,
   /** The whiteboard photo it came from, when there was one. */
   photo: V1FileAttachment.nullable(),
 });
 export type V1NotebookEntry = z.infer<typeof V1NotebookEntry>;
+
+/** Every notebook a student has, by class - deleted classes included. */
+export const V1MyNotebooks = z.strictObject({
+  classes: z.array(z.strictObject({
+    classroomId: Id,
+    name: z.string(),
+    /** The class was deleted; its notes are still the student's. */
+    archived: z.boolean(),
+    entries: z.array(V1NotebookEntry).max(2000),
+  })).max(200),
+});
+export type V1MyNotebooks = z.infer<typeof V1MyNotebooks>;
+
+/** Turning a lesson into study notes in the student's notebook (Plus). */
+export const V1CreateLessonNotesRequest = z.strictObject({});
+export type V1CreateLessonNotesRequest = z.infer<
+  typeof V1CreateLessonNotesRequest
+>;
 
 export const V1NotebookPage = z.strictObject({
   items: z.array(V1NotebookEntry).max(200),

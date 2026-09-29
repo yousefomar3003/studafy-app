@@ -52,7 +52,8 @@ class MessagingInteractor {
     List<String> attachmentFileIds = const [],
   }) {
     final trimmed = body.trim();
-    if (trimmed.isEmpty) {
+    // A voice note - or any attachment - needs no text of its own.
+    if (trimmed.isEmpty && attachmentFileIds.isEmpty) {
       return Future.value(
         const Result.failure(Failure.validation('Write a message first.')),
       );

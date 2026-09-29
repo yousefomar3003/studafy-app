@@ -28,6 +28,19 @@ class DemoSessionRepository implements SessionRepository {
   Stream<SessionLifecycleEvent> get lifecycleEvents => const Stream.empty();
 
   @override
+  String? get currentUserId => null;
+
+  @override
+  Stream<SessionToken> get sessionTokens => const Stream.empty();
+
+  @override
+  Future<void> resumeSession(String refreshToken) async => _noRemoteBackend();
+
+  @override
+  Future<void> enterManagedAccount(String tokenHash) async =>
+      _noRemoteBackend();
+
+  @override
   bool supportsProvider(LoginProvider provider) => true;
 
   @override

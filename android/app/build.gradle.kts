@@ -4,6 +4,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Push notifications need this project's Firebase config. Until
+// google-services.json is added the app builds without it, and push stays
+// off (it is also gated by the PUSH_ENABLED dart-define).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // SEC-001 containment. Remove only after REL-002 supplies final application
 // identity, non-debug signing, privacy declarations, and release-gate evidence.
 gradle.taskGraph.whenReady {

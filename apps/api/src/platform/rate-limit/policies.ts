@@ -168,10 +168,19 @@ export const RATE_LIMIT_FLOWS: Record<RateLimitFlow, FlowPolicy> = {
   },
 };
 
-/** Per-tenant ceiling shared by every account in one school. */
+/**
+ * Per-tenant ceiling shared by every account in one school: a backstop
+ * against a runaway client, never a budget for ordinary use. It was 2,000
+ * per 5 minutes - about 3 list screens a second for a whole school - which
+ * a 500-student school opening the app at the start of the day would spend
+ * in minutes (docs/operations/capacity.md). 60,000 per 5 minutes is 200
+ * requests a second per school. Note: the flow limiter runs before the
+ * route resolves its school, so this is not yet applied at all; it must be
+ * this large before it is.
+ */
 export const TENANT_CEILING: TokenBucketPolicy = {
   kind: "tokenBucket",
-  limit: 2000,
+  limit: 60_000,
   windowSeconds: 300,
 };
 
@@ -352,6 +361,7 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/auth/context",
   "/v1/account/deletion-impact",
   "/v1/account/export-status",
+  "/v1/account/profile",
   "/v1/account/export-download",
   "/v1/notifications/unread-count",
   "/v1/notifications/preferences",

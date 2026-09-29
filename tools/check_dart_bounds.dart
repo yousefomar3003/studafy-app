@@ -76,6 +76,13 @@ const _coreAllowlist = <String>[
   'core/uploads_scope.dart',
   // Opening what was attached is the other half of the same concern.
   'core/attachment_opener.dart',
+  // Voice notes: recorded and played in messages, and a voice note picked up
+  // anywhere an attachment is shown. The port and its platform adapter, like
+  // the attachment picker above.
+  // Links a teacher adds to what they post, and how a reader opens them.
+  'core/content_links.dart',
+  'core/voice_note.dart',
+  'core/platform_voice_notes.dart',
 ];
 
 /// Data-layer-only imports: presentation and application may never touch
@@ -86,6 +93,9 @@ const _dataOnlyImports = <String>[
   // presentation must go through a repository port, never call /v1 itself.
   'data/contracts/v1_client.generated.dart',
   'data/contracts/v1_http_transport.dart',
+  // Where the transport keeps answers for offline reads; a repository may
+  // keep its own answers there too (the study helper).
+  'data/contracts/response_cache.dart',
   // The typed /v1/billing client is a transport client too (PAY-071).
   'data/billing/v1_billing_api.dart',
   'data/secure/keychain_secure_store.dart',
@@ -103,6 +113,8 @@ const _dataOnlyImports = <String>[
   'data/local_cache/offline_cache_store.dart',
   'data/local_cache/mutation_outbox_engine.dart',
   'data/local_cache/session_cache_binder.dart',
+  'data/local_cache/offline_response_cache.dart',
+  'data/local_cache/offline_file_cache.dart',
   // MOB-070: the preference-store adapter. Presentation and application reach
   // device settings through DeviceSettingsStore, never the plugin.
   'data/settings/preferences_device_settings.dart',
@@ -315,7 +327,14 @@ String? _check({
         import.startsWith('package:sqflite/') ||
         import.startsWith('package:flutter_secure_storage/') ||
         import.startsWith('package:sign_in_with_apple/') ||
-        import.startsWith('package:crypto/')) {
+        import.startsWith('package:crypto/') ||
+        // Device-only storage, like sqflite: they locate the app's private
+        // directory (the study helper's chats) and nothing else.
+        import.startsWith('package:path_provider/') ||
+        import.startsWith('package:path/') ||
+        // Push: Firebase messaging, registering the phone's token only.
+        import.startsWith('package:firebase_core/') ||
+        import.startsWith('package:firebase_messaging/')) {
       return zone == 'data'
           ? null
           : '$filePath: $zone imports provider package "$import" '

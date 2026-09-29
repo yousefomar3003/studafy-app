@@ -201,6 +201,10 @@ void main() {
   testWidgets('a teacher files a note and publishes its attachment', (
     tester,
   ) async {
+    // Tall enough that the whole lesson form is built.
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final uploads = _Uploads();
     await tester.pumpWidget(
       localizedApp(
@@ -220,15 +224,20 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.note_add_outlined));
     await tester.pumpAndSettle();
-    // The dialog no longer says attachments are unavailable.
+    // The lesson form does not say attachments are unavailable.
     expect(find.text('Attach file'), findsOneWidget);
 
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Lesson title'),
+      'Slides',
+    );
     await tester.tap(find.text('Attach file'));
     await tester.pumpAndSettle();
     expect(uploads.commands.single.purpose, FilePurpose.lessonResource);
     expect(uploads.commands.single.classroomId, 'class-1');
 
-    await tester.tap(find.text('Save to school'));
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add lesson'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add lesson'));
     await tester.pumpAndSettle();
     expect(uploads.published, ['file-1']);
   });

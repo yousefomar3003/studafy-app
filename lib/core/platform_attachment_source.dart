@@ -66,6 +66,7 @@ String _mediaTypeFor(String name, {String fallback = 'application/pdf'}) {
     'pdf' => 'application/pdf',
     'png' => 'image/png',
     'webp' => 'image/webp',
+    'm4a' => 'audio/mp4',
     'jpg' || 'jpeg' => 'image/jpeg',
     _ => fallback,
   };

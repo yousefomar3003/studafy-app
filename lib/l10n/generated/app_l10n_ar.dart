@@ -3154,4 +3154,735 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get familyPlusPrivacy => 'سياسة الخصوصية';
+
+  @override
+  String get studySetMaxBadge => 'باقة Studafy Max';
+
+  @override
+  String get studySetSwitchedOff =>
+      'الاختبارات وبطاقات المراجعة غير مفعّلة بعد.';
+
+  @override
+  String get studyAssistantOff =>
+      'مساعد الدراسة غير مفعّل بعد. دروسك ودفترك يعملان كالمعتاد.';
+
+  @override
+  String get studyAssistantUnavailable =>
+      'تعذّر على مساعد الدراسة الإجابة الآن. حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get studyAssistantDailyLimit =>
+      'لقد استخدمت كل أسئلة اليوم. يمكنك السؤال مرة أخرى غدًا.';
+
+  @override
+  String get accountsSwitchAccount => 'تبديل الحساب';
+
+  @override
+  String get accountsSwitchAccountDetail =>
+      'الحسابات على هذا الجهاز وحسابات أطفالك';
+
+  @override
+  String get accountsSheetTitle => 'الحسابات';
+
+  @override
+  String get accountsAddAccount => 'إضافة حساب';
+
+  @override
+  String get accountsCreateChild => 'إنشاء حساب لطفل';
+
+  @override
+  String get accountsCreateChildDetail => 'لطفل ليس لديه بريد إلكتروني أو هاتف';
+
+  @override
+  String get accountsSubAccount => 'حساب فرعي';
+
+  @override
+  String accountsSubAccountOf(String name) {
+    return 'حساب فرعي · يديره $name';
+  }
+
+  @override
+  String get accountsCurrent => 'الحساب الحالي';
+
+  @override
+  String get accountsSwitching => 'جارٍ تبديل الحساب…';
+
+  @override
+  String get accountsSwitch => 'تبديل';
+
+  @override
+  String get accountsSwitchFailed =>
+      'تعذّر فتح هذا الحساب. سجّل الدخول إليه مرة أخرى من «إضافة حساب».';
+
+  @override
+  String get accountsNeedsParent =>
+      'يُفتح حساب هذا الطفل من حساب ولي الأمر. سجّل الدخول إلى حساب ولي الأمر على هذا الجهاز أولًا.';
+
+  @override
+  String get childAccountTitle => 'إنشاء حساب لطفل';
+
+  @override
+  String get childAccountIntro =>
+      'لطفل صغير ليس لديه بريد إلكتروني أو هاتف. تفتح حسابه من حسابك وتعود إلى حسابك في أي وقت. يرى معلموه عمله باسمه.';
+
+  @override
+  String get childAccountName => 'اسم الطفل';
+
+  @override
+  String get childAccountNameHelp => 'كما سيراه معلموه';
+
+  @override
+  String get childAccountConsent =>
+      'أنا والد هذا الطفل أو وليّه القانوني، وأوافق على شروط الاستخدام وسياسة الخصوصية نيابةً عنه.';
+
+  @override
+  String get childAccountCreate => 'إنشاء الحساب';
+
+  @override
+  String childAccountCreated(String name) {
+    return 'حساب $name جاهز.';
+  }
+
+  @override
+  String get childAccountNextStep =>
+      'الخطوة التالية: انتقل إلى حسابه وانضم إلى صفه بالرابط أو الرمز من معلمه.';
+
+  @override
+  String childAccountOpenNow(String name) {
+    return 'الانتقال إلى $name';
+  }
+
+  @override
+  String get childAccountLimit => 'يمكنك إدارة ستة حسابات أطفال كحد أقصى.';
+
+  @override
+  String get childAccountUnavailable =>
+      'حسابات الأطفال غير متاحة على هذا الخادم بعد.';
+
+  @override
+  String get childAccountFailed => 'تعذّر إنشاء الحساب. حاول مرة أخرى.';
+
+  @override
+  String get msgVoiceRecord => 'تسجيل رسالة صوتية';
+
+  @override
+  String get msgVoiceRecording => 'جارٍ التسجيل';
+
+  @override
+  String get msgVoiceDiscard => 'حذف';
+
+  @override
+  String get msgVoiceSend => 'إرسال الرسالة الصوتية';
+
+  @override
+  String get msgVoiceMessage => 'رسالة صوتية';
+
+  @override
+  String get msgVoicePlay => 'تشغيل الرسالة الصوتية';
+
+  @override
+  String get msgVoicePause => 'إيقاف مؤقت';
+
+  @override
+  String get msgVoiceChecking => 'جارٍ فحص الرسالة الصوتية…';
+
+  @override
+  String get msgVoiceUnavailable => 'تعذّر تشغيل هذه الرسالة الصوتية.';
+
+  @override
+  String get msgVoiceNoPermission =>
+      'اسمح بالوصول إلى الميكروفون من الإعدادات لتسجيل الرسائل الصوتية.';
+
+  @override
+  String get msgVoiceTooShort => 'كانت قصيرة جدًا لإرسالها.';
+
+  @override
+  String get msgVoiceFailed => 'تعذّر إرسال الرسالة الصوتية. حاول مرة أخرى.';
+
+  @override
+  String get msgVoiceLimit =>
+      'يمكن أن تصل مدة الرسالة الصوتية إلى 5 دقائق، لذا أُرسلت هذه الرسالة.';
+
+  @override
+  String get lessonNewTitle => 'درس جديد';
+
+  @override
+  String get lessonTitleLabel => 'عنوان الدرس';
+
+  @override
+  String get lessonNotesLabel => 'ملاحظات الدرس';
+
+  @override
+  String get lessonNotesHelp => 'ما شرحته. يقرؤه الطلاب في قسم الدروس.';
+
+  @override
+  String get lessonPickClassForFiles => 'اختر الصف أولًا لإرفاق الملفات.';
+
+  @override
+  String get lessonAudienceLabel => 'من يمكنه رؤيته';
+
+  @override
+  String get lessonAudienceBoth => 'الجميع';
+
+  @override
+  String get lessonAudienceStudents => 'الطلاب';
+
+  @override
+  String get lessonAudienceParents => 'أولياء الأمور';
+
+  @override
+  String get lessonClassRequired => 'اختر الصف الذي يخصه هذا الدرس.';
+
+  @override
+  String get lessonTitleRequired => 'أضف عنوانًا للدرس.';
+
+  @override
+  String get lessonContentRequired => 'اكتب بعض الملاحظات أو أرفق ملفًا.';
+
+  @override
+  String get lessonSave => 'إضافة الدرس';
+
+  @override
+  String get lessonSaving => 'جارٍ الإضافة…';
+
+  @override
+  String get lessonCreated => 'تمت إضافة الدرس.';
+
+  @override
+  String get lessonCreateFailed => 'تعذّرت إضافة الدرس. حاول مرة أخرى.';
+
+  @override
+  String get academicAddLesson => 'إضافة درس';
+
+  @override
+  String get examMaterialHelp =>
+      'أرفق ورقة الامتحان أو ورقة مراجعة أو أي شيء يحتاجه الطلاب.';
+
+  @override
+  String get teacherCreateAction => 'إنشاء';
+
+  @override
+  String get teacherCreateTitle => 'إنشاء';
+
+  @override
+  String get teacherCreateLesson => 'درس';
+
+  @override
+  String get teacherCreateLessonDetail => 'ملاحظات وملفات لصف';
+
+  @override
+  String get teacherCreateAssignment => 'واجب';
+
+  @override
+  String get teacherCreateAssignmentDetail =>
+      'عمل يسلّمه الطلاب، مع درجة أو بدونها';
+
+  @override
+  String get teacherCreateExam => 'امتحان أو تقييم';
+
+  @override
+  String get teacherCreateExamDetail => 'يُرصد في دفتر الدرجات مع إرفاق ورقته';
+
+  @override
+  String get teacherCreateAnnouncement => 'إعلان';
+
+  @override
+  String get teacherCreateAnnouncementDetail =>
+      'أخبر صفًا أو أولياء أموره بأمر ما';
+
+  @override
+  String get teacherCreateAttendance => 'الحضور';
+
+  @override
+  String get teacherCreateAttendanceDetail => 'سجّل حضور اليوم لصف';
+
+  @override
+  String get teacherPickClass => 'أي صف؟';
+
+  @override
+  String get teacherNoClassesYet => 'أنشئ صفًا أولًا من تبويب الصفوف.';
+
+  @override
+  String get academicThisClass => 'هذا الصف';
+
+  @override
+  String get studyAssistantNewChat => 'محادثة جديدة';
+
+  @override
+  String get studyAssistantHistory => 'سجل المحادثات';
+
+  @override
+  String get studyAssistantHistoryEmpty =>
+      'لا توجد محادثات بعد. تُحفظ محادثاتك على هذا الجهاز فقط.';
+
+  @override
+  String get studyAssistantOnDevice => 'محفوظة على هذا الجهاز فقط';
+
+  @override
+  String get studyAssistantDeleteChat => 'حذف المحادثة';
+
+  @override
+  String get studyAssistantDeleteAll => 'حذف كل المحادثات';
+
+  @override
+  String get studyAssistantDeleteAllConfirm =>
+      'حذف كل المحادثات على هذا الجهاز؟ لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get studyAssistantDelete => 'حذف';
+
+  @override
+  String get studyAssistantCancel => 'إلغاء';
+
+  @override
+  String get studyAssistantSend => 'إرسال';
+
+  @override
+  String get studyAssistantMessageHint => 'اطرح سؤالًا…';
+
+  @override
+  String get studyAssistantTooShort => 'اكتب أكثر قليلًا أولًا.';
+
+  @override
+  String studyAssistantMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      many: '$count رسالة',
+      few: '$count رسائل',
+      two: 'رسالتان',
+      one: 'رسالة واحدة',
+      zero: 'لا رسائل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studyAssistantYou => 'أنت';
+
+  @override
+  String get studyAssistantHelperName => 'مساعد الدراسة';
+
+  @override
+  String get setupTitle => 'عرّفنا بنفسك';
+
+  @override
+  String get setupIntro => 'نسأل هذا مرة واحدة، عند تسجيل دخولك لأول مرة.';
+
+  @override
+  String get setupNameLabel => 'اسمك';
+
+  @override
+  String get setupNameHelp => 'كما سيراك معلموك وزملاؤك ومدرستك';
+
+  @override
+  String get setupNameRequired => 'أدخل اسمك.';
+
+  @override
+  String get setupGenderLabel => 'الجنس';
+
+  @override
+  String get setupGenderPrivate => 'لا يراه أحد غيرك.';
+
+  @override
+  String get setupGenderGirl => 'بنت';
+
+  @override
+  String get setupGenderBoy => 'ولد';
+
+  @override
+  String get setupGenderPreferNot => 'أفضّل عدم الإجابة';
+
+  @override
+  String get setupGenderRequired => 'اختر إجابة - «أفضّل عدم الإجابة» مقبولة.';
+
+  @override
+  String get setupContinue => 'متابعة';
+
+  @override
+  String get setupSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get setupFailed => 'تعذّر الحفظ. حاول مرة أخرى.';
+
+  @override
+  String get studyToolsTitle => 'الاختبارات وبطاقات المراجعة';
+
+  @override
+  String get studyToolsReady =>
+      'أنشئ اختبارًا أو بطاقات مراجعة من أي درس أدناه.';
+
+  @override
+  String get studyToolsNoLessons => 'تظهر تحت كل درس بمجرد أن يضيفه معلمك.';
+
+  @override
+  String get studyToolsLocked => 'متاحة مع Studafy Max.';
+
+  @override
+  String get linksAdd => 'إضافة رابط';
+
+  @override
+  String get linksAddTitle => 'إضافة رابط';
+
+  @override
+  String get linksInvalid => 'أدخل عنوانًا كاملًا يبدأ بـ https://';
+
+  @override
+  String get linksRemove => 'إزالة الرابط';
+
+  @override
+  String get linksCancel => 'إلغاء';
+
+  @override
+  String get linksOpenTitle => 'فتح هذا الرابط؟';
+
+  @override
+  String get linksOpen => 'فتح';
+
+  @override
+  String get notebookFromLesson => 'من درس';
+
+  @override
+  String get notebookPickLesson => 'اختر درسًا';
+
+  @override
+  String get notebookNoLessons => 'لا توجد دروس في هذا الصف بعد.';
+
+  @override
+  String get notebookCopyLesson => 'نسخ إلى دفتري';
+
+  @override
+  String get notebookCopyLessonDetail => 'الدرس كما كتبه معلمك';
+
+  @override
+  String get notebookLessonNotes => 'تحويله إلى ملاحظات دراسية';
+
+  @override
+  String get notebookLessonNotesDetail =>
+      'عناوين ومصطلحات رئيسية وملخص - Studafy Plus';
+
+  @override
+  String get notebookLessonCopied => 'أُضيف إلى دفترك.';
+
+  @override
+  String get notebookFromLessonBadge => 'من درس';
+
+  @override
+  String get notebookMyNotebooks => 'دفاتري';
+
+  @override
+  String get notebookClassGone => 'هذا الصف لم يعد موجودًا - ملاحظاتك محفوظة';
+
+  @override
+  String get notebookNoNotebooks =>
+      'لا توجد ملاحظات بعد. تظهر هنا الملاحظات التي تكتبها في كل صف، مرتبة حسب الصف.';
+
+  @override
+  String notebookNoteCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ملاحظة',
+      many: '$count ملاحظة',
+      few: '$count ملاحظات',
+      two: 'ملاحظتان',
+      one: 'ملاحظة واحدة',
+      zero: 'لا ملاحظات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get classDeleteAction => 'حذف الصف';
+
+  @override
+  String classDeleteTitle(String name) {
+    return 'حذف $name؟';
+  }
+
+  @override
+  String get classDeleteBody =>
+      'سيختفي الصف لك ولطلابك، وسيتوقف رابط الانضمام إليه. يحتفظ الطلاب بكل ملاحظاتهم في دفاترهم لهذا الصف، وسيظهر أن الصف لم يعد موجودًا.';
+
+  @override
+  String get classDeleteConfirm => 'حذف الصف';
+
+  @override
+  String get classDeleteCancel => 'إبقاؤه';
+
+  @override
+  String get classDeleted => 'حُذف الصف. يحتفظ الطلاب بملاحظاتهم.';
+
+  @override
+  String get classDeleteFailed => 'تعذّر حذف الصف. حاول مرة أخرى.';
+
+  @override
+  String get helperAdd => 'إضافة مادة أو صورة';
+
+  @override
+  String get helperAddMaterial => 'مواد الصف';
+
+  @override
+  String get helperAddMaterialDetail => 'درس أو إحدى ملاحظاتك ليُجيب منها';
+
+  @override
+  String get helperAddPhoto => 'صورة من المعرض';
+
+  @override
+  String get helperTakePhoto => 'التقاط صورة';
+
+  @override
+  String get helperPhotoPlus => 'الصور متاحة مع Studafy Plus.';
+
+  @override
+  String get helperPhotoChecking => 'جارٍ فحص الصورة…';
+
+  @override
+  String get helperPhotoFailed => 'تعذّر إرسال الصورة. حاول مرة أخرى.';
+
+  @override
+  String get helperAnsweringFrom => 'يجيب من';
+
+  @override
+  String get helperRemove => 'إزالة';
+
+  @override
+  String get helperPickTitle => 'اختر مواد الصف';
+
+  @override
+  String get helperPickClass => 'أي صف؟';
+
+  @override
+  String get helperLessons => 'الدروس';
+
+  @override
+  String get helperMyNotes => 'ملاحظاتي';
+
+  @override
+  String get helperPickDone => 'استخدام هذه';
+
+  @override
+  String get helperPickLimit => 'حتى 5 في المرة الواحدة.';
+
+  @override
+  String get helperNothingInClass => 'لا توجد دروس أو ملاحظات في هذا الصف بعد.';
+
+  @override
+  String get helperNoClasses => 'انضم إلى صف لتستخدم دروسه هنا.';
+
+  @override
+  String get upgradeDailyLimitTitle => 'لقد استخدمت أسئلة اليوم';
+
+  @override
+  String upgradeDailyLimitBody(int count) {
+    return 'تتضمن خطتك $count سؤالًا في اليوم. يمكنك السؤال مجددًا غدًا.';
+  }
+
+  @override
+  String get upgradeAllowanceTitle =>
+      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر';
+
+  @override
+  String get upgradeAllowanceBody =>
+      'يتجدد رصيد الذكاء الاصطناعي في خطتك في اليوم الأول من الشهر القادم.';
+
+  @override
+  String upgradeFeatureTitle(String plan) {
+    return 'هذه الميزة متاحة مع $plan';
+  }
+
+  @override
+  String get upgradeFeatureBody => 'خطتك الحالية لا تتضمنها.';
+
+  @override
+  String upgradeWhatUnlocks(String plan) {
+    return 'ما تتيحه $plan';
+  }
+
+  @override
+  String get upgradeLargerAllowance => 'رصيد شهري أكبر للذكاء الاصطناعي';
+
+  @override
+  String get upgradeButton => 'ترقية';
+
+  @override
+  String get upgradeNotNow => 'ليس الآن';
+
+  @override
+  String get upgradeTopPlan => 'أنت على Studafy Max، أكبر خطة.';
+
+  @override
+  String get studyPlansIncludedInYourPlan => 'مضمّنة في خطتك';
+
+  @override
+  String studyPlansUpgradeToName(String name) {
+    return 'الترقية إلى $name';
+  }
+
+  @override
+  String studyPlansUpgradeReplaces(String current) {
+    return 'يُستبدل اشتراكك في $current فورًا، ويحتسب المتجر ما دفعته مسبقًا.';
+  }
+
+  @override
+  String studyPlansRenewsOn(String date) {
+    return 'يتجدد في $date';
+  }
+
+  @override
+  String studyPlansCancelledUntil(String plan, String date) {
+    return 'أُلغي. تبقى لديك $plan حتى $date ولن تُحاسَب مرة أخرى.';
+  }
+
+  @override
+  String get studyPlansPausedNote =>
+      'متوقف مؤقتًا في Google Play. لا رسوم أثناء الإيقاف، ويُستأنف تلقائيًا.';
+
+  @override
+  String studyPlansPaymentIssue(String store, String plan) {
+    return 'تعذّر على $store تحصيل الدفعة. حدّث طريقة الدفع للاحتفاظ بـ $plan.';
+  }
+
+  @override
+  String get studyPlansUpdatePayment => 'تحديث طريقة الدفع';
+
+  @override
+  String get studyPlansManageSubscription => 'إدارة الاشتراك';
+
+  @override
+  String get studyPlansCancelSubscription => 'إلغاء الاشتراك';
+
+  @override
+  String studyPlansPaidByParent(String store) {
+    return 'يدفع أحد الوالدين ثمن هذه الخطة. يمكنه وحده تغييرها أو إلغاؤها من حسابه في $store.';
+  }
+
+  @override
+  String studyPlansBilledBy(String store) {
+    return 'تُحاسَب شهريًا عبر $store';
+  }
+
+  @override
+  String get studyPlansEndOfPeriod => 'نهاية فترة الفوترة الحالية';
+
+  @override
+  String get studyPlansPayWithApple =>
+      'تدفع بطريقة الدفع في حساب Apple، مثل البطاقة، أو Apple Pay حيث توفّره Apple. لا يرى Studafy بطاقتك أبدًا.';
+
+  @override
+  String get studyPlansPayWithGoogle =>
+      'تدفع بطريقة الدفع في حساب Google Play، مثل البطاقة، أو Google Pay حيث توفّره Google. لا يرى Studafy بطاقتك أبدًا.';
+
+  @override
+  String get studyPlansBuyInMobileApp =>
+      'تُشترى الخطط من تطبيق Studafy على iPhone أو Android. تعمل الخطة التي تشتريها هناك هنا عند تسجيل الدخول بالحساب نفسه.';
+
+  @override
+  String get studyPlansBlockedAlready => 'لديك هذه الخطة بالفعل.';
+
+  @override
+  String get studyPlansBlockedParent =>
+      'يدفع أحد الوالدين ثمن خطتك الحالية، لذا يمكنه وحده تغييرها.';
+
+  @override
+  String studyPlansBlockedOtherStore(String store) {
+    return 'تُحاسَب خطتك الحالية عبر $store. غيّرها هناك، من الجهاز الذي اشتريتها منه.';
+  }
+
+  @override
+  String get studyPlansBlockedOriginalAccount =>
+      'لا يمكن لـ Google Play ترقية خطتك إلا من حساب Google الذي اشتراها. استخدم ذلك الحساب في متجر Play، أو ألغِ خطتك الحالية أولًا.';
+
+  @override
+  String get cancelSheetTitle => 'قبل أن تلغي';
+
+  @override
+  String get cancelPauseTitle => 'أوقفه مؤقتًا بدلًا من ذلك';
+
+  @override
+  String cancelPauseBody(String plan, String date) {
+    return 'خذ استراحة من أسبوع إلى 3 أشهر. تبقى لديك $plan حتى $date. بعدها يتوقف مؤقتًا: لا ميزات $plan ولا رسوم حتى يُستأنف تلقائيًا. يمكنك الاستئناف مبكرًا.';
+  }
+
+  @override
+  String get cancelPauseButton => 'إيقاف مؤقت في Google Play';
+
+  @override
+  String cancelCancelBody(String plan, String date) {
+    return 'تبقى لديك $plan حتى $date ولن تُحاسَب مرة أخرى. بعد ذلك تنتقل إلى Studafy Free، وتبقى دفاترك ودروسك.';
+  }
+
+  @override
+  String cancelInStore(String store) {
+    return 'الإلغاء في $store';
+  }
+
+  @override
+  String cancelStoreNote(String store) {
+    return 'يدير $store اشتراكك، لذا يفتح هذا صفحة الاشتراكات فيه. اختر Studafy هناك.';
+  }
+
+  @override
+  String get cancelKeepPlan => 'الإبقاء على خطتي';
+
+  @override
+  String get notificationCopyBillingSubscriptionActiveTitle => 'الاشتراك مفعّل';
+
+  @override
+  String get notificationCopyBillingSubscriptionActiveDetail =>
+      'اشتراكك مفعّل. ترسل Apple أو Google Play الإيصال إلى بريدك الإلكتروني.';
+
+  @override
+  String get notificationCopyBillingSubscriptionRenewedTitle =>
+      'تم تجديد الاشتراك';
+
+  @override
+  String get notificationCopyBillingSubscriptionRenewedDetail =>
+      'تم تجديد اشتراكك. ترسل Apple أو Google Play الإيصال إلى بريدك الإلكتروني.';
+
+  @override
+  String get notificationCopyBillingPaymentProblemTitle => 'مشكلة في الدفع';
+
+  @override
+  String get notificationCopyBillingPaymentProblemDetail =>
+      'تعذّر تجديد اشتراكك. تحقّق من طريقة الدفع في App Store أو Google Play.';
+
+  @override
+  String get notificationCopyBillingSubscriptionEndedTitle => 'انتهى الاشتراك';
+
+  @override
+  String get notificationCopyBillingSubscriptionEndedDetail =>
+      'انتهى اشتراكك. يمكنك الاشتراك مرة أخرى من صفحة الخطط.';
+
+  @override
+  String get notificationCopySystemPushTestTitle => 'إشعار تجريبي';
+
+  @override
+  String get notificationCopySystemPushTestDetail =>
+      'الإشعارات تعمل على هذا الجهاز.';
+
+  @override
+  String get famLinkHasAccount => 'لدى طفلي حساب في Studafy';
+
+  @override
+  String get famLinkHasAccountBody =>
+      'ابحث عنه برقم Studafy الموجود في ملفه. يوافق على الربط من حسابه.';
+
+  @override
+  String get famLinkCreateAccount => 'إنشاء حساب لطفلي';
+
+  @override
+  String get famLinkCreateAccountBody =>
+      'لطفل ليس لديه بريد إلكتروني أو هاتف. تدير الحساب وتفتحه من حسابك. لا حاجة لموافقة طفلك.';
+
+  @override
+  String get famManagedTitle => 'حسابات الأطفال التي تديرها';
+
+  @override
+  String get famManagedHint =>
+      'افتح حساب طفلك لينضم إلى صفه برمز الصف. يظهر تقدمه هنا بعد ذلك.';
+
+  @override
+  String get famManagedOpen => 'فتح الحساب';
 }

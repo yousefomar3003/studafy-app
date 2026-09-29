@@ -17,6 +17,8 @@ export const V1FilePurpose = z.enum([
   "announcement_attachment",
   // A photo of the lesson whiteboard, for Studafy Plus to turn into notes.
   "notebook_photo",
+  // A photo a student sends the study helper (Studafy Plus).
+  "assistant_attachment",
 ]);
 export type V1FilePurpose = z.infer<typeof V1FilePurpose>;
 
@@ -49,6 +51,8 @@ export const V1CreateUploadIntentRequest = z.strictObject({
   expectedSizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
   declaredMediaType: z.enum([
     "application/pdf",
+    // Voice notes: AAC in an MP4 container, message attachments only.
+    "audio/mp4",
     "image/jpeg",
     "image/png",
     "image/webp",
@@ -79,6 +83,8 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     announcement_attachment: [],
     // The class whose notebook the photo is for.
     notebook_photo: ["classroomId"],
+    // Bound to nothing: it is sent with one question, then only kept.
+    assistant_attachment: [],
   };
   // Targets a caller may name but need not. A student handing their own work
   // in leaves studentId out and the server resolves it from their enrolment;

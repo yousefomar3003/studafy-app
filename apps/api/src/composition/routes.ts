@@ -3,6 +3,7 @@ import { type AuthorizationEnv } from "../authorization/middleware";
 import {
   createAcademicAppendedRoutes,
   createAcademicRoutes,
+  createClassroomArchiveRoutes,
   createSubmissionHistoryRoutes,
 } from "../academic/routes";
 import { PostgresAcademicRepository } from "../academic/repository";
@@ -47,6 +48,7 @@ import { PostgresNotificationsRepository } from "../notifications/repository";
 import {
   createAccountReadRoutes,
   createAccountRoutes,
+  createProfileReadRoutes,
 } from "../account/routes";
 import { PostgresAccountRepository } from "../account/repository";
 import { createSupportAccessRoutes } from "../support-access/routes";
@@ -60,6 +62,12 @@ import {
   RealAppleTransactionVerifier,
   RealGooglePurchaseVerifier,
 } from "@studafy/infrastructure";
+import { createManagedAccountRoutes } from "../managed-accounts/routes";
+import {
+  createNotebookRoutes,
+  PostgresNotebookRepository,
+} from "../study/notebookRoutes";
+import { PostgresManagedAccountRepository } from "../managed-accounts/repository";
 import { createBillingRoutes } from "../billing/routes";
 import { createBillingWebhookRoutes } from "../billing/webhookRoutes";
 import { PostgresBillingRepository } from "../billing/repository";
@@ -81,6 +89,7 @@ export function buildRoutes(platform: Platform) {
     authDependencies,
     invalidateActorContext,
     privateStorage,
+    managedAccountIssuer,
   } = platform;
 
   const academic = sql && env.API_CURSOR_SIGNING_KEY
@@ -239,13 +248,46 @@ export function buildRoutes(platform: Platform) {
     })
     : null;
   const studyRepository = sql ? new PostgresStudyRepository(sql) : null;
+  // How much of a chat the helper remembers, by plan, inside the window.
+  const chatMemory = {
+    contextWindowTokens: env.AI_CONTEXT_WINDOW_TOKENS,
+    freeTokens: env.AI_CHAT_MEMORY_TOKENS_FREE,
+    paidTokens: env.AI_CHAT_MEMORY_TOKENS_PAID,
+  };
+
+  // Managed child accounts. The issuer holds the service role, so it is
+  // built with the other credentials in platform.ts; without it the routes
+  // are absent and the app offers no "create a child account". Development
+  // mirrors each new identity into a local database, as the auth middleware
+  // does for anyone who signs in.
+  const managedAccounts = sql && idempotencyDependencies &&
+      managedAccountIssuer
+    ? createManagedAccountRoutes(
+      {
+        repository: new PostgresManagedAccountRepository(sql, {
+          mirrorIdentities: env.ENVIRONMENT === "development",
+        }),
+        issuer: managedAccountIssuer,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
 
   // The question box needs the provider and the cost ledger. Without either
   // the route is absent and the app shows no AI tab, which is the honest state
   // rather than a tab that always errors.
   const studyAssistant = aiAssistant && studyRepository
     ? createStudyAssistantRoutes(
-      { assistant: aiAssistant, repository: studyRepository, prices: aiPrices },
+      {
+        assistant: aiAssistant,
+        repository: studyRepository,
+        prices: aiPrices,
+        chatMemory,
+        notebooks: sql ? new PostgresNotebookRepository(sql) : undefined,
+        storage: privateStorage,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
       authorization,
     )
     : undefined;
@@ -358,6 +400,37 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  const classroomArchive = sql && env.API_CURSOR_SIGNING_KEY
+    ? createClassroomArchiveRoutes(
+      {
+        repository: new PostgresAcademicRepository(sql),
+        cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+        enabledSlices: { classes: env.API041_CLASSES_ENABLED },
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
+  const notebooks = studyRepository && idempotencyDependencies
+    ? createNotebookRoutes(
+      {
+        notebooks: new PostgresNotebookRepository(sql!),
+        study: studyRepository,
+        prices: aiPrices,
+        assistant: aiAssistant,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
+  const profileReads = accountDependencies
+    ? createProfileReadRoutes(
+      accountDependencies,
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
 
   const supportAccess = sql && env.API_CURSOR_SIGNING_KEY
     ? createSupportAccessRoutes(
@@ -425,6 +498,8 @@ export function buildRoutes(platform: Platform) {
         assistant: aiAssistant,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
         storage: privateStorage,
+        chatMemory,
+        notebooks: new PostgresNotebookRepository(sql!),
       },
       authorization,
       idempotencyDependencies,
@@ -552,6 +627,10 @@ export function buildRoutes(platform: Platform) {
     meetingList,
     messageReceipts,
     study,
+    managedAccounts,
+    profileReads,
+    classroomArchive,
+    notebooks,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

@@ -13,6 +13,7 @@ import {
   checkRedis,
   createCloudWatchSink,
   createRedis,
+  SupabaseManagedAccountIssuer,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { checkDatabase, createDatabase } from "@studafy/database";
@@ -51,7 +52,9 @@ export function buildPlatform() {
     configuration: describeApiEnv(env),
   });
 
-  const sql = env.DATABASE_URL ? createDatabase(env.DATABASE_URL) : undefined;
+  const sql = env.DATABASE_URL
+    ? createDatabase(env.DATABASE_URL, { max: env.DATABASE_POOL_MAX })
+    : undefined;
   const redis = env.REDIS_URL ? createRedis(env.REDIS_URL) : undefined;
 
   const databaseCheck: DependentCheck | undefined = sql
@@ -150,6 +153,15 @@ export function buildPlatform() {
     ? new SupabasePrivateFileStorage(storageUrl, storageKey)
     : null;
 
+  // Managed child accounts use Supabase Auth's admin API in the project that
+  // issues identities - SUPABASE_URL, never the storage split above.
+  const managedAccountIssuer = env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
+    ? new SupabaseManagedAccountIssuer(
+      env.SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY,
+    )
+    : null;
+
   return {
     env,
     cloudwatch,
@@ -165,6 +177,7 @@ export function buildPlatform() {
     authDependencies,
     invalidateActorContext,
     privateStorage,
+    managedAccountIssuer,
   };
 }
 

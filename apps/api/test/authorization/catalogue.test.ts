@@ -7,6 +7,7 @@ import { createAuthRoutes } from "../../src/auth/routes";
 import {
   createAcademicAppendedRoutes,
   createAcademicRoutes,
+  createClassroomArchiveRoutes,
   createSubmissionHistoryRoutes,
 } from "../../src/academic/routes";
 import {
@@ -23,6 +24,8 @@ import { createClassJoinRoutes } from "../../src/class-join/routes";
 import { createOnboardingRoutes } from "../../src/onboarding/routes";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import { createStudyRoutes } from "../../src/study/routes";
+import { createNotebookRoutes } from "../../src/study/notebookRoutes";
+import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
 import {
   createCommunicationsRoutes,
@@ -40,6 +43,7 @@ import {
 import {
   createAccountReadRoutes,
   createAccountRoutes,
+  createProfileReadRoutes,
 } from "../../src/account/routes";
 import { createSupportAccessRoutes } from "../../src/support-access/routes";
 import { createSafetyRoutes } from "../../src/safety/routes";
@@ -399,6 +403,11 @@ function routeTable() {
           command: async () => ({ outcome: "invalid" as const }),
         },
         prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        chatMemory: {
+          contextWindowTokens: 262_144,
+          freeTokens: 4_000,
+          paidTokens: 32_000,
+        },
       },
       authorization,
     ),
@@ -465,6 +474,67 @@ function routeTable() {
         assistant: null,
         lessonToolsEnabled: false,
         storage: null,
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createManagedAccountRoutes(
+      {
+        repository: { call: async () => ({ outcome: "forbidden" }) },
+        issuer: {
+          createChild: async () => ({ id: "", email: "" }),
+          signInToken: async () => "",
+          deleteChild: async () => {},
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createProfileReadRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createClassroomArchiveRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createNotebookRoutes(
+      {
+        notebooks: { call: async () => ({ outcome: "forbidden" }) },
+        study: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        assistant: null,
+        lessonToolsEnabled: false,
       },
       authorization,
       idempotency,
@@ -636,14 +706,21 @@ describe("permission catalogue", () => {
       expect(["none", "required", "forbidden"]).toContain(route.idempotency);
       if (route.method === "get") expect(route.idempotency).toBe("none");
     }
-    expect(
-      V1_ROUTE_CATALOGUE.find((route) => route.operationId === "verifyReauth")
-        ?.idempotency,
-    )
-      .toBe("forbidden");
+    // Routes that hand out a single-use credential must never store their
+    // response for replay; every other command must require a key.
+    const oneTimeCredentials = new Set<string>([
+      "verifyReauth",
+      "createManagedChildSession",
+    ]);
+    for (const operationId of oneTimeCredentials) {
+      expect(
+        V1_ROUTE_CATALOGUE.find((route) => route.operationId === operationId)
+          ?.idempotency,
+      ).toBe("forbidden");
+    }
     expect(
       V1_ROUTE_CATALOGUE.filter((route) =>
-        route.method === "post" && route.operationId !== "verifyReauth"
+        route.method === "post" && !oneTimeCredentials.has(route.operationId)
       )
         .every((route) => route.idempotency === "required"),
     ).toBe(true);

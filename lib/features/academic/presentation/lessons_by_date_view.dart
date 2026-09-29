@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -19,6 +20,7 @@ class LessonsByDateView extends StatefulWidget {
     this.studentId,
     this.uploads,
     this.actionsFor,
+    this.header,
   });
 
   final AcademicContentRepository repository;
@@ -27,6 +29,11 @@ class LessonsByDateView extends StatefulWidget {
   final FileUploadRepository? uploads;
   final Widget Function(BuildContext context, AcademicRecord lesson)?
   actionsFor;
+
+  /// Above the lessons - or above "no lessons yet" - so what the host offers
+  /// for them is visible before there is anything to use it on.
+  final Widget Function(BuildContext context, {required bool hasLessons})?
+  header;
 
   @override
   State<LessonsByDateView> createState() => _LessonsByDateViewState();
@@ -88,18 +95,24 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
           if (bd == null) return -1;
           return bd.compareTo(ad);
         });
+      final header = widget.header;
       if (lessons.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              AppL10n.of(context).lessonsNoLessonsYetTheyAppear,
-              textAlign: TextAlign.center,
-            ),
+        final empty = Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            AppL10n.of(context).lessonsNoLessonsYetTheyAppear,
+            textAlign: TextAlign.center,
           ),
         );
+        if (header == null) return Center(child: empty);
+        return ListView(
+          padding: const EdgeInsets.all(12),
+          children: [header(context, hasLessons: false), empty],
+        );
       }
-      final children = <Widget>[];
+      final children = <Widget>[
+        if (header != null) header(context, hasLessons: true),
+      ];
       DateTime? current;
       var first = true;
       for (final lesson in lessons) {
@@ -135,7 +148,7 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
                   ),
                   if (lesson.detail.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    UserContentText(lesson.detail),
+                    LinkedText(lesson.detail),
                   ],
                   StoredAttachmentList(
                     attachments: lesson.attachments,

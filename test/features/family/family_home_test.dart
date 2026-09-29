@@ -93,6 +93,7 @@ Widget _app(
   _Fake fake, {
   Future<void> Function()? reauth,
   void Function(GuardianChild)? onOpen,
+  Future<void> Function()? onCreateChildAccount,
   Locale locale = const Locale('en'),
 }) => MaterialApp(
   locale: locale,
@@ -112,7 +113,10 @@ Widget _app(
     ),
     child: child!,
   ),
-  home: FamilyHomePage(onOpenChild: onOpen),
+  home: FamilyHomePage(
+    onOpenChild: onOpen,
+    onCreateChildAccount: onCreateChildAccount,
+  ),
 );
 
 void main() {
@@ -204,6 +208,50 @@ void main() {
     // serve, and opening it unasked is how a parent once saw a raw error.
     expect(fake.captchaTokens, everyElement(isNull));
     expect(find.text('Security check'), findsNothing);
+  });
+
+  testWidgets('linking offers to create an account for a child with none', (
+    tester,
+  ) async {
+    var created = 0;
+    final fake = _Fake([]);
+    await tester.pumpWidget(
+      _app(fake, onCreateChildAccount: () async => created++),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Link a child'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('My child has a Studafy account'), findsOne);
+    expect(find.text('Create an account for my child'), findsOne);
+    expect(
+      find.textContaining('No approval from your child is needed'),
+      findsOne,
+    );
+
+    await tester.tap(find.text('Create an account for my child'));
+    await tester.pumpAndSettle();
+    expect(created, 1);
+    // No link request: the parent manages the account they created.
+    expect(fake.requested, isEmpty);
+  });
+
+  testWidgets('a child with an account is still found by Studafy ID', (
+    tester,
+  ) async {
+    final fake = _Fake([]);
+    await tester.pumpWidget(_app(fake, onCreateChildAccount: () async {}));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Link a child'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My child has a Studafy account'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'STU-42');
+    await tester.tap(find.text('Find'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Request link to Omar'));
+    await tester.pumpAndSettle();
+    expect(fake.requested, ['student-42']);
   });
 
   testWidgets('approving proves a recent sign-in first', (tester) async {

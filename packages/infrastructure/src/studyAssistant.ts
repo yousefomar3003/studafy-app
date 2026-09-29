@@ -10,9 +10,10 @@
  *      so a swapped environment variable cannot redirect children's questions
  *      to a new destination.
  *   2. It forwarded lesson-material bodies with no redaction. This one sends
- *      only the sentence the student typed, never their name, their id, their
- *      school, their marks or any material the app holds. Nothing is read
- *      from the database to build the prompt.
+ *      only what the student typed - and, for a follow-up, the last few turns
+ *      of the same chat, which the student's device supplies - never their
+ *      name, their id, their school, their marks or any material the app
+ *      holds. Nothing is read from the database to build the prompt.
  *
  * It also never sees a service-role credential: the provider key is the only
  * secret it holds, and it is used for exactly one host.
@@ -63,8 +64,38 @@ export class StudyAssistantError extends Error {
   }
 }
 
+/** One earlier turn of the same chat. */
+export interface StudyTurn {
+  role: "student" | "assistant";
+  text: string;
+}
+
+/** The most of a chat that is sent with a question; the caller trims it to
+ * the plan's memory budget first. */
+export const STUDY_HISTORY_MAX_TURNS = 400;
+const STUDY_TURN_MAX_CHARS = 4_000;
+
+/** Class material the student pointed the helper at, already fitted to the
+ * plan's budget. */
+export interface StudyReference {
+  title: string;
+  text: string;
+}
+
+/** A photo the student sent, as the scan cleared it. */
+export interface StudyImage {
+  bytes: Uint8Array;
+  mediaType: string;
+}
+
 export interface StudyAssistant {
-  ask(question: string): Promise<StudyAssistantReply>;
+  /** [history] is the chat so far, oldest first, already fitted to the
+   * plan's chat memory. */
+  ask(
+    question: string,
+    history?: StudyTurn[],
+    extras?: { references?: StudyReference[]; images?: StudyImage[] },
+  ): Promise<StudyAssistantReply>;
   /** Notes from a whiteboard photo. Throws "unreadable" for a blank one. */
   whiteboardNotes(
     image: Uint8Array,
@@ -75,7 +106,11 @@ export interface StudyAssistant {
     title: string,
     lessonText: string,
   ): Promise<StudySetResult>;
+  /** Study notes made from a lesson's text (Studafy Plus). */
+  lessonNotes(title: string, lessonText: string): Promise<StudyAssistantReply>;
 }
+
+type Message = { role: "system" | "user" | "assistant"; content: Content };
 
 type Content =
   | string
@@ -115,6 +150,7 @@ export function createStudyAssistant(
     system: string,
     user: Content,
     maxTokens: number,
+    earlier: Message[] = [],
   ): Promise<{ text: string; usage?: StudyUsage }> {
     const endpoint = new URL("/v1/chat/completions", allowed);
     // The allowlist, enforced rather than assumed: the origin that ends up
@@ -144,6 +180,7 @@ export function createStudyAssistant(
           reasoning: { enabled: false },
           messages: [
             { role: "system", content: system },
+            ...earlier,
             { role: "user", content: user },
           ],
         }),
@@ -175,11 +212,55 @@ export function createStudyAssistant(
   }
 
   return {
-    async ask(question: string): Promise<StudyAssistantReply> {
-      const { text, usage } = await complete(
+    async ask(
+      question: string,
+      history: StudyTurn[] = [],
+      extras: { references?: StudyReference[]; images?: StudyImage[] } = {},
+    ): Promise<StudyAssistantReply> {
+      const references = extras.references ?? [];
+      const images = extras.images ?? [];
+      for (const image of images) {
+        if (
+          image.mediaType !== "image/jpeg" && image.mediaType !== "image/png"
+        ) {
+          throw new StudyAssistantError("refused");
+        }
+      }
+      // The same redaction as the question, on both sides of the chat: a
+      // reply can quote back what the student typed.
+      const earlier: Message[] = history
+        .slice(-STUDY_HISTORY_MAX_TURNS)
+        .map((turn) => ({
+          role: turn.role === "student" ? "user" : "assistant",
+          content: redactForProvider(turn.text.slice(0, STUDY_TURN_MAX_CHARS)),
+        }));
+      // The material goes in the instructions, not as something the student
+      // said: it is the ground to answer from, redacted like the question.
+      const system = references.length === 0 ? STUDY_PROMPTS.ask : [
         STUDY_PROMPTS.ask,
-        redactForProvider(question),
-        maxOutputTokens,
+        STUDY_PROMPTS.askReferences,
+        ...references.map((reference) =>
+          `### ${redactForProvider(reference.title)}\n${
+            redactForProvider(reference.text)
+          }`
+        ),
+      ].join("\n\n");
+      const user: Content = images.length === 0
+        ? redactForProvider(question)
+        : [
+          { type: "text", text: redactForProvider(question) },
+          ...images.map((image) => ({
+            type: "image_url" as const,
+            image_url: {
+              url: `data:${image.mediaType};base64,${base64(image.bytes)}`,
+            },
+          })),
+        ];
+      const { text, usage } = await complete(
+        system,
+        user,
+        images.length === 0 ? maxOutputTokens : maxLongOutputTokens,
+        earlier,
       );
       return { answer: text, ...(usage ? { usage } : {}) };
     },
@@ -207,6 +288,15 @@ export function createStudyAssistant(
       if (isUnreadableReply(text)) {
         throw new StudyAssistantError("unreadable");
       }
+      return { answer: text, ...(usage ? { usage } : {}) };
+    },
+
+    async lessonNotes(title, lessonText): Promise<StudyAssistantReply> {
+      const { text, usage } = await complete(
+        STUDY_PROMPTS.lessonNotes,
+        lessonPrompt(title, lessonText),
+        maxLongOutputTokens,
+      );
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 

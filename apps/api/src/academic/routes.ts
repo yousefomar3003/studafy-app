@@ -130,6 +130,30 @@ export function createAcademicAppendedRoutes(
   );
 }
 
+/** Deleting (archiving) a class, mounted last as it is last in the
+ * catalogue. The SQL behind it keeps students' notebooks. */
+export function createClassroomArchiveRoutes(
+  deps: AcademicDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: catalogueRoutesNamed(["archiveClassroom"]),
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: (c) =>
+        ((c.get("validatedParams") ?? {}) as Record<string, string>)[
+          "classroomId"
+        ] ?? null,
+      sliceFor: () => "classes" as AcademicSlice,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
 export function createAcademicRoutes(
   deps: AcademicDependencies,
   authorization: AuthorizationDependencies,

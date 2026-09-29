@@ -66,6 +66,19 @@ export const STUDY_PROMPTS = {
     "exact. Do not add facts that are not on the board. If the photo shows no",
     "readable writing, reply with exactly: UNREADABLE",
   ].join(" "),
+  askReferences: [
+    "The student has shared material from their class below. Base your",
+    "answer on it, refer to it by its title where it helps, and do not ask",
+    "the student to paste it again. If it does not cover the question, say so",
+    "and answer from general knowledge.",
+  ].join(" "),
+  lessonNotes: [
+    "You turn the lesson below into clear study notes in Markdown for a",
+    "school student: a title, short headings, bullet points and the key terms",
+    "in bold, ending with a three-line summary. Use only what the lesson says",
+    "- add no facts of your own. Keep formulas exact. Write in the language",
+    "the lesson is written in.",
+  ].join(" "),
   quiz: [
     "You write a short multiple-choice quiz for a school student from the",
     "lesson below. Use only what the lesson says. Reply with JSON only, no",

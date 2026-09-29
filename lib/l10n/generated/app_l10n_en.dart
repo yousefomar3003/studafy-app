@@ -3151,4 +3151,743 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get familyPlusPrivacy => 'Privacy policy';
+
+  @override
+  String get studySetMaxBadge => 'Studafy Max';
+
+  @override
+  String get studySetSwitchedOff =>
+      'Quizzes and flashcards are not switched on yet.';
+
+  @override
+  String get studyAssistantOff =>
+      'The study helper is not switched on yet. Your lessons and notebook work as usual.';
+
+  @override
+  String get studyAssistantUnavailable =>
+      'The study helper could not answer just now. Please try again in a moment.';
+
+  @override
+  String get studyAssistantDailyLimit =>
+      'You have used all of today\'s questions. You can ask again tomorrow.';
+
+  @override
+  String get accountsSwitchAccount => 'Switch account';
+
+  @override
+  String get accountsSwitchAccountDetail =>
+      'Accounts on this device, and your children\'s accounts';
+
+  @override
+  String get accountsSheetTitle => 'Accounts';
+
+  @override
+  String get accountsAddAccount => 'Add account';
+
+  @override
+  String get accountsCreateChild => 'Create a child account';
+
+  @override
+  String get accountsCreateChildDetail => 'For a child with no email or phone';
+
+  @override
+  String get accountsSubAccount => 'Sub-account';
+
+  @override
+  String accountsSubAccountOf(String name) {
+    return 'Sub-account · managed by $name';
+  }
+
+  @override
+  String get accountsCurrent => 'Current account';
+
+  @override
+  String get accountsSwitching => 'Switching account…';
+
+  @override
+  String get accountsSwitch => 'Switch';
+
+  @override
+  String get accountsSwitchFailed =>
+      'That account could not be opened. Sign in to it again with Add account.';
+
+  @override
+  String get accountsNeedsParent =>
+      'This child account opens from the parent\'s account. Sign in to the parent\'s account on this device first.';
+
+  @override
+  String get childAccountTitle => 'Create a child account';
+
+  @override
+  String get childAccountIntro =>
+      'For a young child with no email or phone. You open their account from yours and switch back any time. Their teachers see their work under their own name.';
+
+  @override
+  String get childAccountName => 'Child\'s name';
+
+  @override
+  String get childAccountNameHelp => 'As their teachers will see it';
+
+  @override
+  String get childAccountConsent =>
+      'I am this child\'s parent or legal guardian, and I accept the Terms of Use and Privacy Policy on their behalf.';
+
+  @override
+  String get childAccountCreate => 'Create account';
+
+  @override
+  String childAccountCreated(String name) {
+    return '$name\'s account is ready.';
+  }
+
+  @override
+  String get childAccountNextStep =>
+      'Next, switch to their account and join their class with the link or code from their teacher.';
+
+  @override
+  String childAccountOpenNow(String name) {
+    return 'Switch to $name';
+  }
+
+  @override
+  String get childAccountLimit => 'You can manage up to six child accounts.';
+
+  @override
+  String get childAccountUnavailable =>
+      'Child accounts are not available on this server yet.';
+
+  @override
+  String get childAccountFailed =>
+      'The account could not be created. Please try again.';
+
+  @override
+  String get msgVoiceRecord => 'Record a voice note';
+
+  @override
+  String get msgVoiceRecording => 'Recording';
+
+  @override
+  String get msgVoiceDiscard => 'Discard';
+
+  @override
+  String get msgVoiceSend => 'Send voice note';
+
+  @override
+  String get msgVoiceMessage => 'Voice message';
+
+  @override
+  String get msgVoicePlay => 'Play voice message';
+
+  @override
+  String get msgVoicePause => 'Pause';
+
+  @override
+  String get msgVoiceChecking => 'Checking voice message…';
+
+  @override
+  String get msgVoiceUnavailable => 'This voice message could not be played.';
+
+  @override
+  String get msgVoiceNoPermission =>
+      'Allow microphone access in Settings to record voice notes.';
+
+  @override
+  String get msgVoiceTooShort => 'That was too short to send.';
+
+  @override
+  String get msgVoiceFailed =>
+      'The voice note could not be sent. Please try again.';
+
+  @override
+  String get msgVoiceLimit =>
+      'Voice notes can be up to 5 minutes, so this one was sent.';
+
+  @override
+  String get lessonNewTitle => 'New lesson';
+
+  @override
+  String get lessonTitleLabel => 'Lesson title';
+
+  @override
+  String get lessonNotesLabel => 'Lesson notes';
+
+  @override
+  String get lessonNotesHelp =>
+      'What you taught. Students read this under Lessons.';
+
+  @override
+  String get lessonPickClassForFiles =>
+      'Choose the class first to attach files.';
+
+  @override
+  String get lessonAudienceLabel => 'Who can see it';
+
+  @override
+  String get lessonAudienceBoth => 'Everyone';
+
+  @override
+  String get lessonAudienceStudents => 'Students';
+
+  @override
+  String get lessonAudienceParents => 'Parents';
+
+  @override
+  String get lessonClassRequired => 'Choose the class this lesson is for.';
+
+  @override
+  String get lessonTitleRequired => 'Give the lesson a title.';
+
+  @override
+  String get lessonContentRequired => 'Write some notes or attach a file.';
+
+  @override
+  String get lessonSave => 'Add lesson';
+
+  @override
+  String get lessonSaving => 'Adding…';
+
+  @override
+  String get lessonCreated => 'Lesson added.';
+
+  @override
+  String get lessonCreateFailed =>
+      'The lesson could not be added. Please try again.';
+
+  @override
+  String get academicAddLesson => 'Add lesson';
+
+  @override
+  String get examMaterialHelp =>
+      'Attach the exam paper, a revision sheet or anything students need.';
+
+  @override
+  String get teacherCreateAction => 'Create';
+
+  @override
+  String get teacherCreateTitle => 'Create';
+
+  @override
+  String get teacherCreateLesson => 'Lesson';
+
+  @override
+  String get teacherCreateLessonDetail => 'Notes and files for a class';
+
+  @override
+  String get teacherCreateAssignment => 'Assignment';
+
+  @override
+  String get teacherCreateAssignmentDetail =>
+      'Work students hand in, graded or not';
+
+  @override
+  String get teacherCreateExam => 'Exam or assessment';
+
+  @override
+  String get teacherCreateExamDetail =>
+      'Marked in the gradebook, with its paper attached';
+
+  @override
+  String get teacherCreateAnnouncement => 'Announcement';
+
+  @override
+  String get teacherCreateAnnouncementDetail =>
+      'Tell a class or its parents something';
+
+  @override
+  String get teacherCreateAttendance => 'Attendance';
+
+  @override
+  String get teacherCreateAttendanceDetail =>
+      'Take today\'s register for a class';
+
+  @override
+  String get teacherPickClass => 'Which class?';
+
+  @override
+  String get teacherNoClassesYet =>
+      'Create a class first, from the Classes tab.';
+
+  @override
+  String get academicThisClass => 'This class';
+
+  @override
+  String get studyAssistantNewChat => 'New chat';
+
+  @override
+  String get studyAssistantHistory => 'Chat history';
+
+  @override
+  String get studyAssistantHistoryEmpty =>
+      'No chats yet. Your chats are kept on this device only.';
+
+  @override
+  String get studyAssistantOnDevice => 'Kept on this device only';
+
+  @override
+  String get studyAssistantDeleteChat => 'Delete chat';
+
+  @override
+  String get studyAssistantDeleteAll => 'Delete all chats';
+
+  @override
+  String get studyAssistantDeleteAllConfirm =>
+      'Delete every chat on this device? This cannot be undone.';
+
+  @override
+  String get studyAssistantDelete => 'Delete';
+
+  @override
+  String get studyAssistantCancel => 'Cancel';
+
+  @override
+  String get studyAssistantSend => 'Send';
+
+  @override
+  String get studyAssistantMessageHint => 'Ask a question…';
+
+  @override
+  String get studyAssistantTooShort => 'Write a little more first.';
+
+  @override
+  String studyAssistantMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studyAssistantYou => 'You';
+
+  @override
+  String get studyAssistantHelperName => 'Study helper';
+
+  @override
+  String get setupTitle => 'Tell us about you';
+
+  @override
+  String get setupIntro => 'We ask this once, the first time you sign in.';
+
+  @override
+  String get setupNameLabel => 'Your name';
+
+  @override
+  String get setupNameHelp =>
+      'How your teachers, classmates and school will see you';
+
+  @override
+  String get setupNameRequired => 'Enter your name.';
+
+  @override
+  String get setupGenderLabel => 'Gender';
+
+  @override
+  String get setupGenderPrivate => 'Only you can see this.';
+
+  @override
+  String get setupGenderGirl => 'Girl';
+
+  @override
+  String get setupGenderBoy => 'Boy';
+
+  @override
+  String get setupGenderPreferNot => 'Prefer not to say';
+
+  @override
+  String get setupGenderRequired =>
+      'Choose an answer - \"Prefer not to say\" is fine.';
+
+  @override
+  String get setupContinue => 'Continue';
+
+  @override
+  String get setupSaving => 'Saving…';
+
+  @override
+  String get setupFailed => 'That could not be saved. Please try again.';
+
+  @override
+  String get studyToolsTitle => 'Quizzes & flashcards';
+
+  @override
+  String get studyToolsReady =>
+      'Make a quiz or flashcards from any lesson below.';
+
+  @override
+  String get studyToolsNoLessons =>
+      'They appear under each lesson once your teacher adds one.';
+
+  @override
+  String get studyToolsLocked => 'Included with Studafy Max.';
+
+  @override
+  String get linksAdd => 'Add link';
+
+  @override
+  String get linksAddTitle => 'Add a link';
+
+  @override
+  String get linksInvalid => 'Enter a full web address starting with https://';
+
+  @override
+  String get linksRemove => 'Remove link';
+
+  @override
+  String get linksCancel => 'Cancel';
+
+  @override
+  String get linksOpenTitle => 'Open this link?';
+
+  @override
+  String get linksOpen => 'Open';
+
+  @override
+  String get notebookFromLesson => 'From a lesson';
+
+  @override
+  String get notebookPickLesson => 'Choose a lesson';
+
+  @override
+  String get notebookNoLessons => 'This class has no lessons yet.';
+
+  @override
+  String get notebookCopyLesson => 'Copy into my notebook';
+
+  @override
+  String get notebookCopyLessonDetail => 'The lesson as your teacher wrote it';
+
+  @override
+  String get notebookLessonNotes => 'Turn into study notes';
+
+  @override
+  String get notebookLessonNotesDetail =>
+      'Headings, key terms and a summary - Studafy Plus';
+
+  @override
+  String get notebookLessonCopied => 'Added to your notebook.';
+
+  @override
+  String get notebookFromLessonBadge => 'From a lesson';
+
+  @override
+  String get notebookMyNotebooks => 'My notebooks';
+
+  @override
+  String get notebookClassGone =>
+      'This class no longer exists - your notes are kept';
+
+  @override
+  String get notebookNoNotebooks =>
+      'No notes yet. Notes you write in a class appear here, by class.';
+
+  @override
+  String notebookNoteCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count notes',
+      one: '1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get classDeleteAction => 'Delete class';
+
+  @override
+  String classDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get classDeleteBody =>
+      'The class disappears for you and your students, and its join link stops working. Students keep every note in their notebook for it - it will show that the class no longer exists.';
+
+  @override
+  String get classDeleteConfirm => 'Delete class';
+
+  @override
+  String get classDeleteCancel => 'Keep it';
+
+  @override
+  String get classDeleted => 'Class deleted. Students keep their notes.';
+
+  @override
+  String get classDeleteFailed =>
+      'The class could not be deleted. Please try again.';
+
+  @override
+  String get helperAdd => 'Add material or a photo';
+
+  @override
+  String get helperAddMaterial => 'Class material';
+
+  @override
+  String get helperAddMaterialDetail =>
+      'A lesson or one of your notes to answer from';
+
+  @override
+  String get helperAddPhoto => 'Photo from library';
+
+  @override
+  String get helperTakePhoto => 'Take a photo';
+
+  @override
+  String get helperPhotoPlus => 'Photos come with Studafy Plus.';
+
+  @override
+  String get helperPhotoChecking => 'Checking the photo…';
+
+  @override
+  String get helperPhotoFailed =>
+      'The photo could not be sent. Please try again.';
+
+  @override
+  String get helperAnsweringFrom => 'Answering from';
+
+  @override
+  String get helperRemove => 'Remove';
+
+  @override
+  String get helperPickTitle => 'Choose class material';
+
+  @override
+  String get helperPickClass => 'Which class?';
+
+  @override
+  String get helperLessons => 'Lessons';
+
+  @override
+  String get helperMyNotes => 'My notes';
+
+  @override
+  String get helperPickDone => 'Use these';
+
+  @override
+  String get helperPickLimit => 'Up to 5 at a time.';
+
+  @override
+  String get helperNothingInClass => 'This class has no lessons or notes yet.';
+
+  @override
+  String get helperNoClasses => 'Join a class to use its lessons here.';
+
+  @override
+  String get upgradeDailyLimitTitle => 'You\'ve used today\'s questions';
+
+  @override
+  String upgradeDailyLimitBody(int count) {
+    return 'Your plan includes $count questions a day. You can ask again tomorrow.';
+  }
+
+  @override
+  String get upgradeAllowanceTitle => 'This month\'s AI allowance is used';
+
+  @override
+  String get upgradeAllowanceBody =>
+      'Your plan\'s AI allowance renews on the 1st of next month.';
+
+  @override
+  String upgradeFeatureTitle(String plan) {
+    return 'This comes with $plan';
+  }
+
+  @override
+  String get upgradeFeatureBody => 'Your current plan does not include it.';
+
+  @override
+  String upgradeWhatUnlocks(String plan) {
+    return 'What $plan unlocks';
+  }
+
+  @override
+  String get upgradeLargerAllowance => 'A larger monthly AI allowance';
+
+  @override
+  String get upgradeButton => 'Upgrade';
+
+  @override
+  String get upgradeNotNow => 'Not now';
+
+  @override
+  String get upgradeTopPlan => 'You\'re on Studafy Max, the largest plan.';
+
+  @override
+  String get studyPlansIncludedInYourPlan => 'Included in your plan';
+
+  @override
+  String studyPlansUpgradeToName(String name) {
+    return 'Upgrade to $name';
+  }
+
+  @override
+  String studyPlansUpgradeReplaces(String current) {
+    return 'Your $current subscription is replaced right away, and the store credits what you have already paid for.';
+  }
+
+  @override
+  String studyPlansRenewsOn(String date) {
+    return 'Renews on $date';
+  }
+
+  @override
+  String studyPlansCancelledUntil(String plan, String date) {
+    return 'Cancelled. You keep $plan until $date and won\'t be charged again.';
+  }
+
+  @override
+  String get studyPlansPausedNote =>
+      'Paused in Google Play. No charges while it is paused, and it resumes on its own.';
+
+  @override
+  String studyPlansPaymentIssue(String store, String plan) {
+    return '$store couldn\'t take the payment. Update your payment method to keep $plan.';
+  }
+
+  @override
+  String get studyPlansUpdatePayment => 'Update payment method';
+
+  @override
+  String get studyPlansManageSubscription => 'Manage subscription';
+
+  @override
+  String get studyPlansCancelSubscription => 'Cancel subscription';
+
+  @override
+  String studyPlansPaidByParent(String store) {
+    return 'A parent pays for this plan. Only they can change or cancel it, from their own $store account.';
+  }
+
+  @override
+  String studyPlansBilledBy(String store) {
+    return 'Billed monthly through $store';
+  }
+
+  @override
+  String get studyPlansEndOfPeriod => 'the end of this billing period';
+
+  @override
+  String get studyPlansPayWithApple =>
+      'You pay with the payment method in your Apple Account, such as a card, or Apple Pay where Apple offers it. Studafy never sees your card.';
+
+  @override
+  String get studyPlansPayWithGoogle =>
+      'You pay with the payment method in your Google Play account, such as a card, or Google Pay where Google offers it. Studafy never sees your card.';
+
+  @override
+  String get studyPlansBuyInMobileApp =>
+      'Plans are bought in the Studafy app for iPhone or Android. A plan bought there works here when you sign in with the same account.';
+
+  @override
+  String get studyPlansBlockedAlready => 'You already have this plan.';
+
+  @override
+  String get studyPlansBlockedParent =>
+      'A parent pays for your current plan, so only they can change it.';
+
+  @override
+  String studyPlansBlockedOtherStore(String store) {
+    return 'Your current plan is billed by $store. Change it there, on the device you bought it with.';
+  }
+
+  @override
+  String get studyPlansBlockedOriginalAccount =>
+      'Google Play can only upgrade your plan from the Google account that bought it. Use that account in the Play Store, or cancel your current plan first.';
+
+  @override
+  String get cancelSheetTitle => 'Before you cancel';
+
+  @override
+  String get cancelPauseTitle => 'Pause instead';
+
+  @override
+  String cancelPauseBody(String plan, String date) {
+    return 'Take a break for 1 week to 3 months. You keep $plan until $date. Then it pauses: no $plan features and no charges until it resumes on its own. You can resume early.';
+  }
+
+  @override
+  String get cancelPauseButton => 'Pause in Google Play';
+
+  @override
+  String cancelCancelBody(String plan, String date) {
+    return 'You keep $plan until $date and won\'t be charged again. After that you\'re on Studafy Free, and your notebook and lessons stay.';
+  }
+
+  @override
+  String cancelInStore(String store) {
+    return 'Cancel in $store';
+  }
+
+  @override
+  String cancelStoreNote(String store) {
+    return '$store handles your subscription, so this opens its subscriptions page. Choose Studafy there.';
+  }
+
+  @override
+  String get cancelKeepPlan => 'Keep my plan';
+
+  @override
+  String get notificationCopyBillingSubscriptionActiveTitle =>
+      'Subscription active';
+
+  @override
+  String get notificationCopyBillingSubscriptionActiveDetail =>
+      'Your subscription is active. Apple or Google Play emails your receipt.';
+
+  @override
+  String get notificationCopyBillingSubscriptionRenewedTitle =>
+      'Subscription renewed';
+
+  @override
+  String get notificationCopyBillingSubscriptionRenewedDetail =>
+      'Your subscription renewed. Apple or Google Play emails your receipt.';
+
+  @override
+  String get notificationCopyBillingPaymentProblemTitle => 'Payment problem';
+
+  @override
+  String get notificationCopyBillingPaymentProblemDetail =>
+      'Your subscription could not be renewed. Check your payment method in the App Store or Google Play.';
+
+  @override
+  String get notificationCopyBillingSubscriptionEndedTitle =>
+      'Subscription ended';
+
+  @override
+  String get notificationCopyBillingSubscriptionEndedDetail =>
+      'Your subscription has ended. You can subscribe again from Plans.';
+
+  @override
+  String get notificationCopySystemPushTestTitle => 'Test notification';
+
+  @override
+  String get notificationCopySystemPushTestDetail =>
+      'Notifications are working on this device.';
+
+  @override
+  String get famLinkHasAccount => 'My child has a Studafy account';
+
+  @override
+  String get famLinkHasAccountBody =>
+      'Find them by the Studafy ID on their profile. They approve the link from their account.';
+
+  @override
+  String get famLinkCreateAccount => 'Create an account for my child';
+
+  @override
+  String get famLinkCreateAccountBody =>
+      'For a child with no email or phone. You manage the account and open it from yours. No approval from your child is needed.';
+
+  @override
+  String get famManagedTitle => 'Child accounts you manage';
+
+  @override
+  String get famManagedHint =>
+      'Open your child\'s account to join their class with the class code. Their progress then shows here.';
+
+  @override
+  String get famManagedOpen => 'Open account';
 }

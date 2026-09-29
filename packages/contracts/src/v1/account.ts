@@ -2,9 +2,16 @@ import { z } from "zod";
 
 const Id = z.string().uuid();
 
+/** Asked once, at first sign-in; "prefer not to say" is always offered. */
+export const V1Gender = z.enum(["girl", "boy", "prefer_not_to_say"]);
+export type V1Gender = z.infer<typeof V1Gender>;
+
 export const V1UpdateProfileRequest = z.strictObject({
   displayName: z.string().trim().min(1).max(160).optional(),
   locale: z.enum(["en", "ar"]).optional(),
+  gender: V1Gender.optional(),
+  /** Finishes first-sign-in setup; needs displayName and gender with it. */
+  completeSetup: z.boolean().optional(),
 });
 export type V1UpdateProfileRequest = z.infer<typeof V1UpdateProfileRequest>;
 
@@ -12,6 +19,12 @@ export const V1ProfileResponse = z.strictObject({
   id: Id,
   displayName: z.string(),
   locale: z.enum(["en", "ar"]),
+  /** The person's own answer; returned to them and nobody else. Absent from
+   * servers older than 2026-09-28. */
+  gender: V1Gender.nullable().optional(),
+  /** False until the person has chosen their name and answered gender.
+   * Absent from older servers, which have no setup to finish. */
+  setupComplete: z.boolean().optional(),
 });
 export type V1ProfileResponse = z.infer<typeof V1ProfileResponse>;
 

@@ -18,6 +18,8 @@ import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'account/account_switching.dart';
+import 'account/managed_children_section.dart';
 import 'account_hub_page.dart';
 
 /// The parent's app: their children's day, schoolwork, Family+ insights,
@@ -94,9 +96,15 @@ class _ParentShellState extends State<ParentShell> {
       children: [
         FamilyHomePage(
           actions: const [AccountButton()],
-          // Meetings with the teacher, on Google Meet.
-          sections: const [UpcomingMeetingsSection()],
+          // Meetings with the teacher, on Google Meet; and the child
+          // accounts this parent created.
+          sections: const [UpcomingMeetingsSection(), ManagedChildrenSection()],
           onOpenChild: _selectChild,
+          onCreateChildAccount: switch (DeviceAccountsScope.maybeOf(context)) {
+            final switcher? when switcher.canCreateChild =>
+              () => openCreateChildAccount(context, switcher),
+            _ => null,
+          },
         ),
         AcademicOverviewPage(
           key: ValueKey(ActiveContextController.instance.selectedStudent?.id),

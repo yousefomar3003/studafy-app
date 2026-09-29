@@ -5,13 +5,15 @@
  * "clean" is only ever returned for bytes that passed the full structural
  * walk of their format; the transformation stage then produces the bytes
  * that will actually be stored — a deterministic metadata-strip rewrite for
- * images, no change for PDFs (CDR is deliberately deferred; see ADR-0023).
+ * images, metadata boxes neutralised in place for voice notes, no change for
+ * PDFs (CDR is deliberately deferred; see ADR-0023).
  */
 import { containsEicarSignature } from "./eicar";
 import { jpegMetadataPayloads, parseJpeg, stripJpegMetadata } from "./jpeg";
 import { parsePng, pngAncillaryPayloads, stripPngMetadata } from "./png";
 import { parseWebp, stripWebpMetadata, webpMetadataPayloads } from "./webp";
 import { parsePdf } from "./pdf";
+import { mp4MetadataPayloads, neutralizeMp4Metadata, parseMp4 } from "./mp4";
 
 export type ScanVerdict =
   | "clean"
@@ -29,6 +31,8 @@ export type ScanErrorCode =
   | "active_content"
   | "decompression_limit"
   | "unsupported_animation"
+  | "not_audio"
+  | "external_reference"
   | "stored_object_mismatch";
 
 export interface AnalyzeResult {
@@ -38,6 +42,7 @@ export interface AnalyzeResult {
 
 export type SafeMediaType =
   | "application/pdf"
+  | "audio/mp4"
   | "image/jpeg"
   | "image/png"
   | "image/webp";
@@ -99,8 +104,30 @@ export async function analyzeBytes(
       if (!parsed.ok) return mapPdfFailure(parsed.reason);
       return { verdict: "clean" };
     }
+    case "audio/mp4": {
+      const parsed = parseMp4(bytes);
+      if (!parsed.ok) {
+        switch (parsed.reason) {
+          case "not_audio":
+            return { verdict: "policy_rejected", errorCode: "not_audio" };
+          case "external":
+            return {
+              verdict: "policy_rejected",
+              errorCode: "external_reference",
+            };
+          default:
+            return mapParseFailure(parsed.reason);
+        }
+      }
+      for (const payload of mp4MetadataPayloads(bytes, parsed.metadata)) {
+        if (containsEicarSignature(payload)) {
+          return { verdict: "malicious", errorCode: "malware_detected" };
+        }
+      }
+      return { verdict: "clean" };
+    }
     default:
-      // FILE-050 only admits the four signature-detected types; anything
+      // FILE-050 only admits the signature-detected types; anything
       // else here means the caller lied about the detected type.
       return { verdict: "malformed", errorCode: "malformed_file" };
   }
@@ -144,6 +171,14 @@ export function transformBytes(
       if (!parsed.ok) return { bytes: null, transformPolicyVersion: null };
       return {
         bytes: stripWebpMetadata(bytes, parsed.chunks),
+        transformPolicyVersion: TRANSFORM_POLICY_VERSION,
+      };
+    }
+    case "audio/mp4": {
+      const parsed = parseMp4(bytes);
+      if (!parsed.ok) return { bytes: null, transformPolicyVersion: null };
+      return {
+        bytes: neutralizeMp4Metadata(bytes, parsed.metadata),
         transformPolicyVersion: TRANSFORM_POLICY_VERSION,
       };
     }

@@ -856,3 +856,106 @@ describe("PAY-071 billing reconciliation", () => {
     expect(dispatch.reconcileOutcomes).toHaveLength(0);
   });
 });
+
+describe("subscription lifecycle (202609290004)", () => {
+  const applePayload = {
+    platform: "app_store",
+    environment: "production",
+    rawPayload: JSON.stringify({ signedPayload: "signed.payload" }),
+  };
+
+  test("an Apple billing grace period keeps access until the grace end", async () => {
+    const apple = new FakeAppleVerifier();
+    const graceEnd = Date.now() + 6 * 86400000;
+    const lapsed = verifiedApple({ expiresDate: Date.now() - 60_000 });
+    apple.notification = {
+      notificationType: "DID_FAIL_TO_RENEW",
+      subtype: "GRACE_PERIOD",
+      notificationUUID: "uuid-grace",
+      transaction: lapsed,
+    };
+    apple.status = {
+      ...lapsed,
+      subscriptionStatus: 4,
+      autoRenewing: true,
+      gracePeriodExpiresDate: graceEnd,
+    };
+    const body = await reverify(applePayload, {
+      environment: "production",
+      apple: appleEnv(apple),
+      google: null,
+    });
+    expect(body?.state).toBe("grace_period");
+    expect(body?.effectiveUntil).toBe(new Date(graceEnd).toISOString());
+    expect(body?.renewalStatus).toBe("payment_issue");
+  });
+
+  test("turning auto-renew off on iOS is recorded, not ignored", async () => {
+    const apple = new FakeAppleVerifier();
+    apple.notification = {
+      notificationType: "DID_CHANGE_RENEWAL_STATUS",
+      subtype: "AUTO_RENEW_DISABLED",
+      notificationUUID: "uuid-cancel",
+      transaction: verifiedApple(),
+    };
+    apple.status = {
+      ...verifiedApple(),
+      subscriptionStatus: 1,
+      autoRenewing: false,
+    };
+    const body = await reverify(applePayload, {
+      environment: "production",
+      apple: appleEnv(apple),
+      google: null,
+    });
+    expect(body?.noop).toBeUndefined();
+    expect(body?.state).toBe("active");
+    expect(body?.renewalStatus).toBe("cancelled");
+  });
+
+  test("an Apple event names the exact transaction and billed product", async () => {
+    const apple = new FakeAppleVerifier();
+    apple.notification = {
+      notificationType: "DID_RENEW",
+      subtype: null,
+      notificationUUID: "uuid-renew",
+      transaction: verifiedApple(),
+    };
+    apple.status = verifiedApple({
+      transactionId: "apple-txn-2",
+      productId: "studafy_max_monthly",
+      subscriptionStatus: 1,
+    });
+    const body = await reverify(applePayload, {
+      environment: "production",
+      apple: appleEnv(apple),
+      google: null,
+    });
+    expect(body?.transactionId).toBe("apple-txn-2");
+    expect(body?.storeProductId).toBe("studafy_max_monthly");
+  });
+
+  test("a Google event names its own purchase token and pause state", async () => {
+    const google = new FakeGoogleVerifier();
+    google.purchase = verifiedGoogle({
+      subscriptionState: "SUBSCRIPTION_STATE_PAUSED",
+      acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+      autoRenewEnabled: true,
+    });
+    const body = await reverify(
+      {
+        platform: "play_store",
+        environment: "production",
+        rawPayload: googleRtDn,
+      },
+      { environment: "production", apple: null, google: googleEnv(google) },
+    );
+    expect(body?.transactionId).toBe("gpa.token-1");
+    expect(body?.state).toBe("on_hold");
+    expect(body?.renewalStatus).toBe("paused");
+    // v2 reports acknowledgement by name; an acknowledged purchase is not
+    // acknowledged again.
+    expect(body?.acknowledged).toBe(true);
+    expect(google.ackCalls).toBe(0);
+  });
+});

@@ -88,10 +88,17 @@ void main() {
         email: 'sara@example.test',
         memberships: [membership],
       );
+    // Tall enough that the whole account screen is built, sign-out and
+    // account deletion at the bottom included.
+    tester.view.physicalSize = const Size(1200, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(_app(const AccountHubPage()));
     await tester.pumpAndSettle();
     expect(find.text('Sara Al-Amin'), findsOneWidget);
     expect(find.text('sara@example.test'), findsOneWidget);
+    // Notification settings are adjusted here, in every role.
+    expect(find.text('Notification preferences'), findsOneWidget);
     // The header shows these as separate chips now; both must still be the
     // real school and role, not a sample.
     expect(find.text('Al-Noor International'), findsOneWidget);

@@ -25,9 +25,16 @@ class FamilyHomePage extends StatefulWidget {
   const FamilyHomePage({
     super.key,
     this.onOpenChild,
+    this.onCreateChildAccount,
     this.actions = const [],
     this.sections = const [],
   });
+
+  /// Creates an account for a child who has none, from the parent's own
+  /// account. Supplied by the shell, which owns the device's accounts; null
+  /// where this account may not create one, and "Link a child" then only
+  /// finds a child by their Studafy ID.
+  final Future<void> Function()? onCreateChildAccount;
 
   /// App bar actions supplied by the host shell, such as its account entry.
   final List<Widget> actions;
@@ -95,7 +102,23 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
     widget.onOpenChild?.call(verified.first);
   }
 
+  /// A child either has an account to link to, or the parent makes one.
   Future<void> _linkChild() async {
+    final create = widget.onCreateChildAccount;
+    if (create != null) {
+      final choice = await showModalBottomSheet<_LinkChoice>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => const _LinkChoiceSheet(),
+      );
+      if (choice == null || !mounted) return;
+      if (choice == _LinkChoice.create) {
+        await create();
+        if (mounted) await _load();
+        return;
+      }
+    }
     final linked = await showModalBottomSheet<GuardianChild>(
       context: context,
       isScrollControlled: true,
@@ -587,6 +610,66 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _LinkChoice { find, create }
+
+/// "Link a child": find a child who has an account, or create one for a
+/// child who has none (no email or phone). A created account is the
+/// parent's to manage, so the child has nothing to approve.
+class _LinkChoiceSheet extends StatelessWidget {
+  const _LinkChoiceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    Widget option(
+      _LinkChoice choice,
+      IconData icon,
+      String title,
+      String body,
+    ) => Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Icon(icon, color: studafyCyan, size: 30),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(body),
+        ),
+        onTap: () => Navigator.pop(context, choice),
+      ),
+    );
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.famLinkTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            option(
+              _LinkChoice.find,
+              Icons.person_search_rounded,
+              l10n.famLinkHasAccount,
+              l10n.famLinkHasAccountBody,
+            ),
+            option(
+              _LinkChoice.create,
+              Icons.person_add_alt_1_rounded,
+              l10n.famLinkCreateAccount,
+              l10n.famLinkCreateAccountBody,
+            ),
           ],
         ),
       ),

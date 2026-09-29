@@ -39,6 +39,26 @@ String notificationCopy(AppL10n l10n, String key) => switch (key) {
     l10n.notificationCopyBillingPurchaseApprovalDeclinedTitle,
   'notification.billing.purchase_approval_declined.detail' =>
     l10n.notificationCopyBillingPurchaseApprovalDeclinedDetail,
+  'notification.billing.subscription_active.title' =>
+    l10n.notificationCopyBillingSubscriptionActiveTitle,
+  'notification.billing.subscription_active.detail' =>
+    l10n.notificationCopyBillingSubscriptionActiveDetail,
+  'notification.billing.subscription_renewed.title' =>
+    l10n.notificationCopyBillingSubscriptionRenewedTitle,
+  'notification.billing.subscription_renewed.detail' =>
+    l10n.notificationCopyBillingSubscriptionRenewedDetail,
+  'notification.billing.payment_problem.title' =>
+    l10n.notificationCopyBillingPaymentProblemTitle,
+  'notification.billing.payment_problem.detail' =>
+    l10n.notificationCopyBillingPaymentProblemDetail,
+  'notification.billing.subscription_ended.title' =>
+    l10n.notificationCopyBillingSubscriptionEndedTitle,
+  'notification.billing.subscription_ended.detail' =>
+    l10n.notificationCopyBillingSubscriptionEndedDetail,
+  'notification.system.push_test.title' =>
+    l10n.notificationCopySystemPushTestTitle,
+  'notification.system.push_test.detail' =>
+    l10n.notificationCopySystemPushTestDetail,
   'notification.meetings.scheduled.title' =>
     l10n.notificationCopyMeetingsScheduledTitle,
   'notification.meetings.scheduled.detail' =>

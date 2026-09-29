@@ -6,7 +6,6 @@ import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/notification.dart';
 import 'notification_copy.dart';
-import 'notification_preferences_page.dart';
 import 'notifications_scope.dart';
 
 /// Real notifications feed, backed by the typed `/v1` notifications
@@ -123,17 +122,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text(l10n.notificationsFeedTitle),
+        // Notification settings live on the account screen, with the other
+        // preferences, rather than here in every role.
         actions: [
-          IconButton(
-            tooltip: AppL10n.of(context).notificationsNotificationPreferences,
-            icon: const Icon(Icons.tune_rounded),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => const NotificationPreferencesPage(),
-              ),
-            ),
-          ),
           TextButton(
             onPressed: _items.any((item) => !item.isRead) ? _markAllRead : null,
             child: Text(l10n.notificationsFeedMarkAllRead),

@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { MP4_AUDIO_BRANDS } from "@studafy/domain";
 
 export const FILE_BUCKET = "private-school-files";
 export const SIGNED_UPLOAD_TTL_SECONDS = 2 * 60 * 60;
@@ -186,6 +187,12 @@ export function detectMediaType(bytes: Uint8Array): string | null {
     bytes.length >= 12 && ascii(bytes, 0, 4) === "RIFF" &&
     ascii(bytes, 8, 12) === "WEBP"
   ) return "image/webp";
+  // A voice note: an MP4-family file. Video in the same container is refused
+  // later, by the structural scan, which reads its tracks.
+  if (
+    bytes.length >= 12 && ascii(bytes, 4, 8) === "ftyp" &&
+    MP4_AUDIO_BRANDS.has(ascii(bytes, 8, 12))
+  ) return "audio/mp4";
   return null;
 }
 

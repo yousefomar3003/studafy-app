@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
+import '../../../core/content_links.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
@@ -58,6 +59,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
   bool _saving = false;
   String? _error;
   List<Attachment> _attachments = const [];
+  List<Uri> _links = const [];
 
   /// Rebuilt when the class changes. Material is uploaded for one class and
   /// the server refuses to bind it to another, so switching class starts the
@@ -146,7 +148,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
         AssignmentDraft(
           classroomId: classroomId!,
           title: _title.text.trim(),
-          instructions: _instructions.text.trim(),
+          instructions: textWithLinks(_instructions.text, _links),
           dueAt: dueAt!,
           attachmentFileIds: _fileIds,
           maximumScore: _graded ? score : null,
@@ -231,6 +233,10 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
                   source: widget.attachmentSource ?? pickPlatformAttachment,
                   onChanged: (items) => setState(() => _attachments = items),
                 ),
+            LinksField(
+              enabled: !_saving,
+              onChanged: (links) => setState(() => _links = links),
+            ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _saving ? null : _pickDue,

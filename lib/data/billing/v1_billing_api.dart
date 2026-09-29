@@ -160,6 +160,10 @@ class V1EntitlementRow {
     required this.startsAt,
     this.endsAt,
     this.beneficiaryStudentId,
+    this.renewalStatus,
+    this.platform,
+    this.storeProductId,
+    this.purchasedByMe = true,
   });
 
   final String featureKey;
@@ -170,6 +174,16 @@ class V1EntitlementRow {
   /// Null for the caller's own entitlement; the linked child's student id
   /// when a guardian reads the Parent Insights access attached to that child.
   final String? beneficiaryStudentId;
+
+  /// renewing, cancelled, paused or payment_issue; null when unknown.
+  final String? renewalStatus;
+
+  /// app_store or play_store: where to manage it.
+  final String? platform;
+  final String? storeProductId;
+
+  /// False when a guardian pays for the caller's plan.
+  final bool purchasedByMe;
 
   bool get grantsAccess => status == 'active' || status == 'grace_period';
 
@@ -182,6 +196,10 @@ class V1EntitlementRow {
             ? null
             : DateTime.parse(json['endsAt'] as String),
         beneficiaryStudentId: json['beneficiaryStudentId'] as String?,
+        renewalStatus: json['renewalStatus'] as String?,
+        platform: json['platform'] as String?,
+        storeProductId: json['storeProductId'] as String?,
+        purchasedByMe: json['purchasedByMe'] as bool? ?? true,
       );
 }
 

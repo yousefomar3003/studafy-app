@@ -5,7 +5,7 @@
  * already-verified `SubscriptionPurchaseV2` to Studafy's ledger vocabulary
  * and checks the package-name fraud-prevention invariant.
  */
-import type { StoreTransactionState } from "./appleTransaction";
+import type { RenewalStatus, StoreTransactionState } from "./appleTransaction";
 
 /** Google's `subscriptionState` on `SubscriptionPurchaseV2`. */
 export type GoogleSubscriptionState =
@@ -38,6 +38,40 @@ export function mapGoogleSubscriptionStateToTransactionState(
     default:
       return null;
   }
+}
+
+/**
+ * What the subscriber has set up next, from Google's state and the line
+ * item's `autoRenewingPlan.autoRenewEnabled`.
+ */
+export function googleRenewalStatus(
+  state: string,
+  autoRenewEnabled: boolean | null | undefined,
+): RenewalStatus | null {
+  switch (state as GoogleSubscriptionState) {
+    case "SUBSCRIPTION_STATE_PAUSED":
+      return "paused";
+    case "SUBSCRIPTION_STATE_ON_HOLD":
+    case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
+      return "payment_issue";
+    case "SUBSCRIPTION_STATE_CANCELED":
+      return "cancelled";
+    case "SUBSCRIPTION_STATE_ACTIVE":
+      return autoRenewEnabled === false ? "cancelled" : "renewing";
+    default:
+      return null;
+  }
+}
+
+/**
+ * `purchases.subscriptionsv2` reports acknowledgement as an enum name; the
+ * v1 API used the number 1 (acknowledged) as `acknowledgementState`. Both
+ * are accepted so a mixed-version response never looks unacknowledged.
+ */
+export function isGoogleAcknowledged(
+  state: string | null | undefined,
+): boolean {
+  return state === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" || state === "1";
 }
 
 export function isGooglePackageNameTrusted(

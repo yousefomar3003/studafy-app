@@ -22,9 +22,15 @@ import {
   validateRouteInput,
 } from "../platform/validation";
 import type { StudyRepository } from "./repository";
+import type { NotebookRepository } from "./notebookRoutes";
 import { resolvedSchoolDbContext } from "../platform/dbContext";
 import { outcomeProblem } from "../platform/outcomes";
 import { AI_REFUSALS, AiMeter, holdFor, type ModelPrices } from "./metering";
+import {
+  CHARS_PER_TOKEN,
+  type ChatMemoryBudgets,
+  chatMemoryTokens,
+} from "@studafy/domain";
 
 export interface StudyRoutesDependencies {
   repository: StudyRepository;
@@ -35,6 +41,10 @@ export interface StudyRoutesDependencies {
   lessonToolsEnabled: boolean;
   /** Where cleaned whiteboard photos are read from. */
   storage: PrivateFileStorage | null;
+  /** How much of a chat the helper remembers, by plan. */
+  chatMemory?: ChatMemoryBudgets;
+  /** Finds a note already made from a whiteboard photo. */
+  notebooks?: NotebookRepository;
 }
 
 function refusal(c: Context<AuthorizationEnv>, outcome: string): Response {
@@ -77,6 +87,16 @@ export function createStudyRoutes(
     return problem(c, "SERVICE_UNAVAILABLE", 503);
   }
 
+  // The same conditions the AI routes below check before calling the
+  // provider, so the app is never told a feature is here when it is not.
+  function available(): string[] {
+    if (!deps.assistant) return [];
+    if (!deps.lessonToolsEnabled) return ["ask"];
+    return deps.storage
+      ? ["ask", "whiteboard", "quiz", "flashcards"]
+      : ["ask", "quiz", "flashcards"];
+  }
+
   // -------------------------------------------------------------------------
   // The plan and this month's allowance.
   // -------------------------------------------------------------------------
@@ -99,6 +119,14 @@ export function createStudyRoutes(
       const response = {
         plan: summary["plan"],
         features: summary["features"],
+        available: available(),
+        ...(deps.chatMemory
+          ? {
+            chatMemoryChars:
+              chatMemoryTokens(deps.chatMemory, String(summary["plan"])) *
+              CHARS_PER_TOKEN,
+          }
+          : {}),
         allowanceUsed: cap > 0 ? Math.min(1, committed / cap) : 0,
         resetsAt: new Date(String(summary["resetsAt"])).toISOString(),
         askToday: summary["askToday"],
@@ -218,6 +246,18 @@ export function createStudyRoutes(
       const context = resolvedSchoolDbContext(c);
       const classroomId = routeParam(c, "classroomId");
       const input = validatedBody<{ photoFileId: string; title?: string }>(c);
+
+      // The same photo again: the note made from it is still the note. The
+      // provider is not asked again and nothing is charged.
+      const made = await deps.notebooks?.call(
+        context,
+        "whiteboardEntry",
+        input.photoFileId,
+      );
+      if (made?.["entry"]) {
+        const parsed = whiteboardRoute.response.safeParse(made["entry"]);
+        if (parsed.success) return c.json(parsed.data, 201);
+      }
 
       const photo = await deps.repository.query(
         context,

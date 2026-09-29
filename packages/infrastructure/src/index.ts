@@ -115,9 +115,20 @@ export {
 } from "./notifications/channelSenders";
 export {
   createStudyAssistant,
+  STUDY_HISTORY_MAX_TURNS,
   type StudyAssistant,
   StudyAssistantError,
   type StudyAssistantOptions,
   type StudyAssistantReply,
+  type StudyImage,
+  type StudyReference,
   type StudySetResult,
+  type StudyTurn,
 } from "./studyAssistant";
+export {
+  type CreatedChild,
+  MANAGED_ACCOUNT_DOMAIN,
+  ManagedAccountError,
+  type ManagedAccountIssuer,
+  SupabaseManagedAccountIssuer,
+} from "./managedAccounts";

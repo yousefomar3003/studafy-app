@@ -15,6 +15,7 @@ import { startChannelDelivery } from "../src/processors/channelDelivery";
 import {
   channelCopy,
   channelCopyCategories,
+  channelCopyTemplates,
 } from "../src/processors/notificationCopy";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
@@ -43,6 +44,19 @@ test("channel copy exists in both languages and carries no placeholders", () => 
     for (const category of categories.en) {
       const text = channelCopy(`${category}.anything`, locale);
       expect(text.body).not.toContain("{");
+    }
+  }
+});
+
+test("subscription copy is specific, in both languages, and never claims a charge", () => {
+  const templates = channelCopyTemplates();
+  expect(templates.ar).toEqual(templates.en);
+  expect(templates.en).toContain("billing.payment_problem");
+  for (const locale of ["en", "ar"]) {
+    for (const key of templates.en) {
+      const text = channelCopy(key, locale);
+      expect(text).not.toEqual(channelCopy("billing.anything", locale));
+      expect(text.body).not.toMatch(/[$€£]|\d/);
     }
   }
 });

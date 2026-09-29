@@ -30,6 +30,18 @@ abstract class FakeSessionRepositoryBase implements SessionRepository {
       lifecycleController.add(event);
 
   @override
+  String? get currentUserId => null;
+
+  @override
+  Stream<SessionToken> get sessionTokens => const Stream.empty();
+
+  @override
+  Future<void> resumeSession(String refreshToken) async => unimplemented();
+
+  @override
+  Future<void> enterManagedAccount(String tokenHash) async => unimplemented();
+
+  @override
   bool supportsProvider(LoginProvider provider) => true;
 
   @override

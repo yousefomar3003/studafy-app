@@ -1071,6 +1071,40 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Approve or decline a linked child's purchase request after recent authentication.",
   },
+  // Managed child accounts (2026-09-28). Self-scoped: the SQL behind each
+  // re-derives the caller from auth.uid() and refuses a managed account
+  // outright, so a child can neither create accounts nor sign in as one.
+  "notebook.list_own": {
+    resource: "notebook",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List the caller's own notebooks by class, deleted classes included.",
+  },
+  "managed_child.list": {
+    resource: "managed_child",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "List the child accounts the caller manages.",
+  },
+  "managed_child.create": {
+    resource: "managed_child",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Create a student account for a child with no email or phone, managed by the caller.",
+  },
+  "managed_child.session": {
+    resource: "managed_child",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Issue a one-time sign-in for a child account the caller manages. Audited.",
+  },
 } as const satisfies Record<string, PermissionDefinition>;
 
 function resource(resourceName: string, description: string) {

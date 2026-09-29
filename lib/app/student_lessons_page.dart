@@ -8,6 +8,7 @@ import '../features/academic/presentation/lessons_by_date_view.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/study/domain/study.dart';
+import '../features/study/presentation/my_notebooks_page.dart';
 import '../features/study/presentation/notebook_view.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
@@ -65,6 +66,16 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
     appBar: AppBar(
       title: Text(AppL10n.of(context).feedContent),
       actions: [
+        // Every notebook, by class - a deleted class's included.
+        IconButton(
+          tooltip: AppL10n.of(context).notebookMyNotebooks,
+          icon: const Icon(Icons.auto_stories_outlined),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => MyNotebooksPage(study: widget.study),
+            ),
+          ),
+        ),
         TextButton.icon(
           onPressed: _openPlans,
           icon: const Icon(Icons.workspace_premium_outlined),
@@ -192,6 +203,63 @@ class _StudentClassPageState extends State<StudentClassPage> {
     }
   }
 
+  /// One of this class's published lessons, for the notebook to use.
+  Future<LessonChoice?> _pickLesson(BuildContext context) async {
+    final l10n = AppL10n.of(context);
+    final lessons = await widget.academic.load(
+      AcademicFeed.content,
+      classroomId: widget.classroom.id.value,
+    );
+    if (!context.mounted) return null;
+    return showModalBottomSheet<LessonChoice>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .7,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              ListTile(
+                title: Text(
+                  l10n.notebookPickLesson,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              if (lessons.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(l10n.notebookNoLessons),
+                ),
+              for (final lesson in lessons)
+                ListTile(
+                  leading: const Icon(Icons.menu_book_rounded),
+                  title: Text(lesson.title),
+                  subtitle: lesson.date == null
+                      ? null
+                      : Text(
+                          MaterialLocalizations.of(sheetContext)
+                              .formatMediumDate(lesson.date!),
+                        ),
+                  onTap: () => Navigator.pop(
+                    sheetContext,
+                    LessonChoice(
+                      id: lesson.id,
+                      title: lesson.title,
+                      text: lesson.detail,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openPlans() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -224,6 +292,11 @@ class _StudentClassPageState extends State<StudentClassPage> {
             repository: widget.academic,
             classroomId: widget.classroom.id.value,
             uploads: widget.uploads,
+            header: (context, {required bool hasLessons}) => StudyToolsCard(
+              plan: _plan,
+              hasLessons: hasLessons,
+              onOpenPlans: _openPlans,
+            ),
             actionsFor: (context, lesson) => StudySetButtons(
               study: widget.study,
               resourceId: lesson.id,
@@ -239,6 +312,7 @@ class _StudentClassPageState extends State<StudentClassPage> {
             uploads: widget.uploads,
             source: pickPlatformAttachment,
             onOpenPlans: _openPlans,
+            pickLesson: _pickLesson,
           ),
         ],
       ),

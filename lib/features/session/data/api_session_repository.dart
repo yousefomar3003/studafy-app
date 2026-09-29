@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     as supabase
     show SignOutScope;
 
+import '../../../core/account_lifecycle.dart';
 import '../../../core/ids.dart';
 import '../../../core/secure_storage.dart';
 import '../../../core/studafy_domain.dart';
@@ -45,10 +46,6 @@ class ApiSessionRepository implements SessionRepository {
 
   SupabaseClient get _auth => _supabase ?? StudafyBackend.client;
 
-  /// Policy version accepted by the consent checkbox. The database refuses a
-  /// version with no published policy row, so bumping this alone fails closed.
-  static const _termsPolicyVersion = '2026-09-09';
-
   @override
   bool get hasCurrentSession => _auth.auth.currentSession != null;
 
@@ -75,6 +72,39 @@ class ApiSessionRepository implements SessionRepository {
       await controller.close();
     };
     return controller.stream;
+  }
+
+  @override
+  String? get currentUserId => _auth.auth.currentUser?.id;
+
+  @override
+  Stream<SessionToken> get sessionTokens => _auth.auth.onAuthStateChange
+      // A failed refresh is reported through [lifecycleEvents]; here it only
+      // means there is no new token.
+      .handleError((Object _) {})
+      .map((state) => state.session)
+      .where((session) => (session?.refreshToken ?? '').isNotEmpty)
+      .map(
+        (session) => SessionToken(
+          userId: session!.user.id,
+          refreshToken: session.refreshToken!,
+        ),
+      );
+
+  @override
+  Future<void> resumeSession(String refreshToken) async {
+    await _auth.auth.setSession(refreshToken);
+  }
+
+  @override
+  Future<void> enterManagedAccount(String tokenHash) async {
+    final response = await _auth.auth.verifyOTP(
+      tokenHash: tokenHash,
+      type: OtpType.magiclink,
+    );
+    if (response.session == null) {
+      throw StateError('The sign-in did not produce a session.');
+    }
   }
 
   static SessionLifecycleEvent _lifecycleFor(AuthChangeEvent event) =>
@@ -214,7 +244,7 @@ class ApiSessionRepository implements SessionRepository {
       'record_policy_consent',
       params: {
         'requested_purpose': 'terms_and_privacy',
-        'requested_version': _termsPolicyVersion,
+        'requested_version': termsPolicyVersion,
         'requested_locale': locale,
       },
     );

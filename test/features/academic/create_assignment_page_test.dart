@@ -38,6 +38,7 @@ Future<void> _fillTitleAndDue(WidgetTester tester, String title) async {
 void main() {
   testWidgets('ungraded work is filed as an assignment', (tester) async {
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -58,6 +59,7 @@ void main() {
     // among their assignments or hand in. It is an assignment now; the mark
     // out of 25 is recorded on a linked assessment by the repository.
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -77,6 +79,7 @@ void main() {
 
   testWidgets('ungraded work carries no mark', (tester) async {
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
     await _fillTitleAndDue(tester, 'Reading');
@@ -89,6 +92,7 @@ void main() {
     tester,
   ) async {
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -100,6 +104,7 @@ void main() {
 
   testWidgets('a title is required before anything is created', (tester) async {
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -113,6 +118,7 @@ void main() {
 
   testWidgets('a due date is required', (tester) async {
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -128,6 +134,7 @@ void main() {
     // The database rejects it too (maximum_score > 0); catching it here
     // means the teacher is told which field, not handed a failed request.
     final fake = CreateWorkFake();
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -144,6 +151,7 @@ void main() {
 
   testWidgets('a failure keeps the form open and says so', (tester) async {
     final fake = CreateWorkFake(fail: true);
+    _tall(tester);
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
@@ -166,4 +174,12 @@ void main() {
     expect(find.text('واجب جديد'), findsOneWidget);
     expect(find.text('بدرجة'), findsOneWidget);
   });
+}
+
+/// Tall enough that the whole form is built; a ListView leaves off-screen
+/// rows unbuilt, and the Create button is the last one.
+void _tall(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1200, 2600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
 }

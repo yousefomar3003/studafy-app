@@ -7,6 +7,7 @@ import {
   DEFAULT_PLATFORM_LIMITS,
   type PlatformEnv,
   type PlatformLimits,
+  ROUTE_LIMIT_OVERRIDES,
 } from "./types";
 
 const METHODS = new Set(["GET", "HEAD", "POST", "OPTIONS"]);
@@ -194,14 +195,20 @@ export function protocolControls(
       return c.body(null, 204);
     }
 
-    const limited = await boundedBody(c, limits.maxBodyBytes);
+    // Exact path match: an override never leaks to a neighbouring route.
+    const route = ROUTE_LIMIT_OVERRIDES[c.req.path];
+    const maxBodyBytes = route
+      ? Math.max(route.maxBodyBytes, limits.maxBodyBytes)
+      : limits.maxBodyBytes;
+    const maxJsonKeys = route
+      ? Math.max(route.maxJsonKeys, limits.maxJsonKeys)
+      : limits.maxJsonKeys;
+    const limited = await boundedBody(c, maxBodyBytes);
     if (limited) return limited;
     if (c.req.raw.body) {
       try {
         const value = JSON.parse(await c.req.raw.clone().text());
-        if (
-          !jsonShapeWithinLimits(value, limits.maxJsonDepth, limits.maxJsonKeys)
-        ) {
+        if (!jsonShapeWithinLimits(value, limits.maxJsonDepth, maxJsonKeys)) {
           return problem(c, "INVALID_REQUEST", 400);
         }
       } catch {

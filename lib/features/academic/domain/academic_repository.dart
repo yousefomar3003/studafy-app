@@ -72,10 +72,19 @@ class TextResourceDraft {
     required this.title,
     required this.body,
     this.lessonSessionId,
+    this.audience = 'both',
+    this.publish = false,
   });
   final String classroomId;
   final String title;
   final String body;
+
+  /// Publish straight away, so the class sees it. Otherwise it is a draft
+  /// only its teachers can see until they publish it.
+  final bool publish;
+
+  /// Who sees it: 'students', 'guardians' or 'both'.
+  final String audience;
 
   /// The meeting this content was taught in. A section cannot be closed
   /// until something is filed against it, so this is the link that satisfies
@@ -484,6 +493,10 @@ abstract interface class ClassTimetableRepository {
     int expectedVersion,
     List<ClassSessionSlot> slots,
   );
+
+  /// Deletes a class. It is archived: it leaves every class list, and each
+  /// student keeps their notebook for it.
+  Future<void> archiveClassroom(String classroomId, int expectedVersion);
 
   /// Meetings of [classroomId] that have already happened.
   Future<List<LessonSession>> lessonSessions(String classroomId);

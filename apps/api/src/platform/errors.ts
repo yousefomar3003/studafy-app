@@ -229,6 +229,10 @@ const DEFINITIONS: Record<
     title: "Product not available",
     detail: "This product is not currently offered.",
   },
+  MANAGED_CHILD_LIMIT: {
+    title: "Child account limit reached",
+    detail: "One account can manage up to six child accounts.",
+  },
 };
 
 export class RequestTimeoutError extends Error {

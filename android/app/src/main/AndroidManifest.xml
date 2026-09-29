@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Voice notes in messages. Asked for only when someone first records. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Push notifications on Android 13 and later. Asked for at sign-in. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="studafy"
         android:name="${applicationName}"

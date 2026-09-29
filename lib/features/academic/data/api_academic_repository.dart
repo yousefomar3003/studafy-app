@@ -160,23 +160,28 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> createResource(TextResourceDraft draft) => _done(
-    'resource:${draft.classroomId}:${draft.title}:${draft.body}',
-    (key) async {
-      await _client.createResource(
-        V1CreateResourceRequestDto(
-          schoolId: _schoolId,
-          classroomId: draft.classroomId,
-          title: draft.title,
-          resourceType: 'lesson_note',
-          body: draft.body,
-          audience: 'both',
-          lessonSessionId: draft.lessonSessionId,
-        ),
-        idempotencyKey: key,
-      );
-    },
-  );
+  Future<void> createResource(TextResourceDraft draft) =>
+      _done('resource:${draft.classroomId}:${draft.title}:${draft.body}:'
+          '${draft.audience}', (key) async {
+        final created = await _client.createResource(
+          V1CreateResourceRequestDto(
+            schoolId: _schoolId,
+            classroomId: draft.classroomId,
+            title: draft.title,
+            resourceType: 'lesson_note',
+            body: draft.body,
+            audience: draft.audience,
+            lessonSessionId: draft.lessonSessionId,
+          ),
+          idempotencyKey: key,
+        );
+        // A lesson is created as a draft, which students and parents never
+        // see. Inside the same retry scope, so a retry replays the create
+        // and publishes that rather than filing a second copy.
+        if (draft.publish && created.state == 'draft') {
+          await publishResource(created.id, created.version);
+        }
+      });
 
   @override
   Future<void> reviseResource(
@@ -473,6 +478,16 @@ class ApiAcademicRepository implements AcademicRepository {
         ),
     ];
   }
+
+  @override
+  Future<void> archiveClassroom(String classroomId, int expectedVersion) =>
+      _done('archive:$classroomId:$expectedVersion', (key) async {
+        await _client.archiveClassroom(
+          V1ArchiveClassroomRequestDto(expectedVersion: expectedVersion),
+          classroomId: classroomId,
+          idempotencyKey: key,
+        );
+      });
 
   @override
   Future<void> replaceSchedule(

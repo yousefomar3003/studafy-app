@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart'
+    show ReplacementMode;
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
@@ -20,13 +22,22 @@ class StoreSubscriptionRepository
     InAppPurchase? store,
     V1BillingApi? billingApi,
     SecureStore? pendingStore,
+    Future<QueryPurchaseDetailsResponse> Function(String account)?
+    playPurchases,
   }) : _store = store ?? InAppPurchase.instance,
        // ignore: prefer_initializing_formals
        _billingApi = billingApi,
-       _pending = pendingStore ?? InMemorySecureStore();
+       _pending = pendingStore ?? InMemorySecureStore(),
+       // ignore: prefer_initializing_formals
+       _playPurchases = playPurchases;
 
   final InAppPurchase _store;
   final V1BillingApi? _billingApi;
+
+  /// The subscriptions this phone's Google account bought. Tests supply
+  /// their own; the default asks Google Play.
+  final Future<QueryPurchaseDetailsResponse> Function(String account)?
+  _playPurchases;
 
   /// Remembers which linked child a started purchase is for, keyed by store
   /// product id. It must survive an app kill between the store sheet and
@@ -55,6 +66,47 @@ class StoreSubscriptionRepository
   String? _approvalRequestKey;
 
   bool get _isRemote => _billingApi != null;
+
+  @override
+  SubscriptionStore? get purchaseStore {
+    if (kIsWeb) return null;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.iOS => SubscriptionStore.appStore,
+      TargetPlatform.android => SubscriptionStore.playStore,
+      _ => null,
+    };
+  }
+
+  /// Called when an account signs in on this device (and after a switch).
+  ///
+  /// Listens to the store at once, so a purchase the store finished while
+  /// the app was closed - or on the way to a new phone - is verified now,
+  /// not when the Plans screen is next opened. On Android it also asks
+  /// Google Play, silently, for this Google account's subscriptions, which
+  /// the server attaches only to the Studafy account that bought them. The
+  /// App Store's restore can ask for an Apple password, so on iPhone that
+  /// stays behind the Restore purchases button.
+  Future<void> resumeForAccount() async {
+    if (!_isRemote || purchaseStore == null) return;
+    await initialize();
+    if (purchaseStore != SubscriptionStore.playStore) return;
+    try {
+      await _products();
+      if (!await _store.isAvailable()) return;
+      await _store.restorePurchases(applicationUserName: _accountToken);
+    } on Object {
+      // Offline or no Play Store: the next sign-in or Restore tries again.
+    }
+  }
+
+  @override
+  Future<StudyPlanSubscription?> subscription() async {
+    if (!_isRemote) return null;
+    return currentStudyPlanSubscription(
+      await _billingApi!.entitlements(),
+      DateTime.now(),
+    );
+  }
 
   @override
   void addEntitlementListener(EntitlementChanged listener) {
@@ -269,6 +321,30 @@ class StoreSubscriptionRepository
         terms.currencyCode.isEmpty) {
       throw StateError('Subscription terms are unavailable');
     }
+    // Never a second subscription beside the first, and never a second
+    // charge: the current plan is upgraded in place or the purchase stops.
+    final current = currentStudyPlanSubscription(
+      await _billingApi.entitlements(),
+      DateTime.now(),
+    );
+    ChangeSubscriptionParam? replacing;
+    if (current != null) {
+      if (current.tier.includes(tier)) {
+        throw const PurchaseBlockedException(PurchaseBlock.alreadySubscribed);
+      }
+      if (!current.paidByMe) {
+        throw const PurchaseBlockedException(PurchaseBlock.paidByParent);
+      }
+      if (current.store != purchaseStore) {
+        throw const PurchaseBlockedException(PurchaseBlock.otherStore);
+      }
+      // The App Store upgrades within the subscription group both plans
+      // belong to and credits the unused part; Google Play needs the
+      // subscription being replaced named.
+      if (selected is GooglePlayProductDetails) {
+        replacing = await _replacing(current, account);
+      }
+    }
     await initialize();
     final PurchaseParam param;
     if (selected is GooglePlayProductDetails) {
@@ -280,6 +356,7 @@ class StoreSubscriptionRepository
             .productDetails
             .subscriptionOfferDetails![index]
             .offerIdToken,
+        changeSubscriptionParam: replacing,
       );
     } else {
       param = PurchaseParam(
@@ -290,6 +367,39 @@ class StoreSubscriptionRepository
     if (!await _store.buyNonConsumable(purchaseParam: param)) {
       throw StateError('The store did not start the purchase');
     }
+  }
+
+  /// The Google Play subscription an upgrade replaces. Only the Google
+  /// account that bought it can replace it, so it must be on this phone.
+  /// The switch happens at once and Google charges only the difference for
+  /// the rest of the current period.
+  Future<ChangeSubscriptionParam> _replacing(
+    StudyPlanSubscription current,
+    String account,
+  ) async {
+    const blocked = PurchaseBlockedException(
+      PurchaseBlock.upgradeNeedsOriginalAccount,
+    );
+    final QueryPurchaseDetailsResponse past;
+    try {
+      past =
+          await (_playPurchases?.call(account) ??
+              _store
+                  .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>()
+                  .queryPastPurchases(applicationUserName: account));
+    } on Object {
+      throw blocked;
+    }
+    final owned = past.pastPurchases.where(
+      (purchase) =>
+          purchase.productID == current.storeProductId &&
+          purchase.status != PurchaseStatus.error,
+    );
+    if (past.error != null || owned.isEmpty) throw blocked;
+    return ChangeSubscriptionParam(
+      oldPurchaseDetails: owned.first,
+      replacementMode: ReplacementMode.chargeProratedPrice,
+    );
   }
 
   Future<V1BillingProduct> _insightsProductOrThrow() async {
@@ -500,4 +610,49 @@ class StoreSubscriptionRepository
       listener();
     }
   }
+}
+
+const _planFeatures = {
+  'studafy_max': StudyPlanTier.max,
+  'studafy_plus': StudyPlanTier.plus,
+};
+
+/// The student's own paid plan from their entitlement rows: the highest
+/// plan that is active, in a payment grace period, or on hold (paused or
+/// failing to renew) within the last 100 days. A plan a guardian reads for
+/// a child ([V1EntitlementRow.beneficiaryStudentId]) is not the caller's.
+StudyPlanSubscription? currentStudyPlanSubscription(
+  List<V1EntitlementRow> rows,
+  DateTime now,
+) {
+  StudyPlanSubscription? best;
+  for (final row in rows) {
+    final tier = _planFeatures[row.featureKey];
+    if (tier == null || row.beneficiaryStudentId != null) continue;
+    final ends = row.endsAt;
+    final current = switch (row.status) {
+      'active' || 'grace_period' => ends == null || ends.isAfter(now),
+      'on_hold' =>
+        ends == null || ends.isAfter(now.subtract(const Duration(days: 100))),
+      _ => false,
+    };
+    if (!current) continue;
+    var renewal = RenewalStatus.parse(row.renewalStatus);
+    if (row.status == 'grace_period' ||
+        (row.status == 'on_hold' && renewal != RenewalStatus.paused)) {
+      renewal = RenewalStatus.paymentIssue;
+    }
+    final candidate = StudyPlanSubscription(
+      tier: tier,
+      renewal: renewal,
+      endsAt: ends,
+      store: SubscriptionStore.parse(row.platform),
+      storeProductId: row.storeProductId,
+      paidByMe: row.purchasedByMe,
+    );
+    if (best == null || candidate.tier.index > best.tier.index) {
+      best = candidate;
+    }
+  }
+  return best;
 }

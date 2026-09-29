@@ -74,6 +74,26 @@ export function createAccountRoutes(
   );
 }
 
+/** The caller's own profile, mounted last, as it is last in the catalogue. */
+export function createProfileReadRoutes(
+  deps: AccountDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: catalogueRoutesNamed(["getProfile"]),
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector,
+      sliceFor,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
 export function createAccountReadRoutes(
   deps: AccountDependencies,
   authorization: AuthorizationDependencies,

@@ -4,6 +4,7 @@ import '../../core/studafy_domain.dart';
 import 'cache_scope.dart';
 import 'offline_cache_database.dart';
 import 'offline_cache_store.dart';
+import 'offline_file_cache.dart';
 
 /// Serializes cache opens and identity transitions. A sign-out/account switch
 /// erases all of the departed user's school files before another scope opens.
@@ -22,6 +23,9 @@ class SessionCacheBinder {
   bool _disposed = false;
 
   Future<void> get settled => _tail;
+
+  /// Whose cache is open now; null when nobody is signed in.
+  CacheScope? get scope => _scope;
 
   /// Null only when nobody is signed in.
   ///
@@ -53,6 +57,7 @@ class SessionCacheBinder {
     _tail = _tail.then((_) async {
       if (next == null || next.userId != previous.userId) {
         await OfflineCacheDatabase.wipeUser(previous.userId);
+        await OfflineFileCache.wipeUser(previous.userId);
       } else {
         await (await OfflineCacheDatabase.open(previous)).close();
       }

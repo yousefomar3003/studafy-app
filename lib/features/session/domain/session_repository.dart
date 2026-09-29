@@ -77,6 +77,20 @@ class AuthDevice {
   final bool isCurrent;
 }
 
+/// One account's current refresh token, as the session layer sees it change.
+///
+/// Refresh tokens rotate on every refresh, and presenting a rotated-out one
+/// is treated by Supabase as token theft: it ends that account's session.
+/// So an account kept on this device for switching back to has to hold its
+/// latest token, which is what this carries each time one is issued.
+@immutable
+class SessionToken {
+  const SessionToken({required this.userId, required this.refreshToken});
+
+  final String userId;
+  final String refreshToken;
+}
+
 /// Raised when the server demands fresh proof of presence.
 class ReauthRequiredFailure implements Exception {
   const ReauthRequiredFailure(this.purpose);
@@ -96,6 +110,21 @@ abstract interface class SessionRepository {
 
   /// Emits every lifecycle transition, including refresh failures.
   Stream<SessionLifecycleEvent> get lifecycleEvents;
+
+  /// The signed-in account's id, or null when signed out.
+  String? get currentUserId;
+
+  /// Every session token this device is issued: at sign-in and at each
+  /// refresh. The device's account list follows it (see [SessionToken]).
+  Stream<SessionToken> get sessionTokens;
+
+  /// Makes another account kept on this device the current one, from its
+  /// latest refresh token. The account being left keeps its own session.
+  Future<void> resumeSession(String refreshToken);
+
+  /// Enters a managed child account with the one-time sign-in the child's
+  /// parent was issued for it.
+  Future<void> enterManagedAccount(String tokenHash);
 
   /// Starts the OAuth flow for [provider]. Completing only means the
   /// browser/WebView opened; the session arrives via [sessionChanges].

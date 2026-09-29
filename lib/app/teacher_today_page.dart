@@ -23,7 +23,7 @@ class TeacherTodayPage extends StatefulWidget {
     required this.classes,
     required this.academic,
     required this.onOpenClassroom,
-    required this.onOpenMessages,
+    this.onOpenMessages,
     required this.onOpenNotifications,
   });
 
@@ -33,7 +33,9 @@ class TeacherTodayPage extends StatefulWidget {
   /// has been set, and sections still owing their content.
   final AcademicRepository academic;
   final Future<void> Function(ClassroomSummary classroom) onOpenClassroom;
-  final VoidCallback onOpenMessages;
+
+  /// Null hides the messages button - the teacher shell has an Inbox tab.
+  final VoidCallback? onOpenMessages;
   final VoidCallback onOpenNotifications;
 
   @override
@@ -129,11 +131,12 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
         backgroundColor: Colors.white,
         title: Text(school ?? AppL10n.of(context).todayTitle),
         actions: [
-          IconButton(
-            tooltip: AppL10n.of(context).todayMessages,
-            onPressed: widget.onOpenMessages,
-            icon: const Icon(Icons.chat_bubble_outline),
-          ),
+          if (widget.onOpenMessages case final openMessages?)
+            IconButton(
+              tooltip: AppL10n.of(context).todayMessages,
+              onPressed: openMessages,
+              icon: const Icon(Icons.chat_bubble_outline),
+            ),
           IconButton(
             tooltip: AppL10n.of(context).todayNotifications,
             onPressed: () {

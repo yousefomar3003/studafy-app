@@ -71,6 +71,13 @@ const assistant: StudyAssistant = {
       usage: { inputTokens: 700, outputTokens: 90, model: "stub" },
     };
   },
+  lessonNotes: async () => {
+    calls.push("lessonNotes");
+    return {
+      answer: "# Cells\n\n- The cell is the unit of life",
+      usage: { inputTokens: 500, outputTokens: 200, model: "stub" },
+    };
+  },
   studySet: async (kind) => {
     calls.push(kind);
     const usage = { inputTokens: 280, outputTokens: 600, model: "stub" };
@@ -264,7 +271,16 @@ suite("Studafy Plus / Max over real SQL", () => {
     app.route(
       "/",
       createStudyAssistantRoutes(
-        { assistant, repository, prices: PRICES },
+        {
+          assistant,
+          repository,
+          prices: PRICES,
+          chatMemory: {
+            contextWindowTokens: 262_144,
+            freeTokens: 4_000,
+            paidTokens: 32_000,
+          },
+        },
         authorization,
       ),
     );

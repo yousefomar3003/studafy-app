@@ -83,6 +83,13 @@ class CreateWorkFake implements AcademicRepository {
   final bool fail;
   final assignments = <AssignmentDraft>[];
   final assessments = <AssessmentDraft>[];
+  final lessons = <TextResourceDraft>[];
+
+  @override
+  Future<void> createResource(TextResourceDraft draft) async {
+    if (fail) throw StateError('synthetic create failure');
+    lessons.add(draft);
+  }
 
   @override
   Future<void> createAssignment(AssignmentDraft draft) async {

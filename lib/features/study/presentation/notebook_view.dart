@@ -10,6 +10,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
+import 'upgrade_prompt.dart';
 
 /// A student's own notebook for one class, newest first, grouped by day.
 ///
@@ -25,6 +26,7 @@ class NotebookView extends StatefulWidget {
     this.schoolId,
     this.uploads,
     this.source,
+    this.pickLesson,
     this.readyTimeout = const Duration(seconds: 40),
     this.readyPoll = const Duration(seconds: 2),
   });
@@ -42,6 +44,11 @@ class NotebookView extends StatefulWidget {
 
   /// The photo picker. Tests supply their own.
   final AttachmentSource? source;
+
+  /// Lets the student choose one of this class's lessons to turn into notes.
+  /// Lessons live in another feature, so the host supplies the picker; null
+  /// hides "From a lesson".
+  final Future<LessonChoice?> Function(BuildContext context)? pickLesson;
 
   /// How long to wait for a new photo to clear the scan, and how often to ask.
   final Duration readyTimeout;
@@ -96,6 +103,31 @@ class _NotebookViewState extends State<NotebookView> {
   void _say(String message) =>
       ScaffoldMessenger.of(context).showMessage(message);
 
+  /// A refusal because of the plan explains itself and offers the upgrade;
+  /// anything else is a short message.
+  Future<void> _refused(StudyRefusal refusal) async {
+    final reason = upgradeReasonFor(refusal);
+    if (reason == null) {
+      _say(_refusalText(refusal));
+      return;
+    }
+    StudyPlan? plan;
+    try {
+      plan = await widget.study.plan();
+    } on Object {
+      plan = null;
+    }
+    if (!mounted) return;
+    await showUpgradePrompt(
+      context,
+      reason: reason,
+      plan: plan,
+      // Whiteboard and lesson notes are Studafy Plus.
+      needs: StudyPlanTier.plus,
+      onUpgrade: widget.onOpenPlans,
+    );
+  }
+
   String _refusalText(StudyRefusal refusal) => switch (refusal) {
     StudyRefusal.planRequired => AppL10n.of(
       context,
@@ -112,8 +144,80 @@ class _NotebookViewState extends State<NotebookView> {
     StudyRefusal.unavailable => AppL10n.of(
       context,
     ).studySetThisIsNotAvailableYet,
+    StudyRefusal.lessonHasNoText => AppL10n.of(
+      context,
+    ).studySetThisLessonHasNoText,
     _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
   };
+
+  /// A lesson, chosen by the student, into their notebook: as the teacher
+  /// wrote it (free), or turned into study notes (Studafy Plus).
+  Future<void> _fromLesson() async {
+    final pick = widget.pickLesson;
+    if (pick == null) return;
+    final lesson = await pick(context);
+    if (lesson == null || !mounted) return;
+    final l10n = AppL10n.of(context);
+    final canCopy = lesson.text.trim().isNotEmpty;
+    final canMakeNotes = _plan?.canSnapWhiteboard ?? false;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: UserContentText(
+                lesson.title,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.content_copy_rounded),
+              title: Text(l10n.notebookCopyLesson),
+              subtitle: Text(l10n.notebookCopyLessonDetail),
+              enabled: canCopy,
+              onTap: () => Navigator.pop(sheetContext, 'copy'),
+            ),
+            ListTile(
+              leading: Icon(
+                canMakeNotes
+                    ? Icons.auto_awesome_rounded
+                    : Icons.lock_outline_rounded,
+              ),
+              title: Text(l10n.notebookLessonNotes),
+              subtitle: Text(l10n.notebookLessonNotesDetail),
+              onTap: () => Navigator.pop(sheetContext, 'notes'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    if (choice == 'notes' && !canMakeNotes) {
+      widget.onOpenPlans();
+      return;
+    }
+    setState(() => _working = AppL10n.of(context).scheduleSaving);
+    try {
+      if (choice == 'copy') {
+        await widget.study.addNote(
+          widget.classroomId,
+          title: lesson.title,
+          body: lesson.text,
+        );
+      } else {
+        await widget.study.lessonNotes(lesson.id);
+      }
+      _say(l10n.notebookLessonCopied);
+      await _load();
+    } on StudyException catch (error) {
+      await _refused(error.refusal);
+    } finally {
+      if (mounted) setState(() => _working = null);
+    }
+  }
 
   Future<void> _addNote() async {
     final title = TextEditingController();
@@ -237,8 +341,7 @@ class _NotebookViewState extends State<NotebookView> {
       _say(l10n.notebookNotesAddedToYourNotebook);
       await _load();
     } on StudyException catch (error) {
-      if (error.refusal == StudyRefusal.planRequired) widget.onOpenPlans();
-      _say(_refusalText(error.refusal));
+      await _refused(error.refusal);
     } on Object {
       _say(l10n.notebookThePhotoCouldNotBe);
     } finally {
@@ -300,6 +403,12 @@ class _NotebookViewState extends State<NotebookView> {
             icon: const Icon(Icons.edit_note_rounded),
             label: Text(AppL10n.of(context).notebookAddNote),
           ),
+          if (widget.pickLesson != null)
+            FilledButton.tonalIcon(
+              onPressed: _working != null ? null : _fromLesson,
+              icon: const Icon(Icons.menu_book_rounded),
+              label: Text(AppL10n.of(context).notebookFromLesson),
+            ),
           if (canUpload)
             FilledButton.icon(
               onPressed: _working != null
@@ -400,6 +509,14 @@ class _NotebookViewState extends State<NotebookView> {
               children: [
                 Row(
                   children: [
+                    if (entry.fromLesson)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 6),
+                        child: Tooltip(
+                          message: AppL10n.of(context).notebookFromLessonBadge,
+                          child: const Icon(Icons.menu_book_rounded, size: 18),
+                        ),
+                      ),
                     if (entry.fromWhiteboard)
                       Padding(
                         padding: const EdgeInsetsDirectional.only(end: 6),

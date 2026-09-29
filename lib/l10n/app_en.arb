@@ -1763,5 +1763,407 @@
   "familyPlusManage": "Manage or cancel",
   "familyPlusDisclosure": "Auto-renewing monthly subscription, paid through your app store account. It renews unless cancelled at least 24 hours before the end of the period; cancel any time in your store subscription settings. Studafy never sees your card details.",
   "familyPlusTerms": "Terms of use",
-  "familyPlusPrivacy": "Privacy policy"
+  "familyPlusPrivacy": "Privacy policy",
+  "studySetMaxBadge": "Studafy Max",
+  "@studySetMaxBadge": {
+    "description": "Badge beside locked quiz and flashcard buttons naming the plan that unlocks them. Keep \"Studafy Max\" as the product name; the Arabic says \"the Studafy Max plan\"."
+  },
+  "studySetSwitchedOff": "Quizzes and flashcards are not switched on yet.",
+  "studyAssistantOff": "The study helper is not switched on yet. Your lessons and notebook work as usual.",
+  "studyAssistantUnavailable": "The study helper could not answer just now. Please try again in a moment.",
+  "studyAssistantDailyLimit": "You have used all of today's questions. You can ask again tomorrow.",
+  "accountsSwitchAccount": "Switch account",
+  "@accountsSwitchAccount": {
+    "description": "Account screen row that opens the list of accounts on this device."
+  },
+  "accountsSwitchAccountDetail": "Accounts on this device, and your children's accounts",
+  "accountsSheetTitle": "Accounts",
+  "accountsAddAccount": "Add account",
+  "@accountsAddAccount": {
+    "description": "Signs in to another account without signing out of this one."
+  },
+  "accountsCreateChild": "Create a child account",
+  "accountsCreateChildDetail": "For a child with no email or phone",
+  "accountsSubAccount": "Sub-account",
+  "@accountsSubAccount": {
+    "description": "Label for a child account that a parent manages."
+  },
+  "accountsSubAccountOf": "Sub-account · managed by {name}",
+  "@accountsSubAccountOf": {
+    "description": "Shown on a child account; name is the parent who manages it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsCurrent": "Current account",
+  "accountsSwitching": "Switching account…",
+  "accountsSwitch": "Switch",
+  "accountsSwitchFailed": "That account could not be opened. Sign in to it again with Add account.",
+  "accountsNeedsParent": "This child account opens from the parent's account. Sign in to the parent's account on this device first.",
+  "childAccountTitle": "Create a child account",
+  "childAccountIntro": "For a young child with no email or phone. You open their account from yours and switch back any time. Their teachers see their work under their own name.",
+  "childAccountName": "Child's name",
+  "childAccountNameHelp": "As their teachers will see it",
+  "childAccountConsent": "I am this child's parent or legal guardian, and I accept the Terms of Use and Privacy Policy on their behalf.",
+  "childAccountCreate": "Create account",
+  "childAccountCreated": "{name}'s account is ready.",
+  "@childAccountCreated": {
+    "description": "",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childAccountNextStep": "Next, switch to their account and join their class with the link or code from their teacher.",
+  "childAccountOpenNow": "Switch to {name}",
+  "@childAccountOpenNow": {
+    "description": "",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childAccountLimit": "You can manage up to six child accounts.",
+  "childAccountUnavailable": "Child accounts are not available on this server yet.",
+  "childAccountFailed": "The account could not be created. Please try again.",
+  "msgVoiceRecord": "Record a voice note",
+  "@msgVoiceRecord": {
+    "description": "Tooltip on the microphone button in a chat."
+  },
+  "msgVoiceRecording": "Recording",
+  "msgVoiceDiscard": "Discard",
+  "msgVoiceSend": "Send voice note",
+  "msgVoiceMessage": "Voice message",
+  "@msgVoiceMessage": {
+    "description": "Read out for a message that is only a voice note."
+  },
+  "msgVoicePlay": "Play voice message",
+  "msgVoicePause": "Pause",
+  "msgVoiceChecking": "Checking voice message…",
+  "@msgVoiceChecking": {
+    "description": "Shown while the uploaded voice note is being scanned."
+  },
+  "msgVoiceUnavailable": "This voice message could not be played.",
+  "msgVoiceNoPermission": "Allow microphone access in Settings to record voice notes.",
+  "msgVoiceTooShort": "That was too short to send.",
+  "msgVoiceFailed": "The voice note could not be sent. Please try again.",
+  "msgVoiceLimit": "Voice notes can be up to 5 minutes, so this one was sent.",
+  "lessonNewTitle": "New lesson",
+  "lessonTitleLabel": "Lesson title",
+  "lessonNotesLabel": "Lesson notes",
+  "lessonNotesHelp": "What you taught. Students read this under Lessons.",
+  "lessonPickClassForFiles": "Choose the class first to attach files.",
+  "lessonAudienceLabel": "Who can see it",
+  "lessonAudienceBoth": "Everyone",
+  "lessonAudienceStudents": "Students",
+  "lessonAudienceParents": "Parents",
+  "lessonClassRequired": "Choose the class this lesson is for.",
+  "lessonTitleRequired": "Give the lesson a title.",
+  "lessonContentRequired": "Write some notes or attach a file.",
+  "lessonSave": "Add lesson",
+  "lessonSaving": "Adding…",
+  "lessonCreated": "Lesson added.",
+  "lessonCreateFailed": "The lesson could not be added. Please try again.",
+  "academicAddLesson": "Add lesson",
+  "@academicAddLesson": {
+    "description": "Button on the teacher's Lessons feed that opens the new-lesson form."
+  },
+  "examMaterialHelp": "Attach the exam paper, a revision sheet or anything students need.",
+  "teacherCreateAction": "Create",
+  "@teacherCreateAction": {
+    "description": "The teacher's main button that opens the list of things they can create."
+  },
+  "teacherCreateTitle": "Create",
+  "teacherCreateLesson": "Lesson",
+  "teacherCreateLessonDetail": "Notes and files for a class",
+  "teacherCreateAssignment": "Assignment",
+  "teacherCreateAssignmentDetail": "Work students hand in, graded or not",
+  "teacherCreateExam": "Exam or assessment",
+  "teacherCreateExamDetail": "Marked in the gradebook, with its paper attached",
+  "teacherCreateAnnouncement": "Announcement",
+  "teacherCreateAnnouncementDetail": "Tell a class or its parents something",
+  "teacherCreateAttendance": "Attendance",
+  "teacherCreateAttendanceDetail": "Take today's register for a class",
+  "teacherPickClass": "Which class?",
+  "teacherNoClassesYet": "Create a class first, from the Classes tab.",
+  "academicThisClass": "This class",
+  "studyAssistantNewChat": "New chat",
+  "studyAssistantHistory": "Chat history",
+  "studyAssistantHistoryEmpty": "No chats yet. Your chats are kept on this device only.",
+  "studyAssistantOnDevice": "Kept on this device only",
+  "studyAssistantDeleteChat": "Delete chat",
+  "studyAssistantDeleteAll": "Delete all chats",
+  "studyAssistantDeleteAllConfirm": "Delete every chat on this device? This cannot be undone.",
+  "studyAssistantDelete": "Delete",
+  "studyAssistantCancel": "Cancel",
+  "studyAssistantSend": "Send",
+  "studyAssistantMessageHint": "Ask a question…",
+  "studyAssistantTooShort": "Write a little more first.",
+  "studyAssistantMessageCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@studyAssistantMessageCount": {
+    "description": "",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "studyAssistantYou": "You",
+  "studyAssistantHelperName": "Study helper",
+  "setupTitle": "Tell us about you",
+  "setupIntro": "We ask this once, the first time you sign in.",
+  "setupNameLabel": "Your name",
+  "setupNameHelp": "How your teachers, classmates and school will see you",
+  "setupNameRequired": "Enter your name.",
+  "setupGenderLabel": "Gender",
+  "setupGenderPrivate": "Only you can see this.",
+  "setupGenderGirl": "Girl",
+  "setupGenderBoy": "Boy",
+  "setupGenderPreferNot": "Prefer not to say",
+  "setupGenderRequired": "Choose an answer - \"Prefer not to say\" is fine.",
+  "setupContinue": "Continue",
+  "setupSaving": "Saving…",
+  "setupFailed": "That could not be saved. Please try again.",
+  "studyToolsTitle": "Quizzes & flashcards",
+  "studyToolsReady": "Make a quiz or flashcards from any lesson below.",
+  "studyToolsNoLessons": "They appear under each lesson once your teacher adds one.",
+  "studyToolsLocked": "Included with Studafy Max.",
+  "linksAdd": "Add link",
+  "linksAddTitle": "Add a link",
+  "linksInvalid": "Enter a full web address starting with https://",
+  "linksRemove": "Remove link",
+  "linksCancel": "Cancel",
+  "linksOpenTitle": "Open this link?",
+  "linksOpen": "Open",
+  "notebookFromLesson": "From a lesson",
+  "notebookPickLesson": "Choose a lesson",
+  "notebookNoLessons": "This class has no lessons yet.",
+  "notebookCopyLesson": "Copy into my notebook",
+  "notebookCopyLessonDetail": "The lesson as your teacher wrote it",
+  "notebookLessonNotes": "Turn into study notes",
+  "notebookLessonNotesDetail": "Headings, key terms and a summary - Studafy Plus",
+  "notebookLessonCopied": "Added to your notebook.",
+  "notebookFromLessonBadge": "From a lesson",
+  "notebookMyNotebooks": "My notebooks",
+  "notebookClassGone": "This class no longer exists - your notes are kept",
+  "notebookNoNotebooks": "No notes yet. Notes you write in a class appear here, by class.",
+  "notebookNoteCount": "{count, plural, =1{1 note} other{{count} notes}}",
+  "@notebookNoteCount": {
+    "description": "",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "classDeleteAction": "Delete class",
+  "classDeleteTitle": "Delete {name}?",
+  "@classDeleteTitle": {
+    "description": "",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "classDeleteBody": "The class disappears for you and your students, and its join link stops working. Students keep every note in their notebook for it - it will show that the class no longer exists.",
+  "classDeleteConfirm": "Delete class",
+  "classDeleteCancel": "Keep it",
+  "classDeleted": "Class deleted. Students keep their notes.",
+  "classDeleteFailed": "The class could not be deleted. Please try again.",
+  "helperAdd": "Add material or a photo",
+  "helperAddMaterial": "Class material",
+  "helperAddMaterialDetail": "A lesson or one of your notes to answer from",
+  "helperAddPhoto": "Photo from library",
+  "helperTakePhoto": "Take a photo",
+  "helperPhotoPlus": "Photos come with Studafy Plus.",
+  "helperPhotoChecking": "Checking the photo…",
+  "helperPhotoFailed": "The photo could not be sent. Please try again.",
+  "helperAnsweringFrom": "Answering from",
+  "helperRemove": "Remove",
+  "helperPickTitle": "Choose class material",
+  "helperPickClass": "Which class?",
+  "helperLessons": "Lessons",
+  "helperMyNotes": "My notes",
+  "helperPickDone": "Use these",
+  "helperPickLimit": "Up to 5 at a time.",
+  "helperNothingInClass": "This class has no lessons or notes yet.",
+  "helperNoClasses": "Join a class to use its lessons here.",
+  "upgradeDailyLimitTitle": "You've used today's questions",
+  "upgradeDailyLimitBody": "Your plan includes {count} questions a day. You can ask again tomorrow.",
+  "@upgradeDailyLimitBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "upgradeAllowanceTitle": "This month's AI allowance is used",
+  "upgradeAllowanceBody": "Your plan's AI allowance renews on the 1st of next month.",
+  "upgradeFeatureTitle": "This comes with {plan}",
+  "@upgradeFeatureTitle": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFeatureBody": "Your current plan does not include it.",
+  "upgradeWhatUnlocks": "What {plan} unlocks",
+  "@upgradeWhatUnlocks": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeLargerAllowance": "A larger monthly AI allowance",
+  "upgradeButton": "Upgrade",
+  "upgradeNotNow": "Not now",
+  "upgradeTopPlan": "You're on Studafy Max, the largest plan.",
+  "studyPlansIncludedInYourPlan": "Included in your plan",
+  "studyPlansUpgradeToName": "Upgrade to {name}",
+  "@studyPlansUpgradeToName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansUpgradeReplaces": "Your {current} subscription is replaced right away, and the store credits what you have already paid for.",
+  "@studyPlansUpgradeReplaces": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansRenewsOn": "Renews on {date}",
+  "@studyPlansRenewsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansCancelledUntil": "Cancelled. You keep {plan} until {date} and won't be charged again.",
+  "@studyPlansCancelledUntil": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansPausedNote": "Paused in Google Play. No charges while it is paused, and it resumes on its own.",
+  "studyPlansPaymentIssue": "{store} couldn't take the payment. Update your payment method to keep {plan}.",
+  "@studyPlansPaymentIssue": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansUpdatePayment": "Update payment method",
+  "studyPlansManageSubscription": "Manage subscription",
+  "studyPlansCancelSubscription": "Cancel subscription",
+  "studyPlansPaidByParent": "A parent pays for this plan. Only they can change or cancel it, from their own {store} account.",
+  "@studyPlansPaidByParent": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansBilledBy": "Billed monthly through {store}",
+  "@studyPlansBilledBy": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansEndOfPeriod": "the end of this billing period",
+  "studyPlansPayWithApple": "You pay with the payment method in your Apple Account, such as a card, or Apple Pay where Apple offers it. Studafy never sees your card.",
+  "studyPlansPayWithGoogle": "You pay with the payment method in your Google Play account, such as a card, or Google Pay where Google offers it. Studafy never sees your card.",
+  "studyPlansBuyInMobileApp": "Plans are bought in the Studafy app for iPhone or Android. A plan bought there works here when you sign in with the same account.",
+  "studyPlansBlockedAlready": "You already have this plan.",
+  "studyPlansBlockedParent": "A parent pays for your current plan, so only they can change it.",
+  "studyPlansBlockedOtherStore": "Your current plan is billed by {store}. Change it there, on the device you bought it with.",
+  "@studyPlansBlockedOtherStore": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "studyPlansBlockedOriginalAccount": "Google Play can only upgrade your plan from the Google account that bought it. Use that account in the Play Store, or cancel your current plan first.",
+  "cancelSheetTitle": "Before you cancel",
+  "cancelPauseTitle": "Pause instead",
+  "cancelPauseBody": "Take a break for 1 week to 3 months. You keep {plan} until {date}. Then it pauses: no {plan} features and no charges until it resumes on its own. You can resume early.",
+  "@cancelPauseBody": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelPauseButton": "Pause in Google Play",
+  "cancelCancelBody": "You keep {plan} until {date} and won't be charged again. After that you're on Studafy Free, and your notebook and lessons stay.",
+  "@cancelCancelBody": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelInStore": "Cancel in {store}",
+  "@cancelInStore": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelStoreNote": "{store} handles your subscription, so this opens its subscriptions page. Choose Studafy there.",
+  "@cancelStoreNote": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelKeepPlan": "Keep my plan",
+  "notificationCopyBillingSubscriptionActiveTitle": "Subscription active",
+  "notificationCopyBillingSubscriptionActiveDetail": "Your subscription is active. Apple or Google Play emails your receipt.",
+  "notificationCopyBillingSubscriptionRenewedTitle": "Subscription renewed",
+  "notificationCopyBillingSubscriptionRenewedDetail": "Your subscription renewed. Apple or Google Play emails your receipt.",
+  "notificationCopyBillingPaymentProblemTitle": "Payment problem",
+  "notificationCopyBillingPaymentProblemDetail": "Your subscription could not be renewed. Check your payment method in the App Store or Google Play.",
+  "notificationCopyBillingSubscriptionEndedTitle": "Subscription ended",
+  "notificationCopyBillingSubscriptionEndedDetail": "Your subscription has ended. You can subscribe again from Plans.",
+  "notificationCopySystemPushTestTitle": "Test notification",
+  "notificationCopySystemPushTestDetail": "Notifications are working on this device.",
+  "famLinkHasAccount": "My child has a Studafy account",
+  "famLinkHasAccountBody": "Find them by the Studafy ID on their profile. They approve the link from their account.",
+  "famLinkCreateAccount": "Create an account for my child",
+  "famLinkCreateAccountBody": "For a child with no email or phone. You manage the account and open it from yours. No approval from your child is needed.",
+  "famManagedTitle": "Child accounts you manage",
+  "famManagedHint": "Open your child's account to join their class with the class code. Their progress then shows here.",
+  "famManagedOpen": "Open account"
 }

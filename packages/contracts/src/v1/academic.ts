@@ -103,6 +103,14 @@ export const V1UpdateClassroomRequest = z.strictObject({
 });
 export type V1UpdateClassroomRequest = z.infer<typeof V1UpdateClassroomRequest>;
 
+/** Deleting a class: it is archived, and students keep their notebooks. */
+export const V1ArchiveClassroomRequest = z.strictObject({
+  expectedVersion: Version,
+});
+export type V1ArchiveClassroomRequest = z.infer<
+  typeof V1ArchiveClassroomRequest
+>;
+
 export const V1ReplaceScheduleRequest = z.strictObject({
   expectedVersion: Version,
   schedule: z.array(V1ScheduleSlotInput).max(21),

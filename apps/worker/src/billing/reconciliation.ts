@@ -15,10 +15,13 @@
  */
 import type { Logger } from "@studafy/observability";
 import {
+  appleRenewalStatus,
+  googleRenewalStatus,
   isAppleTransactionTrusted,
+  isGoogleAcknowledged,
   isGooglePackageNameTrusted,
-  mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
+  resolveAppleSubscriptionState,
 } from "@studafy/domain";
 import { normalizedErrorCode } from "../platform/jobGuards";
 import {
@@ -97,21 +100,28 @@ export function startBillingReconciliation(
       ) {
         throw new Error("apple transaction fails bundle/environment trust");
       }
-      const state = mapAppleTransactionTypeToState(
-        null,
-        signedStatus.revocationReason,
-        signedStatus.expiresDate,
-        Date.now(),
-      );
+      const { state, effectiveUntil } = resolveAppleSubscriptionState({
+        subscriptionStatus: signedStatus.subscriptionStatus,
+        revocationReason: signedStatus.revocationReason,
+        expiresDate: signedStatus.expiresDate,
+        gracePeriodExpiresDate: signedStatus.gracePeriodExpiresDate,
+        nowMillis: Date.now(),
+      });
       return dispatch.reconcileTransaction(candidate.transactionId, {
         platform: "app_store",
         environment: candidate.environment,
         originalTransactionId: signedStatus.originalTransactionId,
+        transactionId: signedStatus.transactionId,
+        storeProductId: signedStatus.productId,
         purchasedAt: new Date(signedStatus.purchaseDate).toISOString(),
-        effectiveUntil: signedStatus.expiresDate
-          ? new Date(signedStatus.expiresDate).toISOString()
+        effectiveUntil: effectiveUntil
+          ? new Date(effectiveUntil).toISOString()
           : null,
         state,
+        renewalStatus: appleRenewalStatus(
+          signedStatus.subscriptionStatus,
+          signedStatus.autoRenewing,
+        ),
         acknowledged: false,
       });
     }
@@ -137,7 +147,7 @@ export function startBillingReconciliation(
       ) ??
         "on_hold";
 
-      let acknowledged = verified.acknowledgementState === "2";
+      let acknowledged = isGoogleAcknowledged(verified.acknowledgementState);
       if (
         !acknowledged &&
         verified.subscriptionState !== "SUBSCRIPTION_STATE_EXPIRED"
@@ -161,6 +171,10 @@ export function startBillingReconciliation(
         purchasedAt: verified.startTime ?? candidate.purchasedAt,
         effectiveUntil: verified.expiryTime,
         state,
+        renewalStatus: googleRenewalStatus(
+          verified.subscriptionState,
+          verified.autoRenewEnabled,
+        ),
         acknowledged,
       });
     }

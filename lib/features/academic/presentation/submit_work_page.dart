@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
@@ -131,7 +132,7 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
             ),
             if (widget.instructions case final text? when text.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(text),
+              LinkedText(text),
             ],
             if (widget.material.isNotEmpty) ...[
               const SizedBox(height: 12),

@@ -6,8 +6,10 @@ import '../core/language_picker.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/account/presentation/delete_account_page.dart';
+import '../features/notifications/presentation/notification_preferences_page.dart';
 import '../features/session/presentation/account_security_page.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'account/account_switching.dart';
 import 'account/account_text.dart';
 import 'account/account_widgets.dart';
 import 'account/data_export_tile.dart';
@@ -22,12 +24,18 @@ class AccountButton extends StatelessWidget {
   const AccountButton({super.key});
 
   @override
-  Widget build(BuildContext context) => IconButton(
-    tooltip: AppL10n.of(context).accountTitle,
-    icon: const Icon(Icons.account_circle_outlined),
-    onPressed: () => Navigator.push(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const AccountHubPage()),
+  Widget build(BuildContext context) => GestureDetector(
+    // A long press goes straight to the account list, as on Instagram.
+    onLongPress: DeviceAccountsScope.maybeOf(context) == null
+        ? null
+        : () => openAccountSwitcher(context),
+    child: IconButton(
+      tooltip: AppL10n.of(context).accountTitle,
+      icon: const Icon(Icons.account_circle_outlined),
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const AccountHubPage()),
+      ),
     ),
   );
 }
@@ -44,6 +52,7 @@ class AccountHubPage extends StatelessWidget {
     final profile = context_.profile;
     final membership = context_.membership;
     final session = SessionScope.maybeOf(context);
+    final deviceAccounts = DeviceAccountsScope.maybeOf(context);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
@@ -72,6 +81,18 @@ class AccountHubPage extends StatelessWidget {
           Card(
             child: Column(
               children: [
+                // Several accounts on one device, Instagram-style, and a
+                // parent's child accounts.
+                if (deviceAccounts != null)
+                  ListTile(
+                    leading: const Icon(Icons.switch_account_outlined),
+                    title: Text(AppL10n.of(context).accountsSwitchAccount),
+                    subtitle: Text(
+                      AppL10n.of(context).accountsSwitchAccountDetail,
+                    ),
+                    trailing: Icon(forwardChevron(context)),
+                    onTap: () => openAccountSwitcher(context),
+                  ),
                 if (profile != null)
                   ListTile(
                     leading: const Icon(Icons.badge_outlined),
@@ -114,6 +135,21 @@ class AccountHubPage extends StatelessWidget {
                   trailing: Icon(forwardChevron(context)),
                   onTap: () => showStudafyLanguagePicker(context),
                 ),
+                // What each person is notified about, and how - adjusted
+                // here, with their other preferences, in every role.
+                ListTile(
+                  leading: const Icon(Icons.notifications_active_outlined),
+                  title: Text(
+                    AppL10n.of(context).notificationsNotificationPreferences,
+                  ),
+                  trailing: Icon(forwardChevron(context)),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationPreferencesPage(),
+                    ),
+                  ),
+                ),
                 if (session != null)
                   ListTile(
                     leading: const Icon(Icons.shield_outlined),
@@ -141,6 +177,12 @@ class AccountHubPage extends StatelessWidget {
           if (session != null)
             OutlinedButton(
               onPressed: () async {
+                // Only this account leaves the device; another one kept here
+                // opens next.
+                if (deviceAccounts != null) {
+                  await signOutOfDevice(context, deviceAccounts);
+                  return;
+                }
                 // Leaving is not allowed to fail. The interactor clears this
                 // device in a finally, so the only thing left to guarantee is
                 // that the person actually lands back on the role screen.

@@ -36,6 +36,8 @@ that references the old one.
 | [ADR-0028](ADR-0028-localization-rtl-and-locale-persistence.md) | Arabic as a switchable language: gen-l10n copy, device-scoped persistence, device-first resolution, RTL, untranslated user content, Western digits | Accepted for local/disposable use | DL-055 |
 | [ADR-0029](ADR-0029-study-plans-and-ai-lesson-tools.md) | Free Lessons and per-class notebook; Studafy Plus / Max resolved server-side; reserve-settle AI ledger with hard monthly caps; shared study sets; grounded AI gated | Accepted for local/disposable use | - |
 | [ADR-0030](ADR-0030-flat-sql-dispatchers.md) | Flatten rename-and-wrap SQL chains into named handlers behind one dispatcher, proved by differential checks; the migration gate bans new chains | Accepted for local/disposable use | - |
+| [ADR-0031](ADR-0031-managed-child-accounts-and-account-switching.md) | Parents create real student accounts for children with no email or phone, entered only through the parent by one-time sign-ins; several accounts per device with Instagram-style switching | Accepted for local/disposable use | - |
+| [ADR-0032](ADR-0032-subscription-lifecycle-and-backups.md) | Store-only subscriptions with upgrade-at-limit, renewal status, per-token store events, pause-first cancel, store receipts plus verified-only notices; daily encrypted backups restored on every run | Accepted for local/disposable use | - |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

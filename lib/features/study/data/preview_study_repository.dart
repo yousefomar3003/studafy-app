@@ -47,4 +47,20 @@ class PreviewStudyRepository implements StudyRepository {
   @override
   Future<StudySet> studySet(String resourceId, StudySetKind kind) =>
       throw const StudyException(StudyRefusal.unavailable);
+
+  @override
+  Future<List<NotebookGroup>> myNotebooks() async => [
+    for (final entry in _notes.entries)
+      if (entry.value.isNotEmpty)
+        NotebookGroup(
+          classroomId: entry.key,
+          className: entry.key,
+          classGone: false,
+          entries: List.of(entry.value),
+        ),
+  ];
+
+  @override
+  Future<NotebookEntry> lessonNotes(String resourceId) =>
+      throw const StudyException(StudyRefusal.planRequired);
 }
