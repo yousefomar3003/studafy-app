@@ -7,6 +7,7 @@ import {
   DEFAULT_PLATFORM_LIMITS,
   type PlatformEnv,
   type PlatformLimits,
+  ROUTE_LIMIT_OVERRIDES,
 } from "./types";
 
 const METHODS = new Set(["GET", "HEAD", "POST", "OPTIONS"]);
@@ -194,14 +195,20 @@ export function protocolControls(
       return c.body(null, 204);
     }
 
-    const limited = await boundedBody(c, limits.maxBodyBytes);
+    // Exact path match: an override never leaks to a neighbouring route.
+    const route = ROUTE_LIMIT_OVERRIDES[c.req.path];
+    const maxBodyBytes = route
+      ? Math.max(route.maxBodyBytes, limits.maxBodyBytes)
+      : limits.maxBodyBytes;
+    const maxJsonKeys = route
+      ? Math.max(route.maxJsonKeys, limits.maxJsonKeys)
+      : limits.maxJsonKeys;
+    const limited = await boundedBody(c, maxBodyBytes);
     if (limited) return limited;
     if (c.req.raw.body) {
       try {
         const value = JSON.parse(await c.req.raw.clone().text());
-        if (
-          !jsonShapeWithinLimits(value, limits.maxJsonDepth, limits.maxJsonKeys)
-        ) {
+        if (!jsonShapeWithinLimits(value, limits.maxJsonDepth, maxJsonKeys)) {
           return problem(c, "INVALID_REQUEST", 400);
         }
       } catch {
@@ -310,6 +317,14 @@ export function requestTelemetry(
           ? hmacSubject(identity.hmacKey, "log_ip", address)
           : null,
         ua_family: userAgentFamily(c.req.header("user-agent")),
+        // A request no route matched is logged under the wildcard it fell
+        // through to, which says nothing about what was asked for. The path
+        // carries only ids, never a query string, so it is safe to record
+        // and it is the one thing that makes a client/route mismatch
+        // diagnosable.
+        ...(c.req.routePath.endsWith("*") && status === 404
+          ? { unmatched_path: c.req.path }
+          : {}),
       });
     }
   };

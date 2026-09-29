@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../../l10n/generated/app_l10n.dart';
+
 /// Loads the existing API's widget page. Never carries access tokens or secrets.
 class FamilyChallengePage extends StatefulWidget {
   const FamilyChallengePage({super.key, required this.url});
@@ -76,17 +78,16 @@ class _FamilyChallengePageState extends State<FamilyChallengePage> {
 
   @override
   Widget build(BuildContext context) {
-    final ar = Localizations.localeOf(context).languageCode == 'ar';
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'تحقق سريع' : 'Security check')),
+      appBar: AppBar(
+        title: Text(AppL10n.of(context).familyChallengeSecurityCheck),
+      ),
       body: _failed
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  ar
-                      ? 'تعذر تحميل التحقق. ارجع وحاول مرة أخرى.'
-                      : 'The check could not load. Go back and try again.',
+                  AppL10n.of(context).familyChallengeTheCheckCouldNotLoad,
                 ),
               ),
             )

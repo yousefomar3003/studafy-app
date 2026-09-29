@@ -22,9 +22,10 @@ import {
   createFamilyRoutes,
   createStudentFamilyRoutes,
 } from "../../src/family/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const ADMIN = "5f440000-0000-4000-8000-0000000000a1";
 const GUARDIAN = "5f440000-0000-4000-8000-0000000000a2";
@@ -68,15 +69,9 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.guardian_links where student_id = ${STUDENT_ROW}::uuid`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid or actor_id = ${GUARDIAN}::uuid`;
-    await tx`delete from public.students where id = ${STUDENT_ROW}::uuid`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${ADMIN}::uuid, ${GUARDIAN}::uuid, ${STUDENT_USER}::uuid)`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [ADMIN, GUARDIAN, STUDENT_USER],
   });
 }
 

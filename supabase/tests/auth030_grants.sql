@@ -66,6 +66,20 @@ select is(
     -- Self-serve teacher sign-up, which creates the first workspace and its
     -- owning membership in one audited command (202609230001).
     'api045_command',
+    -- The student's Notebook and lesson study sets (202609270010): owner-only
+    -- notebook reads and writes, and study sets re-checked against the Max
+    -- plan and the lesson's visibility on every call.
+    'api046_command',
+    'api046_query',
+    -- The AI cost ledger (202609270009): reserve/settle/release against the
+    -- caller's own monthly cap, and their own usage summary.
+    'api047_ai_usage',
+    -- Managed child accounts (202609280004): list, register and authorise a
+    -- parent's sign-in to a child they manage, each re-deriving the caller.
+    'api048_managed_accounts',
+    -- Every notebook a student has, and the helper's lesson/note/photo reads
+    -- (202609290001, 202609290003, 202609290005): read-only, as the caller.
+    'api049_notebooks',
     -- FILE-050. Five narrow upload/file commands; each independently
     -- re-validates actor, tenant, membership, relationship, purpose and state.
     'api050_complete_upload',
@@ -107,6 +121,9 @@ select is(
     'billing_self_purchase_status',
     'billing_set_self_purchase',
     'billing_submit_verification',
+    -- Lesson notes kept per lesson version (202609290005): re-checks the
+    -- caller's plan and that the version is the one they can read.
+    'lesson_notes_cache_put',
     -- Family+ gate: a verified guardian link plus a live parent_insights
     -- entitlement, with the store environment read from the server's own
     -- single-row table rather than the request (202609240002).

@@ -25,9 +25,10 @@ import { PostgresAuthorizationRepository } from "../../src/authorization/reposit
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresClassJoinRepository } from "../../src/class-join/repository";
 import { createClassJoinRoutes } from "../../src/class-join/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const TEACHER = "5f520000-0000-4000-8000-0000000000a1";
 const OTHER_TEACHER = "5f520000-0000-4000-8000-0000000000a2";
@@ -101,23 +102,9 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.membership_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.class_join_links where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.enrollments where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.students where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.classroom_staff where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.classrooms where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.terms where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.membership_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.idempotency_records where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${TEACHER}::uuid, ${OTHER_TEACHER}::uuid, ${JOINER}::uuid)`;
-    await tx`alter table public.membership_events enable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [TEACHER, OTHER_TEACHER, JOINER],
   });
 }
 
@@ -139,6 +126,52 @@ async function request(path: string, input: RequestInput): Promise<Response> {
     headers,
     ...(input.body !== undefined ? { body: JSON.stringify(input.body) } : {}),
   });
+}
+
+/**
+ * The /v1 stack both suites run against. The first builds it without a code
+ * key, proving links alone still work; the second switches JOIN-053 on.
+ */
+function buildApp(
+  repository: PostgresClassJoinRepository,
+  authorization: ReturnType<typeof createAuthorizationDependencies>,
+  idempotency: {
+    logger: ReturnType<typeof createJsonLogger>;
+    repository: PostgresIdempotencyRepository;
+  },
+): Hono<AuthorizationEnv> {
+  const built = new Hono<AuthorizationEnv>();
+  built.use("*", async (c, next) => {
+    const subject = c.req.header("x-test-subject")!;
+    const context = await contexts.load(subject);
+    if (!context) return c.text("unauthenticated", 401);
+    const actor: Actor = {
+      token: {
+        subject,
+        sessionId: null,
+        issuedAt: 1,
+        expiresAt: 4_000_000_000,
+        assuranceLevel: testAssurance(c),
+        authMethods: [],
+        claims: {},
+      },
+      context,
+      aal2: testAssurance(c) === "aal2",
+      mfaRequiredByPolicy: false,
+    };
+    c.set("requestId", crypto.randomUUID());
+    c.set("actor", actor);
+    await next();
+  });
+  built.route(
+    "/",
+    createClassJoinRoutes(
+      { repository, cursorSigningKey: CURSOR_KEY },
+      authorization,
+      idempotency,
+    ),
+  );
+  return built;
 }
 
 suite("JOIN-052 class join links over the real /v1 stack", () => {
@@ -164,39 +197,10 @@ suite("JOIN-052 class join links over the real /v1 stack", () => {
       repository: new PostgresIdempotencyRepository(sql),
     };
 
-    app = new Hono<AuthorizationEnv>();
-    app.use("*", async (c, next) => {
-      const subject = c.req.header("x-test-subject")!;
-      const context = await contexts.load(subject);
-      if (!context) return c.text("unauthenticated", 401);
-      const actor: Actor = {
-        token: {
-          subject,
-          sessionId: null,
-          issuedAt: 1,
-          expiresAt: 4_000_000_000,
-          assuranceLevel: testAssurance(c),
-          authMethods: [],
-          claims: {},
-        },
-        context,
-        aal2: testAssurance(c) === "aal2",
-        mfaRequiredByPolicy: false,
-      };
-      c.set("requestId", crypto.randomUUID());
-      c.set("actor", actor);
-      await next();
-    });
-    app.route(
-      "/",
-      createClassJoinRoutes(
-        {
-          repository: new PostgresClassJoinRepository(sql),
-          cursorSigningKey: CURSOR_KEY,
-        },
-        authorization,
-        idempotency,
-      ),
+    app = buildApp(
+      new PostgresClassJoinRepository(sql),
+      authorization,
+      idempotency,
     );
   });
 
@@ -256,7 +260,10 @@ suite("JOIN-052 class join links over the real /v1 stack", () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json() as Record<string, unknown>;
-    expect(body["token"]).toBeUndefined();
+    // Without a code key the token is random and was never stored, so there
+    // is nothing to re-derive: the field is present but empty.
+    expect(body["token"] ?? null).toBeNull();
+    expect(body["derivationSalt"]).toBeUndefined();
     expect(body["classroomId"]).toBe(CLASSROOM);
   });
 
@@ -338,5 +345,205 @@ suite("JOIN-052 class join links over the real /v1 stack", () => {
     );
     expect(revoke.status).toBe(200);
     expect((await revoke.json() as { status: string }).status).toBe("revoked");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// JOIN-053: the same link as an eight-character code.
+//
+// A code is short enough to guess in a way a 43-character token is not, so
+// these assert what stops that mattering: it is stored keyed, it resolves to
+// exactly one live link, and it dies with the link it belongs to.
+// ---------------------------------------------------------------------------
+const CODE_KEY = "join053-integration-code-key-000000000001";
+const CODE_SHAPE = /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
+
+suite("JOIN-053 class codes over the real /v1 stack", () => {
+  let code: string;
+
+  async function mint(): Promise<{ code: string | null; token: string }> {
+    const res = await request(`/v1/classrooms/${CLASSROOM}/join-link`, {
+      method: "POST",
+      subject: TEACHER,
+      body: {},
+    });
+    expect(res.status).toBe(201);
+    return await res.json() as { code: string | null; token: string };
+  }
+
+  beforeAll(async () => {
+    sql = createDatabase(databaseUrl!);
+    await cleanup();
+    await seed();
+    contexts = new AuthContextRepository(sql);
+    const logger = createJsonLogger(
+      "api",
+      "join053-integration",
+      "debug" as LogLevel,
+      () => undefined,
+    );
+    app = buildApp(
+      new PostgresClassJoinRepository(sql, CODE_KEY),
+      createAuthorizationDependencies(
+        logger,
+        new PostgresAuthorizationRepository(sql),
+      ),
+      { logger, repository: new PostgresIdempotencyRepository(sql) },
+    );
+  });
+
+  afterAll(async () => {
+    if (!sql) return;
+    await cleanup();
+    await sql.end({ timeout: 5 });
+  });
+
+  test("minting a link also yields a readable code", async () => {
+    const minted = await mint();
+    expect(minted.code).toMatch(CODE_SHAPE);
+    code = minted.code!;
+  });
+
+  test("the stored code is keyed, not the code or its plain digest", async () => {
+    const rows = await sql<{ code_hash: string }[]>`
+      select code_hash from public.class_join_links
+      where classroom_id = ${CLASSROOM}::uuid and status = 'active'
+    `;
+    const stored = rows[0]!.code_hash;
+    expect(stored).toMatch(/^[0-9a-f]{64}$/);
+    const canonical = code.replace("-", "");
+    expect(stored).not.toContain(canonical);
+    const plain = [
+      ...new Uint8Array(
+        await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(canonical),
+        ),
+      ),
+    ].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    expect(stored).not.toBe(plain);
+  });
+
+  test("a student types the code, however loosely, and joins", async () => {
+    // Lower case and no dash: what a child actually types.
+    const typed = code.toLowerCase().replace("-", " ");
+    const res = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code: typed },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as { classroomId: string };
+    expect(body.classroomId).toBe(CLASSROOM);
+    const enrolled = await sql<{ count: string }[]>`
+      select count(*)::text as count from public.enrollments e
+      join public.students s on s.id = e.student_id
+      where s.user_id = ${JOINER}::uuid and e.classroom_id = ${CLASSROOM}::uuid
+    `;
+    expect(enrolled[0]!.count).toBe("1");
+  });
+
+  test("a wrong code joins nothing", async () => {
+    const res = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code: "ZZZZ-ZZZZ" },
+    });
+    expect(res.status).toBe(404);
+  });
+
+  test("a code and a token together are refused", async () => {
+    const res = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code, token: "x".repeat(43) },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("something that cannot be a code is refused without a lookup", async () => {
+    const res = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code: "0000-0000" },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  async function readBack() {
+    const res = await request(`/v1/classrooms/${CLASSROOM}/join-link`, {
+      subject: TEACHER,
+    });
+    expect(res.status).toBe(200);
+    return await res.json() as Record<string, unknown>;
+  }
+
+  test("opening the invite again shows the same code, not a new one", async () => {
+    // The teacher shares a code once. Looking it up again must not change
+    // it, and must not revoke the one already on the board.
+    const first = await readBack();
+    const second = await readBack();
+    expect(first["code"]).toBe(code);
+    expect(second["code"]).toBe(code);
+    expect(typeof first["token"]).toBe("string");
+    expect(second["token"]).toBe(first["token"]);
+    // The salt the API derives them from never leaves it.
+    expect(first["derivationSalt"]).toBeUndefined();
+  });
+
+  test("the code read back is the one that joins", async () => {
+    const res = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code: (await readBack())["code"] },
+    });
+    // The joiner is already in the class from the test above, so the answer
+    // is "already a member" - which proves the code resolved to this link.
+    // A code that matched nothing would be 404.
+    expect(res.status).not.toBe(404);
+    expect(res.status).toBeLessThan(500);
+  });
+
+  test("another class's teacher cannot read this class's code", async () => {
+    const res = await request(`/v1/classrooms/${CLASSROOM}/join-link`, {
+      subject: OTHER_TEACHER,
+    });
+    expect(res.status).toBe(404);
+  });
+
+  test("re-issuing the link retires the old code with it", async () => {
+    const replacement = await mint();
+    expect(replacement.code).toMatch(CODE_SHAPE);
+    expect(replacement.code).not.toBe(code);
+    // OTHER_TEACHER is staff at this school and would be refused anyway, so a
+    // fresh probe of the retired code is made as the enrolled joiner: a dead
+    // code is simply not found.
+    const old = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code },
+    });
+    expect(old.status).toBe(404);
+    code = replacement.code!;
+    // And reading it back now shows the new code.
+    expect((await readBack())["code"]).toBe(code);
+  });
+
+  test("revoking the link kills its code", async () => {
+    const link = await sql<{ id: string }[]>`
+      select id from public.class_join_links
+      where classroom_id = ${CLASSROOM}::uuid and status = 'active'
+    `;
+    const revoke = await request(
+      `/v1/class-join-links/${link[0]!.id}/revoke`,
+      { method: "POST", subject: TEACHER, body: {} },
+    );
+    expect(revoke.status).toBe(200);
+    const res = await request("/v1/class-join-links/redeem", {
+      method: "POST",
+      subject: JOINER,
+      body: { code },
+    });
+    expect(res.status).toBe(404);
   });
 });

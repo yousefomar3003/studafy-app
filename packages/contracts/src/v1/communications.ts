@@ -50,6 +50,14 @@ export const V1Message = z.strictObject({
   body: z.string(),
   createdAt: z.string().datetime({ offset: true }),
   attachments: z.array(V1FileAttachment).max(5),
+  /**
+   * The sender's receipt, on their own messages only: `sent` once the server
+   * has it, `delivered` once every other participant's app has fetched it,
+   * `read` once every one of them has opened the conversation since. Null on
+   * other people's messages. Optional because a replayed send stored before
+   * receipts existed has none.
+   */
+  status: z.enum(["sent", "delivered", "read"]).nullable().optional(),
 });
 export type V1Message = z.infer<typeof V1Message>;
 
@@ -61,9 +69,18 @@ export type V1MessagePage = z.infer<typeof V1MessagePage>;
 
 export const V1SendMessageRequest = z.strictObject({
   clientMessageId: Id,
-  body: z.string().trim().min(1).max(4000),
+  /** May be empty when something is attached - a voice note needs no text. */
+  body: z.string().trim().max(4000),
   /** Uploads of purpose `message_attachment`, owned by the sender. */
   attachmentFileIds: attachmentFileIds(),
+}).superRefine((value, context) => {
+  if (value.body.length === 0 && (value.attachmentFileIds ?? []).length === 0) {
+    context.addIssue({
+      code: "custom",
+      path: ["body"],
+      message: "A message needs text or an attachment.",
+    });
+  }
 });
 export type V1SendMessageRequest = z.infer<typeof V1SendMessageRequest>;
 
@@ -124,3 +141,31 @@ export const V1ContactPage = z.strictObject({
   nextCursor: z.string().nullable(),
 });
 export type V1ContactPage = z.infer<typeof V1ContactPage>;
+
+/** Opening a conversation: everything in it up to now has been read. */
+export const V1MarkConversationReadRequest = z.strictObject({});
+export type V1MarkConversationReadRequest = z.infer<
+  typeof V1MarkConversationReadRequest
+>;
+
+export const V1MarkConversationReadResponse = z.strictObject({
+  conversationId: z.string().uuid(),
+  readAt: z.string().datetime({ offset: true }),
+});
+export type V1MarkConversationReadResponse = z.infer<
+  typeof V1MarkConversationReadResponse
+>;
+
+/** The caller's app has fetched their conversations: all is delivered. */
+export const V1AcknowledgeDeliveryRequest = z.strictObject({});
+export type V1AcknowledgeDeliveryRequest = z.infer<
+  typeof V1AcknowledgeDeliveryRequest
+>;
+
+export const V1AcknowledgeDeliveryResponse = z.strictObject({
+  acknowledgedAt: z.string().datetime({ offset: true }),
+  conversations: z.number().int().nonnegative(),
+});
+export type V1AcknowledgeDeliveryResponse = z.infer<
+  typeof V1AcknowledgeDeliveryResponse
+>;

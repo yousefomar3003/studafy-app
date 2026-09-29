@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../l10n/generated/app_l10n.dart';
-import '../../../core/file_upload_repository.dart';
 import '../../../core/attachment_field.dart';
+import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
+import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'submission_history_view.dart';
 
 /// A student handing work in against an assignment.
 ///
@@ -22,9 +26,11 @@ class SubmitWorkPage extends StatefulWidget {
     this.schoolId,
     this.studentId,
     this.attachmentSource,
+    this.material = const [],
+    this.instructions,
   });
 
-  final AcademicRepository repository;
+  final AssignmentRepository repository;
   final String assignmentId;
   final String assignmentTitle;
 
@@ -39,6 +45,13 @@ class SubmitWorkPage extends StatefulWidget {
 
   /// Overrides the platform picker. Tests supply their own.
   final AttachmentSource? attachmentSource;
+
+  /// What the teacher attached to the work - the worksheet, the reading.
+  /// Shown above the answer, because it is usually what the answer is about.
+  final List<StoredAttachment> material;
+
+  /// The teacher's instructions, when the caller has them.
+  final String? instructions;
 
   /// False for work that is not open, so a student is told before typing
   /// rather than after.
@@ -117,6 +130,21 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
               widget.assignmentTitle,
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            if (widget.instructions case final text? when text.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              LinkedText(text),
+            ],
+            if (widget.material.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                l10n.submitMaterialHeading,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              StoredAttachmentList(
+                attachments: widget.material,
+                uploads: widget.uploads,
+              ),
+            ],
             const SizedBox(height: 12),
             if (!widget.canSubmit)
               Text(
@@ -136,7 +164,10 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
                   border: const OutlineInputBorder(),
                 ),
               ),
-              if (widget.uploads case final uploads?)
+              // A guardian's route into this page has no uploads to hand it;
+              // the app-wide scope is the same pipeline either way.
+              if (widget.uploads ?? UploadsScope.maybeOf(context)
+                  case final uploads?)
                 if (widget.schoolId case final schoolId?)
                   AttachmentField(
                     purpose: FilePurpose.assignmentSubmission,
@@ -173,6 +204,18 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
                 child: Text(_sending ? l10n.submitSending : l10n.submitSend),
               ),
             ],
+            // What has already been handed in - including by a parent - so
+            // a resubmission is made knowing what it replaces.
+            const SizedBox(height: 24),
+            SubmissionHistoryView(
+              repository: widget.repository,
+              assignmentId: widget.assignmentId,
+              studentId: widget.studentId,
+              uploads: widget.uploads,
+              shrinkWrap: true,
+              hideWhenEmpty: true,
+              title: l10n.historyYours,
+            ),
           ],
         ),
       ),

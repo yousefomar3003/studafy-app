@@ -36,7 +36,7 @@ re-runs the checks on every push.
    licence-scanning CI job or `pana`-based check in Phase 1.
 2. **No automated dependency-update or provenance/SBOM workflow** (matches the
    audit's supply-chain gap). New runtime dependencies require review per
-   instructions.md.
+   docs/planning/instructions.md.
 3. GPL-pattern packages detected in the Dart inventory (2 hits) need
    confirmation they are dev-only/transitive and compatible with a store
    release; flagged for the licence review.

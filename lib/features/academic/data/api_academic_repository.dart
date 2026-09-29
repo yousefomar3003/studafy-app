@@ -1,35 +1,34 @@
 import '../../../core/failures.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/academic_repository.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
-  ApiAcademicRepository(this._client, {ActiveContextController? context})
-    : _context = context ?? ActiveContextController.instance;
+  /// [context] is the signed-in person's active school and child; it is
+  /// passed in so the repository never reaches for a global.
+  ApiAcademicRepository(this._client, {required this._context});
 
   final V1ApiClient _client;
   final ActiveContextController _context;
-  final Map<String, String> _pendingKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   String get _schoolId {
     final value = _context.membership;
-    if (value == null || !value.active) throw Failure.unauthorized;
-    return value.schoolId;
+    if (value != null && value.active) return value.schoolId;
+    // A guardian holds no membership; their school is the child's they are
+    // looking at. The server authorizes each read on the guardian link.
+    final child = _context.selectedStudent?.schoolId;
+    if (value == null && child != null) return child;
+    throw Failure.unauthorized;
   }
 
-  String _key(String fingerprint) => _pendingKeys.putIfAbsent(
-    fingerprint,
-    () =>
-        'academic-${DateTime.now().microsecondsSinceEpoch}-${fingerprint.hashCode.abs()}',
-  );
-
+  /// Runs a command under one key until it succeeds, so a retry replays it.
   Future<void> _done(
     String fingerprint,
     Future<void> Function(String key) command,
-  ) async {
-    await command(_key(fingerprint));
-    _pendingKeys.remove(fingerprint);
-  }
+  ) => _keys.run('academic', fingerprint, command);
 
   @override
   Future<List<AcademicRecord>> load(
@@ -53,6 +52,9 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.body ?? '',
               state: x.state,
               version: x.version,
+              date: x.publishedAt == null
+                  ? null
+                  : DateTime.tryParse(x.publishedAt!)?.toLocal(),
               classroomId: x.classroomId,
             ),
         ];
@@ -72,6 +74,8 @@ class ApiAcademicRepository implements AcademicRepository {
               state: x.state,
               version: x.version,
               classroomId: x.classroomId,
+              attachments: _attachments(x.attachments),
+              maximumScore: x.maximumScore?.toDouble(),
             ),
         ];
       case AcademicFeed.assessments:
@@ -82,6 +86,9 @@ class ApiAcademicRepository implements AcademicRepository {
           pageSize: 100,
         );
         return [
+          // Every assessment, including the marks for graded assignments:
+          // the gradebook enters marks on those. The Assessments screen
+          // leaves them out, since they are listed with their assignment.
           for (final x in page.items)
             AcademicRecord(
               id: x.id,
@@ -90,6 +97,8 @@ class ApiAcademicRepository implements AcademicRepository {
               state: x.state,
               version: x.version,
               classroomId: x.classroomId,
+              attachments: _attachments(x.attachments),
+              markedAssignmentId: x.assignmentId,
             ),
         ];
       case AcademicFeed.grades:
@@ -151,23 +160,28 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> createResource(TextResourceDraft draft) => _done(
-    'resource:${draft.classroomId}:${draft.title}:${draft.body}',
-    (key) async {
-      await _client.createResource(
-        V1CreateResourceRequestDto(
-          schoolId: _schoolId,
-          classroomId: draft.classroomId,
-          title: draft.title,
-          resourceType: 'lesson_note',
-          body: draft.body,
-          audience: 'both',
-          lessonSessionId: draft.lessonSessionId,
-        ),
-        idempotencyKey: key,
-      );
-    },
-  );
+  Future<void> createResource(TextResourceDraft draft) =>
+      _done('resource:${draft.classroomId}:${draft.title}:${draft.body}:'
+          '${draft.audience}', (key) async {
+        final created = await _client.createResource(
+          V1CreateResourceRequestDto(
+            schoolId: _schoolId,
+            classroomId: draft.classroomId,
+            title: draft.title,
+            resourceType: 'lesson_note',
+            body: draft.body,
+            audience: draft.audience,
+            lessonSessionId: draft.lessonSessionId,
+          ),
+          idempotencyKey: key,
+        );
+        // A lesson is created as a draft, which students and parents never
+        // see. Inside the same retry scope, so a retry replays the create
+        // and publishes that rather than filing a second copy.
+        if (draft.publish && created.state == 'draft') {
+          await publishResource(created.id, created.version);
+        }
+      });
 
   @override
   Future<void> reviseResource(
@@ -217,18 +231,50 @@ class ApiAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> createAssignment(AssignmentDraft draft) => _done(
-    'assignment:${draft.classroomId}:${draft.title}:${draft.dueAt.toUtc().toIso8601String()}',
+    // The files are part of the work: retrying with a different set is a
+    // different request, not a replay of the first.
+    'assignment:${draft.classroomId}:${draft.title}:'
+    '${draft.dueAt.toUtc().toIso8601String()}:'
+    '${draft.attachmentFileIds.join(',')}',
     (key) async {
-      await _client.createAssignment(
+      final created = await _client.createAssignment(
         V1CreateAssignmentRequestDto(
           classroomId: draft.classroomId,
           title: draft.title,
           instructions: draft.instructions,
           dueAt: draft.dueAt.toUtc().toIso8601String(),
           closesAt: draft.closesAt?.toUtc().toIso8601String(),
+          attachmentFileIds: draft.attachmentFileIds.isEmpty
+              ? null
+              : draft.attachmentFileIds,
         ),
         idempotencyKey: key,
       );
+      // Inside the same retry scope: if publishing fails, a retry replays
+      // the create (same key, same response) and publishes that, rather
+      // than creating a second copy.
+      if (draft.publish && created.state == 'draft') {
+        await publishAssignment(created.id, created.version);
+      }
+      // Graded: the mark lives on an assessment linked to this assignment,
+      // which is what the gradebook reads. The student still hands in the
+      // assignment itself.
+      final score = draft.maximumScore;
+      if (score != null) {
+        await createAssessment(
+          AssessmentDraft(
+            classroomId: draft.classroomId,
+            title: draft.title,
+            maximumScore: score,
+            questions: const [],
+            category: 'assignment',
+            delivery: 'paper',
+            scheduledAt: draft.dueAt,
+            publish: draft.publish,
+            assignmentId: created.id,
+          ),
+        );
+      }
     },
   );
 
@@ -260,8 +306,9 @@ class ApiAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> createAssessment(AssessmentDraft draft) =>
-      _done('assessment:${draft.classroomId}:${draft.title}', (key) async {
-        await _client.createAssessment(
+      _done('assessment:${draft.classroomId}:${draft.title}:'
+          '${draft.attachmentFileIds.join(',')}', (key) async {
+        final created = await _client.createAssessment(
           V1CreateAssessmentRequestDto(
             classroomId: draft.classroomId,
             title: draft.title,
@@ -269,6 +316,10 @@ class ApiAcademicRepository implements AcademicRepository {
             maximumScore: draft.maximumScore,
             scheduledAt: draft.scheduledAt?.toUtc().toIso8601String(),
             delivery: draft.delivery,
+            assignmentId: draft.assignmentId,
+            attachmentFileIds: draft.attachmentFileIds.isEmpty
+                ? null
+                : draft.attachmentFileIds,
             questions: [
               for (var i = 0; i < draft.questions.length; i++)
                 V1AssessmentQuestionDraftDto(
@@ -281,6 +332,9 @@ class ApiAcademicRepository implements AcademicRepository {
           ),
           idempotencyKey: key,
         );
+        if (draft.publish && created.state == 'draft') {
+          await publishAssessment(created.id, created.version);
+        }
       });
 
   @override
@@ -401,6 +455,39 @@ class ApiAcademicRepository implements AcademicRepository {
     } while (cursor != null);
     return items;
   }
+
+  @override
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  }) async {
+    final page = await _client.listSubmissionHistory(
+      assignmentId: assignmentId,
+      studentId: studentId,
+    );
+    return [
+      for (final item in page.items)
+        SubmissionAttempt(
+          id: item.id,
+          submittedAt: DateTime.parse(item.submittedAt).toLocal(),
+          current: item.current,
+          answerText: item.answerText,
+          submittedByGuardianId: item.submittedByGuardianId,
+          submittedByGuardianName: item.submittedByGuardianName,
+          attachments: _attachments(item.attachments),
+        ),
+    ];
+  }
+
+  @override
+  Future<void> archiveClassroom(String classroomId, int expectedVersion) =>
+      _done('archive:$classroomId:$expectedVersion', (key) async {
+        await _client.archiveClassroom(
+          V1ArchiveClassroomRequestDto(expectedVersion: expectedVersion),
+          classroomId: classroomId,
+          idempotencyKey: key,
+        );
+      });
 
   @override
   Future<void> replaceSchedule(
@@ -528,9 +615,35 @@ class ApiAcademicRepository implements AcademicRepository {
     // children each guardian is linked to. Matching on id, never on display
     // name: a class can hold two children called the same thing.
     final byStudent = <String, List<StudentGuardian>>{};
+    try {
+      await _guardiansByStudent(byStudent);
+    } on Object {
+      // Guardians are extra detail on a roster, not the roster. A school
+      // where messaging is restricted, or a contact read that fails, must
+      // still let a teacher see their class and what it handed in.
+      byStudent.clear();
+    }
+
+    return [
+      for (final student in students)
+        ClassStudent(
+          id: student.id,
+          displayName: student.displayName,
+          studafyId: student.studafyId,
+          guardians: byStudent[student.id] ?? const [],
+        ),
+    ];
+  }
+
+  Future<void> _guardiansByStudent(
+    Map<String, List<StudentGuardian>> byStudent,
+  ) async {
     String? contactCursor;
     do {
       final page = await _client.listContacts(
+        // Contacts are per school; the server refuses a read that does not
+        // say which.
+        schoolId: _schoolId,
         cursor: contactCursor,
         pageSize: 100,
       );
@@ -548,16 +661,6 @@ class ApiAcademicRepository implements AcademicRepository {
       }
       contactCursor = page.nextCursor;
     } while (contactCursor != null);
-
-    return [
-      for (final student in students)
-        ClassStudent(
-          id: student.id,
-          displayName: student.displayName,
-          studafyId: student.studafyId,
-          guardians: byStudent[student.id] ?? const [],
-        ),
-    ];
   }
 
   @override
@@ -734,4 +837,17 @@ class ApiAcademicRepository implements AcademicRepository {
       key,
     );
   });
+
+  static List<StoredAttachment> _attachments(
+    List<V1FileAttachmentDto>? items,
+  ) => [
+    for (final dto in items ?? const <V1FileAttachmentDto>[])
+      StoredAttachment(
+        id: dto.id,
+        displayName: dto.displayName,
+        sizeBytes: dto.sizeBytes,
+        scanState: dto.scanState,
+        mediaType: dto.mediaType,
+      ),
+  ];
 }

@@ -2,17 +2,24 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_field.dart';
+import '../../../core/attachment_opener.dart';
 import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/idempotency.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/platform_voice_notes.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/uploads_scope.dart';
+import '../../../core/voice_note.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'blocked_people_page.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 import 'safety_sheets.dart';
-import '../../../core/file_upload_repository.dart';
-import '../../../core/attachment_field.dart';
-import '../../../core/platform_attachment_source.dart';
-import '../../../core/uploads_scope.dart';
+import 'voice_note_widgets.dart';
 
 /// One conversation. Report and block controls are always one tap away in
 /// the app bar, and any message can be reported with a long press.
@@ -23,6 +30,9 @@ class ConversationPage extends StatefulWidget {
     required this.myUserId,
     this.uploads,
     this.attachmentSource,
+    this.voiceRecorder,
+    this.voicePlayer,
+    this.refreshEvery = const Duration(seconds: 4),
   });
 
   final Conversation conversation;
@@ -34,6 +44,14 @@ class ConversationPage extends StatefulWidget {
 
   /// Overrides the platform picker. Tests supply their own.
   final AttachmentSource? attachmentSource;
+
+  /// Override the microphone and the speaker. Tests supply their own; the
+  /// platform ones are only made when first used.
+  final VoiceRecorder Function()? voiceRecorder;
+  final VoicePlayer Function()? voicePlayer;
+
+  /// How often an open chat re-reads its newest messages.
+  final Duration refreshEvery;
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -64,18 +82,81 @@ class _ConversationPageState extends State<ConversationPage> {
   /// Kept across retries of one draft, so a resend never duplicates it.
   String? _pendingClientId;
 
+  /// Voice notes: one recording at a time, one note playing at a time.
+  VoiceRecorder? _recorder;
+  VoicePlayer? _player;
+  bool _recording = false;
+  bool _sendingVoice = false;
+
+  VoicePlayer _voicePlayer() =>
+      _player ??= (widget.voicePlayer ?? PlatformVoicePlayer.new)();
+
   Conversation get _conversation => widget.conversation;
+
+  /// Re-reads the newest messages while the chat is open, so replies appear
+  /// and my ticks move from one to two to blue without leaving the screen.
+  Timer? _refresher;
 
   @override
   void initState() {
     super.initState();
     unawaited(_load());
+    _refresher = Timer.periodic(widget.refreshEvery, (_) => _refreshLatest());
   }
 
   @override
   void dispose() {
+    _refresher?.cancel();
     _composer.dispose();
+    unawaited(_recorder?.dispose());
+    unawaited(_player?.dispose());
     super.dispose();
+  }
+
+  /// Opening the chat is reading it. Failure is silent: the only effect is
+  /// that the sender's ticks stay grey a little longer.
+  void _markRead() =>
+      unawaited(MessagingScope.of(context).markRead(_conversation.id));
+
+  bool _refreshing = false;
+
+  Future<void> _refreshLatest() async {
+    if (_refreshing || _loading || _sending || !mounted) return;
+    _refreshing = true;
+    try {
+      final page = await MessagingScope.of(context).messages(_conversation.id);
+      if (!mounted) return;
+      page.fold(
+        onSuccess: (value) {
+          final known = {for (final m in _messages) m.id};
+          final arrived = value.items.any(
+            (m) => !known.contains(m.id) && m.senderId != widget.myUserId,
+          );
+          final fresh = {for (final m in value.items) m.id};
+          // The newest page replaces its own slice (which carries the latest
+          // ticks); anything older that was already loaded stays below it.
+          final oldestFresh = value.items.isEmpty
+              ? null
+              : value.items.last.createdAt;
+          setState(() {
+            final older = [
+              for (final m in _messages)
+                if (!fresh.contains(m.id) &&
+                    (oldestFresh == null || m.createdAt.isBefore(oldestFresh)))
+                  m,
+            ];
+            _messages
+              ..clear()
+              ..addAll(value.items)
+              ..addAll(older);
+          });
+          if (arrived) _markRead();
+        },
+        onFailure: (_) {},
+      );
+    } finally {
+      _refreshing = false;
+    }
   }
 
   Future<void> _load() async {
@@ -93,6 +174,7 @@ class _ConversationPageState extends State<ConversationPage> {
             ..addAll(value.items);
           _olderCursor = value.nextCursor;
           _loadError = null;
+          _markRead();
         },
         onFailure: (failure) =>
             _loadError = messagingFailureText(context, failure),
@@ -163,16 +245,103 @@ class _ConversationPageState extends State<ConversationPage> {
           _attachmentsKey = UniqueKey();
         },
         onFailure: (failure) => _sendError = failure.code == Failure.networkCode
-            ? messagingText(context, 'sendFailed')
+            ? AppL10n.of(context).msgSendFailed
             : messagingFailureText(context, failure),
       );
     });
   }
 
+  FileUploadRepository? get _uploads =>
+      widget.uploads ?? UploadsScope.maybeOf(context);
+
+  Future<void> _startRecording() async {
+    if (_recording || _sendingVoice || _sending) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppL10n.of(context);
+    final recorder = _recorder ??=
+        (widget.voiceRecorder ?? PlatformVoiceRecorder.new)();
+    try {
+      if (!await recorder.requestPermission()) {
+        messenger.showMessage(l10n.msgVoiceNoPermission);
+        return;
+      }
+      await recorder.start();
+    } on Object {
+      messenger.showMessage(l10n.msgVoiceFailed);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _recording = true;
+        _sendError = null;
+      });
+    }
+  }
+
+  Future<void> _discardRecording() async {
+    setState(() => _recording = false);
+    await _recorder?.cancel();
+  }
+
+  /// Uploads the note as a message attachment and sends it as a message of
+  /// its own, with no text - the way WhatsApp does.
+  Future<void> _sendRecording({required bool reachedLimit}) async {
+    final uploads = _uploads;
+    final recorder = _recorder;
+    if (uploads == null || recorder == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppL10n.of(context);
+    final interactor = MessagingScope.of(context);
+    setState(() {
+      _recording = false;
+      _sendingVoice = true;
+    });
+    String? error;
+    try {
+      final note = await recorder.stop();
+      if (note == null || note.duration < voiceNoteMinimum) {
+        messenger.showMessage(l10n.msgVoiceTooShort);
+        return;
+      }
+      if (reachedLimit) messenger.showMessage(l10n.msgVoiceLimit);
+      final file = await uploads.upload(
+        FileUploadCommand(
+          attemptId: newIdempotencyKey('voice-note'),
+          schoolId: _conversation.schoolId,
+          purpose: FilePurpose.messageAttachment,
+          displayName: l10n.msgVoiceMessage,
+          mediaType: voiceNoteMediaType,
+          bytes: note.bytes,
+        ),
+      );
+      final result = await interactor.send(
+        _conversation.id,
+        '',
+        clientMessageId: interactor.newClientMessageId(),
+        attachmentFileIds: [file.id],
+      );
+      result.fold(
+        onSuccess: (message) {
+          if (mounted) setState(() => _messages.insert(0, message));
+        },
+        onFailure: (_) => error = l10n.msgVoiceFailed,
+      );
+    } on Object {
+      error = l10n.msgVoiceFailed;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sendingVoice = false;
+          _sendError = error;
+        });
+      }
+    }
+  }
+
   String _nameOf(String userId) {
-    if (userId == widget.myUserId) return messagingText(context, 'you');
+    if (userId == widget.myUserId) return AppL10n.of(context).msgYou;
     return _conversation.participantName(userId) ??
-        messagingText(context, 'unknownPerson');
+        AppL10n.of(context).msgUnknownPerson;
   }
 
   Future<void> _reportConversation() async {
@@ -219,9 +388,8 @@ class _ConversationPageState extends State<ConversationPage> {
 
   void _confirmReport() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(messagingText(context, 'report.sent'))),
-    );
+    ScaffoldMessenger.of(context)
+        .showMessage(AppL10n.of(context).msgReportSent);
   }
 
   Future<void> _block(ConversationParticipant person) async {
@@ -251,30 +419,27 @@ class _ConversationPageState extends State<ConversationPage> {
         title: Text(title, overflow: TextOverflow.ellipsis),
         actions: [
           PopupMenuButton<VoidCallback>(
-            tooltip: t('report.title'),
+            tooltip: AppL10n.of(context).msgReportTitle,
             icon: const Icon(Icons.flag_outlined),
             onSelected: (action) => action(),
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: _reportConversation,
-                child: Text(t('menu.reportConversation')),
+                child: Text(AppL10n.of(context).msgMenuReportConversation),
               ),
               for (final person in others) ...[
                 PopupMenuItem(
                   value: () => _reportPerson(person),
                   child: Text(
-                    messagingText(context, 'menu.reportPerson', {
-                      'name': person.displayName,
-                    }),
+                    AppL10n.of(context).msgMenuReportPerson(person.displayName),
                   ),
                 ),
                 if (!_blockedByMe.contains(person.userId))
                   PopupMenuItem(
                     value: () => _block(person),
                     child: Text(
-                      messagingText(context, 'menu.blockPerson', {
-                        'name': person.displayName,
-                      }),
+                      AppL10n.of(context)
+                          .msgMenuBlockPerson(person.displayName),
                     ),
                   ),
               ],
@@ -295,7 +460,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   );
                   if (mounted) await _load();
                 },
-                child: Text(t('menu.blocked')),
+                child: Text(AppL10n.of(context).msgMenuBlocked),
               ),
             ],
           ),
@@ -324,9 +489,9 @@ class _ConversationPageState extends State<ConversationPage> {
     if (_loadError != null) {
       return StudafyStatusCard(
         icon: Icons.error_outline_rounded,
-        title: messagingText(context, 'error.title'),
+        title: AppL10n.of(context).msgErrorTitle,
         message: _loadError!,
-        actionLabel: messagingText(context, 'retry'),
+        actionLabel: AppL10n.of(context).msgRetry,
         onAction: _load,
       );
     }
@@ -339,7 +504,7 @@ class _ConversationPageState extends State<ConversationPage> {
           return Center(
             child: TextButton(
               onPressed: _loadingOlder ? null : _loadOlder,
-              child: Text(messagingText(context, 'loadOlder')),
+              child: Text(AppL10n.of(context).msgLoadOlder),
             ),
           );
         }
@@ -352,8 +517,10 @@ class _ConversationPageState extends State<ConversationPage> {
           child: GestureDetector(
             onLongPress: () => _reportMessage(message),
             child: Semantics(
-              label: '${_nameOf(message.senderId)}: ${message.body}',
-              hint: messagingText(context, 'message.report'),
+              label:
+                  '${_nameOf(message.senderId)}: '
+                  '${message.body.isEmpty ? AppL10n.of(context).msgVoiceMessage : message.body}',
+              hint: AppL10n.of(context).msgMessageReport,
               onLongPress: () => _reportMessage(message),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -378,38 +545,55 @@ class _ConversationPageState extends State<ConversationPage> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    Text(
-                      message.body,
-                      style: TextStyle(color: mine ? Colors.white : studafyInk),
-                    ),
-                    for (final file in message.attachments)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              file.isReady
-                                  ? Icons.description_outlined
-                                  : Icons.hourglass_empty_rounded,
-                              size: 16,
-                              color: mine ? Colors.white70 : studafyMuted,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                file.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: mine ? Colors.white70 : studafyMuted,
-                                ),
-                              ),
-                            ),
-                          ],
+                    if (message.body.isNotEmpty)
+                      Text(
+                        message.body,
+                        style: TextStyle(
+                          color: mine ? Colors.white : studafyInk,
                         ),
                       ),
+                    for (final note in message.attachments)
+                      if (isVoiceNote(note.mediaType))
+                        VoiceNoteBubble(
+                          key: ValueKey('voice-${note.id}'),
+                          attachment: note,
+                          uploads: _uploads,
+                          player: _voicePlayer,
+                          mine: mine,
+                        ),
+                    if (message.attachments.any(
+                      (note) => !isVoiceNote(note.mediaType),
+                    ))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: StoredAttachmentList(
+                          attachments: [
+                            for (final note in message.attachments)
+                              if (!isVoiceNote(note.mediaType)) note,
+                          ],
+                          dense: true,
+                          color: mine ? Colors.white70 : studafyMuted,
+                        ),
+                      ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          MaterialLocalizations.of(context).formatTimeOfDay(
+                            TimeOfDay.fromDateTime(message.createdAt.toLocal()),
+                          ),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: mine ? Colors.white70 : studafyMuted,
+                          ),
+                        ),
+                        if (mine && message.status != null) ...[
+                          const SizedBox(width: 4),
+                          MessageTicks(status: message.status!),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -437,51 +621,113 @@ class _ConversationPageState extends State<ConversationPage> {
                 style: const TextStyle(color: Color(0xFFB3261E), fontSize: 12),
               ),
             ),
-          // The attachment control sits above the input so a long filename
-          // does not squeeze the text field.
-          // The constructor argument wins so a test can inject a fake; the
-          // scope is how the real app supplies it.
-          if (widget.uploads ?? UploadsScope.maybeOf(context)
-              case final uploads?)
-            if (_conversation.schoolId case final schoolId)
-              AttachmentField(
-                key: _attachmentsKey,
-                purpose: FilePurpose.messageAttachment,
-                schoolId: schoolId,
-                uploads: uploads,
-                enabled: !_sending,
-                maximumCount: 3,
-                source: widget.attachmentSource ?? pickPlatformAttachment,
-                onChanged: (items) => setState(() => _attachments = items),
-              ),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _composer,
-                  minLines: 1,
-                  maxLines: 4,
-                  maxLength: 4000,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: messagingText(context, 'compose.hint'),
-                    counterText: '',
-                    border: const OutlineInputBorder(),
-                  ),
-                  // Editing the draft means it is a new message, not a retry.
-                  onChanged: (_) => _pendingClientId = null,
+          if (_recording)
+            VoiceNoteRecorderBar(
+              onDiscard: _discardRecording,
+              onSend: _sendRecording,
+            )
+          else ...[
+            // The attachment control sits above the input so a long filename
+            // does not squeeze the text field.
+            // The constructor argument wins so a test can inject a fake; the
+            // scope is how the real app supplies it.
+            if (_uploads case final uploads?)
+              if (_conversation.schoolId case final schoolId)
+                AttachmentField(
+                  key: _attachmentsKey,
+                  purpose: FilePurpose.messageAttachment,
+                  schoolId: schoolId,
+                  uploads: uploads,
+                  enabled: !_sending,
+                  maximumCount: 3,
+                  source: widget.attachmentSource ?? pickPlatformAttachment,
+                  onChanged: (items) => setState(() => _attachments = items),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: messagingText(context, 'send'),
-                onPressed: _sending || _uploading ? null : _send,
-                icon: const Icon(Icons.send_rounded),
-              ),
-            ],
-          ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _composer,
+                    minLines: 1,
+                    maxLines: 4,
+                    maxLength: 4000,
+                    textInputAction: TextInputAction.newline,
+                    decoration: InputDecoration(
+                      hintText: AppL10n.of(context).msgComposeHint,
+                      counterText: '',
+                      border: const OutlineInputBorder(),
+                    ),
+                    // Editing the draft means it is a new message, not a retry.
+                    // The button beside it follows: send for text, a microphone
+                    // for an empty draft.
+                    onChanged: (_) => setState(() => _pendingClientId = null),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (_sendingVoice)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else if (_composer.text.trim().isEmpty &&
+                    _attachments.isEmpty &&
+                    _uploads != null)
+                  IconButton.filled(
+                    tooltip: AppL10n.of(context).msgVoiceRecord,
+                    onPressed: _sending ? null : _startRecording,
+                    icon: const Icon(Icons.mic_rounded),
+                  )
+                else
+                  IconButton.filled(
+                    tooltip: AppL10n.of(context).msgSend,
+                    onPressed: _sending || _uploading ? null : _send,
+                    icon: const Icon(Icons.send_rounded),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     ),
   );
+}
+
+/// WhatsApp's ticks on one of my messages: one grey when sent, two grey when
+/// it has reached everyone, two blue once everyone has read it.
+class MessageTicks extends StatelessWidget {
+  const MessageTicks({super.key, required this.status});
+
+  final MessageStatus status;
+
+  /// Readable on the navy bubble, and close to the blue people know.
+  static const readColor = Color(0xFF53BDEB);
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color, label) = switch (status) {
+      MessageStatus.sent => (
+        Icons.done_rounded,
+        Colors.white70,
+        AppL10n.of(context).conversationSent,
+      ),
+      MessageStatus.delivered => (
+        Icons.done_all_rounded,
+        Colors.white70,
+        AppL10n.of(context).conversationDelivered,
+      ),
+      MessageStatus.read => (
+        Icons.done_all_rounded,
+        readColor,
+        AppL10n.of(context).conversationRead,
+      ),
+    };
+    return Semantics(
+      label: label,
+      child: Icon(icon, size: 16, color: color),
+    );
+  }
 }

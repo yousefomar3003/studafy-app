@@ -12,6 +12,7 @@
  */
 import {
   AppStoreServerAPIClient,
+  AutoRenewStatus,
   Environment as AppleLibraryEnvironment,
   type JWSTransactionDecodedPayload,
   RevocationReason,
@@ -36,6 +37,13 @@ export interface VerifiedAppleTransaction {
   purchaseDate: number;
   expiresDate: number | null;
   revocationReason: RevocationReason | null;
+  /** App Store Server API `status` (1 active ... 5 revoked). Set only by a
+   * status lookup; a bare signed transaction does not carry it. */
+  subscriptionStatus?: number | null;
+  /** From the signed renewal info, when one came with the transaction. */
+  autoRenewing?: boolean | null;
+  /** Epoch milliseconds; set while Apple's billing grace period is open. */
+  gracePeriodExpiresDate?: number | null;
 }
 
 export interface VerifiedAppleNotification {
@@ -123,7 +131,10 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
       );
       const signedTransactionInfo = decoded.data?.signedTransactionInfo;
       const transaction = signedTransactionInfo
-        ? await this.verifyTransaction(signedTransactionInfo)
+        ? {
+          ...await this.verifyTransaction(signedTransactionInfo),
+          ...await this.renewal(decoded.data?.signedRenewalInfo),
+        }
         : null;
       return {
         notificationType: String(decoded.notificationType ?? ""),
@@ -156,7 +167,13 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
             row.originalTransactionId === originalTransactionId &&
             row.signedTransactionInfo
           )
-          .map((row) => this.verifyTransaction(row.signedTransactionInfo!)),
+          .map(async (row): Promise<VerifiedAppleTransaction> => ({
+            ...await this.verifyTransaction(row.signedTransactionInfo!),
+            ...await this.renewal(row.signedRenewalInfo),
+            subscriptionStatus: typeof row.status === "number"
+              ? row.status
+              : null,
+          })),
       );
       return verified.filter((row) =>
         row.originalTransactionId === originalTransactionId
@@ -166,6 +183,30 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
       throw new AppleVerificationError(
         error instanceof Error ? error.message : "status lookup failed",
       );
+    }
+  }
+
+  /** Auto-renew and grace end from Apple's signed renewal info. The same
+   * chain verification applies as for transactions; an absent or
+   * unverifiable renewal info leaves both unknown rather than guessed. */
+  private async renewal(
+    signedRenewalInfo: string | undefined,
+  ): Promise<
+    Pick<VerifiedAppleTransaction, "autoRenewing" | "gracePeriodExpiresDate">
+  > {
+    if (!signedRenewalInfo) return {};
+    try {
+      const info = await this.#verifier.verifyAndDecodeRenewalInfo(
+        signedRenewalInfo,
+      );
+      return {
+        autoRenewing: info.autoRenewStatus === undefined
+          ? null
+          : info.autoRenewStatus === AutoRenewStatus.ON,
+        gracePeriodExpiresDate: info.gracePeriodExpiresDate ?? null,
+      };
+    } catch {
+      return {};
     }
   }
 

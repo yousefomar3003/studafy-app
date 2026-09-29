@@ -5,7 +5,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { TurnstileOptions } from "../turnstile/verification";
 import { requireStudentLookupChallenge } from "../turnstile/middleware";
 import type { FamilyRepository } from "./repository";
@@ -20,7 +23,12 @@ export interface FamilyDependencies {
 export type FamilySlice = "family";
 
 // Appended after invitations' 4 entries (indices [64, 68)).
-const FAMILY_ROUTES = V1_ROUTE_CATALOGUE.slice(68, 72);
+const FAMILY_ROUTES = catalogueRoutesNamed([
+  "locateStudent",
+  "requestGuardianLink",
+  "verifyGuardianLink",
+  "revokeGuardianLink",
+]);
 // DL-050 appended listMyGuardianLinks at the end of the catalogue; it
 // mounts in its own router so handler order stays equal to the contract.
 const FAMILY_READ_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>

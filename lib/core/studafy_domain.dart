@@ -76,6 +76,11 @@ class ActiveContextController extends ChangeNotifier {
 
   StudafyRole? get role => membership?.role;
 
+  /// The role this session was opened as, which [role] cannot say for an
+  /// account with no membership: every parent, and a student before their
+  /// first class. Switching accounts on the device returns to it.
+  StudafyRole? signedInAs;
+
   /// The school the app is acting in, or null when there is none.
   ///
   /// Not the same thing as [membership]. A guardian has no membership and
@@ -163,9 +168,11 @@ class ActiveContextController extends ChangeNotifier {
     SchoolMembership? activeMembership,
     StudentSummary? student,
     String? termId,
+    StudafyRole? signedInAs,
   }) {
     profile = authenticatedProfile;
     membership = activeMembership;
+    this.signedInAs = signedInAs ?? activeMembership?.role;
     selectedStudent = student;
     activeTermId = termId;
     notifyListeners();
@@ -174,6 +181,7 @@ class ActiveContextController extends ChangeNotifier {
   void signOut() {
     profile = null;
     membership = null;
+    signedInAs = null;
     selectedStudent = null;
     activeTermId = null;
     notifyListeners();

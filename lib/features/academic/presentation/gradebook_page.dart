@@ -18,11 +18,15 @@ class ClassGradebookPage extends StatefulWidget {
     required this.repository,
     required this.classroomId,
     required this.classroomName,
+    this.focusAssignmentId,
   });
 
   final AcademicRepository repository;
   final String classroomId;
   final String classroomName;
+
+  /// Opens on the mark for this assignment, when coming from its hand-ins.
+  final String? focusAssignmentId;
 
   @override
   State<ClassGradebookPage> createState() => _ClassGradebookPageState();
@@ -74,9 +78,15 @@ class _ClassGradebookPageState extends State<ClassGradebookPage> {
         _assessments = assessments;
         _students = students;
         _entries = entries;
+        final focus = widget.focusAssignmentId;
+        final focused = focus == null
+            ? null
+            : assessments
+                  .where((item) => item.markedAssignmentId == focus)
+                  .firstOrNull;
         _selected = assessments.any((item) => item.id == _selected?.id)
             ? _selected
-            : (assessments.isEmpty ? null : assessments.first);
+            : (focused ?? (assessments.isEmpty ? null : assessments.first));
         _edited.clear();
         _loading = false;
       });

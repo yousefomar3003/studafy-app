@@ -1,7 +1,7 @@
 # Phase 7, Part 7B (PAY-071) — store billing and entitlement lifecycle
 
 Date: 2026-09-18 · ADR-0009 · DL-036 (beneficiary model), DL-012 (purchaser/beneficiary
-rules) · Gateway: §21.8 (`instructions.md:1704`) ·
+rules) · Gateway: §21.8 (`docs/planning/instructions.md:1704`) ·
 Disclosures: `docs/release/subscription-disclosure-requirements.md`
 
 ## Scope executed
@@ -82,7 +82,7 @@ Disclosures: `docs/release/subscription-disclosure-requirements.md`
 | SQL replay + drain (container) | migrations `202609180001..006` replay clean; worker-role drain exercises reconcile convergence |
 | `supabase/functions/verify-store-purchase` | deleted; env vars retired from `.env.example` |
 
-## Acceptance criteria (per `instructions.md:1287`)
+## Acceptance criteria (per `docs/planning/instructions.md:1287`)
 
 Status: **implemented, not yet store-certified.** Store-certification sandbox
 evidence, guardian-purchase-for-linked-child, student self-purchase switch

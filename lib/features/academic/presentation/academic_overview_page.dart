@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../domain/academic_repository.dart';
-import '../../../core/file_upload_repository.dart';
 import '../../../core/attachment_field.dart';
-import '../../../core/platform_attachment_source.dart';
+import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
+import '../../../core/feedback.dart';
+import '../../../core/file_upload_repository.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../domain/academic_repository.dart';
+import 'create_lesson_page.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;
@@ -42,8 +45,8 @@ class AcademicOverviewPage extends StatefulWidget {
   final Future<List<ClassChoice>> Function()? loadClassChoices;
   final bool teacherTools;
 
-  /// Opens one row. A student taps an assignment to hand work in; nothing
-  /// opens where no handler is given, so other feeds stay read-only.
+  /// Opens one assignment row. A student taps one to hand work in; the other
+  /// feeds never call it, since every handler expects an assignment.
   final void Function(AcademicRecord record)? onOpenRecord;
   final AcademicFeed initialFeed;
 
@@ -106,11 +109,48 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     return null;
   }
 
-  Future<List<AcademicRecord>> _load() => widget.repository.load(
-    feed,
-    classroomId: widget.classroomId ?? selectedClassId,
-    studentId: widget.studentId,
-  );
+  Future<List<AcademicRecord>> _load() async {
+    final records = await widget.repository.load(
+      feed,
+      classroomId: widget.classroomId ?? selectedClassId,
+      studentId: widget.studentId,
+    );
+    // Graded coursework is listed with the assignment it marks, not a second
+    // time among the tests.
+    return feed == AcademicFeed.assessments
+        ? [
+            for (final record in records)
+              if (record.markedAssignmentId == null) record,
+          ]
+        : records;
+  }
+
+  bool _canPublish(AcademicRecord record) =>
+      widget.teacherTools &&
+      record.state == 'draft' &&
+      (feed == AcademicFeed.assignments ||
+          feed == AcademicFeed.assessments ||
+          // A lesson filed before lessons were published on creation, or
+          // by any other path, would otherwise sit unseen forever.
+          feed == AcademicFeed.content);
+
+  Future<void> _publish(AcademicRecord record) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppL10n.of(context);
+    try {
+      if (feed == AcademicFeed.assignments) {
+        await widget.repository.publishAssignment(record.id, record.version);
+      } else if (feed == AcademicFeed.content) {
+        await widget.repository.publishResource(record.id, record.version);
+      } else {
+        await widget.repository.publishAssessment(record.id, record.version);
+      }
+      messenger.showMessage(l10n.academicPublished);
+    } on Object {
+      messenger.showMessage(l10n.academicPublishFailed);
+    }
+    if (mounted) _refresh();
+  }
 
   void _refresh() {
     setState(() {
@@ -215,7 +255,14 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     final item = items[index];
                     // Titles and details are school-authored content, so
                     // they render verbatim in their own direction.
-                    final onOpen = widget.onOpenRecord;
+                    // Only an assignment opens anything. Every caller hands the
+                    // record to an assignment screen - hand-in for a student
+                    // or guardian, the roster for a teacher - so a grade or an
+                    // assessment tapped here used to open "hand in work" with
+                    // an id that is not an assignment's.
+                    final onOpen = feed == AcademicFeed.assignments
+                        ? widget.onOpenRecord
+                        : null;
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -232,7 +279,24 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            UserContentText(item.detail),
+                            LinkedText(item.detail),
+                            if (item.maximumScore case final score?)
+                              Text(
+                                AppL10n.of(context).academicGradedOutOf(
+                                  score == score.roundToDouble()
+                                      ? score.toInt().toString()
+                                      : score.toString(),
+                                ),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            // The teacher's material, openable from the list
+                            // itself - the only place graded work is shown.
+                            StoredAttachmentList(
+                              attachments: item.attachments,
+                              uploads: widget.uploads,
+                              dense: true,
+                            ),
                             // Only while the list spans classes. Once it is
                             // narrowed the chip would repeat the chosen chip
                             // above on every row.
@@ -247,8 +311,20 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                               ),
                           ],
                         ),
-                        isThreeLine: _className(item) != null,
-                        trailing: Chip(label: Text(item.state)),
+                        isThreeLine:
+                            _className(item) != null ||
+                            item.attachments.isNotEmpty,
+                        // Work a teacher has created but not released is
+                        // invisible to the class; say so and offer the fix
+                        // right where the teacher is looking.
+                        trailing: _canPublish(item)
+                            ? TextButton(
+                                onPressed: () => _publish(item),
+                                child: Text(
+                                  AppL10n.of(context).academicPublish,
+                                ),
+                              )
+                            : Chip(label: Text(item.state)),
                         onTap: onOpen == null ? null : () => onOpen(item),
                       ),
                     );
@@ -263,9 +339,13 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: FilledButton.icon(
-                onPressed: widget.classroomId == null ? null : _fileNote,
+                // Needs a class to file into: this page's own, or one of the
+                // teacher's to choose from.
+                onPressed: widget.classroomId == null && choices.isEmpty
+                    ? null
+                    : _addLesson,
                 icon: const Icon(Icons.note_add_outlined),
-                label: Text(AppL10n.of(context).academicFileNote),
+                label: Text(AppL10n.of(context).academicAddLesson),
               ),
             ),
           ),
@@ -273,105 +353,39 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     ),
   );
 
-  Future<void> _fileNote() async {
-    final title = TextEditingController();
-    final body = TextEditingController();
-    String? error;
-    var attachments = const <Attachment>[];
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(AppL10n.of(context).academicNoteTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: title,
-                decoration: InputDecoration(
-                  labelText: AppL10n.of(context).academicNoteTitleLabel,
-                ),
-              ),
-              TextField(
-                controller: body,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: AppL10n.of(context).academicNoteBodyLabel,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Each attached file becomes class material in its own right
-              // once published, which is how the server models it - the note
-              // above is a separate resource, not a carrier for them.
-              if (widget.uploads case final uploads?)
-                if (widget.schoolId case final schoolId?)
-                  AttachmentField(
-                    purpose: FilePurpose.lessonResource,
-                    schoolId: schoolId,
-                    classroomId: widget.classroomId,
-                    uploads: uploads,
-                    source: widget.attachmentSource ?? pickPlatformAttachment,
-                    onChanged: (items) =>
-                        setDialogState(() => attachments = items),
-                  )
-                else
-                  Text(AppL10n.of(context).academicAttachmentsUnavailable)
-              else
-                Text(AppL10n.of(context).academicAttachmentsUnavailable),
-              if (error != null)
-                Text(error!, style: const TextStyle(color: Colors.red)),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(AppL10n.of(context).academicCancel),
+  /// Opens the new-lesson form. Inside a class it is for that class; on the
+  /// all-classes Teaching tab the teacher picks one, starting from the class
+  /// they are filtering by.
+  Future<void> _addLesson() async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final classroomId = widget.classroomId;
+    final classes = classroomId != null
+        ? [
+            ClassOption(
+              id: classroomId,
+              name: widget.title ?? l10n.academicThisClass,
             ),
-            FilledButton(
-              // Refused while anything is still in flight: a note saved now
-              // would be filed without the file the teacher is waiting on.
-              onPressed:
-                  attachments.any((a) => a.stage == AttachmentStage.uploading)
-                  ? null
-                  : () async {
-                      try {
-                        await widget.repository.createResource(
-                          TextResourceDraft(
-                            classroomId: widget.classroomId!,
-                            title: title.text,
-                            body: body.text,
-                          ),
-                        );
-                        // Each upload becomes its own piece of class
-                        // material. A file that failed or was refused is
-                        // simply not among them.
-                        final uploads = widget.uploads;
-                        if (uploads != null) {
-                          for (final item in attachments) {
-                            final fileId = item.fileId;
-                            if (fileId == null) continue;
-                            await uploads.publishToClass(
-                              fileId: fileId,
-                              audience: FileAudience.students,
-                            );
-                          }
-                        }
-                        if (!dialogContext.mounted) return;
-                        Navigator.pop(dialogContext);
-                        _refresh();
-                      } catch (_) {
-                        setDialogState(
-                          () =>
-                              error = AppL10n.of(context).academicNoteNotSaved,
-                        );
-                      }
-                    },
-              child: Text(AppL10n.of(context).academicSaveToSchool),
-            ),
-          ],
+          ]
+        : [
+            for (final choice in choices)
+              ClassOption(id: choice.id, name: choice.name),
+          ];
+    final added = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => CreateLessonPage(
+          repository: widget.repository,
+          classes: classes,
+          initialClassroomId: classroomId ?? selectedClassId,
+          schoolId: widget.schoolId,
+          uploads: widget.uploads,
+          attachmentSource: widget.attachmentSource,
         ),
       ),
     );
+    if (added == null || !mounted) return;
+    messenger.showMessage(added);
+    _refresh();
   }
 }
 

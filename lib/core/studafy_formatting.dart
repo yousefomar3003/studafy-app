@@ -49,6 +49,11 @@ String studafyShortDate(BuildContext context, DateTime when) =>
 String studafyTime(BuildContext context, DateTime when) =>
     _toWesternDigits(DateFormat.jm(_localeOf(context)).format(when));
 
+/// A moment as "17 Sep 2026 · 2:30 PM": when work was handed in, when a
+/// meeting starts.
+String studafyDateTime(BuildContext context, DateTime when) =>
+    '${studafyShortDate(context, when)} · ${studafyTime(context, when)}';
+
 /// A plain number — a grade, a count, a percentage.
 String studafyNumber(BuildContext context, num value) => _toWesternDigits(
   NumberFormat.decimalPattern(_localeOf(context)).format(value),

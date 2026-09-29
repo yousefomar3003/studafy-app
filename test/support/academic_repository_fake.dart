@@ -83,6 +83,13 @@ class CreateWorkFake implements AcademicRepository {
   final bool fail;
   final assignments = <AssignmentDraft>[];
   final assessments = <AssessmentDraft>[];
+  final lessons = <TextResourceDraft>[];
+
+  @override
+  Future<void> createResource(TextResourceDraft draft) async {
+    if (fail) throw StateError('synthetic create failure');
+    lessons.add(draft);
+  }
 
   @override
   Future<void> createAssignment(AssignmentDraft draft) async {
@@ -152,6 +159,19 @@ class SubmitFake implements AcademicRepository {
     ));
   }
 
+  /// What the history read returns; each call is recorded.
+  List<SubmissionAttempt> history = const [];
+  final historyRequests = <({String assignmentId, String? studentId})>[];
+
+  @override
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  }) async {
+    historyRequests.add((assignmentId: assignmentId, studentId: studentId));
+    return history;
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('${invocation.memberName} is not faked');
@@ -170,6 +190,32 @@ class SubmissionsFake implements AcademicRepository {
 
   @override
   Future<List<SubmittedWork>> submissionsFor(String assignmentId) async => work;
+
+  /// Earlier attempts per student, newest first. Without an entry a
+  /// student's history is just their current work, which is what a server
+  /// with one attempt returns.
+  Map<String, List<SubmissionAttempt>> history = const {};
+  final historyRequests = <String?>[];
+
+  @override
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  }) async {
+    historyRequests.add(studentId);
+    return history[studentId] ??
+        [
+          for (final item in work)
+            if (item.studentId == studentId && item.submittedAt != null)
+              SubmissionAttempt(
+                id: item.id,
+                submittedAt: item.submittedAt!,
+                current: true,
+                answerText: item.answerText,
+                submittedByGuardianId: item.submittedByGuardianId,
+              ),
+        ];
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>

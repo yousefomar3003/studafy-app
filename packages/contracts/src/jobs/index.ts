@@ -1,6 +1,6 @@
 /**
  * Versioned job payload contracts for the BullMQ queue platform (OPS-061,
- * instructions.md §10). Payloads carry opaque identifiers only — never full
+ * docs/planning/instructions.md §10). Payloads carry opaque identifiers only — never full
  * student records, tokens, signed URLs, or large content; workers re-fetch
  * and re-authorize current state. Each queue's payload version is bumped on
  * any incompatible change; consumers must reject unknown versions.

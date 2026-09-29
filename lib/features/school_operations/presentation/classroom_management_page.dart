@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
-import '../../../core/failures.dart';
+import '../../../core/studafy_formatting.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/school_operations_repository.dart';
+import 'schedule_meeting_dialog.dart';
 
 class ClassroomManagementPage extends StatefulWidget {
   const ClassroomManagementPage({
@@ -11,10 +17,14 @@ class ClassroomManagementPage extends StatefulWidget {
     required this.repository,
     required this.classroom,
     required this.classrooms,
+    this.openLink,
   });
   final SchoolOperationsRepository repository;
   final ManagedClassroom classroom;
   final List<ManagedClassroom> classrooms;
+
+  /// Opens a link outside the app. Tests supply their own.
+  final Future<bool> Function(Uri url)? openLink;
 
   @override
   State<ClassroomManagementPage> createState() =>
@@ -30,18 +40,37 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
   bool _busy = false;
   RosterStudent? _pendingEnrollment;
   String? _error;
+  List<ManagedMeeting> _meetings = const [];
+
+  Future<bool> _open(Uri url) =>
+      (widget.openLink ??
+      (u) => launchUrl(u, mode: LaunchMode.externalApplication))(url);
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
     _load();
+    _loadMeetings();
   }
 
   @override
   void dispose() {
     _tabs.dispose();
     super.dispose();
+  }
+
+  /// Separate from the roster: a meeting list that fails to load must not
+  /// take the students and staff tabs down with it.
+  Future<void> _loadMeetings() async {
+    try {
+      final meetings = await widget.repository.listMeetings(
+        widget.classroom.id,
+      );
+      if (mounted) setState(() => _meetings = meetings);
+    } on Object {
+      // The tab shows its empty state; scheduling still works.
+    }
   }
 
   Future<void> _load() async {
@@ -76,13 +105,11 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     try {
       await action();
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(success)));
+      messenger.showMessage(success);
       await _load();
     } on Object catch (error) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(Failure.fromError(error).message)),
-        );
+        messenger.showMessage(Failure.fromError(error).message);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -91,8 +118,9 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
 
   @override
   Widget build(BuildContext context) {
-    final ar = Localizations.localeOf(context).languageCode == 'ar';
-    String t(String en, String arText) => ar ? arText : en;
+    // Read once here and handed to each tab and action: several of them
+    // show a message after an await, when this context may be gone.
+    final l10n = AppL10n.of(context);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
@@ -100,9 +128,9 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
         bottom: TabBar(
           controller: _tabs,
           tabs: [
-            Tab(text: t('Students', 'الطلاب')),
-            Tab(text: t('Staff', 'المعلمون')),
-            Tab(text: t('Meetings', 'الاجتماعات')),
+            Tab(text: l10n.announcementAudienceStudents),
+            Tab(text: l10n.classroomAdminStaff),
+            Tab(text: l10n.notificationPrefsMeetings),
           ],
         ),
       ),
@@ -119,7 +147,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: _load,
-                      child: Text(t('Try again', 'إعادة المحاولة')),
+                      child: Text(l10n.securityTryAgain),
                     ),
                   ],
                 ),
@@ -127,26 +155,30 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
             )
           : TabBarView(
               controller: _tabs,
-              children: [_studentsTab(t), _staffTab(t), _meetingsTab(t)],
+              children: [
+                _studentsTab(l10n),
+                _staffTab(l10n),
+                _meetingsTab(l10n),
+              ],
             ),
     );
   }
 
-  Widget _studentsTab(String Function(String, String) t) => RefreshIndicator(
+  Widget _studentsTab(AppL10n l10n) => RefreshIndicator(
     onRefresh: _load,
     child: ListView(
       padding: const EdgeInsets.all(16),
       children: [
         if (ActiveContextController.instance.role == StudafyRole.schoolAdmin)
           FilledButton.icon(
-            onPressed: _busy ? null : () => _addStudent(t),
+            onPressed: _busy ? null : () => _addStudent(l10n),
             icon: const Icon(Icons.person_add_alt_1),
-            label: Text(t('Create and enrol student', 'إنشاء طالب وتسجيله')),
+            label: Text(l10n.classroomAdminCreateAndEnrolStudent),
           ),
         const SizedBox(height: 8),
         if (_pendingEnrollment != null) ...[
           SelectableText(
-            '${t('Created student awaiting enrolment', 'طالب تم إنشاؤه بانتظار التسجيل')}: ${_pendingEnrollment!.displayName}\n${_pendingEnrollment!.id}',
+            '${l10n.classroomAdminCreatedStudentAwaitingEnrolment}: ${_pendingEnrollment!.displayName}\n${_pendingEnrollment!.id}',
           ),
           OutlinedButton(
             onPressed: _busy
@@ -157,18 +189,17 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
                       studentId: _pendingEnrollment!.id,
                     );
                     _pendingEnrollment = null;
-                  }, t('Student enrolled.', 'تم تسجيل الطالب.')),
-            child: Text(t('Retry enrolment', 'إعادة محاولة التسجيل')),
+                  }, l10n.classroomAdminStudentEnrolled),
+            child: Text(l10n.classroomAdminRetryEnrolment),
           ),
         ],
         OutlinedButton.icon(
-          onPressed: () => _enrolExisting(t),
+          onPressed: () => _enrolExisting(l10n),
           icon: const Icon(Icons.how_to_reg_outlined),
-          label: Text(t('Enrol by student ID', 'تسجيل باستخدام معرّف الطالب')),
+          label: Text(l10n.classroomAdminEnrolByStudentId),
         ),
         const SizedBox(height: 16),
-        if (_students.isEmpty)
-          Text(t('No enrolled students.', 'لا يوجد طلاب مسجلون.')),
+        if (_students.isEmpty) Text(l10n.classroomAdminNoEnrolledStudents),
         for (final student in _students)
           Card(
             child: ListTile(
@@ -176,16 +207,16 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
               subtitle: Text(student.studafyId),
               trailing: PopupMenuButton<String>(
                 onSelected: (value) => value == 'withdraw'
-                    ? _withdraw(student, t)
-                    : _transfer(student, t),
+                    ? _withdraw(student, l10n)
+                    : _transfer(student, l10n),
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'transfer',
-                    child: Text(t('Transfer', 'نقل')),
+                    child: Text(l10n.classroomAdminTransfer),
                   ),
                   PopupMenuItem(
                     value: 'withdraw',
-                    child: Text(t('Withdraw', 'سحب')),
+                    child: Text(l10n.classroomAdminWithdraw),
                   ),
                 ],
               ),
@@ -195,34 +226,32 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     ),
   );
 
-  Widget _staffTab(String Function(String, String) t) => RefreshIndicator(
+  Widget _staffTab(AppL10n l10n) => RefreshIndicator(
     onRefresh: _load,
     child: ListView(
       padding: const EdgeInsets.all(16),
       children: [
         FilledButton.icon(
-          onPressed: () => _assignStaff(t),
+          onPressed: () => _assignStaff(l10n),
           icon: const Icon(Icons.person_add_outlined),
-          label: Text(t('Assign staff', 'تعيين معلم')),
+          label: Text(l10n.classroomAdminAssignStaff),
         ),
         const SizedBox(height: 16),
-        if (_staff.isEmpty)
-          Text(t('No staff assignments.', 'لا توجد تعيينات للمعلمين.')),
+        if (_staff.isEmpty) Text(l10n.classroomAdminNoStaffAssignments),
         for (final member in _staff)
           Card(
             child: ListTile(
               title: Text(member.displayName),
               subtitle: Text('${member.role} · ${member.userId}'),
               trailing: IconButton(
-                tooltip: t('Remove', 'إزالة'),
+                tooltip: l10n.classroomAdminRemove,
                 icon: const Icon(Icons.person_remove_outlined),
                 onPressed: () =>
                     _confirm(
-                      t(
-                        'Remove ${member.displayName} from this class?',
-                        'إزالة ${member.displayName} من هذا الفصل؟',
+                      l10n.classroomAdminRemoveDisplaynameFromThisClass(
+                        member.displayName,
                       ),
-                      t,
+                      l10n,
                     ).then((ok) {
                       if (ok) {
                         _run(
@@ -230,7 +259,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
                             classroomId: widget.classroom.id,
                             assignmentId: member.assignmentId,
                           ),
-                          t('Staff removed.', 'تمت إزالة المعلم.'),
+                          l10n.classroomAdminStaffRemoved,
                         );
                       }
                     }),
@@ -241,59 +270,118 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     ),
   );
 
-  Widget _meetingsTab(String Function(String, String) t) => ListView(
-    padding: const EdgeInsets.all(16),
-    children: [
-      FilledButton.icon(
-        onPressed: () => _requestMeeting(t),
-        icon: const Icon(Icons.video_call_outlined),
-        label: Text(t('Request meeting', 'طلب اجتماع')),
-      ),
-      const SizedBox(height: 12),
-      OutlinedButton.icon(
-        onPressed: () => _lookupMeeting(t),
-        icon: const Icon(Icons.search),
-        label: Text(
-          t(
-            'Check or cancel by meeting ID',
-            'فحص أو إلغاء باستخدام معرّف الاجتماع',
+  String _audience(String value, AppL10n l10n) => switch (value) {
+    'guardians' => l10n.schoolAdminGuardians,
+    'students' => l10n.announcementAudienceStudents,
+    _ => l10n.classroomAdminWholeClass,
+  };
+
+  Widget _meetingsTab(AppL10n l10n) => RefreshIndicator(
+    onRefresh: _loadMeetings,
+    child: ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        FilledButton.icon(
+          onPressed: _busy ? null : () => _requestMeeting(l10n),
+          icon: const Icon(Icons.video_call_outlined),
+          label: Text(l10n.classroomAdminScheduleMeeting),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.classroomAdminCreateTheMeetingInGoogle,
+          style: const TextStyle(color: studafyMuted),
+        ),
+        const SizedBox(height: 16),
+        if (_meetings.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              l10n.classroomAdminNoUpcomingMeetings,
+              textAlign: TextAlign.center,
+            ),
           ),
-        ),
-      ),
-      const SizedBox(height: 16),
-      Text(
-        t(
-          'Save the meeting ID shown after creation to check its status or cancel it later.',
-          'احفظ معرّف الاجتماع الذي يظهر بعد إنشائه للتحقق من حالته أو إلغائه لاحقًا.',
-        ),
-        style: const TextStyle(color: studafyMuted),
-      ),
-    ],
+        for (final meeting in _meetings)
+          Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    meeting.title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(studafyDateTime(context, meeting.startsAt)),
+                  Text(
+                    '${_audience(meeting.audience, l10n)} · '
+                    '${meeting.state == 'cancelled' ? l10n.meetingsCancelled : l10n.classroomAdminRecipientcountInvited(meeting.recipientCount)}',
+                    style: const TextStyle(color: studafyMuted),
+                  ),
+                  if (meeting.state != 'cancelled')
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        if (meeting.meetUrl case final url?) ...[
+                          TextButton.icon(
+                            onPressed: () => _open(url),
+                            icon: const Icon(Icons.videocam_outlined),
+                            label: Text(l10n.meetingsJoin),
+                          ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: url.toString()),
+                              );
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context)
+                                  .showMessage(l10n.classroomAdminLinkCopied);
+                            },
+                            icon: const Icon(Icons.copy_rounded),
+                            label: Text(l10n.classroomAdminCopyLink),
+                          ),
+                        ],
+                        TextButton.icon(
+                          onPressed: _busy
+                              ? null
+                              : () => _run(() async {
+                                  await widget.repository.cancelMeeting(
+                                    meetingId: meeting.id,
+                                    expectedVersion: meeting.version,
+                                  );
+                                  await _loadMeetings();
+                                }, l10n.classroomAdminMeetingCancelled),
+                          icon: const Icon(Icons.event_busy_outlined),
+                          label: Text(l10n.classroomAdminCancelMeeting),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    ),
   );
 
-  Future<void> _addStudent(String Function(String, String) t) async {
+  Future<void> _addStudent(AppL10n l10n) async {
     if (_pendingEnrollment != null || _busy) return;
     final name = TextEditingController();
     final userId = TextEditingController();
-    final ok = await _form(t('Create student', 'إنشاء طالب'), [
+    final ok = await _form(l10n.classroomAdminCreateStudent, [
       TextField(
         controller: name,
         textCapitalization: TextCapitalization.words,
-        decoration: InputDecoration(
-          labelText: t('Display name', 'الاسم الظاهر'),
-        ),
+        decoration: InputDecoration(labelText: l10n.classroomAdminDisplayName),
       ),
       TextField(
         controller: userId,
         autocorrect: false,
         decoration: InputDecoration(
-          labelText: t(
-            'Account UUID (optional)',
-            'معرّف الحساب UUID (اختياري)',
-          ),
+          labelText: l10n.classroomAdminAccountUuidOptional,
         ),
       ),
-    ], t);
+    ], l10n);
     if (!ok || name.text.trim().isEmpty) return;
     await _run(() async {
       final student = await widget.repository.createStudent(
@@ -306,41 +394,35 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
         studentId: student.id,
       );
       _pendingEnrollment = null;
-    }, t('Student created and enrolled.', 'تم إنشاء الطالب وتسجيله.'));
+    }, l10n.classroomAdminStudentCreatedAndEnrolled);
   }
 
-  Future<void> _enrolExisting(String Function(String, String) t) async {
+  Future<void> _enrolExisting(AppL10n l10n) async {
     final id = TextEditingController();
-    final ok = await _form(t('Enrol student', 'تسجيل طالب'), [
+    final ok = await _form(l10n.classroomAdminEnrolStudent, [
       TextField(
         controller: id,
         autocorrect: false,
         decoration: InputDecoration(
-          labelText: t('Student record ID', 'معرّف سجل الطالب'),
+          labelText: l10n.classroomAdminStudentRecordId,
         ),
       ),
-    ], t);
+    ], l10n);
     if (ok && id.text.trim().isNotEmpty) {
       await _run(
         () => widget.repository.enrollStudent(
           classroomId: widget.classroom.id,
           studentId: id.text.trim(),
         ),
-        t('Student enrolled.', 'تم تسجيل الطالب.'),
+        l10n.classroomAdminStudentEnrolled,
       );
     }
   }
 
-  Future<void> _withdraw(
-    RosterStudent student,
-    String Function(String, String) t,
-  ) async {
+  Future<void> _withdraw(RosterStudent student, AppL10n l10n) async {
     if (!await _confirm(
-      t(
-        'Withdraw ${student.displayName} from this class?',
-        'سحب ${student.displayName} من هذا الفصل؟',
-      ),
-      t,
+      l10n.classroomAdminWithdrawDisplaynameFromThisClass(student.displayName),
+      l10n,
     )) {
       return;
     }
@@ -349,14 +431,11 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
         classroomId: widget.classroom.id,
         studentId: student.id,
       ),
-      t('Student withdrawn.', 'تم سحب الطالب.'),
+      l10n.classroomAdminStudentWithdrawn,
     );
   }
 
-  Future<void> _transfer(
-    RosterStudent student,
-    String Function(String, String) t,
-  ) async {
+  Future<void> _transfer(RosterStudent student, AppL10n l10n) async {
     final targets = widget.classrooms
         .where((c) => c.id != widget.classroom.id)
         .toList();
@@ -368,15 +447,12 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
           builder: (context) => StatefulBuilder(
             builder: (context, setDialog) => AlertDialog(
               title: Text(
-                t(
-                  'Transfer ${student.displayName}',
-                  'نقل ${student.displayName}',
-                ),
+                l10n.classroomAdminTransferDisplayname(student.displayName),
               ),
               content: DropdownButtonFormField<String>(
                 initialValue: target,
                 decoration: InputDecoration(
-                  labelText: t('Target class', 'الفصل المستهدف'),
+                  labelText: l10n.classroomAdminTargetClass,
                 ),
                 items: [
                   for (final c in targets)
@@ -387,11 +463,11 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: Text(t('Cancel', 'إلغاء')),
+                  child: Text(l10n.academicCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: Text(t('Transfer', 'نقل')),
+                  child: Text(l10n.classroomAdminTransfer),
                 ),
               ],
             ),
@@ -405,12 +481,12 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
           studentId: student.id,
           targetClassroomId: target,
         ),
-        t('Student transferred.', 'تم نقل الطالب.'),
+        l10n.classroomAdminStudentTransferred,
       );
     }
   }
 
-  Future<void> _assignStaff(String Function(String, String) t) async {
+  Future<void> _assignStaff(AppL10n l10n) async {
     final userId = TextEditingController();
     var role = 'co_teacher';
     final ok =
@@ -418,7 +494,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
           context: context,
           builder: (context) => StatefulBuilder(
             builder: (context, setDialog) => AlertDialog(
-              title: Text(t('Assign staff', 'تعيين معلم')),
+              title: Text(l10n.classroomAdminAssignStaff),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -426,24 +502,23 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
                     controller: userId,
                     autocorrect: false,
                     decoration: InputDecoration(
-                      labelText: t(
-                        'Teacher account UUID',
-                        'معرّف حساب المعلم UUID',
-                      ),
+                      labelText: l10n.classroomAdminTeacherAccountUuid,
                     ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: role,
-                    decoration: InputDecoration(labelText: t('Role', 'الدور')),
+                    decoration: InputDecoration(
+                      labelText: l10n.classroomAdminRole,
+                    ),
                     items: [
                       DropdownMenuItem(
                         value: 'co_teacher',
-                        child: Text(t('Co-teacher', 'معلم مشارك')),
+                        child: Text(l10n.classroomAdminCoTeacher),
                       ),
                       DropdownMenuItem(
                         value: 'lead_teacher',
-                        child: Text(t('Lead teacher', 'المعلم الرئيسي')),
+                        child: Text(l10n.classroomAdminLeadTeacher),
                       ),
                     ],
                     onChanged: (value) => setDialog(() => role = value!),
@@ -453,11 +528,11 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: Text(t('Cancel', 'إلغاء')),
+                  child: Text(l10n.academicCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: Text(t('Assign', 'تعيين')),
+                  child: Text(l10n.classroomAdminAssign),
                 ),
               ],
             ),
@@ -471,228 +546,32 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
           userId: userId.text,
           role: role,
         ),
-        t('Staff assigned.', 'تم تعيين المعلم.'),
+        l10n.classroomAdminStaffAssigned,
       );
     }
   }
 
-  Future<void> _requestMeeting(String Function(String, String) t) async {
-    final title = TextEditingController();
-    var starts = DateTime.now().add(const Duration(days: 1));
-    var duration = 30;
-    var audience = 'guardians';
-    final ok =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => StatefulBuilder(
-            builder: (context, setDialog) => AlertDialog(
-              title: Text(t('Request meeting', 'طلب اجتماع')),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: title,
-                      decoration: InputDecoration(
-                        labelText: t('Title', 'العنوان'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(t('Starts', 'يبدأ')),
-                      subtitle: Text(
-                        MaterialLocalizations.of(context)
-                            .formatFullDate(starts),
-                      ),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final d = await showDatePicker(
-                          context: context,
-                          initialDate: starts,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 730),
-                          ),
-                        );
-                        if (d != null) {
-                          setDialog(
-                            () => starts = DateTime(
-                              d.year,
-                              d.month,
-                              d.day,
-                              starts.hour,
-                              starts.minute,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    ListTile(
-                      title: Text(t('Time', 'الوقت')),
-                      subtitle: Text(
-                        TimeOfDay.fromDateTime(starts).format(context),
-                      ),
-                      onTap: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(starts),
-                        );
-                        if (time != null && context.mounted) {
-                          setDialog(
-                            () => starts = DateTime(
-                              starts.year,
-                              starts.month,
-                              starts.day,
-                              time.hour,
-                              time.minute,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    DropdownButtonFormField<int>(
-                      initialValue: duration,
-                      decoration: InputDecoration(
-                        labelText: t('Duration', 'المدة'),
-                      ),
-                      items: [30, 45, 60, 90]
-                          .map(
-                            (v) => DropdownMenuItem(
-                              value: v,
-                              child: Text('$v ${t('minutes', 'دقيقة')}'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setDialog(() => duration = v!),
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: audience,
-                      decoration: InputDecoration(
-                        labelText: t('Audience', 'الحضور'),
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'guardians',
-                          child: Text(t('Guardians', 'أولياء الأمور')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'students',
-                          child: Text(t('Students', 'الطلاب')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'both',
-                          child: Text(t('Whole class', 'الفصل بالكامل')),
-                        ),
-                      ],
-                      onChanged: (v) => setDialog(() => audience = v!),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(t('Cancel', 'إلغاء')),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text(t('Request', 'طلب')),
-                ),
-              ],
-            ),
-          ),
-        ) ??
-        false;
-    if (!ok || title.text.trim().isEmpty) return;
-    try {
-      final meeting = await widget.repository.requestMeeting(
+  Future<void> _requestMeeting(AppL10n l10n) async {
+    final draft = await showScheduleMeetingDialog(
+      context,
+      l10n,
+      openLink: _open,
+    );
+    if (draft == null) return;
+    await _run(() async {
+      await widget.repository.requestMeeting(
         classroomId: widget.classroom.id,
-        title: title.text,
-        startsAt: starts,
-        endsAt: starts.add(Duration(minutes: duration)),
-        audience: audience,
+        title: draft.title,
+        startsAt: draft.startsAt,
+        endsAt: draft.endsAt,
+        audience: draft.audience,
+        meetUrl: draft.meetUrl,
       );
-      if (mounted) {
-        await _showMeeting(meeting, t);
-      }
-    } on Object catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Failure.fromError(error).message)),
-        );
-      }
-    }
+      await _loadMeetings();
+    }, l10n.classroomAdminMeetingScheduledEveryoneInvitedHas);
   }
 
-  Future<void> _lookupMeeting(String Function(String, String) t) async {
-    final id = TextEditingController();
-    final ok = await _form(t('Find meeting', 'البحث عن اجتماع'), [
-      TextField(
-        controller: id,
-        autocorrect: false,
-        decoration: InputDecoration(
-          labelText: t('Meeting ID', 'معرّف الاجتماع'),
-        ),
-      ),
-    ], t);
-    if (!ok || id.text.trim().isEmpty) return;
-    try {
-      final meeting = await widget.repository.getMeeting(id.text);
-      if (mounted) {
-        await _showMeeting(meeting, t);
-      }
-    } on Object catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Failure.fromError(error).message)),
-        );
-      }
-    }
-  }
-
-  Future<void> _showMeeting(
-    ManagedMeeting meeting,
-    String Function(String, String) t,
-  ) async {
-    final cancel =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(meeting.title),
-            content: SelectableText(
-              '${t('Meeting ID', 'معرّف الاجتماع')}: ${meeting.id}\n${t('State', 'الحالة')}: ${meeting.state}\n${t('Recipients', 'المستلمون')}: ${meeting.recipientCount}\n${meeting.startsAt}\n${meeting.meetUrl ?? ''}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(t('Close', 'إغلاق')),
-              ),
-              if (meeting.state != 'cancelled')
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text(t('Cancel meeting', 'إلغاء الاجتماع')),
-                ),
-            ],
-          ),
-        ) ??
-        false;
-    if (cancel) {
-      await _run(() async {
-        await widget.repository.cancelMeeting(
-          meetingId: meeting.id,
-          expectedVersion: meeting.version,
-        );
-      }, t('Meeting cancelled.', 'تم إلغاء الاجتماع.'));
-    }
-  }
-
-  Future<bool> _form(
-    String title,
-    List<Widget> fields,
-    String Function(String, String) t,
-  ) async =>
+  Future<bool> _form(String title, List<Widget> fields, AppL10n l10n) async =>
       await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -712,21 +591,18 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: Text(t('Cancel', 'إلغاء')),
+              child: Text(l10n.academicCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(t('Save', 'حفظ')),
+              child: Text(l10n.notebookSave),
             ),
           ],
         ),
       ) ??
       false;
 
-  Future<bool> _confirm(
-    String message,
-    String Function(String, String) t,
-  ) async =>
+  Future<bool> _confirm(String message, AppL10n l10n) async =>
       await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -734,11 +610,11 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: Text(t('Cancel', 'إلغاء')),
+              child: Text(l10n.academicCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(t('Confirm', 'تأكيد')),
+              child: Text(l10n.studentFamilyConfirm),
             ),
           ],
         ),

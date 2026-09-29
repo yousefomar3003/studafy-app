@@ -1,49 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'app/app_bootstrap.dart';
-import 'app/account_hub_page.dart';
+import 'app/account/account_switching.dart';
 import 'app/account_scope.dart';
+import 'app/app_bootstrap.dart';
 import 'app/app_dependencies.dart';
 import 'app/class_join_link_guard.dart';
-import 'app/onboarding_page.dart';
 import 'app/class_join_link_listener.dart';
 import 'app/oauth_callback_guard.dart';
+import 'app/onboarding_page.dart';
+import 'app/parent_shell.dart';
+import 'app/profile_setup_gate.dart';
+import 'app/session_scope.dart';
 import 'app/studafy_theme.dart';
+import 'app/student_shell.dart';
 import 'app/teacher_shell.dart';
 import 'core/app_routes.dart';
 import 'core/locale_controller.dart';
-import 'core/studafy_localizations.dart';
 import 'core/runtime_environment.dart';
-import 'l10n/generated/app_l10n.dart';
+import 'core/studafy_design.dart';
+import 'core/uploads_scope.dart';
 import 'features/family/presentation/family_scope.dart';
+import 'features/meetings/presentation/meetings_scope.dart';
 import 'features/messaging/presentation/messaging_scope.dart';
 import 'features/notifications/presentation/notifications_scope.dart';
-import 'features/parent/presentation/parent_repository_scope.dart';
 import 'features/session/presentation/role_page.dart';
 import 'features/session/presentation/splash_page.dart';
-import 'features/teacher_dashboard/presentation/teacher_dashboard_repository_scope.dart';
-import 'parent_features.dart';
-import 'student_features.dart';
-import 'core/uploads_scope.dart';
+import 'l10n/generated/app_l10n.dart';
 
 /// Holds a class join link tapped before the app had somewhere to show it.
 final classJoinLinks = ClassJoinLinkGuard();
 
 final _navigatorKey = GlobalKey<NavigatorState>();
 
-const navy = Color(0xFF241D73),
-    cyan = Color(0xFF20C6E8),
-    ink = Color(0xFF171441),
-    muted = Color(0xFF8D94AF),
-    canvas = Color(0xFFF7F6FE);
-
 /// Locale delegates every entry point needs: Studafy's own generated copy,
 /// plus Material, Widgets and Cupertino, which supply the built-in component
 /// strings and the right-to-left direction for Arabic.
 const _localizationsDelegates = <LocalizationsDelegate<Object>>[
   AppL10n.delegate,
-  StudafyLocalizations.delegate,
   GlobalMaterialLocalizations.delegate,
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,
@@ -117,18 +111,30 @@ class StudafyApp extends StatelessWidget {
               classes: deps.classes,
               teacherWorkspace: deps.teacherWorkspace,
             ),
-            teacherRoute: (_) => TeacherShell(dependencies: deps),
-            parentRoute: (_) => ParentShell(
-              academic: deps.academic,
-              insights: deps.familyInsights,
+            teacherRoute: (_) => ProfileSetupGate(
+              repository: deps.profileSetup,
+              child: TeacherShell(dependencies: deps),
             ),
-            studentRoute: (_) => StudentShell(
-              academic: deps.academic,
-              classes: deps.classes,
-              notebookSubscription: deps.notebookSubscription,
-              session: deps.session,
-              studyAssistant: deps.studyAssistant,
-              fileUploads: deps.fileUploads,
+            parentRoute: (_) => ProfileSetupGate(
+              repository: deps.profileSetup,
+              child: ParentShell(
+                academic: deps.academic,
+                insights: deps.familyInsights,
+                familyPlus: deps.familyPlus,
+              ),
+            ),
+            studentRoute: (_) => ProfileSetupGate(
+              repository: deps.profileSetup,
+              child: StudentShell(
+                academic: deps.academic,
+                classes: deps.classes,
+                studyPlans: deps.studyPlans,
+                study: deps.study,
+                session: deps.session,
+                studyAssistant: deps.studyAssistant,
+                studyChats: deps.studyChats,
+                fileUploads: deps.fileUploads,
+              ),
             ),
           };
     // A blocked build has no composition root, so it has no locale controller
@@ -181,6 +187,19 @@ class StudafyApp extends StatelessWidget {
             );
           }
           if (deps == null) return content;
+          final deviceAccounts = deps.deviceAccounts;
+          if (deviceAccounts != null) {
+            content = DeviceAccountsFrame(
+              switcher: deviceAccounts,
+              onSwitch: () {
+                final navigatorContext = _navigatorKey.currentContext;
+                if (navigatorContext != null) {
+                  openAccountSwitcher(navigatorContext);
+                }
+              },
+              child: content,
+            );
+          }
           content = ClassJoinLinkListener(
             guard: classJoinLinks,
             classes: deps.classes,
@@ -200,21 +219,15 @@ class StudafyApp extends StatelessWidget {
                 // screen can still reach the upload pipeline.
                 child: UploadsScope(
                   uploads: deps.fileUploads,
-                  child: NotificationsScope(
-                    interactor: deps.notifications,
-                    child: MessagingScope(
-                      interactor: deps.messaging,
-                      child: FamilyScope(
-                        interactor: deps.family,
-                        child: ParentRepositoryScope(
-                          repository: deps.parent,
-                          subscription: deps.parentSubscription,
-                          signOut: deps.session.signOut,
-                          isRemote: runtimePolicy.requiresRemoteBackend,
-                          child: TeacherDashboardRepositoryScope(
-                            repository: deps.teacherDashboard,
-                            child: content,
-                          ),
+                  child: MeetingsScope(
+                    repository: deps.meetings,
+                    child: NotificationsScope(
+                      interactor: deps.notifications,
+                      child: MessagingScope(
+                        interactor: deps.messaging,
+                        child: FamilyScope(
+                          interactor: deps.family,
+                          child: content,
                         ),
                       ),
                     ),
@@ -274,13 +287,17 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.security_rounded, size: 54, color: navy),
+                const Icon(
+                  Icons.security_rounded,
+                  size: 54,
+                  color: studafyNavy,
+                ),
                 const SizedBox(height: 18),
                 Text(
                   AppL10n.of(context).blockedTitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: ink,
+                    color: studafyInk,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                   ),
@@ -289,13 +306,13 @@ class ProductionReadinessBlockedPage extends StatelessWidget {
                 Text(
                   reason ?? AppL10n.of(context).blockedDefaultReason,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: muted, height: 1.4),
+                  style: const TextStyle(color: studafyMuted, height: 1.4),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   AppL10n.of(context).blockedReference,
                   style: const TextStyle(
-                    color: muted,
+                    color: studafyMuted,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

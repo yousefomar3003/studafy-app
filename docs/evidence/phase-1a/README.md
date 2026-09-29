@@ -50,7 +50,7 @@ Architecture record: ADR-0011.
 | Container smoke (full API + worker queue + SIGTERM) | Digest-pinned images built; API health/readiness 200; worker processed smoke job; both exited 0 after graceful shutdown |
 | Production fail-closed | exit 1 with stable `ConfigError` (`fail-closed-2026-09-10.md`) |
 
-## Acceptance criteria (instructions.md:1035) — met
+## Acceptance criteria (docs/planning/instructions.md:1035) — met
 
 - **Clean clone runs pinned installs, tests and containers**: CI `workspace`
   job proves install → tests → container build → health/shutdown on every

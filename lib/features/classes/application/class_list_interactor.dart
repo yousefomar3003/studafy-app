@@ -27,11 +27,13 @@ class ClassListInteractor {
     });
   }
 
-  Future<Result<String>> inviteLinkFor(ClassroomId id) {
+  Future<Result<ClassInvite>> inviteLinkFor(ClassroomId id) {
     return runCatching(() async {
-      final link = await repository.inviteLinkFor(id);
-      telemetry.event('class_join_link_created');
-      return link;
+      final invite = await repository.inviteLinkFor(id);
+      telemetry.event('class_join_link_created', {
+        'with_code': invite.code != null,
+      });
+      return invite;
     });
   }
 
@@ -49,6 +51,16 @@ class ClassListInteractor {
     return runCatching(() async {
       final joined = await repository.joinWithLink(token);
       telemetry.event('class_joined_via_link');
+      return joined;
+    });
+  }
+
+  /// Redeems a class code. [code] is canonical, as classJoinCredentialFrom
+  /// returns it. The code itself is never sent to telemetry.
+  Future<Result<JoinedClass>> joinWithCode(String code) {
+    return runCatching(() async {
+      final joined = await repository.joinWithCode(code);
+      telemetry.event('class_joined_via_code');
       return joined;
     });
   }

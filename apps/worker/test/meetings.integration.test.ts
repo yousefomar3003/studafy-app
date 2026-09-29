@@ -12,9 +12,10 @@ import {
   ConferenceProviderError,
 } from "@studafy/infrastructure";
 import { startMeetingProcessor } from "../src/processors/meetings";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const SCHOOL = "d1052000-0000-4000-8000-0000000000b1";
 const TERM = "d1052000-0000-4000-8000-0000000000e1";
@@ -44,20 +45,7 @@ class FakeProvider implements ConferenceProvider {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.meeting_deliveries where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.meetings where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.classrooms where id = ${CLASSROOM}::uuid`;
-    await tx`delete from public.terms where id = ${TERM}::uuid`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id = ${TEACHER}::uuid`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
-  });
+  await removeFixtures(sql, { schoolIds: [SCHOOL], userIds: [TEACHER] });
 }
 
 suite("DL-052 meeting processor", () => {

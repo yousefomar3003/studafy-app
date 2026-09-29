@@ -5,7 +5,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { MeetingsRepository } from "./repository";
 
 export interface MeetingsDependencies {
@@ -17,7 +20,11 @@ export interface MeetingsDependencies {
 export type MeetingsSlice = "meetings";
 
 // Appended after communications' 6 entries (indices [72, 78)).
-const MEETINGS_ROUTES = V1_ROUTE_CATALOGUE.slice(78, 81);
+const MEETINGS_ROUTES = catalogueRoutesNamed([
+  "requestMeeting",
+  "cancelMeeting",
+  "getMeetingStatus",
+]);
 
 function selector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
@@ -39,6 +46,32 @@ export function createMeetingsRoutes(
       repository: deps.repository,
       cursorSigningKey: deps.cursorSigningKey,
       selector,
+      sliceFor,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
+/// The meeting list sits at the very end of the contract catalogue, so it is
+/// its own group, mounted last: mount order is asserted to equal catalogue
+/// order.
+const MEETING_LIST_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "listMeetings"
+);
+
+export function createMeetingListRoutes(
+  deps: MeetingsDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: MEETING_LIST_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: () => null,
       sliceFor,
       enabledSlices: deps.enabledSlices,
     },

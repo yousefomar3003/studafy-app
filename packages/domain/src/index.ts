@@ -52,6 +52,14 @@ export {
   type PdfRejectReason,
 } from "./files/pdf";
 export {
+  MP4_AUDIO_BRANDS,
+  type Mp4Box,
+  mp4MetadataPayloads,
+  type Mp4ParseResult,
+  neutralizeMp4Metadata,
+  parseMp4,
+} from "./files/mp4";
+export {
   analyzeBytes,
   type AnalyzeResult,
   SCAN_POLICY_VERSION,
@@ -72,14 +80,40 @@ export {
 } from "./files/deliveryToken";
 export { type DedupeEligibilityInput, isDedupeEligible } from "./files/dedup";
 export {
+  APPLE_SUBSCRIPTION_STATUS,
   type AppleNotificationType,
+  appleRenewalStatus,
   isAppleTransactionTrusted,
   mapAppleNotificationToTransactionState,
   mapAppleTransactionTypeToState,
+  type RenewalStatus,
+  resolveAppleSubscriptionState,
   type StoreTransactionState,
 } from "./billing/appleTransaction";
 export {
+  googleRenewalStatus,
   type GoogleSubscriptionState,
+  isGoogleAcknowledged,
   isGooglePackageNameTrusted,
   mapGoogleSubscriptionStateToTransactionState,
 } from "./billing/googlePurchase";
+export {
+  type Flashcard,
+  isUnreadableReply,
+  lessonPrompt,
+  parseFlashcards,
+  parseQuiz,
+  type QuizQuestion,
+  redactForProvider,
+  STUDY_LESSON_MAX_CHARS,
+  STUDY_PROMPTS,
+  type StudySetKind,
+  type StudyUsage,
+} from "./study/studyContent";
+export {
+  CHARS_PER_TOKEN,
+  type ChatMemoryBudgets,
+  chatMemoryTokens,
+  CONTEXT_RESERVE_TOKENS,
+  fitChatMemory,
+} from "./study/chatMemory";

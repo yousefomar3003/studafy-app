@@ -1,5 +1,6 @@
 import '../../../core/class_join_link.dart';
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/ids.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
@@ -9,12 +10,11 @@ import '../domain/classroom_repository.dart';
 /// Authoritative API-041 classroom adapter. It never reads or writes the
 /// local preview database and never falls back when the service is offline.
 class ApiClassroomRepository implements ClassroomRepository {
-  ApiClassroomRepository(this._client, {ActiveContextController? context})
-    : _context = context ?? ActiveContextController.instance;
+  ApiClassroomRepository(this._client, {required this._context});
 
   final V1ApiClient _client;
   final ActiveContextController _context;
-  final Map<String, String> _pendingKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   String get _schoolId {
     final membership = _context.membership;
@@ -49,14 +49,7 @@ class ApiClassroomRepository implements ClassroomRepository {
       for (final item in draft.sessions)
         '${item.weekday}:${item.startTime}:${item.endTime}',
     ].join('|');
-    final key = _pendingKeys.putIfAbsent(
-      fingerprint,
-      () => 'class-${DateTime.now().microsecondsSinceEpoch}-$fingerprint'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
-    );
+    final key = _keys.keyFor('class', fingerprint);
     final today = DateTime.now();
     final effectiveFrom =
         '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -80,27 +73,30 @@ class ApiClassroomRepository implements ClassroomRepository {
       ),
       idempotencyKey: key,
     );
-    _pendingKeys.remove(fingerprint);
+    _keys.completed('class', fingerprint);
   }
 
   @override
-  Future<String> inviteLinkFor(ClassroomId id) async {
-    // Each tap mints a fresh link, which supersedes whatever was live for
-    // this class, so the idempotency key is per-call rather than derived
-    // from the class: a teacher who taps twice means to replace the link,
-    // not to be handed the previous one.
+  Future<ClassInvite> inviteLinkFor(ClassroomId id) async {
+    // Only called to make a new link - none exists yet, or the teacher asked
+    // for a new code - and a new link supersedes the old, so the key is per
+    // call. Showing the existing code is activeJoinLink's job.
     final response = await _client.createClassJoinLink(
-      const V1CreateClassJoinLinkRequestDto(),
+      // A code is shared once, at the start: it lasts the school year unless
+      // the teacher replaces it.
+      V1CreateClassJoinLinkRequestDto(
+        expiresAt: DateTime.now()
+            .add(const Duration(days: 365))
+            .toUtc()
+            .toIso8601String(),
+      ),
       classroomId: id.value,
-      idempotencyKey:
-          'join-${DateTime.now().microsecondsSinceEpoch}-'
-                  '${id.value}'
-              .hashCode
-              .abs()
-              .toRadixString(36)
-              .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('join-link'),
     );
-    return classJoinLinkUrl(response.token);
+    return ClassInvite(
+      link: classJoinLinkUrl(response.token),
+      code: response.code,
+    );
   }
 
   @override
@@ -113,6 +109,9 @@ class ApiClassroomRepository implements ClassroomRepository {
         expiresAt:
             DateTime.tryParse(link.expiresAt)?.toLocal() ?? DateTime.now(),
         maxUses: link.maxUses,
+        invite: link.token == null
+            ? null
+            : ClassInvite(link: classJoinLinkUrl(link.token!), code: link.code),
       );
     } on Object {
       // No live link is the ordinary case for a class nobody has shared yet,
@@ -126,11 +125,7 @@ class ApiClassroomRepository implements ClassroomRepository {
     await _client.revokeClassJoinLink(
       const V1RevokeClassJoinLinkRequestDto(),
       linkId: linkId,
-      idempotencyKey: 'revoke-link-${DateTime.now().microsecondsSinceEpoch}'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('revoke-link'),
     );
   }
 
@@ -140,11 +135,23 @@ class ApiClassroomRepository implements ClassroomRepository {
     // this school yet, and the token is the whole credential.
     final response = await _client.redeemClassJoinLink(
       V1RedeemClassJoinLinkRequestDto(token: token),
-      idempotencyKey: 'join-redeem-${DateTime.now().microsecondsSinceEpoch}'
-          .hashCode
-          .abs()
-          .toRadixString(36)
-          .padLeft(16, '0'),
+      idempotencyKey: newIdempotencyKey('join-redeem'),
+    );
+    return JoinedClass(
+      schoolId: response.schoolId,
+      classroomId: ClassroomId(response.classroomId),
+      classroomName: response.classroomName,
+    );
+  }
+
+  @override
+  Future<JoinedClass> joinWithCode(String code) async {
+    // Same reasoning as joinWithLink: no membership exists yet, so nothing
+    // here may depend on one. The server hashes the code under its own key
+    // and resolves it to exactly one live link, or refuses.
+    final response = await _client.redeemClassJoinLink(
+      V1RedeemClassJoinLinkRequestDto(code: code),
+      idempotencyKey: newIdempotencyKey('join-code'),
     );
     return JoinedClass(
       schoolId: response.schoolId,

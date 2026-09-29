@@ -44,9 +44,7 @@ class _RolePageState extends State<RolePage> {
         const StudafyLogo(size: 36),
         const SizedBox(height: 28),
         StudafyHero(
-          eyebrow: Localizations.localeOf(c).languageCode == 'ar'
-              ? 'مساحتك للنمو'
-              : 'YOUR SPACE TO GROW',
+          eyebrow: AppL10n.of(c).rolesYourSpaceToGrow,
           title: AppL10n.of(c).roleQuestion,
           subtitle: AppL10n.of(c).roleChoosePrompt,
           icon: Icons.auto_awesome_rounded,

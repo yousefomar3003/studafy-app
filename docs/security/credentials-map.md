@@ -1,6 +1,6 @@
 # Where each credential lives, and whether to gather it yet
 
-`instructions.md` §22 is the register of *what* credentials exist. This is the
+`docs/planning/instructions.md` §22 is the register of *what* credentials exist. This is the
 operational companion: *which file* each one goes in locally, and *whether it
 is worth obtaining now*.
 
@@ -14,7 +14,7 @@ local file is a liability, not preparation.
 The user explicitly authorized local storage for hosted testing. The supplied
 server credentials are now in ignored, owner-only `.env.hosted`; public mobile
 settings remain separate. Use `bun run dev:hosted` to prevent accidental loading
-of the local database configuration. See [setup status](../evidence/hosted-credentials-turnstile-2026-09-22.md)
+of the local database configuration. See [setup status](../evidence/hosted/2026-09-22-credentials-turnstile.md)
 for validated services and the missing database/hostname setup. The local-stack
 instructions below remain applicable to local Supabase only.
 

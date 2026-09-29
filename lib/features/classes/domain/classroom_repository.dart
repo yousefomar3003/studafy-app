@@ -10,8 +10,9 @@ abstract interface class ClassroomRepository {
   /// Creates a classroom. Only implemented by the preview adapter today.
   Future<void> createClass(NewClassDraft draft);
 
-  /// Shareable join link for a classroom, replacing whatever was live.
-  Future<String> inviteLinkFor(ClassroomId id);
+  /// Shareable join link and class code for a classroom, replacing whatever
+  /// was live.
+  Future<ClassInvite> inviteLinkFor(ClassroomId id);
 
   /// The classroom's live join link, or null when none is active.
   Future<ClassJoinLinkInfo?> activeJoinLink(String classroomId);
@@ -25,4 +26,9 @@ abstract interface class ClassroomRepository {
   /// of the link, so this must not depend on an active membership the way
   /// every other call here does.
   Future<JoinedClass> joinWithLink(String token);
+
+  /// Joins a class with the short code a teacher read out or wrote down.
+  /// [code] is canonical: eight upper-case characters, no dash. Like a link,
+  /// it needs no membership here.
+  Future<JoinedClass> joinWithCode(String code);
 }

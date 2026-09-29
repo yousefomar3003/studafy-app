@@ -1,12 +1,12 @@
 # Repository, roadmap, security and credential audit
 
-Date: 2026-09-19. Scope: the current working tree, `prompts.md`, `instructions.md`, `inputs.md`, phase evidence, Flutter composition and feature adapters, API/auth/authorization/platform code, workers, database migrations/tests, configuration, native projects and CI.
+Date: 2026-09-19. Scope: the current working tree, `docs/planning/prompts.md`, `docs/planning/instructions.md`, `docs/planning/inputs.md`, phase evidence, Flutter composition and feature adapters, API/auth/authorization/platform code, workers, database migrations/tests, configuration, native projects and CI.
 
 **Verdict: substantial backend implementation exists, but the product is not ready for a real-school pilot, payments or production release. Missing credentials are only part of the remaining work.** The roadmap's opening status tables are stale. Conversely, the existence of routes and passing unit tests does not establish complete mobile workflows or safe billing.
 
 This is a repository review with local verification, not an independent penetration-test certification. There are 744 tracked files, 53 migrations and 131 versioned route contracts at review time. External consoles, hosted legal documents, DNS, production secret managers and physical devices were not inspected. A value absent locally may exist in an external secret store; this report does not claim otherwise. No remote deployment, migration or store transaction was performed. The pre-existing `pubspec.lock` change was left in place.
 
-## What has been built from prompts.md
+## What has been built from docs/planning/prompts.md
 
 “Implemented locally” below means code and local evidence exist; it does not close the prompt's external acceptance gates.
 
@@ -200,8 +200,8 @@ The storage skip means this audit did not freshly prove the full signed-upload/s
 ## Documentation corrections needed
 
 - `README.md` still describes an empty `/v1` router, prototype billing and JWT-issuance-based deletion despite later implementations.
-- `instructions.md` §1 marks authentication unstarted, APIs skeletal and queues smoke-only. Treat its design requirements as requirements, not its opening table as current evidence.
-- `prompts.md` A9's 94 student/teacher SQLite references are outdated; current literal count is 83 across those two legacy directories. That is progress, not completion.
+- `docs/planning/instructions.md` §1 marks authentication unstarted, APIs skeletal and queues smoke-only. Treat its design requirements as requirements, not its opening table as current evidence.
+- `docs/planning/prompts.md` A9's 94 student/teacher SQLite references are outdated; current literal count is 83 across those two legacy directories. That is progress, not completion.
 - `docs/security/credentials-map.md` says only Google/Microsoft are needed today and refers to deleting a billing stub. It now omits credentials for existing scanner/file/billing implementations.
 - Older phase evidence contains historical open items later completed; PAY-071 still discusses four store products, while AI-072 retired two. A single up-to-date acceptance matrix is needed.
 - Evidence recorded on 2026-09-18 says the remote synthetic project had 45 pending migrations. That is historical evidence, not a current remote check; local code must not be assumed deployed there.

@@ -20,10 +20,12 @@ import { PostgresCommunicationsRepository } from "../../src/communications/repos
 import {
   createCommunicationsRoutes,
   createContactsRoutes,
+  createMessageReceiptRoutes,
 } from "../../src/communications/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const ADMIN = "5f450000-0000-4000-8000-0000000000a1";
 const TEACHER = "5f450000-0000-4000-8000-0000000000a2";
@@ -82,28 +84,9 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.messages disable trigger db020_reject_mutation`;
-    await tx`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.school_content_controls where school_id = ${SCHOOL}::uuid`;
-    // Before messages and memberships: file_objects restricts membership
-    // deletion, and a binding restricts nothing but is cascaded by its target.
-    await tx`delete from public.file_bindings where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.file_objects where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.messages where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.conversation_participants where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.conversations where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.announcements where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.guardian_links where student_id in (${STUDENT_ROW}::uuid, ${OTHER_STUDENT_ROW}::uuid)`;
-    await tx`delete from public.audit_events where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.students where id in (${STUDENT_ROW}::uuid, ${OTHER_STUDENT_ROW}::uuid)`;
-    await tx`delete from public.memberships where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.schools where id = ${SCHOOL}::uuid`;
-    await tx`delete from auth.users where id in (${ADMIN}::uuid, ${TEACHER}::uuid, ${GUARDIAN}::uuid, ${STUDENT_USER}::uuid, ${OTHER_STUDENT_USER}::uuid)`;
-    await tx`alter table public.messages enable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [ADMIN, TEACHER, GUARDIAN, STUDENT_USER, OTHER_STUDENT_USER],
   });
 }
 
@@ -183,6 +166,10 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
       createCommunicationsRoutes(commsDeps, authorization, idempotency),
     );
     app.route("/", createContactsRoutes(commsDeps, authorization, idempotency));
+    app.route(
+      "/",
+      createMessageReceiptRoutes(commsDeps, authorization, idempotency),
+    );
   });
 
   afterAll(async () => {
@@ -375,6 +362,116 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
       "first note",
       "Thank you for the update.",
     ]);
+  });
+
+  // -------------------------------------------------------------------------
+  // Receipts: one tick when sent, two when it reaches the other person's app,
+  // two coloured once they open the chat.
+  // -------------------------------------------------------------------------
+  async function send(subject: string, text: string) {
+    const res = await request(`/v1/conversations/${conversationId}/messages`, {
+      method: "POST",
+      subject,
+      body: { clientMessageId: crypto.randomUUID(), body: text },
+    });
+    expect(res.status).toBe(201);
+    return await res.json() as { id: string; status: string | null };
+  }
+
+  async function statusOf(subject: string, messageId: string) {
+    const res = await request(
+      `/v1/conversations/${conversationId}/messages?pageSize=100`,
+      { subject },
+    );
+    expect(res.status).toBe(200);
+    const items = (await res.json() as {
+      items: { id: string; status: string | null }[];
+    }).items;
+    return items.find((m) => m.id === messageId)?.status;
+  }
+
+  let receiptMessage = "";
+
+  test("a message just sent carries one tick", async () => {
+    // Timestamps decide receipts; let the guardian's earlier activity age.
+    await Bun.sleep(20);
+    const sent = await send(TEACHER, "Receipt check");
+    expect(sent.status).toBe("sent");
+    receiptMessage = sent.id;
+    expect(await statusOf(TEACHER, receiptMessage)).toBe("sent");
+  });
+
+  test("other people's messages carry no receipt", async () => {
+    // Whether a third person read something is not the reader's business.
+    expect(await statusOf(GUARDIAN, receiptMessage)).toBeNull();
+  });
+
+  test("it is delivered once the other person's app fetches it", async () => {
+    const ack = await request("/v1/me/message-deliveries", {
+      method: "POST",
+      subject: GUARDIAN,
+      body: {},
+    });
+    expect(ack.status).toBe(200);
+    expect(await statusOf(TEACHER, receiptMessage)).toBe("delivered");
+  });
+
+  test("it is read once they open the conversation", async () => {
+    const read = await request(`/v1/conversations/${conversationId}/read`, {
+      method: "POST",
+      subject: GUARDIAN,
+      body: {},
+    });
+    expect(read.status).toBe(200);
+    expect(await statusOf(TEACHER, receiptMessage)).toBe("read");
+  });
+
+  test("a newer message starts again at one tick", async () => {
+    await Bun.sleep(20);
+    const next = await send(TEACHER, "And one more");
+    expect(next.status).toBe("sent");
+    // The earlier one stays read.
+    expect(await statusOf(TEACHER, receiptMessage)).toBe("read");
+  });
+
+  test("in a group, a tick means everyone", async () => {
+    // A third participant, added directly: the rule is about the receipt,
+    // not about who may be added.
+    await sql`
+      insert into public.conversation_participants (school_id, conversation_id, user_id)
+      values (${SCHOOL}::uuid, ${conversationId}::uuid, ${ADMIN}::uuid)
+      on conflict do nothing`;
+    try {
+      await Bun.sleep(20);
+      const sent = await send(TEACHER, "To both of you");
+      await request(`/v1/conversations/${conversationId}/read`, {
+        method: "POST",
+        subject: GUARDIAN,
+        body: {},
+      });
+      // One of two has read it: not read, and the other has not received it.
+      expect(await statusOf(TEACHER, sent.id)).toBe("sent");
+      await request("/v1/me/message-deliveries", {
+        method: "POST",
+        subject: ADMIN,
+        body: {},
+      });
+      expect(await statusOf(TEACHER, sent.id)).toBe("delivered");
+    } finally {
+      await sql`
+        delete from public.conversation_participants
+        where conversation_id = ${conversationId}::uuid
+          and user_id = ${ADMIN}::uuid`;
+    }
+  });
+
+  test("only a participant can mark a conversation read", async () => {
+    const res = await request(`/v1/conversations/${conversationId}/read`, {
+      method: "POST",
+      subject: OTHER_STUDENT_USER,
+      body: {},
+    });
+    expect(res.status).toBe(404);
   });
 
   test("a non-participant cannot list messages", async () => {

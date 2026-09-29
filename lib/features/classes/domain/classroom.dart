@@ -82,6 +82,21 @@ class NewClassDraft {
   final List<ClassSessionDraft> sessions;
 }
 
+/// What a teacher is handed when they share a class: a link to send, and
+/// the same link as a short code to read out or write on the board.
+///
+/// Both are shown once. The server keeps only hashes, so a teacher who loses
+/// them shares again, which retires the old link and its code together.
+@immutable
+class ClassInvite {
+  const ClassInvite({required this.link, this.code});
+
+  final String link;
+
+  /// Formatted `ABCD-EFGH`. Null when the server issues links only.
+  final String? code;
+}
+
 /// The class a student has just joined through a shared link.
 @immutable
 class JoinedClass {
@@ -108,10 +123,16 @@ class ClassJoinLinkInfo {
     required this.useCount,
     required this.expiresAt,
     this.maxUses,
+    this.invite,
   });
 
   final String id;
   final int useCount;
   final DateTime expiresAt;
   final int? maxUses;
+
+  /// The link and code this class already has, when the server can show
+  /// them again. Null for a link made before codes were re-derivable, or one
+  /// that can no longer be used.
+  final ClassInvite? invite;
 }

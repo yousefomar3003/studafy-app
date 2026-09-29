@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_field.dart';
+import '../../../core/content_links.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/messaging_interactor.dart';
 import '../domain/messaging.dart';
-import '../../../core/file_upload_repository.dart';
-import '../../../core/attachment_field.dart';
-import '../../../core/platform_attachment_source.dart';
-import '../../../core/uploads_scope.dart';
 
 /// One class a teacher may announce to.
 ///
@@ -54,6 +55,7 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
   bool _important = false;
   bool _posting = false;
   List<Attachment> _attachments = const [];
+  List<Uri> _links = const [];
 
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
@@ -89,7 +91,8 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
     final String? problem = switch (null) {
       _ when classroomId == null => l10n.announcementClassRequired,
       _ when _title.text.trim().isEmpty => l10n.announcementTitleRequired,
-      _ when _body.text.trim().isEmpty => l10n.announcementBodyRequired,
+      _ when _body.text.trim().isEmpty && _links.isEmpty =>
+        l10n.announcementBodyRequired,
       _ => null,
     };
     if (problem != null) {
@@ -107,7 +110,7 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
         schoolId: widget.schoolId,
         classroomId: classroomId,
         title: _title.text.trim(),
-        body: _body.text.trim(),
+        body: textWithLinks(_body.text, _links),
         audience: _audience,
         important: _important,
         attachmentFileIds: [for (final item in _attachments) ?item.fileId],
@@ -195,6 +198,10 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
                   : (value) => setState(() => _important = value),
               title: Text(l10n.announcementImportantLabel),
               subtitle: Text(l10n.announcementImportantDetail),
+            ),
+            LinksField(
+              enabled: !_posting,
+              onChanged: (links) => setState(() => _links = links),
             ),
             if (UploadsScope.maybeOf(context) case final uploads?)
               AttachmentField(

@@ -1,6 +1,5 @@
 import { type Context, Hono } from "hono";
 import {
-  type ErrorCodeType,
   V1CreateUploadIntentRequest,
   V1PublishFileRequest,
   v1Route,
@@ -17,21 +16,23 @@ import type {
 } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { idempotency } from "../platform/idempotency";
+import { committedJson, idempotency } from "../platform/idempotency";
 import { problem } from "../platform/errors";
 import {
+  routeParam,
   validatedBody,
   validatedParams,
   validateRouteInput,
 } from "../platform/validation";
-import type { RequestDbContext } from "../platform/catalogueRoutes";
-import type { File050Result, FileRepository } from "./repository";
+import type { FileCommandResult, FileRepository } from "./repository";
 import {
   normalizeDisplayName,
   type PrivateFileStorage,
   sha256Hex,
   StorageUnavailableError,
-} from "./storage";
+} from "@studafy/infrastructure";
+import { resolvedSchoolDbContext } from "../platform/dbContext";
+import { outcomeProblem, type OutcomeTable } from "../platform/outcomes";
 
 export interface FileRoutesDependencies {
   repository: FileRepository;
@@ -72,12 +73,11 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/uploads",
-    validateRouteInput(create) as never,
+    validateRouteInput(create),
     requirePermission(
       authorization,
       "upload.intent.create",
-      (c) =>
-        (validatedBody<Record<string, string>>(c as never)).schoolId ?? null,
+      (c) => (validatedBody<Record<string, string>>(c)).schoolId ?? null,
     ),
     idempotency(idempotencyDependencies, create.operationId, "required"),
     async (c) => {
@@ -87,13 +87,13 @@ export function createFileRoutes(
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
       const parsed = V1CreateUploadIntentRequest.parse(
-        validatedBody(c as never),
+        validatedBody(c),
       );
       const body = {
         ...parsed,
         displayName: normalizeDisplayName(parsed.displayName),
       };
-      const context = requestContext(c);
+      const context = resolvedSchoolDbContext(c);
       const prepared = await deps.repository.prepareIntent(context, body);
       const rejected = mapOutcome(c, prepared);
       if (rejected) return rejected;
@@ -119,24 +119,22 @@ export function createFileRoutes(
       if (failure) return failure;
       const response = create.response.safeParse(result.response);
       if (!response.success) return problem(c, "INTERNAL_ERROR", 500);
-      c.set("idempotencyCompleted", true);
-      return c.json(response.data, 201);
+      return committedJson(c, response.data, 201);
     },
   );
 
   routes.get(
     "/v1/uploads/:uploadId",
-    validateRouteInput(uploadStatus) as never,
+    validateRouteInput(uploadStatus),
     requirePermission(
       authorization,
       "upload.read",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).uploadId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).uploadId ?? null,
     ),
     async (c) => {
-      const id = requiredParam(c, "uploadId");
+      const id = routeParam(c, "uploadId");
       const result = await deps.repository.query(
-        requestContext(c),
+        resolvedSchoolDbContext(c),
         uploadStatus.operationId,
         id,
       );
@@ -151,19 +149,18 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/uploads/:uploadId/complete",
-    validateRouteInput(complete) as never,
+    validateRouteInput(complete),
     requirePermission(
       authorization,
       "upload.complete",
-      (c) =>
-        validatedParams<Record<string, string>>(c as never).uploadId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).uploadId ?? null,
     ),
     idempotency(idempotencyDependencies, complete.operationId, "required"),
     async (c) => {
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const uploadId = requiredParam(c, "uploadId");
-      const context = requestContext(c);
+      const uploadId = routeParam(c, "uploadId");
+      const context = resolvedSchoolDbContext(c);
       const prepared = await deps.repository.prepareCompletion(
         context,
         uploadId,
@@ -188,8 +185,7 @@ export function createFileRoutes(
         reservation,
       );
       if (result.outcome === "problem") {
-        c.set("idempotencyCompleted", true);
-        return c.json(result.response as never, 422, {
+        return committedJson(c, result.response as never, 422, {
           "Content-Type": "application/problem+json; charset=UTF-8",
         });
       }
@@ -197,23 +193,22 @@ export function createFileRoutes(
       if (failure) return failure;
       const response = complete.response.safeParse(result.response);
       if (!response.success) return problem(c, "INTERNAL_ERROR", 500);
-      c.set("idempotencyCompleted", true);
-      return c.json(response.data);
+      return committedJson(c, response.data);
     },
   );
 
   routes.get(
     "/v1/files/:fileId",
-    validateRouteInput(fileStatus) as never,
+    validateRouteInput(fileStatus),
     requirePermission(
       authorization,
       "file.read",
-      (c) => validatedParams<Record<string, string>>(c as never).fileId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).fileId ?? null,
     ),
     async (c) => {
-      const id = requiredParam(c, "fileId");
+      const id = routeParam(c, "fileId");
       const result = await deps.repository.query(
-        requestContext(c),
+        resolvedSchoolDbContext(c),
         fileStatus.operationId,
         id,
       );
@@ -228,19 +223,19 @@ export function createFileRoutes(
 
   routes.post(
     "/v1/files/:fileId/download-intent",
-    validateRouteInput(download) as never,
+    validateRouteInput(download),
     requirePermission(
       authorization,
       "file.download",
-      (c) => validatedParams<Record<string, string>>(c as never).fileId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).fileId ?? null,
     ),
     idempotency(idempotencyDependencies, download.operationId, "required"),
     async (c) => {
-      const id = requiredParam(c, "fileId");
+      const id = routeParam(c, "fileId");
       const delivery = deps.delivery;
       if (!delivery) {
         const result = await deps.repository.query(
-          requestContext(c),
+          resolvedSchoolDbContext(c),
           download.operationId,
           id,
         );
@@ -267,7 +262,7 @@ export function createFileRoutes(
         delivery.signingKey,
       );
       const result = await deps.repository.createDownloadGrant(
-        requestContext(c),
+        resolvedSchoolDbContext(c),
         id,
         {
           nonceHash: await hashDeliveryNonce(nonce),
@@ -280,18 +275,17 @@ export function createFileRoutes(
       if (failure) return failure;
       const response = download.response.safeParse(result.response);
       if (!response.success) return problem(c, "INTERNAL_ERROR", 500);
-      c.set("idempotencyCompleted", true);
-      return c.json(response.data);
+      return committedJson(c, response.data);
     },
   );
 
   routes.post(
     "/v1/files/:fileId/publish",
-    validateRouteInput(publish) as never,
+    validateRouteInput(publish),
     requirePermission(
       authorization,
       "file.publish",
-      (c) => validatedParams<Record<string, string>>(c as never).fileId ?? null,
+      (c) => validatedParams<Record<string, string>>(c).fileId ?? null,
     ),
     idempotency(idempotencyDependencies, publish.operationId, "required"),
     async (c) => {
@@ -300,10 +294,10 @@ export function createFileRoutes(
       }
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const body = V1PublishFileRequest.parse(validatedBody(c as never));
+      const body = V1PublishFileRequest.parse(validatedBody(c));
       const result = await deps.repository.publish(
-        requestContext(c),
-        requiredParam(c, "fileId"),
+        resolvedSchoolDbContext(c),
+        routeParam(c, "fileId"),
         body,
         reservation,
       );
@@ -311,8 +305,7 @@ export function createFileRoutes(
       if (failure) return failure;
       const response = publish.response.safeParse(result.response);
       if (!response.success) return problem(c, "INTERNAL_ERROR", 500);
-      c.set("idempotencyCompleted", true);
-      return c.json(response.data, 201);
+      return committedJson(c, response.data, 201);
     },
   );
 
@@ -419,10 +412,10 @@ function deliveryUrl(base: string, fileId: string, token: string): string {
   return url.toString();
 }
 
-/** Only the four scanned types are ever served; anything else is opaque. */
+/** Only the scanned types are ever served; anything else is opaque. */
 function safeMediaType(value: string | null | undefined): string {
   return value === "application/pdf" || value === "image/jpeg" ||
-      value === "image/png" || value === "image/webp"
+      value === "image/png" || value === "image/webp" || value === "audio/mp4"
     ? value
     : "application/octet-stream";
 }
@@ -438,43 +431,24 @@ export function contentDisposition(displayName: string): string {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
-function requestContext(c: Context<AuthorizationEnv>): RequestDbContext {
-  return {
-    subject: c.get("actor").token.subject,
-    schoolId: c.get("authorization").tenant?.schoolId ?? null,
-    requestId: c.get("requestId"),
-    aal2: c.get("actor").aal2,
-  };
-}
-
-function requiredParam(c: Context<AuthorizationEnv>, name: string): string {
-  const value = validatedParams<Record<string, string>>(c as never)[name];
-  if (!value) throw new Error(`validated route parameter missing: ${name}`);
-  return value;
-}
+const FILE_OUTCOMES: OutcomeTable = {
+  size_limit: ["PAYLOAD_TOO_LARGE", 413],
+  type_not_allowed: ["UNSUPPORTED_MEDIA_TYPE", 415],
+  quota_exceeded: ["UPLOAD_QUOTA_EXCEEDED", 429],
+  concurrency_limit: ["UPLOAD_CONCURRENCY_LIMIT", 429],
+  expired: ["UPLOAD_EXPIRED", 409],
+  already_completed: ["UPLOAD_ALREADY_COMPLETED", 409],
+  incomplete: ["UPLOAD_INCOMPLETE", 409],
+  file_not_clean: ["FILE_NOT_CLEAN", 409],
+  delivery_disabled: ["FILE_DELIVERY_DISABLED", 409],
+  grant_invalid: ["DELIVERY_GRANT_INVALID", 404],
+};
 
 function mapOutcome(
   c: Context<AuthorizationEnv>,
-  result: File050Result,
+  result: FileCommandResult,
 ): Response | null {
-  const mapped: Record<string, [ErrorCodeType, Parameters<typeof problem>[2]]> =
-    {
-      not_found: ["NOT_FOUND", 404],
-      forbidden: ["FORBIDDEN", 403],
-      invalid: ["INVALID_REQUEST", 400],
-      invalid_state: ["INVALID_STATE", 409],
-      size_limit: ["PAYLOAD_TOO_LARGE", 413],
-      type_not_allowed: ["UNSUPPORTED_MEDIA_TYPE", 415],
-      quota_exceeded: ["UPLOAD_QUOTA_EXCEEDED", 429],
-      concurrency_limit: ["UPLOAD_CONCURRENCY_LIMIT", 429],
-      expired: ["UPLOAD_EXPIRED", 409],
-      already_completed: ["UPLOAD_ALREADY_COMPLETED", 409],
-      incomplete: ["UPLOAD_INCOMPLETE", 409],
-      file_not_clean: ["FILE_NOT_CLEAN", 409],
-      delivery_disabled: ["FILE_DELIVERY_DISABLED", 409],
-      grant_invalid: ["DELIVERY_GRANT_INVALID", 404],
-    };
-  if (result.outcome === "ok") return null;
-  const entry = mapped[result.outcome] ?? ["INTERNAL_ERROR", 500];
-  return problem(c, entry[0], entry[1]);
+  return result.outcome === "ok"
+    ? null
+    : outcomeProblem(c, result.outcome, FILE_OUTCOMES);
 }

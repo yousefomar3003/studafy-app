@@ -391,6 +391,7 @@ export type Database = {
       };
       assessments: {
         Row: {
+          assignment_id: string | null;
           category: string;
           category_weight: number | null;
           classroom_id: string;
@@ -409,6 +410,7 @@ export type Database = {
           version: number;
         };
         Insert: {
+          assignment_id?: string | null;
           category: string;
           category_weight?: number | null;
           classroom_id: string;
@@ -427,6 +429,7 @@ export type Database = {
           version?: number;
         };
         Update: {
+          assignment_id?: string | null;
           category?: string;
           category_weight?: number | null;
           classroom_id?: string;
@@ -445,6 +448,13 @@ export type Database = {
           version?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "assessments_assignment_school_fk";
+            columns: ["school_id", "assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["school_id", "id"];
+          },
           {
             foreignKeyName: "assessments_classroom_id_fkey";
             columns: ["classroom_id"];
@@ -1021,8 +1031,10 @@ export type Database = {
       class_join_links: {
         Row: {
           classroom_id: string;
+          code_hash: string | null;
           created_at: string;
           created_by: string;
+          derivation_salt: string | null;
           expires_at: string;
           id: string;
           max_uses: number | null;
@@ -1037,8 +1049,10 @@ export type Database = {
         };
         Insert: {
           classroom_id: string;
+          code_hash?: string | null;
           created_at?: string;
           created_by: string;
+          derivation_salt?: string | null;
           expires_at: string;
           id?: string;
           max_uses?: number | null;
@@ -1053,8 +1067,10 @@ export type Database = {
         };
         Update: {
           classroom_id?: string;
+          code_hash?: string | null;
           created_at?: string;
           created_by?: string;
+          derivation_salt?: string | null;
           expires_at?: string;
           id?: string;
           max_uses?: number | null;
@@ -1415,6 +1431,7 @@ export type Database = {
         Row: {
           conversation_id: string;
           joined_at: string;
+          last_delivered_at: string | null;
           last_read_at: string | null;
           left_at: string | null;
           school_id: string;
@@ -1423,6 +1440,7 @@ export type Database = {
         Insert: {
           conversation_id: string;
           joined_at?: string;
+          last_delivered_at?: string | null;
           last_read_at?: string | null;
           left_at?: string | null;
           school_id: string;
@@ -1431,6 +1449,7 @@ export type Database = {
         Update: {
           conversation_id?: string;
           joined_at?: string;
+          last_delivered_at?: string | null;
           last_read_at?: string | null;
           left_at?: string | null;
           school_id?: string;
@@ -1729,6 +1748,8 @@ export type Database = {
         Row: {
           ai_grading_draft_id: string | null;
           announcement_id: string | null;
+          assessment_id: string | null;
+          assignment_id: string | null;
           created_at: string;
           file_object_id: string;
           id: string;
@@ -1741,6 +1762,8 @@ export type Database = {
         Insert: {
           ai_grading_draft_id?: string | null;
           announcement_id?: string | null;
+          assessment_id?: string | null;
+          assignment_id?: string | null;
           created_at?: string;
           file_object_id: string;
           id?: string;
@@ -1753,6 +1776,8 @@ export type Database = {
         Update: {
           ai_grading_draft_id?: string | null;
           announcement_id?: string | null;
+          assessment_id?: string | null;
+          assignment_id?: string | null;
           created_at?: string;
           file_object_id?: string;
           id?: string;
@@ -1846,6 +1871,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "submission_attempts";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "file_material_binding_assessment_school_fk";
+            columns: ["school_id", "assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_material_binding_assignment_school_fk";
+            columns: ["school_id", "assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["school_id", "id"];
           },
           {
             foreignKeyName: "file050_binding_upload_school_fk";
@@ -3271,6 +3310,87 @@ export type Database = {
           },
         ];
       };
+      notebook_entries: {
+        Row: {
+          body: string;
+          classroom_id: string;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          owner_id: string;
+          photo_file_id: string | null;
+          school_id: string;
+          source: string;
+          student_id: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          body: string;
+          classroom_id: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          owner_id: string;
+          photo_file_id?: string | null;
+          school_id: string;
+          source: string;
+          student_id: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          body?: string;
+          classroom_id?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          owner_id?: string;
+          photo_file_id?: string | null;
+          school_id?: string;
+          source?: string;
+          student_id?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notebook_entries_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notebook_entries_photo_file_id_fkey";
+            columns: ["photo_file_id"];
+            isOneToOne: false;
+            referencedRelation: "file_objects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notebook_entries_school_id_classroom_id_fkey";
+            columns: ["school_id", "classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "notebook_entries_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notebook_entries_school_id_student_id_fkey";
+            columns: ["school_id", "student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
       notification_deliveries: {
         Row: {
           attempt: number;
@@ -3667,8 +3787,10 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           display_name: string;
+          gender: string | null;
           id: string;
           locale: string;
+          profile_completed_at: string | null;
           status: Database["public"]["Enums"]["profile_status"];
           updated_at: string;
         };
@@ -3676,8 +3798,10 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           display_name: string;
+          gender?: string | null;
           id: string;
           locale?: string;
+          profile_completed_at?: string | null;
           status?: Database["public"]["Enums"]["profile_status"];
           updated_at?: string;
         };
@@ -3685,8 +3809,10 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           display_name?: string;
+          gender?: string | null;
           id?: string;
           locale?: string;
+          profile_completed_at?: string | null;
           status?: Database["public"]["Enums"]["profile_status"];
           updated_at?: string;
         };
@@ -4528,6 +4654,7 @@ export type Database = {
           raw_payload: string | null;
           received_at: string;
           state: Database["public"]["Enums"]["outbox_state"];
+          updated_at: string;
         };
         Insert: {
           attempt_count?: number;
@@ -4546,6 +4673,7 @@ export type Database = {
           raw_payload?: string | null;
           received_at?: string;
           state?: Database["public"]["Enums"]["outbox_state"];
+          updated_at?: string;
         };
         Update: {
           attempt_count?: number;
@@ -4564,6 +4692,7 @@ export type Database = {
           raw_payload?: string | null;
           received_at?: string;
           state?: Database["public"]["Enums"]["outbox_state"];
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -4670,6 +4799,8 @@ export type Database = {
           purchase_approval_id: string | null;
           purchased_at: string;
           purchaser_id: string;
+          reconciled_at: string | null;
+          renewal_status: string | null;
           signed_data_hash: string;
           state: Database["public"]["Enums"]["store_transaction_state"];
           transaction_id: string;
@@ -4689,6 +4820,8 @@ export type Database = {
           purchase_approval_id?: string | null;
           purchased_at: string;
           purchaser_id: string;
+          reconciled_at?: string | null;
+          renewal_status?: string | null;
           signed_data_hash: string;
           state: Database["public"]["Enums"]["store_transaction_state"];
           transaction_id: string;
@@ -4708,6 +4841,8 @@ export type Database = {
           purchase_approval_id?: string | null;
           purchased_at?: string;
           purchaser_id?: string;
+          reconciled_at?: string | null;
+          renewal_status?: string | null;
           signed_data_hash?: string;
           state?: Database["public"]["Enums"]["store_transaction_state"];
           transaction_id?: string;
@@ -4807,6 +4942,84 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      study_sets: {
+        Row: {
+          classroom_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          items: Json;
+          kind: string;
+          model: string;
+          resource_id: string;
+          resource_version_id: string;
+          school_id: string;
+          withdrawn_at: string | null;
+        };
+        Insert: {
+          classroom_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          items: Json;
+          kind: string;
+          model: string;
+          resource_id: string;
+          resource_version_id: string;
+          school_id: string;
+          withdrawn_at?: string | null;
+        };
+        Update: {
+          classroom_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          items?: Json;
+          kind?: string;
+          model?: string;
+          resource_id?: string;
+          resource_version_id?: string;
+          school_id?: string;
+          withdrawn_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "study_sets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "study_sets_resource_id_fkey";
+            columns: ["resource_id"];
+            isOneToOne: false;
+            referencedRelation: "resources";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "study_sets_resource_version_id_fkey";
+            columns: ["resource_version_id"];
+            isOneToOne: false;
+            referencedRelation: "resource_versions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "study_sets_school_id_classroom_id_fkey";
+            columns: ["school_id", "classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "study_sets_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];
@@ -5493,7 +5706,9 @@ export type Database = {
         | "paper_scan"
         | "coach_attachment"
         | "message_attachment"
-        | "announcement_attachment";
+        | "announcement_attachment"
+        | "notebook_photo"
+        | "assistant_attachment";
       file_scan_state:
         | "quarantined"
         | "scanning"
@@ -5759,6 +5974,8 @@ export const Constants = {
         "coach_attachment",
         "message_attachment",
         "announcement_attachment",
+        "notebook_photo",
+        "assistant_attachment",
       ],
       file_scan_state: [
         "quarantined",

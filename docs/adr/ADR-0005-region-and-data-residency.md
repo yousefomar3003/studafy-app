@@ -8,7 +8,7 @@ the Phase 7 pilot. Decision-log: DL-009. Date: 2026-09-10.
 The only remote project (`eamewgaptdfqzpmayavx`) runs in AWS
 `ap-northeast-1` (Tokyo) and contains synthetic data only. Studafy targets
 Saudi schools; Saudi PDPL cross-border transfer assessment and hosting
-constraints require qualified legal review (instructions.md explicitly marks
+constraints require qualified legal review (docs/planning/instructions.md explicitly marks
 these as engineering prompts, not legal conclusions). ARC-001 requires the
 region decision to be made or explicitly recorded as stopping later work.
 
@@ -17,7 +17,7 @@ region decision to be made or explicitly recorded as stopping later work.
 **Deferred.** Working assumptions until legal review:
 
 - The production primary region hosts API, worker, Redis, and the primary
-  Supabase project together in one approved region (instructions.md default).
+  Supabase project together in one approved region (docs/planning/instructions.md default).
 - The current Tokyo synthetic project is not a production region commitment.
 - Cross-border transfers (AI providers, Google Calendar, store verification,
   Cloudflare) must be inventoried in the threat model and assessed by counsel

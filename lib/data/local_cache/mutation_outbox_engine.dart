@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import '../../core/idempotency.dart';
 import '../contracts/v1_http_transport.dart';
 import 'offline_cache_store.dart';
-import 'uuid.dart';
 
 /// What happened when a queued mutation was replayed against the server.
 sealed class MutationOutcome {

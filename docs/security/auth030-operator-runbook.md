@@ -144,7 +144,7 @@ restoring direct client grants. Both would undo DB-021.
 
 ```
 bunx supabase start
-bun run test:auth030:lifecycle          # 26 end-to-end checks
+bun run test:auth:lifecycle          # 26 end-to-end checks
 bunx supabase test db --local supabase/tests/auth030_grants.sql
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
   bun test apps/api/test/auth

@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createDatabase, type Sql } from "@studafy/database";
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 const USER = "4a400000-0000-4000-8000-000000000001";
 const OTHER_USER = "4a400000-0000-4000-8000-000000000002";
 const SCHOOL = "4a400000-0000-4000-8000-000000000003";
@@ -38,10 +39,10 @@ async function seed() {
 }
 
 async function cleanup() {
-  await sql`delete from public.idempotency_records where actor_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.memberships where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.schools where id=${SCHOOL}::uuid`;
-  await sql`delete from auth.users where id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [USER, OTHER_USER],
+  });
 }
 
 function input(key: string, requestHash = "a".repeat(64)) {

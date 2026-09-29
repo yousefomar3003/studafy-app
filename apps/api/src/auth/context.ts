@@ -75,23 +75,6 @@ export async function withVerifiedActor<T>(
   }) as T;
 }
 
-/** API-041 transaction boundary. Tenant and request correlation are installed
- * with SET LOCAL beside the verified subject so pooled connections cannot
- * retain authority from a previous request. */
-export async function withRequestContext<T>(
-  sql: Sql,
-  context: { subject: string; schoolId: string | null; requestId: string },
-  work: (tx: Sql) => Promise<T>,
-): Promise<T> {
-  return await sql.begin(async (tx) => {
-    await tx`select
-      set_config('request.jwt.claim.sub', ${context.subject}, true),
-      set_config('studafy.school_id', ${context.schoolId}, true),
-      set_config('studafy.request_id', ${context.requestId}, true)`;
-    return await work(tx as unknown as Sql);
-  }) as T;
-}
-
 /**
  * Normalizes a `timestamptz` to an ISO string.
  *
@@ -159,6 +142,48 @@ export class AuthContextRepository {
     } catch {
       return await loader();
     }
+  }
+
+  /**
+   * Mirrors a verified identity into this database's `auth.users`, so the
+   * `on_auth_user_created` trigger creates its profile the same way a signup
+   * does.
+   *
+   * Only for a database that is not the one the token came from. Development
+   * signs people in against the hosted project and keeps `DATABASE_URL` on
+   * local Postgres, so the hosted signup trigger never fires here and every
+   * account arrives as `no_profile` - which the app shows as "Please sign in
+   * again", for every role, with no way forward. Where the database and the
+   * issuer are the same project the hosted trigger has already done this, and
+   * the caller must not enable it.
+   *
+   * A profile grants nothing by itself: school access still needs a
+   * membership, which only a school action creates. A deleted account keeps
+   * its row through the grace period and is refused as `profile_deleted`
+   * before this is ever reached.
+   */
+  async provisionIdentity(token: VerifiedToken): Promise<void> {
+    const claims = token.claims;
+    const email = typeof claims["email"] === "string" ? claims["email"] : null;
+    const metadata = typeof claims["user_metadata"] === "object" &&
+        claims["user_metadata"] !== null
+      ? claims["user_metadata"] as Record<string, unknown>
+      : {};
+    await this.#sql`
+      insert into auth.users (
+        id, email, aud, role, email_confirmed_at, created_at, updated_at,
+        instance_id, confirmation_token, recovery_token, email_change,
+        email_change_token_new, email_change_token_current,
+        phone_change_token, raw_app_meta_data, raw_user_meta_data)
+      values (
+        ${token.subject}::uuid, ${email}, 'authenticated', 'authenticated',
+        now(), now(), now(), '00000000-0000-0000-0000-000000000000',
+        '', '', '', '', '', '', '{}'::jsonb, ${
+      this.#sql.json(metadata as never)
+    })
+      on conflict (id) do nothing
+    `;
+    await this.#invalidate(token.subject);
   }
 
   /**

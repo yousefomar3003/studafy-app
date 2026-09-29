@@ -19,7 +19,7 @@ Phase 5B (§11, §20) is that exit. Four requirements drive it:
    file.
 4. The malicious-file response must be documented and rehearsed.
 
-There is no malware scanning vendor yet (inputs.md Group 3, A6), no approved
+There is no malware scanning vendor yet (docs/planning/inputs.md Group 3, A6), no approved
 retention schedule (§29), and no production environment.
 
 ## Decision
@@ -139,7 +139,7 @@ a whole dedupe group in one transaction. It moves every member out of
 legal hold and writes an attributed audit event.
 `file051_release_contained_object` lifts the hold and queues exact-key
 deletion. Neither function is granted to a runtime role. The runbook is
-rehearsed by `apps/api/scripts/file051-malware-drill.ts`.
+rehearsed by `apps/api/scripts/delivery-malware-drill.ts`.
 
 **Least privilege holds, and one FILE-050 gap is closed.** The API gains
 EXECUTE on three commands. The worker gains its own functions and `USAGE` on

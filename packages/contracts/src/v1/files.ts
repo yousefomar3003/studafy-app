@@ -15,6 +15,10 @@ export const V1FilePurpose = z.enum([
   "coach_attachment",
   "message_attachment",
   "announcement_attachment",
+  // A photo of the lesson whiteboard, for Studafy Plus to turn into notes.
+  "notebook_photo",
+  // A photo a student sends the study helper (Studafy Plus).
+  "assistant_attachment",
 ]);
 export type V1FilePurpose = z.infer<typeof V1FilePurpose>;
 
@@ -47,6 +51,8 @@ export const V1CreateUploadIntentRequest = z.strictObject({
   expectedSizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
   declaredMediaType: z.enum([
     "application/pdf",
+    // Voice notes: AAC in an MP4 container, message attachments only.
+    "audio/mp4",
     "image/jpeg",
     "image/png",
     "image/webp",
@@ -75,10 +81,44 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     // place to get that decision wrong.
     message_attachment: [],
     announcement_attachment: [],
+    // The class whose notebook the photo is for.
+    notebook_photo: ["classroomId"],
+    // Bound to nothing: it is sent with one question, then only kept.
+    assistant_attachment: [],
   };
+  // Targets a caller may name but need not. A student handing their own work
+  // in leaves studentId out and the server resolves it from their enrolment;
+  // a guardian acting for a child names the child.
+  const optional: Partial<
+    Record<V1UploadablePurpose, (keyof typeof present)[]>
+  > = { assignment_submission: ["studentId"] };
+  // Material names the work it belongs to when that already exists, or the
+  // class it is being written for when it does not yet - exactly one.
+  if (value.purpose === "assignment_material") {
+    if (present.assignmentId === present.classroomId) {
+      context.addIssue({
+        code: "custom",
+        path: ["assignmentId"],
+        message: "name exactly one of assignmentId or classroomId",
+      });
+    }
+    for (const key of ["studentId", "gradeResultId"] as const) {
+      if (present[key]) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: "target does not match upload purpose",
+        });
+      }
+    }
+    return;
+  }
   const allowed = new Set(required[value.purpose]);
+  const mayOmit = new Set(optional[value.purpose] ?? []);
   for (const [key, isPresent] of Object.entries(present)) {
-    if (isPresent !== allowed.has(key as keyof typeof present)) {
+    const name = key as keyof typeof present;
+    if (!isPresent && mayOmit.has(name)) continue;
+    if (isPresent !== allowed.has(name)) {
       context.addIssue({
         code: "custom",
         path: [key],

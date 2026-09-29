@@ -171,7 +171,7 @@ export function createAuthRoutes(
     requireRecentAuth(deps, "device_revoke"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1AuthDeviceRevokeRequestType>(c as never);
+      const body = validatedBody<V1AuthDeviceRevokeRequestType>(c);
 
       const revoked = await deps.repository.revokeDevice(
         actor.token.subject,
@@ -196,7 +196,7 @@ export function createAuthRoutes(
     idempotency(idempotencyDependencies, "signOut", "required"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1AuthSignOutRequestType>(c as never);
+      const body = validatedBody<V1AuthSignOutRequestType>(c);
 
       if (body.scope === "current") {
         // The current session's refresh token is revoked by the client's own
@@ -232,7 +232,7 @@ export function createAuthRoutes(
     idempotency(idempotencyDependencies, "challengeReauth", "required"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1ReauthChallengeRequestType>(c as never);
+      const body = validatedBody<V1ReauthChallengeRequestType>(c);
 
       await recordAuthEvent(deps, actor.token.subject, {
         eventType: "reauth_challenged",
@@ -258,7 +258,7 @@ export function createAuthRoutes(
     idempotency(idempotencyDependencies, "verifyReauth", "forbidden"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1ReauthVerifyRequestType>(c as never);
+      const body = validatedBody<V1ReauthVerifyRequestType>(c);
 
       const sessionId = actor.token.sessionId;
       if (!sessionId) return problem(c, "INVALID_REQUEST", 400);
@@ -303,7 +303,7 @@ export function createAuthRoutes(
     requireRecentAuth(deps, "account_link"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1IdentityLinkRequestType>(c as never);
+      const body = validatedBody<V1IdentityLinkRequestType>(c);
 
       // The provider's id token is verified before anything is linked, so a
       // caller cannot claim an identity it does not control.
@@ -356,7 +356,7 @@ export function createAuthRoutes(
     requireRecentAuth(deps, "account_link"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1IdentityUnlinkRequestType>(c as never);
+      const body = validatedBody<V1IdentityUnlinkRequestType>(c);
 
       const outcome = await deps.repository.unlinkIdentity(
         actor.token.subject,
@@ -415,7 +415,7 @@ export function createAuthRoutes(
     requireRecentAuth(deps, "account_deletion"),
     async (c) => {
       const actor = c.get("actor");
-      const body = validatedBody<V1DeletionRequestRequestType>(c as never);
+      const body = validatedBody<V1DeletionRequestRequestType>(c);
 
       // The impact is recomputed server-side and stored with the request, so
       // the record shows what was true at confirmation rather than whatever

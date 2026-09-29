@@ -6,7 +6,7 @@ Date: 2026-09-10.
 ## Context
 
 Studafy is a Flutter app with Supabase (Auth, PostgreSQL, Storage, Deno Edge
-Functions). The audit (instructions.md §3) found the Edge Functions lack shared
+Functions). The audit (docs/planning/instructions.md §3) found the Edge Functions lack shared
 validation, idempotency, transactions, and observability, and that a
 microservice split is not justified at current scale. Eight Deno functions
 already duplicate auth/bootstrap logic.

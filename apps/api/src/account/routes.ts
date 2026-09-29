@@ -6,7 +6,10 @@ import type {
 } from "../authorization/middleware";
 import type { AuthDependencies } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { AccountRepository } from "./repository";
 
 export interface AccountDependencies {
@@ -18,7 +21,11 @@ export interface AccountDependencies {
 export type AccountSlice = "account";
 
 // Appended after notifications' 5 entries (indices [81, 86)).
-const ACCOUNT_ROUTES = V1_ROUTE_CATALOGUE.slice(86, 89);
+const ACCOUNT_ROUTES = catalogueRoutesNamed([
+  "updateProfile",
+  "requestDataExport",
+  "getExportStatus",
+]);
 // DL-051 appended downloadDataExport at the end of the catalogue; it mounts
 // in its own router so handler order stays equal to the contract.
 const ACCOUNT_READ_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
@@ -48,7 +55,7 @@ export function createAccountRoutes(
       selector,
       sliceFor,
       enabledSlices: deps.enabledSlices,
-      // instructions.md section 7: a data export is sensitive enough to need
+      // docs/planning/instructions.md section 7: a data export is sensitive enough to need
       // the same fresh re-confirmation account deletion already requires
       // (AUTH-030's account_deletion purpose, apps/api/src/auth/routes.ts) -
       // a standing second factor is not additionally required here, matching
@@ -61,6 +68,26 @@ export function createAccountRoutes(
       },
       // 'account_data_export' is added to AUTH-030's reauth purpose
       // allowlist by supabase/migrations/202609160010_api042_reauth_purposes.sql.
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
+/** The caller's own profile, mounted last, as it is last in the catalogue. */
+export function createProfileReadRoutes(
+  deps: AccountDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: catalogueRoutesNamed(["getProfile"]),
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector,
+      sliceFor,
+      enabledSlices: deps.enabledSlices,
     },
     authorization,
     idempotencyDependencies,

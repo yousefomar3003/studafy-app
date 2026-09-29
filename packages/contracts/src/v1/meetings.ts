@@ -22,6 +22,16 @@ export const V1RequestMeetingRequest = z.strictObject({
   startsAt: z.string().datetime({ offset: true }),
   endsAt: z.string().datetime({ offset: true }),
   audience: z.enum(["students", "guardians", "both"]).default("both"),
+  /**
+   * The Google Meet link the teacher created. Studafy does not host the call;
+   * with a link the meeting is scheduled and its audience notified at once.
+   * Only meet.google.com links are accepted - this link goes to every family
+   * in the class, so it must not be able to point anywhere else.
+   */
+  meetUrl: z.string().trim().max(300).regex(
+    /^https:\/\/meet\.google\.com\/[A-Za-z0-9-]{3,64}(\?[A-Za-z0-9=&._-]{0,200})?$/,
+    "must be a https://meet.google.com/ link",
+  ).optional(),
 });
 export type V1RequestMeetingRequest = z.infer<typeof V1RequestMeetingRequest>;
 
@@ -42,3 +52,19 @@ export const V1MeetingStatusResponse = z.strictObject({
   deliveries: z.array(V1MeetingDelivery),
 });
 export type V1MeetingStatusResponse = z.infer<typeof V1MeetingStatusResponse>;
+
+/** A meeting as it appears in someone's list: with its class's name. */
+export const V1MeetingListItem = V1Meeting.extend({
+  classroomName: z.string(),
+});
+export type V1MeetingListItem = z.infer<typeof V1MeetingListItem>;
+
+/**
+ * Upcoming meetings the caller was invited to, and for staff their classes'
+ * meetings, soonest first.
+ */
+export const V1MeetingList = z.strictObject({
+  items: z.array(V1MeetingListItem),
+  nextCursor: z.string().nullable(),
+});
+export type V1MeetingList = z.infer<typeof V1MeetingList>;

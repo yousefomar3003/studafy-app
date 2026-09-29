@@ -2,7 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_l10n.dart';
 import 'attachment_policy.dart';
+import 'feedback.dart';
 import 'file_upload_repository.dart';
 
 /// What the person chose, before anything has been sent.
@@ -19,7 +21,13 @@ class PickedAttachment {
   final Uint8List bytes;
 }
 
-enum AttachmentKind { photo, document }
+enum AttachmentKind {
+  photo,
+  document,
+
+  /// A new photo taken with the camera, for a whiteboard.
+  camera,
+}
 
 /// Opens the platform picker. Injected so a test never touches a channel.
 typedef AttachmentSource = Future<PickedAttachment?> Function(
@@ -109,9 +117,6 @@ class _AttachmentFieldState extends State<AttachmentField> {
 
   AttachmentPolicy get _policy => AttachmentPolicy.of(widget.purpose);
 
-  String _text(String en, String ar) =>
-      Localizations.localeOf(context).languageCode == 'ar' ? ar : en;
-
   void _publish() => widget.onChanged?.call(List.unmodifiable(_items));
 
   Future<void> _add(AttachmentKind kind) async {
@@ -172,7 +177,7 @@ class _AttachmentFieldState extends State<AttachmentField> {
       // detail that is not the person's to read, and the action is the same
       // whatever it was.
       _replace(localId, (item) => item.copyWith(stage: AttachmentStage.failed));
-      _say(_text('That file could not be uploaded.', 'تعذّر رفع هذا الملف.'));
+      _say(AppL10n.of(context).attachmentThatFileCouldNotBe);
     }
   }
 
@@ -189,19 +194,16 @@ class _AttachmentFieldState extends State<AttachmentField> {
   }
 
   void _say(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showMessage(message);
 
   String _refusalText(AttachmentRefusal refusal) => switch (refusal) {
-    AttachmentRefusal.empty => _text('That file is empty.', 'هذا الملف فارغ.'),
-    AttachmentRefusal.mediaType => _text(
-      'Only PDF and photos can be attached.',
-      'يمكن إرفاق ملفات PDF والصور فقط.',
-    ),
-    AttachmentRefusal.tooLarge => _text(
-      'That file is larger than ${_megabytes(_policy.maximumSizeBytes)} MB.',
-      'حجم الملف أكبر من ${_megabytes(_policy.maximumSizeBytes)} ميغابايت.',
-    ),
+    AttachmentRefusal.empty => AppL10n.of(context).attachmentThatFileIsEmpty,
+    AttachmentRefusal.mediaType => AppL10n.of(
+      context,
+    ).attachmentOnlyPdfAndPhotosCan,
+    AttachmentRefusal.tooLarge => AppL10n.of(
+      context,
+    ).attachmentThatFileIsLargerThan(_megabytes(_policy.maximumSizeBytes)),
   };
 
   static String _megabytes(int bytes) =>
@@ -227,12 +229,12 @@ class _AttachmentFieldState extends State<AttachmentField> {
                 TextButton.icon(
                   onPressed: () => _add(AttachmentKind.document),
                   icon: const Icon(Icons.attach_file_rounded),
-                  label: Text(_text('Attach file', 'إرفاق ملف')),
+                  label: Text(AppL10n.of(context).attachmentAttachFile),
                 ),
                 TextButton.icon(
                   onPressed: () => _add(AttachmentKind.photo),
                   icon: const Icon(Icons.image_outlined),
-                  label: Text(_text('Photo', 'صورة')),
+                  label: Text(AppL10n.of(context).attachmentPhoto),
                 ),
               ],
             ),
@@ -241,10 +243,8 @@ class _AttachmentFieldState extends State<AttachmentField> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              _text(
-                'Up to ${widget.maximumCount} attachments.',
-                'حتى ${widget.maximumCount} مرفقات.',
-              ),
+              AppL10n.of(context)
+                  .attachmentUpToMaximumcountAttachments(widget.maximumCount),
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),
@@ -253,12 +253,12 @@ class _AttachmentFieldState extends State<AttachmentField> {
   }
 
   String _stageLabel(AttachmentStage stage) => switch (stage) {
-    AttachmentStage.uploading => _text('Uploading', 'جارٍ الرفع'),
+    AttachmentStage.uploading => AppL10n.of(context).attachmentUploading,
     // Honest about what quarantine means: it is attached, and it is not
     // downloadable by anyone until the scan clears it.
-    AttachmentStage.quarantined => _text('Checking', 'قيد الفحص'),
-    AttachmentStage.ready => _text('Ready', 'جاهز'),
-    AttachmentStage.failed => _text('Failed', 'فشل'),
+    AttachmentStage.quarantined => AppL10n.of(context).attachmentChecking,
+    AttachmentStage.ready => AppL10n.of(context).attachmentReady,
+    AttachmentStage.failed => AppL10n.of(context).attachmentFailed,
   };
 }
 

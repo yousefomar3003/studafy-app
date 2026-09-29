@@ -110,6 +110,41 @@ describe("Turnstile", () => {
     expect((await send({ captchaToken: "fresh" })).status).toBe(403);
     expect(writes).toBe(1);
   });
+
+  test("no token asks for a check; a bad token is refused flatly", async () => {
+    // The app shows the check only when it sees CAPTCHA_REQUIRED, so the two
+    // must not be confused: a missing token is a request for one, and a
+    // failed solve is a refusal that says nothing about how to do better.
+    const app = new Hono<AuthorizationEnv>();
+    app.use(
+      "*",
+      requireStudentLookupChallenge(
+        options,
+        async () => Response.json({ success: false }),
+      ),
+    );
+    app.post("/v1/students/locate", (c) => c.json({ found: true }));
+    const send = async (body: unknown) => {
+      const res = await app.request("/v1/students/locate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return {
+        status: res.status,
+        code: (await res.json() as { code: string }).code,
+      };
+    };
+    expect(await send({})).toEqual({ status: 403, code: "CAPTCHA_REQUIRED" });
+    expect(await send({ captchaToken: "" })).toEqual({
+      status: 403,
+      code: "CAPTCHA_REQUIRED",
+    });
+    expect(await send({ captchaToken: "forged" })).toEqual({
+      status: 403,
+      code: "FORBIDDEN",
+    });
+  });
   test("widget page exposes only sitekey and retains nonce-based CSP", async () => {
     const app = new Hono();
     app.use("*", secureResponseHeaders("development") as never);

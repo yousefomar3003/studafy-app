@@ -32,6 +32,8 @@ export interface VerifiedGooglePurchase {
   startTime: string | null;
   expiryTime: string | null;
   acknowledgementState: string;
+  /** `autoRenewingPlan.autoRenewEnabled`; null for a prepaid plan. */
+  autoRenewEnabled?: boolean | null;
 }
 
 export interface GooglePurchaseVerifier {
@@ -113,6 +115,7 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
         startTime: data.startTime ?? null,
         expiryTime: lineItem.expiryTime ?? null,
         acknowledgementState: data.acknowledgementState ?? "0",
+        autoRenewEnabled: lineItem.autoRenewingPlan?.autoRenewEnabled ?? null,
       };
     } catch (error) {
       if (error instanceof GoogleVerificationError) throw error;

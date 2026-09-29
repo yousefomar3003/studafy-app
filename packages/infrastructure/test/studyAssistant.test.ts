@@ -7,9 +7,9 @@
  * properties that stop that recurring, so neither can be quietly lost.
  */
 import { describe, expect, test } from "bun:test";
+import { redactForProvider } from "@studafy/domain";
 import {
   createStudyAssistant,
-  redactForProvider,
   StudyAssistantError,
 } from "../src/studyAssistant";
 
@@ -76,6 +76,50 @@ describe("study assistant egress", () => {
     for (const forbidden of ["schoolId", "studentId", "userId", "classroom"]) {
       expect(payload).not.toContain(forbidden);
     }
+  });
+
+  test("a follow-up carries the chat it is given, redacted, in order", async () => {
+    // The route has already fitted the chat to the plan's memory budget;
+    // this layer forwards it as it is, redacting both sides.
+    const sent: { messages: { role: string; content: string }[] }[] = [];
+    const assistant = assistantWith(
+      (async (_input, init) => {
+        sent.push(JSON.parse((init as RequestInit).body as string));
+        return reply("ok");
+      }) as typeof fetch,
+    );
+    const history = Array.from({ length: 12 }, (_, i) => ({
+      role: i % 2 === 0 ? "student" as const : "assistant" as const,
+      text: i === 11 ? "Write to me at kid@example.com" : `turn ${i}`,
+    }));
+
+    await assistant.ask("What does that mean?", history);
+
+    const messages = sent[0]!.messages;
+    // System, all twelve turns, then the question.
+    expect(messages).toHaveLength(14);
+    expect(messages[0]!.role).toBe("system");
+    expect(messages[1]).toEqual({ role: "user", content: "turn 0" });
+    expect(messages[2]).toEqual({ role: "assistant", content: "turn 1" });
+    expect(messages[12]!.content).toBe("Write to me at [email]");
+    expect(messages[13]).toEqual({
+      role: "user",
+      content: "What does that mean?",
+    });
+  });
+
+  test("asks for an answer without a reasoning trace", async () => {
+    // A thinking model spends the token budget on its reasoning; with it on,
+    // students got cut-off or empty answers.
+    const sent: Record<string, unknown>[] = [];
+    const assistant = assistantWith(
+      (async (_input, init) => {
+        sent.push(JSON.parse((init as RequestInit).body as string));
+        return reply("ok");
+      }) as typeof fetch,
+    );
+    await assistant.ask("What is photosynthesis?");
+    expect(sent[0]?.["reasoning"]).toEqual({ enabled: false });
   });
 
   test("obvious identifiers are stripped before egress", () => {

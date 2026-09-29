@@ -5,7 +5,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { AcademicRepository } from "./repository";
 
 export interface AcademicDependencies {
@@ -25,7 +28,48 @@ export type AcademicSlice =
 
 // Bounded, not open-ended: entries after index 51 belong to school-admin
 // (API-042 S1) and are mounted by createSchoolAdminRoutes instead.
-const ACADEMIC_ROUTES = V1_ROUTE_CATALOGUE.slice(12, 52);
+const ACADEMIC_ROUTES = catalogueRoutesNamed([
+  "getSchool",
+  "listTerms",
+  "listClassrooms",
+  "createClassroom",
+  "getClassroom",
+  "listClassroomStaff",
+  "updateClassroom",
+  "replaceClassroomSchedule",
+  "listClassroomStudents",
+  "listResources",
+  "listLessonSessions",
+  "createResource",
+  "reviseResource",
+  "publishResource",
+  "withdrawResource",
+  "listAssignments",
+  "createAssignment",
+  "publishAssignment",
+  "withdrawAssignment",
+  "submitAssignment",
+  "getAssignment",
+  "listAssignmentSubmissions",
+  "listAssessments",
+  "createAssessment",
+  "publishAssessment",
+  "withdrawAssessment",
+  "listAssessmentQuestions",
+  "listAssessmentAuthoringQuestions",
+  "listAssessmentAttempts",
+  "submitAssessment",
+  "listGradeResults",
+  "reviewGradeResult",
+  "publishGradeResult",
+  "correctGradeResult",
+  "withdrawGradeResult",
+  "listAttendance",
+  "listAttendanceRoster",
+  "recordAttendance",
+  "listWellbeing",
+  "createWellbeing",
+]);
 
 function selector(
   c: Context<AuthorizationEnv>,
@@ -86,6 +130,30 @@ export function createAcademicAppendedRoutes(
   );
 }
 
+/** Deleting (archiving) a class, mounted last as it is last in the
+ * catalogue. The SQL behind it keeps students' notebooks. */
+export function createClassroomArchiveRoutes(
+  deps: AcademicDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: catalogueRoutesNamed(["archiveClassroom"]),
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: (c) =>
+        ((c.get("validatedParams") ?? {}) as Record<string, string>)[
+          "classroomId"
+        ] ?? null,
+      sliceFor: () => "classes" as AcademicSlice,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
 export function createAcademicRoutes(
   deps: AcademicDependencies,
   authorization: AuthorizationDependencies,
@@ -98,6 +166,37 @@ export function createAcademicRoutes(
       cursorSigningKey: deps.cursorSigningKey,
       selector,
       sliceFor,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}
+
+/// Submission history: every attempt at one assignment.
+///
+/// Its own group because it sits at the very end of the contract catalogue,
+/// and mount order is asserted to equal catalogue order - it must be mounted
+/// after everything the catalogue lists before it.
+const SUBMISSION_HISTORY_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  route.operationId === "listSubmissionHistory"
+);
+
+export function createSubmissionHistoryRoutes(
+  deps: AcademicDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: SUBMISSION_HISTORY_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      selector: (c) =>
+        ((c.get("validatedParams") ?? {}) as Record<string, string>)[
+          "assignmentId"
+        ] ?? null,
+      sliceFor: () => "assignments" as AcademicSlice,
       enabledSlices: deps.enabledSlices,
     },
     authorization,

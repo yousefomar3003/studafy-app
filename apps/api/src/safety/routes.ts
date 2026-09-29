@@ -1,11 +1,13 @@
 import type { Context, Hono } from "hono";
-import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import type {
   AuthorizationDependencies,
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { SafetyRepository } from "./repository";
 
 export interface SafetyDependencies {
@@ -23,7 +25,31 @@ export type SafetySlice =
 // SAFE-043's routes were appended after schoolRoster at indices [96, 119)
 // (see packages/contracts/src/v1/routes.ts). Order inside the catalogue is
 // fixed; sliceFor maps each operation to the config flag that gates it.
-const SAFETY_ROUTES = V1_ROUTE_CATALOGUE.slice(96, 119);
+const SAFETY_ROUTES = catalogueRoutesNamed([
+  "getContentControls",
+  "updateContentControls",
+  "createReport",
+  "listReports",
+  "getReport",
+  "appealReport",
+  "createBlock",
+  "listBlocks",
+  "unblockUser",
+  "getModerationOverview",
+  "listModerationQueue",
+  "getModerationReport",
+  "triageReport",
+  "resolveReport",
+  "escalateReport",
+  "addReportEvidence",
+  "holdReport",
+  "releaseLegalHold",
+  "requestModerationAccess",
+  "approveModerationAccess",
+  "startModerationAccess",
+  "revokeModerationAccess",
+  "listModerationAccess",
+]);
 
 function selector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;

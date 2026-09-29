@@ -2,7 +2,7 @@ import type { Context, MiddlewareHandler } from "hono";
 import type { z } from "zod";
 import type { V1RouteContract } from "@studafy/contracts";
 import { problem } from "./errors";
-import type { PlatformEnv } from "./types";
+import type { PlatformEnv, RouteContext } from "./types";
 
 function issueCode(code: string): string {
   return code === "unrecognized_keys" ? "unknownField" : code;
@@ -35,10 +35,17 @@ function fieldErrors(
   });
 }
 
-export function validateRouteInput(
+/**
+ * Validates a route's query, params and body against its contract, and
+ * records the operation for the middleware after it.
+ *
+ * Generic in the route environment so it slots into an authenticated or
+ * authorized router without a cast; it only touches PlatformEnv's variables.
+ */
+export function validateRouteInput<E extends PlatformEnv = PlatformEnv>(
   route: V1RouteContract,
-): MiddlewareHandler<PlatformEnv> {
-  return async (c, next) => {
+): MiddlewareHandler<E> {
+  const handler: MiddlewareHandler<PlatformEnv> = async (c, next) => {
     c.set("operationId", route.operationId as never);
     c.set("idempotencyMode", route.idempotency);
 
@@ -91,16 +98,40 @@ export function validateRouteInput(
     c.set("validatedBody", result.data);
     await next();
   };
+  return handler as unknown as MiddlewareHandler<E>;
 }
 
-export function validatedBody<T>(c: Context<PlatformEnv>): T {
-  return c.get("validatedBody") as T;
+/**
+ * The validated request parts, readable from any route context.
+ *
+ * Hono's Context is invariant in its environment, so a handler typed for
+ * AuthorizationEnv could not pass itself to a PlatformEnv parameter without a
+ * cast at every call site. These accept every route context the API uses;
+ * the one cast lives here, where the variables are known to exist because
+ * [validateRouteInput] set them.
+ */
+function platform(c: RouteContext): Context<PlatformEnv> {
+  return c as unknown as Context<PlatformEnv>;
 }
 
-export function validatedParams<T>(c: Context<PlatformEnv>): T {
-  return c.get("validatedParams") as T;
+export function validatedBody<T>(c: RouteContext): T {
+  return platform(c).get("validatedBody") as T;
 }
 
-export function validatedQuery<T>(c: Context<PlatformEnv>): T {
-  return c.get("validatedQuery") as T;
+export function validatedParams<T>(c: RouteContext): T {
+  return platform(c).get("validatedParams") as T;
+}
+
+export function validatedQuery<T>(c: RouteContext): T {
+  return platform(c).get("validatedQuery") as T;
+}
+
+/**
+ * One validated path parameter. The route schema has already required it, so
+ * a missing value is a wiring bug and fails loudly rather than as a 404.
+ */
+export function routeParam(c: RouteContext, name: string): string {
+  const value = validatedParams<Record<string, string>>(c)[name];
+  if (!value) throw new Error(`validated route parameter missing: ${name}`);
+  return value;
 }

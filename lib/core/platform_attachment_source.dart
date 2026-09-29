@@ -1,8 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'attachment_policy.dart';
 import 'attachment_field.dart';
+import 'attachment_policy.dart';
 
 /// The real picker.
 ///
@@ -17,8 +17,11 @@ Future<PickedAttachment?> pickPlatformAttachment(
 ) async {
   switch (kind) {
     case AttachmentKind.photo:
+    case AttachmentKind.camera:
       final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
+        source: kind == AttachmentKind.camera
+            ? ImageSource.camera
+            : ImageSource.gallery,
         // Re-encoding at pick time drops most camera metadata before the
         // bytes ever leave the device. The server strips it again; this just
         // means the original was never sent.
@@ -63,6 +66,7 @@ String _mediaTypeFor(String name, {String fallback = 'application/pdf'}) {
     'pdf' => 'application/pdf',
     'png' => 'image/png',
     'webp' => 'image/webp',
+    'm4a' => 'audio/mp4',
     'jpg' || 'jpeg' => 'image/jpeg',
     _ => fallback,
   };

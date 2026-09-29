@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 
+import '../../../core/app_routes.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
-import '../../../l10n/generated/app_l10n.dart';
 import '../../../core/studafy_domain.dart';
-import '../../../core/app_routes.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
 import 'role_page.dart';
@@ -36,11 +36,25 @@ class _LoginPageState extends State<LoginPage> {
   /// startup never tries to close a browser that was never opened.
   bool awaitingProviderCallback = false;
 
+  /// While adding an account, the account that was current when this screen
+  /// opened. Null otherwise.
+  String? _addingTo;
+
+  bool get _stillTheAccountBeingAddedTo =>
+      _addingTo != null && widget.session.currentUserId == _addingTo;
+
   @override
   void initState() {
     super.initState();
+    // Taken now, before any callback can replace the session.
+    if (widget.session.addingAccount) {
+      _addingTo = widget.session.currentUserId;
+    }
     sessionSubscription = widget.session.sessionChanges.listen(
       (hasSession) {
+        // Adding an account: only a sign-in as somebody else counts, not a
+        // refresh of the account being added to.
+        if (_stillTheAccountBeingAddedTo) return;
         if (hasSession) {
           _dismissProviderBrowser();
           _completeRemoteLogin();
@@ -62,7 +76,9 @@ class _LoginPageState extends State<LoginPage> {
     if (checkedRestoredSession) return;
     checkedRestoredSession = true;
     // Localizations is an inherited widget and cannot be read in initState.
-    if (widget.session.hasCurrentSession) {
+    // While an account is being added, the session still here is the one
+    // being added to; this screen waits for the new sign-in instead.
+    if (widget.session.hasCurrentSession && !_stillTheAccountBeingAddedTo) {
       _completeRemoteLogin();
     }
   }
@@ -95,6 +111,14 @@ class _LoginPageState extends State<LoginPage> {
     // on screen — iOS presents one at a time — and that first browser is the
     // one holding the callback, so a failure here must not disown it.
     if (result.isSuccess) awaitingProviderCallback = true;
+    // Native Sign in with Apple has its session before this returns, so the
+    // listener above already skipped it as "no new account yet".
+    if (result.isSuccess &&
+        _addingTo != null &&
+        widget.session.hasCurrentSession &&
+        !_stillTheAccountBeingAddedTo) {
+      unawaited(_completeRemoteLogin());
+    }
     // Opening the browser is not a completed login. Let the user retry when
     // they dismiss it; sessionChanges handles the eventual OAuth callback.
     if (mounted) {

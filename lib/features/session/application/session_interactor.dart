@@ -152,7 +152,7 @@ class SessionInteractor {
           await repository.signOut();
           throw Failure.validation('This account no longer has access.');
         }
-        context.hydrate(authenticatedProfile: profile);
+        context.hydrate(authenticatedProfile: profile, signedInAs: role);
         return LoginOutcome.needsOnboarding;
       }
       final term = await repository.activeTermForSchool(
@@ -162,11 +162,13 @@ class SessionInteractor {
         authenticatedProfile: profile,
         activeMembership: membership,
         termId: term?.id.value,
+        signedInAs: role,
       );
       return LoginOutcome.ready;
     });
     result.fold(
       onSuccess: (outcome) {
+        addingAccount = false;
         switch (outcome) {
           case LoginOutcome.ready:
             _setStatus(SessionStatus.authenticated);
@@ -262,6 +264,34 @@ class SessionInteractor {
     final cancelled = await repository.cancelAccountDeletion();
     telemetry.event('session_deletion_cancelled', {'cancelled': cancelled});
     return cancelled;
+  }
+
+  // --------------------------------------------------------------------
+  // Accounts on this device
+  //
+  // Several accounts can be signed in on one device, and a parent can hold
+  // their children's managed accounts, switching between them without
+  // signing out. Only one session is current at a time; the others wait in
+  // the device's account list with their latest refresh tokens.
+  // --------------------------------------------------------------------
+
+  /// Set while another account is being added. The login screen then waits
+  /// for the new sign-in instead of completing with the session that is
+  /// still current, which belongs to the account being added *to*.
+  bool addingAccount = false;
+
+  String? get currentUserId => repository.currentUserId;
+
+  Stream<SessionToken> get sessionTokens => repository.sessionTokens;
+
+  Future<void> resumeSession(String refreshToken) async {
+    await repository.resumeSession(refreshToken);
+    telemetry.event('session_account_resumed');
+  }
+
+  Future<void> enterManagedAccount(String tokenHash) async {
+    await repository.enterManagedAccount(tokenHash);
+    telemetry.event('session_managed_account_entered');
   }
 
   /// Switches to another role the profile holds. Outside synthetic builds a

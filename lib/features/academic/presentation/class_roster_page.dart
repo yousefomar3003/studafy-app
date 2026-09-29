@@ -17,7 +17,7 @@ class ClassRosterPage extends StatefulWidget {
     this.onMessageGuardian,
   });
 
-  final AcademicRepository repository;
+  final ClassTimetableRepository repository;
   final String classroomId;
   final String classroomName;
 

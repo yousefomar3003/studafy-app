@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'blocked_people_page.dart';
 import 'conversation_page.dart';
@@ -13,7 +15,22 @@ import 'messaging_strings.dart';
 /// Conversation list for every role, backed by authoritative `/v1`
 /// messaging (MOB-070, SAFE-043). Replaces the legacy SQLite chat screens.
 class ConversationsPage extends StatefulWidget {
-  const ConversationsPage({super.key, this.visible = true});
+  const ConversationsPage({
+    super.key,
+    this.visible = true,
+    this.acknowledgeEvery = const Duration(seconds: 30),
+    this.asRole,
+  });
+
+  /// The role this inbox belongs to. One account can be a teacher at one
+  /// school and a parent at another; each interface then lists only the
+  /// conversations it takes part in that way, so the parent's inbox does not
+  /// fill with the same person's teaching conversations. Null lists all.
+  final MessagingRole? asRole;
+
+  /// How often, while the app is in the foreground, this device tells the
+  /// server it has received its conversations - the second grey tick.
+  final Duration acknowledgeEvery;
 
   /// Whether this tab is the one on screen.
   ///
@@ -28,7 +45,8 @@ class ConversationsPage extends StatefulWidget {
   State<ConversationsPage> createState() => _ConversationsPageState();
 }
 
-class _ConversationsPageState extends State<ConversationsPage> {
+class _ConversationsPageState extends State<ConversationsPage>
+    with WidgetsBindingObserver {
   List<Conversation> _conversations = const [];
 
   /// False while this tab is off screen: nothing is loading, so a spinner
@@ -37,10 +55,53 @@ class _ConversationsPageState extends State<ConversationsPage> {
   bool _enabled = true;
   Failure? _failure;
 
+  /// Every shell keeps this page alive in its IndexedStack, so it is where
+  /// the app says "delivered" for the whole signed-in session - the way a
+  /// phone that is on receives messages whichever screen is open.
+  Timer? _acknowledger;
+  bool _foreground = true;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.visible) unawaited(_load());
+    // After the first frame: the scope is an inherited widget.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _acknowledge());
+    _acknowledger = Timer.periodic(
+      widget.acknowledgeEvery,
+      (_) => _acknowledge(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _acknowledger?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (_foreground) _acknowledge();
+  }
+
+  bool _acknowledging = false;
+
+  Future<void> _acknowledge() async {
+    // One at a time: the timer, a resume and a finished load can all ask at
+    // once, and overlapping requests only race each other.
+    if (_acknowledging || !mounted || !_foreground) return;
+    if (messagingIdentity() == null) return;
+    _acknowledging = true;
+    try {
+      // Silent either way: a failure only means the sender's second tick
+      // arrives on the next try.
+      await MessagingScope.of(context).acknowledgeDelivery();
+    } finally {
+      _acknowledging = false;
+    }
   }
 
   @override
@@ -78,8 +139,19 @@ class _ConversationsPageState extends State<ConversationsPage> {
           enabled?.fold(onSuccess: (v) => v, onFailure: (_) => true) ?? true;
       list.fold(
         onSuccess: (items) {
-          _conversations = items;
+          final role = widget.asRole;
+          final me = identity.userId;
+          _conversations = role == null
+              ? items
+              : [
+                  for (final item in items)
+                    if (item.participants.any(
+                      (p) => p.userId == me && p.role == role,
+                    ))
+                      item,
+                ];
           _failure = null;
+          _acknowledge();
         },
         onFailure: (failure) => _failure = failure,
       );
@@ -109,7 +181,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => messagingText(context, key);
     final identity = messagingIdentity();
     // Picking recipients and blocking are both per school, because the
     // contact policy is. Starting a conversation therefore waits on a
@@ -119,11 +190,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(t('title')),
+        title: Text(AppL10n.of(context).msgTitle),
         actions: [
           if (identity != null && schoolId != null)
             IconButton(
-              tooltip: t('menu.blocked'),
+              tooltip: AppL10n.of(context).msgMenuBlocked,
               icon: const Icon(Icons.block_rounded),
               onPressed: () => Navigator.push(
                 context,
@@ -140,25 +211,29 @@ class _ConversationsPageState extends State<ConversationsPage> {
       floatingActionButton:
           identity != null && schoolId != null && _enabled && !_loading
           ? FloatingActionButton.extended(
+              // Every tab stays alive in the shell's IndexedStack, so two
+              // buttons with the default hero tag coexist and break the
+              // transition of every screen pushed from any tab.
+              heroTag: null,
               onPressed: () => _startNew(schoolId, identity.userId),
               icon: const Icon(Icons.edit_rounded),
-              label: Text(t('new')),
+              label: Text(AppL10n.of(context).msgNew),
             )
           : null,
       body: identity == null
           ? StudafyStatusCard(
               icon: Icons.school_outlined,
-              title: t('title'),
-              message: t('noSchool'),
+              title: AppL10n.of(context).msgTitle,
+              message: AppL10n.of(context).msgNoSchool,
             )
           : _loading
           ? const Center(child: CircularProgressIndicator())
           : _failure != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).msgErrorTitle,
               message: messagingFailureText(context, _failure!),
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).msgRetry,
               onAction: _load,
             )
           : RefreshIndicator(
@@ -169,16 +244,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   if (!_enabled)
                     StudafyStatusCard(
                       icon: Icons.chat_bubble_outline_rounded,
-                      title: t('title'),
-                      message: t('error.MESSAGING_DISABLED'),
+                      title: AppL10n.of(context).msgTitle,
+                      message: AppL10n.of(context).msgErrorMessagingDisabled,
                     ),
                   if (_conversations.isEmpty && _enabled)
                     StudafyStatusCard(
                       icon: Icons.forum_outlined,
-                      title: t('empty.title'),
+                      title: AppL10n.of(context).msgEmptyTitle,
                       message: schoolId == null
-                          ? t('empty.awaitingLink')
-                          : t('empty.message'),
+                          ? AppL10n.of(context).msgEmptyAwaitingLink
+                          : AppL10n.of(context).msgEmptyMessage,
                     ),
                   for (final conversation in _conversations)
                     Padding(
@@ -312,9 +387,8 @@ class _NewConversationPageState extends State<NewConversationPage> {
       onSuccess: (conversation) => Navigator.pop(context, conversation),
       onFailure: (failure) {
         setState(() => _starting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(messagingFailureText(context, failure))),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(messagingFailureText(context, failure));
       },
     );
   }
@@ -322,16 +396,14 @@ class _NewConversationPageState extends State<NewConversationPage> {
   String _detail(MessagingContact contact) {
     if (contact.role == MessagingRole.guardian &&
         contact.relatedStudentNames.isNotEmpty) {
-      return messagingText(context, 'guardianOf', {
-        'names': contact.relatedStudentNames.join(', '),
-      });
+      return AppL10n.of(context)
+          .msgGuardianOf(contact.relatedStudentNames.join(', '));
     }
     return messagingText(context, 'role.${contact.role.name}');
   }
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => messagingText(context, key);
     final visible = [
       for (final contact in _contacts)
         if (_query.isEmpty ||
@@ -342,14 +414,14 @@ class _NewConversationPageState extends State<NewConversationPage> {
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(t('new.title')),
+        title: Text(AppL10n.of(context).msgNewTitle),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
             onPressed: _selected.isEmpty || _starting ? null : _start,
-            child: Text(t('start')),
+            child: Text(AppL10n.of(context).msgStart),
           ),
         ),
       ),
@@ -358,9 +430,9 @@ class _NewConversationPageState extends State<NewConversationPage> {
           : _failure != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).msgErrorTitle,
               message: messagingFailureText(context, _failure!),
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).msgRetry,
               onAction: _load,
             )
           : ListView(
@@ -370,7 +442,7 @@ class _NewConversationPageState extends State<NewConversationPage> {
                   controller: _subject,
                   maxLength: 160,
                   decoration: InputDecoration(
-                    labelText: t('subject.hint'),
+                    labelText: AppL10n.of(context).msgSubjectHint,
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -378,7 +450,7 @@ class _NewConversationPageState extends State<NewConversationPage> {
                   onChanged: (value) => setState(() => _query = value),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search_rounded),
-                    hintText: t('new.search'),
+                    hintText: AppL10n.of(context).msgNewSearch,
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -386,8 +458,8 @@ class _NewConversationPageState extends State<NewConversationPage> {
                 if (visible.isEmpty)
                   StudafyStatusCard(
                     icon: Icons.people_outline_rounded,
-                    title: t('new.title'),
-                    message: t('new.empty'),
+                    title: AppL10n.of(context).msgNewTitle,
+                    message: AppL10n.of(context).msgNewEmpty,
                   ),
                 for (final contact in visible)
                   CheckboxListTile(

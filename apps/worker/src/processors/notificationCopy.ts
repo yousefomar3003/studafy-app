@@ -64,10 +64,71 @@ const copy: Record<"en" | "ar", Record<string, ChannelCopy>> = {
   },
 };
 
+/**
+ * Copy for particular templates, where the category's text would be too
+ * vague to act on. Still fixed text: no plan name, price or amount, and it
+ * points to the store for the receipt, which the store sends for every
+ * charge.
+ */
+const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
+  en: {
+    "billing.subscription_active": {
+      title: "Subscription active",
+      body:
+        "Your Studafy subscription is active. Apple or Google Play emails your receipt.",
+    },
+    "billing.subscription_renewed": {
+      title: "Subscription renewed",
+      body:
+        "Your Studafy subscription renewed. Apple or Google Play emails your receipt.",
+    },
+    "billing.payment_problem": {
+      title: "Payment problem",
+      body:
+        "Your Studafy subscription could not be renewed. Check your payment method in the App Store or Google Play.",
+    },
+    "billing.subscription_ended": {
+      title: "Subscription ended",
+      body:
+        "Your Studafy subscription has ended. You can subscribe again in the app.",
+    },
+    "system.push_test": {
+      title: "Test notification",
+      body: "Notifications from Studafy are working on this device.",
+    },
+  },
+  ar: {
+    "billing.subscription_active": {
+      title: "الاشتراك مفعّل",
+      body:
+        "اشتراكك في Studafy مفعّل. ترسل Apple أو Google Play الإيصال إلى بريدك الإلكتروني.",
+    },
+    "billing.subscription_renewed": {
+      title: "تم تجديد الاشتراك",
+      body:
+        "تم تجديد اشتراكك في Studafy. ترسل Apple أو Google Play الإيصال إلى بريدك الإلكتروني.",
+    },
+    "billing.payment_problem": {
+      title: "مشكلة في الدفع",
+      body:
+        "تعذّر تجديد اشتراكك في Studafy. تحقّق من طريقة الدفع في App Store أو Google Play.",
+    },
+    "billing.subscription_ended": {
+      title: "انتهى الاشتراك",
+      body: "انتهى اشتراكك في Studafy. يمكنك الاشتراك مرة أخرى من التطبيق.",
+    },
+    "system.push_test": {
+      title: "إشعار تجريبي",
+      body: "إشعارات Studafy تعمل على هذا الجهاز.",
+    },
+  },
+};
+
 export function channelCopy(templateKey: string, locale: string): ChannelCopy {
   const language = locale === "ar" ? "ar" : "en";
   const category = templateKey.split(".")[0] ?? "";
-  return copy[language][category] ?? copy[language].generic!;
+  return templates[language][templateKey] ?? copy[language][category] ??
+    copy[language].generic!;
 }
 
 /** Every category exists in both languages; used by the parity test. */
@@ -75,5 +136,13 @@ export function channelCopyCategories(): Record<"en" | "ar", string[]> {
   return {
     en: Object.keys(copy.en).sort(),
     ar: Object.keys(copy.ar).sort(),
+  };
+}
+
+/** Every template-specific copy exists in both languages. */
+export function channelCopyTemplates(): Record<"en" | "ar", string[]> {
+  return {
+    en: Object.keys(templates.en).sort(),
+    ar: Object.keys(templates.ar).sort(),
   };
 }

@@ -252,7 +252,7 @@ No production UI invokes this adapter. `allowsRemoteFileUploads` is `false`,
 remote file controls stay disabled with FILE-050/051 messaging, and there is
 no SQLite queue or local-success fallback.
 
-`scripts/check-file050-boundaries.ts` enforces the boundary in CI: no direct
+`scripts/check-file-boundaries.ts` enforces the boundary in CI: no direct
 Supabase Storage call, no `quarantine/v1/` path construction, and no
 service-role reference outside the server storage adapter and the composition
 roots.
@@ -420,7 +420,7 @@ every member meets all of these conditions:
 - no deletion already in flight.
 
 Rows become `deleted` only after storage confirms.
-`apps/api/scripts/file051-reconciliation.ts` compares the bucket index with the rows
+`apps/api/scripts/delivery-reconciliation.ts` compares the bucket index with the rows
 and must report zero drift.
 
 ### Privilege posture

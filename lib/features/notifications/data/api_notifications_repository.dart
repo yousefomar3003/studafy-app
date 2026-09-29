@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../../../data/local_cache/mutation_outbox_engine.dart';
@@ -22,7 +22,7 @@ class ApiNotificationsRepository implements NotificationsRepository {
 
   final V1ApiClient _client;
   final SessionCacheBinder _cache;
-  final Map<String, String> _preferenceKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   Future<OfflineCacheStore> _store() async {
     final store = await _cache.currentStore();
@@ -195,11 +195,7 @@ class ApiNotificationsRepository implements NotificationsRepository {
   ) async {
     final fingerprint =
         '${preference.schoolId}|${preference.channel}|${preference.category}|${preference.enabled}';
-    final key = _preferenceKeys.putIfAbsent(
-      fingerprint,
-      () =>
-          'pref-${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}',
-    );
+    final key = _keys.keyFor('pref', fingerprint);
     final value = await _client.updateNotificationPreferences(
       V1UpdateNotificationPreferenceRequestDto(
         schoolId: preference.schoolId,
@@ -209,7 +205,7 @@ class ApiNotificationsRepository implements NotificationsRepository {
       ),
       idempotencyKey: key,
     );
-    _preferenceKeys.remove(fingerprint);
+    _keys.completed('pref', fingerprint);
     return NotificationPreference(
       schoolId: value.schoolId,
       channel: value.channel,

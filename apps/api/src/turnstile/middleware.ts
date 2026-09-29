@@ -17,6 +17,11 @@ export function requireStudentLookupChallenge(
     try {
       token = (await c.req.json()).captchaToken;
     } catch { /* malformed or missing input fails closed */ }
+    // No token at all is a request for one; a token that fails verification
+    // stays a flat refusal, so a bad solve is not told how to do better.
+    if (typeof token !== "string" || token.length === 0) {
+      return problem(c, "CAPTCHA_REQUIRED", 403);
+    }
     if (!await verifyTurnstile(options, token, fetcher)) {
       return problem(c, "FORBIDDEN", 403);
     }

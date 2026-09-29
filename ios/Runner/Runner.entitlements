@@ -27,6 +27,14 @@
 	domain can only be claimed by whoever controls it, so this is the
 	callback a hostile app cannot intercept.
 	-->
+	<!--
+	Push notifications (2026-09-29), delivered through Firebase Cloud
+	Messaging, which relays to Apple's service. "development" for debug
+	builds; the release build's signing sets "production".
+	-->
+	<key>aps-environment</key>
+	<string>development</string>
+
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:app.studafy.io</string>

@@ -156,11 +156,23 @@ class PreviewAcademicRepository implements AcademicRepository {
       const [];
 
   @override
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  }) async => const [];
+
+  @override
   Future<void> replaceSchedule(
     String classroomId,
     int expectedVersion,
     List<ClassSessionSlot> slots,
   ) async => throw StateError('Editing a schedule needs the school service.');
+
+  @override
+  Future<void> archiveClassroom(
+    String classroomId,
+    int expectedVersion,
+  ) async => throw StateError('Deleting a class needs the school service.');
 
   @override
   Future<List<LessonSession>> lessonSessions(String classroomId) async =>

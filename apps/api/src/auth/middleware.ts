@@ -67,6 +67,15 @@ export interface AuthDependencies {
     provider: string,
     idToken: string,
   ) => Promise<string | null>;
+  /**
+   * Create a profile for a verified identity this database has never seen.
+   *
+   * True only where the database is not the token issuer's own - the
+   * development split between hosted sign-in and local Postgres. Anywhere
+   * else the issuer's signup trigger has already created the profile, so an
+   * unknown subject is an anomaly to refuse, not a person to enrol.
+   */
+  provisionUnknownSubjects?: boolean;
 }
 
 /**
@@ -132,7 +141,18 @@ export function createAuthMiddleware(
       return denyUnauthenticated(c, reason);
     }
 
-    const context = await deps.repository.load(verified.subject);
+    let context = await deps.repository.load(verified.subject);
+    // Only a verified token reaches here, and only a subject with no row at
+    // all: a deleted or suspended account still has one and is refused below
+    // for that reason, never re-enrolled.
+    if (!context && deps.provisionUnknownSubjects) {
+      await deps.repository.provisionIdentity(verified);
+      context = await deps.repository.load(verified.subject);
+      deps.logger.info("auth_identity_provisioned", {
+        request_id: requestId,
+        provisioned: context !== null,
+      });
+    }
     const decision = evaluateSession(
       verified,
       context,

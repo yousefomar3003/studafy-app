@@ -6,7 +6,7 @@ Status: Accepted. Decision-log: DL-008. Date: 2026-09-10.
 
 The Flutter prototype mixes UI, state, and direct SQLite access across
 ~15,000 lines of feature files, while a partial Supabase schema exists.
-instructions.md recommends preserving the interaction design and tested
+docs/planning/instructions.md recommends preserving the interaction design and tested
 insight calculations rather than rewriting.
 
 ## Decision

@@ -1,11 +1,13 @@
 import type { Context, Hono } from "hono";
-import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import type {
   AuthorizationDependencies,
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { InvitationsRepository } from "./repository";
 
 export interface InvitationsDependencies {
@@ -17,7 +19,12 @@ export interface InvitationsDependencies {
 export type InvitationsSlice = "invitations";
 
 // Appended after school-admin's 12 entries (indices [52, 64)).
-const INVITATIONS_ROUTES = V1_ROUTE_CATALOGUE.slice(64, 68);
+const INVITATIONS_ROUTES = catalogueRoutesNamed([
+  "issueInvitation",
+  "listInvitations",
+  "revokeInvitation",
+  "acceptInvitation",
+]);
 
 function selector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;

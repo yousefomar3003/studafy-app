@@ -6,7 +6,9 @@ import '../features/academic/domain/academic_repository.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/family/presentation/student_family_page.dart';
+import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/notifications/presentation/notifications_page.dart';
+import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 
 class StudentTodayPage extends StatelessWidget {
@@ -17,7 +19,7 @@ class StudentTodayPage extends StatelessWidget {
     required this.onNotebook,
     this.classes,
   });
-  final AcademicRepository academic;
+  final AcademicContentRepository academic;
   final VoidCallback onWork;
   final VoidCallback onNotebook;
 
@@ -26,8 +28,6 @@ class StudentTodayPage extends StatelessWidget {
   final ClassListInteractor? classes;
   @override
   Widget build(BuildContext context) {
-    final ar = Localizations.localeOf(context).languageCode == 'ar';
-    String t(String en, String arabic) => ar ? arabic : en;
     final name =
         ActiveContextController.instance.profile?.displayName
             .split(' ')
@@ -38,7 +38,7 @@ class StudentTodayPage extends StatelessWidget {
         title: const StudafyLogo(size: 28),
         actions: [
           IconButton(
-            tooltip: t('Notifications', 'الإشعارات'),
+            tooltip: AppL10n.of(context).recordNotifications,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
@@ -54,17 +54,15 @@ class StudentTodayPage extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         children: [
           StudafyHero(
-            eyebrow: t('A LITTLE PROGRESS, EVERY DAY', 'خطوة صغيرة كل يوم'),
-            title: t(
-              'Make today yours${name.isEmpty ? '' : ', $name'}.',
-              'اجعل اليوم يومك${name.isEmpty ? '' : '، $name'}.',
-            ),
-            subtitle: t(
-              'Your classes, your ideas, your next big thing.',
-              'فصولك، أفكارك، وإنجازك القادم.',
-            ),
+            eyebrow: AppL10n.of(context).studentTodayALittleProgressEveryDay,
+            title: name.isEmpty
+                ? AppL10n.of(context).studentTodayMakeTodayYours
+                : AppL10n.of(context).studentTodayMakeTodayYoursName(name),
+            subtitle: AppL10n.of(context).studentTodayYourClassesYourIdeasYour,
             icon: Icons.bolt_rounded,
           ),
+          // A class meeting the teacher set up in Google Meet.
+          const UpcomingMeetingsSection(),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -82,15 +80,12 @@ class StudentTodayPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        t('My notebook', 'دفتر دروسي'),
+                        AppL10n.of(context).studentTodayMyNotebook,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        t(
-                          'Lesson notes · Subscription',
-                          'ملاحظات الدروس · اشتراك',
-                        ),
+                        AppL10n.of(context).studentTodayLessonNotesSubscription,
                         style: const TextStyle(
                           color: studafyMuted,
                           fontSize: 12,
@@ -115,12 +110,12 @@ class StudentTodayPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        t('My work', 'أعمالي'),
+                        AppL10n.of(context).studentTodayMyWork,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        t('Take the next step', 'خطوتك القادمة'),
+                        AppL10n.of(context).studentTodayTakeTheNextStep,
                         style: const TextStyle(
                           color: studafyMuted,
                           fontSize: 12,
@@ -159,15 +154,12 @@ class StudentTodayPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        t('My ID & family', 'معرّفي وعائلتي'),
+                        AppL10n.of(context).studentTodayMyIdFamily,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        t(
-                          'Share your ID. Review parent requests.',
-                          'شارك معرّفك وراجع طلبات أولياء الأمور.',
-                        ),
+                        AppL10n.of(context).studentTodayShareYourIdReviewParent,
                         style: const TextStyle(
                           color: studafyMuted,
                           fontSize: 13,
@@ -187,15 +179,15 @@ class StudentTodayPage extends StatelessWidget {
           // different question and reads as empty until a teacher sets work.
           if (classes != null) ...[
             Text(
-              t('Your classes', 'صفوفي'),
+              AppL10n.of(context).studentTodayYourClasses,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            _StudentClasses(classes: classes!, label: t),
+            _StudentClasses(classes: classes!),
             const SizedBox(height: 24),
           ],
           Text(
-            t('Ready when you are', 'جاهز عندما تكون مستعدًا'),
+            AppL10n.of(context).studentTodayReadyWhenYouAre,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
@@ -207,21 +199,16 @@ class StudentTodayPage extends StatelessWidget {
               }
               if (snapshot.hasError) {
                 return Text(
-                  t(
-                    'Your work could not load. Open My work to retry.',
-                    'تعذر تحميل أعمالك. افتح أعمالي لإعادة المحاولة.',
-                  ),
+                  AppL10n.of(context).studentTodayYourWorkCouldNotLoad,
                 );
               }
               final records = snapshot.data ?? [];
               if (records.isEmpty) {
                 return StudafyStatusCard(
                   icon: Icons.wb_sunny_outlined,
-                  title: t('A little breathing room', 'وقت لالتقاط الأنفاس'),
-                  message: t(
-                    'New assignments will appear here when your teacher shares them.',
-                    'ستظهر الواجبات الجديدة هنا عندما يشاركها معلمك.',
-                  ),
+                  title: AppL10n.of(context).studentTodayALittleBreathingRoom,
+                  message: AppL10n.of(context)
+                      .studentTodayNewAssignmentsWillAppearHere,
                 );
               }
               return Column(
@@ -263,10 +250,9 @@ class StudentTodayPage extends StatelessWidget {
 /// and a failed request look identical to a student otherwise, and the first
 /// means "you are in no class yet" while the second means "try again".
 class _StudentClasses extends StatelessWidget {
-  const _StudentClasses({required this.classes, required this.label});
+  const _StudentClasses({required this.classes});
 
   final ClassListInteractor classes;
-  final String Function(String en, String ar) label;
 
   @override
   Widget build(BuildContext context) {
@@ -282,22 +268,14 @@ class _StudentClasses extends StatelessWidget {
           return const LinearProgressIndicator();
         }
         if (snapshot.hasError) {
-          return Text(
-            label(
-              'Your classes could not load. Pull down to retry.',
-              'تعذّر تحميل صفوفك. اسحب للأسفل لإعادة المحاولة.',
-            ),
-          );
+          return Text(AppL10n.of(context).studentTodayClassesCouldNotLoad);
         }
         final items = snapshot.data ?? const <ClassroomSummary>[];
         if (items.isEmpty) {
           return StudafyStatusCard(
             icon: Icons.group_add_outlined,
-            title: label('No classes yet', 'لا توجد صفوف بعد'),
-            message: label(
-              'Paste the class link your teacher shared to join your first class.',
-              'الصق رابط الصف الذي شاركه معلمك للانضمام إلى صفك الأول.',
-            ),
+            title: AppL10n.of(context).studentTodayNoClassesYet,
+            message: AppL10n.of(context).studentTodayPasteClassLink,
           );
         }
         return Column(
@@ -319,9 +297,9 @@ class _StudentClasses extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             Text(
-                              label(
-                                'Grade ${item.grade} \u00B7 ${item.section}',
-                                'الصف ${item.grade} \u00B7 ${item.section}',
+                              AppL10n.of(context).studentTodayGradeSection(
+                                item.grade,
+                                item.section,
                               ),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),

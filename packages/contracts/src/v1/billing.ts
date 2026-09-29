@@ -9,13 +9,16 @@ const Timestamp = z.string().datetime({ offset: true });
  * is offered in any environment and the database forbids activating either.
  * They remain here only so historical ledger rows stay decodable.
  * `parent_insights` stays out of the catalogue everywhere but `synthetic`
- * until the §29 legal sign-off lands.
+ * until the §29 legal sign-off lands. `studafy_plus` and `studafy_max` are
+ * the student plans of ADR-0029; `student_notebook` is retired with them.
  */
 export const V1BillingFeatureKey = z.enum([
   "parent_insights",
   "student_notebook",
   "student_ai",
   "teacher_ai_grading",
+  "studafy_plus",
+  "studafy_max",
 ]);
 export type V1BillingFeatureKey = z.infer<typeof V1BillingFeatureKey>;
 
@@ -81,7 +84,11 @@ export type V1BillingCatalogueResponse = z.infer<
  * recent-auth challenge. The server consumes the approval when it records
  * the subscription's first ledger row; the client never asserts it.
  */
-export const V1PurchaseApprovalFeatureKey = z.enum(["student_notebook"]);
+export const V1PurchaseApprovalFeatureKey = z.enum([
+  "student_notebook",
+  "studafy_plus",
+  "studafy_max",
+]);
 export const V1PurchaseApprovalStatus = z.enum([
   "requested",
   "approved",
@@ -161,6 +168,14 @@ export type V1RestorePurchaseResponse = z.infer<
   typeof V1RestorePurchaseResponse
 >;
 
+export const V1RenewalStatus = z.enum([
+  "renewing",
+  "cancelled",
+  "paused",
+  "payment_issue",
+]);
+export type V1RenewalStatus = z.infer<typeof V1RenewalStatus>;
+
 export const V1Entitlement = z.strictObject({
   featureKey: V1BillingFeatureKey,
   status: V1BillingEntitlementStatus,
@@ -172,6 +187,19 @@ export const V1Entitlement = z.strictObject({
    * child (ADR-0009: the beneficiary, not the purchaser, holds access).
    */
   beneficiaryStudentId: Id.nullable(),
+  /**
+   * What happens at the end of the period, for display: `renewing`,
+   * `cancelled` (auto-renew off; access lasts until `endsAt`), `paused`
+   * (Google Play) or `payment_issue` (the store is retrying a charge).
+   * Null when the store has not said. Access is `status` and `endsAt`.
+   */
+  renewalStatus: V1RenewalStatus.nullable().optional(),
+  /** Where the subscription is billed, so the app opens the right
+   * store's subscription management. */
+  platform: V1BillingPlatform.optional(),
+  storeProductId: z.string().min(1).max(200).optional(),
+  /** False when someone else (a guardian) pays for it. */
+  purchasedByMe: z.boolean().optional(),
 });
 export type V1Entitlement = z.infer<typeof V1Entitlement>;
 

@@ -33,9 +33,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   sqflite: ^2.4.3
   path: ^1.9.1
   share_plus: ^13.3.0
@@ -59,6 +56,11 @@ dependencies:
   # Session material stays in flutter_secure_storage; see lib/core/secure_storage.dart.
   shared_preferences: ^2.5.5
   webview_flutter: ^4.14.1
+  record: ^7.1.1
+  audioplayers: ^6.8.1
+  path_provider: ^2.1.6
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
 
 dev_dependencies:
   flutter_test:

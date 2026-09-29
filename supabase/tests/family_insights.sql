@@ -17,11 +17,11 @@ select ok(
     'private.parent_insights_has_access(uuid)', 'execute'),
   'a signed-in client may not evaluate it directly');
 -- The ungated previous generation must be unreachable, or the paywall could
--- be walked around by calling the older function name.
+-- be walked around by calling the older function name. Since the query chain
+-- was flattened (ADR-0030) it no longer exists at all.
 select ok(
-  not has_function_privilege('studafy_api_runtime',
-    'private.api042_query_pre_family_insights(text,uuid,jsonb)', 'execute'),
-  'the pre-Family+ query surface is no longer callable by the runtime role');
+  to_regprocedure('private.api042_query_pre_family_insights(text,uuid,jsonb)') is null,
+  'the pre-Family+ query surface no longer exists');
 
 \set school   '7a000000-0000-4000-8000-000000000001'
 \set term     '7a000000-0000-4000-8000-000000000002'

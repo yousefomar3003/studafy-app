@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/class_join_link.dart';
 import '../../../core/failures.dart';
@@ -47,10 +48,11 @@ class _JoinClassPageState extends State<JoinClassPage> {
 
   Future<void> _join() async {
     if (_joining) return;
-    // Accepts the whole link or the bare token: people paste both, and
-    // working out which half to copy is not the student's job.
-    final token = classJoinTokenFrom(_controller.text);
-    if (token == null) {
+    // Accepts a class code, the whole link or the bare token: people type
+    // the first and paste the other two, and working out which they were
+    // given is not the student's job.
+    final credential = classJoinCredentialFrom(_controller.text);
+    if (credential == null) {
       setState(() => _error = AppL10n.of(context).joinClassInvalid);
       return;
     }
@@ -58,7 +60,10 @@ class _JoinClassPageState extends State<JoinClassPage> {
       _joining = true;
       _error = null;
     });
-    final result = await widget.classes.joinWithLink(token);
+    final result = await switch (credential) {
+      ClassJoinToken(:final token) => widget.classes.joinWithLink(token),
+      ClassJoinCode(:final code) => widget.classes.joinWithCode(code),
+    };
     if (!mounted) return;
     result.fold(
       onSuccess: (joined) {
@@ -83,6 +88,27 @@ class _JoinClassPageState extends State<JoinClassPage> {
     );
   }
 
+  /// Reads the clipboard only when asked, never on its own.
+  ///
+  /// iOS offers Paste in the text menu only when there is text to paste, so an
+  /// empty clipboard used to leave nothing but "Scan Text" and no hint why.
+  /// The usual reason is that the link was copied on another account and a
+  /// sign-in in between replaced it, so the message points at the two ways
+  /// that do not depend on the clipboard at all.
+  Future<void> _paste() async {
+    final l10n = AppL10n.of(context);
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final text = data?.text?.trim() ?? '';
+    if (text.isEmpty) {
+      setState(() => _error = l10n.joinClassNothingToPaste);
+      return;
+    }
+    _controller.text = text;
+    _controller.selection = TextSelection.collapsed(offset: text.length);
+    setState(() => _error = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final joined = _joined;
@@ -103,9 +129,20 @@ class _JoinClassPageState extends State<JoinClassPage> {
                       controller: _controller,
                       autofocus: widget.initialToken == null,
                       enabled: !_joining,
+                      // A code is typed in capitals; a link is pasted whole.
+                      // Neither wants autocorrect rewriting it.
+                      textCapitalization: TextCapitalization.characters,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       decoration: InputDecoration(
                         labelText: l10n.joinClassField,
+                        hintText: 'K7QM-4XTR',
                         border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          tooltip: l10n.joinClassPaste,
+                          icon: const Icon(Icons.content_paste_rounded),
+                          onPressed: _joining ? null : _paste,
+                        ),
                       ),
                       onSubmitted: (_) => _join(),
                     ),

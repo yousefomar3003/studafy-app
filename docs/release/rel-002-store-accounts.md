@@ -6,7 +6,7 @@ Holder, not a repository change.
 
 This record prepares store submission. It does **not** authorize a release, does
 not remove any SEC-001 containment guard, and does not change application
-behaviour. Submission remains blocked by Phases 3–10 of `instructions.md`; the
+behaviour. Submission remains blocked by Phases 3–10 of `docs/planning/instructions.md`; the
 accounts prepared here are obtained early only because their verification lead
 times are long.
 
@@ -47,7 +47,7 @@ every functional location, so adopting it costs no redirect changes:
 ### Deferred to the REL-002 cutover
 
 The identifier is decided but **not yet applied**. These edits happen last,
-after the Phase 10 gate, per `instructions.md` §21.5:
+after the Phase 10 gate, per `docs/planning/instructions.md` §21.5:
 
 | File | Current | Cutover change |
 |---|---|---|
@@ -79,7 +79,7 @@ Both registrations need the same underlying facts. Collect once.
 | Account Holder | A person with legal authority to bind the entity |
 | Phone number | Used for verification callbacks |
 | Payment method | Corporate card in the entity's name |
-| Privacy policy URL | Required by both consoles — see `instructions.md` §21.6 |
+| Privacy policy URL | Required by both consoles — see `docs/planning/instructions.md` §21.6 |
 
 > Name and address mismatches between the CR, the D-U-N-S record, and the
 > enrolment form are the most common cause of multi-week enrolment delays.
@@ -117,7 +117,7 @@ Expect **1–4 weeks** end to end, dominated by verification.
 |---|---|
 | Register the App ID | `io.studafy.app` in Certificates, Identifiers & Profiles |
 | Enable Sign in with Apple | Guideline 4.8 makes it **mandatory** — the app already offers Google and Microsoft sign-in (`lib/features/session/domain/session_repository.dart:8`) |
-| Create the Sign in with Apple key | Service ID, Key ID, Team ID, `.p8` — needed for Supabase Auth (`instructions.md` §22.5) |
+| Create the Sign in with Apple key | Service ID, Key ID, Team ID, `.p8` — needed for Supabase Auth (`docs/planning/instructions.md` §22.5) |
 | Reserve the app name | In App Store Connect; names are first-come and cannot be held indefinitely |
 | Record the Team ID | Needed for `DEVELOPMENT_TEAM` at cutover |
 
@@ -143,7 +143,7 @@ key.
 > Enrol. There is no good reason not to.
 
 The keystore itself is generated at cutover by the Account Holder, not now —
-see `instructions.md` §21.1.
+see `docs/planning/instructions.md` §21.1.
 
 ### 4.3 Package name
 
@@ -162,7 +162,7 @@ this policy has changed repeatedly.
 ## 5. Credential custody
 
 Each account produces artifacts that must never enter Git. Full register in
-`instructions.md` §22.2.
+`docs/planning/instructions.md` §22.2.
 
 | Artifact | Produced by | Custody |
 |---|---|---|
@@ -185,7 +185,7 @@ Each account produces artifacts that must never enter Git. Full register in
 | TestFlight distribution | Phases 3–10 (a functional, server-backed app) |
 | Play internal testing track | Phases 3–10 |
 | IAP product creation (`studafy_parent_insights_monthly`) | PAY-071, and legal approval of paid insights |
-| Submission | Every gate in `instructions.md` §20 |
+| Submission | Every gate in `docs/planning/instructions.md` §20 |
 
 Obtaining the accounts does **not** shorten the engineering path. It removes the
 verification wait from the critical path so it does not become the final delay.
@@ -204,7 +204,7 @@ This record closes when all of the following hold:
 - [ ] Renewal reminder set for the Apple annual membership
 
 Signing material, privacy manifests, and the native cutover remain open under
-`DL-015` and are tracked by `instructions.md` §21.
+`DL-015` and are tracked by `docs/planning/instructions.md` §21.
 
 ## Related
 
@@ -212,4 +212,4 @@ Signing material, privacy manifests, and the native cutover remain open under
 - ADR-0003 — supported platforms (deferred identity to REL-002)
 - DL-015 (deferred), DL-029 (identity decided)
 - `docs/security/sec-001-containment.md` — the release guards this record must not remove
-- `instructions.md` §21 (edit list), §22 (credential register), §23–§24 (rejection registers)
+- `docs/planning/instructions.md` §21 (edit list), §22 (credential register), §23–§24 (rejection registers)

@@ -31,9 +31,13 @@ that references the old one.
 | [ADR-0023](ADR-0023-file051-scan-publication-delivery.md) | FILE-051 fail-closed scanning, deterministic metadata stripping, single-object publication, school-scoped dedupe, retention units and single-use re-authorizing delivery | Accepted for local/disposable use | DL-044 |
 | [ADR-0024](ADR-0024-ops060-rate-limits-and-caches.md) | OPS-060 Redis security posture, rate-limit registry/middleware and revocation-safe version-keyed caches | Accepted for local/disposable use | DL-045 |
 | [ADR-0025](ADR-0025-ops061-bullmq-outbox-platform.md) | OPS-061 BullMQ queue platform and transactional outbox drain | Accepted for local/disposable use | DL-046 |
-| [ADR-0026](ADR-0026-ai072-remove-ai-capability.md) | AI-072 removes the AI capability: no signed DPA or extended DPIA exists | Accepted for local/disposable use | DL-047 |
+| [ADR-0026](ADR-0026-ai072-remove-ai-capability.md) | AI-072 removes the AI capability: no signed DPA or extended DPIA exists | Accepted for local/disposable use; superseded in part by ADR-0029 | DL-047 |
 | [ADR-0027](ADR-0027-messaging-safeguards-and-mobile-safety-controls.md) | Messaging contact policy, content-free notifications, enforced messaging switch, and mobile report/block controls | Accepted for local/disposable use | DL-049 |
 | [ADR-0028](ADR-0028-localization-rtl-and-locale-persistence.md) | Arabic as a switchable language: gen-l10n copy, device-scoped persistence, device-first resolution, RTL, untranslated user content, Western digits | Accepted for local/disposable use | DL-055 |
+| [ADR-0029](ADR-0029-study-plans-and-ai-lesson-tools.md) | Free Lessons and per-class notebook; Studafy Plus / Max resolved server-side; reserve-settle AI ledger with hard monthly caps; shared study sets; grounded AI gated | Accepted for local/disposable use | - |
+| [ADR-0030](ADR-0030-flat-sql-dispatchers.md) | Flatten rename-and-wrap SQL chains into named handlers behind one dispatcher, proved by differential checks; the migration gate bans new chains | Accepted for local/disposable use | - |
+| [ADR-0031](ADR-0031-managed-child-accounts-and-account-switching.md) | Parents create real student accounts for children with no email or phone, entered only through the parent by one-time sign-ins; several accounts per device with Instagram-style switching | Accepted for local/disposable use | - |
+| [ADR-0032](ADR-0032-subscription-lifecycle-and-backups.md) | Store-only subscriptions with upgrade-at-limit, renewal status, per-token store events, pause-first cancel, store receipts plus verified-only notices; daily encrypted backups restored on every run | Accepted for local/disposable use | - |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

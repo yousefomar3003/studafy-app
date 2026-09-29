@@ -1,19 +1,15 @@
-import 'dart:math';
-
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../domain/school_operations_repository.dart';
 
 class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
-  ApiSchoolOperationsRepository(
-    this._client, {
-    ActiveContextController? context,
-  }) : _context = context ?? ActiveContextController.instance;
+  ApiSchoolOperationsRepository(this._client, {required this._context});
 
   final V1ApiClient _client;
   final ActiveContextController _context;
-  final Map<String, String> _pendingKeys = {};
+  final _keys = PendingIdempotencyKeys();
 
   String get _schoolId {
     final membership = _context.membership;
@@ -21,53 +17,11 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     return membership.schoolId;
   }
 
-  String _key(String operation, String fingerprint) => _pendingKeys.putIfAbsent(
-    '$operation|$fingerprint',
-    () =>
-        '$operation-${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}',
-  );
+  String _key(String operation, String fingerprint) =>
+      _keys.keyFor(operation, fingerprint);
 
   void _done(String operation, String fingerprint) =>
-      _pendingKeys.remove('$operation|$fingerprint');
-
-  @override
-  Future<List<SchoolTerm>> listTerms() async {
-    final result = <SchoolTerm>[];
-    String? cursor;
-    do {
-      final page = await _client.listTerms(
-        schoolId: _schoolId,
-        cursor: cursor,
-        pageSize: 100,
-      );
-      result.addAll(page.items.map(_term));
-      cursor = page.nextCursor;
-    } while (cursor != null);
-    return result;
-  }
-
-  @override
-  Future<SchoolTerm> createTerm({
-    required String name,
-    required DateTime startsOn,
-    required DateTime endsOn,
-  }) async {
-    if (!endsOn.isAfter(startsOn)) {
-      throw const FormatException('The end date must be after the start date.');
-    }
-    final fingerprint = '$name|${_date(startsOn)}|${_date(endsOn)}';
-    final value = await _client.createTerm(
-      V1CreateTermRequestDto(
-        name: name.trim(),
-        startsOn: _date(startsOn),
-        endsOn: _date(endsOn),
-      ),
-      schoolId: _schoolId,
-      idempotencyKey: _key('term', fingerprint),
-    );
-    _done('term', fingerprint);
-    return _term(value);
-  }
+      _keys.completed(operation, fingerprint);
 
   @override
   Future<List<RosterStudent>> listStudents(String classroomId) async {
@@ -220,55 +174,53 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
   );
 
   @override
-  Future<String> verifyGuardianLink({
-    required String linkId,
-    int? expiresInDays,
-  }) async {
-    final value = await _client.verifyGuardianLink(
-      V1VerifyGuardianLinkRequestDto(expiresInDays: expiresInDays),
-      guardianLinkId: linkId.trim(),
-      idempotencyKey: _key('guardian-verify', linkId),
-    );
-    _done('guardian-verify', linkId);
-    return value.status;
-  }
-
-  @override
-  Future<String> revokeGuardianLink(String linkId) async {
-    final value = await _client.revokeGuardianLink(
-      const V1RevokeGuardianLinkRequestDto(),
-      guardianLinkId: linkId.trim(),
-      idempotencyKey: _key('guardian-revoke', linkId),
-    );
-    _done('guardian-revoke', linkId);
-    return value.status;
-  }
-
-  @override
   Future<ManagedMeeting> requestMeeting({
     required String classroomId,
     required String title,
     required DateTime startsAt,
     required DateTime endsAt,
     required String audience,
+    Uri? meetUrl,
   }) async {
     if (!endsAt.isAfter(startsAt)) {
       throw const FormatException('The meeting end must be after its start.');
     }
     final fingerprint =
-        '$classroomId|$title|${startsAt.toUtc()}|${endsAt.toUtc()}|$audience';
+        '$classroomId|$title|${startsAt.toUtc()}|${endsAt.toUtc()}|$audience|'
+        '${meetUrl ?? ''}';
     final value = await _client.requestMeeting(
       V1RequestMeetingRequestDto(
         title: title.trim(),
         startsAt: startsAt.toUtc().toIso8601String(),
         endsAt: endsAt.toUtc().toIso8601String(),
         audience: audience,
+        meetUrl: meetUrl?.toString(),
       ),
       classroomId: classroomId,
       idempotencyKey: _key('meeting', fingerprint),
     );
     _done('meeting', fingerprint);
     return _meeting(value);
+  }
+
+  @override
+  Future<List<ManagedMeeting>> listMeetings(String classroomId) async {
+    final page = await _client.listMeetings(classroomId: classroomId);
+    return [
+      for (final v in page.items)
+        ManagedMeeting(
+          id: v.id,
+          classroomId: v.classroomId,
+          title: v.title,
+          startsAt: DateTime.parse(v.startsAt).toLocal(),
+          endsAt: DateTime.parse(v.endsAt).toLocal(),
+          audience: v.audience,
+          state: v.state,
+          version: v.version,
+          recipientCount: v.recipientCount,
+          meetUrl: v.meetUrl == null ? null : Uri.tryParse(v.meetUrl!),
+        ),
+    ];
   }
 
   @override
@@ -297,13 +249,6 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     _done(operation, fingerprint);
   }
 
-  static SchoolTerm _term(V1TermDto v) => SchoolTerm(
-    id: v.id,
-    name: v.name,
-    startsOn: DateTime.parse(v.startsOn),
-    endsOn: DateTime.parse(v.endsOn),
-    status: v.status,
-  );
   static ManagedMeeting _meeting(V1MeetingDto v) => ManagedMeeting(
     id: v.id,
     classroomId: v.classroomId,
@@ -316,6 +261,4 @@ class ApiSchoolOperationsRepository implements SchoolOperationsRepository {
     recipientCount: v.recipientCount,
     meetUrl: v.meetUrl == null ? null : Uri.tryParse(v.meetUrl!),
   );
-  static String _date(DateTime value) =>
-      '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }

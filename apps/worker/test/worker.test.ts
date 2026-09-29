@@ -18,7 +18,9 @@ describe("worker smoke queue lifecycle", () => {
         collector.sink,
       );
       const runtime = buildSmokeRuntime(redisUrl!, logger, {
-        environment: "development",
+        // A queue of its own: a dev worker running against the same Redis
+        // must not take this test's job.
+        environment: `test-${crypto.randomUUID()}`,
         concurrency: 1,
       });
 

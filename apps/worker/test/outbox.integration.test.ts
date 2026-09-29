@@ -17,7 +17,7 @@ import {
 } from "@studafy/infrastructure";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
-import { LogCollector } from "@studafy/test-support";
+import { LogCollector, removeFixtures } from "@studafy/test-support";
 import {
   buildNotificationRuntime,
   type NotificationRuntime,
@@ -35,7 +35,10 @@ const CO_TEACHER = "61061000-0000-4000-8000-0000000000c3";
 const SUSPENDED_TEACHER = "61061000-0000-4000-8000-0000000000c4";
 const OTHER_SCHOOL_ADMIN = "61061000-0000-4000-8000-0000000000d1";
 const WORKER = "ops061-worker";
-const PREFIX = "studafy-development";
+// A queue namespace of its own, so a dev worker on the same Redis cannot
+// take this suite's jobs.
+const ENVIRONMENT = `test-${crypto.randomUUID()}`;
+const PREFIX = `studafy-${ENVIRONMENT}`;
 
 let sql: Sql;
 let runtime: NotificationRuntime;
@@ -78,14 +81,15 @@ async function seedGraph(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.notification_deliveries where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.notification_outbox where school_id = ${SCHOOL}::uuid`;
-    await tx`delete from public.audit_events where request_id like 'ops061-%'`;
-    await tx`delete from public.schools where id in (${SCHOOL}::uuid, ${OTHER_SCHOOL}::uuid)`;
-    await tx`delete from auth.users where id in (${ADMIN}::uuid, ${TEACHER}::uuid, ${CO_TEACHER}::uuid, ${SUSPENDED_TEACHER}::uuid, ${OTHER_SCHOOL_ADMIN}::uuid)`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL, OTHER_SCHOOL],
+    userIds: [
+      ADMIN,
+      TEACHER,
+      CO_TEACHER,
+      SUSPENDED_TEACHER,
+      OTHER_SCHOOL_ADMIN,
+    ],
   });
 }
 
@@ -194,7 +198,7 @@ suite("OPS-061 notifications queue", () => {
       new LogCollector().sink,
     );
     runtime = buildNotificationRuntime(redisUrl!, sql, logger, {
-      environment: "development",
+      environment: ENVIRONMENT,
       concurrency: 3,
     });
     await runtime.worker.waitUntilReady();

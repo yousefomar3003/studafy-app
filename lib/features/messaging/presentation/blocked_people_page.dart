@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
@@ -81,40 +83,38 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
               if (b.blockId != block.blockId) b,
           ],
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(messagingText(context, 'unblock.done'))),
-        );
+        ScaffoldMessenger.of(context)
+            .showMessage(AppL10n.of(context).msgUnblockDone);
       },
-      onFailure: (failure) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(messagingFailureText(context, failure))),
-      ),
+      onFailure: (failure) =>
+          ScaffoldMessenger.of(context)
+              .showMessage(messagingFailureText(context, failure)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => messagingText(context, key);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(t('blocked.title')),
+        title: Text(AppL10n.of(context).msgBlockedTitle),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).msgErrorTitle,
               message: _error!,
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).msgRetry,
               onAction: _load,
             )
           : _blocks.isEmpty
           ? StudafyStatusCard(
               icon: Icons.block_rounded,
-              title: t('blocked.title'),
-              message: t('blocked.empty'),
+              title: AppL10n.of(context).msgBlockedTitle,
+              message: AppL10n.of(context).msgBlockedEmpty,
             )
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -127,13 +127,14 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _names[block.blockedId] ?? t('unknownPerson'),
+                            _names[block.blockedId] ??
+                                AppL10n.of(context).msgUnknownPerson,
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                         TextButton(
                           onPressed: () => _unblock(block),
-                          child: Text(t('unblock')),
+                          child: Text(AppL10n.of(context).msgUnblock),
                         ),
                       ],
                     ),

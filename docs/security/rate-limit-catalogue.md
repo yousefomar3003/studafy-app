@@ -22,7 +22,7 @@ The former `aiCoach` and `aiGrading` flows were retired by AI-072
 | `uploadIntent` | account | fixed window, 100 / hour | yes | `POST /v1/uploads` (create intent), `POST /v1/uploads/{id}/complete`, `POST /v1/files/{id}/download-intent` (FILE-050/051); publish stays an ordinary command |
 | `search` | account | sliding window, 60 / 5 min | yes | declared — lands with ARC-011's route |
 | `publicDefault` | ip | fixed window, 120 / min | **no** (bounded local fallback) | every `/v1/*` request, pre-auth (edge backstop) |
-| `authenticatedApi` | account (+ tenant ceiling) | token bucket, 300 sustained / 5 min, burst 150 | **no** (bounded local fallback) | ordinary reads/collections (weight 1 / 2) and non-sensitive commands (weight 2); tenant ceiling 2000 / 5 min per school |
+| `authenticatedApi` | account (+ tenant ceiling) | token bucket, 300 sustained / 5 min, burst 150 | **no** (bounded local fallback) | ordinary reads/collections (weight 1 / 2) and non-sensitive commands (weight 2); tenant ceiling 60,000 / 5 min per school (a runaway backstop; not yet enforced, because the flow limiter runs before the route resolves the school - docs/operations/capacity.md) |
 | `adminApi` | account | sliding window, 120 / 5 min, cost ×2 per op | yes | `/internal/*` (support access, moderation, legal holds), school-admin command surface (`/v1/schools*`, `/v1/memberships/*` POST), `/v1/control-panel/*` |
 | `billingPurchase` | account | fixed window, 20 / hour | yes | declared — lands with BIL-051's surface |
 | `storeWebhook` | ip | fixed window, 600 / min | yes | declared — store-webhook gateway rule (OPS-051) |

@@ -10,7 +10,7 @@ log/credential review and explicit security-owner approval remain pending in
 
 ## ARC-001 deliverables → evidence
 
-| Deliverable (instructions.md:1007) | Evidence |
+| Deliverable (docs/planning/instructions.md:1007) | Evidence |
 |---|---|
 | Approved ADR set | `docs/adr/` — 10 ADRs + index; statuses mirrored in the decision log |
 | Live-vs-repo diff | `docs/evidence/schema/reconciliation-report.md` (+ local/remote dumps, diff; remote confirmed empty, schemas identical except platform `rls_auto_enable()`) |
@@ -34,7 +34,7 @@ RTO/RPO (Phase 6), retention/legal (pilot), billing purchaser/beneficiary
 (PAY-071), notification vendors (Phase 6), family/age/provisioning questions
 (Phase 3 detail design), final app identity (REL-002). **Met.**
 
-## Phase 0 gate (instructions.md:1013) → status
+## Phase 0 gate (docs/planning/instructions.md:1013) → status
 
 | Gate item | Status | Evidence |
 |---|---|---|

@@ -10,6 +10,13 @@ export interface AuthorizationGrant {
   permission: Permission;
   resourceId: string | null;
   tenant: TenantContext | null;
+  /**
+   * The school the decision resolved the resource to. Differs from
+   * `tenant?.schoolId` only when the actor holds no membership there - a
+   * guardian acting through their link - and is used only by handlers whose
+   * SQL re-authorizes the actor against that school on its own.
+   */
+  decisionSchoolId?: string | null;
 }
 
 export interface AuthorizationEnv extends AuthEnv {
@@ -133,7 +140,12 @@ export function requirePermission(
       return deny(deps, c, permission, resourceId, "membership_mismatch");
     }
 
-    c.set("authorization", { permission, resourceId, tenant });
+    c.set("authorization", {
+      permission,
+      resourceId,
+      tenant,
+      decisionSchoolId: decision.schoolId,
+    });
     await next();
   };
   Object.defineProperty(middleware, DECLARED_PERMISSION, {

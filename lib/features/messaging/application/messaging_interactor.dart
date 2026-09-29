@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../../../core/failures.dart';
+import '../../../core/idempotency.dart';
 import '../../../core/result.dart';
 import '../../../core/telemetry.dart';
 import '../domain/messaging.dart';
@@ -32,15 +33,17 @@ class MessagingInteractor {
     String? cursor,
   }) => runCatching(() => messaging.messages(conversationId, cursor: cursor));
 
+  /// Tells the server I have opened [conversationId], so the sender's ticks
+  /// turn blue. A failure changes nothing on screen and is not reported.
+  Future<Result<void>> markRead(String conversationId) =>
+      runCatching(() => messaging.markRead(conversationId));
+
+  /// Tells the server my app has my conversations, so senders see two ticks.
+  Future<Result<void>> acknowledgeDelivery() =>
+      runCatching(messaging.acknowledgeDelivery);
+
   /// A fresh id per compose; pass the same id again to retry that message.
-  String newClientMessageId() {
-    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
-        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
-  }
+  String newClientMessageId() => generateUuidV4(random: _random);
 
   Future<Result<ChatMessage>> send(
     String conversationId,
@@ -49,7 +52,8 @@ class MessagingInteractor {
     List<String> attachmentFileIds = const [],
   }) {
     final trimmed = body.trim();
-    if (trimmed.isEmpty) {
+    // A voice note - or any attachment - needs no text of its own.
+    if (trimmed.isEmpty && attachmentFileIds.isEmpty) {
       return Future.value(
         const Result.failure(Failure.validation('Write a message first.')),
       );

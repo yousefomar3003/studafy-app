@@ -3,23 +3,45 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
-import '../../../core/runtime_environment.dart';
+import '../../../core/feedback.dart';
+import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
-import 'family_challenge_page.dart';
 import 'child_progress_page.dart';
+import 'family_challenge_page.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
 
 /// Guardian home on authoritative `/v1` data (MOB-070 parent slice).
 /// Replaces the legacy SQLite home in real builds: children come from the
 /// guardian's own links, and only a verified link opens a child's records.
+
+/// The server's request for a bot check, as opposed to a refusal.
+const captchaRequiredCode = 'CAPTCHA_REQUIRED';
+
 class FamilyHomePage extends StatefulWidget {
-  const FamilyHomePage({super.key, this.onOpenChild, this.actions = const []});
+  const FamilyHomePage({
+    super.key,
+    this.onOpenChild,
+    this.onCreateChildAccount,
+    this.actions = const [],
+    this.sections = const [],
+  });
+
+  /// Creates an account for a child who has none, from the parent's own
+  /// account. Supplied by the shell, which owns the device's accounts; null
+  /// where this account may not create one, and "Link a child" then only
+  /// finds a child by their Studafy ID.
+  final Future<void> Function()? onCreateChildAccount;
 
   /// App bar actions supplied by the host shell, such as its account entry.
   final List<Widget> actions;
+
+  /// Further sections under the children, supplied by the host shell - such
+  /// as upcoming meetings, which belong to another feature.
+  final List<Widget> sections;
 
   /// Called when a guardian opens a verified child, so the shell can make
   /// that child the active one for the other tabs.
@@ -80,7 +102,23 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
     widget.onOpenChild?.call(verified.first);
   }
 
+  /// A child either has an account to link to, or the parent makes one.
   Future<void> _linkChild() async {
+    final create = widget.onCreateChildAccount;
+    if (create != null) {
+      final choice = await showModalBottomSheet<_LinkChoice>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => const _LinkChoiceSheet(),
+      );
+      if (choice == null || !mounted) return;
+      if (choice == _LinkChoice.create) {
+        await create();
+        if (mounted) await _load();
+        return;
+      }
+    }
     final linked = await showModalBottomSheet<GuardianChild>(
       context: context,
       isScrollControlled: true,
@@ -93,13 +131,8 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
       ),
     );
     if (linked == null || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          familyText(context, 'link.sent', {'name': linked.studentName}),
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+        .showMessage(AppL10n.of(context).famLinkSent(linked.studentName));
     await _load();
   }
 
@@ -108,11 +141,10 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
         .decide(request.id, approve: approve);
     if (!mounted) return;
     final message = result.fold(
-      onSuccess: (_) => familyText(context, 'approvals.done'),
+      onSuccess: (_) => AppL10n.of(context).famApprovalsDone,
       onFailure: (failure) => familyFailureText(context, failure),
     );
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showMessage(message);
     await _load();
   }
 
@@ -126,12 +158,11 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => familyText(context, key);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: studafyCanvas,
-        title: Text(t('title')),
+        title: Text(AppL10n.of(context).famTitle),
         actions: widget.actions,
       ),
       body: _loading
@@ -139,9 +170,9 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
           : _failure != null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).famErrorTitle,
               message: familyFailureText(context, _failure!),
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).famRetry,
               onAction: _load,
             )
           : RefreshIndicator(
@@ -150,7 +181,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 96),
                 children: [
                   if (_approvals.isNotEmpty) ...[
-                    _SectionTitle(t('approvals.title')),
+                    _SectionTitle(AppL10n.of(context).famApprovalsTitle),
                     for (final request in _approvals)
                       _ApprovalCard(
                         request: request,
@@ -160,15 +191,10 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                     const SizedBox(height: 16),
                   ],
                   StudafyHero(
-                    eyebrow:
-                        Localizations.localeOf(context).languageCode == 'ar'
-                        ? 'معًا، كل يوم'
-                        : 'TOGETHER, EVERY DAY',
-                    title: t('children'),
-                    subtitle:
-                        Localizations.localeOf(context).languageCode == 'ar'
-                        ? 'عالمهم ينمو. كن جزءًا منه.'
-                        : 'Their world is growing. Be part of it.',
+                    eyebrow: AppL10n.of(context).familyHomeTogetherEveryDay,
+                    title: AppL10n.of(context).famChildren,
+                    subtitle: AppL10n.of(context)
+                        .familyHomeTheirWorldIsGrowingBe,
                     icon: Icons.favorite_rounded,
                   ),
                   const SizedBox(height: 28),
@@ -195,7 +221,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                             width: width,
                             child: Semantics(
                               button: true,
-                              label: t('link'),
+                              label: AppL10n.of(context).famLink,
                               child: Material(
                                 color: const Color(0xFFECEBFF),
                                 borderRadius: BorderRadius.circular(26),
@@ -228,7 +254,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                                         ),
                                         const SizedBox(height: 18),
                                         Text(
-                                          t('link'),
+                                          AppL10n.of(context).famLink,
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w800,
@@ -262,11 +288,12 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
                   if (_children.isEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      t('empty.message'),
+                      AppL10n.of(context).famEmptyMessage,
                       style: const TextStyle(color: studafyMuted),
                       textAlign: TextAlign.center,
                     ),
                   ],
+                  ...widget.sections,
                 ],
               ),
             ),
@@ -414,9 +441,7 @@ class _ApprovalCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            familyText(context, 'approvals.detail', {
-              'name': request.studentName,
-            }),
+            AppL10n.of(context).famApprovalsDetail(request.studentName),
             style: const TextStyle(color: studafyInk),
           ),
           const SizedBox(height: 8),
@@ -425,12 +450,12 @@ class _ApprovalCard extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: onDecline,
-                child: Text(familyText(context, 'approvals.decline')),
+                child: Text(AppL10n.of(context).famApprovalsDecline),
               ),
               const SizedBox(width: 8),
               FilledButton(
                 onPressed: onApprove,
-                child: Text(familyText(context, 'approvals.approve')),
+                child: Text(AppL10n.of(context).famApprovalsApprove),
               ),
             ],
           ),
@@ -465,54 +490,59 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
       _message = null;
       _found = null;
     });
-    String? captchaToken;
-    if (const bool.fromEnvironment('TURNSTILE_ENABLED') &&
-        !StudafyRuntime.policy.isSynthetic &&
-        _code.text.trim().isNotEmpty) {
-      final base = Uri.tryParse(
-        const String.fromEnvironment('STUDAFY_API_URL'),
-      );
-      if (base == null || !base.hasAuthority) {
-        setState(() {
-          _busy = false;
-          _message = familyText(context, 'error.title');
-        });
-        return;
-      }
-      captchaToken = await Navigator.of(context).push<String>(
-        MaterialPageRoute(
-          builder: (_) => FamilyChallengePage(
-            url: base.replace(
-              path: '/auth/bot-check',
-              queryParameters: {
-                'lang': Localizations.localeOf(context).languageCode,
-              },
-            ),
-          ),
-        ),
-      );
+    // Ask first, and prove a person is asking only when the server says so.
+    // This used to decide from a build flag, and a flag that disagreed with
+    // the server opened a challenge page the server did not serve - which is
+    // how a parent linking a child ended up looking at a raw error.
+    var result = await FamilyScope.of(context).locate(_code.text);
+    if (!mounted) return;
+    if (result case FailureResult(
+      failure: Failure(code: captchaRequiredCode),
+    )) {
+      final captchaToken = await _challenge();
       if (!mounted) return;
       if (captchaToken == null) {
         setState(() => _busy = false);
         return;
       }
+      result = await FamilyScope.of(context)
+          .locate(_code.text, captchaToken: captchaToken);
+      if (!mounted) return;
     }
-    if (!mounted) return;
-    final result = await FamilyScope.of(context)
-        .locate(_code.text, captchaToken: captchaToken);
-    if (!mounted) return;
     setState(() {
       _busy = false;
       result.fold(
         onSuccess: (student) {
           _found = student;
           if (student == null) {
-            _message = familyText(context, 'link.notFound');
+            _message = AppL10n.of(context).famLinkNotFound;
           }
         },
         onFailure: (failure) => _message = familyFailureText(context, failure),
       );
     });
+  }
+
+  /// Opens the server's own bot-check page and returns the token it issues,
+  /// or null when the parent backs out or no API address is configured.
+  Future<String?> _challenge() async {
+    final base = Uri.tryParse(const String.fromEnvironment('STUDAFY_API_URL'));
+    if (base == null || !base.hasAuthority) {
+      setState(() => _message = AppL10n.of(context).famErrorTitle);
+      return null;
+    }
+    return await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => FamilyChallengePage(
+          url: base.replace(
+            path: '/auth/bot-check',
+            queryParameters: {
+              'lang': Localizations.localeOf(context).languageCode,
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _request() async {
@@ -532,7 +562,6 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => familyText(context, key);
     final found = _found;
     return SafeArea(
       child: Padding(
@@ -542,7 +571,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              t('link.title'),
+              AppL10n.of(context).famLinkTitle,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
@@ -553,7 +582,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                     controller: _code,
                     textCapitalization: TextCapitalization.characters,
                     decoration: InputDecoration(
-                      labelText: t('link.hint'),
+                      labelText: AppL10n.of(context).famLinkHint,
                       border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _find(),
@@ -562,7 +591,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                 const SizedBox(width: 8),
                 OutlinedButton(
                   onPressed: _busy ? null : _find,
-                  child: Text(t('link.find')),
+                  child: Text(AppL10n.of(context).famLinkFind),
                 ),
               ],
             ),
@@ -577,12 +606,70 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
                 child: FilledButton(
                   onPressed: _busy ? null : _request,
                   child: Text(
-                    familyText(context, 'link.confirm', {
-                      'name': found.displayName,
-                    }),
+                    AppL10n.of(context).famLinkConfirm(found.displayName),
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _LinkChoice { find, create }
+
+/// "Link a child": find a child who has an account, or create one for a
+/// child who has none (no email or phone). A created account is the
+/// parent's to manage, so the child has nothing to approve.
+class _LinkChoiceSheet extends StatelessWidget {
+  const _LinkChoiceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    Widget option(
+      _LinkChoice choice,
+      IconData icon,
+      String title,
+      String body,
+    ) => Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Icon(icon, color: studafyCyan, size: 30),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(body),
+        ),
+        onTap: () => Navigator.pop(context, choice),
+      ),
+    );
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.famLinkTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            option(
+              _LinkChoice.find,
+              Icons.person_search_rounded,
+              l10n.famLinkHasAccount,
+              l10n.famLinkHasAccountBody,
+            ),
+            option(
+              _LinkChoice.create,
+              Icons.person_add_alt_1_rounded,
+              l10n.famLinkCreateAccount,
+              l10n.famLinkCreateAccountBody,
+            ),
           ],
         ),
       ),

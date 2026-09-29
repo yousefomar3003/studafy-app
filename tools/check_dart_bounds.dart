@@ -40,6 +40,10 @@ const _coreAllowlist = <String>[
   'core/account_lifecycle.dart',
   'core/failures.dart',
   'core/result.dart',
+  // UUIDs and idempotency keys: one secure generator for every command.
+  'core/idempotency.dart',
+  // One way to show a short confirmation or error.
+  'core/feedback.dart',
   'core/telemetry.dart',
   'core/studafy_domain.dart',
   'core/studafy_design.dart',
@@ -47,7 +51,6 @@ const _coreAllowlist = <String>[
   // where it is navigating to without importing lib/app, which is what the
   // composition-root rule below forbids.
   'core/app_routes.dart',
-  'core/studafy_localizations.dart',
   'core/runtime_environment.dart',
   // MOB-070 localization (ADR-0028). The generated localizations are the one
   // source of interface copy, so every zone may read them; the port below is
@@ -71,6 +74,15 @@ const _coreAllowlist = <String>[
   'core/attachment_field.dart',
   'core/platform_attachment_source.dart',
   'core/uploads_scope.dart',
+  // Opening what was attached is the other half of the same concern.
+  'core/attachment_opener.dart',
+  // Voice notes: recorded and played in messages, and a voice note picked up
+  // anywhere an attachment is shown. The port and its platform adapter, like
+  // the attachment picker above.
+  // Links a teacher adds to what they post, and how a reader opens them.
+  'core/content_links.dart',
+  'core/voice_note.dart',
+  'core/platform_voice_notes.dart',
 ];
 
 /// Data-layer-only imports: presentation and application may never touch
@@ -81,6 +93,9 @@ const _dataOnlyImports = <String>[
   // presentation must go through a repository port, never call /v1 itself.
   'data/contracts/v1_client.generated.dart',
   'data/contracts/v1_http_transport.dart',
+  // Where the transport keeps answers for offline reads; a repository may
+  // keep its own answers there too (the study helper).
+  'data/contracts/response_cache.dart',
   // The typed /v1/billing client is a transport client too (PAY-071).
   'data/billing/v1_billing_api.dart',
   'data/secure/keychain_secure_store.dart',
@@ -98,6 +113,8 @@ const _dataOnlyImports = <String>[
   'data/local_cache/offline_cache_store.dart',
   'data/local_cache/mutation_outbox_engine.dart',
   'data/local_cache/session_cache_binder.dart',
+  'data/local_cache/offline_response_cache.dart',
+  'data/local_cache/offline_file_cache.dart',
   // MOB-070: the preference-store adapter. Presentation and application reach
   // device settings through DeviceSettingsStore, never the plugin.
   'data/settings/preferences_device_settings.dart',
@@ -213,10 +230,74 @@ DartBoundaryReport checkDartBoundaries(String rootPath) {
     }
   }
 
+  checkedFiles += _checkLayers(root.path, violations);
+
   return DartBoundaryReport(
     checkedFiles: checkedFiles,
     violations: List.unmodifiable(violations),
   );
+}
+
+/// The layers outside lib/features.
+///
+/// - `lib/core` is the innermost ring: it may import nothing from features,
+///   data or app.
+/// - `lib/data` adapts providers and may implement a feature's domain port,
+///   but never reaches a feature's presentation or application code, or the
+///   composition root.
+/// - A `part` file inherits its library's imports, so the checker cannot see
+///   what it uses; the old parent screens hid cross-feature imports that way.
+///   Only generated code and the preview database may be split into parts.
+int _checkLayers(String rootPath, List<String> violations) {
+  var checked = 0;
+  const partsAllowed = ['lib/l10n/generated/', 'lib/data/local/'];
+  const partLibrariesAllowed = ['lib/studafy_database.dart'];
+  final lib = Directory('$rootPath/lib');
+  for (final entry in lib.listSync(recursive: true)) {
+    if (entry is! File || !entry.path.endsWith('.dart')) continue;
+    final path = entry.path.substring(rootPath.length + 1);
+    final source = entry.readAsStringSync();
+    if (RegExp(r'^part (of )?', multiLine: true).hasMatch(source) &&
+        !partsAllowed.any(path.startsWith) &&
+        !partLibrariesAllowed.contains(path)) {
+      violations.add('$path: uses `part`, which hides its imports');
+    }
+    if (path.startsWith('lib/features/')) continue;
+    checked++;
+    for (final match in _importPattern.allMatches(source)) {
+      final import = match.group(1)!;
+      final target = _resolveLibPath(import, entry.path, rootPath);
+      if (target == null) continue;
+      if (path.startsWith('lib/core/') &&
+          (target.startsWith('lib/features/') ||
+              target.startsWith('lib/data/') ||
+              target.startsWith('lib/app/'))) {
+        violations.add('$path: core imports "$import" (core imports no layer)');
+      }
+      if (path.startsWith('lib/data/') &&
+          (target.startsWith('lib/app/') ||
+              (target.startsWith('lib/features/') &&
+                  !target.contains('/domain/')))) {
+        violations.add(
+          '$path: data imports "$import" (data may use only feature domains)',
+        );
+      }
+    }
+  }
+  return checked;
+}
+
+/// The lib-relative path an import points at, or null for packages/dart:.
+String? _resolveLibPath(String import, String fromFile, String rootPath) {
+  if (import.startsWith('package:studafy/')) {
+    return 'lib/${import.substring('package:studafy/'.length)}';
+  }
+  if (import.startsWith('package:') || import.startsWith('dart:')) return null;
+  final resolved = File('${File(fromFile).parent.path}/$import').absolute.uri
+      .normalizePath()
+      .toFilePath();
+  if (!resolved.startsWith(rootPath)) return null;
+  return resolved.substring(rootPath.length + 1);
 }
 
 String? _zoneFor(String path) {
@@ -246,7 +327,14 @@ String? _check({
         import.startsWith('package:sqflite/') ||
         import.startsWith('package:flutter_secure_storage/') ||
         import.startsWith('package:sign_in_with_apple/') ||
-        import.startsWith('package:crypto/')) {
+        import.startsWith('package:crypto/') ||
+        // Device-only storage, like sqflite: they locate the app's private
+        // directory (the study helper's chats) and nothing else.
+        import.startsWith('package:path_provider/') ||
+        import.startsWith('package:path/') ||
+        // Push: Firebase messaging, registering the phone's token only.
+        import.startsWith('package:firebase_core/') ||
+        import.startsWith('package:firebase_messaging/')) {
       return zone == 'data'
           ? null
           : '$filePath: $zone imports provider package "$import" '

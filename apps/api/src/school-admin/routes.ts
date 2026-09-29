@@ -1,12 +1,14 @@
 import type { Context, Hono } from "hono";
-import { V1_ROUTE_CATALOGUE } from "@studafy/contracts";
 import type {
   AuthorizationDependencies,
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { AuthDependencies } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { SchoolAdminRepository } from "./repository";
 
 export interface SchoolAdminDependencies {
@@ -24,7 +26,20 @@ export type SchoolAdminSlice =
 // School-admin owns the fixed slice of the catalogue appended after
 // academic (indices 52-63); academic/routes.ts bounds its own slice to
 // [12, 52) so the two modules never claim the same entries.
-const SCHOOL_ADMIN_ROUTES = V1_ROUTE_CATALOGUE.slice(52, 64);
+const SCHOOL_ADMIN_ROUTES = catalogueRoutesNamed([
+  "provisionSchool",
+  "suspendSchool",
+  "closeSchool",
+  "grantMembership",
+  "activateMembership",
+  "suspendMembership",
+  "revokeMembership",
+  "assignClassroomStaff",
+  "removeClassroomStaff",
+  "enrollStudent",
+  "withdrawStudent",
+  "transferEnrollment",
+]);
 
 function selector(
   c: Context<AuthorizationEnv>,
@@ -51,7 +66,10 @@ function sliceFor(operation: string): SchoolAdminSlice {
 // catalogue reaches index 94 - so folding them into SCHOOL_ADMIN_ROUTES
 // would desync the two orderings. apps/api/src/index.ts mounts this last,
 // after every other module, to match.
-const SCHOOL_ROSTER_ROUTES = V1_ROUTE_CATALOGUE.slice(94, 96);
+const SCHOOL_ROSTER_ROUTES = catalogueRoutesNamed([
+  "createTerm",
+  "createStudent",
+]);
 
 function rosterSelector(c: Context<AuthorizationEnv>): string | null {
   const params = (c.get("validatedParams") ?? {}) as Record<string, string>;
@@ -91,7 +109,7 @@ export function createSchoolAdminRoutes(
       selector,
       sliceFor,
       enabledSlices: deps.enabledSlices,
-      // instructions.md section 7: school closure/suspension are admin
+      // docs/planning/instructions.md section 7: school closure/suspension are admin
       // mutations sensitive enough to require a fresh re-confirmation, not
       // just the platform-operator/school-admin role check the SQL
       // dispatcher already enforces. Both reuse AUTH-030's

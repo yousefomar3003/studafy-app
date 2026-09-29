@@ -105,7 +105,11 @@ select set_eq(
   $$ select purpose::text from public.file_purpose_policies where enabled $$,
   $$ values ('profile_image'),('lesson_resource'),('assignment_material'),
             ('assignment_submission'),('paper_scan'),
-            ('message_attachment'),('announcement_attachment') $$,
+            ('message_attachment'),('announcement_attachment'),
+            -- A student's own whiteboard photo for their notebook (ADR-0029).
+            ('notebook_photo'),
+            -- A photo a student sends the study helper (202609290002).
+            ('assistant_attachment') $$,
   'every non-AI upload purpose stays enabled and coach_attachment does not');
 
 -- 5. Neither AI product can be offered or re-activated.
@@ -122,7 +126,10 @@ select throws_like($$ update public.store_products set active=true, storefront_l
 select throws_like($$ insert into public.store_products(feature_key,platform,environment,store_product_id,active,storefront_listed)
   values('teacher_ai_grading','app_store','production','studafy_teacher_ai_grading_monthly',true,true) $$,
   '%ai072_ai_products_retired%', 'a new AI product cannot be listed');
-select ok((select count(*) from public.store_products where feature_key='student_notebook' and active)>0,
+-- The products still on sale: Family+ and the two study plans. The Student
+-- Notebook was retired when Lessons became free (ADR-0029).
+select is((select count(distinct feature_key) from public.store_products
+  where feature_key in ('parent_insights','studafy_plus','studafy_max') and active),3::bigint,
   'non-AI products stay active');
 
 select * from finish();

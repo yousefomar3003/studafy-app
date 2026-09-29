@@ -183,6 +183,13 @@ IconData directionalIcon(
 }) => Directionality.of(context) == TextDirection.rtl ? rtl : ltr;
 
 /// The "go deeper" chevron on a row, pointing the way the reader reads.
+/// The mirror of [forwardChevron]: "previous" in the reading direction.
+IconData backChevron(BuildContext context) => directionalIcon(
+  context,
+  ltr: Icons.chevron_left_rounded,
+  rtl: Icons.chevron_right_rounded,
+);
+
 IconData forwardChevron(BuildContext context) => directionalIcon(
   context,
   ltr: Icons.chevron_right_rounded,

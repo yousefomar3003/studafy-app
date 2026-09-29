@@ -2,8 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Studafy uses the camera to photograph the lesson whiteboard for your notebook.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Studafy uses the microphone to record voice notes you send in messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Studafy uses your selected photo as your profile picture.</string>
+	<string>Studafy uses the photos you choose - a profile picture, or a photo of the lesson whiteboard for your notebook.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

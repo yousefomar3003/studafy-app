@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_field.dart';
+import '../../../core/file_upload_repository.dart';
+import '../../../core/platform_attachment_source.dart';
+import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 
@@ -12,6 +16,9 @@ import '../domain/academic_repository.dart';
 /// them, but no exam is taken on the platform — offering it only invited a
 /// teacher to author a paper nobody would ever see.
 ///
+/// The paper itself - or a revision sheet - can be attached, as with an
+/// assignment, so students can open it from the exam.
+///
 /// Recorded as an assessment because grade_results attach to nothing else.
 class CreateExamPage extends StatefulWidget {
   const CreateExamPage({
@@ -19,11 +26,23 @@ class CreateExamPage extends StatefulWidget {
     required this.repository,
     required this.classes,
     this.initialClassroomId,
+    this.schoolId,
+    this.uploads,
+    this.attachmentSource,
   });
 
-  final AcademicRepository repository;
+  final AssessmentRepository repository;
   final List<ClassOption> classes;
   final String? initialClassroomId;
+
+  /// The school the files are filed under; without one no attach control.
+  final String? schoolId;
+
+  /// Falls back to the app's [UploadsScope].
+  final FileUploadRepository? uploads;
+
+  /// Overrides the platform picker. Tests supply their own.
+  final AttachmentSource? attachmentSource;
 
   @override
   State<CreateExamPage> createState() => _CreateExamPageState();
@@ -37,6 +56,13 @@ class _CreateExamPageState extends State<CreateExamPage> {
   DateTime? _scheduledAt;
   bool _saving = false;
   String? _error;
+  List<Attachment> _attachments = const [];
+
+  /// Files are uploaded for one class; changing it starts them over.
+  Key _attachmentsKey = UniqueKey();
+
+  bool get _uploading =>
+      _attachments.any((a) => a.stage == AttachmentStage.uploading);
 
   @override
   void initState() {
@@ -79,7 +105,7 @@ class _CreateExamPageState extends State<CreateExamPage> {
   }
 
   Future<void> _create() async {
-    if (_saving) return;
+    if (_saving || _uploading) return;
     final l10n = AppL10n.of(context);
     final classroomId = _classroomId;
     final total = double.tryParse(_total.text.trim());
@@ -117,6 +143,7 @@ class _CreateExamPageState extends State<CreateExamPage> {
           // could show a student, and an assessment carrying questions must
           // have their marks sum to its total — a rule with no purpose here.
           questions: const [],
+          attachmentFileIds: [for (final item in _attachments) ?item.fileId],
         ),
       );
       if (!mounted) return;
@@ -152,7 +179,12 @@ class _CreateExamPageState extends State<CreateExamPage> {
               ],
               onChanged: _saving
                   ? null
-                  : (value) => setState(() => _classroomId = value),
+                  : (value) => setState(() {
+                      if (value == _classroomId) return;
+                      _classroomId = value;
+                      _attachments = const [];
+                      _attachmentsKey = UniqueKey();
+                    }),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -216,6 +248,30 @@ class _CreateExamPageState extends State<CreateExamPage> {
                           '${scheduledAt.minute.toString().padLeft(2, '0')}',
               ),
             ),
+            const SizedBox(height: 12),
+            if (widget.uploads ?? UploadsScope.maybeOf(context)
+                case final uploads?)
+              if ((widget.schoolId, _classroomId) case (
+                final schoolId?,
+                final classroomId?,
+              )) ...[
+                Text(
+                  l10n.examMaterialHelp,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                AttachmentField(
+                  key: _attachmentsKey,
+                  // The same purpose as an assignment's material: the server
+                  // binds it to the exam when the exam is created.
+                  purpose: FilePurpose.assignmentMaterial,
+                  schoolId: schoolId,
+                  classroomId: classroomId,
+                  uploads: uploads,
+                  enabled: !_saving,
+                  source: widget.attachmentSource ?? pickPlatformAttachment,
+                  onChanged: (items) => setState(() => _attachments = items),
+                ),
+              ],
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(
@@ -225,7 +281,9 @@ class _CreateExamPageState extends State<CreateExamPage> {
             ],
             const SizedBox(height: 20),
             FilledButton(
-              onPressed: _saving ? null : _create,
+              // Held while a file uploads, so the exam is never created
+              // without the paper the teacher is attaching.
+              onPressed: _saving || _uploading ? null : _create,
               child: Text(_saving ? l10n.examCreating : l10n.examCreate),
             ),
           ],

@@ -29,11 +29,15 @@
  */
 import { BillingEventsJobV1 } from "@studafy/contracts";
 import {
+  appleRenewalStatus,
+  googleRenewalStatus,
   isAppleTransactionTrusted,
+  isGoogleAcknowledged,
   isGooglePackageNameTrusted,
   mapAppleNotificationToTransactionState,
-  mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
+  type RenewalStatus,
+  resolveAppleSubscriptionState,
 } from "@studafy/domain";
 import type {
   AppleTransactionVerifier,
@@ -64,9 +68,16 @@ interface FinishBody {
   platform: "app_store" | "play_store";
   environment: string;
   originalTransactionId?: string;
+  /** The exact store transaction (Apple transaction id, Google purchase
+   * token), so an event about a replaced token never lands on its
+   * replacement. */
+  transactionId?: string;
+  /** The product the store now bills this lineage for. */
+  storeProductId?: string;
   purchasedAt?: string;
   effectiveUntil?: string | null;
   state?: string;
+  renewalStatus?: RenewalStatus | null;
   acknowledged?: boolean;
   noop?: boolean;
 }
@@ -193,6 +204,18 @@ export async function reverify(
   return { platform: payload.platform as never, environment, noop: true };
 }
 
+/**
+ * Notifications that change no access by themselves but change what the app
+ * shows (auto-renew turned off or on, a plan change, a renewal date moved),
+ * so the lineage is re-read from Apple's status instead of ignored.
+ */
+const REFRESH_NOTIFICATIONS = new Set([
+  "DID_CHANGE_RENEWAL_STATUS",
+  "DID_CHANGE_RENEWAL_PREF",
+  "RENEWAL_EXTENDED",
+  "OFFER_REDEEMED",
+]);
+
 async function reverifyApple(
   rawPayload: string | null,
   apple: BillingVerifierDependencies["apple"],
@@ -242,9 +265,11 @@ async function reverifyApple(
     notification.notificationType,
     notification.subtype,
   );
-  if (signal === null) {
-    // Renewal-preference / consumption / price notifications: no lifecycle
-    // change, even though they carry a signed transaction.
+  if (
+    signal === null && !REFRESH_NOTIFICATIONS.has(notification.notificationType)
+  ) {
+    // Consumption / price notifications: no lifecycle change, even though
+    // they carry a signed transaction.
     return null;
   }
 
@@ -272,27 +297,36 @@ async function reverifyApple(
     // Store outage: fall back to the embedded signed transaction.
   }
 
-  let state = mapAppleTransactionTypeToState(
-    null,
-    authoritative.revocationReason,
-    authoritative.expiresDate,
-    Date.now(),
-  );
-  // REFUND and REVOKE are direct lifecycle signals carried in the signed
-  // notification itself; a refund/revoke must remove access even if the
-  // status lookup still shows an overlapping newer transaction.
-  if (notification.notificationType === "REFUND") state = "refunded";
-  else if (notification.notificationType === "REVOKE") state = "revoked";
+  // Apple's status decides when the lookup returned one. REFUND and REVOKE
+  // are direct lifecycle signals carried in the signed notification itself;
+  // a refund/revoke must remove access even if the status lookup still
+  // shows an overlapping newer transaction. A grace-period signal keeps
+  // access when the status is unknown, because the transaction's own
+  // expiry has already passed during a billing grace period.
+  const { state, effectiveUntil } = resolveAppleSubscriptionState({
+    subscriptionStatus: authoritative.subscriptionStatus,
+    revocationReason: authoritative.revocationReason,
+    expiresDate: authoritative.expiresDate,
+    gracePeriodExpiresDate: authoritative.gracePeriodExpiresDate,
+    notificationSignal: signal,
+    nowMillis: Date.now(),
+  });
 
   return {
     platform: "app_store",
     environment,
     originalTransactionId: authoritative.originalTransactionId,
+    transactionId: authoritative.transactionId,
+    storeProductId: authoritative.productId,
     purchasedAt: new Date(authoritative.purchaseDate).toISOString(),
-    effectiveUntil: authoritative.expiresDate
-      ? new Date(authoritative.expiresDate).toISOString()
+    effectiveUntil: effectiveUntil
+      ? new Date(effectiveUntil).toISOString()
       : null,
     state,
+    renewalStatus: appleRenewalStatus(
+      authoritative.subscriptionStatus,
+      authoritative.autoRenewing ?? transaction.autoRenewing,
+    ),
     acknowledged: false,
   };
 }
@@ -346,7 +380,7 @@ async function reverifyGoogle(
     mapGoogleSubscriptionStateToTransactionState(verified.subscriptionState) ??
       "on_hold";
 
-  let acknowledged = verified.acknowledgementState === "2";
+  let acknowledged = isGoogleAcknowledged(verified.acknowledgementState);
   if (
     !acknowledged &&
     verified.subscriptionState !== "SUBSCRIPTION_STATE_EXPIRED"
@@ -369,9 +403,15 @@ async function reverifyGoogle(
     platform: "play_store",
     environment,
     originalTransactionId: verified.originalTransactionId,
+    transactionId: verified.transactionId,
+    storeProductId: verified.productId,
     purchasedAt: verified.startTime ?? new Date().toISOString(),
     effectiveUntil: verified.expiryTime,
     state,
+    renewalStatus: googleRenewalStatus(
+      verified.subscriptionState,
+      verified.autoRenewEnabled,
+    ),
     acknowledged,
   };
 }

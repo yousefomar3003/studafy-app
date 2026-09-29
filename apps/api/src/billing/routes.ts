@@ -8,12 +8,20 @@ import {
   V1SubmitPurchaseRequest,
 } from "@studafy/contracts";
 import {
+  appleRenewalStatus,
+  googleRenewalStatus,
   isAppleTransactionTrusted,
   isGooglePackageNameTrusted,
-  mapAppleTransactionTypeToState,
   mapGoogleSubscriptionStateToTransactionState,
+  resolveAppleSubscriptionState,
 } from "@studafy/domain";
-import { sha256Hex } from "@studafy/infrastructure";
+import {
+  type AppleTransactionVerifier,
+  AppleVerificationError,
+  type GooglePurchaseVerifier,
+  GoogleVerificationError,
+  sha256Hex,
+} from "@studafy/infrastructure";
 import type {
   AuthorizationDependencies,
   AuthorizationEnv,
@@ -22,19 +30,16 @@ import { requirePermission } from "../authorization/middleware";
 import type { AuthDependencies } from "../auth/middleware";
 import { requireRecentAuth } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { idempotency } from "../platform/idempotency";
+import { committedJson, idempotency } from "../platform/idempotency";
 import { problem } from "../platform/errors";
 import {
   validatedBody,
   validatedParams,
   validateRouteInput,
 } from "../platform/validation";
-import type { RequestDbContext } from "../platform/catalogueRoutes";
-import type { AppleTransactionVerifier } from "./appleVerifier";
-import { AppleVerificationError } from "./appleVerifier";
-import type { GooglePurchaseVerifier } from "./googleVerifier";
-import { GoogleVerificationError } from "./googleVerifier";
 import type { BillingRepository, NormalizedTransaction } from "./repository";
+import { membershipDbContext } from "../platform/dbContext";
+import { outcomeProblem, type OutcomeTable } from "../platform/outcomes";
 
 export interface BillingRoutesDependencies {
   repository: BillingRepository;
@@ -71,7 +76,7 @@ export function createBillingRoutes(
   // replaces the arithmetic challenge a child could answer unaided.
   routes.post(
     "/v1/billing/purchase-approvals",
-    validateRouteInput(requestApproval) as never,
+    validateRouteInput(requestApproval),
     requirePermission(authorization, "billing.purchase_approval.request"),
     idempotency(
       idempotencyDependencies,
@@ -82,27 +87,26 @@ export function createBillingRoutes(
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
       const body = V1RequestPurchaseApprovalRequest.parse(
-        validatedBody(c as never),
+        validatedBody(c),
       );
       const result = await deps.repository.requestPurchaseApproval(
-        requestContext(c),
+        membershipDbContext(c),
         body.featureKey,
         reservation,
       );
       const failure = mapBillingOutcome(c, result.outcome);
       if (failure) return failure;
-      c.set("idempotencyCompleted", true);
-      return c.json(result.response, 201);
+      return committedJson(c, result.response, 201);
     },
   );
 
   routes.get(
     "/v1/billing/purchase-approvals",
-    validateRouteInput(listApprovals) as never,
+    validateRouteInput(listApprovals),
     requirePermission(authorization, "billing.purchase_approval.read"),
     async (c) => {
       const approvals = await deps.repository.listPurchaseApprovals(
-        requestContext(c),
+        membershipDbContext(c),
       );
       return c.json({ approvals });
     },
@@ -110,7 +114,7 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/purchase-approvals/:approvalId/decision",
-    validateRouteInput(decideApproval) as never,
+    validateRouteInput(decideApproval),
     requirePermission(authorization, "billing.purchase_approval.decide"),
     idempotency(
       idempotencyDependencies,
@@ -128,29 +132,28 @@ export function createBillingRoutes(
         c as never,
       );
       const body = V1DecidePurchaseApprovalRequest.parse(
-        validatedBody(c as never),
+        validatedBody(c),
       );
       const result = await deps.repository.decidePurchaseApproval(
-        requestContext(c),
+        membershipDbContext(c),
         approvalId,
         body.approve,
         reservation,
       );
       const failure = mapBillingOutcome(c, result.outcome);
       if (failure) return failure;
-      c.set("idempotencyCompleted", true);
-      return c.json(result.response, 200);
+      return committedJson(c, result.response, 200);
     },
   );
 
   routes.get(
     "/v1/billing/catalogue",
-    validateRouteInput(catalogue) as never,
+    validateRouteInput(catalogue),
     requirePermission(authorization, "billing.catalogue.read"),
     async (c) => {
       const [products, selfPurchase] = await Promise.all([
         deps.repository.catalogue(deps.environment),
-        deps.repository.selfPurchaseStatus(requestContext(c)),
+        deps.repository.selfPurchaseStatus(membershipDbContext(c)),
       ]);
       return c.json({
         products: products.products,
@@ -162,13 +165,13 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/purchases",
-    validateRouteInput(submit) as never,
+    validateRouteInput(submit),
     requirePermission(authorization, "billing.purchase.submit"),
     idempotency(idempotencyDependencies, submit.operationId, "required"),
     async (c) => {
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const body = V1SubmitPurchaseRequest.parse(validatedBody(c as never));
+      const body = V1SubmitPurchaseRequest.parse(validatedBody(c));
 
       let normalized: NormalizedTransaction;
       try {
@@ -192,7 +195,7 @@ export function createBillingRoutes(
       normalized.beneficiaryStudentId = body.beneficiaryStudentId ?? null;
 
       const result = await deps.repository.submitVerification(
-        requestContext(c),
+        membershipDbContext(c),
         normalized,
         reservation,
       );
@@ -210,20 +213,19 @@ export function createBillingRoutes(
         ).catch(() => undefined);
       }
 
-      c.set("idempotencyCompleted", true);
-      return c.json(result.response, 200);
+      return committedJson(c, result.response, 200);
     },
   );
 
   routes.post(
     "/v1/billing/restore",
-    validateRouteInput(restore) as never,
+    validateRouteInput(restore),
     requirePermission(authorization, "billing.restore"),
     idempotency(idempotencyDependencies, restore.operationId, "required"),
     async (c) => {
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const body = V1RestorePurchaseRequest.parse(validatedBody(c as never));
+      const body = V1RestorePurchaseRequest.parse(validatedBody(c));
 
       let normalized: NormalizedTransaction;
       try {
@@ -247,28 +249,24 @@ export function createBillingRoutes(
       normalized.beneficiaryStudentId = body.beneficiaryStudentId ?? null;
 
       const result = await deps.repository.restore(
-        requestContext(c),
+        membershipDbContext(c),
         normalized,
         reservation,
       );
       const failure = mapBillingOutcome(c, result.outcome);
       if (failure) return failure;
-      c.set("idempotencyCompleted", true);
       const response = result.response as { restored?: boolean } | undefined;
-      return c.json(
-        { restored: true, ...(response ?? {}) },
-        200,
-      );
+      return committedJson(c, { restored: true, ...(response ?? {}) });
     },
   );
 
   routes.get(
     "/v1/billing/entitlements",
-    validateRouteInput(entitlements) as never,
+    validateRouteInput(entitlements),
     requirePermission(authorization, "billing.entitlement.read"),
     async (c) => {
       const rows = await deps.repository.listEntitlements(
-        requestContext(c),
+        membershipDbContext(c),
         deps.environment,
       );
       return c.json({ entitlements: rows });
@@ -277,7 +275,7 @@ export function createBillingRoutes(
 
   routes.post(
     "/v1/billing/school-settings/self-purchase",
-    validateRouteInput(setSelfPurchase) as never,
+    validateRouteInput(setSelfPurchase),
     requirePermission(authorization, "billing.school_settings.write"),
     idempotency(
       idempotencyDependencies,
@@ -287,16 +285,15 @@ export function createBillingRoutes(
     async (c) => {
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const body = V1SetSelfPurchaseRequest.parse(validatedBody(c as never));
+      const body = V1SetSelfPurchaseRequest.parse(validatedBody(c));
       const ok = await deps.repository.setSelfPurchase(
-        requestContext(c),
+        membershipDbContext(c),
         body.schoolId,
         body.enabled,
         reservation,
       );
       if (!ok) return problem(c, "FORBIDDEN", 403);
-      c.set("idempotencyCompleted", true);
-      return c.json({
+      return committedJson(c, {
         schoolId: body.schoolId,
         selfPurchaseEnabled: body.enabled,
       });
@@ -358,12 +355,15 @@ async function verifyAndNormalize(
         "bundle, environment or product mismatch",
       );
     }
-    const state = mapAppleTransactionTypeToState(
-      null,
-      decoded.revocationReason,
-      decoded.expiresDate,
-      Date.now(),
-    );
+    // Apple's own status, not the expiry alone: a subscription in its
+    // billing grace period has an expired transaction but keeps access.
+    const { state, effectiveUntil } = resolveAppleSubscriptionState({
+      subscriptionStatus: decoded.subscriptionStatus,
+      revocationReason: decoded.revocationReason,
+      expiresDate: decoded.expiresDate,
+      gracePeriodExpiresDate: decoded.gracePeriodExpiresDate,
+      nowMillis: Date.now(),
+    });
     return {
       platform: "app_store",
       environment: deps.environment,
@@ -374,9 +374,13 @@ async function verifyAndNormalize(
       signedDataHash,
       state,
       purchasedAt: new Date(decoded.purchaseDate).toISOString(),
-      effectiveUntil: decoded.expiresDate
-        ? new Date(decoded.expiresDate).toISOString()
+      effectiveUntil: effectiveUntil
+        ? new Date(effectiveUntil).toISOString()
         : null,
+      renewalStatus: appleRenewalStatus(
+        decoded.subscriptionStatus,
+        decoded.autoRenewing,
+      ),
     };
   }
 
@@ -410,46 +414,28 @@ async function verifyAndNormalize(
     state,
     purchasedAt: verified.startTime ?? new Date().toISOString(),
     effectiveUntil: verified.expiryTime,
+    renewalStatus: googleRenewalStatus(
+      verified.subscriptionState,
+      verified.autoRenewEnabled,
+    ),
   };
 }
 
-function requestContext(c: Context<AuthorizationEnv>): RequestDbContext {
-  return {
-    subject: c.get("actor").token.subject,
-    schoolId: c.get("authorization").tenant?.schoolId ?? null,
-    requestId: c.get("requestId"),
-    aal2: c.get("actor").aal2,
-  };
-}
+const BILLING_OUTCOMES: OutcomeTable = {
+  product_not_found: ["PRODUCT_NOT_FOUND", 404],
+  beneficiary_required: ["BENEFICIARY_LINK_INVALID", 422],
+  beneficiary_link_invalid: ["BENEFICIARY_LINK_INVALID", 422],
+  invalid_beneficiary: ["BENEFICIARY_LINK_INVALID", 422],
+  not_eligible: ["FORBIDDEN", 403],
+  parental_gate_required: ["PARENTAL_GATE_REQUIRED", 422],
+  guardian_link_required: ["GUARDIAN_LINK_REQUIRED", 422],
+  student_purchase_disabled: ["STUDENT_PURCHASE_DISABLED", 422],
+  owned_by_other_account: ["ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT", 403],
+};
 
 function mapBillingOutcome(
   c: Context<AuthorizationEnv>,
   outcome: string,
 ): Response | null {
-  if (outcome === "ok") return null;
-  const mapped: Record<string, Parameters<typeof problem>[1]> = {
-    forbidden: "FORBIDDEN",
-    product_not_found: "PRODUCT_NOT_FOUND",
-    beneficiary_required: "BENEFICIARY_LINK_INVALID",
-    beneficiary_link_invalid: "BENEFICIARY_LINK_INVALID",
-    invalid_beneficiary: "BENEFICIARY_LINK_INVALID",
-    not_eligible: "FORBIDDEN",
-    parental_gate_required: "PARENTAL_GATE_REQUIRED",
-    guardian_link_required: "GUARDIAN_LINK_REQUIRED",
-    not_found: "NOT_FOUND",
-    invalid_state: "INVALID_STATE",
-    student_purchase_disabled: "STUDENT_PURCHASE_DISABLED",
-    owned_by_other_account: "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT",
-  };
-  const code = mapped[outcome] ?? "INTERNAL_ERROR";
-  const status = code === "INTERNAL_ERROR"
-    ? 500
-    : code === "FORBIDDEN" || code === "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT"
-    ? 403
-    : code === "PRODUCT_NOT_FOUND" || code === "NOT_FOUND"
-    ? 404
-    : code === "INVALID_STATE"
-    ? 409
-    : 422;
-  return problem(c, code, status);
+  return outcome === "ok" ? null : outcomeProblem(c, outcome, BILLING_OUTCOMES);
 }

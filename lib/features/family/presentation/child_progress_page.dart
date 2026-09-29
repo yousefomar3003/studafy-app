@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
 import 'family_scope.dart';
 import 'family_strings.dart';
@@ -49,50 +50,49 @@ class _ChildProgressPageState extends State<ChildProgressPage> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key, [Map<String, String> args = const {}]) =>
-        familyText(context, key, args);
     final progress = _progress;
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(t('progress.title', {'name': widget.child.studentName})),
+        title: Text(
+          AppL10n.of(context).famProgressTitle(widget.child.studentName),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _failure != null || progress == null
           ? StudafyStatusCard(
               icon: Icons.error_outline_rounded,
-              title: t('error.title'),
+              title: AppL10n.of(context).famErrorTitle,
               message: familyFailureText(context, _failure ?? Failure.unknown),
-              actionLabel: t('retry'),
+              actionLabel: AppL10n.of(context).famRetry,
               onAction: _load,
             )
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _Metric(
-                  label: t('progress.average'),
+                  label: AppL10n.of(context).famProgressAverage,
                   value: progress.averagePercent == null
-                      ? t('progress.none')
+                      ? AppL10n.of(context).famProgressNone
                       : '${progress.averagePercent!.toStringAsFixed(0)}%',
-                  detail: t('progress.graded', {
-                    'count': '${progress.gradedCount}',
-                  }),
+                  detail: AppL10n.of(context)
+                      .famProgressGraded('${progress.gradedCount}'),
                 ),
                 const SizedBox(height: 10),
                 _Metric(
-                  label: t('progress.attendance'),
+                  label: AppL10n.of(context).famProgressAttendance,
                   value: progress.attendancePercent == null
-                      ? t('progress.none')
+                      ? AppL10n.of(context).famProgressNone
                       : '${progress.attendancePercent!.toStringAsFixed(0)}%',
                   detail:
-                      '${t('progress.sessions', {'count': '${progress.sessions}'})}\n'
-                      '${t('progress.breakdown', {'present': '${progress.present}', 'late': '${progress.late}', 'absent': '${progress.absent}', 'excused': '${progress.excused}'})}',
+                      '${AppL10n.of(context).famProgressSessions('${progress.sessions}')}\n'
+                      '${AppL10n.of(context).famProgressBreakdown('${progress.present}', '${progress.late}', '${progress.absent}', '${progress.excused}')}',
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  t('progress.source'),
+                  AppL10n.of(context).famProgressSource,
                   style: const TextStyle(color: studafyMuted, fontSize: 12),
                 ),
               ],

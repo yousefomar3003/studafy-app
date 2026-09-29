@@ -45,7 +45,7 @@ final class AuthCallbackRejected extends AuthCallbackOutcome {
 /// verification. The SDK holds the generated `state` and the code verifier and
 /// checks both during the exchange; a second copy here could not see either,
 /// so it would prove nothing. That enforcement is verified end to end against
-/// a real GoTrue by `scripts/verify-auth030-lifecycle.ts`.
+/// a real GoTrue by `scripts/verify-auth-lifecycle.ts`.
 ///
 /// Nor can it stop another app registering the same custom scheme and
 /// receiving the callback first. Nothing in-process can. The mitigations there

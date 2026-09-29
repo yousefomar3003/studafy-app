@@ -35,7 +35,7 @@ export function createFamilyInsightsRoutes(
 
   routes.get(
     "/v1/family/insights",
-    validateRouteInput(route) as never,
+    validateRouteInput(route),
     requirePermission(authorization, "family_insights.read"),
     async (c: Context<AuthorizationEnv>) => {
       const query = c.get("validatedQuery") as {

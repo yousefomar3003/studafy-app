@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
-import '../application/class_list_interactor.dart';
-import '../domain/classroom.dart';
-import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
+import '../application/class_list_interactor.dart';
+import '../domain/classroom.dart';
+import 'create_class_dialog.dart';
 
 /// Typed teacher class list (ARC-011 classes slice).
 ///
@@ -124,271 +125,7 @@ class _ClassesPageState extends State<ClassesPage> {
   );
 
   Future<void> _createClass(BuildContext context) async {
-    final name = TextEditingController();
-    final room = TextEditingController();
-    int grade = 10;
-    String section = 'A';
-    int weeklySessions = 1;
-    String? createFailure;
-    final sessions = <ClassSessionDraft>[
-      ClassSessionDraft(weekday: 1, startTime: '08:00', endTime: '08:50'),
-    ];
-    final dayNames = studafyWeekdayNames(context);
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialog) => AlertDialog(
-          title: Text(AppL10n.of(dialogContext).classesCreateTitle),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: name,
-                  decoration: InputDecoration(
-                    labelText: AppL10n.of(dialogContext).classesNameLabel,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: room,
-                  decoration: InputDecoration(
-                    labelText: AppL10n.of(dialogContext).classesRoomLabel,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        initialValue: grade,
-                        decoration: InputDecoration(
-                          labelText: AppL10n.of(dialogContext)
-                              .classesGradeLabel,
-                        ),
-                        items: List.generate(
-                          12,
-                          (i) => DropdownMenuItem(
-                            value: i + 1,
-                            child: Text(
-                              AppL10n.of(dialogContext)
-                                  .classesGradeOption(i + 1),
-                            ),
-                          ),
-                        ),
-                        onChanged: (v) => setDialog(() => grade = v!),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: section,
-                        decoration: InputDecoration(
-                          labelText: AppL10n.of(dialogContext)
-                              .classesSectionLabel,
-                        ),
-                        items: ['A', 'B', 'C', 'D']
-                            .map(
-                              (v) => DropdownMenuItem(value: v, child: Text(v)),
-                            )
-                            .toList(),
-                        onChanged: (v) => setDialog(() => section = v!),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: weeklySessions,
-                  decoration: InputDecoration(
-                    labelText: AppL10n.of(dialogContext).classesWeeklyLabel,
-                    prefixIcon: const Icon(Icons.event_repeat_rounded),
-                  ),
-                  items: List.generate(
-                    14,
-                    (i) => DropdownMenuItem(
-                      value: i + 1,
-                      child: Text(
-                        AppL10n.of(dialogContext).classesWeeklyOption(i + 1),
-                      ),
-                    ),
-                  ),
-                  onChanged: (value) => setDialog(() {
-                    weeklySessions = value ?? 1;
-                    while (sessions.length < weeklySessions) {
-                      sessions.add(
-                        ClassSessionDraft(
-                          weekday: sessions.last.weekday,
-                          startTime: sessions.last.startTime,
-                          endTime: sessions.last.endTime,
-                        ),
-                      );
-                    }
-                    while (sessions.length > weeklySessions) {
-                      sessions.removeLast();
-                    }
-                  }),
-                ),
-                const SizedBox(height: 18),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    AppL10n.of(dialogContext).classesChooseTimes,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                for (var i = 0; i < sessions.length; i++)
-                  Container(
-                    margin: const EdgeInsetsDirectional.only(bottom: 10),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: [
-                        studafyCyan,
-                        const Color(0xFF7737EE),
-                        const Color(0xFFFF6B6B),
-                        const Color(0xFF20B981),
-                        const Color(0xFFFFB84D),
-                      ][i % 5].withValues(alpha: .08),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppL10n.of(dialogContext).classesSessionNumber(i + 1),
-                          style: const TextStyle(
-                            color: studafyInk,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<int>(
-                          initialValue: sessions[i].weekday,
-                          decoration: InputDecoration(
-                            labelText: AppL10n.of(dialogContext)
-                                .classesDayLabel,
-                          ),
-                          items: List.generate(
-                            7,
-                            (day) => DropdownMenuItem(
-                              value: day + 1,
-                              child: Text(dayNames[day]),
-                            ),
-                          ),
-                          onChanged: (value) => setDialog(
-                            () => sessions[i] = ClassSessionDraft(
-                              weekday: value ?? 1,
-                              startTime: sessions[i].startTime,
-                              endTime: sessions[i].endTime,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () async {
-                                  final t = await showTimePicker(
-                                    context: dialogContext,
-                                    initialTime: _parseTimeOfday(
-                                      sessions[i].startTime,
-                                    ),
-                                  );
-                                  if (t != null) {
-                                    setDialog(
-                                      () => sessions[i] = ClassSessionDraft(
-                                        weekday: sessions[i].weekday,
-                                        startTime: _formatTimeOfDay(t),
-                                        endTime: sessions[i].endTime,
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Text(sessions[i].startTime),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                              ),
-                              child: Text(AppL10n.of(dialogContext).classesTo),
-                            ),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () async {
-                                  final t = await showTimePicker(
-                                    context: dialogContext,
-                                    initialTime: _parseTimeOfday(
-                                      sessions[i].endTime,
-                                    ),
-                                  );
-                                  if (t != null) {
-                                    setDialog(
-                                      () => sessions[i] = ClassSessionDraft(
-                                        weekday: sessions[i].weekday,
-                                        startTime: sessions[i].startTime,
-                                        endTime: _formatTimeOfDay(t),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Text(sessions[i].endTime),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(AppL10n.of(dialogContext).classesCancel),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (name.text.trim().isEmpty || sessions.isEmpty) return;
-                final draft = NewClassDraft(
-                  name: name.text.trim(),
-                  grade: grade,
-                  section: section,
-                  room: room.text.trim().isEmpty ? 'TBD' : room.text.trim(),
-                  firstSessionStart: sessions.first.startTime,
-                  firstSessionEnd: sessions.first.endTime,
-                  weeklySessions: weeklySessions,
-                  sessions: List.unmodifiable(sessions),
-                );
-                final result = await widget.classes.createClass(draft);
-                if (!dialogContext.mounted) return;
-                switch (result) {
-                  case Success():
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext, true);
-                    }
-                  case FailureResult(:final failure):
-                    createFailure = failure.message;
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext, false);
-                    }
-                }
-              },
-              child: Text(AppL10n.of(dialogContext).classesCreateAction),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (saved == true) {
-      _refresh();
-    } else if (createFailure != null && context.mounted) {
-      _showFailure(context, createFailure!);
-    }
+    if (await showCreateClassDialog(context, widget.classes)) _refresh();
   }
 
   Future<void> _invite(BuildContext context, ClassroomSummary classroom) async {
@@ -401,16 +138,63 @@ class _ClassesPageState extends State<ClassesPage> {
       onSuccess: (link) => link,
       onFailure: (_) => null,
     );
+    // The code already shared is the one shown: a teacher writes it on the
+    // board once, and looking it up again must not replace it.
+    if (live?.invite case final invite?) {
+      await _showInviteDialog(context, invite, classroom: classroom);
+      return;
+    }
+    // A live link whose code cannot be shown again - made before codes were
+    // re-derivable - is described, with the choice to replace it.
     if (live != null) {
       final replace = await _showLiveLinkSheet(context, live);
       if (!context.mounted || !replace) return;
     }
+    await _mintAndShow(context, classroom);
+  }
+
+  Future<void> _mintAndShow(
+    BuildContext context,
+    ClassroomSummary classroom,
+  ) async {
     final result = await widget.classes.inviteLinkFor(classroom.id);
     if (!context.mounted) return;
     result.fold(
-      onSuccess: (link) => _showInviteDialog(context, link),
+      onSuccess: (invite) =>
+          _showInviteDialog(context, invite, classroom: classroom),
       onFailure: (failure) => _showFailure(context, failure.message),
     );
+  }
+
+  /// Replaces the code, after saying what that does to the old one.
+  Future<void> _newCode(
+    BuildContext dialogContext,
+    ClassroomSummary classroom,
+  ) async {
+    final l10n = AppL10n.of(dialogContext);
+    final sure = await showDialog<bool>(
+      context: dialogContext,
+      builder: (confirmContext) => AlertDialog(
+        title: Text(l10n.classesNewCodeTitle),
+        content: Text(l10n.classesNewCodeBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(confirmContext, false),
+            child: Text(
+              MaterialLocalizations.of(confirmContext).cancelButtonLabel,
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(confirmContext, true),
+            child: Text(l10n.classesNewCodeConfirm),
+          ),
+        ],
+      ),
+    );
+    if (sure != true || !dialogContext.mounted) return;
+    Navigator.pop(dialogContext);
+    if (!mounted) return;
+    await _mintAndShow(context, classroom);
   }
 
   /// Shows the live link and offers to revoke it or replace it.
@@ -476,12 +260,8 @@ class _ClassesPageState extends State<ClassesPage> {
     if (choice == 'revoke') {
       final revoked = await widget.classes.revokeJoinLink(link.id);
       revoked.fold(
-        onSuccess: (_) => messenger.showSnackBar(
-          SnackBar(content: Text(l10n.joinLinkRevoked)),
-        ),
-        onFailure: (_) => messenger.showSnackBar(
-          SnackBar(content: Text(l10n.joinLinkRevokeFailed)),
-        ),
+        onSuccess: (_) => messenger.showMessage(l10n.joinLinkRevoked),
+        onFailure: (_) => messenger.showMessage(l10n.joinLinkRevokeFailed),
       );
       return false;
     }
@@ -489,11 +269,16 @@ class _ClassesPageState extends State<ClassesPage> {
   }
 
   void _showFailure(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showMessage(message);
   }
 
-  Future<void> _showInviteDialog(BuildContext context, String link) async {
+  Future<void> _showInviteDialog(
+    BuildContext context,
+    ClassInvite invite, {
+    required ClassroomSummary classroom,
+  }) async {
+    final link = invite.link;
+    final code = invite.code;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -504,6 +289,43 @@ class _ClassesPageState extends State<ClassesPage> {
           children: [
             Text(AppL10n.of(dialogContext).classesInviteBody),
             const SizedBox(height: 16),
+            // The code first and large: it is what a teacher reads out or
+            // writes on the board, and what a young child types on a
+            // parent's phone. The link below is for sending in a message.
+            if (code != null) ...[
+              Text(
+                AppL10n.of(dialogContext).classesInviteCodeLabel,
+                style: Theme.of(dialogContext).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: studafyNavy.withValues(alpha: .06),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: SelectableText(
+                  code,
+                  textAlign: TextAlign.center,
+                  // Left to right even in Arabic: a code is read character
+                  // by character in the order it was minted.
+                  textDirection: TextDirection.ltr,
+                  style: const TextStyle(
+                    color: studafyNavy,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 4,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                AppL10n.of(dialogContext).classesInviteLinkLabel,
+                style: Theme.of(dialogContext).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 6),
+            ],
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -521,17 +343,16 @@ class _ClassesPageState extends State<ClassesPage> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => _newCode(dialogContext, classroom),
+            child: Text(AppL10n.of(dialogContext).classesNewCode),
+          ),
           TextButton.icon(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: link));
               if (dialogContext.mounted) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppL10n.of(dialogContext).classesInviteCopied,
-                    ),
-                  ),
-                );
+                ScaffoldMessenger.of(dialogContext)
+                    .showMessage(AppL10n.of(dialogContext).classesInviteCopied);
               }
             },
             icon: const Icon(Icons.copy),
@@ -540,7 +361,10 @@ class _ClassesPageState extends State<ClassesPage> {
           FilledButton.icon(
             onPressed: () => SharePlus.instance.share(
               ShareParams(
-                text: AppL10n.of(dialogContext).classesShareMessage(link),
+                text: code == null
+                    ? AppL10n.of(dialogContext).classesShareMessage(link)
+                    : AppL10n.of(dialogContext)
+                          .classesShareMessageWithCode(link, code),
               ),
             ),
             icon: const Icon(Icons.ios_share),
@@ -651,14 +475,3 @@ class _ClassesTitleHeader extends StatelessWidget {
     ),
   );
 }
-
-TimeOfDay _parseTimeOfday(String value) {
-  final parts = value.split(':');
-  return TimeOfDay(
-    hour: int.tryParse(parts.isNotEmpty ? parts[0] : '8') ?? 8,
-    minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0,
-  );
-}
-
-String _formatTimeOfDay(TimeOfDay t) =>
-    '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';

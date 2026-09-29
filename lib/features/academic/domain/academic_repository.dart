@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/file_upload_repository.dart';
+
 enum AcademicFeed {
   content,
   assignments,
@@ -18,12 +20,31 @@ class AcademicRecord {
     required this.state,
     required this.version,
     this.classroomId,
+    this.attachments = const [],
+    this.maximumScore,
+    this.markedAssignmentId,
+    this.date,
   });
   final String id;
   final String title;
   final String detail;
   final String state;
   final int version;
+
+  /// Set on graded assignments: what the work is marked out of.
+  final double? maximumScore;
+
+  /// Set on an assessment that is the mark for an assignment: which one.
+  /// Such an assessment is listed with its assignment, not among the tests,
+  /// but the gradebook still needs it - it is where the mark is entered.
+  final String? markedAssignmentId;
+
+  /// When the record was published - a lesson's date. Null where the feed
+  /// does not carry one.
+  final DateTime? date;
+
+  /// Files the teacher attached to the work. Empty for every other feed.
+  final List<StoredAttachment> attachments;
 
   /// The class this record belongs to, so a list spanning several classes can
   /// say which one each row came from. Null where the record has no class -
@@ -51,10 +72,19 @@ class TextResourceDraft {
     required this.title,
     required this.body,
     this.lessonSessionId,
+    this.audience = 'both',
+    this.publish = false,
   });
   final String classroomId;
   final String title;
   final String body;
+
+  /// Publish straight away, so the class sees it. Otherwise it is a draft
+  /// only its teachers can see until they publish it.
+  final bool publish;
+
+  /// Who sees it: 'students', 'guardians' or 'both'.
+  final String audience;
 
   /// The meeting this content was taught in. A section cannot be closed
   /// until something is filed against it, so this is the link that satisfies
@@ -70,12 +100,27 @@ class AssignmentDraft {
     required this.instructions,
     required this.dueAt,
     this.closesAt,
+    this.attachmentFileIds = const [],
+    this.publish = true,
+    this.maximumScore,
   });
   final String classroomId;
   final String title;
   final String instructions;
   final DateTime dueAt;
   final DateTime? closesAt;
+
+  /// Completed `assignment_material` uploads for [classroomId]. The server
+  /// binds them when the assignment is created, or creates nothing.
+  final List<String> attachmentFileIds;
+
+  /// Publish as soon as it is created, so the class can see it. Work is
+  /// stored as a draft first; nothing a student can reach shows a draft.
+  final bool publish;
+
+  /// Set for graded work: what it is marked out of. The student still hands
+  /// in this assignment; the mark is kept on a linked assessment.
+  final double? maximumScore;
 }
 
 @immutable
@@ -88,11 +133,25 @@ class AssessmentDraft {
     this.category = 'assessment',
     this.delivery = 'online',
     this.scheduledAt,
+    this.attachmentFileIds = const [],
+    this.publish = false,
+    this.assignmentId,
   });
   final String classroomId;
   final String title;
   final double maximumScore;
   final List<AssessmentQuestionDraft> questions;
+
+  /// As on [AssignmentDraft]: material bound when the work is created.
+  final List<String> attachmentFileIds;
+
+  /// Publish on creation. Off by default: an exam is written, checked and
+  /// released later. Graded coursework set from the assignment form is
+  /// published at once, like any other assignment.
+  final bool publish;
+
+  /// The assignment this is the mark for, when it is graded coursework.
+  final String? assignmentId;
 
   /// Free-text grouping the gradebook reads. A graded assignment is filed
   /// under 'assignment': the schema already separates work that earns a
@@ -183,6 +242,33 @@ class SubmittedWork {
   /// have no device of their own, so a teacher needs to know whose work they
   /// are marking.
   final String? submittedByGuardianId;
+}
+
+/// One hand-in of a piece of work. A resubmission is a new attempt; the
+/// earlier ones stay exactly as they were handed in.
+@immutable
+class SubmissionAttempt {
+  const SubmissionAttempt({
+    required this.id,
+    required this.submittedAt,
+    required this.current,
+    this.answerText,
+    this.submittedByGuardianId,
+    this.submittedByGuardianName,
+    this.attachments = const [],
+  });
+
+  final String id;
+  final DateTime submittedAt;
+
+  /// The attempt being marked: the latest.
+  final bool current;
+  final String? answerText;
+
+  /// Set when a guardian handed this attempt in for the child.
+  final String? submittedByGuardianId;
+  final String? submittedByGuardianName;
+  final List<StoredAttachment> attachments;
 }
 
 /// One meeting of a class that has taken place.
@@ -333,10 +419,8 @@ class WellbeingDraft {
   final String? context;
 }
 
-/// Typed mobile boundary for every API-041 slice. Remote implementations must
-/// fail closed; preview implementations are the only adapters allowed to use
-/// SQLite.
-abstract interface class AcademicRepository {
+/// Lessons and class material: the content feed and its lifecycle.
+abstract interface class AcademicContentRepository {
   Future<List<AcademicRecord>> load(
     AcademicFeed feed, {
     String? classroomId,
@@ -351,12 +435,13 @@ abstract interface class AcademicRepository {
   );
   Future<void> publishResource(String resourceId, int expectedVersion);
   Future<void> withdrawResource(String resourceId, int expectedVersion);
+}
+
+/// Assignments: setting work, handing it in and reviewing what came back.
+abstract interface class AssignmentRepository {
   Future<void> createAssignment(AssignmentDraft draft);
   Future<void> publishAssignment(String assignmentId, int expectedVersion);
   Future<void> withdrawAssignment(String assignmentId, int expectedVersion);
-  Future<void> createAssessment(AssessmentDraft draft);
-  Future<void> publishAssessment(String assessmentId, int expectedVersion);
-  Future<void> withdrawAssessment(String assessmentId, int expectedVersion);
 
   /// Hands work in. [attachmentFileIds] are the student's own completed
   /// uploads of purpose `assignment_submission`; the server binds them to the
@@ -367,38 +452,37 @@ abstract interface class AcademicRepository {
     List<String> attachmentFileIds = const [],
     String? studentId,
   });
+
+  /// What students have handed in for [assignmentId].
+  Future<List<SubmittedWork>> submissionsFor(String assignmentId);
+
+  /// Every attempt one student made at [assignmentId], newest first.
+  ///
+  /// A student leaves [studentId] out and gets their own. A guardian names
+  /// their child and a teacher names the student; the server refuses anyone
+  /// who is none of those.
+  Future<List<SubmissionAttempt>> submissionHistory(
+    String assignmentId, {
+    String? studentId,
+  });
+}
+
+/// Assessments and exams.
+abstract interface class AssessmentRepository {
+  Future<void> createAssessment(AssessmentDraft draft);
+  Future<void> publishAssessment(String assessmentId, int expectedVersion);
+  Future<void> withdrawAssessment(String assessmentId, int expectedVersion);
   Future<void> submitAssessment(
     String assessmentId,
     Map<String, String> answers,
   );
+}
 
+/// A class's timetable, its lessons as taught, and who is in it.
+abstract interface class ClassTimetableRepository {
   /// The class's weekly meetings, so the teacher can pick which one they are
   /// taking the register for.
   Future<List<ClassSessionSlot>> classroomSchedule(String classroomId);
-
-  /// Children enrolled in [classroomId], each with their verified guardians.
-  Future<List<ClassStudent>> classStudents(String classroomId);
-
-  /// The register for one meeting of [classroomId].
-  ///
-  /// [startsAt] names the meeting; a class that meets twice in a day has two
-  /// separate registers, and a date alone cannot tell them apart.
-  Future<AttendanceRegister> attendanceRoster(
-    String classroomId,
-    DateTime date, {
-    DateTime? startsAt,
-  });
-
-  Future<void> recordAttendance(
-    String classroomId,
-    DateTime startsAt,
-    DateTime endsAt,
-    int expectedVersion,
-    List<AttendanceDraft> entries,
-  );
-
-  /// What students have handed in for [assignmentId].
-  Future<List<SubmittedWork>> submissionsFor(String assignmentId);
 
   /// Replaces a classroom's weekly schedule.
   ///
@@ -410,15 +494,44 @@ abstract interface class AcademicRepository {
     List<ClassSessionSlot> slots,
   );
 
+  /// Deletes a class. It is archived: it leaves every class list, and each
+  /// student keeps their notebook for it.
+  Future<void> archiveClassroom(String classroomId, int expectedVersion);
+
   /// Meetings of [classroomId] that have already happened.
   Future<List<LessonSession>> lessonSessions(String classroomId);
 
   /// Closes a section. Refused while nothing has been filed against it.
   Future<void> closeLessonSession(String lessonSessionId);
 
+  /// Children enrolled in [classroomId], each with their verified guardians.
+  Future<List<ClassStudent>> classStudents(String classroomId);
+}
+
+/// Attendance registers.
+abstract interface class AttendanceRepository {
+  /// The register for one meeting of [classroomId].
+  ///
+  /// [startsAt] names the meeting; a class that meets twice in a day has two
+  /// separate registers, and a date alone cannot tell them apart.
+  Future<AttendanceRegister> attendanceRoster(
+    String classroomId,
+    DateTime date, {
+    DateTime? startsAt,
+  });
+  Future<void> recordAttendance(
+    String classroomId,
+    DateTime startsAt,
+    DateTime endsAt,
+    int expectedVersion,
+    List<AttendanceDraft> entries,
+  );
+}
+
+/// Grades: review, publication and corrections.
+abstract interface class GradeRepository {
   /// Every mark for [classroomId], across its assessments.
   Future<List<GradeEntry>> gradeEntries(String classroomId);
-
   Future<void> reviewGrade(
     String gradeId,
     int expectedVersion,
@@ -434,5 +547,25 @@ abstract interface class AcademicRepository {
     String? feedback,
   });
   Future<void> withdrawGrade(String gradeId, int expectedVersion);
+}
+
+/// Wellbeing notes.
+abstract interface class WellbeingRepository {
   Future<void> createWellbeing(WellbeingDraft draft);
 }
+
+/// Typed mobile boundary for every API-041 slice. Remote implementations must
+/// fail closed; preview implementations are the only adapters allowed to use
+/// SQLite.
+///
+/// The union of the slice interfaces above. A screen that needs one slice
+/// asks for that interface, so its tests fake only what it uses.
+abstract interface class AcademicRepository
+    implements
+        AcademicContentRepository,
+        AssignmentRepository,
+        AssessmentRepository,
+        ClassTimetableRepository,
+        AttendanceRepository,
+        GradeRepository,
+        WellbeingRepository {}

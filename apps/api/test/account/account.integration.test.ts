@@ -22,9 +22,10 @@ import {
   createAccountReadRoutes,
   createAccountRoutes,
 } from "../../src/account/routes";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const USER_A = "5f480000-0000-4000-8000-0000000000a1";
 
@@ -46,13 +47,7 @@ async function seed(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await sql.begin(async (tx) => {
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.data_export_requests where user_id = ${USER_A}::uuid`;
-    await tx`delete from public.audit_events where actor_id = ${USER_A}::uuid`;
-    await tx`delete from auth.users where id = ${USER_A}::uuid`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
-  });
+  await removeFixtures(sql, { userIds: [USER_A] });
 }
 
 const SESSION_ID = "5f480000-0000-4000-8000-00000000f001";

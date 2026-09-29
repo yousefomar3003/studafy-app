@@ -28,9 +28,10 @@ import { PostgresSchoolAdminRepository } from "../../src/school-admin/repository
 import { createSchoolAdminRoutes } from "../../src/school-admin/routes";
 import { createAcademicRoutes } from "../../src/academic/routes";
 import { PostgresAcademicRepository } from "../../src/academic/repository";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const OPERATOR = "5f420000-0000-4000-8000-0000000000a1";
 const ADMIN = "5f420000-0000-4000-8000-0000000000a2";
@@ -100,25 +101,9 @@ async function seed(): Promise<void> {
 
 async function cleanup(provisioned?: string): Promise<void> {
   const schoolIds = provisioned ? [SCHOOL, provisioned] : [SCHOOL];
-  await sql.begin(async (tx) => {
-    await tx`alter table public.membership_events disable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events disable trigger db020_reject_mutation`;
-    await tx`delete from public.enrollments where classroom_id = ${CLASSROOM}::uuid`;
-    await tx`delete from public.students where id = ${STUDENT_ROW}::uuid`;
-    await tx`delete from public.classroom_staff where classroom_id = ${CLASSROOM}::uuid`;
-    await tx`delete from public.classrooms where id = ${CLASSROOM}::uuid`;
-    await tx`delete from public.terms where id = ${TERM}::uuid`;
-    await tx`delete from public.membership_events where school_id = any(${schoolIds}::uuid[])`;
-    await tx`delete from public.audit_events where school_id = any(${schoolIds}::uuid[])`;
-    await tx`delete from public.memberships where school_id = any(${schoolIds}::uuid[])`;
-    await tx`delete from public.schools where id = any(${schoolIds}::uuid[])`;
-    await tx`delete from public.platform_operators where user_id = ${OPERATOR}::uuid`;
-    // auth.users cascades to profiles, which SET NULLs audit_events.actor_id
-    // - still an update against the append-only table, so it must happen
-    // before the trigger is re-enabled.
-    await tx`delete from auth.users where id in (${OPERATOR}::uuid, ${ADMIN}::uuid, ${TEACHER}::uuid, ${STUDENT_USER}::uuid)`;
-    await tx`alter table public.membership_events enable trigger db020_reject_mutation`;
-    await tx`alter table public.audit_events enable trigger db020_reject_mutation`;
+  await removeFixtures(sql, {
+    schoolIds: [...schoolIds],
+    userIds: [OPERATOR, ADMIN, TEACHER, STUDENT_USER],
   });
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 
@@ -68,6 +69,44 @@ class _AttendancePageState extends State<AttendancePage> {
       _schedule.where((slot) => slot.weekday == _date.weekday).toList()
         ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
 
+  /// Weekdays the class meets on.
+  Set<int> get _meetingDays => {for (final slot in _schedule) slot.weekday};
+
+  static DateTime _day(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
+
+  /// The nearest day, stepping by [direction] from [from] (not including
+  /// it), that the class meets. Null when the class has no schedule.
+  DateTime? _stepMeeting(DateTime from, int direction) {
+    if (_meetingDays.isEmpty) return null;
+    var day = _day(from);
+    for (var i = 0; i < 7; i++) {
+      day = day.add(Duration(days: direction));
+      if (_meetingDays.contains(day.weekday)) return day;
+    }
+    return null;
+  }
+
+  /// Opening on a day the class does not meet showed "no lesson" and a
+  /// disabled Save, which read as the register not working. Opened without
+  /// a date, it lands on today's lesson, or the most recent one.
+  bool _placed = false;
+
+  void _placeOnALesson() {
+    if (_placed) return;
+    _placed = true;
+    if (widget.initialDate != null) return;
+    if (_meetingDays.isEmpty || _meetingDays.contains(_date.weekday)) return;
+    _date = _stepMeeting(_date, -1) ?? _date;
+  }
+
+  Future<void> _stepTo(int direction) async {
+    final next = _stepMeeting(_date, direction);
+    if (next == null) return;
+    setState(() => _date = next);
+    await _load();
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -80,6 +119,7 @@ class _AttendancePageState extends State<AttendancePage> {
           widget.classroomId,
         );
       }
+      _placeOnALesson();
       final slots = _slotsForDay;
       _slot = slots.contains(_slot)
           ? _slot
@@ -121,13 +161,22 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Future<void> _pickDate() async {
+    final days = _meetingDays;
+    // Only days the class meets can be chosen: any other day has no
+    // register to take. The calendar must open on a choosable day.
+    final initial = days.isEmpty || days.contains(_date.weekday)
+        ? _date
+        : (_stepMeeting(_date, -1) ?? _stepMeeting(_date, 1) ?? _date);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _date,
+      initialDate: initial,
       // A register is taken for a lesson that has happened or is happening;
       // a year either side covers catching up and the rare correction.
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      selectableDayPredicate: days.isEmpty
+          ? null
+          : (day) => days.contains(day.weekday),
     );
     if (picked == null) return;
     setState(() => _date = picked);
@@ -212,6 +261,12 @@ class _AttendancePageState extends State<AttendancePage> {
               slots: slots,
               selected: _slot,
               onPickDate: _pickDate,
+              onPrevious: _meetingDays.isEmpty || _loading
+                  ? null
+                  : () => _stepTo(-1),
+              onNext: _meetingDays.isEmpty || _loading
+                  ? null
+                  : () => _stepTo(1),
               onPickSlot: (slot) {
                 setState(() => _slot = slot);
                 // Each meeting has its own register; re-read rather than
@@ -309,6 +364,8 @@ class _DayAndSlotPicker extends StatelessWidget {
     required this.selected,
     required this.onPickDate,
     required this.onPickSlot,
+    this.onPrevious,
+    this.onNext,
   });
 
   final DateTime date;
@@ -317,19 +374,40 @@ class _DayAndSlotPicker extends StatelessWidget {
   final VoidCallback onPickDate;
   final ValueChanged<ClassSessionSlot> onPickSlot;
 
+  /// Step to the class's previous or next lesson day.
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        OutlinedButton.icon(
-          onPressed: onPickDate,
-          icon: const Icon(Icons.calendar_today_outlined),
-          label: Text(
-            '${date.year}-${date.month.toString().padLeft(2, '0')}-'
-            '${date.day.toString().padLeft(2, '0')}',
-          ),
+        Row(
+          children: [
+            IconButton(
+              tooltip: AppL10n.of(context).attendancePreviousLesson,
+              onPressed: onPrevious,
+              icon: Icon(backChevron(context)),
+            ),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onPickDate,
+                icon: const Icon(Icons.calendar_today_outlined),
+                // The weekday, not only the date: a teacher thinks "Monday's
+                // lesson", and it shows at a glance why a day has none.
+                label: Text(
+                  MaterialLocalizations.of(context).formatFullDate(date),
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: AppL10n.of(context).attendanceNextLesson,
+              onPressed: onNext,
+              icon: Icon(forwardChevron(context)),
+            ),
+          ],
         ),
         if (slots.length > 1) ...[
           const SizedBox(height: 8),

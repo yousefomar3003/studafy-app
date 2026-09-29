@@ -12,14 +12,17 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createDatabase, type Sql } from "@studafy/database";
 import { AuthContextRepository, evaluateSession } from "../../src/auth/context";
 import type { VerifiedToken } from "../../src/auth/verify";
+import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = databaseUrl ? describe : describe.skip;
+const suite = integrationSuite(describe);
 
 const USER = "3f000000-0000-4000-8000-0000000000a1";
 const OTHER_USER = "3f000000-0000-4000-8000-0000000000a2";
 const SCHOOL = "3f000000-0000-4000-8000-0000000000b1";
 const SESSION = "3f000000-0000-4000-8000-0000000000c1";
+/** The failed sign-in recorded below, which has no account to hang from. */
+const SIGN_IN_REQUEST = "3f000000-0000-4000-8000-0000000000d1";
 
 let sql: Sql;
 let repository: AuthContextRepository;
@@ -72,12 +75,11 @@ async function seed(): Promise<void> {
  * reused rather than recreated.
  */
 async function cleanup(): Promise<void> {
-  await sql`delete from public.auth_reauth_grants where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.auth_identity_links where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.auth_devices where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.auth_session_revocations where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.account_deletion_requests where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
-  await sql`delete from public.memberships where user_id in (${USER}::uuid, ${OTHER_USER}::uuid)`;
+  await removeFixtures(sql, {
+    schoolIds: [SCHOOL],
+    userIds: [USER, OTHER_USER],
+    requestIds: [SIGN_IN_REQUEST],
+  });
 }
 
 function tokenFor(issuedAtSeconds: number): VerifiedToken {
@@ -257,7 +259,7 @@ suite("AuthContextRepository against Postgres", () => {
       accountIdentifier: email,
       ip: "203.0.113.10",
       userAgentFamily: "flutter",
-      requestId: crypto.randomUUID(),
+      requestId: SIGN_IN_REQUEST,
     });
 
     const rows = await sql<{ account_hash: string; ip_hash: string }[]>`
@@ -270,8 +272,8 @@ suite("AuthContextRepository against Postgres", () => {
     expect(rows[0]!.account_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(rows[0]!.account_hash).not.toContain("@");
     expect(rows[0]!.ip_hash).not.toBe("203.0.113.10");
-    // Left in place deliberately: the relation is append-only, and proving
-    // the row cannot be removed is part of what this suite asserts.
+    // The relation is append-only, and proving the row cannot be removed is
+    // part of what this suite asserts; only the teardown lifts that guard.
   });
 
   test("a recorded security event cannot be altered or removed", async () => {
@@ -295,5 +297,47 @@ suite("AuthContextRepository against Postgres", () => {
     expect(
       await attempt(() => sql`delete from public.auth_security_events`),
     ).toMatch(/Append-only/);
+  });
+
+  // First sign-in in the development split. The signup trigger is what builds
+  // the profile, so this is proved against the real database rather than the
+  // fake: a wrong column or a skipped trigger would pass there and fail here.
+  test("provisionIdentity creates a usable, membership-less profile", async () => {
+    // Fresh per run. Nothing below writes an audit row, so the auth.users row
+    // stays deletable and the cascade takes the profile with it.
+    const subject = crypto.randomUUID();
+    const token: VerifiedToken = {
+      subject,
+      sessionId: SESSION,
+      issuedAt: Math.floor(Date.now() / 1000),
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      assuranceLevel: "aal1",
+      authMethods: [],
+      claims: {
+        email: "provisioned@synthetic.studafy.test",
+        user_metadata: { full_name: "First Sign In" },
+      },
+    };
+    try {
+      expect(await repository.load(subject)).toBeNull();
+
+      await repository.provisionIdentity(token);
+      const context = await repository.load(subject);
+      expect(context?.userId).toBe(subject);
+      expect(context?.displayName).toBe("First Sign In");
+      expect(context?.profileStatus).toBe("active");
+      // A profile is not school access.
+      expect(context?.memberships).toEqual([]);
+      expect(evaluateSession(token, context, 0).allowed).toBe(true);
+
+      // A second sign-in leaves the existing row alone.
+      await repository.provisionIdentity(token);
+      const count = await sql<{ n: number }[]>`
+        select count(*)::int as n from public.profiles where id = ${subject}::uuid
+      `;
+      expect(count[0]?.n).toBe(1);
+    } finally {
+      await sql`delete from auth.users where id = ${subject}::uuid`;
+    }
   });
 });

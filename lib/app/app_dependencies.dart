@@ -1,67 +1,79 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/device_settings.dart';
+import '../core/file_upload_repository.dart';
 import '../core/locale_controller.dart';
 import '../core/runtime_environment.dart';
+import '../core/secure_storage.dart';
 import '../core/studafy_domain.dart';
 import '../core/telemetry.dart';
-import '../data/settings/preferences_device_settings.dart';
-import 'locale_session_binder.dart';
 import '../data/backend.dart';
+import '../data/billing/store_subscription_repository.dart';
 import '../data/billing/v1_billing_api.dart';
-import '../data/contracts/v1_http_transport.dart';
 import '../data/contracts/v1_client.generated.dart';
+import '../data/contracts/v1_http_transport.dart';
+import '../data/local_cache/offline_file_cache.dart';
+import '../data/local_cache/offline_response_cache.dart';
 import '../data/local_cache/session_cache_binder.dart';
-import '../core/secure_storage.dart';
 import '../data/secure/keychain_secure_store.dart';
-import '../data/subscription_service.dart';
-import '../features/notebook/domain/notebook_subscription_repository.dart';
+import '../data/settings/preferences_device_settings.dart';
+import '../features/academic/data/api_academic_repository.dart';
+import '../features/academic/data/preview_academic_repository.dart';
+import '../features/academic/domain/academic_repository.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/data/api_data_export_repository.dart';
 import '../features/account/data/api_profile_repository.dart';
 import '../features/account/data/session_account_repository.dart';
-import '../features/academic/data/api_academic_repository.dart';
-import '../features/academic/data/preview_academic_repository.dart';
-import '../features/academic/domain/academic_repository.dart';
+import '../features/account/domain/profile_setup.dart';
+import '../features/accounts/data/api_managed_children_repository.dart';
+import '../features/accounts/data/secure_account_vault.dart';
 import '../features/classes/application/class_list_interactor.dart';
-import '../features/classes/data/preview_classroom_repository.dart';
 import '../features/classes/data/api_classroom_repository.dart';
+import '../features/classes/data/preview_classroom_repository.dart';
 import '../features/classes/domain/classroom_repository.dart';
 import '../features/family/application/family_interactor.dart';
 import '../features/family/data/api_family_repository.dart';
 import '../features/family/data/preview_family_repository.dart';
-import '../features/messaging/application/messaging_interactor.dart';
-import '../features/messaging/data/api_messaging_repository.dart';
-import '../features/messaging/data/preview_messaging_repository.dart';
-import '../features/notifications/application/notifications_interactor.dart';
-import '../features/onboarding/application/teacher_workspace_interactor.dart';
-import '../features/study_assistant/application/study_assistant_interactor.dart';
-import '../features/study_assistant/data/api_study_assistant_repository.dart';
 import '../features/family_insights/application/family_insights_interactor.dart';
 import '../features/family_insights/data/api_family_insights_repository.dart';
-import '../features/onboarding/data/api_teacher_workspace_repository.dart';
-import '../features/notifications/data/api_notifications_repository.dart';
-import '../features/notifications/data/preview_notifications_repository.dart';
-import '../features/notifications/domain/notifications_repository.dart';
+import '../features/family_insights/domain/parent_subscription_repository.dart';
 import '../features/files/data/api_file_upload_repository.dart';
 import '../features/files/data/preview_file_upload_repository.dart';
 import '../features/files/data/signed_upload_transport.dart';
 import '../features/files/data/unavailable_file_upload_repository.dart';
-import '../core/file_upload_repository.dart';
-import '../features/parent/data/preview_parent_repository.dart';
-import '../features/parent/data/unavailable_parent_repository.dart';
-import '../features/parent/domain/parent_repository.dart';
-import '../features/parent/domain/parent_subscription_repository.dart';
-import '../features/session/application/session_interactor.dart';
-import '../features/session/data/demo_session_repository.dart';
-import '../features/session/data/api_session_repository.dart';
-import '../features/session/domain/session_repository.dart';
+import '../features/meetings/data/api_meetings_repository.dart';
+import '../features/meetings/data/preview_meetings_repository.dart';
+import '../features/meetings/domain/meetings.dart';
+import '../features/messaging/application/messaging_interactor.dart';
+import '../features/messaging/data/api_messaging_repository.dart';
+import '../features/messaging/data/preview_messaging_repository.dart';
+import '../features/notifications/application/notifications_interactor.dart';
+import '../features/notifications/data/api_notifications_repository.dart';
+import '../features/notifications/data/firebase_push_registrar.dart';
+import '../features/notifications/data/preview_notifications_repository.dart';
+import '../features/notifications/domain/notifications_repository.dart';
+import '../features/notifications/domain/push_registrar.dart';
+import '../features/onboarding/application/teacher_workspace_interactor.dart';
+import '../features/onboarding/data/api_teacher_workspace_repository.dart';
 import '../features/school_operations/data/api_school_operations_repository.dart';
 import '../features/school_operations/data/preview_school_operations_repository.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
-import '../features/teacher_dashboard/data/preview_teacher_dashboard_repository.dart';
-import '../features/teacher_dashboard/data/unavailable_teacher_dashboard_repository.dart';
-import '../features/teacher_dashboard/domain/teacher_dashboard_repository.dart';
+import '../features/session/application/session_interactor.dart';
+import '../features/session/data/api_session_repository.dart';
+import '../features/session/data/demo_session_repository.dart';
+import '../features/session/domain/session_repository.dart';
+import '../features/study/data/api_study_repository.dart';
+import '../features/study/data/preview_study_repository.dart';
+import '../features/study/domain/study.dart';
+import '../features/study_assistant/application/study_assistant_interactor.dart';
+import '../features/study_assistant/data/api_study_assistant_repository.dart';
+import '../features/study_assistant/data/cached_study_assistant_repository.dart';
+import '../features/study_assistant/data/file_study_chat_store.dart';
+import '../features/study_assistant/domain/study_assistant_repository.dart';
+import 'account/device_account_switcher.dart';
+import 'locale_session_binder.dart';
+import 'push_binder.dart';
+import 'store_sync_binder.dart';
 
 /// Composition root (ARC-011). Builds the interactors once, choosing
 /// adapters by runtime policy: synthetic builds get the demo/preview pair;
@@ -71,14 +83,18 @@ import '../features/teacher_dashboard/domain/teacher_dashboard_repository.dart';
 class AppDependencies {
   const AppDependencies({
     required this.session,
+    this.deviceAccounts,
     required this.classes,
     this.teacherWorkspace,
     this.studyAssistant,
+    this.studyChats,
+    this.profileSetup,
+    this.push,
+    this.storeSync,
     this.familyInsights,
-    required this.parent,
-    required this.teacherDashboard,
-    required this.parentSubscription,
-    this.notebookSubscription,
+    this.studyPlans,
+    this.familyPlus,
+    required this.study,
     required this.account,
     required this.academicApi,
     required this.academic,
@@ -86,6 +102,7 @@ class AppDependencies {
     required this.notifications,
     required this.cacheBinder,
     required this.fileUploads,
+    required this.meetings,
     required this.messaging,
     required this.family,
     required this.locale,
@@ -93,6 +110,10 @@ class AppDependencies {
   });
 
   final SessionInteractor session;
+
+  /// The accounts kept on this device and a parent's child accounts. Null
+  /// in synthetic builds, which have one demo identity and no sessions.
+  final DeviceAccountSwitcher? deviceAccounts;
   final ClassListInteractor classes;
 
   /// Null in synthetic and preview builds, which have no tenant to create.
@@ -102,12 +123,31 @@ class AppDependencies {
   /// AI provider configured - the tab is then absent rather than broken.
   final StudyAssistantInteractor? studyAssistant;
 
+  /// The student's chats with the helper, on this device only.
+  final StudyChatStore? studyChats;
+
+  /// First-sign-in setup: name and gender. Null in synthetic builds.
+  final ProfileSetupRepository? profileSetup;
+
+  /// Registers the phone for push as accounts sign in. Held so it keeps
+  /// listening; null in synthetic builds.
+  final PushBinder? push;
+
+  /// Picks up store purchases as accounts sign in. Held so it keeps
+  /// listening; null in synthetic builds.
+  final StoreSyncBinder? storeSync;
+
   /// Family+. Null without a backend; the paid tab is then absent.
   final FamilyInsightsInteractor? familyInsights;
-  final ParentRepository parent;
-  final TeacherDashboardRepository teacherDashboard;
-  final ParentSubscriptionRepository parentSubscription;
-  final NotebookSubscriptionRepository? notebookSubscription;
+
+  /// Buying Studafy Plus / Max through the store. Null without billing.
+  final StudyPlanSubscriptionRepository? studyPlans;
+
+  /// Buying Family+ for a linked child through the store.
+  final ParentSubscriptionRepository? familyPlus;
+
+  /// Plans, the student's notebook, and quizzes and flashcards.
+  final StudyRepository study;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
@@ -119,6 +159,9 @@ class AppDependencies {
   /// alive and listening for the app's whole lifetime.
   final SessionCacheBinder cacheBinder;
   final FileUploadRepository fileUploads;
+
+  /// Meetings the signed-in person was invited to (Google Meet links).
+  final MeetingsRepository meetings;
 
   /// Conversations with report and block controls (MOB-070, SAFE-043).
   final MessagingInteractor messaging;
@@ -146,14 +189,11 @@ class AppDependencies {
     final ClassroomRepository classroomRepository = policy.isSynthetic
         ? const PreviewClassroomRepository()
         : ApiClassroomRepository(remote!.api, context: context);
-    final ParentRepository parentRepository = policy.isSynthetic
-        ? const PreviewParentRepository()
-        : const UnavailableParentRepository();
-    final TeacherDashboardRepository teacherDashboardRepository =
-        policy.isSynthetic
-        ? const PreviewTeacherDashboardRepository()
-        : const UnavailableTeacherDashboardRepository();
     final cacheBinder = SessionCacheBinder(context: context);
+    // Everything the app reads is kept on the device for the account signed
+    // in, and shown when the server cannot be reached.
+    final responseCache = OfflineResponseCache(cacheBinder);
+    remote?.transport.responseCache = responseCache;
     // A synthetic build has no profile to publish to, so it keeps the choice
     // on the device only. Device settings are read in both, so a developer's
     // language choice survives a restart the same way a user's does.
@@ -192,6 +232,18 @@ class AppDependencies {
     final apiFamily = remote == null
         ? null
         : ApiFamilyRepository(remote.api, billing: billingApi);
+    final studyChats = remote == null
+        ? null
+        : FileStudyChatStore(currentUserId: () => context.profile?.id);
+    final PushRegistrar pushRegistrar = remote == null
+        ? const NoPushRegistrar()
+        : FirebasePushRegistrar(remote.api);
+    final session = SessionInteractor(
+      repository: sessionRepository,
+      context: context,
+      telemetry: telemetry,
+      runtimePolicy: policy,
+    );
     final subscriptions = StoreSubscriptionRepository(
       billingApi: billingApi,
       pendingStore: remote?.secureStore,
@@ -210,12 +262,17 @@ class AppDependencies {
         safety: messagingAdapter ?? apiMessaging!,
         telemetry: telemetry,
       ),
-      session: SessionInteractor(
-        repository: sessionRepository,
-        context: context,
-        telemetry: telemetry,
-        runtimePolicy: policy,
-      ),
+      session: session,
+      deviceAccounts: remote == null
+          ? null
+          : DeviceAccountSwitcher(
+              session: session,
+              vault: SecureAccountVault(remote.secureStore),
+              managedChildren: ApiManagedChildrenRepository(remote.api),
+              forgetAccount: studyChats?.forgetUser,
+              beforeSignOut: pushRegistrar.unregister,
+              context: context,
+            ),
       classes: ClassListInteractor(
         repository: classroomRepository,
         telemetry: telemetry,
@@ -231,8 +288,22 @@ class AppDependencies {
       studyAssistant: remote == null
           ? null
           : StudyAssistantInteractor(
-              repository: ApiStudyAssistantRepository(remote.api),
+              repository: CachedStudyAssistantRepository(
+                ApiStudyAssistantRepository(remote.api),
+                responseCache,
+              ),
               telemetry: telemetry,
+            ),
+      studyChats: studyChats,
+      profileSetup: profiles,
+      push: remote == null
+          ? null
+          : PushBinder(registrar: pushRegistrar, context: context),
+      storeSync: remote == null
+          ? null
+          : StoreSyncBinder(
+              resume: subscriptions.resumeForAccount,
+              context: context,
             ),
       familyInsights: remote == null
           ? null
@@ -240,10 +311,11 @@ class AppDependencies {
               repository: ApiFamilyInsightsRepository(remote.api),
               telemetry: telemetry,
             ),
-      parent: parentRepository,
-      teacherDashboard: teacherDashboardRepository,
-      parentSubscription: subscriptions,
-      notebookSubscription: subscriptions,
+      studyPlans: subscriptions,
+      familyPlus: subscriptions,
+      study: remote == null
+          ? PreviewStudyRepository()
+          : ApiStudyRepository(remote.api),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(
@@ -281,13 +353,20 @@ class AppDependencies {
       // now sends real bytes through the real pipeline. A build with no API
       // client still has nowhere to send them, and says so rather than
       // pretending an upload succeeded.
+      meetings: remote == null
+          ? const PreviewMeetingsRepository()
+          : ApiMeetingsRepository(remote.api),
       fileUploads: policy.isSynthetic
           ? const PreviewFileUploadRepository()
           : (remote == null || !policy.allowsRemoteFileUploads
                 ? const UnavailableFileUploadRepository()
-                : ApiFileUploadRepository(
-                    remote.api,
-                    IoSignedUploadTransport(),
+                : CachingFileRepository(
+                    ApiFileUploadRepository(
+                      remote.api,
+                      IoSignedUploadTransport(),
+                      fetch: remote.transport.getBytes,
+                    ),
+                    OfflineFileCache(cacheBinder),
                   )),
     );
   }
@@ -344,7 +423,7 @@ class _RemoteClients {
     required this.session,
   });
   final V1ApiClient api;
-  final V1JsonTransport transport;
+  final V1HttpTransport transport;
   final SecureStore secureStore;
   final SessionRepository session;
 }

@@ -63,7 +63,7 @@ Date: 2026-09-17 · ADR-0025 · DL-046 · Runbook:
 | `bun run check:bounds` | passed — 9 members, 107 source files, 0 violations |
 | `bun run generate:check` / `generate:db-types:check` | passed (migration type columns regenerated) |
 
-## Acceptance evidence per instructions.md (OPS-061)
+## Acceptance evidence per docs/planning/instructions.md (OPS-061)
 
 **Logical idempotency through crash and failover.** The e2e suite force-closes
 a worker after the side effect commits but before BullMQ acknowledges:

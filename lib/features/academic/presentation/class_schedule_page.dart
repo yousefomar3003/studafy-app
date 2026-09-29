@@ -20,7 +20,7 @@ class ClassSchedulePage extends StatefulWidget {
     this.initialSlots = const [],
   });
 
-  final AcademicRepository repository;
+  final ClassTimetableRepository repository;
   final String classroomId;
   final String classroomName;
 

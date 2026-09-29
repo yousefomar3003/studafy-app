@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
-import '../core/studafy_localizations.dart';
-import '../features/classes/application/class_list_interactor.dart';
+import '../core/studafy_formatting.dart';
 import '../core/user_content_text.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
+import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
-import '../core/studafy_formatting.dart';
 
 /// Teacher home for real builds. Everything on it comes from the signed-in
 /// profile and the server: the legacy home was fixed demo content, with a
@@ -23,7 +23,7 @@ class TeacherTodayPage extends StatefulWidget {
     required this.classes,
     required this.academic,
     required this.onOpenClassroom,
-    required this.onOpenMessages,
+    this.onOpenMessages,
     required this.onOpenNotifications,
   });
 
@@ -33,7 +33,9 @@ class TeacherTodayPage extends StatefulWidget {
   /// has been set, and sections still owing their content.
   final AcademicRepository academic;
   final Future<void> Function(ClassroomSummary classroom) onOpenClassroom;
-  final VoidCallback onOpenMessages;
+
+  /// Null hides the messages button - the teacher shell has an Inbox tab.
+  final VoidCallback? onOpenMessages;
   final VoidCallback onOpenNotifications;
 
   @override
@@ -118,7 +120,6 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
 
   @override
   Widget build(BuildContext context) {
-    String t(String key) => _todayText(context, key);
     final profile = ActiveContextController.instance.profile;
     final school = ActiveContextController.instance.membership?.schoolName;
     final firstName = (profile?.displayName ?? '').trim().split(' ').first;
@@ -128,15 +129,16 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
       backgroundColor: studafyCanvas,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(school ?? t('title')),
+        title: Text(school ?? AppL10n.of(context).todayTitle),
         actions: [
+          if (widget.onOpenMessages case final openMessages?)
+            IconButton(
+              tooltip: AppL10n.of(context).todayMessages,
+              onPressed: openMessages,
+              icon: const Icon(Icons.chat_bubble_outline),
+            ),
           IconButton(
-            tooltip: t('messages'),
-            onPressed: widget.onOpenMessages,
-            icon: const Icon(Icons.chat_bubble_outline),
-          ),
-          IconButton(
-            tooltip: t('notifications'),
+            tooltip: AppL10n.of(context).todayNotifications,
             onPressed: () {
               widget.onOpenNotifications();
               unawaited(_load());
@@ -158,18 +160,16 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
             StudafyHero(
               eyebrow: today,
               title: firstName.isEmpty
-                  ? t('hello')
-                  : t('helloName').replaceAll('{name}', firstName),
-              subtitle: Localizations.localeOf(context).languageCode == 'ar'
-                  ? 'مساحة للإلهام. ويوم لصنع الفرق.'
-                  : 'Space to inspire. A day to make a difference.',
+                  ? AppL10n.of(context).todayHello
+                  : AppL10n.of(context).todayHelloName(firstName),
+              subtitle: AppL10n.of(context).teacherTodaySpaceToInspireADay,
               icon: Icons.wb_sunny_outlined,
             ),
             const SizedBox(height: 24),
             Semantics(
               header: true,
               child: Text(
-                t('classes'),
+                AppL10n.of(context).todayClasses,
                 style: const TextStyle(
                   color: studafyInk,
                   fontSize: 16,
@@ -183,16 +183,16 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
             else if (_failed)
               StudafyStatusCard(
                 icon: Icons.error_outline_rounded,
-                title: t('error'),
-                message: t('errorDetail'),
-                actionLabel: t('retry'),
+                title: AppL10n.of(context).todayError,
+                message: AppL10n.of(context).todayErrorDetail,
+                actionLabel: AppL10n.of(context).todayRetry,
                 onAction: _load,
               )
             else if (_classes.isEmpty)
               StudafyStatusCard(
                 icon: Icons.class_outlined,
-                title: t('empty'),
-                message: t('emptyDetail'),
+                title: AppL10n.of(context).todayEmpty,
+                message: AppL10n.of(context).todayEmptyDetail,
               )
             else
               for (final classroom in _classes)
@@ -219,10 +219,8 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                                 ),
                               ),
                               Text(
-                                t('students').replaceAll(
-                                  '{count}',
-                                  '${classroom.studentCount}',
-                                ),
+                                AppL10n.of(context)
+                                    .todayStudents('${classroom.studentCount}'),
                                 style: const TextStyle(
                                   color: studafyMuted,
                                   fontSize: 12,
@@ -243,7 +241,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
               Semantics(
                 header: true,
                 child: Text(
-                  t('sections'),
+                  AppL10n.of(context).todaySections,
                   style: const TextStyle(
                     color: studafyInk,
                     fontSize: 16,
@@ -254,7 +252,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
               const SizedBox(height: 12),
               if (_outstanding.isEmpty)
                 Text(
-                  t('sections.empty'),
+                  AppL10n.of(context).todaySectionsEmpty,
                   style: const TextStyle(color: studafyMuted),
                 )
               else
@@ -280,7 +278,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                                   ),
                                 ),
                                 Text(
-                                  '${t('sections.outstanding')} · '
+                                  '${AppL10n.of(context).todaySectionsOutstanding} · '
                                   '${section.startsAt.year}-'
                                   '${section.startsAt.month.toString().padLeft(2, '0')}-'
                                   '${section.startsAt.day.toString().padLeft(2, '0')}',
@@ -300,7 +298,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
               Semantics(
                 header: true,
                 child: Text(
-                  t('work'),
+                  AppL10n.of(context).todayWork,
                   style: const TextStyle(
                     color: studafyInk,
                     fontSize: 16,
@@ -311,7 +309,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
               const SizedBox(height: 12),
               if (_work.isEmpty)
                 Text(
-                  t('work.empty'),
+                  AppL10n.of(context).todayWorkEmpty,
                   style: const TextStyle(color: studafyMuted),
                 )
               else
@@ -357,56 +355,6 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
     );
   }
 }
-
-String _todayText(BuildContext context, String key) {
-  final code = StudafyLocalizations.of(context).locale.languageCode;
-  return _strings[code]?[key] ?? _strings['en']![key] ?? key;
-}
-
-Map<String, Set<String>> teacherTodayStringKeys() => {
-  for (final entry in _strings.entries) entry.key: entry.value.keys.toSet(),
-};
-
-const _strings = <String, Map<String, String>>{
-  'en': {
-    'work': 'Work you have set',
-    'work.empty': 'You have not set any work yet.',
-    'sections': 'Sections needing content',
-    'sections.empty': 'Every section you have taught has its content filed.',
-    'sections.outstanding': 'Content outstanding',
-    'title': 'Today',
-    'hello': 'Hello',
-    'helloName': 'Hello, {name}',
-    'classes': 'My classes',
-    'students': '{count} students',
-    'empty': 'No classes yet',
-    'emptyDetail': 'Create your first class from the Classes tab.',
-    'error': 'Classes could not load',
-    'errorDetail': 'Check your connection and try again.',
-    'retry': 'Try again',
-    'messages': 'Messages',
-    'notifications': 'Notifications',
-  },
-  'ar': {
-    'work': 'الأعمال التي أسندتها',
-    'work.empty': 'لم تُسند أي عمل بعد.',
-    'sections': 'حصص تنتظر المحتوى',
-    'sections.empty': 'كل حصة درّستها تم رفع محتواها.',
-    'sections.outstanding': 'المحتوى غير مرفوع',
-    'title': 'اليوم',
-    'hello': 'مرحباً',
-    'helloName': 'مرحباً، {name}',
-    'classes': 'فصولي',
-    'students': '{count} طلاب',
-    'empty': 'لا توجد فصول بعد',
-    'emptyDetail': 'أنشئ فصلك الأول من تبويب الفصول.',
-    'error': 'تعذر تحميل الفصول',
-    'errorDetail': 'تحقق من اتصالك وحاول مرة أخرى.',
-    'retry': 'حاول مرة أخرى',
-    'messages': 'الرسائل',
-    'notifications': 'الإشعارات',
-  },
-};
 
 /// One piece of work a teacher has set, shown on Today.
 @immutable

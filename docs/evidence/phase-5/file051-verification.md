@@ -312,7 +312,7 @@ Other adjustments:
 
 - **No real malware engine.** The provider adapter is exercised against a
   local fake only. Its request and response shape is provisional until a
-  vendor is chosen (inputs.md Group 3, A6). Locally, *clean* means
+  vendor is chosen (docs/planning/inputs.md Group 3, A6). Locally, *clean* means
   structurally valid and metadata-stripped.
 - **Image transformation is metadata removal, not pixel re-encoding.** A
   payload in the entropy-coded image data is not neutralised. PDF content

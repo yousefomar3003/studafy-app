@@ -1,6 +1,8 @@
 # ADR-0026: AI-072 — remove the AI capability
 
-- Status: Accepted for local/disposable use
+- Status: Accepted for local/disposable use; superseded in part by
+  [ADR-0029](ADR-0029-study-plans-and-ai-lesson-tools.md), which brings back
+  whiteboard notes, quizzes and flashcards behind `AI_LESSON_TOOLS_ENABLED`
 - Date: 2026-09-18
 - Decision owner: repository owner (GitHub `@yousefomar3003`), the
   single-owner mapping recorded in `docs/security/sec-001-containment.md`
@@ -36,8 +38,8 @@ outstanding:
 
 | Document | Status | Where the repository records it |
 |---|---|---|
-| Signed DPA with any AI provider | **Absent** | `inputs.md` (AI provider: "blocked … until a DPA … is signed"); `instructions.md` §22.6; `docs/security/credentials-map.md`; ADR-0009 |
-| DPIA extended to AI processing of minors' data | **Absent** | `instructions.md` §15 and §20 Part 7C list it as a precondition; no assessment exists |
+| Signed DPA with any AI provider | **Absent** | `docs/planning/inputs.md` (AI provider: "blocked … until a DPA … is signed"); `docs/planning/instructions.md` §22.6; `docs/security/credentials-map.md`; ADR-0009 |
+| DPIA extended to AI processing of minors' data | **Absent** | `docs/planning/instructions.md` §15 and §20 Part 7C list it as a precondition; no assessment exists |
 | AI provider selection, retention and training opt-out | **Absent** | No provider was ever contracted; only synthetic placeholders existed |
 
 ## Decision
@@ -86,7 +88,7 @@ Deliberately kept:
 - **`allowsAiGrading => false`** (`lib/core/runtime_environment.dart`). Nothing
   reads it now, but it stays as a hard-false SEC-001 tripwire and is still
   asserted by tests. Removing it is a separate reviewed change with its own
-  ADR and decision-log entry, never a side effect of this one (`instructions.md`
+  ADR and decision-log entry, never a side effect of this one (`docs/planning/instructions.md`
   §21.5 is unchanged).
 - The `student_ai`/`teacher_ai_grading` billing feature keys and the
   `coach_attachment` enum value in response schemas. These are retired
@@ -118,7 +120,7 @@ There is no flag and no environment variable that re-enables any of this.
 
 Reverting this ADR does not re-enable AI. A future AI capability needs a new
 ADR, a signed DPA, a DPIA extended to minors' data, and the full enable-path
-engineering in `instructions.md` §20 Part 7C:
+engineering in `docs/planning/instructions.md` §20 Part 7C:
 
 - a named provider adapter;
 - server-owned `file_object_id` only;

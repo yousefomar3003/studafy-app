@@ -13,9 +13,14 @@ import {
   V1CreateUploadIntentRequest,
   V1DeletionImpactResponse,
   V1DeletionRequestRequest,
+  V1EntitlementsResponse,
   V1Membership,
   V1MeResponse,
   V1ReauthVerifyResponse,
+  V1RequestPurchaseApprovalRequest,
+  v1Route,
+  V1SendMessageRequest,
+  V1SubmitPurchaseRequest,
 } from "../src";
 
 describe("readiness contract", () => {
@@ -68,7 +73,11 @@ describe("problem details contract", () => {
 
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
+      "AI_ALLOWANCE_USED",
+      "AI_DAILY_LIMIT",
+      "AI_FEATURE_DISABLED",
       "BENEFICIARY_LINK_INVALID",
+      "CAPTCHA_REQUIRED",
       "CONFLICT",
       "CONTACT_NOT_ALLOWED",
       "CURSOR_INVALID",
@@ -87,6 +96,8 @@ describe("problem details contract", () => {
       "INVALID_HEADER",
       "INVALID_REQUEST",
       "INVALID_STATE",
+      "LESSON_HAS_NO_TEXT",
+      "MANAGED_CHILD_LIMIT",
       "MESSAGING_DISABLED",
       "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
@@ -94,6 +105,9 @@ describe("problem details contract", () => {
       "NOT_IMPLEMENTED",
       "PARENTAL_GATE_REQUIRED",
       "PAYLOAD_TOO_LARGE",
+      "PHOTO_NOT_READY",
+      "PHOTO_UNREADABLE",
+      "PLAN_REQUIRED",
       "PRODUCT_NOT_FOUND",
       "RATE_LIMITED",
       "REAUTH_REQUIRED",
@@ -400,4 +414,71 @@ describe("/v1 typed contracts (ARC-011)", () => {
       ).toHaveLength(2);
     },
   );
+});
+
+describe("operation ids are checked at compile time", () => {
+  test("a known id resolves and an unknown one does not compile", () => {
+    expect(v1Route("getStudyPlan").path).toBe("/v1/me/study-plan");
+    // @ts-expect-error: not an operation in the catalogue.
+    expect(() => v1Route("getStudyPlann")).toThrow();
+  });
+});
+
+describe("sending a message", () => {
+  const id = "00000000-0000-4000-8000-000000000001";
+
+  test("a voice note needs no text", () => {
+    expect(
+      V1SendMessageRequest.safeParse({
+        clientMessageId: id,
+        body: "",
+        attachmentFileIds: [id],
+      }).success,
+    ).toBe(true);
+  });
+
+  test("a message with neither text nor an attachment is refused", () => {
+    expect(
+      V1SendMessageRequest.safeParse({ clientMessageId: id, body: "  " })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("billing: the student plans are accepted", () => {
+  test("Plus and Max purchases and approvals validate", () => {
+    for (const key of ["studafy_plus", "studafy_max"]) {
+      expect(
+        V1SubmitPurchaseRequest.safeParse({
+          platform: "play_store",
+          environment: "development",
+          productFeatureKey: key,
+          storeProductId: `${key}_monthly`,
+          verificationPayload: "opaque",
+        }).success,
+      ).toBe(true);
+      expect(
+        V1RequestPurchaseApprovalRequest.safeParse({ featureKey: key }).success,
+      )
+        .toBe(true);
+    }
+  });
+
+  test("an entitlement carries its renewal status", () => {
+    expect(
+      V1EntitlementsResponse.safeParse({
+        entitlements: [{
+          featureKey: "studafy_max",
+          status: "active",
+          startsAt: "2026-09-01T00:00:00Z",
+          endsAt: "2026-10-01T00:00:00Z",
+          beneficiaryStudentId: null,
+          renewalStatus: "cancelled",
+          platform: "app_store",
+          storeProductId: "studafy_max_monthly",
+          purchasedByMe: true,
+        }],
+      }).success,
+    ).toBe(true);
+  });
 });

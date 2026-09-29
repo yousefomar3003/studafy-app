@@ -18,7 +18,7 @@ import type { Actor } from "../../src/auth/middleware";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
 import { VersionedTenantContextCache } from "../../src/authorization/cache";
 import { createOnboardingRoutes } from "../../src/onboarding/routes";
-import type { CatalogueCommandResult } from "../../src/platform/catalogueRoutes";
+import type { CatalogueCommandResult } from "../../src/platform/dispatchRepository";
 import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
 
 const SUBJECT = "4a110000-0000-4000-8000-0000000000a1";

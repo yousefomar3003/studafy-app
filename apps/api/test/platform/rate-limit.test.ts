@@ -129,6 +129,12 @@ describe("flow registry coverage (OPS-060)", () => {
       flow: "linking",
       weight: 2,
     });
+    // JOIN-053: redemption accepts a short class code, so it is charged
+    // against the code-probing budget, not the general authenticated one.
+    expect(flowFor("post", "/v1/class-join-links/redeem")).toEqual({
+      flow: "linking",
+      weight: 2,
+    });
     expect(flowFor("post", "/v1/notifications/mark-read")).toEqual({
       flow: "rpc",
       weight: 1,

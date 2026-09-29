@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 
@@ -244,12 +245,6 @@ class _SectionTile extends StatelessWidget {
   final VoidCallback onFile;
   final VoidCallback onClose;
 
-  static String _when(DateTime value) =>
-      '${value.year}-${value.month.toString().padLeft(2, '0')}-'
-      '${value.day.toString().padLeft(2, '0')} '
-      '${value.hour.toString().padLeft(2, '0')}:'
-      '${value.minute.toString().padLeft(2, '0')}';
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -259,7 +254,10 @@ class _SectionTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_when(session.startsAt), style: theme.textTheme.titleSmall),
+          Text(
+            studafyDateTime(context, session.startsAt),
+            style: theme.textTheme.titleSmall,
+          ),
           const SizedBox(height: 4),
           Row(
             children: [

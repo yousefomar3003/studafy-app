@@ -5,7 +5,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { createCatalogueRoutes } from "../platform/catalogueRoutes";
+import {
+  catalogueRoutesNamed,
+  createCatalogueRoutes,
+} from "../platform/catalogueRoutes";
 import type { NotificationsRepository } from "./repository";
 
 export interface NotificationsDependencies {
@@ -17,7 +20,13 @@ export interface NotificationsDependencies {
 export type NotificationsSlice = "notifications";
 
 // Appended after meetings' 3 entries (indices [78, 81)).
-const NOTIFICATIONS_ROUTES = V1_ROUTE_CATALOGUE.slice(81, 86);
+const NOTIFICATIONS_ROUTES = catalogueRoutesNamed([
+  "listNotifications",
+  "getUnreadCount",
+  "markNotificationsRead",
+  "getNotificationPreferences",
+  "updateNotificationPreferences",
+]);
 // DL-053 appended the push-device commands at the end of the catalogue;
 // they mount in their own router so handler order equals the contract.
 const PUSH_DEVICE_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
