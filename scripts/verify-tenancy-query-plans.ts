@@ -34,6 +34,9 @@ const teacherId = "82000000-0000-4000-8000-000000000002";
 const termId = "82000000-0000-4000-8000-000000000003";
 const firstStudentId = "83000000-0000-4000-8000-000000000001";
 const firstStudentUserId = "84000000-0000-4000-8000-000000000001";
+// Parents are their own accounts: a guardian links only to a student, never
+// to an account holding another role.
+const firstGuardianUserId = "88000000-0000-4000-8000-000000000001";
 
 const sql = postgres(databaseUrl, { max: 1 });
 
@@ -71,6 +74,22 @@ try {
         jsonb_build_object('full_name', 'DB020 Scale Student ' || i)
       from generate_series(1, 2000) i;
 
+      insert into auth.users (
+        id, email, encrypted_password, aud, role, email_confirmed_at,
+        created_at, updated_at, instance_id, confirmation_token,
+        recovery_token, email_change, email_change_token_new,
+        email_change_token_current, phone_change_token,
+        raw_app_meta_data, raw_user_meta_data
+      )
+      select
+        ('88000000-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
+        'db020.scale.guardian.' || i || '@synthetic.studafy.test',
+        'synthetic-not-a-secret', 'authenticated', 'authenticated', now(),
+        now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '',
+        '', '', '', '{}'::jsonb,
+        jsonb_build_object('full_name', 'DB020 Scale Guardian ' || i)
+      from generate_series(1, 2000) i;
+
       insert into public.schools (id, name, status)
       values ('${schoolId}', 'DB020 Scale School', 'active');
 
@@ -83,9 +102,12 @@ try {
         'student', true
       from generate_series(1, 2000) i;
 
+      -- Multi-role accounts, as the plans were measured with: here the
+      -- parents also teach (co-teachers below). A student account never
+      -- holds another role, because a parent can link only to a student.
       insert into public.memberships (school_id, user_id, role, active)
       select '${schoolId}',
-        ('84000000-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
+        ('88000000-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
         'teacher', true
       from generate_series(1, 2000) i;
 
@@ -114,7 +136,7 @@ try {
       )
       select '${schoolId}',
         ('83000000-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
-        ('84000000-0000-4000-8000-' || lpad((1 + (i % 2000))::text, 12, '0'))::uuid,
+        ('88000000-0000-4000-8000-' || lpad((1 + (i % 2000))::text, 12, '0'))::uuid,
         'verified', 'synthetic_guardian', '${teacherId}', now()
       from generate_series(1, 2000) i;
 
@@ -261,14 +283,14 @@ try {
         relation: "guardian_links",
         statement:
           "select student_id from public.guardian_links where guardian_id = $1 and status = 'verified' limit 20",
-        parameters: [firstStudentUserId],
+        parameters: [firstGuardianUserId],
       },
       {
         name: "active classroom staff by user",
         relation: "classroom_staff",
         statement:
           "select classroom_id from public.classroom_staff where user_id = $1 and status = 'active' limit 100",
-        parameters: [firstStudentUserId],
+        parameters: [firstGuardianUserId],
       },
       {
         name: "active classrooms by school and term",

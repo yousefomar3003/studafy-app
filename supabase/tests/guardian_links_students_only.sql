@@ -7,7 +7,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(10);
+select plan(11);
 
 -- A students row behind a teacher's account (accounts can hold several
 -- roles), and a child the school created with no account yet.
@@ -44,6 +44,21 @@ select is(pg_temp.run('find-teacher', 'locateStudent',
   jsonb_build_object('studafyId', 'STU-TEACHER-LINK')) -> 'response',
   jsonb_build_object('found', false, 'studentId', null, 'displayName', null),
   'a teacher''s account is answered exactly as an unknown ID');
+-- An existing account a school admin put on the roster, with no student
+-- membership: still a student, still found.
+insert into auth.users (id, email, encrypted_password, aud, role, email_confirmed_at, created_at,
+  updated_at, instance_id, confirmation_token, recovery_token, email_change,
+  email_change_token_new, email_change_token_current, phone_change_token,
+  raw_app_meta_data, raw_user_meta_data)
+values ('abcf0000-0000-4000-8000-0000000000f4', 'links-only.roster@synthetic.studafy.test',
+  'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(),
+  '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}', '{}');
+insert into public.students (id, school_id, user_id, studafy_id, display_name, provisional, created_by)
+values ('abcf0000-0000-4000-8000-0000000000f3', :'school_id', 'abcf0000-0000-4000-8000-0000000000f4',
+  'STU-ROSTER-ONLY', 'Roster student', false, :'teacher_user');
+select is(pg_temp.run('find-roster', 'locateStudent',
+  jsonb_build_object('studafyId', 'STU-ROSTER-ONLY')) -> 'response' ->> 'found', 'true',
+  'a student an admin added to the roster, with no membership, can be found');
 select is(pg_temp.run('find-provisional', 'locateStudent',
   jsonb_build_object('studafyId', 'STU-NO-ACCOUNT')) -> 'response' ->> 'found', 'true',
   'a child the school created with no account yet can be found');

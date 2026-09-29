@@ -8,8 +8,8 @@
 -- private.guardian_link_target_allowed is the rule for every link: the row
 -- is live, and it is either a child with no account yet (created by the
 -- school), or an account that holds no role but student anywhere and is not
--- the guardian themselves. private.student_linkable adds, for what a parent
--- may find and request, that the account is a current student there. Locating an ID that is not linkable answers
+-- the guardian themselves. private.student_linkable applies the same rule
+-- to what a parent may find and request. Locating an ID that is not linkable answers
 -- exactly as an unknown ID does, so it cannot be used to discover staff
 -- accounts; a request for one is not_found; and a trigger refuses any other
 -- path that would create or re-point such a link.
@@ -34,18 +34,14 @@ returns boolean language sql stable security definer set search_path = '' as $$
   );
 $$;
 
--- What a parent may find and ask to link to: the above, and an account
--- must also be a current student at that school.
+-- What a parent may find and ask to link to: the same rule. A student
+-- record is what makes a student - class join creates one, and so does a
+-- school admin adding an existing account to the roster, with or without a
+-- membership - so nothing more is required of the account than holding no
+-- other role.
 create or replace function private.student_linkable(p_student uuid, p_guardian uuid)
 returns boolean language sql stable security definer set search_path = '' as $$
-  select private.guardian_link_target_allowed(p_student, p_guardian)
-    and exists (
-      select 1 from public.students st
-      where st.id = p_student
-        and (st.user_id is null or exists (
-          select 1 from public.memberships m
-          where m.user_id = st.user_id and m.school_id = st.school_id
-            and m.role = 'student' and m.active)));
+  select private.guardian_link_target_allowed(p_student, p_guardian);
 $$;
 
 alter function private.guardian_link_target_allowed(uuid, uuid) owner to postgres;

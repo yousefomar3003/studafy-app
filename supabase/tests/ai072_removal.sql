@@ -107,7 +107,9 @@ select set_eq(
             ('assignment_submission'),('paper_scan'),
             ('message_attachment'),('announcement_attachment'),
             -- A student's own whiteboard photo for their notebook (ADR-0029).
-            ('notebook_photo') $$,
+            ('notebook_photo'),
+            -- A photo a student sends the study helper (202609290002).
+            ('assistant_attachment') $$,
   'every non-AI upload purpose stays enabled and coach_attachment does not');
 
 -- 5. Neither AI product can be offered or re-activated.

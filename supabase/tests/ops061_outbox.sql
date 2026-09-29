@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(37);
+select plan(39);
 
 -- --------------------------------------------------------------------------
 -- Grant surface: the worker runtime drives the drain; nobody else does.
@@ -31,6 +31,18 @@ select ok(
   and not has_function_privilege('anon', 'private.api061_finish_notification(bigint)', 'execute'),
   'no other role can drive the outbox drain'
 );
+
+-- The school audience is its active staff: teachers and admins with an
+-- active membership and profile. Other suites in the run add staff to the
+-- same shared school, so the expected set is read from the school rather
+-- than assumed; the fixture's own four are the floor.
+create temporary table ops061_staff as
+select distinct m.user_id from public.memberships m
+join public.profiles p on p.id = m.user_id and p.status = 'active'
+where m.school_id = :'school_id' and m.active and m.status = 'active'
+  and m.role in ('school_admin', 'teacher');
+select ok((select count(*) from ops061_staff) >= 4,
+  'the shared school has at least the fixture''s four active staff');
 
 -- --------------------------------------------------------------------------
 -- Seed audience rows and one direct-recipient row (delivered inline by
@@ -204,8 +216,16 @@ select is(
   (select count(distinct nd.recipient_id) from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
    where o.source_event_id = 'ops061-evt-1'),
-  4::bigint,
+  (select count(*) from ops061_staff),
   'every active staff member got exactly one delivery; suspended profiles did not'
+);
+select is(
+  (select count(*) from public.notification_deliveries nd
+   join public.notification_outbox o on o.id = nd.outbox_id
+   where o.source_event_id = 'ops061-evt-1'
+     and nd.recipient_id = :'suspended_teacher_user'),
+  0::bigint,
+  'the suspended teacher received nothing'
 );
 select is(
   (select nd.attempt from public.notification_deliveries nd
@@ -224,7 +244,7 @@ select is(
   (select count(*) from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
    where o.source_event_id = 'ops061-evt-1'),
-  4::bigint,
+  (select count(*) from ops061_staff),
   'the repeat run inserted no second delivery'
 );
 select is(
@@ -289,8 +309,8 @@ select is(
   (select count(distinct nd.recipient_id) from public.notification_deliveries nd
    join public.notification_outbox o on o.id = nd.outbox_id
    where o.source_event_id = 'ops061-evt-5'),
-  4::bigint,
-  'the recovered run produced the same four deliveries, once'
+  (select count(*) from ops061_staff),
+  'the recovered run produced the same deliveries, once'
 );
 
 -- --------------------------------------------------------------------------
