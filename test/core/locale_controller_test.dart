@@ -391,4 +391,11 @@ class _FakeProfiles implements ProfileRepository {
 
   @override
   Future<void> updateLocale(String locale) async => published.add(locale);
+
+  @override
+  Future<OwnProfile> readOwn() async => const OwnProfile(displayName: '');
+
+  @override
+  Future<OwnProfile> rename(String displayName) async =>
+      OwnProfile(displayName: displayName);
 }

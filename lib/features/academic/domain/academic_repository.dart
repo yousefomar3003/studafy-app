@@ -31,6 +31,28 @@ class AcademicRecord {
     this.deadline,
     this.timeZone,
   });
+
+  /// A separate instance with the same values - so the same assignment,
+  /// shown once for each of two siblings, is two rows that can each say
+  /// whose they are.
+  AcademicRecord copy() => AcademicRecord(
+    id: id,
+    title: title,
+    detail: detail,
+    state: state,
+    version: version,
+    classroomId: classroomId,
+    attachments: attachments,
+    maximumScore: maximumScore,
+    markedAssignmentId: markedAssignmentId,
+    date: date,
+    delivery: delivery,
+    mark: mark,
+    score: score,
+    outOf: outOf,
+    deadline: deadline,
+    timeZone: timeZone,
+  );
   final String id;
   final String title;
   final String detail;
@@ -120,6 +142,20 @@ class SubmissionDeadline {
 /// Deliberately a plain pair rather than the classes slice's own summary
 /// type: this page must not import another feature, so the shell that owns
 /// both supplies the list.
+/// A child whose record a guardian can read, for filtering by child.
+@immutable
+class StudentChoice {
+  const StudentChoice({
+    required this.id,
+    required this.name,
+    this.schoolName = '',
+  });
+
+  final String id;
+  final String name;
+  final String schoolName;
+}
+
 @immutable
 class ClassChoice {
   const ClassChoice({required this.id, required this.name});

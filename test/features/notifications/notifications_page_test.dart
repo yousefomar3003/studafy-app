@@ -18,6 +18,7 @@ void main() {
     NotificationsRepository repository, {
     Locale locale = const Locale('en'),
     bool visible = true,
+    bool Function(NotificationItem item)? onOpen,
   }) => MaterialApp(
     locale: locale,
     supportedLocales: AppL10n.supportedLocales,
@@ -32,7 +33,7 @@ void main() {
         repository: repository,
         telemetry: const NoopTelemetry(),
       ),
-      child: NotificationsPage(visible: visible),
+      child: NotificationsPage(visible: visible, onOpen: onOpen),
     ),
   );
 
@@ -117,13 +118,14 @@ void main() {
       await tester.pumpWidget(harness(repository));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.notifications_active_rounded), findsOneWidget);
+      // Unread is said in words for screen readers, and as a dot.
+      expect(find.bySemanticsLabel(RegExp(r'Unread')), findsOneWidget);
 
       await tester.tap(find.text('Mark all read'));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.notifications_active_rounded), findsNothing);
-      expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'Unread')), findsNothing);
+      expect(find.text('Mark all read'), findsOneWidget);
       expect(repository.markReadCalls.single.all, isTrue);
     },
   );
@@ -181,6 +183,34 @@ void main() {
       expect(find.text('تعليم الكل كمقروء'), findsOneWidget); // "Mark all read"
     },
   );
+  testWidgets('a tap marks it read and opens what it is about', (tester) async {
+    final repository = _FakeRepository(
+      items: [
+        NotificationItem(
+          id: 'n1',
+          templateKey: 'communications.announcement_created',
+          title: 'notification.communications.announcement_created.title',
+          detail: 'notification.communications.announcement_created.detail',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      ],
+    );
+    final opened = <String>[];
+    await tester.pumpWidget(
+      harness(
+        repository,
+        onOpen: (item) {
+          opened.add(item.templateKey);
+          return true;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel(RegExp(r'Unread')));
+    await tester.pumpAndSettle();
+    expect(opened, ['communications.announcement_created']);
+    expect(find.bySemanticsLabel(RegExp(r'Unread')), findsNothing);
+  });
 }
 
 class _FakeRepository implements NotificationsRepository {

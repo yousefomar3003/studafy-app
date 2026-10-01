@@ -5035,4 +5035,136 @@ class AppL10nEn extends AppL10n {
   @override
   String get accountSwitchRoleTeacherParent =>
       'Move between teaching and following your children.';
+
+  @override
+  String get accountName => 'Name';
+
+  @override
+  String get accountEditName => 'Edit name';
+
+  @override
+  String get accountEditNameTitle => 'Edit your name';
+
+  @override
+  String get accountNameHelp =>
+      'This is how your teachers, classmates and family see you.';
+
+  @override
+  String get accountNameInvalid => 'Enter a name of up to 160 characters.';
+
+  @override
+  String get accountNameSaved => 'Name saved';
+
+  @override
+  String get accountNameFailed =>
+      'Your name couldn\'t be saved. Please try again.';
+
+  @override
+  String get accountSaveAction => 'Save';
+
+  @override
+  String get accountCancelAction => 'Cancel';
+
+  @override
+  String get accountPublicIdDetail =>
+      'Studafy support may ask for this number. It can\'t be used to see your account or to link to a child.';
+
+  @override
+  String get navAnnouncements => 'Announcements';
+
+  @override
+  String get announcementsSubtitle => 'News from your children\'s schools';
+
+  @override
+  String get announcementsAllChildren => 'All children';
+
+  @override
+  String get announcementsNoChildren =>
+      'Link a child to see their school\'s announcements.';
+
+  @override
+  String announcementsFrom(String school, String children) {
+    return '$school · $children';
+  }
+
+  @override
+  String get learningSubtitle => 'Lessons, work, tests, grades and attendance';
+
+  @override
+  String get learningFilterByChild => 'Filter by child';
+
+  @override
+  String get learningNoChildrenTitle => 'No child linked yet';
+
+  @override
+  String get learningNoChildrenBody =>
+      'Link a child from Today to follow their lessons, work and grades here.';
+
+  @override
+  String get parentTodaySubtitle => 'Your children\'s day at a glance';
+
+  @override
+  String get parentQuickLink => 'Link a child';
+
+  @override
+  String get parentQuickLearning => 'Learning';
+
+  @override
+  String get parentQuickAnnouncements => 'Announcements';
+
+  @override
+  String get parentQuickMessages => 'Message a teacher';
+
+  @override
+  String get parentChildrenSection => 'Your children';
+
+  @override
+  String get parentNoChildrenTitle => 'Link your first child';
+
+  @override
+  String get parentNoChildrenBody =>
+      'Ask your child for their Studafy ID. They approve the request on their own device.';
+
+  @override
+  String get parentChildOpen => 'Open';
+
+  @override
+  String get parentLinkSearching => 'Checking…';
+
+  @override
+  String get familyPlusNoPlan => 'No Family+ plan yet';
+
+  @override
+  String familyPlusCoveredCount(int count) {
+    return 'Covers $count of your children';
+  }
+
+  @override
+  String familyPlusEnds(String date) {
+    return 'Active until $date';
+  }
+
+  @override
+  String get familyPlusWhatYouGet => 'What Family+ adds';
+
+  @override
+  String get familyPlusPlansTitle => 'Choose a plan';
+
+  @override
+  String get familyPlusManagePlan => 'Plan';
+
+  @override
+  String get famLinkCheckFailed =>
+      'The security check didn\'t go through. Please try again.';
+
+  @override
+  String get famLinkAlready =>
+      'You\'ve already asked to link this child, or they\'re linked already.';
+
+  @override
+  String get famLinkIdHelp =>
+      'Your child finds it on their Profile, under Your Studafy ID.';
+
+  @override
+  String get familyPlusCurrentPlan => 'Current plan';
 }

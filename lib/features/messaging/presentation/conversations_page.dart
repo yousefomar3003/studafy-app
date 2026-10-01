@@ -25,7 +25,12 @@ class ConversationsPage extends StatefulWidget {
     this.acknowledgeEvery = const Duration(minutes: 2),
     this.asRole,
     this.onNewAnnouncement,
+    this.showAnnouncements = true,
   });
+
+  /// False where announcements have a page of their own (the parent's
+  /// app), so this one is about conversations only.
+  final bool showAnnouncements;
 
   /// Opens the announcement composer. Null for people who cannot post one;
   /// announcements are still listed for them to read.
@@ -273,6 +278,8 @@ class _ConversationsPageState extends State<ConversationsPage>
                 message: l10n.msgNoSchool,
               ),
             )
+          : !widget.showAnnouncements
+          ? _messages(identity.userId, schoolId)
           : Column(
               children: [
                 PillTabs<_InboxPart>(
@@ -381,8 +388,9 @@ class _ConversationsPageState extends State<ConversationsPage>
               icon: Icons.wifi_off_rounded,
               title: l10n.msgAnnouncementsFailed,
               actionLabel: l10n.msgRetry,
-              onAction: () =>
-                  setState(() => _announcements = _loadAnnouncements()),
+              onAction: () => setState(() {
+                _announcements = _loadAnnouncements();
+              }),
             ),
           );
         }
@@ -416,7 +424,7 @@ class _ConversationsPageState extends State<ConversationsPage>
               for (final item in items)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _AnnouncementCard(announcement: item),
+                  child: AnnouncementCard(announcement: item),
                 ),
             ],
           ),
@@ -529,10 +537,15 @@ class _ConversationTile extends StatelessWidget {
   }
 }
 
-class _AnnouncementCard extends StatelessWidget {
-  const _AnnouncementCard({required this.announcement});
+/// One announcement: what it is, when, where from, and what came with it.
+class AnnouncementCard extends StatelessWidget {
+  const AnnouncementCard({super.key, required this.announcement, this.from});
 
   final Announcement announcement;
+
+  /// Who it reached the reader through - a school and the reader's children
+  /// there - shown under the date when the list spans several.
+  final String? from;
 
   @override
   Widget build(BuildContext context) {
@@ -569,6 +582,30 @@ class _AnnouncementCard extends StatelessWidget {
                           .formatMediumDate(announcement.createdAt.toLocal()),
                       style: const TextStyle(color: studafyMuted, fontSize: 12),
                     ),
+                    if (from case final source?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.apartment_rounded,
+                              size: 13,
+                              color: studafyMuted,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: UserContentText(
+                                source,
+                                style: const TextStyle(
+                                  color: studafyMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),

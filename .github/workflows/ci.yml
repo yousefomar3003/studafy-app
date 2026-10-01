@@ -306,6 +306,12 @@ jobs:
           bunx supabase test db --local
           supabase/tests/one_kind_per_account.sql
 
+      # Every account's numeric Studafy ID, and renaming oneself.
+      - name: Verify numeric Studafy IDs and renaming
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/numeric_public_id.sql
+
       # Expired idempotency records are pruned by the worker; live and
       # in-flight ones are kept. Transactional.
       - name: Verify housekeeping

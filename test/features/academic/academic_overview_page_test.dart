@@ -442,4 +442,51 @@ void main() {
     );
     expect(find.text('Marked'), findsWidgets);
   });
+
+  testWidgets('a parent filters by child, or sees every child labelled', (
+    tester,
+  ) async {
+    final repository = _FakeAcademicRepository([
+      const AcademicRecord(
+        id: 'w1',
+        title: 'Fractions sheet',
+        detail: '',
+        state: 'published',
+        version: 1,
+      ),
+    ]);
+    final opened = <String?>[];
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: repository,
+          title: 'Learning',
+          subtitle: 'Lessons, work, tests, grades and attendance',
+          availableFeeds: const [AcademicFeed.assignments],
+          students: const [
+            StudentChoice(id: 'layla', name: 'Layla', schoolName: 'Al-Noor'),
+            StudentChoice(id: 'omar', name: 'Omar', schoolName: 'Riverside'),
+          ],
+          onOpenStudentRecord: (record, student) => opened.add(student?.id),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Filter by child'), findsOne);
+    expect(find.text('All children'), findsOne);
+    // Every child asked for, and every row says whose it is.
+    expect({for (final load in repository.loads) load.$3}, {'layla', 'omar'});
+    expect(find.text('Layla · Al-Noor'), findsOne);
+    expect(find.text('Omar · Riverside'), findsOne);
+    await tester.tap(find.text('Fractions sheet').last);
+    expect(opened, ['omar']);
+
+    repository.loads.clear();
+    await tester.tap(find.text('Layla'));
+    await tester.pumpAndSettle();
+    expect(repository.loads.single.$3, 'layla');
+    // One child shown: no per-row label repeating the filter.
+    expect(find.text('Layla · Al-Noor'), findsNothing);
+  });
 }

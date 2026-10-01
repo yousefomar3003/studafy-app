@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +11,8 @@ import '../core/profile_photo.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
+import '../features/account/application/account_interactor.dart';
+import '../features/account/domain/profile_repository.dart';
 import '../features/account/presentation/delete_account_page.dart';
 import '../features/notifications/presentation/notification_preferences_page.dart';
 import '../features/session/presentation/account_security_page.dart';
@@ -145,10 +149,76 @@ class NotificationBellButton extends StatelessWidget {
 /// Grouped as in iOS Settings: who you are, your account, preferences,
 /// notifications, subscription, then sign-in and security - where deleting
 /// the account lives, as on the teacher's profile.
-class AccountHubPage extends StatelessWidget {
+class AccountHubPage extends StatefulWidget {
   const AccountHubPage({super.key, this.subscription});
 
   final SubscriptionEntry? subscription;
+
+  @override
+  State<AccountHubPage> createState() => _AccountHubPageState();
+}
+
+class _AccountHubPageState extends State<AccountHubPage> {
+  /// The person's own profile as the server has it: the name they chose and
+  /// their Studafy number. Null until read, or in builds that cannot read it.
+  OwnProfile? _own;
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    unawaited(_loadOwn());
+  }
+
+  Future<void> _loadOwn() async {
+    final account = AccountScope.maybeOf(context);
+    if (account == null || !account.profileAvailable) return;
+    final result = await account.ownProfile();
+    if (!mounted) return;
+    result.fold(
+      onSuccess: (own) => setState(() => _own = own),
+      onFailure: (_) {},
+    );
+  }
+
+  /// Edit name: a prefilled form, saved to the server, then shown
+  /// everywhere the app reads the name.
+  Future<void> _editName(String current) async {
+    final account = AccountScope.maybeOf(context);
+    if (account == null || !account.profileAvailable) return;
+    final saved = await showModalBottomSheet<OwnProfile>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
+        child: _EditNameSheet(initial: current, account: account),
+      ),
+    );
+    if (saved == null || !mounted) return;
+    final context_ = ActiveContextController.instance;
+    final profile = context_.profile;
+    if (profile != null) {
+      context_.hydrate(
+        authenticatedProfile: UserProfile(
+          id: profile.id,
+          displayName: saved.displayName,
+          email: profile.email,
+          memberships: profile.memberships,
+          accountKind: profile.accountKind,
+        ),
+        activeMembership: context_.membership,
+        student: context_.selectedStudent,
+        termId: context_.activeTermId,
+        signedInAs: context_.signedInAs,
+      );
+    }
+    setState(() => _own = saved);
+    ScaffoldMessenger.of(context)
+        .showMessage(AppL10n.of(context).accountNameSaved);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,8 +229,14 @@ class AccountHubPage extends StatelessWidget {
     final membership = context_.membership;
     final session = SessionScope.maybeOf(context);
     final deviceAccounts = DeviceAccountsScope.maybeOf(context);
-    final student = membership?.role == StudafyRole.student;
-    final subscription = this.subscription;
+    final student =
+        membership?.role == StudafyRole.student ||
+        context_.signedInAs == StudafyRole.student;
+    final subscription = widget.subscription;
+    final account = AccountScope.maybeOf(context);
+    final canRename = profile != null && (account?.profileAvailable ?? false);
+    final name = _own?.displayName ?? profile?.displayName ?? '';
+    final publicId = _own?.publicId;
     final accountRows = [
       // Several accounts on one device, Instagram-style, and a parent's
       // child accounts.
@@ -189,7 +265,7 @@ class AccountHubPage extends StatelessWidget {
         padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 40),
         children: [
           AccountProfileHeader(
-            name: profile?.displayName ?? l10n.accountUnknown,
+            name: name.isEmpty ? l10n.accountUnknown : name,
             email: profile?.email ?? '',
             membership: membership,
             roleLabel: membership == null
@@ -203,6 +279,17 @@ class AccountHubPage extends StatelessWidget {
           SettingsGroup(
             title: l10n.accountSectionProfile,
             children: [
+              if (canRename)
+                SettingsRow(
+                  icon: Icons.person_rounded,
+                  title: l10n.accountName,
+                  subtitle: name,
+                  trailing: TextButton(
+                    onPressed: () => _editName(name),
+                    child: Text(l10n.accountEditName),
+                  ),
+                  onTap: () => _editName(name),
+                ),
               if (profile != null)
                 SettingsRow(
                   icon: Icons.photo_camera_rounded,
@@ -213,14 +300,18 @@ class AccountHubPage extends StatelessWidget {
               // A student has one identifier worth knowing: the Studafy ID a
               // parent asks for. Their internal account id is kept out of
               // the way, under sign-in and security.
+              // One ID a person reads out: a student's is the Studafy ID a
+              // parent links with; an adult's is their Studafy number. The
+              // internal account id waits under sign-in and security.
               if (student)
                 const StudafyIdRow()
-              else if (profile != null)
+              else if (publicId != null)
                 _AccountIdRow(
-                  id: profile.id,
-                  title: l10n.accountAccountId,
-                  detail: l10n.accountAccountIdDetail,
-                  copied: l10n.accountAccountIdCopied,
+                  id: publicId,
+                  title: l10n.accountStudafyId,
+                  detail: l10n.accountPublicIdDetail,
+                  copied: l10n.accountStudafyIdCopied,
+                  icon: Icons.qr_code_rounded,
                 ),
             ],
           ),
@@ -288,7 +379,7 @@ class AccountHubPage extends StatelessWidget {
                   ),
                 ),
               DataExportTile(account: AccountScope.of(context)),
-              if (student && profile != null)
+              if (profile != null)
                 _AccountIdRow(
                   id: profile.id,
                   title: l10n.accountTechnicalId,
@@ -479,5 +570,122 @@ Future<void> _choosePhoto(BuildContext context, String userId) async {
     await ProfilePhotos.save(userId, bytes);
   } on Object {
     messenger.showMessage(l10n.profilePhotoFailed);
+  }
+}
+
+/// Edit name: the current name, ready to change. Saved only when the server
+/// says so; a failure keeps the form open with the typed name.
+class _EditNameSheet extends StatefulWidget {
+  const _EditNameSheet({required this.initial, required this.account});
+
+  final String initial;
+  final AccountInteractor account;
+
+  @override
+  State<_EditNameSheet> createState() => _EditNameSheetState();
+}
+
+class _EditNameSheetState extends State<_EditNameSheet> {
+  late final _name = TextEditingController(text: widget.initial);
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final l10n = AppL10n.of(context);
+    if (normaliseDisplayName(_name.text) == null) {
+      setState(() => _error = l10n.accountNameInvalid);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final result = await widget.account.rename(_name.text);
+    if (!mounted) return;
+    result.fold(
+      onSuccess: (saved) => Navigator.pop(context, saved),
+      onFailure: (_) => setState(() {
+        _saving = false;
+        _error = l10n.accountNameFailed;
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.accountEditNameTitle,
+              style: const TextStyle(
+                color: studafyInk,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.accountNameHelp,
+              style: const TextStyle(color: studafyMuted, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _name,
+              autofocus: true,
+              enabled: !_saving,
+              maxLength: maxDisplayNameLength,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: l10n.accountName,
+                errorText: _error,
+                counterText: '',
+              ),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              child: _saving
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(l10n.accountSaveAction),
+            ),
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: _saving ? null : () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+              ),
+              child: Text(l10n.accountCancelAction),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

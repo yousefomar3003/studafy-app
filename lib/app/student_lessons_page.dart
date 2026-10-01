@@ -185,7 +185,9 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
                       icon: Icons.wifi_off_rounded,
                       title: l10n.studentLessonsYourClassesCouldNotBe,
                       actionLabel: l10n.todayRetry,
-                      onAction: () => setState(() => _classes = _load()),
+                      onAction: () => setState(() {
+                        _classes = _load();
+                      }),
                     ),
                   );
                 }

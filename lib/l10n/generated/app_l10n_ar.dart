@@ -5027,4 +5027,134 @@ class AppL10nAr extends AppL10n {
   @override
   String get accountSwitchRoleTeacherParent =>
       'التنقّل بين التدريس ومتابعة أطفالك.';
+
+  @override
+  String get accountName => 'الاسم';
+
+  @override
+  String get accountEditName => 'تعديل الاسم';
+
+  @override
+  String get accountEditNameTitle => 'تعديل اسمك';
+
+  @override
+  String get accountNameHelp => 'هكذا يراك معلموك وزملاؤك وعائلتك.';
+
+  @override
+  String get accountNameInvalid => 'أدخل اسمًا لا يزيد عن 160 حرفًا.';
+
+  @override
+  String get accountNameSaved => 'تم حفظ الاسم';
+
+  @override
+  String get accountNameFailed => 'تعذّر حفظ اسمك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get accountSaveAction => 'حفظ';
+
+  @override
+  String get accountCancelAction => 'إلغاء';
+
+  @override
+  String get accountPublicIdDetail =>
+      'قد يطلب دعم Studafy هذا الرقم. لا يمكن استخدامه لرؤية حسابك أو للارتباط بطفل.';
+
+  @override
+  String get navAnnouncements => 'الإعلانات';
+
+  @override
+  String get announcementsSubtitle => 'أخبار مدارس أطفالك';
+
+  @override
+  String get announcementsAllChildren => 'كل الأطفال';
+
+  @override
+  String get announcementsNoChildren => 'اربط طفلًا لرؤية إعلانات مدرسته.';
+
+  @override
+  String announcementsFrom(String school, String children) {
+    return '$school · أطفالك: $children';
+  }
+
+  @override
+  String get learningSubtitle =>
+      'الدروس والواجبات والاختبارات والدرجات والحضور';
+
+  @override
+  String get learningFilterByChild => 'التصفية حسب الطفل';
+
+  @override
+  String get learningNoChildrenTitle => 'لا يوجد طفل مرتبط بعد';
+
+  @override
+  String get learningNoChildrenBody =>
+      'اربط طفلًا من صفحة اليوم لمتابعة دروسه وواجباته ودرجاته هنا.';
+
+  @override
+  String get parentTodaySubtitle => 'يوم أطفالك في لمحة';
+
+  @override
+  String get parentQuickLink => 'ربط طفل';
+
+  @override
+  String get parentQuickLearning => 'التعلّم';
+
+  @override
+  String get parentQuickAnnouncements => 'الإعلانات';
+
+  @override
+  String get parentQuickMessages => 'مراسلة معلم';
+
+  @override
+  String get parentChildrenSection => 'أطفالك';
+
+  @override
+  String get parentNoChildrenTitle => 'اربط طفلك الأول';
+
+  @override
+  String get parentNoChildrenBody =>
+      'اطلب من طفلك معرّف Studafy الخاص به. يوافق على الطلب من جهازه.';
+
+  @override
+  String get parentChildOpen => 'فتح';
+
+  @override
+  String get parentLinkSearching => 'جارٍ التحقق…';
+
+  @override
+  String get familyPlusNoPlan => 'لا توجد خطة Family+ بعد';
+
+  @override
+  String familyPlusCoveredCount(int count) {
+    return 'تغطي $count من أطفالك';
+  }
+
+  @override
+  String familyPlusEnds(String date) {
+    return 'فعّالة حتى $date';
+  }
+
+  @override
+  String get familyPlusWhatYouGet => 'ما تضيفه Family+';
+
+  @override
+  String get familyPlusPlansTitle => 'اختر خطة';
+
+  @override
+  String get familyPlusManagePlan => 'الخطة';
+
+  @override
+  String get famLinkCheckFailed =>
+      'لم يكتمل التحقق الأمني. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get famLinkAlready =>
+      'لقد طلبت ربط هذا الطفل من قبل، أو أنه مرتبط بالفعل.';
+
+  @override
+  String get famLinkIdHelp =>
+      'يجده طفلك في ملفه الشخصي، تحت معرّف Studafy الخاص بك.';
+
+  @override
+  String get familyPlusCurrentPlan => 'الخطة الحالية';
 }

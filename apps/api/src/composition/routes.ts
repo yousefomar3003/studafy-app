@@ -172,6 +172,8 @@ export function buildRoutes(platform: Platform) {
       secret: env.TURNSTILE_SECRET!,
       siteKey: env.TURNSTILE_SITE_KEY!,
       hostnames: env.TURNSTILE_HOSTNAMES,
+      // Cloudflare's testing keys, for local and hosted development only.
+      allowTestingKeys: env.ENVIRONMENT !== "production",
     }
     : undefined;
 
@@ -384,6 +386,7 @@ export function buildRoutes(platform: Platform) {
       repository: new PostgresAccountRepository(sql),
       cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
       enabledSlices: { account: env.API042_ACCOUNT_RIGHTS_ENABLED },
+      invalidateActorContext,
     }
     : undefined;
   const account = accountDependencies && authDependencies

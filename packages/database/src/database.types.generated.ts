@@ -3993,6 +3993,7 @@ export type Database = {
           id: string;
           locale: string;
           profile_completed_at: string | null;
+          public_id: string;
           status: Database["public"]["Enums"]["profile_status"];
           updated_at: string;
         };
@@ -4005,6 +4006,7 @@ export type Database = {
           id: string;
           locale?: string;
           profile_completed_at?: string | null;
+          public_id: string;
           status?: Database["public"]["Enums"]["profile_status"];
           updated_at?: string;
         };
@@ -4017,6 +4019,7 @@ export type Database = {
           id?: string;
           locale?: string;
           profile_completed_at?: string | null;
+          public_id?: string;
           status?: Database["public"]["Enums"]["profile_status"];
           updated_at?: string;
         };

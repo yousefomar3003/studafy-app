@@ -337,6 +337,7 @@ class AppDependencies {
                 submitRequest: sessionRepository.requestAccountDeletion,
                 cancelRequest: sessionRepository.cancelAccountDeletion,
               ),
+        profiles: profiles,
         exports: remote == null
             ? null
             : ApiDataExportRepository(

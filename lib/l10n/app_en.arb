@@ -2805,5 +2805,68 @@
     }
   },
   "loginUseDifferentEmail": "Use a different email",
-  "accountSwitchRoleTeacherParent": "Move between teaching and following your children."
+  "accountSwitchRoleTeacherParent": "Move between teaching and following your children.",
+  "accountName": "Name",
+  "accountEditName": "Edit name",
+  "accountEditNameTitle": "Edit your name",
+  "accountNameHelp": "This is how your teachers, classmates and family see you.",
+  "accountNameInvalid": "Enter a name of up to 160 characters.",
+  "accountNameSaved": "Name saved",
+  "accountNameFailed": "Your name couldn't be saved. Please try again.",
+  "accountSaveAction": "Save",
+  "accountCancelAction": "Cancel",
+  "accountPublicIdDetail": "Studafy support may ask for this number. It can't be used to see your account or to link to a child.",
+  "navAnnouncements": "Announcements",
+  "announcementsSubtitle": "News from your children's schools",
+  "announcementsAllChildren": "All children",
+  "announcementsNoChildren": "Link a child to see their school's announcements.",
+  "announcementsFrom": "{school} · {children}",
+  "@announcementsFrom": {
+    "placeholders": {
+      "school": {
+        "type": "String"
+      },
+      "children": {
+        "type": "String"
+      }
+    }
+  },
+  "learningSubtitle": "Lessons, work, tests, grades and attendance",
+  "learningFilterByChild": "Filter by child",
+  "learningNoChildrenTitle": "No child linked yet",
+  "learningNoChildrenBody": "Link a child from Today to follow their lessons, work and grades here.",
+  "parentTodaySubtitle": "Your children's day at a glance",
+  "parentQuickLink": "Link a child",
+  "parentQuickLearning": "Learning",
+  "parentQuickAnnouncements": "Announcements",
+  "parentQuickMessages": "Message a teacher",
+  "parentChildrenSection": "Your children",
+  "parentNoChildrenTitle": "Link your first child",
+  "parentNoChildrenBody": "Ask your child for their Studafy ID. They approve the request on their own device.",
+  "parentChildOpen": "Open",
+  "parentLinkSearching": "Checking…",
+  "familyPlusNoPlan": "No Family+ plan yet",
+  "familyPlusCoveredCount": "Covers {count} of your children",
+  "@familyPlusCoveredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyPlusEnds": "Active until {date}",
+  "@familyPlusEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusWhatYouGet": "What Family+ adds",
+  "familyPlusPlansTitle": "Choose a plan",
+  "familyPlusManagePlan": "Plan",
+  "famLinkCheckFailed": "The security check didn't go through. Please try again.",
+  "famLinkAlready": "You've already asked to link this child, or they're linked already.",
+  "famLinkIdHelp": "Your child finds it on their Profile, under Your Studafy ID.",
+  "familyPlusCurrentPlan": "Current plan"
 }

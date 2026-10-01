@@ -35,6 +35,10 @@ export const V1ProfileResponse = z.strictObject({
    * teacher, a parent or both. Null until something decides it; absent from
    * servers older than 2026-10-01. */
   accountKind: V1AccountKind.nullable().optional(),
+  /** The account's own ten-digit Studafy number, as a string so its digits
+   * never change. Read-only, for the owner only; it grants nothing. Absent
+   * from servers older than 2026-10-01. */
+  publicId: z.string().regex(/^[1-9][0-9]{9}$/).optional(),
 });
 export type V1ProfileResponse = z.infer<typeof V1ProfileResponse>;
 

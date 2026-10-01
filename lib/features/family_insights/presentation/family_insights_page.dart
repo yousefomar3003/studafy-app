@@ -45,7 +45,9 @@ class _FamilyInsightsPageState extends State<FamilyInsightsPage> {
   void didUpdateWidget(FamilyInsightsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.studentId != widget.studentId) {
-      setState(() => _future = _load());
+      setState(() {
+        _future = _load();
+      });
     }
   }
 
@@ -80,7 +82,9 @@ class _FamilyInsightsPageState extends State<FamilyInsightsPage> {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => setState(() => _future = _load()),
+            onRefresh: () async => setState(() {
+              _future = _load();
+            }),
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [

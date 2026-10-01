@@ -8624,6 +8624,240 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Move between teaching and following your children.'**
   String get accountSwitchRoleTeacherParent;
+
+  /// No description provided for @accountName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get accountName;
+
+  /// No description provided for @accountEditName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get accountEditName;
+
+  /// No description provided for @accountEditNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit your name'**
+  String get accountEditNameTitle;
+
+  /// No description provided for @accountNameHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how your teachers, classmates and family see you.'**
+  String get accountNameHelp;
+
+  /// No description provided for @accountNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name of up to 160 characters.'**
+  String get accountNameInvalid;
+
+  /// No description provided for @accountNameSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Name saved'**
+  String get accountNameSaved;
+
+  /// No description provided for @accountNameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name couldn\'t be saved. Please try again.'**
+  String get accountNameFailed;
+
+  /// No description provided for @accountSaveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get accountSaveAction;
+
+  /// No description provided for @accountCancelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get accountCancelAction;
+
+  /// No description provided for @accountPublicIdDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy support may ask for this number. It can\'t be used to see your account or to link to a child.'**
+  String get accountPublicIdDetail;
+
+  /// No description provided for @navAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get navAnnouncements;
+
+  /// No description provided for @announcementsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'News from your children\'s schools'**
+  String get announcementsSubtitle;
+
+  /// No description provided for @announcementsAllChildren.
+  ///
+  /// In en, this message translates to:
+  /// **'All children'**
+  String get announcementsAllChildren;
+
+  /// No description provided for @announcementsNoChildren.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a child to see their school\'s announcements.'**
+  String get announcementsNoChildren;
+
+  /// No description provided for @announcementsFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'{school} · {children}'**
+  String announcementsFrom(String school, String children);
+
+  /// No description provided for @learningSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons, work, tests, grades and attendance'**
+  String get learningSubtitle;
+
+  /// No description provided for @learningFilterByChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by child'**
+  String get learningFilterByChild;
+
+  /// No description provided for @learningNoChildrenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No child linked yet'**
+  String get learningNoChildrenTitle;
+
+  /// No description provided for @learningNoChildrenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a child from Today to follow their lessons, work and grades here.'**
+  String get learningNoChildrenBody;
+
+  /// No description provided for @parentTodaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your children\'s day at a glance'**
+  String get parentTodaySubtitle;
+
+  /// No description provided for @parentQuickLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a child'**
+  String get parentQuickLink;
+
+  /// No description provided for @parentQuickLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get parentQuickLearning;
+
+  /// No description provided for @parentQuickAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get parentQuickAnnouncements;
+
+  /// No description provided for @parentQuickMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Message a teacher'**
+  String get parentQuickMessages;
+
+  /// No description provided for @parentChildrenSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Your children'**
+  String get parentChildrenSection;
+
+  /// No description provided for @parentNoChildrenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link your first child'**
+  String get parentNoChildrenTitle;
+
+  /// No description provided for @parentNoChildrenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your child for their Studafy ID. They approve the request on their own device.'**
+  String get parentNoChildrenBody;
+
+  /// No description provided for @parentChildOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get parentChildOpen;
+
+  /// No description provided for @parentLinkSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get parentLinkSearching;
+
+  /// No description provided for @familyPlusNoPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'No Family+ plan yet'**
+  String get familyPlusNoPlan;
+
+  /// No description provided for @familyPlusCoveredCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Covers {count} of your children'**
+  String familyPlusCoveredCount(int count);
+
+  /// No description provided for @familyPlusEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Active until {date}'**
+  String familyPlusEnds(String date);
+
+  /// No description provided for @familyPlusWhatYouGet.
+  ///
+  /// In en, this message translates to:
+  /// **'What Family+ adds'**
+  String get familyPlusWhatYouGet;
+
+  /// No description provided for @familyPlusPlansTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a plan'**
+  String get familyPlusPlansTitle;
+
+  /// No description provided for @familyPlusManagePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get familyPlusManagePlan;
+
+  /// No description provided for @famLinkCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The security check didn\'t go through. Please try again.'**
+  String get famLinkCheckFailed;
+
+  /// No description provided for @famLinkAlready.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already asked to link this child, or they\'re linked already.'**
+  String get famLinkAlready;
+
+  /// No description provided for @famLinkIdHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Your child finds it on their Profile, under Your Studafy ID.'**
+  String get famLinkIdHelp;
+
+  /// No description provided for @familyPlusCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get familyPlusCurrentPlan;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -8596,6 +8596,7 @@ class V1ProfileResponseDto {
     this.gender,
     this.setupComplete,
     this.accountKind,
+    this.publicId,
   });
 
   factory V1ProfileResponseDto.fromJson(Map<String, dynamic> json) =>
@@ -8606,6 +8607,7 @@ class V1ProfileResponseDto {
         gender: json['gender'] as String?,
         setupComplete: json['setupComplete'] as bool?,
         accountKind: json['accountKind'] as String?,
+        publicId: json['publicId'] as String?,
       );
 
   final String id;
@@ -8614,6 +8616,7 @@ class V1ProfileResponseDto {
   final String? gender;
   final bool? setupComplete;
   final String? accountKind;
+  final String? publicId;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -8622,6 +8625,7 @@ class V1ProfileResponseDto {
     'gender': ?gender,
     'setupComplete': ?setupComplete,
     'accountKind': ?accountKind,
+    'publicId': ?publicId,
   };
 }
 

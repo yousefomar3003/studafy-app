@@ -6,8 +6,10 @@ import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/navigation.dart';
 import '../../../core/result.dart';
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
 import 'child_progress_page.dart';
@@ -29,7 +31,16 @@ class FamilyHomePage extends StatefulWidget {
     this.onCreateChildAccount,
     this.actions = const [],
     this.sections = const [],
+    this.quickActions = const [],
+    this.onChildrenChanged,
   });
+
+  /// Shortcuts to the parent's other workflows, built by the shell.
+  final List<FamilyQuickAction> quickActions;
+
+  /// Every time the children are read, so the shell's other tabs (Learning,
+  /// Announcements) filter by the same list.
+  final ValueChanged<List<GuardianChild>>? onChildrenChanged;
 
   /// Creates an account for a child who has none, from the parent's own
   /// account. Supplied by the shell, which owns the device's accounts; null
@@ -49,10 +60,10 @@ class FamilyHomePage extends StatefulWidget {
   final void Function(GuardianChild child)? onOpenChild;
 
   @override
-  State<FamilyHomePage> createState() => _FamilyHomePageState();
+  State<FamilyHomePage> createState() => FamilyHomePageState();
 }
 
-class _FamilyHomePageState extends State<FamilyHomePage> {
+class FamilyHomePageState extends State<FamilyHomePage> {
   List<GuardianChild> _children = const [];
   List<PurchaseApprovalRequest> _approvals = const [];
   bool _loading = true;
@@ -81,6 +92,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
         onFailure: (failure) => _failure = failure,
       );
     });
+    widget.onChildrenChanged?.call(_children);
     _keepSelectionValid();
   }
 
@@ -104,6 +116,8 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
   }
 
   /// A child either has an account to link to, or the parent makes one.
+  Future<void> linkChild() => _linkChild();
+
   Future<void> _linkChild() async {
     final create = widget.onCreateChildAccount;
     if (create != null) {
@@ -158,139 +172,134 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final name = (ActiveContextController.instance.profile?.displayName ?? '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .first;
+    final today = MaterialLocalizations.of(context)
+        .formatFullDate(DateTime.now());
     return Scaffold(
-      backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: studafyCanvas,
-        title: Text(AppL10n.of(context).famTitle),
+        // The brand heads the home screen, as for every role.
+        title: const StudafyLogo(size: 26),
+        titleSpacing: 20,
         actions: widget.actions,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _failure != null
-          ? StudafyStatusCard(
-              icon: Icons.error_outline_rounded,
-              title: AppL10n.of(context).famErrorTitle,
-              message: familyFailureText(context, _failure!),
-              actionLabel: AppL10n.of(context).famRetry,
-              onAction: _load,
+          ? Center(
+              child: StudafyEmptyState(
+                icon: Icons.wifi_off_rounded,
+                title: l10n.famErrorTitle,
+                message: familyFailureText(context, _failure!),
+                actionLabel: l10n.famRetry,
+                onAction: _load,
+              ),
             )
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 96),
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),
                 children: [
+                  StudafyHero(
+                    eyebrow: today,
+                    title: name.isEmpty
+                        ? l10n.todayHello
+                        : l10n.todayHelloName(name),
+                    subtitle: l10n.parentTodaySubtitle,
+                    icon: Icons.favorite_rounded,
+                  ),
                   if (_approvals.isNotEmpty) ...[
-                    _SectionTitle(AppL10n.of(context).famApprovalsTitle),
+                    SectionHeader(l10n.famApprovalsTitle),
                     for (final request in _approvals)
                       _ApprovalCard(
                         request: request,
                         onApprove: () => _decide(request, true),
                         onDecline: () => _decide(request, false),
                       ),
-                    const SizedBox(height: 16),
                   ],
-                  StudafyHero(
-                    eyebrow: AppL10n.of(context).familyHomeTogetherEveryDay,
-                    title: AppL10n.of(context).famChildren,
-                    subtitle: AppL10n.of(context)
-                        .familyHomeTheirWorldIsGrowingBe,
-                    icon: Icons.favorite_rounded,
-                  ),
-                  const SizedBox(height: 28),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final columns = constraints.maxWidth > 600 ? 3 : 2;
-                      final width =
-                          (constraints.maxWidth - (columns - 1) * 14) / columns;
-                      return Wrap(
-                        spacing: 14,
-                        runSpacing: 14,
-                        children: [
-                          for (final child in _children)
-                            SizedBox(
-                              width: width,
-                              child: _ChildCard(
-                                child: child,
-                                onOpen: child.isVerified
-                                    ? () => _open(child)
-                                    : null,
-                              ),
+                  SectionHeader(
+                    l10n.parentChildrenSection,
+                    // Compact and labelled: linking is one action among
+                    // several, not the whole page.
+                    action: _children.isEmpty
+                        ? null
+                        : TextButton.icon(
+                            onPressed: _linkChild,
+                            icon: const Icon(
+                              Icons.person_add_rounded,
+                              size: 19,
                             ),
-                          SizedBox(
-                            width: width,
-                            child: Semantics(
-                              button: true,
-                              label: AppL10n.of(context).famLink,
-                              child: Material(
-                                color: const Color(0xFFECEBFF),
-                                borderRadius: BorderRadius.circular(26),
-                                child: InkWell(
-                                  onTap: _linkChild,
-                                  borderRadius: BorderRadius.circular(26),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 30,
-                                      horizontal: 16,
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          width: 76,
-                                          height: 76,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: .7,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              26,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.add_rounded,
-                                            size: 34,
-                                            color: studafyNavy,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 18),
-                                        Text(
-                                          AppL10n.of(context).famLink,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            color: studafyNavy,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          Localizations.localeOf(context)
-                                                      .languageCode ==
-                                                  'ar'
-                                              ? 'ابدأ بمعرّف طفلك'
-                                              : 'Start with their ID',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: studafyMuted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            label: Text(l10n.parentQuickLink),
+                          ),
+                  ),
+                  if (_children.isEmpty)
+                    FeatureCard(
+                      child: Column(
+                        children: [
+                          const IconBadge(
+                            icon: Icons.family_restroom_rounded,
+                            size: 56,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            l10n.parentNoChildrenTitle,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: studafyInk,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.parentNoChildrenBody,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: studafyMuted,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          FilledButton.icon(
+                            onPressed: _linkChild,
+                            icon: const Icon(Icons.person_add_rounded),
+                            label: Text(l10n.parentQuickLink),
+                          ),
                         ],
-                      );
-                    },
-                  ),
-                  if (_children.isEmpty) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      AppL10n.of(context).famEmptyMessage,
-                      style: const TextStyle(color: studafyMuted),
-                      textAlign: TextAlign.center,
+                      ),
+                    )
+                  else
+                    for (final child in _children)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ChildRow(
+                          child: child,
+                          onOpen: child.isVerified ? () => _open(child) : null,
+                        ),
+                      ),
+                  if (widget.quickActions.isNotEmpty) ...[
+                    SectionHeader(l10n.todayQuickActions),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth > 560 ? 4 : 2;
+                        final width =
+                            (constraints.maxWidth - (columns - 1) * 10) /
+                            columns;
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final action in widget.quickActions)
+                              SizedBox(
+                                width: width,
+                                child: _QuickActionTile(action: action),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                   ...widget.sections,
@@ -301,29 +310,61 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
+/// A shortcut on the parent's Today, wired by the shell. [linksChild] marks
+/// the one that opens "Link a child" on this page itself.
+@immutable
+class FamilyQuickAction {
+  const FamilyQuickAction({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.linksChild = false,
+  });
 
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Semantics(
-      header: true,
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: studafyInk,
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    ),
-  );
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool linksChild;
 }
 
-class _ChildCard extends StatelessWidget {
-  const _ChildCard({required this.child, this.onOpen});
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({required this.action});
+
+  final FamilyQuickAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.findAncestorStateOfType<FamilyHomePageState>();
+    final onTap = action.linksChild ? state?.linkChild : action.onTap;
+    return FeatureCard(
+      onTap: onTap,
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 10, 12),
+      child: Row(
+        children: [
+          IconBadge(icon: action.icon, size: 38),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              action.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: studafyInk,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One linked child: who, which school, and whether the link is approved.
+class _ChildRow extends StatelessWidget {
+  const _ChildRow({required this.child, this.onOpen});
 
   final GuardianChild child;
   final VoidCallback? onOpen;
@@ -331,91 +372,44 @@ class _ChildCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final verified = child.isVerified;
-    final colors = [
-      const Color(0xFFDFF5EB),
-      const Color(0xFFFFEBD6),
-      const Color(0xFFE7E4FF),
-      const Color(0xFFDDEFFD),
-    ];
-    final tint =
-        colors[child.studentId.codeUnits.fold(0, (a, b) => a + b) %
-            colors.length];
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(26),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 14),
-          child: Column(
-            children: [
-              Container(
-                width: 84,
-                height: 84,
-                decoration: BoxDecoration(
-                  color: tint,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Center(
-                  child: Text(
-                    child.studentName.isEmpty
-                        ? '?'
-                        : child.studentName.characters.first.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w800,
-                      color: studafyInk,
-                    ),
+    return FeatureCard(
+      onTap: onOpen,
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 10, 12),
+      child: Row(
+        children: [
+          InitialsAvatar(name: child.studentName, radius: 24),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                UserContentText(
+                  child.studentName,
+                  style: const TextStyle(
+                    color: studafyInk,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                child.studentName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: studafyInk,
+                if (child.schoolName.isNotEmpty)
+                  UserContentText(
+                    child.schoolName,
+                    style: const TextStyle(color: studafyMuted, fontSize: 13),
+                  ),
+                const SizedBox(height: 6),
+                StatusPill(
+                  label: familyText(context, 'status.${child.status.name}'),
+                  icon: verified
+                      ? Icons.check_circle_rounded
+                      : Icons.schedule_rounded,
+                  color: verified ? studafyTeal : studafyMuted,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                child.schoolName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: studafyMuted, fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    verified
-                        ? Icons.check_circle_rounded
-                        : Icons.schedule_rounded,
-                    size: 14,
-                    color: verified ? const Color(0xFF087B61) : studafyMuted,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      familyText(context, 'status.${child.status.name}'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: verified
-                            ? const Color(0xFF087B61)
-                            : studafyMuted,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          if (onOpen != null)
+            Icon(forwardChevron(context), color: studafyMuted),
+        ],
       ),
     );
   }
@@ -436,7 +430,7 @@ class _ApprovalCard extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
     child: FeatureCard(
-      tint: const Color(0xFFF2B01E),
+      tint: studafyTeal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -508,6 +502,16 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
       result = await FamilyScope.of(context)
           .locate(_code.text, captchaToken: captchaToken);
       if (!mounted) return;
+      // Refused even with a fresh check: the check itself did not hold.
+      if (result case FailureResult(
+        failure: Failure(code: Failure.forbiddenCode),
+      )) {
+        setState(() {
+          _busy = false;
+          _message = AppL10n.of(context).famLinkCheckFailed;
+        });
+        return;
+      }
     }
     setState(() {
       _busy = false;
@@ -555,7 +559,10 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
       onSuccess: (child) => Navigator.pop(context, child),
       onFailure: (failure) => setState(() {
         _busy = false;
-        _message = familyFailureText(context, failure);
+        // The server refuses a second request for the same child.
+        _message = failure.code == Failure.validationCode
+            ? AppL10n.of(context).famLinkAlready
+            : familyFailureText(context, failure);
       }),
     );
   }
@@ -572,44 +579,93 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
           children: [
             Text(
               AppL10n.of(context).famLinkTitle,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                color: studafyInk,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _code,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: InputDecoration(
-                      labelText: AppL10n.of(context).famLinkHint,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _find(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: _busy ? null : _find,
-                  child: Text(AppL10n.of(context).famLinkFind),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              AppL10n.of(context).famLinkIdHelp,
+              style: const TextStyle(color: studafyMuted, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _code,
+              autofocus: true,
+              enabled: !_busy,
+              textCapitalization: TextCapitalization.characters,
+              autocorrect: false,
+              decoration: InputDecoration(
+                labelText: AppL10n.of(context).famLinkHint,
+                prefixIcon: const Icon(Icons.qr_code_rounded),
+              ),
+              onSubmitted: (_) => _find(),
             ),
             if (_message != null)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(_message!),
-              ),
-            if (found != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: FilledButton(
-                  onPressed: _busy ? null : _request,
+                padding: const EdgeInsets.only(top: 10),
+                child: Semantics(
+                  liveRegion: true,
                   child: Text(
-                    AppL10n.of(context).famLinkConfirm(found.displayName),
+                    _message!,
+                    style: const TextStyle(color: studafyDanger, height: 1.4),
                   ),
                 ),
               ),
+            const SizedBox(height: 14),
+            if (found == null)
+              FilledButton.icon(
+                onPressed: _busy ? null : _find,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                icon: _busy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.search_rounded),
+                label: Text(
+                  _busy
+                      ? AppL10n.of(context).parentLinkSearching
+                      : AppL10n.of(context).famLinkFind,
+                ),
+              )
+            else ...[
+              FeatureCard(
+                child: Row(
+                  children: [
+                    InitialsAvatar(name: found.displayName),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: UserContentText(
+                        found.displayName,
+                        style: const TextStyle(
+                          color: studafyInk,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: _busy ? null : _request,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                child: Text(
+                  AppL10n.of(context).famLinkConfirm(found.displayName),
+                ),
+              ),
+            ],
           ],
         ),
       ),

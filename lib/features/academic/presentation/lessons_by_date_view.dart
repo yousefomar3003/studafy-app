@@ -78,7 +78,9 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
             icon: Icons.wifi_off_rounded,
             title: AppL10n.of(context).lessonsLessonsCouldNotBeLoaded,
             actionLabel: AppL10n.of(context).studySetTryAgain,
-            onAction: () => setState(() => _lessons = _load()),
+            onAction: () => setState(() {
+              _lessons = _load();
+            }),
           ),
         );
       }
