@@ -489,4 +489,42 @@ void main() {
     // One child shown: no per-row label repeating the filter.
     expect(find.text('Layla · Al-Noor'), findsNothing);
   });
+
+  testWidgets('a class page has no row of tools - only its options menu', (
+    tester,
+  ) async {
+    var deleted = 0;
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository(records),
+          classroomId: 'class-1',
+          title: 'Biology 9A',
+          teacherTools: true,
+          appBarActions: [
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'Options',
+              onSelected: (action) => action(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: () => deleted++,
+                  child: const Text('Delete class'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final gone in ['Roster', 'Schedule', 'Sections', 'Gradebook']) {
+      expect(find.text(gone), findsNothing, reason: gone);
+    }
+    await tester.tap(find.byTooltip('Options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete class'));
+    await tester.pumpAndSettle();
+    expect(deleted, 1);
+  });
 }

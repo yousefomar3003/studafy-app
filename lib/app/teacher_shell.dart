@@ -8,12 +8,7 @@ import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
-import '../features/academic/presentation/attendance_page.dart';
-import '../features/academic/presentation/class_roster_page.dart';
-import '../features/academic/presentation/class_schedule_page.dart';
-import '../features/academic/presentation/class_sections_page.dart';
 import '../features/academic/presentation/gradebook_home_page.dart';
-import '../features/academic/presentation/gradebook_page.dart';
 import '../features/academic/presentation/submissions_page.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
@@ -21,8 +16,6 @@ import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/notifications/presentation/notifications_page.dart';
-import '../features/school_operations/domain/school_operations_repository.dart';
-import '../features/school_operations/presentation/classroom_management_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
 import 'teacher_create_actions.dart';
@@ -37,33 +30,6 @@ class TeacherShell extends StatefulWidget {
 
 class _TeacherShellState extends State<TeacherShell> {
   int index = 0;
-
-  // API-041 classes open only the typed authoritative/preview academic port.
-  /// Opens a conversation with a child's guardian.
-  ///
-  /// Contact runs through Studafy's own messaging rather than by handing the
-  /// teacher a family's phone number: those threads are moderated, logged,
-  /// and can be reported or blocked by either side.
-  Future<void> _messageGuardian(
-    BuildContext context,
-    StudentGuardian guardian,
-  ) async {
-    final schoolId = ActiveContextController.instance.membership?.schoolId;
-    if (schoolId == null) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    final result = await MessagingScope.of(
-      context,
-    ).startConversation(schoolId: schoolId, participantIds: [guardian.userId]);
-    result.fold(
-      onSuccess: (_) => navigator.pushOnce(
-        MaterialPageRoute<void>(
-          builder: (_) => const ConversationsPage(asRole: MessagingRole.staff),
-        ),
-      ),
-      onFailure: (failure) => messenger.showMessage(failure.message),
-    );
-  }
 
   /// Supplies the class filter its options, so every feed a teacher reads
   /// can be narrowed to one of their classes.
@@ -90,7 +56,7 @@ class _TeacherShellState extends State<TeacherShell> {
           title: classroom.name,
           teacherTools: true,
           initialFeed: AcademicFeed.content,
-          // Marks are kept in the Gradebook, one tap away in the tools.
+          // Marks are kept in the Gradebook tab.
           availableFeeds: const [
             AcademicFeed.content,
             AcademicFeed.assignments,
@@ -115,164 +81,34 @@ class _TeacherShellState extends State<TeacherShell> {
               ),
             ),
           ),
-          actions: [
-            if (widget.dependencies.schoolOperations != null)
-              Builder(
-                builder: (pageContext) => _ClassToolButton(
-                  tooltip: AppL10n.of(pageContext)
-                      .teacherShellManageRosterStaffAndMeetings,
-                  icon: const Icon(Icons.tune_rounded),
-                  onPressed: () async {
-                    final result = await widget.dependencies.classes
-                        .loadClasses();
-                    if (!pageContext.mounted) return;
-                    final classrooms = result.fold(
-                      onSuccess: (value) => value,
-                      onFailure: (_) => <ClassroomSummary>[classroom],
-                    );
-                    await Navigator.of(pageContext).pushOnce(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ClassroomManagementPage(
-                          repository: widget.dependencies.schoolOperations!,
-                          classroom: ManagedClassroom(
-                            id: classroom.id.value,
-                            name: classroom.name,
-                          ),
-                          classrooms: [
-                            for (final item in classrooms)
-                              ManagedClassroom(
-                                id: item.id.value,
-                                name: item.name,
-                              ),
-                          ],
+          // No row of tools across the class: attendance and marks are in
+          // the "+" menu and the Gradebook tab, as everything else is. The
+          // one thing only a class can do - deleting it - is in its menu.
+          appBarActions: [
+            Builder(
+              builder: (pageContext) => PopupMenuButton<VoidCallback>(
+                tooltip: AppL10n.of(pageContext).msgOptions,
+                icon: const Icon(Icons.more_horiz_rounded),
+                onSelected: (action) => action(),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: () => _deleteClass(pageContext, classroom),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 20,
+                          color: studafyDanger,
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).rosterAction,
-                icon: const Icon(Icons.groups_outlined),
-                onPressed: () => Navigator.of(pageContext).pushOnce(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ClassRosterPage(
-                      repository: academic,
-                      classroomId: classroom.id.value,
-                      classroomName: classroom.name,
-                      onMessageGuardian: MessagingScope.isAvailable(pageContext)
-                          ? (guardian) =>
-                                _messageGuardian(pageContext, guardian)
-                          : null,
+                        const SizedBox(width: 12),
+                        Text(
+                          AppL10n.of(pageContext).classDeleteAction,
+                          style: const TextStyle(color: studafyDanger),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).scheduleAction,
-                icon: const Icon(Icons.calendar_month_outlined),
-                onPressed: () async {
-                  final slots = await academic.classroomSchedule(
-                    classroom.id.value,
-                  );
-                  if (!pageContext.mounted) return;
-                  await Navigator.of(pageContext).pushOnce(
-                    MaterialPageRoute<void>(
-                      builder: (_) => ClassSchedulePage(
-                        repository: academic,
-                        classroomId: classroom.id.value,
-                        classroomName: classroom.name,
-                        expectedVersion: classroom.version,
-                        initialSlots: slots,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).sectionsAction,
-                icon: const Icon(Icons.menu_book_outlined),
-                onPressed: () => Navigator.of(pageContext).pushOnce(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ClassSectionsPage(
-                      repository: academic,
-                      classroomId: classroom.id.value,
-                      classroomName: classroom.name,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).gradebookAction,
-                icon: const Icon(Icons.grade_outlined),
-                onPressed: () => Navigator.of(pageContext).pushOnce(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ClassGradebookPage(
-                      repository: academic,
-                      classroomId: classroom.id.value,
-                      classroomName: classroom.name,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).academicAddLesson,
-                icon: const Icon(Icons.note_add_outlined),
-                onPressed: () => _create.newLesson(
-                  pageContext,
-                  classroomId: classroom.id.value,
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).examAction,
-                icon: const Icon(Icons.quiz_outlined),
-                onPressed: () => _create.newExam(
-                  pageContext,
-                  classroomId: classroom.id.value,
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).assignmentAction,
-                icon: const Icon(Icons.assignment_add),
-                onPressed: () => _create.newAssignment(
-                  pageContext,
-                  classroomId: classroom.id.value,
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).attendanceAction,
-                icon: const Icon(Icons.fact_check_outlined),
-                onPressed: () => Navigator.of(pageContext).pushOnce(
-                  MaterialPageRoute<void>(
-                    builder: (_) => AttendancePage(
-                      repository: academic,
-                      classroomId: classroom.id.value,
-                      classroomName: classroom.name,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Builder(
-              builder: (pageContext) => _ClassToolButton(
-                tooltip: AppL10n.of(pageContext).classDeleteAction,
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () => _deleteClass(pageContext, classroom),
+                ],
               ),
             ),
           ],
@@ -506,33 +342,6 @@ class _TeacherShellState extends State<TeacherShell> {
       ),
     );
   }
-}
-
-class _ClassToolButton extends StatelessWidget {
-  const _ClassToolButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
-  final String tooltip;
-  final Widget icon;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.only(end: 8),
-    child: FilledButton.tonalIcon(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: studafyNavy,
-        side: const BorderSide(color: studafyHairline),
-        minimumSize: const Size(0, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-      ),
-      icon: icon,
-      label: Text(tooltip),
-    ),
-  );
 }
 
 /// A large page title, as in iOS, with nothing competing with it.

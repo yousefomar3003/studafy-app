@@ -27,6 +27,7 @@ class AcademicOverviewPage extends StatefulWidget {
     this.teacherTools = false,
     this.initialFeed = AcademicFeed.assignments,
     this.actions = const [],
+    this.appBarActions = const [],
     this.onOpenRecord,
     this.availableFeeds = AcademicFeed.values,
     this.title,
@@ -75,8 +76,11 @@ class AcademicOverviewPage extends StatefulWidget {
   final void Function(AcademicRecord record)? onOpenRecord;
   final AcademicFeed initialFeed;
 
-  /// App bar actions supplied by the host shell, such as its account entry.
+  /// A row of controls supplied by the host shell, under the title.
   final List<Widget> actions;
+
+  /// Controls in the app bar itself, such as a page's options menu.
+  final List<Widget> appBarActions;
 
   /// Lets a teacher attach files to what they are filing. Null - or a null
   /// [schoolId] - leaves the attachment control out entirely rather than
@@ -422,7 +426,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     return Scaffold(
       appBar: largeTitle
           ? null
-          : AppBar(title: Text(widget.title ?? l10n.academicTitle)),
+          : AppBar(
+              title: Text(widget.title ?? l10n.academicTitle),
+              actions: widget.appBarActions,
+            ),
       body: Column(
         children: [
           if (largeTitle)
