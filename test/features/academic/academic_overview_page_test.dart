@@ -339,7 +339,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Title'),
       'Quiet this week',
     );
-    await tester.tap(find.text('Staff and parents'));
+    await tester.tap(find.text('You and the parents'));
     await tester.ensureVisible(find.text('Save note'));
     await tester.tap(find.text('Save note'));
     await tester.pumpAndSettle();

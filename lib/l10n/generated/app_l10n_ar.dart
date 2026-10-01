@@ -4680,20 +4680,20 @@ class AppL10nAr extends AppL10n {
   String get wellbeingWhoSees => 'من يمكنه قراءتها؟';
 
   @override
-  String get wellbeingSeeStaff => 'طاقم الصف فقط';
+  String get wellbeingSeeStaff => 'أنت فقط';
 
   @override
-  String get wellbeingSeeStaffDetail => 'معلمو هذا الصف فقط.';
+  String get wellbeingSeeStaffDetail => 'تبقى لك بصفتك معلم هذا الصف.';
 
   @override
-  String get wellbeingSeeGuardians => 'الطاقم وأولياء الأمور';
+  String get wellbeingSeeGuardians => 'أنت وأولياء الأمور';
 
   @override
   String get wellbeingSeeGuardiansDetail =>
       'وأيضًا أولياء أمور الطالب المرتبطون.';
 
   @override
-  String get wellbeingSeeStudent => 'الطاقم وأولياء الأمور والطالب';
+  String get wellbeingSeeStudent => 'أنت وأولياء الأمور والطالب';
 
   @override
   String get wellbeingSeeStudentDetail => 'وأيضًا أولياء الأمور والطالب نفسه.';

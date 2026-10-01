@@ -8034,19 +8034,19 @@ abstract class AppL10n {
   /// No description provided for @wellbeingSeeStaff.
   ///
   /// In en, this message translates to:
-  /// **'Class staff only'**
+  /// **'Only you'**
   String get wellbeingSeeStaff;
 
   /// No description provided for @wellbeingSeeStaffDetail.
   ///
   /// In en, this message translates to:
-  /// **'Only this class\'s teachers.'**
+  /// **'Kept to you, as this class\'s teacher.'**
   String get wellbeingSeeStaffDetail;
 
   /// No description provided for @wellbeingSeeGuardians.
   ///
   /// In en, this message translates to:
-  /// **'Staff and parents'**
+  /// **'You and the parents'**
   String get wellbeingSeeGuardians;
 
   /// No description provided for @wellbeingSeeGuardiansDetail.
@@ -8058,7 +8058,7 @@ abstract class AppL10n {
   /// No description provided for @wellbeingSeeStudent.
   ///
   /// In en, this message translates to:
-  /// **'Staff, parents and the student'**
+  /// **'You, the parents and the student'**
   String get wellbeingSeeStudent;
 
   /// No description provided for @wellbeingSeeStudentDetail.

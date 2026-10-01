@@ -4685,20 +4685,21 @@ class AppL10nEn extends AppL10n {
   String get wellbeingWhoSees => 'Who can read it?';
 
   @override
-  String get wellbeingSeeStaff => 'Class staff only';
+  String get wellbeingSeeStaff => 'Only you';
 
   @override
-  String get wellbeingSeeStaffDetail => 'Only this class\'s teachers.';
+  String get wellbeingSeeStaffDetail =>
+      'Kept to you, as this class\'s teacher.';
 
   @override
-  String get wellbeingSeeGuardians => 'Staff and parents';
+  String get wellbeingSeeGuardians => 'You and the parents';
 
   @override
   String get wellbeingSeeGuardiansDetail =>
       'Also the student\'s linked parents.';
 
   @override
-  String get wellbeingSeeStudent => 'Staff, parents and the student';
+  String get wellbeingSeeStudent => 'You, the parents and the student';
 
   @override
   String get wellbeingSeeStudentDetail =>
