@@ -13,6 +13,7 @@ import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/family/presentation/student_family_page.dart';
 import '../features/meetings/presentation/upcoming_meetings_section.dart';
+import '../features/notifications/domain/notification.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
 import '../l10n/generated/app_l10n.dart';
@@ -29,7 +30,11 @@ class StudentTodayPage extends StatefulWidget {
     this.classes,
     this.onJoinClass,
     this.subscription,
+    this.onOpenNotification,
   });
+
+  /// Opens what a tapped notification is about; true when it was handled.
+  final bool Function(NotificationItem item)? onOpenNotification;
   final AcademicContentRepository academic;
   final VoidCallback onWork;
   final VoidCallback onNotebook;
@@ -115,7 +120,8 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
             onPressed: () async {
               await Navigator.of(context).pushOnce(
                 MaterialPageRoute<void>(
-                  builder: (_) => const NotificationsPage(),
+                  builder: (_) =>
+                      NotificationsPage(onOpen: widget.onOpenNotification),
                 ),
               );
               unawaited(_loadUnread());

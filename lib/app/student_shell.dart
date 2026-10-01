@@ -16,6 +16,7 @@ import '../features/classes/presentation/join_class_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
+import '../features/notifications/domain/notification.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study/domain/study.dart';
 import '../features/study/presentation/study_plan_copy.dart';
@@ -76,6 +77,36 @@ class StudentShell extends StatefulWidget {
 
 class _StudentShellState extends State<StudentShell> {
   int index = 0;
+
+  /// The tab Work opens on; a notification about marks opens Grades.
+  AcademicFeed _workFeed = AcademicFeed.assignments;
+
+  /// Opens what a notification is about, in this student's app.
+  bool _openNotification(NotificationItem item) {
+    final key = item.templateKey;
+    final messagesIndex = 3 + (widget.studyAssistant == null ? 0 : 1);
+    final (int, AcademicFeed?)? target = switch (key.split('.').first) {
+      'academic' when key.contains('grade') => (2, AcademicFeed.grades),
+      'academic' when key.contains('assessment') => (
+        2,
+        AcademicFeed.assessments,
+      ),
+      'academic' when key.contains('resource') => (1, null),
+      'academic' => (2, AcademicFeed.assignments),
+      'communications' when MessagingScope.isAvailable(context) => (
+        messagesIndex,
+        null,
+      ),
+      _ => null,
+    };
+    if (target == null) return false;
+    setState(() {
+      index = target.$1;
+      if (target.$2 case final feed?) _workFeed = feed;
+      _navCompact = false;
+    });
+    return true;
+  }
 
   /// The bar is compact while the student scrolls down a page, and full
   /// again as soon as they scroll back up or touch it - as on the teacher's.
@@ -191,6 +222,7 @@ class _StudentShellState extends State<StudentShell> {
         classes: widget.classes,
         onJoinClass: widget.classes == null ? null : _joinClass,
         subscription: _subscription,
+        onOpenNotification: _openNotification,
       ),
       // Lessons are free (2026-09-27): every class, its lessons by date and
       // the student's own notebook for it.
@@ -212,13 +244,15 @@ class _StudentShellState extends State<StudentShell> {
           loadClassChoices: widget.classes == null ? null : _classChoices,
         ),
       AcademicOverviewPage(
+        // Re-keyed when a notification picks the tab Work opens on.
+        key: ValueKey(_workFeed),
         repository: repository,
         studentId: studentId,
         // A tab of its own, so a large title like the others, and no
         // profile button: that lives on Today.
         title: AppL10n.of(context).navWork,
         subtitle: AppL10n.of(context).workSubtitle,
-        initialFeed: AcademicFeed.assignments,
+        initialFeed: _workFeed,
         availableFeeds: const [
           AcademicFeed.assignments,
           AcademicFeed.assessments,

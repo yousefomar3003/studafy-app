@@ -527,4 +527,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(deleted, 1);
   });
+
+  testWidgets('a student\'s grades show the mark - never attendance words', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository(const [
+            AcademicRecord(
+              id: 'g1',
+              title: 'Algebra test',
+              detail: '',
+              state: 'published',
+              version: 1,
+              delivery: 'paper',
+              mark: GradeMark.scored,
+              score: 45,
+              outOf: 68,
+            ),
+            AcademicRecord(
+              id: 'g2',
+              title: 'Geometry quiz',
+              detail: '',
+              state: 'published',
+              version: 1,
+              delivery: 'paper',
+              mark: GradeMark.absent,
+              outOf: 20,
+            ),
+          ]),
+          initialFeed: AcademicFeed.grades,
+          availableFeeds: const [AcademicFeed.grades],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('45 out of 68'), findsOne);
+    expect(find.text('Missed the exam'), findsOne);
+    for (final word in ['Published', 'Present', 'Absent']) {
+      expect(find.text(word), findsNothing, reason: word);
+    }
+  });
 }

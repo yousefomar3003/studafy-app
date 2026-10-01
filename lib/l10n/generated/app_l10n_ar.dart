@@ -4214,7 +4214,7 @@ class AppL10nAr extends AppL10n {
   String get paperGradesScore => 'درجة';
 
   @override
-  String get paperGradesAbsent => 'غائب';
+  String get paperGradesAbsent => 'لم يحضر الاختبار';
 
   @override
   String get paperGradesNotGraded => 'بلا تقييم';
@@ -5157,4 +5157,10 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get familyPlusCurrentPlan => 'الخطة الحالية';
+
+  @override
+  String get paperGradesOtherMark => 'علامة أخرى';
+
+  @override
+  String get paperGradesEnterScore => 'إدخال درجة بدلًا من ذلك';
 }

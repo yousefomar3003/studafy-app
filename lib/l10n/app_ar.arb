@@ -1182,7 +1182,7 @@
   "paperGradesOutOf": "من {max}",
   "paperGradesWeight": "يُحتسب {weight}٪",
   "paperGradesScore": "درجة",
-  "paperGradesAbsent": "غائب",
+  "paperGradesAbsent": "لم يحضر الاختبار",
   "paperGradesNotGraded": "بلا تقييم",
   "paperGradesUnmarked": "لم تُصحَّح بعد",
   "paperGradesStateDraft": "مسودة",
@@ -1457,5 +1457,7 @@
   "famLinkCheckFailed": "لم يكتمل التحقق الأمني. يرجى المحاولة مرة أخرى.",
   "famLinkAlready": "لقد طلبت ربط هذا الطفل من قبل، أو أنه مرتبط بالفعل.",
   "famLinkIdHelp": "يجده طفلك في ملفه الشخصي، تحت معرّف Studafy الخاص بك.",
-  "familyPlusCurrentPlan": "الخطة الحالية"
+  "familyPlusCurrentPlan": "الخطة الحالية",
+  "paperGradesOtherMark": "علامة أخرى",
+  "paperGradesEnterScore": "إدخال درجة بدلًا من ذلك"
 }

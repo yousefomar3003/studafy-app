@@ -579,61 +579,83 @@ class _SheetRow extends StatelessWidget {
               ],
             )
           else ...[
-            SegmentedButton<GradeMark?>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(
-                  value: GradeMark.scored,
-                  label: Text(l10n.paperGradesScore),
+            // A score is what a teacher enters, so the box is there
+            // straight away. Missing the exam, or not grading it, are the
+            // exceptions - in a menu, and said in words.
+            if (edit.mark == GradeMark.absent ||
+                edit.mark == GradeMark.notGraded)
+              InputChip(
+                avatar: Icon(
+                  edit.mark == GradeMark.absent
+                      ? Icons.event_busy_rounded
+                      : Icons.remove_circle_outline_rounded,
+                  size: 18,
                 ),
-                ButtonSegment(
-                  value: GradeMark.absent,
-                  label: Text(l10n.paperGradesAbsent),
+                label: Text(
+                  edit.mark == GradeMark.absent
+                      ? l10n.paperGradesAbsent
+                      : l10n.paperGradesNotGraded,
                 ),
-                ButtonSegment(
-                  value: GradeMark.notGraded,
-                  label: Text(l10n.paperGradesNotGraded),
-                ),
-              ],
-              emptySelectionAllowed: true,
-              selected: {if (edit.mark != null) edit.mark},
-              onSelectionChanged: enabled
-                  ? (value) {
-                      edit.mark = value.isEmpty ? null : value.first;
-                      if (edit.mark != GradeMark.scored) edit.score.clear();
-                      onChanged();
-                    }
-                  : null,
-            ),
-            if (edit.mark == GradeMark.scored)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 110,
-                      child: TextField(
-                        controller: edit.score,
-                        enabled: enabled,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          labelText: l10n.paperGradesScore,
-                          border: const OutlineInputBorder(),
-                        ),
-                        onChanged: (_) => onChanged(),
+                deleteButtonTooltipMessage: l10n.paperGradesEnterScore,
+                onDeleted: enabled
+                    ? () {
+                        edit.mark = null;
+                        onChanged();
+                      }
+                    : null,
+              )
+            else
+              Row(
+                children: [
+                  SizedBox(
+                    width: 110,
+                    child: TextField(
+                      controller: edit.score,
+                      enabled: enabled,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: l10n.paperGradesScore,
+                      ),
+                      onChanged: (text) {
+                        edit.mark = text.trim().isEmpty
+                            ? null
+                            : GradeMark.scored;
+                        onChanged();
+                      },
                     ),
-                    const SizedBox(width: 8),
-                    Text(
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
                       l10n.paperGradesOutOf(
                         _PaperGradebookPageState._number(maximumScore),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  PopupMenuButton<GradeMark>(
+                    tooltip: l10n.paperGradesOtherMark,
+                    enabled: enabled,
+                    icon: const Icon(Icons.more_horiz_rounded),
+                    onSelected: (mark) {
+                      edit.mark = mark;
+                      edit.score.clear();
+                      onChanged();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: GradeMark.absent,
+                        child: Text(l10n.paperGradesAbsent),
+                      ),
+                      PopupMenuItem(
+                        value: GradeMark.notGraded,
+                        child: Text(l10n.paperGradesNotGraded),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             if (edit.showComment || edit.feedback.text.isNotEmpty)
               Padding(

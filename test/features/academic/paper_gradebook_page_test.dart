@@ -98,15 +98,19 @@ void _tall(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-Future<void> _choose(WidgetTester tester, String student, String mark) =>
-    tester.tap(
-      find.descendant(
-        of: find
-            .ancestor(of: find.text(student), matching: find.byType(Container))
-            .first,
-        matching: find.text(mark),
-      ),
-    );
+/// Gives [student] a mark. A score needs nothing chosen - its box is already
+/// there; the other marks are in the row's "Other mark" menu.
+Future<void> _choose(WidgetTester tester, String student, String mark) async {
+  if (mark == 'Score') return;
+  final row = find
+      .ancestor(of: find.text(student), matching: find.byType(Container))
+      .first;
+  await tester.tap(
+    find.descendant(of: row, matching: find.byTooltip('Other mark')),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(mark).last);
+}
 
 void main() {
   testWidgets(
@@ -122,7 +126,7 @@ void main() {
       await _choose(tester, 'Amal', 'Score');
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, '17.5');
-      await _choose(tester, 'Bilal', 'Absent');
+      await _choose(tester, 'Bilal', 'Missed the exam');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save draft'));
       await tester.pumpAndSettle();
@@ -151,6 +155,7 @@ void main() {
     await _choose(tester, 'Amal', 'Score');
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '25');
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save draft'));
     await tester.pumpAndSettle();
 
@@ -170,7 +175,7 @@ void main() {
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
-    await _choose(tester, 'Bilal', 'Absent');
+    await _choose(tester, 'Bilal', 'Missed the exam');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save draft'));
     await tester.pumpAndSettle();
@@ -231,7 +236,7 @@ void main() {
     await tester.pumpWidget(_page(fake));
     await tester.pumpAndSettle();
 
-    await _choose(tester, 'Amal', 'Absent');
+    await _choose(tester, 'Amal', 'Missed the exam');
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, 'Publish'));
     await tester.pumpAndSettle();
@@ -301,7 +306,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('حفظ كمسودة'), findsOneWidget);
-    expect(find.text('غائب'), findsNWidgets(2));
+    // Each row's other marks, in Arabic.
+    expect(find.byTooltip('علامة أخرى'), findsNWidgets(2));
     expect(
       Directionality.of(tester.element(find.text('حفظ كمسودة'))),
       TextDirection.rtl,

@@ -2382,7 +2382,7 @@
     }
   },
   "paperGradesScore": "Score",
-  "paperGradesAbsent": "Absent",
+  "paperGradesAbsent": "Missed the exam",
   "paperGradesNotGraded": "Not graded",
   "paperGradesUnmarked": "Not marked yet",
   "paperGradesStateDraft": "Draft",
@@ -2868,5 +2868,7 @@
   "famLinkCheckFailed": "The security check didn't go through. Please try again.",
   "famLinkAlready": "You've already asked to link this child, or they're linked already.",
   "famLinkIdHelp": "Your child finds it on their Profile, under Your Studafy ID.",
-  "familyPlusCurrentPlan": "Current plan"
+  "familyPlusCurrentPlan": "Current plan",
+  "paperGradesOtherMark": "Other mark",
+  "paperGradesEnterScore": "Enter a score instead"
 }

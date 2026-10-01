@@ -4217,7 +4217,7 @@ class AppL10nEn extends AppL10n {
   String get paperGradesScore => 'Score';
 
   @override
-  String get paperGradesAbsent => 'Absent';
+  String get paperGradesAbsent => 'Missed the exam';
 
   @override
   String get paperGradesNotGraded => 'Not graded';
@@ -5168,4 +5168,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get familyPlusCurrentPlan => 'Current plan';
+
+  @override
+  String get paperGradesOtherMark => 'Other mark';
+
+  @override
+  String get paperGradesEnterScore => 'Enter a score instead';
 }

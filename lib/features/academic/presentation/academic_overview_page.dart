@@ -619,9 +619,13 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             (index == 0 || (items[index - 1].delivery == 'paper') != paper)) ||
         (student && (index == 0 || _window(items[index - 1]) != window));
     final className = _className(item);
-    // "Published" says nothing to the person handing work in; whether it is
-    // still open does.
-    final pill = student ? _windowPill(l10n, window) : _statePill(l10n, item);
+    // "Published" says nothing to the person handing work in, or reading
+    // their marks; whether work is still open does.
+    final pill = student
+        ? _windowPill(l10n, window)
+        : grades && !widget.teacherTools
+        ? null
+        : _statePill(l10n, item);
     final labelStyle = Theme.of(context).textTheme.labelSmall
         ?.copyWith(color: studafyMuted, fontWeight: FontWeight.w600);
 
@@ -691,9 +695,19 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                   ),
                   const SizedBox(height: 3),
                   if (grades)
-                    Text(
-                      _markText(l10n, item),
-                      style: const TextStyle(color: studafyInk),
+                    // The mark itself, large: it is what the row is for.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _markText(l10n, item),
+                        style: TextStyle(
+                          color: item.mark == GradeMark.scored
+                              ? studafyDeep
+                              : studafyMuted,
+                          fontSize: item.mark == GradeMark.scored ? 20 : 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     )
                   else if (item.detail.trim().isNotEmpty)
                     LinkedText(item.detail),

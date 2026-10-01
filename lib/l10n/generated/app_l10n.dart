@@ -7206,7 +7206,7 @@ abstract class AppL10n {
   /// No description provided for @paperGradesAbsent.
   ///
   /// In en, this message translates to:
-  /// **'Absent'**
+  /// **'Missed the exam'**
   String get paperGradesAbsent;
 
   /// No description provided for @paperGradesNotGraded.
@@ -8858,6 +8858,18 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Current plan'**
   String get familyPlusCurrentPlan;
+
+  /// No description provided for @paperGradesOtherMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Other mark'**
+  String get paperGradesOtherMark;
+
+  /// No description provided for @paperGradesEnterScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a score instead'**
+  String get paperGradesEnterScore;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
