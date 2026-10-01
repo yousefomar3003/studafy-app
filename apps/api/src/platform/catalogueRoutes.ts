@@ -251,6 +251,7 @@ export function createCatalogueRoutes<Slice extends string>(
             result.outcome,
             CATALOGUE_OUTCOMES,
             authorization.logger,
+            result.rows,
           );
         }
         const parsed = route.response.safeParse(result.response);

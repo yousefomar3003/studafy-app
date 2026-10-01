@@ -24,7 +24,7 @@ void main() {
   );
 
   Future<void> openInvite(WidgetTester tester) async {
-    await tester.tap(find.byIcon(Icons.person_add_alt_1_outlined));
+    await tester.tap(find.byTooltip('Invite students'));
     await tester.pumpAndSettle();
   }
 
@@ -37,7 +37,9 @@ void main() {
 
     await openInvite(tester);
     expect(find.text('K7QM-4XTR'), findsOne);
-    await tester.tap(find.text('Copy'));
+    // The code is the invite: the long link is not shown to read out.
+    expect(find.textContaining('://'), findsNothing);
+    await tester.tap(find.text('Copy code'));
     await tester.pumpAndSettle();
     Navigator.of(tester.element(find.text('K7QM-4XTR'))).pop();
     await tester.pumpAndSettle();

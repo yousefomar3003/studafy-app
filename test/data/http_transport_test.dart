@@ -118,4 +118,49 @@ void main() {
       await serving.cancel();
     }
   });
+
+  test('a read already in flight is shared, not sent twice', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    var calls = 0;
+    final serving = server.listen((request) async {
+      calls += 1;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(jsonEncode({'n': calls}));
+      await request.response.close();
+    });
+    var token = 'first-account';
+    final transport = V1HttpTransport(
+      baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      accessToken: () async => token,
+      refreshSession: () async => false,
+      onSessionLost: () {},
+    );
+    try {
+      final both = await Future.wait([
+        transport.get('/v1/classrooms'),
+        transport.get('/v1/classrooms'),
+      ]);
+      expect(
+        calls,
+        1,
+        reason: 'two identical reads in flight make one request',
+      );
+      expect(both[0], both[1]);
+
+      // Once it has completed, the next read goes to the server again.
+      await transport.get('/v1/classrooms');
+      expect(calls, 2);
+
+      // Another account never shares the first account's read.
+      final first = transport.get('/v1/classrooms');
+      token = 'second-account';
+      final second = transport.get('/v1/classrooms');
+      await Future.wait([first, second]);
+      expect(calls, 4);
+    } finally {
+      await serving.cancel();
+      await server.close(force: true);
+    }
+  });
 }

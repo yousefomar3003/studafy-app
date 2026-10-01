@@ -22,6 +22,7 @@ class SubmissionHistoryView extends StatefulWidget {
     this.shrinkWrap = false,
     this.hideWhenEmpty = false,
     this.title,
+    this.onLoaded,
   });
 
   final AssignmentRepository repository;
@@ -40,6 +41,10 @@ class SubmissionHistoryView extends StatefulWidget {
   /// A heading, shown only when there is something under it.
   final String? title;
 
+  /// Handed the attempts once they load, so a host that also needs them -
+  /// the hand-in screen, for the files it can keep - does not ask again.
+  final ValueChanged<List<SubmissionAttempt>>? onLoaded;
+
   @override
   State<SubmissionHistoryView> createState() => SubmissionHistoryViewState();
 }
@@ -49,12 +54,16 @@ class SubmissionHistoryViewState extends State<SubmissionHistoryView> {
 
   // Future.sync: a repository that throws before returning a future still
   // lands in the error branch below rather than breaking the page.
-  Future<List<SubmissionAttempt>> _load() => Future.sync(
-    () => widget.repository.submissionHistory(
-      widget.assignmentId,
-      studentId: widget.studentId,
-    ),
-  );
+  Future<List<SubmissionAttempt>> _load() =>
+      Future.sync(
+        () => widget.repository.submissionHistory(
+          widget.assignmentId,
+          studentId: widget.studentId,
+        ),
+      ).then((attempts) {
+        widget.onLoaded?.call(attempts);
+        return attempts;
+      });
 
   /// Reloads, for a caller that has just added an attempt.
   Future<void> refresh() async {

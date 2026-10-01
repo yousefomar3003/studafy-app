@@ -23,6 +23,10 @@ class NotificationsScope extends InheritedWidget {
     return scope.interactor;
   }
 
+  /// The interactor, or null in a shell that installs none.
+  static NotificationsInteractor? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<NotificationsScope>()?.interactor;
+
   @override
   bool updateShouldNotify(NotificationsScope oldWidget) =>
       interactor != oldWidget.interactor;

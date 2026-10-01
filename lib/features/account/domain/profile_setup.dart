@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 
 /// How someone describes themselves, asked once at first sign-in.
 enum Gender {
-  girl('girl'),
-  boy('boy'),
+  male('male'),
+  female('female'),
   preferNotToSay('prefer_not_to_say');
 
   const Gender(this.wireValue);

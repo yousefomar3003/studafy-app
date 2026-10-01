@@ -128,11 +128,14 @@ void main() {
     final repository = _Session();
     await _pumpParentShell(tester, repository);
 
-    expect(find.byIcon(Icons.account_circle_outlined), findsWidgets);
-    await tester.tap(find.byIcon(Icons.account_circle_outlined).first);
+    expect(find.byTooltip('Account'), findsWidgets);
+    await tester.tap(find.byTooltip('Account').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Sign out'), findsOneWidget);
+    // Below the grouped settings, so scrolled to first.
+    await tester.ensureVisible(find.text('Sign out'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
@@ -148,7 +151,10 @@ void main() {
     final repository = _Session(failServerCall: true);
     await _pumpParentShell(tester, repository);
 
-    await tester.tap(find.byIcon(Icons.account_circle_outlined).first);
+    await tester.tap(find.byTooltip('Account').first);
+    await tester.pumpAndSettle();
+    // Below the grouped settings, so scrolled to first.
+    await tester.ensureVisible(find.text('Sign out'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();

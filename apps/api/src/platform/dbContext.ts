@@ -27,6 +27,36 @@ export interface RequestDbContext {
   aal2: boolean;
 }
 
+/**
+ * Calls one dispatcher as the request's actor, school and request id, in a
+ * single statement and so a single round trip. See [selectAsActor] in
+ * auth/context.ts for why the settings always apply before the call and
+ * never outlive the statement. [call] is a fixed function call whose
+ * arguments are bound parameters; the three settings are bound after them.
+ */
+export async function selectInRequestContext<R>(
+  sql: Sql,
+  context: Pick<RequestDbContext, "subject" | "schoolId" | "requestId">,
+  call: string,
+  parameters: readonly unknown[],
+): Promise<R | null> {
+  const n = parameters.length;
+  const rows = await sql.unsafe<{ result: R }[]>(
+    `select ${call} as result
+     from (select
+       set_config('request.jwt.claim.sub', $${n + 1}, true),
+       set_config('studafy.school_id', $${n + 2}, true),
+       set_config('studafy.request_id', $${n + 3}, true)) as context`,
+    [
+      ...parameters,
+      context.subject,
+      context.schoolId,
+      context.requestId,
+    ] as never,
+  );
+  return rows[0]?.result ?? null;
+}
+
 /** API-041 transaction boundary. Tenant and request correlation are installed
  * with SET LOCAL beside the verified subject so pooled connections cannot
  * retain authority from a previous request. */

@@ -124,8 +124,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                   child: Column(
                     children: [
                       for (final (gender, label) in [
-                        (Gender.girl, l10n.setupGenderGirl),
-                        (Gender.boy, l10n.setupGenderBoy),
+                        (Gender.male, l10n.setupGenderMale),
+                        (Gender.female, l10n.setupGenderFemale),
                         (Gender.preferNotToSay, l10n.setupGenderPreferNot),
                       ])
                         RadioListTile<Gender>(

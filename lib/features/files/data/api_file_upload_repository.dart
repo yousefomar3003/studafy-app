@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
 import '../../../data/contracts/v1_client.generated.dart';
+import '../../../data/contracts/v1_http_transport.dart';
 import 'signed_upload_transport.dart';
 
 /// Fetches a delivery link's bytes with the caller's session attached.
@@ -30,20 +31,22 @@ class ApiFileUploadRepository implements FileUploadRepository {
         complete: 'file-complete-${command.attemptId}',
       ),
     );
-    final intent = await _api.createUploadIntent(
-      V1CreateUploadIntentRequestDto(
-        schoolId: command.schoolId,
-        purpose: command.purpose.wireValue,
-        displayName: command.displayName,
-        expectedSizeBytes: command.bytes.length,
-        declaredMediaType: command.mediaType,
-        sha256: sha256.convert(command.bytes).toString(),
-        classroomId: command.classroomId,
-        assignmentId: command.assignmentId,
-        studentId: command.studentId,
-        gradeResultId: command.gradeResultId,
+    final intent = await _switchedOn(
+      () => _api.createUploadIntent(
+        V1CreateUploadIntentRequestDto(
+          schoolId: command.schoolId,
+          purpose: command.purpose.wireValue,
+          displayName: command.displayName,
+          expectedSizeBytes: command.bytes.length,
+          declaredMediaType: command.mediaType,
+          sha256: sha256.convert(command.bytes).toString(),
+          classroomId: command.classroomId,
+          assignmentId: command.assignmentId,
+          studentId: command.studentId,
+          gradeResultId: command.gradeResultId,
+        ),
+        idempotencyKey: keys.intent,
       ),
-      idempotencyKey: keys.intent,
     );
     if (intent.method != 'PUT') {
       throw const FormatException('Unsupported signed upload method.');
@@ -89,15 +92,15 @@ class ApiFileUploadRepository implements FileUploadRepository {
   @override
   Future<DownloadedFile> download(String fileId) async {
     final fetch = this.fetch;
-    if (fetch == null) {
-      throw StateError('File delivery is not configured in this build.');
-    }
-    final grant = await _api.createFileDownloadIntent(
-      const V1DownloadIntentRequestDto(),
-      fileId: fileId,
-      // Fresh every time: a grant is single-use, so replaying an earlier
-      // response would hand back a link that has already been spent.
-      idempotencyKey: newIdempotencyKey('file-download'),
+    if (fetch == null) throw const FileServiceUnavailable();
+    final grant = await _switchedOn(
+      () => _api.createFileDownloadIntent(
+        const V1DownloadIntentRequestDto(),
+        fileId: fileId,
+        // Fresh every time: a grant is single-use, so replaying an earlier
+        // response would hand back a link that has already been spent.
+        idempotencyKey: newIdempotencyKey('file-download'),
+      ),
     );
     final bytes = await fetch(Uri.parse(grant.downloadUrl));
     return DownloadedFile(
@@ -105,5 +108,26 @@ class ApiFileUploadRepository implements FileUploadRepository {
       mediaType: grant.mediaType,
       bytes: bytes,
     );
+  }
+
+  /// The codes a server sends when its file pipeline is switched off or its
+  /// storage is not configured - as opposed to a dropped connection.
+  static const _switchedOffCodes = {
+    'SERVICE_UNAVAILABLE',
+    'STORAGE_UNAVAILABLE',
+    'FILE_DELIVERY_DISABLED',
+  };
+
+  static Future<T> _switchedOn<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } on V1ApiException catch (error) {
+      // Delivery being off is a 409; the others are 503s.
+      if (_switchedOffCodes.contains(error.code) &&
+          (error.status == 503 || error.code == 'FILE_DELIVERY_DISABLED')) {
+        throw const FileServiceUnavailable();
+      }
+      rethrow;
+    }
   }
 }

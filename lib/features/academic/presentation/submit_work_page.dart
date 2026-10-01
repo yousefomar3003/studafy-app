@@ -5,9 +5,13 @@ import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/studafy_components.dart';
+import '../../../core/studafy_design.dart';
 import '../../../core/uploads_scope.dart';
+import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'coursework_messages.dart';
 import 'submission_history_view.dart';
 
 /// A student handing work in against an assignment.
@@ -28,6 +32,7 @@ class SubmitWorkPage extends StatefulWidget {
     this.attachmentSource,
     this.material = const [],
     this.instructions,
+    this.deadline,
   });
 
   final AssignmentRepository repository;
@@ -57,6 +62,10 @@ class SubmitWorkPage extends StatefulWidget {
   /// rather than after.
   final bool canSubmit;
 
+  /// Until when the work can be handed in or replaced, and whether it still
+  /// can be. The server enforces it either way; this only says so up front.
+  final SubmissionDeadline? deadline;
+
   @override
   State<SubmitWorkPage> createState() => _SubmitWorkPageState();
 }
@@ -67,12 +76,46 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
   String? _error;
   List<Attachment> _attachments = const [];
 
+  /// Files on the work being replaced, and which of them to keep. Kept
+  /// files carry over without another upload.
+  List<StoredAttachment> _previousFiles = const [];
+
+  /// Keeps the history's state (and its one request) when the rows above it
+  /// change.
+  final _historyKey = GlobalKey<SubmissionHistoryViewState>();
+  final Set<String> _keep = {};
+
+  /// Something has been handed in already, so sending replaces it.
+  bool _handedIn = false;
+
+  /// From the history the page already loads: the files on the work being
+  /// replaced, all kept unless the student unticks one.
+  void _previousLoaded(List<SubmissionAttempt> attempts) {
+    final current = attempts.where((a) => a.current).firstOrNull;
+    if (!mounted || current == null) return;
+    setState(() {
+      _handedIn = true;
+      _previousFiles = current.attachments
+          .where((file) => file.isReady)
+          .toList();
+      _keep
+        ..clear()
+        ..addAll(_previousFiles.map((file) => file.id));
+    });
+  }
+
+  bool get _open =>
+      widget.canSubmit &&
+      (widget.deadline?.state ?? SubmissionWindow.open) ==
+          SubmissionWindow.open;
+
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
 
   /// Only files the server actually has. A failed upload is simply absent
   /// rather than blocking the hand-in.
   List<String> get _readyFileIds => [
+    ..._keep,
     for (final item in _attachments) ?item.fileId,
   ];
 
@@ -108,6 +151,12 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
       );
       if (!mounted) return;
       Navigator.of(context).pop(done);
+    } on CourseworkRefusal catch (refusal) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _error = courseworkMessage(l10n, refusal);
+      });
     } on Object {
       if (!mounted) return;
       setState(() {
@@ -120,94 +169,223 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final window = widget.canSubmit
+        ? widget.deadline?.state ?? SubmissionWindow.open
+        : SubmissionWindow.closed;
+    final uploads = widget.uploads ?? UploadsScope.maybeOf(context);
     return Scaffold(
+      backgroundColor: studafyCanvas,
       appBar: AppBar(title: Text(l10n.submitTitle)),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 32),
           children: [
-            Text(
-              widget.assignmentTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+            // What the work is, whether it is open, and until when.
+            FeatureCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const IconBadge(icon: Icons.assignment_rounded),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: UserContentText(
+                          widget.assignmentTitle,
+                          style: const TextStyle(
+                            color: studafyInk,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      switch (window) {
+                        SubmissionWindow.open => StatusPill(
+                          label: l10n.workStateOpen,
+                          icon: Icons.edit_rounded,
+                        ),
+                        SubmissionWindow.closed => StatusPill(
+                          label: l10n.workStateClosed,
+                          icon: Icons.lock_clock_rounded,
+                          color: studafyMuted,
+                        ),
+                        SubmissionWindow.gradedLocked => StatusPill(
+                          label: l10n.workStateGraded,
+                          icon: Icons.grading_rounded,
+                          color: studafyTeal,
+                        ),
+                      },
+                      if (widget.deadline case final deadline?)
+                        _DeadlineLine(deadline: deadline),
+                    ],
+                  ),
+                ],
+              ),
             ),
             if (widget.instructions case final text? when text.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              LinkedText(text),
+              SectionHeader(l10n.submitInstructions),
+              FeatureCard(child: LinkedText(text)),
             ],
             if (widget.material.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                l10n.submitMaterialHeading,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              StoredAttachmentList(
-                attachments: widget.material,
-                uploads: widget.uploads,
+              SectionHeader(l10n.submitMaterialHeading),
+              FeatureCard(
+                padding: const EdgeInsetsDirectional.fromSTEB(14, 6, 8, 6),
+                child: StoredAttachmentList(
+                  attachments: widget.material,
+                  uploads: widget.uploads,
+                ),
               ),
             ],
-            const SizedBox(height: 12),
-            if (!widget.canSubmit)
-              Text(
-                l10n.submitClosed,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+            SectionHeader(l10n.submitAnswerLabel),
+            if (!_open)
+              _Notice(
+                icon: window == SubmissionWindow.gradedLocked
+                    ? Icons.grading_rounded
+                    : Icons.lock_clock_rounded,
+                text: switch (widget.deadline?.state) {
+                  SubmissionWindow.closed => l10n.deadlineClosed,
+                  SubmissionWindow.gradedLocked => l10n.deadlineGraded,
+                  _ => l10n.submitClosed,
+                },
               )
             else ...[
-              TextField(
-                controller: _answer,
-                enabled: !_sending,
-                minLines: 6,
-                maxLines: 16,
-                maxLength: 100000,
-                decoration: InputDecoration(
-                  labelText: l10n.submitAnswerLabel,
-                  hintText: l10n.submitAnswerHint,
-                  border: const OutlineInputBorder(),
+              if (_handedIn)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _Notice(
+                    icon: Icons.history_rounded,
+                    text: l10n.deadlineReplaceHint,
+                  ),
+                ),
+              FeatureCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_previousFiles.isNotEmpty) ...[
+                      Text(
+                        l10n.deadlineKeepFiles,
+                        style: const TextStyle(
+                          color: studafyInk,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      for (final file in _previousFiles)
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          value: _keep.contains(file.id),
+                          title: Text(file.displayName),
+                          onChanged: _sending
+                              ? null
+                              : (value) => setState(() {
+                                  if (value ?? false) {
+                                    _keep.add(file.id);
+                                  } else {
+                                    _keep.remove(file.id);
+                                  }
+                                }),
+                        ),
+                      const Divider(height: 24, color: studafyHairline),
+                    ],
+                    TextField(
+                      controller: _answer,
+                      enabled: !_sending,
+                      minLines: 6,
+                      maxLines: 16,
+                      maxLength: 100000,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: l10n.submitAnswerHint,
+                        counterText: '',
+                        filled: true,
+                        fillColor: studafyCanvas,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (_) {
+                        if (_error != null) setState(() => _error = null);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    // A guardian's route into this page has no uploads to
+                    // hand it; the app-wide scope is the same pipeline
+                    // either way.
+                    if (uploads != null && widget.schoolId != null)
+                      AttachmentField(
+                        purpose: FilePurpose.assignmentSubmission,
+                        schoolId: widget.schoolId!,
+                        assignmentId: widget.assignmentId,
+                        studentId: widget.studentId,
+                        uploads: uploads,
+                        enabled: !_sending,
+                        source:
+                            widget.attachmentSource ?? pickPlatformAttachment,
+                        onChanged: (items) =>
+                            setState(() => _attachments = items),
+                      )
+                    else
+                      Text(
+                        l10n.submitAttachmentsSoon,
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              // A guardian's route into this page has no uploads to hand it;
-              // the app-wide scope is the same pipeline either way.
-              if (widget.uploads ?? UploadsScope.maybeOf(context)
-                  case final uploads?)
-                if (widget.schoolId case final schoolId?)
-                  AttachmentField(
-                    purpose: FilePurpose.assignmentSubmission,
-                    schoolId: schoolId,
-                    assignmentId: widget.assignmentId,
-                    studentId: widget.studentId,
-                    uploads: uploads,
-                    enabled: !_sending,
-                    source: widget.attachmentSource ?? pickPlatformAttachment,
-                    onChanged: (items) => setState(() => _attachments = items),
-                  )
-                else
-                  Text(
-                    l10n.submitAttachmentsSoon,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  )
-              else
-                Text(
-                  l10n.submitAttachmentsSoon,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                _Notice(
+                  icon: Icons.error_outline_rounded,
+                  text: _error!,
+                  danger: true,
                 ),
               ],
-              const SizedBox(height: 20),
-              FilledButton(
+              const SizedBox(height: 16),
+              FilledButton.icon(
                 // Held while an upload is in flight: handing in now would
                 // file the work without the file being waited on.
                 onPressed: _sending || _uploading ? null : _submit,
-                child: Text(_sending ? l10n.submitSending : l10n.submitSend),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(54),
+                ),
+                icon: _sending
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send_rounded),
+                label: Text(
+                  _sending
+                      ? l10n.submitSending
+                      : _handedIn
+                      ? l10n.submitHandInAgain
+                      : l10n.submitSend,
+                ),
               ),
             ],
             // What has already been handed in - including by a parent - so
             // a resubmission is made knowing what it replaces.
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             SubmissionHistoryView(
+              key: _historyKey,
               repository: widget.repository,
               assignmentId: widget.assignmentId,
               studentId: widget.studentId,
@@ -215,10 +393,105 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
               shrinkWrap: true,
               hideWhenEmpty: true,
               title: l10n.historyYours,
+              onLoaded: _previousLoaded,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A calm line of information on a soft background - why work cannot be
+/// handed in, or what handing it in again does. Errors use the same shape
+/// in red.
+class _Notice extends StatelessWidget {
+  const _Notice({required this.icon, required this.text, this.danger = false});
+
+  final IconData icon;
+  final String text;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: danger,
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: danger ? studafyDanger.withValues(alpha: .08) : studafyWash,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: danger ? studafyDanger : studafySteel),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: danger ? studafyDanger : studafyInk,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// "Due 1 Oct 2026 23:59 (Asia/Riyadh)" - on the school's clock, which is
+/// the one the deadline is enforced on.
+class _DeadlineLine extends StatelessWidget {
+  const _DeadlineLine({required this.deadline});
+
+  final SubmissionDeadline deadline;
+
+  String _when(BuildContext context, String local) {
+    final at = DateTime.tryParse(local);
+    if (at == null) return local;
+    final localizations = MaterialLocalizations.of(context);
+    return '${localizations.formatMediumDate(at)} '
+        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at))}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    const style = TextStyle(color: studafyMuted, fontSize: 13);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 1),
+          child: Icon(Icons.schedule_rounded, size: 16, color: studafyMuted),
+        ),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.deadlineDue(
+                  _when(context, deadline.deadlineLocal),
+                  deadline.timeZone,
+                ),
+                style: style.copyWith(
+                  color: studafyInk,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (deadline.extendedUntilLocal case final until?)
+                Text(
+                  l10n.deadlineExtended(_when(context, until)),
+                  style: style,
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

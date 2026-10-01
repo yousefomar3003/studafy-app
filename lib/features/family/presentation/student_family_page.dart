@@ -110,7 +110,9 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
           else if (_family == null)
             const Center(child: CircularProgressIndicator())
           else ...[
-            for (final identity in _family!.identities)
+            // A student has one Studafy ID, however many teachers' classes
+            // they are in, so it is shown once.
+            for (final identity in _family!.identities.take(1))
               FeatureCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

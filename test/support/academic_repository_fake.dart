@@ -1,11 +1,22 @@
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 
-/// One call to [AcademicRepository.recordAttendance].
+/// One call to [AcademicRepository.recordAttendance], or to
+/// [AcademicRepository.correctAttendance] (which has no times).
 class RecordedAttendance {
-  RecordedAttendance(this.startsAt, this.endsAt, this.entries);
-  final DateTime startsAt;
-  final DateTime endsAt;
+  RecordedAttendance(
+    this.startsAt,
+    this.endsAt,
+    this.entries, {
+    this.reason,
+    this.override = false,
+    this.sessionId,
+  });
+  final DateTime? startsAt;
+  final DateTime? endsAt;
   final List<AttendanceDraft> entries;
+  final String? reason;
+  final bool override;
+  final String? sessionId;
 }
 
 /// Implements only what the register needs; `noSuchMethod` absorbs the rest
@@ -16,11 +27,19 @@ class AttendanceFake implements AcademicRepository {
     required this.schedule,
     required this.roster,
     this.version = 0,
+    this.sessionId,
+    this.editRule = AttendanceEditRule.open,
+    this.refusal,
   });
 
   final List<ClassSessionSlot> schedule;
   final List<AttendanceRosterEntry> roster;
   final int version;
+  final String? sessionId;
+  final AttendanceEditRule editRule;
+
+  /// Thrown by every save, when set.
+  final CourseworkRefusal? refusal;
   final recorded = <RecordedAttendance>[];
   final recordedVersions = <int>[];
 
@@ -37,7 +56,12 @@ class AttendanceFake implements AcademicRepository {
     DateTime? startsAt,
   }) async {
     rosterCalls.add(startsAt);
-    return AttendanceRegister(entries: roster, version: version);
+    return AttendanceRegister(
+      entries: roster,
+      version: version,
+      sessionId: sessionId,
+      editRule: editRule,
+    );
   }
 
   @override
@@ -46,10 +70,43 @@ class AttendanceFake implements AcademicRepository {
     DateTime startsAt,
     DateTime endsAt,
     int expectedVersion,
-    List<AttendanceDraft> entries,
-  ) async {
+    List<AttendanceDraft> entries, {
+    String? correctionReason,
+    bool override = false,
+  }) async {
+    if (refusal case final refused?) throw refused;
     recordedVersions.add(expectedVersion);
-    recorded.add(RecordedAttendance(startsAt, endsAt, entries));
+    recorded.add(
+      RecordedAttendance(
+        startsAt,
+        endsAt,
+        entries,
+        reason: correctionReason,
+        override: override,
+      ),
+    );
+  }
+
+  @override
+  Future<void> correctAttendance(
+    String sessionId,
+    int expectedVersion,
+    List<AttendanceDraft> entries, {
+    String? reason,
+    bool override = false,
+  }) async {
+    if (refusal case final refused?) throw refused;
+    recordedVersions.add(expectedVersion);
+    recorded.add(
+      RecordedAttendance(
+        null,
+        null,
+        entries,
+        reason: reason,
+        override: override,
+        sessionId: sessionId,
+      ),
+    );
   }
 
   @override
@@ -190,6 +247,23 @@ class SubmissionsFake implements AcademicRepository {
 
   @override
   Future<List<SubmittedWork>> submissionsFor(String assignmentId) async => work;
+
+  /// Students given more time, and the calls that changed it.
+  List<AssignmentExtension> extensions = const [];
+  final granted = <(String studentId, String untilLocal, String reason)>[];
+
+  @override
+  Future<List<AssignmentExtension>> assignmentExtensions(
+    String assignmentId,
+  ) async => extensions;
+
+  @override
+  Future<void> grantExtension(
+    String assignmentId,
+    String studentId,
+    String untilLocal,
+    String reason,
+  ) async => granted.add((studentId, untilLocal, reason));
 
   /// Earlier attempts per student, newest first. Without an entry a
   /// student's history is just their current work, which is what a server

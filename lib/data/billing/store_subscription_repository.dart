@@ -56,7 +56,8 @@ class StoreSubscriptionRepository
 
   final List<EntitlementChanged> _entitlementListeners = [];
 
-  V1BillingProduct? _insightsProduct;
+  /// The server catalogue's product for each Family+ plan on this store.
+  final Map<FamilyPlusPlan, V1BillingProduct> _familyProducts = {};
 
   /// The store offer each plan's purchase will use, and the billing account
   /// it was read for: a purchase must never bind to a different account than
@@ -146,10 +147,11 @@ class StoreSubscriptionRepository
       final products = catalogue.products
           .where((product) => product.platform == _platformName)
           .toList();
-      final matched = products.indexWhere(
-        (product) => product.featureKey == 'parent_insights',
-      );
-      _insightsProduct = matched < 0 ? null : products[matched];
+      _familyProducts.clear();
+      for (final product in products) {
+        final plan = FamilyPlusPlan.fromFeatureKey(product.featureKey);
+        if (plan != null) _familyProducts[plan] = product;
+      }
       return products;
     } catch (_) {
       rethrow;
@@ -342,7 +344,7 @@ class StoreSubscriptionRepository
       // belong to and credits the unused part; Google Play needs the
       // subscription being replaced named.
       if (selected is GooglePlayProductDetails) {
-        replacing = await _replacing(current, account);
+        replacing = await _replacing(current.storeProductId, account);
       }
     }
     await initialize();
@@ -374,7 +376,7 @@ class StoreSubscriptionRepository
   /// The switch happens at once and Google charges only the difference for
   /// the rest of the current period.
   Future<ChangeSubscriptionParam> _replacing(
-    StudyPlanSubscription current,
+    String? storeProductId,
     String account,
   ) async {
     const blocked = PurchaseBlockedException(
@@ -392,7 +394,7 @@ class StoreSubscriptionRepository
     }
     final owned = past.pastPurchases.where(
       (purchase) =>
-          purchase.productID == current.storeProductId &&
+          purchase.productID == storeProductId &&
           purchase.status != PurchaseStatus.error,
     );
     if (past.error != null || owned.isEmpty) throw blocked;
@@ -402,15 +404,30 @@ class StoreSubscriptionRepository
     );
   }
 
-  Future<V1BillingProduct> _insightsProductOrThrow() async {
+  Future<V1BillingProduct> _familyProductOrThrow(FamilyPlusPlan plan) async {
     await _products();
-    final insights = _insightsProduct;
-    if (insights == null) {
-      // PAY-071 §29: Parent Insights is not sold until legal sign-off and is
-      // absent from every non-synthetic catalogue.
-      throw StateError('Insights+ is not available in this environment');
+    final product = _familyProducts[plan];
+    if (product == null) {
+      throw StateError('Family+ is not on sale in this environment');
     }
-    return insights;
+    return product;
+  }
+
+  /// The parent's live Family+ plan rows, largest plan first.
+  static List<(FamilyPlusPlan, V1EntitlementRow)> _livePlans(
+    List<V1EntitlementRow> rows,
+    DateTime now,
+  ) {
+    final live = <(FamilyPlusPlan, V1EntitlementRow)>[];
+    for (final row in rows) {
+      final plan = FamilyPlusPlan.fromFeatureKey(row.featureKey);
+      if (plan == null || row.beneficiaryStudentId != null) continue;
+      if (!row.grantsAccess) continue;
+      if (row.endsAt != null && !row.endsAt!.isAfter(now)) continue;
+      live.add((plan, row));
+    }
+    live.sort((a, b) => b.$1.seats.compareTo(a.$1.seats));
+    return live;
   }
 
   @override
@@ -422,15 +439,29 @@ class StoreSubscriptionRepository
     }
     try {
       final rows = await _billingApi!.entitlements();
+      final now = DateTime.now();
+      // The parent's family plan, when it covers this child. The server
+      // decides which children are covered; the app never counts seats.
+      for (final (_, row) in _livePlans(rows, now)) {
+        if (beneficiaryStudentId != null &&
+            row.coveredStudentIds.contains(beneficiaryStudentId)) {
+          return SubscriptionEntitlement(
+            active: true,
+            source: row.status,
+            expiresAt: row.endsAt,
+          );
+        }
+      }
       for (final row in rows) {
-        // Parent Insights is held by the child; a guardian reads it through
-        // the child's student id, never as their own entitlement.
+        // A per-child Family+ bought before the family plans is held by the
+        // child; a guardian reads it through the child's student id.
         if (row.featureKey == 'parent_insights' &&
-            row.beneficiaryStudentId == beneficiaryStudentId) {
+            row.beneficiaryStudentId == beneficiaryStudentId &&
+            beneficiaryStudentId != null) {
           return SubscriptionEntitlement(
             active:
                 row.grantsAccess &&
-                (row.endsAt == null || row.endsAt!.isAfter(DateTime.now())),
+                (row.endsAt == null || row.endsAt!.isAfter(now)),
             source: row.status,
             expiresAt: row.endsAt,
           );
@@ -447,15 +478,29 @@ class StoreSubscriptionRepository
   }
 
   @override
-  Future<PaywallOffer> insightsOffer() async {
+  Future<FamilyPlusStatus> familyPlan() async {
+    if (!_isRemote) return FamilyPlusStatus.none;
+    final live = _livePlans(await _billingApi!.entitlements(), DateTime.now());
+    if (live.isEmpty) return FamilyPlusStatus.none;
+    final (plan, row) = live.first;
+    return FamilyPlusStatus(
+      plan: plan,
+      coveredStudentIds: row.coveredStudentIds,
+      endsAt: row.endsAt,
+      paidByMe: row.purchasedByMe,
+    );
+  }
+
+  @override
+  Future<PaywallOffer> familyOffer(FamilyPlusPlan plan) async {
     final fallback = PaywallOffer(
-      featureKey: 'parent_insights',
-      storeProductId: _insightsProduct?.storeProductId ?? '',
+      featureKey: plan.featureKey,
+      storeProductId: _familyProducts[plan]?.storeProductId ?? '',
     );
     if (!_isRemote) return fallback;
     final V1BillingProduct product;
     try {
-      product = await _insightsProductOrThrow();
+      product = await _familyProductOrThrow(plan);
     } catch (_) {
       return fallback;
     }
@@ -465,7 +510,7 @@ class StoreSubscriptionRepository
     }
     final terms = resolveStoreOfferTerms(response.productDetails.first);
     return PaywallOffer(
-      featureKey: 'parent_insights',
+      featureKey: plan.featureKey,
       storeProductId: product.storeProductId,
       storeAvailable: true,
       price: terms.price,
@@ -477,18 +522,27 @@ class StoreSubscriptionRepository
   }
 
   @override
-  Future<void> purchaseInsightsMonthly({
-    required String beneficiaryStudentId,
-  }) async {
+  Future<void> purchaseFamilyPlan(FamilyPlusPlan plan) async {
     await initialize();
     if (!_isRemote) throw StateError('Billing is unavailable in preview');
-    if (beneficiaryStudentId.isEmpty) {
-      throw StateError('Choose the child this subscription is for');
-    }
-    final product = await _insightsProductOrThrow();
+    final product = await _familyProductOrThrow(plan);
     final accountToken = _accountToken;
     if (accountToken == null) {
       throw StateError('Billing is unavailable right now');
+    }
+    // Never a second family plan beside the first: the current one is
+    // upgraded in place, and the same or a smaller plan is not sold again.
+    final current = _livePlans(
+      await _billingApi!.entitlements(),
+      DateTime.now(),
+    ).firstOrNull;
+    if (current != null && current.$1.seats >= plan.seats) {
+      throw const PurchaseBlockedException(PurchaseBlock.alreadySubscribed);
+    }
+    if (current != null &&
+        current.$2.platform != null &&
+        SubscriptionStore.parse(current.$2.platform) != purchaseStore) {
+      throw const PurchaseBlockedException(PurchaseBlock.otherStore);
     }
     if (!await _store.isAvailable()) {
       throw StateError('Store is unavailable');
@@ -496,26 +550,39 @@ class StoreSubscriptionRepository
     final response = await _store.queryProductDetails({product.storeProductId});
     if (response.error != null) throw StateError(response.error!.message);
     if (response.productDetails.isEmpty) {
-      throw StateError('Insights+ is not available in this store region');
+      throw StateError('Family+ is not available in this store region');
     }
-    final terms = resolveStoreOfferTerms(response.productDetails.first);
+    final selected = response.productDetails.first;
+    final terms = resolveStoreOfferTerms(selected);
     if (terms.price.trim().isEmpty ||
         terms.currencyCode.trim().isEmpty ||
         terms.periodLength.trim().isEmpty) {
       throw StateError('Subscription terms are unavailable in this store');
     }
-    await _pending.write(
-      _pendingKey(product.storeProductId),
-      beneficiaryStudentId,
-    );
-    final started = await _store.buyNonConsumable(
-      purchaseParam: PurchaseParam(
-        productDetails: response.productDetails.first,
+    final PurchaseParam param;
+    if (selected is GooglePlayProductDetails) {
+      // The App Store upgrades within the subscription group both plans
+      // belong to; Google Play needs the subscription being replaced named.
+      final replacing = current == null
+          ? null
+          : await _replacing(current.$2.storeProductId, accountToken);
+      final index = selected.subscriptionIndex!;
+      param = GooglePlayPurchaseParam(
+        productDetails: selected,
         applicationUserName: accountToken,
-      ),
-    );
-    if (!started) {
-      await _pending.delete(_pendingKey(product.storeProductId));
+        offerToken: selected
+            .productDetails
+            .subscriptionOfferDetails![index]
+            .offerIdToken,
+        changeSubscriptionParam: replacing,
+      );
+    } else {
+      param = PurchaseParam(
+        productDetails: selected,
+        applicationUserName: accountToken,
+      );
+    }
+    if (!await _store.buyNonConsumable(purchaseParam: param)) {
       throw StateError('The store did not start the purchase');
     }
   }

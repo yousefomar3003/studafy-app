@@ -10,8 +10,14 @@ ThemeData studafyTheme() => ThemeData(
     primary: studafyNavy,
     secondary: studafyCyan,
     surface: Colors.white,
+    error: studafyDanger,
+    // Tonal buttons and chips: the palette's lightest blue, deep blue text.
+    secondaryContainer: studafyWash,
+    onSecondaryContainer: studafyNavy,
   ),
   splashFactory: InkSparkle.splashFactory,
+  // The bar is the page's own colour, so header and content read as one
+  // screen rather than two bands.
   appBarTheme: const AppBarTheme(
     backgroundColor: studafyCanvas,
     foregroundColor: studafyInk,
@@ -67,77 +73,121 @@ ThemeData studafyTheme() => ThemeData(
     surfaceTintColor: Colors.transparent,
     margin: const EdgeInsets.symmetric(vertical: 6),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(24),
-      side: const BorderSide(color: Color(0xFFE8ECF2)),
+      borderRadius: BorderRadius.circular(22),
+      side: const BorderSide(color: studafyHairline),
     ),
   ),
   dividerTheme: const DividerThemeData(
-    color: Color(0xFFE8ECF2),
+    color: studafyHairline,
     thickness: 1,
     space: 24,
   ),
+  listTileTheme: const ListTileThemeData(
+    iconColor: studafyNavy,
+    textColor: studafyInk,
+    subtitleTextStyle: TextStyle(color: studafyMuted, fontSize: 13),
+  ),
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
-    fillColor: const Color(0xFFF2F4F8),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+    fillColor: studafyWash,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide.none,
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
-      borderSide: const BorderSide(color: studafyNavy, width: 2),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: studafyNavy, width: 1.6),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: studafyDanger, width: 1.2),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: studafyDanger, width: 1.6),
     ),
     labelStyle: const TextStyle(color: studafyMuted),
+    hintStyle: const TextStyle(color: studafyMuted),
   ),
   filledButtonTheme: FilledButtonThemeData(
+    // Colours come from the scheme, so a tonal button stays light.
     style: FilledButton.styleFrom(
-      minimumSize: const Size(48, 54),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      disabledBackgroundColor: studafyHairline,
+      disabledForegroundColor: studafyMuted,
+      minimumSize: const Size(48, 52),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+      shape: const StadiumBorder(),
       textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
     ),
   ),
   outlinedButtonTheme: OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(
-      minimumSize: const Size(48, 52),
-      side: const BorderSide(color: Color(0xFFDDE3EC)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      foregroundColor: studafyNavy,
+      minimumSize: const Size(48, 50),
+      side: const BorderSide(color: studafyHairline, width: 1.2),
+      shape: const StadiumBorder(),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: studafyNavy,
+      shape: const StadiumBorder(),
       textStyle: const TextStyle(fontWeight: FontWeight.w700),
     ),
   ),
   iconButtonTheme: IconButtonThemeData(
     style: IconButton.styleFrom(
-      minimumSize: const Size(48, 48),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      minimumSize: const Size(44, 44),
+      foregroundColor: studafyInk,
+      shape: const CircleBorder(),
     ),
   ),
   chipTheme: ChipThemeData(
-    backgroundColor: const Color(0xFFEEF0FF),
-    selectedColor: const Color(0xFFDFE3FF),
-    side: BorderSide.none,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    labelStyle: const TextStyle(
+    backgroundColor: Colors.white,
+    selectedColor: studafyWash,
+    checkmarkColor: studafyNavy,
+    side: const BorderSide(color: studafyHairline),
+    shape: const StadiumBorder(),
+    labelStyle: const TextStyle(color: studafyInk, fontWeight: FontWeight.w600),
+    secondaryLabelStyle: const TextStyle(
       color: studafyNavy,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
     ),
+  ),
+  segmentedButtonTheme: SegmentedButtonThemeData(
+    style: SegmentedButton.styleFrom(
+      selectedBackgroundColor: studafyWash,
+      selectedForegroundColor: studafyNavy,
+      side: const BorderSide(color: studafyHairline),
+    ),
+  ),
+  checkboxTheme: CheckboxThemeData(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
   ),
   bottomSheetTheme: const BottomSheetThemeData(
     backgroundColor: Colors.white,
     surfaceTintColor: Colors.transparent,
     showDragHandle: true,
+    dragHandleColor: studafyHairline,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
     ),
   ),
   dialogTheme: DialogThemeData(
     backgroundColor: Colors.white,
     surfaceTintColor: Colors.transparent,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+  ),
+  popupMenuTheme: PopupMenuThemeData(
+    color: Colors.white,
+    surfaceTintColor: Colors.transparent,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
   ),
   snackBarTheme: SnackBarThemeData(
     behavior: SnackBarBehavior.floating,
@@ -147,10 +197,12 @@ ThemeData studafyTheme() => ThemeData(
   floatingActionButtonTheme: const FloatingActionButtonThemeData(
     backgroundColor: studafyNavy,
     foregroundColor: Colors.white,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-    ),
+    elevation: 3,
+    shape: StadiumBorder(),
+  ),
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
+    color: studafyNavy,
+    linearTrackColor: studafyWash,
   ),
   tabBarTheme: const TabBarThemeData(
     labelColor: studafyNavy,

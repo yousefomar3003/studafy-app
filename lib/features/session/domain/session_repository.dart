@@ -150,6 +150,10 @@ abstract interface class SessionRepository {
   /// Records acceptance of the current terms/privacy policy version.
   Future<void> recordTermsConsent({required String locale});
 
+  /// Records, once, which kind of account this is - from the role the
+  /// person first signed in as. The server ignores it once decided.
+  Future<void> recordAccountKind(AccountKind kind);
+
   /// Clears the session for [scope] and erases locally cached material.
   Future<void> signOut({SignOutScope scope = SignOutScope.currentDevice});
 

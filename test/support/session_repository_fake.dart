@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:studafy/core/ids.dart';
+import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
 
 /// Base for session-repository fakes.
@@ -49,6 +50,12 @@ abstract class FakeSessionRepositoryBase implements SessionRepository {
 
   @override
   Future<void> recordTermsConsent({required String locale}) async {}
+
+  final recordedKinds = <AccountKind>[];
+
+  @override
+  Future<void> recordAccountKind(AccountKind kind) async =>
+      recordedKinds.add(kind);
 
   @override
   Future<void> signOut({

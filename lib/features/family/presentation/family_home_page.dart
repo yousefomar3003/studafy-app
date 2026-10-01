@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
+import '../../../core/navigation.dart';
 import '../../../core/result.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
@@ -150,8 +151,7 @@ class _FamilyHomePageState extends State<FamilyHomePage> {
 
   void _open(GuardianChild child) {
     widget.onOpenChild?.call(child);
-    Navigator.push(
-      context,
+    Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(builder: (_) => ChildProgressPage(child: child)),
     );
   }
@@ -531,7 +531,7 @@ class _LinkChildSheetState extends State<_LinkChildSheet> {
       setState(() => _message = AppL10n.of(context).famErrorTitle);
       return null;
     }
-    return await Navigator.of(context).push<String>(
+    return await Navigator.of(context).pushOnce<String>(
       MaterialPageRoute(
         builder: (_) => FamilyChallengePage(
           url: base.replace(

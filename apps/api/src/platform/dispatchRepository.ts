@@ -1,5 +1,5 @@
 import type { Sql } from "@studafy/database";
-import { type RequestDbContext, withRequestContext } from "./dbContext";
+import { type RequestDbContext, selectInRequestContext } from "./dbContext";
 
 /** What a SQL dispatcher answered for a command. */
 export interface CatalogueCommandResult {
@@ -10,8 +10,15 @@ export interface CatalogueCommandResult {
     | "version_conflict"
     | "invalid_state"
     | "window_closed"
-    | "invalid";
+    | "invalid"
+    | "grade_entries_invalid"
+    | "reason_required"
+    | "attendance_locked"
+    | "graded_locked"
+    | "file_not_clean";
   response?: unknown;
+  /** Per-row refusals of a bulk command, when the outcome names rows. */
+  rows?: unknown;
 }
 
 /**
@@ -83,13 +90,12 @@ export class PostgresDispatchRepository implements CatalogueRepository {
     resourceId: string | null,
     input: unknown,
   ): Promise<unknown> {
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx.unsafe<{ result: unknown }[]>(
-        `select ${this.dispatcher.query}($1, $2::uuid, $3::jsonb) as result`,
-        [operation, resourceId, tx.json((input ?? null) as never)],
-      );
-      return rows[0]?.result ?? null;
-    });
+    return await selectInRequestContext<unknown>(
+      this.sql,
+      context,
+      `${this.dispatcher.query}($1, $2::uuid, $3::jsonb)`,
+      [operation, resourceId, this.sql.json((input ?? null) as never)],
+    );
   }
 
   async command(
@@ -102,19 +108,17 @@ export class PostgresDispatchRepository implements CatalogueRepository {
     const payload = this.dispatcher.forwardAal2
       ? { ...(input as Record<string, unknown>), aal2: context.aal2 }
       : input;
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx.unsafe<{ result: CatalogueCommandResult }[]>(
-        `select ${this.dispatcher.command}($1, $2::uuid, $3::jsonb, $4::uuid, $5)
-           as result`,
-        [
-          operation,
-          resourceId,
-          tx.json((payload ?? null) as never),
-          reservation.id,
-          reservation.generation,
-        ],
-      );
-      return rows[0]?.result ?? { outcome: "invalid" };
-    });
+    return await selectInRequestContext<CatalogueCommandResult>(
+      this.sql,
+      context,
+      `${this.dispatcher.command}($1, $2::uuid, $3::jsonb, $4::uuid, $5)`,
+      [
+        operation,
+        resourceId,
+        this.sql.json((payload ?? null) as never),
+        reservation.id,
+        reservation.generation,
+      ],
+    ) ?? { outcome: "invalid" };
   }
 }

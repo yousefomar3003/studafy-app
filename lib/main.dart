@@ -100,7 +100,8 @@ class StudafyApp extends StatelessWidget {
     final routes = deps == null
         ? <String, WidgetBuilder>{}
         : <String, WidgetBuilder>{
-            rolesRoute: (_) => RolePage(session: deps.session),
+            rolesRoute: (_) =>
+                RolePage(session: deps.session, settings: deps.deviceSettings),
             // The role arrives as a route argument because the person already
             // chose it on RolePage; onboarding only has to explain one step.
             onboardingRoute: (context) => OnboardingPage(

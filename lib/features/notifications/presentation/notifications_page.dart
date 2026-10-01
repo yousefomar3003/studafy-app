@@ -120,7 +120,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         title: Text(l10n.notificationsFeedTitle),
         // Notification settings live on the account screen, with the other
         // preferences, rather than here in every role.

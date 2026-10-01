@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/navigation.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
@@ -81,7 +82,7 @@ class _MyNotebooksPageState extends State<MyNotebooksPage> {
                             MaterialLocalizations.of(context)
                                 .formatMediumDate(entry.createdAt),
                           ),
-                          onTap: () => Navigator.of(context).push(
+                          onTap: () => Navigator.of(context).pushOnce(
                             MaterialPageRoute<void>(
                               builder: (_) => _NoteView(entry: entry),
                             ),

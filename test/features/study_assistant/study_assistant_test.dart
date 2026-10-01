@@ -27,6 +27,8 @@ void main() {
     List<ChatReference>? pick,
     _Uploads? uploads,
     Future<void> Function(BuildContext, String)? onPlanLimit,
+    HelperPlan? plan,
+    Future<void> Function()? onUpgrade,
   }) => localizedApp(
     locale: locale,
     home: StudyAssistantPage(
@@ -40,6 +42,8 @@ void main() {
       pickReferences: pick == null ? null : (_, _) async => pick,
       uploads: uploads,
       onPlanLimit: onPlanLimit,
+      plan: plan == null ? null : () async => plan,
+      onUpgrade: onUpgrade,
       schoolId: uploads == null ? null : 'school-1',
       attachmentSource: (_, _) async => PickedAttachment(
         displayName: 'homework.jpg',
@@ -242,6 +246,71 @@ void main() {
     expect(repository.questions, isEmpty);
   });
 
+  testWidgets('the plan, its questions today and what upgrading adds', (
+    tester,
+  ) async {
+    var upgrades = 0;
+    await tester.pumpWidget(
+      page(
+        _Recording(),
+        plan: const HelperPlan(
+          name: 'Studafy Free',
+          askToday: 4,
+          askPerDay: 10,
+          upgradeTo: 'Studafy Plus',
+          upgradeBenefits: ['40 questions a day'],
+        ),
+        onUpgrade: () async => upgrades++,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Studafy Free'), findsOne);
+    expect(find.text('Questions today: 4 of 10'), findsOne);
+    expect(find.text('Studafy Plus adds:'), findsOne);
+    expect(find.text('40 questions a day'), findsOne);
+    await tester.tap(find.text('Upgrade'));
+    await tester.pumpAndSettle();
+    expect(upgrades, 1);
+  });
+
+  testWidgets('on the top plan nothing is sold', (tester) async {
+    await tester.pumpWidget(
+      page(
+        _Recording(),
+        plan: const HelperPlan(name: 'Studafy Max', askToday: 1, askPerDay: 60),
+        onUpgrade: () async {},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Studafy Max'), findsOne);
+    expect(find.text('Upgrade'), findsNothing);
+  });
+
+  testWidgets(
+    'with today\'s questions used, it says so and offers the way on',
+    (tester) async {
+      var upgrades = 0;
+      await tester.pumpWidget(
+        page(
+          _Recording(),
+          plan: const HelperPlan(
+            name: 'Studafy Free',
+            askToday: 10,
+            askPerDay: 10,
+            upgradeTo: 'Studafy Plus',
+          ),
+          onUpgrade: () async => upgrades++,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining("You've used today's questions"), findsOne);
+      await tester.tap(find.widgetWithText(FilledButton, 'Upgrade').last);
+      await tester.pumpAndSettle();
+      expect(upgrades, 1);
+    },
+  );
+
   testWidgets('chats are kept, and an old one can be opened again', (
     tester,
   ) async {
@@ -254,7 +323,9 @@ void main() {
 
     await tester.tap(find.byTooltip('New chat'));
     await tester.pumpAndSettle();
-    expect(find.text('What is gravity?'), findsNothing);
+    // The chat is closed, and listed among the recent ones to go back to.
+    expect(find.text('Recent chats'), findsOne);
+    expect(find.text('What is gravity?'), findsOne);
 
     await tester.tap(find.byTooltip('Chat history'));
     await tester.pumpAndSettle();

@@ -4,6 +4,7 @@ import {
   createAcademicAppendedRoutes,
   createAcademicRoutes,
   createClassroomArchiveRoutes,
+  createCourseworkRoutes,
   createSubmissionHistoryRoutes,
 } from "../academic/routes";
 import { PostgresAcademicRepository } from "../academic/repository";
@@ -411,6 +412,23 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  const coursework = sql && env.API_CURSOR_SIGNING_KEY
+    ? createCourseworkRoutes(
+      {
+        repository: new PostgresAcademicRepository(sql),
+        cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
+        enabledSlices: {
+          content: env.API041_CONTENT_ENABLED,
+          assignments: env.API041_ASSIGNMENTS_ENABLED,
+          assessments: env.API041_ASSESSMENTS_ENABLED,
+          grades: env.API041_GRADES_ENABLED,
+          attendance: env.API041_ATTENDANCE_ENABLED,
+        },
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   const notebooks = studyRepository && idempotencyDependencies
     ? createNotebookRoutes(
       {
@@ -631,6 +649,7 @@ export function buildRoutes(platform: Platform) {
     profileReads,
     classroomArchive,
     notebooks,
+    coursework,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

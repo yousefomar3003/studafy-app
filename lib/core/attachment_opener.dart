@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../l10n/generated/app_l10n.dart';
+import 'failures.dart';
 import 'feedback.dart';
 import 'file_upload_repository.dart';
+import 'navigation.dart';
 import 'uploads_scope.dart';
 
 /// Shows [file] to the person who tapped it.
@@ -25,7 +27,7 @@ Future<void> presentDownloadedFile(
   DownloadedFile file,
 ) async {
   if (file.isImage) {
-    await Navigator.of(context).push<void>(
+    await Navigator.of(context).pushOnce<void>(
       MaterialPageRoute<void>(
         builder: (_) => Scaffold(
           appBar: AppBar(title: Text(file.displayName)),
@@ -38,18 +40,30 @@ Future<void> presentDownloadedFile(
     );
     return;
   }
+  final name = sharedFileName(file.displayName, file.mediaType);
   await SharePlus.instance.share(
     ShareParams(
-      files: [
-        XFile.fromData(
-          file.bytes,
-          name: file.displayName,
-          mimeType: file.mediaType,
-        ),
-      ],
-      fileNameOverrides: [file.displayName],
+      files: [XFile.fromData(file.bytes, name: name, mimeType: file.mediaType)],
+      fileNameOverrides: [name],
     ),
   );
+}
+
+/// The name a shared file is saved under: the name it was uploaded with,
+/// given an extension from its type when it has none, so the receiving app
+/// knows how to open "Worksheet" as a PDF.
+String sharedFileName(String displayName, String? mediaType) {
+  final name = displayName.trim().isEmpty ? 'file' : displayName.trim();
+  if (RegExp(r'\.[A-Za-z0-9]{1,5}$').hasMatch(name)) return name;
+  final extension = switch (mediaType) {
+    'application/pdf' => 'pdf',
+    'image/jpeg' => 'jpg',
+    'image/png' => 'png',
+    'image/webp' => 'webp',
+    'audio/mp4' => 'm4a',
+    _ => null,
+  };
+  return extension == null ? name : '$name.$extension';
 }
 
 /// The files attached to something already stored, each one tappable.
@@ -95,14 +109,18 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
     }
     setState(() => _opening = item.id);
     final failed = AppL10n.of(context).attachmentThatFileCouldNotBe2;
+    final gone = AppL10n.of(context).downloadUnavailable;
     try {
       final file = await uploads.download(item.id);
       if (!mounted) return;
       await widget.present(context, file);
-    } on Object {
-      // As with uploads, the reason stays on the server: what the person can
-      // do about it is the same whatever it was.
-      messenger.showMessage(failed);
+    } on Object catch (error) {
+      // A file replaced by a newer one, taken off the work, or deleted is
+      // refused as not found: refreshing shows what is there now. Anything
+      // else keeps its reason on the server.
+      messenger.showMessage(
+        Failure.fromError(error).code == Failure.notFound.code ? gone : failed,
+      );
     } finally {
       if (mounted) setState(() => _opening = null);
     }

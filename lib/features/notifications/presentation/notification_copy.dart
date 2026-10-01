@@ -19,6 +19,14 @@ String notificationCopy(AppL10n l10n, String key) => switch (key) {
     l10n.notificationCopyAcademicGradePublishedTitle,
   'notification.academic.grade_published.detail' =>
     l10n.notificationCopyAcademicGradePublishedDetail,
+  'notification.academic.grades_published.title' =>
+    l10n.notificationCopyAcademicGradesPublishedTitle,
+  'notification.academic.grades_published.detail' =>
+    l10n.notificationCopyAcademicGradesPublishedDetail,
+  'notification.academic.grades_corrected.title' =>
+    l10n.notificationCopyAcademicGradesCorrectedTitle,
+  'notification.academic.grades_corrected.detail' =>
+    l10n.notificationCopyAcademicGradesCorrectedDetail,
   'notification.academic.resource_published.title' =>
     l10n.notificationCopyAcademicResourcePublishedTitle,
   'notification.academic.resource_published.detail' =>

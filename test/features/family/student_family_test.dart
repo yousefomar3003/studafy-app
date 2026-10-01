@@ -3,10 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/family/application/family_interactor.dart';
 import 'package:studafy/features/family/data/preview_family_repository.dart';
+import 'package:studafy/features/family/domain/family.dart';
 import 'package:studafy/features/family/presentation/family_scope.dart';
 import 'package:studafy/features/family/presentation/student_family_page.dart';
 
 import '../../support/localized_app.dart';
+
+/// An older server answering with one record per teacher's school.
+class _TwoRecords extends _Repository {
+  @override
+  Future<StudentFamily> studentFamily() async => StudentFamily(
+    identities: const [
+      StudentIdentity(id: 'a', studafyId: 'SJ-01F922B050', name: 'Sara'),
+      StudentIdentity(id: 'b', studafyId: 'SJ-5D6BE979D9', name: 'Sara'),
+    ],
+    requests: const [],
+  );
+}
 
 class _Repository extends PreviewFamilyRepository {
   final decisions = <(String, String)>[];
@@ -70,4 +83,12 @@ void main() {
       },
     );
   }
+
+  testWidgets('a student is shown one Studafy ID, never two', (tester) async {
+    await tester.pumpWidget(_app(_TwoRecords(), 'en'));
+    await tester.pumpAndSettle();
+    expect(find.text('MY STUDAFY ID'), findsOneWidget);
+    expect(find.text('SJ-01F922B050'), findsOneWidget);
+    expect(find.text('SJ-5D6BE979D9'), findsNothing);
+  });
 }

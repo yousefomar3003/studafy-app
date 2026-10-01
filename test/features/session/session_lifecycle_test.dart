@@ -207,7 +207,8 @@ void main() {
       expect(context.membership!.schoolId, 'school-2');
     });
 
-    test('a role the account does not hold grants no role', () async {
+    test('a teacher account signing in as a student enters nothing, and '
+        'is pointed back to teaching', () async {
       interactor = build(const RuntimePolicy(StudafyEnvironment.development));
       repository.profile = _teacher();
 
@@ -217,15 +218,99 @@ void main() {
         locale: 'en',
       );
 
-      // The session survives so onboarding can use it - a teacher choosing
-      // Student is the same shape as a brand-new account - but no role is
-      // conferred and no school is in scope, which is the part that matters.
-      expect(result.require, LoginOutcome.needsOnboarding);
-      expect(interactor.status, SessionStatus.onboarding);
+      // One kind of account per email: no student role is conferred, the
+      // teacher role is not silently swapped out, and the screen is told
+      // which role this account is for.
+      expect(result.require, LoginOutcome.wrongRole);
+      expect(interactor.accountRole, StudafyRole.teacher);
       expect(context.membership, isNull);
       expect(context.role, isNull);
       expect(repository.signOutScopes, isEmpty);
+      expect(repository.recordedKinds, isEmpty);
     });
+
+    test('a student account signing in as a teacher or a parent enters '
+        'nothing, and is pointed back to studying', () async {
+      for (final role in [StudafyRole.teacher, StudafyRole.parent]) {
+        interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+        repository.profile = const UserProfile(
+          id: 'user-s',
+          displayName: 'Sara',
+          email: 'sara@example.test',
+          memberships: [
+            SchoolMembership(
+              id: 'membership-s',
+              schoolId: 'school-1',
+              schoolName: 'Al-Noor International',
+              role: StudafyRole.student,
+              active: true,
+            ),
+          ],
+        );
+        final result = await interactor.completeRemoteLogin(
+          role: role,
+          consentAccepted: true,
+          locale: 'en',
+        );
+        expect(result.require, LoginOutcome.wrongRole, reason: role.name);
+        expect(interactor.accountRole, StudafyRole.student);
+        expect(context.membership, isNull);
+      }
+    });
+
+    test(
+      'a student account with no class yet is still a student account',
+      () async {
+        interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+        repository.profile = const UserProfile(
+          id: 'user-new',
+          displayName: 'New',
+          email: 'new@example.test',
+          memberships: [],
+          accountKind: AccountKind.student,
+        );
+        final result = await interactor.completeRemoteLogin(
+          role: StudafyRole.teacher,
+          consentAccepted: true,
+          locale: 'en',
+        );
+        expect(result.require, LoginOutcome.wrongRole);
+        expect(interactor.accountRole, StudafyRole.student);
+      },
+    );
+
+    test('a teacher may also sign in as a parent', () async {
+      interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+      repository.profile = _teacher();
+      final result = await interactor.completeRemoteLogin(
+        role: StudafyRole.parent,
+        consentAccepted: true,
+        locale: 'en',
+      );
+      expect(result.require, LoginOutcome.needsOnboarding);
+      expect(context.signedInAs, StudafyRole.parent);
+      expect(context.membership, isNull);
+    });
+
+    test(
+      'a brand-new account takes the kind of the door it came through',
+      () async {
+        interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+        repository.profile = const UserProfile(
+          id: 'user-fresh',
+          displayName: 'Fresh',
+          email: 'fresh@example.test',
+          memberships: [],
+        );
+        final result = await interactor.completeRemoteLogin(
+          role: StudafyRole.student,
+          consentAccepted: true,
+          locale: 'en',
+        );
+        expect(result.require, LoginOutcome.needsOnboarding);
+        expect(repository.recordedKinds, [AccountKind.student]);
+      },
+    );
 
     test('a withdrawn membership is denied and signs out', () async {
       interactor = build(const RuntimePolicy(StudafyEnvironment.development));

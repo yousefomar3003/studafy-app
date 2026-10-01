@@ -7,6 +7,7 @@ import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:studafy/data/billing/store_subscription_repository.dart';
 import 'package:studafy/data/billing/v1_billing_api.dart';
+import 'package:studafy/features/family_insights/domain/parent_subscription_repository.dart';
 import 'package:studafy/features/study/domain/study.dart';
 
 const sku = 'studafy_plus_monthly';
@@ -31,6 +32,16 @@ class Billing extends Fake implements V1BillingApi {
         featureKey: 'studafy_max',
         platform: 'play_store',
         storeProductId: maxSku,
+      ),
+      V1BillingProduct(
+        featureKey: 'family_plus',
+        platform: 'play_store',
+        storeProductId: 'studafy_family_plus_monthly',
+      ),
+      V1BillingProduct(
+        featureKey: 'family_plus_large',
+        platform: 'play_store',
+        storeProductId: 'studafy_family_plus_8_monthly',
       ),
     ],
     selfPurchase: [
@@ -221,6 +232,86 @@ void main() {
     expect(status.storeAvailable, isFalse);
     expect(status.price, isEmpty);
   });
+  test('Family+ unlocks only the children the server says it covers', () async {
+    V1EntitlementRow plan(String feature, List<String> covered) =>
+        V1EntitlementRow(
+          featureKey: feature,
+          status: 'active',
+          startsAt: DateTime.now().subtract(const Duration(days: 1)),
+          endsAt: DateTime.now().add(const Duration(days: 20)),
+          platform: 'play_store',
+          coveredStudentIds: covered,
+        );
+    billing.rows = [
+      plan('family_plus', ['c1', 'c2', 'c3', 'c4']),
+    ];
+    expect(
+      (await repository.entitlement(beneficiaryStudentId: 'c1')).active,
+      isTrue,
+    );
+    // The fifth child: the app never counts seats itself.
+    expect(
+      (await repository.entitlement(beneficiaryStudentId: 'c5')).active,
+      isFalse,
+    );
+    expect((await repository.familyPlan()).plan, FamilyPlusPlan.upTo4);
+
+    // The larger plan wins while an upgrade overlaps the old one.
+    billing.rows = [
+      plan('family_plus', ['c1', 'c2', 'c3', 'c4']),
+      plan('family_plus_large', ['c1', 'c2', 'c3', 'c4', 'c5']),
+    ];
+    expect((await repository.familyPlan()).plan, FamilyPlusPlan.upTo8);
+    expect(
+      (await repository.entitlement(beneficiaryStudentId: 'c5')).active,
+      isTrue,
+    );
+
+    // An ended plan covers nobody.
+    billing.rows = [
+      V1EntitlementRow(
+        featureKey: 'family_plus',
+        status: 'expired',
+        startsAt: DateTime.now().subtract(const Duration(days: 40)),
+        endsAt: DateTime.now().subtract(const Duration(days: 1)),
+        coveredStudentIds: const ['c1'],
+      ),
+    ];
+    expect(
+      (await repository.entitlement(beneficiaryStudentId: 'c1')).active,
+      isFalse,
+    );
+    expect((await repository.familyPlan()).plan, isNull);
+  });
+
+  test(
+    'a family plan the same size or smaller is never bought twice',
+    () async {
+      billing.rows = [
+        V1EntitlementRow(
+          featureKey: 'family_plus_large',
+          status: 'active',
+          startsAt: DateTime.now().subtract(const Duration(days: 1)),
+          endsAt: DateTime.now().add(const Duration(days: 20)),
+          platform: 'play_store',
+        ),
+      ];
+      for (final plan in FamilyPlusPlan.values) {
+        await expectLater(
+          repository.purchaseFamilyPlan(plan),
+          throwsA(
+            isA<PurchaseBlockedException>().having(
+              (e) => e.reason,
+              'reason',
+              PurchaseBlock.alreadySubscribed,
+            ),
+          ),
+        );
+      }
+      expect(store.bought, isNull);
+    },
+  );
+
   test('only a current, own Studafy Plus entitlement unlocks', () async {
     V1EntitlementRow row({
       String feature = 'studafy_plus',

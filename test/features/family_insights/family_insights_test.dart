@@ -87,6 +87,45 @@ void main() {
     expect(find.text('Nothing to report yet'), findsOneWidget);
   });
 
+  testWidgets('the richer view: focus, chart, each class, missing work', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(page(_Served(_rich())));
+    await tester.pumpAndSettle();
+
+    expect(find.text('WHAT TO FOCUS ON'), findsOne);
+    expect(find.text('A test in Maths was missed'), findsOne);
+    // The server's English label is replaced by the app's own wording.
+    expect(find.text('Tests missed'), findsOne);
+    expect(find.text('MARKS OVER TIME'), findsOne);
+    expect(find.text('CLASS BY CLASS'), findsOne);
+    expect(find.text('Weakest'), findsOne);
+    expect(find.text('Strongest'), findsOne);
+    expect(find.textContaining('Attendance 80%'), findsOne);
+    expect(find.text('MISSING WORK'), findsOne);
+    expect(find.text('Essay'), findsOne);
+    expect(find.text('LATEST MARKS'), findsOne);
+    // A missed paper exam is "Missed", never 0%.
+    expect(find.text('Missed'), findsOne);
+    expect(find.textContaining('Paper'), findsWidgets);
+    expect(find.text('Up 6 points compared with earlier'), findsOne);
+  });
+
+  testWidgets('the richer view reads in Arabic', (tester) async {
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(page(_Served(_rich()), locale: const Locale('ar')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('حسب الصف'), findsOne);
+    expect(find.text('الأضعف'), findsOne);
+    expect(find.text('اختبارات فائتة'), findsWidgets);
+  });
+
   testWidgets('reads in Arabic', (tester) async {
     await tester.pumpWidget(
       page(_Served(_insights()), locale: const Locale('ar')),
@@ -149,6 +188,123 @@ FamilyInsights _insights({
           ],
         ),
       ],
+);
+
+FamilyInsights _rich() => FamilyInsights(
+  studentName: 'Kid Student',
+  gradedCount: 8,
+  averagePercent: 71,
+  subjects: const [],
+  attendance: const AttendanceSummary(
+    present: 16,
+    late: 0,
+    absent: 4,
+    excused: 0,
+    ratePercent: 80,
+  ),
+  homework: const HomeworkSummary(
+    due: 4,
+    onTime: 3,
+    late: 0,
+    missing: 1,
+    onTimePercent: 75,
+  ),
+  upcoming: const [],
+  wellbeing: const [],
+  averageChange: 6,
+  missedAssessments: 1,
+  signals: const [
+    InsightSignal(
+      kind: InsightKind.missedAssessments,
+      subject: 'Maths',
+      strength: InsightStrength.high,
+      evidence: [
+        InsightEvidenceItem(
+          label: 'Tests missed (server wording)',
+          value: '1',
+          recordCount: 1,
+          code: InsightEvidenceCode.missedAssessments,
+        ),
+      ],
+    ),
+  ],
+  classes: const [
+    ClassInsight(
+      classroomId: 'm',
+      className: 'Maths',
+      averagePercent: 55,
+      gradedCount: 4,
+      latestPercent: 50,
+      trend: ClassTrend.down,
+      trendPoints: -8,
+      missedAssessments: 1,
+      attendanceRatePercent: 80,
+      absences: 4,
+      homeworkDue: 2,
+      homeworkMissing: 1,
+      homeworkLate: 0,
+      homeworkOnTimePercent: 50,
+      standing: ClassStanding.weakest,
+    ),
+    ClassInsight(
+      classroomId: 'a',
+      className: 'Art',
+      averagePercent: 90,
+      gradedCount: 4,
+      latestPercent: 92,
+      trend: ClassTrend.steady,
+      trendPoints: 1,
+      missedAssessments: 0,
+      attendanceRatePercent: null,
+      absences: 0,
+      homeworkDue: 2,
+      homeworkMissing: 0,
+      homeworkLate: 0,
+      homeworkOnTimePercent: 100,
+      standing: ClassStanding.strongest,
+    ),
+  ],
+  timeline: [
+    InsightTimelinePoint(
+      start: DateTime.utc(2026, 7),
+      averagePercent: 65,
+      gradedCount: 3,
+    ),
+    InsightTimelinePoint(
+      start: DateTime.utc(2026, 8),
+      averagePercent: 72,
+      gradedCount: 3,
+    ),
+    InsightTimelinePoint(
+      start: DateTime.utc(2026, 9),
+      averagePercent: 78,
+      gradedCount: 2,
+    ),
+  ],
+  recentMarks: [
+    RecentMark(
+      title: 'Paper exam 1',
+      className: 'Maths',
+      percent: null,
+      paper: true,
+      at: DateTime.utc(2026, 9, 20),
+    ),
+    RecentMark(
+      title: 'Quiz 2',
+      className: 'Art',
+      percent: 92,
+      paper: false,
+      at: DateTime.utc(2026, 9, 18),
+    ),
+  ],
+  missingWork: [
+    MissingWorkItem(
+      assignmentId: 'w1',
+      title: 'Essay',
+      className: 'Maths',
+      dueAt: DateTime.utc(2026, 9, 19),
+    ),
+  ],
 );
 
 class _Served implements FamilyInsightsRepository {

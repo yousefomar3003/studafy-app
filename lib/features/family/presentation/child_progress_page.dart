@@ -54,7 +54,6 @@ class _ChildProgressPageState extends State<ChildProgressPage> {
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         title: Text(
           AppL10n.of(context).famProgressTitle(widget.child.studentName),
         ),

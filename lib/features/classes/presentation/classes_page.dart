@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/feedback.dart';
 import '../../../core/result.dart';
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -65,58 +66,70 @@ class _ClassesPageState extends State<ClassesPage> {
               onSuccess: (value) => value,
               onFailure: (_) => const <ClassroomSummary>[],
             );
-            return ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        AppL10n.of(context).classesTitle,
-                        style: const TextStyle(
-                          color: studafyInk,
-                          fontSize: 21,
-                          fontWeight: FontWeight.w800,
+            final waiting = snapshot.connectionState == ConnectionState.waiting;
+            final list = classrooms ?? const <ClassroomSummary>[];
+            return RefreshIndicator(
+              onRefresh: () async => _refresh(),
+              child: ListView(
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          waiting
+                              ? AppL10n.of(context).classesTitle
+                              : AppL10n.of(context).classesSummary(list.length),
+                          style: const TextStyle(
+                            color: studafyMuted,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
+                      FilledButton.tonalIcon(
+                        onPressed: () => _createClass(context),
+                        icon: const Icon(Icons.add_rounded),
+                        label: Text(AppL10n.of(context).classesCreate),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  if (waiting)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
-                    const SizedBox(width: 12),
-                    FilledButton.icon(
-                      onPressed: () => _createClass(context),
-                      icon: const Icon(Icons.add),
-                      label: Text(AppL10n.of(context).classesCreate),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  const Center(child: CircularProgressIndicator()),
-                if (result != null && result.isFailure)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(bottom: 12),
-                    child: Text(
-                      result.fold(
+                  if (result != null && result.isFailure)
+                    StudafyEmptyState(
+                      icon: Icons.wifi_off_rounded,
+                      title: result.fold(
                         onSuccess: (_) => '',
                         onFailure: (failure) => failure.message,
                       ),
-                      style: const TextStyle(color: Color(0xFFB42318)),
+                      actionLabel: AppL10n.of(context).todayRetry,
+                      onAction: _refresh,
+                    )
+                  else if (!waiting && list.isEmpty)
+                    StudafyEmptyState(
+                      icon: Icons.class_outlined,
+                      title: AppL10n.of(context).todayEmpty,
+                      message: AppL10n.of(context).classesEmptyDetail,
                     ),
-                  ),
-                for (final classroom
-                    in classrooms ?? const <ClassroomSummary>[])
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(bottom: 12),
-                    child: _ClassCard(
-                      classroom: classroom,
-                      onTap: () async {
-                        await widget.onOpenClassroom(classroom);
-                        _refresh();
-                      },
-                      onInvite: () => _invite(context, classroom),
+                  for (final classroom in list)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(bottom: 12),
+                      child: _ClassCard(
+                        classroom: classroom,
+                        onTap: () async {
+                          await widget.onOpenClassroom(classroom);
+                          _refresh();
+                        },
+                        onInvite: () => _invite(context, classroom),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -287,11 +300,15 @@ class _ClassesPageState extends State<ClassesPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(AppL10n.of(dialogContext).classesInviteBody),
+            // The class code is what a teacher reads out, writes on the
+            // board, or sends; a student types it in the app to join. The
+            // long link is only a fallback for a class made before codes.
+            Text(
+              code == null
+                  ? AppL10n.of(dialogContext).classesInviteBody
+                  : AppL10n.of(dialogContext).classesInviteCodeBody,
+            ),
             const SizedBox(height: 16),
-            // The code first and large: it is what a teacher reads out or
-            // writes on the board, and what a young child types on a
-            // parent's phone. The link below is for sending in a message.
             if (code != null) ...[
               Text(
                 AppL10n.of(dialogContext).classesInviteCodeLabel,
@@ -319,27 +336,21 @@ class _ClassesPageState extends State<ClassesPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                AppL10n.of(dialogContext).classesInviteLinkLabel,
-                style: Theme.of(dialogContext).textTheme.labelMedium,
-              ),
-              const SizedBox(height: 6),
-            ],
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: studafyNavy.withValues(alpha: .06),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: SelectableText(
-                link,
-                style: const TextStyle(
-                  color: studafyNavy,
-                  fontWeight: FontWeight.w700,
+            ] else
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: studafyNavy.withValues(alpha: .06),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: SelectableText(
+                  link,
+                  style: const TextStyle(
+                    color: studafyNavy,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         actions: [
@@ -349,14 +360,21 @@ class _ClassesPageState extends State<ClassesPage> {
           ),
           TextButton.icon(
             onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: link));
+              await Clipboard.setData(ClipboardData(text: code ?? link));
               if (dialogContext.mounted) {
-                ScaffoldMessenger.of(dialogContext)
-                    .showMessage(AppL10n.of(dialogContext).classesInviteCopied);
+                ScaffoldMessenger.of(dialogContext).showMessage(
+                  code == null
+                      ? AppL10n.of(dialogContext).classesInviteCopied
+                      : AppL10n.of(dialogContext).classesInviteCodeCopied,
+                );
               }
             },
             icon: const Icon(Icons.copy),
-            label: Text(AppL10n.of(dialogContext).classesCopy),
+            label: Text(
+              code == null
+                  ? AppL10n.of(dialogContext).classesCopy
+                  : AppL10n.of(dialogContext).classesCopyCode,
+            ),
           ),
           FilledButton.icon(
             onPressed: () => SharePlus.instance.share(
@@ -368,7 +386,11 @@ class _ClassesPageState extends State<ClassesPage> {
               ),
             ),
             icon: const Icon(Icons.ios_share),
-            label: Text(AppL10n.of(dialogContext).classesShareLink),
+            label: Text(
+              code == null
+                  ? AppL10n.of(dialogContext).classesShareLink
+                  : AppL10n.of(dialogContext).classesShareCode,
+            ),
           ),
         ],
       ),
@@ -389,60 +411,75 @@ class _ClassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tint = Color(classroom.colorValue ?? 0xFF241D73);
     final l10n = AppL10n.of(context);
-    final detail = [
-      l10n.classesStudentCount(classroom.studentCount),
-      if (classroom.weeklySessions != null)
-        l10n.classesPerWeek(classroom.weeklySessions!),
-      classroom.room ?? l10n.classesRoomTbd,
-    ].join(' · ');
     return FeatureCard(
-      tint: tint,
       onTap: onTap,
-      child: Row(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 8, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 4,
-            height: 64,
-            decoration: BoxDecoration(
-              color: tint,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // The teacher named this class; it shows as they wrote it.
-                UserContentText(
-                  classroom.name,
-                  style: const TextStyle(
-                    color: studafyInk,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
+          Row(
+            children: [
+              IconBadge(icon: subjectIcon(classroom.name), size: 48),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // The teacher named this class; it shows as they wrote
+                    // it.
+                    UserContentText(
+                      classroom.name,
+                      style: const TextStyle(
+                        color: studafyInk,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.classesGradeSection(
+                        classroom.grade.toString(),
+                        classroom.section,
+                      ),
+                      style: const TextStyle(color: studafyMuted, fontSize: 13),
+                    ),
+                  ],
                 ),
-                Text(
-                  l10n.classesGradeSection(
-                    classroom.grade.toString(),
-                    classroom.section,
-                  ),
-                  style: const TextStyle(color: studafyMuted),
+              ),
+              IconButton(
+                tooltip: l10n.classesInviteTitle,
+                onPressed: onInvite,
+                icon: const Icon(
+                  Icons.person_add_alt_1_rounded,
+                  color: studafyNavy,
                 ),
-                Text(
-                  detail,
-                  style: const TextStyle(color: studafyMuted, fontSize: 12),
+              ),
+              Icon(forwardChevron(context), color: studafyMuted),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              StatusPill(
+                icon: Icons.groups_rounded,
+                label: l10n.classesStudentCount(classroom.studentCount),
+              ),
+              if (classroom.weeklySessions != null)
+                StatusPill(
+                  icon: Icons.event_repeat_rounded,
+                  label: l10n.classesPerWeek(classroom.weeklySessions!),
+                  color: studafyCyan,
                 ),
-              ],
-            ),
+              StatusPill(
+                icon: Icons.meeting_room_outlined,
+                label: classroom.room ?? l10n.classesRoomTbd,
+                color: studafyMuted,
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: onInvite,
-            icon: const Icon(Icons.person_add_alt_1_outlined),
-          ),
-          Icon(forwardChevron(context), color: studafyMuted),
         ],
       ),
     );
@@ -453,24 +490,21 @@ class _ClassesTitleHeader extends StatelessWidget {
   const _ClassesTitleHeader();
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: Colors.white,
-    padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 16, 14),
-    child: SafeArea(
-      bottom: false,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Classes',
-              style: const TextStyle(
-                color: studafyInk,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+  Widget build(BuildContext context) => SafeArea(
+    bottom: false,
+    child: Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 4),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          AppL10n.of(context).classesTitle,
+          style: const TextStyle(
+            color: studafyInk,
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -.8,
           ),
-        ],
+        ),
       ),
     ),
   );

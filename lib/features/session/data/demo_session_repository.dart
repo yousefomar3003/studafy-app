@@ -58,6 +58,9 @@ class DemoSessionRepository implements SessionRepository {
   Future<void> recordTermsConsent({required String locale}) async {}
 
   @override
+  Future<void> recordAccountKind(AccountKind kind) async {}
+
+  @override
   Future<void> signOut({
     SignOutScope scope = SignOutScope.currentDevice,
   }) async {}

@@ -196,6 +196,44 @@ class AppL10nEn extends AppL10n {
   String get roleParentDetail => 'Follow progress and school updates';
 
   @override
+  String get introSkip => 'Skip';
+
+  @override
+  String get introNext => 'Next';
+
+  @override
+  String get introStart => 'Get started';
+
+  @override
+  String introPageOf(int index, int total) {
+    return 'Page $index of $total';
+  }
+
+  @override
+  String get introTitleOne => 'Your whole school day in one place';
+
+  @override
+  String get introBodyOne =>
+      'Lessons, homework, marks and attendance - teachers, students and parents, together.';
+
+  @override
+  String get introTitleTwo => 'Every mark counts, on paper or online';
+
+  @override
+  String get introBodyTwo =>
+      'Teachers mark paper exams and online work in one gradebook. Families see a mark once it is published.';
+
+  @override
+  String get introTitleThree => 'Parents see what matters';
+
+  @override
+  String get introBodyThree =>
+      'Follow progress and attendance - and with Family+, each class\'s trend and what to focus on this week. No ads, and your data is never sold.';
+
+  @override
+  String get roleWhatIsStudafy => 'What is Studafy?';
+
+  @override
   String loginWelcome(String role) {
     return 'Welcome, $role';
   }
@@ -235,11 +273,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get policyPrivacyBody =>
-      'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose; the school or class you belong to and your role in it; the work you are set and hand in, your marks, attendance and pastoral notes; messages, announcements and meetings inside the app; files you upload; and your notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nTHE STUDY HELPER\nIf you use the study helper, the question you type is sent to an AI company outside Studafy so it can answer. Your name, school, marks, work and messages are never sent. Answers can be wrong, so check anything you hand in. Using the helper is optional.\n\nWHO SEES YOUR WORK\nStaff at your school whose role requires it, and a parent linked to you. Other students cannot see your marks, your submitted work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent can follow progress; a parent is not given your private messages.\n\nPAYMENTS\nSubscriptions are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Resend sends email and Firebase sends push notifications. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion.\n\nHOW WE PROTECT IT\nAccess to a school\'s data is enforced in the database itself. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Administrator accounts require two-factor sign-in. Files are scanned before they can be downloaded.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.';
+      'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebook. Messages, voice notes, announcements and meeting links inside the app. Files you upload. Your subscriptions and notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. When you use them, what you give them is sent to Together AI, an AI company outside Studafy: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo you add (the study helper, whiteboard notes, lesson notes, quizzes and flashcards). Your name, email, school and marks are never sent. Chats are kept only on your device. Answers can be wrong, so never hand them in as your own work. AI never marks your work.\n\nFILES\nFiles are stored privately, scanned before anyone can download them, and opened only through links that work once and expire within minutes. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max and Family+ are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; GitHub stores encrypted backups it cannot read; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Together AI runs the AI study tools; Resend sends email and Firebase sends push notifications, which never contain your marks or messages; meetings happen in Google Meet. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your study helper chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.';
 
   @override
   String get policyTermsBody =>
-      'Use Studafy only for authorized school communication. Keep accounts secure, respect students and staff, and do not upload harmful or unlawful content. School policies continue to apply. Misuse may lead to account suspension.';
+      'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. We may remove content and suspend accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share.\n\nSTUDENTS\nHand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional and can be wrong. Check what they produce and never hand it in as your own work. AI never marks work. Daily and monthly limits apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students; Family+ is for parents, for up to 4 or up to 8 linked children. All are billed monthly by Apple or Google at the price the store shows until you cancel in your store account, where refunds are also handled.\n\nMEETINGS\nStudafy does not host video calls. Meeting links open in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.';
 
   @override
   String get deleteTitle => 'Delete account';
@@ -539,7 +577,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String classesShareMessageWithCode(String link, String code) {
-    return 'Join my Studafy class: $link\nOr type the class code: $code';
+    return 'Join my Studafy class with the class code $code\nOr open this link: $link';
   }
 
   @override
@@ -1409,6 +1447,159 @@ class AppL10nEn extends AppL10n {
   String get insightStrengthHigh => 'Based on a large number of records';
 
   @override
+  String get insightMissingWork =>
+      'Work missed its deadline and was never handed in';
+
+  @override
+  String insightMissingWorkIn(String subject) {
+    return 'Work in $subject missed its deadline';
+  }
+
+  @override
+  String get insightMissedTests => 'Tests were missed';
+
+  @override
+  String insightMissedTestsIn(String subject) {
+    return 'A test in $subject was missed';
+  }
+
+  @override
+  String get insightAttendanceLow => 'Attendance is below 90%';
+
+  @override
+  String insightStrength(String subject) {
+    return '$subject is their strongest subject right now';
+  }
+
+  @override
+  String insightEvClassAverage(String subject) {
+    return '$subject average';
+  }
+
+  @override
+  String get insightEvOverallAverage => 'Their average across all subjects';
+
+  @override
+  String get insightEvRecentTypical => 'Typical recent mark';
+
+  @override
+  String get insightEvEarlierTypical => 'Typical earlier mark';
+
+  @override
+  String get insightEvChange => 'Change (points)';
+
+  @override
+  String get insightEvOnTime => 'Handed in on time';
+
+  @override
+  String get insightEvLate => 'Handed in late';
+
+  @override
+  String get insightEvNotHandedIn => 'Not handed in';
+
+  @override
+  String insightEvWeekdayAbsences(String day) {
+    return 'Absences on a $day';
+  }
+
+  @override
+  String get insightEvAbsencesTotal => 'Absences in total';
+
+  @override
+  String get insightEvDueSoon => 'Due in the next 7 days, not handed in';
+
+  @override
+  String get insightEvMissed => 'Tests missed';
+
+  @override
+  String get insightEvAttendanceRate => 'Attended';
+
+  @override
+  String get insightEvSessions => 'Lessons counted';
+
+  @override
+  String get insightEvPastDue => 'Past the deadline, not handed in';
+
+  @override
+  String get insightsFocusTitle => 'What to focus on';
+
+  @override
+  String get insightsProgressTitle => 'Marks over time';
+
+  @override
+  String get insightsByClass => 'Class by class';
+
+  @override
+  String get insightsMissingTitle => 'Missing work';
+
+  @override
+  String get insightsRecentTitle => 'Latest marks';
+
+  @override
+  String get insightsMissedTests => 'Missed tests';
+
+  @override
+  String insightsTrendUp(int points) {
+    return 'Up $points points compared with earlier';
+  }
+
+  @override
+  String insightsTrendDown(int points) {
+    return 'Down $points points compared with earlier';
+  }
+
+  @override
+  String get insightsTrendSteady => 'Steady compared with earlier';
+
+  @override
+  String get insightsTrendUnknown => 'Not enough marks for a trend yet';
+
+  @override
+  String get insightsStrongest => 'Strongest';
+
+  @override
+  String get insightsWeakest => 'Weakest';
+
+  @override
+  String insightsClassAttendance(int rate) {
+    return 'Attendance $rate%';
+  }
+
+  @override
+  String insightsClassOnTime(int rate) {
+    return 'On time $rate%';
+  }
+
+  @override
+  String insightsMissingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count missing',
+      one: '1 missing',
+      zero: 'Nothing missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsMissedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count missed tests',
+      one: '1 missed test',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get insightsMissed => 'Missed';
+
+  @override
+  String get insightsPaper => 'Paper';
+
+  @override
   String insightsDueOn(String date) {
     return 'Due $date';
   }
@@ -1712,6 +1903,14 @@ class AppL10nEn extends AppL10n {
   @override
   String get studyPlansTheStoreCouldNotBe =>
       'The store could not be reached. Try again later.';
+
+  @override
+  String get studyPlansPaymentsNotSetUp =>
+      'Paid plans are not on sale yet. Everything free keeps working.';
+
+  @override
+  String get studyPlansCannotBuyYet =>
+      'This plan cannot be bought yet - see the note under it.';
 
   @override
   String get studyPlansBuyingIsNotEnabledFor =>
@@ -2866,6 +3065,21 @@ class AppL10nEn extends AppL10n {
       'A grade was published. Open Grades to view it.';
 
   @override
+  String get notificationCopyAcademicGradesPublishedTitle => 'New marks';
+
+  @override
+  String get notificationCopyAcademicGradesPublishedDetail =>
+      'Your teacher published new marks. Open Grades to view them.';
+
+  @override
+  String get notificationCopyAcademicGradesCorrectedTitle =>
+      'A mark was updated';
+
+  @override
+  String get notificationCopyAcademicGradesCorrectedDetail =>
+      'Your teacher corrected a published mark. Open Grades to see the new one.';
+
+  @override
   String get notificationCopyAcademicResourcePublishedTitle =>
       'New class material';
 
@@ -3072,22 +3286,70 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get familyPlusIntro =>
-      'See how your child is really doing, and one useful thing to do this week.';
+      'One subscription for the family. See how each child is really doing, where they need help, and what to do about it this week.';
 
   @override
   String get familyPlusFeatureTrends =>
       'What changed this term, with the records behind every claim';
 
   @override
-  String get familyPlusFeatureDue => 'Work due this week, so nothing slips';
-
-  @override
-  String get familyPlusFeatureSubjects =>
-      'Marks by subject and attendance at a glance';
-
-  @override
   String get familyPlusFeatureSchool =>
       'Notes the school chose to share with you';
+
+  @override
+  String get familyPlusFeatureFocus =>
+      'What to focus on this week, most urgent first';
+
+  @override
+  String get familyPlusFeatureClasses =>
+      'Every class side by side - average, trend, attendance and homework, with the strongest and weakest named';
+
+  @override
+  String get familyPlusFeatureChart =>
+      'Marks over time on a chart, and the latest marks - paper exams included';
+
+  @override
+  String get familyPlusFeatureMissing =>
+      'Missing work and missed tests, so nothing slips';
+
+  @override
+  String familyPlusPlanName(int seats) {
+    return 'Up to $seats children';
+  }
+
+  @override
+  String familyPlusPlanDetail(int seats) {
+    return 'One monthly price for the whole family: all your linked children, up to $seats.';
+  }
+
+  @override
+  String get familyPlusYourPlan => 'Your plan';
+
+  @override
+  String familyPlusSubscribePlan(int seats) {
+    return 'Subscribe for up to $seats children';
+  }
+
+  @override
+  String familyPlusUpgrade(int seats) {
+    return 'Upgrade to up to $seats children';
+  }
+
+  @override
+  String get familyPlusCannotBuyYet =>
+      'This plan cannot be bought in this version of the app yet.';
+
+  @override
+  String get familyPlusNotCoveredTitle => 'Not covered by your plan yet';
+
+  @override
+  String familyPlusNotCovered(int seats, String name) {
+    return 'Your Family+ covers your first $seats linked children, and $name is not one of them. Move to the plan for up to 8 children to include $name.';
+  }
+
+  @override
+  String get familyPlusCoversFamily =>
+      'Your children are covered in the order you linked them. A child you link later is included straight away while the plan has room.';
 
   @override
   String familyPlusPrice(String price) {
@@ -3095,8 +3357,9 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get familyPlusUsPrice =>
-      'US\$1.99 / month in the US - the store shows your price';
+  String familyPlusUsPrice(String price) {
+    return '$price / month in the US - the store shows your price';
+  }
 
   @override
   String familyPlusTrial(String trial, String price) {
@@ -3104,17 +3367,7 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String familyPlusOneChild(String name) {
-    return 'Covers $name only. Each child has their own Family+.';
-  }
-
-  @override
   String get familyPlusStartTrial => 'Start free trial';
-
-  @override
-  String familyPlusSubscribe(String name) {
-    return 'Subscribe for $name';
-  }
 
   @override
   String get familyPlusCheckingStore => 'Checking the store price...';
@@ -3485,20 +3738,20 @@ class AppL10nEn extends AppL10n {
   String get setupGenderLabel => 'Gender';
 
   @override
+  String get setupGenderMale => 'Male';
+
+  @override
+  String get setupGenderFemale => 'Female';
+
+  @override
   String get setupGenderPrivate => 'Only you can see this.';
 
   @override
-  String get setupGenderGirl => 'Girl';
-
-  @override
-  String get setupGenderBoy => 'Boy';
-
-  @override
-  String get setupGenderPreferNot => 'Prefer not to say';
+  String get setupGenderPreferNot => 'Prefer not to answer';
 
   @override
   String get setupGenderRequired =>
-      'Choose an answer - \"Prefer not to say\" is fine.';
+      'Choose an answer - \"Prefer not to answer\" is fine.';
 
   @override
   String get setupContinue => 'Continue';
@@ -3890,4 +4143,896 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get famManagedOpen => 'Open account';
+
+  @override
+  String get courseworkVersionConflict =>
+      'Someone else changed this while you were working. Reload to see the latest, then try again.';
+
+  @override
+  String get courseworkNotAllowed =>
+      'You don\'t have permission to do this for this class.';
+
+  @override
+  String get courseworkWindowClosed =>
+      'The deadline for this work has passed. Ask your teacher for more time.';
+
+  @override
+  String get courseworkSubmissionLocked =>
+      'Your teacher has already marked this work, so it can\'t be replaced. Ask your teacher if you need to hand it in again.';
+
+  @override
+  String get courseworkReasonRequired =>
+      'Please give a reason. It is kept with the change.';
+
+  @override
+  String get courseworkAttendanceLocked =>
+      'This register is locked by your school\'s attendance policy.';
+
+  @override
+  String get courseworkEntriesInvalid =>
+      'Some rows need fixing. Nothing was saved.';
+
+  @override
+  String get courseworkFailed =>
+      'That didn\'t work. Check your connection and try again.';
+
+  @override
+  String paperGradesTitle(String title) {
+    return 'Grade sheet: $title';
+  }
+
+  @override
+  String get paperGradesPaperLabel => 'Paper';
+
+  @override
+  String get paperGradesOnlineLabel => 'Online';
+
+  @override
+  String get paperGradesPaperSection => 'Paper work';
+
+  @override
+  String get paperGradesOnlineSection => 'Online work';
+
+  @override
+  String get paperGradesNew => 'New paper grade';
+
+  @override
+  String get paperGradesOpenSheet => 'Open the grade sheet';
+
+  @override
+  String get paperGradesSheetHint =>
+      'This is paper work. Enter marks for the whole class on its grade sheet.';
+
+  @override
+  String paperGradesOutOf(String max) {
+    return 'out of $max';
+  }
+
+  @override
+  String paperGradesWeight(String weight) {
+    return 'Counts $weight%';
+  }
+
+  @override
+  String get paperGradesScore => 'Score';
+
+  @override
+  String get paperGradesAbsent => 'Absent';
+
+  @override
+  String get paperGradesNotGraded => 'Not graded';
+
+  @override
+  String get paperGradesUnmarked => 'Not marked yet';
+
+  @override
+  String get paperGradesStateDraft => 'Draft';
+
+  @override
+  String get paperGradesStateReady => 'Ready';
+
+  @override
+  String get paperGradesStatePublished => 'Published';
+
+  @override
+  String get paperGradesStateChanged => 'Unsaved';
+
+  @override
+  String get paperGradesLeftClass => 'Left the class';
+
+  @override
+  String get paperGradesComment => 'Comment (optional)';
+
+  @override
+  String get paperGradesAddComment => 'Add comment';
+
+  @override
+  String get paperGradesSaveDraft => 'Save draft';
+
+  @override
+  String get paperGradesSaving => 'Saving…';
+
+  @override
+  String get paperGradesSaved =>
+      'Draft saved. Students and parents can\'t see it yet.';
+
+  @override
+  String get paperGradesPublish => 'Publish';
+
+  @override
+  String get paperGradesSaveFirst => 'Save your changes before publishing.';
+
+  @override
+  String get paperGradesNothingToPublish =>
+      'Nothing is ready to publish. Enter and save marks first.';
+
+  @override
+  String get paperGradesPublishTitle => 'Publish marks?';
+
+  @override
+  String paperGradesPublishBody(int ready, int unmarked) {
+    return '$ready marks will be visible to students and their parents, who will be notified. $unmarked students without a mark stay unpublished.';
+  }
+
+  @override
+  String paperGradesPublished(int count) {
+    return '$count marks published.';
+  }
+
+  @override
+  String get paperGradesCancel => 'Cancel';
+
+  @override
+  String paperGradesCounts(int ready, int published, int unmarked) {
+    return '$ready ready · $published published · $unmarked not marked';
+  }
+
+  @override
+  String get paperGradesEmpty => 'No students are enrolled in this class yet.';
+
+  @override
+  String get paperGradesLoadFailed => 'The grade sheet could not be loaded.';
+
+  @override
+  String get paperGradesRetry => 'Try again';
+
+  @override
+  String get paperGradesCorrect => 'Correct';
+
+  @override
+  String paperGradesCorrected(int count) {
+    return 'Corrected $count×';
+  }
+
+  @override
+  String get paperGradesRowNotEnrolled => 'Not in this class';
+
+  @override
+  String get paperGradesRowAlreadyPublished =>
+      'Already published. Use Correct.';
+
+  @override
+  String get paperGradesRowScoreRequired => 'Enter a score';
+
+  @override
+  String paperGradesRowScoreOutOfRange(String max) {
+    return 'Must be between 0 and $max';
+  }
+
+  @override
+  String get paperGradesRowScoreNotAllowed =>
+      'No score for absent or not graded';
+
+  @override
+  String get paperGradesRowConflict => 'Changed by someone else';
+
+  @override
+  String get paperGradesRowInvalid => 'Check this row';
+
+  @override
+  String get paperGradesEditItem => 'Edit details';
+
+  @override
+  String get paperItemTitle => 'Paper grade';
+
+  @override
+  String get paperItemName => 'Name';
+
+  @override
+  String get paperItemNameHint => 'e.g. Term 1 exam';
+
+  @override
+  String get paperItemCategory => 'Kind';
+
+  @override
+  String get paperItemCategoryExam => 'Paper exam';
+
+  @override
+  String get paperItemCategoryHomework => 'Homework';
+
+  @override
+  String get paperItemCategoryQuiz => 'Quiz';
+
+  @override
+  String get paperItemCategoryParticipation => 'Participation';
+
+  @override
+  String get paperItemCategoryOther => 'Other';
+
+  @override
+  String get paperItemCategoryCustom => 'Kind of work';
+
+  @override
+  String get paperItemMaximum => 'Out of';
+
+  @override
+  String get paperItemWeight => 'Weight % (optional)';
+
+  @override
+  String get paperItemDate => 'Date (optional)';
+
+  @override
+  String get paperItemPickDate => 'Pick a date';
+
+  @override
+  String get paperItemSave => 'Save';
+
+  @override
+  String get paperItemInvalid =>
+      'Enter a name and a maximum above 0. A weight is between 0 and 100.';
+
+  @override
+  String gradeCorrectionTitle(String name) {
+    return 'Correct $name\'s mark';
+  }
+
+  @override
+  String get gradeCorrectionReason => 'Reason for the change';
+
+  @override
+  String get gradeCorrectionReasonHint => 'e.g. added up page 3 again';
+
+  @override
+  String get gradeCorrectionReasonTooShort =>
+      'Give a reason of at least 3 characters.';
+
+  @override
+  String get gradeCorrectionSave => 'Save correction';
+
+  @override
+  String get gradeCorrectionNotifies =>
+      'If the mark changes, the student and their parents are told. A comment-only change is recorded but not announced.';
+
+  @override
+  String get gradeCorrectionHistory => 'Changes';
+
+  @override
+  String get gradeCorrectionHistoryEmpty => 'No changes yet.';
+
+  @override
+  String get gradeCorrectionChangePublished => 'Published';
+
+  @override
+  String get gradeCorrectionChangeCorrected => 'Corrected';
+
+  @override
+  String gradeCorrectionBy(String name) {
+    return 'by $name';
+  }
+
+  @override
+  String get gradeCorrectionDone => 'Mark corrected.';
+
+  @override
+  String get attendanceRuleReasonRequired =>
+      'This lesson is in the past. Changing a mark needs a reason, which is kept with it.';
+
+  @override
+  String get attendanceRuleLocked =>
+      'This register is locked by your school\'s attendance policy.';
+
+  @override
+  String get attendanceRuleLockedOverride =>
+      'This register is locked. As the class\'s lead teacher you can override the lock, with a reason.';
+
+  @override
+  String get attendanceOverride => 'Override the lock';
+
+  @override
+  String get attendanceCorrectionReason => 'Reason for the change';
+
+  @override
+  String get attendanceHistory => 'Changes';
+
+  @override
+  String get attendanceHistoryEmpty =>
+      'No marks on this register have been changed.';
+
+  @override
+  String attendanceHistoryLine(String name, String from, String to) {
+    return '$name: $from → $to';
+  }
+
+  @override
+  String get attendanceHistoryOverride => 'Lock overridden';
+
+  @override
+  String deadlineDue(String when, String zone) {
+    return 'Due $when ($zone)';
+  }
+
+  @override
+  String deadlineExtended(String when) {
+    return 'You have extra time until $when';
+  }
+
+  @override
+  String get deadlineClosed => 'The deadline has passed.';
+
+  @override
+  String get deadlineGraded => 'Marked - it can no longer be replaced.';
+
+  @override
+  String get deadlineReplaceHint =>
+      'You can replace your work until the deadline. Your earlier hand-ins are kept.';
+
+  @override
+  String get deadlineKeepFiles => 'Keep files from your last hand-in';
+
+  @override
+  String get deadlineExtend => 'Give more time';
+
+  @override
+  String get deadlineRemoveExtension => 'Remove extra time';
+
+  @override
+  String deadlineExtendedUntil(String when) {
+    return 'Extra time until $when';
+  }
+
+  @override
+  String get deadlineReopen => 'Reopen for the class';
+
+  @override
+  String get deadlineUntil => 'Until';
+
+  @override
+  String deadlineSchoolTime(String zone) {
+    return 'School time ($zone)';
+  }
+
+  @override
+  String get deadlineReason => 'Reason';
+
+  @override
+  String get deadlineSave => 'Save';
+
+  @override
+  String get deadlineSaved => 'Saved.';
+
+  @override
+  String get lessonEdit => 'Edit';
+
+  @override
+  String get lessonEditTitle => 'Edit lesson';
+
+  @override
+  String get lessonEditName => 'Title';
+
+  @override
+  String get lessonEditBody => 'Notes';
+
+  @override
+  String get lessonEditReplaceFile => 'Replace the file';
+
+  @override
+  String get lessonEditReplaceHint =>
+      'The class sees only the new file. The old one is kept for the school.';
+
+  @override
+  String get lessonEditSave => 'Save';
+
+  @override
+  String get lessonEditSaved => 'Lesson updated.';
+
+  @override
+  String get downloadUnavailable =>
+      'This file is no longer available. Pull down to refresh.';
+
+  @override
+  String get materialsEditTitle => 'Change the material';
+
+  @override
+  String get materialsEditHint =>
+      'Files you take off are kept for the school but no longer shown to the class.';
+
+  @override
+  String get materialsEditNone => 'No files attached yet.';
+
+  @override
+  String get materialsEditRemoving => 'Will be taken off';
+
+  @override
+  String get materialsEditSaved => 'Material updated.';
+
+  @override
+  String get classesInviteCodeBody =>
+      'Students join by typing this class code in Studafy. Read it out, write it on the board, or share it.';
+
+  @override
+  String get classesCopyCode => 'Copy code';
+
+  @override
+  String get classesInviteCodeCopied => 'Class code copied.';
+
+  @override
+  String get classesShareCode => 'Share code';
+
+  @override
+  String get teacherCreatePaperGrades => 'Paper grades';
+
+  @override
+  String get teacherCreatePaperGradesDetail =>
+      'Marks for a paper exam, quiz or homework, for the whole class';
+
+  @override
+  String get profilePhotoChange => 'Change profile photo';
+
+  @override
+  String get profilePhotoOnDevice =>
+      'Your photo is kept on this phone only. It is never uploaded, and it is removed when you sign out.';
+
+  @override
+  String get profilePhotoChoose => 'Choose a photo';
+
+  @override
+  String get profilePhotoTake => 'Take a photo';
+
+  @override
+  String get profilePhotoRemove => 'Remove photo';
+
+  @override
+  String get profilePhotoFailed =>
+      'That photo could not be used. Try another one.';
+
+  @override
+  String todayStatClasses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count classes',
+      one: '1 class',
+      zero: 'No classes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todayQuickActions => 'Quick actions';
+
+  @override
+  String get todaySeeAll => 'See all';
+
+  @override
+  String get wellbeingNewTitle => 'New wellbeing note';
+
+  @override
+  String get wellbeingIntro =>
+      'Record how a student is doing - a strength to celebrate, a note, or a concern to follow up. You choose who else can read it.';
+
+  @override
+  String get wellbeingWhoAbout => 'Who is it about?';
+
+  @override
+  String get wellbeingClass => 'Class';
+
+  @override
+  String get wellbeingPickClass => 'Choose a class';
+
+  @override
+  String get wellbeingStudent => 'Student';
+
+  @override
+  String get wellbeingPickStudent => 'Choose a student';
+
+  @override
+  String get wellbeingNoStudents => 'No students have joined this class yet.';
+
+  @override
+  String get wellbeingStudentsFailed =>
+      'The students could not load. Tap to try again.';
+
+  @override
+  String get wellbeingKind => 'Type of note';
+
+  @override
+  String get wellbeingKindStrength => 'Strength';
+
+  @override
+  String get wellbeingKindNote => 'Note';
+
+  @override
+  String get wellbeingKindConcern => 'Concern';
+
+  @override
+  String get wellbeingSeverity => 'How serious is it?';
+
+  @override
+  String get wellbeingSeverityLow => 'Low';
+
+  @override
+  String get wellbeingSeverityModerate => 'Moderate';
+
+  @override
+  String get wellbeingSeverityHigh => 'High';
+
+  @override
+  String get wellbeingDetails => 'Details';
+
+  @override
+  String get wellbeingTitle => 'Title';
+
+  @override
+  String get wellbeingTitleRequired => 'Give the note a short title.';
+
+  @override
+  String get wellbeingContext => 'What happened (optional)';
+
+  @override
+  String get wellbeingFollowUp => 'Follow-up (optional)';
+
+  @override
+  String get wellbeingWhoSees => 'Who can read it?';
+
+  @override
+  String get wellbeingSeeStaff => 'Class staff only';
+
+  @override
+  String get wellbeingSeeStaffDetail => 'Only this class\'s teachers.';
+
+  @override
+  String get wellbeingSeeGuardians => 'Staff and parents';
+
+  @override
+  String get wellbeingSeeGuardiansDetail =>
+      'Also the student\'s linked parents.';
+
+  @override
+  String get wellbeingSeeStudent => 'Staff, parents and the student';
+
+  @override
+  String get wellbeingSeeStudentDetail =>
+      'Also the parents and the student themselves.';
+
+  @override
+  String get wellbeingSave => 'Save note';
+
+  @override
+  String get wellbeingSaving => 'Saving...';
+
+  @override
+  String get wellbeingSaved => 'Wellbeing note saved.';
+
+  @override
+  String get wellbeingSaveFailed =>
+      'The note could not be saved. Please try again.';
+
+  @override
+  String get wellbeingAdd => 'New wellbeing note';
+
+  @override
+  String get gradebookHomeNoClasses =>
+      'Create a class on the Classes tab, then its marks are kept here.';
+
+  @override
+  String get gradebookHomeNothing => 'Nothing to mark in this class yet';
+
+  @override
+  String get gradebookHomeNothingDetail =>
+      'Add a paper grade for a test done on paper, or set graded work from the Teaching tab.';
+
+  @override
+  String gradebookHomeCounts(int total, int drafts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total graded pieces',
+      one: '1 graded piece',
+      zero: 'No graded work',
+    );
+    return '$_temp0 · $drafts drafts';
+  }
+
+  @override
+  String get gradebookMarkOnline => 'Mark online work';
+
+  @override
+  String get gradebookViewHandIns => 'View hand-ins';
+
+  @override
+  String get academicStateWithdrawn => 'Hidden';
+
+  @override
+  String get academicEmptyTeacherHint =>
+      'Tap + to create something for your classes.';
+
+  @override
+  String get teacherCreateGroupTeaching => 'Teaching';
+
+  @override
+  String get teacherCreateGroupClass => 'Class records';
+
+  @override
+  String get teacherCreateGroupFamilies => 'Families';
+
+  @override
+  String get teacherCreateWellbeingDetail =>
+      'A strength, note or concern about one student';
+
+  @override
+  String classesSummary(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count classes',
+      one: '1 class',
+      zero: 'No classes yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get classesEmptyDetail =>
+      'Create your first class, then invite students with its class code.';
+
+  @override
+  String get attendanceMarkAllPresent => 'Mark all present';
+
+  @override
+  String get attendanceNotMarked => 'Not marked';
+
+  @override
+  String get attendanceUnsaved => 'Unsaved changes';
+
+  @override
+  String attendanceStatusFor(String name, String status) {
+    return '$name: $status. Change attendance';
+  }
+
+  @override
+  String attendanceCounts(int present, int absent, int late, int unmarked) {
+    return '$present present · $absent absent · $late late · $unmarked not marked';
+  }
+
+  @override
+  String get attachmentCamera => 'Camera';
+
+  @override
+  String get attachmentDocument => 'Document';
+
+  @override
+  String get attachmentAdd => 'Attach';
+
+  @override
+  String get msgOptions => 'Options';
+
+  @override
+  String get msgAnnouncements => 'Announcements';
+
+  @override
+  String get msgAnnouncementsEmpty => 'No announcements yet';
+
+  @override
+  String get msgAnnouncementsFailed => 'Announcements could not load';
+
+  @override
+  String get msgNewAnnouncement => 'New announcement';
+
+  @override
+  String get msgImportant => 'Important';
+
+  @override
+  String get msgUnread => 'Unread';
+
+  @override
+  String get msgBlockedIntro =>
+      'People you block cannot message you, and you cannot message them. Unblock someone to talk again.';
+
+  @override
+  String get msgBlockedEmptyDetail =>
+      'If someone makes you uncomfortable, you can block or report them from the conversation\'s options.';
+
+  @override
+  String get msgBlockedLabel => 'Blocked';
+
+  @override
+  String get accountSecurityDetailFull =>
+      'Devices, two-step verification, sign out everywhere, delete account';
+
+  @override
+  String get securityDeleteHeading => 'Delete account';
+
+  @override
+  String get securityDeleteFooter =>
+      'Deleting your account removes your personal data after 14 days, and you can cancel before then. Records your school must keep stay with the school.';
+
+  @override
+  String get securityDeleteTitle => 'Delete your account?';
+
+  @override
+  String get securityDeleteExplain =>
+      'You will see exactly what is removed and what your school keeps, and you will be asked to confirm again. Deletion happens after 14 days and can be cancelled until then.';
+
+  @override
+  String get securityDeleteContinue => 'Continue';
+
+  @override
+  String get loginDidNotFinish =>
+      'Sign-in did not finish - the connection may have dropped. Please try again.';
+
+  @override
+  String get filesSwitchedOff =>
+      'Attachments and voice notes aren\'t switched on for your school yet.';
+
+  @override
+  String get attachmentRetry => 'Try again';
+
+  @override
+  String get attachmentRemove => 'Remove';
+
+  @override
+  String get msgVoiceSending => 'Sending voice note…';
+
+  @override
+  String get studentTodayLessonsShortcut => 'Lessons & notebooks';
+
+  @override
+  String get studentTodayLessonsShortcutDetail =>
+      'Every class, with your own notes';
+
+  @override
+  String get studentTodayWorkShortcutDetail => 'Hand in and check deadlines';
+
+  @override
+  String get studentTodayFamilyShortcutDetail =>
+      'Your Studafy ID and parent requests';
+
+  @override
+  String get studentTodayWorkSection => 'Work to do';
+
+  @override
+  String get studentLessonsSubtitle =>
+      'Your classes, their lessons and your notebooks';
+
+  @override
+  String get studentClassLessonsDetail =>
+      'Everything your teacher shared, by date';
+
+  @override
+  String get studentClassNotebook => 'Notebook';
+
+  @override
+  String get studentClassNotebookDetail =>
+      'Your own notes for this class, each one dated';
+
+  @override
+  String get studentClassOpenNotebook => 'Open notebook';
+
+  @override
+  String planUpgradeTo(Object plan) {
+    return 'Upgrade to $plan';
+  }
+
+  @override
+  String planAdds(Object plan) {
+    return '$plan adds:';
+  }
+
+  @override
+  String get planEverything => 'You have every study feature.';
+
+  @override
+  String get planSeePlans => 'See plans';
+
+  @override
+  String get workSubtitle => 'Assignments, tests, grades and attendance';
+
+  @override
+  String get workSectionOpen => 'To do';
+
+  @override
+  String get workSectionClosed => 'Past the deadline';
+
+  @override
+  String get workSectionGraded => 'Marked';
+
+  @override
+  String get workStateOpen => 'Open';
+
+  @override
+  String get workStateClosed => 'Closed';
+
+  @override
+  String get workStateGraded => 'Marked';
+
+  @override
+  String get workView => 'View';
+
+  @override
+  String get submitInstructions => 'Instructions';
+
+  @override
+  String get submitHandInAgain => 'Hand in again';
+
+  @override
+  String get submitSaving => 'Your work is being handed in…';
+
+  @override
+  String get helperSubtitle => 'Ask about anything you\'re studying';
+
+  @override
+  String get helperLimitReached =>
+      'You\'ve used today\'s questions. Upgrade for more each day, or ask again tomorrow.';
+
+  @override
+  String get helperRecentChats => 'Recent chats';
+
+  @override
+  String get helperSeeAll => 'See all';
+
+  @override
+  String get helperOffTitle => 'Not switched on yet';
+
+  @override
+  String get accountSectionProfile => 'Profile information';
+
+  @override
+  String get accountSectionNotifications => 'Notifications';
+
+  @override
+  String get accountSectionSubscription => 'Subscription';
+
+  @override
+  String get accountStudyPlan => 'Study plan';
+
+  @override
+  String get accountStudyPlanDetail =>
+      'Your plan, what it includes, and upgrades';
+
+  @override
+  String get accountTechnicalId => 'Technical account ID';
+
+  @override
+  String get accountTechnicalIdDetail =>
+      'Only needed if Studafy support asks for it. To link with a parent, share your Studafy ID instead.';
+
+  @override
+  String get accountChangePhoto => 'Change photo';
+
+  @override
+  String get loginWrongRoleStudentTitle => 'This email is a student account';
+
+  @override
+  String get loginWrongRoleStudentBody =>
+      'A student account is only for learning, so it can\'t be used as a teacher or a parent. To teach or to follow a child, sign in with a different email.';
+
+  @override
+  String get loginWrongRoleAdultTitle => 'This email isn\'t a student account';
+
+  @override
+  String loginWrongRoleAdultBody(String role) {
+    return 'It\'s already used as a $role, so it can\'t be a student too. A student needs an email of their own.';
+  }
+
+  @override
+  String loginContinueAs(String role) {
+    return 'Continue as $role';
+  }
+
+  @override
+  String get loginUseDifferentEmail => 'Use a different email';
+
+  @override
+  String get accountSwitchRoleTeacherParent =>
+      'Move between teaching and following your children.';
 }

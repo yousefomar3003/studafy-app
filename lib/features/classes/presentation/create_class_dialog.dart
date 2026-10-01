@@ -51,6 +51,10 @@ Future<bool> showCreateClassDialog(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
+                      // Fills its half of the row and trims a long grade
+                      // name ("Grade 12", or longer in Arabic) instead of
+                      // pushing past the edge.
+                      isExpanded: true,
                       initialValue: grade,
                       decoration: InputDecoration(
                         labelText: AppL10n.of(dialogContext).classesGradeLabel,
@@ -61,6 +65,7 @@ Future<bool> showCreateClassDialog(
                           value: i + 1,
                           child: Text(
                             AppL10n.of(dialogContext).classesGradeOption(i + 1),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -70,6 +75,7 @@ Future<bool> showCreateClassDialog(
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: section,
                       decoration: InputDecoration(
                         labelText: AppL10n.of(dialogContext)

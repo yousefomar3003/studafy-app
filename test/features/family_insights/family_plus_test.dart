@@ -5,8 +5,9 @@ import 'package:studafy/features/family_insights/presentation/family_plus_gate.d
 
 import '../../support/localized_app.dart';
 
-/// Family+ is bought per child through the store. The server keeps the
-/// entitlement; these tests cover what the parent sees and can do.
+/// Family+ is a family plan bought through the store: up to 4 or up to 8
+/// linked children. The server keeps the entitlement and decides which
+/// children it covers; these tests cover what the parent sees and can do.
 void main() {
   void tall(WidgetTester tester) {
     tester.view.physicalSize = const Size(1200, 2600);
@@ -29,7 +30,7 @@ void main() {
     expect(find.text('INSIGHTS'), findsOne);
   });
 
-  testWidgets('without it, the offer names the child, the price and trial', (
+  testWidgets('without it, both family plans are offered at store prices', (
     tester,
   ) async {
     tall(tester);
@@ -39,15 +40,17 @@ void main() {
 
     expect(find.text('INSIGHTS'), findsNothing);
     expect(find.text('Family+ for Sara'), findsOne);
-    expect(find.text('Work due this week, so nothing slips'), findsOne);
-    // The store's own price and trial, never a hard-coded one.
-    expect(find.text(r'$1.99 / month'), findsOne);
     expect(
-      find.text(r'If eligible, free for 30 days, then $1.99 / month'),
+      find.text('What to focus on this week, most urgent first'),
       findsOne,
     );
+    expect(find.text('Up to 4 children'), findsOne);
+    expect(find.text('Up to 8 children'), findsOne);
+    // The store's own prices and trial, never hard-coded ones.
+    expect(find.text(r'$2.99 / month'), findsOne);
+    expect(find.text(r'$4.99 / month'), findsOne);
     expect(
-      find.text('Covers Sara only. Each child has their own Family+.'),
+      find.text(r'If eligible, free for 30 days, then $2.99 / month'),
       findsOne,
     );
     // Asked about this child only.
@@ -58,14 +61,44 @@ void main() {
     tester,
   ) async {
     tall(tester);
-    await tester.pumpWidget(gate(_Store()));
+    final store = _Store();
+    await tester.pumpWidget(gate(store));
     await tester.pumpAndSettle();
     // This build has no policy URLs configured, as a misconfigured release
-    // would not: the button is shown but cannot start a purchase.
+    // would not: the buttons show but cannot start a purchase, and a tap on
+    // the plan says why instead of doing nothing.
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Start free trial'),
+      find.widgetWithText(FilledButton, 'Start free trial').first,
     );
     expect(button.onPressed, isNull);
+    await tester.tap(find.text('Up to 8 children'));
+    await tester.pump();
+    expect(
+      find.text('This plan cannot be bought in this version of the app yet.'),
+      findsOne,
+    );
+    expect(store.purchased, isEmpty);
+  });
+
+  testWidgets('a fifth child is told the 4-child plan does not cover them', (
+    tester,
+  ) async {
+    tall(tester);
+    final store = _Store(
+      plan: const FamilyPlusStatus(
+        plan: FamilyPlusPlan.upTo4,
+        coveredStudentIds: ['a', 'b', 'c', 'd'],
+      ),
+    );
+    await tester.pumpWidget(gate(store));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Not covered by your plan yet'), findsOne);
+    expect(find.textContaining('first 4 linked children'), findsOne);
+    expect(find.text('Your plan'), findsOne);
+    // Only the bigger plan is on offer; the one held is not sold again.
+    expect(find.text('Upgrade to up to 8 children'), findsOne);
+    expect(find.text('Subscribe for up to 4 children'), findsNothing);
   });
 
   testWidgets('purchases can be restored', (tester) async {
@@ -105,10 +138,15 @@ void main() {
       findsOne,
     );
     expect(
-      find.text('US\$1.99 / month in the US - the store shows your price'),
+      find.text('US\$2.99 / month in the US - the store shows your price'),
       findsOne,
     );
-    expect(find.byType(FilledButton), findsNothing);
+    expect(
+      find.text('US\$4.99 / month in the US - the store shows your price'),
+      findsOne,
+    );
+    final buttons = tester.widgetList<FilledButton>(find.byType(FilledButton));
+    expect(buttons.every((b) => b.onPressed == null), isTrue);
   });
 
   testWidgets('a build with no store describes Family+ but cannot sell it', (
@@ -144,12 +182,17 @@ void main() {
 }
 
 class _Store implements ParentSubscriptionRepository {
-  _Store({Set<String>? active, this.storeAvailable = true})
-    : active = active ?? {};
+  _Store({
+    Set<String>? active,
+    this.storeAvailable = true,
+    this.plan = FamilyPlusStatus.none,
+  }) : active = active ?? {};
 
   final Set<String> active;
   final bool storeAvailable;
+  final FamilyPlusStatus plan;
   final entitlementAskedFor = <String?>[];
+  final purchased = <FamilyPlusPlan>[];
   final _listeners = <EntitlementChanged>[];
   int restored = 0;
 
@@ -171,26 +214,28 @@ class _Store implements ParentSubscriptionRepository {
   }
 
   @override
-  Future<PaywallOffer> insightsOffer() async => storeAvailable
-      ? const PaywallOffer(
-          featureKey: 'parent_insights',
-          storeProductId: 'studafy_parent_insights_monthly',
+  Future<FamilyPlusStatus> familyPlan() async => plan;
+
+  @override
+  Future<PaywallOffer> familyOffer(FamilyPlusPlan plan) async => storeAvailable
+      ? PaywallOffer(
+          featureKey: plan.featureKey,
+          storeProductId: 'studafy_${plan.featureKey}_monthly',
           storeAvailable: true,
-          price: r'$1.99',
+          price: plan == FamilyPlusPlan.upTo4 ? r'$2.99' : r'$4.99',
           currencyCode: 'USD',
           periodLabel: 'month',
           hasTrial: true,
           trialLengthLabel: '30 days',
         )
-      : const PaywallOffer(
-          featureKey: 'parent_insights',
-          storeProductId: 'studafy_parent_insights_monthly',
+      : PaywallOffer(
+          featureKey: plan.featureKey,
+          storeProductId: 'studafy_${plan.featureKey}_monthly',
         );
 
   @override
-  Future<void> purchaseInsightsMonthly({
-    required String beneficiaryStudentId,
-  }) async {}
+  Future<void> purchaseFamilyPlan(FamilyPlusPlan plan) async =>
+      purchased.add(plan);
 
   @override
   Future<void> restorePurchases() async => restored++;

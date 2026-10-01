@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 
 import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
+import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
+import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -15,6 +18,7 @@ import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study/domain/study.dart';
+import '../features/study/presentation/study_plan_copy.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/upgrade_prompt.dart';
 import '../features/study_assistant/application/study_assistant_interactor.dart';
@@ -73,6 +77,62 @@ class StudentShell extends StatefulWidget {
 class _StudentShellState extends State<StudentShell> {
   int index = 0;
 
+  /// The bar is compact while the student scrolls down a page, and full
+  /// again as soon as they scroll back up or touch it - as on the teacher's.
+  bool _navCompact = false;
+
+  bool _onScroll(UserScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final compact = switch (notification.direction) {
+      ScrollDirection.reverse => true,
+      ScrollDirection.forward => false,
+      ScrollDirection.idle => _navCompact,
+    };
+    if (compact != _navCompact) setState(() => _navCompact = compact);
+    return false;
+  }
+
+  /// Opens the Plans screen, from wherever a plan is mentioned.
+  Future<void> _openPlans(BuildContext context) async {
+    final study = widget.study;
+    if (study == null) return;
+    await Navigator.of(context).pushOnce(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            StudyPlansPage(study: study, subscriptions: widget.studyPlans),
+      ),
+    );
+  }
+
+  /// The plan as the helper shows it: its name, today's questions, and what
+  /// the next plan adds - nothing to upgrade to on Studafy Max.
+  Future<HelperPlan?> _helperPlan(BuildContext context) async {
+    final study = widget.study;
+    if (study == null) return null;
+    final l10n = AppL10n.of(context);
+    final plan = await study.plan();
+    final next = plan.tier.next;
+    return HelperPlan(
+      name: studyPlanCopy[plan.tier]!.name,
+      askToday: plan.askToday,
+      askPerDay: plan.askPerDay,
+      upgradeTo: next == null ? null : studyPlanCopy[next]!.name,
+      upgradeBenefits: next == null
+          ? const []
+          : [for (final line in studyPlanCopy[next]!.adds) line(l10n)],
+    );
+  }
+
+  /// The Subscription row on the student's profile.
+  SubscriptionEntry? get _subscription {
+    final study = widget.study;
+    if (study == null) return null;
+    return SubscriptionEntry(
+      open: _openPlans,
+      currentPlan: () async => studyPlanCopy[(await study.plan()).tier]!.name,
+    );
+  }
+
   /// Signed in, but not in any class yet.
   ///
   /// Every student starts here: they make an account before a teacher has
@@ -87,7 +147,7 @@ class _StudentShellState extends State<StudentShell> {
   Future<void> _joinClass() async {
     final classes = widget.classes;
     if (classes == null) return;
-    final joined = await Navigator.of(context).push<Object?>(
+    final joined = await Navigator.of(context).pushOnce<Object?>(
       MaterialPageRoute<void>(builder: (_) => JoinClassPage(classes: classes)),
     );
     if (joined == null || !mounted) return;
@@ -129,6 +189,8 @@ class _StudentShellState extends State<StudentShell> {
         onWork: () => setState(() => index = 2),
         onNotebook: () => setState(() => index = 1),
         classes: widget.classes,
+        onJoinClass: widget.classes == null ? null : _joinClass,
+        subscription: _subscription,
       ),
       // Lessons are free (2026-09-27): every class, its lessons by date and
       // the student's own notebook for it.
@@ -147,12 +209,15 @@ class _StudentShellState extends State<StudentShell> {
           studentId: studentId,
           initialFeed: AcademicFeed.content,
           availableFeeds: const [AcademicFeed.content],
-          actions: const [AccountButton()],
           loadClassChoices: widget.classes == null ? null : _classChoices,
         ),
       AcademicOverviewPage(
         repository: repository,
         studentId: studentId,
+        // A tab of its own, so a large title like the others, and no
+        // profile button: that lives on Today.
+        title: AppL10n.of(context).navWork,
+        subtitle: AppL10n.of(context).workSubtitle,
         initialFeed: AcademicFeed.assignments,
         availableFeeds: const [
           AcademicFeed.assignments,
@@ -161,19 +226,19 @@ class _StudentShellState extends State<StudentShell> {
           AcademicFeed.attendance,
           AcademicFeed.wellbeing,
         ],
-        actions: const [AccountButton()],
         loadClassChoices: widget.classes == null ? null : _classChoices,
         // Only published work can be handed in; a draft is not the
         // student's to see as open.
         onOpenRecord: (record) async {
           final messenger = ScaffoldMessenger.of(context);
-          final done = await Navigator.of(context).push<String>(
+          final done = await Navigator.of(context).pushOnce<String>(
             MaterialPageRoute<String>(
               builder: (_) => SubmitWorkPage(
                 repository: repository,
                 assignmentId: record.id,
                 assignmentTitle: record.title,
                 canSubmit: record.state == 'published',
+                deadline: record.deadline,
                 instructions: record.detail,
                 material: record.attachments,
                 uploads: widget.fileUploads,
@@ -237,7 +302,7 @@ class _StudentShellState extends State<StudentShell> {
                 plan: plan,
                 // Photos to the helper are Studafy Plus.
                 needs: StudyPlanTier.plus,
-                onUpgrade: () => Navigator.of(context).push(
+                onUpgrade: () => Navigator.of(context).pushOnce(
                   MaterialPageRoute<void>(
                     builder: (_) => StudyPlansPage(
                       study: study,
@@ -249,22 +314,8 @@ class _StudentShellState extends State<StudentShell> {
             },
             null => null,
           },
-          actions: [
-            if (widget.study case final study?)
-              IconButton(
-                tooltip: AppL10n.of(context).studentLessonsPlans,
-                icon: const Icon(Icons.workspace_premium_outlined),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => StudyPlansPage(
-                      study: study,
-                      subscriptions: widget.studyPlans,
-                    ),
-                  ),
-                ),
-              ),
-            const AccountButton(),
-          ],
+          plan: widget.study == null ? null : () => _helperPlan(context),
+          onUpgrade: widget.study == null ? null : () => _openPlans(context),
         ),
       if (messaging)
         ConversationsPage(
@@ -278,30 +329,29 @@ class _StudentShellState extends State<StudentShell> {
         body: SafeArea(
           child: _NoClassYet(
             onJoin: _joinClass,
-            actions: const [AccountButton()],
+            actions: [AccountButton(subscription: _subscription)],
           ),
         ),
       );
     }
     return Scaffold(
-      body: IndexedStack(index: index, children: pages),
-      // Always reachable, not only from an empty state: a student joins a
-      // second class on the same day they join their first, and the link
-      // often arrives in a chat app rather than as something tappable.
-      floatingActionButton: classes == null || index != 0
-          ? null
-          : FloatingActionButton.extended(
-              // Every tab stays alive in the shell's IndexedStack, so two
-              // buttons with the default hero tag coexist and break the
-              // transition of every screen pushed from any tab.
-              heroTag: null,
-              onPressed: _joinClass,
-              icon: const Icon(Icons.group_add_outlined),
-              label: Text(AppL10n.of(context).joinClassAction),
-            ),
+      backgroundColor: studafyCanvas,
+      // Joining another class is on Today, beside the class list, rather
+      // than a floating button that sat over the cards and the bar.
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: _onScroll,
+        child: IndexedStack(index: index, children: pages),
+      ),
       bottomNavigationBar: StudafyNavigationBar(
         selectedIndex: index,
-        onSelected: (value) => setState(() => index = value),
+        compact: _navCompact,
+        onInteract: () {
+          if (_navCompact) setState(() => _navCompact = false);
+        },
+        onSelected: (value) => setState(() {
+          index = value;
+          _navCompact = false;
+        }),
         items: [
           StudafyNavItem(
             AppL10n.of(context).navToday,
@@ -310,8 +360,8 @@ class _StudentShellState extends State<StudentShell> {
           ),
           StudafyNavItem(
             AppL10n.of(context).feedContent,
-            Icons.menu_book_outlined,
-            Icons.menu_book_rounded,
+            Icons.auto_stories_outlined,
+            Icons.auto_stories_rounded,
           ),
           StudafyNavItem(
             AppL10n.of(context).navWork,
@@ -321,14 +371,14 @@ class _StudentShellState extends State<StudentShell> {
           if (assistant != null)
             StudafyNavItem(
               AppL10n.of(context).studyAssistantTab,
-              Icons.school_outlined,
-              Icons.school_rounded,
+              Icons.auto_awesome_outlined,
+              Icons.auto_awesome_rounded,
             ),
           if (messaging)
             StudafyNavItem(
               AppL10n.of(context).navMessages,
-              Icons.forum_outlined,
-              Icons.forum_rounded,
+              Icons.send_outlined,
+              Icons.send_rounded,
             ),
         ],
         accent: studafyNavy,
@@ -354,11 +404,10 @@ class _NoClassYet extends StatelessWidget {
     final l10n = AppL10n.of(context);
     return Column(
       children: [
-        Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(mainAxisSize: MainAxisSize.min, children: actions),
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 8, 4),
+          child: Row(
+            children: [const StudafyLogo(size: 26), const Spacer(), ...actions],
           ),
         ),
         Expanded(
@@ -367,29 +416,45 @@ class _NoClassYet extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.group_add_outlined, size: 56),
-                    const SizedBox(height: 20),
-                    Text(
-                      l10n.onboardingStudentTitle,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      l10n.onboardingStudentBody,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 28),
-                    FilledButton.icon(
-                      onPressed: onJoin,
-                      icon: const Icon(Icons.group_add_outlined),
-                      label: Text(l10n.joinClassAction),
-                    ),
-                  ],
+                child: FeatureCard(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      const IconBadge(icon: Icons.group_add_rounded, size: 72),
+                      const SizedBox(height: 20),
+                      Text(
+                        l10n.onboardingStudentTitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: studafyInk,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -.4,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        l10n.onboardingStudentBody,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: onJoin,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                          ),
+                          icon: const Icon(Icons.group_add_rounded),
+                          label: Text(l10n.joinClassAction),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

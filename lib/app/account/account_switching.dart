@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_routes.dart';
 import '../../core/feedback.dart';
+import '../../core/navigation.dart';
 import '../../core/studafy_domain.dart';
 import '../../features/accounts/domain/device_account.dart';
 import '../../features/accounts/presentation/account_switcher_sheet.dart';
@@ -112,7 +113,7 @@ Future<void> openCreateChildAccount(
   DeviceAccountSwitcher switcher,
 ) async {
   final locale = Localizations.localeOf(context).languageCode;
-  await Navigator.of(context).push(
+  await Navigator.of(context).pushOnce(
     MaterialPageRoute<void>(
       builder: (_) => CreateChildAccountPage(
         create: (name) => switcher.createChild(name, locale: locale),

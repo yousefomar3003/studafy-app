@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/feedback.dart';
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
@@ -69,62 +70,85 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
         return const SizedBox.shrink();
       }
       final now = (widget.now ?? DateTime.now)();
-      return Padding(
-        padding: const EdgeInsets.only(top: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Semantics(
-              header: true,
-              child: Text(
-                AppL10n.of(context).meetingsUpcomingMeetings,
-                style: const TextStyle(
-                  color: studafyInk,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(AppL10n.of(context).meetingsUpcomingMeetings),
+          for (final meeting in meetings)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: FeatureCard(
+                padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 12, 12),
+                child: Row(
+                  children: [
+                    IconBadge(
+                      icon: meeting.isCancelled
+                          ? Icons.event_busy_rounded
+                          : Icons.videocam_rounded,
+                      color: meeting.isCancelled ? studafyMuted : studafyTeal,
+                      size: 42,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          UserContentText(
+                            meeting.title,
+                            style: const TextStyle(
+                              color: studafyInk,
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          UserContentText(
+                            meeting.classroomName,
+                            style: const TextStyle(
+                              color: studafyMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            studafyDateTime(context, meeting.startsAt),
+                            style: const TextStyle(
+                              color: studafyMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                          if (meeting.isCancelled)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: StatusPill(
+                                label: AppL10n.of(context).meetingsCancelled,
+                                icon: Icons.event_busy_rounded,
+                                color: studafyDanger,
+                              ),
+                            )
+                          else if (meeting.meetUrl == null)
+                            Text(
+                              AppL10n.of(context).meetingsTheLinkWillAppearHere,
+                              style: const TextStyle(
+                                color: studafyMuted,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (meeting.canJoin(now))
+                      FilledButton(
+                        onPressed: () => _join(meeting),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, 44),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(AppL10n.of(context).meetingsJoin),
+                      ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            for (final meeting in meetings)
-              Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  leading: Icon(
-                    meeting.isCancelled
-                        ? Icons.event_busy_outlined
-                        : Icons.videocam_outlined,
-                  ),
-                  title: UserContentText(meeting.title),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      UserContentText(meeting.classroomName),
-                      Text(studafyDateTime(context, meeting.startsAt)),
-                      if (meeting.isCancelled)
-                        Text(
-                          AppL10n.of(context).meetingsCancelled,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        )
-                      else if (meeting.meetUrl == null)
-                        Text(AppL10n.of(context).meetingsTheLinkWillAppearHere),
-                    ],
-                  ),
-                  isThreeLine: true,
-                  trailing: meeting.canJoin(now)
-                      ? FilledButton(
-                          onPressed: () => _join(meeting),
-                          child: Text(AppL10n.of(context).meetingsJoin),
-                        )
-                      : null,
-                ),
-              ),
-          ],
-        ),
+        ],
       );
     },
   );

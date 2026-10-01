@@ -292,6 +292,20 @@ jobs:
           bunx supabase test db --local
           supabase/tests/guardian_links_students_only.sql
 
+      # A student has one Studafy ID however many teachers' schools they
+      # join; a parent finds them by it, and nobody else can hold it.
+      - name: Verify one Studafy ID per student
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/one_studafy_id.sql
+
+      # One kind of account per email: a student account is a student only;
+      # an adult's may be a teacher, a parent or both.
+      - name: Verify one kind of account per email
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/one_kind_per_account.sql
+
       # Expired idempotency records are pruned by the worker; live and
       # in-flight ones are kept. Transactional.
       - name: Verify housekeeping
@@ -323,6 +337,16 @@ jobs:
         run: >-
           bunx supabase test db --local
           supabase/tests/assistant_material.sql
+
+      # Paper gradebook, attendance corrections, deadlines and coursework
+      # files (2026-09-30). Each suite seeds and rolls back its own fixtures.
+      - name: Verify paper grades, corrections, deadlines and downloads
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/paper_gradebook.sql
+          supabase/tests/attendance_corrections.sql
+          supabase/tests/submission_deadlines.sql
+          supabase/tests/coursework_files.sql
 
       # API-042: every school-operations slice - account, communications,
       # family, invitations, meetings, notifications, roster, school
@@ -360,6 +384,15 @@ jobs:
           bunx supabase test db --local
           supabase/tests/family_insights.sql
 
+      # Family+ is a family plan: 4 or 8 children, held by the parent who
+      # pays. Which children hold the seats is worked out on every read, so
+      # these pin the count, the order, a seat freeing when a link goes, and
+      # that the plan never covers another guardian. Seeds its own fixtures.
+      - name: Verify Family+ family plans
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/family_plus_tiers.sql
+
       # Notifications name the people an event is about, so the audience is
       # a disclosure decision: a mark reaches one child's guardian and not
       # the class, a safeguarding-restricted note reaches no family at all,
@@ -386,6 +419,9 @@ jobs:
 
       - name: Verify API-041 cursor query plans
         run: bun run test:plans:academic
+
+      - name: Verify paper gradebook, attendance and deadline query plans
+        run: bun run test:plans:coursework
 
       - name: Verify FILE-050 quota, status, expiry, and outbox query plans
         run: bun run test:plans:uploads

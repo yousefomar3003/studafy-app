@@ -106,7 +106,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hello, Khaled'), findsOneWidget);
     expect(find.text('Physics 11A'), findsOneWidget);
-    expect(find.text('24 students'), findsOneWidget);
+    // Once in the class card, once in the day's totals.
+    expect(find.text('24 students'), findsNWidgets(2));
     expect(find.text('3'), findsOneWidget);
     for (final sample in [
       'Rana',

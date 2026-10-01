@@ -8,6 +8,7 @@ import {
   createAcademicAppendedRoutes,
   createAcademicRoutes,
   createClassroomArchiveRoutes,
+  createCourseworkRoutes,
   createSubmissionHistoryRoutes,
 } from "../../src/academic/routes";
 import {
@@ -540,6 +541,20 @@ function routeTable() {
       idempotency,
     ),
   );
+  combined.route(
+    "/",
+    createCourseworkRoutes(
+      {
+        cursorSigningKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        repository: {
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+      },
+      authorization,
+      idempotency,
+    ),
+  );
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -616,6 +631,9 @@ describe("permission catalogue", () => {
     const receiptsMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609270001_message_receipts.sql`,
     ).text();
+    const courseworkMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202609300001_paper_gradebook.sql`,
+    ).text();
     const submissionHistoryMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609260002_submission_history.sql`,
     ).text();
@@ -625,7 +643,7 @@ describe("permission catalogue", () => {
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}\n${submissionHistoryMigration}\n${receiptsMigration}\n${notebookMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}\n${submissionHistoryMigration}\n${receiptsMigration}\n${notebookMigration}\n${courseworkMigration}`,
       ).toContain(`'${permission}'`);
     }
   });

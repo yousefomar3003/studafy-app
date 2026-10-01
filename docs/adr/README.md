@@ -38,6 +38,7 @@ that references the old one.
 | [ADR-0030](ADR-0030-flat-sql-dispatchers.md) | Flatten rename-and-wrap SQL chains into named handlers behind one dispatcher, proved by differential checks; the migration gate bans new chains | Accepted for local/disposable use | - |
 | [ADR-0031](ADR-0031-managed-child-accounts-and-account-switching.md) | Parents create real student accounts for children with no email or phone, entered only through the parent by one-time sign-ins; several accounts per device with Instagram-style switching | Accepted for local/disposable use | - |
 | [ADR-0032](ADR-0032-subscription-lifecycle-and-backups.md) | Store-only subscriptions with upgrade-at-limit, renewal status, per-token store events, pause-first cancel, store receipts plus verified-only notices; daily encrypted backups restored on every run | Accepted for local/disposable use | - |
+| [ADR-0033](ADR-0033-paper-gradebook-corrections-and-deadlines.md) | Paper marks as `delivery=paper` assessments with draft/publish/correct in bulk, previous values kept in `grade_result_events`; attendance lock rule with lead-teacher override (no school admin in this release) and append-only history; extensions, reopen and a graded lock on hand-ins; lessons edited in place with retained files | Accepted for local/disposable use | - |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

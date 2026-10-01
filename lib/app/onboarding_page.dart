@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_routes.dart';
+import '../core/navigation.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/classes/application/class_list_interactor.dart';
@@ -124,7 +125,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Future<void> _joinClass() async {
     final classes = widget.classes;
     if (classes == null) return;
-    final joined = await Navigator.of(context).push<Object?>(
+    final joined = await Navigator.of(context).pushOnce<Object?>(
       MaterialPageRoute<Object?>(
         builder: (_) => JoinClassPage(classes: classes),
       ),

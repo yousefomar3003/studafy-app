@@ -8,9 +8,12 @@ const Timestamp = z.string().datetime({ offset: true });
  * ledger vocabulary: AI-072 removed the AI capability (ADR-0026), so neither
  * is offered in any environment and the database forbids activating either.
  * They remain here only so historical ledger rows stay decodable.
- * `parent_insights` stays out of the catalogue everywhere but `synthetic`
- * until the §29 legal sign-off lands. `studafy_plus` and `studafy_max` are
- * the student plans of ADR-0029; `student_notebook` is retired with them.
+ * `studafy_plus` and `studafy_max` are the student plans of ADR-0029;
+ * `student_notebook` is retired with them. `family_plus` (up to 4 linked
+ * children) and `family_plus_large` (up to 8) are the parent's Family+
+ * plans, held by the parent who pays. `parent_insights` is the per-child
+ * Family+ they replace: no longer sold, kept so a subscription bought
+ * before still renews.
  */
 export const V1BillingFeatureKey = z.enum([
   "parent_insights",
@@ -19,6 +22,8 @@ export const V1BillingFeatureKey = z.enum([
   "teacher_ai_grading",
   "studafy_plus",
   "studafy_max",
+  "family_plus",
+  "family_plus_large",
 ]);
 export type V1BillingFeatureKey = z.infer<typeof V1BillingFeatureKey>;
 
@@ -200,6 +205,12 @@ export const V1Entitlement = z.strictObject({
   storeProductId: z.string().min(1).max(200).optional(),
   /** False when someone else (a guardian) pays for it. */
   purchasedByMe: z.boolean().optional(),
+  /**
+   * Family+ plans only: the linked children the plan covers now - the
+   * parent's first 4 (or 8) verified links, earliest first. Worked out by
+   * the server on every read, so a link added or removed shows at once.
+   */
+  coveredStudentIds: z.array(Id).max(8).optional(),
 });
 export type V1Entitlement = z.infer<typeof V1Entitlement>;
 

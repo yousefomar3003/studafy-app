@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../core/device_settings.dart';
 import '../core/file_upload_repository.dart';
 import '../core/locale_controller.dart';
+import '../core/profile_photo.dart';
 import '../core/runtime_environment.dart';
 import '../core/secure_storage.dart';
 import '../core/studafy_domain.dart';
@@ -107,6 +108,7 @@ class AppDependencies {
     required this.family,
     required this.locale,
     required this.localeSession,
+    required this.deviceSettings,
   });
 
   final SessionInteractor session;
@@ -174,6 +176,10 @@ class AppDependencies {
   /// [cacheBinder], because it must stay alive for the app's whole lifetime:
   /// the root listens to it to rebuild on a language change.
   final LocaleController locale;
+
+  /// Device-scoped preferences (language, whether the welcome slides were
+  /// seen). Never session data.
+  final DeviceSettingsStore deviceSettings;
 
   /// Seeds the language from the profile on sign-in. Held so it keeps
   /// listening; null in synthetic builds, which have no profile.
@@ -269,7 +275,12 @@ class AppDependencies {
               session: session,
               vault: SecureAccountVault(remote.secureStore),
               managedChildren: ApiManagedChildrenRepository(remote.api),
-              forgetAccount: studyChats?.forgetUser,
+              // What this device keeps for an account goes with it: its
+              // study helper chats and its profile photo.
+              forgetAccount: (userId) async {
+                await studyChats?.forgetUser(userId);
+                await ProfilePhotos.delete(userId);
+              },
               beforeSignOut: pushRegistrar.unregister,
               context: context,
             ),
@@ -348,6 +359,7 @@ class AppDependencies {
       ),
       cacheBinder: cacheBinder,
       locale: localeController,
+      deviceSettings: deviceSettings,
       localeSession: localeSessionBinder,
       // FILE-051's scanning and delivery gate has passed, so a remote build
       // now sends real bytes through the real pipeline. A build with no API

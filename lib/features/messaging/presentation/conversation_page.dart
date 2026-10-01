@@ -8,6 +8,7 @@ import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/navigation.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/platform_voice_notes.dart';
 import '../../../core/studafy_design.dart';
@@ -70,7 +71,9 @@ class _ConversationPageState extends State<ConversationPage> {
 
   /// Replaced after a send so the field rebuilds empty: it owns its own list
   /// of staged files, and those have just been handed to a message.
-  Key _attachmentsKey = UniqueKey();
+  /// Replaced after each send so the field starts empty, and used by the
+  /// composer's one attach button to open the picker.
+  GlobalKey<AttachmentFieldState> _attachmentsKey = GlobalKey();
 
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
@@ -87,6 +90,10 @@ class _ConversationPageState extends State<ConversationPage> {
   VoicePlayer? _player;
   bool _recording = false;
   bool _sendingVoice = false;
+
+  /// A voice note that could not be sent, kept so it can be tried again
+  /// rather than recorded again.
+  RecordedVoiceNote? _unsentVoice;
 
   VoicePlayer _voicePlayer() =>
       _player ??= (widget.voicePlayer ?? PlatformVoicePlayer.new)();
@@ -217,7 +224,12 @@ class _ConversationPageState extends State<ConversationPage> {
     final text = _composer.text;
     // An attachment still uploading would be dropped from the message, so the
     // send waits for it rather than sending half of what was meant.
-    if (text.trim().isEmpty || _sending || _uploading) return;
+    // A photo or file needs no text of its own, as a voice note does not.
+    if ((text.trim().isEmpty && _attachments.isEmpty) ||
+        _sending ||
+        _uploading) {
+      return;
+    }
     final interactor = MessagingScope.of(context);
     final clientId = _pendingClientId ??= interactor.newClientMessageId();
     setState(() {
@@ -242,7 +254,7 @@ class _ConversationPageState extends State<ConversationPage> {
           // would attach them again on the next send, which the server
           // refuses anyway.
           _attachments = const [];
-          _attachmentsKey = UniqueKey();
+          _attachmentsKey = GlobalKey();
         },
         onFailure: (failure) => _sendError = failure.code == Failure.networkCode
             ? AppL10n.of(context).msgSendFailed
@@ -283,27 +295,44 @@ class _ConversationPageState extends State<ConversationPage> {
     await _recorder?.cancel();
   }
 
-  /// Uploads the note as a message attachment and sends it as a message of
-  /// its own, with no text - the way WhatsApp does.
+  /// Stops the recording and sends it as a message of its own, with no
+  /// text - the way WhatsApp does.
   Future<void> _sendRecording({required bool reachedLimit}) async {
-    final uploads = _uploads;
     final recorder = _recorder;
-    if (uploads == null || recorder == null) return;
+    if (recorder == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppL10n.of(context);
+    setState(() => _recording = false);
+    RecordedVoiceNote? note;
+    try {
+      note = await recorder.stop();
+    } on Object {
+      note = null;
+    }
+    if (!mounted) return;
+    if (note == null || note.duration < voiceNoteMinimum) {
+      messenger.showMessage(l10n.msgVoiceTooShort);
+      return;
+    }
+    if (reachedLimit) messenger.showMessage(l10n.msgVoiceLimit);
+    await _sendVoice(note);
+  }
+
+  /// Uploads [note] as a message attachment and sends it. On failure the
+  /// note is kept, with a way to try again or to throw it away.
+  Future<void> _sendVoice(RecordedVoiceNote recorded) async {
+    RecordedVoiceNote? note = recorded;
+    final uploads = _uploads;
+    if (uploads == null || _sendingVoice) return;
     final l10n = AppL10n.of(context);
     final interactor = MessagingScope.of(context);
     setState(() {
-      _recording = false;
       _sendingVoice = true;
+      _unsentVoice = null;
+      _sendError = null;
     });
     String? error;
     try {
-      final note = await recorder.stop();
-      if (note == null || note.duration < voiceNoteMinimum) {
-        messenger.showMessage(l10n.msgVoiceTooShort);
-        return;
-      }
-      if (reachedLimit) messenger.showMessage(l10n.msgVoiceLimit);
       final file = await uploads.upload(
         FileUploadCommand(
           attemptId: newIdempotencyKey('voice-note'),
@@ -311,7 +340,7 @@ class _ConversationPageState extends State<ConversationPage> {
           purpose: FilePurpose.messageAttachment,
           displayName: l10n.msgVoiceMessage,
           mediaType: voiceNoteMediaType,
-          bytes: note.bytes,
+          bytes: recorded.bytes,
         ),
       );
       final result = await interactor.send(
@@ -326,6 +355,11 @@ class _ConversationPageState extends State<ConversationPage> {
         },
         onFailure: (_) => error = l10n.msgVoiceFailed,
       );
+    } on FileServiceUnavailable {
+      // Trying again will not help until the school's server has uploads
+      // switched on, so the note is not offered for another try.
+      error = l10n.filesSwitchedOff;
+      note = null;
     } on Object {
       error = l10n.msgVoiceFailed;
     } finally {
@@ -333,6 +367,7 @@ class _ConversationPageState extends State<ConversationPage> {
         setState(() {
           _sendingVoice = false;
           _sendError = error;
+          _unsentVoice = error == null ? null : note;
         });
       }
     }
@@ -415,38 +450,45 @@ class _ConversationPageState extends State<ConversationPage> {
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         title: Text(title, overflow: TextOverflow.ellipsis),
         actions: [
+          // Report and block live behind one clearly labelled menu, each
+          // with its own icon, rather than a lone flag.
           PopupMenuButton<VoidCallback>(
-            tooltip: AppL10n.of(context).msgReportTitle,
-            icon: const Icon(Icons.flag_outlined),
+            tooltip: AppL10n.of(context).msgOptions,
+            icon: const Icon(Icons.more_horiz_rounded),
             onSelected: (action) => action(),
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: _reportConversation,
-                child: Text(AppL10n.of(context).msgMenuReportConversation),
+                child: _MenuLine(
+                  icon: Icons.report_outlined,
+                  text: AppL10n.of(context).msgMenuReportConversation,
+                ),
               ),
               for (final person in others) ...[
                 PopupMenuItem(
                   value: () => _reportPerson(person),
-                  child: Text(
-                    AppL10n.of(context).msgMenuReportPerson(person.displayName),
+                  child: _MenuLine(
+                    icon: Icons.person_search_outlined,
+                    text: AppL10n.of(context)
+                        .msgMenuReportPerson(person.displayName),
                   ),
                 ),
                 if (!_blockedByMe.contains(person.userId))
                   PopupMenuItem(
                     value: () => _block(person),
-                    child: Text(
-                      AppL10n.of(context)
+                    child: _MenuLine(
+                      icon: Icons.block_rounded,
+                      text: AppL10n.of(context)
                           .msgMenuBlockPerson(person.displayName),
+                      destructive: true,
                     ),
                   ),
               ],
               PopupMenuItem(
                 value: () async {
-                  await Navigator.push(
-                    context,
+                  await Navigator.of(context).pushOnce(
                     MaterialPageRoute<void>(
                       builder: (_) => BlockedPeoplePage(
                         schoolId: _conversation.schoolId,
@@ -460,7 +502,10 @@ class _ConversationPageState extends State<ConversationPage> {
                   );
                   if (mounted) await _load();
                 },
-                child: Text(AppL10n.of(context).msgMenuBlocked),
+                child: _MenuLine(
+                  icon: Icons.person_off_outlined,
+                  text: AppL10n.of(context).msgMenuBlocked,
+                ),
               ),
             ],
           ),
@@ -530,8 +575,15 @@ class _ConversationPageState extends State<ConversationPage> {
                 ),
                 constraints: const BoxConstraints(maxWidth: 320),
                 decoration: BoxDecoration(
-                  color: mine ? studafyNavy : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  gradient: mine ? studafyActionGradient : null,
+                  color: mine ? null : Colors.white,
+                  border: mine ? null : Border.all(color: studafyHairline),
+                  borderRadius: BorderRadiusDirectional.only(
+                    topStart: const Radius.circular(18),
+                    topEnd: const Radius.circular(18),
+                    bottomStart: Radius.circular(mine ? 18 : 6),
+                    bottomEnd: Radius.circular(mine ? 6 : 18),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,95 +656,290 @@ class _ConversationPageState extends State<ConversationPage> {
     );
   }
 
-  Widget _composerBar() => SafeArea(
-    top: false,
-    child: Container(
-      color: Colors.white,
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 8, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_sendError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
-                _sendError!,
-                style: const TextStyle(color: Color(0xFFB3261E), fontSize: 12),
+  Widget _composerBar() {
+    final l10n = AppL10n.of(context);
+    final empty = _composer.text.trim().isEmpty && _attachments.isEmpty;
+    final unsent = _unsentVoice;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 10, 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_sendError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _ComposerNotice(
+                  text: _sendError!,
+                  // A voice note that failed can be sent again as it is.
+                  actionLabel: unsent == null ? null : l10n.msgRetry,
+                  onAction: unsent == null ? null : () => _sendVoice(unsent),
+                  onDismiss: unsent == null
+                      ? null
+                      : () => setState(() {
+                          _unsentVoice = null;
+                          _sendError = null;
+                        }),
+                ),
               ),
-            ),
-          if (_recording)
-            VoiceNoteRecorderBar(
-              onDiscard: _discardRecording,
-              onSend: _sendRecording,
-            )
-          else ...[
-            // The attachment control sits above the input so a long filename
-            // does not squeeze the text field.
-            // The constructor argument wins so a test can inject a fake; the
-            // scope is how the real app supplies it.
-            if (_uploads case final uploads?)
-              if (_conversation.schoolId case final schoolId)
+            if (_sendingVoice)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
+                child: Row(
+                  children: [
+                    const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      l10n.msgVoiceSending,
+                      style: const TextStyle(color: studafyMuted, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            if (_recording)
+              _ComposerShell(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(4, 2, 4, 2),
+                  child: VoiceNoteRecorderBar(
+                    onDiscard: _discardRecording,
+                    onSend: _sendRecording,
+                  ),
+                ),
+              )
+            else ...[
+              // What has been attached, each with a way to take it back out
+              // (or to try it again), shown just above the message it goes
+              // with. The constructor argument wins so a test can inject a
+              // fake; the scope is how the real app supplies it.
+              if (_uploads case final uploads?)
                 AttachmentField(
                   key: _attachmentsKey,
                   purpose: FilePurpose.messageAttachment,
-                  schoolId: schoolId,
+                  schoolId: _conversation.schoolId,
                   uploads: uploads,
                   enabled: !_sending,
                   maximumCount: 3,
+                  showAddButtons: false,
                   source: widget.attachmentSource ?? pickPlatformAttachment,
                   onChanged: (items) => setState(() => _attachments = items),
                 ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _composer,
-                    minLines: 1,
-                    maxLines: 4,
-                    maxLength: 4000,
-                    textInputAction: TextInputAction.newline,
-                    decoration: InputDecoration(
-                      hintText: AppL10n.of(context).msgComposeHint,
-                      counterText: '',
-                      border: const OutlineInputBorder(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: _ComposerShell(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // One attach button, inside the field: it asks
+                          // photo, camera or document.
+                          if (_uploads != null)
+                            IconButton(
+                              tooltip: l10n.attachmentAdd,
+                              onPressed: _sending
+                                  ? null
+                                  : () => _attachmentsKey.currentState
+                                        ?.chooseAndAdd(),
+                              icon: const Icon(
+                                Icons.attach_file_rounded,
+                                color: studafyNavy,
+                              ),
+                            )
+                          else
+                            const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _composer,
+                              minLines: 1,
+                              maxLines: 6,
+                              maxLength: 4000,
+                              textInputAction: TextInputAction.newline,
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: InputDecoration(
+                                hintText: l10n.msgComposeHint,
+                                counterText: '',
+                                isDense: true,
+                                filled: false,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 12,
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                              ),
+                              // Editing the draft means it is a new message,
+                              // not a retry. The button beside it follows:
+                              // send for text, a microphone for an empty
+                              // draft.
+                              onChanged: (_) =>
+                                  setState(() => _pendingClientId = null),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      ),
                     ),
-                    // Editing the draft means it is a new message, not a retry.
-                    // The button beside it follows: send for text, a microphone
-                    // for an empty draft.
-                    onChanged: (_) => setState(() => _pendingClientId = null),
                   ),
-                ),
-                const SizedBox(width: 8),
-                if (_sendingVoice)
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(width: 8),
+                  if (_sendingVoice)
+                    const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Padding(
+                        padding: EdgeInsets.all(13),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else if (empty && _uploads != null)
+                    IconButton.filled(
+                      tooltip: l10n.msgVoiceRecord,
+                      onPressed: _sending ? null : _startRecording,
+                      style: IconButton.styleFrom(
+                        backgroundColor: studafyNavy,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: studafyHairline,
+                        disabledForegroundColor: studafyMuted,
+                        fixedSize: const Size(48, 48),
+                      ),
+                      icon: const Icon(Icons.mic_rounded),
+                    )
+                  else
+                    IconButton.filled(
+                      tooltip: l10n.msgSend,
+                      onPressed: _sending || _uploading ? null : _send,
+                      style: IconButton.styleFrom(
+                        backgroundColor: studafyNavy,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: studafyHairline,
+                        disabledForegroundColor: studafyMuted,
+                        fixedSize: const Size(48, 48),
+                      ),
+                      icon: _sending
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded),
                     ),
-                  )
-                else if (_composer.text.trim().isEmpty &&
-                    _attachments.isEmpty &&
-                    _uploads != null)
-                  IconButton.filled(
-                    tooltip: AppL10n.of(context).msgVoiceRecord,
-                    onPressed: _sending ? null : _startRecording,
-                    icon: const Icon(Icons.mic_rounded),
-                  )
-                else
-                  IconButton.filled(
-                    tooltip: AppL10n.of(context).msgSend,
-                    onPressed: _sending || _uploading ? null : _send,
-                    icon: const Icon(Icons.send_rounded),
-                  ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The rounded white field the composer's controls sit in.
+class _ComposerShell extends StatelessWidget {
+  const _ComposerShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(26),
+      border: Border.all(color: studafyHairline),
+      boxShadow: [
+        BoxShadow(
+          color: studafyAbyss.withValues(alpha: .06),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Padding(padding: const EdgeInsets.all(2), child: child),
+  );
+}
+
+/// A failure above the composer, with what can be done about it.
+class _ComposerNotice extends StatelessWidget {
+  const _ComposerNotice({
+    required this.text,
+    this.actionLabel,
+    this.onAction,
+    this.onDismiss,
+  });
+
+  final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    container: true,
+    child: Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 4, 6),
+      decoration: BoxDecoration(
+        color: studafyDanger.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: studafyDanger,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: studafyDanger, fontSize: 13),
+            ),
+          ),
+          if (actionLabel != null && onAction != null)
+            TextButton(onPressed: onAction, child: Text(actionLabel!)),
+          if (onDismiss != null)
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close_rounded, size: 18),
+            ),
         ],
       ),
     ),
+  );
+}
+
+/// One line of an options menu: an icon and a clear label.
+class _MenuLine extends StatelessWidget {
+  const _MenuLine({
+    required this.icon,
+    required this.text,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String text;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: 20, color: destructive ? studafyDanger : studafyInk),
+      const SizedBox(width: 12),
+      Flexible(
+        child: Text(
+          text,
+          style: TextStyle(color: destructive ? studafyDanger : studafyInk),
+        ),
+      ),
+    ],
   );
 }
 

@@ -164,6 +164,7 @@ class V1EntitlementRow {
     this.platform,
     this.storeProductId,
     this.purchasedByMe = true,
+    this.coveredStudentIds = const [],
   });
 
   final String featureKey;
@@ -185,6 +186,9 @@ class V1EntitlementRow {
   /// False when a guardian pays for the caller's plan.
   final bool purchasedByMe;
 
+  /// Family+ plans: the linked children the plan covers now.
+  final List<String> coveredStudentIds;
+
   bool get grantsAccess => status == 'active' || status == 'grace_period';
 
   factory V1EntitlementRow.fromJson(Map<String, dynamic> json) =>
@@ -200,6 +204,10 @@ class V1EntitlementRow {
         platform: json['platform'] as String?,
         storeProductId: json['storeProductId'] as String?,
         purchasedByMe: json['purchasedByMe'] as bool? ?? true,
+        coveredStudentIds: [
+          for (final id in json['coveredStudentIds'] as List<dynamic>? ?? [])
+            id as String,
+        ],
       );
 }
 

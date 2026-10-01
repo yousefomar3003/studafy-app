@@ -61,6 +61,21 @@ test("subscription copy is specific, in both languages, and never claims a charg
   }
 });
 
+test("mark release and correction copy is specific but names no mark", () => {
+  for (const locale of ["en", "ar"]) {
+    for (
+      const key of ["academic.grades_published", "academic.grades_corrected"]
+    ) {
+      const text = channelCopy(key, locale);
+      expect(text).not.toEqual(channelCopy("academic.anything", locale));
+      expect(`${text.title} ${text.body}`).not.toMatch(/\d/);
+    }
+  }
+  expect(channelCopy("academic.grades_corrected", "en")).not.toEqual(
+    channelCopy("academic.grades_published", "en"),
+  );
+});
+
 suite("DL-053 channel delivery", () => {
   beforeAll(async () => {
     sql = createDatabase(databaseUrl!);

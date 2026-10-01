@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
-import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
+import 'package:studafy/features/academic/presentation/create_lesson_page.dart';
 import 'package:studafy/features/academic/presentation/submit_work_page.dart';
 
 import '../support/localized_app.dart';
@@ -208,13 +208,12 @@ void main() {
     final uploads = _Uploads();
     await tester.pumpWidget(
       localizedApp(
-        home: AcademicOverviewPage(
+        // Lessons are filed from the "+" menu, which opens this form.
+        home: CreateLessonPage(
           repository: _StubAcademic(),
-          classroomId: 'class-1',
+          classes: const [ClassOption(id: 'class-1', name: 'Biology')],
+          initialClassroomId: 'class-1',
           schoolId: 'school-1',
-          teacherTools: true,
-          initialFeed: AcademicFeed.content,
-          availableFeeds: const [AcademicFeed.content],
           uploads: uploads,
           attachmentSource: (_, _) async => _picked(name: 'slides.pdf'),
         ),
@@ -222,8 +221,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.note_add_outlined));
-    await tester.pumpAndSettle();
     // The lesson form does not say attachments are unavailable.
     expect(find.text('Attach file'), findsOneWidget);
 
@@ -268,6 +265,8 @@ void main() {
     expect(uploads.commands.single.assignmentId, 'assignment-1');
     expect(uploads.commands.single.studentId, 'student-1');
 
+    await tester.ensureVisible(find.text('Hand in'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Hand in'));
     await tester.pumpAndSettle();
     expect(academic.attachments, ['file-1']);

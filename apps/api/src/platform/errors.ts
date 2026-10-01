@@ -233,6 +233,22 @@ const DEFINITIONS: Record<
     title: "Child account limit reached",
     detail: "One account can manage up to six child accounts.",
   },
+  GRADE_ENTRIES_INVALID: {
+    title: "Some entries were refused",
+    detail: "Nothing was saved. The errors list which rows to fix and why.",
+  },
+  REASON_REQUIRED: {
+    title: "Reason required",
+    detail: "Changing this record needs a reason, which is kept with it.",
+  },
+  ATTENDANCE_LOCKED: {
+    title: "Register locked",
+    detail: "This register is locked by the school's attendance policy.",
+  },
+  SUBMISSION_LOCKED: {
+    title: "Work already marked",
+    detail: "This work has a published mark and cannot be replaced.",
+  },
 };
 
 export class RequestTimeoutError extends Error {

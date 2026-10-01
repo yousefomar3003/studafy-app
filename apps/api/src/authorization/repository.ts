@@ -1,5 +1,5 @@
 import type { Sql } from "@studafy/database";
-import { withVerifiedActor } from "../auth/context";
+import { selectAsActor } from "../auth/context";
 import type { Permission } from "./catalogue";
 
 export interface ResourceAuthorizationDecision {
@@ -36,20 +36,18 @@ export class PostgresAuthorizationRepository
     permission: Permission,
     resourceId: string,
   ): Promise<ResourceAuthorizationDecision> {
-    return await withVerifiedActor(this.#sql, subject, async (tx) => {
-      const rows = await tx<{ decision: RawDecision | null }[]>`
-        select private.authz_authorize(
-          ${permission}, ${resourceId}::uuid
-        ) as decision
-      `;
-      const raw = rows[0]?.decision;
-      if (!raw) return denied("invalid_resource");
-      return {
-        allowed: raw.allowed === true,
-        schoolId: raw.school_id ?? null,
-        reason: raw.reason ?? "denied",
-      };
-    });
+    const raw = await selectAsActor<RawDecision>(
+      this.#sql,
+      subject,
+      "private.authz_authorize($1, $2::uuid)",
+      [permission, resourceId],
+    );
+    if (!raw) return denied("invalid_resource");
+    return {
+      allowed: raw.allowed === true,
+      schoolId: raw.school_id ?? null,
+      reason: raw.reason ?? "denied",
+    };
   }
 }
 

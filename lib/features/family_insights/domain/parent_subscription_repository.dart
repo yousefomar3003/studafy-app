@@ -47,17 +47,72 @@ class PaywallOffer {
 /// verified it, so a screen can re-read its entitlement without polling.
 typedef EntitlementChanged = void Function();
 
+/// The two Family+ plans. Both are the parent's own subscription and cover
+/// their linked children, earliest linked first, up to [seats].
+enum FamilyPlusPlan {
+  upTo4(featureKey: 'family_plus', seats: 4, usPrice: r'US$2.99'),
+  upTo8(featureKey: 'family_plus_large', seats: 8, usPrice: r'US$4.99');
+
+  const FamilyPlusPlan({
+    required this.featureKey,
+    required this.seats,
+    required this.usPrice,
+  });
+
+  /// The server's feature key for this plan.
+  final String featureKey;
+  final int seats;
+
+  /// Shown only until the store has confirmed the price where the parent
+  /// lives; the store's own price always wins.
+  final String usPrice;
+
+  static FamilyPlusPlan? fromFeatureKey(String key) {
+    for (final plan in values) {
+      if (plan.featureKey == key) return plan;
+    }
+    return null;
+  }
+}
+
+/// The parent's Family+ plan, as the server sees it now.
+@immutable
+class FamilyPlusStatus {
+  const FamilyPlusStatus({
+    this.plan,
+    this.coveredStudentIds = const [],
+    this.endsAt,
+    this.paidByMe = true,
+  });
+
+  static const none = FamilyPlusStatus();
+
+  /// Null without a live plan.
+  final FamilyPlusPlan? plan;
+
+  /// The linked children the plan covers now, decided by the server.
+  final List<String> coveredStudentIds;
+  final DateTime? endsAt;
+  final bool paidByMe;
+
+  bool covers(String studentId) => coveredStudentIds.contains(studentId);
+}
+
 abstract interface class ParentSubscriptionRepository {
-  /// Parent Insights access for one linked child. Null reads the caller's
-  /// own entitlement, which a guardian never holds for this product.
+  /// Whether this linked child's Family+ insights are unlocked: covered by
+  /// the parent's family plan, or by a per-child subscription bought before
+  /// Family+ became a family plan.
   Future<SubscriptionEntitlement> entitlement({String? beneficiaryStudentId});
 
-  /// The store product id + verified price disclosure for the paywall.
-  Future<PaywallOffer> insightsOffer();
+  /// The parent's own family plan and the children it covers.
+  Future<FamilyPlusStatus> familyPlan();
 
-  /// Starts the store purchase for one linked child. The entitlement is
-  /// attached to that child, never to the purchasing guardian (ADR-0009).
-  Future<void> purchaseInsightsMonthly({required String beneficiaryStudentId});
+  /// The store product id and store-confirmed price of one plan.
+  Future<PaywallOffer> familyOffer(FamilyPlusPlan plan);
+
+  /// Starts the store purchase of a family plan, held by the parent. Moving
+  /// from 4 to 8 upgrades the same subscription; it never adds a second.
+  Future<void> purchaseFamilyPlan(FamilyPlusPlan plan);
 
   Future<void> restorePurchases();
 

@@ -38,6 +38,9 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
   bool _loading = false;
   bool _failed = false;
 
+  /// The school's server does not deliver files yet.
+  bool _switchedOff = false;
+
   @override
   void dispose() {
     unawaited(_subscription?.cancel());
@@ -72,6 +75,13 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
       // The server says what it is; only a voice note is played as one.
       if (!isVoiceNote(file.mediaType)) throw StateError('not a voice note');
       await player.play(widget.attachment.id, file.bytes);
+    } on FileServiceUnavailable {
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _switchedOff = true;
+        });
+      }
     } on Object {
       if (mounted) setState(() => _failed = true);
     } finally {
@@ -158,7 +168,7 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
           ),
           if (_failed)
             Text(
-              l10n.msgVoiceUnavailable,
+              _switchedOff ? l10n.filesSwitchedOff : l10n.msgVoiceUnavailable,
               style: TextStyle(color: muted, fontSize: 11),
             ),
         ],
@@ -228,7 +238,7 @@ class _VoiceNoteRecorderBarState extends State<VoiceNoteRecorderBar> {
           onPressed: _done ? null : widget.onDiscard,
           icon: const Icon(Icons.delete_outline_rounded),
         ),
-        const Icon(Icons.fiber_manual_record_rounded, color: Color(0xFFB3261E)),
+        const Icon(Icons.fiber_manual_record_rounded, color: studafyDanger),
         const SizedBox(width: 6),
         Expanded(
           child: Semantics(
@@ -243,6 +253,11 @@ class _VoiceNoteRecorderBarState extends State<VoiceNoteRecorderBar> {
         IconButton.filled(
           tooltip: l10n.msgVoiceSend,
           onPressed: _done ? null : () => _finish(reachedLimit: false),
+          style: IconButton.styleFrom(
+            backgroundColor: studafyNavy,
+            foregroundColor: Colors.white,
+            fixedSize: const Size(44, 44),
+          ),
           icon: const Icon(Icons.send_rounded),
         ),
       ],

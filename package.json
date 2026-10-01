@@ -19,6 +19,7 @@
     "test:plans:tenancy": "bun scripts/verify-tenancy-query-plans.ts",
     "test:plans:rls": "bun scripts/verify-rls-policy-plans.ts",
     "test:plans:academic": "bun scripts/verify-academic-query-plans.ts",
+    "test:plans:coursework": "bun scripts/verify-coursework-query-plans.ts",
     "test:plans:uploads": "bun scripts/verify-upload-query-plans.ts",
     "test:uploads:storage": "bun scripts/verify-upload-storage.ts",
     "test:plans:delivery": "bun scripts/verify-delivery-query-plans.ts",
@@ -37,7 +38,8 @@
     "build": "bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build",
     "dev:stack": "docker compose -f docker-compose.dev.yml up -d || docker-compose -f docker-compose.dev.yml up -d",
     "check:migrations": "bun scripts/check-migration-immutability.ts",
-    "dev:hosted": "bun --no-env-file scripts/start-hosted-api.ts"
+    "dev:hosted": "bun --no-env-file scripts/start-hosted-api.ts",
+    "dev:hosted:worker": "bun --no-env-file scripts/start-hosted-worker.ts"
   },
   "dependencies": {},
   "overrides": {

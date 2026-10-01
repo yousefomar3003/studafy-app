@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
+import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/lessons_by_date_view.dart';
@@ -452,6 +453,42 @@ void main() {
       expect(find.text('Subscribe to Studafy Max'), findsOne);
     });
 
+    testWidgets('tapping anywhere on a plan does what its button does', (
+      tester,
+    ) async {
+      tall(tester);
+      final store = _Store();
+      await tester.pumpWidget(plans(_Study(), store));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quizzes made from your lessons'));
+      await tester.pumpAndSettle();
+      expect(store.approvalsRequested, [StudyPlanTier.max]);
+    });
+
+    testWidgets('with payments not set up, a plan says so when tapped', (
+      tester,
+    ) async {
+      tall(tester);
+      final store = _Store()..offerError = Failure.notFound;
+      await tester.pumpWidget(plans(_Study(), store));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Paid plans are not on sale yet. Everything free keeps working.',
+        ),
+        findsNWidgets(2),
+      );
+      await tester.tap(find.text('Studafy Max'));
+      await tester.pump();
+      expect(
+        find.text(
+          'Paid plans are not on sale yet. Everything free keeps working.',
+        ),
+        findsNWidgets(3),
+      );
+      expect(store.purchases, isEmpty);
+    });
+
     Widget plansWith(_Study study, _Store store, [List<Uri>? opened]) =>
         localizedApp(
           home: StudyPlansPage(
@@ -827,7 +864,9 @@ class _Lessons implements AcademicRepository {
 
 class _Store implements StudyPlanSubscriptionRepository {
   bool approved = false;
+  Object? offerError;
   final approvalsRequested = <StudyPlanTier>[];
+  final purchases = <StudyPlanTier>[];
   SubscriptionStore? store = SubscriptionStore.playStore;
   StudyPlanSubscription? current;
 
@@ -838,21 +877,24 @@ class _Store implements StudyPlanSubscriptionRepository {
   Future<StudyPlanSubscription?> subscription() async => current;
 
   @override
-  Future<StudyPlanOffer> offer(StudyPlanTier tier) async => StudyPlanOffer(
-    tier: tier,
-    price: tier == StudyPlanTier.max ? r'$5.99' : r'$3.99',
-    monthly: true,
-    storeAvailable: true,
-    selfPurchaseEnabled: true,
-    approval: approved ? 'approved' : 'none',
-  );
+  Future<StudyPlanOffer> offer(StudyPlanTier tier) async {
+    if (offerError case final error?) throw error;
+    return StudyPlanOffer(
+      tier: tier,
+      price: tier == StudyPlanTier.max ? r'$5.99' : r'$3.99',
+      monthly: true,
+      storeAvailable: true,
+      selfPurchaseEnabled: true,
+      approval: approved ? 'approved' : 'none',
+    );
+  }
 
   @override
   Future<void> requestApproval(StudyPlanTier tier) async =>
       approvalsRequested.add(tier);
 
   @override
-  Future<void> purchase(StudyPlanTier tier) async {}
+  Future<void> purchase(StudyPlanTier tier) async => purchases.add(tier);
 
   @override
   Future<void> restorePurchases() async {}

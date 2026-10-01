@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 /// themselves at sign-in, and for a child when a parent creates their
 /// account. The database refuses a version with no published policy row, so
 /// bumping this alone fails closed.
-const termsPolicyVersion = '2026-09-09';
+const termsPolicyVersion = '2026-09-30.2';
 
 /// What deleting this account does, as computed by the server.
 ///

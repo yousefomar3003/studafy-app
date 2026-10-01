@@ -65,6 +65,38 @@ void main() {
     await repository.close();
   });
 
+  testWidgets('a callback that fails closes the browser and says so', (
+    tester,
+  ) async {
+    const policy = RuntimePolicy(StudafyEnvironment.development);
+    StudafyRuntime.initialize(policy);
+    final repository = _DismissalRepository();
+    final session = _interactor(repository, policy);
+
+    await tester.pumpWidget(
+      localizedApp(
+        home: LoginPage(role: UserRole.teacher, session: session),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
+
+    repository.emitFailure();
+    await tester.pumpAndSettle();
+
+    // Not left on the provider's page looking as if it were still loading.
+    expect(launcherCalls, contains('closeWebView'));
+    expect(find.textContaining('Sign-in did not finish'), findsOne);
+    // And the person can simply try again.
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
+    expect(repository.providerCalls, 2);
+    await repository.close();
+  });
+
   testWidgets('a second launch that fails does not disown the open browser', (
     tester,
   ) async {
@@ -165,6 +197,10 @@ class _DismissalRepository extends FakeSessionRepositoryBase {
   }
 
   void emitSession() => _sessions.add(true);
+
+  /// The callback came back but the code exchange failed, as when the
+  /// connection dropped while the provider was redirecting.
+  void emitFailure() => _sessions.addError(StateError('Connection reset'));
 
   @override
   Future<UserProfile?> currentProfile() async => null;

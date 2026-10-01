@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/core/voice_note.dart';
@@ -43,6 +44,7 @@ void main() {
     WidgetTester tester, {
     List<ChatMessage> history = const [],
     _Mic? mic,
+    AttachmentSource? attachmentSource,
   }) async {
     final chat = _Chat(history);
     final uploads = _Uploads();
@@ -65,12 +67,74 @@ void main() {
           voiceRecorder: () => microphone,
           voicePlayer: () => speaker,
           refreshEvery: const Duration(days: 1),
+          attachmentSource: attachmentSource,
         ),
       ),
     );
     await tester.pumpAndSettle();
     return (chat, uploads, microphone, speaker);
   }
+
+  testWidgets('one attach button beside the input opens photo or file', (
+    tester,
+  ) async {
+    final picked = <AttachmentKind>[];
+    final (chat, uploads, _, _) = await open(
+      tester,
+      attachmentSource: (kind, _) async {
+        picked.add(kind);
+        return PickedAttachment(
+          displayName: 'worksheet.pdf',
+          mediaType: 'application/pdf',
+          bytes: Uint8List.fromList([1, 2, 3, 4]),
+        );
+      },
+    );
+    // No separate "Attach file" and "Photo" buttons above the input.
+    expect(find.text('Attach file'), findsNothing);
+
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pumpAndSettle();
+    expect(find.text('Photo'), findsOne);
+    expect(find.text('Camera'), findsOne);
+    await tester.tap(find.text('Document'));
+    await tester.pumpAndSettle();
+
+    // The file waits above the input, removable, until the message is sent.
+    expect(picked, [AttachmentKind.document]);
+    expect(find.text('worksheet.pdf'), findsOne);
+    expect(find.byTooltip('Send'), findsOne);
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pumpAndSettle();
+    expect(chat.sent.single.fileIds, ['file-1']);
+    expect(find.text('worksheet.pdf'), findsNothing);
+    expect(uploads.commands.single.purpose, FilePurpose.messageAttachment);
+  });
+
+  testWidgets('an attachment can be taken back out before sending', (
+    tester,
+  ) async {
+    final (chat, _, _, _) = await open(
+      tester,
+      attachmentSource: (kind, _) async => PickedAttachment(
+        displayName: 'photo.jpg',
+        mediaType: 'image/jpeg',
+        bytes: Uint8List.fromList([1, 2, 3]),
+      ),
+    );
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo'));
+    await tester.pumpAndSettle();
+    expect(find.text('photo.jpg'), findsOne);
+
+    await tester.tap(find.byTooltip('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('photo.jpg'), findsNothing);
+    // Nothing to send any more: the microphone is back.
+    expect(find.byTooltip('Record a voice note'), findsOne);
+    expect(chat.sent, isEmpty);
+  });
 
   testWidgets('an empty draft offers the microphone; text offers send', (
     tester,
@@ -106,6 +170,84 @@ void main() {
     // Just sent, so still being checked - the sender cannot play it yet
     // either.
     expect(find.text('Checking voice message…'), findsOne);
+  });
+
+  testWidgets('a voice note that failed to send is sent again as it is', (
+    tester,
+  ) async {
+    final (chat, uploads, mic, _) = await open(tester);
+    uploads.failures.add(StateError('connection dropped'));
+
+    await tester.tap(find.byTooltip('Record a voice note'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send voice note'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('The voice note could not be sent. Please try again.'),
+      findsOne,
+    );
+    expect(chat.sent, isEmpty);
+
+    // No second recording: the same note goes again.
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(uploads.commands, hasLength(2));
+    expect(uploads.commands.last.bytes, mic.bytes);
+    expect(chat.sent.single.fileIds, ['file-2']);
+    expect(find.text('Try again'), findsNothing);
+  });
+
+  testWidgets('a server with uploads switched off says so, not "try again"', (
+    tester,
+  ) async {
+    final (chat, uploads, _, _) = await open(tester);
+    uploads.failures.add(const FileServiceUnavailable());
+
+    await tester.tap(find.byTooltip('Record a voice note'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send voice note'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        "Attachments and voice notes aren't switched on for your school yet.",
+      ),
+      findsOne,
+    );
+    expect(find.text('Try again'), findsNothing);
+    expect(chat.sent, isEmpty);
+  });
+
+  testWidgets('a file that failed to upload can be tried again', (
+    tester,
+  ) async {
+    final (chat, uploads, _, _) = await open(
+      tester,
+      attachmentSource: (_, _) async => PickedAttachment(
+        displayName: 'worksheet.pdf',
+        mediaType: 'application/pdf',
+        bytes: Uint8List.fromList([1, 2, 3, 4]),
+      ),
+    );
+    uploads.failures.add(StateError('connection dropped'));
+
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Document'));
+    await tester.pumpAndSettle();
+    // Said on the file's own row, not in a snackbar over the send button.
+    expect(find.text('That file could not be uploaded.'), findsOne);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(uploads.commands, hasLength(2));
+    // The same attempt, so the server never keeps two copies.
+    expect(uploads.commands.first.attemptId, uploads.commands.last.attemptId);
+    expect(find.text('That file could not be uploaded.'), findsNothing);
+
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pumpAndSettle();
+    expect(chat.sent.single.fileIds, ['file-2']);
   });
 
   testWidgets('without the microphone, nothing is recorded and it says why', (
@@ -241,9 +383,13 @@ class _Uploads implements FileUploadRepository {
   final commands = <FileUploadCommand>[];
   final downloaded = <String>[];
 
+  /// Thrown, in order, by the next uploads.
+  final failures = <Object>[];
+
   @override
   Future<QuarantinedFile> upload(FileUploadCommand command) async {
     commands.add(command);
+    if (failures.isNotEmpty) throw failures.removeAt(0);
     return QuarantinedFile(
       id: 'file-${commands.length}',
       uploadId: 'upload-${commands.length}',
@@ -320,8 +466,10 @@ class _Chat implements MessagingRepository, SafetyRepository {
   @override
   Future<void> createAnnouncement(AnnouncementDraft draft) async {}
   @override
-  Future<List<Announcement>> announcements({String? classroomId}) async =>
-      const [];
+  Future<List<Announcement>> announcements({
+    String? schoolId,
+    String? classroomId,
+  }) async => const [];
   @override
   Future<List<MessagingContact>> contacts(String schoolId) async => const [];
   @override

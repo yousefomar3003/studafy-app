@@ -138,6 +138,14 @@ ready; this launcher prevents accidentally combining hosted login with the
 local database. See [current setup status](docs/evidence/hosted/2026-09-22-credentials-turnstile.md)
 for Turnstile, tunnel hostname, billing and remaining prerequisites.
 
+Photos, files and voice notes also need `bun run dev:hosted:worker` running
+beside the API: it checks each upload before anyone can open it, so without
+it attachments stay "Checking". It runs for files only (no notifications,
+billing or database housekeeping). Download links are issued on
+`FILE051_DELIVERY_PUBLIC_BASE_URL`, which must be the same host as
+`STUDAFY_API_URL` in the Flutter defines the app was built with
+(`config/dart-defines.device.json` for a phone on the LAN).
+
 ## Future backend deployment (not currently authorized)
 
 The following is a later-phase checklist, not permission to deploy. The only

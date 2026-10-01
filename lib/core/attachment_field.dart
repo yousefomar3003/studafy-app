@@ -6,6 +6,7 @@ import '../l10n/generated/app_l10n.dart';
 import 'attachment_policy.dart';
 import 'feedback.dart';
 import 'file_upload_repository.dart';
+import 'studafy_design.dart';
 
 /// What the person chose, before anything has been sent.
 @immutable
@@ -94,6 +95,7 @@ class AttachmentField extends StatefulWidget {
     this.studentId,
     this.maximumCount = 5,
     this.enabled = true,
+    this.showAddButtons = true,
   });
 
   final FilePurpose purpose;
@@ -107,17 +109,102 @@ class AttachmentField extends StatefulWidget {
   final int maximumCount;
   final bool enabled;
 
+  /// False when the host offers its own attach button (the message
+  /// composer's, WhatsApp-style) and calls [AttachmentFieldState.add] or
+  /// [AttachmentFieldState.chooseAndAdd]; the field then shows only what
+  /// has been attached, each with a remove button.
+  final bool showAddButtons;
+
   @override
-  State<AttachmentField> createState() => _AttachmentFieldState();
+  State<AttachmentField> createState() => AttachmentFieldState();
 }
 
-class _AttachmentFieldState extends State<AttachmentField> {
+class AttachmentFieldState extends State<AttachmentField> {
   final List<Attachment> _items = [];
   int _counter = 0;
+
+  /// What was picked for each attachment still on the list, so a failed
+  /// upload can be tried again without picking the file again.
+  final Map<String, PickedAttachment> _picked = {};
 
   AttachmentPolicy get _policy => AttachmentPolicy.of(widget.purpose);
 
   void _publish() => widget.onChanged?.call(List.unmodifiable(_items));
+
+  /// Whether another attachment may be added.
+  bool get canAddMore => widget.enabled && _items.length < widget.maximumCount;
+
+  /// Asks what to attach - a photo or a document - then adds it.
+  Future<void> chooseAndAdd() async {
+    if (!canAddMore) {
+      _say(
+        AppL10n.of(context)
+            .attachmentUpToMaximumcountAttachments(widget.maximumCount),
+      );
+      return;
+    }
+    final l10n = AppL10n.of(context);
+    final kind = await showModalBottomSheet<AttachmentKind>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
+          child: Row(
+            children: [
+              for (final (kind, icon, label) in [
+                (
+                  AttachmentKind.photo,
+                  Icons.photo_library_rounded,
+                  l10n.attachmentPhoto,
+                ),
+                (
+                  AttachmentKind.camera,
+                  Icons.photo_camera_rounded,
+                  l10n.attachmentCamera,
+                ),
+                (
+                  AttachmentKind.document,
+                  Icons.description_rounded,
+                  l10n.attachmentDocument,
+                ),
+              ])
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => Navigator.pop(sheetContext, kind),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Theme.of(sheetContext)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: .1),
+                            child: Icon(
+                              icon,
+                              color: Theme.of(sheetContext).colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(label, textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (kind == null || !mounted) return;
+    await add(kind);
+  }
+
+  /// Adds one attachment of [kind] from the platform picker.
+  Future<void> add(AttachmentKind kind) => _add(kind);
 
   Future<void> _add(AttachmentKind kind) async {
     final picked = await widget.source(kind, _policy);
@@ -134,6 +221,7 @@ class _AttachmentFieldState extends State<AttachmentField> {
 
     final localId = 'attachment-${++_counter}';
     final name = sanitiseAttachmentName(picked.displayName);
+    _picked[localId] = picked;
     setState(() {
       _items.add(
         Attachment(
@@ -145,7 +233,26 @@ class _AttachmentFieldState extends State<AttachmentField> {
       );
     });
     _publish();
+    await _upload(localId, picked, name);
+  }
 
+  /// Tries a failed upload again, under the same attempt so the server
+  /// never keeps two copies.
+  Future<void> _retry(Attachment item) async {
+    final picked = _picked[item.localId];
+    if (picked == null) return;
+    _replace(
+      item.localId,
+      (current) => current.copyWith(stage: AttachmentStage.uploading),
+    );
+    await _upload(item.localId, picked, item.displayName);
+  }
+
+  Future<void> _upload(
+    String localId,
+    PickedAttachment picked,
+    String name,
+  ) async {
     try {
       final stored = await widget.uploads.upload(
         FileUploadCommand(
@@ -171,13 +278,30 @@ class _AttachmentFieldState extends State<AttachmentField> {
           fileId: stored.id,
         ),
       );
+    } on FileServiceUnavailable {
+      if (!mounted) return;
+      // Not the file and not the connection: this school's server does not
+      // take files yet, so trying again would not help.
+      _picked.remove(localId);
+      final reason = AppL10n.of(context).filesSwitchedOff;
+      _replace(
+        localId,
+        (item) => item.copyWith(stage: AttachmentStage.failed, message: reason),
+      );
     } catch (_) {
       if (!mounted) return;
       // The reason is deliberately not shown: upload failures carry server
       // detail that is not the person's to read, and the action is the same
-      // whatever it was.
-      _replace(localId, (item) => item.copyWith(stage: AttachmentStage.failed));
-      _say(AppL10n.of(context).attachmentThatFileCouldNotBe);
+      // whatever it was. The row says it failed and offers to try again, so
+      // no snackbar is raised over the form - in a chat it would sit on top
+      // of the send button.
+      _replace(
+        localId,
+        (item) => item.copyWith(
+          stage: AttachmentStage.failed,
+          message: AppL10n.of(context).attachmentThatFileCouldNotBe,
+        ),
+      );
     }
   }
 
@@ -189,6 +313,7 @@ class _AttachmentFieldState extends State<AttachmentField> {
   }
 
   void _remove(Attachment item) {
+    _picked.remove(item.localId);
     setState(() => _items.removeWhere((x) => x.localId == item.localId));
     _publish();
   }
@@ -219,9 +344,17 @@ class _AttachmentFieldState extends State<AttachmentField> {
           _AttachmentTile(
             item: item,
             onRemove: widget.enabled ? () => _remove(item) : null,
-            label: _stageLabel(item.stage),
+            onRetry:
+                widget.enabled &&
+                    item.stage == AttachmentStage.failed &&
+                    _picked.containsKey(item.localId)
+                ? () => _retry(item)
+                : null,
+            label: item.stage == AttachmentStage.failed && item.message != null
+                ? item.message!
+                : _stageLabel(item.stage),
           ),
-        if (widget.enabled && !full)
+        if (widget.showAddButtons && widget.enabled && !full)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Row(
@@ -239,7 +372,7 @@ class _AttachmentFieldState extends State<AttachmentField> {
               ],
             ),
           ),
-        if (full)
+        if (full && widget.showAddButtons)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
@@ -267,43 +400,84 @@ class _AttachmentTile extends StatelessWidget {
     required this.item,
     required this.label,
     this.onRemove,
+    this.onRetry,
   });
 
   final Attachment item;
   final String label;
   final VoidCallback? onRemove;
+  final VoidCallback? onRetry;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    dense: true,
-    contentPadding: EdgeInsets.zero,
-    leading: item.stage == AttachmentStage.uploading
-        ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Icon(
-            switch (item.stage) {
-              AttachmentStage.ready => Icons.check_circle_outline_rounded,
-              AttachmentStage.quarantined => Icons.hourglass_empty_rounded,
-              AttachmentStage.failed => Icons.error_outline_rounded,
-              AttachmentStage.uploading => Icons.upload_rounded,
-            },
-            color: item.stage == AttachmentStage.failed
-                ? Theme.of(context).colorScheme.error
-                : null,
+  Widget build(BuildContext context) {
+    final failed = item.stage == AttachmentStage.failed;
+    final error = Theme.of(context).colorScheme.error;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 2, 6),
+        decoration: BoxDecoration(
+          color: failed ? error.withValues(alpha: .06) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: failed ? error.withValues(alpha: .3) : studafyHairline,
           ),
-    // A filename is user content: it renders in its own direction, and it is
-    // already sanitised by the time it reaches here.
-    title: Text(item.displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
-    subtitle: Text(label),
-    trailing: onRemove == null
-        ? null
-        : IconButton(
-            icon: const Icon(Icons.close_rounded),
-            onPressed: onRemove,
-            tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
-          ),
-  );
+        ),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 36,
+              child: item.stage == AttachmentStage.uploading
+                  ? const Padding(
+                      padding: EdgeInsets.all(9),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(switch (item.stage) {
+                      AttachmentStage.ready =>
+                        Icons.check_circle_outline_rounded,
+                      AttachmentStage.quarantined =>
+                        Icons.hourglass_empty_rounded,
+                      AttachmentStage.failed => Icons.error_outline_rounded,
+                      AttachmentStage.uploading => Icons.upload_rounded,
+                    }, color: failed ? error : null),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // A filename is user content: it renders in its own
+                  // direction, and it is already sanitised by now.
+                  Text(
+                    item.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: failed ? error : Theme.of(context).hintColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onRetry != null)
+              TextButton(
+                onPressed: onRetry,
+                child: Text(AppL10n.of(context).attachmentRetry),
+              ),
+            if (onRemove != null)
+              IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: onRemove,
+                tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

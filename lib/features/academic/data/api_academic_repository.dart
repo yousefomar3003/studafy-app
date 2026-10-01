@@ -3,6 +3,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
+import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/academic_repository.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
@@ -56,6 +57,9 @@ class ApiAcademicRepository implements AcademicRepository {
                   ? null
                   : DateTime.tryParse(x.publishedAt!)?.toLocal(),
               classroomId: x.classroomId,
+              // The lesson's current file, which students and families
+              // download from the lesson itself.
+              attachments: _attachments(x.attachments),
             ),
         ];
       case AcademicFeed.assignments:
@@ -76,6 +80,8 @@ class ApiAcademicRepository implements AcademicRepository {
               classroomId: x.classroomId,
               attachments: _attachments(x.attachments),
               maximumScore: x.maximumScore?.toDouble(),
+              deadline: _deadline(x),
+              timeZone: x.timeZone,
             ),
         ];
       case AcademicFeed.assessments:
@@ -99,6 +105,7 @@ class ApiAcademicRepository implements AcademicRepository {
               classroomId: x.classroomId,
               attachments: _attachments(x.attachments),
               markedAssignmentId: x.assignmentId,
+              delivery: x.delivery,
             ),
         ];
       case AcademicFeed.grades:
@@ -115,11 +122,17 @@ class ApiAcademicRepository implements AcademicRepository {
               // student with several exams could not tell them apart.
               id: x.id,
               title: x.assessmentTitle,
-              detail: x.score == null
-                  ? 'Not marked yet'
-                  : '${_trimmed(x.score!)} / ${_trimmed(x.maximumScore)}',
+              // The screen words the mark: "Absent" and "not marked yet"
+              // are the reader's language, not this layer's.
+              detail: '',
               state: x.state,
               version: x.version,
+              delivery: x.delivery,
+              mark:
+                  GradeMark.fromWire(x.mark) ??
+                  (x.score == null ? null : GradeMark.scored),
+              score: x.score?.toDouble(),
+              outOf: x.maximumScore.toDouble(),
             ),
         ];
       case AcademicFeed.attendance:
@@ -204,6 +217,31 @@ class ApiAcademicRepository implements AcademicRepository {
   });
 
   @override
+  Future<void> editResource(
+    String resourceId,
+    int expectedVersion, {
+    String? title,
+    String? body,
+    String? replaceFileId,
+  }) => _refusing(
+    () => _done(
+      'resource-edit:$resourceId:$expectedVersion:$title:$body:$replaceFileId',
+      (key) async {
+        await _client.editResource(
+          V1EditResourceRequestDto(
+            expectedVersion: expectedVersion,
+            title: title,
+            body: body,
+            replaceFileId: replaceFileId,
+          ),
+          resourceId: resourceId,
+          idempotencyKey: key,
+        );
+      },
+    ),
+  );
+
+  @override
   Future<void> publishResource(String resourceId, int expectedVersion) =>
       _versionCommand(
         'resource-publish',
@@ -244,6 +282,12 @@ class ApiAcademicRepository implements AcademicRepository {
           instructions: draft.instructions,
           dueAt: draft.dueAt.toUtc().toIso8601String(),
           closesAt: draft.closesAt?.toUtc().toIso8601String(),
+          // The time the teacher picked, as a wall-clock time: the server
+          // reads it on the school's clock, whatever this device's zone.
+          dueLocal: _wallClock(draft.dueAt),
+          closesLocal: draft.closesAt == null
+              ? null
+              : _wallClock(draft.closesAt!),
           attachmentFileIds: draft.attachmentFileIds.isEmpty
               ? null
               : draft.attachmentFileIds,
@@ -316,6 +360,7 @@ class ApiAcademicRepository implements AcademicRepository {
             maximumScore: draft.maximumScore,
             scheduledAt: draft.scheduledAt?.toUtc().toIso8601String(),
             delivery: draft.delivery,
+            weight: draft.weight,
             assignmentId: draft.assignmentId,
             attachmentFileIds: draft.attachmentFileIds.isEmpty
                 ? null
@@ -373,22 +418,24 @@ class ApiAcademicRepository implements AcademicRepository {
       // The attachments are part of the fingerprint: handing the same text in
       // again with a different file is a different submission, and replaying
       // the first key would silently drop the new one.
-      _done('assignment-submit:$assignmentId:$studentId:$answer'
-          ':${attachmentFileIds.join(",")}', (key) async {
-        await _client.submitAssignment(
-          V1SubmitAssignmentRequestDto(
-            answerText: answer,
-            attachmentFileIds: attachmentFileIds.isEmpty
-                ? null
-                : attachmentFileIds,
-            // Present only for a guardian handing work in for a child. A
-            // student omits it and the server files it against them.
-            studentId: studentId,
-          ),
-          assignmentId: assignmentId,
-          idempotencyKey: key,
-        );
-      });
+      _refusing(
+        () => _done('assignment-submit:$assignmentId:$studentId:$answer'
+            ':${attachmentFileIds.join(",")}', (key) async {
+          await _client.submitAssignment(
+            V1SubmitAssignmentRequestDto(
+              answerText: answer,
+              attachmentFileIds: attachmentFileIds.isEmpty
+                  ? null
+                  : attachmentFileIds,
+              // Present only for a guardian handing work in for a child. A
+              // student omits it and the server files it against them.
+              studentId: studentId,
+            ),
+            assignmentId: assignmentId,
+            idempotencyKey: key,
+          );
+        }),
+      );
 
   @override
   Future<void> submitAssessment(
@@ -478,6 +525,129 @@ class ApiAcademicRepository implements AcademicRepository {
         ),
     ];
   }
+
+  @override
+  Future<List<AssignmentExtension>> assignmentExtensions(
+    String assignmentId,
+  ) async {
+    final page = await _client.listAssignmentExtensions(
+      assignmentId: assignmentId,
+    );
+    return [
+      for (final item in page.items)
+        AssignmentExtension(
+          studentId: item.studentId,
+          untilLocal: item.extendedUntilLocal,
+          reason: item.reason,
+        ),
+    ];
+  }
+
+  @override
+  Future<void> grantExtension(
+    String assignmentId,
+    String studentId,
+    String untilLocal,
+    String reason,
+  ) => _refusing(
+    () => _done('extend:$assignmentId:$studentId:$untilLocal:$reason', (
+      key,
+    ) async {
+      await _client.grantAssignmentExtension(
+        V1GrantExtensionRequestDto(
+          studentId: studentId,
+          extendedUntilLocal: untilLocal,
+          reason: reason,
+        ),
+        assignmentId: assignmentId,
+        idempotencyKey: key,
+      );
+    }),
+  );
+
+  @override
+  Future<void> revokeExtension(String assignmentId, String studentId) =>
+      _refusing(
+        () => _done('extend-revoke:$assignmentId:$studentId', (key) async {
+          await _client.revokeAssignmentExtension(
+            V1RevokeExtensionRequestDto(studentId: studentId),
+            assignmentId: assignmentId,
+            idempotencyKey: key,
+          );
+        }),
+      );
+
+  @override
+  Future<void> updateAssignmentMaterials(
+    String assignmentId,
+    int expectedVersion, {
+    List<String> detachFileIds = const [],
+    List<String> attachmentFileIds = const [],
+  }) => _refusing(
+    () => _done('materials:$assignmentId:$expectedVersion:'
+        '${detachFileIds.join(',')}:${attachmentFileIds.join(',')}', (
+      key,
+    ) async {
+      await _client.updateAssignmentMaterials(
+        V1UpdateWorkMaterialsRequestDto(
+          expectedVersion: expectedVersion,
+          detachFileIds: detachFileIds,
+          attachmentFileIds: attachmentFileIds.isEmpty
+              ? null
+              : attachmentFileIds,
+        ),
+        assignmentId: assignmentId,
+        idempotencyKey: key,
+      );
+    }),
+  );
+
+  @override
+  Future<void> updateAssessmentMaterials(
+    String assessmentId,
+    int expectedVersion, {
+    List<String> detachFileIds = const [],
+    List<String> attachmentFileIds = const [],
+  }) => _refusing(
+    () => _done('exam-materials:$assessmentId:$expectedVersion:'
+        '${detachFileIds.join(',')}:${attachmentFileIds.join(',')}', (
+      key,
+    ) async {
+      await _client.updateAssessmentMaterials(
+        V1UpdateWorkMaterialsRequestDto(
+          expectedVersion: expectedVersion,
+          detachFileIds: detachFileIds,
+          attachmentFileIds: attachmentFileIds.isEmpty
+              ? null
+              : attachmentFileIds,
+        ),
+        assessmentId: assessmentId,
+        idempotencyKey: key,
+      );
+    }),
+  );
+
+  @override
+  Future<void> reopenAssignment(
+    String assignmentId,
+    int expectedVersion,
+    String closesAtLocal,
+    String reason,
+  ) => _refusing(
+    () => _done('reopen:$assignmentId:$expectedVersion:$closesAtLocal', (
+      key,
+    ) async {
+      await _client.reopenAssignment(
+        V1ReopenAssignmentRequestDto(
+          expectedVersion: expectedVersion,
+          closesAtLocal: closesAtLocal,
+          reason: reason,
+        ),
+        assignmentId: assignmentId,
+        idempotencyKey: key,
+      );
+    }),
+  );
 
   @override
   Future<void> archiveClassroom(String classroomId, int expectedVersion) =>
@@ -672,6 +842,8 @@ class ApiAcademicRepository implements AcademicRepository {
     final entries = <AttendanceRosterEntry>[];
     String? cursor;
     int version = 0;
+    String? sessionId;
+    var rule = AttendanceEditRule.open;
     do {
       final page = await _client.listAttendanceRoster(
         classroomId: classroomId,
@@ -683,6 +855,8 @@ class ApiAcademicRepository implements AcademicRepository {
       // Absent until this lesson has been recorded once; zero is then the
       // value recordAttendance requires for creating the session.
       version = page.session?.version ?? 0;
+      sessionId = page.session?.id;
+      rule = AttendanceEditRule.fromWire(page.editRule);
       for (final item in page.items) {
         entries.add(
           AttendanceRosterEntry(
@@ -690,17 +864,19 @@ class ApiAcademicRepository implements AcademicRepository {
             displayName: item.student.displayName,
             state: _stateFrom(item.record?.state),
             reason: item.record?.reason,
+            enrolled: item.enrolled ?? true,
           ),
         );
       }
       cursor = page.nextCursor;
     } while (cursor != null);
-    return AttendanceRegister(entries: entries, version: version);
+    return AttendanceRegister(
+      entries: entries,
+      version: version,
+      sessionId: sessionId,
+      editRule: rule,
+    );
   }
-
-  /// Scores are numeric; 18 should read as 18 rather than 18.0.
-  static String _trimmed(num value) =>
-      value == value.roundToDouble() ? value.toInt().toString() : '$value';
 
   static String _isoDate(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-'
@@ -721,29 +897,366 @@ class ApiAcademicRepository implements AcademicRepository {
     DateTime startsAt,
     DateTime endsAt,
     int expectedVersion,
-    List<AttendanceDraft> entries,
-  ) => _done(
-    'attendance:$classroomId:${startsAt.toUtc().toIso8601String()}:$expectedVersion',
-    (key) async {
+    List<AttendanceDraft> entries, {
+    String? correctionReason,
+    bool override = false,
+  }) => _refusing(
+    () => _done('attendance:$classroomId:${startsAt.toUtc().toIso8601String()}:'
+        '$expectedVersion:$correctionReason:$override', (key) async {
       await _client.recordAttendance(
         V1RecordAttendanceRequestDto(
           classroomId: classroomId,
           startsAt: startsAt.toUtc().toIso8601String(),
           endsAt: endsAt.toUtc().toIso8601String(),
           expectedVersion: expectedVersion,
-          entries: [
-            for (final x in entries)
-              V1AttendanceEntryDto(
-                studentId: x.studentId,
-                state: x.state,
-                reason: x.reason,
-              ),
-          ],
+          entries: _attendanceEntries(entries),
+          correctionReason: correctionReason,
+          override: override ? true : null,
         ),
         idempotencyKey: key,
       );
-    },
+    }),
   );
+
+  @override
+  Future<void> correctAttendance(
+    String sessionId,
+    int expectedVersion,
+    List<AttendanceDraft> entries, {
+    String? reason,
+    bool override = false,
+  }) => _refusing(
+    () => _done('attendance-correct:$sessionId:$expectedVersion:$reason:'
+        '$override', (key) async {
+      await _client.correctAttendance(
+        V1CorrectAttendanceRequestDto(
+          expectedVersion: expectedVersion,
+          reason: reason,
+          override: override ? true : null,
+          entries: _attendanceEntries(entries),
+        ),
+        lessonSessionId: sessionId,
+        idempotencyKey: key,
+      );
+    }),
+  );
+
+  @override
+  Future<List<AttendanceChange>> attendanceHistory(String sessionId) async {
+    final page = await _client.listAttendanceHistory(
+      lessonSessionId: sessionId,
+      pageSize: 100,
+    );
+    return [
+      for (final item in page.items)
+        if ((_stateFrom(item.previousState), _stateFrom(item.nextState)) case (
+          final previous?,
+          final next?,
+        ))
+          AttendanceChange(
+            studentName: item.studentName,
+            previous: previous,
+            next: next,
+            at: DateTime.parse(item.createdAt).toLocal(),
+            reason: item.reason,
+            override: item.override,
+            actorName: item.actor?.displayName,
+          ),
+    ];
+  }
+
+  static List<V1AttendanceEntryDto> _attendanceEntries(
+    List<AttendanceDraft> entries,
+  ) => [
+    for (final x in entries)
+      V1AttendanceEntryDto(
+        studentId: x.studentId,
+        state: x.state,
+        reason: x.reason,
+      ),
+  ];
+
+  @override
+  Future<String> createPaperGradebookItem(
+    String classroomId, {
+    required String title,
+    required String category,
+    required double maximumScore,
+    double? weight,
+    DateTime? scheduledAt,
+  }) => _refusing(
+    () => _keys.run(
+      'academic',
+      'paper-item:$classroomId:$title:$category:'
+          '$maximumScore:$weight',
+      (key) async {
+        final created = await _client.createAssessment(
+          V1CreateAssessmentRequestDto(
+            classroomId: classroomId,
+            title: title,
+            category: category,
+            maximumScore: maximumScore,
+            scheduledAt: scheduledAt?.toUtc().toIso8601String(),
+            delivery: 'paper',
+            weight: weight,
+            questions: const [],
+          ),
+          idempotencyKey: key,
+        );
+        return created.id;
+      },
+    ),
+  );
+
+  /// `2026-10-01T23:59`: the wall-clock time [value] shows, without a zone.
+  static String _wallClock(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-'
+      '${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}T'
+      '${value.hour.toString().padLeft(2, '0')}:'
+      '${value.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Future<PaperGradebook> paperGradebook(String assessmentId) async {
+    final rows = <PaperGradebookRow>[];
+    PaperGradebookItem? item;
+    String? cursor;
+    // One page holds a class of up to 100; bigger classes take one more.
+    do {
+      final page = await _client.listGradebook(
+        assessmentId: assessmentId,
+        cursor: cursor,
+        pageSize: 100,
+      );
+      final x = page.item;
+      item ??= PaperGradebookItem(
+        id: x.id,
+        title: x.title,
+        category: x.category,
+        maximumScore: x.maximumScore.toDouble(),
+        state: x.state,
+        version: x.version,
+        gradebookVersion: x.gradebookVersion,
+        unmarked: (x.counts['unmarked'] as num?)?.toInt() ?? 0,
+        ready: (x.counts['ready'] as num?)?.toInt() ?? 0,
+        published: (x.counts['published'] as num?)?.toInt() ?? 0,
+        weight: x.weight?.toDouble(),
+        scheduledAt: x.scheduledAt == null
+            ? null
+            : DateTime.tryParse(x.scheduledAt!)?.toLocal(),
+      );
+      for (final row in page.items) {
+        final grade = row.grade;
+        rows.add(
+          PaperGradebookRow(
+            studentId: row.student.id,
+            displayName: row.student.displayName,
+            enrolled: row.enrolled,
+            grade: grade == null
+                ? null
+                : PaperGrade(
+                    id: grade.id,
+                    state: switch (grade.state) {
+                      'reviewed' => PaperGradeState.ready,
+                      'published' => PaperGradeState.published,
+                      'withdrawn' => PaperGradeState.withdrawn,
+                      _ => PaperGradeState.unmarked,
+                    },
+                    version: grade.version,
+                    mark: GradeMark.fromWire(grade.mark),
+                    score: grade.score?.toDouble(),
+                    feedback: grade.feedback,
+                    corrections: grade.corrections,
+                  ),
+          ),
+        );
+      }
+      cursor = page.nextCursor;
+    } while (cursor != null);
+    return PaperGradebook(item: item, rows: rows);
+  }
+
+  @override
+  Future<int> saveGradeDrafts(
+    String assessmentId,
+    int gradebookVersion,
+    List<GradeDraft> entries,
+  ) => _refusing(
+    () => _keys.run(
+      'academic',
+      'grades-save:$assessmentId:$gradebookVersion:${_draftPrint(entries)}',
+      (key) async {
+        final saved = await _client.saveGradeDrafts(
+          V1SaveGradeDraftsRequestDto(
+            expectedGradebookVersion: gradebookVersion,
+            entries: [
+              for (final entry in entries)
+                V1GradeDraftEntryDto(
+                  studentId: entry.studentId,
+                  expectedVersion: entry.expectedVersion,
+                  mark: entry.mark?.wire,
+                  score: entry.score,
+                  feedback: entry.feedback,
+                ),
+            ],
+          ),
+          assessmentId: assessmentId,
+          idempotencyKey: key,
+        );
+        return saved.gradebookVersion;
+      },
+    ),
+  );
+
+  static String _draftPrint(List<GradeDraft> entries) => [
+    for (final e in entries)
+      '${e.studentId}/${e.expectedVersion}/${e.mark?.wire}/${e.score}/'
+          '${e.feedback}',
+  ].join('|');
+
+  @override
+  Future<PublishedGrades> publishGrades(
+    String assessmentId,
+    int gradebookVersion,
+  ) => _refusing(
+    () => _keys.run(
+      'academic',
+      'grades-publish:$assessmentId:$gradebookVersion',
+      (key) async {
+        final result = await _client.publishGrades(
+          V1PublishGradesRequestDto(expectedGradebookVersion: gradebookVersion),
+          assessmentId: assessmentId,
+          idempotencyKey: key,
+        );
+        return PublishedGrades(
+          published: result.published,
+          unmarked: result.unmarked,
+        );
+      },
+    ),
+  );
+
+  @override
+  Future<void> correctGrades(
+    String assessmentId,
+    String reason,
+    List<GradeCorrection> entries,
+  ) => _refusing(
+    () => _done(
+      'grades-correct:$assessmentId:$reason:'
+      '${[for (final e in entries) '${e.gradeId}/${e.expectedVersion}/${e.mark.wire}/${e.score}/${e.feedback}'].join('|')}',
+      (key) async {
+        await _client.correctGrades(
+          V1CorrectGradesRequestDto(
+            reason: reason,
+            entries: [
+              for (final entry in entries)
+                V1GradeCorrectionEntryDto(
+                  gradeResultId: entry.gradeId,
+                  expectedVersion: entry.expectedVersion,
+                  mark: entry.mark.wire,
+                  score: entry.score,
+                  feedback: entry.feedback,
+                ),
+            ],
+          ),
+          assessmentId: assessmentId,
+          idempotencyKey: key,
+        );
+      },
+    ),
+  );
+
+  @override
+  Future<List<GradeChange>> gradeHistory(String gradeId) async {
+    final page = await _client.listGradeHistory(
+      gradeResultId: gradeId,
+      pageSize: 100,
+    );
+    return [
+      for (final item in page.items)
+        GradeChange(
+          change: item.change,
+          at: DateTime.parse(item.createdAt).toLocal(),
+          previousMark: GradeMark.fromWire(item.previousMark),
+          previousScore: item.previousScore?.toDouble(),
+          nextMark: GradeMark.fromWire(item.nextMark),
+          nextScore: item.nextScore?.toDouble(),
+          reason: item.reason,
+          actorName: item.actor?.displayName,
+        ),
+    ];
+  }
+
+  @override
+  Future<void> updateGradebookItem(
+    String assessmentId,
+    int expectedVersion, {
+    required String title,
+    required String category,
+    required double maximumScore,
+    double? weight,
+    DateTime? scheduledAt,
+  }) => _refusing(
+    () => _done('gradebook-item:$assessmentId:$expectedVersion:$title:'
+        '$category:$maximumScore:$weight', (key) async {
+      await _client.updateGradebookItem(
+        V1UpdateGradebookItemRequestDto(
+          expectedVersion: expectedVersion,
+          title: title,
+          category: category,
+          maximumScore: maximumScore,
+          weight: weight,
+          scheduledAt: scheduledAt?.toUtc().toIso8601String(),
+        ),
+        assessmentId: assessmentId,
+        idempotencyKey: key,
+      );
+    }),
+  );
+
+  /// A refusal the screen can act on, instead of a generic failure. Anything
+  /// else - offline, signed out - keeps its ordinary meaning.
+  static Future<T> _refusing<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } on V1ApiException catch (error) {
+      final problem = switch (error.code) {
+        'VERSION_CONFLICT' => CourseworkProblem.versionConflict,
+        'GRADE_ENTRIES_INVALID' => CourseworkProblem.entriesInvalid,
+        'REASON_REQUIRED' => CourseworkProblem.reasonRequired,
+        'ATTENDANCE_LOCKED' => CourseworkProblem.attendanceLocked,
+        'SUBMISSION_LOCKED' => CourseworkProblem.submissionLocked,
+        'WINDOW_CLOSED' => CourseworkProblem.windowClosed,
+        'FORBIDDEN' || 'NOT_FOUND' => CourseworkProblem.notAllowed,
+        _ => null,
+      };
+      if (problem == null) rethrow;
+      throw CourseworkRefusal(
+        problem,
+        rows: {
+          for (final entry in error.fieldErrors.entries)
+            entry.key.split('/').last: entry.value,
+        },
+      );
+    }
+  }
+
+  static SubmissionDeadline? _deadline(V1AssignmentDto x) {
+    final local = x.deadlineLocal;
+    final zone = x.timeZone;
+    if (local == null || zone == null) return null;
+    return SubmissionDeadline(
+      state: switch (x.submissionState) {
+        'closed' => SubmissionWindow.closed,
+        'graded_locked' => SubmissionWindow.gradedLocked,
+        _ => SubmissionWindow.open,
+      },
+      deadlineLocal: local,
+      timeZone: zone,
+      extendedUntilLocal: x.extension?.extendedUntilLocal,
+    );
+  }
 
   @override
   Future<void> reviewGrade(
@@ -816,9 +1329,9 @@ class ApiAcademicRepository implements AcademicRepository {
           kind: draft.kind,
           title: draft.title,
           context: draft.context,
-          followUp: null,
-          visibility: 'class_staff',
-          severity: 'low',
+          followUp: draft.followUp,
+          visibility: draft.visibility,
+          severity: draft.severity,
         ),
         idempotencyKey: key,
       );

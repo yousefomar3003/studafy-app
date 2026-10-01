@@ -20,6 +20,7 @@ Widget localizedApp({
   List<Locale> deviceLocales = const [Locale('en')],
   Widget Function(Widget child)? scopes,
   Map<String, WidgetBuilder> routes = const {},
+  ThemeData? theme,
 }) {
   final resolved =
       controller ??
@@ -30,6 +31,7 @@ Widget localizedApp({
   return LocaleScope(
     controller: resolved,
     child: MaterialApp(
+      theme: theme,
       locale: locale ?? resolved.resolvedLocale,
       supportedLocales: kSupportedLocales,
       localeResolutionCallback: (device, _) =>

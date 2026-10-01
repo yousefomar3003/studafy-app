@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/attachment_opener.dart';
 import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
+import '../../../core/navigation.dart';
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'blocked_people_page.dart';
@@ -18,9 +22,14 @@ class ConversationsPage extends StatefulWidget {
   const ConversationsPage({
     super.key,
     this.visible = true,
-    this.acknowledgeEvery = const Duration(seconds: 30),
+    this.acknowledgeEvery = const Duration(minutes: 2),
     this.asRole,
+    this.onNewAnnouncement,
   });
+
+  /// Opens the announcement composer. Null for people who cannot post one;
+  /// announcements are still listed for them to read.
+  final VoidCallback? onNewAnnouncement;
 
   /// The role this inbox belongs to. One account can be a teacher at one
   /// school and a parent at another; each interface then lists only the
@@ -29,7 +38,11 @@ class ConversationsPage extends StatefulWidget {
   final MessagingRole? asRole;
 
   /// How often, while the app is in the foreground, this device tells the
-  /// server it has received its conversations - the second grey tick.
+  /// server it has received its conversations - the second grey tick. It is
+  /// also said at once on opening the app, on returning to it, and whenever
+  /// the inbox loads, so the interval only covers a quiet open app. Every
+  /// open app sends it, so it is kept long: at 30 seconds, tens of thousands
+  /// of users were a thousand writes a second for nothing.
   final Duration acknowledgeEvery;
 
   /// Whether this tab is the one on screen.
@@ -159,8 +172,7 @@ class _ConversationsPageState extends State<ConversationsPage>
   }
 
   Future<void> _open(Conversation conversation, String myUserId) async {
-    await Navigator.push(
-      context,
+    await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (_) =>
             ConversationPage(conversation: conversation, myUserId: myUserId),
@@ -170,8 +182,7 @@ class _ConversationsPageState extends State<ConversationsPage>
   }
 
   Future<void> _startNew(String schoolId, String myUserId) async {
-    final created = await Navigator.push<Conversation>(
-      context,
+    final created = await Navigator.of(context).pushOnce<Conversation>(
       MaterialPageRoute(
         builder: (_) => NewConversationPage(schoolId: schoolId),
       ),
@@ -179,97 +190,243 @@ class _ConversationsPageState extends State<ConversationsPage>
     if (created != null && mounted) await _open(created, myUserId);
   }
 
+  _InboxPart _part = _InboxPart.messages;
+  Future<List<Announcement>>? _announcements;
+
+  Future<List<Announcement>> _loadAnnouncements() async {
+    final schoolId = messagingIdentity()?.schoolId;
+    // Announcements belong to a school. Someone acting in none - a guardian
+    // before a link is verified - has none to read yet.
+    if (schoolId == null) return const [];
+    final result = await MessagingScope.of(context)
+        .announcements(schoolId: schoolId);
+    return result.fold(
+      onSuccess: (items) =>
+          [...items]..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+      onFailure: (failure) => throw failure,
+    );
+  }
+
+  void _openBlocked(String schoolId, String myUserId) =>
+      Navigator.of(context).pushOnce(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              BlockedPeoplePage(schoolId: schoolId, myUserId: myUserId),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     final identity = messagingIdentity();
-    // Picking recipients and blocking are both per school, because the
-    // contact policy is. Starting a conversation therefore waits on a
-    // school; reading the ones already going does not.
     final schoolId = identity?.schoolId;
+    final canStart =
+        identity != null && schoolId != null && _enabled && !_loading;
     return Scaffold(
-      backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Text(AppL10n.of(context).msgTitle),
+        // The page is named as its tab is: Messages for a student, the
+        // Inbox for staff, whose tab also holds announcements they post.
+        title: Text(
+          widget.asRole == MessagingRole.student
+              ? l10n.navMessages
+              : l10n.navInbox,
+        ),
         actions: [
+          // Labelled, and only here: announcements have their own control
+          // inside their own tab, so the two never sit together.
+          if (canStart)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 4),
+              child: StudafyPillButton(
+                icon: Icons.edit_square,
+                label: l10n.msgNew,
+                prominent: true,
+                onPressed: () => _startNew(schoolId, identity.userId),
+              ),
+            ),
           if (identity != null && schoolId != null)
-            IconButton(
-              tooltip: AppL10n.of(context).msgMenuBlocked,
-              icon: const Icon(Icons.block_rounded),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => BlockedPeoplePage(
-                    schoolId: schoolId,
-                    myUserId: identity.userId,
+            PopupMenuButton<VoidCallback>(
+              tooltip: l10n.msgOptions,
+              icon: const Icon(Icons.more_horiz_rounded),
+              onSelected: (action) => action(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: () => _openBlocked(schoolId, identity.userId),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_off_outlined, size: 20),
+                      const SizedBox(width: 12),
+                      Text(l10n.msgMenuBlocked),
+                    ],
                   ),
                 ),
+              ],
+            ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: identity == null
+          ? Center(
+              child: StudafyEmptyState(
+                icon: Icons.school_outlined,
+                title: l10n.msgTitle,
+                message: l10n.msgNoSchool,
+              ),
+            )
+          : Column(
+              children: [
+                PillTabs<_InboxPart>(
+                  values: _InboxPart.values,
+                  selected: _part,
+                  label: (part) => switch (part) {
+                    _InboxPart.messages => l10n.msgTitle,
+                    _InboxPart.announcements => l10n.msgAnnouncements,
+                  },
+                  icon: (part) => switch (part) {
+                    _InboxPart.messages => Icons.forum_rounded,
+                    _InboxPart.announcements => Icons.campaign_rounded,
+                  },
+                  onSelected: (part) => setState(() {
+                    _part = part;
+                    if (part == _InboxPart.announcements) {
+                      _announcements = _loadAnnouncements();
+                    }
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: _part == _InboxPart.messages
+                      ? _messages(identity.userId, schoolId)
+                      : _announcementList(),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _messages(String myUserId, String? schoolId) {
+    final l10n = AppL10n.of(context);
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_failure != null) {
+      return Center(
+        child: StudafyEmptyState(
+          icon: Icons.wifi_off_rounded,
+          title: l10n.msgErrorTitle,
+          message: messagingFailureText(context, _failure!),
+          actionLabel: l10n.msgRetry,
+          onAction: _load,
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 24),
+        children: [
+          if (!_enabled)
+            StudafyEmptyState(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: l10n.msgTitle,
+              message: l10n.msgErrorMessagingDisabled,
+            )
+          else if (_conversations.isEmpty)
+            // The labelled New message button in the header is the way to
+            // start one, so it is not repeated here.
+            StudafyEmptyState(
+              icon: Icons.send_rounded,
+              title: l10n.msgEmptyTitle,
+              message: schoolId == null
+                  ? l10n.msgEmptyAwaitingLink
+                  : l10n.msgEmptyMessage,
+            )
+          else
+            FeatureCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (final (index, conversation)
+                      in _conversations.indexed) ...[
+                    if (index > 0)
+                      const Divider(
+                        height: 1,
+                        indent: 76,
+                        color: studafyHairline,
+                      ),
+                    _ConversationTile(
+                      conversation: conversation,
+                      myUserId: myUserId,
+                      onTap: () => _open(conversation, myUserId),
+                    ),
+                  ],
+                ],
               ),
             ),
         ],
       ),
-      floatingActionButton:
-          identity != null && schoolId != null && _enabled && !_loading
-          ? FloatingActionButton.extended(
-              // Every tab stays alive in the shell's IndexedStack, so two
-              // buttons with the default hero tag coexist and break the
-              // transition of every screen pushed from any tab.
-              heroTag: null,
-              onPressed: () => _startNew(schoolId, identity.userId),
-              icon: const Icon(Icons.edit_rounded),
-              label: Text(AppL10n.of(context).msgNew),
-            )
-          : null,
-      body: identity == null
-          ? StudafyStatusCard(
-              icon: Icons.school_outlined,
-              title: AppL10n.of(context).msgTitle,
-              message: AppL10n.of(context).msgNoSchool,
-            )
-          : _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _failure != null
-          ? StudafyStatusCard(
-              icon: Icons.error_outline_rounded,
-              title: AppL10n.of(context).msgErrorTitle,
-              message: messagingFailureText(context, _failure!),
-              actionLabel: AppL10n.of(context).msgRetry,
-              onAction: _load,
-            )
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 96),
-                children: [
-                  if (!_enabled)
-                    StudafyStatusCard(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      title: AppL10n.of(context).msgTitle,
-                      message: AppL10n.of(context).msgErrorMessagingDisabled,
-                    ),
-                  if (_conversations.isEmpty && _enabled)
-                    StudafyStatusCard(
-                      icon: Icons.forum_outlined,
-                      title: AppL10n.of(context).msgEmptyTitle,
-                      message: schoolId == null
-                          ? AppL10n.of(context).msgEmptyAwaitingLink
-                          : AppL10n.of(context).msgEmptyMessage,
-                    ),
-                  for (final conversation in _conversations)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _ConversationTile(
-                        conversation: conversation,
-                        myUserId: identity.userId,
-                        onTap: () => _open(conversation, identity.userId),
-                      ),
-                    ),
-                ],
-              ),
+    );
+  }
+
+  Widget _announcementList() {
+    final l10n = AppL10n.of(context);
+    final action = widget.onNewAnnouncement;
+    return FutureBuilder<List<Announcement>>(
+      future: _announcements ??= _loadAnnouncements(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: StudafyEmptyState(
+              icon: Icons.wifi_off_rounded,
+              title: l10n.msgAnnouncementsFailed,
+              actionLabel: l10n.msgRetry,
+              onAction: () =>
+                  setState(() => _announcements = _loadAnnouncements()),
             ),
+          );
+        }
+        final items = snapshot.data ?? const <Announcement>[];
+        return RefreshIndicator(
+          onRefresh: () async {
+            final next = _loadAnnouncements();
+            setState(() => _announcements = next);
+            await next.catchError((Object _) => const <Announcement>[]);
+          },
+          child: ListView(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 24),
+            children: [
+              if (action != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonalIcon(
+                      onPressed: action,
+                      icon: const Icon(Icons.campaign_rounded),
+                      label: Text(l10n.msgNewAnnouncement),
+                    ),
+                  ),
+                ),
+              if (items.isEmpty)
+                StudafyEmptyState(
+                  icon: Icons.campaign_outlined,
+                  title: l10n.msgAnnouncementsEmpty,
+                ),
+              for (final item in items)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _AnnouncementCard(announcement: item),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
+
+enum _InboxPart { messages, announcements }
 
 class _ConversationTile extends StatelessWidget {
   const _ConversationTile({
@@ -282,52 +439,165 @@ class _ConversationTile extends StatelessWidget {
   final String myUserId;
   final VoidCallback onTap;
 
+  String _when(BuildContext context) {
+    final at = conversation.updatedAt.toLocal();
+    final now = DateTime.now();
+    final localizations = MaterialLocalizations.of(context);
+    if (at.year == now.year && at.month == now.month && at.day == now.day) {
+      return localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at));
+    }
+    return localizations.formatShortMonthDay(at);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     final others = conversation.others(myUserId);
     final names = others.map((p) => p.displayName).join(', ');
     final unread = conversation.hasUnread;
-    return FeatureCard(
-      tint: unread ? studafyCyan : null,
-      onTap: onTap,
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: studafyNavy.withValues(alpha: .1),
-            child: Text(
-              names.isEmpty ? '?' : names.characters.first.toUpperCase(),
-              style: const TextStyle(color: studafyNavy),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  conversation.subject ?? names,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: studafyInk,
-                    fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
-                  ),
+    final title = conversation.subject ?? names;
+    return Semantics(
+      button: true,
+      label: unread ? '$title. ${l10n.msgUnread}' : title,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              InitialsAvatar(name: names, radius: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: studafyInk,
+                        fontSize: 15.5,
+                        fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                    if (conversation.subject != null)
+                      Text(
+                        names,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          fontSize: 13,
+                        ),
+                      ),
+                  ],
                 ),
-                if (conversation.subject != null)
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
                   Text(
-                    names,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: studafyMuted, fontSize: 12),
+                    _when(context),
+                    style: TextStyle(
+                      color: unread ? studafyNavy : studafyMuted,
+                      fontSize: 12,
+                      fontWeight: unread ? FontWeight.w800 : FontWeight.w500,
+                    ),
                   ),
-              ],
-            ),
+                  const SizedBox(height: 6),
+                  // Unread is a dot and bold text, not a colour alone.
+                  if (unread)
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: studafyNavy,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 10),
+                ],
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnnouncementCard extends StatelessWidget {
+  const _AnnouncementCard({required this.announcement});
+
+  final Announcement announcement;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return FeatureCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconBadge(
+                icon: announcement.important
+                    ? Icons.priority_high_rounded
+                    : Icons.campaign_rounded,
+                color: announcement.important ? studafyDanger : studafyNavy,
+                size: 40,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UserContentText(
+                      announcement.title,
+                      style: const TextStyle(
+                        color: studafyInk,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      MaterialLocalizations.of(context)
+                          .formatMediumDate(announcement.createdAt.toLocal()),
+                      style: const TextStyle(color: studafyMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              if (announcement.important)
+                StatusPill(
+                  label: l10n.msgImportant,
+                  icon: Icons.priority_high_rounded,
+                  color: studafyDanger,
+                ),
+            ],
+          ),
+          if (announcement.body.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            UserContentText(
+              announcement.body,
+              style: const TextStyle(color: studafyInk, height: 1.45),
+            ),
+          ],
+          if (announcement.attachments.isNotEmpty)
+            StoredAttachmentList(
+              attachments: announcement.attachments,
+              dense: true,
+            ),
         ],
       ),
     );
   }
 }
 
-/// Pick people the server says this user may contact, then start talking.
 class NewConversationPage extends StatefulWidget {
   const NewConversationPage({super.key, required this.schoolId});
 
@@ -412,16 +682,25 @@ class _NewConversationPageState extends State<NewConversationPage> {
     ];
     return Scaffold(
       backgroundColor: studafyCanvas,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Text(AppL10n.of(context).msgNewTitle),
-      ),
+      appBar: AppBar(title: Text(AppL10n.of(context).msgNewTitle)),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: FilledButton(
+          child: FilledButton.icon(
             onPressed: _selected.isEmpty || _starting ? null : _start,
-            child: Text(AppL10n.of(context).msgStart),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
+            icon: _starting
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.send_rounded),
+            label: Text(AppL10n.of(context).msgStart),
           ),
         ),
       ),
@@ -443,7 +722,7 @@ class _NewConversationPageState extends State<NewConversationPage> {
                   maxLength: 160,
                   decoration: InputDecoration(
                     labelText: AppL10n.of(context).msgSubjectHint,
-                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.short_text_rounded),
                   ),
                 ),
                 TextField(
@@ -451,7 +730,6 @@ class _NewConversationPageState extends State<NewConversationPage> {
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search_rounded),
                     hintText: AppL10n.of(context).msgNewSearch,
-                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -461,21 +739,92 @@ class _NewConversationPageState extends State<NewConversationPage> {
                     title: AppL10n.of(context).msgNewTitle,
                     message: AppL10n.of(context).msgNewEmpty,
                   ),
-                for (final contact in visible)
-                  CheckboxListTile(
-                    value: _selected.contains(contact.userId),
-                    onChanged: (checked) => setState(() {
-                      if (checked ?? false) {
-                        _selected.add(contact.userId);
-                      } else {
-                        _selected.remove(contact.userId);
-                      }
-                    }),
-                    title: Text(contact.displayName),
-                    subtitle: Text(_detail(contact)),
+                if (visible.isNotEmpty)
+                  FeatureCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (final (index, contact) in visible.indexed) ...[
+                          if (index > 0)
+                            const Divider(
+                              height: 1,
+                              indent: 72,
+                              color: studafyHairline,
+                            ),
+                          _ContactRow(
+                            name: contact.displayName,
+                            detail: _detail(contact),
+                            selected: _selected.contains(contact.userId),
+                            onChanged: (checked) => setState(() {
+                              if (checked) {
+                                _selected.add(contact.userId);
+                              } else {
+                                _selected.remove(contact.userId);
+                              }
+                            }),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
               ],
             ),
     );
   }
+}
+
+/// Someone to message: who they are, and whether they are chosen.
+class _ContactRow extends StatelessWidget {
+  const _ContactRow({
+    required this.name,
+    required this.detail,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final String name;
+  final String detail;
+  final bool selected;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    checked: selected,
+    child: InkWell(
+      onTap: () => onChanged(!selected),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 8, 10),
+        child: Row(
+          children: [
+            InitialsAvatar(name: name, radius: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: studafyInk,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    detail,
+                    style: const TextStyle(color: studafyMuted, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Checkbox(
+              value: selected,
+              shape: const CircleBorder(),
+              onChanged: (value) => onChanged(value ?? false),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

@@ -1304,7 +1304,9 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     ).toBe(0);
   });
 
-  test("an already attached file cannot be attached again", async () => {
+  // Replacing an answer keeps a file already on the work being replaced,
+  // without another upload (202609300003); the earlier attempt keeps it too.
+  test("a file already on the work being replaced carries over", async () => {
     const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
       method: "POST",
       subject: STUDENT_USER,
@@ -1314,7 +1316,9 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         attachmentFileIds: [OWN_FILE],
       },
     });
-    expect(submit.status).toBe(400);
+    expect(submit.status).toBe(201);
+    const body = await submit.json() as { attachments: { id: string }[] };
+    expect(body.attachments.map((file) => file.id)).toEqual([OWN_FILE]);
   });
 
   test("a file of the wrong purpose is refused", async () => {

@@ -10,20 +10,38 @@ export interface RawInsightFacts {
   to: string;
   grades: {
     subject: string;
-    score: number;
+    classroomId?: string;
+    className?: string;
+    title?: string;
+    delivery?: string | null;
+    /** `scored`, or `absent` for a test the child missed (score null). */
+    mark?: "scored" | "absent";
+    score: number | null;
     maximumScore: number;
     at: string;
   }[];
+  /** Always empty from a database that returns `attendanceCounts`. */
   attendance: {
     state: "present" | "late" | "absent" | "excused";
     at: string;
   }[];
+  /** Register entries counted per class, state and school-local weekday. */
+  attendanceCounts?: {
+    classroomId: string;
+    className: string;
+    state: "present" | "late" | "absent" | "excused";
+    weekday: number;
+    count: number;
+  }[];
   homework: {
     assignmentId: string;
     title: string;
+    classroomId?: string;
+    className?: string;
     dueAt: string;
     submittedAt: string | null;
   }[];
+  classes?: { classroomId: string; className: string }[];
   wellbeing: { id: string; kind: string; title: string; createdAt: string }[];
 }
 
