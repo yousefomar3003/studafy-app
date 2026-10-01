@@ -103,8 +103,12 @@ void main() {
     // real school and role, not a sample.
     expect(find.text('Al-Noor International'), findsOneWidget);
     expect(find.text('Student'), findsOneWidget);
-    expect(find.text('Delete account'), findsOneWidget);
+    // Deleting the account lives in Sign-in and security, not on the
+    // profile itself.
+    expect(find.text('Delete account'), findsNothing);
     expect(find.text('Nadia Hassan'), findsNothing);
+    // No photo on this device: the first two letters of the name.
+    expect(find.text('SA'), findsWidgets);
   });
 
   testWidgets('the student shell reaches the account screen', (tester) async {
@@ -112,10 +116,29 @@ void main() {
       _app(StudentShell(academic: PreviewAcademicRepository())),
     );
     await tester.pump();
-    expect(find.byIcon(Icons.account_circle_outlined), findsWidgets);
-    await tester.tap(find.byIcon(Icons.account_circle_outlined).first);
+    expect(find.byTooltip('Account'), findsWidgets);
+    await tester.tap(find.byTooltip('Account').first);
     await tester.pumpAndSettle();
-    expect(find.text('Delete account'), findsOneWidget);
+    expect(find.byType(AccountHubPage), findsOneWidget);
+    expect(find.text('Notification preferences'), findsOneWidget);
+  });
+
+  testWidgets('the profile button is on Today only, beside the logo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(StudentShell(academic: PreviewAcademicRepository())),
+    );
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Studafy'), findsOne);
+    expect(find.byTooltip('Notifications'), findsOne);
+    expect(find.byTooltip('Account'), findsOne);
+
+    for (final tab in ['Lessons', 'Work']) {
+      await tester.tap(find.byTooltip(tab));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Account'), findsNothing, reason: tab);
+    }
   });
 
   testWidgets('a person can request a copy of their data', (tester) async {
@@ -147,5 +170,52 @@ void main() {
     await tester.pumpWidget(_app(const AccountHubPage()));
     await tester.pumpAndSettle();
     expect(find.text('Download my data'), findsNothing);
+  });
+
+  testWidgets('a student is shown one ID to share, and the account id only '
+      'under sign-in and security', (tester) async {
+    ActiveContextController.instance
+      ..profile = const UserProfile(
+        id: 'user-uuid-1',
+        displayName: 'Sara Al-Amin',
+        email: 'sara@example.test',
+        memberships: [],
+      )
+      ..membership = const SchoolMembership(
+        id: 'membership-1',
+        schoolId: 'school-1',
+        schoolName: 'Al-Noor International',
+        role: StudafyRole.student,
+        active: true,
+      );
+    await tester.pumpWidget(_app(const AccountHubPage()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PROFILE INFORMATION'), findsOne);
+    expect(find.text('Account ID'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Technical account ID'), 200);
+    expect(find.text('Technical account ID'), findsOne);
+    expect(find.text('SIGN-IN AND SECURITY'), findsOne);
+  });
+
+  testWidgets('a teacher keeps the account id on the profile', (tester) async {
+    ActiveContextController.instance
+      ..profile = const UserProfile(
+        id: 'user-uuid-2',
+        displayName: 'Rana Haddad',
+        email: 'rana@example.test',
+        memberships: [],
+      )
+      ..membership = const SchoolMembership(
+        id: 'membership-2',
+        schoolId: 'school-1',
+        schoolName: 'Al-Noor International',
+        role: StudafyRole.teacher,
+        active: true,
+      );
+    await tester.pumpWidget(_app(const AccountHubPage()));
+    await tester.pumpAndSettle();
+    expect(find.text('Account ID'), findsOne);
+    expect(find.text('Technical account ID'), findsNothing);
   });
 }

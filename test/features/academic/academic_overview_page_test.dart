@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/studafy_components.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
 
@@ -140,8 +141,13 @@ class _FakeAcademicRepository implements AcademicRepository {
   @override
   Future<List<GradeEntry>> gradeEntries(String classroomId) async => const [];
   @override
-  Future<List<ClassStudent>> classStudents(String classroomId) async =>
-      const [];
+  Future<List<ClassStudent>> classStudents(String classroomId) async => const [
+    ClassStudent(
+      id: '55555555-5555-4555-8555-555555555555',
+      displayName: 'Lina',
+      studafyId: 'SJ-LINA0001',
+    ),
+  ];
   @override
   Future<AttendanceRegister> attendanceRoster(
     String classroomId,
@@ -154,10 +160,16 @@ class _FakeAcademicRepository implements AcademicRepository {
     DateTime startsAt,
     DateTime endsAt,
     int expectedVersion,
-    List<AttendanceDraft> entries,
-  ) async {
+    List<AttendanceDraft> entries, {
+    String? correctionReason,
+    bool override = false,
+  }) async {
     drafts.add(classroomId);
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} is not faked');
 
   @override
   Future<void> reviewGrade(
@@ -225,7 +237,10 @@ void main() {
 
     expect(find.text('Atomic models'), findsOneWidget);
     expect(find.text('Cell diagrams'), findsOneWidget);
-    expect(find.byType(Chip), findsNWidgets(2));
+    // Each record says its state in words, with an icon.
+    expect(find.byType(StatusPill), findsNWidgets(2));
+    expect(find.text('Published'), findsOne);
+    expect(find.text('Draft'), findsOne);
     expect(repository.loads.single, (AcademicFeed.assignments, null, null));
   });
 
@@ -264,7 +279,32 @@ void main() {
     expect(find.text('Atomic models'), findsOneWidget);
   });
 
-  testWidgets('inside a class, a teacher adds a lesson to it', (tester) async {
+  testWidgets('lessons are added from the "+" menu, not a second button', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository(const []),
+          classroomId: '22222222-2222-4222-8222-222222222222',
+          title: 'Biology 7A',
+          teacherTools: true,
+          initialFeed: AcademicFeed.content,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add lesson'), findsNothing);
+    expect(find.textContaining('Tap + to create'), findsOne);
+  });
+
+  testWidgets('a teacher writes a wellbeing note from the Wellbeing tab', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final repository = _FakeAcademicRepository(const []);
     await tester.pumpWidget(
       localizedApp(
@@ -273,102 +313,133 @@ void main() {
           classroomId: '22222222-2222-4222-8222-222222222222',
           title: 'Biology 7A',
           teacherTools: true,
+          initialFeed: AcademicFeed.wellbeing,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Lessons'));
+    await tester.tap(find.text('New wellbeing note'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add lesson'));
+    // Saving with nothing filled in says what is missing.
+    await tester.tap(find.text('Save note'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose a student'), findsOne);
+    expect(find.text('Give the note a short title.'), findsOne);
+    expect(repository.drafts, isEmpty);
+
+    await tester.tap(find.text('Student'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lina').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Concern'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Moderate'));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Quiet this week',
+    );
+    await tester.tap(find.text('Staff and parents'));
+    await tester.ensureVisible(find.text('Save note'));
+    await tester.tap(find.text('Save note'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Lesson title'),
-      'Photosynthesis',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Lesson notes'),
-      'Light in.',
-    );
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add lesson'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Add lesson'));
-    await tester.pumpAndSettle();
-
-    final draft = repository.drafts.single as TextResourceDraft;
-    expect(draft.title, 'Photosynthesis');
-    expect(draft.body, 'Light in.');
+    final draft = repository.drafts.single as WellbeingDraft;
     expect(draft.classroomId, '22222222-2222-4222-8222-222222222222');
-    expect(draft.audience, 'both');
-    expect(find.text('Lesson added.'), findsOne);
+    expect(draft.studentId, '55555555-5555-4555-8555-555555555555');
+    expect(draft.kind, 'concern');
+    expect(draft.severity, 'moderate');
+    expect(draft.visibility, 'guardian_shared');
+    expect(draft.title, 'Quiet this week');
+    // Back on the tab, with a confirmation.
+    expect(find.text('Wellbeing note saved.'), findsOne);
   });
 
-  testWidgets('on the all-classes tab, the class being viewed is preselected', (
-    tester,
-  ) async {
-    // The reported bug: here the button was always disabled, so a teacher
-    // had nowhere to add a lesson at all.
-    final repository = _FakeAcademicRepository(const []);
-    await tester.pumpWidget(
-      localizedApp(
-        home: AcademicOverviewPage(
-          repository: repository,
-          teacherTools: true,
-          initialFeed: AcademicFeed.content,
-          loadClassChoices: () async => const [
-            ClassChoice(
-              id: '33333333-3333-4333-8333-333333333333',
-              name: 'Maths',
-            ),
-            ClassChoice(
-              id: '44444444-4444-4444-8444-444444444444',
-              name: 'Art',
-            ),
-          ],
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Art'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Add lesson'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Lesson title'),
-      'Colour wheel',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Lesson notes'),
-      'Primary colours.',
-    );
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add lesson'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Add lesson'));
-    await tester.pumpAndSettle();
-
-    final draft = repository.drafts.single as TextResourceDraft;
-    expect(draft.classroomId, '44444444-4444-4444-8444-444444444444');
-  });
-
-  testWidgets('with no class at all, the lesson control is disabled', (
-    tester,
-  ) async {
+  testWidgets('students and parents get no wellbeing button', (tester) async {
     await tester.pumpWidget(
       localizedApp(
         home: AcademicOverviewPage(
           repository: _FakeAcademicRepository(const []),
-          teacherTools: true,
+          classroomId: '22222222-2222-4222-8222-222222222222',
+          initialFeed: AcademicFeed.wellbeing,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('New wellbeing note'), findsNothing);
+  });
+
+  testWidgets('a student sees work grouped by whether it can still be handed '
+      'in, and what a tap does', (tester) async {
+    AcademicRecord work(String id, String title, SubmissionWindow? window) =>
+        AcademicRecord(
+          id: id,
+          title: title,
+          detail: '',
+          state: 'published',
+          version: 1,
+          deadline: window == null
+              ? null
+              : SubmissionDeadline(
+                  state: window,
+                  deadlineLocal: '2026-10-05T23:59',
+                  timeZone: 'Asia/Riyadh',
+                ),
+        );
+    final repository = _FakeAcademicRepository([
+      work('a', 'Marked essay', SubmissionWindow.gradedLocked),
+      work('b', 'Late worksheet', SubmissionWindow.closed),
+      work('c', 'Open poster', SubmissionWindow.open),
+      work('d', 'Reading log', null),
+    ]);
+    final opened = <String>[];
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: repository,
+          title: 'Work',
+          subtitle: 'Assignments, tests, grades and attendance',
+          availableFeeds: const [AcademicFeed.assignments],
+          onOpenRecord: (record) => opened.add(record.id),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Lessons'));
-    await tester.pumpAndSettle();
+    // A large title of its own, with no profile button.
+    expect(find.text('Work'), findsOne);
+    expect(find.byTooltip('Account'), findsNothing);
+    // Open work first, then past the deadline, then marked.
+    final order = [
+      'To do',
+      'Open poster',
+      'Reading log',
+      'Past the deadline',
+      'Late worksheet',
+    ];
+    final tops = [
+      for (final text in order) tester.getTopLeft(find.text(text)).dy,
+    ];
+    expect(tops, orderedEquals([...tops]..sort()));
+    // "Published" means nothing to a student; whether it is open does.
+    expect(find.text('Published'), findsNothing);
+    expect(find.text('Hand in'), findsNWidgets(2));
+    // Past the deadline and marked work can be looked at, not handed in.
+    expect(find.text('View'), findsNWidgets(2));
 
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Add lesson'),
+    await tester.tap(find.text('Open poster'));
+    expect(opened, ['c']);
+
+    await tester.scrollUntilVisible(
+      find.text('Marked essay'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(RefreshIndicator),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
-    expect(button.onPressed, isNull);
+    expect(find.text('Marked'), findsWidgets);
   });
 }

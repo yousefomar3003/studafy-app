@@ -48,9 +48,9 @@ void main() {
     await tester.pumpAndSettle();
     // Gender is required, but "prefer not to say" is an answer.
     expect(setup.saved, isEmpty);
-    expect(find.textContaining('Prefer not to say'), findsWidgets);
+    expect(find.textContaining('Prefer not to answer'), findsWidgets);
 
-    await tester.tap(find.text('Prefer not to say'));
+    await tester.tap(find.text('Prefer not to answer'));
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 

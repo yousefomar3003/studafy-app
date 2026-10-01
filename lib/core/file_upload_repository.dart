@@ -100,6 +100,17 @@ class DownloadedFile {
   bool get isImage => mediaType.startsWith('image/');
 }
 
+/// The server this app talks to has file uploads or delivery switched off.
+///
+/// Not a fault of the file or of the connection, and retrying will not help,
+/// so screens say so plainly instead of "check your connection".
+class FileServiceUnavailable implements Exception {
+  const FileServiceUnavailable();
+
+  @override
+  String toString() => 'FileServiceUnavailable';
+}
+
 abstract interface class FileUploadRepository {
   Future<QuarantinedFile> upload(FileUploadCommand command);
 

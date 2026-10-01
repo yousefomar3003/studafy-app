@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/feedback.dart';
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
@@ -34,6 +35,10 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
   Map<String, String> _names = const {};
   bool _loading = true;
   String? _error;
+
+  /// Blocks being undone right now, so each button shows it is working and
+  /// cannot be pressed twice.
+  final Set<String> _unblocking = {};
 
   @override
   void initState() {
@@ -73,8 +78,11 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
   }
 
   Future<void> _unblock(BlockedPerson block) async {
+    if (!_unblocking.add(block.blockId)) return;
+    setState(() {});
     final result = await MessagingScope.of(context).unblock(block.blockId);
     if (!mounted) return;
+    setState(() => _unblocking.remove(block.blockId));
     result.fold(
       onSuccess: (_) {
         setState(
@@ -94,53 +102,139 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     return Scaffold(
-      backgroundColor: studafyCanvas,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Text(AppL10n.of(context).msgBlockedTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.msgBlockedTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? StudafyStatusCard(
-              icon: Icons.error_outline_rounded,
-              title: AppL10n.of(context).msgErrorTitle,
-              message: _error!,
-              actionLabel: AppL10n.of(context).msgRetry,
-              onAction: _load,
+          ? Center(
+              child: StudafyEmptyState(
+                icon: Icons.wifi_off_rounded,
+                title: l10n.msgErrorTitle,
+                message: _error!,
+                actionLabel: l10n.msgRetry,
+                onAction: _load,
+              ),
             )
-          : _blocks.isEmpty
-          ? StudafyStatusCard(
-              icon: Icons.block_rounded,
-              title: AppL10n.of(context).msgBlockedTitle,
-              message: AppL10n.of(context).msgBlockedEmpty,
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                for (final block in _blocks)
-                  FeatureCard(
-                    child: Row(
-                      children: [
-                        const Icon(Icons.block_rounded, color: studafyMuted),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _names[block.blockedId] ??
-                                AppL10n.of(context).msgUnknownPerson,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => _unblock(block),
-                          child: Text(AppL10n.of(context).msgUnblock),
-                        ),
-                      ],
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
+                children: [
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 14),
+                    child: Text(
+                      l10n.msgBlockedIntro,
+                      style: const TextStyle(color: studafyMuted, height: 1.4),
                     ),
                   ),
+                  if (_blocks.isEmpty)
+                    StudafyEmptyState(
+                      icon: Icons.verified_user_outlined,
+                      title: l10n.msgBlockedEmpty,
+                      message: l10n.msgBlockedEmptyDetail,
+                    )
+                  else
+                    FeatureCard(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          for (final (index, block) in _blocks.indexed) ...[
+                            if (index > 0)
+                              const Divider(
+                                height: 1,
+                                indent: 72,
+                                color: studafyHairline,
+                              ),
+                            _BlockedRow(
+                              name:
+                                  _names[block.blockedId] ??
+                                  l10n.msgUnknownPerson,
+                              busy: _unblocking.contains(block.blockId),
+                              onUnblock: () => _unblock(block),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+/// One blocked person: who, and the way to undo it.
+class _BlockedRow extends StatelessWidget {
+  const _BlockedRow({
+    required this.name,
+    required this.onUnblock,
+    this.busy = false,
+  });
+
+  final String name;
+  final VoidCallback onUnblock;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 12, 12),
+      child: Row(
+        children: [
+          InitialsAvatar(name: name, radius: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: studafyInk,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.block_rounded,
+                      size: 14,
+                      color: studafyMuted,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.msgBlockedLabel,
+                      style: const TextStyle(
+                        color: studafyMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
+          ),
+          OutlinedButton(
+            onPressed: busy ? null : onUnblock,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              foregroundColor: studafyNavy,
+              side: const BorderSide(color: studafyHairline),
+              shape: const StadiumBorder(),
+            ),
+            child: busy
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(l10n.msgUnblock),
+          ),
+        ],
+      ),
     );
   }
 }

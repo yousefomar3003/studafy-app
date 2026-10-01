@@ -31,7 +31,15 @@ enum SessionStatus {
 /// Returned as a value rather than signalled by a failure message, because
 /// "you have no class yet" is an ordinary first-run state that the login
 /// screen routes on, not an error to render in red.
-enum LoginOutcome { ready, needsOnboarding }
+enum LoginOutcome {
+  ready,
+  needsOnboarding,
+
+  /// The account is another kind than the role chosen - a student account
+  /// signing in as a teacher, or an adult's as a student. Nothing was
+  /// entered; [SessionInteractor.accountRole] is the role it can open.
+  wrongRole,
+}
 
 /// Drives the session state machine (ARC-011 session slice, AUTH-030).
 ///
@@ -69,6 +77,10 @@ class SessionInteractor {
   bool get isDemoSession => runtimePolicy.isSynthetic;
 
   bool get hasCurrentSession => repository.hasCurrentSession;
+
+  /// After [LoginOutcome.wrongRole]: the role this account is for.
+  StudafyRole? get accountRole => _accountRole;
+  StudafyRole? _accountRole;
 
   Stream<bool> get sessionChanges => repository.sessionChanges;
 
@@ -136,6 +148,32 @@ class SessionInteractor {
         await repository.signOut();
         throw Failure.validation('This account could not be loaded.');
       }
+      // One kind of account per email. A student account is a student only;
+      // an adult's may be a teacher, a parent or both. Coming in through
+      // another door enters nothing - the screen offers the account's own
+      // role instead of quietly carrying it into a new one.
+      final kind = profile.effectiveKind;
+      if (kind != null && !kind.allows(role)) {
+        _accountRole = switch (kind) {
+          AccountKind.student => StudafyRole.student,
+          AccountKind.adult =>
+            profile.memberships.any(
+                  (m) => m.active && m.role == StudafyRole.teacher,
+                )
+                ? StudafyRole.teacher
+                : StudafyRole.parent,
+        };
+        return LoginOutcome.wrongRole;
+      }
+      if (kind == null) {
+        // Nothing has decided this account yet, so the door it first came
+        // through does. Best effort: the server keeps the rule either way.
+        try {
+          await repository.recordAccountKind(AccountKind.forRole(role));
+        } on Object {
+          // An older server, or offline; the memberships decide later.
+        }
+      }
       final membership = profile.memberships
           .where((item) => item.active && item.role == role)
           .firstOrNull;
@@ -173,6 +211,8 @@ class SessionInteractor {
           case LoginOutcome.ready:
             _setStatus(SessionStatus.authenticated);
             telemetry.event('session_authenticated', {'role': role.name});
+          case LoginOutcome.wrongRole:
+            telemetry.event('session_role_refused', {'role': role.name});
           case LoginOutcome.needsOnboarding:
             _setStatus(SessionStatus.onboarding);
             telemetry.event('session_onboarding_required', {'role': role.name});

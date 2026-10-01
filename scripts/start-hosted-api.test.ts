@@ -4,7 +4,8 @@ const env = {
   ENVIRONMENT: "development",
   SUPABASE_URL: "https://projectref.supabase.co",
   API_CURSOR_SIGNING_KEY: "synthetic",
-  RATE_LIMIT_HMAC_SIGNING_KEY: "synthetic",
+  RATE_LIMIT_HMAC_SIGNING_KEY: "synthetic-rate",
+  CLASS_JOIN_CODE_KEY: "synthetic-join",
 };
 test("hosted launcher refuses absent, placeholder, local and cross-project database URLs", () => {
   for (
@@ -29,4 +30,19 @@ test("hosted launcher accepts only the matching direct or pooler project", () =>
     expect(() => validateHostedEnvironment({ ...env, DATABASE_URL })).not
       .toThrow();
   }
+});
+
+test("hosted launcher refuses to run without its own class code key", () => {
+  const DATABASE_URL =
+    "postgres://postgres:synthetic@db.projectref.supabase.co/postgres";
+  expect(() =>
+    validateHostedEnvironment({ ...env, DATABASE_URL, CLASS_JOIN_CODE_KEY: "" })
+  ).toThrow("CLASS_JOIN_CODE_KEY");
+  expect(() =>
+    validateHostedEnvironment({
+      ...env,
+      DATABASE_URL,
+      CLASS_JOIN_CODE_KEY: env.API_CURSOR_SIGNING_KEY,
+    })
+  ).toThrow("CLASS_JOIN_CODE_KEY");
 });

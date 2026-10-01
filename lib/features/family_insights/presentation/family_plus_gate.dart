@@ -92,7 +92,6 @@ class _FamilyPlusGateState extends State<FamilyPlusGate> {
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         title: Text(AppL10n.of(context).insightsTitle),
         actions: widget.actions,
       ),
@@ -109,12 +108,12 @@ class _FamilyPlusGateState extends State<FamilyPlusGate> {
   }
 }
 
-/// What Family+ is, what it costs, and the way to buy it for one child.
+/// What Family+ is, what the two family plans cost, and the way to buy one.
 ///
 /// Follows the stores' subscription rules: the price shown is the store's
-/// own, the buy button only appears over store-confirmed terms and working
-/// terms and privacy links, and renewal, cancellation and restore are all on
-/// the same screen.
+/// own, buying only happens over store-confirmed terms and working terms and
+/// privacy links, and renewal, cancellation and restore are all on the same
+/// screen. Each plan card is the thing to press.
 class FamilyPlusOffer extends StatefulWidget {
   const FamilyPlusOffer({
     super.key,
@@ -137,7 +136,8 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
   static const _terms = String.fromEnvironment('STUDAFY_TERMS_URL');
   static const _privacy = String.fromEnvironment('STUDAFY_PRIVACY_URL');
 
-  PaywallOffer? _offer;
+  final Map<FamilyPlusPlan, PaywallOffer> _offers = {};
+  FamilyPlusStatus _status = FamilyPlusStatus.none;
   bool _loading = true;
   bool _busy = false;
   String? _message;
@@ -145,22 +145,37 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
   @override
   void initState() {
     super.initState();
-    _loadOffer();
+    _load();
   }
 
-  Future<void> _loadOffer() async {
+  Future<void> _load() async {
     final subscriptions = widget.subscriptions;
-    PaywallOffer? offer;
+    final offers = <FamilyPlusPlan, PaywallOffer>{};
+    var status = FamilyPlusStatus.none;
     if (subscriptions != null) {
-      try {
-        offer = await subscriptions.insightsOffer();
-      } on Object {
-        offer = null;
+      // Both plans' prices and the current plan together: one wait, not
+      // three in a row.
+      final results = await Future.wait<Object?>([
+        for (final plan in FamilyPlusPlan.values)
+          subscriptions
+              .familyOffer(plan)
+              .then<Object?>((offer) => offer, onError: (Object _) => null),
+        subscriptions.familyPlan().then<Object?>(
+          (plan) => plan,
+          onError: (Object _) => FamilyPlusStatus.none,
+        ),
+      ]);
+      for (final (index, plan) in FamilyPlusPlan.values.indexed) {
+        if (results[index] case final PaywallOffer offer) offers[plan] = offer;
       }
+      if (results.last case final FamilyPlusStatus current) status = current;
     }
     if (!mounted) return;
     setState(() {
-      _offer = offer;
+      _offers
+        ..clear()
+        ..addAll(offers);
+      _status = status;
       _loading = false;
     });
   }
@@ -202,54 +217,121 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
     }
   }
 
+  void _explain(String reason) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(reason)));
+
+  Widget _planCard(FamilyPlusPlan plan) {
+    final l10n = AppL10n.of(context);
+    final theme = Theme.of(context);
+    final subscriptions = widget.subscriptions;
+    final offer = _offers[plan];
+    final confirmed = offer != null && offer.canPurchase;
+    final links = _validUrl(_terms) && _validUrl(_privacy);
+    final held = _status.plan;
+    final current = held == plan;
+    // A plan the same size or smaller than the one held is not sold again.
+    final covered = held != null && held.seats >= plan.seats;
+
+    final price = confirmed
+        ? l10n.familyPlusPrice(offer.price)
+        : l10n.familyPlusUsPrice(plan.usPrice);
+    final trial =
+        confirmed && offer.hasTrial && offer.trialLengthLabel.isNotEmpty
+        ? l10n.familyPlusTrial(offer.trialLengthLabel, offer.price)
+        : null;
+
+    VoidCallback? onTap;
+    Widget? action;
+    if (!covered) {
+      if (subscriptions == null) {
+        onTap = () => _explain(l10n.familyPlusNotInThisBuild);
+      } else if (_loading) {
+        onTap = null;
+      } else if (!confirmed) {
+        onTap = () => _explain(l10n.familyPlusStoreUnavailable);
+      } else if (!links) {
+        onTap = () => _explain(l10n.familyPlusCannotBuyYet);
+      } else if (!_busy) {
+        onTap = () => _perform(
+          () => subscriptions.purchaseFamilyPlan(plan),
+          l10n.familyPlusOpeningStore,
+        );
+      }
+      action = SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: confirmed && links && !_busy ? onTap : null,
+          icon: const Icon(Icons.lock_open_rounded),
+          label: Text(
+            held != null
+                ? l10n.familyPlusUpgrade(plan.seats)
+                : trial != null
+                ? l10n.familyPlusStartTrial
+                : l10n.familyPlusSubscribePlan(plan.seats),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: current
+            ? const BorderSide(color: studafyCyan, width: 2)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.family_restroom_rounded, color: studafyNavy),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      l10n.familyPlusPlanName(plan.seats),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (current) Chip(label: Text(l10n.familyPlusYourPlan)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                price,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (trial != null) ...[const SizedBox(height: 4), Text(trial)],
+              const SizedBox(height: 4),
+              Text(
+                l10n.familyPlusPlanDetail(plan.seats),
+                style: theme.textTheme.bodySmall,
+              ),
+              if (action != null) ...[const SizedBox(height: 12), action],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final theme = Theme.of(context);
     final subscriptions = widget.subscriptions;
-    final offer = _offer;
-    final storeConfirmed = offer != null && offer.canPurchase;
-    final links = _validUrl(_terms) && _validUrl(_privacy);
-
-    final String price;
-    if (storeConfirmed) {
-      price = l10n.familyPlusPrice(offer.price);
-    } else {
-      price = l10n.familyPlusUsPrice;
-    }
-    final trial =
-        storeConfirmed && offer.hasTrial && offer.trialLengthLabel.isNotEmpty
-        ? l10n.familyPlusTrial(offer.trialLengthLabel, offer.price)
-        : null;
-
-    final Widget action;
-    if (subscriptions == null) {
-      action = Text(l10n.familyPlusNotInThisBuild);
-    } else if (_loading) {
-      action = Text(l10n.familyPlusCheckingStore);
-    } else if (!storeConfirmed) {
-      action = Text(l10n.familyPlusStoreUnavailable);
-    } else {
-      action = SizedBox(
-        width: double.infinity,
-        child: FilledButton.icon(
-          onPressed: _busy || !links
-              ? null
-              : () => _perform(
-                  () => subscriptions.purchaseInsightsMonthly(
-                    beneficiaryStudentId: widget.studentId,
-                  ),
-                  l10n.familyPlusOpeningStore,
-                ),
-          icon: const Icon(Icons.lock_open_rounded),
-          label: Text(
-            trial != null
-                ? l10n.familyPlusStartTrial
-                : l10n.familyPlusSubscribe(widget.childName),
-          ),
-        ),
-      );
-    }
+    final held = _status.plan;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -281,6 +363,15 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
           ),
         ),
         const SizedBox(height: 18),
+        if (held != null && !_status.covers(widget.studentId))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: StudafyStatusCard(
+              icon: Icons.group_add_outlined,
+              title: l10n.familyPlusNotCoveredTitle,
+              message: l10n.familyPlusNotCovered(held.seats, widget.childName),
+            ),
+          ),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -288,9 +379,11 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (final feature in [
+                  l10n.familyPlusFeatureFocus,
+                  l10n.familyPlusFeatureClasses,
+                  l10n.familyPlusFeatureChart,
+                  l10n.familyPlusFeatureMissing,
                   l10n.familyPlusFeatureTrends,
-                  l10n.familyPlusFeatureDue,
-                  l10n.familyPlusFeatureSubjects,
                   l10n.familyPlusFeatureSchool,
                 ])
                   Padding(
@@ -308,25 +401,28 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
                       ],
                     ),
                   ),
-                const Divider(height: 26),
-                Text(
-                  price,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (trial != null) ...[const SizedBox(height: 4), Text(trial)],
-                const SizedBox(height: 6),
-                Text(
-                  l10n.familyPlusOneChild(widget.childName),
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 14),
-                action,
               ],
             ),
           ),
         ),
+        const SizedBox(height: 14),
+        for (final plan in FamilyPlusPlan.values) _planCard(plan),
+        if (subscriptions == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(l10n.familyPlusNotInThisBuild),
+          )
+        else if (!_loading && !_offers.values.any((offer) => offer.canPurchase))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(l10n.familyPlusStoreUnavailable),
+          ),
+        Text(l10n.familyPlusCoversFamily, style: theme.textTheme.bodySmall),
+        if (_loading)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(l10n.familyPlusCheckingStore),
+          ),
         if (_busy)
           const Padding(
             padding: EdgeInsets.only(top: 12),

@@ -3,8 +3,11 @@ import { z } from "zod";
 const Id = z.string().uuid();
 
 /** Asked once, at first sign-in; "prefer not to say" is always offered. */
-export const V1Gender = z.enum(["girl", "boy", "prefer_not_to_say"]);
+export const V1Gender = z.enum(["male", "female", "prefer_not_to_say"]);
 export type V1Gender = z.infer<typeof V1Gender>;
+
+export const V1AccountKind = z.enum(["student", "adult"]);
+export type V1AccountKind = z.infer<typeof V1AccountKind>;
 
 export const V1UpdateProfileRequest = z.strictObject({
   displayName: z.string().trim().min(1).max(160).optional(),
@@ -12,6 +15,9 @@ export const V1UpdateProfileRequest = z.strictObject({
   gender: V1Gender.optional(),
   /** Finishes first-sign-in setup; needs displayName and gender with it. */
   completeSetup: z.boolean().optional(),
+  /** The kind of account, from the role the person signed in as. Recorded
+   * once, for an account nothing has decided yet, and ignored after that. */
+  accountKind: V1AccountKind.optional(),
 });
 export type V1UpdateProfileRequest = z.infer<typeof V1UpdateProfileRequest>;
 
@@ -25,6 +31,10 @@ export const V1ProfileResponse = z.strictObject({
   /** False until the person has chosen their name and answered gender.
    * Absent from older servers, which have no setup to finish. */
   setupComplete: z.boolean().optional(),
+  /** 'student' accounts are students only; 'adult' accounts may be a
+   * teacher, a parent or both. Null until something decides it; absent from
+   * servers older than 2026-10-01. */
+  accountKind: V1AccountKind.nullable().optional(),
 });
 export type V1ProfileResponse = z.infer<typeof V1ProfileResponse>;
 

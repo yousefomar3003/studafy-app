@@ -1,17 +1,93 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
-const studafyNavy = Color(0xFF5146E5);
-const studafyCyan = Color(0xFF08A88A);
-const studafyInk = Color(0xFF192333);
-const studafyMuted = Color(0xFF69778C);
-const studafyCanvas = Color(0xFFF5F7FB);
+// Brand roles. Every screen reads these names, so the whole app follows the
+// ocean palette below: white is the primary surface, the deep blue is the
+// accent for actions and selection, and the steel blue carries secondary
+// text. The names predate the palette and are kept so nothing else changes.
+const studafyNavy = Color(0xFF0A4174);
+const studafyCyan = Color(0xFF4E8EA2);
+const studafyInk = Color(0xFF001D39);
+const studafyMuted = Color(0xFF49769F);
+
+/// The page behind cards: white with the faintest frost, so a white card
+/// still reads as a surface without a hard line between them.
+const studafyCanvas = Color(0xFFF7FAFD);
+
+/// Hairlines and quiet fills, from the lightest palette colour.
+const studafyHairline = Color(0xFFE2ECF3);
+const studafyWash = Color(0xFFEFF5FA);
+
+/// Errors stay red: they are a warning, not a brand choice.
+const studafyDanger = Color(0xFFB3261E);
+
+// The ocean palette, darkest to lightest. The welcome, sign-in and intro
+// screens are built from it; the rest of the app moves to it screen by
+// screen.
+const studafyAbyss = Color(0xFF001D39);
+const studafyDeep = Color(0xFF0A4174);
+const studafySteel = Color(0xFF49769F);
+const studafyTeal = Color(0xFF4E8EA2);
+const studafyMist = Color(0xFF6EA2B3);
+const studafySky = Color(0xFF7BBDE8);
+const studafyFrost = Color(0xFFBDD8E9);
+
+/// The deep-water backdrop behind the welcome and sign-in screens.
+const studafyOceanGradient = LinearGradient(
+  begin: AlignmentDirectional.topStart,
+  end: AlignmentDirectional.bottomEnd,
+  colors: [studafyAbyss, studafyDeep, studafyTeal],
+  stops: [0, .55, 1],
+);
+
+/// Primary actions on the ocean screens.
+const studafyActionGradient = LinearGradient(
+  begin: AlignmentDirectional.centerStart,
+  end: AlignmentDirectional.centerEnd,
+  colors: [studafyDeep, studafyTeal],
+);
+
+/// The brand wordmark artwork: "studafy" with the sparkle cross over the t.
+const studafyWordmarkAsset = 'assets/brand/studafy_wordmark.png';
+
+/// Width over height of [studafyWordmarkAsset], so space is reserved for it
+/// before the image has decoded and the header never jumps.
+const studafyWordmarkAspect = 3.34;
 
 /// Brand lockup shared by the session flow and every shell.
+///
+/// On light surfaces it is the real wordmark artwork. On the ocean backdrop
+/// it is drawn in white, since the artwork's navy would disappear there.
 class StudafyLogo extends StatelessWidget {
-  const StudafyLogo({super.key, this.size = 46});
+  const StudafyLogo({super.key, this.size = 46, this.onDark = false});
   final double size;
+
+  /// White wordmark for the ocean backdrop.
+  final bool onDark;
   @override
-  Widget build(BuildContext c) => Row(
+  Widget build(BuildContext c) {
+    if (onDark) return _drawn();
+    final height = size * 1.15;
+    return Semantics(
+      label: 'Studafy',
+      image: true,
+      child: SizedBox(
+        height: height,
+        width: height * studafyWordmarkAspect,
+        child: Image.asset(
+          studafyWordmarkAsset,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          excludeFromSemantics: true,
+          // A build without the asset still shows the brand.
+          errorBuilder: (_, _, _) => FittedBox(child: _drawn()),
+        ),
+      ),
+    );
+  }
+
+  Widget _drawn() => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       Container(
@@ -19,10 +95,16 @@ class StudafyLogo extends StatelessWidget {
         height: size * .56,
         margin: EdgeInsetsDirectional.only(end: size * .05),
         decoration: BoxDecoration(
-          color: studafyCyan.withValues(alpha: .14),
+          color: onDark
+              ? studafyFrost.withValues(alpha: .22)
+              : studafyCyan.withValues(alpha: .14),
           borderRadius: BorderRadius.circular(size * .18),
         ),
-        child: Icon(Icons.add_rounded, color: studafyCyan, size: size * .45),
+        child: Icon(
+          Icons.add_rounded,
+          color: onDark ? studafySky : studafyCyan,
+          size: size * .45,
+        ),
       ),
       Text(
         'studafy',
@@ -31,36 +113,99 @@ class StudafyLogo extends StatelessWidget {
           height: 1,
           letterSpacing: -2,
           fontWeight: FontWeight.w900,
-          color: studafyNavy,
+          color: onDark ? Colors.white : studafyNavy,
         ),
       ),
     ],
   );
 }
 
-/// Shared card primitive used across features.
+/// Shared card primitive used across features: a white, softly raised
+/// surface with rounded corners and a hairline edge.
 class FeatureCard extends StatelessWidget {
-  const FeatureCard({super.key, required this.child, this.onTap, this.tint});
+  const FeatureCard({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.tint,
+    this.padding = const EdgeInsets.all(18),
+  });
   final Widget child;
   final VoidCallback? onTap;
   final Color? tint;
+  final EdgeInsetsGeometry padding;
   @override
-  Widget build(BuildContext c) => Card(
-    elevation: 0,
-    shadowColor: const Color(0xFF7737EE).withValues(alpha: .12),
-    color: tint == null
-        ? Colors.white
-        : Color.alphaBlend(tint!.withValues(alpha: .065), Colors.white),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(24),
-      side: BorderSide(color: (tint ?? studafyCyan).withValues(alpha: .11)),
-    ),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Padding(padding: const EdgeInsets.all(20), child: child),
-    ),
-  );
+  Widget build(BuildContext c) {
+    final radius = BorderRadius.circular(22);
+    final card = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: studafyAbyss.withValues(alpha: .06),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: tint == null
+            ? Colors.white
+            : Color.alphaBlend(tint!.withValues(alpha: .07), Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: tint == null
+                ? studafyHairline
+                : tint!.withValues(alpha: .18),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+    return onTap == null ? card : StudafyPressable(child: card);
+  }
+}
+
+/// Gives a tappable surface a brief, gentle press: it settles to 98% while
+/// a finger is on it. Purely visual - the child handles the tap - and still
+/// under the device's reduce-motion setting.
+class StudafyPressable extends StatefulWidget {
+  const StudafyPressable({super.key, required this.child, this.scale = .98});
+
+  final Widget child;
+  final double scale;
+
+  @override
+  State<StudafyPressable> createState() => _StudafyPressableState();
+}
+
+class _StudafyPressableState extends State<StudafyPressable> {
+  bool _down = false;
+
+  void _set(bool down) {
+    if (_down != down) setState(() => _down = down);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
+    return Listener(
+      onPointerDown: (_) => _set(true),
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _down ? widget.scale : 1,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 class StudafyNavItem {
@@ -70,7 +215,15 @@ class StudafyNavItem {
   final IconData selectedIcon;
 }
 
-/// Persistent navigation shared by every mobile role.
+/// Persistent navigation shared by every role: a floating, rounded glass
+/// bar that sits above the page rather than cutting a band across it.
+///
+/// It never covers content - it occupies the scaffold's bottom slot, so the
+/// page above ends where it starts - and it becomes more compact while the
+/// person scrolls ([compact]), expanding again on any touch. Labels stay in
+/// the semantics and tooltips when they are hidden. Motion follows the
+/// device's reduce-motion setting, and the frosted look degrades to an
+/// almost opaque white where blur is unavailable, so it stays legible.
 class StudafyNavigationBar extends StatelessWidget {
   const StudafyNavigationBar({
     super.key,
@@ -78,6 +231,8 @@ class StudafyNavigationBar extends StatelessWidget {
     required this.onSelected,
     required this.items,
     this.accent = studafyNavy,
+    this.compact = false,
+    this.onInteract,
   });
 
   final int selectedIndex;
@@ -85,40 +240,150 @@ class StudafyNavigationBar extends StatelessWidget {
   final List<StudafyNavItem> items;
   final Color accent;
 
+  /// Icons only, and a little lower, while the page is being scrolled.
+  final bool compact;
+
+  /// Called on any touch of the bar, so the host can expand it again.
+  final VoidCallback? onInteract;
+
   @override
-  Widget build(BuildContext context) => NavigationBarTheme(
-    data: NavigationBarThemeData(
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => TextStyle(
-          color: states.contains(WidgetState.selected) ? accent : studafyMuted,
-          fontSize: 11,
-          fontWeight: states.contains(WidgetState.selected)
-              ? FontWeight.w800
-              : FontWeight.w600,
-        ),
-      ),
-      iconTheme: WidgetStateProperty.resolveWith(
-        (states) => IconThemeData(
-          color: states.contains(WidgetState.selected) ? accent : studafyMuted,
-        ),
-      ),
-    ),
-    child: NavigationBar(
-      height: 76,
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onSelected,
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      indicatorColor: accent.withValues(alpha: .10),
-      animationDuration: const Duration(milliseconds: 300),
-      destinations: [
-        for (final item in items)
-          NavigationDestination(
-            icon: Icon(item.icon),
-            selectedIcon: Icon(item.selectedIcon),
-            label: item.label,
+  Widget build(BuildContext context) {
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 220);
+    final radius = BorderRadius.circular(compact ? 26 : 30);
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 6, 14, 6),
+        child: Listener(
+          onPointerDown: (_) => onInteract?.call(),
+          child: AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            height: compact ? 58 : 70,
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              boxShadow: [
+                BoxShadow(
+                  color: studafyAbyss.withValues(alpha: .14),
+                  blurRadius: 26,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .9),
+                    borderRadius: radius,
+                    border: Border.all(color: studafyHairline),
+                  ),
+                  child: Row(
+                    children: [
+                      for (final (index, item) in items.indexed)
+                        Expanded(
+                          child: StudafyNavDestination(
+                            item: item,
+                            selected: index == selectedIndex,
+                            compact: compact,
+                            accent: accent,
+                            duration: duration,
+                            onTap: () => onSelected(index),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-      ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One destination on [StudafyNavigationBar].
+class StudafyNavDestination extends StatelessWidget {
+  const StudafyNavDestination({
+    super.key,
+    required this.item,
+    required this.selected,
+    required this.compact,
+    required this.accent,
+    required this.duration,
+    required this.onTap,
+  });
+
+  final StudafyNavItem item;
+  final bool selected;
+  final bool compact;
+  final Color accent;
+  final Duration duration;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    selected: selected,
+    button: true,
+    label: item.label,
+    excludeSemantics: true,
+    child: Tooltip(
+      message: item.label,
+      excludeFromSemantics: true,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 36,
+        highlightShape: BoxShape.rectangle,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.symmetric(
+                horizontal: selected ? 16 : 10,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                color: selected ? studafyWash : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                selected ? item.selectedIcon : item.icon,
+                size: 24,
+                color: selected ? accent : studafyMuted,
+              ),
+            ),
+            AnimatedSize(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              child: compact
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: selected ? accent : studafyMuted,
+                          fontWeight: selected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }
@@ -228,7 +493,7 @@ class StudafyHero extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF252455), Color(0xFF5146E5)],
+          colors: [studafyAbyss, studafyDeep, studafyTeal],
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
         ),
@@ -243,7 +508,7 @@ class StudafyHero extends StatelessWidget {
                 child: Text(
                   eyebrow,
                   style: const TextStyle(
-                    color: Color(0xFFC7F9E8),
+                    color: studafyFrost,
                     fontSize: 12,
                     letterSpacing: 1.2,
                     fontWeight: FontWeight.w700,
@@ -256,7 +521,7 @@ class StudafyHero extends StatelessWidget {
                   color: Colors.white.withValues(alpha: .12),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, color: const Color(0xFFC7F9E8), size: 26),
+                child: Icon(icon, color: studafyFrost, size: 26),
               ),
             ],
           ),
@@ -275,7 +540,7 @@ class StudafyHero extends StatelessWidget {
           Text(
             subtitle,
             style: const TextStyle(
-              color: Color(0xFFE0E2FF),
+              color: studafyFrost,
               fontSize: 14,
               height: 1.5,
             ),

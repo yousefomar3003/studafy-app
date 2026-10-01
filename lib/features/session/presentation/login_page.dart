@@ -10,6 +10,8 @@ import '../../../core/studafy_domain.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
+import 'auth_frame.dart';
+import 'provider_marks.dart';
 import 'role_page.dart';
 
 /// The login screen drives [SessionInteractor]; it never touches Supabase,
@@ -62,9 +64,18 @@ class _LoginPageState extends State<LoginPage> {
       },
       onError: (Object failure) {
         if (!mounted) return;
+        // The provider has already sent the person back by the time the
+        // exchange fails (a dropped connection, an expired code), so the
+        // browser would only sit on its last page looking as if it were
+        // still loading. Close it and say what happened here instead.
+        final hadBrowser = awaitingProviderCallback;
+        _dismissProviderBrowser();
+        final known = Failure.fromError(failure);
         setState(() {
           signingIn = false;
-          error = Failure.fromError(failure).message;
+          error = hadBrowser && known.code == Failure.unknownCode
+              ? AppL10n.of(context).loginDidNotFinish
+              : known.message;
         });
       },
     );
@@ -145,13 +156,14 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(closeInAppWebView());
   }
 
-  Future<void> _completeRemoteLogin() async {
+  Future<void> _completeRemoteLogin({UserRole? as}) async {
     if (!mounted || completingRemoteLogin || widget.session.isDemoSession) {
       return;
     }
+    final role = as ?? widget.role;
     completingRemoteLogin = true;
     final result = await widget.session.completeRemoteLogin(
-      role: selectedRole,
+      role: _studafyRole(role),
       consentAccepted: accepted,
       locale: Localizations.localeOf(context).languageCode,
     );
@@ -161,9 +173,12 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         switch (outcome) {
           case LoginOutcome.ready:
-            _openRole();
+            _openRole(role);
           case LoginOutcome.needsOnboarding:
-            _openOnboarding();
+            _openOnboarding(role);
+          case LoginOutcome.wrongRole:
+            final own = widget.session.accountRole;
+            if (own != null) unawaited(_explainWrongRole(own));
         }
       },
       onFailure: (failure) {
@@ -185,23 +200,129 @@ class _LoginPageState extends State<LoginPage> {
   /// all, so for both of them having nothing yet is an empty home rather than
   /// a locked door: they go straight in, and their shell offers the one step
   /// that fills it - join a class, or link to a child.
-  void _openOnboarding() {
-    if (widget.role != UserRole.teacher) {
-      _openRole();
+  void _openOnboarding(UserRole role) {
+    if (role != UserRole.teacher) {
+      _openRole(role);
       return;
     }
     Navigator.pushNamedAndRemoveUntil(
       context,
       onboardingRoute,
       (_) => false,
-      arguments: widget.role,
+      arguments: role,
     );
   }
 
-  void _openRole() {
+  static StudafyRole _studafyRole(UserRole role) => switch (role) {
+    UserRole.teacher => StudafyRole.teacher,
+    UserRole.parent => StudafyRole.parent,
+    UserRole.student => StudafyRole.student,
+  };
+
+  static UserRole _userRole(StudafyRole role) => switch (role) {
+    StudafyRole.teacher || StudafyRole.schoolAdmin => UserRole.teacher,
+    StudafyRole.parent => UserRole.parent,
+    StudafyRole.student => UserRole.student,
+  };
+
+  String _roleName(AppL10n l10n, StudafyRole role) => switch (role) {
+    StudafyRole.teacher || StudafyRole.schoolAdmin => l10n.roleTeacher,
+    StudafyRole.parent => l10n.roleParent,
+    StudafyRole.student => l10n.roleStudent,
+  };
+
+  /// This email is another kind of account than the door it came through.
+  /// Nothing has been entered: the person continues in the role the account
+  /// is for, or signs in with a different email.
+  Future<void> _explainWrongRole(StudafyRole own) async {
+    final l10n = AppL10n.of(context);
+    final student = own == StudafyRole.student;
+    final ownName = _roleName(l10n, own);
+    final choice = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: studafyWash,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    student ? Icons.menu_book_rounded : Icons.badge_rounded,
+                    color: studafyNavy,
+                    size: 30,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                student
+                    ? l10n.loginWrongRoleStudentTitle
+                    : l10n.loginWrongRoleAdultTitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: studafyInk,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                student
+                    ? l10n.loginWrongRoleStudentBody
+                    : l10n.loginWrongRoleAdultBody(ownName.toLowerCase()),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: studafyMuted, height: 1.45),
+              ),
+              const SizedBox(height: 22),
+              FilledButton(
+                onPressed: () => Navigator.pop(sheet, true),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                child: Text(l10n.loginContinueAs(ownName)),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(sheet, false),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(l10n.loginUseDifferentEmail),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice ?? false) {
+      await _completeRemoteLogin(as: _userRole(own));
+      return;
+    }
+    // A different email: this one leaves the device's sign-in, and the
+    // screen waits for the next.
+    setState(() {
+      signingIn = false;
+      error = null;
+    });
+    await widget.session.signOut();
+  }
+
+  void _openRole([UserRole? as]) {
     // The shells are registered as named routes by the app; the session
     // feature never imports the role shells directly.
-    final route = switch (widget.role) {
+    final route = switch (as ?? widget.role) {
       UserRole.teacher => teacherRoute,
       UserRole.parent => parentRoute,
       UserRole.student => studentRoute,
@@ -209,128 +330,216 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
   }
 
+  /// Set when a provider is tapped before the terms are accepted, so the
+  /// reminder turns red instead of the tap silently doing nothing.
+  bool _nudged = false;
+
+  IconData get _roleIcon => switch (widget.role) {
+    UserRole.teacher => Icons.school_rounded,
+    UserRole.student => Icons.menu_book_rounded,
+    UserRole.parent => Icons.family_restroom_rounded,
+  };
+
+  void _tapProvider(LoginProvider provider) {
+    if (signingIn) return;
+    if (!accepted) {
+      setState(() => _nudged = true);
+      return;
+    }
+    login(provider);
+  }
+
   @override
-  Widget build(BuildContext c) => AuthFrame(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const StudafyLogo(size: 36),
-        const SizedBox(height: 40),
-        Text(
-          AppL10n.of(c).loginWelcome(roleLabel(c, widget.role)),
-          textAlign: TextAlign.center,
-          style: Theme.of(c).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          AppL10n.of(c).loginSubtitle,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: studafyMuted),
-        ),
-        const SizedBox(height: 30),
-        // Sign in with Apple is required on iOS wherever third-party login
-        // establishes the primary account (Apple guideline 4.8). It is hidden
-        // where it cannot complete natively rather than offered as a button
-        // that fails.
-        for (final x in [
-          ('G', 'Google', LoginProvider.google),
-          ('M', 'Microsoft', LoginProvider.microsoft),
-          ('', 'Apple', LoginProvider.apple),
-        ])
-          if (widget.session.supportsProvider(x.$3))
-            SocialButton(
-              mark: x.$1,
-              label: AppL10n.of(c).loginContinueWith(x.$2),
-              onTap: signingIn ? () {} : () => login(x.$3),
-            ),
-        if (signingIn)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: LinearProgressIndicator(),
-          ),
-        if (error != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              error!,
-              style: const TextStyle(color: Color(0xFFB42318)),
-            ),
-          ),
-        const SizedBox(height: 10),
-        CheckboxListTile(
-          value: accepted,
-          onChanged: (v) => setState(() => accepted = v ?? false),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          title: Wrap(
-            children: [
-              Text(AppL10n.of(c).loginConsentPrefix),
-              LinkText(
-                AppL10n.of(c).loginTermsOfUse,
-                onTap: () => showPolicy(c, PolicyDocument.terms),
-              ),
-              Text(AppL10n.of(c).loginConsentAnd),
-              LinkText(
-                AppL10n.of(c).loginPrivacyPolicy,
-                onTap: () => showPolicy(c, PolicyDocument.privacy),
-              ),
-              Text(AppL10n.of(c).loginConsentSuffix),
-            ],
-          ),
-        ),
-        if (!accepted)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(start: 12),
-            child: Text(
-              AppL10n.of(c).loginAcceptFirst,
-              style: const TextStyle(color: studafyMuted, fontSize: 12),
-            ),
-          ),
-        const SizedBox(height: 20),
-        TextButton.icon(
+  Widget build(BuildContext c) {
+    final l10n = AppL10n.of(c);
+    return AuthFrame(
+      header: const StudafyLogo(size: 38, onDark: true),
+      footer: Center(
+        child: TextButton.icon(
           onPressed: () => Navigator.pop(c),
-          icon: const Icon(Icons.arrow_back),
-          label: Text(AppL10n.of(c).loginChangeRole),
+          style: TextButton.styleFrom(foregroundColor: studafyFrost),
+          icon: Icon(backChevron(c)),
+          label: Text(l10n.loginChangeRole),
         ),
-      ],
-    ),
-  );
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: studafyActionGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: studafyDeep.withValues(alpha: .35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Icon(_roleIcon, color: Colors.white, size: 32),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            l10n.loginWelcome(roleLabel(c, widget.role)),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: studafyAbyss,
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.6,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.loginSubtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: studafySteel, height: 1.4),
+          ),
+          const SizedBox(height: 26),
+          // Sign in with Apple is required on iOS wherever third-party login
+          // establishes the primary account (Apple guideline 4.8). It is
+          // hidden where it cannot complete natively rather than offered as a
+          // button that fails.
+          for (final x in [
+            (const GoogleMark(), 'Google', LoginProvider.google),
+            (const MicrosoftMark(), 'Microsoft', LoginProvider.microsoft),
+            (
+              const Icon(Icons.apple, size: 24, color: Colors.black),
+              'Apple',
+              LoginProvider.apple,
+            ),
+          ])
+            if (widget.session.supportsProvider(x.$3))
+              SocialButton(
+                logo: x.$1,
+                label: l10n.loginContinueWith(x.$2),
+                onTap: () => _tapProvider(x.$3),
+              ),
+          if (signingIn)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: LinearProgressIndicator(color: studafyTeal),
+            ),
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                error!,
+                style: const TextStyle(color: Color(0xFFB42318)),
+              ),
+            ),
+          const SizedBox(height: 6),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() {
+              accepted = !accepted;
+              if (accepted) _nudged = false;
+            }),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Checkbox(
+                  value: accepted,
+                  activeColor: studafyDeep,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  onChanged: (v) => setState(() {
+                    accepted = v ?? false;
+                    if (accepted) _nudged = false;
+                  }),
+                ),
+                Expanded(
+                  child: Wrap(
+                    children: [
+                      Text(l10n.loginConsentPrefix),
+                      LinkText(
+                        l10n.loginTermsOfUse,
+                        onTap: () => showPolicy(c, PolicyDocument.terms),
+                      ),
+                      Text(l10n.loginConsentAnd),
+                      LinkText(
+                        l10n.loginPrivacyPolicy,
+                        onTap: () => showPolicy(c, PolicyDocument.privacy),
+                      ),
+                      Text(l10n.loginConsentSuffix),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!accepted)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 14, top: 2),
+              child: Text(
+                l10n.loginAcceptFirst,
+                style: TextStyle(
+                  color: _nudged ? const Color(0xFFB42318) : studafySteel,
+                  fontSize: 12,
+                  fontWeight: _nudged ? FontWeight.w700 : FontWeight.w400,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
+/// A provider's sign-in button: its real logo and "Continue with ...", on
+/// the soft surface of the ocean screens.
 class SocialButton extends StatelessWidget {
   const SocialButton({
     super.key,
     required this.label,
-    required this.mark,
+    required this.logo,
     required this.onTap,
   });
-  final String label, mark;
+  final String label;
+  final Widget logo;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext c) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
-    child: OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(54),
-        side: const BorderSide(color: Color(0xFFDCE0EE)),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 42,
-            child: Text(
-              mark,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: studafyInk,
-              ),
+    child: Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Ink(
+            height: 56,
+            decoration: softSurface().copyWith(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: 56, child: Center(child: logo)),
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: studafyAbyss,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 56),
+              ],
             ),
           ),
-          Expanded(child: Text(label, textAlign: TextAlign.center)),
-          const SizedBox(width: 42),
-        ],
+        ),
       ),
     ),
   );
@@ -346,9 +555,10 @@ class LinkText extends StatelessWidget {
     child: Text(
       text,
       style: const TextStyle(
-        color: studafyNavy,
+        color: studafyDeep,
         fontWeight: FontWeight.w700,
         decoration: TextDecoration.underline,
+        decorationColor: studafyDeep,
       ),
     ),
   );
@@ -370,35 +580,47 @@ void showPolicy(BuildContext c, PolicyDocument document) =>
     showModalBottomSheet(
       context: c,
       showDragHandle: true,
+      // The whole policy is read here before signing in, so the sheet can
+      // grow to most of the screen and the text scrolls inside it.
+      isScrollControlled: true,
       builder: (c) {
         final l10n = AppL10n.of(c);
-        return Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                document == PolicyDocument.privacy
-                    ? l10n.loginPrivacyPolicy
-                    : l10n.loginTermsOfUse,
-                style: Theme.of(c).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 14),
-              Text(
-                document == PolicyDocument.privacy
-                    ? l10n.policyPrivacyBody
-                    : l10n.policyTermsBody,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(c),
-                  child: Text(l10n.loginClose),
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(c).height * 0.85,
+          ),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 8, 24, 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  document == PolicyDocument.privacy
+                      ? l10n.loginPrivacyPolicy
+                      : l10n.loginTermsOfUse,
+                  style: Theme.of(c).textTheme.headlineSmall,
                 ),
-              ),
-            ],
+                const SizedBox(height: 14),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      document == PolicyDocument.privacy
+                          ? l10n.policyPrivacyBody
+                          : l10n.policyTermsBody,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(c),
+                    child: Text(l10n.loginClose),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -202,8 +202,10 @@ class PreviewAcademicRepository implements AcademicRepository {
     DateTime startsAt,
     DateTime endsAt,
     int expectedVersion,
-    List<AttendanceDraft> entries,
-  ) async {
+    List<AttendanceDraft> entries, {
+    String? correctionReason,
+    bool override = false,
+  }) async {
     for (final entry in entries) {
       _records[AcademicFeed.attendance]!.add(
         AcademicRecord(
@@ -216,6 +218,139 @@ class PreviewAcademicRepository implements AcademicRepository {
       );
     }
   }
+
+  // The paper gradebook, deadlines and history are server features: the
+  // synthetic preview shows empty sheets and accepts commands as no-ops.
+  @override
+  Future<void> editResource(
+    String resourceId,
+    int expectedVersion, {
+    String? title,
+    String? body,
+    String? replaceFileId,
+  }) => _replace(
+    AcademicFeed.content,
+    resourceId,
+    expectedVersion,
+    title: title,
+    detail: body,
+    state: 'published',
+  );
+
+  @override
+  Future<List<AssignmentExtension>> assignmentExtensions(
+    String assignmentId,
+  ) async => const [];
+
+  @override
+  Future<void> grantExtension(
+    String assignmentId,
+    String studentId,
+    String untilLocal,
+    String reason,
+  ) async {}
+
+  @override
+  Future<void> revokeExtension(String assignmentId, String studentId) async {}
+
+  @override
+  Future<void> updateAssignmentMaterials(
+    String assignmentId,
+    int expectedVersion, {
+    List<String> detachFileIds = const [],
+    List<String> attachmentFileIds = const [],
+  }) async {}
+
+  @override
+  Future<void> updateAssessmentMaterials(
+    String assessmentId,
+    int expectedVersion, {
+    List<String> detachFileIds = const [],
+    List<String> attachmentFileIds = const [],
+  }) async {}
+
+  @override
+  Future<void> reopenAssignment(
+    String assignmentId,
+    int expectedVersion,
+    String closesAtLocal,
+    String reason,
+  ) async {}
+
+  @override
+  Future<void> correctAttendance(
+    String sessionId,
+    int expectedVersion,
+    List<AttendanceDraft> entries, {
+    String? reason,
+    bool override = false,
+  }) async {}
+
+  @override
+  Future<List<AttendanceChange>> attendanceHistory(String sessionId) async =>
+      const [];
+
+  @override
+  Future<String> createPaperGradebookItem(
+    String classroomId, {
+    required String title,
+    required String category,
+    required double maximumScore,
+    double? weight,
+    DateTime? scheduledAt,
+  }) async => _id('paper');
+
+  @override
+  Future<PaperGradebook> paperGradebook(String assessmentId) async =>
+      PaperGradebook(
+        item: PaperGradebookItem(
+          id: assessmentId,
+          title: '',
+          category: 'paper_exam',
+          maximumScore: 100,
+          state: 'draft',
+          version: 1,
+          gradebookVersion: 0,
+          unmarked: 0,
+          ready: 0,
+          published: 0,
+        ),
+        rows: const [],
+      );
+
+  @override
+  Future<int> saveGradeDrafts(
+    String assessmentId,
+    int gradebookVersion,
+    List<GradeDraft> entries,
+  ) async => gradebookVersion + 1;
+
+  @override
+  Future<PublishedGrades> publishGrades(
+    String assessmentId,
+    int gradebookVersion,
+  ) async => const PublishedGrades(published: 0, unmarked: 0);
+
+  @override
+  Future<void> correctGrades(
+    String assessmentId,
+    String reason,
+    List<GradeCorrection> entries,
+  ) async {}
+
+  @override
+  Future<List<GradeChange>> gradeHistory(String gradeId) async => const [];
+
+  @override
+  Future<void> updateGradebookItem(
+    String assessmentId,
+    int expectedVersion, {
+    required String title,
+    required String category,
+    required double maximumScore,
+    double? weight,
+    DateTime? scheduledAt,
+  }) async {}
 
   @override
   Future<void> reviewGrade(

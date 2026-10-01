@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/studafy_design.dart';
 
@@ -31,19 +32,25 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   @override
-  Widget build(BuildContext c) => const Scaffold(
-    backgroundColor: Colors.white,
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          StudafyLogo(size: 64),
-          SizedBox(height: 18),
-          Text(
-            'School life, connected.',
-            style: TextStyle(color: studafyMuted, fontSize: 16),
+  Widget build(BuildContext c) => const AnnotatedRegion<SystemUiOverlayStyle>(
+    value: SystemUiOverlayStyle.light,
+    child: Scaffold(
+      backgroundColor: studafyAbyss,
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: studafyOceanGradient),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StudafyLogo(size: 64, onDark: true),
+              SizedBox(height: 18),
+              Text(
+                'School life, connected.',
+                style: TextStyle(color: studafyFrost, fontSize: 16),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     ),
   );

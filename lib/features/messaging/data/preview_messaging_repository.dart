@@ -167,6 +167,8 @@ class PreviewMessagingRepository
       throw StateError('Announcements need the school service.');
 
   @override
-  Future<List<Announcement>> announcements({String? classroomId}) async =>
-      const [];
+  Future<List<Announcement>> announcements({
+    String? schoolId,
+    String? classroomId,
+  }) async => const [];
 }

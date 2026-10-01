@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
 import '../../../core/file_upload_repository.dart';
+import '../../../core/studafy_components.dart';
+import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -72,18 +74,11 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
       }
       if (snapshot.hasError) {
         return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(AppL10n.of(context).lessonsLessonsCouldNotBeLoaded),
-                TextButton(
-                  onPressed: () => setState(() => _lessons = _load()),
-                  child: Text(AppL10n.of(context).studySetTryAgain),
-                ),
-              ],
-            ),
+          child: StudafyEmptyState(
+            icon: Icons.wifi_off_rounded,
+            title: AppL10n.of(context).lessonsLessonsCouldNotBeLoaded,
+            actionLabel: AppL10n.of(context).studySetTryAgain,
+            onAction: () => setState(() => _lessons = _load()),
           ),
         );
       }
@@ -97,16 +92,13 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
         });
       final header = widget.header;
       if (lessons.isEmpty) {
-        final empty = Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            AppL10n.of(context).lessonsNoLessonsYetTheyAppear,
-            textAlign: TextAlign.center,
-          ),
+        final empty = StudafyEmptyState(
+          icon: Icons.menu_book_rounded,
+          title: AppL10n.of(context).lessonsNoLessonsYetTheyAppear,
         );
         if (header == null) return Center(child: empty);
         return ListView(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
           children: [header(context, hasLessons: false), empty],
         );
       }
@@ -119,32 +111,38 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
         final day = lesson.date == null ? null : _day(lesson.date!);
         if (first || day != current) {
           children.add(
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(4, 16, 4, 6),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  _heading(day),
-                  style: Theme.of(context).textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-              ),
+            SectionHeader(
+              _heading(day),
+              padding: const EdgeInsetsDirectional.fromSTEB(4, 16, 4, 8),
             ),
           );
           current = day;
           first = false;
         }
         children.add(
-          Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: FeatureCard(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  UserContentText(
-                    lesson.title,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const IconBadge(icon: Icons.menu_book_rounded, size: 36),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: UserContentText(
+                          lesson.title,
+                          style: const TextStyle(
+                            color: studafyInk,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   if (lesson.detail.isNotEmpty) ...[
                     const SizedBox(height: 6),
@@ -168,7 +166,10 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
           setState(() => _lessons = next);
           await next.then((_) {}, onError: (_) {});
         },
-        child: ListView(padding: const EdgeInsets.all(12), children: children),
+        child: ListView(
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
+          children: children,
+        ),
       );
     },
   );

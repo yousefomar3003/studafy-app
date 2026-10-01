@@ -47,10 +47,16 @@ const _coreAllowlist = <String>[
   'core/telemetry.dart',
   'core/studafy_domain.dart',
   'core/studafy_design.dart',
+  // The shared components of the redesign, built only from the tokens
+  // above: avatars, section headers, pills, settings rows, the "+".
+  'core/studafy_components.dart',
   // Named routes only - no widgets, no wiring. A screen must be able to say
   // where it is navigating to without importing lib/app, which is what the
   // composition-root rule below forbids.
   'core/app_routes.dart',
+  // Opening a page once per tap: every screen pushes through it, so a
+  // second tap on a slow connection never stacks the same page twice.
+  'core/navigation.dart',
   'core/runtime_environment.dart',
   // MOB-070 localization (ADR-0028). The generated localizations are the one
   // source of interface copy, so every zone may read them; the port below is

@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:studafy/app/app_bootstrap.dart';
 import 'package:studafy/core/runtime_environment.dart';
+import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/features/session/presentation/login_page.dart';
+import 'package:studafy/features/session/presentation/provider_marks.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
 import 'package:studafy/main.dart';
 
@@ -35,6 +37,12 @@ void main() {
         }
         await tester.pumpAndSettle();
         expect(find.byType(RolePage), findsOneWidget);
+        // The welcome slides show once per device; skip them if they are up.
+        final skip = find.text(language == 'ar' ? 'تخطي' : 'Skip');
+        if (skip.evaluate().isNotEmpty) {
+          await tester.tap(skip);
+          await tester.pumpAndSettle();
+        }
         final tile = find.byWidgetPredicate(
           (w) => w is RoleTile && w.role == role,
         );
@@ -51,14 +59,14 @@ void main() {
         await tester.tap(consent);
         await tester.pump();
         final google = find.byWidgetPredicate(
-          (w) => w is SocialButton && w.mark == 'G',
+          (w) => w is SocialButton && w.logo is GoogleMark,
         );
         await tester.ensureVisible(google);
         await tester.tap(google);
         await tester.pumpAndSettle();
         expect(find.byType(LoginPage), findsNothing);
 
-        final destinations = find.byType(NavigationDestination);
+        final destinations = find.byType(StudafyNavDestination);
         expect(destinations, findsNWidgets(role == UserRole.parent ? 4 : 5));
         for (var tab = 0; tab < (role == UserRole.parent ? 4 : 5); tab++) {
           await tester.tap(destinations.at(tab));
@@ -66,7 +74,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(
             tester
-                .widget<NavigationBar>(find.byType(NavigationBar))
+                .widget<StudafyNavigationBar>(find.byType(StudafyNavigationBar))
                 .selectedIndex,
             tab,
           );

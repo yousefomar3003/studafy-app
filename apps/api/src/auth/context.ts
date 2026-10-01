@@ -64,6 +64,35 @@ interface RawContext {
  * cannot leak one request's identity into the next — the failure mode that
  * would turn a connection pool into a cross-tenant data leak.
  */
+/**
+ * Calls one SQL function as the verified subject in a single statement.
+ *
+ * [withVerifiedActor] costs four round trips - BEGIN, the identity, the
+ * call, COMMIT - which on a distant database is most of a request's time.
+ * Here the identity and the call are one statement, and so one implicit
+ * transaction: the subquery holding set_config is volatile, so Postgres
+ * cannot flatten it and always sets the identity before evaluating the
+ * call, and the setting is transaction-local, so it is gone when the
+ * statement ends and a pooled connection keeps nothing. [call] is a fixed
+ * SQL function call whose arguments are bound parameters ($1, $2, ...);
+ * the subject is bound after them.
+ */
+export async function selectAsActor<R>(
+  sql: Sql,
+  subject: string,
+  call: string,
+  parameters: readonly unknown[],
+): Promise<R | null> {
+  const rows = await sql.unsafe<{ result: R }[]>(
+    `select ${call} as result
+     from (select set_config('request.jwt.claim.sub', $${
+      parameters.length + 1
+    }, true)) as actor`,
+    [...parameters, subject] as never,
+  );
+  return rows[0]?.result ?? null;
+}
+
 export async function withVerifiedActor<T>(
   sql: Sql,
   subject: string,
@@ -116,26 +145,27 @@ export class AuthContextRepository {
    * Redis problems can only cost latency, never correctness.
    */
   async load(subject: string): Promise<SessionContext | null> {
-    const loader = () =>
-      withVerifiedActor(this.#sql, subject, async (tx) => {
-        const rows = await tx<{ context: RawContext | null }[]>`
-          select private.auth_context() as context
-        `;
-        const raw = rows[0]?.context ?? null;
-        if (!raw) return null;
-        return {
-          userId: raw.user_id,
-          displayName: raw.display_name,
-          locale: raw.locale,
-          profileStatus: raw.profile_status,
-          profileDeletedAt: raw.profile_deleted_at,
-          revokedBefore: raw.revoked_before,
-          deletionState: raw.deletion_state,
-          memberships: raw.memberships ?? [],
-          membershipVersion: raw.membership_version,
-          mfaEnrolled: raw.mfa_enrolled,
-        };
-      });
+    const loader = async () => {
+      const raw = await selectAsActor<RawContext>(
+        this.#sql,
+        subject,
+        "private.auth_context()",
+        [],
+      );
+      if (!raw) return null;
+      return {
+        userId: raw.user_id,
+        displayName: raw.display_name,
+        locale: raw.locale,
+        profileStatus: raw.profile_status,
+        profileDeletedAt: raw.profile_deleted_at,
+        revokedBefore: raw.revoked_before,
+        deletionState: raw.deletion_state,
+        memberships: raw.memberships ?? [],
+        membershipVersion: raw.membership_version,
+        mfaEnrolled: raw.mfa_enrolled,
+      };
+    };
     if (!this.#cache) return await loader();
     try {
       return await this.#cache.load(subject, loader);

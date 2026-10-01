@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../core/feedback.dart';
+import '../core/navigation.dart';
+import '../core/studafy_components.dart';
+import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/attendance_page.dart';
 import '../features/academic/presentation/create_assignment_page.dart';
 import '../features/academic/presentation/create_exam_page.dart';
 import '../features/academic/presentation/create_lesson_page.dart';
+import '../features/academic/presentation/create_wellbeing_page.dart';
+import '../features/academic/presentation/gradebook_page.dart';
 import '../features/messaging/presentation/create_announcement_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
 import '../l10n/generated/app_l10n.dart';
@@ -36,7 +41,7 @@ class TeacherCreateActions {
       onFailure: (_) => const <AnnouncementTarget>[],
     );
     if (targets.isEmpty) return;
-    final posted = await Navigator.of(context).push<String>(
+    final posted = await Navigator.of(context).pushOnce<String>(
       MaterialPageRoute<String>(
         builder: (_) => CreateAnnouncementPage(
           messaging: MessagingScope.of(context),
@@ -78,8 +83,9 @@ class TeacherCreateActions {
     final messenger = ScaffoldMessenger.of(context);
     final options = await _classOptions(context);
     if (options == null || !context.mounted) return;
-    final created = await Navigator.of(context)
-        .push<String>(MaterialPageRoute<String>(builder: (_) => form(options)));
+    final created = await Navigator.of(context).pushOnce<String>(
+      MaterialPageRoute<String>(builder: (_) => form(options)),
+    );
     if (created != null) messenger.showMessage(created);
   }
 
@@ -146,7 +152,7 @@ class TeacherCreateActions {
             ),
           );
     if (chosen == null || !context.mounted) return;
-    await Navigator.of(context).push(
+    await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (_) => AttendancePage(
           repository: dependencies.academic,
@@ -157,71 +163,148 @@ class TeacherCreateActions {
     );
   }
 
-  /// Everything a teacher makes, in one place.
+  /// Marks for paper work: a class's gradebook, where a paper exam, quiz or
+  /// homework is set up and marked for the whole class in one sheet. A
+  /// teacher with one class goes straight to it.
+  Future<void> paperGrades(BuildContext context) async {
+    final options = await _classOptions(context);
+    if (options == null || !context.mounted) return;
+    final chosen = options.length == 1
+        ? options.single
+        : await showDialog<ClassOption>(
+            context: context,
+            builder: (dialogContext) => SimpleDialog(
+              title: Text(AppL10n.of(dialogContext).teacherPickClass),
+              children: [
+                for (final option in options)
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(dialogContext, option),
+                    child: Text(option.name),
+                  ),
+              ],
+            ),
+          );
+    if (chosen == null || !context.mounted) return;
+    await Navigator.of(context).pushOnce(
+      MaterialPageRoute<void>(
+        builder: (_) => ClassGradebookPage(
+          repository: dependencies.academic,
+          classroomId: chosen.id,
+          classroomName: chosen.name,
+        ),
+      ),
+    );
+  }
+
+  /// A wellbeing note about one student in one of this teacher's classes.
+  Future<void> newWellbeing(BuildContext context) => _openForm(
+    context,
+    (classes) => CreateWellbeingPage(
+      repository: dependencies.academic,
+      classes: classes,
+    ),
+  );
+
+  /// Everything a teacher makes, in one place: the sheet the "+" opens.
   Future<void> openCreateMenu(BuildContext context) async {
     final l10n = AppL10n.of(context);
     final canAnnounce =
         MessagingScope.isAvailable(context) && _schoolId != null;
     final action = await showModalBottomSheet<Future<void> Function()>(
       context: context,
-      showDragHandle: true,
+      isScrollControlled: true,
       builder: (sheetContext) {
         Widget item(
           IconData icon,
           String title,
           String detail,
           Future<void> Function() run,
-        ) => ListTile(
-          leading: CircleAvatar(child: Icon(icon)),
-          title: Text(title),
-          subtitle: Text(detail),
+        ) => SettingsRow(
+          icon: icon,
+          title: title,
+          subtitle: detail,
           onTap: () => Navigator.pop(sheetContext, run),
         );
         return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 8),
-                child: Text(
-                  l10n.teacherCreateTitle,
-                  style: Theme.of(sheetContext).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * .85,
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
+              children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 4),
+                  child: Text(
+                    l10n.teacherCreateTitle,
+                    style: const TextStyle(
+                      color: studafyInk,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
-              ),
-              item(
-                Icons.menu_book_rounded,
-                l10n.teacherCreateLesson,
-                l10n.teacherCreateLessonDetail,
-                () => newLesson(context),
-              ),
-              item(
-                Icons.assignment_add,
-                l10n.teacherCreateAssignment,
-                l10n.teacherCreateAssignmentDetail,
-                () => newAssignment(context),
-              ),
-              item(
-                Icons.quiz_outlined,
-                l10n.teacherCreateExam,
-                l10n.teacherCreateExamDetail,
-                () => newExam(context),
-              ),
-              if (canAnnounce)
-                item(
-                  Icons.campaign_outlined,
-                  l10n.teacherCreateAnnouncement,
-                  l10n.teacherCreateAnnouncementDetail,
-                  () => newAnnouncement(context),
+                SettingsGroup(
+                  title: l10n.teacherCreateGroupTeaching,
+                  children: [
+                    item(
+                      Icons.menu_book_rounded,
+                      l10n.teacherCreateLesson,
+                      l10n.teacherCreateLessonDetail,
+                      () => newLesson(context),
+                    ),
+                    item(
+                      Icons.assignment_add,
+                      l10n.teacherCreateAssignment,
+                      l10n.teacherCreateAssignmentDetail,
+                      () => newAssignment(context),
+                    ),
+                    item(
+                      Icons.quiz_rounded,
+                      l10n.teacherCreateExam,
+                      l10n.teacherCreateExamDetail,
+                      () => newExam(context),
+                    ),
+                  ],
                 ),
-              item(
-                Icons.fact_check_outlined,
-                l10n.teacherCreateAttendance,
-                l10n.teacherCreateAttendanceDetail,
-                () => takeAttendance(context),
-              ),
-              const SizedBox(height: 8),
-            ],
+                SettingsGroup(
+                  title: l10n.teacherCreateGroupClass,
+                  children: [
+                    item(
+                      Icons.grading_rounded,
+                      l10n.teacherCreatePaperGrades,
+                      l10n.teacherCreatePaperGradesDetail,
+                      () => paperGrades(context),
+                    ),
+                    item(
+                      Icons.fact_check_rounded,
+                      l10n.teacherCreateAttendance,
+                      l10n.teacherCreateAttendanceDetail,
+                      () => takeAttendance(context),
+                    ),
+                    item(
+                      Icons.favorite_rounded,
+                      l10n.wellbeingNewTitle,
+                      l10n.teacherCreateWellbeingDetail,
+                      () => newWellbeing(context),
+                    ),
+                  ],
+                ),
+                if (canAnnounce)
+                  SettingsGroup(
+                    title: l10n.teacherCreateGroupFamilies,
+                    children: [
+                      item(
+                        Icons.campaign_rounded,
+                        l10n.teacherCreateAnnouncement,
+                        l10n.teacherCreateAnnouncementDetail,
+                        () => newAnnouncement(context),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
         );
       },

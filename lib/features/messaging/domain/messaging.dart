@@ -237,7 +237,10 @@ abstract interface class MessagingRepository {
   Future<void> createAnnouncement(AnnouncementDraft draft);
 
   /// Announcements visible to the caller, newest first.
-  Future<List<Announcement>> announcements({String? classroomId});
+  Future<List<Announcement>> announcements({
+    String? schoolId,
+    String? classroomId,
+  });
 
   Future<Conversation> startConversation({
     required String schoolId,

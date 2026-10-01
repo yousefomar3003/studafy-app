@@ -1,0 +1,100 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/app/studafy_theme.dart';
+import 'package:studafy/app/student_shell.dart';
+import 'package:studafy/core/studafy_design.dart';
+import 'package:studafy/core/studafy_domain.dart';
+import 'package:studafy/core/telemetry.dart';
+import 'package:studafy/features/academic/data/preview_academic_repository.dart';
+import 'package:studafy/features/classes/application/class_list_interactor.dart';
+import 'package:studafy/features/classes/data/preview_classroom_repository.dart';
+import 'package:studafy/features/study/data/preview_study_repository.dart';
+import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
+import 'package:studafy/features/study_assistant/domain/study_assistant_repository.dart';
+
+import '../support/localized_app.dart';
+
+/// Every student tab, on a small phone, a large phone and a tablet, with
+/// large text and in Arabic: nothing may overflow, and the floating bar must
+/// leave every tab reachable.
+class _Helper implements StudyAssistantRepository {
+  @override
+  Future<StudyAnswer> ask(
+    String question, {
+    List<ChatTurn> history = const [],
+    List<ChatReference> references = const [],
+    List<String> photoFileIds = const [],
+  }) async => const StudyAnswer(answer: 'Answer', remainingToday: 9);
+}
+
+void main() {
+  setUp(() {
+    const membership = SchoolMembership(
+      id: 'membership-1',
+      schoolId: 'school-1',
+      schoolName: 'Al-Noor International',
+      role: StudafyRole.student,
+      active: true,
+    );
+    ActiveContextController.instance
+      ..profile = const UserProfile(
+        id: 'user-1',
+        displayName: 'Sara Al-Amin',
+        email: 'sara@example.test',
+        memberships: [membership],
+      )
+      ..membership = membership;
+  });
+  tearDown(() {
+    ActiveContextController.instance
+      ..profile = null
+      ..membership = null;
+  });
+
+  final cases = <(String, Size, double, Locale)>[
+    ('small phone', const Size(320, 640), 1, const Locale('en')),
+    ('phone, large text', const Size(390, 844), 1.6, const Locale('en')),
+    ('phone, Arabic', const Size(390, 844), 1, const Locale('ar')),
+    ('tablet', const Size(834, 1112), 1, const Locale('en')),
+  ];
+
+  for (final (name, size, scale, locale) in cases) {
+    testWidgets('every student tab lays out: $name', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await tester.pumpWidget(
+        localizedApp(
+          locale: locale,
+          theme: studafyTheme(),
+          home: StudentShell(
+            academic: PreviewAcademicRepository(),
+            classes: ClassListInteractor(
+              repository: const PreviewClassroomRepository(),
+              telemetry: const NoopTelemetry(),
+            ),
+            study: PreviewStudyRepository(),
+            studyAssistant: StudyAssistantInteractor(
+              repository: _Helper(),
+              telemetry: const NoopTelemetry(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      // Today, Lessons, Work, Helper - by position, so the check holds in
+      // either language.
+      expect(find.byType(StudafyNavDestination), findsNWidgets(4));
+      for (var tab = 1; tab < 4; tab++) {
+        await tester.tap(find.byType(StudafyNavDestination).at(tab));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'tab $tab');
+      }
+    });
+  }
+}

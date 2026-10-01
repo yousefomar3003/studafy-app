@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/feedback.dart';
+import '../core/navigation.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -134,13 +135,14 @@ class _ParentShellState extends State<ParentShell> {
             final child = ActiveContextController.instance.selectedStudent;
             if (child == null) return;
             final messenger = ScaffoldMessenger.of(context);
-            final done = await Navigator.of(context).push<String>(
+            final done = await Navigator.of(context).pushOnce<String>(
               MaterialPageRoute<String>(
                 builder: (_) => SubmitWorkPage(
                   repository: widget.academic,
                   assignmentId: record.id,
                   assignmentTitle: record.title,
                   canSubmit: record.state == 'published',
+                  deadline: record.deadline,
                   instructions: record.detail,
                   material: record.attachments,
                   schoolId: child.schoolId,
@@ -237,7 +239,6 @@ class _InsightsTab extends StatelessWidget {
       return Scaffold(
         backgroundColor: studafyCanvas,
         appBar: AppBar(
-          backgroundColor: Colors.white,
           title: Text(AppL10n.of(context).insightsTitle),
           actions: const [AccountButton()],
         ),

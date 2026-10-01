@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../core/studafy_formatting.dart';
@@ -25,7 +26,15 @@ class TeacherTodayPage extends StatefulWidget {
     required this.onOpenClassroom,
     this.onOpenMessages,
     required this.onOpenNotifications,
+    this.quickActions = const [],
+    this.onSeeAllClasses,
   });
+
+  /// Shortcuts to the things a teacher does most, built by the shell.
+  final List<TodayQuickAction> quickActions;
+
+  /// Opens the full class list (the Classes tab).
+  final VoidCallback? onSeeAllClasses;
 
   final ClassListInteractor classes;
 
@@ -120,34 +129,31 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     final profile = ActiveContextController.instance.profile;
-    final school = ActiveContextController.instance.membership?.schoolName;
     final firstName = (profile?.displayName ?? '').trim().split(' ').first;
     final today = MaterialLocalizations.of(context)
         .formatFullDate(DateTime.now());
+    final students = _classes.fold<int>(0, (sum, c) => sum + c.studentCount);
     return Scaffold(
-      backgroundColor: studafyCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Text(school ?? AppL10n.of(context).todayTitle),
+        // The brand, not the school's name, heads the home screen.
+        title: const StudafyLogo(size: 28),
+        titleSpacing: 20,
         actions: [
           if (widget.onOpenMessages case final openMessages?)
             IconButton(
-              tooltip: AppL10n.of(context).todayMessages,
+              tooltip: l10n.todayMessages,
               onPressed: openMessages,
-              icon: const Icon(Icons.chat_bubble_outline),
+              icon: const Icon(Icons.send_rounded),
             ),
-          IconButton(
-            tooltip: AppL10n.of(context).todayNotifications,
+          NotificationBellButton(
+            unread: _unread,
+            label: studafyNumber(context, _unread),
             onPressed: () {
               widget.onOpenNotifications();
               unawaited(_load());
             },
-            icon: Badge(
-              isLabelVisible: _unread > 0,
-              label: Text(studafyNumber(context, _unread)),
-              child: const Icon(Icons.notifications_none),
-            ),
           ),
           const AccountButton(),
         ],
@@ -155,81 +161,134 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 48),
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),
           children: [
             StudafyHero(
               eyebrow: today,
               title: firstName.isEmpty
-                  ? AppL10n.of(context).todayHello
-                  : AppL10n.of(context).todayHelloName(firstName),
-              subtitle: AppL10n.of(context).teacherTodaySpaceToInspireADay,
+                  ? l10n.todayHello
+                  : l10n.todayHelloName(firstName),
+              subtitle: l10n.teacherTodaySpaceToInspireADay,
               icon: Icons.wb_sunny_outlined,
+              child: _loading || _failed
+                  ? null
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _HeroStat(
+                          icon: Icons.class_rounded,
+                          label: l10n.todayStatClasses(_classes.length),
+                        ),
+                        _HeroStat(
+                          icon: Icons.groups_rounded,
+                          label: l10n.classesStudentCount(students),
+                        ),
+                      ],
+                    ),
             ),
-            const SizedBox(height: 24),
-            Semantics(
-              header: true,
-              child: Text(
-                AppL10n.of(context).todayClasses,
-                style: const TextStyle(
-                  color: studafyInk,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
+            if (widget.quickActions.isNotEmpty) ...[
+              SectionHeader(l10n.todayQuickActions),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.3,
+                children: [
+                  for (final action in widget.quickActions)
+                    FeatureCard(
+                      onTap: action.onTap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          IconBadge(icon: action.icon, size: 38),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              action.label,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: studafyInk,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.5,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
+            ],
+            SectionHeader(
+              l10n.todayClasses,
+              action: widget.onSeeAllClasses == null || _classes.length <= 3
+                  ? null
+                  : TextButton(
+                      onPressed: widget.onSeeAllClasses,
+                      child: Text(l10n.todaySeeAll),
+                    ),
             ),
-            const SizedBox(height: 12),
             if (_loading)
-              const Center(child: CircularProgressIndicator())
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              )
             else if (_failed)
-              StudafyStatusCard(
-                icon: Icons.error_outline_rounded,
-                title: AppL10n.of(context).todayError,
-                message: AppL10n.of(context).todayErrorDetail,
-                actionLabel: AppL10n.of(context).todayRetry,
+              StudafyEmptyState(
+                icon: Icons.wifi_off_rounded,
+                title: l10n.todayError,
+                message: l10n.todayErrorDetail,
+                actionLabel: l10n.todayRetry,
                 onAction: _load,
               )
             else if (_classes.isEmpty)
-              StudafyStatusCard(
+              StudafyEmptyState(
                 icon: Icons.class_outlined,
-                title: AppL10n.of(context).todayEmpty,
-                message: AppL10n.of(context).todayEmptyDetail,
+                title: l10n.todayEmpty,
+                message: l10n.todayEmptyDetail,
               )
             else
-              for (final classroom in _classes)
+              for (final classroom in _classes.take(3))
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: FeatureCard(
                     onTap: () => widget.onOpenClassroom(classroom),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.diversity_3_rounded,
-                          color: studafyNavy,
-                        ),
-                        const SizedBox(width: 12),
+                        IconBadge(icon: subjectIcon(classroom.name)),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              UserContentText(
                                 classroom.name,
                                 style: const TextStyle(
                                   color: studafyInk,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
+                              const SizedBox(height: 2),
                               Text(
-                                AppL10n.of(context)
-                                    .todayStudents('${classroom.studentCount}'),
+                                l10n.todayStudents('${classroom.studentCount}'),
                                 style: const TextStyle(
                                   color: studafyMuted,
-                                  fontSize: 12,
+                                  fontSize: 12.5,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Icon(forwardChevron(context)),
+                        Icon(forwardChevron(context), color: studafyMuted),
                       ],
                     ),
                   ),
@@ -237,24 +296,9 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
             // Today draws from the other pages, so an empty Today means
             // nothing is outstanding rather than nothing is wired up.
             if (!_loading && !_failed) ...[
-              const SizedBox(height: 24),
-              Semantics(
-                header: true,
-                child: Text(
-                  AppL10n.of(context).todaySections,
-                  style: const TextStyle(
-                    color: studafyInk,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+              SectionHeader(l10n.todaySections),
               if (_outstanding.isEmpty)
-                Text(
-                  AppL10n.of(context).todaySectionsEmpty,
-                  style: const TextStyle(color: studafyMuted),
-                )
+                _AllClear(text: l10n.todaySectionsEmpty)
               else
                 for (final section in _outstanding.take(5))
                   Padding(
@@ -262,9 +306,10 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                     child: FeatureCard(
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.error_outline_rounded,
-                            color: studafyNavy,
+                          const IconBadge(
+                            icon: Icons.pending_actions_rounded,
+                            color: studafyCyan,
+                            size: 40,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -274,17 +319,16 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                                 UserContentText(
                                   section.className,
                                   style: const TextStyle(
+                                    color: studafyInk,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 Text(
-                                  '${AppL10n.of(context).todaySectionsOutstanding} · '
-                                  '${section.startsAt.year}-'
-                                  '${section.startsAt.month.toString().padLeft(2, '0')}-'
-                                  '${section.startsAt.day.toString().padLeft(2, '0')}',
+                                  '${l10n.todaySectionsOutstanding} · '
+                                  '${MaterialLocalizations.of(context).formatMediumDate(section.startsAt)}',
                                   style: const TextStyle(
                                     color: studafyMuted,
-                                    fontSize: 12,
+                                    fontSize: 12.5,
                                   ),
                                 ),
                               ],
@@ -294,23 +338,11 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                       ),
                     ),
                   ),
-              const SizedBox(height: 24),
-              Semantics(
-                header: true,
-                child: Text(
-                  AppL10n.of(context).todayWork,
-                  style: const TextStyle(
-                    color: studafyInk,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+              SectionHeader(l10n.todayWork),
               if (_work.isEmpty)
-                Text(
-                  AppL10n.of(context).todayWorkEmpty,
-                  style: const TextStyle(color: studafyMuted),
+                _AllClear(
+                  text: l10n.todayWorkEmpty,
+                  icon: Icons.assignment_outlined,
                 )
               else
                 for (final item in _work.take(5))
@@ -319,9 +351,9 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                     child: FeatureCard(
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.assignment_outlined,
-                            color: studafyNavy,
+                          const IconBadge(
+                            icon: Icons.assignment_rounded,
+                            size: 40,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -331,6 +363,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                                 UserContentText(
                                   item.title,
                                   style: const TextStyle(
+                                    color: studafyInk,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -338,7 +371,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                                   item.className,
                                   style: const TextStyle(
                                     color: studafyMuted,
-                                    fontSize: 12,
+                                    fontSize: 12.5,
                                   ),
                                 ),
                               ],
@@ -354,6 +387,77 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
       ),
     );
   }
+}
+
+/// A shortcut on the teacher's home, wired by the shell.
+@immutable
+class TodayQuickAction {
+  const TodayQuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+class _HeroStat extends StatelessWidget {
+  const _HeroStat({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .14),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: Colors.white),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// A quiet line that says nothing is waiting, rather than an empty gap.
+class _AllClear extends StatelessWidget {
+  const _AllClear({required this.text, this.icon = Icons.check_circle_outline});
+
+  final String text;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: studafyWash,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: studafyMuted, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, style: const TextStyle(color: studafyMuted)),
+        ),
+      ],
+    ),
+  );
 }
 
 /// One piece of work a teacher has set, shown on Today.

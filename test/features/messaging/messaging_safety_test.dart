@@ -84,8 +84,10 @@ class _Fake implements MessagingRepository, SafetyRepository {
   @override
   Future<void> createAnnouncement(AnnouncementDraft draft) async {}
   @override
-  Future<List<Announcement>> announcements({String? classroomId}) async =>
-      const [];
+  Future<List<Announcement>> announcements({
+    String? schoolId,
+    String? classroomId,
+  }) async => const [];
   @override
   Future<List<MessagingContact>> contacts(String schoolId) async => const [];
   @override
@@ -167,7 +169,7 @@ Widget _app(_Fake fake, Widget home, {Locale locale = const Locale('en')}) =>
     );
 
 Future<void> _openMenu(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.flag_outlined));
+  await tester.tap(find.byIcon(Icons.more_horiz_rounded));
   await tester.pumpAndSettle();
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
+import 'package:studafy/features/academic/presentation/submission_history_view.dart';
 import 'package:studafy/features/academic/presentation/submissions_page.dart';
 import 'package:studafy/features/academic/presentation/submit_work_page.dart';
 
@@ -66,7 +67,15 @@ void main() {
     // A parent's hand-in is named as theirs.
     expect(find.text('Handed in by Huda Saleh'), findsOne);
     // Each attempt keeps its own files.
-    expect(find.text('diagram.jpg'), findsOne);
+    expect(
+      find.descendant(
+        of: find.byType(SubmissionHistoryView),
+        matching: find.text('diagram.jpg'),
+      ),
+      findsOne,
+    );
+    // Replacing the work offers to keep that file, without asking again.
+    expect(find.widgetWithText(CheckboxListTile, 'diagram.jpg'), findsOne);
     // A student reading their own work does not name themselves.
     expect(fake.historyRequests.single.studentId, isNull);
   });

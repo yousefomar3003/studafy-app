@@ -80,8 +80,12 @@ class MessagingInteractor {
         });
       });
 
-  Future<Result<List<Announcement>>> announcements({String? classroomId}) =>
-      runCatching(() => messaging.announcements(classroomId: classroomId));
+  Future<Result<List<Announcement>>> announcements({
+    String? schoolId,
+    String? classroomId,
+  }) => runCatching(
+    () => messaging.announcements(schoolId: schoolId, classroomId: classroomId),
+  );
 
   Future<Result<List<MessagingContact>>> contacts(String schoolId) =>
       runCatching(() => messaging.contacts(schoolId));

@@ -56,20 +56,37 @@ export function createFamilyInsightsRoutes(
 
       const facts: InsightFacts = {
         grades: raw.grades.map((g) => ({
-          subject: g.subject,
-          percent: (g.score * 100) / g.maximumScore,
+          subject: g.className ?? g.subject,
+          classroomId: g.classroomId,
+          title: g.title,
+          paper: g.delivery === "paper",
+          // A missed test is reported as missed, never as a zero.
+          percent: g.mark === "absent" || g.score === null
+            ? null
+            : (g.score * 100) / g.maximumScore,
           at: new Date(g.at),
         })),
-        attendance: raw.attendance.map((a) => ({
-          state: a.state,
-          at: new Date(a.at),
-        })),
+        attendance: raw.attendanceCounts
+          ? raw.attendanceCounts.map((a) => ({
+            state: a.state,
+            weekday: a.weekday,
+            count: a.count,
+            classroomId: a.classroomId,
+            className: a.className,
+          }))
+          : raw.attendance.map((a) => ({
+            state: a.state,
+            at: new Date(a.at),
+          })),
         homework: raw.homework.map((h) => ({
           assignmentId: h.assignmentId,
           title: h.title,
+          classroomId: h.classroomId,
+          className: h.className,
           dueAt: new Date(h.dueAt),
           submittedAt: h.submittedAt === null ? null : new Date(h.submittedAt),
         })),
+        classes: raw.classes,
       };
 
       const at = now();

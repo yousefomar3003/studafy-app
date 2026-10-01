@@ -6,7 +6,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(8);
+select plan(10);
 
 select set_config('request.jwt.claim.sub', :'student_user', true);
 select set_config('studafy.request_id', 'profile-setup-test', true);
@@ -25,7 +25,7 @@ select is(private.api042_query('getProfile', null, '{}')->>'setupComplete', 'fal
 select is(pg_temp.update('{"displayName":"Sara","completeSetup":true}')->>'outcome',
   'invalid', 'setup needs a gender answer too');
 select is(pg_temp.update('{"gender":"unknown"}')->>'outcome', 'invalid',
-  'only girl, boy or prefer not to say');
+  'only male, female or prefer not to say');
 select is(pg_temp.update('{"displayName":"  Sara  ","gender":"prefer_not_to_say","completeSetup":true}')
   ->'response'->>'displayName', 'Sara', 'the chosen name replaces the email-derived one');
 select is(private.api042_query('getProfile', null, '{}')->>'setupComplete', 'true',
@@ -34,6 +34,10 @@ select is(private.api042_query('getProfile', null, '{}')->>'gender', 'prefer_not
   'and the answer is kept');
 select is(pg_temp.update('{"locale":"ar"}')->'response'->>'setupComplete', 'true',
   'a later change does not undo setup');
+select is(pg_temp.update('{"gender":"female"}')->'response'->>'gender', 'female',
+  'female is an answer');
+select is(pg_temp.update('{"gender":"girl"}')->>'outcome', 'invalid',
+  'the old child-only wording is no longer accepted');
 select ok(not has_function_privilege('authenticated', 'private.profile_json(uuid)', 'execute'),
   'clients cannot read profiles directly');
 

@@ -96,6 +96,16 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
       title: "Test notification",
       body: "Notifications from Studafy are working on this device.",
     },
+    // Marks for paper work: which work and which mark are shown only in
+    // the app, after sign-in.
+    "academic.grades_published": {
+      title: "New marks",
+      body: "A teacher has published new marks in Studafy.",
+    },
+    "academic.grades_corrected": {
+      title: "A mark was updated",
+      body: "A teacher has corrected a published mark in Studafy.",
+    },
   },
   ar: {
     "billing.subscription_active": {
@@ -120,6 +130,14 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     "system.push_test": {
       title: "إشعار تجريبي",
       body: "إشعارات Studafy تعمل على هذا الجهاز.",
+    },
+    "academic.grades_published": {
+      title: "درجات جديدة",
+      body: "نشر معلم درجات جديدة في Studafy.",
+    },
+    "academic.grades_corrected": {
+      title: "تم تعديل درجة",
+      body: "صحّح معلم درجة منشورة في Studafy.",
     },
   },
 };

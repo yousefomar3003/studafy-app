@@ -259,6 +259,24 @@ class DeviceAccountSwitcher extends ChangeNotifier {
       if (loaded.isFailure) {
         throw const AccountSwitchException(AccountSwitchFailure.needsSignIn);
       }
+      // An account kept here under a role it may not hold (one kind of
+      // account per email) opens in the role it is for.
+      final wrongRole = loaded.fold(
+        onSuccess: (outcome) => outcome == LoginOutcome.wrongRole,
+        onFailure: (_) => false,
+      );
+      final own = session.accountRole;
+      if (wrongRole && own != null) {
+        final retried = await session.completeRemoteLogin(
+          role: own,
+          consentAccepted: false,
+          locale: locale,
+        );
+        if (retried.isFailure) {
+          throw const AccountSwitchException(AccountSwitchFailure.needsSignIn);
+        }
+        return own;
+      }
       return target.role;
     } on Object catch (error) {
       await _restore(from, locale: locale);

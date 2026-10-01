@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/feedback.dart';
+import '../../core/profile_photo.dart';
+import '../../core/studafy_components.dart';
 import '../../core/studafy_design.dart';
 import '../../core/studafy_domain.dart';
 import '../../features/family/presentation/family_scope.dart';
 import '../../l10n/generated/app_l10n.dart';
-
-String _initials(String name) {
-  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
-  if (parts.isEmpty) return '?';
-  return parts.take(2).map((p) => p.characters.first.toUpperCase()).join();
-}
 
 /// A small uppercase heading that groups the settings below it.
 class AccountSectionLabel extends StatelessWidget {
@@ -48,7 +44,15 @@ class AccountProfileHeader extends StatelessWidget {
     required this.email,
     required this.membership,
     required this.roleLabel,
+    this.userId,
+    this.onPhotoTap,
   });
+
+  /// Whose photo to show; the photo lives on this device only.
+  final String? userId;
+
+  /// Opens the photo choices. Null leaves the avatar as it is.
+  final VoidCallback? onPhotoTap;
 
   final String name;
   final String email;
@@ -64,7 +68,7 @@ class AccountProfileHeader extends StatelessWidget {
       gradient: const LinearGradient(
         begin: AlignmentDirectional.topStart,
         end: AlignmentDirectional.bottomEnd,
-        colors: [studafyNavy, Color(0xFF2F2A9E)],
+        colors: [studafyAbyss, studafyDeep, studafyTeal],
       ),
     ),
     child: Column(
@@ -72,15 +76,42 @@ class AccountProfileHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 32,
-              backgroundColor: Colors.white.withValues(alpha: .18),
-              child: Text(
-                _initials(name),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+            Semantics(
+              button: onPhotoTap != null,
+              label: AppL10n.of(context).profilePhotoChange,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onPhotoTap,
+                child: Stack(
+                  children: [
+                    ProfileAvatar(
+                      userId: userId,
+                      radius: 32,
+                      backgroundColor: Colors.white.withValues(alpha: .18),
+                      fallback: Text(
+                        profileInitials(name),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (onPhotoTap != null)
+                      const PositionedDirectional(
+                        end: 0,
+                        bottom: 0,
+                        child: CircleAvatar(
+                          radius: 11,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            Icons.photo_camera_outlined,
+                            size: 14,
+                            color: studafyNavy,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -162,44 +193,50 @@ class _HeaderChip extends StatelessWidget {
   );
 }
 
-/// The student's own Studafy ID.
+/// The student's own Studafy ID, as a row on their profile.
 ///
-/// A parent cannot ask to be linked without it, and until now the only place
-/// it appeared was inside the family screen - so a student being asked for it
-/// by a parent had nowhere obvious to look. Shown only to students, because
-/// it identifies one and nobody else needs to read it here.
-class StudafyIdCard extends StatefulWidget {
-  const StudafyIdCard({super.key});
+/// A parent cannot ask to be linked without it, so it is the one identifier
+/// a student's profile shows: labelled once, explained in a line, copied
+/// with a tap. Shown only to students, because it identifies one and nobody
+/// else needs to read it here.
+class StudafyIdRow extends StatefulWidget {
+  const StudafyIdRow({super.key});
 
   @override
-  State<StudafyIdCard> createState() => _StudafyIdCardState();
+  State<StudafyIdRow> createState() => _StudafyIdRowState();
 }
 
-class _StudafyIdCardState extends State<StudafyIdCard> {
+class _StudafyIdRowState extends State<StudafyIdRow> {
   String? _id;
-  bool _loaded = false;
+  bool _loading = true;
+  bool _started = false;
+  bool _available = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_loaded) return;
-    _loaded = true;
+    if (_started) return;
+    _started = true;
     unawaited(_load());
   }
 
   Future<void> _load() async {
     // Absent in shells that install no family scope, and in widget tests
-    // that pump this page alone. The card is an extra, so it disappears
+    // that pump this page alone. The row is an extra, so it disappears
     // rather than taking the profile down with it.
     final family = FamilyScope.maybeOf(context);
-    if (family == null) return;
+    if (family == null) {
+      setState(() => _available = false);
+      return;
+    }
     final result = await family.studentFamily();
     if (!mounted) return;
     setState(() {
+      _loading = false;
       _id = result.fold(
         onSuccess: (family) => family.identities.firstOrNull?.studafyId,
-        // A missing id is not worth an error on a profile screen; the card
-        // simply does not appear.
+        // A missing id is not worth an error on a profile screen; the row
+        // says how to get one instead.
         onFailure: (_) => null,
       );
     });
@@ -207,54 +244,35 @@ class _StudafyIdCardState extends State<StudafyIdCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_available) return const SizedBox.shrink();
+    final l10n = AppL10n.of(context);
     final id = _id;
-    if (id == null) return const SizedBox.shrink();
-    return FeatureCard(
-      tint: studafyCyan,
-      child: Row(
-        children: [
-          const Icon(Icons.qr_code_rounded, color: studafyCyan),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppL10n.of(context).accountStudafyId,
-                  style: const TextStyle(
-                    color: studafyInk,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  id,
-                  style: const TextStyle(
-                    color: studafyInk,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-                Text(
-                  AppL10n.of(context).accountStudafyIdDetail,
-                  style: const TextStyle(color: studafyMuted, fontSize: 12),
-                ),
-              ],
+    return SettingsRow(
+      icon: Icons.qr_code_rounded,
+      title: l10n.accountStudafyId,
+      subtitle: _loading
+          ? '…'
+          : id == null
+          ? l10n.studentFamilyJoinAClassToActivate
+          : '$id\n${l10n.accountStudafyIdDetail}',
+      trailing: id == null
+          ? null
+          : Tooltip(
+              message: l10n.accountStudafyIdCopy,
+              child: const Icon(
+                Icons.copy_rounded,
+                color: studafyMuted,
+                size: 20,
+              ),
             ),
-          ),
-          IconButton(
-            tooltip: AppL10n.of(context).accountStudafyIdCopy,
-            icon: const Icon(Icons.copy_rounded),
-            onPressed: () async {
+      onTap: id == null
+          ? null
+          : () async {
               final messenger = ScaffoldMessenger.of(context);
-              final copied = AppL10n.of(context).accountStudafyIdCopied;
+              final copied = l10n.accountStudafyIdCopied;
               await Clipboard.setData(ClipboardData(text: id));
               messenger.showMessage(copied);
             },
-          ),
-        ],
-      ),
     );
   }
 }

@@ -204,7 +204,16 @@ class ApiSessionRepository implements SessionRepository {
   @override
   Future<UserProfile?> currentProfile() async {
     final me = await _client.getMe();
+    // The kind is on the profile, which an older server may not have; the
+    // memberships then speak for it.
+    AccountKind? kind;
+    try {
+      kind = AccountKind.parse((await _client.getProfile()).accountKind);
+    } on Object {
+      kind = null;
+    }
     return UserProfile(
+      accountKind: kind,
       id: me.id,
       displayName: me.displayName,
       // Email is identity-provider profile data, not school authorization
@@ -221,6 +230,13 @@ class ApiSessionRepository implements SessionRepository {
               active: membership.active,
             ),
       ],
+    );
+  }
+
+  @override
+  Future<void> recordAccountKind(AccountKind kind) async {
+    await _client.updateProfile(
+      V1UpdateProfileRequestDto(accountKind: kind.name),
     );
   }
 

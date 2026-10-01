@@ -30,6 +30,10 @@ abstract final class DeviceSettingKeys {
   /// The locale last accepted by the server, so a failed publish can be
   /// retried on the next launch instead of being lost.
   static const publishedLocale = 'settings.locale.published';
+
+  /// Set once the welcome slides have been seen or skipped on this device,
+  /// so they are shown once, not at every sign-in.
+  static const introSeen = 'settings.intro.seen';
 }
 
 /// In-memory store for tests and synthetic builds.

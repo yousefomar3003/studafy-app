@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/feedback.dart';
+import '../../../core/navigation.dart';
+import '../../../core/studafy_components.dart';
+import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
@@ -63,7 +66,7 @@ class _StudySetButtonsState extends State<StudySetButtons> {
     try {
       final set = await widget.study.studySet(widget.resourceId, kind);
       if (!mounted) return;
-      await navigator.push(
+      await navigator.pushOnce(
         MaterialPageRoute<void>(
           builder: (_) => kind == StudySetKind.quiz
               ? QuizPage(title: widget.lessonTitle, questions: set.questions)
@@ -177,33 +180,54 @@ class StudyToolsCard extends StatelessWidget {
     final plan = this.plan;
     final off = plan != null && !plan.studySetsOn;
     final locked = !off && !(plan?.canMakeStudySets ?? false);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(
-          locked ? Icons.lock_outline_rounded : Icons.style_outlined,
-        ),
-        title: Text(
-          l10n.studyToolsTitle,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          off
-              ? l10n.studySetSwitchedOff
-              : locked
-              ? l10n.studyToolsLocked
-              : hasLessons
-              ? l10n.studyToolsReady
-              : l10n.studyToolsNoLessons,
-        ),
-        trailing: locked
-            ? ActionChip(
-                avatar: const Icon(Icons.workspace_premium_outlined, size: 16),
-                label: Text(l10n.studySetMaxBadge),
-                onPressed: onOpenPlans,
-              )
-            : null,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: FeatureCard(
         onTap: locked ? onOpenPlans : null,
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 12, 12),
+        child: Row(
+          children: [
+            IconBadge(
+              icon: locked ? Icons.lock_outline_rounded : Icons.style_rounded,
+              color: locked ? studafyMuted : studafyTeal,
+              size: 40,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.studyToolsTitle,
+                    style: const TextStyle(
+                      color: studafyInk,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    off
+                        ? l10n.studySetSwitchedOff
+                        : locked
+                        ? l10n.studyToolsLocked
+                        : hasLessons
+                        ? l10n.studyToolsReady
+                        : l10n.studyToolsNoLessons,
+                    style: const TextStyle(color: studafyMuted, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            if (locked) ...[
+              const SizedBox(width: 8),
+              StatusPill(
+                label: l10n.studySetMaxBadge,
+                icon: Icons.workspace_premium_rounded,
+                color: studafyDeep,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

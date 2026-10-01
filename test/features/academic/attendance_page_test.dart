@@ -46,9 +46,17 @@ void main() {
     await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
     await tester.pumpAndSettle();
 
+    // Unmarked until the teacher says otherwise, and every state is one
+    // tap away on the student's card.
+    expect(find.text('Not marked'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.expand_more_rounded));
+    await tester.pumpAndSettle();
     for (final label in ['Present', 'Absent', 'Tardy', 'Excused absence']) {
       expect(
-        find.text(label),
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text(label),
+        ),
         findsOneWidget,
         reason: '$label must be offered',
       );
@@ -68,14 +76,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Reason (optional)'), findsNothing);
-    await tester.tap(find.text('Excused absence'));
-    await tester.pumpAndSettle();
+    await _mark(tester, 'Excused absence');
     expect(find.text('Reason (optional)'), findsOneWidget);
 
     // Marking present again retracts the reason: it no longer means anything.
-    await tester.tap(find.text('Present'));
-    await tester.pumpAndSettle();
+    await _mark(tester, 'Present');
     expect(find.text('Reason (optional)'), findsNothing);
+  });
+
+  testWidgets('mark all present, then change one student', (tester) async {
+    final fake = AttendanceFake(
+      schedule: _twiceOnMonday,
+      roster: const [
+        AttendanceRosterEntry(studentId: 's1', displayName: 'Amal'),
+        AttendanceRosterEntry(studentId: 's2', displayName: 'Bilal'),
+        AttendanceRosterEntry(studentId: 's3', displayName: 'Carim'),
+      ],
+    );
+    await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mark all present'));
+    await tester.pumpAndSettle();
+    // Nothing is sent until the teacher saves, and the screen says so.
+    expect(find.text('Unsaved changes'), findsOneWidget);
+    expect(fake.recorded, isEmpty);
+    await _mark(tester, 'Absent', student: 1);
+    await tester.tap(find.text('Save attendance'));
+    await tester.pumpAndSettle();
+
+    final entries = {
+      for (final entry in fake.recorded.single.entries)
+        entry.studentId: entry.state,
+    };
+    expect(entries, {'s1': 'present', 's2': 'absent', 's3': 'present'});
+    // Confirmed on screen, and nothing is left unsaved.
+    expect(find.text('Register saved for 3 students.'), findsWidgets);
+    expect(find.text('Unsaved changes'), findsNothing);
   });
 
   testWidgets('a class meeting twice in a day makes the teacher choose', (
@@ -108,8 +145,7 @@ void main() {
     await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Absent').first);
-    await tester.pumpAndSettle();
+    await _mark(tester, 'Absent');
     await tester.tap(find.text('Save attendance'));
     await tester.pumpAndSettle();
 
@@ -153,15 +189,14 @@ void main() {
 
     await tester.tap(find.text('13:00–14:00'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Present'));
-    await tester.pumpAndSettle();
+    await _mark(tester, 'Present');
     await tester.tap(find.text('Save attendance'));
     await tester.pumpAndSettle();
 
     final call = fake.recorded.single;
-    expect(call.startsAt.hour, 13);
-    expect(call.endsAt.hour, 14);
-    expect(call.startsAt.day, monday.day);
+    expect(call.startsAt!.hour, 13);
+    expect(call.endsAt!.hour, 14);
+    expect(call.startsAt!.day, monday.day);
   });
 
   testWidgets('marks already recorded come back selected', (tester) async {
@@ -218,8 +253,7 @@ void main() {
     await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Present'));
-    await tester.pumpAndSettle();
+    await _mark(tester, 'Present');
     await tester.tap(find.text('Save attendance'));
     await tester.pumpAndSettle();
 
@@ -263,11 +297,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('حفظ الحضور'), findsOneWidget);
+    expect(find.text('أي حصة؟'), findsOneWidget);
+    expect(find.text('تحديد الجميع حاضرين'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.expand_more_rounded));
+    await tester.pumpAndSettle();
     expect(find.text('حاضر'), findsOneWidget);
     expect(find.text('غائب'), findsOneWidget);
     expect(find.text('متأخر'), findsOneWidget);
-    expect(find.text('حفظ الحضور'), findsOneWidget);
-    expect(find.text('أي حصة؟'), findsOneWidget);
     expect(
       Directionality.of(tester.element(find.text('حاضر'))),
       TextDirection.rtl,
@@ -318,4 +355,151 @@ void main() {
       expect(first.difference(fake.rosterCalls.last!).inDays, 7);
     });
   });
+
+  group('the school\'s attendance policy', () {
+    const roster = [
+      AttendanceRosterEntry(
+        studentId: 's1',
+        displayName: 'Amal',
+        state: AttendanceState.present,
+      ),
+    ];
+
+    testWidgets('a locked register cannot be changed or saved', (tester) async {
+      final fake = AttendanceFake(
+        schedule: _twiceOnMonday,
+        roster: roster,
+        version: 3,
+        sessionId: 'session-1',
+        editRule: AttendanceEditRule.locked,
+      );
+      await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This register is locked by your school\'s attendance policy.',
+        ),
+        findsOneWidget,
+      );
+      final save = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Save attendance'),
+      );
+      expect(save.onPressed, isNull);
+    });
+
+    testWidgets('a past lesson is corrected by the lesson, with its reason', (
+      tester,
+    ) async {
+      final fake = AttendanceFake(
+        schedule: _twiceOnMonday,
+        roster: roster,
+        version: 3,
+        sessionId: 'session-1',
+        editRule: AttendanceEditRule.reasonRequired,
+      );
+      await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+      await tester.pumpAndSettle();
+
+      await _mark(tester, 'Absent');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Reason for the change'),
+        'Parent called',
+      );
+      await tester.tap(find.text('Save attendance'));
+      await tester.pumpAndSettle();
+
+      final call = fake.recorded.single;
+      expect(call.sessionId, 'session-1');
+      expect(call.reason, 'Parent called');
+      expect(fake.recordedVersions.single, 3);
+    });
+
+    testWidgets('a lead teacher overrides a lock only by choosing to', (
+      tester,
+    ) async {
+      final fake = AttendanceFake(
+        schedule: _twiceOnMonday,
+        roster: roster,
+        version: 3,
+        sessionId: 'session-1',
+        editRule: AttendanceEditRule.lockedOverride,
+      );
+      await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+      await tester.pumpAndSettle();
+
+      final locked = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Save attendance'),
+      );
+      expect(locked.onPressed, isNull);
+
+      await tester.tap(find.text('Override the lock'));
+      await tester.pumpAndSettle();
+      await _mark(tester, 'Tardy');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Reason for the change'),
+        'Register was misread',
+      );
+      await tester.tap(find.text('Save attendance'));
+      await tester.pumpAndSettle();
+
+      expect(fake.recorded.single.override, isTrue);
+      expect(fake.recorded.single.reason, 'Register was misread');
+    });
+
+    testWidgets('a refusal says why', (tester) async {
+      final fake = AttendanceFake(
+        schedule: _twiceOnMonday,
+        roster: roster,
+        version: 3,
+        sessionId: 'session-1',
+        editRule: AttendanceEditRule.reasonRequired,
+        refusal: const CourseworkRefusal(CourseworkProblem.reasonRequired),
+      );
+      await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+      await tester.pumpAndSettle();
+
+      await _mark(tester, 'Absent');
+      await tester.tap(find.text('Save attendance'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Please give a reason. It is kept with the change.'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  testWidgets('a student who left but was marked still shows, labelled', (
+    tester,
+  ) async {
+    final fake = AttendanceFake(
+      schedule: _twiceOnMonday,
+      roster: const [
+        AttendanceRosterEntry(studentId: 's1', displayName: 'Amal'),
+        AttendanceRosterEntry(
+          studentId: 's2',
+          displayName: 'Bilal',
+          state: AttendanceState.present,
+          enrolled: false,
+        ),
+      ],
+    );
+    await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bilal'), findsOneWidget);
+    expect(find.text('Left the class'), findsOneWidget);
+  });
+}
+
+/// Opens a student's attendance choices and picks [label]. The mark is a
+/// button on the student's card; the choices open in a sheet.
+Future<void> _mark(WidgetTester tester, String label, {int student = 0}) async {
+  await tester.tap(find.byIcon(Icons.expand_more_rounded).at(student));
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.descendant(of: find.byType(BottomSheet), matching: find.text(label)),
+  );
+  await tester.pumpAndSettle();
 }

@@ -203,3 +203,63 @@ export function createSubmissionHistoryRoutes(
     idempotencyDependencies,
   );
 }
+
+/// Paper gradebook, attendance corrections, deadlines and editing
+/// (2026-09-30). Appended at the very end of the contract catalogue, so
+/// mounted last.
+const COURSEWORK_OPERATIONS = new Set([
+  "listGradebook",
+  "saveGradeDrafts",
+  "publishGrades",
+  "correctGrades",
+  "updateGradebookItem",
+  "listGradeHistory",
+  "correctAttendance",
+  "listAttendanceHistory",
+  "listAssignmentExtensions",
+  "grantAssignmentExtension",
+  "revokeAssignmentExtension",
+  "reopenAssignment",
+  "updateAssignmentMaterials",
+  "updateAssessmentMaterials",
+  "editResource",
+]);
+const COURSEWORK_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
+  COURSEWORK_OPERATIONS.has(route.operationId)
+);
+
+function courseworkSlice(operation: string): AcademicSlice {
+  if (/Attendance/.test(operation)) return "attendance";
+  if (/Assignment/.test(operation)) return "assignments";
+  if (/AssessmentMaterials/.test(operation)) return "assessments";
+  if (/Resource/.test(operation)) return "content";
+  return "grades";
+}
+
+export function createCourseworkRoutes(
+  deps: AcademicDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  return createCatalogueRoutes(
+    {
+      routes: COURSEWORK_ROUTES,
+      repository: deps.repository,
+      cursorSigningKey: deps.cursorSigningKey,
+      // Every route names exactly one resource in its path.
+      selector: (c) => {
+        const params = (c.get("validatedParams") ?? {}) as Record<
+          string,
+          string
+        >;
+        return params["assessmentId"] ?? params["gradeResultId"] ??
+          params["lessonSessionId"] ?? params["assignmentId"] ??
+          params["resourceId"] ?? params["schoolId"] ?? null;
+      },
+      sliceFor: courseworkSlice,
+      enabledSlices: deps.enabledSlices,
+    },
+    authorization,
+    idempotencyDependencies,
+  );
+}

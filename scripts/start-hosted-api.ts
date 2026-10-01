@@ -34,6 +34,17 @@ export function validateHostedEnvironment(env: Record<string, string>): void {
       "Hosted development requires its own cursor and rate-limit signing keys.",
     );
   }
+  // Without it the API issues join links only, and teachers never see a
+  // class code to read out or write on the board.
+  if (
+    !env.CLASS_JOIN_CODE_KEY ||
+    env.CLASS_JOIN_CODE_KEY === env.API_CURSOR_SIGNING_KEY ||
+    env.CLASS_JOIN_CODE_KEY === env.RATE_LIMIT_HMAC_SIGNING_KEY
+  ) {
+    throw new Error(
+      "Hosted development requires CLASS_JOIN_CODE_KEY, distinct from the other signing keys (openssl rand -hex 32).",
+    );
+  }
 }
 
 if (import.meta.main) {

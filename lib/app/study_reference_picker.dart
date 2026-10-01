@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/navigation.dart';
 import '../core/studafy_design.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/classes/application/class_list_interactor.dart';
@@ -20,7 +21,7 @@ Future<List<ChatReference>?> pickStudyReferences(
   required AcademicRepository academic,
   required StudyRepository study,
   required List<ChatReference> current,
-}) => Navigator.of(context).push<List<ChatReference>>(
+}) => Navigator.of(context).pushOnce<List<ChatReference>>(
   MaterialPageRoute<List<ChatReference>>(
     builder: (_) => _ReferencePicker(
       classes: classes,

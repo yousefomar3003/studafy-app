@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/navigation.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/presentation/join_class_page.dart';
 import '../features/session/application/session_interactor.dart';
@@ -72,7 +73,7 @@ class _ClassJoinLinkListenerState extends State<ClassJoinLinkListener> {
     if (token == null) return;
     _opening = true;
     try {
-      await navigator.push(
+      await navigator.pushOnce(
         MaterialPageRoute<void>(
           builder: (_) =>
               JoinClassPage(classes: widget.classes, initialToken: token),

@@ -22,6 +22,28 @@ return 201, while transition commands return the canonical updated resource.
 | Attendance     | `GET /v1/attendance`, `/v1/classrooms/{classroomId}/attendance-roster`                  | `POST /v1/attendance/record`                                                         |
 | Wellbeing      | `GET /v1/wellbeing`                                                                     | `POST /v1/wellbeing`                                                                 |
 
+Added 2026-09-30 (ADR-0033), mounted after every earlier route:
+
+| Slice | Reads | Commands |
+|---|---|---|
+| Paper gradebook | `GET /v1/assessments/{assessmentId}/gradebook`, `GET /v1/grade-results/{gradeResultId}/history` | `POST /v1/assessments/{assessmentId}/grades/drafts`, `/grades/publish`, `/grades/correct`, `/update`, `/materials` |
+| Attendance | `GET /v1/lesson-sessions/{lessonSessionId}/attendance/history` | `POST /v1/lesson-sessions/{lessonSessionId}/attendance/correct` |
+| Deadlines | `GET /v1/assignments/{assignmentId}/extensions` | `POST /v1/assignments/{assignmentId}/extensions`, `/extensions/revoke`, `/reopen`, `/materials` |
+| Content | — | `POST /v1/resources/{resourceId}/edit` |
+
+These operations change behaviour:
+
+- `recordAttendance` accepts `correctionReason` and `override`, and applies
+  the lock rule to past lessons. The register lists students who have left
+  but were marked for that lesson, flagged `enrolled: false`.
+- Every route here is for a class's own teachers (lead and co-teachers write;
+  assistants read). This release has no school administrator, and none of
+  these routes admits one.
+- `submitAssignment` enforces extensions and the graded lock, returns `late`,
+  and re-binds kept files.
+- `correctGradeResult` now records the previous value.
+- Problems for bulk commands carry `errors[{path: "students/<id>" | "gradeResults/<id>", code}]`.
+
 ## Authorization and response safety
 
 - The school is resolved from the stored resource and the actor's fresh active

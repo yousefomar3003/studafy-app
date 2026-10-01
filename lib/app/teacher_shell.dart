@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 
 import '../core/feedback.dart';
+import '../core/navigation.dart';
+import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -9,6 +12,7 @@ import '../features/academic/presentation/attendance_page.dart';
 import '../features/academic/presentation/class_roster_page.dart';
 import '../features/academic/presentation/class_schedule_page.dart';
 import '../features/academic/presentation/class_sections_page.dart';
+import '../features/academic/presentation/gradebook_home_page.dart';
 import '../features/academic/presentation/gradebook_page.dart';
 import '../features/academic/presentation/submissions_page.dart';
 import '../features/classes/domain/classroom.dart';
@@ -20,7 +24,6 @@ import '../features/notifications/presentation/notifications_page.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
 import '../features/school_operations/presentation/classroom_management_page.dart';
 import '../l10n/generated/app_l10n.dart';
-import 'account_hub_page.dart';
 import 'app_dependencies.dart';
 import 'teacher_create_actions.dart';
 import 'teacher_today_page.dart';
@@ -53,7 +56,7 @@ class _TeacherShellState extends State<TeacherShell> {
       context,
     ).startConversation(schoolId: schoolId, participantIds: [guardian.userId]);
     result.fold(
-      onSuccess: (_) => navigator.push(
+      onSuccess: (_) => navigator.pushOnce(
         MaterialPageRoute<void>(
           builder: (_) => const ConversationsPage(asRole: MessagingRole.staff),
         ),
@@ -79,19 +82,27 @@ class _TeacherShellState extends State<TeacherShell> {
 
   Future<void> _openClassroom(ClassroomSummary classroom) async {
     final academic = widget.dependencies.academic;
-    await Navigator.push(
-      context,
+    await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (_) => AcademicOverviewPage(
           repository: academic,
           classroomId: classroom.id.value,
           title: classroom.name,
           teacherTools: true,
+          initialFeed: AcademicFeed.content,
+          // Marks are kept in the Gradebook, one tap away in the tools.
+          availableFeeds: const [
+            AcademicFeed.content,
+            AcademicFeed.assignments,
+            AcademicFeed.assessments,
+            AcademicFeed.attendance,
+            AcademicFeed.wellbeing,
+          ],
           uploads: widget.dependencies.fileUploads,
           schoolId: ActiveContextController.instance.membership?.schoolId,
           // Tapping a piece of work shows who has handed it in. Students
           // can submit now, so without this the loop has no other end.
-          onOpenRecord: (record) => Navigator.of(context).push(
+          onOpenRecord: (record) => Navigator.of(context).pushOnce(
             MaterialPageRoute<void>(
               builder: (_) => SubmissionsPage(
                 repository: academic,
@@ -99,6 +110,8 @@ class _TeacherShellState extends State<TeacherShell> {
                 assignmentTitle: record.title,
                 classroomId: classroom.id.value,
                 graded: record.maximumScore != null,
+                assignmentVersion: record.version,
+                timeZone: record.timeZone,
               ),
             ),
           ),
@@ -117,7 +130,7 @@ class _TeacherShellState extends State<TeacherShell> {
                       onSuccess: (value) => value,
                       onFailure: (_) => <ClassroomSummary>[classroom],
                     );
-                    await Navigator.of(pageContext).push(
+                    await Navigator.of(pageContext).pushOnce(
                       MaterialPageRoute<void>(
                         builder: (_) => ClassroomManagementPage(
                           repository: widget.dependencies.schoolOperations!,
@@ -142,7 +155,7 @@ class _TeacherShellState extends State<TeacherShell> {
               builder: (pageContext) => _ClassToolButton(
                 tooltip: AppL10n.of(pageContext).rosterAction,
                 icon: const Icon(Icons.groups_outlined),
-                onPressed: () => Navigator.of(pageContext).push(
+                onPressed: () => Navigator.of(pageContext).pushOnce(
                   MaterialPageRoute<void>(
                     builder: (_) => ClassRosterPage(
                       repository: academic,
@@ -166,7 +179,7 @@ class _TeacherShellState extends State<TeacherShell> {
                     classroom.id.value,
                   );
                   if (!pageContext.mounted) return;
-                  await Navigator.of(pageContext).push(
+                  await Navigator.of(pageContext).pushOnce(
                     MaterialPageRoute<void>(
                       builder: (_) => ClassSchedulePage(
                         repository: academic,
@@ -184,7 +197,7 @@ class _TeacherShellState extends State<TeacherShell> {
               builder: (pageContext) => _ClassToolButton(
                 tooltip: AppL10n.of(pageContext).sectionsAction,
                 icon: const Icon(Icons.menu_book_outlined),
-                onPressed: () => Navigator.of(pageContext).push(
+                onPressed: () => Navigator.of(pageContext).pushOnce(
                   MaterialPageRoute<void>(
                     builder: (_) => ClassSectionsPage(
                       repository: academic,
@@ -199,7 +212,7 @@ class _TeacherShellState extends State<TeacherShell> {
               builder: (pageContext) => _ClassToolButton(
                 tooltip: AppL10n.of(pageContext).gradebookAction,
                 icon: const Icon(Icons.grade_outlined),
-                onPressed: () => Navigator.of(pageContext).push(
+                onPressed: () => Navigator.of(pageContext).pushOnce(
                   MaterialPageRoute<void>(
                     builder: (_) => ClassGradebookPage(
                       repository: academic,
@@ -244,7 +257,7 @@ class _TeacherShellState extends State<TeacherShell> {
               builder: (pageContext) => _ClassToolButton(
                 tooltip: AppL10n.of(pageContext).attendanceAction,
                 icon: const Icon(Icons.fact_check_outlined),
-                onPressed: () => Navigator.of(pageContext).push(
+                onPressed: () => Navigator.of(pageContext).pushOnce(
                   MaterialPageRoute<void>(
                     builder: (_) => AttendancePage(
                       repository: academic,
@@ -318,7 +331,7 @@ class _TeacherShellState extends State<TeacherShell> {
   void _openSubmissions(AcademicRecord record) {
     final classroomId = record.classroomId;
     if (classroomId == null) return;
-    Navigator.of(context).push(
+    Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (_) => SubmissionsPage(
           repository: widget.dependencies.academic,
@@ -326,41 +339,97 @@ class _TeacherShellState extends State<TeacherShell> {
           assignmentTitle: record.title,
           classroomId: classroomId,
           graded: record.maximumScore != null,
+          assignmentVersion: record.version,
+          timeZone: record.timeZone,
         ),
       ),
     );
   }
 
+  /// The bar is compact while the person scrolls down a page, and full
+  /// again as soon as they scroll back up or touch it.
+  bool _navCompact = false;
+
+  bool _onScroll(UserScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final compact = switch (notification.direction) {
+      ScrollDirection.reverse => true,
+      ScrollDirection.forward => false,
+      ScrollDirection.idle => _navCompact,
+    };
+    if (compact != _navCompact) setState(() => _navCompact = compact);
+    return false;
+  }
+
   @override
   Widget build(BuildContext c) {
+    final l10n = AppL10n.of(c);
     void open(Widget page) {
-      Navigator.of(c).push(MaterialPageRoute<void>(builder: (_) => page));
+      Navigator.of(c).pushOnce(MaterialPageRoute<void>(builder: (_) => page));
     }
 
+    final canAnnounce = MessagingScope.isAvailable(c);
     final pages = [
-      TeacherTodayPage(
-        key: ValueKey(('today', _classesKey)),
-        classes: widget.dependencies.classes,
-        academic: widget.dependencies.academic,
-        onOpenClassroom: _openClassroom,
-        // No messages button here: the Inbox tab is the one way in.
-        onOpenNotifications: () => open(const NotificationsPage()),
+      Builder(
+        builder: (tabContext) => TeacherTodayPage(
+          key: ValueKey(('today', _classesKey)),
+          classes: widget.dependencies.classes,
+          academic: widget.dependencies.academic,
+          onOpenClassroom: _openClassroom,
+          // No messages button here: the Inbox tab is the one way in.
+          onOpenNotifications: () => open(const NotificationsPage()),
+          onSeeAllClasses: () => setState(() => index = 1),
+          quickActions: [
+            TodayQuickAction(
+              icon: Icons.fact_check_rounded,
+              label: l10n.teacherCreateAttendance,
+              onTap: () => _create.takeAttendance(tabContext),
+            ),
+            TodayQuickAction(
+              icon: Icons.menu_book_rounded,
+              label: l10n.teacherCreateLesson,
+              onTap: () => _create.newLesson(tabContext),
+            ),
+            TodayQuickAction(
+              icon: Icons.grading_rounded,
+              label: l10n.teacherCreatePaperGrades,
+              onTap: () => _create.paperGrades(tabContext),
+            ),
+            if (canAnnounce)
+              TodayQuickAction(
+                icon: Icons.campaign_rounded,
+                label: l10n.teacherCreateAnnouncement,
+                onTap: () => _create.newAnnouncement(tabContext),
+              )
+            else
+              TodayQuickAction(
+                icon: Icons.assignment_add,
+                label: l10n.teacherCreateAssignment,
+                onTap: () => _create.newAssignment(tabContext),
+              ),
+          ],
+        ),
       ),
+      // No account or notification buttons here: the Classes tab is about
+      // the classes alone.
       ClassesPage(
         key: ValueKey(('classes', _classesKey)),
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
-        // The real header: this teacher's notifications and account.
-        // Messages are the Inbox tab, not a second button up here.
-        header: _TabHeader(
-          title: AppL10n.of(c).teacherShellClasses,
-          onOpenNotifications: () => open(const NotificationsPage()),
-        ),
+        header: _TabHeader(title: l10n.teacherShellClasses),
       ),
+      // Teaching content lives here; every mark lives in the Gradebook.
       AcademicOverviewPage(
+        title: l10n.navTeaching,
         repository: widget.dependencies.academic,
         teacherTools: true,
         initialFeed: AcademicFeed.content,
+        availableFeeds: const [
+          AcademicFeed.content,
+          AcademicFeed.assignments,
+          AcademicFeed.assessments,
+          AcademicFeed.wellbeing,
+        ],
         loadClassChoices: _classChoices,
         uploads: widget.dependencies.fileUploads,
         schoolId: ActiveContextController.instance.membership?.schoolId,
@@ -368,77 +437,72 @@ class _TeacherShellState extends State<TeacherShell> {
         // this the Teaching tab listed assignments that led nowhere.
         onOpenRecord: _openSubmissions,
       ),
-      AcademicOverviewPage(
+      GradebookHomePage(
         repository: widget.dependencies.academic,
-        teacherTools: true,
-        initialFeed: AcademicFeed.grades,
         loadClassChoices: _classChoices,
+        onOpenAssignment: _openSubmissions,
       ),
       // Real builds message through /v1 with report and block controls.
-      // The legacy inbox stays only for the synthetic demo, where its
-      // announcement and meeting forms have no replacement yet.
-      ConversationsPage(visible: index == 4, asRole: MessagingRole.staff),
+      Builder(
+        builder: (tabContext) => ConversationsPage(
+          visible: index == 4,
+          asRole: MessagingRole.staff,
+          onNewAnnouncement: canAnnounce
+              ? () => _create.newAnnouncement(tabContext)
+              : null,
+        ),
+      ),
     ];
     return Scaffold(
-      body: IndexedStack(index: index, children: pages),
-      // Teaching is where a teacher sets work, but that tab is not scoped to
-      // a class, so the form asks which one. Index 2 is Teaching; the other
-      // tabs have their own actions.
-      // One "Create" everywhere a teacher works - lessons, assignments,
-      // exams, announcements and attendance - and Announce in the Inbox.
-      floatingActionButton: switch (index) {
-        0 || 1 || 2 || 3 => Builder(
-          builder: (tabContext) => FloatingActionButton.extended(
-            // Every tab stays alive in the shell's IndexedStack, so two
-            // buttons with the default hero tag coexist and break the
-            // transition of every screen pushed from any tab.
-            heroTag: null,
-            onPressed: () => _create.openCreateMenu(tabContext),
-            icon: const Icon(Icons.add_rounded),
-            label: Text(AppL10n.of(tabContext).teacherCreateAction),
-          ),
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: _onScroll,
+        child: IndexedStack(index: index, children: pages),
+      ),
+      // One "+" everywhere a teacher works: lessons, assignments, exams,
+      // paper grades, attendance, wellbeing notes and announcements.
+      floatingActionButton: Builder(
+        builder: (tabContext) => StudafyCreateButton(
+          label: l10n.teacherCreateAction,
+          onPressed: () => _create.openCreateMenu(tabContext),
         ),
-        4 when MessagingScope.isAvailable(c) => Builder(
-          builder: (tabContext) => FloatingActionButton.extended(
-            heroTag: null,
-            onPressed: () => _create.newAnnouncement(tabContext),
-            icon: const Icon(Icons.campaign_outlined),
-            label: Text(AppL10n.of(tabContext).announcementAction),
-          ),
-        ),
-        _ => null,
-      },
+      ),
       bottomNavigationBar: StudafyNavigationBar(
         selectedIndex: index,
-        onSelected: (value) => setState(() => index = value),
+        compact: _navCompact,
+        onInteract: () {
+          if (_navCompact) setState(() => _navCompact = false);
+        },
+        onSelected: (value) => setState(() {
+          index = value;
+          _navCompact = false;
+        }),
         items: [
           StudafyNavItem(
-            AppL10n.of(c).navToday,
+            l10n.navToday,
             Icons.home_outlined,
             Icons.home_rounded,
           ),
           StudafyNavItem(
-            AppL10n.of(c).navClasses,
-            Icons.diversity_3_outlined,
-            Icons.diversity_3_rounded,
+            l10n.navClasses,
+            Icons.class_outlined,
+            Icons.class_rounded,
           ),
           StudafyNavItem(
-            AppL10n.of(c).navTeaching,
+            l10n.navTeaching,
             Icons.auto_stories_outlined,
             Icons.auto_stories_rounded,
           ),
           StudafyNavItem(
-            AppL10n.of(c).navGradebook,
-            Icons.fact_check_outlined,
-            Icons.fact_check_rounded,
+            l10n.navGradebook,
+            Icons.grading_outlined,
+            Icons.grading_rounded,
           ),
           StudafyNavItem(
-            AppL10n.of(c).navInbox,
-            Icons.forum_outlined,
-            Icons.forum_rounded,
+            l10n.navInbox,
+            Icons.send_outlined,
+            Icons.send_rounded,
           ),
         ],
-        accent: studafyNavy,
       ),
     );
   }
@@ -456,41 +520,46 @@ class _ClassToolButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsetsDirectional.only(end: 8),
-    child: OutlinedButton.icon(
+    child: FilledButton.tonalIcon(
       onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: studafyNavy,
+        side: const BorderSide(color: studafyHairline),
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+      ),
       icon: icon,
       label: Text(tooltip),
     ),
   );
 }
 
+/// A large page title, as in iOS, with nothing competing with it.
 class _TabHeader extends StatelessWidget {
-  const _TabHeader({required this.title, required this.onOpenNotifications});
+  const _TabHeader({required this.title});
 
   final String title;
-  final VoidCallback onOpenNotifications;
 
   @override
   Widget build(BuildContext context) => SafeArea(
     bottom: false,
     child: Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 8, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800, color: studafyInk),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 4),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: studafyInk,
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.8,
             ),
           ),
-          IconButton(
-            tooltip: AppL10n.of(context).recordNotifications,
-            onPressed: onOpenNotifications,
-            icon: const Icon(Icons.notifications_none_rounded),
-          ),
-          const AccountButton(),
-        ],
+        ),
       ),
     ),
   );

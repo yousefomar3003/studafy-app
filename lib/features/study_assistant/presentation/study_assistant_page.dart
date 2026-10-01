@@ -7,12 +7,47 @@ import '../../../core/attachment_policy.dart';
 import '../../../core/failures.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/navigation.dart';
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/study_assistant_interactor.dart';
 import '../domain/study_assistant_repository.dart';
 import 'study_chat_history_page.dart';
+
+/// The student's plan, as the helper shows it. Built by the host, since
+/// plans belong to another feature.
+@immutable
+class HelperPlan {
+  const HelperPlan({
+    required this.name,
+    required this.askToday,
+    required this.askPerDay,
+    this.upgradeTo,
+    this.upgradeBenefits = const [],
+  });
+
+  final String name;
+  final int askToday;
+  final int askPerDay;
+
+  /// The next plan's name; null when there is nothing above this one.
+  final String? upgradeTo;
+
+  /// What the next plan adds, in the reader's language.
+  final List<String> upgradeBenefits;
+
+  bool get limitReached => askPerDay > 0 && askToday >= askPerDay;
+
+  HelperPlan withAskToday(int value) => HelperPlan(
+    name: name,
+    askToday: value,
+    askPerDay: askPerDay,
+    upgradeTo: upgradeTo,
+    upgradeBenefits: upgradeBenefits,
+  );
+}
 
 /// The student's study helper, as a chat.
 ///
@@ -36,6 +71,8 @@ class StudyAssistantPage extends StatefulWidget {
     this.photoReadyPoll = const Duration(seconds: 2),
     this.now = DateTime.now,
     this.onPlanLimit,
+    this.plan,
+    this.onUpgrade,
   });
 
   final StudyAssistantInteractor assistant;
@@ -82,6 +119,12 @@ class StudyAssistantPage extends StatefulWidget {
   final Future<void> Function(BuildContext context, String failureCode)?
   onPlanLimit;
 
+  /// The student's plan and today's questions. Null shows neither.
+  final Future<HelperPlan?> Function()? plan;
+
+  /// Opens the plans. Null offers no upgrade.
+  final Future<void> Function()? onUpgrade;
+
   @override
   State<StudyAssistantPage> createState() => _StudyAssistantPageState();
 }
@@ -95,6 +138,12 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   int? _remaining;
   StudyChat? _chat;
   HelperAbilities _abilities = const HelperAbilities();
+  HelperPlan? _plan;
+
+  /// Today's questions are used: the server refused one for that reason, or
+  /// the plan says so.
+  bool _limitHit = false;
+  List<StudyChat> _recent = const [];
 
   /// Material chosen before the chat's first question.
   List<ChatReference> _draftReferences = const [];
@@ -112,7 +161,33 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     unawaited(_checkSwitchedOn());
     unawaited(_loadAbilities());
     unawaited(_openLatest());
+    unawaited(_loadPlan());
   }
+
+  Future<void> _loadPlan() async {
+    final load = widget.plan;
+    if (load == null) return;
+    try {
+      final plan = await load();
+      if (!mounted) return;
+      setState(() {
+        _plan = plan;
+        _limitHit = plan?.limitReached ?? false;
+      });
+    } on Object {
+      // Without the plan there is no usage line; questions still work.
+    }
+  }
+
+  Future<void> _upgrade() async {
+    final open = widget.onUpgrade;
+    if (open == null) return;
+    await open();
+    // A plan bought there lifts the limit here.
+    await _loadPlan();
+  }
+
+  bool get _canUpgrade => widget.onUpgrade != null && _plan?.upgradeTo != null;
 
   @override
   void dispose() {
@@ -251,9 +326,11 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     if (store == null) return;
     try {
       final chats = await store.chats();
-      if (mounted && _chat == null && chats.isNotEmpty) {
-        setState(() => _chat = chats.first);
-      }
+      if (!mounted) return;
+      setState(() {
+        _recent = chats;
+        if (_chat == null && chats.isNotEmpty) _chat = chats.first;
+      });
     } on Object {
       // A history that cannot be read still leaves a working helper.
     }
@@ -273,7 +350,23 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     _ => failure.message,
   };
 
-  void _newChat() => setState(() {
+  void _newChat() {
+    unawaited(_refreshRecent());
+    _clearChat();
+  }
+
+  Future<void> _refreshRecent() async {
+    final store = widget.chats;
+    if (store == null) return;
+    try {
+      final chats = await store.chats();
+      if (mounted) setState(() => _recent = chats);
+    } on Object {
+      // The list is a convenience; the history page is the full record.
+    }
+  }
+
+  void _clearChat() => setState(() {
     _chat = null;
     _error = null;
     _draftReferences = const [];
@@ -284,12 +377,13 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   Future<void> _openHistory() async {
     final store = widget.chats;
     if (store == null) return;
-    final chosen = await Navigator.of(context).push<StudyChat>(
+    final chosen = await Navigator.of(context).pushOnce<StudyChat>(
       MaterialPageRoute<StudyChat>(
         builder: (_) => StudyChatHistoryPage(store: store),
       ),
     );
     if (!mounted) return;
+    unawaited(_refreshRecent());
     if (chosen != null) {
       setState(() {
         _chat = chosen;
@@ -396,6 +490,16 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
             _status = null;
             _chat = answered;
             _remaining = value.remainingToday;
+            final plan = _plan;
+            if (plan != null) {
+              _plan = plan.withAskToday(
+                (plan.askPerDay - value.remainingToday).clamp(
+                  0,
+                  plan.askPerDay,
+                ),
+              );
+            }
+            _limitHit = value.remainingToday == 0;
           });
           unawaited(widget.chats?.save(answered).catchError((Object _) {}));
           return false;
@@ -406,6 +510,9 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
             return true;
           }
           giveBack(_explain(failure));
+          if (failure.code == StudyAssistantFailure.dailyLimit) {
+            setState(() => _limitHit = true);
+          }
           final onPlanLimit = widget.onPlanLimit;
           if (onPlanLimit != null &&
               (failure.code == StudyAssistantFailure.dailyLimit ||
@@ -425,26 +532,37 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.studyAssistantTitle),
-        actions: [
-          if (widget.chats != null)
-            IconButton(
-              tooltip: l10n.studyAssistantHistory,
-              icon: const Icon(Icons.history_rounded),
-              onPressed: _openHistory,
-            ),
-          IconButton(
-            tooltip: l10n.studyAssistantNewChat,
-            icon: const Icon(Icons.edit_square),
-            onPressed: _asking || _turns.isEmpty ? null : _newChat,
-          ),
-          ...?widget.actions,
-        ],
-      ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
+            StudafyLargeTitle(
+              title: l10n.studyAssistantTitle,
+              subtitle: l10n.helperSubtitle,
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 16, 8),
+            ),
+            // Starting afresh and going back to an earlier chat are the two
+            // things a student looks for first, so both are labelled.
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  StudafyPillButton(
+                    icon: Icons.add_comment_rounded,
+                    label: l10n.studyAssistantNewChat,
+                    prominent: true,
+                    onPressed: _asking || _turns.isEmpty ? null : _newChat,
+                  ),
+                  const SizedBox(width: 8),
+                  if (widget.chats != null)
+                    StudafyPillButton(
+                      icon: Icons.history_rounded,
+                      label: l10n.studyAssistantHistory,
+                      onPressed: _openHistory,
+                    ),
+                ],
+              ),
+            ),
             Expanded(child: _conversation(l10n)),
             _composerBar(l10n),
           ],
@@ -453,22 +571,132 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     );
   }
 
+  /// The plan, in full on the start screen and as one line during a chat,
+  /// so it never stands between the student and the conversation.
+  Widget? _planCard(AppL10n l10n, {required bool compact}) {
+    final plan = _plan;
+    if (plan == null) return null;
+    final upgrade = _canUpgrade;
+    return PlanSummaryCard(
+      eyebrow: l10n.studyPlansYourPlan,
+      planName: plan.name,
+      detail: plan.askPerDay > 0
+          ? l10n.studyPlansQuestionsTodayAsktodayOfAskperday(
+              plan.askToday,
+              plan.askPerDay,
+            )
+          : null,
+      progress: plan.askPerDay > 0 ? plan.askToday / plan.askPerDay : null,
+      benefitsTitle: upgrade ? l10n.planAdds(plan.upgradeTo!) : null,
+      benefits: upgrade ? plan.upgradeBenefits : const [],
+      actionLabel: upgrade ? l10n.upgradeButton : null,
+      onAction: upgrade ? _upgrade : null,
+      compact: compact,
+    );
+  }
+
   Widget _conversation(AppL10n l10n) {
     final turns = _turns;
     if (turns.isEmpty && !_asking) {
+      final dates = MaterialLocalizations.of(context);
+      final recent = _recent.take(3).toList();
       return ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 16),
         children: [
-          Text(
-            l10n.studyAssistantIntro,
-            style: Theme.of(context).textTheme.bodyMedium,
+          if (_off)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FeatureCard(
+                tint: studafyMuted,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const IconBadge(
+                      icon: Icons.power_settings_new_rounded,
+                      color: studafyMuted,
+                      size: 40,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.helperOffTitle,
+                            style: const TextStyle(
+                              color: studafyInk,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.studyAssistantOff,
+                            style: const TextStyle(
+                              color: studafyMuted,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (!_off) ?_planCard(l10n, compact: false),
+          const SizedBox(height: 12),
+          FeatureCard(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const IconBadge(
+                  icon: Icons.auto_awesome_rounded,
+                  color: studafyTeal,
+                  size: 40,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.studyAssistantIntro,
+                    style: const TextStyle(color: studafyInk, height: 1.45),
+                  ),
+                ),
+              ],
+            ),
           ),
-          if (_off) ...[
-            const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.power_off_outlined),
-                title: Text(l10n.studyAssistantOff),
+          if (recent.isNotEmpty) ...[
+            SectionHeader(
+              l10n.helperRecentChats,
+              action: _recent.length > recent.length
+                  ? TextButton(
+                      onPressed: _openHistory,
+                      child: Text(l10n.helperSeeAll),
+                    )
+                  : null,
+            ),
+            FeatureCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (final (index, chat) in recent.indexed) ...[
+                    if (index > 0)
+                      const Divider(
+                        height: 1,
+                        indent: 64,
+                        color: studafyHairline,
+                      ),
+                    ChatHistoryRow(
+                      title: chat.title,
+                      detail:
+                          '${dates.formatMediumDate(chat.updatedAt)} · '
+                          '${l10n.studyAssistantMessageCount(chat.turns.length)}',
+                      onTap: () => setState(() {
+                        _chat = chat;
+                        _error = null;
+                      }),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -483,14 +711,14 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     return ListView(
       controller: _scroll,
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 4),
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
             l10n.studyAssistantCheckWork,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: const TextStyle(color: studafyMuted, fontSize: 12),
           ),
         ),
         ...items.reversed,
@@ -498,36 +726,81 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     );
   }
 
-  Widget _composerBar(AppL10n l10n) => Material(
-    color: Colors.white,
-    child: Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 8, 8),
+  Widget _composerBar(AppL10n l10n) {
+    final plan = _plan;
+    final inChat = _turns.isNotEmpty || _asking;
+    final canAdd = _canAddMaterial || widget.uploads != null;
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_error != null)
+          // Today's questions are used: say so, and offer the way on.
+          if (_limitHit && !_off)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _Banner(
+                icon: Icons.hourglass_bottom_rounded,
+                // The server's own refusal when there is one; otherwise the
+                // plan says today's questions are used.
+                text: _error ?? l10n.helperLimitReached,
+                actionLabel: _canUpgrade ? l10n.upgradeButton : null,
+                onAction: _canUpgrade ? _upgrade : null,
               ),
-            ),
-          if (_remaining != null)
+            )
+          else if (inChat && plan != null && plan.askPerDay > 0)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 4, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${plan.name} · '
+                      '${l10n.studyPlansQuestionsTodayAsktodayOfAskperday(plan.askToday, plan.askPerDay)}',
+                      style: const TextStyle(
+                        color: studafyMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                  if (_canUpgrade)
+                    TextButton(
+                      onPressed: _upgrade,
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(0, 36),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: Text(l10n.upgradeButton),
+                    ),
+                ],
+              ),
+            )
+          else if (_remaining != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 4),
               child: Text(
                 l10n.studyAssistantRemaining(_remaining!),
-                style: Theme.of(context).textTheme.bodySmall,
+                style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+              ),
+            ),
+          if (_error != null && !(_limitHit && !_off))
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 6),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: studafyDanger, fontSize: 13),
+                ),
               ),
             ),
           if (_status != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 6),
               child: Text(
                 _status!,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: const TextStyle(color: studafyMuted, fontSize: 12.5),
               ),
             ),
           // What this chat answers from, and the photo going with the next
@@ -543,7 +816,11 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                   if (_references.isNotEmpty)
                     Text(
                       l10n.helperAnsweringFrom,
-                      style: Theme.of(context).textTheme.labelSmall,
+                      style: const TextStyle(
+                        color: studafyMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   for (final reference in _references)
                     InputChip(
@@ -574,38 +851,198 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                 ],
               ),
             ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (_canAddMaterial || widget.uploads != null)
-                IconButton(
-                  tooltip: l10n.helperAdd,
-                  onPressed: _asking || _off ? null : _add,
-                  icon: const Icon(Icons.add_circle_outline_rounded),
+          // One rounded field: add on the leading side, send on the other.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: studafyHairline),
+              boxShadow: [
+                BoxShadow(
+                  color: studafyAbyss.withValues(alpha: .06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
                 ),
-              Expanded(
-                child: TextField(
-                  controller: _composer,
-                  enabled: !_asking && !_off,
-                  minLines: 1,
-                  maxLines: 5,
-                  maxLength: 1000,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: l10n.studyAssistantMessageHint,
-                    counterText: '',
-                    border: const OutlineInputBorder(),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (canAdd)
+                    IconButton(
+                      tooltip: l10n.helperAdd,
+                      onPressed: _asking || _off ? null : _add,
+                      icon: const Icon(
+                        Icons.add_circle_outline_rounded,
+                        color: studafyNavy,
+                      ),
+                    )
+                  else
+                    const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _composer,
+                      enabled: !_asking && !_off,
+                      minLines: 1,
+                      maxLines: 6,
+                      maxLength: 1000,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.newline,
+                      decoration: InputDecoration(
+                        hintText: l10n.studyAssistantMessageHint,
+                        counterText: '',
+                        isDense: true,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 12,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton.filled(
+                    tooltip: l10n.studyAssistantSend,
+                    onPressed: _asking || _off ? null : _send,
+                    style: IconButton.styleFrom(
+                      backgroundColor: studafyNavy,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: studafyHairline,
+                      disabledForegroundColor: studafyMuted,
+                      fixedSize: const Size(44, 44),
+                    ),
+                    icon: _asking
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.arrow_upward_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A notice above the composer with an optional action beside it.
+class _Banner extends StatelessWidget {
+  const _Banner({
+    required this.icon,
+    required this.text,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    container: true,
+    child: Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: studafyWash,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: studafyFrost),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: studafySteel, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: studafyInk,
+                fontSize: 13,
+                height: 1.35,
+              ),
+            ),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: onAction,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 40),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(actionLabel!),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+/// One earlier chat: its title, when, and how long - tap to carry on.
+class ChatHistoryRow extends StatelessWidget {
+  const ChatHistoryRow({
+    super.key,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 8, 12),
+      child: Row(
+        children: [
+          const IconBadge(
+            icon: Icons.chat_bubble_rounded,
+            color: studafyTeal,
+            size: 36,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                UserContentText(
+                  title,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: studafyInk,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: l10n.studyAssistantSend,
-                onPressed: _asking || _off ? null : _send,
-                icon: const Icon(Icons.arrow_upward_rounded),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+                ),
+              ],
+            ),
           ),
+          trailing ?? Icon(forwardChevron(context), color: studafyMuted),
         ],
       ),
     ),
@@ -636,7 +1073,7 @@ class _Bubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: mine ? studafyNavy : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: mine ? null : Border.all(color: const Color(0xFFE6E8F0)),
+            border: mine ? null : Border.all(color: studafyHairline),
           ),
           // The model's reply is text somebody else produced, so it renders
           // in its own direction rather than the interface's.
@@ -695,7 +1132,7 @@ class _Thinking extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE6E8F0)),
+        border: Border.all(color: studafyHairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

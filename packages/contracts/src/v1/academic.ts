@@ -4,6 +4,26 @@ import { attachmentFileIds, V1FileAttachment } from "./attachments";
 const Id = z.string().uuid();
 const Timestamp = z.string().datetime({ offset: true });
 const Version = z.number().int().positive();
+/// A wall-clock time on the school's clock, e.g. 2026-10-01T23:59.
+const LocalDateTime = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+const GradeWeight = z.number().min(0).max(100);
+
+/// How a student did on a piece of marked work. A mark that has not been
+/// entered is null - never a zero.
+export const V1GradeMark = z.enum(["scored", "absent", "not_graded"]);
+export type V1GradeMark = z.infer<typeof V1GradeMark>;
+
+/// More time one student was given for one piece of work.
+export const V1AssignmentExtensionSummary = z.strictObject({
+  id: Id,
+  extendedUntil: Timestamp,
+  extendedUntilLocal: LocalDateTime,
+  reason: z.string().min(1),
+  createdAt: Timestamp,
+});
+export type V1AssignmentExtensionSummary = z.infer<
+  typeof V1AssignmentExtensionSummary
+>;
 
 export const V1PageQuery = z.strictObject({
   schoolId: Id.optional(),
@@ -175,6 +195,12 @@ export const V1Resource = z.strictObject({
   state: z.enum(["draft", "published", "withdrawn", "archived"]),
   version: Version,
   publishedAt: Timestamp.nullable(),
+  /**
+   * The lesson's current file, when it has one, for the app to offer as a
+   * download. A replaced file is not listed: only the school's staff can
+   * still open it.
+   */
+  attachments: z.array(V1FileAttachment).max(1).optional(),
 });
 export type V1Resource = z.infer<typeof V1Resource>;
 
@@ -248,6 +274,20 @@ export const V1Assignment = z.strictObject({
    * none; every current read includes it.
    */
   attachments: z.array(V1FileAttachment).max(5).optional(),
+  /** The school's time zone, in which due times are set and shown. */
+  timeZone: z.string().min(1).max(100).optional(),
+  /** dueAt as the school's wall-clock time, e.g. 2026-10-01T23:59. */
+  dueLocal: LocalDateTime.optional(),
+  closesLocal: LocalDateTime.nullable().optional(),
+  /**
+   * For a student (or a guardian reading a child's work): the last moment
+   * work can be handed in or replaced - the later of the closing time and
+   * any extension - and whether it still can be.
+   */
+  deadlineAt: Timestamp.optional(),
+  deadlineLocal: LocalDateTime.optional(),
+  submissionState: z.enum(["open", "closed", "graded_locked"]).optional(),
+  extension: V1AssignmentExtensionSummary.nullable().optional(),
 });
 export type V1Assignment = z.infer<typeof V1Assignment>;
 
@@ -263,6 +303,12 @@ export const V1CreateAssignmentRequest = z.strictObject({
   instructions: z.string().max(30_000).nullable(),
   dueAt: Timestamp,
   closesAt: Timestamp.nullable(),
+  /**
+   * The due time as the teacher picked it, on the school's clock. When sent
+   * it wins over dueAt, which the device worked out in its own time zone.
+   */
+  dueLocal: LocalDateTime.optional(),
+  closesLocal: LocalDateTime.nullable().optional(),
   /**
    * Uploads of purpose `assignment_material`, started for this class. Bound
    * when the work is created, in the same transaction: a refused file means
@@ -313,6 +359,8 @@ export const V1Submission = z.strictObject({
    * distinguishable from a guardian hand-in for as long as the record exists.
    */
   submittedByGuardianId: Id.nullable(),
+  /** Handed in after the due time, within an extension or late window. */
+  late: z.boolean().optional(),
 });
 export type V1Submission = z.infer<typeof V1Submission>;
 
@@ -395,6 +443,8 @@ export const V1Assessment = z.strictObject({
    * none; every current read includes it.
    */
   attachments: z.array(V1FileAttachment).max(5).optional(),
+  /** How much this category counts, when the school weighs categories. */
+  weight: GradeWeight.nullable().optional(),
 });
 export type V1Assessment = z.infer<typeof V1Assessment>;
 
@@ -417,6 +467,8 @@ export const V1CreateAssessmentRequest = z.strictObject({
    * student hands the assignment in, and the grade is recorded here.
    */
   assignmentId: Id.optional(),
+  /** How much this category counts, when the school weighs categories. */
+  weight: GradeWeight.nullable().optional(),
   /**
    * Uploads of purpose `assignment_material`, started for this class. Bound
    * when the work is created, in the same transaction: a refused file means
@@ -487,6 +539,15 @@ export const V1GradeResult = z.strictObject({
   version: Version,
   reviewedAt: Timestamp.nullable(),
   publishedAt: Timestamp.nullable(),
+  /// paper, online or practice: paper marks are shown as such, and kept
+  /// apart from marks for work handed in online.
+  delivery: z.enum(["paper", "online", "practice"]).optional(),
+  /// scored, absent or not_graded. Absent and not graded carry no score and
+  /// are never a zero. Null only for a mark not entered yet.
+  mark: V1GradeMark.nullable().optional(),
+  weight: GradeWeight.nullable().optional(),
+  /// Set when the mark is for handed-in work.
+  assignmentId: Id.nullable().optional(),
 });
 export type V1GradeResult = z.infer<typeof V1GradeResult>;
 
@@ -534,6 +595,11 @@ export type V1AttendancePage = z.infer<typeof V1AttendancePage>;
 export const V1AttendanceRosterItem = z.strictObject({
   student: V1StudentSummary,
   record: V1AttendanceRecord.nullable(),
+  /**
+   * False for a student who has left the class but was marked for this
+   * lesson: listed after the class so the mark can still be corrected.
+   */
+  enrolled: z.boolean().optional(),
 });
 export type V1AttendanceRosterItem = z.infer<typeof V1AttendanceRosterItem>;
 /// The session a register was read from, absent when the lesson has not been
@@ -547,10 +613,25 @@ export type V1AttendanceRosterSession = z.infer<
   typeof V1AttendanceRosterSession
 >;
 
+export const V1AttendanceEditRule = z.enum([
+  "open",
+  "reason_required",
+  "locked",
+  "locked_override",
+]);
+export type V1AttendanceEditRule = z.infer<typeof V1AttendanceEditRule>;
+
 export const V1AttendanceRosterPage = z.strictObject({
   items: z.array(V1AttendanceRosterItem),
   session: V1AttendanceRosterSession.nullable(),
   nextCursor: z.string().nullable(),
+  /**
+   * What the caller may do to this register under the school's lock rule:
+   * open (change freely), reason_required (a changed mark needs a reason),
+   * locked, or locked_override (locked, but this caller - the class's lead
+   * teacher - may override it).
+   */
+  editRule: V1AttendanceEditRule.optional(),
 });
 export type V1AttendanceRosterPage = z.infer<typeof V1AttendanceRosterPage>;
 
@@ -560,6 +641,10 @@ export const V1RecordAttendanceRequest = z.strictObject({
   endsAt: Timestamp,
   expectedVersion: z.number().int().min(0),
   entries: z.array(V1AttendanceEntry).min(1).max(200),
+  /** Why a mark on a past lesson changed. Required by the school's policy. */
+  correctionReason: z.string().trim().min(3).max(500).optional(),
+  /** Override a locked register; only a lead teacher or school admin may. */
+  override: z.boolean().optional(),
 });
 export type V1RecordAttendanceRequest = z.infer<
   typeof V1RecordAttendanceRequest
@@ -613,3 +698,271 @@ export const V1CreateWellbeingRequest = z.strictObject({
   severity: z.enum(["low", "moderate", "high"]).nullable(),
 });
 export type V1CreateWellbeingRequest = z.infer<typeof V1CreateWellbeingRequest>;
+
+// ---------------------------------------------------------------------------
+// Paper gradebook, corrections, attendance history and deadlines
+// (2026-09-30). Marks for paper work are entered for a whole class, kept as
+// drafts until published, and corrected with a reason and the value they
+// replaced.
+// ---------------------------------------------------------------------------
+
+const Reason = z.string().trim().min(3).max(500);
+const Feedback = z.string().max(2_000);
+
+export const V1Actor = z.strictObject({
+  id: Id,
+  displayName: z.string(),
+});
+export type V1Actor = z.infer<typeof V1Actor>;
+
+export const V1GradebookGrade = z.strictObject({
+  id: Id,
+  mark: V1GradeMark.nullable(),
+  score: z.number().nullable(),
+  feedback: z.string().nullable(),
+  /// draft: not marked yet; reviewed: marked, not published; published.
+  state: z.enum(["draft", "reviewed", "published", "withdrawn"]),
+  version: Version,
+  reviewedAt: Timestamp.nullable(),
+  publishedAt: Timestamp.nullable(),
+  updatedAt: Timestamp,
+  /// How many times the published mark has been corrected.
+  corrections: z.number().int().min(0),
+});
+export type V1GradebookGrade = z.infer<typeof V1GradebookGrade>;
+
+export const V1GradebookRow = z.strictObject({
+  student: V1StudentSummary,
+  /// False for a student who has left the class but already has a mark.
+  enrolled: z.boolean(),
+  grade: V1GradebookGrade.nullable(),
+});
+export type V1GradebookRow = z.infer<typeof V1GradebookRow>;
+
+export const V1GradebookItem = V1Assessment.extend({
+  /// Sent back when publishing, so exactly the sheet the teacher saw is
+  /// published.
+  gradebookVersion: z.number().int().min(0),
+  counts: z.strictObject({
+    unmarked: z.number().int().min(0),
+    ready: z.number().int().min(0),
+    published: z.number().int().min(0),
+    withdrawn: z.number().int().min(0),
+  }),
+});
+export type V1GradebookItem = z.infer<typeof V1GradebookItem>;
+
+export const V1Gradebook = z.strictObject({
+  item: V1GradebookItem,
+  items: z.array(V1GradebookRow),
+  nextCursor: z.string().nullable(),
+});
+export type V1Gradebook = z.infer<typeof V1Gradebook>;
+
+export const V1GradeDraftEntry = z.strictObject({
+  studentId: Id,
+  /// 0 for a student with no mark yet, else the row's current version.
+  expectedVersion: z.number().int().min(0),
+  /// null clears the mark back to "not marked yet".
+  mark: V1GradeMark.nullable(),
+  score: z.number().min(0).nullable().optional(),
+  feedback: Feedback.nullable().optional(),
+});
+export type V1GradeDraftEntry = z.infer<typeof V1GradeDraftEntry>;
+
+export const V1SaveGradeDraftsRequest = z.strictObject({
+  expectedGradebookVersion: z.number().int().min(0).optional(),
+  entries: z.array(V1GradeDraftEntry).min(1).max(100),
+});
+export type V1SaveGradeDraftsRequest = z.infer<typeof V1SaveGradeDraftsRequest>;
+
+export const V1SavedGrade = z.strictObject({
+  id: Id,
+  studentId: Id,
+  state: z.enum(["draft", "reviewed", "published", "withdrawn"]),
+  version: Version,
+});
+export type V1SavedGrade = z.infer<typeof V1SavedGrade>;
+
+export const V1SaveGradeDraftsResponse = z.strictObject({
+  gradebookVersion: z.number().int().min(0),
+  saved: z.number().int().min(0),
+  grades: z.array(V1SavedGrade),
+});
+export type V1SaveGradeDraftsResponse = z.infer<
+  typeof V1SaveGradeDraftsResponse
+>;
+
+export const V1PublishGradesRequest = z.strictObject({
+  expectedGradebookVersion: z.number().int().min(0),
+});
+export type V1PublishGradesRequest = z.infer<typeof V1PublishGradesRequest>;
+
+export const V1PublishGradesResponse = z.strictObject({
+  gradebookVersion: z.number().int().min(0),
+  published: z.number().int().min(1),
+  /// Students left unmarked: still drafts, never published as zero.
+  unmarked: z.number().int().min(0),
+});
+export type V1PublishGradesResponse = z.infer<typeof V1PublishGradesResponse>;
+
+export const V1GradeCorrectionEntry = z.strictObject({
+  gradeResultId: Id,
+  expectedVersion: Version,
+  mark: V1GradeMark,
+  score: z.number().min(0).nullable().optional(),
+  feedback: Feedback.nullable().optional(),
+});
+export type V1GradeCorrectionEntry = z.infer<typeof V1GradeCorrectionEntry>;
+
+export const V1CorrectGradesRequest = z.strictObject({
+  reason: Reason,
+  entries: z.array(V1GradeCorrectionEntry).min(1).max(100),
+});
+export type V1CorrectGradesRequest = z.infer<typeof V1CorrectGradesRequest>;
+
+export const V1CorrectGradesResponse = z.strictObject({
+  gradebookVersion: z.number().int().min(0),
+  corrected: z.number().int().min(0),
+  /// Corrections that changed the mark, which the families were told about.
+  notified: z.number().int().min(0),
+  grades: z.array(V1SavedGrade),
+});
+export type V1CorrectGradesResponse = z.infer<typeof V1CorrectGradesResponse>;
+
+export const V1GradeHistoryEntry = z.strictObject({
+  id: z.string().min(1),
+  change: z.enum([
+    "proposed",
+    "reviewed",
+    "published",
+    "corrected",
+    "withdrawn",
+  ]),
+  previousState: z.string().nullable(),
+  nextState: z.string(),
+  previousMark: V1GradeMark.nullable(),
+  previousScore: z.number().nullable(),
+  previousFeedback: z.string().nullable(),
+  nextMark: V1GradeMark.nullable(),
+  nextScore: z.number().nullable(),
+  nextFeedback: z.string().nullable(),
+  reason: z.string().nullable(),
+  actor: V1Actor.nullable(),
+  createdAt: Timestamp,
+});
+export type V1GradeHistoryEntry = z.infer<typeof V1GradeHistoryEntry>;
+
+export const V1GradeHistoryPage = z.strictObject({
+  items: z.array(V1GradeHistoryEntry),
+  nextCursor: z.string().nullable(),
+});
+export type V1GradeHistoryPage = z.infer<typeof V1GradeHistoryPage>;
+
+export const V1UpdateGradebookItemRequest = z.strictObject({
+  expectedVersion: Version,
+  title: z.string().trim().min(1).max(200),
+  category: z.string().trim().min(1).max(80),
+  maximumScore: z.number().positive().max(100_000),
+  weight: GradeWeight.nullable(),
+  scheduledAt: Timestamp.nullable(),
+});
+export type V1UpdateGradebookItemRequest = z.infer<
+  typeof V1UpdateGradebookItemRequest
+>;
+
+export const V1CorrectAttendanceRequest = z.strictObject({
+  expectedVersion: Version,
+  /// Required once the lesson's day has passed, and for any override.
+  reason: z.string().trim().max(500).nullable().optional(),
+  override: z.boolean().optional(),
+  entries: z.array(V1AttendanceEntry).min(1).max(200),
+});
+export type V1CorrectAttendanceRequest = z.infer<
+  typeof V1CorrectAttendanceRequest
+>;
+
+export const V1AttendanceHistoryEntry = z.strictObject({
+  id: z.string().min(1),
+  studentId: Id,
+  studentName: z.string(),
+  previousState: z.enum(["present", "absent", "late", "excused"]),
+  previousReason: z.string().nullable(),
+  nextState: z.enum(["present", "absent", "late", "excused"]),
+  nextReason: z.string().nullable(),
+  reason: z.string().nullable(),
+  override: z.boolean(),
+  actor: V1Actor.nullable(),
+  createdAt: Timestamp,
+});
+export type V1AttendanceHistoryEntry = z.infer<typeof V1AttendanceHistoryEntry>;
+
+export const V1AttendanceHistoryPage = z.strictObject({
+  items: z.array(V1AttendanceHistoryEntry),
+  nextCursor: z.string().nullable(),
+});
+export type V1AttendanceHistoryPage = z.infer<typeof V1AttendanceHistoryPage>;
+
+export const V1AssignmentExtension = z.strictObject({
+  id: Id,
+  assignmentId: Id,
+  studentId: Id,
+  extendedUntil: Timestamp,
+  extendedUntilLocal: LocalDateTime,
+  reason: z.string().min(1),
+  grantedBy: Id.nullable(),
+  createdAt: Timestamp,
+  revokedAt: Timestamp.nullable(),
+});
+export type V1AssignmentExtension = z.infer<typeof V1AssignmentExtension>;
+
+export const V1AssignmentExtensionPage = z.strictObject({
+  items: z.array(V1AssignmentExtension),
+  nextCursor: z.string().nullable(),
+});
+export type V1AssignmentExtensionPage = z.infer<
+  typeof V1AssignmentExtensionPage
+>;
+
+export const V1GrantExtensionRequest = z.strictObject({
+  studentId: Id,
+  /// On the school's clock.
+  extendedUntilLocal: LocalDateTime,
+  reason: Reason,
+});
+export type V1GrantExtensionRequest = z.infer<typeof V1GrantExtensionRequest>;
+
+export const V1RevokeExtensionRequest = z.strictObject({
+  studentId: Id,
+});
+export type V1RevokeExtensionRequest = z.infer<typeof V1RevokeExtensionRequest>;
+
+export const V1ReopenAssignmentRequest = z.strictObject({
+  expectedVersion: Version,
+  /// The new closing time for the whole class, on the school's clock.
+  closesAtLocal: LocalDateTime,
+  reason: Reason,
+});
+export type V1ReopenAssignmentRequest = z.infer<
+  typeof V1ReopenAssignmentRequest
+>;
+
+export const V1EditResourceRequest = z.strictObject({
+  expectedVersion: Version,
+  title: z.string().trim().min(1).max(200).optional(),
+  body: z.string().max(30_000).nullable().optional(),
+  /// A clean `lesson_resource` upload for the lesson's class. The file it
+  /// replaces is kept for the school; students see only the new one.
+  replaceFileId: Id.optional(),
+});
+export type V1EditResourceRequest = z.infer<typeof V1EditResourceRequest>;
+
+export const V1UpdateWorkMaterialsRequest = z.strictObject({
+  expectedVersion: Version,
+  /// Taken off the work: hidden from the class, kept for the school.
+  detachFileIds: z.array(Id).max(5),
+  attachmentFileIds: attachmentFileIds(),
+});
+export type V1UpdateWorkMaterialsRequest = z.infer<
+  typeof V1UpdateWorkMaterialsRequest
+>;

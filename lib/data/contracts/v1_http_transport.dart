@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/failures.dart';
@@ -19,12 +20,18 @@ class V1ApiException implements Exception, FailureConvertible {
     required this.code,
     required this.message,
     this.requestId,
+    this.fieldErrors = const {},
   });
 
   final int status;
   final String code;
   final String message;
   final String? requestId;
+
+  /// The problem's `errors`: which part of the request was refused (a path
+  /// such as `students/<id>`) and a fixed reason code. A bulk command that
+  /// refuses some rows names each one, so a screen can point at them.
+  final Map<String, String> fieldErrors;
 
   bool get isUnauthenticated => code == 'UNAUTHENTICATED';
   bool get isReauthRequired => code == 'REAUTH_REQUIRED';
@@ -161,10 +168,35 @@ class V1HttpTransport implements V1JsonTransport {
   /// single-use grant cannot be accidentally replayed by a later call.
   void useReauthGrant(String grant) => _pendingReauthGrant = grant;
 
+  /// Reads already on their way, by who asked and what for.
+  final Map<String, Future<Map<String, dynamic>>> _inFlight = {};
+
+  /// A read already on its way is shared rather than sent again. Screens
+  /// that open together, or a tap repeated while the first is still
+  /// loading, would otherwise each cost the server a full request. Only
+  /// requests still in flight are shared - nothing is reused once it
+  /// completes - and the key carries the caller's token, so two accounts on
+  /// one device never share an answer.
   @override
-  Future<Map<String, dynamic>> get(String path) => keeps('GET', path)
-      ? _keeping('GET $path', () => _send('GET', path, null))
-      : _send('GET', path, null);
+  Future<Map<String, dynamic>> get(String path) async {
+    final token = await _accessToken();
+    final key =
+        '${token == null ? '' : sha256.convert(utf8.encode(token))}'
+        ' $path';
+    final pending = _inFlight[key];
+    if (pending != null) return pending;
+    final request = keeps('GET', path)
+        ? _keeping('GET $path', () => _send('GET', path, null))
+        : _send('GET', path, null);
+    _inFlight[key] = request;
+    try {
+      return await request;
+    } finally {
+      if (identical(_inFlight[key], request)) {
+        unawaited(_inFlight.remove(key));
+      }
+    }
+  }
 
   @override
   Future<Map<String, dynamic>> post(
@@ -326,6 +358,15 @@ class V1HttpTransport implements V1JsonTransport {
         code: response.body['code'] as String? ?? 'INTERNAL_ERROR',
         message: response.body['detail'] as String? ?? 'The request failed.',
         requestId: response.body['requestId'] as String?,
+        fieldErrors: {
+          for (final item
+              in (response.body['errors'] as List<Object?>? ?? const []))
+            if (item case {
+              'path': final String path,
+              'code': final String code,
+            })
+              path: code,
+        },
       );
     }
     return V1ApiException(

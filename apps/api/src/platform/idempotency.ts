@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
 import type { IdempotencyModeType, V1OperationId } from "@studafy/contracts";
-import { withVerifiedActor } from "../auth/context";
+import { selectAsActor } from "../auth/context";
 import type { AuthorizationEnv } from "../authorization/middleware";
 import { problem } from "./errors";
 import type { Context } from "hono";
@@ -40,15 +40,19 @@ export class PostgresIdempotencyRepository implements IdempotencyRepository {
     subject: string,
     input: Parameters<IdempotencyRepository["reserve"]>[1],
   ): Promise<Reservation> {
-    return await withVerifiedActor(this.sql, subject, async (tx) => {
-      const rows = await tx<{ result: Reservation }[]>`
-        select private.api_idempotency_reserve(
-          ${input.schoolId}::uuid, ${input.scope}, ${input.key},
-          ${input.requestHash}, ${input.retentionSeconds}, ${input.leaseSeconds}
-        ) as result
-      `;
-      return rows[0]?.result ?? { outcome: "denied" };
-    });
+    return await selectAsActor<Reservation>(
+      this.sql,
+      subject,
+      "private.api_idempotency_reserve($1::uuid, $2, $3, $4, $5, $6)",
+      [
+        input.schoolId,
+        input.scope,
+        input.key,
+        input.requestHash,
+        input.retentionSeconds,
+        input.leaseSeconds,
+      ],
+    ) ?? { outcome: "denied" };
   }
 
   async complete(
@@ -58,14 +62,12 @@ export class PostgresIdempotencyRepository implements IdempotencyRepository {
     status: number,
     body: unknown,
   ): Promise<boolean> {
-    return await withVerifiedActor(this.sql, subject, async (tx) => {
-      const rows = await tx<{ result: boolean }[]>`
-        select private.api_idempotency_complete(
-          ${id}::uuid, ${generation}, ${status}, ${tx.json(body as never)}
-        ) as result
-      `;
-      return rows[0]?.result ?? false;
-    });
+    return await selectAsActor<boolean>(
+      this.sql,
+      subject,
+      "private.api_idempotency_complete($1::uuid, $2, $3, $4::jsonb)",
+      [id, generation, status, this.sql.json(body as never)],
+    ) ?? false;
   }
 
   async fail(
@@ -73,12 +75,12 @@ export class PostgresIdempotencyRepository implements IdempotencyRepository {
     id: string,
     generation: number,
   ): Promise<boolean> {
-    return await withVerifiedActor(this.sql, subject, async (tx) => {
-      const rows = await tx<{ result: boolean }[]>`
-        select private.api_idempotency_fail(${id}::uuid, ${generation}) as result
-      `;
-      return rows[0]?.result ?? false;
-    });
+    return await selectAsActor<boolean>(
+      this.sql,
+      subject,
+      "private.api_idempotency_fail($1::uuid, $2)",
+      [id, generation],
+    ) ?? false;
   }
 }
 

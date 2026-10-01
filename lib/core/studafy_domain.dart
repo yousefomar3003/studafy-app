@@ -28,12 +28,53 @@ class UserProfile {
     required this.displayName,
     required this.email,
     required this.memberships,
+    this.accountKind,
   });
 
   final String id;
   final String displayName;
   final String email;
   final List<SchoolMembership> memberships;
+
+  /// Which kind of account this is, as the server decided it; null when
+  /// nothing has yet (and from older servers).
+  final AccountKind? accountKind;
+
+  /// The kind the server reported, or else what the memberships show.
+  AccountKind? get effectiveKind {
+    if (accountKind != null) return accountKind;
+    final active = memberships.where((m) => m.active);
+    if (active.any((m) => m.role != StudafyRole.student)) {
+      return AccountKind.adult;
+    }
+    if (active.any((m) => m.role == StudafyRole.student)) {
+      return AccountKind.student;
+    }
+    return null;
+  }
+}
+
+/// One kind of account per email (2026-10-01): a student account is a
+/// student only; an adult account may be a teacher, a parent, or both.
+enum AccountKind {
+  student,
+  adult;
+
+  static AccountKind? parse(String? value) => switch (value) {
+    'student' => AccountKind.student,
+    'adult' => AccountKind.adult,
+    _ => null,
+  };
+
+  /// Whether this kind of account may act as [role].
+  bool allows(StudafyRole role) => switch (this) {
+    AccountKind.student => role == StudafyRole.student,
+    AccountKind.adult => role != StudafyRole.student,
+  };
+
+  /// The kind a person signing in as [role] makes a new account.
+  static AccountKind forRole(StudafyRole role) =>
+      role == StudafyRole.student ? AccountKind.student : AccountKind.adult;
 }
 
 @immutable
@@ -149,6 +190,7 @@ class ActiveContextController extends ChangeNotifier {
       if (StudafyRuntime.policy.isSynthetic) startDemoRole(target);
       return;
     }
+    signedInAs = target;
     switchMembership(next);
   }
 

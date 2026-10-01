@@ -399,6 +399,7 @@ export type Database = {
           created_by: string;
           deleted_at: string | null;
           delivery: string;
+          gradebook_version: number;
           id: string;
           maximum_score: number;
           published_at: string | null;
@@ -418,6 +419,7 @@ export type Database = {
           created_by: string;
           deleted_at?: string | null;
           delivery?: string;
+          gradebook_version?: number;
           id?: string;
           maximum_score: number;
           published_at?: string | null;
@@ -437,6 +439,7 @@ export type Database = {
           created_by?: string;
           deleted_at?: string | null;
           delivery?: string;
+          gradebook_version?: number;
           id?: string;
           maximum_score?: number;
           published_at?: string | null;
@@ -474,6 +477,81 @@ export type Database = {
             columns: ["school_id", "classroom_id"];
             isOneToOne: false;
             referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
+      assignment_extensions: {
+        Row: {
+          assignment_id: string;
+          created_at: string;
+          extended_until: string;
+          granted_by: string | null;
+          id: string;
+          reason: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          school_id: string;
+          student_id: string;
+        };
+        Insert: {
+          assignment_id: string;
+          created_at?: string;
+          extended_until: string;
+          granted_by?: string | null;
+          id?: string;
+          reason: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          school_id: string;
+          student_id: string;
+        };
+        Update: {
+          assignment_id?: string;
+          created_at?: string;
+          extended_until?: string;
+          granted_by?: string | null;
+          id?: string;
+          reason?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          school_id?: string;
+          student_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assignment_extensions_assignment_fk";
+            columns: ["school_id", "assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "assignment_extensions_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assignment_extensions_revoked_by_fkey";
+            columns: ["revoked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assignment_extensions_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assignment_extensions_student_fk";
+            columns: ["school_id", "student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
             referencedColumns: ["school_id", "id"];
           },
         ];
@@ -547,6 +625,92 @@ export type Database = {
             columns: ["school_id", "classroom_id"];
             isOneToOne: false;
             referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
+      attendance_record_revisions: {
+        Row: {
+          actor_id: string | null;
+          attendance_record_id: string;
+          created_at: string;
+          id: number;
+          next_reason: string | null;
+          next_state: Database["public"]["Enums"]["attendance_state"];
+          operation_id: string;
+          override: boolean;
+          previous_reason: string | null;
+          previous_recorded_at: string;
+          previous_recorded_by: string | null;
+          previous_state: Database["public"]["Enums"]["attendance_state"];
+          reason: string | null;
+          school_id: string;
+          session_id: string;
+          student_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          attendance_record_id: string;
+          created_at?: string;
+          id?: never;
+          next_reason?: string | null;
+          next_state: Database["public"]["Enums"]["attendance_state"];
+          operation_id: string;
+          override?: boolean;
+          previous_reason?: string | null;
+          previous_recorded_at: string;
+          previous_recorded_by?: string | null;
+          previous_state: Database["public"]["Enums"]["attendance_state"];
+          reason?: string | null;
+          school_id: string;
+          session_id: string;
+          student_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          attendance_record_id?: string;
+          created_at?: string;
+          id?: never;
+          next_reason?: string | null;
+          next_state?: Database["public"]["Enums"]["attendance_state"];
+          operation_id?: string;
+          override?: boolean;
+          previous_reason?: string | null;
+          previous_recorded_at?: string;
+          previous_recorded_by?: string | null;
+          previous_state?: Database["public"]["Enums"]["attendance_state"];
+          reason?: string | null;
+          school_id?: string;
+          session_id?: string;
+          student_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "attendance_record_revisions_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attendance_record_revisions_record_fk";
+            columns: ["school_id", "attendance_record_id"];
+            isOneToOne: false;
+            referencedRelation: "attendance_records";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "attendance_record_revisions_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attendance_record_revisions_session_fk";
+            columns: ["school_id", "session_id"];
+            isOneToOne: false;
+            referencedRelation: "lesson_sessions";
             referencedColumns: ["school_id", "id"];
           },
         ];
@@ -1751,6 +1915,8 @@ export type Database = {
           assessment_id: string | null;
           assignment_id: string | null;
           created_at: string;
+          detached_at: string | null;
+          detached_by: string | null;
           file_object_id: string;
           id: string;
           message_id: string | null;
@@ -1765,6 +1931,8 @@ export type Database = {
           assessment_id?: string | null;
           assignment_id?: string | null;
           created_at?: string;
+          detached_at?: string | null;
+          detached_by?: string | null;
           file_object_id: string;
           id?: string;
           message_id?: string | null;
@@ -1779,6 +1947,8 @@ export type Database = {
           assessment_id?: string | null;
           assignment_id?: string | null;
           created_at?: string;
+          detached_at?: string | null;
+          detached_by?: string | null;
           file_object_id?: string;
           id?: string;
           message_id?: string | null;
@@ -1835,6 +2005,13 @@ export type Database = {
             columns: ["ai_grading_draft_id"];
             isOneToOne: false;
             referencedRelation: "ai_grading_drafts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "file_bindings_detached_by_fkey";
+            columns: ["detached_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2248,7 +2425,14 @@ export type Database = {
           grade_result_id: string;
           id: number;
           idempotency_key: string;
+          material: boolean | null;
+          next_feedback: string | null;
+          next_mark: Database["public"]["Enums"]["grade_mark"] | null;
+          next_score: number | null;
           next_state: Database["public"]["Enums"]["publication_state"];
+          previous_feedback: string | null;
+          previous_mark: Database["public"]["Enums"]["grade_mark"] | null;
+          previous_score: number | null;
           previous_state:
             | Database["public"]["Enums"]["publication_state"]
             | null;
@@ -2262,7 +2446,14 @@ export type Database = {
           grade_result_id: string;
           id?: never;
           idempotency_key: string;
+          material?: boolean | null;
+          next_feedback?: string | null;
+          next_mark?: Database["public"]["Enums"]["grade_mark"] | null;
+          next_score?: number | null;
           next_state: Database["public"]["Enums"]["publication_state"];
+          previous_feedback?: string | null;
+          previous_mark?: Database["public"]["Enums"]["grade_mark"] | null;
+          previous_score?: number | null;
           previous_state?:
             | Database["public"]["Enums"]["publication_state"]
             | null;
@@ -2276,7 +2467,14 @@ export type Database = {
           grade_result_id?: string;
           id?: never;
           idempotency_key?: string;
+          material?: boolean | null;
+          next_feedback?: string | null;
+          next_mark?: Database["public"]["Enums"]["grade_mark"] | null;
+          next_score?: number | null;
           next_state?: Database["public"]["Enums"]["publication_state"];
+          previous_feedback?: string | null;
+          previous_mark?: Database["public"]["Enums"]["grade_mark"] | null;
+          previous_score?: number | null;
           previous_state?:
             | Database["public"]["Enums"]["publication_state"]
             | null;
@@ -2320,6 +2518,7 @@ export type Database = {
           created_at: string;
           feedback: string | null;
           id: string;
+          mark: Database["public"]["Enums"]["grade_mark"] | null;
           published_at: string | null;
           published_by: string | null;
           reviewed_at: string | null;
@@ -2336,6 +2535,7 @@ export type Database = {
           created_at?: string;
           feedback?: string | null;
           id?: string;
+          mark?: Database["public"]["Enums"]["grade_mark"] | null;
           published_at?: string | null;
           published_by?: string | null;
           reviewed_at?: string | null;
@@ -2352,6 +2552,7 @@ export type Database = {
           created_at?: string;
           feedback?: string | null;
           id?: string;
+          mark?: Database["public"]["Enums"]["grade_mark"] | null;
           published_at?: string | null;
           published_by?: string | null;
           reviewed_at?: string | null;
@@ -3784,6 +3985,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          account_kind: string | null;
           created_at: string;
           deleted_at: string | null;
           display_name: string;
@@ -3795,6 +3997,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          account_kind?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           display_name: string;
@@ -3806,6 +4009,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          account_kind?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           display_name?: string;
@@ -5716,6 +5920,7 @@ export type Database = {
         | "rejected"
         | "error"
         | "deleted";
+      grade_mark: "scored" | "absent" | "not_graded";
       invitation_status: "pending" | "accepted" | "revoked" | "expired";
       lesson_session_status: "scheduled" | "completed" | "cancelled";
       link_status: "pending" | "verified" | "declined" | "revoked";
@@ -5985,6 +6190,7 @@ export const Constants = {
         "error",
         "deleted",
       ],
+      grade_mark: ["scored", "absent", "not_graded"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       lesson_session_status: ["scheduled", "completed", "cancelled"],
       link_status: ["pending", "verified", "declined", "revoked"],

@@ -137,6 +137,18 @@ parent.
 
       Both must be in the **same group**. That is what makes Plus to Max an
       upgrade rather than a second subscription.
+- [ ] **A second subscription group** (e.g. "Family+") with two
+      auto-renewable subscriptions, 1-month duration, for parents:
+      - `studafy_family_plus_8_monthly`, level 1 (highest), US$4.99 - up to
+        8 linked children
+      - `studafy_family_plus_monthly`, level 2, US$2.99 - up to 4 linked
+        children
+
+      Same rule: both in **one group**, so 4 to 8 is an upgrade. The plan is
+      held by the parent (no child is named at purchase); the server works
+      out which linked children it covers on every read, earliest linked
+      first. The per-child `studafy_parent_insights_monthly` is no longer
+      sold; leave it in App Store Connect so existing subscribers renew.
 - [ ] Localised display name and description for each (English and
       Arabic), and the review screenshot.
 - [ ] Optional introductory offer: 1-month free trial. The app shows "Start
@@ -159,6 +171,10 @@ parent.
 - [ ] **Monetize → Subscriptions**: create `studafy_plus_monthly` and
       `studafy_max_monthly`, each with an auto-renewing monthly base plan and
       its price. Optional: a free-trial offer with a 1-month free phase.
+- [ ] Also `studafy_family_plus_monthly` (US$2.99, up to 4 children) and
+      `studafy_family_plus_8_monthly` (US$4.99, up to 8), the same way. The
+      app upgrades 4 to 8 by naming the subscription it replaces, exactly as
+      it does Plus to Max.
 - [ ] In the subscription settings: a **grace period** and **account hold**,
       and **subscription pause** allowed. The app offers Pause first on
       Android.
@@ -218,13 +234,15 @@ runtime environment and must match `PAY071_ENVIRONMENT`.
 
 ### 6. List the products
 
-Plus and Max are listed only in `synthetic` and `development` until you
+Plus, Max and the two Family+ plans are listed only in `synthetic` and
+`development` until you
 confirm them in both consoles. Then list them for the environment in a
 migration:
 
 ```sql
 update public.store_products set storefront_listed = true
-where feature_key in ('studafy_plus', 'studafy_max') and environment = 'production';
+where feature_key in ('studafy_plus', 'studafy_max', 'family_plus', 'family_plus_large')
+  and environment = 'production';
 ```
 
 And turn on self-purchase for a school if students should be able to ask

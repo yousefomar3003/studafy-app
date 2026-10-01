@@ -103,6 +103,27 @@
   "roleStudentDetail": "Learn, submit work and stay updated",
   "roleParent": "Parent",
   "roleParentDetail": "Follow progress and school updates",
+  "introSkip": "Skip",
+  "introNext": "Next",
+  "introStart": "Get started",
+  "introPageOf": "Page {index} of {total}",
+  "@introPageOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "introTitleOne": "Your whole school day in one place",
+  "introBodyOne": "Lessons, homework, marks and attendance - teachers, students and parents, together.",
+  "introTitleTwo": "Every mark counts, on paper or online",
+  "introBodyTwo": "Teachers mark paper exams and online work in one gradebook. Families see a mark once it is published.",
+  "introTitleThree": "Parents see what matters",
+  "introBodyThree": "Follow progress and attendance - and with Family+, each class's trend and what to focus on this week. No ads, and your data is never sold.",
+  "roleWhatIsStudafy": "What is Studafy?",
   "loginWelcome": "Welcome, {role}",
   "@loginWelcome": {
     "placeholders": {
@@ -131,13 +152,13 @@
   "loginAcceptFirst": "Please accept before signing in.",
   "loginChangeRole": "Change role",
   "loginClose": "Close",
-  "policyPrivacyBody": "WHAT WE COLLECT\nYour name and email from the sign-in provider you choose; the school or class you belong to and your role in it; the work you are set and hand in, your marks, attendance and pastoral notes; messages, announcements and meetings inside the app; files you upload; and your notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nTHE STUDY HELPER\nIf you use the study helper, the question you type is sent to an AI company outside Studafy so it can answer. Your name, school, marks, work and messages are never sent. Answers can be wrong, so check anything you hand in. Using the helper is optional.\n\nWHO SEES YOUR WORK\nStaff at your school whose role requires it, and a parent linked to you. Other students cannot see your marks, your submitted work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent can follow progress; a parent is not given your private messages.\n\nPAYMENTS\nSubscriptions are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Resend sends email and Firebase sends push notifications. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion.\n\nHOW WE PROTECT IT\nAccess to a school's data is enforced in the database itself. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Administrator accounts require two-factor sign-in. Files are scanned before they can be downloaded.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.",
+  "policyPrivacyBody": "WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebook. Messages, voice notes, announcements and meeting links inside the app. Files you upload. Your subscriptions and notification settings.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson's day need a reason, only the class's lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school's time zone.\n\nWHO SEES YOUR WORK\nYour class's teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child's private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. When you use them, what you give them is sent to Together AI, an AI company outside Studafy: the question you type and the recent turns of the same chat, and - if you choose - a lesson's text, your own notes, or a photo you add (the study helper, whiteboard notes, lesson notes, quizzes and flashcards). Your name, email, school and marks are never sent. Chats are kept only on your device. Answers can be wrong, so never hand them in as your own work. AI never marks your work.\n\nFILES\nFiles are stored privately, scanned before anyone can download them, and opened only through links that work once and expire within minutes. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max and Family+ are charged by Apple or Google under their own terms. We never see your card.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Amazon Web Services hosts the app and its technical logs; GitHub stores encrypted backups it cannot read; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Cloudflare runs a bot check; Together AI runs the AI study tools; Resend sends email and Firebase sends push notifications, which never contain your marks or messages; meetings happen in Google Meet. Each acts only on our instructions.\n\nWHERE YOUR DATA IS\nData may be processed outside your country, including outside the EEA, protected by Standard Contractual Clauses or an adequacy decision.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only and cannot be edited or removed, including by us. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your study helper chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class's data is enforced in the database itself, and only that class's teachers can change its marks and attendance. Secrets are stripped from logs. IP addresses are stored only as a one-way hash. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.",
   "@policyPrivacyBody": {
-    "description": "In-app summary of docs/legal/privacy-policy.md, which governs. Update both together: this text names the AI provider disclosure and the processor list, so it goes stale the moment either changes. Not reviewed by counsel; the Arabic translation has not been reviewed by a native legal translator."
+    "description": "In-app summary of docs/legal/privacy-policy.md (version 1.2, consent version 2026-09-30.2), which governs. Update both together, publish a new consent version and bump termsPolicyVersion. Not reviewed by counsel; the Arabic translation has not been reviewed by a native legal translator."
   },
-  "policyTermsBody": "Use Studafy only for authorized school communication. Keep accounts secure, respect students and staff, and do not upload harmful or unlawful content. School policies continue to apply. Misuse may lead to account suspension.",
+  "policyTermsBody": "WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else's work - or AI output - as your own. You can report or block anyone from inside the app. We may remove content and suspend accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson's day need a reason; after seven days only the class's lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share.\n\nSTUDENTS\nHand in your own work. You can replace it until the deadline, which is in your school's time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher's permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child's private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school's records.\n\nAI STUDY TOOLS\nThey are optional and can be wrong. Check what they produce and never hand it in as your own work. AI never marks work. Daily and monthly limits apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students; Family+ is for parents, for up to 4 or up to 8 linked children. All are billed monthly by Apple or Google at the price the store shows until you cancel in your store account, where refunds are also handled.\n\nMEETINGS\nStudafy does not host video calls. Meeting links open in Google Meet under Google's terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.",
   "@policyTermsBody": {
-    "description": "Placeholder legal copy. See policyPrivacyBody."
+    "description": "In-app summary of docs/legal/terms-of-use.md (consent version 2026-09-30.2), which governs. See policyPrivacyBody."
   },
   "deleteTitle": "Delete account",
   "deleteWarningTitle": "This affects more than your profile",
@@ -296,7 +317,7 @@
       }
     }
   },
-  "classesShareMessageWithCode": "Join my Studafy class: {link}\nOr type the class code: {code}",
+  "classesShareMessageWithCode": "Join my Studafy class with the class code {code}\nOr open this link: {link}",
   "@classesShareMessageWithCode": {
     "description": "Message shared with students when the class has both a link and a code.",
     "placeholders": {
@@ -875,6 +896,122 @@
   "@insightStrengthHigh": {
     "description": "Family+ insights: insightStrengthHigh."
   },
+  "insightMissingWork": "Work missed its deadline and was never handed in",
+  "insightMissingWorkIn": "Work in {subject} missed its deadline",
+  "@insightMissingWorkIn": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "insightMissedTests": "Tests were missed",
+  "insightMissedTestsIn": "A test in {subject} was missed",
+  "@insightMissedTestsIn": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "insightAttendanceLow": "Attendance is below 90%",
+  "insightStrength": "{subject} is their strongest subject right now",
+  "@insightStrength": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "insightEvClassAverage": "{subject} average",
+  "@insightEvClassAverage": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "insightEvOverallAverage": "Their average across all subjects",
+  "insightEvRecentTypical": "Typical recent mark",
+  "insightEvEarlierTypical": "Typical earlier mark",
+  "insightEvChange": "Change (points)",
+  "insightEvOnTime": "Handed in on time",
+  "insightEvLate": "Handed in late",
+  "insightEvNotHandedIn": "Not handed in",
+  "insightEvWeekdayAbsences": "Absences on a {day}",
+  "@insightEvWeekdayAbsences": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "insightEvAbsencesTotal": "Absences in total",
+  "insightEvDueSoon": "Due in the next 7 days, not handed in",
+  "insightEvMissed": "Tests missed",
+  "insightEvAttendanceRate": "Attended",
+  "insightEvSessions": "Lessons counted",
+  "insightEvPastDue": "Past the deadline, not handed in",
+  "insightsFocusTitle": "What to focus on",
+  "insightsProgressTitle": "Marks over time",
+  "insightsByClass": "Class by class",
+  "insightsMissingTitle": "Missing work",
+  "insightsRecentTitle": "Latest marks",
+  "insightsMissedTests": "Missed tests",
+  "insightsTrendUp": "Up {points} points compared with earlier",
+  "@insightsTrendUp": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsTrendDown": "Down {points} points compared with earlier",
+  "@insightsTrendDown": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsTrendSteady": "Steady compared with earlier",
+  "insightsTrendUnknown": "Not enough marks for a trend yet",
+  "insightsStrongest": "Strongest",
+  "insightsWeakest": "Weakest",
+  "insightsClassAttendance": "Attendance {rate}%",
+  "@insightsClassAttendance": {
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsClassOnTime": "On time {rate}%",
+  "@insightsClassOnTime": {
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsMissingCount": "{count, plural, =0{Nothing missing} =1{1 missing} other{{count} missing}}",
+  "@insightsMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsMissedCount": "{count, plural, =1{1 missed test} other{{count} missed tests}}",
+  "@insightsMissedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsMissed": "Missed",
+  "insightsPaper": "Paper",
   "insightsDueOn": "Due {date}",
   "@insightsDueOn": {
     "description": "Family+ insights: insightsDueOn.",
@@ -1126,6 +1263,8 @@
     }
   },
   "studyPlansTheStoreCouldNotBe": "The store could not be reached. Try again later.",
+  "studyPlansPaymentsNotSetUp": "Paid plans are not on sale yet. Everything free keeps working.",
+  "studyPlansCannotBuyYet": "This plan cannot be bought yet - see the note under it.",
   "studyPlansBuyingIsNotEnabledFor": "Buying is not enabled for your account yet.",
   "studyPlansWeAskedYourParentTo": "We asked your parent to approve.",
   "studyPlansWaitingForAParent": "Waiting for a parent",
@@ -1651,6 +1790,10 @@
   "notificationCopyAcademicAssignmentPublishedDetail": "A new assignment is ready for one of your classes.",
   "notificationCopyAcademicGradePublishedTitle": "New grade",
   "notificationCopyAcademicGradePublishedDetail": "A grade was published. Open Grades to view it.",
+  "notificationCopyAcademicGradesPublishedTitle": "New marks",
+  "notificationCopyAcademicGradesPublishedDetail": "Your teacher published new marks. Open Grades to view them.",
+  "notificationCopyAcademicGradesCorrectedTitle": "A mark was updated",
+  "notificationCopyAcademicGradesCorrectedDetail": "Your teacher corrected a published mark. Open Grades to see the new one.",
   "notificationCopyAcademicResourcePublishedTitle": "New class material",
   "notificationCopyAcademicResourcePublishedDetail": "Your teacher shared new material for one of your classes.",
   "notificationCopyAcademicWellbeingSharedTitle": "Wellbeing note shared",
@@ -1711,11 +1854,60 @@
       }
     }
   },
-  "familyPlusIntro": "See how your child is really doing, and one useful thing to do this week.",
+  "familyPlusIntro": "One subscription for the family. See how each child is really doing, where they need help, and what to do about it this week.",
   "familyPlusFeatureTrends": "What changed this term, with the records behind every claim",
-  "familyPlusFeatureDue": "Work due this week, so nothing slips",
-  "familyPlusFeatureSubjects": "Marks by subject and attendance at a glance",
   "familyPlusFeatureSchool": "Notes the school chose to share with you",
+  "familyPlusFeatureFocus": "What to focus on this week, most urgent first",
+  "familyPlusFeatureClasses": "Every class side by side - average, trend, attendance and homework, with the strongest and weakest named",
+  "familyPlusFeatureChart": "Marks over time on a chart, and the latest marks - paper exams included",
+  "familyPlusFeatureMissing": "Missing work and missed tests, so nothing slips",
+  "familyPlusPlanName": "Up to {seats} children",
+  "@familyPlusPlanName": {
+    "placeholders": {
+      "seats": {
+        "type": "int"
+      }
+    }
+  },
+  "familyPlusPlanDetail": "One monthly price for the whole family: all your linked children, up to {seats}.",
+  "@familyPlusPlanDetail": {
+    "placeholders": {
+      "seats": {
+        "type": "int"
+      }
+    }
+  },
+  "familyPlusYourPlan": "Your plan",
+  "familyPlusSubscribePlan": "Subscribe for up to {seats} children",
+  "@familyPlusSubscribePlan": {
+    "placeholders": {
+      "seats": {
+        "type": "int"
+      }
+    }
+  },
+  "familyPlusUpgrade": "Upgrade to up to {seats} children",
+  "@familyPlusUpgrade": {
+    "placeholders": {
+      "seats": {
+        "type": "int"
+      }
+    }
+  },
+  "familyPlusCannotBuyYet": "This plan cannot be bought in this version of the app yet.",
+  "familyPlusNotCoveredTitle": "Not covered by your plan yet",
+  "familyPlusNotCovered": "Your Family+ covers your first {seats} linked children, and {name} is not one of them. Move to the plan for up to 8 children to include {name}.",
+  "@familyPlusNotCovered": {
+    "placeholders": {
+      "seats": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPlusCoversFamily": "Your children are covered in the order you linked them. A child you link later is included straight away while the plan has room.",
   "familyPlusPrice": "{price} / month",
   "@familyPlusPrice": {
     "placeholders": {
@@ -1724,7 +1916,7 @@
       }
     }
   },
-  "familyPlusUsPrice": "US$1.99 / month in the US - the store shows your price",
+  "familyPlusUsPrice": "{price} / month in the US - the store shows your price",
   "familyPlusTrial": "If eligible, free for {trial}, then {price} / month",
   "@familyPlusTrial": {
     "placeholders": {
@@ -1736,23 +1928,7 @@
       }
     }
   },
-  "familyPlusOneChild": "Covers {name} only. Each child has their own Family+.",
-  "@familyPlusOneChild": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "familyPlusStartTrial": "Start free trial",
-  "familyPlusSubscribe": "Subscribe for {name}",
-  "@familyPlusSubscribe": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "familyPlusCheckingStore": "Checking the store price...",
   "familyPlusStoreUnavailable": "The store could not be reached. Try again later.",
   "familyPlusNotInThisBuild": "Family+ cannot be bought in this version of the app.",
@@ -1920,11 +2096,11 @@
   "setupNameHelp": "How your teachers, classmates and school will see you",
   "setupNameRequired": "Enter your name.",
   "setupGenderLabel": "Gender",
+  "setupGenderMale": "Male",
+  "setupGenderFemale": "Female",
   "setupGenderPrivate": "Only you can see this.",
-  "setupGenderGirl": "Girl",
-  "setupGenderBoy": "Boy",
-  "setupGenderPreferNot": "Prefer not to say",
-  "setupGenderRequired": "Choose an answer - \"Prefer not to say\" is fine.",
+  "setupGenderPreferNot": "Prefer not to answer",
+  "setupGenderRequired": "Choose an answer - \"Prefer not to answer\" is fine.",
   "setupContinue": "Continue",
   "setupSaving": "Saving…",
   "setupFailed": "That could not be saved. Please try again.",
@@ -2165,5 +2341,469 @@
   "famLinkCreateAccountBody": "For a child with no email or phone. You manage the account and open it from yours. No approval from your child is needed.",
   "famManagedTitle": "Child accounts you manage",
   "famManagedHint": "Open your child's account to join their class with the class code. Their progress then shows here.",
-  "famManagedOpen": "Open account"
+  "famManagedOpen": "Open account",
+  "courseworkVersionConflict": "Someone else changed this while you were working. Reload to see the latest, then try again.",
+  "courseworkNotAllowed": "You don't have permission to do this for this class.",
+  "courseworkWindowClosed": "The deadline for this work has passed. Ask your teacher for more time.",
+  "courseworkSubmissionLocked": "Your teacher has already marked this work, so it can't be replaced. Ask your teacher if you need to hand it in again.",
+  "courseworkReasonRequired": "Please give a reason. It is kept with the change.",
+  "courseworkAttendanceLocked": "This register is locked by your school's attendance policy.",
+  "courseworkEntriesInvalid": "Some rows need fixing. Nothing was saved.",
+  "courseworkFailed": "That didn't work. Check your connection and try again.",
+  "paperGradesTitle": "Grade sheet: {title}",
+  "@paperGradesTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "paperGradesPaperLabel": "Paper",
+  "paperGradesOnlineLabel": "Online",
+  "paperGradesPaperSection": "Paper work",
+  "paperGradesOnlineSection": "Online work",
+  "paperGradesNew": "New paper grade",
+  "paperGradesOpenSheet": "Open the grade sheet",
+  "paperGradesSheetHint": "This is paper work. Enter marks for the whole class on its grade sheet.",
+  "paperGradesOutOf": "out of {max}",
+  "@paperGradesOutOf": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "paperGradesWeight": "Counts {weight}%",
+  "@paperGradesWeight": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "paperGradesScore": "Score",
+  "paperGradesAbsent": "Absent",
+  "paperGradesNotGraded": "Not graded",
+  "paperGradesUnmarked": "Not marked yet",
+  "paperGradesStateDraft": "Draft",
+  "paperGradesStateReady": "Ready",
+  "paperGradesStatePublished": "Published",
+  "paperGradesStateChanged": "Unsaved",
+  "paperGradesLeftClass": "Left the class",
+  "paperGradesComment": "Comment (optional)",
+  "paperGradesAddComment": "Add comment",
+  "paperGradesSaveDraft": "Save draft",
+  "paperGradesSaving": "Saving…",
+  "paperGradesSaved": "Draft saved. Students and parents can't see it yet.",
+  "paperGradesPublish": "Publish",
+  "paperGradesSaveFirst": "Save your changes before publishing.",
+  "paperGradesNothingToPublish": "Nothing is ready to publish. Enter and save marks first.",
+  "paperGradesPublishTitle": "Publish marks?",
+  "paperGradesPublishBody": "{ready} marks will be visible to students and their parents, who will be notified. {unmarked} students without a mark stay unpublished.",
+  "@paperGradesPublishBody": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "unmarked": {
+        "type": "int"
+      }
+    }
+  },
+  "paperGradesPublished": "{count} marks published.",
+  "@paperGradesPublished": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paperGradesCancel": "Cancel",
+  "paperGradesCounts": "{ready} ready · {published} published · {unmarked} not marked",
+  "@paperGradesCounts": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "published": {
+        "type": "int"
+      },
+      "unmarked": {
+        "type": "int"
+      }
+    }
+  },
+  "paperGradesEmpty": "No students are enrolled in this class yet.",
+  "paperGradesLoadFailed": "The grade sheet could not be loaded.",
+  "paperGradesRetry": "Try again",
+  "paperGradesCorrect": "Correct",
+  "paperGradesCorrected": "Corrected {count}×",
+  "@paperGradesCorrected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paperGradesRowNotEnrolled": "Not in this class",
+  "paperGradesRowAlreadyPublished": "Already published. Use Correct.",
+  "paperGradesRowScoreRequired": "Enter a score",
+  "paperGradesRowScoreOutOfRange": "Must be between 0 and {max}",
+  "@paperGradesRowScoreOutOfRange": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "paperGradesRowScoreNotAllowed": "No score for absent or not graded",
+  "paperGradesRowConflict": "Changed by someone else",
+  "paperGradesRowInvalid": "Check this row",
+  "paperGradesEditItem": "Edit details",
+  "paperItemTitle": "Paper grade",
+  "paperItemName": "Name",
+  "paperItemNameHint": "e.g. Term 1 exam",
+  "paperItemCategory": "Kind",
+  "paperItemCategoryExam": "Paper exam",
+  "paperItemCategoryHomework": "Homework",
+  "paperItemCategoryQuiz": "Quiz",
+  "paperItemCategoryParticipation": "Participation",
+  "paperItemCategoryOther": "Other",
+  "paperItemCategoryCustom": "Kind of work",
+  "paperItemMaximum": "Out of",
+  "paperItemWeight": "Weight % (optional)",
+  "paperItemDate": "Date (optional)",
+  "paperItemPickDate": "Pick a date",
+  "paperItemSave": "Save",
+  "paperItemInvalid": "Enter a name and a maximum above 0. A weight is between 0 and 100.",
+  "gradeCorrectionTitle": "Correct {name}'s mark",
+  "@gradeCorrectionTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gradeCorrectionReason": "Reason for the change",
+  "gradeCorrectionReasonHint": "e.g. added up page 3 again",
+  "gradeCorrectionReasonTooShort": "Give a reason of at least 3 characters.",
+  "gradeCorrectionSave": "Save correction",
+  "gradeCorrectionNotifies": "If the mark changes, the student and their parents are told. A comment-only change is recorded but not announced.",
+  "gradeCorrectionHistory": "Changes",
+  "gradeCorrectionHistoryEmpty": "No changes yet.",
+  "gradeCorrectionChangePublished": "Published",
+  "gradeCorrectionChangeCorrected": "Corrected",
+  "gradeCorrectionBy": "by {name}",
+  "@gradeCorrectionBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gradeCorrectionDone": "Mark corrected.",
+  "attendanceRuleReasonRequired": "This lesson is in the past. Changing a mark needs a reason, which is kept with it.",
+  "attendanceRuleLocked": "This register is locked by your school's attendance policy.",
+  "attendanceRuleLockedOverride": "This register is locked. As the class's lead teacher you can override the lock, with a reason.",
+  "attendanceOverride": "Override the lock",
+  "attendanceCorrectionReason": "Reason for the change",
+  "attendanceHistory": "Changes",
+  "attendanceHistoryEmpty": "No marks on this register have been changed.",
+  "attendanceHistoryLine": "{name}: {from} → {to}",
+  "@attendanceHistoryLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceHistoryOverride": "Lock overridden",
+  "deadlineDue": "Due {when} ({zone})",
+  "@deadlineDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "deadlineExtended": "You have extra time until {when}",
+  "@deadlineExtended": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "deadlineClosed": "The deadline has passed.",
+  "deadlineGraded": "Marked - it can no longer be replaced.",
+  "deadlineReplaceHint": "You can replace your work until the deadline. Your earlier hand-ins are kept.",
+  "deadlineKeepFiles": "Keep files from your last hand-in",
+  "deadlineExtend": "Give more time",
+  "deadlineRemoveExtension": "Remove extra time",
+  "deadlineExtendedUntil": "Extra time until {when}",
+  "@deadlineExtendedUntil": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "deadlineReopen": "Reopen for the class",
+  "deadlineUntil": "Until",
+  "deadlineSchoolTime": "School time ({zone})",
+  "@deadlineSchoolTime": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "deadlineReason": "Reason",
+  "deadlineSave": "Save",
+  "deadlineSaved": "Saved.",
+  "lessonEdit": "Edit",
+  "lessonEditTitle": "Edit lesson",
+  "lessonEditName": "Title",
+  "lessonEditBody": "Notes",
+  "lessonEditReplaceFile": "Replace the file",
+  "lessonEditReplaceHint": "The class sees only the new file. The old one is kept for the school.",
+  "lessonEditSave": "Save",
+  "lessonEditSaved": "Lesson updated.",
+  "downloadUnavailable": "This file is no longer available. Pull down to refresh.",
+  "materialsEditTitle": "Change the material",
+  "materialsEditHint": "Files you take off are kept for the school but no longer shown to the class.",
+  "materialsEditNone": "No files attached yet.",
+  "materialsEditRemoving": "Will be taken off",
+  "materialsEditSaved": "Material updated.",
+  "classesInviteCodeBody": "Students join by typing this class code in Studafy. Read it out, write it on the board, or share it.",
+  "classesCopyCode": "Copy code",
+  "classesInviteCodeCopied": "Class code copied.",
+  "classesShareCode": "Share code",
+  "teacherCreatePaperGrades": "Paper grades",
+  "teacherCreatePaperGradesDetail": "Marks for a paper exam, quiz or homework, for the whole class",
+  "profilePhotoChange": "Change profile photo",
+  "profilePhotoOnDevice": "Your photo is kept on this phone only. It is never uploaded, and it is removed when you sign out.",
+  "profilePhotoChoose": "Choose a photo",
+  "profilePhotoTake": "Take a photo",
+  "profilePhotoRemove": "Remove photo",
+  "profilePhotoFailed": "That photo could not be used. Try another one.",
+  "@familyPlusUsPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "todayStatClasses": "{count, plural, =0{No classes} =1{1 class} other{{count} classes}}",
+  "@todayStatClasses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayQuickActions": "Quick actions",
+  "todaySeeAll": "See all",
+  "wellbeingNewTitle": "New wellbeing note",
+  "wellbeingIntro": "Record how a student is doing - a strength to celebrate, a note, or a concern to follow up. You choose who else can read it.",
+  "wellbeingWhoAbout": "Who is it about?",
+  "wellbeingClass": "Class",
+  "wellbeingPickClass": "Choose a class",
+  "wellbeingStudent": "Student",
+  "wellbeingPickStudent": "Choose a student",
+  "wellbeingNoStudents": "No students have joined this class yet.",
+  "wellbeingStudentsFailed": "The students could not load. Tap to try again.",
+  "wellbeingKind": "Type of note",
+  "wellbeingKindStrength": "Strength",
+  "wellbeingKindNote": "Note",
+  "wellbeingKindConcern": "Concern",
+  "wellbeingSeverity": "How serious is it?",
+  "wellbeingSeverityLow": "Low",
+  "wellbeingSeverityModerate": "Moderate",
+  "wellbeingSeverityHigh": "High",
+  "wellbeingDetails": "Details",
+  "wellbeingTitle": "Title",
+  "wellbeingTitleRequired": "Give the note a short title.",
+  "wellbeingContext": "What happened (optional)",
+  "wellbeingFollowUp": "Follow-up (optional)",
+  "wellbeingWhoSees": "Who can read it?",
+  "wellbeingSeeStaff": "Class staff only",
+  "wellbeingSeeStaffDetail": "Only this class's teachers.",
+  "wellbeingSeeGuardians": "Staff and parents",
+  "wellbeingSeeGuardiansDetail": "Also the student's linked parents.",
+  "wellbeingSeeStudent": "Staff, parents and the student",
+  "wellbeingSeeStudentDetail": "Also the parents and the student themselves.",
+  "wellbeingSave": "Save note",
+  "wellbeingSaving": "Saving...",
+  "wellbeingSaved": "Wellbeing note saved.",
+  "wellbeingSaveFailed": "The note could not be saved. Please try again.",
+  "wellbeingAdd": "New wellbeing note",
+  "gradebookHomeNoClasses": "Create a class on the Classes tab, then its marks are kept here.",
+  "gradebookHomeNothing": "Nothing to mark in this class yet",
+  "gradebookHomeNothingDetail": "Add a paper grade for a test done on paper, or set graded work from the Teaching tab.",
+  "gradebookHomeCounts": "{total, plural, =0{No graded work} =1{1 graded piece} other{{total} graded pieces}} · {drafts} drafts",
+  "@gradebookHomeCounts": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "drafts": {
+        "type": "int"
+      }
+    }
+  },
+  "gradebookMarkOnline": "Mark online work",
+  "gradebookViewHandIns": "View hand-ins",
+  "academicStateWithdrawn": "Hidden",
+  "academicEmptyTeacherHint": "Tap + to create something for your classes.",
+  "teacherCreateGroupTeaching": "Teaching",
+  "teacherCreateGroupClass": "Class records",
+  "teacherCreateGroupFamilies": "Families",
+  "teacherCreateWellbeingDetail": "A strength, note or concern about one student",
+  "classesSummary": "{count, plural, =0{No classes yet} =1{1 class} other{{count} classes}}",
+  "@classesSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "classesEmptyDetail": "Create your first class, then invite students with its class code.",
+  "attendanceMarkAllPresent": "Mark all present",
+  "attendanceNotMarked": "Not marked",
+  "attendanceUnsaved": "Unsaved changes",
+  "attendanceStatusFor": "{name}: {status}. Change attendance",
+  "@attendanceStatusFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceCounts": "{present} present · {absent} absent · {late} late · {unmarked} not marked",
+  "@attendanceCounts": {
+    "placeholders": {
+      "present": {
+        "type": "int"
+      },
+      "absent": {
+        "type": "int"
+      },
+      "late": {
+        "type": "int"
+      },
+      "unmarked": {
+        "type": "int"
+      }
+    }
+  },
+  "attachmentCamera": "Camera",
+  "attachmentDocument": "Document",
+  "attachmentAdd": "Attach",
+  "msgOptions": "Options",
+  "msgAnnouncements": "Announcements",
+  "msgAnnouncementsEmpty": "No announcements yet",
+  "msgAnnouncementsFailed": "Announcements could not load",
+  "msgNewAnnouncement": "New announcement",
+  "msgImportant": "Important",
+  "msgUnread": "Unread",
+  "msgBlockedIntro": "People you block cannot message you, and you cannot message them. Unblock someone to talk again.",
+  "msgBlockedEmptyDetail": "If someone makes you uncomfortable, you can block or report them from the conversation's options.",
+  "msgBlockedLabel": "Blocked",
+  "accountSecurityDetailFull": "Devices, two-step verification, sign out everywhere, delete account",
+  "securityDeleteHeading": "Delete account",
+  "securityDeleteFooter": "Deleting your account removes your personal data after 14 days, and you can cancel before then. Records your school must keep stay with the school.",
+  "securityDeleteTitle": "Delete your account?",
+  "securityDeleteExplain": "You will see exactly what is removed and what your school keeps, and you will be asked to confirm again. Deletion happens after 14 days and can be cancelled until then.",
+  "securityDeleteContinue": "Continue",
+  "loginDidNotFinish": "Sign-in did not finish - the connection may have dropped. Please try again.",
+  "filesSwitchedOff": "Attachments and voice notes aren't switched on for your school yet.",
+  "attachmentRetry": "Try again",
+  "attachmentRemove": "Remove",
+  "msgVoiceSending": "Sending voice note…",
+  "studentTodayLessonsShortcut": "Lessons & notebooks",
+  "studentTodayLessonsShortcutDetail": "Every class, with your own notes",
+  "studentTodayWorkShortcutDetail": "Hand in and check deadlines",
+  "studentTodayFamilyShortcutDetail": "Your Studafy ID and parent requests",
+  "studentTodayWorkSection": "Work to do",
+  "studentLessonsSubtitle": "Your classes, their lessons and your notebooks",
+  "studentClassLessonsDetail": "Everything your teacher shared, by date",
+  "studentClassNotebook": "Notebook",
+  "studentClassNotebookDetail": "Your own notes for this class, each one dated",
+  "studentClassOpenNotebook": "Open notebook",
+  "planUpgradeTo": "Upgrade to {plan}",
+  "@planUpgradeTo": {
+    "placeholders": {
+      "plan": {
+        "type": "Object"
+      }
+    }
+  },
+  "planAdds": "{plan} adds:",
+  "@planAdds": {
+    "placeholders": {
+      "plan": {
+        "type": "Object"
+      }
+    }
+  },
+  "planEverything": "You have every study feature.",
+  "planSeePlans": "See plans",
+  "workSubtitle": "Assignments, tests, grades and attendance",
+  "workSectionOpen": "To do",
+  "workSectionClosed": "Past the deadline",
+  "workSectionGraded": "Marked",
+  "workStateOpen": "Open",
+  "workStateClosed": "Closed",
+  "workStateGraded": "Marked",
+  "workView": "View",
+  "submitInstructions": "Instructions",
+  "submitHandInAgain": "Hand in again",
+  "submitSaving": "Your work is being handed in…",
+  "helperSubtitle": "Ask about anything you're studying",
+  "helperLimitReached": "You've used today's questions. Upgrade for more each day, or ask again tomorrow.",
+  "helperRecentChats": "Recent chats",
+  "helperSeeAll": "See all",
+  "helperOffTitle": "Not switched on yet",
+  "accountSectionProfile": "Profile information",
+  "accountSectionNotifications": "Notifications",
+  "accountSectionSubscription": "Subscription",
+  "accountStudyPlan": "Study plan",
+  "accountStudyPlanDetail": "Your plan, what it includes, and upgrades",
+  "accountTechnicalId": "Technical account ID",
+  "accountTechnicalIdDetail": "Only needed if Studafy support asks for it. To link with a parent, share your Studafy ID instead.",
+  "accountChangePhoto": "Change photo",
+  "loginWrongRoleStudentTitle": "This email is a student account",
+  "loginWrongRoleStudentBody": "A student account is only for learning, so it can't be used as a teacher or a parent. To teach or to follow a child, sign in with a different email.",
+  "loginWrongRoleAdultTitle": "This email isn't a student account",
+  "loginWrongRoleAdultBody": "It's already used as a {role}, so it can't be a student too. A student needs an email of their own.",
+  "@loginWrongRoleAdultBody": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "loginContinueAs": "Continue as {role}",
+  "@loginContinueAs": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "loginUseDifferentEmail": "Use a different email",
+  "accountSwitchRoleTeacherParent": "Move between teaching and following your children."
 }

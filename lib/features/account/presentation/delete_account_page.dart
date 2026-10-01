@@ -110,10 +110,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: studafyCanvas,
-    appBar: AppBar(
-      backgroundColor: Colors.white,
-      title: Text(AppL10n.of(context).deleteTitle),
-    ),
+    appBar: AppBar(title: Text(AppL10n.of(context).deleteTitle)),
     body: loading
         ? const Center(child: CircularProgressIndicator())
         : loadError != null

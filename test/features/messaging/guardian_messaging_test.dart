@@ -114,6 +114,30 @@ void main() {
     expect(repository.lastEnabledSchool, 'school-1');
   });
 
+  testWidgets('announcements are asked for with the school they belong to', (
+    tester,
+  ) async {
+    signInAsGuardian();
+    ActiveContextController.instance.selectStudent(
+      const StudentSummary(
+        id: 'student-1',
+        studafyId: 'SJ-1',
+        displayName: 'Layla',
+        verified: true,
+        schoolId: 'school-1',
+      ),
+    );
+    final repository = _Repository(conversationList: const []);
+    await tester.pumpWidget(host(repository));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Announcements'));
+    await tester.pumpAndSettle();
+    // Without the school the server refuses the list (it answered 404).
+    expect(repository.announcementSchools, ['school-1']);
+    expect(find.text('No announcements yet'), findsOneWidget);
+  });
+
   testWidgets('a school that has messaging off still blocks a new message', (
     tester,
   ) async {
@@ -158,6 +182,17 @@ class _Repository implements MessagingRepository {
 
   @override
   Future<List<Conversation>> conversations() async => conversationList;
+
+  final announcementSchools = <String?>[];
+
+  @override
+  Future<List<Announcement>> announcements({
+    String? schoolId,
+    String? classroomId,
+  }) async {
+    announcementSchools.add(schoolId);
+    return const [];
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();

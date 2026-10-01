@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/app/student_shell.dart';
 import 'package:studafy/core/runtime_environment.dart';
+import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/features/academic/data/preview_academic_repository.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
@@ -137,7 +138,7 @@ void main() {
     // assertions below check directly. Re-adding an AI tab needs a DPA, a
     // DPIA covering minors' data, and an ADR superseding ADR-0026 - not an
     // edit to this number.
-    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    expect(find.byType(StudafyNavDestination), findsNWidgets(3));
     expect(find.text('Study Coach'), findsNothing);
     expect(find.byIcon(Icons.auto_awesome_outlined), findsNothing);
   });

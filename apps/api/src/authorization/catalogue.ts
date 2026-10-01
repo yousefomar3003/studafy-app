@@ -361,6 +361,60 @@ export const PERMISSION_CATALOGUE = {
     "classroom",
     "Read a dated attendance roster as exact class staff.",
   ),
+  // Paper gradebook, corrections and deadlines (2026-09-30). Staff-only:
+  // private.authz_coursework decides each, and no guardian rule applies.
+  "gradebook.read": resource(
+    "assessment",
+    "Read a class gradebook, drafts included, as the class's staff.",
+  ),
+  "gradebook.write": resource(
+    "assessment",
+    "Save draft marks for enrolled students as a lead or co-teacher.",
+  ),
+  "gradebook.publish": resource(
+    "assessment",
+    "Publish every ready mark at once as a lead or co-teacher.",
+  ),
+  "gradebook.correct": resource(
+    "assessment",
+    "Correct published marks with a reason as a lead or co-teacher.",
+  ),
+  "assessment.update": resource(
+    "assessment",
+    "Change a paper gradebook item as a lead or co-teacher.",
+  ),
+  "grade_result.history": resource(
+    "grade_result",
+    "Read who changed a mark, when, from what and why, as class staff.",
+  ),
+  "attendance_session.correct": resource(
+    "lesson_session",
+    "Correct a lesson's register under the school's attendance policy.",
+  ),
+  "attendance_session.history": resource(
+    "lesson_session",
+    "Read every change to a lesson's register as class staff.",
+  ),
+  "assignment.extend": resource(
+    "assignment",
+    "Give one student more time on a piece of work as its teacher.",
+  ),
+  "assignment.reopen": resource(
+    "assignment",
+    "Reopen a piece of work for the class as its teacher.",
+  ),
+  "assignment.materials": resource(
+    "assignment",
+    "Add or detach an assignment's material as its teacher.",
+  ),
+  "assessment.materials": resource(
+    "assessment",
+    "Add or detach an assessment's material as its teacher.",
+  ),
+  "resource.edit": resource(
+    "resource",
+    "Edit a lesson, or replace its file, keeping earlier versions.",
+  ),
   "wellbeing_event.list": resource(
     "school_class_or_student",
     "List visibility-filtered wellbeing records.",
@@ -495,7 +549,7 @@ export const PERMISSION_CATALOGUE = {
     // entitlement. There is no tenant to require and no resource to resolve.
     tenantRequired: false,
     description:
-      "Read Family+ insights for a linked child. Requires a verified guardian link and a live parent_insights entitlement, both enforced in SQL.",
+      "Read Family+ insights for a linked child. Requires a verified guardian link and a live Family+ plan covering that child (or a per-child parent_insights subscription), both enforced in SQL.",
   },
   "study_assistant.ask": {
     resource: "study_assistant",

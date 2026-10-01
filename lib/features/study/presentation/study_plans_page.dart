@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -42,6 +43,10 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
   StudyPlan? _plan;
   StudyPlanSubscription? _subscription;
   final Map<StudyPlanTier, StudyPlanOffer> _offers = {};
+
+  /// The server answered that it takes no payments (billing not switched
+  /// on), as opposed to the store being out of reach for a moment.
+  bool _paymentsOff = false;
   bool _loading = true;
   bool _busy = false;
   String? _message;
@@ -82,6 +87,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     }
     StudyPlanSubscription? subscription;
     final offers = <StudyPlanTier, StudyPlanOffer>{};
+    var paymentsOff = false;
     final subscriptions = widget.subscriptions;
     if (subscriptions != null) {
       try {
@@ -93,9 +99,13 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         for (final tier in [StudyPlanTier.plus, StudyPlanTier.max]) {
           try {
             offers[tier] = await subscriptions.offer(tier);
-          } on Object {
+          } on Object catch (error) {
             // A store outage never hides the plans; the card says the store
-            // could not be reached.
+            // could not be reached. A server with no billing at all says
+            // so instead, since trying again will not help.
+            if (Failure.fromError(error).code == Failure.notFoundCode) {
+              paymentsOff = true;
+            }
           }
         }
       }
@@ -107,6 +117,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
       _offers
         ..clear()
         ..addAll(offers);
+      _paymentsOff = paymentsOff;
       _loading = false;
     });
   }
@@ -308,6 +319,9 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     final upgrading = held != StudyPlanTier.free;
 
     Widget? action;
+    // What the plan's own button does; a tap anywhere on the card does the
+    // same, so the whole plan is the thing to press.
+    VoidCallback? primary;
     if (tier != StudyPlanTier.free &&
         !current &&
         !included &&
@@ -315,17 +329,22 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         _store != null) {
       final links = _validUrl(_terms) && _validUrl(_privacy);
       if (offer == null) {
-        action = Text(l10n.studyPlansTheStoreCouldNotBe);
+        action = Text(
+          _paymentsOff
+              ? l10n.studyPlansPaymentsNotSetUp
+              : l10n.studyPlansTheStoreCouldNotBe,
+        );
       } else if (!offer.selfPurchaseEnabled) {
         action = Text(l10n.studyPlansBuyingIsNotEnabledFor);
       } else if (offer.approval != 'approved') {
+        primary = _busy || offer.approval == 'requested'
+            ? null
+            : () => _perform(
+                () => subscriptions.requestApproval(tier),
+                l10n.studyPlansWeAskedYourParentTo,
+              );
         action = OutlinedButton.icon(
-          onPressed: _busy || offer.approval == 'requested'
-              ? null
-              : () => _perform(
-                  () => subscriptions.requestApproval(tier),
-                  l10n.studyPlansWeAskedYourParentTo,
-                ),
+          onPressed: primary,
           icon: const Icon(Icons.family_restroom_rounded),
           label: Text(
             offer.approval == 'requested'
@@ -334,16 +353,17 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
           ),
         );
       } else {
+        primary = _busy || !offer.canPurchase || !links
+            ? null
+            : () => _perform(
+                () => subscriptions.purchase(tier),
+                l10n.studyPlansOpeningTheStore,
+              );
         action = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilledButton.icon(
-              onPressed: _busy || !offer.canPurchase || !links
-                  ? null
-                  : () => _perform(
-                      () => subscriptions.purchase(tier),
-                      l10n.studyPlansOpeningTheStore,
-                    ),
+              onPressed: primary,
               icon: const Icon(Icons.lock_open_rounded),
               label: Text(
                 upgrading
@@ -371,7 +391,31 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         ? l10n.studyPlansPriceMonth(offer.price)
         : l10n.studyPlansUspriceMonthInTheUs(copy.usPrice);
 
+    VoidCallback? onTap = primary;
+    if (onTap == null &&
+        !_busy &&
+        tier != StudyPlanTier.free &&
+        !current &&
+        !included) {
+      // Nothing can be done from this plan yet: say why, rather than a tap
+      // that does nothing.
+      final String reason;
+      if (subscriptions == null || _store == null) {
+        reason = l10n.studyPlansBuyInMobileApp;
+      } else if (_paymentsOff) {
+        reason = l10n.studyPlansPaymentsNotSetUp;
+      } else if (offer == null) {
+        reason = l10n.studyPlansTheStoreCouldNotBe;
+      } else {
+        reason = l10n.studyPlansCannotBuyYet;
+      }
+      onTap = () => ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(reason)));
+    }
+
     return Card(
+      clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -379,47 +423,50 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
             ? BorderSide(color: theme.colorScheme.primary, width: 2)
             : BorderSide.none,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    copy.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      copy.name,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-                if (current)
-                  Chip(label: Text(l10n.studyPlansYourPlan))
-                else if (included)
-                  Chip(label: Text(l10n.studyPlansIncludedInYourPlan)),
-              ],
-            ),
-            Text(price, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 10),
-            for (final feature in copy.features)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.check_circle_rounded,
-                      size: 18,
-                      color: studafyCyan,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(feature(l10n))),
-                  ],
-                ),
+                  if (current)
+                    Chip(label: Text(l10n.studyPlansYourPlan))
+                  else if (included)
+                    Chip(label: Text(l10n.studyPlansIncludedInYourPlan)),
+                ],
               ),
-            if (action != null) ...[const SizedBox(height: 12), action],
-          ],
+              Text(price, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 10),
+              for (final feature in copy.features)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: studafyCyan,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(feature(l10n))),
+                    ],
+                  ),
+                ),
+              if (action != null) ...[const SizedBox(height: 12), action],
+            ],
+          ),
         ),
       ),
     );

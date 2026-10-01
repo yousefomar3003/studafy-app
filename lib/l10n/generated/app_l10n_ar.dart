@@ -205,6 +205,44 @@ class AppL10nAr extends AppL10n {
   String get roleParentDetail => 'متابعة التقدّم وأخبار المدرسة';
 
   @override
+  String get introSkip => 'تخطي';
+
+  @override
+  String get introNext => 'التالي';
+
+  @override
+  String get introStart => 'ابدأ الآن';
+
+  @override
+  String introPageOf(int index, int total) {
+    return 'الصفحة $index من $total';
+  }
+
+  @override
+  String get introTitleOne => 'يومك الدراسي كله في مكان واحد';
+
+  @override
+  String get introBodyOne =>
+      'الدروس والواجبات والدرجات والحضور - المعلمون والطلاب وأولياء الأمور معًا.';
+
+  @override
+  String get introTitleTwo => 'لكل درجة قيمتها، ورقية كانت أو إلكترونية';
+
+  @override
+  String get introBodyTwo =>
+      'يرصد المعلمون درجات الاختبارات الورقية والأعمال الإلكترونية في سجل واحد، وترى العائلة الدرجة بعد نشرها.';
+
+  @override
+  String get introTitleThree => 'يرى أولياء الأمور ما يهمهم';
+
+  @override
+  String get introBodyThree =>
+      'تابع التقدّم والحضور - ومع Family+ اتجاه كل صف وما يجب التركيز عليه هذا الأسبوع. بلا إعلانات، ولا نبيع بياناتك أبدًا.';
+
+  @override
+  String get roleWhatIsStudafy => 'ما هو ستودافاي؟';
+
+  @override
   String loginWelcome(String role) {
     return 'أهلًا بك، $role';
   }
@@ -243,11 +281,11 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get policyPrivacyBody =>
-      'ما الذي نجمعه\nاسمك وبريدك الإلكتروني من مزوّد تسجيل الدخول الذي تختاره؛ المدرسة أو الصف الذي تنتمي إليه ودورك فيه؛ الواجبات المطلوبة منك وما تسلّمه، ودرجاتك وحضورك وملاحظات الرعاية؛ الرسائل والإعلانات والاجتماعات داخل التطبيق؛ والملفات التي ترفعها؛ وإعدادات الإشعارات.\n\nلماذا\nلتشغيل صفوفك، وحماية حسابك، وإدارة الاشتراكات، والوفاء بالالتزامات القانونية. لا نبيع البيانات الشخصية. لا نعرض أي إعلانات. ولا نستخدم بياناتك لتدريب أي نموذج ذكاء اصطناعي.\n\nمساعد الدراسة\nإذا استخدمت مساعد الدراسة، يُرسل السؤال الذي تكتبه إلى شركة ذكاء اصطناعي خارج ستودافاي للإجابة عليه. لا يُرسل اسمك ولا مدرستك ولا درجاتك ولا أعمالك ولا رسائلك. قد تكون الإجابات خاطئة، فتحقق من أي شيء تسلّمه. استخدام المساعد اختياري.\n\nمن يرى أعمالك\nالعاملون في مدرستك ممن يقتضي دورهم ذلك، وولي الأمر المرتبط بك. لا يستطيع الطلاب الآخرون الاطلاع على درجاتك أو أعمالك المسلَّمة أو رسائلك الخاصة. تُخزَّن الرسائل على خوادمنا وليست مشفّرة طرفًا إلى طرف.\n\nأولياء الأمور والأبناء\nيطلب ولي الأمر الارتباط بالطالب، ويوافق الطالب أو يرفض من جهازه. يستطيع ولي الأمر متابعة التقدّم، ولا يُمنح رسائلك الخاصة.\n\nالمدفوعات\nتُحصَّل الاشتراكات عبر Apple أو Google وفق شروطهما. لا نطّلع على بطاقتك إطلاقًا.\n\nمن يعالج البيانات أيضًا\nتستضيف Supabase قاعدة البيانات وتسجيل الدخول والملفات؛ وتستضيف Amazon Web Services التطبيق وسجلاته التقنية؛ ويحفظ Redis عدادات قصيرة الأجل؛ وتتحقق Google وMicrosoft وApple من تسجيل الدخول؛ وتشغّل Cloudflare فحص الروبوتات؛ وترسل Resend البريد وترسل Firebase الإشعارات. ويعمل كل منهم وفق تعليماتنا فقط.\n\nأين تُعالَج بياناتك\nقد تُعالَج بياناتك خارج بلدك، بما في ذلك خارج المنطقة الاقتصادية الأوروبية، محميةً بالبنود التعاقدية القياسية أو بقرار كفاية.\n\nما لا يمكننا حذفه\nسجلات الإجراءات المهمة تُضاف ولا تُعدَّل ولا تُحذف، ولا حتى من قِبلنا. وكثيرًا ما تكون المدارس ملزمة بالاحتفاظ بسجلات الحضور والتقييم وحماية الطفل. يعرض التطبيق السجلات التي تبقى لدى مدرستك قبل تأكيد الحذف.\n\nكيف نحميها\nيُفرض الوصول إلى بيانات كل مدرسة داخل قاعدة البيانات نفسها. وتُزال الأسرار من السجلات. وتُخزَّن عناوين IP كبصمة أحادية الاتجاه فقط. وتتطلب حسابات المسؤولين تسجيل دخول بخطوتين. وتُفحص الملفات قبل السماح بتنزيلها.\n\nحقوقك\nيمكنك طلب نسخة من بياناتك أو تصحيحها أو حذف حسابك أو تقييد المعالجة أو الاعتراض عليها أو سحب موافقتك. يوجد حذف الحساب وتصدير البيانات في إعدادات الحساب، ويمكن إلغاء الحذف خلال ١٤ يومًا. ويمكنك تقديم شكوى إلى لجنة حماية البيانات في أيرلندا في أي وقت.\n\nإذا كانت مدرستك هي المتحكم في سجلاتك، فاسأل مدرستك أولًا؛ وسننقل طلبك إليها ونخبرك بذلك.';
+      'ما الذي نجمعه\nاسمك وبريدك الإلكتروني من مزوّد تسجيل الدخول الذي تختاره، وجنسك فقط إذا اخترت ذكره (ولا يظهر لأي أحد آخر). المدرسة أو الصف الذي تنتمي إليه ودورك فيه. الدروس، والأعمال المطلوبة منك وما تسلّمه وكل تسليم سابق، ودرجاتك وسجل أي تعديل عليها، وحضورك، وملاحظات الرعاية، ودفتر ملاحظاتك الخاص. الرسائل والرسائل الصوتية والإعلانات وروابط الاجتماعات داخل التطبيق. الملفات التي ترفعها. اشتراكاتك وإعدادات الإشعارات.\n\nلماذا\nلتشغيل صفوفك، وحماية حسابك، وإدارة الاشتراكات، والوفاء بالالتزامات القانونية. لا نبيع البيانات الشخصية. لا نعرض أي إعلانات. ولا نستخدم بياناتك لتدريب أي نموذج ذكاء اصطناعي.\n\nالدرجات والحضور\nيمكن للمعلمين رصد درجات الأعمال الورقية إلى جانب الأعمال المسلَّمة إلكترونيًا. تبقى الدرجة مسودة لا يراها إلا معلموك حتى ينشرها المعلم، ولا تُحتسب الدرجة غير المرصودة صفرًا أبدًا. إذا صُحّحت درجة منشورة نحتفظ بالدرجة القديمة والجديدة ومن غيّرها ومتى ولماذا، ويُبلَّغ أنت ووالداك إذا تغيّرت الدرجة. تعديل الحضور بعد يوم الدرس يتطلب سببًا، ولا يستطيع تعديل سجل مضى عليه أكثر من سبعة أيام إلا المعلم الرئيسي للصف، ويُحفظ كل تعديل. تُحدَّد مواعيد التسليم بتوقيت مدرستك.\n\nمن يرى أعمالك\nمعلمو صفك، وولي الأمر المرتبط بك بعد نشر الدرجة. لا يوجد مسؤول مدرسة في هذا الإصدار من التطبيق. لا يستطيع الطلاب الآخرون الاطلاع على درجاتك أو أعمالك أو رسائلك الخاصة. تُخزَّن الرسائل على خوادمنا وليست مشفّرة طرفًا إلى طرف.\n\nأولياء الأمور والأبناء\nيطلب ولي الأمر الارتباط بالطالب، ويوافق الطالب أو يرفض من جهازه. ويمكن لولي الأمر أيضًا إنشاء حساب لطفل ليس لديه بريد إلكتروني أو هاتف وإدارته، ويقبل هذه الشروط نيابةً عن الطفل. يرى ولي الأمر المرتبط الدرجات المنشورة والحضور والأعمال ومواد الصف، ويمكنه تسليم العمل عن طفل صغير، لكنه لا يستطيع تعديل الدرجات أو الحضور ولا يُمنح رسائل الطفل الخاصة. Family+ خطة مدفوعة لأولياء الأمور تشمل حتى 4 أو حتى 8 أطفال مرتبطين، الأسبق ربطًا أولًا. ولكل طفل تشمله تلخّص ما يستطيع ولي الأمر رؤيته أصلًا - الدرجات حسب الصف والاتجاهات والحضور والواجبات غير المسلّمة والاختبارات الفائتة - وتقارن الطفل بسجله السابق فقط، ولا تستخدم الذكاء الاصطناعي.\n\nأدوات الدراسة بالذكاء الاصطناعي\nهذه الأدوات اختيارية. عند استخدامها يُرسل ما تقدّمه لها إلى Together AI، وهي شركة ذكاء اصطناعي خارج ستودافاي: السؤال الذي تكتبه وآخر الرسائل في المحادثة نفسها، وإذا اخترت ذلك نص درس أو ملاحظاتك الخاصة أو صورة تضيفها (مساعد الدراسة، وملاحظات السبورة، وملاحظات الدرس، والاختبارات والبطاقات التعليمية). لا يُرسل اسمك ولا بريدك ولا مدرستك ولا درجاتك أبدًا. تُحفظ المحادثات على جهازك فقط. قد تكون الإجابات خاطئة، فلا تسلّمها على أنها عملك أبدًا. الذكاء الاصطناعي لا يصحّح أعمالك أبدًا.\n\nالملفات\nتُخزَّن الملفات بشكل خاص، وتُفحص قبل أن يتمكن أحد من تنزيلها، ولا تُفتح إلا عبر روابط تعمل مرة واحدة وتنتهي خلال دقائق. تُزال التفاصيل المخفية من الصور والرسائل الصوتية. إذا استبدل المعلم ملفًا أو أزاله فلن يراه الصف، لكنه يُحفظ لدى المدرسة.\n\nالمدفوعات\nتُحصَّل اشتراكات Studafy Plus وStudafy Max وFamily+ عبر Apple أو Google وفق شروطهما. لا نطّلع على بطاقتك إطلاقًا.\n\nمن يعالج البيانات أيضًا\nتستضيف Supabase قاعدة البيانات وتسجيل الدخول والملفات؛ وتستضيف Amazon Web Services التطبيق وسجلاته التقنية؛ ويخزّن GitHub نسخًا احتياطية مشفّرة لا يستطيع قراءتها؛ ويحفظ Redis عدادات قصيرة الأجل؛ وتتحقق Google وMicrosoft وApple من تسجيل الدخول؛ وتشغّل Cloudflare فحص الروبوتات؛ وتشغّل Together AI أدوات الدراسة بالذكاء الاصطناعي؛ وترسل Resend البريد وترسل Firebase الإشعارات التي لا تتضمن درجاتك أو رسائلك أبدًا؛ وتُعقد الاجتماعات في Google Meet. ويعمل كل منهم وفق تعليماتنا فقط.\n\nأين تُعالَج بياناتك\nقد تُعالَج بياناتك خارج بلدك، بما في ذلك خارج المنطقة الاقتصادية الأوروبية، محميةً بالبنود التعاقدية القياسية أو بقرار كفاية.\n\nما لا يمكننا حذفه\nسجلات الإجراءات المهمة تُضاف ولا تُعدَّل ولا تُحذف، ولا حتى من قِبلنا. ويشمل ذلك سجل الدرجات والحضور، والتسليمات السابقة، والملفات التي استبدلها المعلم. وكثيرًا ما تكون المدارس ملزمة بالاحتفاظ بسجلات الحضور والتقييم وحماية الطفل. يعرض التطبيق السجلات التي تبقى لدى مدرستك قبل تأكيد الحذف. تُحفظ النسخ الاحتياطية المشفّرة لمدة ٣٠ يومًا.\n\nعلى جهازك\nيحتفظ التطبيق بجلستك ولغتك ونسخة مؤقتة مما فتحته ونزّلته ومحادثات مساعد الدراسة وصورتك الشخصية، لكل حساب على حدة. لا تُرفع صورتك الشخصية إلى خوادمنا أبدًا، فلا يراها أحد غيرك. وتُمسح عند تسجيل خروج ذلك الحساب.\n\nكيف نحميها\nيُفرض الوصول إلى بيانات كل صف داخل قاعدة البيانات نفسها، ولا يستطيع تعديل درجات الصف وحضوره إلا معلمو ذلك الصف. وتُزال الأسرار من السجلات. وتُخزَّن عناوين IP كبصمة أحادية الاتجاه فقط. وتُشفَّر النسخ الاحتياطية قبل أن تغادر أنظمتنا.\n\nحقوقك\nيمكنك طلب نسخة من بياناتك أو تصحيحها أو حذف حسابك أو تقييد المعالجة أو الاعتراض عليها أو سحب موافقتك. يوجد حذف الحساب وتصدير البيانات في إعدادات الحساب، ويمكن إلغاء الحذف خلال ١٤ يومًا؛ ويقوم ولي الأمر بذلك لحساب الطفل الذي يديره. ويمكنك تقديم شكوى إلى لجنة حماية البيانات في أيرلندا في أي وقت.\n\nإذا كانت مدرستك هي المتحكم في سجلاتك، فاسأل مدرستك أولًا؛ وسننقل طلبك إليها ونخبرك بذلك.';
 
   @override
   String get policyTermsBody =>
-      'استخدم ستودافاي للتواصل المدرسي المصرَّح به فقط. حافظ على أمان الحسابات، واحترم الطلاب والعاملين، ولا ترفع محتوى ضارًا أو مخالفًا للقانون. تظل سياسات المدرسة سارية. قد يؤدي سوء الاستخدام إلى تعليق الحساب.';
+      'لمن هذا التطبيق\nستودافاي للمعلمين والطلاب وأولياء الأمور. لا يوجد مسؤول مدرسة في هذا الإصدار من التطبيق. بتسجيل الدخول فإنك تقبل هذه الشروط وسياسة الخصوصية.\n\nحسابك\nسجّل الدخول عبر Google أو Microsoft أو Apple وحافظ على أمان ذلك الحساب. يمكنك إضافة عدة حسابات إلى جهاز واحد؛ وسجّل الخروج من أي جهاز مشترك. يمكن لولي الأمر إنشاء حساب لطفل ليس لديه بريد إلكتروني أو هاتف، ويقبل هذه الشروط نيابةً عنه، ويكون مسؤولًا عن طريقة استخدامه. لا تنتحل شخصية أحد.\n\nالاستخدام السليم\nاستخدم ستودافاي للتعلّم والتدريس والتواصل المدرسي فقط. لا تتنمّر على أحد أو تضايقه أو تهدده، ولا تشارك محتوى جنسيًا أو عنيفًا أو يحض على الكراهية أو مخالفًا للقانون، ولا ترفع ملفات لا يحق لك مشاركتها، ولا تحاول الاطلاع على سجلات ليست لك، ولا تسلّم عمل غيرك أو ما ينتجه الذكاء الاصطناعي على أنه عملك. يمكنك الإبلاغ عن أي شخص أو حظره من داخل التطبيق. قد نزيل المحتوى ونعلّق الحسابات التي تخالف هذه القواعد.\n\nالمعلمون\nأنت مسؤول عن الدرجات والحضور الذي ترصده. تبقى الدرجات مسودات حتى تنشرها. لا تُعدَّل الدرجة المنشورة إلا بتصحيحها مع ذكر السبب، وتُحفظ الدرجة القديمة. تعديل الحضور بعد يوم الدرس يتطلب سببًا، وبعد سبعة أيام لا يستطيع تعديل السجل إلا المعلم الرئيسي للصف. امنح الطلاب وقتًا إضافيًا أو أعد فتح العمل مع ذكر السبب. تُحفظ الملفات التي تستبدلها أو تزيلها لدى المدرسة. لا تشارك إلا ما يحق لك مشاركته.\n\nالطلاب\nسلّم عملك بنفسك. يمكنك استبداله حتى موعد التسليم، وهو بتوقيت مدرستك، وتُحفظ التسليمات السابقة. بعد انتهاء الموعد، أو بعد نشر الدرجة، تحتاج إلى إذن معلمك لتسليم العمل من جديد. إذا بدت درجة أو سجل حضور غير صحيح فاسأل معلمك.\n\nأولياء الأمور\nلا يمكنك الارتباط بطفلك إلا بموافقته، إلا إذا كنت أنت من أنشأ حسابه. يمكنك رؤية الدرجات المنشورة والحضور والأعمال ومواد الصف، وتسليم العمل عن طفل صغير. لا يمكنك تعديل الدرجات أو الحضور، ولا ترى رسائل طفلك الخاصة. Family+ خطة مدفوعة خاصة بك: خطة تشمل حتى 4 أطفال مرتبطين، وخطة أكبر تشمل حتى 8، بترتيب ربطهم. تلخّص ما تستطيع رؤيته أصلًا، وتقارن الطفل بسجله السابق فقط، ولا تتنبأ بشيء.\n\nمحتواك\nتحتفظ بحقوقك فيما تكتبه وترفعه. وتسمح لنا بتخزينه وعرضه فقط لتشغيل ستودافاي لك ولمدرستك. تصبح الأعمال المسلَّمة والدرجات والحضور والملفات المشتركة جزءًا من سجلات المدرسة.\n\nأدوات الدراسة بالذكاء الاصطناعي\nهي اختيارية وقد تخطئ. تحقّق مما تنتجه ولا تسلّمه على أنه عملك أبدًا. الذكاء الاصطناعي لا يصحّح الأعمال أبدًا. تنطبق حدود يومية وشهرية.\n\nالاشتراكات\nالدروس ودفاتر الملاحظات والأعمال والدرجات والحضور مجانية. Studafy Plus وStudafy Max للطلاب، وFamily+ لأولياء الأمور لحتى 4 أو حتى 8 أطفال مرتبطين. تُحصَّل جميعها شهريًا عبر Apple أو Google بالسعر الذي يعرضه المتجر حتى تلغيها من حسابك في المتجر، حيث تُعالَج المبالغ المستردة أيضًا.\n\nالاجتماعات\nلا يستضيف ستودافاي مكالمات الفيديو. تُفتح روابط الاجتماعات في Google Meet وفق شروط Google.\n\nالتغييرات وإنهاء الاستخدام\nقد نغيّر الميزات أو نوقفها، وسنبلغك قبل أي تغيير في هذه الشروط يؤثر عليك. يمكنك حذف حسابك من إعدادات الحساب والتراجع خلال ١٤ يومًا. تبقى السجلات التي يجب على المدرسة الاحتفاظ بها لدى المدرسة.';
 
   @override
   String get deleteTitle => 'حذف الحساب';
@@ -560,7 +598,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String classesShareMessageWithCode(String link, String code) {
-    return 'انضم إلى فصلي في ستودافاي: $link\nأو اكتب رمز الصف: $code';
+    return 'انضم إلى فصلي في ستودافاي برمز الصف $code\nأو افتح هذا الرابط: $link';
   }
 
   @override
@@ -1434,6 +1472,164 @@ class AppL10nAr extends AppL10n {
   String get insightStrengthHigh => 'بناءً على عدد كبير من السجلات';
 
   @override
+  String get insightMissingWork => 'فاتت مواعيد تسليم بعض الواجبات ولم تُسلَّم';
+
+  @override
+  String insightMissingWorkIn(String subject) {
+    return 'فات موعد تسليم واجب في $subject';
+  }
+
+  @override
+  String get insightMissedTests => 'فاتته بعض الاختبارات';
+
+  @override
+  String insightMissedTestsIn(String subject) {
+    return 'فاته اختبار في $subject';
+  }
+
+  @override
+  String get insightAttendanceLow => 'نسبة الحضور أقل من 90%';
+
+  @override
+  String insightStrength(String subject) {
+    return '$subject هي أقوى مادة لديه حاليًا';
+  }
+
+  @override
+  String insightEvClassAverage(String subject) {
+    return 'معدل $subject';
+  }
+
+  @override
+  String get insightEvOverallAverage => 'معدله في جميع المواد';
+
+  @override
+  String get insightEvRecentTypical => 'الدرجة المعتادة مؤخرًا';
+
+  @override
+  String get insightEvEarlierTypical => 'الدرجة المعتادة سابقًا';
+
+  @override
+  String get insightEvChange => 'التغيّر (نقاط)';
+
+  @override
+  String get insightEvOnTime => 'سُلّم في الوقت';
+
+  @override
+  String get insightEvLate => 'سُلّم متأخرًا';
+
+  @override
+  String get insightEvNotHandedIn => 'لم يُسلَّم';
+
+  @override
+  String insightEvWeekdayAbsences(String day) {
+    return 'الغياب يوم $day';
+  }
+
+  @override
+  String get insightEvAbsencesTotal => 'مجموع الغياب';
+
+  @override
+  String get insightEvDueSoon => 'مطلوب خلال 7 أيام ولم يُسلَّم';
+
+  @override
+  String get insightEvMissed => 'اختبارات فائتة';
+
+  @override
+  String get insightEvAttendanceRate => 'نسبة الحضور';
+
+  @override
+  String get insightEvSessions => 'الحصص المحسوبة';
+
+  @override
+  String get insightEvPastDue => 'تجاوز الموعد ولم يُسلَّم';
+
+  @override
+  String get insightsFocusTitle => 'ما يجب التركيز عليه';
+
+  @override
+  String get insightsProgressTitle => 'الدرجات عبر الوقت';
+
+  @override
+  String get insightsByClass => 'حسب الصف';
+
+  @override
+  String get insightsMissingTitle => 'واجبات غير مسلّمة';
+
+  @override
+  String get insightsRecentTitle => 'آخر الدرجات';
+
+  @override
+  String get insightsMissedTests => 'اختبارات فائتة';
+
+  @override
+  String insightsTrendUp(int points) {
+    return 'ارتفاع $points نقاط مقارنة بالسابق';
+  }
+
+  @override
+  String insightsTrendDown(int points) {
+    return 'انخفاض $points نقاط مقارنة بالسابق';
+  }
+
+  @override
+  String get insightsTrendSteady => 'مستقر مقارنة بالسابق';
+
+  @override
+  String get insightsTrendUnknown => 'لا توجد درجات كافية لتحديد الاتجاه بعد';
+
+  @override
+  String get insightsStrongest => 'الأقوى';
+
+  @override
+  String get insightsWeakest => 'الأضعف';
+
+  @override
+  String insightsClassAttendance(int rate) {
+    return 'الحضور $rate%';
+  }
+
+  @override
+  String insightsClassOnTime(int rate) {
+    return 'في الوقت $rate%';
+  }
+
+  @override
+  String insightsMissingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count واجب ناقص',
+      many: '$count واجبًا ناقصًا',
+      few: '$count واجبات ناقصة',
+      two: 'واجبان ناقصان',
+      one: 'واجب واحد ناقص',
+      zero: 'لا شيء ناقص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsMissedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count اختبار فائت',
+      many: '$count اختبارًا فائتًا',
+      few: '$count اختبارات فائتة',
+      two: 'اختباران فائتان',
+      one: 'اختبار واحد فائت',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get insightsMissed => 'فائت';
+
+  @override
+  String get insightsPaper => 'ورقي';
+
+  @override
   String insightsDueOn(String date) {
     return 'الموعد $date';
   }
@@ -1739,6 +1935,14 @@ class AppL10nAr extends AppL10n {
   @override
   String get studyPlansTheStoreCouldNotBe =>
       'تعذّر الوصول إلى المتجر. حاول لاحقًا.';
+
+  @override
+  String get studyPlansPaymentsNotSetUp =>
+      'الخطط المدفوعة غير متاحة للبيع بعد. كل الميزات المجانية تعمل كالمعتاد.';
+
+  @override
+  String get studyPlansCannotBuyYet =>
+      'لا يمكن شراء هذه الخطة بعد - اطّلع على الملاحظة أسفلها.';
 
   @override
   String get studyPlansBuyingIsNotEnabledFor => 'الشراء غير مفعّل لحسابك بعد.';
@@ -2879,6 +3083,20 @@ class AppL10nAr extends AppL10n {
       'تم نشر درجة جديدة. افتح الدرجات للاطلاع عليها.';
 
   @override
+  String get notificationCopyAcademicGradesPublishedTitle => 'درجات جديدة';
+
+  @override
+  String get notificationCopyAcademicGradesPublishedDetail =>
+      'نشر معلمك درجات جديدة. افتح الدرجات للاطلاع عليها.';
+
+  @override
+  String get notificationCopyAcademicGradesCorrectedTitle => 'تم تعديل درجة';
+
+  @override
+  String get notificationCopyAcademicGradesCorrectedDetail =>
+      'صحّح معلمك درجة منشورة. افتح الدرجات لرؤية الدرجة الجديدة.';
+
+  @override
   String get notificationCopyAcademicResourcePublishedTitle =>
       'مادة دراسية جديدة';
 
@@ -3075,22 +3293,69 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get familyPlusIntro =>
-      'اعرف كيف يسير طفلك فعلًا، وما الخطوة المفيدة التي يمكنك القيام بها هذا الأسبوع.';
+      'اشتراك واحد للعائلة. اعرف كيف يسير كل طفل فعلًا، وأين يحتاج إلى المساعدة، وما الذي يمكنك فعله هذا الأسبوع.';
 
   @override
   String get familyPlusFeatureTrends =>
       'ما الذي تغيّر هذا الفصل، مع السجلات التي تثبت كل ملاحظة';
 
   @override
-  String get familyPlusFeatureDue =>
-      'الواجبات المطلوبة هذا الأسبوع حتى لا يفوت شيء';
-
-  @override
-  String get familyPlusFeatureSubjects =>
-      'الدرجات حسب المادة والحضور بلمحة سريعة';
-
-  @override
   String get familyPlusFeatureSchool => 'ملاحظات اختارت المدرسة مشاركتها معك';
+
+  @override
+  String get familyPlusFeatureFocus =>
+      'ما الذي يجب التركيز عليه هذا الأسبوع، الأهم أولًا';
+
+  @override
+  String get familyPlusFeatureClasses =>
+      'كل الصفوف جنبًا إلى جنب - المعدل والاتجاه والحضور والواجبات، مع تحديد الأقوى والأضعف';
+
+  @override
+  String get familyPlusFeatureChart =>
+      'رسم بياني للدرجات عبر الوقت وآخر الدرجات - بما فيها الاختبارات الورقية';
+
+  @override
+  String get familyPlusFeatureMissing =>
+      'الواجبات غير المسلّمة والاختبارات الفائتة حتى لا يفوت شيء';
+
+  @override
+  String familyPlusPlanName(int seats) {
+    return 'حتى $seats أطفال';
+  }
+
+  @override
+  String familyPlusPlanDetail(int seats) {
+    return 'سعر شهري واحد للعائلة كلها: جميع أطفالك المرتبطين، حتى $seats.';
+  }
+
+  @override
+  String get familyPlusYourPlan => 'خطتك';
+
+  @override
+  String familyPlusSubscribePlan(int seats) {
+    return 'اشترك لحتى $seats أطفال';
+  }
+
+  @override
+  String familyPlusUpgrade(int seats) {
+    return 'الترقية إلى حتى $seats أطفال';
+  }
+
+  @override
+  String get familyPlusCannotBuyYet =>
+      'لا يمكن شراء هذه الخطة في هذا الإصدار من التطبيق بعد.';
+
+  @override
+  String get familyPlusNotCoveredTitle => 'غير مشمول في خطتك بعد';
+
+  @override
+  String familyPlusNotCovered(int seats, String name) {
+    return 'يشمل Family+ لديك أول $seats أطفال ربطتهم، و$name ليس منهم. انتقل إلى خطة حتى 8 أطفال لتشمل $name.';
+  }
+
+  @override
+  String get familyPlusCoversFamily =>
+      'يُشمل أطفالك بترتيب ربطهم. الطفل الذي تربطه لاحقًا يُضاف فورًا ما دام في الخطة مكان.';
 
   @override
   String familyPlusPrice(String price) {
@@ -3098,8 +3363,9 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String get familyPlusUsPrice =>
-      '1.99 دولار أمريكي شهريًا في الولايات المتحدة - يعرض المتجر سعرك';
+  String familyPlusUsPrice(String price) {
+    return '$price شهريًا في الولايات المتحدة - يعرض المتجر سعرك';
+  }
 
   @override
   String familyPlusTrial(String trial, String price) {
@@ -3107,17 +3373,7 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String familyPlusOneChild(String name) {
-    return 'يشمل $name فقط. لكل طفل اشتراك Family+ خاص به.';
-  }
-
-  @override
   String get familyPlusStartTrial => 'ابدأ الفترة التجريبية المجانية';
-
-  @override
-  String familyPlusSubscribe(String name) {
-    return 'اشترك لـ $name';
-  }
 
   @override
   String get familyPlusCheckingStore => 'جارٍ التحقق من سعر المتجر...';
@@ -3483,13 +3739,13 @@ class AppL10nAr extends AppL10n {
   String get setupGenderLabel => 'الجنس';
 
   @override
+  String get setupGenderMale => 'ذكر';
+
+  @override
+  String get setupGenderFemale => 'أنثى';
+
+  @override
   String get setupGenderPrivate => 'لا يراه أحد غيرك.';
-
-  @override
-  String get setupGenderGirl => 'بنت';
-
-  @override
-  String get setupGenderBoy => 'ولد';
 
   @override
   String get setupGenderPreferNot => 'أفضّل عدم الإجابة';
@@ -3885,4 +4141,890 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get famManagedOpen => 'فتح الحساب';
+
+  @override
+  String get courseworkVersionConflict =>
+      'غيّر شخص آخر هذا أثناء عملك. أعد التحميل لرؤية أحدث نسخة ثم حاول مرة أخرى.';
+
+  @override
+  String get courseworkNotAllowed =>
+      'ليست لديك صلاحية للقيام بهذا في هذا الصف.';
+
+  @override
+  String get courseworkWindowClosed =>
+      'انتهى موعد تسليم هذا العمل. اطلب من معلمك مزيدًا من الوقت.';
+
+  @override
+  String get courseworkSubmissionLocked =>
+      'صحّح معلمك هذا العمل بالفعل، لذا لا يمكن استبداله. اسأل معلمك إذا كنت بحاجة إلى تسليمه مرة أخرى.';
+
+  @override
+  String get courseworkReasonRequired => 'يرجى ذكر السبب. سيُحفظ مع التعديل.';
+
+  @override
+  String get courseworkAttendanceLocked =>
+      'هذا السجل مقفل وفق سياسة الحضور في مدرستك.';
+
+  @override
+  String get courseworkEntriesInvalid =>
+      'بعض الصفوف تحتاج إلى تصحيح. لم يُحفظ شيء.';
+
+  @override
+  String get courseworkFailed =>
+      'لم تنجح العملية. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String paperGradesTitle(String title) {
+    return 'كشف الدرجات: $title';
+  }
+
+  @override
+  String get paperGradesPaperLabel => 'ورقي';
+
+  @override
+  String get paperGradesOnlineLabel => 'إلكتروني';
+
+  @override
+  String get paperGradesPaperSection => 'أعمال ورقية';
+
+  @override
+  String get paperGradesOnlineSection => 'أعمال إلكترونية';
+
+  @override
+  String get paperGradesNew => 'درجة ورقية جديدة';
+
+  @override
+  String get paperGradesOpenSheet => 'فتح كشف الدرجات';
+
+  @override
+  String get paperGradesSheetHint =>
+      'هذا عمل ورقي. أدخل درجات الصف كله في كشف الدرجات.';
+
+  @override
+  String paperGradesOutOf(String max) {
+    return 'من $max';
+  }
+
+  @override
+  String paperGradesWeight(String weight) {
+    return 'يُحتسب $weight٪';
+  }
+
+  @override
+  String get paperGradesScore => 'درجة';
+
+  @override
+  String get paperGradesAbsent => 'غائب';
+
+  @override
+  String get paperGradesNotGraded => 'بلا تقييم';
+
+  @override
+  String get paperGradesUnmarked => 'لم تُصحَّح بعد';
+
+  @override
+  String get paperGradesStateDraft => 'مسودة';
+
+  @override
+  String get paperGradesStateReady => 'جاهزة';
+
+  @override
+  String get paperGradesStatePublished => 'منشورة';
+
+  @override
+  String get paperGradesStateChanged => 'غير محفوظة';
+
+  @override
+  String get paperGradesLeftClass => 'غادر الصف';
+
+  @override
+  String get paperGradesComment => 'ملاحظة (اختيارية)';
+
+  @override
+  String get paperGradesAddComment => 'إضافة ملاحظة';
+
+  @override
+  String get paperGradesSaveDraft => 'حفظ كمسودة';
+
+  @override
+  String get paperGradesSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get paperGradesSaved =>
+      'حُفظت المسودة. لا يستطيع الطلاب وأولياء الأمور رؤيتها بعد.';
+
+  @override
+  String get paperGradesPublish => 'نشر';
+
+  @override
+  String get paperGradesSaveFirst => 'احفظ تغييراتك قبل النشر.';
+
+  @override
+  String get paperGradesNothingToPublish =>
+      'لا يوجد شيء جاهز للنشر. أدخل الدرجات واحفظها أولًا.';
+
+  @override
+  String get paperGradesPublishTitle => 'نشر الدرجات؟';
+
+  @override
+  String paperGradesPublishBody(int ready, int unmarked) {
+    return 'ستظهر $ready درجة للطلاب وأولياء أمورهم وسيصلهم إشعار. يبقى $unmarked طالبًا بلا درجة غير منشورين.';
+  }
+
+  @override
+  String paperGradesPublished(int count) {
+    return 'نُشرت $count درجة.';
+  }
+
+  @override
+  String get paperGradesCancel => 'إلغاء';
+
+  @override
+  String paperGradesCounts(int ready, int published, int unmarked) {
+    return '$ready جاهزة · $published منشورة · $unmarked بلا درجة';
+  }
+
+  @override
+  String get paperGradesEmpty => 'لا يوجد طلاب مسجلون في هذا الصف بعد.';
+
+  @override
+  String get paperGradesLoadFailed => 'تعذّر تحميل كشف الدرجات.';
+
+  @override
+  String get paperGradesRetry => 'حاول مرة أخرى';
+
+  @override
+  String get paperGradesCorrect => 'تصحيح';
+
+  @override
+  String paperGradesCorrected(int count) {
+    return 'صُحّحت $count مرة';
+  }
+
+  @override
+  String get paperGradesRowNotEnrolled => 'ليس في هذا الصف';
+
+  @override
+  String get paperGradesRowAlreadyPublished => 'منشورة بالفعل. استخدم التصحيح.';
+
+  @override
+  String get paperGradesRowScoreRequired => 'أدخل درجة';
+
+  @override
+  String paperGradesRowScoreOutOfRange(String max) {
+    return 'يجب أن تكون بين 0 و$max';
+  }
+
+  @override
+  String get paperGradesRowScoreNotAllowed => 'لا درجة للغائب أو غير المقيَّم';
+
+  @override
+  String get paperGradesRowConflict => 'غيّرها شخص آخر';
+
+  @override
+  String get paperGradesRowInvalid => 'تحقق من هذا الصف';
+
+  @override
+  String get paperGradesEditItem => 'تعديل التفاصيل';
+
+  @override
+  String get paperItemTitle => 'درجة ورقية';
+
+  @override
+  String get paperItemName => 'الاسم';
+
+  @override
+  String get paperItemNameHint => 'مثال: امتحان الفصل الأول';
+
+  @override
+  String get paperItemCategory => 'النوع';
+
+  @override
+  String get paperItemCategoryExam => 'امتحان ورقي';
+
+  @override
+  String get paperItemCategoryHomework => 'واجب';
+
+  @override
+  String get paperItemCategoryQuiz => 'اختبار قصير';
+
+  @override
+  String get paperItemCategoryParticipation => 'مشاركة';
+
+  @override
+  String get paperItemCategoryOther => 'أخرى';
+
+  @override
+  String get paperItemCategoryCustom => 'نوع العمل';
+
+  @override
+  String get paperItemMaximum => 'الدرجة القصوى';
+
+  @override
+  String get paperItemWeight => 'الوزن ٪ (اختياري)';
+
+  @override
+  String get paperItemDate => 'التاريخ (اختياري)';
+
+  @override
+  String get paperItemPickDate => 'اختر تاريخًا';
+
+  @override
+  String get paperItemSave => 'حفظ';
+
+  @override
+  String get paperItemInvalid =>
+      'أدخل اسمًا ودرجة قصوى أكبر من 0. الوزن بين 0 و100.';
+
+  @override
+  String gradeCorrectionTitle(String name) {
+    return 'تصحيح درجة $name';
+  }
+
+  @override
+  String get gradeCorrectionReason => 'سبب التعديل';
+
+  @override
+  String get gradeCorrectionReasonHint => 'مثال: أعدت جمع درجات الصفحة 3';
+
+  @override
+  String get gradeCorrectionReasonTooShort => 'اذكر سببًا من 3 أحرف على الأقل.';
+
+  @override
+  String get gradeCorrectionSave => 'حفظ التصحيح';
+
+  @override
+  String get gradeCorrectionNotifies =>
+      'إذا تغيّرت الدرجة يُبلَّغ الطالب وأولياء أمره. يُسجَّل تعديل الملاحظة وحدها دون إشعار.';
+
+  @override
+  String get gradeCorrectionHistory => 'التعديلات';
+
+  @override
+  String get gradeCorrectionHistoryEmpty => 'لا تعديلات بعد.';
+
+  @override
+  String get gradeCorrectionChangePublished => 'نُشرت';
+
+  @override
+  String get gradeCorrectionChangeCorrected => 'صُحّحت';
+
+  @override
+  String gradeCorrectionBy(String name) {
+    return 'بواسطة $name';
+  }
+
+  @override
+  String get gradeCorrectionDone => 'صُحّحت الدرجة.';
+
+  @override
+  String get attendanceRuleReasonRequired =>
+      'هذا الدرس مضى. تعديل أي علامة يتطلب سببًا يُحفظ معها.';
+
+  @override
+  String get attendanceRuleLocked =>
+      'هذا السجل مقفل وفق سياسة الحضور في مدرستك.';
+
+  @override
+  String get attendanceRuleLockedOverride =>
+      'هذا السجل مقفل. بصفتك المعلم الرئيسي للصف يمكنك تجاوز القفل مع ذكر السبب.';
+
+  @override
+  String get attendanceOverride => 'تجاوز القفل';
+
+  @override
+  String get attendanceCorrectionReason => 'سبب التعديل';
+
+  @override
+  String get attendanceHistory => 'التعديلات';
+
+  @override
+  String get attendanceHistoryEmpty => 'لم تُعدَّل أي علامة في هذا السجل.';
+
+  @override
+  String attendanceHistoryLine(String name, String from, String to) {
+    return '$name: $from ← $to';
+  }
+
+  @override
+  String get attendanceHistoryOverride => 'تم تجاوز القفل';
+
+  @override
+  String deadlineDue(String when, String zone) {
+    return 'موعد التسليم $when ($zone)';
+  }
+
+  @override
+  String deadlineExtended(String when) {
+    return 'لديك وقت إضافي حتى $when';
+  }
+
+  @override
+  String get deadlineClosed => 'انتهى موعد التسليم.';
+
+  @override
+  String get deadlineGraded => 'صُحّح - لم يعد بالإمكان استبداله.';
+
+  @override
+  String get deadlineReplaceHint =>
+      'يمكنك استبدال عملك حتى موعد التسليم. تُحفظ تسليماتك السابقة.';
+
+  @override
+  String get deadlineKeepFiles => 'الاحتفاظ بملفات تسليمك الأخير';
+
+  @override
+  String get deadlineExtend => 'منح وقت إضافي';
+
+  @override
+  String get deadlineRemoveExtension => 'إزالة الوقت الإضافي';
+
+  @override
+  String deadlineExtendedUntil(String when) {
+    return 'وقت إضافي حتى $when';
+  }
+
+  @override
+  String get deadlineReopen => 'إعادة الفتح للصف';
+
+  @override
+  String get deadlineUntil => 'حتى';
+
+  @override
+  String deadlineSchoolTime(String zone) {
+    return 'بتوقيت المدرسة ($zone)';
+  }
+
+  @override
+  String get deadlineReason => 'السبب';
+
+  @override
+  String get deadlineSave => 'حفظ';
+
+  @override
+  String get deadlineSaved => 'تم الحفظ.';
+
+  @override
+  String get lessonEdit => 'تعديل';
+
+  @override
+  String get lessonEditTitle => 'تعديل الدرس';
+
+  @override
+  String get lessonEditName => 'العنوان';
+
+  @override
+  String get lessonEditBody => 'الملاحظات';
+
+  @override
+  String get lessonEditReplaceFile => 'استبدال الملف';
+
+  @override
+  String get lessonEditReplaceHint =>
+      'يرى الصف الملف الجديد فقط. يُحفظ الملف القديم لدى المدرسة.';
+
+  @override
+  String get lessonEditSave => 'حفظ';
+
+  @override
+  String get lessonEditSaved => 'حُدّث الدرس.';
+
+  @override
+  String get downloadUnavailable =>
+      'لم يعد هذا الملف متاحًا. اسحب للأسفل للتحديث.';
+
+  @override
+  String get materialsEditTitle => 'تغيير المرفقات';
+
+  @override
+  String get materialsEditHint =>
+      'تُحفظ الملفات التي تزيلها لدى المدرسة لكنها لا تظهر للصف بعد الآن.';
+
+  @override
+  String get materialsEditNone => 'لا توجد ملفات مرفقة بعد.';
+
+  @override
+  String get materialsEditRemoving => 'ستُزال';
+
+  @override
+  String get materialsEditSaved => 'حُدّثت المرفقات.';
+
+  @override
+  String get classesInviteCodeBody =>
+      'ينضم الطلاب بكتابة رمز الصف هذا في ستودافاي. اقرأه بصوت عالٍ أو اكتبه على السبورة أو شاركه.';
+
+  @override
+  String get classesCopyCode => 'نسخ الرمز';
+
+  @override
+  String get classesInviteCodeCopied => 'تم نسخ رمز الصف.';
+
+  @override
+  String get classesShareCode => 'مشاركة الرمز';
+
+  @override
+  String get teacherCreatePaperGrades => 'درجات ورقية';
+
+  @override
+  String get teacherCreatePaperGradesDetail =>
+      'درجات امتحان أو اختبار أو واجب ورقي للصف كله';
+
+  @override
+  String get profilePhotoChange => 'تغيير صورة الملف الشخصي';
+
+  @override
+  String get profilePhotoOnDevice =>
+      'تُحفظ صورتك على هذا الهاتف فقط، ولا تُرفع أبدًا، وتُحذف عند تسجيل الخروج.';
+
+  @override
+  String get profilePhotoChoose => 'اختيار صورة';
+
+  @override
+  String get profilePhotoTake => 'التقاط صورة';
+
+  @override
+  String get profilePhotoRemove => 'إزالة الصورة';
+
+  @override
+  String get profilePhotoFailed => 'تعذّر استخدام هذه الصورة. جرّب صورة أخرى.';
+
+  @override
+  String todayStatClasses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صف',
+      many: '$count صفًا',
+      few: '$count صفوف',
+      two: 'صفان',
+      one: 'صف واحد',
+      zero: 'لا صفوف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get todayQuickActions => 'إجراءات سريعة';
+
+  @override
+  String get todaySeeAll => 'عرض الكل';
+
+  @override
+  String get wellbeingNewTitle => 'ملاحظة رفاه جديدة';
+
+  @override
+  String get wellbeingIntro =>
+      'سجّل حال الطالب - نقطة قوة تستحق الإشادة، أو ملاحظة، أو مصدر قلق للمتابعة. أنت تختار من يمكنه قراءتها أيضًا.';
+
+  @override
+  String get wellbeingWhoAbout => 'عمّن هذه الملاحظة؟';
+
+  @override
+  String get wellbeingClass => 'الصف';
+
+  @override
+  String get wellbeingPickClass => 'اختر صفًا';
+
+  @override
+  String get wellbeingStudent => 'الطالب';
+
+  @override
+  String get wellbeingPickStudent => 'اختر طالبًا';
+
+  @override
+  String get wellbeingNoStudents => 'لم ينضم أي طالب إلى هذا الصف بعد.';
+
+  @override
+  String get wellbeingStudentsFailed =>
+      'تعذّر تحميل الطلاب. اضغط للمحاولة مجددًا.';
+
+  @override
+  String get wellbeingKind => 'نوع الملاحظة';
+
+  @override
+  String get wellbeingKindStrength => 'نقطة قوة';
+
+  @override
+  String get wellbeingKindNote => 'ملاحظة';
+
+  @override
+  String get wellbeingKindConcern => 'مصدر قلق';
+
+  @override
+  String get wellbeingSeverity => 'ما مدى خطورته؟';
+
+  @override
+  String get wellbeingSeverityLow => 'منخفض';
+
+  @override
+  String get wellbeingSeverityModerate => 'متوسط';
+
+  @override
+  String get wellbeingSeverityHigh => 'مرتفع';
+
+  @override
+  String get wellbeingDetails => 'التفاصيل';
+
+  @override
+  String get wellbeingTitle => 'العنوان';
+
+  @override
+  String get wellbeingTitleRequired => 'اكتب عنوانًا قصيرًا للملاحظة.';
+
+  @override
+  String get wellbeingContext => 'ما الذي حدث (اختياري)';
+
+  @override
+  String get wellbeingFollowUp => 'المتابعة (اختياري)';
+
+  @override
+  String get wellbeingWhoSees => 'من يمكنه قراءتها؟';
+
+  @override
+  String get wellbeingSeeStaff => 'طاقم الصف فقط';
+
+  @override
+  String get wellbeingSeeStaffDetail => 'معلمو هذا الصف فقط.';
+
+  @override
+  String get wellbeingSeeGuardians => 'الطاقم وأولياء الأمور';
+
+  @override
+  String get wellbeingSeeGuardiansDetail =>
+      'وأيضًا أولياء أمور الطالب المرتبطون.';
+
+  @override
+  String get wellbeingSeeStudent => 'الطاقم وأولياء الأمور والطالب';
+
+  @override
+  String get wellbeingSeeStudentDetail => 'وأيضًا أولياء الأمور والطالب نفسه.';
+
+  @override
+  String get wellbeingSave => 'حفظ الملاحظة';
+
+  @override
+  String get wellbeingSaving => 'جارٍ الحفظ...';
+
+  @override
+  String get wellbeingSaved => 'تم حفظ ملاحظة الرفاه.';
+
+  @override
+  String get wellbeingSaveFailed => 'تعذّر حفظ الملاحظة. حاول مرة أخرى.';
+
+  @override
+  String get wellbeingAdd => 'ملاحظة رفاه جديدة';
+
+  @override
+  String get gradebookHomeNoClasses =>
+      'أنشئ صفًا من تبويب الصفوف، وستُحفظ درجاته هنا.';
+
+  @override
+  String get gradebookHomeNothing => 'لا يوجد ما يُرصد في هذا الصف بعد';
+
+  @override
+  String get gradebookHomeNothingDetail =>
+      'أضف درجة ورقية لاختبار أُجري على الورق، أو عيّن عملًا مُقيّمًا من تبويب التدريس.';
+
+  @override
+  String gradebookHomeCounts(int total, int drafts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total عمل مقيّم',
+      many: '$total عملًا مقيّمًا',
+      few: '$total أعمال مقيّمة',
+      two: 'عملان مقيّمان',
+      one: 'عمل مقيّم واحد',
+      zero: 'لا أعمال مقيّمة',
+    );
+    return '$_temp0 · $drafts مسودات';
+  }
+
+  @override
+  String get gradebookMarkOnline => 'رصد الأعمال الإلكترونية';
+
+  @override
+  String get gradebookViewHandIns => 'عرض التسليمات';
+
+  @override
+  String get academicStateWithdrawn => 'مخفي';
+
+  @override
+  String get academicEmptyTeacherHint => 'اضغط + لإنشاء محتوى لصفوفك.';
+
+  @override
+  String get teacherCreateGroupTeaching => 'التدريس';
+
+  @override
+  String get teacherCreateGroupClass => 'سجلات الصف';
+
+  @override
+  String get teacherCreateGroupFamilies => 'العائلات';
+
+  @override
+  String get teacherCreateWellbeingDetail =>
+      'نقطة قوة أو ملاحظة أو مصدر قلق عن طالب واحد';
+
+  @override
+  String classesSummary(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صف',
+      many: '$count صفًا',
+      few: '$count صفوف',
+      two: 'صفان',
+      one: 'صف واحد',
+      zero: 'لا صفوف بعد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get classesEmptyDetail => 'أنشئ صفك الأول، ثم ادعُ الطلاب برمز الصف.';
+
+  @override
+  String get attendanceMarkAllPresent => 'تحديد الجميع حاضرين';
+
+  @override
+  String get attendanceNotMarked => 'لم يُحدَّد';
+
+  @override
+  String get attendanceUnsaved => 'تغييرات غير محفوظة';
+
+  @override
+  String attendanceStatusFor(String name, String status) {
+    return '$name: $status. تغيير الحضور';
+  }
+
+  @override
+  String attendanceCounts(int present, int absent, int late, int unmarked) {
+    return '$present حاضر · $absent غائب · $late متأخر · $unmarked دون تحديد';
+  }
+
+  @override
+  String get attachmentCamera => 'الكاميرا';
+
+  @override
+  String get attachmentDocument => 'مستند';
+
+  @override
+  String get attachmentAdd => 'إرفاق';
+
+  @override
+  String get msgOptions => 'خيارات';
+
+  @override
+  String get msgAnnouncements => 'الإعلانات';
+
+  @override
+  String get msgAnnouncementsEmpty => 'لا توجد إعلانات بعد';
+
+  @override
+  String get msgAnnouncementsFailed => 'تعذّر تحميل الإعلانات';
+
+  @override
+  String get msgNewAnnouncement => 'إعلان جديد';
+
+  @override
+  String get msgImportant => 'مهم';
+
+  @override
+  String get msgUnread => 'غير مقروءة';
+
+  @override
+  String get msgBlockedIntro =>
+      'لا يستطيع من تحظرهم مراسلتك، ولا تستطيع مراسلتهم. ألغِ الحظر للتواصل مجددًا.';
+
+  @override
+  String get msgBlockedEmptyDetail =>
+      'إن أزعجك أحد، يمكنك حظره أو الإبلاغ عنه من خيارات المحادثة.';
+
+  @override
+  String get msgBlockedLabel => 'محظور';
+
+  @override
+  String get accountSecurityDetailFull =>
+      'الأجهزة، التحقق بخطوتين، تسجيل الخروج من كل مكان، حذف الحساب';
+
+  @override
+  String get securityDeleteHeading => 'حذف الحساب';
+
+  @override
+  String get securityDeleteFooter =>
+      'يؤدي حذف حسابك إلى إزالة بياناتك الشخصية بعد 14 يومًا، ويمكنك الإلغاء قبل ذلك. تبقى السجلات التي يجب على مدرستك الاحتفاظ بها لدى المدرسة.';
+
+  @override
+  String get securityDeleteTitle => 'حذف حسابك؟';
+
+  @override
+  String get securityDeleteExplain =>
+      'سترى بالضبط ما سيُحذف وما تحتفظ به مدرستك، وسيُطلب منك التأكيد مرة أخرى. يتم الحذف بعد 14 يومًا ويمكن إلغاؤه حتى ذلك الحين.';
+
+  @override
+  String get securityDeleteContinue => 'متابعة';
+
+  @override
+  String get loginDidNotFinish =>
+      'لم يكتمل تسجيل الدخول - ربما انقطع الاتصال. حاول مرة أخرى.';
+
+  @override
+  String get filesSwitchedOff =>
+      'المرفقات والرسائل الصوتية غير مفعّلة لمدرستك بعد.';
+
+  @override
+  String get attachmentRetry => 'حاول مرة أخرى';
+
+  @override
+  String get attachmentRemove => 'إزالة';
+
+  @override
+  String get msgVoiceSending => 'جارٍ إرسال الرسالة الصوتية…';
+
+  @override
+  String get studentTodayLessonsShortcut => 'الدروس والدفاتر';
+
+  @override
+  String get studentTodayLessonsShortcutDetail => 'كل صفوفك مع ملاحظاتك';
+
+  @override
+  String get studentTodayWorkShortcutDetail => 'سلّم أعمالك وتابع المواعيد';
+
+  @override
+  String get studentTodayFamilyShortcutDetail => 'معرّف Studafy وطلبات الأهل';
+
+  @override
+  String get studentTodayWorkSection => 'أعمال مطلوبة';
+
+  @override
+  String get studentLessonsSubtitle => 'صفوفك ودروسها ودفاترك';
+
+  @override
+  String get studentClassLessonsDetail => 'كل ما شاركه معلمك، حسب التاريخ';
+
+  @override
+  String get studentClassNotebook => 'الدفتر';
+
+  @override
+  String get studentClassNotebookDetail =>
+      'ملاحظاتك الخاصة لهذا الصف، كل منها بتاريخه';
+
+  @override
+  String get studentClassOpenNotebook => 'افتح الدفتر';
+
+  @override
+  String planUpgradeTo(Object plan) {
+    return 'الترقية إلى $plan';
+  }
+
+  @override
+  String planAdds(Object plan) {
+    return 'يضيف $plan:';
+  }
+
+  @override
+  String get planEverything => 'لديك كل ميزات الدراسة.';
+
+  @override
+  String get planSeePlans => 'عرض الخطط';
+
+  @override
+  String get workSubtitle => 'الواجبات والاختبارات والدرجات والحضور';
+
+  @override
+  String get workSectionOpen => 'مطلوب';
+
+  @override
+  String get workSectionClosed => 'انتهى موعدها';
+
+  @override
+  String get workSectionGraded => 'مصحّحة';
+
+  @override
+  String get workStateOpen => 'مفتوح';
+
+  @override
+  String get workStateClosed => 'مغلق';
+
+  @override
+  String get workStateGraded => 'مصحّح';
+
+  @override
+  String get workView => 'عرض';
+
+  @override
+  String get submitInstructions => 'التعليمات';
+
+  @override
+  String get submitHandInAgain => 'سلّم مرة أخرى';
+
+  @override
+  String get submitSaving => 'جارٍ تسليم عملك…';
+
+  @override
+  String get helperSubtitle => 'اسأل عن أي شيء تدرسه';
+
+  @override
+  String get helperLimitReached =>
+      'لقد استخدمت أسئلة اليوم. قم بالترقية للحصول على المزيد يوميًا، أو اسأل مجددًا غدًا.';
+
+  @override
+  String get helperRecentChats => 'المحادثات الأخيرة';
+
+  @override
+  String get helperSeeAll => 'عرض الكل';
+
+  @override
+  String get helperOffTitle => 'غير مفعّل بعد';
+
+  @override
+  String get accountSectionProfile => 'معلومات الملف الشخصي';
+
+  @override
+  String get accountSectionNotifications => 'الإشعارات';
+
+  @override
+  String get accountSectionSubscription => 'الاشتراك';
+
+  @override
+  String get accountStudyPlan => 'خطة الدراسة';
+
+  @override
+  String get accountStudyPlanDetail => 'خطتك وما تتضمنه وخيارات الترقية';
+
+  @override
+  String get accountTechnicalId => 'معرّف الحساب التقني';
+
+  @override
+  String get accountTechnicalIdDetail =>
+      'لا تحتاجه إلا إذا طلبه دعم Studafy. للربط مع أحد الوالدين، شارك معرّف Studafy بدلًا منه.';
+
+  @override
+  String get accountChangePhoto => 'تغيير الصورة';
+
+  @override
+  String get loginWrongRoleStudentTitle => 'هذا البريد الإلكتروني لحساب طالب';
+
+  @override
+  String get loginWrongRoleStudentBody =>
+      'حساب الطالب مخصص للتعلّم فقط، لذا لا يمكن استخدامه كمعلم أو ولي أمر. للتدريس أو لمتابعة طفل، سجّل الدخول ببريد إلكتروني آخر.';
+
+  @override
+  String get loginWrongRoleAdultTitle => 'هذا البريد الإلكتروني ليس لحساب طالب';
+
+  @override
+  String loginWrongRoleAdultBody(String role) {
+    return 'إنه مستخدم بالفعل كـ$role، لذا لا يمكن أن يكون لطالب أيضًا. يحتاج الطالب إلى بريد إلكتروني خاص به.';
+  }
+
+  @override
+  String loginContinueAs(String role) {
+    return 'المتابعة كـ$role';
+  }
+
+  @override
+  String get loginUseDifferentEmail => 'استخدام بريد إلكتروني آخر';
+
+  @override
+  String get accountSwitchRoleTeacherParent =>
+      'التنقّل بين التدريس ومتابعة أطفالك.';
 }

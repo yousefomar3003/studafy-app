@@ -24,6 +24,12 @@ class AcademicRecord {
     this.maximumScore,
     this.markedAssignmentId,
     this.date,
+    this.delivery,
+    this.mark,
+    this.score,
+    this.outOf,
+    this.deadline,
+    this.timeZone,
   });
   final String id;
   final String title;
@@ -50,6 +56,63 @@ class AcademicRecord {
   /// say which one each row came from. Null where the record has no class -
   /// school-wide content, and feeds that are already pinned to one class.
   final String? classroomId;
+
+  /// Grades only: 'paper' for work marked on paper, 'online' for work handed
+  /// in or answered in the app. Paper marks are labelled as such.
+  final String? delivery;
+
+  /// Grades only: how the student did. Null while unmarked - never a zero.
+  final GradeMark? mark;
+  final double? score;
+  final double? outOf;
+
+  /// Assignments seen by a student or a guardian: until when the work can be
+  /// handed in or replaced, on the school's clock.
+  final SubmissionDeadline? deadline;
+
+  /// Assignments: the school's time zone, in which deadlines are set.
+  final String? timeZone;
+}
+
+/// How a student did on marked work. Absent and not graded carry no score
+/// and are never counted as zero.
+enum GradeMark {
+  scored('scored'),
+  absent('absent'),
+  notGraded('not_graded');
+
+  const GradeMark(this.wire);
+  final String wire;
+
+  static GradeMark? fromWire(String? value) => switch (value) {
+    'scored' => GradeMark.scored,
+    'absent' => GradeMark.absent,
+    'not_graded' => GradeMark.notGraded,
+    _ => null,
+  };
+}
+
+/// Whether a student can still hand work in, and until when.
+enum SubmissionWindow { open, closed, gradedLocked }
+
+@immutable
+class SubmissionDeadline {
+  const SubmissionDeadline({
+    required this.state,
+    required this.deadlineLocal,
+    required this.timeZone,
+    this.extendedUntilLocal,
+  });
+
+  final SubmissionWindow state;
+
+  /// `2026-10-01T23:59` on the school's clock, shown as the school reads it
+  /// whatever the device's own time zone.
+  final String deadlineLocal;
+  final String timeZone;
+
+  /// Set when the teacher gave this student more time.
+  final String? extendedUntilLocal;
 }
 
 /// One class a feed can be narrowed to.
@@ -136,10 +199,14 @@ class AssessmentDraft {
     this.attachmentFileIds = const [],
     this.publish = false,
     this.assignmentId,
+    this.weight,
   });
   final String classroomId;
   final String title;
   final double maximumScore;
+
+  /// How much this counts, 0-100, when the school weighs categories.
+  final double? weight;
   final List<AssessmentQuestionDraft> questions;
 
   /// As on [AssignmentDraft]: material bound when the work is created.
@@ -374,9 +441,20 @@ class ClassStudent {
 /// A register for one meeting: who is on it, and the version to save with.
 @immutable
 class AttendanceRegister {
-  const AttendanceRegister({required this.entries, required this.version});
+  const AttendanceRegister({
+    required this.entries,
+    required this.version,
+    this.sessionId,
+    this.editRule = AttendanceEditRule.open,
+  });
 
   final List<AttendanceRosterEntry> entries;
+
+  /// The lesson, once its register has been saved at least once.
+  final String? sessionId;
+
+  /// What the school's policy lets this teacher do to this register.
+  final AttendanceEditRule editRule;
 
   /// What recordAttendance expects as its expectedVersion: zero when this
   /// lesson has never been recorded, the session's current version once it
@@ -393,16 +471,27 @@ class AttendanceRosterEntry {
     required this.displayName,
     this.state,
     this.reason,
+    this.enrolled = true,
   });
 
   final String studentId;
   final String displayName;
+
+  /// False for a student who has left the class but was marked for this
+  /// lesson: shown so their mark can still be corrected.
+  final bool enrolled;
 
   /// Null when this student has not been marked for the chosen session yet.
   final AttendanceState? state;
   final String? reason;
 }
 
+/// A wellbeing note about one student, written by one of their teachers.
+///
+/// [visibility] is who may read it besides the class's staff: `class_staff`
+/// (staff only - the default), `guardian_shared` (also the student's linked
+/// parents) or `student_guardian_shared` (also the student). [severity] is
+/// `low`, `moderate` or `high`.
 @immutable
 class WellbeingDraft {
   const WellbeingDraft({
@@ -411,12 +500,261 @@ class WellbeingDraft {
     required this.kind,
     required this.title,
     this.context,
+    this.followUp,
+    this.visibility = 'class_staff',
+    this.severity = 'low',
   });
   final String classroomId;
   final String studentId;
   final String kind;
   final String title;
   final String? context;
+  final String? followUp;
+  final String visibility;
+  final String? severity;
+}
+
+/// What a school's attendance policy lets the caller do to one register.
+enum AttendanceEditRule {
+  /// The lesson's own day (or later): marks change freely.
+  open,
+
+  /// A past lesson: new marks are fine, a changed mark needs a reason.
+  reasonRequired,
+
+  /// Past the school's window: nothing changes.
+  locked,
+
+  /// Locked, but this caller (a lead teacher or admin) may override it.
+  lockedOverride;
+
+  static AttendanceEditRule fromWire(String? value) => switch (value) {
+    'reason_required' => AttendanceEditRule.reasonRequired,
+    'locked' => AttendanceEditRule.locked,
+    'locked_override' => AttendanceEditRule.lockedOverride,
+    _ => AttendanceEditRule.open,
+  };
+}
+
+/// One change to one student's mark on a register.
+@immutable
+class AttendanceChange {
+  const AttendanceChange({
+    required this.studentName,
+    required this.previous,
+    required this.next,
+    required this.at,
+    this.reason,
+    this.override = false,
+    this.actorName,
+  });
+
+  final String studentName;
+  final AttendanceState previous;
+  final AttendanceState next;
+  final DateTime at;
+  final String? reason;
+  final bool override;
+  final String? actorName;
+}
+
+/// A paper gradebook item and the class's marks for it.
+@immutable
+class PaperGradebook {
+  const PaperGradebook({required this.item, required this.rows});
+
+  final PaperGradebookItem item;
+  final List<PaperGradebookRow> rows;
+}
+
+@immutable
+class PaperGradebookItem {
+  const PaperGradebookItem({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.maximumScore,
+    required this.state,
+    required this.version,
+    required this.gradebookVersion,
+    required this.unmarked,
+    required this.ready,
+    required this.published,
+    this.weight,
+    this.scheduledAt,
+  });
+
+  final String id;
+  final String title;
+  final String category;
+  final double maximumScore;
+  final String state;
+  final int version;
+
+  /// Sent back when saving and publishing, so the teacher publishes exactly
+  /// the sheet they saw.
+  final int gradebookVersion;
+  final int unmarked;
+  final int ready;
+  final int published;
+  final double? weight;
+  final DateTime? scheduledAt;
+}
+
+@immutable
+class PaperGradebookRow {
+  const PaperGradebookRow({
+    required this.studentId,
+    required this.displayName,
+    required this.enrolled,
+    this.grade,
+  });
+
+  final String studentId;
+  final String displayName;
+
+  /// False for a student who left the class but already has a mark.
+  final bool enrolled;
+  final PaperGrade? grade;
+}
+
+/// Where one student's mark is: not marked, marked but private, or
+/// published to the student and their family.
+enum PaperGradeState { unmarked, ready, published, withdrawn }
+
+@immutable
+class PaperGrade {
+  const PaperGrade({
+    required this.id,
+    required this.state,
+    required this.version,
+    this.mark,
+    this.score,
+    this.feedback,
+    this.corrections = 0,
+  });
+
+  final String id;
+  final PaperGradeState state;
+  final int version;
+  final GradeMark? mark;
+  final double? score;
+  final String? feedback;
+
+  /// How many times the published mark has been corrected.
+  final int corrections;
+}
+
+/// One student's mark as the teacher enters it.
+@immutable
+class GradeDraft {
+  const GradeDraft({
+    required this.studentId,
+    required this.expectedVersion,
+    this.mark,
+    this.score,
+    this.feedback,
+  });
+
+  final String studentId;
+
+  /// 0 for a student with no mark yet.
+  final int expectedVersion;
+
+  /// Null clears the mark back to "not marked yet".
+  final GradeMark? mark;
+  final double? score;
+  final String? feedback;
+}
+
+@immutable
+class GradeCorrection {
+  const GradeCorrection({
+    required this.gradeId,
+    required this.expectedVersion,
+    required this.mark,
+    this.score,
+    this.feedback,
+  });
+
+  final String gradeId;
+  final int expectedVersion;
+  final GradeMark mark;
+  final double? score;
+  final String? feedback;
+}
+
+/// One publication or correction of a mark.
+@immutable
+class GradeChange {
+  const GradeChange({
+    required this.change,
+    required this.at,
+    this.previousMark,
+    this.previousScore,
+    this.nextMark,
+    this.nextScore,
+    this.reason,
+    this.actorName,
+  });
+
+  /// 'published' or 'corrected'.
+  final String change;
+  final DateTime at;
+  final GradeMark? previousMark;
+  final double? previousScore;
+  final GradeMark? nextMark;
+  final double? nextScore;
+  final String? reason;
+  final String? actorName;
+}
+
+@immutable
+class PublishedGrades {
+  const PublishedGrades({required this.published, required this.unmarked});
+
+  final int published;
+
+  /// Left as drafts: unmarked students are never published as zero.
+  final int unmarked;
+}
+
+/// More time one student was given for one piece of work.
+@immutable
+class AssignmentExtension {
+  const AssignmentExtension({
+    required this.studentId,
+    required this.untilLocal,
+    required this.reason,
+  });
+
+  final String studentId;
+  final String untilLocal;
+  final String reason;
+}
+
+/// Why the server refused a coursework command, in terms a screen can act
+/// on. [rows] names the refused rows (a student or grade id) with a reason
+/// code, when a bulk command refused only some of them.
+enum CourseworkProblem {
+  versionConflict,
+  entriesInvalid,
+  reasonRequired,
+  attendanceLocked,
+  submissionLocked,
+  windowClosed,
+  notAllowed,
+  other,
+}
+
+class CourseworkRefusal implements Exception {
+  const CourseworkRefusal(this.problem, {this.rows = const {}});
+
+  final CourseworkProblem problem;
+  final Map<String, String> rows;
+
+  @override
+  String toString() => 'CourseworkRefusal($problem)';
 }
 
 /// Lessons and class material: the content feed and its lifecycle.
@@ -435,6 +773,17 @@ abstract interface class AcademicContentRepository {
   );
   Future<void> publishResource(String resourceId, int expectedVersion);
   Future<void> withdrawResource(String resourceId, int expectedVersion);
+
+  /// Edits a lesson in place: it stays as visible as it was. With
+  /// [replaceFileId] its file is replaced; the old one is kept for the
+  /// school, and only staff can still open it.
+  Future<void> editResource(
+    String resourceId,
+    int expectedVersion, {
+    String? title,
+    String? body,
+    String? replaceFileId,
+  });
 }
 
 /// Assignments: setting work, handing it in and reviewing what came back.
@@ -465,6 +814,37 @@ abstract interface class AssignmentRepository {
     String assignmentId, {
     String? studentId,
   });
+
+  /// The students given more time on [assignmentId].
+  Future<List<AssignmentExtension>> assignmentExtensions(String assignmentId);
+
+  /// Gives one student until [untilLocal] (school time, `YYYY-MM-DDTHH:mm`).
+  Future<void> grantExtension(
+    String assignmentId,
+    String studentId,
+    String untilLocal,
+    String reason,
+  );
+  Future<void> revokeExtension(String assignmentId, String studentId);
+
+  /// Changes the teacher's material on set work: [detachFileIds] are taken
+  /// off (kept for the school, hidden from the class) and
+  /// [attachmentFileIds] - completed `assignment_material` uploads for the
+  /// class - are added.
+  Future<void> updateAssignmentMaterials(
+    String assignmentId,
+    int expectedVersion, {
+    List<String> detachFileIds = const [],
+    List<String> attachmentFileIds = const [],
+  });
+
+  /// Reopens the work for the whole class until [closesAtLocal].
+  Future<void> reopenAssignment(
+    String assignmentId,
+    int expectedVersion,
+    String closesAtLocal,
+    String reason,
+  );
 }
 
 /// Assessments and exams.
@@ -472,6 +852,14 @@ abstract interface class AssessmentRepository {
   Future<void> createAssessment(AssessmentDraft draft);
   Future<void> publishAssessment(String assessmentId, int expectedVersion);
   Future<void> withdrawAssessment(String assessmentId, int expectedVersion);
+
+  /// As [AssignmentRepository.updateAssignmentMaterials], for an exam.
+  Future<void> updateAssessmentMaterials(
+    String assessmentId,
+    int expectedVersion, {
+    List<String> detachFileIds = const [],
+    List<String> attachmentFileIds = const [],
+  });
   Future<void> submitAssessment(
     String assessmentId,
     Map<String, String> answers,
@@ -524,8 +912,23 @@ abstract interface class AttendanceRepository {
     DateTime startsAt,
     DateTime endsAt,
     int expectedVersion,
-    List<AttendanceDraft> entries,
-  );
+    List<AttendanceDraft> entries, {
+    String? correctionReason,
+    bool override = false,
+  });
+
+  /// Corrects a lesson that has a register, addressed by the lesson itself,
+  /// so it works after the timetable changed or a student left.
+  Future<void> correctAttendance(
+    String sessionId,
+    int expectedVersion,
+    List<AttendanceDraft> entries, {
+    String? reason,
+    bool override = false,
+  });
+
+  /// Every change to an existing mark on the lesson's register, newest first.
+  Future<List<AttendanceChange>> attendanceHistory(String sessionId);
 }
 
 /// Grades: review, publication and corrections.
@@ -549,6 +952,51 @@ abstract interface class GradeRepository {
   Future<void> withdrawGrade(String gradeId, int expectedVersion);
 }
 
+/// Marks for paper work: a whole class at once, private until published,
+/// corrected with a reason.
+abstract interface class PaperGradebookRepository {
+  /// Sets up a paper gradebook item in [classroomId] and answers its id. It
+  /// stays private until marks for it are published.
+  Future<String> createPaperGradebookItem(
+    String classroomId, {
+    required String title,
+    required String category,
+    required double maximumScore,
+    double? weight,
+    DateTime? scheduledAt,
+  });
+
+  Future<PaperGradebook> paperGradebook(String assessmentId);
+
+  /// Saves marks as drafts and answers the sheet's new version.
+  Future<int> saveGradeDrafts(
+    String assessmentId,
+    int gradebookVersion,
+    List<GradeDraft> entries,
+  );
+
+  /// Publishes every marked row, all at once or not at all.
+  Future<PublishedGrades> publishGrades(
+    String assessmentId,
+    int gradebookVersion,
+  );
+  Future<void> correctGrades(
+    String assessmentId,
+    String reason,
+    List<GradeCorrection> entries,
+  );
+  Future<List<GradeChange>> gradeHistory(String gradeId);
+  Future<void> updateGradebookItem(
+    String assessmentId,
+    int expectedVersion, {
+    required String title,
+    required String category,
+    required double maximumScore,
+    double? weight,
+    DateTime? scheduledAt,
+  });
+}
+
 /// Wellbeing notes.
 abstract interface class WellbeingRepository {
   Future<void> createWellbeing(WellbeingDraft draft);
@@ -568,4 +1016,5 @@ abstract interface class AcademicRepository
         ClassTimetableRepository,
         AttendanceRepository,
         GradeRepository,
+        PaperGradebookRepository,
         WellbeingRepository {}

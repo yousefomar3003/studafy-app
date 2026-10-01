@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/user_content_text.dart';
+import '../../../core/studafy_components.dart';
+import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study_assistant_repository.dart';
+import 'study_assistant_page.dart';
 
 /// Earlier chats with the helper, newest first. Tap one to carry on with it,
 /// swipe it away to delete it. Everything here is on this device only.
@@ -43,21 +45,22 @@ class _StudyChatHistoryPageState extends State<StudyChatHistoryPage> {
     if (mounted) _reload();
   }
 
+  Future<void> _delete(StudyChat chat) async {
+    try {
+      await widget.store.delete(chat.id);
+    } on Object {
+      // On this device only; the reload below shows whatever is left.
+    }
+    if (mounted) _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final dates = MaterialLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.studyAssistantHistory),
-        actions: [
-          IconButton(
-            tooltip: l10n.studyAssistantDeleteAll,
-            icon: const Icon(Icons.delete_sweep_outlined),
-            onPressed: _deleteAll,
-          ),
-        ],
-      ),
+      backgroundColor: studafyCanvas,
+      appBar: AppBar(title: Text(l10n.studyAssistantHistory)),
       body: FutureBuilder<List<StudyChat>>(
         future: _chats,
         builder: (context, snapshot) {
@@ -67,64 +70,93 @@ class _StudyChatHistoryPageState extends State<StudyChatHistoryPage> {
           final chats = snapshot.data ?? const <StudyChat>[];
           if (chats.isEmpty) {
             return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  l10n.studyAssistantHistoryEmpty,
-                  textAlign: TextAlign.center,
-                ),
+              child: StudafyEmptyState(
+                icon: Icons.forum_outlined,
+                title: l10n.studyAssistantHistoryEmpty,
               ),
             );
           }
           return ListView(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 32),
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsetsDirectional.fromSTEB(4, 4, 4, 12),
                 child: Row(
                   children: [
-                    const Icon(Icons.phone_iphone_rounded, size: 16),
+                    const Icon(
+                      Icons.phone_iphone_rounded,
+                      size: 16,
+                      color: studafyMuted,
+                    ),
                     const SizedBox(width: 6),
-                    Text(
-                      l10n.studyAssistantOnDevice,
-                      style: Theme.of(context).textTheme.bodySmall,
+                    Expanded(
+                      child: Text(
+                        l10n.studyAssistantOnDevice,
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          fontSize: 12.5,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              for (final chat in chats)
-                Dismissible(
-                  key: ValueKey(chat.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Theme.of(context).colorScheme.error,
-                    alignment: AlignmentDirectional.centerEnd,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: Colors.white,
-                    ),
-                  ),
-                  onDismissed: (_) => widget.store.delete(chat.id),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.chat_bubble_outline_rounded),
-                    ),
-                    title: UserContentText(chat.title, maxLines: 1),
-                    subtitle: Text(
-                      '${dates.formatMediumDate(chat.updatedAt)} · '
-                      '${l10n.studyAssistantMessageCount(chat.turns.length)}',
-                    ),
-                    trailing: IconButton(
-                      tooltip: l10n.studyAssistantDeleteChat,
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: () async {
-                        await widget.store.delete(chat.id);
-                        if (mounted) _reload();
-                      },
-                    ),
-                    onTap: () => Navigator.pop(context, chat),
-                  ),
+              FeatureCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    for (final (index, chat) in chats.indexed) ...[
+                      if (index > 0)
+                        const Divider(
+                          height: 1,
+                          indent: 64,
+                          color: studafyHairline,
+                        ),
+                      Dismissible(
+                        key: ValueKey(chat.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: studafyDanger,
+                          alignment: AlignmentDirectional.centerEnd,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        onDismissed: (_) => _delete(chat),
+                        child: ChatHistoryRow(
+                          title: chat.title,
+                          detail:
+                              '${dates.formatMediumDate(chat.updatedAt)} · '
+                              '${l10n.studyAssistantMessageCount(chat.turns.length)}',
+                          onTap: () => Navigator.pop(context, chat),
+                          trailing: IconButton(
+                            tooltip: l10n.studyAssistantDeleteChat,
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: studafyMuted,
+                            ),
+                            onPressed: () => _delete(chat),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
+              ),
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: _deleteAll,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: studafyDanger,
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: studafyHairline),
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                icon: const Icon(Icons.delete_sweep_outlined),
+                label: Text(l10n.studyAssistantDeleteAll),
+              ),
             ],
           );
         },

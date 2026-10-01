@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/failures.dart';
 import '../../core/feedback.dart';
+import '../../core/studafy_components.dart';
 import '../../features/account/application/account_interactor.dart';
 import '../../features/account/domain/data_export.dart';
 import '../../l10n/generated/app_l10n.dart';
@@ -98,16 +99,14 @@ class _DataExportTileState extends State<DataExportTile> {
     final state = _status?.state;
     final ready = state == DataExportState.ready;
     final pending = state == DataExportState.pending;
-    return ListTile(
-      leading: const Icon(Icons.download_rounded),
-      title: Text(AppL10n.of(context).accountExport),
-      subtitle: Text(
-        ready
-            ? AppL10n.of(context).accountExportReady
-            : pending
-            ? AppL10n.of(context).accountExportPending
-            : AppL10n.of(context).accountExportDetail,
-      ),
+    return SettingsRow(
+      icon: Icons.download_rounded,
+      title: AppL10n.of(context).accountExport,
+      subtitle: ready
+          ? AppL10n.of(context).accountExportReady
+          : pending
+          ? AppL10n.of(context).accountExportPending
+          : AppL10n.of(context).accountExportDetail,
       trailing: _busy
           ? const SizedBox(
               width: 20,

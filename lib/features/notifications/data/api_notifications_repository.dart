@@ -236,6 +236,8 @@ const _knownTemplateKeys = <String>{
   'academic.assessment_published',
   'academic.assignment_published',
   'academic.grade_published',
+  'academic.grades_corrected',
+  'academic.grades_published',
   'academic.resource_published',
   'academic.wellbeing_shared',
   'billing.purchase_approval_approved',
