@@ -100,6 +100,7 @@ flutter:
   # background made transparent so it sits on any light surface.
   assets:
     - assets/brand/studafy_wordmark.png
+    - assets/brand/studafy_wordmark_white.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

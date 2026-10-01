@@ -51,14 +51,18 @@ const studafyActionGradient = LinearGradient(
 /// The brand wordmark artwork: "studafy" with the sparkle cross over the t.
 const studafyWordmarkAsset = 'assets/brand/studafy_wordmark.png';
 
+/// The same artwork for dark backgrounds: white letters, the cross still in
+/// its own cyan.
+const studafyWordmarkOnDarkAsset = 'assets/brand/studafy_wordmark_white.png';
+
 /// Width over height of [studafyWordmarkAsset], so space is reserved for it
 /// before the image has decoded and the header never jumps.
 const studafyWordmarkAspect = 3.34;
 
 /// Brand lockup shared by the session flow and every shell.
 ///
-/// On light surfaces it is the real wordmark artwork. On the ocean backdrop
-/// it is drawn in white, since the artwork's navy would disappear there.
+/// The real wordmark artwork everywhere: navy on light surfaces, and white
+/// (with the cross kept cyan) on the ocean backdrop of the first screens.
 class StudafyLogo extends StatelessWidget {
   const StudafyLogo({super.key, this.size = 46, this.onDark = false});
   final double size;
@@ -67,7 +71,6 @@ class StudafyLogo extends StatelessWidget {
   final bool onDark;
   @override
   Widget build(BuildContext c) {
-    if (onDark) return _drawn();
     final height = size * 1.15;
     return Semantics(
       label: 'Studafy',
@@ -76,7 +79,7 @@ class StudafyLogo extends StatelessWidget {
         height: height,
         width: height * studafyWordmarkAspect,
         child: Image.asset(
-          studafyWordmarkAsset,
+          onDark ? studafyWordmarkOnDarkAsset : studafyWordmarkAsset,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.medium,
           excludeFromSemantics: true,
