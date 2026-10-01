@@ -100,6 +100,7 @@ class _StudentAccount extends FakeSessionRepositoryBase {
     await _sessions.close();
     await closeLifecycle();
   }
+
   @override
   Future<void> signInWithProvider(LoginProvider provider) async {}
   @override
