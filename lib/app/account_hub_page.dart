@@ -236,7 +236,10 @@ class _AccountHubPageState extends State<AccountHubPage> {
     final account = AccountScope.maybeOf(context);
     final canRename = profile != null && (account?.profileAvailable ?? false);
     final name = _own?.displayName ?? profile?.displayName ?? '';
-    final publicId = _own?.publicId;
+    final publicId = switch (_own?.publicId) {
+      final number? => studafyIdFor(number, teacher: _isTeacher(profile)),
+      null => null,
+    };
     final accountRows = [
       // Several accounts on one device, Instagram-style, and a parent's
       // child accounts.
@@ -689,3 +692,16 @@ class _EditNameSheetState extends State<_EditNameSheet> {
     );
   }
 }
+
+/// Whether this account teaches anywhere, whichever role it is in now.
+bool _isTeacher(UserProfile? profile) =>
+    profile?.memberships.any(
+      (m) => m.active && m.role == StudafyRole.teacher,
+    ) ??
+    false;
+
+/// How an adult's Studafy number is shown: a teacher's reads as a code,
+/// like a student's SJ-..., so it is never taken for a phone number; a
+/// parent's is the plain number. The stored number is the same either way.
+String studafyIdFor(String number, {required bool teacher}) =>
+    teacher ? 'TC-$number' : number;

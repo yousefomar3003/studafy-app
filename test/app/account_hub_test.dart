@@ -290,4 +290,35 @@ void main() {
     expect(ActiveContextController.instance.profile?.displayName, 'رنا حداد');
     expect(find.text('Name saved'), findsOne);
   });
+
+  test(
+    'a teacher\'s Studafy ID reads as a code; a parent\'s is the number',
+    () {
+      expect(studafyIdFor('9963198566', teacher: true), 'TC-9963198566');
+      expect(studafyIdFor('8279671903', teacher: false), '8279671903');
+    },
+  );
+
+  testWidgets('a teacher sees their Studafy ID as a TC- code', (tester) async {
+    const teaching = SchoolMembership(
+      id: 'membership-t',
+      schoolId: 'school-1',
+      schoolName: 'Rara Nana',
+      role: StudafyRole.teacher,
+      active: true,
+    );
+    ActiveContextController.instance
+      ..profile = const UserProfile(
+        id: 'user-uuid-4',
+        displayName: 'Mr.ahmad',
+        email: 'ahmad@example.test',
+        memberships: [teaching],
+      )
+      ..membership = teaching;
+    await tester.pumpWidget(
+      _app(const AccountHubPage(), profiles: _Profiles()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('TC-4827159360'), findsOne);
+  });
 }
