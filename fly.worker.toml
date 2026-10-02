@@ -1,0 +1,36 @@
+# Studafy worker on Fly.io (ADR-0035, docs/deployment/fly-io.md).
+# Deploy from the repository root:
+#   fly deploy --config fly.worker.toml
+# Secrets are set with `fly secrets set --config fly.worker.toml`.
+
+app = "studafy-worker"
+primary_region = "fra"
+
+[build]
+  dockerfile = "apps/worker/Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  LOG_LEVEL = "info"
+  # OPS-090: failed jobs and the per-minute backlog heartbeats are always
+  # kept; 1 in 10 routine "job done" lines.
+  LOG_SAMPLE_SUCCESS_RATE = "0.1"
+  LOG_SAMPLE_ROUTINE_RATE = "0.01"
+  DATABASE_POOL_MAX = "10"
+  # In-app notifications: without this every notification stays queued and
+  # no inbox shows one (the 2026-10-02 incident on hosted).
+  OPS061_NOTIFICATIONS_ENABLED = "true"
+  # Uploads are scanned before anyone can open them; abandoned ones cleaned.
+  FILE051_SCAN_ENABLED = "true"
+  FILE050_CLEANUP_ENABLED = "true"
+  DB_HOUSEKEEPING_ENABLED = "true"
+  # Switched on at launch once their own credentials are set (see the doc):
+  # PAY071_BILLING_ENABLED (store keys), NOTIFICATION_CHANNELS_ENABLED
+  # (Firebase / email), ACCOUNT_DELETION_EXECUTOR_ENABLED,
+  # DATA_EXPORT_EXECUTOR_ENABLED, MEETINGS_PROCESSOR_ENABLED.
+
+# The worker serves no HTTP. It runs continuously: one machine, never
+# stopped for being idle, since queued work arrives without traffic.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

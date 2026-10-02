@@ -1,0 +1,23 @@
+# Studafy alert relay (ADR-0035, docs/deployment/fly-io.md).
+# Deploy: cd ops/alert-relay && npx wrangler deploy
+# Secrets (npx wrangler secret put NAME): RELAY_SECRET, TELEGRAM_BOT_TOKEN,
+# TELEGRAM_CHAT_ID, and for emailed uptime alerts RESEND_API_KEY and
+# ALERT_EMAIL_TO (kept out of the repository).
+name = "studafy-alert-relay"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+[vars]
+UPTIME_URL = "https://api.studafy.com/readyz"
+ALERT_EMAIL_FROM = "Studafy alerts <alerts@studafy.com>"
+
+# Every minute: is the API answering?
+[triggers]
+crons = ["* * * * *"]
+
+# Remembers an ongoing outage so it alerts once, not every minute.
+# Create it with: npx wrangler kv namespace create STATE
+# and paste the id it prints here.
+[[kv_namespaces]]
+binding = "STATE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"

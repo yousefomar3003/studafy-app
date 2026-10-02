@@ -40,6 +40,7 @@ that references the old one.
 | [ADR-0032](ADR-0032-subscription-lifecycle-and-backups.md) | Store-only subscriptions with upgrade-at-limit, renewal status, per-token store events, pause-first cancel, store receipts plus verified-only notices; daily encrypted backups restored on every run | Accepted for local/disposable use | - |
 | [ADR-0033](ADR-0033-paper-gradebook-corrections-and-deadlines.md) | Paper marks as `delivery=paper` assessments with draft/publish/correct in bulk, previous values kept in `grade_result_events`; attendance lock rule with lead-teacher override (no school admin in this release) and append-only history; extensions, reopen and a graded lock on hand-ins; lessons edited in place with retained files | Accepted for local/disposable use | - |
 | [ADR-0034](ADR-0034-paid-plans-live-from-launch.md) | Studafy Plus, Max and Family+ live from launch: the four subscriptions listed in staging and production; lesson AI ships switched on, with the provider DPA and minors' DPIA as launch blockers | Accepted; production AI switch conditional on DPA and DPIA | - |
+| [ADR-0035](ADR-0035-fly-sentry-axiom-and-alerts.md) | Fly.io in Frankfurt for API and worker; logs sampled at the source and shipped to Axiom; Sentry for API, worker and app errors with personal data off; email and Telegram alerts via a Cloudflare Worker relay with an outside uptime check | Accepted | - |
 
 Decision statuses are tracked in `docs/governance/decision-log.md`. Deferred
 ADRs record the working assumption and the explicitly blocked later work, which

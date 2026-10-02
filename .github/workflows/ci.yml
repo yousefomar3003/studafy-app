@@ -584,8 +584,14 @@ jobs:
       - name: Type-check all workspace members
         run: bun run typecheck
 
+      # The Cloudflare Worker that relays alerts to Telegram (ADR-0035).
+      - name: Type-check the alert relay
+        run: bunx tsc -p ops/alert-relay
+
+      # scripts/ holds the launcher and Fly-config checks, ops/ the alert
+      # relay (ADR-0035); neither needs a database.
       - name: Run workspace tests
-        run: bun test apps packages
+        run: bun test apps packages scripts ops
         env:
           REDIS_URL: redis://127.0.0.1:6379
 

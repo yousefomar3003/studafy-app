@@ -1,0 +1,68 @@
+# Studafy API on Fly.io (ADR-0035, docs/deployment/fly-io.md).
+# Deploy from the repository root:
+#   fly deploy --config fly.api.toml
+# Secrets (DATABASE_URL, REDIS_URL, keys, SENTRY_DSN ...) are set with
+# `fly secrets set`, never here.
+
+app = "studafy-api"
+# Frankfurt, next to the Supabase database (eu-central-1).
+primary_region = "fra"
+
+[build]
+  dockerfile = "apps/api/Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  API_PORT = "8080"
+  LOG_LEVEL = "info"
+  # OPS-090: keep every warning, error, failed and slow request; keep 1 in 10
+  # ordinary successes and 1 in 100 unread-badge polls.
+  LOG_SAMPLE_SUCCESS_RATE = "0.1"
+  LOG_SAMPLE_ROUTINE_RATE = "0.01"
+  LOG_SLOW_REQUEST_MS = "2000"
+  # Per machine. Machines x this, plus the worker's pool, must stay under the
+  # Supabase plan's connection limit.
+  DATABASE_POOL_MAX = "10"
+  # Behaviour switches the production app needs (secrets are separate).
+  TURNSTILE_ENABLED = "true"
+  TURNSTILE_HOSTNAMES = "api.studafy.com"
+  FILE050_NEW_INTENTS_ENABLED = "true"
+  FILE051_PUBLISH_ENABLED = "true"
+  FILE051_DELIVERY_ENABLED = "true"
+  FILE051_DELIVERY_PUBLIC_BASE_URL = "https://api.studafy.com"
+  # ADR-0034: set to "true" at launch, once the provider DPA and the minors'
+  # DPIA are signed. Until then the lesson AI answers AI_FEATURE_DISABLED.
+  AI_LESSON_TOOLS_ENABLED = "false"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Machines start when traffic arrives and stop when it is quiet (nights,
+  # weekends), so idle capacity costs almost nothing. One always stays warm.
+  auto_start_machines = true
+  auto_stop_machines = "stop"
+  min_machines_running = 1
+
+  # Above soft_limit concurrent requests a machine counts as busy and Fly
+  # starts another; hard_limit is the most one machine is ever given.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  # Routing health: is the process alive. Database and Redis reachability
+  # (/readyz) is watched by the uptime alert instead, so a short database
+  # blip does not take every machine out of rotation at once.
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "10s"
+
+[deploy]
+  strategy = "rolling"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"

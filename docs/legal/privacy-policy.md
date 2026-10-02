@@ -446,7 +446,10 @@ own purposes.
 | Provider | What they process | Where |
 |---|---|---|
 | **Supabase** (database, authentication, file storage) | Substantially all application data | [CURRENTLY AWS ap-northeast-1, Tokyo — MOVING TO eu-central-1, Frankfurt. State the live region at publication.] |
-| **Amazon Web Services** (application hosting, operational logs; optionally a backup copy) | Technical logs with hashed identifiers; encrypted backups where enabled | [REGION] |
+| **Fly.io** (application hosting) | Requests passing through our servers while they are handled | Frankfurt, Germany |
+| **Axiom** (operational logs) | Technical logs: request times, outcomes and error codes, with account ids and hashed network addresses. Most successful requests are not kept; logs are deleted after 30 days | [REGION — choose EU] |
+| **Sentry** (error reports) | What broke and where in our code. No names, emails, message content or photos: we switch off its collection of personal data and mask anything that looks like it | [REGION — choose EU] |
+| **Amazon Web Services** (optionally a backup copy) | Encrypted backups where enabled | [REGION] |
 | **GitHub** (Microsoft) (backup storage) | Encrypted daily backups, which GitHub cannot read | [REGION] |
 | **Redis** (rate limits, short-lived caches) | Hashed identifiers and counters | [REGION] |
 | **Google** (Sign in with Google) | Your identity at sign-in | Global |
@@ -659,7 +662,9 @@ You do not have to contact us first.
 2. **§6** — the DPA with Together AI and the DPIA. Both are outstanding. The
    DPIA must cover photos of students' work and whiteboards, and lesson
    material.
-3. **§8** — confirm the transfer mechanism for each provider individually.
+3. **§8** — confirm the transfer mechanism for each provider individually,
+   including Fly.io, Axiom and Sentry (ADR-0035). Sign each one's DPA and
+   choose their EU data regions before production data reaches them.
 4. **§10** — define the retention periods left open.
 5. **§12** — write the incident response procedure.
 6. **Legal review.** This document describes processing of children's data by

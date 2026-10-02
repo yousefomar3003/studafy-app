@@ -1,5 +1,8 @@
 # Deploying the API to AWS App Runner (eu-central-1)
 
+> **Superseded** by [fly-io.md](fly-io.md) (ADR-0035, 2026-10-02). Kept for
+> reference only.
+
 ## Why this exists
 
 Measured from a laptop in Jordan against the Tokyo database:
