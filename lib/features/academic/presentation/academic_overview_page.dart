@@ -590,6 +590,14 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
         },
       );
 
+  /// The lesson an attendance mark is for, as its day and start time.
+  static String? _lessonWhen(BuildContext context, DateTime? startsAt) {
+    if (startsAt == null) return null;
+    final dates = MaterialLocalizations.of(context);
+    return '${dates.formatFullDate(startsAt)} · '
+        '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(startsAt))}';
+  }
+
   Widget _recordCard(
     BuildContext context,
     List<AcademicRecord> items,
@@ -611,6 +619,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     // In the combined view each row says whose it is, and where.
     final owner = _combined ? _owners[item] : null;
     final grades = feed == AcademicFeed.grades;
+    final attendance = feed == AcademicFeed.attendance;
     final paper = item.delivery == 'paper';
     final student = _studentWork;
     final window = _window(item);
@@ -683,16 +692,28 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titles and details are school-authored content, so they
-                  // render verbatim in their own direction.
-                  UserContentText(
-                    item.title,
-                    style: const TextStyle(
-                      color: studafyInk,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
+                  if (attendance)
+                    // A mark is read by the lesson it was for: the day and
+                    // time are the row's name, the mark its pill.
+                    Text(
+                      _lessonWhen(context, item.date) ?? l10n.feedAttendance,
+                      style: const TextStyle(
+                        color: studafyInk,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )
+                  else
+                    // Titles and details are school-authored content, so
+                    // they render verbatim in their own direction.
+                    UserContentText(
+                      item.title,
+                      style: const TextStyle(
+                        color: studafyInk,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 3),
                   if (grades)
                     // The mark itself, large: it is what the row is for.
@@ -713,6 +734,27 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     LinkedText(item.detail),
                   if (grades && paper)
                     Text(l10n.paperGradesPaperLabel, style: labelStyle),
+                  if (!attendance && item.date != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 13,
+                            color: studafyMuted,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              MaterialLocalizations.of(context)
+                                  .formatMediumDate(item.date!),
+                              style: labelStyle,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   if (item.deadline case final deadline?)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),

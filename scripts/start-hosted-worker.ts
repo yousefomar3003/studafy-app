@@ -5,10 +5,15 @@ import { validateHostedEnvironment } from "./start-hosted-api.ts";
 
 /**
  * The worker settings the hosted launcher allows. Hosted development runs
- * the worker for files only - the scan that clears an upload before anyone
- * can open it, and the cleanup of abandoned uploads. Notifications, billing,
- * account-rights executors and database housekeeping stay off, whatever
- * `.env.hosted` says, until each is set up for the hosted project on its own.
+ * the worker for files - the scan that clears an upload before anyone can
+ * open it, and the cleanup of abandoned uploads - and for in-app
+ * notifications: without the outbox drain every notification the app
+ * queues stays in the database and nobody's inbox ever shows one. They need
+ * nothing beyond the database and Redis the worker already has; push to
+ * phones is a separate switch (NOTIFICATION_CHANNELS_ENABLED) and is left
+ * as `.env.hosted` sets it. Billing, account-rights executors and database
+ * housekeeping stay off, whatever `.env.hosted` says, until each is set up
+ * for the hosted project on its own.
  */
 export function hostedWorkerEnvironment(
   env: Record<string, string>,
@@ -22,7 +27,10 @@ export function hostedWorkerEnvironment(
   return {
     ...env,
     DB_HOUSEKEEPING_ENABLED: "false",
-    OPS061_NOTIFICATIONS_ENABLED: "false",
+    // On unless `.env.hosted` explicitly turns it off.
+    OPS061_NOTIFICATIONS_ENABLED: env.OPS061_NOTIFICATIONS_ENABLED === "false"
+      ? "false"
+      : "true",
     PAY071_BILLING_ENABLED: "false",
     PAY071_RECONCILIATION_ENABLED: "false",
     ACCOUNT_DELETION_EXECUTOR_ENABLED: "false",

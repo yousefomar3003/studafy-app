@@ -570,4 +570,56 @@ void main() {
       expect(find.text(word), findsNothing, reason: word);
     }
   });
+
+  testWidgets('each attendance mark says the day and time of its lesson', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository([
+            AcademicRecord(
+              id: 'a1',
+              title: 'absent',
+              detail: 'Doctor visit',
+              state: 'absent',
+              version: 1,
+              date: DateTime(2026, 9, 28, 8),
+            ),
+          ]),
+          initialFeed: AcademicFeed.attendance,
+          availableFeeds: const [AcademicFeed.attendance],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Monday, September 28, 2026 · 8:00 AM'), findsOne);
+    expect(find.text('Absent'), findsOne);
+    expect(find.text('Doctor visit'), findsOne);
+    // The wire word is never shown as a title.
+    expect(find.text('absent'), findsNothing);
+  });
+
+  testWidgets('posted work says the day it was set', (tester) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository([
+            AcademicRecord(
+              id: 'w1',
+              title: 'Fractions sheet',
+              detail: '',
+              state: 'published',
+              version: 1,
+              date: DateTime(2026, 10, 2, 9, 30),
+            ),
+          ]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fri, Oct 2'), findsOne);
+  });
 }

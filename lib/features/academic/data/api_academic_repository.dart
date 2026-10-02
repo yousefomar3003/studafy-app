@@ -53,9 +53,7 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.body ?? '',
               state: x.state,
               version: x.version,
-              date: x.publishedAt == null
-                  ? null
-                  : DateTime.tryParse(x.publishedAt!)?.toLocal(),
+              date: _when(x.publishedAt),
               classroomId: x.classroomId,
               // The lesson's current file, which students and families
               // download from the lesson itself.
@@ -80,6 +78,7 @@ class ApiAcademicRepository implements AcademicRepository {
               classroomId: x.classroomId,
               attachments: _attachments(x.attachments),
               maximumScore: x.maximumScore?.toDouble(),
+              date: _when(x.publishedAt),
               deadline: _deadline(x),
               timeZone: x.timeZone,
             ),
@@ -106,6 +105,7 @@ class ApiAcademicRepository implements AcademicRepository {
               attachments: _attachments(x.attachments),
               markedAssignmentId: x.assignmentId,
               delivery: x.delivery,
+              date: _when(x.publishedAt),
             ),
         ];
       case AcademicFeed.grades:
@@ -133,6 +133,7 @@ class ApiAcademicRepository implements AcademicRepository {
                   (x.score == null ? null : GradeMark.scored),
               score: x.score?.toDouble(),
               outOf: x.maximumScore.toDouble(),
+              date: _when(x.publishedAt),
             ),
         ];
       case AcademicFeed.attendance:
@@ -142,6 +143,7 @@ class ApiAcademicRepository implements AcademicRepository {
           studentId: studentId,
           pageSize: 100,
         );
+        // Newest lesson first: a mark is read by the day it was for.
         return [
           for (final x in page.items)
             AcademicRecord(
@@ -150,8 +152,10 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.reason ?? '',
               state: x.state,
               version: 1,
+              classroomId: x.classroomId,
+              date: _when(x.startsAt),
             ),
-        ];
+        ]..sort(_newestFirst);
       case AcademicFeed.wellbeing:
         final page = await _client.listWellbeing(
           schoolId: _schoolId,
@@ -167,9 +171,25 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.context ?? '',
               state: x.kind,
               version: 1,
+              classroomId: x.classroomId,
+              date: _when(x.createdAt),
             ),
         ];
     }
+  }
+
+  /// A wire timestamp as local time; null when absent or unreadable.
+  static DateTime? _when(String? at) =>
+      at == null ? null : DateTime.tryParse(at)?.toLocal();
+
+  /// Dated records before undated ones, the most recent first.
+  static int _newestFirst(AcademicRecord a, AcademicRecord b) {
+    final first = a.date;
+    final second = b.date;
+    if (first == null || second == null) {
+      return first == null ? (second == null ? 0 : 1) : -1;
+    }
+    return second.compareTo(first);
   }
 
   @override

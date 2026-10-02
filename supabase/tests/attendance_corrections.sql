@@ -6,7 +6,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(28);
+select plan(32);
 
 \set co_teacher 'aaaa0000-0000-4000-8000-0000000000b1'
 \set left_student 'abcf0000-0000-4000-8000-0000000000b2'
@@ -184,6 +184,28 @@ select is(jsonb_array_length(private.api041_query('listAttendanceHistory', :'rec
   2, 'the class teacher reads every change to an existing mark');
 select throws_ok($$update public.attendance_record_revisions set reason = 'rewritten'$$,
   null, 'the history cannot be rewritten');
+
+-- Each mark in a list says which lesson it was for, and work and exams
+-- say when they were set (202610020001).
+select set_config('request.jwt.claim.sub', :'teacher_user', true);
+select is((select (i->>'startsAt')::timestamptz from jsonb_array_elements(private.api041_query(
+    'listAttendance', null, jsonb_build_object('classroomId', :'classroom_id'))->'items') i
+  where i->>'sessionId' = :'recent_session'),
+  (select starts_at from public.lesson_sessions where id = :'recent_session'),
+  'the class teacher reads the day of each lesson in the attendance list');
+select is((select i->>'classroomId' from jsonb_array_elements(private.api041_query(
+    'listAttendance', null, jsonb_build_object('classroomId', :'classroom_id'))->'items') i
+  where i->>'sessionId' = :'recent_session'),
+  :'classroom_id', 'and its class');
+select ok((select bool_and(i ? 'publishedAt') from jsonb_array_elements(private.api041_query(
+    'listAssessments', null, '{}')->'items') i),
+  'every exam in the list says when it was published');
+select set_config('request.jwt.claim.sub', :'guardian_user', true);
+select is((select (i->>'startsAt')::timestamptz from jsonb_array_elements(private.api041_query(
+    'listAttendance', null, jsonb_build_object('studentId', :'student_id'))->'items') i
+  where i->>'sessionId' = :'recent_session'),
+  (select starts_at from public.lesson_sessions where id = :'recent_session'),
+  'a parent reads which day their child was marked for');
 
 select * from finish();
 rollback;

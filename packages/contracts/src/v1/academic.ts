@@ -288,6 +288,8 @@ export const V1Assignment = z.strictObject({
   deadlineLocal: LocalDateTime.optional(),
   submissionState: z.enum(["open", "closed", "graded_locked"]).optional(),
   extension: V1AssignmentExtensionSummary.nullable().optional(),
+  /** When the work was set for the class; null while it is a draft. */
+  publishedAt: Timestamp.nullable().optional(),
 });
 export type V1Assignment = z.infer<typeof V1Assignment>;
 
@@ -445,6 +447,8 @@ export const V1Assessment = z.strictObject({
   attachments: z.array(V1FileAttachment).max(5).optional(),
   /** How much this category counts, when the school weighs categories. */
   weight: GradeWeight.nullable().optional(),
+  /** When the exam was published to the class; null while it is a draft. */
+  publishedAt: Timestamp.nullable().optional(),
 });
 export type V1Assessment = z.infer<typeof V1Assessment>;
 
@@ -583,6 +587,14 @@ export const V1AttendanceRecord = z.strictObject({
   state: z.enum(["present", "absent", "late", "excused"]),
   reason: z.string().nullable(),
   recordedAt: Timestamp,
+  /**
+   * The lesson the mark is for - its class and when it met - so a list of
+   * marks says which day each one was. Present on every list read; a
+   * register already names its lesson, so its rows leave these out.
+   */
+  classroomId: Id.optional(),
+  startsAt: Timestamp.optional(),
+  endsAt: Timestamp.optional(),
 });
 export type V1AttendanceRecord = z.infer<typeof V1AttendanceRecord>;
 

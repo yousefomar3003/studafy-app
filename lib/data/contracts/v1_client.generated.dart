@@ -2979,6 +2979,7 @@ class V1AssessmentDto {
     this.assignmentId,
     this.attachments,
     this.weight,
+    this.publishedAt,
   });
 
   factory V1AssessmentDto.fromJson(Map<String, dynamic> json) =>
@@ -3000,6 +3001,7 @@ class V1AssessmentDto {
                   V1FileAttachmentDto.fromJson(item as Map<String, dynamic>),
               ],
         weight: json['weight'] as num?,
+        publishedAt: json['publishedAt'] as String?,
       );
 
   final String id;
@@ -3014,6 +3016,7 @@ class V1AssessmentDto {
   final String? assignmentId;
   final List<V1FileAttachmentDto>? attachments;
   final num? weight;
+  final String? publishedAt;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -3029,6 +3032,7 @@ class V1AssessmentDto {
     if (attachments != null)
       'attachments': [for (final item in attachments!) item.toJson()],
     'weight': ?weight,
+    'publishedAt': ?publishedAt,
   };
 }
 
@@ -3313,6 +3317,7 @@ class V1AssignmentDto {
     this.deadlineLocal,
     this.submissionState,
     this.extension,
+    this.publishedAt,
   });
 
   factory V1AssignmentDto.fromJson(Map<String, dynamic> json) =>
@@ -3345,6 +3350,7 @@ class V1AssignmentDto {
             : V1AssignmentExtensionSummaryDto.fromJson(
                 json['extension'] as Map<String, dynamic>,
               ),
+        publishedAt: json['publishedAt'] as String?,
       );
 
   final String id;
@@ -3366,6 +3372,7 @@ class V1AssignmentDto {
   final String? deadlineLocal;
   final String? submissionState;
   final V1AssignmentExtensionSummaryDto? extension;
+  final String? publishedAt;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -3388,6 +3395,7 @@ class V1AssignmentDto {
     'deadlineLocal': ?deadlineLocal,
     'submissionState': ?submissionState,
     if (extension != null) 'extension': extension!.toJson(),
+    'publishedAt': ?publishedAt,
   };
 }
 
@@ -3655,6 +3663,9 @@ class V1AttendanceRecordDto {
     required this.state,
     required this.reason,
     required this.recordedAt,
+    this.classroomId,
+    this.startsAt,
+    this.endsAt,
   });
 
   factory V1AttendanceRecordDto.fromJson(Map<String, dynamic> json) =>
@@ -3665,6 +3676,9 @@ class V1AttendanceRecordDto {
         state: json['state'] as String,
         reason: json['reason'] as String?,
         recordedAt: json['recordedAt'] as String,
+        classroomId: json['classroomId'] as String?,
+        startsAt: json['startsAt'] as String?,
+        endsAt: json['endsAt'] as String?,
       );
 
   final String id;
@@ -3673,6 +3687,9 @@ class V1AttendanceRecordDto {
   final String state;
   final String? reason;
   final String recordedAt;
+  final String? classroomId;
+  final String? startsAt;
+  final String? endsAt;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -3681,6 +3698,9 @@ class V1AttendanceRecordDto {
     'state': state,
     'reason': reason,
     'recordedAt': recordedAt,
+    'classroomId': ?classroomId,
+    'startsAt': ?startsAt,
+    'endsAt': ?endsAt,
   };
 }
 
@@ -6695,6 +6715,7 @@ class V1GradebookItemDto {
     this.assignmentId,
     this.attachments,
     this.weight,
+    this.publishedAt,
     required this.gradebookVersion,
     required this.counts,
   });
@@ -6718,6 +6739,7 @@ class V1GradebookItemDto {
                   V1FileAttachmentDto.fromJson(item as Map<String, dynamic>),
               ],
         weight: json['weight'] as num?,
+        publishedAt: json['publishedAt'] as String?,
         gradebookVersion: json['gradebookVersion'] as int,
         counts: json['counts'] as Map<String, dynamic>,
       );
@@ -6734,6 +6756,7 @@ class V1GradebookItemDto {
   final String? assignmentId;
   final List<V1FileAttachmentDto>? attachments;
   final num? weight;
+  final String? publishedAt;
   final int gradebookVersion;
   final Map<String, dynamic> counts;
 
@@ -6751,6 +6774,7 @@ class V1GradebookItemDto {
     if (attachments != null)
       'attachments': [for (final item in attachments!) item.toJson()],
     'weight': ?weight,
+    'publishedAt': ?publishedAt,
     'gradebookVersion': gradebookVersion,
     'counts': counts,
   };

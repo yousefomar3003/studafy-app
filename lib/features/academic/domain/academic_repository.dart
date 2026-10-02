@@ -67,7 +67,9 @@ class AcademicRecord {
   /// but the gradebook still needs it - it is where the mark is entered.
   final String? markedAssignmentId;
 
-  /// When the record was published - a lesson's date. Null where the feed
+  /// When the record happened: a lesson's, work's or exam's publishing
+  /// time, when a mark was released or a note written - and for an
+  /// attendance mark, when the lesson it is for began. Null where the feed
   /// does not carry one.
   final DateTime? date;
 
