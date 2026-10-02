@@ -1459,5 +1459,8 @@
   "famLinkIdHelp": "يجده طفلك في ملفه الشخصي، تحت معرّف Studafy الخاص بك.",
   "familyPlusCurrentPlan": "الخطة الحالية",
   "paperGradesOtherMark": "علامة أخرى",
-  "paperGradesEnterScore": "إدخال درجة بدلًا من ذلك"
+  "paperGradesEnterScore": "إدخال درجة بدلًا من ذلك",
+  "courseworkInvalidState": "لا يمكن تنفيذ ذلك الآن.",
+  "attendanceNotOnTimetable": "لم يكن هذا الدرس في جدول الصف في ذلك التاريخ، لذا لا يوجد له سجل حضور.",
+  "attendanceSaveFailed": "تعذّر حفظ الحضور. يرجى المحاولة مرة أخرى."
 }

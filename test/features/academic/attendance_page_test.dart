@@ -354,6 +354,38 @@ void main() {
       await tester.pumpAndSettle();
       expect(first.difference(fake.rosterCalls.last!).inDays, 7);
     });
+
+    testWidgets('no lesson is offered before the timetable started', (
+      tester,
+    ) async {
+      // A class set up today, meeting on a weekday that already went by this
+      // week: last week's lesson never existed, so the register must not
+      // offer it - the server refuses a register for it.
+      final today = DateTime.now();
+      final startsOn = DateTime(today.year, today.month, today.day);
+      final yesterday = startsOn.subtract(const Duration(days: 1)).weekday;
+      final fake = AttendanceFake(
+        schedule: [
+          ClassSessionSlot(
+            weekday: yesterday,
+            startsAt: '08:00',
+            endsAt: '08:50',
+            effectiveFrom: startsOn,
+          ),
+        ],
+        roster: roster,
+      );
+      await tester.pumpWidget(_page(fake));
+      await tester.pumpAndSettle();
+
+      final opened = fake.rosterCalls.last!;
+      expect(opened.weekday, yesterday);
+      expect(opened.isBefore(startsOn), isFalse);
+
+      await tester.tap(find.byTooltip('Previous lesson'));
+      await tester.pumpAndSettle();
+      expect(fake.rosterCalls.last!.isBefore(startsOn), isFalse);
+    });
   });
 
   group('the school\'s attendance policy', () {
@@ -466,6 +498,34 @@ void main() {
       expect(
         find.text('Please give a reason. It is kept with the change.'),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('a lesson that was not on the timetable says so', (
+      tester,
+    ) async {
+      final fake = AttendanceFake(
+        schedule: _twiceOnMonday,
+        roster: roster,
+        refusal: const CourseworkRefusal(CourseworkProblem.invalidState),
+      );
+      await tester.pumpWidget(_page(fake, on: _nextWeekday(DateTime.monday)));
+      await tester.pumpAndSettle();
+
+      await _mark(tester, 'Absent');
+      await tester.tap(find.text('Save attendance'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          "This lesson wasn't on the class's timetable on that date, "
+          'so it has no register.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Could not load the register. Please try again.'),
+        findsNothing,
       );
     });
   });

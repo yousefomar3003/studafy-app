@@ -5174,4 +5174,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get paperGradesEnterScore => 'Enter a score instead';
+
+  @override
+  String get courseworkInvalidState =>
+      'That can\'t be done for this right now.';
+
+  @override
+  String get attendanceNotOnTimetable =>
+      'This lesson wasn\'t on the class\'s timetable on that date, so it has no register.';
+
+  @override
+  String get attendanceSaveFailed =>
+      'The attendance couldn\'t be saved. Please try again.';
 }

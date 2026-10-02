@@ -2870,5 +2870,8 @@
   "famLinkIdHelp": "Your child finds it on their Profile, under Your Studafy ID.",
   "familyPlusCurrentPlan": "Current plan",
   "paperGradesOtherMark": "Other mark",
-  "paperGradesEnterScore": "Enter a score instead"
+  "paperGradesEnterScore": "Enter a score instead",
+  "courseworkInvalidState": "That can't be done for this right now.",
+  "attendanceNotOnTimetable": "This lesson wasn't on the class's timetable on that date, so it has no register.",
+  "attendanceSaveFailed": "The attendance couldn't be saved. Please try again."
 }

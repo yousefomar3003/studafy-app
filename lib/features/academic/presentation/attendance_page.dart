@@ -101,11 +101,16 @@ class _AttendancePageState extends State<AttendancePage> {
   /// meet that day at all, which is worth saying plainly rather than
   /// showing an empty register the teacher might fill in anyway.
   List<ClassSessionSlot> get _slotsForDay =>
-      _schedule.where((slot) => slot.weekday == _date.weekday).toList()
+      _schedule.where((slot) => slot.appliesOn(_date)).toList()
         ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
 
   /// Weekdays the class meets on.
   Set<int> get _meetingDays => {for (final slot in _schedule) slot.weekday};
+
+  /// Whether the class had a lesson on [day] - on a weekday it meets, and
+  /// inside the dates its timetable held. A class set up today has no
+  /// register for last Monday, however often it meets on Mondays now.
+  bool _meetsOn(DateTime day) => _schedule.any((slot) => slot.appliesOn(day));
 
   static DateTime _day(DateTime value) =>
       DateTime(value.year, value.month, value.day);
@@ -115,9 +120,11 @@ class _AttendancePageState extends State<AttendancePage> {
   DateTime? _stepMeeting(DateTime from, int direction) {
     if (_meetingDays.isEmpty) return null;
     var day = _day(from);
-    for (var i = 0; i < 7; i++) {
+    // A year either way: a timetable can start or stop, so the next lesson
+    // is not always within a week.
+    for (var i = 0; i < 366; i++) {
       day = day.add(Duration(days: direction));
-      if (_meetingDays.contains(day.weekday)) return day;
+      if (_meetsOn(day)) return day;
     }
     return null;
   }
@@ -131,8 +138,10 @@ class _AttendancePageState extends State<AttendancePage> {
     if (_placed) return;
     _placed = true;
     if (widget.initialDate != null) return;
-    if (_meetingDays.isEmpty || _meetingDays.contains(_date.weekday)) return;
-    _date = _stepMeeting(_date, -1) ?? _date;
+    if (_meetingDays.isEmpty || _meetsOn(_date)) return;
+    // The most recent lesson, or - for a timetable that starts later - the
+    // first one.
+    _date = _stepMeeting(_date, -1) ?? _stepMeeting(_date, 1) ?? _date;
   }
 
   Future<void> _stepTo(int direction) async {
@@ -205,7 +214,7 @@ class _AttendancePageState extends State<AttendancePage> {
     final days = _meetingDays;
     // Only days the class meets can be chosen: any other day has no
     // register to take. The calendar must open on a choosable day.
-    final initial = days.isEmpty || days.contains(_date.weekday)
+    final initial = days.isEmpty || _meetsOn(_date)
         ? _date
         : (_stepMeeting(_date, -1) ?? _stepMeeting(_date, 1) ?? _date);
     final picked = await showDatePicker(
@@ -217,7 +226,7 @@ class _AttendancePageState extends State<AttendancePage> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       selectableDayPredicate: days.isEmpty
           ? null
-          : (day) => days.contains(day.weekday),
+          : (day) => _meetsOn(day) || _day(day) == _day(initial),
     );
     if (picked == null) return;
     setState(() => _date = picked);
@@ -288,13 +297,16 @@ class _AttendancePageState extends State<AttendancePage> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = courseworkMessage(l10n, refusal);
+        _error = refusal.problem == CourseworkProblem.invalidState
+            ? l10n.attendanceNotOnTimetable
+            : courseworkMessage(l10n, refusal);
       });
     } on Object {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = _loadFailedMessage;
+        // A failed save is not a failed load: the register is still here.
+        _error = l10n.attendanceSaveFailed;
       });
     }
   }

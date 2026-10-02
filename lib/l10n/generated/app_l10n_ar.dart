@@ -5163,4 +5163,15 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get paperGradesEnterScore => 'إدخال درجة بدلًا من ذلك';
+
+  @override
+  String get courseworkInvalidState => 'لا يمكن تنفيذ ذلك الآن.';
+
+  @override
+  String get attendanceNotOnTimetable =>
+      'لم يكن هذا الدرس في جدول الصف في ذلك التاريخ، لذا لا يوجد له سجل حضور.';
+
+  @override
+  String get attendanceSaveFailed =>
+      'تعذّر حفظ الحضور. يرجى المحاولة مرة أخرى.';
 }

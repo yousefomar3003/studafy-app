@@ -469,6 +469,11 @@ class ApiAcademicRepository implements AcademicRepository {
           weekday: slot.weekday,
           startsAt: slot.startsAt,
           endsAt: slot.endsAt,
+          effectiveFrom: DateTime.tryParse(slot.effectiveFrom),
+          effectiveUntil: switch (slot.effectiveUntil) {
+            final until? => DateTime.tryParse(until),
+            null => null,
+          },
         ),
     ];
   }
@@ -1223,6 +1228,7 @@ class ApiAcademicRepository implements AcademicRepository {
     } on V1ApiException catch (error) {
       final problem = switch (error.code) {
         'VERSION_CONFLICT' => CourseworkProblem.versionConflict,
+        'INVALID_STATE' => CourseworkProblem.invalidState,
         'GRADE_ENTRIES_INVALID' => CourseworkProblem.entriesInvalid,
         'REASON_REQUIRED' => CourseworkProblem.reasonRequired,
         'ATTENDANCE_LOCKED' => CourseworkProblem.attendanceLocked,

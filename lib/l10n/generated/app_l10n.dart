@@ -8870,6 +8870,24 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Enter a score instead'**
   String get paperGradesEnterScore;
+
+  /// No description provided for @courseworkInvalidState.
+  ///
+  /// In en, this message translates to:
+  /// **'That can\'t be done for this right now.'**
+  String get courseworkInvalidState;
+
+  /// No description provided for @attendanceNotOnTimetable.
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson wasn\'t on the class\'s timetable on that date, so it has no register.'**
+  String get attendanceNotOnTimetable;
+
+  /// No description provided for @attendanceSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The attendance couldn\'t be saved. Please try again.'**
+  String get attendanceSaveFailed;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

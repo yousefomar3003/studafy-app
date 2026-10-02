@@ -306,6 +306,8 @@ class ClassSessionSlot {
     required this.weekday,
     required this.startsAt,
     required this.endsAt,
+    this.effectiveFrom,
+    this.effectiveUntil,
   });
 
   /// ISO-8601 weekday: Monday is 1, Sunday is 7.
@@ -314,6 +316,23 @@ class ClassSessionSlot {
   /// Wall-clock start, `HH:mm` or `HH:mm:ss`, in the school's timezone.
   final String startsAt;
   final String endsAt;
+
+  /// The days the class keeps this slot: from when the timetable said so,
+  /// until it changed. Null is open-ended. A lesson outside them was never
+  /// on the timetable, and the server refuses a register for it.
+  final DateTime? effectiveFrom;
+  final DateTime? effectiveUntil;
+
+  /// Whether the class meets in this slot on [day].
+  bool appliesOn(DateTime day) {
+    if (day.weekday != weekday) return false;
+    final date = DateTime(day.year, day.month, day.day);
+    final from = effectiveFrom;
+    final until = effectiveUntil;
+    if (from != null && date.isBefore(from)) return false;
+    if (until != null && date.isAfter(until)) return false;
+    return true;
+  }
 }
 
 /// How a student was marked for one session.
@@ -774,6 +793,10 @@ class AssignmentExtension {
 /// code, when a bulk command refused only some of them.
 enum CourseworkProblem {
   versionConflict,
+
+  /// The thing asked for does not exist in the state asked - a register
+  /// for a lesson that was never on the class's timetable.
+  invalidState,
   entriesInvalid,
   reasonRequired,
   attendanceLocked,
