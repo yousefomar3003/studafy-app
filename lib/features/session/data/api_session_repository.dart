@@ -241,6 +241,14 @@ class ApiSessionRepository implements SessionRepository {
   }
 
   @override
+  Future<bool> hasLinkedChildren() async {
+    final links = await _client.listMyGuardianLinks();
+    return links.items.any(
+      (link) => link.status == 'verified' || link.status == 'pending',
+    );
+  }
+
+  @override
   Future<TermInfo?> activeTermForSchool(SchoolId school) async {
     final context = await _client.getAuthContext();
     for (final membership in context.memberships) {

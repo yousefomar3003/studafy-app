@@ -5186,4 +5186,19 @@ class AppL10nEn extends AppL10n {
   @override
   String get attendanceSaveFailed =>
       'The attendance couldn\'t be saved. Please try again.';
+
+  @override
+  String loginOtherRoleTitle(String role) {
+    return 'This email is already a $role account';
+  }
+
+  @override
+  String loginOtherRoleBody(String own, String chosen) {
+    return 'Continue as a $own, or also use this account as a $chosen. You can switch between the two any time from your profile.';
+  }
+
+  @override
+  String loginAlsoUseAs(String role) {
+    return 'Also use it as a $role';
+  }
 }

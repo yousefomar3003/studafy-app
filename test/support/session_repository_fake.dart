@@ -57,6 +57,12 @@ abstract class FakeSessionRepositoryBase implements SessionRepository {
   Future<void> recordAccountKind(AccountKind kind) async =>
       recordedKinds.add(kind);
 
+  /// Whether the signed-in account follows a child.
+  bool linkedChildren = false;
+
+  @override
+  Future<bool> hasLinkedChildren() async => linkedChildren;
+
   @override
   Future<void> signOut({
     SignOutScope scope = SignOutScope.currentDevice,

@@ -39,6 +39,12 @@ enum LoginOutcome {
   /// signing in as a teacher, or an adult's as a student. Nothing was
   /// entered; [SessionInteractor.accountRole] is the role it can open.
   wrongRole,
+
+  /// An adult's account already used in the other adult role - a parent's
+  /// signing in as a teacher, or a teacher's as a parent - and not yet in
+  /// the one chosen. Nothing was entered: the person picks between the role
+  /// they have ([SessionInteractor.accountRole]) and adding the one chosen.
+  otherRole,
 }
 
 /// Drives the session state machine (ARC-011 session slice, AUTH-030).
@@ -130,10 +136,14 @@ class SessionInteractor {
 
   /// Hydrates the authenticated context after a remote session appears:
   /// consent, profile, matching membership, and the school's active term.
+  ///
+  /// [addRole] is set once the person has chosen to add [role] to an
+  /// account already used in the other adult role.
   Future<Result<LoginOutcome>> completeRemoteLogin({
     required StudafyRole role,
     required bool consentAccepted,
     required String locale,
+    bool addRole = false,
   }) async {
     final result = await runCatching(() async {
       if (consentAccepted) {
@@ -190,6 +200,19 @@ class SessionInteractor {
           await repository.signOut();
           throw Failure.validation('This account no longer has access.');
         }
+      }
+      // An adult's account that already has the other adult role is never
+      // carried into this one unasked: a parent who came in through the
+      // Teacher door used to land in teacher setup, as if the email were
+      // new, with nothing saying where their children had gone.
+      if (!addRole) {
+        final own = await _ownOtherRole(profile, role, membership);
+        if (own != null) {
+          _accountRole = own;
+          return LoginOutcome.otherRole;
+        }
+      }
+      if (membership == null) {
         context.hydrate(authenticatedProfile: profile, signedInAs: role);
         return LoginOutcome.needsOnboarding;
       }
@@ -213,6 +236,8 @@ class SessionInteractor {
             telemetry.event('session_authenticated', {'role': role.name});
           case LoginOutcome.wrongRole:
             telemetry.event('session_role_refused', {'role': role.name});
+          case LoginOutcome.otherRole:
+            telemetry.event('session_role_offered', {'role': role.name});
           case LoginOutcome.needsOnboarding:
             _setStatus(SessionStatus.onboarding);
             telemetry.event('session_onboarding_required', {'role': role.name});
@@ -224,6 +249,38 @@ class SessionInteractor {
       },
     );
     return result;
+  }
+
+  /// The adult role this account already has when it has not got [role]:
+  /// parent for a teacher sign-in by someone following a child and teaching
+  /// nowhere, teacher for a parent sign-in by a teacher following no child.
+  /// Null when [role] is already theirs, or the account has no role yet.
+  Future<StudafyRole?> _ownOtherRole(
+    UserProfile profile,
+    StudafyRole role,
+    SchoolMembership? membership,
+  ) async {
+    Future<bool> followsAChild() async {
+      try {
+        return await repository.hasLinkedChildren();
+      } on Object {
+        // Best effort: unable to tell, the chosen door decides as before.
+        return false;
+      }
+    }
+
+    switch (role) {
+      case StudafyRole.teacher when membership == null:
+        return await followsAChild() ? StudafyRole.parent : null;
+      case StudafyRole.parent:
+        final teaches = profile.memberships.any(
+          (m) => m.active && m.role == StudafyRole.teacher,
+        );
+        if (!teaches) return null;
+        return await followsAChild() ? null : StudafyRole.teacher;
+      default:
+        return null;
+    }
   }
 
   /// Starts the synthetic demo session. Refuses every non-synthetic build.

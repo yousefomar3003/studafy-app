@@ -8888,6 +8888,24 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'The attendance couldn\'t be saved. Please try again.'**
   String get attendanceSaveFailed;
+
+  /// No description provided for @loginOtherRoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already a {role} account'**
+  String loginOtherRoleTitle(String role);
+
+  /// No description provided for @loginOtherRoleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as a {own}, or also use this account as a {chosen}. You can switch between the two any time from your profile.'**
+  String loginOtherRoleBody(String own, String chosen);
+
+  /// No description provided for @loginAlsoUseAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Also use it as a {role}'**
+  String loginAlsoUseAs(String role);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

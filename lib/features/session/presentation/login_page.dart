@@ -156,7 +156,10 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(closeInAppWebView());
   }
 
-  Future<void> _completeRemoteLogin({UserRole? as}) async {
+  Future<void> _completeRemoteLogin({
+    UserRole? as,
+    bool addRole = false,
+  }) async {
     if (!mounted || completingRemoteLogin || widget.session.isDemoSession) {
       return;
     }
@@ -166,6 +169,7 @@ class _LoginPageState extends State<LoginPage> {
       role: _studafyRole(role),
       consentAccepted: accepted,
       locale: Localizations.localeOf(context).languageCode,
+      addRole: addRole,
     );
     completingRemoteLogin = false;
     result.fold(
@@ -179,6 +183,9 @@ class _LoginPageState extends State<LoginPage> {
           case LoginOutcome.wrongRole:
             final own = widget.session.accountRole;
             if (own != null) unawaited(_explainWrongRole(own));
+          case LoginOutcome.otherRole:
+            final own = widget.session.accountRole;
+            if (own != null) unawaited(_offerOwnRole(own, role));
         }
       },
       onFailure: (failure) {
@@ -312,6 +319,101 @@ class _LoginPageState extends State<LoginPage> {
     }
     // A different email: this one leaves the device's sign-in, and the
     // screen waits for the next.
+    setState(() {
+      signingIn = false;
+      error = null;
+    });
+    await widget.session.signOut();
+  }
+
+  /// This email is already used in the other adult role. Nothing has been
+  /// entered: the person goes on in the role they have, or adds the one
+  /// they chose - an adult may be both, and switches between them.
+  Future<void> _offerOwnRole(StudafyRole own, UserRole chosen) async {
+    final l10n = AppL10n.of(context);
+    final ownName = _roleName(l10n, own);
+    final chosenName = _roleName(l10n, _studafyRole(chosen));
+    final choice = await showModalBottomSheet<UserRole>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: studafyWash,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    own == StudafyRole.parent
+                        ? Icons.family_restroom_rounded
+                        : Icons.school_rounded,
+                    color: studafyNavy,
+                    size: 30,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.loginOtherRoleTitle(ownName.toLowerCase()),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: studafyInk,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.loginOtherRoleBody(
+                  ownName.toLowerCase(),
+                  chosenName.toLowerCase(),
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: studafyMuted, height: 1.45),
+              ),
+              const SizedBox(height: 22),
+              FilledButton(
+                onPressed: () => Navigator.pop(sheet, _userRole(own)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                child: Text(l10n.loginContinueAs(ownName)),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => Navigator.pop(sheet, chosen),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(l10n.loginAlsoUseAs(chosenName.toLowerCase())),
+              ),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(sheet),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(l10n.loginUseDifferentEmail),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice != null) {
+      await _completeRemoteLogin(as: choice, addRole: choice == chosen);
+      return;
+    }
     setState(() {
       signingIn = false;
       error = null;

@@ -5174,4 +5174,19 @@ class AppL10nAr extends AppL10n {
   @override
   String get attendanceSaveFailed =>
       'تعذّر حفظ الحضور. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String loginOtherRoleTitle(String role) {
+    return 'هذا البريد مستخدم بالفعل كحساب $role';
+  }
+
+  @override
+  String loginOtherRoleBody(String own, String chosen) {
+    return 'تابع كـ$own، أو استخدم هذا الحساب أيضًا كـ$chosen. يمكنك التبديل بينهما في أي وقت من ملفك الشخصي.';
+  }
+
+  @override
+  String loginAlsoUseAs(String role) {
+    return 'استخدمه أيضًا كـ$role';
+  }
 }

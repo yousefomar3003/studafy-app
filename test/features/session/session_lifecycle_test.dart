@@ -279,17 +279,89 @@ void main() {
       },
     );
 
-    test('a teacher may also sign in as a parent', () async {
+    test(
+      'a teacher signing in as a parent is asked first, then may add it',
+      () async {
+        interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+        repository.profile = _teacher();
+        final offered = await interactor.completeRemoteLogin(
+          role: StudafyRole.parent,
+          consentAccepted: true,
+          locale: 'en',
+        );
+        // Not carried into an empty parent home unasked.
+        expect(offered.require, LoginOutcome.otherRole);
+        expect(interactor.accountRole, StudafyRole.teacher);
+        expect(context.signedInAs, isNull);
+
+        final added = await interactor.completeRemoteLogin(
+          role: StudafyRole.parent,
+          consentAccepted: true,
+          locale: 'en',
+          addRole: true,
+        );
+        expect(added.require, LoginOutcome.needsOnboarding);
+        expect(context.signedInAs, StudafyRole.parent);
+        expect(context.membership, isNull);
+      },
+    );
+
+    test(
+      'a teacher who is also a parent goes straight in as a parent',
+      () async {
+        interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+        repository
+          ..profile = _teacher()
+          ..linkedChildren = true;
+        final result = await interactor.completeRemoteLogin(
+          role: StudafyRole.parent,
+          consentAccepted: true,
+          locale: 'en',
+        );
+        expect(result.require, LoginOutcome.needsOnboarding);
+        expect(context.signedInAs, StudafyRole.parent);
+      },
+    );
+
+    test('a parent signing in as a teacher is offered their parent account, '
+        'not teacher setup', () async {
       interactor = build(const RuntimePolicy(StudafyEnvironment.development));
-      repository.profile = _teacher();
-      final result = await interactor.completeRemoteLogin(
+      repository
+        ..profile = const UserProfile(
+          id: 'user-p',
+          displayName: 'Mona',
+          email: 'mona@example.test',
+          memberships: [],
+          accountKind: AccountKind.adult,
+        )
+        ..linkedChildren = true;
+      final offered = await interactor.completeRemoteLogin(
+        role: StudafyRole.teacher,
+        consentAccepted: true,
+        locale: 'en',
+      );
+      expect(offered.require, LoginOutcome.otherRole);
+      expect(interactor.accountRole, StudafyRole.parent);
+      expect(context.signedInAs, isNull);
+
+      // Continuing as the parent they are opens the parent home.
+      final asParent = await interactor.completeRemoteLogin(
         role: StudafyRole.parent,
         consentAccepted: true,
         locale: 'en',
       );
-      expect(result.require, LoginOutcome.needsOnboarding);
+      expect(asParent.require, LoginOutcome.needsOnboarding);
       expect(context.signedInAs, StudafyRole.parent);
-      expect(context.membership, isNull);
+
+      // Choosing to teach as well starts teacher setup.
+      final teaching = await interactor.completeRemoteLogin(
+        role: StudafyRole.teacher,
+        consentAccepted: true,
+        locale: 'en',
+        addRole: true,
+      );
+      expect(teaching.require, LoginOutcome.needsOnboarding);
+      expect(context.signedInAs, StudafyRole.teacher);
     });
 
     test(

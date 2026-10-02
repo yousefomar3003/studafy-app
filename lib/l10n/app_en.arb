@@ -2873,5 +2873,11 @@
   "paperGradesEnterScore": "Enter a score instead",
   "courseworkInvalidState": "That can't be done for this right now.",
   "attendanceNotOnTimetable": "This lesson wasn't on the class's timetable on that date, so it has no register.",
-  "attendanceSaveFailed": "The attendance couldn't be saved. Please try again."
+  "attendanceSaveFailed": "The attendance couldn't be saved. Please try again.",
+  "loginOtherRoleTitle": "This email is already a {role} account",
+  "@loginOtherRoleTitle": {"placeholders": {"role": {"type": "String"}}},
+  "loginOtherRoleBody": "Continue as a {own}, or also use this account as a {chosen}. You can switch between the two any time from your profile.",
+  "@loginOtherRoleBody": {"placeholders": {"own": {"type": "String"}, "chosen": {"type": "String"}}},
+  "loginAlsoUseAs": "Also use it as a {role}",
+  "@loginAlsoUseAs": {"placeholders": {"role": {"type": "String"}}}
 }

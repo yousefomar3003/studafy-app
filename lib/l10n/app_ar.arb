@@ -1462,5 +1462,8 @@
   "paperGradesEnterScore": "إدخال درجة بدلًا من ذلك",
   "courseworkInvalidState": "لا يمكن تنفيذ ذلك الآن.",
   "attendanceNotOnTimetable": "لم يكن هذا الدرس في جدول الصف في ذلك التاريخ، لذا لا يوجد له سجل حضور.",
-  "attendanceSaveFailed": "تعذّر حفظ الحضور. يرجى المحاولة مرة أخرى."
+  "attendanceSaveFailed": "تعذّر حفظ الحضور. يرجى المحاولة مرة أخرى.",
+  "loginOtherRoleTitle": "هذا البريد مستخدم بالفعل كحساب {role}",
+  "loginOtherRoleBody": "تابع كـ{own}، أو استخدم هذا الحساب أيضًا كـ{chosen}. يمكنك التبديل بينهما في أي وقت من ملفك الشخصي.",
+  "loginAlsoUseAs": "استخدمه أيضًا كـ{role}"
 }

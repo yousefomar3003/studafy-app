@@ -154,6 +154,11 @@ abstract interface class SessionRepository {
   /// person first signed in as. The server ignores it once decided.
   Future<void> recordAccountKind(AccountKind kind);
 
+  /// Whether this account follows a child - linked, or asking to be. A
+  /// parent holds no school membership, so this is how sign-in tells a
+  /// parent's account from one that has never been used.
+  Future<bool> hasLinkedChildren();
+
   /// Clears the session for [scope] and erases locally cached material.
   Future<void> signOut({SignOutScope scope = SignOutScope.currentDevice});
 
