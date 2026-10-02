@@ -1152,6 +1152,7 @@
           "dependencies": [
             "npm:@apple/app-store-server-library@3.1.0",
             "npm:@aws-sdk/client-cloudwatch-logs@^3.1137.0",
+            "npm:@sentry/bun@11.2.0",
             "npm:@supabase/supabase-js@2.116.0",
             "npm:bullmq@6.3.4",
             "npm:google-auth-library@^11.1.0",

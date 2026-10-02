@@ -5,7 +5,7 @@ import {
   enforceWorkerFailClosed,
   parseEnv,
   workerEnvSchema,
-} from "@studafy/config";
+} from "../packages/config/src/index.ts";
 
 /**
  * The Fly configs (ADR-0035) hold the non-secret production settings. Each
