@@ -53,8 +53,9 @@ select is(
     from public.store_products
     where feature_key in ('family_plus', 'family_plus_large')
       and storefront_listed),
-  array['development', 'synthetic'],
-  'and are on sale only where the stores are set up for testing');
+  -- On sale everywhere from launch (ADR-0034, 202610020002).
+  array['development', 'production', 'staging', 'synthetic'],
+  'and are on sale in every environment from launch');
 select ok(
   not exists (select 1 from public.store_products
     where feature_key = 'parent_insights' and storefront_listed
