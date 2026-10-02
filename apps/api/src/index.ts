@@ -14,6 +14,7 @@ const platform = buildPlatform();
 const {
   env,
   cloudwatch,
+  errorReporter,
   logger,
   sql,
   redis,
@@ -49,6 +50,7 @@ const app = createApp({
     environment: env.ENVIRONMENT,
   },
   logger,
+  ...(errorReporter ? { errorReporter } : {}),
   checks: { database: databaseCheck, redis: redisCheck },
   platform: {
     allowedOrigins: env.API_ALLOWED_ORIGINS,
@@ -93,5 +95,6 @@ installGracefulShutdown({
       cloudwatch.close();
       await cloudwatch.flush();
     }
+    await errorReporter?.flush();
   },
 });

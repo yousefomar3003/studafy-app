@@ -64,6 +64,18 @@ export const apiEnvSchema = z.object({
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(200).default(20),
   REDIS_URL: url.optional(),
   LOG_LEVEL: LogLevelSchema.default("info"),
+  // OPS-090 log volume. 1 keeps every line (local and test). Production
+  // keeps warnings, errors, failed and slow requests always, and samples the
+  // rest: ordinary successes at LOG_SAMPLE_SUCCESS_RATE, routine polling at
+  // LOG_SAMPLE_ROUTINE_RATE.
+  LOG_SAMPLE_SUCCESS_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SAMPLE_ROUTINE_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SLOW_REQUEST_MS: z.coerce.number().int().min(100).max(60_000).default(
+    2_000,
+  ),
+  // Error reports go to Sentry only when a DSN is set. Personal data is
+  // stripped before sending (packages/infrastructure/src/sentry.ts).
+  SENTRY_DSN: url.optional(),
   // CloudWatch shipping is opt-in: both must be set or the API logs only to
   // stdout. Credentials are never configuration — the AWS SDK resolves them
   // from the task/instance role.
@@ -230,6 +242,18 @@ export const workerEnvSchema = z.object({
   ENVIRONMENT: Environment,
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
+  // OPS-090 log volume. 1 keeps every line (local and test). Production
+  // keeps warnings, errors, failed and slow requests always, and samples the
+  // rest: ordinary successes at LOG_SAMPLE_SUCCESS_RATE, routine polling at
+  // LOG_SAMPLE_ROUTINE_RATE.
+  LOG_SAMPLE_SUCCESS_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SAMPLE_ROUTINE_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SLOW_REQUEST_MS: z.coerce.number().int().min(100).max(60_000).default(
+    2_000,
+  ),
+  // Error reports go to Sentry only when a DSN is set. Personal data is
+  // stripped before sending (packages/infrastructure/src/sentry.ts).
+  SENTRY_DSN: url.optional(),
   DATABASE_URL: url.optional(),
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
   // Removes rows that already count as gone (expired idempotency records).
@@ -622,6 +646,12 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     environment: env.ENVIRONMENT,
     port: env.API_PORT,
     log_level: env.LOG_LEVEL,
+    log_sampling: {
+      success_rate: env.LOG_SAMPLE_SUCCESS_RATE,
+      routine_rate: env.LOG_SAMPLE_ROUTINE_RATE,
+      slow_request_ms: env.LOG_SLOW_REQUEST_MS,
+    },
+    sentry_configured: Boolean(env.SENTRY_DSN),
     allowed_origins: env.API_ALLOWED_ORIGINS,
     max_body_bytes: env.API_MAX_BODY_BYTES,
     request_timeout_ms: env.API_REQUEST_TIMEOUT_MS,
@@ -712,6 +742,12 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
   return {
     environment: env.ENVIRONMENT,
     log_level: env.LOG_LEVEL,
+    log_sampling: {
+      success_rate: env.LOG_SAMPLE_SUCCESS_RATE,
+      routine_rate: env.LOG_SAMPLE_ROUTINE_RATE,
+      slow_request_ms: env.LOG_SLOW_REQUEST_MS,
+    },
+    sentry_configured: Boolean(env.SENTRY_DSN),
     redis_url: redactUrl(env.REDIS_URL),
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
     database_pool_max: env.DATABASE_POOL_MAX,

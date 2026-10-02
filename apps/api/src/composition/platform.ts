@@ -13,11 +13,16 @@ import {
   checkRedis,
   createCloudWatchSink,
   createRedis,
+  createSentryReporter,
   SupabaseManagedAccountIssuer,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { checkDatabase, createDatabase } from "@studafy/database";
-import { createJsonLogger, logStartup } from "@studafy/observability";
+import {
+  createJsonLogger,
+  createLogSampler,
+  logStartup,
+} from "@studafy/observability";
 import { version as apiVersion } from "../../package.json";
 
 /**
@@ -39,11 +44,34 @@ export function buildPlatform() {
     })
     : undefined;
 
+  // OPS-090: unexpected errors to Sentry when a DSN is set, with nothing
+  // personal in them.
+  const errorReporter = env.SENTRY_DSN
+    ? createSentryReporter({
+      dsn: env.SENTRY_DSN,
+      environment: env.ENVIRONMENT,
+      release: apiVersion,
+      service: "api",
+    })
+    : undefined;
+
   const logger = createRedactingLogger(
-    createJsonLogger("api", apiVersion, env.LOG_LEVEL, (line) => {
-      console.log(line);
-      cloudwatch?.record(line);
-    }),
+    createJsonLogger(
+      "api",
+      apiVersion,
+      env.LOG_LEVEL,
+      (line) => {
+        console.log(line);
+        cloudwatch?.record(line);
+        // Error-level lines only; the reporter ignores the rest.
+        errorReporter?.captureLogLine(line);
+      },
+      createLogSampler({
+        successRate: env.LOG_SAMPLE_SUCCESS_RATE,
+        routineRate: env.LOG_SAMPLE_ROUTINE_RATE,
+        slowRequestMs: env.LOG_SLOW_REQUEST_MS,
+      }),
+    ),
   );
 
   logStartup(logger, {
@@ -165,6 +193,7 @@ export function buildPlatform() {
   return {
     env,
     cloudwatch,
+    errorReporter,
     logger,
     sql,
     redis,

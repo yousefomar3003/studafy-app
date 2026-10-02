@@ -6,6 +6,15 @@ export {
   createCloudWatchSink,
 } from "./cloudwatchLogs";
 export {
+  createSentryReporter,
+  type ErrorReporter,
+  logLineReport,
+  safeFields,
+  scrubEvent,
+  scrubText,
+  type SentryReporterOptions,
+} from "./sentry";
+export {
   assertQueueRedisPosture,
   QueuePostureError,
   queuePostureProblems,

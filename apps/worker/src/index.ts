@@ -6,6 +6,7 @@ import {
 } from "./bootstrap/queues";
 import {
   createJsonLogger,
+  createLogSampler,
   installGracefulShutdown,
   logShutdownStep,
   logStartup,
@@ -16,6 +17,7 @@ import {
   assertQueueRedisPosture,
   closeRedis,
   createRedis,
+  createSentryReporter,
   ExternalMalwareScannerClient,
   FcmPushSender,
   FileSecurityScanner,
@@ -33,7 +35,30 @@ import { startChannelDelivery } from "./processors/channelDelivery";
 import { startHousekeeping } from "./processors/housekeeping";
 
 const env = loadWorkerEnv();
-const logger = createJsonLogger("worker", workerVersion, env.LOG_LEVEL);
+// OPS-090: failed jobs and polls reach Sentry when a DSN is set, grouped
+// by event; routine "job done" lines are sampled in production.
+const errorReporter = env.SENTRY_DSN
+  ? createSentryReporter({
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT,
+    release: workerVersion,
+    service: "worker",
+  })
+  : undefined;
+const logger = createJsonLogger(
+  "worker",
+  workerVersion,
+  env.LOG_LEVEL,
+  (line) => {
+    console.log(line);
+    errorReporter?.captureLogLine(line);
+  },
+  createLogSampler({
+    successRate: env.LOG_SAMPLE_SUCCESS_RATE,
+    routineRate: env.LOG_SAMPLE_ROUTINE_RATE,
+    slowRequestMs: env.LOG_SLOW_REQUEST_MS,
+  }),
+);
 
 // OPS-061 queue posture: the queue allocation must be non-evicting and
 // persisted. Production refuses to start otherwise; development logs what
@@ -278,5 +303,6 @@ installGracefulShutdown({
     await housekeeping?.close();
     if (sharedSql) await closeDatabase(sharedSql);
     await runtime.close();
+    await errorReporter?.flush();
   },
 });

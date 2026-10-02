@@ -1,3 +1,4 @@
+import type { ErrorReporter } from "@studafy/infrastructure";
 import { Hono, type MiddlewareHandler } from "hono";
 import {
   ErrorCode,
@@ -26,6 +27,8 @@ export type DependentCheck = () => Promise<void>;
 export interface AppDependencies {
   info: ServiceInfo;
   logger: Logger;
+  /** OPS-090: where unexpected exceptions are reported, when configured. */
+  errorReporter?: Pick<ErrorReporter, "captureException">;
   checks: {
     database?: DependentCheck;
     redis?: DependentCheck;
@@ -150,6 +153,13 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   app.notFound((c) => problem(c, ErrorCode.NOT_FOUND, 404));
 
   app.onError((error, c) => {
+    if (!(error instanceof RequestTimeoutError)) {
+      deps.errorReporter?.captureException(error, {
+        request_id: c.get("requestId"),
+        method: c.req.method,
+        route: c.req.routePath || "unmatched",
+      });
+    }
     deps.logger.error("http_error", {
       request_id: c.get("requestId"),
       method: c.req.method,
