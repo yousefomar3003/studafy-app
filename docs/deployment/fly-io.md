@@ -12,6 +12,24 @@ Cloudflare Worker (relay) ── every minute ──► https://api.studafy.com/
 
 Everything below is done once. Order matters only where noted.
 
+## Test copy (running now)
+
+Until production's blockers are cleared (malware scanner, TLS Redis, real
+Turnstile keys on the domain), a development-mode copy runs on Fly in place
+of the Mac-hosted API:
+
+| App | Config | Address |
+|---|---|---|
+| `studafy-api-test` | `fly.test.api.toml` | https://studafy-api-test.fly.dev |
+| `studafy-worker-test` | `fly.test.worker.toml` | (no HTTP) |
+
+It uses the same Frankfurt Supabase project, Redis, Sentry and Cloudflare
+test keys as `.env.hosted`. Secrets were piped from `.env.hosted` with
+`fly secrets import`. The app's `config/dart-defines.device.json` points
+`STUDAFY_API_URL` at it, which must equal its
+`FILE051_DELIVERY_PUBLIC_BASE_URL` or the app refuses download links.
+Redeploy with `fly deploy --config fly.test.api.toml` (and the worker's).
+
 ## 0. Move the database to Frankfurt first
 
 Supabase cannot change a project's region. Create a **new project in

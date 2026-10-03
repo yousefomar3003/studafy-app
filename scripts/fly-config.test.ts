@@ -60,9 +60,30 @@ describe("Fly configs pass production validation", () => {
     expect(env.FILE051_SCAN_ENABLED).toBe(true);
   });
 
+  test("the test copy loads in development mode", async () => {
+    const api = await flyEnv("fly.test.api.toml");
+    expect(api.ENVIRONMENT).toBe("development");
+    expect(() =>
+      enforceApiFailClosed(parseEnv(apiEnvSchema, { ...api, ...secrets }))
+    ).not.toThrow();
+    const worker = await flyEnv("fly.test.worker.toml");
+    expect(worker.ENVIRONMENT).toBe("development");
+    expect(() =>
+      enforceWorkerFailClosed(
+        parseEnv(workerEnvSchema, { ...worker, ...secrets }),
+      )
+    ).not.toThrow();
+  });
+
   test("no secret is written into a Fly config", async () => {
     for (
-      const file of ["fly.api.toml", "fly.worker.toml", "fly.log-shipper.toml"]
+      const file of [
+        "fly.api.toml",
+        "fly.worker.toml",
+        "fly.log-shipper.toml",
+        "fly.test.api.toml",
+        "fly.test.worker.toml",
+      ]
     ) {
       const env = await flyEnv(file);
       for (const key of Object.keys(env)) {

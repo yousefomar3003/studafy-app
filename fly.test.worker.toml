@@ -1,0 +1,24 @@
+# Studafy worker - TEST copy on Fly.io (ADR-0035), paired with
+# fly.test.api.toml. Development mode, like the Mac-hosted worker.
+#   fly deploy --config fly.test.worker.toml
+app = "studafy-worker-test"
+primary_region = "fra"
+
+[build]
+  dockerfile = "apps/worker/Dockerfile"
+
+[env]
+  ENVIRONMENT = "development"
+  LOG_LEVEL = "info"
+  LOG_SAMPLE_SUCCESS_RATE = "0.1"
+  LOG_SAMPLE_ROUTINE_RATE = "0.01"
+  DATABASE_POOL_MAX = "5"
+  OPS061_NOTIFICATIONS_ENABLED = "true"
+  FILE051_SCAN_ENABLED = "true"
+  FILE050_CLEANUP_ENABLED = "true"
+  DB_HOUSEKEEPING_ENABLED = "true"
+  PAY071_BILLING_ENABLED = "false"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
