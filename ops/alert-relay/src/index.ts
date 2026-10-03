@@ -75,19 +75,68 @@ export function sentryAlert(body: unknown): Alert {
   };
 }
 
-/** Axiom's monitor webhooks ("open" when a monitor fires, "closed" after). */
+/**
+ * Strips Slack's mrkdwn link and emphasis syntax: `<url|label>` becomes the
+ * label, `*bold*` and `_italic_` lose their markers.
+ */
+function plain(value: string): string {
+  return value
+    .replace(/<([^|>]+)\|([^>]+)>/g, "$2")
+    .replace(/<([^>]+)>/g, "$1")
+    .replace(/[*_~`]/g, "")
+    .trim();
+}
+
+/**
+ * Axiom's monitor alerts. Two shapes arrive here:
+ *
+ * - its webhook notifier: `{ action: "open" | "closed", event: {...} }`;
+ * - its Slack notifier pointed at this relay (Axiom's free plan has Slack
+ *   but no webhooks): Slack's incoming-webhook payload, `{ text,
+ *   attachments: [{ title, title_link, text }], blocks }`.
+ */
 export function axiomAlert(body: unknown): Alert {
   const root = record(body);
   const event = record(root["event"]);
+  const attachment = record(
+    Array.isArray(root["attachments"]) ? root["attachments"][0] : undefined,
+  );
+  const blocks = Array.isArray(root["blocks"]) ? root["blocks"] : [];
+  const blockText = blocks
+    .map((block) => text(record(record(block)["text"])["text"]))
+    .filter((line): line is string => Boolean(line))
+    .map(plain);
+  const slackText = text(root["text"])
+    ? plain(String(root["text"]))
+    : undefined;
+
   const action = String(root["action"] ?? event["action"] ?? "").toLowerCase();
+  const title = text(event["title"]) ?? text(root["title"]) ??
+    text(event["monitorName"]) ??
+    (text(attachment["title"])
+      ? plain(String(attachment["title"]))
+      : undefined) ??
+    blockText[0] ?? slackText?.split("\n")[0] ?? "Axiom monitor";
+  const slackDetail = blockText.slice(1).join("\n") ||
+    slackText?.split("\n").slice(1).join("\n") || undefined;
+  const detail = text(event["description"]) ?? text(root["description"]) ??
+    (event["value"] !== undefined ? `value: ${event["value"]}` : undefined) ??
+    (text(attachment["text"])
+      ? plain(String(attachment["text"]))
+      : undefined) ??
+    slackDetail;
+  const everything = [action, title, detail ?? "", slackText ?? ""].join(" ")
+    .toLowerCase();
+  const resolved = action === "closed" || action === "resolved" ||
+    (!action &&
+      /\b(resolved|recovered|closed|back to normal)\b/.test(everything));
   return {
     source: "Axiom",
-    kind: action === "closed" || action === "resolved" ? "resolved" : "problem",
-    title: text(event["title"]) ?? text(root["title"]) ??
-      text(event["monitorName"]) ?? "Axiom monitor",
-    detail: text(event["description"]) ?? text(root["description"]) ??
-      (event["value"] !== undefined ? `value: ${event["value"]}` : undefined),
-    link: text(event["url"]) ?? text(root["url"]),
+    kind: resolved ? "resolved" : "problem",
+    title,
+    detail: detail || undefined,
+    link: text(event["url"]) ?? text(root["url"]) ??
+      text(attachment["title_link"]),
   };
 }
 

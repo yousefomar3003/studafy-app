@@ -76,6 +76,44 @@ describe("alerts become Telegram messages", () => {
     );
   });
 
+  test("Axiom's Slack notifier, pointed at the relay", () => {
+    expect(
+      axiomAlert({
+        text: "Monitor *API server errors* triggered",
+        attachments: [{
+          title: "API server errors",
+          title_link: "https://app.axiom.co/monitors/1",
+          text: "count() is *7*, above the threshold of 5",
+        }],
+      }),
+    ).toEqual({
+      source: "Axiom",
+      kind: "problem",
+      title: "API server errors",
+      detail: "count() is 7, above the threshold of 5",
+      link: "https://app.axiom.co/monitors/1",
+    });
+    expect(
+      axiomAlert({
+        blocks: [
+          {
+            type: "header",
+            text: { type: "plain_text", text: "Worker silent" },
+          },
+          {
+            type: "section",
+            text: { type: "mrkdwn", text: "Monitor *resolved*" },
+          },
+        ],
+      }),
+    ).toMatchObject({ title: "Worker silent", kind: "resolved" });
+    expect(axiomAlert({ text: "Notifications stuck\nvalue 3" })).toMatchObject({
+      title: "Notifications stuck",
+      detail: "value 3",
+      kind: "problem",
+    });
+  });
+
   test("anything unexpected still produces a readable alert", () => {
     expect(sentryAlert({}).title).toBe("Sentry alert");
     expect(axiomAlert("nonsense").title).toBe("Axiom monitor");
