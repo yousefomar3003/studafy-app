@@ -13,6 +13,20 @@ export interface DatabaseOptions {
 }
 
 /**
+ * Whether [url] goes through Supabase's transaction pooler (port 6543).
+ * There a connection is shared between transactions, so a statement
+ * prepared on one may be gone on the next: named prepared statements must
+ * be off. Session mode (5432) and direct connections keep them.
+ */
+export function usesTransactionPooler(url: string): boolean {
+  try {
+    return new URL(url).port === "6543";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Creates a Postgres client for read-only connectivity smoke. No domain data
  * access exists yet; Phase 2+ adds query modules behind repositories.
  */
@@ -28,6 +42,7 @@ export function createDatabase(
     max: options.max ?? 5,
     idle_timeout: options.idleTimeout ?? 30,
     connect_timeout: options.connectTimeout ?? 5,
+    ...(usesTransactionPooler(url) ? { prepare: false } : {}),
   });
 }
 
