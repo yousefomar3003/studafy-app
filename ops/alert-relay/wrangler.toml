@@ -8,7 +8,9 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 
 [vars]
-UPTIME_URL = "https://api.studafy.com/readyz"
+# The test copy on Fly until production is live; then
+# https://api.studafy.com/readyz.
+UPTIME_URL = "https://studafy-api-test.fly.dev/readyz"
 ALERT_EMAIL_FROM = "Studafy alerts <alerts@studafy.com>"
 
 # Every minute: is the API answering?
@@ -20,4 +22,4 @@ crons = ["* * * * *"]
 # and paste the id it prints here.
 [[kv_namespaces]]
 binding = "STATE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "d4173637a67642f9af3a9fc430e8f6a0"

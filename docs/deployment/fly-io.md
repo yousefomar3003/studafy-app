@@ -203,8 +203,12 @@ Axiom posts to Telegram, so both send it their webhooks. It also checks
    ```
    `ALERT_EMAIL_FROM` must be on a domain verified in Resend.
 3. The two webhook addresses are then
-   `https://studafy-alert-relay.<you>.workers.dev/sentry/<RELAY_SECRET>` and
-   `.../axiom/<RELAY_SECRET>`.
+   `https://studafy-alert-relay.studafy.workers.dev/sentry/<RELAY_SECRET>` and
+   `.../axiom/<RELAY_SECRET>`. Both are kept in `.env.hosted`
+   (`ALERT_WEBHOOK_SENTRY_URL`, `ALERT_WEBHOOK_AXIOM_URL`).
+
+Deployed 2026-10-03 on the `studafy.workers.dev` subdomain. Until production
+is live it watches the Fly test copy's `/readyz`.
 
 An outage alerts once when it starts and once when it ends: two failed
 checks 10 seconds apart count as down.
