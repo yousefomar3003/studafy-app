@@ -33,7 +33,7 @@ Update the privacy policy's Supabase row (§7.2) to Frankfurt.
 |---|---|---|
 | Fly.io | Pay as you go | Organisation `personal` (or your own; set `ORG` in `fly.log-shipper.toml`) |
 | Sentry | Developer (free) | **EU data region**. Two projects: `studafy-backend` (Bun) and `studafy-app` (Flutter) |
-| Axiom | Free | **EU region** if offered. A dataset named `studafy-logs`, and an API token that can only ingest into it |
+| Axiom | Free | **EU region** if offered. A dataset named `studafy-production`, and an API token that can only ingest into it |
 | Telegram | Free | A bot from @BotFather, and the group or chat that receives alerts |
 | Cloudflare | Free | Workers, for the alert relay |
 | Redis | Free tier to start | Production refuses a Redis URL without TLS (`rediss://`) and a password. Check that your Redis Cloud database has TLS on, or use Upstash in `eu-central-1`, which has TLS on its free tier |
@@ -109,17 +109,25 @@ same production validation the processes run at start-up.
 
 ## 3. Logs to Axiom
 
+The dataset is `studafy-production`, in Axiom's **EU** region. An EU dataset
+accepts data only through the EU edge
+(`https://eu-central-1.aws.edge.axiom.co/v1/ingest/<dataset>`), and the log
+shipper's built-in Axiom output always uses the US address. The shipper
+therefore sends through its generic HTTP output, which `fly.log-shipper.toml`
+points at the EU edge (`HTTP_URL`). Never set `AXIOM_TOKEN` or
+`AXIOM_DATASET` on the shipper: that switches on the US output as well.
+
 ```sh
 fly apps create studafy-log-shipper
 fly secrets set --config fly.log-shipper.toml \
   ACCESS_TOKEN="$(fly tokens create readonly personal)"
-fly secrets import --config fly.log-shipper.toml < ~/studafy-shipper.secrets  # AXIOM_TOKEN=...
+fly secrets import --config fly.log-shipper.toml < ~/studafy-shipper.secrets  # HTTP_TOKEN=<Axiom ingest token>
 fly deploy --config fly.log-shipper.toml
 ```
 
-If your Axiom organisation is in the EU region, set its ingest URL as the
-log shipper's README describes. After the first deploy, pin the image to its
-digest (`fly image show --config fly.log-shipper.toml`).
+After the first deploy, check `['studafy-production'] | take 20` in Axiom
+shows lines, then pin the image to its digest
+(`fly image show --config fly.log-shipper.toml`).
 
 **What is kept (OPS-090).** The API and worker keep every warning and error,
 every failed (4xx/5xx) or slow (at least 2 s) request, sign-in refusals, the
@@ -204,7 +212,7 @@ address and "Alert Rule Action" on. Then choose it as an action in each rule.
 
 Create two notifiers: **Email** (you), and **Custom webhook** pointing at
 the relay's `/axiom/` address. Then create these as **threshold monitors**
-on `studafy-logs`, each notifying both.
+on `studafy-production`, each notifying both.
 
 The shipper stores each line in `message`, so the queries parse it first. If
 Axiom already shows the fields as columns, drop the `extend` line and use
@@ -213,7 +221,7 @@ the fields directly.
 **API server errors.** Above 5 in 5 minutes, checked every minute:
 
 ```kusto
-['studafy-logs']
+['studafy-production']
 | extend m = parse_json(message)
 | where m.service == "api" and m.event == "http_request_completed"
     and toint(m.status) >= 500
@@ -224,7 +232,7 @@ the fields directly.
 this count is exact:
 
 ```kusto
-['studafy-logs']
+['studafy-production']
 | extend m = parse_json(message)
 | where m.service == "api" and m.event == "http_request_completed"
     and toint(m.duration_ms) >= 2000
@@ -234,7 +242,7 @@ this count is exact:
 **Notifications stuck.** Above 0 in 10 minutes:
 
 ```kusto
-['studafy-logs']
+['studafy-production']
 | extend m = parse_json(message)
 | where m.event == "outbox_backlog" and toint(m.oldest_pending_seconds) > 300
 | summarize count() by bin_auto(_time)
@@ -243,7 +251,7 @@ this count is exact:
 **Uploads failing to scan.** Above 0 in 15 minutes:
 
 ```kusto
-['studafy-logs']
+['studafy-production']
 | extend m = parse_json(message)
 | where m.event == "file_scan_backlog" and toint(m.scan_dead_letters) > 0
 | summarize count() by bin_auto(_time)
@@ -253,7 +261,7 @@ this count is exact:
 heartbeat every minute, so silence means it is down:
 
 ```kusto
-['studafy-logs']
+['studafy-production']
 | extend m = parse_json(message)
 | where m.service == "worker" and m.event == "outbox_backlog"
 | summarize count() by bin_auto(_time)
@@ -265,7 +273,7 @@ patterns (a crash, a job that gave up) come from Sentry.
 ## 7. Check it works
 
 - `curl https://api.studafy.com/readyz` returns 200.
-- In Axiom, `['studafy-logs'] | take 20` shows recent lines from both apps.
+- In Axiom, `['studafy-production'] | take 20` shows recent lines from both apps.
 - Send a test from Sentry's alert rule ("Send Test Notification"): it arrives
   by email and in Telegram.
 - `fly scale count 0 --config fly.api.toml` for two minutes: Telegram and
