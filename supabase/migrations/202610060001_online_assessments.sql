@@ -229,6 +229,8 @@ alter table public.upload_sessions add constraint file050_upload_target_check ch
     when 'coach_attachment' then student_id is not null and num_nonnulls(classroom_id,assignment_id,grade_result_id)=0
     when 'message_attachment' then num_nonnulls(classroom_id,assignment_id,student_id,grade_result_id)=0
     when 'announcement_attachment' then num_nonnulls(classroom_id,assignment_id,student_id,grade_result_id)=0
+    when 'notebook_photo' then classroom_id is not null and num_nonnulls(assignment_id,student_id,grade_result_id)=0
+    when 'assistant_attachment' then num_nonnulls(classroom_id,assignment_id,student_id,grade_result_id)=0
     else false end
 ) not valid;
 alter table public.upload_sessions validate constraint file050_upload_target_check;
