@@ -26,6 +26,8 @@ import { createOnboardingRoutes } from "../onboarding/routes";
 import { createStudyAssistantRoutes } from "../study-assistant/routes";
 import { PostgresStudyRepository } from "../study/repository";
 import { createStudyRoutes } from "../study/routes";
+import { PostgresMaterialRepository } from "../study/material";
+import { createLessonReadingRoutes } from "../study/readingRoutes";
 import { createFamilyInsightsRoutes } from "../family-insights/routes";
 import { PostgresFamilyInsightsRepository } from "../family-insights/repository";
 import { PostgresOnboardingRepository } from "../onboarding/repository";
@@ -247,10 +249,15 @@ export function buildRoutes(platform: Platform) {
       // explanation for a student and comes back in ~3-4s.
       maxOutputTokens: 500,
       maxLongOutputTokens: 1_100,
-      timeoutMs: 8_500,
+      // An answer from class material runs longer than a plain one.
+      timeoutMs: Math.max(5_000, env.API_REQUEST_TIMEOUT_MS - 1_500),
     })
     : null;
   const studyRepository = sql ? new PostgresStudyRepository(sql) : null;
+  // Lessons' files and links, read for the AI (ADR-0037).
+  const materialRepository = sql
+    ? new PostgresMaterialRepository(sql)
+    : undefined;
   // How much of a chat the helper remembers, by plan, inside the window.
   const chatMemory = {
     contextWindowTokens: env.AI_CONTEXT_WINDOW_TOKENS,
@@ -288,6 +295,7 @@ export function buildRoutes(platform: Platform) {
         prices: aiPrices,
         chatMemory,
         notebooks: sql ? new PostgresNotebookRepository(sql) : undefined,
+        material: materialRepository,
         storage: privateStorage,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
       },
@@ -440,6 +448,7 @@ export function buildRoutes(platform: Platform) {
         prices: aiPrices,
         assistant: aiAssistant,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+        material: materialRepository,
       },
       authorization,
       idempotencyDependencies,
@@ -521,6 +530,7 @@ export function buildRoutes(platform: Platform) {
         storage: privateStorage,
         chatMemory,
         notebooks: new PostgresNotebookRepository(sql!),
+        material: materialRepository,
       },
       authorization,
       idempotencyDependencies,
@@ -620,6 +630,14 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // ADR-0037, appended last in the catalogue.
+  const lessonReading = materialRepository && idempotencyDependencies
+    ? createLessonReadingRoutes(
+      { material: materialRepository },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   const modules = [
     academic,
     schoolAdmin,
@@ -653,6 +671,7 @@ export function buildRoutes(platform: Platform) {
     classroomArchive,
     notebooks,
     coursework,
+    lessonReading,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

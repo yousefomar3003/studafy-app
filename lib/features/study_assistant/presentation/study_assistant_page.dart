@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/ai_tokens.dart';
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_policy.dart';
 import '../../../core/failures.dart';
@@ -22,15 +24,15 @@ import 'study_chat_history_page.dart';
 class HelperPlan {
   const HelperPlan({
     required this.name,
-    required this.askToday,
-    required this.askPerDay,
+    this.allowance,
     this.upgradeTo,
     this.upgradeBenefits = const [],
   });
 
   final String name;
-  final int askToday;
-  final int askPerDay;
+
+  /// The AI tokens left, and when they renew (ADR-0037).
+  final HelperAllowance? allowance;
 
   /// The next plan's name; null when there is nothing above this one.
   final String? upgradeTo;
@@ -38,12 +40,11 @@ class HelperPlan {
   /// What the next plan adds, in the reader's language.
   final List<String> upgradeBenefits;
 
-  bool get limitReached => askPerDay > 0 && askToday >= askPerDay;
+  bool get limitReached => allowance?.exhausted ?? false;
 
-  HelperPlan withAskToday(int value) => HelperPlan(
+  HelperPlan withAllowance(HelperAllowance value) => HelperPlan(
     name: name,
-    askToday: value,
-    askPerDay: askPerDay,
+    allowance: value,
     upgradeTo: upgradeTo,
     upgradeBenefits: upgradeBenefits,
   );
@@ -74,6 +75,7 @@ class StudyAssistantPage extends StatefulWidget {
     this.plan,
     this.onUpgrade,
     this.onBack,
+    this.openWith,
   });
 
   final StudyAssistantInteractor assistant;
@@ -112,15 +114,15 @@ class StudyAssistantPage extends StatefulWidget {
 
   final DateTime Function() now;
 
-  /// A question was refused by the student's plan - today's questions are
-  /// used ([StudyAssistantFailure.dailyLimit]) or photos need a higher plan
+  /// A question was refused by the student's plan - its AI tokens are used
+  /// ([StudyAssistantFailure.allowanceUsed]) or photos need a higher plan
   /// ([StudyAssistantFailure.planRequired]). The host explains the limit and
   /// offers the upgrade; plans belong to another feature. Null keeps only
   /// the message under the composer.
   final Future<void> Function(BuildContext context, String failureCode)?
   onPlanLimit;
 
-  /// The student's plan and today's questions. Null shows neither.
+  /// The student's plan and its AI tokens. Null shows neither.
   final Future<HelperPlan?> Function()? plan;
 
   /// Opens the plans. Null offers no upgrade.
@@ -129,6 +131,10 @@ class StudyAssistantPage extends StatefulWidget {
   /// Leaves the helper. Set where it is shown full screen, without the tab
   /// bar, and the page then offers a back arrow.
   final VoidCallback? onBack;
+
+  /// Material to start a new chat about - set when the student opens the
+  /// helper from a lesson. The page clears it once used.
+  final ValueNotifier<List<ChatReference>?>? openWith;
 
   @override
   State<StudyAssistantPage> createState() => _StudyAssistantPageState();
@@ -140,13 +146,12 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   bool _asking = false;
   bool _off = false;
   String? _error;
-  int? _remaining;
   StudyChat? _chat;
   HelperAbilities _abilities = const HelperAbilities();
   HelperPlan? _plan;
 
-  /// Today's questions are used: the server refused one for that reason, or
-  /// the plan says so.
+  /// The AI tokens are used: the server refused a question for that reason,
+  /// or the plan says so.
   bool _limitHit = false;
   List<StudyChat> _recent = const [];
 
@@ -167,6 +172,23 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     unawaited(_loadAbilities());
     unawaited(_openLatest());
     unawaited(_loadPlan());
+    widget.openWith?.addListener(_openRequested);
+    _openRequested();
+  }
+
+  /// Opened from a lesson: a new chat about that lesson.
+  void _openRequested() {
+    final requested = widget.openWith?.value;
+    if (requested == null || requested.isEmpty) return;
+    widget.openWith!.value = null;
+    if (!mounted) return;
+    unawaited(_refreshRecent());
+    setState(() {
+      _chat = null;
+      _error = null;
+      _photo = null;
+      _draftReferences = requested;
+    });
   }
 
   Future<void> _loadPlan() async {
@@ -196,6 +218,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
 
   @override
   void dispose() {
+    widget.openWith?.removeListener(_openRequested);
     _composer.dispose();
     _scroll.dispose();
     super.dispose();
@@ -342,9 +365,15 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   }
 
   String _explain(Failure failure) => switch (failure.code) {
-    StudyAssistantFailure.dailyLimit => AppL10n.of(
+    StudyAssistantFailure.allowanceUsed => switch (_plan?.allowance) {
+      final allowance? => AppL10n.of(context).helperTokensUsedUntil(
+        MaterialLocalizations.of(context).formatMediumDate(allowance.resetsAt),
+      ),
+      null => AppL10n.of(context).helperTokensUsed,
+    },
+    StudyAssistantFailure.inProgress => AppL10n.of(
       context,
-    ).studyAssistantDailyLimit,
+    ).helperStillAnswering,
     StudyAssistantFailure.unavailable => AppL10n.of(
       context,
     ).studyAssistantUnavailable,
@@ -417,6 +446,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     final earlier = _turns;
     final photo = _photo;
     final references = _references;
+    // One id for this question, kept through the waits below: a retry of
+    // the same question is never charged twice.
+    final requestId = generateUuidV4();
+    final language = Localizations.localeOf(context).languageCode;
     final chat =
         _chat ??
         StudyChat(
@@ -478,6 +511,8 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         history: earlier,
         references: references,
         photoFileIds: photoIds,
+        requestId: requestId,
+        language: language,
       );
       if (!mounted) return;
       final retry = result.fold(
@@ -488,23 +523,20 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
               role: ChatRole.assistant,
               text: value.answer,
               at: widget.now(),
+              citations: value.citations,
+              unreadable: value.unreadable,
             ),
           ]);
           setState(() {
             _asking = false;
             _status = null;
             _chat = answered;
-            _remaining = value.remainingToday;
             final plan = _plan;
-            if (plan != null) {
-              _plan = plan.withAskToday(
-                (plan.askPerDay - value.remainingToday).clamp(
-                  0,
-                  plan.askPerDay,
-                ),
-              );
+            final allowance = value.allowance;
+            if (plan != null && allowance != null) {
+              _plan = plan.withAllowance(allowance);
             }
-            _limitHit = value.remainingToday == 0;
+            _limitHit = allowance?.exhausted ?? _limitHit;
           });
           unawaited(widget.chats?.save(answered).catchError((Object _) {}));
           return false;
@@ -515,12 +547,19 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
             return true;
           }
           giveBack(_explain(failure));
-          if (failure.code == StudyAssistantFailure.dailyLimit) {
+          if (failure.code == StudyAssistantFailure.allowanceUsed) {
+            // The question and the chat stay; the plan is read again for
+            // what is left and when it renews.
             setState(() => _limitHit = true);
+            unawaited(
+              _loadPlan().then((_) {
+                if (mounted) setState(() => _limitHit = true);
+              }),
+            );
           }
           final onPlanLimit = widget.onPlanLimit;
           if (onPlanLimit != null &&
-              (failure.code == StudyAssistantFailure.dailyLimit ||
+              (failure.code == StudyAssistantFailure.allowanceUsed ||
                   failure.code == StudyAssistantFailure.planRequired)) {
             unawaited(onPlanLimit(context, failure.code));
           }
@@ -586,21 +625,29 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     final plan = _plan;
     if (plan == null) return null;
     final upgrade = _canUpgrade;
+    final allowance = plan.allowance;
     return PlanSummaryCard(
       eyebrow: l10n.studyPlansYourPlan,
       planName: plan.name,
-      detail: plan.askPerDay > 0
-          ? l10n.studyPlansQuestionsTodayAsktodayOfAskperday(
-              plan.askToday,
-              plan.askPerDay,
-            )
-          : null,
-      progress: plan.askPerDay > 0 ? plan.askToday / plan.askPerDay : null,
+      detail: allowance == null ? null : _tokensLine(l10n, allowance),
+      progress: allowance?.usedFraction,
       benefitsTitle: upgrade ? l10n.planAdds(plan.upgradeTo!) : null,
       benefits: upgrade ? plan.upgradeBenefits : const [],
       actionLabel: upgrade ? l10n.upgradeButton : null,
       onAction: upgrade ? _upgrade : null,
       compact: compact,
+    );
+  }
+
+  /// "36,800 of 40,000 AI tokens left · renews 13 Oct".
+  String _tokensLine(AppL10n l10n, HelperAllowance allowance) {
+    final number = NumberFormat.decimalPattern(
+      Localizations.localeOf(context).toLanguageTag(),
+    );
+    return l10n.helperTokensLeft(
+      number.format(allowance.remaining),
+      number.format(allowance.total),
+      MaterialLocalizations.of(context).formatMediumDate(allowance.resetsAt),
     );
   }
 
@@ -653,6 +700,15 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
               ),
             ),
           if (!_off) ?_planCard(l10n, compact: false),
+          if (!_off && _plan?.allowance != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: () => showTokenGuide(context),
+                icon: const Icon(Icons.info_outline_rounded, size: 18),
+                label: Text(l10n.tokensWhatAreThey),
+              ),
+            ),
           const SizedBox(height: 12),
           FeatureCard(
             child: Row(
@@ -749,28 +805,47 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Today's questions are used: say so, and offer the way on.
+            // The tokens are used: say so, keep the question, and offer the
+            // way on.
             if (_limitHit && !_off)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _Banner(
                   icon: Icons.hourglass_bottom_rounded,
                   // The server's own refusal when there is one; otherwise the
-                  // plan says today's questions are used.
-                  text: _error ?? l10n.helperLimitReached,
+                  // plan says the tokens are used.
+                  text:
+                      _error ??
+                      switch (plan?.allowance) {
+                        final allowance? => l10n.helperTokensUsedUntil(
+                          MaterialLocalizations.of(context)
+                              .formatMediumDate(allowance.resetsAt),
+                        ),
+                        null => l10n.helperTokensUsed,
+                      },
                   actionLabel: _canUpgrade ? l10n.upgradeButton : null,
                   onAction: _canUpgrade ? _upgrade : null,
                 ),
               )
-            else if (inChat && plan != null && plan.askPerDay > 0)
+            else if (plan?.allowance case final allowance?
+                when allowance.low && !_off)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _Banner(
+                  icon: Icons.battery_alert_rounded,
+                  text: l10n.helperTokensLow(_tokensLine(l10n, allowance)),
+                  actionLabel: _canUpgrade ? l10n.upgradeButton : null,
+                  onAction: _canUpgrade ? _upgrade : null,
+                ),
+              )
+            else if (inChat && plan?.allowance != null)
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 4, 4),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        '${plan.name} · '
-                        '${l10n.studyPlansQuestionsTodayAsktodayOfAskperday(plan.askToday, plan.askPerDay)}',
+                        '${plan!.name} · ${_tokensLine(l10n, plan.allowance!)}',
                         style: const TextStyle(
                           color: studafyMuted,
                           fontSize: 12.5,
@@ -787,14 +862,6 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                         child: Text(l10n.upgradeButton),
                       ),
                   ],
-                ),
-              )
-            else if (_remaining != null)
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 4),
-                child: Text(
-                  l10n.studyAssistantRemaining(_remaining!),
-                  style: const TextStyle(color: studafyMuted, fontSize: 12.5),
                 ),
               ),
             if (_error != null && !(_limitHit && !_off))
@@ -837,12 +904,14 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                       ),
                     for (final reference in _references)
                       InputChip(
-                        avatar: Icon(
-                          reference.kind == ChatReferenceKind.lesson
-                              ? Icons.menu_book_rounded
-                              : Icons.sticky_note_2_outlined,
-                          size: 16,
-                        ),
+                        avatar: Icon(switch (reference.kind) {
+                          ChatReferenceKind.lesson => Icons.menu_book_rounded,
+                          ChatReferenceKind.file =>
+                            Icons.insert_drive_file_outlined,
+                          ChatReferenceKind.link => Icons.link_rounded,
+                          ChatReferenceKind.note =>
+                            Icons.sticky_note_2_outlined,
+                        }, size: 16),
                         label: Text(reference.title),
                         deleteButtonTooltipMessage: l10n.helperRemove,
                         onDeleted: _asking
@@ -1124,12 +1193,67 @@ class _Bubble extends StatelessWidget {
                 turn.text,
                 style: TextStyle(color: mine ? Colors.white : studafyInk),
               ),
+              // What the material could not tell it, then where each fact
+              // came from: [1] Leaf.pdf, p. 3.
+              if (turn.unreadable.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                for (final source in turn.unreadable)
+                  Text(
+                    l10n.helperCouldNotRead(
+                      source.name,
+                      readingReasonText(l10n, source.reason),
+                    ),
+                    style: const TextStyle(
+                      color: studafyMuted,
+                      fontSize: 12,
+                      height: 1.35,
+                    ),
+                  ),
+              ],
+              if (turn.citations.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.helperSources,
+                  style: const TextStyle(
+                    color: studafyMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                for (final citation in turn.citations)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '[${citation.n}] ${citationLabel(l10n, citation)}',
+                      style: const TextStyle(
+                        color: studafySteel,
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// "Leaf.pdf, p. 3", "Cells.pptx, slide 2", "Photosynthesis (lesson)".
+String citationLabel(AppL10n l10n, AnswerCitation citation) {
+  final where = citation.page != null
+      ? l10n.helperCitationPage(citation.page!)
+      : citation.slide != null
+      ? l10n.helperCitationSlide(citation.slide!)
+      : null;
+  final name = citation.kind == 'lesson'
+      ? l10n.helperCitationLesson(citation.name)
+      : citation.kind == 'note'
+      ? l10n.helperCitationNote(citation.name)
+      : citation.name;
+  return where == null ? name : '$name, $where';
 }
 
 class _Thinking extends StatelessWidget {

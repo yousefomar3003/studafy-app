@@ -361,6 +361,7 @@ jobs:
           supabase/tests/coursework_files.sql
           supabase/tests/guardian_announcements.sql
           supabase/tests/online_assessments.sql
+          supabase/tests/grounded_material.sql
 
       # API-042: every school-operations slice - account, communications,
       # family, invitations, meetings, notifications, roster, school

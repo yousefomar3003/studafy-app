@@ -25,7 +25,18 @@ import type { StudyRepository } from "./repository";
 import type { NotebookRepository } from "./notebookRoutes";
 import { resolvedSchoolDbContext } from "../platform/dbContext";
 import { outcomeProblem } from "../platform/outcomes";
-import { AI_REFUSALS, AiMeter, holdFor, type ModelPrices } from "./metering";
+import {
+  AI_REFUSALS,
+  AiMeter,
+  holdFor,
+  type ModelPrices,
+  OUTPUT_TOKENS,
+} from "./metering";
+import {
+  gatherMaterial,
+  type MaterialRepository,
+  materialText,
+} from "./material";
 import {
   CHARS_PER_TOKEN,
   type ChatMemoryBudgets,
@@ -45,7 +56,12 @@ export interface StudyRoutesDependencies {
   chatMemory?: ChatMemoryBudgets;
   /** Finds a note already made from a whiteboard photo. */
   notebooks?: NotebookRepository;
+  /** Lessons' files and links, read for the AI (ADR-0037). */
+  material?: MaterialRepository;
 }
+
+/** Material for a quiz, flashcards or notes: shared, so read generously. */
+export const STUDY_SET_MATERIAL_CHARS = 40_000;
 
 function refusal(c: Context<AuthorizationEnv>, outcome: string): Response {
   return outcomeProblem(c, outcome, AI_REFUSALS);
@@ -93,8 +109,8 @@ export function createStudyRoutes(
     if (!deps.assistant) return [];
     if (!deps.lessonToolsEnabled) return ["ask"];
     return deps.storage
-      ? ["ask", "whiteboard", "quiz", "flashcards"]
-      : ["ask", "quiz", "flashcards"];
+      ? ["ask", "whiteboard", "notes", "quiz", "flashcards"]
+      : ["ask", "notes", "quiz", "flashcards"];
   }
 
   // -------------------------------------------------------------------------
@@ -114,8 +130,7 @@ export function createStudyRoutes(
       if (summary["outcome"] !== "ok") {
         return refusal(c, String(summary["outcome"]));
       }
-      const cap = Number(summary["capMicroUsd"]);
-      const committed = Number(summary["committedMicroUsd"]);
+      const allowance = summary["allowance"] as Record<string, unknown>;
       const response = {
         plan: summary["plan"],
         features: summary["features"],
@@ -127,10 +142,10 @@ export function createStudyRoutes(
               CHARS_PER_TOKEN,
           }
           : {}),
-        allowanceUsed: cap > 0 ? Math.min(1, committed / cap) : 0,
-        resetsAt: new Date(String(summary["resetsAt"])).toISOString(),
-        askToday: summary["askToday"],
-        askPerDay: summary["askPerDay"],
+        allowance: {
+          ...allowance,
+          resetsAt: new Date(String(allowance["resetsAt"])).toISOString(),
+        },
       };
       const parsed = planRoute.response.safeParse(response);
       return parsed.success
@@ -289,7 +304,7 @@ export function createStudyRoutes(
         notes = await meter.run(
           context,
           "whiteboard",
-          holdFor(deps.prices, "whiteboard"),
+          holdFor(deps.prices, 0, OUTPUT_TOKENS.long, 1),
           () => assistant.whiteboardNotes(bytes, String(object["mediaType"])),
         );
       } catch (error) {
@@ -337,6 +352,31 @@ export function createStudyRoutes(
         200,
       ),
   );
+
+  /**
+   * A lesson's whole material as one labelled text, "pending" while any of
+   * it is still being read, or null when there is no material index.
+   */
+  async function lessonMaterial(
+    context: ReturnType<typeof resolvedSchoolDbContext>,
+    resourceId: string,
+  ): Promise<string | "pending" | null> {
+    if (!deps.material) return null;
+    const pending = await deps.material.call(context, "pending", {
+      resourceId,
+    });
+    if (pending["pending"] === true) return "pending";
+    const gathered = await gatherMaterial(deps.material, context, {
+      lessonIds: [resourceId],
+      sourceIds: [],
+      question: "",
+      budgetChars: STUDY_SET_MATERIAL_CHARS,
+      mode: "coverage",
+    });
+    return gathered.passages.length > 0
+      ? materialText(gathered.passages)
+      : null;
+  }
 
   // -------------------------------------------------------------------------
   // Studafy Max: a quiz or flashcards from a lesson.
@@ -392,7 +432,11 @@ export function createStudyRoutes(
       }
 
       const lesson = found["lesson"] as Record<string, unknown>;
-      const text = String(lesson["body"] ?? "").trim();
+      // Made once for the whole class: from every file and link the
+      // lesson has, so wait until they are all read (ADR-0037).
+      const material = await lessonMaterial(context, resourceId);
+      if (material === "pending") return problem(c, "MATERIAL_PROCESSING", 409);
+      const text = material ?? String(lesson["body"] ?? "").trim();
       if (text.length < 40) return problem(c, "LESSON_HAS_NO_TEXT", 422);
 
       let generated;
@@ -400,7 +444,7 @@ export function createStudyRoutes(
         generated = await meter.run(
           context,
           kind,
-          holdFor(deps.prices, kind, text.length),
+          holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
           () => assistant.studySet(kind, String(lesson["title"] ?? ""), text),
         );
       } catch (error) {

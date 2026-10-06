@@ -1,16 +1,17 @@
-import { STUDY_LESSON_MAX_CHARS, type StudyUsage } from "@studafy/domain";
+import { type StudyUsage, tokenBound } from "@studafy/domain";
 import type { RequestDbContext } from "../platform/dbContext";
 import type { OutcomeTable } from "../platform/outcomes";
 import type { StudyFeature, StudyRepository } from "./repository";
 
 /**
- * Metering for every AI call (ADR-0029).
+ * Metering for every AI call (ADR-0029, ADR-0037).
  *
- * A call is held at its worst-case cost against the student's allowance
- * before the provider is contacted, then settled to what the provider
+ * A call is held at its worst case - in tokens against the student's
+ * allowance, and in dollars against the paid plans' cap underneath - before
+ * the provider is contacted, then settled to the tokens the provider
  * reported, or released if nothing came back. The database refuses a hold
- * that would pass the plan's daily count or monthly cap, so a refused call
- * costs nothing.
+ * that would pass either, under a per-student lock, so concurrent requests
+ * cannot overspend and a refused call costs nothing.
  */
 
 /** The model's prices, US dollars per million tokens. */
@@ -19,19 +20,26 @@ export interface ModelPrices {
   outputUsdPerMTok: number;
 }
 
-/**
- * Worst-case input tokens per call, used to size the hold taken against a
- * student's cap before the provider is called. Generous on purpose: the hold
- * must never be smaller than what the call can cost, or the cap could be
- * passed. The actual cost replaces it as soon as the provider answers.
- */
-const INPUT_BOUND_TOKENS = {
-  ask: 1_200,
-  // A full-resolution phone photo is ~15k image tokens on Qwen3.5.
-  whiteboard: 16_000,
+/** What a call is held at before it runs. */
+export interface Hold {
+  /** Worst-case input plus output tokens. */
+  tokens: number;
+  /** The same, priced. */
+  microUsd: number;
+}
+
+/** The longest reply each kind of call may have: its output bound. */
+export const OUTPUT_TOKENS = {
+  /** A plain question. */
+  ask: 600,
+  /** A question with class material or a photo, notes, quizzes. */
+  long: 1_400,
 } as const;
-const ASK_OUTPUT_TOKENS = 500;
-const LONG_OUTPUT_TOKENS = 1_400;
+
+/** A full-resolution phone photo is ~15k image tokens on Qwen3.5. */
+export const PHOTO_INPUT_TOKENS = 16_000;
+/** The instructions sent with every call. */
+const INSTRUCTION_TOKENS = 700;
 
 /** Millionths of a dollar for this many tokens. */
 export function costMicroUsd(
@@ -46,46 +54,53 @@ export function costMicroUsd(
   );
 }
 
+/** A hold for [inputChars] of text, [photos] photos and [outputTokens]. */
 export function holdFor(
   prices: ModelPrices,
-  feature: StudyFeature,
-  lessonChars = 0,
-): number {
-  switch (feature) {
-    case "ask":
-      // [lessonChars] is the chat history sent with a question. Two
-      // characters a token is pessimistic for Arabic and English alike.
-      return costMicroUsd(
-        prices,
-        INPUT_BOUND_TOKENS.ask + Math.ceil(lessonChars / 2),
-        ASK_OUTPUT_TOKENS,
-      );
-    case "whiteboard":
-      return costMicroUsd(
-        prices,
-        INPUT_BOUND_TOKENS.whiteboard,
-        LONG_OUTPUT_TOKENS,
-      );
-    default: {
-      // Roughly three characters a token, plus the instructions.
-      const input = Math.ceil(
-        Math.min(lessonChars, STUDY_LESSON_MAX_CHARS) / 3,
-      ) + 600;
-      return costMicroUsd(prices, input, LONG_OUTPUT_TOKENS);
-    }
-  }
+  inputChars: number,
+  outputTokens: number,
+  photos = 0,
+): Hold {
+  const input = INSTRUCTION_TOKENS + tokenBound(inputChars) +
+    photos * PHOTO_INPUT_TOKENS;
+  return {
+    tokens: input + outputTokens,
+    microUsd: costMicroUsd(prices, input, outputTokens),
+  };
 }
 
 /** The refusals an AI call can meet before anything is spent. */
 export const AI_REFUSALS: OutcomeTable = {
   plan_required: ["PLAN_REQUIRED", 403],
+  allowance_exhausted: ["AI_ALLOWANCE_USED", 429],
   monthly_cap: ["AI_ALLOWANCE_USED", 429],
-  daily_limit: ["AI_DAILY_LIMIT", 429],
+  in_progress: ["AI_REQUEST_IN_PROGRESS", 409],
+  duplicate: ["AI_REQUEST_IN_PROGRESS", 409],
 };
 
+export interface Allowance {
+  period: "week" | "month";
+  total: number;
+  used: number;
+  remaining: number;
+  resetsAt: string;
+}
+
+export function allowanceOf(value: unknown): Allowance | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+  return {
+    period: v["period"] === "week" ? "week" : "month",
+    total: Number(v["total"] ?? 0),
+    used: Number(v["used"] ?? 0),
+    remaining: Number(v["remaining"] ?? 0),
+    resetsAt: new Date(String(v["resetsAt"])).toISOString(),
+  };
+}
+
 export type MeteredResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; outcome: string };
+  | { ok: true; value: T; allowance: Allowance | null }
+  | { ok: false; outcome: string; allowance: Allowance | null };
 
 /** Runs provider calls against the AI ledger. */
 export class AiMeter {
@@ -96,21 +111,28 @@ export class AiMeter {
 
   /**
    * Holds [hold], runs [call], then settles to what the provider reported -
-   * or releases the hold if the call threw. Returns the ledger's outcome when
-   * the hold was refused.
+   * or releases the hold if the call threw. [requestKey] makes a retry of
+   * the same request free, and refuses one still running.
    */
   async run<T extends { usage?: StudyUsage }>(
     context: RequestDbContext,
     feature: StudyFeature,
-    hold: number,
+    hold: Hold,
     call: () => Promise<T>,
+    requestKey?: string,
   ): Promise<MeteredResult<T>> {
     const reserved = await this.repository.usage(context, "reserve", {
       feature,
-      estimateMicroUsd: hold,
+      estimateMicroUsd: hold.microUsd,
+      estimateTokens: hold.tokens,
+      ...(requestKey ? { requestKey } : {}),
     });
     if (reserved["outcome"] !== "ok") {
-      return { ok: false, outcome: String(reserved["outcome"]) };
+      return {
+        ok: false,
+        outcome: String(reserved["outcome"]),
+        allowance: allowanceOf(reserved["allowance"]),
+      };
     }
     const usageId = reserved["usageId"];
     let value: T;
@@ -121,16 +143,16 @@ export class AiMeter {
       throw error;
     }
     const usage = value.usage;
-    await this.repository.usage(context, "settle", {
+    const settled = await this.repository.usage(context, "settle", {
       usageId,
-      // No usage reported: charge the hold, which is the upper bound.
+      // No usage reported: the database charges the hold, the upper bound.
       costMicroUsd: usage
         ? costMicroUsd(this.prices, usage.inputTokens, usage.outputTokens)
-        : hold,
+        : hold.microUsd,
       inputTokens: usage?.inputTokens ?? null,
       outputTokens: usage?.outputTokens ?? null,
       model: usage?.model ?? null,
     });
-    return { ok: true, value };
+    return { ok: true, value, allowance: allowanceOf(settled["allowance"]) };
   }
 }

@@ -1371,21 +1371,6 @@ class AppL10nAr extends AppL10n {
       'قد تكون الإجابات خاطئة. تحقق من أي شيء تسلّمه.';
 
   @override
-  String studyAssistantRemaining(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بقي $count سؤال اليوم',
-      many: 'بقي $count سؤالًا اليوم',
-      few: 'بقيت $count أسئلة اليوم',
-      two: 'بقي سؤالان اليوم',
-      one: 'بقي سؤال واحد اليوم',
-      zero: 'لم تتبقَ أسئلة اليوم',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get studyAssistantTab => 'المساعد';
 
   @override
@@ -1882,7 +1867,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studySetThisMonthSAiAllowance =>
-      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر. يتجدد في أول الشهر.';
+      'لقد استخدمت رموز الذكاء الاصطناعي. تتجدد في موعد تجديد خطتك.';
 
   @override
   String get studySetThisLessonHasNoText =>
@@ -1916,19 +1901,6 @@ class AppL10nAr extends AppL10n {
   @override
   String studySetCardPageOfCardscountTap(Object page, Object cardsCount) {
     return 'البطاقة $page من $cardsCount - اضغط لقلبها';
-  }
-
-  @override
-  String studyPlansQuestionsTodayAsktodayOfAskperday(
-    Object askToday,
-    Object askPerDay,
-  ) {
-    return 'أسئلة اليوم: $askToday من $askPerDay';
-  }
-
-  @override
-  String studyPlansAiUsedThisMonthRound(Object round) {
-    return 'الاستخدام هذا الشهر: $round٪';
   }
 
   @override
@@ -2426,17 +2398,11 @@ class AppL10nAr extends AppL10n {
   String get studyPlansFeatureNotebook => 'دفتر خاص بك لكل صف';
 
   @override
-  String get studyPlansFeatureTenQuestions => '10 أسئلة يوميًا للمساعد الدراسي';
-
-  @override
   String get studyPlansFeatureEverythingInFree => 'كل ما في الخطة المجانية';
 
   @override
   String get studyPlansFeatureWhiteboard =>
       'صوّر السبورة واحصل على ملاحظات حقيقية في دفترك';
-
-  @override
-  String get studyPlansFeatureFortyQuestions => '40 سؤالًا يوميًا';
 
   @override
   String get studyPlansFeatureEverythingInPlus => 'كل ما في Plus';
@@ -2446,9 +2412,6 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studyPlansFeatureFlashcards => 'بطاقات مراجعة من دروسك';
-
-  @override
-  String get studyPlansFeatureSixtyQuestions => '60 سؤالًا يوميًا';
 
   @override
   String get studentTodayMakeTodayYours => 'اجعل اليوم يومك.';
@@ -3431,10 +3394,6 @@ class AppL10nAr extends AppL10n {
       'تعذّر على مساعد الدراسة الإجابة الآن. حاول مرة أخرى بعد قليل.';
 
   @override
-  String get studyAssistantDailyLimit =>
-      'لقد استخدمت كل أسئلة اليوم. يمكنك السؤال مرة أخرى غدًا.';
-
-  @override
   String get accountsSwitchAccount => 'تبديل الحساب';
 
   @override
@@ -3932,20 +3891,8 @@ class AppL10nAr extends AppL10n {
   String get helperNoClasses => 'انضم إلى صف لتستخدم دروسه هنا.';
 
   @override
-  String get upgradeDailyLimitTitle => 'لقد استخدمت أسئلة اليوم';
-
-  @override
-  String upgradeDailyLimitBody(int count) {
-    return 'تتضمن خطتك $count سؤالًا في اليوم. يمكنك السؤال مجددًا غدًا.';
-  }
-
-  @override
-  String get upgradeAllowanceTitle =>
-      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر';
-
-  @override
   String get upgradeAllowanceBody =>
-      'يتجدد رصيد الذكاء الاصطناعي في خطتك في اليوم الأول من الشهر القادم.';
+      'استُخدمت رموز الذكاء الاصطناعي. تتجدد في موعد تجديد خطتك، أو مع خطة أكبر.';
 
   @override
   String upgradeFeatureTitle(String plan) {
@@ -3959,9 +3906,6 @@ class AppL10nAr extends AppL10n {
   String upgradeWhatUnlocks(String plan) {
     return 'ما تتيحه $plan';
   }
-
-  @override
-  String get upgradeLargerAllowance => 'رصيد شهري أكبر للذكاء الاصطناعي';
 
   @override
   String get upgradeButton => 'ترقية';
@@ -4968,10 +4912,6 @@ class AppL10nAr extends AppL10n {
   String get helperSubtitle => 'اسأل عن أي شيء تدرسه';
 
   @override
-  String get helperLimitReached =>
-      'لقد استخدمت أسئلة اليوم. قم بالترقية للحصول على المزيد يوميًا، أو اسأل مجددًا غدًا.';
-
-  @override
   String get helperRecentChats => 'المحادثات الأخيرة';
 
   @override
@@ -5806,4 +5746,196 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get gradeClassFiles => 'للصف';
+
+  @override
+  String helperTokensLeft(String remaining, String total, String date) {
+    return 'متبقٍ $remaining من $total رمز ذكاء اصطناعي · يتجدد في $date';
+  }
+
+  @override
+  String get helperTokensUsed =>
+      'لقد استخدمت رموز الذكاء الاصطناعي. سؤالك ما زال هنا.';
+
+  @override
+  String helperTokensUsedUntil(String date) {
+    return 'لقد استخدمت رموز الذكاء الاصطناعي. تتجدد في $date، وسؤالك ما زال هنا.';
+  }
+
+  @override
+  String helperTokensLow(String line) {
+    return 'الرصيد يقترب من النفاد: $line.';
+  }
+
+  @override
+  String get helperStillAnswering => 'ما زال يجري الرد على هذا السؤال.';
+
+  @override
+  String helperCouldNotRead(String name, String reason) {
+    return 'تعذرت قراءة $name: $reason.';
+  }
+
+  @override
+  String get helperSources => 'المصادر';
+
+  @override
+  String helperCitationPage(int n) {
+    return 'ص $n';
+  }
+
+  @override
+  String helperCitationSlide(int n) {
+    return 'الشريحة $n';
+  }
+
+  @override
+  String helperCitationLesson(String name) {
+    return '$name (الدرس)';
+  }
+
+  @override
+  String helperCitationNote(String name) {
+    return '$name (ملاحظتك)';
+  }
+
+  @override
+  String get helperAskAboutLesson => 'اسأل المساعد الذكي';
+
+  @override
+  String get pickerOneFile => 'أو ملف أو رابط واحد';
+
+  @override
+  String get tokensWhatAreThey => 'ما هي رموز الذكاء الاصطناعي؟';
+
+  @override
+  String get tokensExplained =>
+      'يقرأ الذكاء الاصطناعي ويكتب بقطع صغيرة من النص تُسمّى رموزًا، كل رمز نحو ثلاثة أرباع الكلمة. سؤالك، والأجزاء التي يقرؤها من دروسك، والرسائل السابقة في المحادثة، وإجابته كلها تستخدم رموزًا. المساعد والملخصات والاختبارات والبطاقات تتشارك رصيدًا واحدًا.';
+
+  @override
+  String get tokensGuideTitle => 'ما يستهلكه كل شيء تقريبًا';
+
+  @override
+  String get tokensGuideShortQuestion => 'سؤال قصير';
+
+  @override
+  String get tokensGuideLessonQuestion => 'سؤال عن ملفات درس';
+
+  @override
+  String get tokensGuideNotes => 'ملخص أو اختبار أو بطاقات من درس';
+
+  @override
+  String get tokensGuidePhoto => 'صورة سبورة أو واجب';
+
+  @override
+  String tokensAbout(String amount) {
+    return 'نحو $amount';
+  }
+
+  @override
+  String get tokensGuideEstimate =>
+      'هذه تقديرات. العدد الدقيق يحدده الذكاء الاصطناعي لكل طلب، والملفات والإجابات والمحادثات الأطول تستهلك أكثر.';
+
+  @override
+  String get readingTitle => 'القراءة للمساعد الذكي';
+
+  @override
+  String get readingExplained =>
+      'تُقرأ الملفات والروابط مرة واحدة ليجيب المساعد الذكي منها. تُقرأ الصفحات الممسوحة والصور أيضًا ضمن الحد الشهري للقراءة في المدرسة.';
+
+  @override
+  String get readingReady => 'جاهز للمساعد الذكي';
+
+  @override
+  String get readingPartly => 'قُرئ جزئيًا - لم تُقرأ بعض الصفحات';
+
+  @override
+  String get readingStateProcessing => 'جارٍ القراءة…';
+
+  @override
+  String readingStateCannot(String reason) {
+    return 'تتعذر القراءة: $reason';
+  }
+
+  @override
+  String get readingRetry => 'اقرأ مجددًا';
+
+  @override
+  String get readingRetried => 'ستُقرأ مجددًا بعد قليل.';
+
+  @override
+  String get readingRetryFailed => 'تعذر ذلك. حاول مجددًا.';
+
+  @override
+  String get readingLoadFailed => 'تعذر التحقق من الملفات.';
+
+  @override
+  String get readingNothing => 'لا توجد ملفات أو روابط في هذا الدرس.';
+
+  @override
+  String get readingProcessing => 'ما زال قيد القراءة';
+
+  @override
+  String get readingScannedSkipped => 'لم تُقرأ صفحاته الممسوحة';
+
+  @override
+  String get readingNoText => 'لا يحتوي على نص مقروء';
+
+  @override
+  String get readingUnsupportedType => 'لا يمكن قراءة هذا النوع من الملفات';
+
+  @override
+  String get readingLinkSignIn => 'يحتاج الرابط إلى تسجيل دخول';
+
+  @override
+  String get readingLinkVideo => 'إنه فيديو';
+
+  @override
+  String get readingLinkGone => 'الرابط لم يعد يعمل';
+
+  @override
+  String get readingLinkUnreachable => 'تعذر فتح الرابط';
+
+  @override
+  String get readingFailed => 'تعذرت قراءته';
+
+  @override
+  String studyPlansTokensLeft(String remaining, String total) {
+    return 'متبقٍ $remaining من $total رمز ذكاء اصطناعي';
+  }
+
+  @override
+  String studyPlansTokensRenewWeekly(String date) {
+    return 'يتجدد كل يوم اثنين · التالي في $date';
+  }
+
+  @override
+  String get studyPlansTokensLow =>
+      'رصيد رموز الذكاء الاصطناعي يقترب من النفاد.';
+
+  @override
+  String get studyPlansFeatureAskLessons =>
+      'اسأل المساعد الذكي عن دروسك وملفاتها';
+
+  @override
+  String get studyPlansFeatureFreeTokens =>
+      '40,000 رمز ذكاء اصطناعي أسبوعيًا - نحو 10 أسئلة عن دروسك (تقدير)';
+
+  @override
+  String get studyPlansFeaturePlusTokens =>
+      '3,000,000 رمز ذكاء اصطناعي شهريًا - نحو 700 سؤال عن دروسك (تقدير)';
+
+  @override
+  String get studyPlansFeatureMaxTokens =>
+      '6,000,000 رمز ذكاء اصطناعي شهريًا - نحو 1,400 سؤال عن دروسك (تقدير)';
+
+  @override
+  String get upgradeTokensTitle => 'لقد استخدمت رموز الذكاء الاصطناعي';
+
+  @override
+  String upgradeTokensBody(String date) {
+    return 'تتجدد في $date. الخطة الأكبر فيها رموز أكثر.';
+  }
+
+  @override
+  String get studySetMaterialProcessing =>
+      'ما زالت ملفات الدرس قيد القراءة. حاول بعد دقيقة كي لا يفوتك شيء.';
 }

@@ -2365,12 +2365,6 @@ abstract class AppL10n {
   /// **'Answers can be wrong. Check anything you hand in.'**
   String get studyAssistantCheckWork;
 
-  /// How many questions remain in today's allowance.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{No questions left today} =1{1 question left today} other{{count} questions left today}}'**
-  String studyAssistantRemaining(int count);
-
   /// Short navigation label for the study helper tab.
   ///
   /// In en, this message translates to:
@@ -3142,7 +3136,7 @@ abstract class AppL10n {
   /// No description provided for @studySetThisMonthSAiAllowance.
   ///
   /// In en, this message translates to:
-  /// **'This month\'s AI allowance is used. It renews on the 1st.'**
+  /// **'You\'ve used your AI tokens. They renew on your plan\'s reset date.'**
   String get studySetThisMonthSAiAllowance;
 
   /// No description provided for @studySetThisLessonHasNoText.
@@ -3192,21 +3186,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Card {page} of {cardsCount} - tap to turn over'**
   String studySetCardPageOfCardscountTap(Object page, Object cardsCount);
-
-  /// No description provided for @studyPlansQuestionsTodayAsktodayOfAskperday.
-  ///
-  /// In en, this message translates to:
-  /// **'Questions today: {askToday} of {askPerDay}'**
-  String studyPlansQuestionsTodayAsktodayOfAskperday(
-    Object askToday,
-    Object askPerDay,
-  );
-
-  /// No description provided for @studyPlansAiUsedThisMonthRound.
-  ///
-  /// In en, this message translates to:
-  /// **'AI used this month: {round}%'**
-  String studyPlansAiUsedThisMonthRound(Object round);
 
   /// No description provided for @studyPlansRenewsRenews.
   ///
@@ -4114,12 +4093,6 @@ abstract class AppL10n {
   /// **'Your own notebook for each class'**
   String get studyPlansFeatureNotebook;
 
-  /// No description provided for @studyPlansFeatureTenQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'10 questions a day to the study helper'**
-  String get studyPlansFeatureTenQuestions;
-
   /// No description provided for @studyPlansFeatureEverythingInFree.
   ///
   /// In en, this message translates to:
@@ -4131,12 +4104,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Snap the whiteboard - get real notebook notes'**
   String get studyPlansFeatureWhiteboard;
-
-  /// No description provided for @studyPlansFeatureFortyQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'40 questions a day'**
-  String get studyPlansFeatureFortyQuestions;
 
   /// No description provided for @studyPlansFeatureEverythingInPlus.
   ///
@@ -4155,12 +4122,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Flashcards made from your lessons'**
   String get studyPlansFeatureFlashcards;
-
-  /// No description provided for @studyPlansFeatureSixtyQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'60 questions a day'**
-  String get studyPlansFeatureSixtyQuestions;
 
   /// No description provided for @studentTodayMakeTodayYours.
   ///
@@ -5859,12 +5820,6 @@ abstract class AppL10n {
   /// **'The study helper could not answer just now. Please try again in a moment.'**
   String get studyAssistantUnavailable;
 
-  /// No description provided for @studyAssistantDailyLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'You have used all of today\'s questions. You can ask again tomorrow.'**
-  String get studyAssistantDailyLimit;
-
   /// Account screen row that opens the list of accounts on this device.
   ///
   /// In en, this message translates to:
@@ -6759,28 +6714,10 @@ abstract class AppL10n {
   /// **'Join a class to use its lessons here.'**
   String get helperNoClasses;
 
-  /// No description provided for @upgradeDailyLimitTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'You\'ve used today\'s questions'**
-  String get upgradeDailyLimitTitle;
-
-  /// No description provided for @upgradeDailyLimitBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your plan includes {count} questions a day. You can ask again tomorrow.'**
-  String upgradeDailyLimitBody(int count);
-
-  /// No description provided for @upgradeAllowanceTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This month\'s AI allowance is used'**
-  String get upgradeAllowanceTitle;
-
   /// No description provided for @upgradeAllowanceBody.
   ///
   /// In en, this message translates to:
-  /// **'Your plan\'s AI allowance renews on the 1st of next month.'**
+  /// **'Your AI tokens are used. They renew on your plan\'s reset date, or with a bigger plan.'**
   String get upgradeAllowanceBody;
 
   /// No description provided for @upgradeFeatureTitle.
@@ -6800,12 +6737,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'What {plan} unlocks'**
   String upgradeWhatUnlocks(String plan);
-
-  /// No description provided for @upgradeLargerAllowance.
-  ///
-  /// In en, this message translates to:
-  /// **'A larger monthly AI allowance'**
-  String get upgradeLargerAllowance;
 
   /// No description provided for @upgradeButton.
   ///
@@ -8517,12 +8448,6 @@ abstract class AppL10n {
   /// **'Ask about anything you\'re studying'**
   String get helperSubtitle;
 
-  /// No description provided for @helperLimitReached.
-  ///
-  /// In en, this message translates to:
-  /// **'You\'ve used today\'s questions. Upgrade for more each day, or ask again tomorrow.'**
-  String get helperLimitReached;
-
   /// No description provided for @helperRecentChats.
   ///
   /// In en, this message translates to:
@@ -9932,6 +9857,318 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'For the class'**
   String get gradeClassFiles;
+
+  /// No description provided for @helperTokensLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {total} AI tokens left · renews {date}'**
+  String helperTokensLeft(String remaining, String total, String date);
+
+  /// No description provided for @helperTokensUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used your AI tokens. Your question is still here.'**
+  String get helperTokensUsed;
+
+  /// No description provided for @helperTokensUsedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used your AI tokens. They renew on {date} - your question is still here.'**
+  String helperTokensUsedUntil(String date);
+
+  /// No description provided for @helperTokensLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Running low: {line}.'**
+  String helperTokensLow(String line);
+
+  /// No description provided for @helperStillAnswering.
+  ///
+  /// In en, this message translates to:
+  /// **'This question is still being answered.'**
+  String get helperStillAnswering;
+
+  /// No description provided for @helperCouldNotRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read {name}: {reason}.'**
+  String helperCouldNotRead(String name, String reason);
+
+  /// No description provided for @helperSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get helperSources;
+
+  /// No description provided for @helperCitationPage.
+  ///
+  /// In en, this message translates to:
+  /// **'p. {n}'**
+  String helperCitationPage(int n);
+
+  /// No description provided for @helperCitationSlide.
+  ///
+  /// In en, this message translates to:
+  /// **'slide {n}'**
+  String helperCitationSlide(int n);
+
+  /// No description provided for @helperCitationLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (lesson)'**
+  String helperCitationLesson(String name);
+
+  /// No description provided for @helperCitationNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (your note)'**
+  String helperCitationNote(String name);
+
+  /// No description provided for @helperAskAboutLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the AI helper'**
+  String get helperAskAboutLesson;
+
+  /// No description provided for @pickerOneFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Or one file or link'**
+  String get pickerOneFile;
+
+  /// No description provided for @tokensWhatAreThey.
+  ///
+  /// In en, this message translates to:
+  /// **'What are AI tokens?'**
+  String get tokensWhatAreThey;
+
+  /// No description provided for @tokensExplained.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI reads and writes in small pieces of text called tokens - about three-quarters of a word each. Your question, the parts of your lessons it reads, the earlier messages in the chat and its answer all use tokens. The helper, notes, quizzes and flashcards share one allowance.'**
+  String get tokensExplained;
+
+  /// No description provided for @tokensGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roughly what things use'**
+  String get tokensGuideTitle;
+
+  /// No description provided for @tokensGuideShortQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'A short question'**
+  String get tokensGuideShortQuestion;
+
+  /// No description provided for @tokensGuideLessonQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'A question about a lesson\'s files'**
+  String get tokensGuideLessonQuestion;
+
+  /// No description provided for @tokensGuideNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes, a quiz or flashcards from a lesson'**
+  String get tokensGuideNotes;
+
+  /// No description provided for @tokensGuidePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'A whiteboard or homework photo'**
+  String get tokensGuidePhoto;
+
+  /// No description provided for @tokensAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'about {amount}'**
+  String tokensAbout(String amount);
+
+  /// No description provided for @tokensGuideEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'These are estimates. The exact count comes from the AI for each request: longer files, answers and chats use more.'**
+  String get tokensGuideEstimate;
+
+  /// No description provided for @readingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading for the AI helper'**
+  String get readingTitle;
+
+  /// No description provided for @readingExplained.
+  ///
+  /// In en, this message translates to:
+  /// **'Files and links are read once so the AI helper can answer from them. Scanned pages and pictures are read too, within the school\'s monthly reading limit.'**
+  String get readingExplained;
+
+  /// No description provided for @readingReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for the AI helper'**
+  String get readingReady;
+
+  /// No description provided for @readingPartly.
+  ///
+  /// In en, this message translates to:
+  /// **'Partly read - some pages were not read'**
+  String get readingPartly;
+
+  /// No description provided for @readingStateProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading…'**
+  String get readingStateProcessing;
+
+  /// No description provided for @readingStateCannot.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be read: {reason}'**
+  String readingStateCannot(String reason);
+
+  /// No description provided for @readingRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Read again'**
+  String get readingRetry;
+
+  /// No description provided for @readingRetried.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be read again shortly.'**
+  String get readingRetried;
+
+  /// No description provided for @readingRetryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That could not be done. Try again.'**
+  String get readingRetryFailed;
+
+  /// No description provided for @readingLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check the files.'**
+  String get readingLoadFailed;
+
+  /// No description provided for @readingNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'This lesson has no files or links.'**
+  String get readingNothing;
+
+  /// No description provided for @readingProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'it is still being read'**
+  String get readingProcessing;
+
+  /// No description provided for @readingScannedSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'its scanned pages weren\'t read'**
+  String get readingScannedSkipped;
+
+  /// No description provided for @readingNoText.
+  ///
+  /// In en, this message translates to:
+  /// **'it has no readable text'**
+  String get readingNoText;
+
+  /// No description provided for @readingUnsupportedType.
+  ///
+  /// In en, this message translates to:
+  /// **'this kind of file can\'t be read'**
+  String get readingUnsupportedType;
+
+  /// No description provided for @readingLinkSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'the link needs a sign-in'**
+  String get readingLinkSignIn;
+
+  /// No description provided for @readingLinkVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'it\'s a video'**
+  String get readingLinkVideo;
+
+  /// No description provided for @readingLinkGone.
+  ///
+  /// In en, this message translates to:
+  /// **'the link no longer works'**
+  String get readingLinkGone;
+
+  /// No description provided for @readingLinkUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'the link couldn\'t be opened'**
+  String get readingLinkUnreachable;
+
+  /// No description provided for @readingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'it couldn\'t be read'**
+  String get readingFailed;
+
+  /// No description provided for @studyPlansTokensLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {total} AI tokens left'**
+  String studyPlansTokensLeft(String remaining, String total);
+
+  /// No description provided for @studyPlansTokensRenewWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews every Monday · next on {date}'**
+  String studyPlansTokensRenewWeekly(String date);
+
+  /// No description provided for @studyPlansTokensLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Running low on AI tokens.'**
+  String get studyPlansTokensLow;
+
+  /// No description provided for @studyPlansFeatureAskLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the AI helper about your lessons and their files'**
+  String get studyPlansFeatureAskLessons;
+
+  /// No description provided for @studyPlansFeatureFreeTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'40,000 AI tokens a week - about 10 questions on your lessons (an estimate)'**
+  String get studyPlansFeatureFreeTokens;
+
+  /// No description provided for @studyPlansFeaturePlusTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'3,000,000 AI tokens a month - about 700 questions on your lessons (an estimate)'**
+  String get studyPlansFeaturePlusTokens;
+
+  /// No description provided for @studyPlansFeatureMaxTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'6,000,000 AI tokens a month - about 1,400 questions on your lessons (an estimate)'**
+  String get studyPlansFeatureMaxTokens;
+
+  /// No description provided for @upgradeTokensTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used your AI tokens'**
+  String get upgradeTokensTitle;
+
+  /// No description provided for @upgradeTokensBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They renew on {date}. A bigger plan has more tokens.'**
+  String upgradeTokensBody(String date);
+
+  /// No description provided for @studySetMaterialProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'The lesson\'s files are still being read. Try again in a minute so nothing is left out.'**
+  String get studySetMaterialProcessing;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

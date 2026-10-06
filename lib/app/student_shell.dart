@@ -117,9 +117,28 @@ class _StudentShellState extends State<StudentShell> {
   /// The tab the helper was opened from, to go back to.
   int _beforeHelper = 0;
 
+  /// Where the helper is among the tabs, as last built; and a lesson to
+  /// start a chat about, when opened from one (ADR-0037).
+  int? _helperIndex;
+  final _openHelperWith = ValueNotifier<List<ChatReference>?>(null);
+
+  void _askHelperAbout(String lessonId, String title) {
+    final helper = _helperIndex;
+    if (helper == null) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _openHelperWith.value = [
+      ChatReference(kind: ChatReferenceKind.lesson, id: lessonId, title: title),
+    ];
+    setState(() {
+      if (index != helper) _beforeHelper = index;
+      index = helper;
+    });
+  }
+
   @override
   void dispose() {
     _navCompact.dispose();
+    _openHelperWith.dispose();
     super.dispose();
   }
 
@@ -146,8 +165,8 @@ class _StudentShellState extends State<StudentShell> {
     );
   }
 
-  /// The plan as the helper shows it: its name, today's questions, and what
-  /// the next plan adds - nothing to upgrade to on Studafy Max.
+  /// The plan as the helper shows it: its name, its AI tokens, and what the
+  /// next plan adds - nothing to upgrade to on Studafy Max.
   Future<HelperPlan?> _helperPlan(BuildContext context) async {
     final study = widget.study;
     if (study == null) return null;
@@ -156,8 +175,13 @@ class _StudentShellState extends State<StudentShell> {
     final next = plan.tier.next;
     return HelperPlan(
       name: studyPlanCopy[plan.tier]!.name,
-      askToday: plan.askToday,
-      askPerDay: plan.askPerDay,
+      allowance: HelperAllowance(
+        weekly: plan.allowance.weekly,
+        total: plan.allowance.total,
+        used: plan.allowance.used,
+        remaining: plan.allowance.remaining,
+        resetsAt: plan.allowance.resetsAt,
+      ),
       upgradeTo: next == null ? null : studyPlanCopy[next]!.name,
       upgradeBenefits: next == null
           ? const []
@@ -245,6 +269,7 @@ class _StudentShellState extends State<StudentShell> {
           studyPlans: widget.studyPlans,
           uploads: widget.fileUploads,
           schoolId: ActiveContextController.instance.membership?.schoolId,
+          onAskHelper: assistant == null ? null : _askHelperAbout,
         )
       else
         AcademicOverviewPage(
@@ -304,6 +329,7 @@ class _StudentShellState extends State<StudentShell> {
         StudyAssistantPage(
           // Full screen, like a chat: the bar is away while it is open.
           onBack: () => setState(() => index = _beforeHelper),
+          openWith: _openHelperWith,
           assistant: assistant,
           chats: widget.studyChats,
           switchedOn: switch (widget.study) {
@@ -346,8 +372,8 @@ class _StudentShellState extends State<StudentShell> {
               if (!context.mounted) return;
               await showUpgradePrompt(
                 context,
-                reason: code == StudyAssistantFailure.dailyLimit
-                    ? UpgradeReason.dailyQuestions
+                reason: code == StudyAssistantFailure.allowanceUsed
+                    ? UpgradeReason.tokensUsed
                     : UpgradeReason.feature,
                 plan: plan,
                 // Photos to the helper are Studafy Plus.
@@ -375,6 +401,7 @@ class _StudentShellState extends State<StudentShell> {
     ];
     final helper = pages.indexWhere((page) => page is StudyAssistantPage);
     final helperIndex = helper < 0 ? null : helper;
+    _helperIndex = helperIndex;
     final classes = widget.classes;
     if (_hasNoClassYet && classes != null) {
       return Scaffold(

@@ -60,6 +60,21 @@ export {
   parseMp4,
 } from "./files/mp4";
 export {
+  detectOoxmlMediaType,
+  DOCX_MEDIA_TYPE,
+  OOXML_TOTAL_INFLATE_CAP_BYTES,
+  type OoxmlKind,
+  ooxmlKindOf,
+  type OoxmlParseResult,
+  type OoxmlRejectReason,
+  parseOoxml,
+  PPTX_MEDIA_TYPE,
+  readZipDirectory,
+  readZipEntry,
+  type ZipDirectory,
+  type ZipEntry,
+} from "./files/ooxml";
+export {
   analyzeBytes,
   type AnalyzeResult,
   SCAN_POLICY_VERSION,
@@ -117,3 +132,18 @@ export {
   CONTEXT_RESERVE_TOKENS,
   fitChatMemory,
 } from "./study/chatMemory";
+export {
+  type Citation,
+  GROUNDED_RULES,
+  learnerLine,
+  type LearnerProfile,
+  materialBlock,
+  type MaterialPassage,
+  namedLocations,
+  passageLabel,
+  type PassageSource,
+  resolveCitations,
+  tokenBound,
+  type UnreadableSource,
+  wantsWholeMaterial,
+} from "./study/grounding";

@@ -1527,4 +1527,34 @@ class ApiAcademicRepository implements AcademicRepository {
         mediaType: dto.mediaType,
       ),
   ];
+
+  static List<LessonReadingSource> _reading(V1LessonMaterialDto dto) => [
+    for (final source in dto.sources)
+      LessonReadingSource(
+        id: source.id,
+        isLink: source.kind == 'link',
+        name: source.name,
+        state: ReadingState.parse(source.state),
+        reason: source.reason,
+        pages: source.pages,
+        skippedPages: source.skippedPages,
+      ),
+  ];
+
+  @override
+  Future<List<LessonReadingSource>> lessonReading(String resourceId) async =>
+      _reading(await _client.listLessonReading(resourceId: resourceId));
+
+  @override
+  Future<List<LessonReadingSource>> retryLessonReading(
+    String resourceId,
+    String sourceId,
+  ) async => _reading(
+    await _client.retryLessonReading(
+      const V1RetryLessonMaterialRequestDto(),
+      resourceId: resourceId,
+      sourceId: sourceId,
+      idempotencyKey: newIdempotencyKey('reading-retry'),
+    ),
+  );
 }

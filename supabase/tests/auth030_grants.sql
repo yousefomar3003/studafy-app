@@ -92,6 +92,8 @@ select is(
     'api051_consume_download_grant',
     'api051_create_download_grant',
     'api051_publish_file',
+    -- ADR-0037: class material for the study helper, checked per request.
+    'api054_ai_material',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

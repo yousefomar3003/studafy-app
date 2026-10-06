@@ -1134,8 +1134,65 @@ abstract interface class WellbeingRepository {
 ///
 /// The union of the slice interfaces above. A screen that needs one slice
 /// asks for that interface, so its tests fake only what it uses.
+/// How far a lesson's file or link has been read for the AI helper
+/// (ADR-0037).
+enum ReadingState {
+  processing,
+  ready,
+  unsupported,
+  failed;
+
+  static ReadingState parse(String value) => switch (value) {
+    'ready' => ReadingState.ready,
+    'unsupported' => ReadingState.unsupported,
+    'failed' => ReadingState.failed,
+    _ => ReadingState.processing,
+  };
+}
+
+/// One file or link on a lesson, as the AI helper can (or cannot) read it.
+@immutable
+class LessonReadingSource {
+  const LessonReadingSource({
+    required this.id,
+    required this.isLink,
+    required this.name,
+    required this.state,
+    this.reason,
+    this.pages,
+    this.skippedPages,
+  });
+
+  final String id;
+  final bool isLink;
+  final String name;
+  final ReadingState state;
+
+  /// Why it could not be read, or 'partly_read'; a code the app words.
+  final String? reason;
+  final int? pages;
+  final int? skippedPages;
+
+  /// Read, but not all of it: pages past a limit or scans not read.
+  bool get partly => state == ReadingState.ready && (skippedPages ?? 0) > 0;
+}
+
+/// The AI helper's reading of lessons' files and links (ADR-0037).
+abstract interface class LessonReadingRepository {
+  /// Each file and link on the lesson and how far it has been read. A
+  /// teacher sees any lesson they teach; a student one they can see.
+  Future<List<LessonReadingSource>> lessonReading(String resourceId);
+
+  /// Reads one again after it failed or could not be read. Teachers only.
+  Future<List<LessonReadingSource>> retryLessonReading(
+    String resourceId,
+    String sourceId,
+  );
+}
+
 abstract interface class AcademicRepository
     implements
+        LessonReadingRepository,
         AcademicContentRepository,
         AssignmentRepository,
         AssessmentRepository,

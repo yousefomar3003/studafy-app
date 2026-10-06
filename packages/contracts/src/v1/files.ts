@@ -56,6 +56,9 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     "image/jpeg",
     "image/png",
     "image/webp",
+    // Word and PowerPoint, on lessons and assignments (ADR-0037).
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ]),
   sha256: Sha256,
   classroomId: Id.optional(),

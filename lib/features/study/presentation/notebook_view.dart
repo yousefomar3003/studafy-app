@@ -153,6 +153,9 @@ class _NotebookViewState extends State<NotebookView> {
     StudyRefusal.lessonHasNoText => AppL10n.of(
       context,
     ).studySetThisLessonHasNoText,
+    StudyRefusal.materialProcessing => AppL10n.of(
+      context,
+    ).studySetMaterialProcessing,
     _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
   };
 

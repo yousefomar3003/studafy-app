@@ -18,7 +18,7 @@ class ApiStudyRepository implements StudyRepository {
     return switch (error.code) {
       'PLAN_REQUIRED' => StudyRefusal.planRequired,
       'AI_ALLOWANCE_USED' => StudyRefusal.allowanceUsed,
-      'AI_DAILY_LIMIT' => StudyRefusal.dailyLimit,
+      'MATERIAL_PROCESSING' => StudyRefusal.materialProcessing,
       'PHOTO_NOT_READY' => StudyRefusal.photoNotReady,
       'PHOTO_UNREADABLE' => StudyRefusal.photoUnreadable,
       'LESSON_HAS_NO_TEXT' => StudyRefusal.lessonHasNoText,
@@ -61,10 +61,13 @@ class ApiStudyRepository implements StudyRepository {
     final dto = await _client.getStudyPlan();
     return StudyPlan(
       tier: StudyPlanTier.parse(dto.plan),
-      allowanceUsed: dto.allowanceUsed.toDouble(),
-      resetsAt: DateTime.parse(dto.resetsAt).toLocal(),
-      askToday: dto.askToday,
-      askPerDay: dto.askPerDay,
+      allowance: AiAllowance(
+        weekly: dto.allowance.period == 'week',
+        total: dto.allowance.total,
+        used: dto.allowance.used,
+        remaining: dto.allowance.remaining,
+        resetsAt: DateTime.parse(dto.allowance.resetsAt).toLocal(),
+      ),
       available: dto.available?.toSet(),
     );
   });

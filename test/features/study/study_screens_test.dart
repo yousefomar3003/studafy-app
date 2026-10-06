@@ -21,10 +21,13 @@ import '../../support/localized_app.dart';
 void main() {
   StudyPlan planOf(StudyPlanTier tier, {Set<String>? available}) => StudyPlan(
     tier: tier,
-    allowanceUsed: 0.25,
-    resetsAt: DateTime(2026, 10, 1),
-    askToday: 2,
-    askPerDay: 10,
+    allowance: AiAllowance(
+      weekly: tier == StudyPlanTier.free,
+      total: tier == StudyPlanTier.free ? 40000 : 3000000,
+      used: tier == StudyPlanTier.free ? 10000 : 750000,
+      remaining: tier == StudyPlanTier.free ? 30000 : 2250000,
+      resetsAt: DateTime(2026, 10, 12),
+    ),
     available: available,
   );
 
@@ -420,8 +423,18 @@ void main() {
       expect(find.text('Quizzes made from your lessons'), findsOne);
       // The store's own price, in the student's currency.
       expect(find.text(r'$5.99 / month'), findsOne);
-      // On the free plan: today's questions, not a money allowance.
-      expect(find.text('Questions today: 0 of 10'), findsOne);
+      // Every plan in AI tokens: Free a week at a time, with an estimate of
+      // what that buys, and never "unlimited".
+      expect(find.text('40,000 of 40,000 AI tokens left'), findsOne);
+      expect(find.text('Renews every Monday · next on Mon, Oct 12'), findsOne);
+      expect(
+        find.text(
+          '40,000 AI tokens a week - about 10 questions on your lessons (an estimate)',
+        ),
+        findsOne,
+      );
+      expect(find.textContaining('nlimited'), findsNothing);
+      expect(find.textContaining('questions a day'), findsNothing);
     });
 
     testWidgets('a paid plan shows how much of the month is used', (
@@ -432,7 +445,7 @@ void main() {
         plans(_Study(tier: StudyPlanTier.plus), _Store()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('AI used this month: 25%'), findsOne);
+      expect(find.text('2,250,000 of 3,000,000 AI tokens left'), findsOne);
       expect(find.text('Your plan'), findsOne);
     });
 
@@ -714,10 +727,15 @@ class _Study implements StudyRepository {
   @override
   Future<StudyPlan> plan() async => StudyPlan(
     tier: tier,
-    allowanceUsed: tier == StudyPlanTier.free ? 0 : 0.25,
-    resetsAt: DateTime(2026, 10, 1),
-    askToday: 0,
-    askPerDay: 10,
+    allowance: AiAllowance(
+      weekly: tier == StudyPlanTier.free,
+      total: tier == StudyPlanTier.free ? 40000 : 3000000,
+      used: tier == StudyPlanTier.free ? 0 : 750000,
+      remaining: tier == StudyPlanTier.free ? 40000 : 2250000,
+      resetsAt: tier == StudyPlanTier.free
+          ? DateTime(2026, 10, 12)
+          : DateTime(2026, 11, 1),
+    ),
   );
 
   @override

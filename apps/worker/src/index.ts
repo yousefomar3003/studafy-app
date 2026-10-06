@@ -18,6 +18,7 @@ import {
   closeRedis,
   createRedis,
   createSentryReporter,
+  createStudyAssistant,
   ExternalMalwareScannerClient,
   FcmPushSender,
   FileSecurityScanner,
@@ -27,6 +28,10 @@ import {
 } from "@studafy/infrastructure";
 import { startFileCleanup } from "./processors/fileCleanup";
 import { startFileScan } from "./processors/fileScan";
+import {
+  postgresMaterialQueue,
+  startMaterialIndex,
+} from "./processors/materialIndex";
 import { startFileRetentionSweep } from "./processors/retentionSweep";
 import { startAccountDeletionExecutor } from "./processors/accountDeletion";
 import { startDataExportExecutor } from "./processors/dataExport";
@@ -117,7 +122,8 @@ function database(): Sql {
 }
 
 const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
-    env.FILE051_RETENTION_ENABLED || env.OPS061_NOTIFICATIONS_ENABLED ||
+    env.FILE051_RETENTION_ENABLED || env.AI_MATERIAL_INDEX_ENABLED ||
+    env.OPS061_NOTIFICATIONS_ENABLED ||
     env.PAY071_BILLING_ENABLED
   ? database()
   : undefined;
@@ -151,6 +157,38 @@ const scan = fileWorkerSql && storage && env.FILE051_SCAN_ENABLED
   : undefined;
 const retention = fileWorkerSql && storage && env.FILE051_RETENTION_ENABLED
   ? startFileRetentionSweep(fileWorkerSql, storage, logger)
+  : undefined;
+
+// ADR-0037: lesson files and links read for the study helper. The model
+// reads scanned pages and pictures only behind the same switch as every
+// other path that sends lesson material to the provider (ADR-0029).
+const materialReader = env.AI_API_KEY && env.AI_BASE_URL &&
+    env.AI_LESSON_TOOLS_ENABLED
+  ? createStudyAssistant({
+    apiKey: env.AI_API_KEY,
+    baseUrl: env.AI_BASE_URL,
+    model: env.AI_MODEL,
+    maxLongOutputTokens: 1_800,
+    timeoutMs: 60_000,
+  })
+  : null;
+const materialIndex = fileWorkerSql && storage && env.AI_MATERIAL_INDEX_ENABLED
+  ? startMaterialIndex({
+    queue: postgresMaterialQueue(fileWorkerSql),
+    storage,
+    assistant: materialReader,
+    limits: {
+      ocrPagesPerFile: 60,
+      textPagesPerFile: 500,
+      charsPerDocument: 600_000,
+      linkMaxBytes: 3_000_000,
+    },
+    prices: {
+      inputUsdPerMTok: env.AI_PRICE_INPUT_USD_PER_MTOK,
+      outputUsdPerMTok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
+    },
+    logger,
+  }, env.AI_MATERIAL_POLL_INTERVAL_MS)
   : undefined;
 
 // OPS-061: the transactional outbox drain. The dispatcher polls the
@@ -295,6 +333,7 @@ installGracefulShutdown({
     await billing?.close();
     await scan?.close();
     await retention?.close();
+    await materialIndex?.close();
     await cleanup?.close();
     await accountDeletion?.close();
     await dataExport?.close();

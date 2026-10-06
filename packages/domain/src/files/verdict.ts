@@ -14,6 +14,7 @@ import { parsePng, pngAncillaryPayloads, stripPngMetadata } from "./png";
 import { parseWebp, stripWebpMetadata, webpMetadataPayloads } from "./webp";
 import { parsePdf } from "./pdf";
 import { mp4MetadataPayloads, neutralizeMp4Metadata, parseMp4 } from "./mp4";
+import { DOCX_MEDIA_TYPE, parseOoxml, PPTX_MEDIA_TYPE } from "./ooxml";
 
 export type ScanVerdict =
   | "clean"
@@ -42,6 +43,8 @@ export interface AnalyzeResult {
 
 export type SafeMediaType =
   | "application/pdf"
+  | typeof DOCX_MEDIA_TYPE
+  | typeof PPTX_MEDIA_TYPE
   | "audio/mp4"
   | "image/jpeg"
   | "image/png"
@@ -102,6 +105,21 @@ export async function analyzeBytes(
     case "application/pdf": {
       const parsed = await parsePdf(bytes);
       if (!parsed.ok) return mapPdfFailure(parsed.reason);
+      return { verdict: "clean" };
+    }
+    // Word and PowerPoint (ADR-0037): a bounded ZIP walk that refuses
+    // macros, embedded objects and remote templates. Stored unchanged.
+    case DOCX_MEDIA_TYPE:
+    case PPTX_MEDIA_TYPE: {
+      const parsed = parseOoxml(
+        bytes,
+        mediaType === DOCX_MEDIA_TYPE ? "docx" : "pptx",
+      );
+      if (!parsed.ok) {
+        return parsed.reason === "external_reference"
+          ? { verdict: "policy_rejected", errorCode: "external_reference" }
+          : mapPdfFailure(parsed.reason);
+      }
       return { verdict: "clean" };
     }
     case "audio/mp4": {

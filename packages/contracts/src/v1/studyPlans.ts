@@ -20,17 +20,27 @@ export type V1StudyPlanId = z.infer<typeof V1StudyPlanId>;
 export const V1StudyFeature = z.enum([
   "ask",
   "whiteboard",
+  "notes",
   "quiz",
   "flashcards",
 ]);
 export type V1StudyFeature = z.infer<typeof V1StudyFeature>;
 
 /**
- * The caller's plan and how much of this month's AI allowance is used.
- *
- * The allowance is shown as a fraction, not in dollars: what the student
- * needs to know is how much is left, and the cap itself is a cost control.
+ * A student's AI allowance, in tokens (ADR-0037). One allowance covers the
+ * helper and every other AI study tool. Free resets every Monday 00:00 UTC;
+ * Studafy Plus and Max on the 1st of each month, 00:00 UTC.
  */
+export const V1AiAllowance = z.strictObject({
+  period: z.enum(["week", "month"]),
+  total: z.number().int().nonnegative(),
+  used: z.number().int().nonnegative(),
+  remaining: z.number().int().nonnegative(),
+  resetsAt: Timestamp,
+});
+export type V1AiAllowance = z.infer<typeof V1AiAllowance>;
+
+/** The caller's plan and its AI allowance. */
 export const V1StudyPlanSummary = z.strictObject({
   plan: V1StudyPlanId,
   features: z.array(V1StudyFeature).max(8),
@@ -47,11 +57,7 @@ export const V1StudyPlanSummary = z.strictObject({
    * The app sends no more than this with a question.
    */
   chatMemoryChars: z.number().int().nonnegative().optional(),
-  /** 0 to 1. Always 0 on the free plan, which has no monthly allowance. */
-  allowanceUsed: z.number().min(0).max(1),
-  resetsAt: Timestamp,
-  askToday: z.number().int().nonnegative(),
-  askPerDay: z.number().int().nonnegative(),
+  allowance: V1AiAllowance,
 });
 export type V1StudyPlanSummary = z.infer<typeof V1StudyPlanSummary>;
 
@@ -159,4 +165,33 @@ export const V1GenerateStudySetRequest = z.strictObject({
 });
 export type V1GenerateStudySetRequest = z.infer<
   typeof V1GenerateStudySetRequest
+>;
+
+/**
+ * One file or link on a lesson, and how far reading it for the study helper
+ * has got (ADR-0037). "unsupported" and "failed" carry a reason the app
+ * words; a teacher may ask for either to be read again.
+ */
+export const V1MaterialSource = z.strictObject({
+  id: Id,
+  kind: z.enum(["file", "link"]),
+  name: z.string().max(300),
+  url: z.string().max(2048).nullable(),
+  mediaType: z.string().max(120).nullable(),
+  state: z.enum(["processing", "ready", "unsupported", "failed"]),
+  reason: z.string().max(60).nullable(),
+  pages: z.number().int().nonnegative().nullable(),
+  skippedPages: z.number().int().nonnegative().nullable(),
+});
+export type V1MaterialSource = z.infer<typeof V1MaterialSource>;
+
+export const V1LessonMaterial = z.strictObject({
+  resourceId: Id,
+  sources: z.array(V1MaterialSource).max(40),
+});
+export type V1LessonMaterial = z.infer<typeof V1LessonMaterial>;
+
+export const V1RetryLessonMaterialRequest = z.strictObject({});
+export type V1RetryLessonMaterialRequest = z.infer<
+  typeof V1RetryLessonMaterialRequest
 >;

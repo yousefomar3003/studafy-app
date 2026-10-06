@@ -14,6 +14,7 @@ import '../domain/academic_repository.dart';
 import 'create_wellbeing_page.dart';
 import 'edit_lesson_sheet.dart';
 import 'edit_materials_sheet.dart';
+import 'lesson_reading_sheet.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;
@@ -713,10 +714,29 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
         child: Text(l10n.academicPublish),
       );
     } else if (widget.teacherTools && feed == AcademicFeed.content) {
-      trailing = IconButton(
-        tooltip: l10n.lessonEdit,
-        onPressed: () => _editLesson(item),
-        icon: const Icon(Icons.edit_outlined),
+      trailing = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // How far the lesson's files are read for the AI helper.
+          if (item.attachments.isNotEmpty ||
+              item.links.isNotEmpty ||
+              item.resourceType == 'file')
+            IconButton(
+              tooltip: l10n.readingTitle,
+              onPressed: () => showLessonReadingSheet(
+                context,
+                repository: widget.repository,
+                resourceId: item.id,
+                title: item.title,
+              ),
+              icon: const Icon(Icons.auto_awesome_outlined),
+            ),
+          IconButton(
+            tooltip: l10n.lessonEdit,
+            onPressed: () => _editLesson(item),
+            icon: const Icon(Icons.edit_outlined),
+          ),
+        ],
       );
     } else if (widget.teacherTools &&
         (feed == AcademicFeed.assignments ||

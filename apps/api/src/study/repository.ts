@@ -3,7 +3,12 @@ import { withRequestContext } from "../platform/dbContext";
 import type { CatalogueCommandResult } from "../platform/dispatchRepository";
 import type { RequestDbContext } from "../platform/dbContext";
 
-export type StudyFeature = "ask" | "whiteboard" | "quiz" | "flashcards";
+export type StudyFeature =
+  | "ask"
+  | "whiteboard"
+  | "notes"
+  | "quiz"
+  | "flashcards";
 
 export interface UsageReservation {
   outcome: string;
@@ -15,11 +20,15 @@ export interface UsageSummary {
   outcome: string;
   plan: "free" | "plus" | "max";
   features: StudyFeature[];
+  allowance: {
+    period: "week" | "month";
+    total: number;
+    used: number;
+    remaining: number;
+    resetsAt: string;
+  };
   capMicroUsd: number;
   committedMicroUsd: number;
-  askToday: number;
-  askPerDay: number;
-  resetsAt: string;
 }
 
 /**

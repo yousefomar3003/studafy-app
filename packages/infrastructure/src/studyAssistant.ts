@@ -10,10 +10,11 @@
  *      so a swapped environment variable cannot redirect children's questions
  *      to a new destination.
  *   2. It forwarded lesson-material bodies with no redaction. This one sends
- *      only what the student typed - and, for a follow-up, the last few turns
- *      of the same chat, which the student's device supplies - never their
- *      name, their id, their school, their marks or any material the app
- *      holds. Nothing is read from the database to build the prompt.
+ *      what the student typed, the last few turns of the same chat, and -
+ *      behind AI_LESSON_TOOLS_ENABLED (ADR-0029, ADR-0037) - passages of
+ *      the class material that student may read, all redacted. Material is
+ *      wrapped as labelled data the model is told never to obey. Never the
+ *      student's name, id, school or marks.
  *
  * It also never sees a service-role credential: the provider key is the only
  * secret it holds, and it is used for exactly one host.
@@ -21,8 +22,13 @@
 
 import {
   type Flashcard,
+  GROUNDED_RULES,
   isUnreadableReply,
+  learnerLine,
+  type LearnerProfile,
   lessonPrompt,
+  materialBlock,
+  type MaterialPassage,
   parseFlashcards,
   parseQuiz,
   type QuizQuestion,
@@ -30,6 +36,7 @@ import {
   STUDY_PROMPTS,
   type StudySetKind,
   type StudyUsage,
+  type UnreadableSource,
 } from "@studafy/domain";
 
 export interface StudyAssistantOptions {
@@ -88,13 +95,34 @@ export interface StudyImage {
   mediaType: string;
 }
 
+/** What a question is asked with, besides the chat. */
+export interface AskExtras {
+  /** Passages of class material, already chosen and fitted to the budget. */
+  passages?: MaterialPassage[];
+  /** Sources the student chose that could not be read. */
+  unreadable?: UnreadableSource[];
+  /** Photos the student attached. */
+  images?: StudyImage[];
+  learner?: LearnerProfile;
+}
+
 export interface StudyAssistant {
   /** [history] is the chat so far, oldest first, already fitted to the
    * plan's chat memory. */
   ask(
     question: string,
     history?: StudyTurn[],
-    extras?: { references?: StudyReference[]; images?: StudyImage[] },
+    extras?: AskExtras,
+  ): Promise<StudyAssistantReply>;
+  /**
+   * The writing on one scanned page, or the writing and a plain account of
+   * one image, for the material index. Throws "unreadable" when there is
+   * nothing to read.
+   */
+  transcribe(
+    image: Uint8Array,
+    mediaType: string,
+    kind: "page" | "image",
   ): Promise<StudyAssistantReply>;
   /** Notes from a whiteboard photo. Throws "unreadable" for a blank one. */
   whiteboardNotes(
@@ -151,6 +179,7 @@ export function createStudyAssistant(
     user: Content,
     maxTokens: number,
     earlier: Message[] = [],
+    temperature = 0.3,
   ): Promise<{ text: string; usage?: StudyUsage }> {
     const endpoint = new URL("/v1/chat/completions", allowed);
     // The allowlist, enforced rather than assumed: the origin that ends up
@@ -171,7 +200,7 @@ export function createStudyAssistant(
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          temperature: 0.3,
+          temperature,
           // Qwen3.5 thinks before answering by default, and the thinking
           // counts against max_tokens: a 600-token budget came back cut
           // off mid-sentence, or empty, after ~9s. Off, the same question
@@ -215,9 +244,10 @@ export function createStudyAssistant(
     async ask(
       question: string,
       history: StudyTurn[] = [],
-      extras: { references?: StudyReference[]; images?: StudyImage[] } = {},
+      extras: AskExtras = {},
     ): Promise<StudyAssistantReply> {
-      const references = extras.references ?? [];
+      const passages = extras.passages ?? [];
+      const unreadable = extras.unreadable ?? [];
       const images = extras.images ?? [];
       for (const image of images) {
         if (
@@ -235,16 +265,15 @@ export function createStudyAssistant(
           content: redactForProvider(turn.text.slice(0, STUDY_TURN_MAX_CHARS)),
         }));
       // The material goes in the instructions, not as something the student
-      // said: it is the ground to answer from, redacted like the question.
-      const system = references.length === 0 ? STUDY_PROMPTS.ask : [
+      // said: labelled, wrapped, and declared to be data, never orders.
+      const grounded = passages.length > 0 || unreadable.length > 0;
+      const system = [
         STUDY_PROMPTS.ask,
-        STUDY_PROMPTS.askReferences,
-        ...references.map((reference) =>
-          `### ${redactForProvider(reference.title)}\n${
-            redactForProvider(reference.text)
-          }`
-        ),
-      ].join("\n\n");
+        learnerLine(extras.learner ?? {}),
+        ...(grounded
+          ? [GROUNDED_RULES, materialBlock(passages, unreadable)]
+          : []),
+      ].filter((part) => part.length > 0).join("\n\n");
       const user: Content = images.length === 0
         ? redactForProvider(question)
         : [
@@ -259,9 +288,41 @@ export function createStudyAssistant(
       const { text, usage } = await complete(
         system,
         user,
-        images.length === 0 ? maxOutputTokens : maxLongOutputTokens,
+        images.length === 0 && !grounded
+          ? maxOutputTokens
+          : maxLongOutputTokens,
         earlier,
       );
+      return { answer: text, ...(usage ? { usage } : {}) };
+    },
+
+    async transcribe(image, mediaType, kind): Promise<StudyAssistantReply> {
+      if (mediaType !== "image/jpeg" && mediaType !== "image/png") {
+        throw new StudyAssistantError("refused");
+      }
+      const { text, usage } = await complete(
+        kind === "page"
+          ? STUDY_PROMPTS.transcribePage
+          : STUDY_PROMPTS.describeImage,
+        [
+          {
+            type: "text",
+            text: kind === "page"
+              ? "Transcribe this page."
+              : "Read this image.",
+          },
+          {
+            type: "image_url",
+            image_url: { url: `data:${mediaType};base64,${base64(image)}` },
+          },
+        ],
+        maxLongOutputTokens,
+        [],
+        0,
+      );
+      if (isUnreadableReply(text)) {
+        throw new StudyAssistantError("unreadable");
+      }
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 

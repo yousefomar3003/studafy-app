@@ -189,12 +189,18 @@ const DEFINITIONS: Record<
     detail: "This needs Studafy Plus or Studafy Max.",
   },
   AI_ALLOWANCE_USED: {
-    title: "Monthly allowance used",
-    detail: "This month's AI allowance is used. It renews on the 1st.",
+    title: "AI allowance used",
+    detail:
+      "There are not enough AI tokens left for this. They renew on the plan's reset date, or with a bigger plan.",
   },
-  AI_DAILY_LIMIT: {
-    title: "Daily limit reached",
-    detail: "You have asked all of today's questions. Try again tomorrow.",
+  AI_REQUEST_IN_PROGRESS: {
+    title: "Already being answered",
+    detail: "This request is still being answered.",
+  },
+  MATERIAL_PROCESSING: {
+    title: "Material still being read",
+    detail:
+      "The lesson's files are still being read. Try again in a minute so nothing is left out.",
   },
   AI_FEATURE_DISABLED: {
     title: "Not available",

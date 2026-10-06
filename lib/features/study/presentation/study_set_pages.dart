@@ -96,6 +96,9 @@ class _StudySetButtonsState extends State<StudySetButtons> {
         StudyRefusal.lessonHasNoText => AppL10n.of(
           context,
         ).studySetThisLessonHasNoText,
+        StudyRefusal.materialProcessing => AppL10n.of(
+          context,
+        ).studySetMaterialProcessing,
         StudyRefusal.unavailable => AppL10n.of(context).studySetSwitchedOff,
         _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
       });

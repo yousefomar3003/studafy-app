@@ -30,6 +30,7 @@ class StudentLessonsPage extends StatefulWidget {
     required this.classes,
     required this.academic,
     required this.study,
+    this.onAskHelper,
     this.studyPlans,
     this.uploads,
     this.schoolId,
@@ -38,6 +39,9 @@ class StudentLessonsPage extends StatefulWidget {
   final ClassListInteractor classes;
   final AcademicRepository academic;
   final StudyRepository study;
+
+  /// Opens the AI helper about one lesson (ADR-0037). Null hides the button.
+  final void Function(String lessonId, String title)? onAskHelper;
   final StudyPlanSubscriptionRepository? studyPlans;
   final FileUploadRepository? uploads;
   final String? schoolId;
@@ -97,6 +101,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             uploads: widget.uploads,
             schoolId: widget.schoolId,
             initialTab: tab,
+            onAskHelper: widget.onAskHelper,
           ),
         ),
       );
@@ -380,10 +385,14 @@ class StudentClassPage extends StatefulWidget {
     this.uploads,
     this.schoolId,
     this.initialTab = 0,
+    this.onAskHelper,
   });
 
   /// 0 opens the lessons, 1 the notebook.
   final int initialTab;
+
+  /// Opens the AI helper about one lesson. Null hides the button.
+  final void Function(String lessonId, String title)? onAskHelper;
 
   final ClassroomSummary classroom;
   final AcademicRepository academic;
@@ -598,12 +607,26 @@ class _StudentClassPageState extends State<StudentClassPage> {
                 hasLessons: hasLessons,
                 onOpenPlans: _openPlans,
               ),
-              actionsFor: (context, lesson) => StudySetButtons(
-                study: widget.study,
-                resourceId: lesson.id,
-                lessonTitle: lesson.title,
-                plan: _plan,
-                onOpenPlans: _openPlans,
+              actionsFor: (context, lesson) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.onAskHelper case final ask?)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        onPressed: () => ask(lesson.id, lesson.title),
+                        icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                        label: Text(AppL10n.of(context).helperAskAboutLesson),
+                      ),
+                    ),
+                  StudySetButtons(
+                    study: widget.study,
+                    resourceId: lesson.id,
+                    lessonTitle: lesson.title,
+                    plan: _plan,
+                    onOpenPlans: _openPlans,
+                  ),
+                ],
               ),
             ),
             NotebookView(

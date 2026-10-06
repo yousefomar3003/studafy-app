@@ -19,17 +19,25 @@ void main() {
       expect(AttachmentPolicy.profileImage.maximumSizeBytes, 5242880);
     });
 
-    test('office formats are not offered anywhere', () {
-      // No structural parser and no malware engine covers a zip container,
-      // so the pipeline would quarantine it forever.
-      const office = [
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/zip',
-      ];
+    test('Word and PowerPoint only where a teacher files material', () {
+      // ADR-0037: the scan reads their ZIP structure and refuses macros,
+      // embedded objects and remote templates. Old binary .doc files and
+      // plain ZIPs are never offered anywhere.
+      const modern = [AttachmentPolicy.docx, AttachmentPolicy.pptx];
+      const never = ['application/msword', 'application/zip'];
       for (final purpose in FilePurpose.values) {
         final policy = AttachmentPolicy.of(purpose);
-        for (final type in office) {
+        final teacherMaterial =
+            purpose == FilePurpose.lessonResource ||
+            purpose == FilePurpose.assignmentMaterial;
+        for (final type in modern) {
+          expect(
+            policy.allowedMediaTypes.contains(type),
+            teacherMaterial,
+            reason: '${purpose.wireValue} and $type',
+          );
+        }
+        for (final type in never) {
           expect(
             policy.allowedMediaTypes,
             isNot(contains(type)),

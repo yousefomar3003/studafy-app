@@ -273,6 +273,25 @@ export const workerEnvSchema = z.object({
   // FILE-051 scan/retention workers stay off unless explicitly enabled.
   FILE051_SCAN_ENABLED: disabledSwitchFlag,
   FILE051_RETENTION_ENABLED: disabledSwitchFlag,
+  // ADR-0037: lesson files and links are read in the background - text
+  // extracted, scanned pages and images read by the model - so a student's
+  // question can be answered from them. Off unless set. Reading with the
+  // model also needs the AI provider below and AI_LESSON_TOOLS_ENABLED;
+  // without them only files with real text are read.
+  AI_MATERIAL_INDEX_ENABLED: disabledSwitchFlag,
+  AI_MATERIAL_POLL_INTERVAL_MS: z.coerce.number().int().min(500).max(60_000)
+    .default(5000),
+  // The same provider and single pinned origin as the API's study helper.
+  AI_API_KEY: z.string().min(1).optional(),
+  AI_BASE_URL: z.url().optional(),
+  AI_MODEL: z.string().min(1).default("Qwen/Qwen3.5-9B"),
+  AI_PRICE_INPUT_USD_PER_MTOK: z.coerce.number().positive().max(100).default(
+    0.17,
+  ),
+  AI_PRICE_OUTPUT_USD_PER_MTOK: z.coerce.number().positive().max(100).default(
+    0.25,
+  ),
+  AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
   // OPS-061. The outbox drain is producer+consumer over BullMQ: the
   // dispatcher claims notification_outbox rows and enqueues deterministic
   // jobs; the processor expands audiences into deliveries. Off by default;
@@ -758,6 +777,13 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       notificationsEnabled: env.OPS061_NOTIFICATIONS_ENABLED,
       outboxPollIntervalMs: env.OPS061_OUTBOX_POLL_INTERVAL_MS,
       outboxConcurrency: env.OPS061_OUTBOX_CONCURRENCY,
+    },
+    aiMaterial: {
+      indexEnabled: env.AI_MATERIAL_INDEX_ENABLED,
+      modelReading: Boolean(
+        env.AI_API_KEY && env.AI_BASE_URL && env.AI_LESSON_TOOLS_ENABLED,
+      ),
+      model: env.AI_MODEL,
     },
     file051: {
       scanEnabled: env.FILE051_SCAN_ENABLED,

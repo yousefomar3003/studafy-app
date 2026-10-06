@@ -16,6 +16,8 @@ primary_region = "fra"
   LOG_SAMPLE_ROUTINE_RATE = "0.01"
   LOG_SLOW_REQUEST_MS = "2000"
   DATABASE_POOL_MAX = "10"
+  # Answers from class material run longer than a plain question (ADR-0037).
+  API_REQUEST_TIMEOUT_MS = "20000"
   TURNSTILE_ENABLED = "true"
   # What Cloudflare's test keys report; development accepts them only.
   TURNSTILE_HOSTNAMES = "example.com"

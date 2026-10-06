@@ -2688,6 +2688,33 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1LessonMaterialDto> listLessonReading({
+    required String resourceId,
+  }) async => V1LessonMaterialDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/resources/{resourceId}/reading', {
+        'resourceId': resourceId,
+      }, {}),
+    ),
+  );
+
+  Future<V1LessonMaterialDto> retryLessonReading(
+    V1RetryLessonMaterialRequestDto request, {
+    required String resourceId,
+    required String sourceId,
+    String? idempotencyKey,
+  }) async => V1LessonMaterialDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/resources/{resourceId}/reading/{sourceId}/retry', {
+        'resourceId': resourceId,
+        'sourceId': sourceId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -2952,6 +2979,39 @@ class V1AddReportEvidenceRequestDto {
     'kind': kind,
     'attachmentFileId': ?attachmentFileId,
     'note': ?note,
+  };
+}
+
+class V1AiAllowanceDto {
+  const V1AiAllowanceDto({
+    required this.period,
+    required this.total,
+    required this.used,
+    required this.remaining,
+    required this.resetsAt,
+  });
+
+  factory V1AiAllowanceDto.fromJson(Map<String, dynamic> json) =>
+      V1AiAllowanceDto(
+        period: json['period'] as String,
+        total: json['total'] as int,
+        used: json['used'] as int,
+        remaining: json['remaining'] as int,
+        resetsAt: json['resetsAt'] as String,
+      );
+
+  final String period;
+  final int total;
+  final int used;
+  final int remaining;
+  final String resetsAt;
+
+  Map<String, Object?> toJson() => {
+    'period': period,
+    'total': total,
+    'used': used,
+    'remaining': remaining,
+    'resetsAt': resetsAt,
   };
 }
 
@@ -8235,6 +8295,27 @@ class V1LegalHoldDto {
   };
 }
 
+class V1LessonMaterialDto {
+  const V1LessonMaterialDto({required this.resourceId, required this.sources});
+
+  factory V1LessonMaterialDto.fromJson(Map<String, dynamic> json) =>
+      V1LessonMaterialDto(
+        resourceId: json['resourceId'] as String,
+        sources: [
+          for (final item in json['sources'] as List<dynamic>)
+            V1MaterialSourceDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final String resourceId;
+  final List<V1MaterialSourceDto> sources;
+
+  Map<String, Object?> toJson() => {
+    'resourceId': resourceId,
+    'sources': [for (final item in sources) item.toJson()],
+  };
+}
+
 class V1LessonSessionDto {
   const V1LessonSessionDto({
     required this.id,
@@ -8491,6 +8572,55 @@ class V1MarkNotificationsReadResponseDto {
   final int markedCount;
 
   Map<String, Object?> toJson() => {'markedCount': markedCount};
+}
+
+class V1MaterialSourceDto {
+  const V1MaterialSourceDto({
+    required this.id,
+    required this.kind,
+    required this.name,
+    required this.url,
+    required this.mediaType,
+    required this.state,
+    required this.reason,
+    required this.pages,
+    required this.skippedPages,
+  });
+
+  factory V1MaterialSourceDto.fromJson(Map<String, dynamic> json) =>
+      V1MaterialSourceDto(
+        id: json['id'] as String,
+        kind: json['kind'] as String,
+        name: json['name'] as String,
+        url: json['url'] as String?,
+        mediaType: json['mediaType'] as String?,
+        state: json['state'] as String,
+        reason: json['reason'] as String?,
+        pages: json['pages'] as int?,
+        skippedPages: json['skippedPages'] as int?,
+      );
+
+  final String id;
+  final String kind;
+  final String name;
+  final String? url;
+  final String? mediaType;
+  final String state;
+  final String? reason;
+  final int? pages;
+  final int? skippedPages;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'kind': kind,
+    'name': name,
+    'url': url,
+    'mediaType': mediaType,
+    'state': state,
+    'reason': reason,
+    'pages': pages,
+    'skippedPages': skippedPages,
+  };
 }
 
 class V1MeErrorDto {
@@ -10560,6 +10690,15 @@ class V1RestorePurchaseResponseDto {
   };
 }
 
+class V1RetryLessonMaterialRequestDto {
+  const V1RetryLessonMaterialRequestDto();
+
+  factory V1RetryLessonMaterialRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1RetryLessonMaterialRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
 class V1ReviewGradeRequestDto {
   const V1ReviewGradeRequestDto({
     required this.expectedVersion,
@@ -11167,6 +11306,8 @@ class V1StudyAssistantAskRequestDto {
     required this.question,
     this.history,
     this.references,
+    this.language,
+    this.requestId,
     this.attachmentFileIds,
   });
 
@@ -11180,6 +11321,8 @@ class V1StudyAssistantAskRequestDto {
             ? null
             : (json['references'] as List<dynamic>)
                   .cast<Map<String, dynamic>>(),
+        language: json['language'] as String?,
+        requestId: json['requestId'] as String?,
         attachmentFileIds: json['attachmentFileIds'] == null
             ? null
             : (json['attachmentFileIds'] as List<dynamic>).cast<String>(),
@@ -11188,12 +11331,16 @@ class V1StudyAssistantAskRequestDto {
   final String question;
   final List<Map<String, dynamic>>? history;
   final List<Map<String, dynamic>>? references;
+  final String? language;
+  final String? requestId;
   final List<String>? attachmentFileIds;
 
   Map<String, Object?> toJson() => {
     'question': question,
     'history': ?history,
     'references': ?references,
+    'language': ?language,
+    'requestId': ?requestId,
     'attachmentFileIds': ?attachmentFileIds,
   };
 }
@@ -11201,21 +11348,33 @@ class V1StudyAssistantAskRequestDto {
 class V1StudyAssistantAskResponseDto {
   const V1StudyAssistantAskResponseDto({
     required this.answer,
-    required this.remainingToday,
+    required this.citations,
+    required this.unreadable,
+    required this.allowance,
   });
 
   factory V1StudyAssistantAskResponseDto.fromJson(Map<String, dynamic> json) =>
       V1StudyAssistantAskResponseDto(
         answer: json['answer'] as String,
-        remainingToday: json['remainingToday'] as int,
+        citations: (json['citations'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        unreadable: (json['unreadable'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        allowance: V1AiAllowanceDto.fromJson(
+          json['allowance'] as Map<String, dynamic>,
+        ),
       );
 
   final String answer;
-  final int remainingToday;
+  final List<Map<String, dynamic>> citations;
+  final List<Map<String, dynamic>> unreadable;
+  final V1AiAllowanceDto allowance;
 
   Map<String, Object?> toJson() => {
     'answer': answer,
-    'remainingToday': remainingToday,
+    'citations': citations,
+    'unreadable': unreadable,
+    'allowance': allowance.toJson(),
   };
 }
 
@@ -11225,10 +11384,7 @@ class V1StudyPlanSummaryDto {
     required this.features,
     this.available,
     this.chatMemoryChars,
-    required this.allowanceUsed,
-    required this.resetsAt,
-    required this.askToday,
-    required this.askPerDay,
+    required this.allowance,
   });
 
   factory V1StudyPlanSummaryDto.fromJson(Map<String, dynamic> json) =>
@@ -11239,30 +11395,23 @@ class V1StudyPlanSummaryDto {
             ? null
             : (json['available'] as List<dynamic>).cast<String>(),
         chatMemoryChars: json['chatMemoryChars'] as int?,
-        allowanceUsed: json['allowanceUsed'] as num,
-        resetsAt: json['resetsAt'] as String,
-        askToday: json['askToday'] as int,
-        askPerDay: json['askPerDay'] as int,
+        allowance: V1AiAllowanceDto.fromJson(
+          json['allowance'] as Map<String, dynamic>,
+        ),
       );
 
   final String plan;
   final List<String> features;
   final List<String>? available;
   final int? chatMemoryChars;
-  final num allowanceUsed;
-  final String resetsAt;
-  final int askToday;
-  final int askPerDay;
+  final V1AiAllowanceDto allowance;
 
   Map<String, Object?> toJson() => {
     'plan': plan,
     'features': features,
     'available': ?available,
     'chatMemoryChars': ?chatMemoryChars,
-    'allowanceUsed': allowanceUsed,
-    'resetsAt': resetsAt,
-    'askToday': askToday,
-    'askPerDay': askPerDay,
+    'allowance': allowance.toJson(),
   };
 }
 

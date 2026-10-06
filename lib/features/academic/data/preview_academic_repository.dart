@@ -514,4 +514,14 @@ class PreviewAcademicRepository implements AcademicRepository {
       version: current.version + 1,
     );
   }
+
+  @override
+  Future<List<LessonReadingSource>> lessonReading(String resourceId) async =>
+      const [];
+
+  @override
+  Future<List<LessonReadingSource>> retryLessonReading(
+    String resourceId,
+    String sourceId,
+  ) async => const [];
 }

@@ -25,7 +25,18 @@ import {
 } from "../platform/dbContext";
 import { outcomeProblem } from "../platform/outcomes";
 import type { StudyRepository } from "./repository";
-import { AI_REFUSALS, AiMeter, holdFor, type ModelPrices } from "./metering";
+import {
+  AI_REFUSALS,
+  AiMeter,
+  holdFor,
+  type ModelPrices,
+  OUTPUT_TOKENS,
+} from "./metering";
+import {
+  gatherMaterial,
+  type MaterialRepository,
+  materialText,
+} from "./material";
 
 export type NotebookOperation =
   | "myNotebooks"
@@ -97,6 +108,8 @@ export interface NotebookRoutesDependencies {
   prices: ModelPrices;
   assistant: StudyAssistant | null;
   lessonToolsEnabled: boolean;
+  /** Lessons' files and links, read for the AI (ADR-0037). */
+  material?: MaterialRepository;
 }
 
 function toEntry(entry: Record<string, unknown>) {
@@ -178,7 +191,26 @@ export function createNotebookRoutes(
         return outcomeProblem(c, String(found["outcome"]), AI_REFUSALS, log);
       }
       const lesson = found["lesson"] as Record<string, unknown>;
-      const text = String(lesson["body"] ?? "").trim();
+      const resourceId = routeParam(c, "resourceId");
+      // From every file and link on the lesson, not only its text, and only
+      // once they have all been read (ADR-0037).
+      let text = String(lesson["body"] ?? "").trim();
+      if (deps.material) {
+        const pending = await deps.material.call(db, "pending", { resourceId });
+        if (pending["pending"] === true) {
+          return problem(c, "MATERIAL_PROCESSING", 409);
+        }
+        const gathered = await gatherMaterial(deps.material, db, {
+          lessonIds: [resourceId],
+          sourceIds: [],
+          question: "",
+          budgetChars: 40_000,
+          mode: "coverage",
+        });
+        if (gathered.passages.length > 0) {
+          text = materialText(gathered.passages);
+        }
+      }
       if (text.length < 40) return problem(c, "LESSON_HAS_NO_TEXT", 422);
       const title = String(lesson["title"] ?? "");
 
@@ -193,8 +225,8 @@ export function createNotebookRoutes(
           // Plus's AI note-making, metered like the whiteboard.
           notes = await meter.run(
             db,
-            "whiteboard",
-            holdFor(deps.prices, "quiz", text.length),
+            "notes",
+            holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
             () => assistant.lessonNotes(title, text),
           );
         } catch (error) {

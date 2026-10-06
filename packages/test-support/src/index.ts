@@ -49,3 +49,13 @@ export function envSource(
 }
 
 export { type FixtureIds, integrationSuite, removeFixtures } from "./database";
+
+export {
+  buildDocx,
+  buildPptx,
+  buildZip,
+  type DocxBlock,
+  type OfficeOptions,
+  type ZipPart,
+} from "./officeFixtures";
+export { buildPdf, type PdfPage } from "./pdfFixtures";

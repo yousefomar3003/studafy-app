@@ -1,22 +1,143 @@
 import 'package:flutter/foundation.dart';
 
+/// A student's AI allowance, in tokens (ADR-0037): one allowance for the
+/// helper and every other AI study tool. Free resets weekly, the paid plans
+/// monthly.
+@immutable
+class HelperAllowance {
+  const HelperAllowance({
+    required this.weekly,
+    required this.total,
+    required this.used,
+    required this.remaining,
+    required this.resetsAt,
+  });
+
+  final bool weekly;
+  final int total;
+  final int used;
+  final int remaining;
+  final DateTime resetsAt;
+
+  double get usedFraction =>
+      total <= 0 ? 1 : (used / total).clamp(0, 1).toDouble();
+
+  /// Under a fifth left: the student is told before it runs out.
+  bool get low => remaining > 0 && remaining < total * 0.2;
+
+  /// Nothing left to ask with.
+  bool get exhausted => remaining <= 0;
+
+  static HelperAllowance? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final total = json['total'];
+    final used = json['used'];
+    final remaining = json['remaining'];
+    final resets = DateTime.tryParse('${json['resetsAt']}');
+    if (total is! int || used is! int || remaining is! int || resets == null) {
+      return null;
+    }
+    return HelperAllowance(
+      weekly: json['period'] == 'week',
+      total: total,
+      used: used,
+      remaining: remaining,
+      resetsAt: resets.toLocal(),
+    );
+  }
+}
+
+/// Where a fact in an answer came from: [n] in the answer.
+@immutable
+class AnswerCitation {
+  const AnswerCitation({
+    required this.n,
+    required this.kind,
+    required this.name,
+    this.lessonTitle,
+    this.page,
+    this.slide,
+  });
+
+  final int n;
+
+  /// 'lesson', 'file', 'link' or 'note'.
+  final String kind;
+  final String name;
+  final String? lessonTitle;
+  final int? page;
+  final int? slide;
+
+  Map<String, Object?> toJson() => {
+    'n': n,
+    'sourceKind': kind,
+    'name': name,
+    'lessonTitle': ?lessonTitle,
+    'page': ?page,
+    'slide': ?slide,
+  };
+
+  static AnswerCitation? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final n = json['n'];
+    final name = json['name'];
+    if (n is! int || name is! String) return null;
+    return AnswerCitation(
+      n: n,
+      kind: '${json['sourceKind'] ?? 'file'}',
+      name: name,
+      lessonTitle: json['lessonTitle'] as String?,
+      page: json['page'] as int?,
+      slide: json['slide'] as int?,
+    );
+  }
+}
+
+/// A source the student chose that could not be read, and the code for why.
+@immutable
+class UnreadableSource {
+  const UnreadableSource({required this.name, required this.reason});
+
+  final String name;
+  final String reason;
+
+  Map<String, Object?> toJson() => {'name': name, 'reason': reason};
+
+  static UnreadableSource? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final name = json['name'];
+    final reason = json['reason'];
+    if (name is! String || reason is! String) return null;
+    return UnreadableSource(name: name, reason: reason);
+  }
+}
+
 /// One exchange with the study assistant.
 class StudyAnswer {
-  const StudyAnswer({required this.answer, required this.remainingToday});
+  const StudyAnswer({
+    required this.answer,
+    this.citations = const [],
+    this.unreadable = const [],
+    this.allowance,
+  });
 
   final String answer;
+  final List<AnswerCitation> citations;
+  final List<UnreadableSource> unreadable;
 
-  /// Questions left in today's allowance, so the app can warn before the
-  /// student hits the limit rather than after.
-  final int remainingToday;
+  /// What is left after this answer. Null when it came from the device.
+  final HelperAllowance? allowance;
 }
 
 /// Failure codes the helper's screen explains in the reader's own language,
 /// instead of the generic "record no longer exists" or "check your
 /// connection" that a 404 or 429 would otherwise become.
 abstract final class StudyAssistantFailure {
-  /// Today's free questions are used.
-  static const dailyLimit = 'AI_DAILY_LIMIT';
+  /// Not enough tokens left in the allowance for this question.
+  static const allowanceUsed = 'AI_ALLOWANCE_USED';
+
+  /// The same question is still being answered.
+  static const inProgress = 'AI_REQUEST_IN_PROGRESS';
 
   /// No AI provider behind this server, or it did not answer.
   static const unavailable = 'AI_UNAVAILABLE';
@@ -47,26 +168,32 @@ class HelperAbilities {
   final bool photos;
 }
 
-enum ChatReferenceKind { lesson, note }
+enum ChatReferenceKind { lesson, file, link, note }
 
-/// A lesson or one of the student's notes the helper answers from. Only
-/// which one travels; the server reads the text itself.
+/// A lesson, one file or link on a lesson, or one of the student's notes the
+/// helper answers from. Only which one travels; the server reads the
+/// material itself, and only what this student may read.
 @immutable
 class ChatReference {
   const ChatReference({
     required this.kind,
     required this.id,
     required this.title,
+    this.lessonId,
   });
 
   final ChatReferenceKind kind;
   final String id;
   final String title;
 
+  /// The lesson a file or link belongs to.
+  final String? lessonId;
+
   Map<String, Object?> toJson() => {
     'kind': kind.name,
     'id': id,
     'title': title,
+    'lessonId': ?lessonId,
   };
 
   static ChatReference? fromJson(Object? json) {
@@ -77,7 +204,13 @@ class ChatReference {
     final id = json['id'];
     final title = json['title'];
     if (kind == null || id is! String || title is! String) return null;
-    return ChatReference(kind: kind, id: id, title: title);
+    final lesson = json['lessonId'];
+    return ChatReference(
+      kind: kind,
+      id: id,
+      title: title,
+      lessonId: lesson is String ? lesson : null,
+    );
   }
 
   @override
@@ -98,6 +231,8 @@ class ChatTurn {
     required this.text,
     required this.at,
     this.photoName,
+    this.citations = const [],
+    this.unreadable = const [],
   });
 
   final ChatRole role;
@@ -108,11 +243,19 @@ class ChatTurn {
   /// in the upload pipeline.
   final String? photoName;
 
+  /// An answer's sources, and what it could not read.
+  final List<AnswerCitation> citations;
+  final List<UnreadableSource> unreadable;
+
   Map<String, Object?> toJson() => {
     'role': role.name,
     'text': text,
     'at': at.toUtc().toIso8601String(),
     'photoName': ?photoName,
+    if (citations.isNotEmpty)
+      'citations': [for (final c in citations) c.toJson()],
+    if (unreadable.isNotEmpty)
+      'unreadable': [for (final u in unreadable) u.toJson()],
   };
 
   static ChatTurn? fromJson(Object? json) {
@@ -129,6 +272,14 @@ class ChatTurn {
       text: text,
       at: at.toLocal(),
       photoName: photo is String ? photo : null,
+      citations: [
+        for (final item in json['citations'] as List<dynamic>? ?? const [])
+          ?AnswerCitation.fromJson(item),
+      ],
+      unreadable: [
+        for (final item in json['unreadable'] as List<dynamic>? ?? const [])
+          ?UnreadableSource.fromJson(item),
+      ],
     );
   }
 }
@@ -214,13 +365,17 @@ class StudyChat {
 /// or their school is sent, and nothing else is read from the device to build
 /// it - the server holds the provider credential and adds the instructions.
 abstract class StudyAssistantRepository {
-  /// [references] are lessons and notes to answer from; [photoFileIds] the
-  /// student's own scanned uploads of purpose `assistant_attachment`.
+  /// [references] are lessons, files, links and notes to answer from;
+  /// [photoFileIds] the student's own scanned uploads of purpose
+  /// `assistant_attachment`. [requestId] is the same for a retry of the same
+  /// question, so it is never charged twice; [language] is the app's.
   Future<StudyAnswer> ask(
     String question, {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
   });
 }
 

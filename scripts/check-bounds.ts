@@ -36,6 +36,9 @@ const ALLOWED: Record<string, string[]> = {
     "@apple/app-store-server-library",
     "google-auth-library",
     "googleapis",
+    // ADR-0037: reading lesson PDFs, and drawing scanned pages for the model.
+    "pdfjs-dist",
+    "@napi-rs/canvas",
     "@studafy/config",
     "@studafy/domain",
     "@studafy/observability",

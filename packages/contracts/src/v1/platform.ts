@@ -49,7 +49,11 @@ export const ErrorCode = {
   // Studafy Plus / Max (2026-09-27).
   PLAN_REQUIRED: "PLAN_REQUIRED",
   AI_ALLOWANCE_USED: "AI_ALLOWANCE_USED",
-  AI_DAILY_LIMIT: "AI_DAILY_LIMIT",
+  // The lesson's files are still being read (ADR-0037): a quiz, flashcards
+  // or notes made now would miss them.
+  MATERIAL_PROCESSING: "MATERIAL_PROCESSING",
+  // The same AI request is still being answered.
+  AI_REQUEST_IN_PROGRESS: "AI_REQUEST_IN_PROGRESS",
   AI_FEATURE_DISABLED: "AI_FEATURE_DISABLED",
   PHOTO_NOT_READY: "PHOTO_NOT_READY",
   PHOTO_UNREADABLE: "PHOTO_UNREADABLE",

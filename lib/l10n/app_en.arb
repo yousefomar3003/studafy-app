@@ -784,15 +784,6 @@
   "@studyAssistantCheckWork": {
     "description": "Reminder shown under every answer."
   },
-  "studyAssistantRemaining": "{count, plural, =0{No questions left today} =1{1 question left today} other{{count} questions left today}}",
-  "@studyAssistantRemaining": {
-    "description": "How many questions remain in today's allowance.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "studyAssistantTab": "Helper",
   "@studyAssistantTab": {
     "description": "Short navigation label for the study helper tab."
@@ -1198,7 +1189,7 @@
   "studentLessonsLessonsAndYourNotebook": "Lessons and your notebook",
   "studentLessonsMyNotebook": "My notebook",
   "studySetQuizzesAndFlashcardsComeWith": "Quizzes and flashcards come with Studafy Max.",
-  "studySetThisMonthSAiAllowance": "This month's AI allowance is used. It renews on the 1st.",
+  "studySetThisMonthSAiAllowance": "You've used your AI tokens. They renew on your plan's reset date.",
   "studySetThisLessonHasNoText": "This lesson has no text to study from.",
   "studySetThisIsNotAvailableYet": "This is not available yet.",
   "studySetThatDidNotWorkPlease": "That did not work. Please try again.",
@@ -1232,25 +1223,6 @@
         "type": "Object"
       },
       "cardsCount": {
-        "type": "Object"
-      }
-    }
-  },
-  "studyPlansQuestionsTodayAsktodayOfAskperday": "Questions today: {askToday} of {askPerDay}",
-  "@studyPlansQuestionsTodayAsktodayOfAskperday": {
-    "placeholders": {
-      "askToday": {
-        "type": "Object"
-      },
-      "askPerDay": {
-        "type": "Object"
-      }
-    }
-  },
-  "studyPlansAiUsedThisMonthRound": "AI used this month: {round}%",
-  "@studyPlansAiUsedThisMonthRound": {
-    "placeholders": {
-      "round": {
         "type": "Object"
       }
     }
@@ -1469,14 +1441,11 @@
   "rolesYourSpaceToGrow": "YOUR SPACE TO GROW",
   "studyPlansFeatureLessons": "Lessons from every class, by date",
   "studyPlansFeatureNotebook": "Your own notebook for each class",
-  "studyPlansFeatureTenQuestions": "10 questions a day to the study helper",
   "studyPlansFeatureEverythingInFree": "Everything in Free",
   "studyPlansFeatureWhiteboard": "Snap the whiteboard - get real notebook notes",
-  "studyPlansFeatureFortyQuestions": "40 questions a day",
   "studyPlansFeatureEverythingInPlus": "Everything in Plus",
   "studyPlansFeatureQuizzes": "Quizzes made from your lessons",
   "studyPlansFeatureFlashcards": "Flashcards made from your lessons",
-  "studyPlansFeatureSixtyQuestions": "60 questions a day",
   "studentTodayMakeTodayYours": "Make today yours.",
   "studentTodayMakeTodayYoursName": "Make today yours, {name}.",
   "@studentTodayMakeTodayYoursName": {
@@ -1948,7 +1917,6 @@
   "studySetSwitchedOff": "Quizzes and flashcards are not switched on yet.",
   "studyAssistantOff": "The study helper is not switched on yet. Your lessons and notebook work as usual.",
   "studyAssistantUnavailable": "The study helper could not answer just now. Please try again in a moment.",
-  "studyAssistantDailyLimit": "You have used all of today's questions. You can ask again tomorrow.",
   "accountsSwitchAccount": "Switch account",
   "@accountsSwitchAccount": {
     "description": "Account screen row that opens the list of accounts on this device."
@@ -2170,17 +2138,7 @@
   "helperPickLimit": "Up to 5 at a time.",
   "helperNothingInClass": "This class has no lessons or notes yet.",
   "helperNoClasses": "Join a class to use its lessons here.",
-  "upgradeDailyLimitTitle": "You've used today's questions",
-  "upgradeDailyLimitBody": "Your plan includes {count} questions a day. You can ask again tomorrow.",
-  "@upgradeDailyLimitBody": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "upgradeAllowanceTitle": "This month's AI allowance is used",
-  "upgradeAllowanceBody": "Your plan's AI allowance renews on the 1st of next month.",
+  "upgradeAllowanceBody": "Your AI tokens are used. They renew on your plan's reset date, or with a bigger plan.",
   "upgradeFeatureTitle": "This comes with {plan}",
   "@upgradeFeatureTitle": {
     "placeholders": {
@@ -2198,7 +2156,6 @@
       }
     }
   },
-  "upgradeLargerAllowance": "A larger monthly AI allowance",
   "upgradeButton": "Upgrade",
   "upgradeNotNow": "Not now",
   "upgradeTopPlan": "You're on Studafy Max, the largest plan.",
@@ -2774,7 +2731,6 @@
   "submitHandInAgain": "Hand in again",
   "submitSaving": "Your work is being handed in…",
   "helperSubtitle": "Ask about anything you're studying",
-  "helperLimitReached": "You've used today's questions. Upgrade for more each day, or ask again tomorrow.",
   "helperRecentChats": "Recent chats",
   "helperSeeAll": "See all",
   "helperOffTitle": "Not switched on yet",
@@ -3073,5 +3029,70 @@
   "paperAttachmentsSaveFirst": "Save the marks first, then change attachments.",
   "paperSave": "Save",
   "gradeYourFiles": "Your files",
-  "gradeClassFiles": "For the class"
+  "gradeClassFiles": "For the class",
+  "helperTokensLeft": "{remaining} of {total} AI tokens left · renews {date}",
+  "@helperTokensLeft": {"placeholders": {"remaining": {"type": "String"}, "total": {"type": "String"}, "date": {"type": "String"}}},
+  "helperTokensUsed": "You've used your AI tokens. Your question is still here.",
+  "helperTokensUsedUntil": "You've used your AI tokens. They renew on {date} - your question is still here.",
+  "@helperTokensUsedUntil": {"placeholders": {"date": {"type": "String"}}},
+  "helperTokensLow": "Running low: {line}.",
+  "@helperTokensLow": {"placeholders": {"line": {"type": "String"}}},
+  "helperStillAnswering": "This question is still being answered.",
+  "helperCouldNotRead": "Couldn't read {name}: {reason}.",
+  "@helperCouldNotRead": {"placeholders": {"name": {"type": "String"}, "reason": {"type": "String"}}},
+  "helperSources": "Sources",
+  "helperCitationPage": "p. {n}",
+  "@helperCitationPage": {"placeholders": {"n": {"type": "int"}}},
+  "helperCitationSlide": "slide {n}",
+  "@helperCitationSlide": {"placeholders": {"n": {"type": "int"}}},
+  "helperCitationLesson": "{name} (lesson)",
+  "@helperCitationLesson": {"placeholders": {"name": {"type": "String"}}},
+  "helperCitationNote": "{name} (your note)",
+  "@helperCitationNote": {"placeholders": {"name": {"type": "String"}}},
+  "helperAskAboutLesson": "Ask the AI helper",
+  "pickerOneFile": "Or one file or link",
+  "tokensWhatAreThey": "What are AI tokens?",
+  "tokensExplained": "The AI reads and writes in small pieces of text called tokens - about three-quarters of a word each. Your question, the parts of your lessons it reads, the earlier messages in the chat and its answer all use tokens. The helper, notes, quizzes and flashcards share one allowance.",
+  "tokensGuideTitle": "Roughly what things use",
+  "tokensGuideShortQuestion": "A short question",
+  "tokensGuideLessonQuestion": "A question about a lesson's files",
+  "tokensGuideNotes": "Notes, a quiz or flashcards from a lesson",
+  "tokensGuidePhoto": "A whiteboard or homework photo",
+  "tokensAbout": "about {amount}",
+  "@tokensAbout": {"placeholders": {"amount": {"type": "String"}}},
+  "tokensGuideEstimate": "These are estimates. The exact count comes from the AI for each request: longer files, answers and chats use more.",
+  "readingTitle": "Reading for the AI helper",
+  "readingExplained": "Files and links are read once so the AI helper can answer from them. Scanned pages and pictures are read too, within the school's monthly reading limit.",
+  "readingReady": "Ready for the AI helper",
+  "readingPartly": "Partly read - some pages were not read",
+  "readingStateProcessing": "Reading…",
+  "readingStateCannot": "Can't be read: {reason}",
+  "@readingStateCannot": {"placeholders": {"reason": {"type": "String"}}},
+  "readingRetry": "Read again",
+  "readingRetried": "It will be read again shortly.",
+  "readingRetryFailed": "That could not be done. Try again.",
+  "readingLoadFailed": "Could not check the files.",
+  "readingNothing": "This lesson has no files or links.",
+  "readingProcessing": "it is still being read",
+  "readingScannedSkipped": "its scanned pages weren't read",
+  "readingNoText": "it has no readable text",
+  "readingUnsupportedType": "this kind of file can't be read",
+  "readingLinkSignIn": "the link needs a sign-in",
+  "readingLinkVideo": "it's a video",
+  "readingLinkGone": "the link no longer works",
+  "readingLinkUnreachable": "the link couldn't be opened",
+  "readingFailed": "it couldn't be read",
+  "studyPlansTokensLeft": "{remaining} of {total} AI tokens left",
+  "@studyPlansTokensLeft": {"placeholders": {"remaining": {"type": "String"}, "total": {"type": "String"}}},
+  "studyPlansTokensRenewWeekly": "Renews every Monday · next on {date}",
+  "@studyPlansTokensRenewWeekly": {"placeholders": {"date": {"type": "String"}}},
+  "studyPlansTokensLow": "Running low on AI tokens.",
+  "studyPlansFeatureAskLessons": "Ask the AI helper about your lessons and their files",
+  "studyPlansFeatureFreeTokens": "40,000 AI tokens a week - about 10 questions on your lessons (an estimate)",
+  "studyPlansFeaturePlusTokens": "3,000,000 AI tokens a month - about 700 questions on your lessons (an estimate)",
+  "studyPlansFeatureMaxTokens": "6,000,000 AI tokens a month - about 1,400 questions on your lessons (an estimate)",
+  "upgradeTokensTitle": "You've used your AI tokens",
+  "upgradeTokensBody": "They renew on {date}. A bigger plan has more tokens.",
+  "@upgradeTokensBody": {"placeholders": {"date": {"type": "String"}}},
+  "studySetMaterialProcessing": "The lesson's files are still being read. Try again in a minute so nothing is left out."
 }

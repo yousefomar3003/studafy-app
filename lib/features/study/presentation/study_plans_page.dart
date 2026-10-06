@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/ai_tokens.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
@@ -180,39 +182,59 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     androidPackage: _androidPackage,
   );
 
+  /// The plan's AI tokens: what is left of how many, and when they renew.
   Widget _usage(StudyPlan plan) {
     final theme = Theme.of(context);
-    if (plan.tier == StudyPlanTier.free) {
-      return Text(
-        AppL10n.of(context).studyPlansQuestionsTodayAsktodayOfAskperday(
-          plan.askToday,
-          plan.askPerDay,
-        ),
-      );
-    }
+    final l10n = AppL10n.of(context);
+    final allowance = plan.allowance;
+    final number = NumberFormat.decimalPattern(
+      Localizations.localeOf(context).toLanguageTag(),
+    );
     final renews = MaterialLocalizations.of(context)
-        .formatMediumDate(plan.resetsAt);
+        .formatMediumDate(allowance.resetsAt);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppL10n.of(
-            context,
-          ).studyPlansAiUsedThisMonthRound((plan.allowanceUsed * 100).round()),
+          l10n.studyPlansTokensLeft(
+            number.format(allowance.remaining),
+            number.format(allowance.total),
+          ),
         ),
         const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
-            value: plan.allowanceUsed,
+            value: allowance.usedFraction,
             minHeight: 8,
-            color: plan.allowanceUsed >= 0.9 ? theme.colorScheme.error : null,
+            color: allowance.low || allowance.exhausted
+                ? theme.colorScheme.error
+                : null,
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          AppL10n.of(context).studyPlansRenewsRenews(renews),
-          style: theme.textTheme.bodySmall,
+        if (allowance.resetsAt.year < 2100)
+          Text(
+            allowance.weekly
+                ? l10n.studyPlansTokensRenewWeekly(renews)
+                : l10n.studyPlansRenewsRenews(renews),
+            style: theme.textTheme.bodySmall,
+          ),
+        if (allowance.low)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              l10n.studyPlansTokensLow,
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => showTokenGuide(context),
+            icon: const Icon(Icons.info_outline_rounded, size: 18),
+            label: Text(l10n.tokensWhatAreThey),
+          ),
         ),
       ],
     );

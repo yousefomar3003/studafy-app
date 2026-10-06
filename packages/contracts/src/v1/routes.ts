@@ -2001,6 +2001,27 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     assessmentParams(),
   ),
+  // ADR-0037: how far a lesson's files and links have been read for the
+  // study helper, and reading one again. Appended.
+  catalogueGet(
+    "listLessonReading",
+    "/v1/resources/{resourceId}/reading",
+    "lesson_reading.read",
+    StudyPlans.V1LessonMaterial,
+    "V1LessonMaterial",
+    params("resourceId"),
+  ),
+  cataloguePost(
+    "retryLessonReading",
+    "/v1/resources/{resourceId}/reading/{sourceId}/retry",
+    "lesson_reading.retry",
+    StudyPlans.V1RetryLessonMaterialRequest,
+    "V1RetryLessonMaterialRequest",
+    StudyPlans.V1LessonMaterial,
+    "V1LessonMaterial",
+    200,
+    z.strictObject({ resourceId: z.string().uuid(), sourceId: z.string().uuid() }),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

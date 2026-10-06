@@ -5,12 +5,15 @@ import 'package:studafy/features/study/presentation/upgrade_prompt.dart';
 
 import '../../support/localized_app.dart';
 
-StudyPlan planOf(StudyPlanTier tier, {int askPerDay = 10}) => StudyPlan(
+StudyPlan planOf(StudyPlanTier tier) => StudyPlan(
   tier: tier,
-  allowanceUsed: 1,
-  resetsAt: DateTime(2026, 10, 1),
-  askToday: askPerDay,
-  askPerDay: askPerDay,
+  allowance: AiAllowance(
+    weekly: tier == StudyPlanTier.free,
+    total: tier == StudyPlanTier.free ? 40000 : 3000000,
+    used: tier == StudyPlanTier.free ? 40000 : 3000000,
+    remaining: 0,
+    resetsAt: DateTime(2026, 10, 12),
+  ),
 );
 
 Widget host(
@@ -38,50 +41,52 @@ Widget host(
 );
 
 void main() {
-  testWidgets('at the free daily limit: the limit, what Plus adds, Upgrade', (
+  testWidgets('out of free tokens: when they renew, what Plus adds, Upgrade', (
     tester,
   ) async {
     final opened = <String>[];
     await tester.pumpWidget(
-      host(UpgradeReason.dailyQuestions, planOf(StudyPlanTier.free), opened),
+      host(UpgradeReason.tokensUsed, planOf(StudyPlanTier.free), opened),
     );
     await tester.tap(find.text('limit'));
     await tester.pumpAndSettle();
 
-    expect(find.text("You've used today's questions"), findsOne);
+    expect(find.text("You've used your AI tokens"), findsOne);
     expect(
-      find.text(
-        'Your plan includes 10 questions a day. You can ask again tomorrow.',
-      ),
+      find.text('They renew on Mon, Oct 12. A bigger plan has more tokens.'),
       findsOne,
     );
     expect(find.text('What Studafy Plus unlocks'), findsOne);
-    expect(find.text('40 questions a day'), findsOne);
     expect(
-      find.text('Snap the whiteboard - get real notebook notes'),
+      find.text(
+        '3,000,000 AI tokens a month - about 700 questions on your lessons (an estimate)',
+      ),
       findsOne,
     );
+    // No plan promises unlimited AI.
+    expect(find.textContaining('nlimited'), findsNothing);
 
     await tester.tap(find.text('Upgrade'));
     await tester.pumpAndSettle();
     expect(opened, ['plans']);
-    expect(find.text("You've used today's questions"), findsNothing);
+    expect(find.text("You've used your AI tokens"), findsNothing);
   });
 
-  testWidgets('Plus at its monthly allowance is offered Max', (tester) async {
+  testWidgets('Plus out of tokens is offered Max', (tester) async {
     final opened = <String>[];
     await tester.pumpWidget(
-      host(
-        UpgradeReason.monthlyAllowance,
-        planOf(StudyPlanTier.plus, askPerDay: 40),
-        opened,
-      ),
+      host(UpgradeReason.tokensUsed, planOf(StudyPlanTier.plus), opened),
     );
     await tester.tap(find.text('limit'));
     await tester.pumpAndSettle();
-    expect(find.text("This month's AI allowance is used"), findsOne);
+    expect(find.text("You've used your AI tokens"), findsOne);
     expect(find.text('What Studafy Max unlocks'), findsOne);
-    expect(find.text('A larger monthly AI allowance'), findsOne);
+    expect(
+      find.text(
+        '6,000,000 AI tokens a month - about 1,400 questions on your lessons (an estimate)',
+      ),
+      findsOne,
+    );
   });
 
   testWidgets('on Max there is nothing to sell, only the explanation', (
@@ -89,11 +94,7 @@ void main() {
   ) async {
     final opened = <String>[];
     await tester.pumpWidget(
-      host(
-        UpgradeReason.monthlyAllowance,
-        planOf(StudyPlanTier.max, askPerDay: 60),
-        opened,
-      ),
+      host(UpgradeReason.tokensUsed, planOf(StudyPlanTier.max), opened),
     );
     await tester.tap(find.text('limit'));
     await tester.pumpAndSettle();
@@ -124,13 +125,10 @@ void main() {
 
   test('only plan refusals become upgrade prompts', () {
     expect(
-      upgradeReasonFor(StudyRefusal.dailyLimit),
-      UpgradeReason.dailyQuestions,
-    );
-    expect(
       upgradeReasonFor(StudyRefusal.allowanceUsed),
-      UpgradeReason.monthlyAllowance,
+      UpgradeReason.tokensUsed,
     );
+    expect(upgradeReasonFor(StudyRefusal.materialProcessing), isNull);
     expect(upgradeReasonFor(StudyRefusal.planRequired), UpgradeReason.feature);
     expect(upgradeReasonFor(StudyRefusal.photoUnreadable), isNull);
     expect(upgradeReasonFor(StudyRefusal.failed), isNull);

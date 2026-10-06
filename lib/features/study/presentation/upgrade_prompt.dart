@@ -7,11 +7,8 @@ import 'study_plan_copy.dart';
 
 /// Which limit of the student's plan was reached.
 enum UpgradeReason {
-  /// Today's questions to the study helper are used.
-  dailyQuestions,
-
-  /// This month's AI allowance is spent.
-  monthlyAllowance,
+  /// The plan's AI tokens are used (ADR-0037).
+  tokensUsed,
 
   /// The feature belongs to a higher plan.
   feature,
@@ -20,8 +17,7 @@ enum UpgradeReason {
 /// The reason behind a refusal from the server, or null when the refusal is
 /// not about the plan.
 UpgradeReason? upgradeReasonFor(StudyRefusal refusal) => switch (refusal) {
-  StudyRefusal.dailyLimit => UpgradeReason.dailyQuestions,
-  StudyRefusal.allowanceUsed => UpgradeReason.monthlyAllowance,
+  StudyRefusal.allowanceUsed => UpgradeReason.tokensUsed,
   StudyRefusal.planRequired => UpgradeReason.feature,
   _ => null,
 };
@@ -83,13 +79,16 @@ class UpgradePrompt extends StatelessWidget {
     final target = this.target;
     final copy = target == null ? null : studyPlanCopy[target]!;
     final (title, body) = switch (reason) {
-      UpgradeReason.dailyQuestions => (
-        l10n.upgradeDailyLimitTitle,
-        l10n.upgradeDailyLimitBody(plan?.askPerDay ?? 10),
-      ),
-      UpgradeReason.monthlyAllowance => (
-        l10n.upgradeAllowanceTitle,
-        l10n.upgradeAllowanceBody,
+      UpgradeReason.tokensUsed => (
+        l10n.upgradeTokensTitle,
+        switch (plan?.allowance) {
+          final allowance? when allowance.resetsAt.year < 2100 =>
+            l10n.upgradeTokensBody(
+              MaterialLocalizations.of(context)
+                  .formatMediumDate(allowance.resetsAt),
+            ),
+          _ => l10n.upgradeAllowanceBody,
+        },
       ),
       UpgradeReason.feature => (
         l10n.upgradeFeatureTitle(copy?.name ?? 'Studafy Plus'),

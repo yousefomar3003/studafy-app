@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/navigation.dart';
 import '../core/studafy_design.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/presentation/lesson_reading_sheet.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/study/domain/study.dart';
@@ -58,6 +59,9 @@ class _ReferencePickerState extends State<_ReferencePicker> {
   ClassroomSummary? _class;
   Future<List<ChatReference>>? _material;
 
+  /// The lessons of the open class, for their files and links.
+  Map<String, AcademicRecord> _lessons = const {};
+
   Future<List<ClassroomSummary>> _loadClasses() async =>
       (await widget.classes.loadClasses()).fold(
         onSuccess: (list) => list,
@@ -69,6 +73,7 @@ class _ReferencePickerState extends State<_ReferencePicker> {
       AcademicFeed.content,
       classroomId: classroomId,
     );
+    _lessons = {for (final lesson in lessons) lesson.id: lesson};
     List<NotebookEntry> notes;
     try {
       notes = await widget.study.notebook(classroomId);
@@ -180,11 +185,118 @@ class _ReferencePickerState extends State<_ReferencePicker> {
         children: [
           ListTile(subtitle: Text(l10n.helperPickLimit)),
           if (lessons.isNotEmpty) ListTile(title: Text(l10n.helperLessons)),
-          for (final item in lessons) tile(item),
+          for (final item in lessons) ...[
+            tile(item),
+            // Or one of its files or links on its own, with how far it has
+            // been read (ADR-0037).
+            if (_lessons[item.id] case final record?
+                when record.attachments.isNotEmpty ||
+                    record.links.isNotEmpty ||
+                    record.resourceType == 'file')
+              _LessonSources(
+                repository: widget.academic,
+                lesson: item,
+                chosen: _chosen,
+                full: _chosen.length >= maxStudyReferences,
+                onToggle: _toggle,
+              ),
+          ],
           if (notes.isNotEmpty) ListTile(title: Text(l10n.helperMyNotes)),
           for (final item in notes) tile(item),
         ],
       );
     },
   );
+}
+
+/// A lesson's files and links, each choosable on its own once opened.
+class _LessonSources extends StatefulWidget {
+  const _LessonSources({
+    required this.repository,
+    required this.lesson,
+    required this.chosen,
+    required this.full,
+    required this.onToggle,
+  });
+
+  final LessonReadingRepository repository;
+  final ChatReference lesson;
+  final Set<ChatReference> chosen;
+  final bool full;
+  final void Function(ChatReference reference, bool? on) onToggle;
+
+  @override
+  State<_LessonSources> createState() => _LessonSourcesState();
+}
+
+class _LessonSourcesState extends State<_LessonSources> {
+  Future<List<LessonReadingSource>>? _sources;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 40),
+      child: ExpansionTile(
+        dense: true,
+        title: Text(l10n.pickerOneFile),
+        onExpansionChanged: (open) {
+          if (open && _sources == null) {
+            setState(
+              () =>
+                  _sources = widget.repository.lessonReading(widget.lesson.id),
+            );
+          }
+        },
+        children: [
+          FutureBuilder<List<LessonReadingSource>>(
+            future: _sources,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(),
+                );
+              }
+              if (snapshot.hasError) return Text(l10n.readingLoadFailed);
+              final sources = snapshot.data ?? const [];
+              return Column(
+                children: [
+                  for (final source in sources)
+                    () {
+                      final reference = ChatReference(
+                        kind: source.isLink
+                            ? ChatReferenceKind.link
+                            : ChatReferenceKind.file,
+                        id: source.id,
+                        title: source.name,
+                        lessonId: widget.lesson.id,
+                      );
+                      final usable =
+                          source.state == ReadingState.ready ||
+                          source.state == ReadingState.processing;
+                      final on = widget.chosen.contains(reference);
+                      return CheckboxListTile(
+                        dense: true,
+                        value: on,
+                        onChanged: usable && (on || !widget.full)
+                            ? (value) => widget.onToggle(reference, value)
+                            : null,
+                        secondary: Icon(
+                          source.isLink
+                              ? Icons.link_rounded
+                              : Icons.insert_drive_file_outlined,
+                        ),
+                        title: Text(source.name),
+                        subtitle: Text(readingStateText(l10n, source)),
+                      );
+                    }(),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }

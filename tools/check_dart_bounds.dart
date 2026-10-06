@@ -89,6 +89,8 @@ const _coreAllowlist = <String>[
   'core/content_links.dart',
   // The files and titled links on coursework (ADR-0036): the models and the
   // one view and editor every lesson, assignment, question and grade uses.
+  // AI tokens explained, where a plan or the helper shows an allowance.
+  'core/ai_tokens.dart',
   'core/coursework_models.dart',
   'core/coursework_attachments.dart',
   'core/voice_note.dart',

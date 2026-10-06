@@ -673,6 +673,15 @@ export const PERMISSION_CATALOGUE = {
     "resource",
     "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max.",
   ),
+  // ADR-0037: a lesson's files and links as read for the study helper.
+  "lesson_reading.read": resource(
+    "resource",
+    "See how far a lesson's files and links have been read for the study helper: a teacher of the lesson, or anyone who can see it.",
+  ),
+  "lesson_reading.retry": resource(
+    "resource",
+    "Ask for a lesson's file or link to be read again for the study helper. Teachers of the lesson only.",
+  ),
   "meeting.list": {
     resource: "meeting",
     scope: "self",

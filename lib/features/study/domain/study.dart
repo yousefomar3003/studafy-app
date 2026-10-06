@@ -33,24 +33,52 @@ enum StudyPlanTier {
   };
 }
 
-/// The caller's plan and how much of this month's AI allowance is used.
+/// A plan's AI allowance in tokens (ADR-0037): one allowance for the helper
+/// and every other AI study tool. Free renews every Monday, the paid plans
+/// on the 1st of the month.
+@immutable
+class AiAllowance {
+  const AiAllowance({
+    required this.weekly,
+    required this.total,
+    required this.used,
+    required this.remaining,
+    required this.resetsAt,
+  });
+
+  final bool weekly;
+  final int total;
+  final int used;
+  final int remaining;
+  final DateTime resetsAt;
+
+  double get usedFraction =>
+      total <= 0 ? 1 : (used / total).clamp(0, 1).toDouble();
+
+  /// Under a fifth left.
+  bool get low => remaining > 0 && remaining < total * 0.2;
+
+  bool get exhausted => remaining <= 0;
+}
+
+/// The caller's plan and its AI allowance.
 @immutable
 class StudyPlan {
   const StudyPlan({
     required this.tier,
-    required this.allowanceUsed,
-    required this.resetsAt,
-    required this.askToday,
-    required this.askPerDay,
+    required this.allowance,
     this.available,
   });
 
   static final free = StudyPlan(
     tier: StudyPlanTier.free,
-    allowanceUsed: 0,
-    resetsAt: DateTime(2100),
-    askToday: 0,
-    askPerDay: 10,
+    allowance: AiAllowance(
+      weekly: true,
+      total: 40000,
+      used: 0,
+      remaining: 40000,
+      resetsAt: DateTime(2100),
+    ),
   );
 
   /// What the server can do right now, whatever the plan: 'ask',
@@ -75,11 +103,8 @@ class StudyPlan {
 
   final StudyPlanTier tier;
 
-  /// 0 to 1: how much of the month's AI allowance is spent.
-  final double allowanceUsed;
-  final DateTime resetsAt;
-  final int askToday;
-  final int askPerDay;
+  /// The AI tokens this plan has, how many are used, and when they renew.
+  final AiAllowance allowance;
 
   bool get canSnapWhiteboard => tier.includes(StudyPlanTier.plus);
   bool get canMakeStudySets => tier.includes(StudyPlanTier.max);
@@ -155,11 +180,11 @@ enum StudyRefusal {
   /// The plan does not include it: offer the plans.
   planRequired,
 
-  /// This month's AI allowance is spent: it renews on the 1st.
+  /// The AI tokens are used: they renew on the plan's reset date.
   allowanceUsed,
 
-  /// Today's free questions are used.
-  dailyLimit,
+  /// The lesson's files are still being read: try again in a minute.
+  materialProcessing,
 
   /// The whiteboard photo is still being checked.
   photoNotReady,
