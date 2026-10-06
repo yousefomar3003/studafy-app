@@ -5201,4 +5201,604 @@ class AppL10nEn extends AppL10n {
   String loginAlsoUseAs(String role) {
     return 'Also use it as a $role';
   }
+
+  @override
+  String get attachmentsTitle => 'Attachments';
+
+  @override
+  String get attachmentsLinks => 'Links';
+
+  @override
+  String get attachmentsFiles => 'Files';
+
+  @override
+  String get attachmentsAddLink => 'Add link';
+
+  @override
+  String get attachmentsLinkTitle => 'Title readers see';
+
+  @override
+  String get attachmentsLinkAddress => 'Address (https://…)';
+
+  @override
+  String get attachmentsLinkTitleRequired => 'Give the link a title.';
+
+  @override
+  String get attachmentsRemove => 'Remove';
+
+  @override
+  String get attachmentsKeep => 'Keep';
+
+  @override
+  String get attachmentsRemovedOnSave => 'Removed when you save';
+
+  @override
+  String get attachmentsUploading => 'Wait for the files to finish uploading.';
+
+  @override
+  String get attachmentsFailed =>
+      'Retry or remove the files that failed to upload.';
+
+  @override
+  String attachmentsTooManyLinks(int count) {
+    return 'You can add up to $count links.';
+  }
+
+  @override
+  String get attachmentsImagePreview => 'Tap to view';
+
+  @override
+  String get attachmentsChecking => 'Being checked';
+
+  @override
+  String get attachmentsNotAvailable => 'Not available';
+
+  @override
+  String get questionKindSingle => 'Single answer';
+
+  @override
+  String get questionKindMultiple => 'Multiple answers';
+
+  @override
+  String get questionKindTrueFalse => 'True or false';
+
+  @override
+  String get questionKindShort => 'Short answer';
+
+  @override
+  String get questionKindEssay => 'Essay';
+
+  @override
+  String get builderNewTitle => 'New online assessment';
+
+  @override
+  String get builderEditTitle => 'Edit assessment';
+
+  @override
+  String get builderTitleLabel => 'Title';
+
+  @override
+  String get builderClassLabel => 'Class';
+
+  @override
+  String get builderCategoryLabel => 'Type';
+
+  @override
+  String get builderCategoryQuiz => 'Quiz';
+
+  @override
+  String get builderCategoryExam => 'Exam';
+
+  @override
+  String get builderCategoryAssessment => 'Assessment';
+
+  @override
+  String get builderQuestions => 'Questions';
+
+  @override
+  String get builderAddQuestion => 'Add question';
+
+  @override
+  String builderTotal(String points) {
+    return 'Total: $points points';
+  }
+
+  @override
+  String builderQuestionNumber(int number) {
+    return 'Question $number';
+  }
+
+  @override
+  String get builderPrompt => 'Question';
+
+  @override
+  String get builderPoints => 'Points';
+
+  @override
+  String get builderRequired => 'Required';
+
+  @override
+  String builderOption(int number) {
+    return 'Option $number';
+  }
+
+  @override
+  String get builderAddOption => 'Add option';
+
+  @override
+  String get builderRemoveOption => 'Remove option';
+
+  @override
+  String get builderMarkCorrectOne => 'Tick the correct answer.';
+
+  @override
+  String get builderMarkCorrectAll => 'Tick every correct answer.';
+
+  @override
+  String get builderTrue => 'True';
+
+  @override
+  String get builderFalse => 'False';
+
+  @override
+  String get builderCorrectIs => 'The correct answer is';
+
+  @override
+  String get builderAccepted => 'Accepted answers, one per line';
+
+  @override
+  String get builderAcceptedHint => 'Leave empty to mark it yourself.';
+
+  @override
+  String get builderModelAnswer => 'Model answer';
+
+  @override
+  String get builderGuidance => 'Marking guidance';
+
+  @override
+  String get builderPrivateHint =>
+      'Only you see this until answers are released.';
+
+  @override
+  String get builderMoveUp => 'Move up';
+
+  @override
+  String get builderMoveDown => 'Move down';
+
+  @override
+  String get builderDuplicate => 'Duplicate';
+
+  @override
+  String get builderDelete => 'Delete';
+
+  @override
+  String get builderSettings => 'Settings';
+
+  @override
+  String get builderOpens => 'Opens';
+
+  @override
+  String get builderCloses => 'Closes';
+
+  @override
+  String get builderNotSet => 'Not set';
+
+  @override
+  String get builderNow => 'Now';
+
+  @override
+  String get builderAttempts => 'Attempts allowed';
+
+  @override
+  String get builderPolicy => 'Which attempt counts';
+
+  @override
+  String get builderPolicyBest => 'The best';
+
+  @override
+  String get builderPolicyLatest => 'The latest';
+
+  @override
+  String get builderRelease => 'When students see the answers';
+
+  @override
+  String get builderReleaseAfterClose => 'After it closes for everyone';
+
+  @override
+  String get builderReleaseAfterGrading =>
+      'After marking is done and grades are published';
+
+  @override
+  String get builderReleaseManual => 'When I release them';
+
+  @override
+  String get builderReleaseNote =>
+      'Answers are never shown while any student can still attempt it.';
+
+  @override
+  String get builderMaterial => 'Material for the whole assessment';
+
+  @override
+  String get builderPreview => 'Preview as a student';
+
+  @override
+  String get builderSaveDraft => 'Save draft';
+
+  @override
+  String get builderPublish => 'Publish';
+
+  @override
+  String get builderSaved => 'Saved.';
+
+  @override
+  String get builderPublished => 'Published to the class.';
+
+  @override
+  String get builderSaveFailed =>
+      'Could not save. Check the questions and try again.';
+
+  @override
+  String get builderLocked =>
+      'A student has already submitted, so the questions can no longer change. Settings still can.';
+
+  @override
+  String get builderNeedTitle => 'Give it a title.';
+
+  @override
+  String get builderNeedClass => 'Choose a class.';
+
+  @override
+  String get builderNeedQuestion => 'Add at least one question.';
+
+  @override
+  String get builderNeedClose => 'Set when it closes.';
+
+  @override
+  String get builderCloseAfterOpen => 'It must close after it opens.';
+
+  @override
+  String builderProblemPrompt(int number) {
+    return 'Question $number: write the question.';
+  }
+
+  @override
+  String builderProblemPoints(int number) {
+    return 'Question $number: give it points.';
+  }
+
+  @override
+  String builderProblemOptions(int number) {
+    return 'Question $number: add at least two filled-in options.';
+  }
+
+  @override
+  String builderProblemCorrect(int number) {
+    return 'Question $number: mark the correct answer.';
+  }
+
+  @override
+  String builderProblemTrueFalse(int number) {
+    return 'Question $number: choose true or false as the answer.';
+  }
+
+  @override
+  String builderProblemFiles(int number) {
+    return 'Question $number: wait for its files to upload.';
+  }
+
+  @override
+  String get builderOnlineChoice => 'Answered online';
+
+  @override
+  String get builderOnlineChoiceDetail =>
+      'Students answer in the app; choice questions are marked for you.';
+
+  @override
+  String get builderPaperChoice => 'On paper';
+
+  @override
+  String get builderPaperChoiceDetail =>
+      'Students sit it in class; you enter the marks.';
+
+  @override
+  String takeOpens(String time) {
+    return 'Opens $time';
+  }
+
+  @override
+  String takeCloses(String time) {
+    return 'Closes $time';
+  }
+
+  @override
+  String get takeClosed => 'Closed';
+
+  @override
+  String get takeNotOpen => 'Not open yet';
+
+  @override
+  String takeAttemptsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attempts left',
+      one: '1 attempt left',
+      zero: 'No attempts left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeStart => 'Start';
+
+  @override
+  String get takeAgain => 'Try again';
+
+  @override
+  String get takeSubmit => 'Submit answers';
+
+  @override
+  String get takeSubmitTitle => 'Submit your answers?';
+
+  @override
+  String get takeSubmitBody => 'You can\'t change them after submitting.';
+
+  @override
+  String get takeLeaveTitle => 'Leave without submitting?';
+
+  @override
+  String get takeLeaveBody => 'Your answers will not be kept.';
+
+  @override
+  String get takeLeave => 'Leave';
+
+  @override
+  String get takeStay => 'Stay';
+
+  @override
+  String takeMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Answer the $count required questions that are left.',
+      one: 'Answer the required question that is left.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeSubmitted =>
+      'Submitted. Your teacher will release the results.';
+
+  @override
+  String get takeSubmitFailed =>
+      'Your answers were not sent. Check your connection and try again.';
+
+  @override
+  String get takeWindowClosed => 'This has closed, so it can\'t be submitted.';
+
+  @override
+  String get takeRequired => 'Required';
+
+  @override
+  String get takeOptional => 'Optional';
+
+  @override
+  String get takeTypeAnswer => 'Your answer';
+
+  @override
+  String get takeChooseOne => 'Choose one';
+
+  @override
+  String get takeChooseAll => 'Choose all that apply';
+
+  @override
+  String takePoints(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count points',
+      one: '1 point',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeYourAttempts => 'Your attempts';
+
+  @override
+  String takeAttemptLine(int number, String time) {
+    return 'Attempt $number · $time';
+  }
+
+  @override
+  String get takeNotReleased =>
+      'Answers will appear here once your teacher releases them.';
+
+  @override
+  String get takeGrade => 'Grade';
+
+  @override
+  String get takeGradePending => 'Not published yet';
+
+  @override
+  String get takeFeedback => 'Teacher\'s feedback';
+
+  @override
+  String get takeAnswers => 'Answers';
+
+  @override
+  String get takeYourAnswer => 'Your answer';
+
+  @override
+  String get takeCorrectAnswer => 'Correct answer';
+
+  @override
+  String get takeAcceptedAnswers => 'Accepted answers';
+
+  @override
+  String get takeNoAnswer => 'No answer';
+
+  @override
+  String get takeBeingMarked => 'Being marked';
+
+  @override
+  String takeScore(String score, String max) {
+    return '$score of $max';
+  }
+
+  @override
+  String get takeLoadFailed => 'This could not load.';
+
+  @override
+  String get takeRetry => 'Try again';
+
+  @override
+  String get takeReadOnly =>
+      'You can see your child\'s results here. Only they can sit it.';
+
+  @override
+  String get takeOpenAssessment => 'Open';
+
+  @override
+  String get markSubmissions => 'Submissions';
+
+  @override
+  String get markNone => 'No one has submitted yet.';
+
+  @override
+  String get markNeeds => 'Needs marking';
+
+  @override
+  String markDone(String score, String max) {
+    return 'Marked: $score of $max';
+  }
+
+  @override
+  String get markAuto => 'Marked automatically';
+
+  @override
+  String markScoreLabel(String max) {
+    return 'Score (out of $max)';
+  }
+
+  @override
+  String get markAnswerFeedback => 'Comment on this answer';
+
+  @override
+  String get markOverallFeedback => 'Feedback for the student';
+
+  @override
+  String get markSave => 'Save marks';
+
+  @override
+  String get markSaved => 'Marks saved.';
+
+  @override
+  String get markSaveFailed =>
+      'Marks were not saved. Check each score and try again.';
+
+  @override
+  String markScoreInvalid(String max) {
+    return 'Enter a score from 0 to $max.';
+  }
+
+  @override
+  String get markPublishGrades => 'Publish grades';
+
+  @override
+  String markPublished(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count grades published.',
+      one: '1 grade published.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markNothingToPublish => 'Nothing is ready to publish yet.';
+
+  @override
+  String get markReleaseNow => 'Release answers now';
+
+  @override
+  String get markReleased => 'Answers released.';
+
+  @override
+  String get markReleaseRefused =>
+      'Answers can only be released once it has closed for everyone.';
+
+  @override
+  String get markEditQuestions => 'Edit questions and settings';
+
+  @override
+  String get markGrantAccess => 'More time or attempts';
+
+  @override
+  String get markGrantStudent => 'Student';
+
+  @override
+  String get markGrantUntil => 'Open for them until';
+
+  @override
+  String get markGrantExtra => 'Extra attempts';
+
+  @override
+  String get markGrantGive => 'Give';
+
+  @override
+  String get markGranted => 'Done.';
+
+  @override
+  String get markGrantFailed => 'That could not be given.';
+
+  @override
+  String markAnswersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count submissions',
+      one: '1 submission',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markOpenSubmissions => 'Submissions and marking';
+
+  @override
+  String get paperShared => 'For the whole class';
+
+  @override
+  String get paperSharedHint =>
+      'The question paper, a mark scheme or general feedback. Each student sees these once their own mark is published.';
+
+  @override
+  String paperForStudent(String name) {
+    return 'For $name';
+  }
+
+  @override
+  String get paperForStudentHint =>
+      'Only this student and their parents see these, once the mark is published.';
+
+  @override
+  String get paperAttachments => 'Attachments';
+
+  @override
+  String get paperAttachmentsSaved => 'Attachments saved.';
+
+  @override
+  String get paperAttachmentsFailed => 'Attachments were not saved.';
+
+  @override
+  String get paperSave => 'Save';
+
+  @override
+  String get gradeYourFiles => 'Your files';
+
+  @override
+  String get gradeClassFiles => 'For the class';
 }

@@ -285,6 +285,7 @@ class _StudentShellState extends State<StudentShell> {
                 deadline: record.deadline,
                 instructions: record.detail,
                 material: record.attachments,
+          links: record.links,
                 uploads: widget.fileUploads,
                 schoolId: ActiveContextController.instance.membership?.schoolId,
                 studentId: studentId,

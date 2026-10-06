@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
@@ -151,8 +151,9 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
                     const SizedBox(height: 6),
                     LinkedText(lesson.detail),
                   ],
-                  StoredAttachmentList(
+                  AttachmentsView(
                     attachments: lesson.attachments,
+                    links: lesson.links,
                     uploads: widget.uploads,
                   ),
                   if (widget.actionsFor case final actions?)

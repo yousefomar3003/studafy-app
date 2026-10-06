@@ -43,6 +43,8 @@ class _MaterialsFake implements AcademicRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   }) async => updates.add((assignmentId, expectedVersion, detachFileIds));
 
   @override
@@ -76,9 +78,14 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tester.tap(find.widgetWithText(CheckboxListTile, 'worksheet.pdf'));
+      await tester.tap(
+        find.descendant(
+          of: find.widgetWithText(ListTile, 'worksheet.pdf'),
+          matching: find.text('Remove'),
+        ),
+      );
       await tester.pumpAndSettle();
-      expect(find.text('Will be taken off'), findsOneWidget);
+      expect(find.text('Removed when you save'), findsOneWidget);
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 

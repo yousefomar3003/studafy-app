@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
-import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_components.dart';
@@ -31,6 +31,7 @@ class SubmitWorkPage extends StatefulWidget {
     this.studentId,
     this.attachmentSource,
     this.material = const [],
+    this.links = const [],
     this.instructions,
     this.deadline,
   });
@@ -54,6 +55,9 @@ class SubmitWorkPage extends StatefulWidget {
   /// What the teacher attached to the work - the worksheet, the reading.
   /// Shown above the answer, because it is usually what the answer is about.
   final List<StoredAttachment> material;
+
+  /// Titled links the teacher put on the work.
+  final List<ContentLink> links;
 
   /// The teacher's instructions, when the caller has them.
   final String? instructions;
@@ -236,12 +240,13 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
               SectionHeader(l10n.submitInstructions),
               FeatureCard(child: LinkedText(text)),
             ],
-            if (widget.material.isNotEmpty) ...[
+            if (widget.material.isNotEmpty || widget.links.isNotEmpty) ...[
               SectionHeader(l10n.submitMaterialHeading),
               FeatureCard(
                 padding: const EdgeInsetsDirectional.fromSTEB(14, 6, 8, 6),
-                child: StoredAttachmentList(
+                child: AttachmentsView(
                   attachments: widget.material,
+                  links: widget.links,
                   uploads: widget.uploads,
                 ),
               ),

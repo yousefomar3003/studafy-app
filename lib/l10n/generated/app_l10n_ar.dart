@@ -5189,4 +5189,613 @@ class AppL10nAr extends AppL10n {
   String loginAlsoUseAs(String role) {
     return 'استخدمه أيضًا كـ$role';
   }
+
+  @override
+  String get attachmentsTitle => 'المرفقات';
+
+  @override
+  String get attachmentsLinks => 'الروابط';
+
+  @override
+  String get attachmentsFiles => 'الملفات';
+
+  @override
+  String get attachmentsAddLink => 'إضافة رابط';
+
+  @override
+  String get attachmentsLinkTitle => 'العنوان الذي يراه القراء';
+
+  @override
+  String get attachmentsLinkAddress => 'العنوان (https://…)';
+
+  @override
+  String get attachmentsLinkTitleRequired => 'أضف عنوانًا للرابط.';
+
+  @override
+  String get attachmentsRemove => 'إزالة';
+
+  @override
+  String get attachmentsKeep => 'إبقاء';
+
+  @override
+  String get attachmentsRemovedOnSave => 'سيُزال عند الحفظ';
+
+  @override
+  String get attachmentsUploading => 'انتظر حتى يكتمل رفع الملفات.';
+
+  @override
+  String get attachmentsFailed => 'أعد محاولة رفع الملفات التي فشلت أو أزلها.';
+
+  @override
+  String attachmentsTooManyLinks(int count) {
+    return 'يمكنك إضافة $count روابط كحد أقصى.';
+  }
+
+  @override
+  String get attachmentsImagePreview => 'اضغط للعرض';
+
+  @override
+  String get attachmentsChecking => 'قيد الفحص';
+
+  @override
+  String get attachmentsNotAvailable => 'غير متاح';
+
+  @override
+  String get questionKindSingle => 'إجابة واحدة';
+
+  @override
+  String get questionKindMultiple => 'إجابات متعددة';
+
+  @override
+  String get questionKindTrueFalse => 'صح أو خطأ';
+
+  @override
+  String get questionKindShort => 'إجابة قصيرة';
+
+  @override
+  String get questionKindEssay => 'مقال';
+
+  @override
+  String get builderNewTitle => 'تقييم إلكتروني جديد';
+
+  @override
+  String get builderEditTitle => 'تعديل التقييم';
+
+  @override
+  String get builderTitleLabel => 'العنوان';
+
+  @override
+  String get builderClassLabel => 'الصف';
+
+  @override
+  String get builderCategoryLabel => 'النوع';
+
+  @override
+  String get builderCategoryQuiz => 'اختبار قصير';
+
+  @override
+  String get builderCategoryExam => 'امتحان';
+
+  @override
+  String get builderCategoryAssessment => 'تقييم';
+
+  @override
+  String get builderQuestions => 'الأسئلة';
+
+  @override
+  String get builderAddQuestion => 'إضافة سؤال';
+
+  @override
+  String builderTotal(String points) {
+    return 'المجموع: $points درجة';
+  }
+
+  @override
+  String builderQuestionNumber(int number) {
+    return 'السؤال $number';
+  }
+
+  @override
+  String get builderPrompt => 'السؤال';
+
+  @override
+  String get builderPoints => 'الدرجات';
+
+  @override
+  String get builderRequired => 'إلزامي';
+
+  @override
+  String builderOption(int number) {
+    return 'الخيار $number';
+  }
+
+  @override
+  String get builderAddOption => 'إضافة خيار';
+
+  @override
+  String get builderRemoveOption => 'إزالة الخيار';
+
+  @override
+  String get builderMarkCorrectOne => 'حدد الإجابة الصحيحة.';
+
+  @override
+  String get builderMarkCorrectAll => 'حدد كل الإجابات الصحيحة.';
+
+  @override
+  String get builderTrue => 'صح';
+
+  @override
+  String get builderFalse => 'خطأ';
+
+  @override
+  String get builderCorrectIs => 'الإجابة الصحيحة هي';
+
+  @override
+  String get builderAccepted => 'الإجابات المقبولة، واحدة في كل سطر';
+
+  @override
+  String get builderAcceptedHint => 'اتركه فارغًا لتصححه بنفسك.';
+
+  @override
+  String get builderModelAnswer => 'الإجابة النموذجية';
+
+  @override
+  String get builderGuidance => 'إرشادات التصحيح';
+
+  @override
+  String get builderPrivateHint => 'لا يراه أحد غيرك حتى تُنشر الإجابات.';
+
+  @override
+  String get builderMoveUp => 'نقل لأعلى';
+
+  @override
+  String get builderMoveDown => 'نقل لأسفل';
+
+  @override
+  String get builderDuplicate => 'تكرار';
+
+  @override
+  String get builderDelete => 'حذف';
+
+  @override
+  String get builderSettings => 'الإعدادات';
+
+  @override
+  String get builderOpens => 'يفتح';
+
+  @override
+  String get builderCloses => 'يُغلق';
+
+  @override
+  String get builderNotSet => 'غير محدد';
+
+  @override
+  String get builderNow => 'الآن';
+
+  @override
+  String get builderAttempts => 'عدد المحاولات المسموحة';
+
+  @override
+  String get builderPolicy => 'أي محاولة تُحتسب';
+
+  @override
+  String get builderPolicyBest => 'الأفضل';
+
+  @override
+  String get builderPolicyLatest => 'الأخيرة';
+
+  @override
+  String get builderRelease => 'متى يرى الطلاب الإجابات';
+
+  @override
+  String get builderReleaseAfterClose => 'بعد إغلاقه للجميع';
+
+  @override
+  String get builderReleaseAfterGrading => 'بعد انتهاء التصحيح ونشر الدرجات';
+
+  @override
+  String get builderReleaseManual => 'عندما أنشرها بنفسي';
+
+  @override
+  String get builderReleaseNote =>
+      'لا تظهر الإجابات أبدًا ما دام بإمكان أي طالب تقديمه.';
+
+  @override
+  String get builderMaterial => 'مواد للتقييم كله';
+
+  @override
+  String get builderPreview => 'معاينة كطالب';
+
+  @override
+  String get builderSaveDraft => 'حفظ كمسودة';
+
+  @override
+  String get builderPublish => 'نشر';
+
+  @override
+  String get builderSaved => 'تم الحفظ.';
+
+  @override
+  String get builderPublished => 'تم النشر للصف.';
+
+  @override
+  String get builderSaveFailed => 'تعذر الحفظ. راجع الأسئلة وحاول مرة أخرى.';
+
+  @override
+  String get builderLocked =>
+      'قدّم أحد الطلاب بالفعل، لذا لم يعد بالإمكان تغيير الأسئلة. أما الإعدادات فيمكن تغييرها.';
+
+  @override
+  String get builderNeedTitle => 'أضف عنوانًا.';
+
+  @override
+  String get builderNeedClass => 'اختر صفًا.';
+
+  @override
+  String get builderNeedQuestion => 'أضف سؤالًا واحدًا على الأقل.';
+
+  @override
+  String get builderNeedClose => 'حدد موعد الإغلاق.';
+
+  @override
+  String get builderCloseAfterOpen => 'يجب أن يُغلق بعد أن يفتح.';
+
+  @override
+  String builderProblemPrompt(int number) {
+    return 'السؤال $number: اكتب نص السؤال.';
+  }
+
+  @override
+  String builderProblemPoints(int number) {
+    return 'السؤال $number: حدد له درجات.';
+  }
+
+  @override
+  String builderProblemOptions(int number) {
+    return 'السؤال $number: أضف خيارين مكتملين على الأقل.';
+  }
+
+  @override
+  String builderProblemCorrect(int number) {
+    return 'السؤال $number: حدد الإجابة الصحيحة.';
+  }
+
+  @override
+  String builderProblemTrueFalse(int number) {
+    return 'السؤال $number: اختر صح أو خطأ كإجابة.';
+  }
+
+  @override
+  String builderProblemFiles(int number) {
+    return 'السؤال $number: انتظر حتى تُرفع ملفاته.';
+  }
+
+  @override
+  String get builderOnlineChoice => 'يُجاب عنه إلكترونيًا';
+
+  @override
+  String get builderOnlineChoiceDetail =>
+      'يجيب الطلاب في التطبيق، وتُصحَّح أسئلة الاختيار تلقائيًا.';
+
+  @override
+  String get builderPaperChoice => 'على الورق';
+
+  @override
+  String get builderPaperChoiceDetail =>
+      'يؤديه الطلاب في الصف، وتُدخل أنت الدرجات.';
+
+  @override
+  String takeOpens(String time) {
+    return 'يفتح $time';
+  }
+
+  @override
+  String takeCloses(String time) {
+    return 'يُغلق $time';
+  }
+
+  @override
+  String get takeClosed => 'مغلق';
+
+  @override
+  String get takeNotOpen => 'لم يُفتح بعد';
+
+  @override
+  String takeAttemptsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولة متبقية',
+      many: '$count محاولة متبقية',
+      few: '$count محاولات متبقية',
+      two: 'محاولتان متبقيتان',
+      one: 'محاولة واحدة متبقية',
+      zero: 'لا توجد محاولات متبقية',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeStart => 'ابدأ';
+
+  @override
+  String get takeAgain => 'حاول مرة أخرى';
+
+  @override
+  String get takeSubmit => 'إرسال الإجابات';
+
+  @override
+  String get takeSubmitTitle => 'إرسال إجاباتك؟';
+
+  @override
+  String get takeSubmitBody => 'لا يمكنك تغييرها بعد الإرسال.';
+
+  @override
+  String get takeLeaveTitle => 'المغادرة دون إرسال؟';
+
+  @override
+  String get takeLeaveBody => 'لن يتم حفظ إجاباتك.';
+
+  @override
+  String get takeLeave => 'مغادرة';
+
+  @override
+  String get takeStay => 'البقاء';
+
+  @override
+  String takeMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'أجب عن الأسئلة الإلزامية الـ$count المتبقية.',
+      many: 'أجب عن الأسئلة الإلزامية الـ$count المتبقية.',
+      few: 'أجب عن الأسئلة الإلزامية الـ$count المتبقية.',
+      two: 'أجب عن السؤالين الإلزاميين المتبقيين.',
+      one: 'أجب عن السؤال الإلزامي المتبقي.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeSubmitted => 'تم الإرسال. سينشر معلمك النتائج.';
+
+  @override
+  String get takeSubmitFailed =>
+      'لم تُرسل إجاباتك. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get takeWindowClosed => 'أُغلق هذا التقييم، لذا لا يمكن إرساله.';
+
+  @override
+  String get takeRequired => 'إلزامي';
+
+  @override
+  String get takeOptional => 'اختياري';
+
+  @override
+  String get takeTypeAnswer => 'إجابتك';
+
+  @override
+  String get takeChooseOne => 'اختر واحدة';
+
+  @override
+  String get takeChooseAll => 'اختر كل ما ينطبق';
+
+  @override
+  String takePoints(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count درجة',
+      many: '$count درجة',
+      few: '$count درجات',
+      two: 'درجتان',
+      one: 'درجة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeYourAttempts => 'محاولاتك';
+
+  @override
+  String takeAttemptLine(int number, String time) {
+    return 'المحاولة $number · $time';
+  }
+
+  @override
+  String get takeNotReleased => 'ستظهر الإجابات هنا بعد أن ينشرها معلمك.';
+
+  @override
+  String get takeGrade => 'الدرجة';
+
+  @override
+  String get takeGradePending => 'لم تُنشر بعد';
+
+  @override
+  String get takeFeedback => 'ملاحظات المعلم';
+
+  @override
+  String get takeAnswers => 'الإجابات';
+
+  @override
+  String get takeYourAnswer => 'إجابتك';
+
+  @override
+  String get takeCorrectAnswer => 'الإجابة الصحيحة';
+
+  @override
+  String get takeAcceptedAnswers => 'الإجابات المقبولة';
+
+  @override
+  String get takeNoAnswer => 'لا توجد إجابة';
+
+  @override
+  String get takeBeingMarked => 'قيد التصحيح';
+
+  @override
+  String takeScore(String score, String max) {
+    return '$score من $max';
+  }
+
+  @override
+  String get takeLoadFailed => 'تعذر التحميل.';
+
+  @override
+  String get takeRetry => 'حاول مرة أخرى';
+
+  @override
+  String get takeReadOnly =>
+      'يمكنك رؤية نتائج طفلك هنا. هو وحده من يمكنه أداء التقييم.';
+
+  @override
+  String get takeOpenAssessment => 'فتح';
+
+  @override
+  String get markSubmissions => 'الإجابات المقدَّمة';
+
+  @override
+  String get markNone => 'لم يقدّم أحد بعد.';
+
+  @override
+  String get markNeeds => 'بحاجة إلى تصحيح';
+
+  @override
+  String markDone(String score, String max) {
+    return 'مصحَّح: $score من $max';
+  }
+
+  @override
+  String get markAuto => 'مصحَّح تلقائيًا';
+
+  @override
+  String markScoreLabel(String max) {
+    return 'الدرجة (من $max)';
+  }
+
+  @override
+  String get markAnswerFeedback => 'تعليق على هذه الإجابة';
+
+  @override
+  String get markOverallFeedback => 'ملاحظات للطالب';
+
+  @override
+  String get markSave => 'حفظ الدرجات';
+
+  @override
+  String get markSaved => 'تم حفظ الدرجات.';
+
+  @override
+  String get markSaveFailed =>
+      'لم تُحفظ الدرجات. تحقق من كل درجة وحاول مرة أخرى.';
+
+  @override
+  String markScoreInvalid(String max) {
+    return 'أدخل درجة من 0 إلى $max.';
+  }
+
+  @override
+  String get markPublishGrades => 'نشر الدرجات';
+
+  @override
+  String markPublished(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'نُشرت $count درجة.',
+      many: 'نُشرت $count درجة.',
+      few: 'نُشرت $count درجات.',
+      two: 'نُشرت درجتان.',
+      one: 'نُشرت درجة واحدة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markNothingToPublish => 'لا يوجد شيء جاهز للنشر بعد.';
+
+  @override
+  String get markReleaseNow => 'نشر الإجابات الآن';
+
+  @override
+  String get markReleased => 'تم نشر الإجابات.';
+
+  @override
+  String get markReleaseRefused =>
+      'لا يمكن نشر الإجابات إلا بعد إغلاقه للجميع.';
+
+  @override
+  String get markEditQuestions => 'تعديل الأسئلة والإعدادات';
+
+  @override
+  String get markGrantAccess => 'وقت أو محاولات إضافية';
+
+  @override
+  String get markGrantStudent => 'الطالب';
+
+  @override
+  String get markGrantUntil => 'مفتوح له حتى';
+
+  @override
+  String get markGrantExtra => 'محاولات إضافية';
+
+  @override
+  String get markGrantGive => 'منح';
+
+  @override
+  String get markGranted => 'تم.';
+
+  @override
+  String get markGrantFailed => 'تعذر المنح.';
+
+  @override
+  String markAnswersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count إجابة',
+      many: '$count إجابة',
+      few: '$count إجابات',
+      two: 'إجابتان',
+      one: 'إجابة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markOpenSubmissions => 'الإجابات والتصحيح';
+
+  @override
+  String get paperShared => 'للصف كله';
+
+  @override
+  String get paperSharedHint =>
+      'ورقة الأسئلة أو مخطط التصحيح أو ملاحظات عامة. يراها كل طالب بعد نشر درجته.';
+
+  @override
+  String paperForStudent(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get paperForStudentHint =>
+      'لا يراها إلا هذا الطالب ووالداه، بعد نشر الدرجة.';
+
+  @override
+  String get paperAttachments => 'المرفقات';
+
+  @override
+  String get paperAttachmentsSaved => 'تم حفظ المرفقات.';
+
+  @override
+  String get paperAttachmentsFailed => 'لم تُحفظ المرفقات.';
+
+  @override
+  String get paperSave => 'حفظ';
+
+  @override
+  String get gradeYourFiles => 'ملفاتك';
+
+  @override
+  String get gradeClassFiles => 'للصف';
 }

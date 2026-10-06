@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
-import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/navigation.dart';
@@ -814,8 +814,9 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     ),
                   // The teacher's material, openable from the list itself -
                   // the only place graded work is shown.
-                  StoredAttachmentList(
+                  AttachmentsView(
                     attachments: item.attachments,
+                    links: item.links,
                     uploads: widget.uploads,
                     dense: true,
                   ),

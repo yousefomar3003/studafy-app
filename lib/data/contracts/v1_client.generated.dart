@@ -3028,6 +3028,31 @@ class V1AnnouncementPageDto {
   };
 }
 
+class V1AnswerMarkDto {
+  const V1AnswerMarkDto({
+    required this.questionId,
+    required this.score,
+    this.feedback,
+  });
+
+  factory V1AnswerMarkDto.fromJson(Map<String, dynamic> json) =>
+      V1AnswerMarkDto(
+        questionId: json['questionId'] as String,
+        score: json['score'] as num,
+        feedback: json['feedback'] as String?,
+      );
+
+  final String questionId;
+  final num score;
+  final String? feedback;
+
+  Map<String, Object?> toJson() => {
+    'questionId': questionId,
+    'score': score,
+    'feedback': ?feedback,
+  };
+}
+
 class V1AppealReportRequestDto {
   const V1AppealReportRequestDto({
     required this.expectedVersion,
@@ -8388,14 +8413,20 @@ class V1MarkAssessmentAttemptRequestDto {
   factory V1MarkAssessmentAttemptRequestDto.fromJson(
     Map<String, dynamic> json,
   ) => V1MarkAssessmentAttemptRequestDto(
-    marks: (json['marks'] as List<dynamic>).cast<Map<String, dynamic>>(),
+    marks: [
+      for (final item in json['marks'] as List<dynamic>)
+        V1AnswerMarkDto.fromJson(item as Map<String, dynamic>),
+    ],
     feedback: json['feedback'] as String?,
   );
 
-  final List<Map<String, dynamic>> marks;
+  final List<V1AnswerMarkDto> marks;
   final String? feedback;
 
-  Map<String, Object?> toJson() => {'marks': marks, 'feedback': ?feedback};
+  Map<String, Object?> toJson() => {
+    'marks': [for (final item in marks) item.toJson()],
+    'feedback': ?feedback,
+  };
 }
 
 class V1MarkConversationReadRequestDto {

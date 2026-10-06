@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/file_upload_repository.dart';
+import 'online_assessment.dart';
+
+export 'online_assessment.dart';
 
 enum AcademicFeed {
   content,
@@ -30,6 +33,12 @@ class AcademicRecord {
     this.outOf,
     this.deadline,
     this.timeZone,
+    this.links = const [],
+    this.sharedAttachments = const [],
+    this.sharedLinks = const [],
+    this.feedback,
+    this.assessmentId,
+    this.resourceType,
   });
 
   /// A separate instance with the same values - so the same assignment,
@@ -52,6 +61,12 @@ class AcademicRecord {
     outOf: outOf,
     deadline: deadline,
     timeZone: timeZone,
+    links: links,
+    sharedAttachments: sharedAttachments,
+    sharedLinks: sharedLinks,
+    feedback: feedback,
+    assessmentId: assessmentId,
+    resourceType: resourceType,
   );
   final String id;
   final String title;
@@ -96,6 +111,22 @@ class AcademicRecord {
 
   /// Assignments: the school's time zone, in which deadlines are set.
   final String? timeZone;
+
+  /// Titled links on a lesson, work or a grade.
+  final List<ContentLink> links;
+
+  /// Grades only: the class's shared attachments (the question paper), and
+  /// the teacher's feedback. Present once the grade is published.
+  final List<StoredAttachment> sharedAttachments;
+  final List<ContentLink> sharedLinks;
+  final String? feedback;
+
+  /// Grades only: the assessment the mark is for.
+  final String? assessmentId;
+
+  /// Lessons only: 'file' for a lesson that is one file (replaced whole),
+  /// otherwise notes with any number of files and links.
+  final String? resourceType;
 }
 
 /// How a student did on marked work. Absent and not graded carry no score
@@ -175,10 +206,17 @@ class TextResourceDraft {
     this.lessonSessionId,
     this.audience = 'both',
     this.publish = false,
+    this.attachmentFileIds = const [],
+    this.links = const [],
   });
   final String classroomId;
   final String title;
   final String body;
+
+  /// Completed `lesson_resource` uploads for [classroomId]: the lesson's own
+  /// files, bound with it.
+  final List<String> attachmentFileIds;
+  final List<LinkDraft> links;
 
   /// Publish straight away, so the class sees it. Otherwise it is a draft
   /// only its teachers can see until they publish it.
@@ -204,10 +242,14 @@ class AssignmentDraft {
     this.attachmentFileIds = const [],
     this.publish = true,
     this.maximumScore,
+    this.links = const [],
   });
   final String classroomId;
   final String title;
   final String instructions;
+
+  /// Titled links on the work.
+  final List<LinkDraft> links;
   final DateTime dueAt;
   final DateTime? closesAt;
 
@@ -639,6 +681,8 @@ class PaperGradebookItem {
     required this.published,
     this.weight,
     this.scheduledAt,
+    this.sharedAttachments = const [],
+    this.sharedLinks = const [],
   });
 
   final String id;
@@ -647,6 +691,11 @@ class PaperGradebookItem {
   final double maximumScore;
   final String state;
   final int version;
+
+  /// The class's shared attachments: the question paper, general feedback.
+  /// Each student sees them once their own grade is published.
+  final List<StoredAttachment> sharedAttachments;
+  final List<ContentLink> sharedLinks;
 
   /// Sent back when saving and publishing, so the teacher publishes exactly
   /// the sheet they saw.
@@ -689,7 +738,13 @@ class PaperGrade {
     this.score,
     this.feedback,
     this.corrections = 0,
+    this.attachments = const [],
+    this.links = const [],
   });
+
+  /// This student's own attachments: a marked sheet, personal feedback.
+  final List<StoredAttachment> attachments;
+  final List<ContentLink> links;
 
   final String id;
   final PaperGradeState state;
@@ -844,6 +899,7 @@ abstract interface class AcademicContentRepository {
     String? title,
     String? body,
     String? replaceFileId,
+    AttachmentChanges attachments = const AttachmentChanges(),
   });
 }
 
@@ -897,6 +953,8 @@ abstract interface class AssignmentRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   });
 
   /// Reopens the work for the whole class until [closesAtLocal].
@@ -920,6 +978,8 @@ abstract interface class AssessmentRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   });
   Future<void> submitAssessment(
     String assessmentId,
@@ -1078,4 +1138,5 @@ abstract interface class AcademicRepository
         AttendanceRepository,
         GradeRepository,
         PaperGradebookRepository,
-        WellbeingRepository {}
+        WellbeingRepository,
+        OnlineAssessmentRepository {}

@@ -721,12 +721,16 @@ export type V1AssessmentAttemptDetail = z.infer<
   typeof V1AssessmentAttemptDetail
 >;
 
+/// A teacher's mark for one answer.
+export const V1AnswerMark = z.strictObject({
+  questionId: Id,
+  score: z.number().min(0).max(1000),
+  feedback: z.string().trim().max(5000).nullable().optional(),
+});
+export type V1AnswerMark = z.infer<typeof V1AnswerMark>;
+
 export const V1MarkAssessmentAttemptRequest = z.strictObject({
-  marks: z.array(z.strictObject({
-    questionId: Id,
-    score: z.number().min(0).max(1000),
-    feedback: z.string().trim().max(5000).nullable().optional(),
-  })).max(100),
+  marks: z.array(V1AnswerMark).max(100),
   /// Feedback on the attempt as a whole.
   feedback: z.string().trim().max(5000).nullable().optional(),
 });

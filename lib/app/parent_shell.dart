@@ -205,6 +205,7 @@ class _ParentShellState extends State<ParentShell> {
           deadline: record.deadline,
           instructions: record.detail,
           material: record.attachments,
+          links: record.links,
           schoolId: schoolId,
           studentId: child,
         ),

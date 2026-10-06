@@ -70,7 +70,9 @@ void main() {
     // Published, not left as a draft the class never sees - the bug that
     // kept a teacher's lesson from reaching students and parents.
     expect(fake.lessons.single.publish, isTrue);
-    expect(files.published, [('file-1', FileAudience.students)]);
+    // The file is the lesson's own, bound with it - not separate material.
+    expect(fake.lessons.single.attachmentFileIds, ['file-1']);
+    expect(files.published, isEmpty);
   });
 
   testWidgets('a lesson needs notes or a file', (tester) async {

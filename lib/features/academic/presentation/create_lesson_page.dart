@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
-import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
@@ -11,10 +11,10 @@ import '../domain/academic_repository.dart';
 /// Adding a lesson to a class: its title, the teacher's notes, and the files
 /// that go with it - slides, a worksheet, a photo of the board.
 ///
-/// The notes are one piece of class material and each file is another, which
-/// is how the server models it. They are filed together here so that, to the
-/// teacher, a lesson is one thing. Students see it under Lessons, by date,
-/// and with Studafy Max can make quizzes and flashcards from it.
+/// The notes, files and titled links are one lesson (ADR-0036): the files and
+/// links are bound to it on the server, so they travel and are edited with
+/// it. Students see it under Lessons, by date, and with Studafy Max can make
+/// quizzes and flashcards from it.
 class CreateLessonPage extends StatefulWidget {
   const CreateLessonPage({
     super.key,
@@ -53,15 +53,13 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   FileAudience _audience = FileAudience.both;
   bool _saving = false;
   String? _error;
-  List<Attachment> _attachments = const [];
-  List<Uri> _links = const [];
+  AttachmentsEditorValue _attachments = const AttachmentsEditorValue();
 
-  /// Files are uploaded for one class, and the server refuses to publish them
-  /// into another, so changing the class starts the files over.
+  /// Files are uploaded for one class, and the server refuses to bind them
+  /// to another, so changing the class starts the files over.
   Key _attachmentsKey = UniqueKey();
 
-  bool get _uploading =>
-      _attachments.any((a) => a.stage == AttachmentStage.uploading);
+  bool get _uploading => _attachments.uploading;
 
   @override
   void initState() {
@@ -78,15 +76,19 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     super.dispose();
   }
 
-  Future<void> _save(FileUploadRepository? uploads) async {
+  Future<void> _save() async {
     if (_saving || _uploading) return;
     final l10n = AppL10n.of(context);
     final classroomId = _classroomId;
-    final fileIds = [for (final item in _attachments) ?item.fileId];
+    final changes = _attachments.changes;
     final String? problem = switch (null) {
       _ when classroomId == null => l10n.lessonClassRequired,
       _ when _title.text.trim().isEmpty => l10n.lessonTitleRequired,
-      _ when _notes.text.trim().isEmpty && fileIds.isEmpty && _links.isEmpty =>
+      _ when _attachments.failed => l10n.attachmentsFailed,
+      _
+          when _notes.text.trim().isEmpty &&
+              changes.attachFileIds.isEmpty &&
+              changes.addLinks.isEmpty =>
         l10n.lessonContentRequired,
       _ => null,
     };
@@ -105,19 +107,14 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         TextResourceDraft(
           classroomId: classroomId!,
           title: _title.text.trim(),
-          body: textWithLinks(_notes.text, _links),
+          body: _notes.text.trim(),
           audience: _audience.wireValue,
           // "Add lesson" means the class sees it now.
           publish: true,
+          attachmentFileIds: changes.attachFileIds,
+          links: changes.addLinks,
         ),
       );
-      // Each file becomes class material in its own right. One the scan
-      // refused is simply not among them.
-      if (uploads != null) {
-        for (final fileId in fileIds) {
-          await uploads.publishToClass(fileId: fileId, audience: _audience);
-        }
-      }
       if (!mounted) return;
       Navigator.of(context).pop(created);
     } on Object {
@@ -157,7 +154,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   : (value) => setState(() {
                       if (value == _classroomId) return;
                       _classroomId = value;
-                      _attachments = const [];
+                      _attachments = const AttachmentsEditorValue();
                       _attachmentsKey = UniqueKey();
                     }),
             ),
@@ -184,28 +181,20 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
               ),
             ),
             const SizedBox(height: 8),
-            if (uploads != null)
-              if ((widget.schoolId, _classroomId) case (
-                final schoolId?,
-                final classroomId?,
-              ))
-                AttachmentField(
-                  key: _attachmentsKey,
-                  purpose: FilePurpose.lessonResource,
-                  schoolId: schoolId,
-                  classroomId: classroomId,
-                  uploads: uploads,
-                  enabled: !_saving,
-                  source: widget.attachmentSource ?? pickPlatformAttachment,
-                  onChanged: (items) => setState(() => _attachments = items),
-                )
-              else
-                Text(l10n.lessonPickClassForFiles)
-            else
-              Text(l10n.academicAttachmentsUnavailable),
-            LinksField(
+            if (uploads == null)
+              Text(l10n.academicAttachmentsUnavailable)
+            else if (_classroomId == null)
+              Text(l10n.lessonPickClassForFiles),
+            AttachmentsEditor(
+              key: _attachmentsKey,
+              purpose: FilePurpose.lessonResource,
+              schoolId: _classroomId == null ? null : widget.schoolId,
+              classroomId: _classroomId,
+              uploads: uploads,
+              source: widget.attachmentSource ?? pickPlatformAttachment,
+              maxFiles: 10,
               enabled: !_saving,
-              onChanged: (links) => setState(() => _links = links),
+              onChanged: (value) => setState(() => _attachments = value),
             ),
             const SizedBox(height: 16),
             Text(
@@ -244,7 +233,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
             FilledButton.icon(
               // Held while a file is uploading, so the lesson is never filed
               // without the file the teacher is still waiting on.
-              onPressed: _saving || _uploading ? null : () => _save(uploads),
+              onPressed: _saving || _uploading ? null : _save,
               icon: const Icon(Icons.upload_file_rounded),
               label: Text(_saving ? l10n.lessonSaving : l10n.lessonSave),
             ),

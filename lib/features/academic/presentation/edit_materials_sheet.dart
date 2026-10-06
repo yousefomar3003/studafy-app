@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
 
-/// What a teacher's material on set work can be: files taken off, and files
-/// added. A file taken off is kept for the school; the class no longer sees
-/// it. Answers true once saved.
+/// What a teacher's material on set work can be: files and titled links
+/// taken off, and added. Anything taken off is kept for the school; the
+/// class no longer sees it. Answers true once saved.
 Future<bool?> showEditMaterialsSheet(
   BuildContext context, {
   required AcademicRepository repository,
@@ -53,23 +54,16 @@ class _EditMaterialsSheet extends StatefulWidget {
 }
 
 class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
-  /// Current files the teacher chose to take off.
-  final Set<String> _remove = {};
-  List<Attachment> _added = const [];
+  AttachmentsEditorValue _value = const AttachmentsEditorValue();
   bool _saving = false;
   String? _error;
 
-  bool get _uploading =>
-      _added.any((a) => a.stage == AttachmentStage.uploading);
-
-  List<String> get _addedIds => [for (final item in _added) ?item.fileId];
-
-  /// Set work carries at most five files at a time.
-  int get _room => 5 - (widget.work.attachments.length - _remove.length);
+  bool get _hasChanges => !_value.changes.isEmpty;
 
   Future<void> _save() async {
     final l10n = AppL10n.of(context);
-    if (_uploading || (_remove.isEmpty && _addedIds.isEmpty)) return;
+    if (!_value.ready || !_hasChanges) return;
+    final changes = _value.changes;
     setState(() {
       _saving = true;
       _error = null;
@@ -79,15 +73,19 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
         await widget.repository.updateAssessmentMaterials(
           widget.work.id,
           widget.work.version,
-          detachFileIds: _remove.toList(),
-          attachmentFileIds: _addedIds,
+          detachFileIds: changes.detachFileIds,
+          attachmentFileIds: changes.attachFileIds,
+          addLinks: changes.addLinks,
+          removeLinkIds: changes.removeLinkIds,
         );
       } else {
         await widget.repository.updateAssignmentMaterials(
           widget.work.id,
           widget.work.version,
-          detachFileIds: _remove.toList(),
-          attachmentFileIds: _addedIds,
+          detachFileIds: changes.detachFileIds,
+          attachmentFileIds: changes.attachFileIds,
+          addLinks: changes.addLinks,
+          removeLinkIds: changes.removeLinkIds,
         );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -110,8 +108,6 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final theme = Theme.of(context);
-    final uploads = widget.uploads;
-    final schoolId = widget.schoolId;
     final classroomId = widget.work.classroomId;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -125,42 +121,25 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
               const SizedBox(height: 4),
               Text(l10n.materialsEditHint, style: theme.textTheme.bodySmall),
               const SizedBox(height: 8),
-              if (widget.work.attachments.isEmpty)
-                Text(l10n.materialsEditNone)
-              else
-                for (final file in widget.work.attachments)
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(file.displayName),
-                    subtitle: _remove.contains(file.id)
-                        ? Text(l10n.materialsEditRemoving)
-                        : null,
-                    value: !_remove.contains(file.id),
-                    onChanged: _saving
-                        ? null
-                        : (keep) => setState(() {
-                            if (keep ?? true) {
-                              _remove.remove(file.id);
-                            } else {
-                              _remove.add(file.id);
-                            }
-                          }),
-                  ),
-              const SizedBox(height: 8),
-              if (uploads != null &&
-                  schoolId != null &&
-                  classroomId != null &&
-                  _room > 0)
-                AttachmentField(
-                  purpose: FilePurpose.assignmentMaterial,
-                  schoolId: schoolId,
-                  classroomId: classroomId,
-                  uploads: uploads,
-                  maximumCount: _room,
-                  enabled: !_saving,
-                  source: widget.attachmentSource ?? pickPlatformAttachment,
-                  onChanged: (items) => setState(() => _added = items),
+              if (widget.work.attachments.isEmpty && widget.work.links.isEmpty)
+                Text(l10n.materialsEditNone),
+              AttachmentsEditor(
+                purpose: FilePurpose.assignmentMaterial,
+                schoolId: classroomId == null ? null : widget.schoolId,
+                classroomId: classroomId,
+                uploads: widget.uploads,
+                source: widget.attachmentSource ?? pickPlatformAttachment,
+                existingAttachments: widget.work.attachments,
+                existingLinks: widget.work.links,
+                // Set work carries at most five files at a time.
+                maxFiles: 5,
+                enabled: !_saving,
+                onChanged: (value) => setState(() => _value = value),
+              ),
+              if (_value.failed)
+                Text(
+                  l10n.attachmentsFailed,
+                  style: TextStyle(color: theme.colorScheme.error),
                 ),
               if (_error != null)
                 Padding(
@@ -172,10 +151,7 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
                 ),
               const SizedBox(height: 12),
               FilledButton(
-                onPressed:
-                    _saving ||
-                        _uploading ||
-                        (_remove.isEmpty && _addedIds.isEmpty)
+                onPressed: _saving || !_value.ready || !_hasChanges
                     ? null
                     : _save,
                 child: Text(

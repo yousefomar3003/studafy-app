@@ -8906,6 +8906,1020 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Also use it as a {role}'**
   String loginAlsoUseAs(String role);
+
+  /// No description provided for @attachmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get attachmentsTitle;
+
+  /// No description provided for @attachmentsLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get attachmentsLinks;
+
+  /// No description provided for @attachmentsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get attachmentsFiles;
+
+  /// No description provided for @attachmentsAddLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get attachmentsAddLink;
+
+  /// No description provided for @attachmentsLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title readers see'**
+  String get attachmentsLinkTitle;
+
+  /// No description provided for @attachmentsLinkAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address (https://…)'**
+  String get attachmentsLinkAddress;
+
+  /// No description provided for @attachmentsLinkTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the link a title.'**
+  String get attachmentsLinkTitleRequired;
+
+  /// No description provided for @attachmentsRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get attachmentsRemove;
+
+  /// No description provided for @attachmentsKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get attachmentsKeep;
+
+  /// No description provided for @attachmentsRemovedOnSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed when you save'**
+  String get attachmentsRemovedOnSave;
+
+  /// No description provided for @attachmentsUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the files to finish uploading.'**
+  String get attachmentsUploading;
+
+  /// No description provided for @attachmentsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry or remove the files that failed to upload.'**
+  String get attachmentsFailed;
+
+  /// No description provided for @attachmentsTooManyLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add up to {count} links.'**
+  String attachmentsTooManyLinks(int count);
+
+  /// No description provided for @attachmentsImagePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get attachmentsImagePreview;
+
+  /// No description provided for @attachmentsChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Being checked'**
+  String get attachmentsChecking;
+
+  /// No description provided for @attachmentsNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get attachmentsNotAvailable;
+
+  /// No description provided for @questionKindSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Single answer'**
+  String get questionKindSingle;
+
+  /// No description provided for @questionKindMultiple.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple answers'**
+  String get questionKindMultiple;
+
+  /// No description provided for @questionKindTrueFalse.
+  ///
+  /// In en, this message translates to:
+  /// **'True or false'**
+  String get questionKindTrueFalse;
+
+  /// No description provided for @questionKindShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Short answer'**
+  String get questionKindShort;
+
+  /// No description provided for @questionKindEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay'**
+  String get questionKindEssay;
+
+  /// No description provided for @builderNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New online assessment'**
+  String get builderNewTitle;
+
+  /// No description provided for @builderEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit assessment'**
+  String get builderEditTitle;
+
+  /// No description provided for @builderTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get builderTitleLabel;
+
+  /// No description provided for @builderClassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get builderClassLabel;
+
+  /// No description provided for @builderCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get builderCategoryLabel;
+
+  /// No description provided for @builderCategoryQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get builderCategoryQuiz;
+
+  /// No description provided for @builderCategoryExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get builderCategoryExam;
+
+  /// No description provided for @builderCategoryAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Assessment'**
+  String get builderCategoryAssessment;
+
+  /// No description provided for @builderQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get builderQuestions;
+
+  /// No description provided for @builderAddQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add question'**
+  String get builderAddQuestion;
+
+  /// No description provided for @builderTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {points} points'**
+  String builderTotal(String points);
+
+  /// No description provided for @builderQuestionNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}'**
+  String builderQuestionNumber(int number);
+
+  /// No description provided for @builderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get builderPrompt;
+
+  /// No description provided for @builderPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get builderPoints;
+
+  /// No description provided for @builderRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get builderRequired;
+
+  /// No description provided for @builderOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Option {number}'**
+  String builderOption(int number);
+
+  /// No description provided for @builderAddOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add option'**
+  String get builderAddOption;
+
+  /// No description provided for @builderRemoveOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove option'**
+  String get builderRemoveOption;
+
+  /// No description provided for @builderMarkCorrectOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Tick the correct answer.'**
+  String get builderMarkCorrectOne;
+
+  /// No description provided for @builderMarkCorrectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Tick every correct answer.'**
+  String get builderMarkCorrectAll;
+
+  /// No description provided for @builderTrue.
+  ///
+  /// In en, this message translates to:
+  /// **'True'**
+  String get builderTrue;
+
+  /// No description provided for @builderFalse.
+  ///
+  /// In en, this message translates to:
+  /// **'False'**
+  String get builderFalse;
+
+  /// No description provided for @builderCorrectIs.
+  ///
+  /// In en, this message translates to:
+  /// **'The correct answer is'**
+  String get builderCorrectIs;
+
+  /// No description provided for @builderAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted answers, one per line'**
+  String get builderAccepted;
+
+  /// No description provided for @builderAcceptedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to mark it yourself.'**
+  String get builderAcceptedHint;
+
+  /// No description provided for @builderModelAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Model answer'**
+  String get builderModelAnswer;
+
+  /// No description provided for @builderGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Marking guidance'**
+  String get builderGuidance;
+
+  /// No description provided for @builderPrivateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you see this until answers are released.'**
+  String get builderPrivateHint;
+
+  /// No description provided for @builderMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get builderMoveUp;
+
+  /// No description provided for @builderMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get builderMoveDown;
+
+  /// No description provided for @builderDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get builderDuplicate;
+
+  /// No description provided for @builderDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get builderDelete;
+
+  /// No description provided for @builderSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get builderSettings;
+
+  /// No description provided for @builderOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens'**
+  String get builderOpens;
+
+  /// No description provided for @builderCloses.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes'**
+  String get builderCloses;
+
+  /// No description provided for @builderNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get builderNotSet;
+
+  /// No description provided for @builderNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get builderNow;
+
+  /// No description provided for @builderAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts allowed'**
+  String get builderAttempts;
+
+  /// No description provided for @builderPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Which attempt counts'**
+  String get builderPolicy;
+
+  /// No description provided for @builderPolicyBest.
+  ///
+  /// In en, this message translates to:
+  /// **'The best'**
+  String get builderPolicyBest;
+
+  /// No description provided for @builderPolicyLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'The latest'**
+  String get builderPolicyLatest;
+
+  /// No description provided for @builderRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'When students see the answers'**
+  String get builderRelease;
+
+  /// No description provided for @builderReleaseAfterClose.
+  ///
+  /// In en, this message translates to:
+  /// **'After it closes for everyone'**
+  String get builderReleaseAfterClose;
+
+  /// No description provided for @builderReleaseAfterGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'After marking is done and grades are published'**
+  String get builderReleaseAfterGrading;
+
+  /// No description provided for @builderReleaseManual.
+  ///
+  /// In en, this message translates to:
+  /// **'When I release them'**
+  String get builderReleaseManual;
+
+  /// No description provided for @builderReleaseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers are never shown while any student can still attempt it.'**
+  String get builderReleaseNote;
+
+  /// No description provided for @builderMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material for the whole assessment'**
+  String get builderMaterial;
+
+  /// No description provided for @builderPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview as a student'**
+  String get builderPreview;
+
+  /// No description provided for @builderSaveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save draft'**
+  String get builderSaveDraft;
+
+  /// No description provided for @builderPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get builderPublish;
+
+  /// No description provided for @builderSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved.'**
+  String get builderSaved;
+
+  /// No description provided for @builderPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published to the class.'**
+  String get builderPublished;
+
+  /// No description provided for @builderSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Check the questions and try again.'**
+  String get builderSaveFailed;
+
+  /// No description provided for @builderLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'A student has already submitted, so the questions can no longer change. Settings still can.'**
+  String get builderLocked;
+
+  /// No description provided for @builderNeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it a title.'**
+  String get builderNeedTitle;
+
+  /// No description provided for @builderNeedClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a class.'**
+  String get builderNeedClass;
+
+  /// No description provided for @builderNeedQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one question.'**
+  String get builderNeedQuestion;
+
+  /// No description provided for @builderNeedClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Set when it closes.'**
+  String get builderNeedClose;
+
+  /// No description provided for @builderCloseAfterOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'It must close after it opens.'**
+  String get builderCloseAfterOpen;
+
+  /// No description provided for @builderProblemPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: write the question.'**
+  String builderProblemPrompt(int number);
+
+  /// No description provided for @builderProblemPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: give it points.'**
+  String builderProblemPoints(int number);
+
+  /// No description provided for @builderProblemOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: add at least two filled-in options.'**
+  String builderProblemOptions(int number);
+
+  /// No description provided for @builderProblemCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: mark the correct answer.'**
+  String builderProblemCorrect(int number);
+
+  /// No description provided for @builderProblemTrueFalse.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: choose true or false as the answer.'**
+  String builderProblemTrueFalse(int number);
+
+  /// No description provided for @builderProblemFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: wait for its files to upload.'**
+  String builderProblemFiles(int number);
+
+  /// No description provided for @builderOnlineChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered online'**
+  String get builderOnlineChoice;
+
+  /// No description provided for @builderOnlineChoiceDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Students answer in the app; choice questions are marked for you.'**
+  String get builderOnlineChoiceDetail;
+
+  /// No description provided for @builderPaperChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'On paper'**
+  String get builderPaperChoice;
+
+  /// No description provided for @builderPaperChoiceDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Students sit it in class; you enter the marks.'**
+  String get builderPaperChoiceDetail;
+
+  /// No description provided for @takeOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens {time}'**
+  String takeOpens(String time);
+
+  /// No description provided for @takeCloses.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes {time}'**
+  String takeCloses(String time);
+
+  /// No description provided for @takeClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get takeClosed;
+
+  /// No description provided for @takeNotOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Not open yet'**
+  String get takeNotOpen;
+
+  /// No description provided for @takeAttemptsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No attempts left} =1{1 attempt left} other{{count} attempts left}}'**
+  String takeAttemptsLeft(int count);
+
+  /// No description provided for @takeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get takeStart;
+
+  /// No description provided for @takeAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get takeAgain;
+
+  /// No description provided for @takeSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit answers'**
+  String get takeSubmit;
+
+  /// No description provided for @takeSubmitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit your answers?'**
+  String get takeSubmitTitle;
+
+  /// No description provided for @takeSubmitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t change them after submitting.'**
+  String get takeSubmitBody;
+
+  /// No description provided for @takeLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave without submitting?'**
+  String get takeLeaveTitle;
+
+  /// No description provided for @takeLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answers will not be kept.'**
+  String get takeLeaveBody;
+
+  /// No description provided for @takeLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get takeLeave;
+
+  /// No description provided for @takeStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay'**
+  String get takeStay;
+
+  /// No description provided for @takeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Answer the required question that is left.} other{Answer the {count} required questions that are left.}}'**
+  String takeMissing(int count);
+
+  /// No description provided for @takeSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted. Your teacher will release the results.'**
+  String get takeSubmitted;
+
+  /// No description provided for @takeSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answers were not sent. Check your connection and try again.'**
+  String get takeSubmitFailed;
+
+  /// No description provided for @takeWindowClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This has closed, so it can\'t be submitted.'**
+  String get takeWindowClosed;
+
+  /// No description provided for @takeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get takeRequired;
+
+  /// No description provided for @takeOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get takeOptional;
+
+  /// No description provided for @takeTypeAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get takeTypeAnswer;
+
+  /// No description provided for @takeChooseOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one'**
+  String get takeChooseOne;
+
+  /// No description provided for @takeChooseAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose all that apply'**
+  String get takeChooseAll;
+
+  /// No description provided for @takePoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 point} other{{count} points}}'**
+  String takePoints(num count);
+
+  /// No description provided for @takeYourAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Your attempts'**
+  String get takeYourAttempts;
+
+  /// No description provided for @takeAttemptLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempt {number} · {time}'**
+  String takeAttemptLine(int number, String time);
+
+  /// No description provided for @takeNotReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers will appear here once your teacher releases them.'**
+  String get takeNotReleased;
+
+  /// No description provided for @takeGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get takeGrade;
+
+  /// No description provided for @takeGradePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Not published yet'**
+  String get takeGradePending;
+
+  /// No description provided for @takeFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher\'s feedback'**
+  String get takeFeedback;
+
+  /// No description provided for @takeAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers'**
+  String get takeAnswers;
+
+  /// No description provided for @takeYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get takeYourAnswer;
+
+  /// No description provided for @takeCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get takeCorrectAnswer;
+
+  /// No description provided for @takeAcceptedAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted answers'**
+  String get takeAcceptedAnswers;
+
+  /// No description provided for @takeNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer'**
+  String get takeNoAnswer;
+
+  /// No description provided for @takeBeingMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Being marked'**
+  String get takeBeingMarked;
+
+  /// No description provided for @takeScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of {max}'**
+  String takeScore(String score, String max);
+
+  /// No description provided for @takeLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This could not load.'**
+  String get takeLoadFailed;
+
+  /// No description provided for @takeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get takeRetry;
+
+  /// No description provided for @takeReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'You can see your child\'s results here. Only they can sit it.'**
+  String get takeReadOnly;
+
+  /// No description provided for @takeOpenAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get takeOpenAssessment;
+
+  /// No description provided for @markSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions'**
+  String get markSubmissions;
+
+  /// No description provided for @markNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No one has submitted yet.'**
+  String get markNone;
+
+  /// No description provided for @markNeeds.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs marking'**
+  String get markNeeds;
+
+  /// No description provided for @markDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked: {score} of {max}'**
+  String markDone(String score, String max);
+
+  /// No description provided for @markAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked automatically'**
+  String get markAuto;
+
+  /// No description provided for @markScoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Score (out of {max})'**
+  String markScoreLabel(String max);
+
+  /// No description provided for @markAnswerFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment on this answer'**
+  String get markAnswerFeedback;
+
+  /// No description provided for @markOverallFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback for the student'**
+  String get markOverallFeedback;
+
+  /// No description provided for @markSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save marks'**
+  String get markSave;
+
+  /// No description provided for @markSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks saved.'**
+  String get markSaved;
+
+  /// No description provided for @markSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks were not saved. Check each score and try again.'**
+  String get markSaveFailed;
+
+  /// No description provided for @markScoreInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a score from 0 to {max}.'**
+  String markScoreInvalid(String max);
+
+  /// No description provided for @markPublishGrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish grades'**
+  String get markPublishGrades;
+
+  /// No description provided for @markPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 grade published.} other{{count} grades published.}}'**
+  String markPublished(int count);
+
+  /// No description provided for @markNothingToPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is ready to publish yet.'**
+  String get markNothingToPublish;
+
+  /// No description provided for @markReleaseNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Release answers now'**
+  String get markReleaseNow;
+
+  /// No description provided for @markReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers released.'**
+  String get markReleased;
+
+  /// No description provided for @markReleaseRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers can only be released once it has closed for everyone.'**
+  String get markReleaseRefused;
+
+  /// No description provided for @markEditQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit questions and settings'**
+  String get markEditQuestions;
+
+  /// No description provided for @markGrantAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'More time or attempts'**
+  String get markGrantAccess;
+
+  /// No description provided for @markGrantStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get markGrantStudent;
+
+  /// No description provided for @markGrantUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Open for them until'**
+  String get markGrantUntil;
+
+  /// No description provided for @markGrantExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra attempts'**
+  String get markGrantExtra;
+
+  /// No description provided for @markGrantGive.
+  ///
+  /// In en, this message translates to:
+  /// **'Give'**
+  String get markGrantGive;
+
+  /// No description provided for @markGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Done.'**
+  String get markGranted;
+
+  /// No description provided for @markGrantFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That could not be given.'**
+  String get markGrantFailed;
+
+  /// No description provided for @markAnswersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 submission} other{{count} submissions}}'**
+  String markAnswersCount(int count);
+
+  /// No description provided for @markOpenSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions and marking'**
+  String get markOpenSubmissions;
+
+  /// No description provided for @paperShared.
+  ///
+  /// In en, this message translates to:
+  /// **'For the whole class'**
+  String get paperShared;
+
+  /// No description provided for @paperSharedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The question paper, a mark scheme or general feedback. Each student sees these once their own mark is published.'**
+  String get paperSharedHint;
+
+  /// No description provided for @paperForStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'For {name}'**
+  String paperForStudent(String name);
+
+  /// No description provided for @paperForStudentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only this student and their parents see these, once the mark is published.'**
+  String get paperForStudentHint;
+
+  /// No description provided for @paperAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get paperAttachments;
+
+  /// No description provided for @paperAttachmentsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments saved.'**
+  String get paperAttachmentsSaved;
+
+  /// No description provided for @paperAttachmentsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments were not saved.'**
+  String get paperAttachmentsFailed;
+
+  /// No description provided for @paperSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get paperSave;
+
+  /// No description provided for @gradeYourFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Your files'**
+  String get gradeYourFiles;
+
+  /// No description provided for @gradeClassFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'For the class'**
+  String get gradeClassFiles;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -198,7 +198,7 @@ void main() {
     expect(find.textContaining('Up to 1'), findsOneWidget);
   });
 
-  testWidgets('a teacher files a note and publishes its attachment', (
+  testWidgets('a teacher files a note with its attachment', (
     tester,
   ) async {
     // Tall enough that the whole lesson form is built.
@@ -206,11 +206,12 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final uploads = _Uploads();
+    final academic = _StubAcademic();
     await tester.pumpWidget(
       localizedApp(
         // Lessons are filed from the "+" menu, which opens this form.
         home: CreateLessonPage(
-          repository: _StubAcademic(),
+          repository: academic,
           classes: const [ClassOption(id: 'class-1', name: 'Biology')],
           initialClassroomId: 'class-1',
           schoolId: 'school-1',
@@ -236,7 +237,9 @@ void main() {
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add lesson'));
     await tester.tap(find.widgetWithText(FilledButton, 'Add lesson'));
     await tester.pumpAndSettle();
-    expect(uploads.published, ['file-1']);
+    // The file is the lesson's own, bound with it in one request.
+    expect(academic.created.single.attachmentFileIds, ['file-1']);
+    expect(uploads.published, isEmpty);
   });
   testWidgets('a student hands work in with an attachment', (tester) async {
     final uploads = _Uploads();
@@ -314,8 +317,11 @@ class _StubAcademic implements AcademicRepository {
     String? studentId,
   }) async => const [];
 
+  final created = <TextResourceDraft>[];
+
   @override
-  Future<void> createResource(TextResourceDraft draft) async {}
+  Future<void> createResource(TextResourceDraft draft) async =>
+      created.add(draft);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
