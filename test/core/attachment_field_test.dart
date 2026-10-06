@@ -104,6 +104,29 @@ void main() {
     expect(find.text('Ready'), findsOneWidget);
   });
 
+  testWidgets('no two attachment boxes ever send the same upload id', (
+    tester,
+  ) async {
+    // The id is the upload's idempotency key, and the server remembers
+    // keys: one that repeats across boxes refused every later photo (409).
+    final uploads = _Uploads();
+    await tester.pumpWidget(field(uploads, picked: _picked()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+
+    // A new box, as in the next chat or a reopened screen.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(field(uploads, picked: _picked()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+
+    final ids = [for (final command in uploads.commands) command.attemptId];
+    expect(ids, hasLength(2));
+    expect(ids.toSet(), hasLength(2));
+  });
+
   testWidgets('a quarantined file is attached but not yet ready', (
     tester,
   ) async {
