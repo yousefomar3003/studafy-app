@@ -2912,7 +2912,7 @@
   "builderCategoryAssessment": "Assessment",
   "builderQuestions": "Questions",
   "builderAddQuestion": "Add question",
-  "builderTotal": "Total: {points} points",
+  "builderTotal": "Total points: {points}",
   "@builderTotal": {"placeholders": {"points": {"type": "String"}}},
   "builderQuestionNumber": "Question {number}",
   "@builderQuestionNumber": {"placeholders": {"number": {"type": "int"}}},
@@ -3069,6 +3069,7 @@
   "paperAttachments": "Attachments",
   "paperAttachmentsSaved": "Attachments saved.",
   "paperAttachmentsFailed": "Attachments were not saved.",
+  "paperAttachmentsSaveFirst": "Save the marks first, then change attachments.",
   "paperSave": "Save",
   "gradeYourFiles": "Your files",
   "gradeClassFiles": "For the class"

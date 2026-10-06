@@ -28,6 +28,7 @@ import '../features/study_assistant/domain/study_assistant_repository.dart';
 import '../features/study_assistant/presentation/study_assistant_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
+import 'assessment_navigation.dart';
 import 'student_lessons_page.dart';
 import 'student_today_page.dart';
 import 'study_reference_picker.dart';
@@ -271,6 +272,8 @@ class _StudentShellState extends State<StudentShell> {
           AcademicFeed.wellbeing,
         ],
         loadClassChoices: widget.classes == null ? null : _classChoices,
+        onOpenAssessment: (id, title, _) =>
+            openAssessmentForLearner(context, repository, id, title),
         // Only published work can be handed in; a draft is not the
         // student's to see as open.
         onOpenRecord: (record) async {
@@ -285,7 +288,7 @@ class _StudentShellState extends State<StudentShell> {
                 deadline: record.deadline,
                 instructions: record.detail,
                 material: record.attachments,
-          links: record.links,
+                links: record.links,
                 uploads: widget.fileUploads,
                 schoolId: ActiveContextController.instance.membership?.schoolId,
                 studentId: studentId,

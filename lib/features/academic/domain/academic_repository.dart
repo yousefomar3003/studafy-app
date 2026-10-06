@@ -39,6 +39,7 @@ class AcademicRecord {
     this.feedback,
     this.assessmentId,
     this.resourceType,
+    this.online,
   });
 
   /// A separate instance with the same values - so the same assignment,
@@ -67,6 +68,7 @@ class AcademicRecord {
     feedback: feedback,
     assessmentId: assessmentId,
     resourceType: resourceType,
+    online: online,
   );
   final String id;
   final String title;
@@ -127,6 +129,9 @@ class AcademicRecord {
   /// Lessons only: 'file' for a lesson that is one file (replaced whole),
   /// otherwise notes with any number of files and links.
   final String? resourceType;
+
+  /// Assessments only: its window, attempts and release, for an online one.
+  final OnlineAssessment? online;
 }
 
 /// How a student did on marked work. Absent and not graded carry no score

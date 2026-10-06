@@ -213,25 +213,28 @@ void main() {
       expect(controller.resolvedLocale, const Locale('ar'));
     });
 
-    test('retries once signed in on the next launch after a failed publish', () async {
-      final settings = InMemoryDeviceSettings();
-      final failing = build(
-        settings: settings,
-        publish: (_) async => throw Exception('offline'),
-      );
-      await failing.restore();
-      await failing.setLocale(const Locale('ar'));
+    test(
+      'retries once signed in on the next launch after a failed publish',
+      () async {
+        final settings = InMemoryDeviceSettings();
+        final failing = build(
+          settings: settings,
+          publish: (_) async => throw Exception('offline'),
+        );
+        await failing.restore();
+        await failing.setLocale(const Locale('ar'));
 
-      final published = <String>[];
-      final next = build(
-        settings: settings,
-        publish: (code) async => published.add(code),
-      );
-      await next.restore();
-      await next.republishIfPending();
+        final published = <String>[];
+        final next = build(
+          settings: settings,
+          publish: (code) async => published.add(code),
+        );
+        await next.restore();
+        await next.republishIfPending();
 
-      expect(published, ['ar']);
-    });
+        expect(published, ['ar']);
+      },
+    );
 
     test('does not republish a locale the server already has', () async {
       final settings = InMemoryDeviceSettings();

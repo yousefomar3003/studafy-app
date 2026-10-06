@@ -224,13 +224,16 @@ void main() {
       expect(await transport.get('/v1/classrooms'), {'n': 2});
     });
 
-    test('a read on its way while a change is sent is not remembered', () async {
-      final before = transport.get('/v1/classrooms');
-      final change = transport.post('/v1/classrooms', {'name': '7B'});
-      await Future.wait([before, change]);
-      await transport.get('/v1/classrooms');
-      expect(calls, 3);
-    });
+    test(
+      'a read on its way while a change is sent is not remembered',
+      () async {
+        final before = transport.get('/v1/classrooms');
+        final change = transport.post('/v1/classrooms', {'name': '7B'});
+        await Future.wait([before, change]);
+        await transport.get('/v1/classrooms');
+        expect(calls, 3);
+      },
+    );
 
     test('a chat polled for new messages always asks the server', () async {
       await transport.get('/v1/conversations/c1/messages');

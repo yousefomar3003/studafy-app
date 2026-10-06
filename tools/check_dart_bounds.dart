@@ -87,6 +87,10 @@ const _coreAllowlist = <String>[
   // the attachment picker above.
   // Links a teacher adds to what they post, and how a reader opens them.
   'core/content_links.dart',
+  // The files and titled links on coursework (ADR-0036): the models and the
+  // one view and editor every lesson, assignment, question and grade uses.
+  'core/coursework_models.dart',
+  'core/coursework_attachments.dart',
   'core/voice_note.dart',
   'core/platform_voice_notes.dart',
 ];

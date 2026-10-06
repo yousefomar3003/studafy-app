@@ -131,6 +131,8 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
             ? PaperGradebookPage(
                 repository: widget.repository,
                 assessmentId: item.id,
+                attachments: widget.repository,
+                classroomId: selected.id,
               )
             : ClassGradebookPage(
                 repository: widget.repository,
@@ -179,6 +181,8 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
           builder: (_) => PaperGradebookPage(
             repository: widget.repository,
             assessmentId: id,
+            attachments: widget.repository,
+            classroomId: selected.id,
           ),
         ),
       );

@@ -235,6 +235,8 @@ class _ClassGradebookPageState extends State<ClassGradebookPage> {
         builder: (_) => PaperGradebookPage(
           repository: widget.repository,
           assessmentId: assessmentId,
+          attachments: widget.repository,
+          classroomId: widget.classroomId,
         ),
       ),
     );

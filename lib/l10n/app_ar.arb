@@ -1632,6 +1632,7 @@
   "paperAttachments": "المرفقات",
   "paperAttachmentsSaved": "تم حفظ المرفقات.",
   "paperAttachmentsFailed": "لم تُحفظ المرفقات.",
+  "paperAttachmentsSaveFirst": "احفظ الدرجات أولًا، ثم عدّل المرفقات.",
   "paperSave": "حفظ",
   "gradeYourFiles": "ملفاتك",
   "gradeClassFiles": "للصف"

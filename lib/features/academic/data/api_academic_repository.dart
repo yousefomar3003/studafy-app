@@ -114,6 +114,7 @@ class ApiAcademicRepository implements AcademicRepository {
               delivery: x.delivery,
               date: _when(x.publishedAt),
               links: contentLinksFrom(x.links),
+              online: x.delivery == 'paper' ? null : onlineAssessmentFrom(x),
             ),
         ];
       case AcademicFeed.grades:

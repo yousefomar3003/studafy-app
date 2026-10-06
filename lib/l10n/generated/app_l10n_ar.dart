@@ -5791,6 +5791,10 @@ class AppL10nAr extends AppL10n {
   String get paperAttachmentsFailed => 'لم تُحفظ المرفقات.';
 
   @override
+  String get paperAttachmentsSaveFirst =>
+      'احفظ الدرجات أولًا، ثم عدّل المرفقات.';
+
+  @override
   String get paperSave => 'حفظ';
 
   @override

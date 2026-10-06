@@ -176,9 +176,7 @@ void main() {
     expect(uploads.downloaded, isEmpty);
   });
 
-  testWidgets("someone else's note still waits for the check", (
-    tester,
-  ) async {
+  testWidgets("someone else's note still waits for the check", (tester) async {
     await open(
       tester,
       history: [

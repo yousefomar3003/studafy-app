@@ -198,9 +198,7 @@ void main() {
     expect(find.textContaining('Up to 1'), findsOneWidget);
   });
 
-  testWidgets('a teacher files a note with its attachment', (
-    tester,
-  ) async {
+  testWidgets('a teacher files a note with its attachment', (tester) async {
     // Tall enough that the whole lesson form is built.
     tester.view.physicalSize = const Size(1200, 2600);
     tester.view.devicePixelRatio = 1;

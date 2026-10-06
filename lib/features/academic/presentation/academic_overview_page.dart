@@ -39,6 +39,7 @@ class AcademicOverviewPage extends StatefulWidget {
     this.students = const [],
     this.onStudentChanged,
     this.onOpenStudentRecord,
+    this.onOpenAssessment,
   });
 
   final AcademicRepository repository;
@@ -74,6 +75,17 @@ class AcademicOverviewPage extends StatefulWidget {
   /// Opens one assignment row. A student taps one to hand work in; the other
   /// feeds never call it, since every handler expects an assignment.
   final void Function(AcademicRecord record)? onOpenRecord;
+
+  /// Opens an online assessment (ADR-0036): to sit it and see results, or -
+  /// for a teacher - to mark it. Given the assessment's id and title, and
+  /// in the combined view whose row it is. Also opened from a grade for
+  /// online work.
+  final void Function(
+    String assessmentId,
+    String title,
+    StudentChoice? student,
+  )?
+  onOpenAssessment;
   final AcademicFeed initialFeed;
 
   /// A row of controls supplied by the host shell, under the title.
@@ -638,8 +650,17 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     // for a teacher - so a grade or an assessment tapped here used to open
     // "hand in work" with an id that is not an assignment's.
     final onOpenStudent = widget.onOpenStudentRecord;
+    final openAssessment = widget.onOpenAssessment;
+    final assessmentId = switch (feed) {
+      AcademicFeed.assessments when item.delivery != 'paper' => item.id,
+      AcademicFeed.grades when item.delivery == 'online' => item.assessmentId,
+      _ => null,
+    };
     final void Function(AcademicRecord)? onOpen =
-        feed != AcademicFeed.assignments
+        assessmentId != null && openAssessment != null
+        ? (record) =>
+              openAssessment(assessmentId, record.title, _owners[record])
+        : feed != AcademicFeed.assignments
         ? null
         : onOpenStudent != null
         ? (record) => onOpenStudent(record, _owners[record])
@@ -762,6 +783,35 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     LinkedText(item.detail),
                   if (grades && paper)
                     Text(l10n.paperGradesPaperLabel, style: labelStyle),
+                  // A published grade's feedback and attachments: the
+                  // student's own, and the class's shared ones.
+                  if (grades && (item.feedback ?? '').trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: UserContentText(item.feedback!),
+                    ),
+                  if (grades &&
+                      (item.attachments.isNotEmpty ||
+                          item.links.isNotEmpty)) ...[
+                    Text(l10n.gradeYourFiles, style: labelStyle),
+                    AttachmentsView(
+                      attachments: item.attachments,
+                      links: item.links,
+                      uploads: widget.uploads,
+                      dense: true,
+                    ),
+                  ],
+                  if (grades &&
+                      (item.sharedAttachments.isNotEmpty ||
+                          item.sharedLinks.isNotEmpty)) ...[
+                    Text(l10n.gradeClassFiles, style: labelStyle),
+                    AttachmentsView(
+                      attachments: item.sharedAttachments,
+                      links: item.sharedLinks,
+                      uploads: widget.uploads,
+                      dense: true,
+                    ),
+                  ],
                   if (!attendance && item.date != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
@@ -813,13 +863,15 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                       style: labelStyle,
                     ),
                   // The teacher's material, openable from the list itself -
-                  // the only place graded work is shown.
-                  AttachmentsView(
-                    attachments: item.attachments,
-                    links: item.links,
-                    uploads: widget.uploads,
-                    dense: true,
-                  ),
+                  // the only place graded work is shown. A grade's own
+                  // attachments are shown with its feedback, above.
+                  if (!grades)
+                    AttachmentsView(
+                      attachments: item.attachments,
+                      links: item.links,
+                      uploads: widget.uploads,
+                      dense: true,
+                    ),
                   if (pill != null || className != null || owner != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),

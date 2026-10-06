@@ -32,6 +32,7 @@ import '../l10n/generated/app_l10n.dart';
 import 'account/account_switching.dart';
 import 'account/managed_children_section.dart';
 import 'account_hub_page.dart';
+import 'assessment_navigation.dart';
 
 /// The parent's app: their children's day, schoolwork, Family+ insights,
 /// announcements and messages. Composed here because it draws on several
@@ -308,6 +309,15 @@ class _ParentShellState extends State<ParentShell> {
             AcademicFeed.attendance,
           ],
           onOpenStudentRecord: _handIn,
+          // Read-only: a parent sees the child's results, never sits it.
+          onOpenAssessment: (id, title, student) => openAssessmentForLearner(
+            context,
+            widget.academic,
+            id,
+            title,
+            studentId: student?.id ?? selected?.id,
+            childName: student?.name ?? selected?.displayName,
+          ),
         ),
       if (widget.insights != null)
         _InsightsTab(

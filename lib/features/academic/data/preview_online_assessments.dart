@@ -44,6 +44,7 @@ class PreviewOnlineAssessments implements OnlineAssessmentRepository {
         version: 1,
         classroomId: draft.classroomId,
         delivery: 'online',
+        online: assessment,
       ),
     );
     return assessment;

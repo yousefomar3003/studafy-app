@@ -19,6 +19,7 @@ import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
+import 'assessment_navigation.dart';
 import 'teacher_create_actions.dart';
 import 'teacher_today_page.dart';
 
@@ -67,6 +68,14 @@ class _TeacherShellState extends State<TeacherShell> {
           ],
           uploads: widget.dependencies.fileUploads,
           schoolId: ActiveContextController.instance.membership?.schoolId,
+          onOpenAssessment: (id, title, _) => openAssessmentForTeacher(
+            context,
+            academic,
+            id,
+            title,
+            classroomId: classroom.id.value,
+            uploads: widget.dependencies.fileUploads,
+          ),
           // Tapping a piece of work shows who has handed it in. Students
           // can submit now, so without this the loop has no other end.
           onOpenRecord: (record) => Navigator.of(context).pushOnce(
@@ -279,6 +288,13 @@ class _TeacherShellState extends State<TeacherShell> {
         // Tapping a piece of work opens what the class handed in. Without
         // this the Teaching tab listed assignments that led nowhere.
         onOpenRecord: _openSubmissions,
+        onOpenAssessment: (id, title, _) => openAssessmentForTeacher(
+          context,
+          widget.dependencies.academic,
+          id,
+          title,
+          uploads: widget.dependencies.fileUploads,
+        ),
       ),
       GradebookHomePage(
         repository: widget.dependencies.academic,

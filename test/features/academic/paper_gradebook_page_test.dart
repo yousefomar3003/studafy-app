@@ -17,6 +17,7 @@ class _SheetFake implements AcademicRepository {
   final publishes = <int>[];
   final corrections = <(String, List<GradeCorrection>)>[];
   CourseworkRefusal? refuseSave;
+  final attachmentSaves = <(String?, AttachmentChanges)>[];
 
   @override
   Future<PaperGradebook> paperGradebook(String assessmentId) async => sheet;
@@ -60,6 +61,16 @@ class _SheetFake implements AcademicRepository {
   ];
 
   @override
+  Future<GradeAttachments> updateGradeAttachments(
+    String assessmentId,
+    AttachmentChanges changes, {
+    String? studentId,
+  }) async {
+    attachmentSaves.add((studentId, changes));
+    return const GradeAttachments();
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('${invocation.memberName} is not faked');
 }
@@ -87,10 +98,32 @@ PaperGradebook _unmarkedSheet() => PaperGradebook(
   ],
 );
 
-Widget _page(_SheetFake fake, {Locale? locale}) => localizedApp(
-  locale: locale,
-  home: PaperGradebookPage(repository: fake, assessmentId: 'exam-1'),
-);
+Widget _page(_SheetFake fake, {Locale? locale, bool files = false}) =>
+    localizedApp(
+      locale: locale,
+      home: PaperGradebookPage(
+        repository: fake,
+        assessmentId: 'exam-1',
+        attachments: files ? fake : null,
+        classroomId: files ? 'class-1' : null,
+      ),
+    );
+
+/// Adds a titled link in the attachments sheet that is open.
+Future<void> _addLink(WidgetTester tester, String title, String url) async {
+  await tester.tap(find.text('Add link').first);
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find.widgetWithText(TextField, 'Address (https://…)'),
+    url,
+  );
+  await tester.enterText(
+    find.widgetWithText(TextField, 'Title readers see'),
+    title,
+  );
+  await tester.tap(find.widgetWithText(FilledButton, 'Add link'));
+  await tester.pumpAndSettle();
+}
 
 void _tall(WidgetTester tester) {
   tester.view.physicalSize = const Size(1200, 2600);
@@ -312,5 +345,67 @@ void main() {
       Directionality.of(tester.element(find.text('حفظ كمسودة'))),
       TextDirection.rtl,
     );
+  });
+
+  testWidgets('files for the class and for one student are saved apart', (
+    tester,
+  ) async {
+    _tall(tester);
+    final fake = _SheetFake(_unmarkedSheet());
+    await tester.pumpWidget(_page(fake, files: true));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('For the whole class'));
+    await tester.pumpAndSettle();
+    await _addLink(tester, 'Mark scheme', 'https://example.com/scheme');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final (shared, sharedChanges) = fake.attachmentSaves.single;
+    expect(shared, isNull);
+    expect(sharedChanges.addLinks.single.title, 'Mark scheme');
+    expect(find.text('Attachments saved.'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Attachments').first);
+    await tester.pumpAndSettle();
+    expect(find.text('For Amal'), findsOneWidget);
+    await _addLink(tester, 'Marked sheet', 'https://example.com/amal');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final (student, changes) = fake.attachmentSaves.last;
+    expect(student, 's1');
+    expect(changes.addLinks.single.url, 'https://example.com/amal');
+  });
+
+  testWidgets('unsaved marks are saved before attachments change', (
+    tester,
+  ) async {
+    _tall(tester);
+    final fake = _SheetFake(_unmarkedSheet());
+    await tester.pumpWidget(_page(fake, files: true));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, '12');
+    await tester.pump();
+    await tester.tap(find.text('For the whole class'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Save the marks first, then change attachments.'),
+      findsOne,
+    );
+    expect(find.text('Add link'), findsNothing);
+  });
+
+  testWidgets('without a way to save files, the sheet has marks only', (
+    tester,
+  ) async {
+    _tall(tester);
+    await tester.pumpWidget(_page(_SheetFake(_unmarkedSheet())));
+    await tester.pumpAndSettle();
+
+    expect(find.text('For the whole class'), findsNothing);
+    expect(find.byTooltip('Attachments'), findsNothing);
   });
 }

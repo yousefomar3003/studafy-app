@@ -5300,7 +5300,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String builderTotal(String points) {
-    return 'Total: $points points';
+    return 'Total points: $points';
   }
 
   @override
@@ -5792,6 +5792,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get paperAttachmentsFailed => 'Attachments were not saved.';
+
+  @override
+  String get paperAttachmentsSaveFirst =>
+      'Save the marks first, then change attachments.';
 
   @override
   String get paperSave => 'Save';

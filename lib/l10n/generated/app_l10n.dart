@@ -9096,7 +9096,7 @@ abstract class AppL10n {
   /// No description provided for @builderTotal.
   ///
   /// In en, this message translates to:
-  /// **'Total: {points} points'**
+  /// **'Total points: {points}'**
   String builderTotal(String points);
 
   /// No description provided for @builderQuestionNumber.
@@ -9902,6 +9902,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Attachments were not saved.'**
   String get paperAttachmentsFailed;
+
+  /// No description provided for @paperAttachmentsSaveFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the marks first, then change attachments.'**
+  String get paperAttachmentsSaveFirst;
 
   /// No description provided for @paperSave.
   ///
