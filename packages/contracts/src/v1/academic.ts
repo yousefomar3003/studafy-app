@@ -13,6 +13,27 @@ const GradeWeight = z.number().min(0).max(100);
 export const V1GradeMark = z.enum(["scored", "absent", "not_graded"]);
 export type V1GradeMark = z.infer<typeof V1GradeMark>;
 
+/// A titled link a teacher put on a lesson, work, a question or a grade.
+/// Only https with a real host; the reader is shown where it goes.
+export const V1ContentLink = z.strictObject({
+  id: Id,
+  title: z.string().min(1).max(120),
+  url: z.string().url().max(2048),
+});
+export type V1ContentLink = z.infer<typeof V1ContentLink>;
+
+/// A link to add. The server checks it again: https, a host, no
+/// credentials.
+export const V1ContentLinkDraft = z.strictObject({
+  title: z.string().trim().min(1).max(120),
+  url: z.string().trim().url().max(2048).regex(/^https:\/\//),
+});
+export type V1ContentLinkDraft = z.infer<typeof V1ContentLinkDraft>;
+
+const contentLinks = (max: number) =>
+  z.array(V1ContentLinkDraft).max(max).optional();
+const removedIds = (max: number) => z.array(Id).max(max).optional();
+
 /// More time one student was given for one piece of work.
 export const V1AssignmentExtensionSummary = z.strictObject({
   id: Id,
@@ -200,7 +221,9 @@ export const V1Resource = z.strictObject({
    * download. A replaced file is not listed: only the school's staff can
    * still open it.
    */
-  attachments: z.array(V1FileAttachment).max(1).optional(),
+  attachments: z.array(V1FileAttachment).max(11).optional(),
+  /// Titled links on the lesson.
+  links: z.array(V1ContentLink).max(10).optional(),
 });
 export type V1Resource = z.infer<typeof V1Resource>;
 
@@ -223,6 +246,10 @@ export const V1CreateResourceRequest = z.strictObject({
    * the lesson are tied together.
    */
   lessonSessionId: Id.optional(),
+  /// Uploads of purpose `lesson_resource`, started for this class: the
+  /// lesson's files, bound in the same transaction.
+  attachmentFileIds: z.array(Id).max(10).optional(),
+  links: contentLinks(10),
 });
 export type V1CreateResourceRequest = z.infer<typeof V1CreateResourceRequest>;
 
@@ -290,6 +317,8 @@ export const V1Assignment = z.strictObject({
   extension: V1AssignmentExtensionSummary.nullable().optional(),
   /** When the work was set for the class; null while it is a draft. */
   publishedAt: Timestamp.nullable().optional(),
+  /** Titled links the teacher put on the work. */
+  links: z.array(V1ContentLink).max(10).optional(),
 });
 export type V1Assignment = z.infer<typeof V1Assignment>;
 
@@ -317,6 +346,7 @@ export const V1CreateAssignmentRequest = z.strictObject({
    * the work is not created either.
    */
   attachmentFileIds: attachmentFileIds(),
+  links: contentLinks(10),
 });
 export type V1CreateAssignmentRequest = z.infer<
   typeof V1CreateAssignmentRequest
@@ -402,30 +432,95 @@ export const V1SubmissionHistory = z.strictObject({
 });
 export type V1SubmissionHistory = z.infer<typeof V1SubmissionHistory>;
 
+/// What a question asks for. Choice, true/false and short answers with
+/// accepted answers are marked automatically; essays, and short answers
+/// without any, by the teacher.
+export const V1QuestionKind = z.enum([
+  "single_choice",
+  "multiple_choice",
+  "true_false",
+  "short_answer",
+  "essay",
+]);
+export type V1QuestionKind = z.infer<typeof V1QuestionKind>;
+
+export const V1QuestionOption = z.strictObject({
+  id: z.string().min(1).max(40),
+  text: z.string().min(1).max(1000),
+});
+export type V1QuestionOption = z.infer<typeof V1QuestionOption>;
+
+/// A question as a student sees it: no key, no model answer, no guidance.
 export const V1AssessmentQuestion = z.strictObject({
   id: Id,
   position: z.number().int().positive(),
   prompt: z.string().min(1),
   maximumScore: z.number().positive(),
+  kind: V1QuestionKind.optional(),
+  required: z.boolean().optional(),
+  options: z.array(V1QuestionOption).max(10).optional(),
+  attachments: z.array(V1FileAttachment).max(5).optional(),
+  links: z.array(V1ContentLink).max(5).optional(),
 });
 export type V1AssessmentQuestion = z.infer<typeof V1AssessmentQuestion>;
 
+/// A question as its teacher writes it, or as a released review shows it.
+/// The correct answer is in the one field its kind uses: the right option
+/// ids, true or false, or the short answers accepted. None of these, the
+/// model answer or the guidance is ever sent to a student before release.
 export const V1AssessmentAuthoringQuestion = V1AssessmentQuestion.extend({
   preferredAnswer: z.string().nullable(),
+  correctOptionIds: z.array(z.string()).nullable().optional(),
+  correctChoice: z.boolean().nullable().optional(),
+  acceptedAnswers: z.array(z.string()).nullable().optional(),
+  markingGuidance: z.string().nullable().optional(),
 });
 export type V1AssessmentAuthoringQuestion = z.infer<
   typeof V1AssessmentAuthoringQuestion
 >;
 
 export const V1AssessmentQuestionDraft = z.strictObject({
+  /// Set when editing a question that already exists; it keeps its files.
+  id: Id.optional(),
   position: z.number().int().positive(),
   prompt: z.string().trim().min(1).max(10_000),
   preferredAnswer: z.string().max(30_000).nullable(),
-  maximumScore: z.number().positive(),
+  maximumScore: z.number().positive().max(1000),
+  kind: V1QuestionKind.optional(),
+  required: z.boolean().optional(),
+  options: z.array(V1QuestionOption).max(10).optional(),
+  /// Choice questions: the right option ids (exactly one for single choice).
+  correctOptionIds: z.array(z.string().min(1).max(40)).max(10).nullable()
+    .optional(),
+  /// True/false questions.
+  correctChoice: z.boolean().nullable().optional(),
+  /// Short answers accepted for automatic marking; none means the teacher
+  /// marks it.
+  acceptedAnswers: z.array(z.string().trim().min(1).max(500)).max(20).nullable()
+    .optional(),
+  markingGuidance: z.string().max(10_000).nullable().optional(),
+  /// Uploads of purpose `assignment_material` for this class.
+  attachmentFileIds: z.array(Id).max(5).optional(),
+  detachFileIds: removedIds(5),
+  links: contentLinks(5),
+  removeLinkIds: removedIds(5),
 });
 export type V1AssessmentQuestionDraft = z.infer<
   typeof V1AssessmentQuestionDraft
 >;
+
+/// When answers are shown to students and families. Never while anyone can
+/// still attempt: after_close (the default), after_grading (also every
+/// attempt marked and grades published), or manual.
+export const V1AnswerRelease = z.enum([
+  "after_close",
+  "after_grading",
+  "manual",
+]);
+export type V1AnswerRelease = z.infer<typeof V1AnswerRelease>;
+
+export const V1AttemptPolicy = z.enum(["best", "latest"]);
+export type V1AttemptPolicy = z.infer<typeof V1AttemptPolicy>;
 
 export const V1Assessment = z.strictObject({
   id: Id,
@@ -445,10 +540,19 @@ export const V1Assessment = z.strictObject({
    * none; every current read includes it.
    */
   attachments: z.array(V1FileAttachment).max(5).optional(),
+  links: z.array(V1ContentLink).max(10).optional(),
   /** How much this category counts, when the school weighs categories. */
   weight: GradeWeight.nullable().optional(),
   /** When the exam was published to the class; null while it is a draft. */
   publishedAt: Timestamp.nullable().optional(),
+  /** Online only: when students may start, and when it closes. */
+  opensAt: Timestamp.nullable().optional(),
+  closesAt: Timestamp.nullable().optional(),
+  maxAttempts: z.number().int().min(1).max(20).optional(),
+  attemptPolicy: V1AttemptPolicy.optional(),
+  answerRelease: V1AnswerRelease.optional(),
+  answersReleasedAt: Timestamp.nullable().optional(),
+  questionCount: z.number().int().min(0).optional(),
 });
 export type V1Assessment = z.infer<typeof V1Assessment>;
 
@@ -479,10 +583,57 @@ export const V1CreateAssessmentRequest = z.strictObject({
    * the work is not created either.
    */
   attachmentFileIds: attachmentFileIds(),
+  links: contentLinks(10),
+  opensAt: Timestamp.nullable().optional(),
+  closesAt: Timestamp.nullable().optional(),
+  maxAttempts: z.number().int().min(1).max(20).optional(),
+  attemptPolicy: V1AttemptPolicy.optional(),
+  answerRelease: V1AnswerRelease.optional(),
 });
 export type V1CreateAssessmentRequest = z.infer<
   typeof V1CreateAssessmentRequest
 >;
+
+/// The questions and settings of an online assessment. The questions only
+/// while nobody has attempted it; the window, attempts and release at any
+/// time. releaseAnswersNow releases by hand, and only once it has closed
+/// for everyone.
+export const V1UpdateAssessmentDesignRequest = z.strictObject({
+  expectedVersion: Version,
+  title: z.string().trim().min(1).max(200).optional(),
+  questions: z.array(V1AssessmentQuestionDraft).max(100).optional(),
+  opensAt: Timestamp.nullable().optional(),
+  closesAt: Timestamp.nullable().optional(),
+  maxAttempts: z.number().int().min(1).max(20).optional(),
+  attemptPolicy: V1AttemptPolicy.optional(),
+  answerRelease: V1AnswerRelease.optional(),
+  releaseAnswersNow: z.boolean().optional(),
+  attachmentFileIds: attachmentFileIds(),
+  detachFileIds: removedIds(5),
+  links: contentLinks(10),
+  removeLinkIds: removedIds(10),
+});
+export type V1UpdateAssessmentDesignRequest = z.infer<
+  typeof V1UpdateAssessmentDesignRequest
+>;
+
+/// More time, more attempts, or both, for one student.
+export const V1GrantAssessmentAccessRequest = z.strictObject({
+  studentId: Id,
+  closesAt: Timestamp.nullable(),
+  extraAttempts: z.number().int().min(0).max(20),
+  reason: z.string().trim().max(500).nullable().optional(),
+});
+export type V1GrantAssessmentAccessRequest = z.infer<
+  typeof V1GrantAssessmentAccessRequest
+>;
+
+export const V1AssessmentAccessGrant = z.strictObject({
+  studentId: Id,
+  closesAt: Timestamp.nullable(),
+  extraAttempts: z.number().int().min(0).max(20),
+});
+export type V1AssessmentAccessGrant = z.infer<typeof V1AssessmentAccessGrant>;
 
 export const V1AssessmentQuestionsResponse = z.strictObject({
   items: z.array(V1AssessmentQuestion),
@@ -500,9 +651,13 @@ export type V1AssessmentAuthoringQuestionsResponse = z.infer<
   typeof V1AssessmentAuthoringQuestionsResponse
 >;
 
+/// One answer: text for short answers and essays, the chosen option ids for
+/// choice questions, or true/false.
 export const V1AssessmentAnswer = z.strictObject({
   questionId: Id,
-  answerText: z.string().max(30_000),
+  answerText: z.string().max(30_000).optional(),
+  selectedOptionIds: z.array(z.string().min(1).max(40)).max(10).optional(),
+  choice: z.boolean().optional(),
 });
 export type V1AssessmentAnswer = z.infer<typeof V1AssessmentAnswer>;
 
@@ -513,19 +668,71 @@ export type V1SubmitAssessmentRequest = z.infer<
   typeof V1SubmitAssessmentRequest
 >;
 
+/// The confirmation of an attempt. Never a mark.
 export const V1AssessmentAttempt = z.strictObject({
   id: Id,
   assessmentId: Id,
   studentId: Id,
   submittedAt: Timestamp,
   version: Version,
+  attemptNumber: z.number().int().positive().nullable().optional(),
+  attemptsRemaining: z.number().int().min(0).optional(),
 });
 export type V1AssessmentAttempt = z.infer<typeof V1AssessmentAttempt>;
+
+/// One attempt in the teacher's marking list.
+export const V1AssessmentAttemptSummary = V1AssessmentAttempt.extend({
+  studentName: z.string(),
+  needsMarking: z.boolean(),
+  awardedScore: z.number().nullable(),
+});
+export type V1AssessmentAttemptSummary = z.infer<
+  typeof V1AssessmentAttemptSummary
+>;
+
 export const V1AssessmentAttemptPage = z.strictObject({
-  items: z.array(V1AssessmentAttempt),
+  items: z.array(V1AssessmentAttemptSummary),
   nextCursor: z.string().nullable(),
 });
 export type V1AssessmentAttemptPage = z.infer<typeof V1AssessmentAttemptPage>;
+
+/// One answer of an attempt, with its question and marks. For a student or
+/// parent, only ever sent once answers are released.
+export const V1AttemptAnswer = z.strictObject({
+  question: V1AssessmentAuthoringQuestion,
+  answerText: z.string().nullable(),
+  selectedOptionIds: z.array(z.string()).nullable(),
+  choice: z.boolean().nullable(),
+  autoScore: z.number().nullable(),
+  awardedScore: z.number().nullable(),
+  feedback: z.string().nullable(),
+});
+export type V1AttemptAnswer = z.infer<typeof V1AttemptAnswer>;
+
+/// An attempt in full. The marks and answers are present for the class's
+/// teachers, and for the student or a parent only once released.
+export const V1AssessmentAttemptDetail = V1AssessmentAttempt.extend({
+  needsMarking: z.boolean().optional(),
+  awardedScore: z.number().nullable().optional(),
+  feedback: z.string().nullable().optional(),
+  answers: z.array(V1AttemptAnswer).optional(),
+});
+export type V1AssessmentAttemptDetail = z.infer<
+  typeof V1AssessmentAttemptDetail
+>;
+
+export const V1MarkAssessmentAttemptRequest = z.strictObject({
+  marks: z.array(z.strictObject({
+    questionId: Id,
+    score: z.number().min(0).max(1000),
+    feedback: z.string().trim().max(5000).nullable().optional(),
+  })).max(100),
+  /// Feedback on the attempt as a whole.
+  feedback: z.string().trim().max(5000).nullable().optional(),
+});
+export type V1MarkAssessmentAttemptRequest = z.infer<
+  typeof V1MarkAssessmentAttemptRequest
+>;
 
 export const V1GradeResult = z.strictObject({
   id: Id,
@@ -552,8 +759,56 @@ export const V1GradeResult = z.strictObject({
   weight: GradeWeight.nullable().optional(),
   /// Set when the mark is for handed-in work.
   assignmentId: Id.nullable().optional(),
+  /// This student's own files and links - a marked answer sheet, personal
+  /// feedback - and the class's shared ones (the question paper). Present
+  /// only once the grade is published, or for the class's staff.
+  attachments: z.array(V1FileAttachment).max(10).optional(),
+  links: z.array(V1ContentLink).max(10).optional(),
+  sharedAttachments: z.array(V1FileAttachment).max(10).optional(),
+  sharedLinks: z.array(V1ContentLink).max(10).optional(),
 });
 export type V1GradeResult = z.infer<typeof V1GradeResult>;
+
+/// A student's own view of an online assessment, or a linked parent's view
+/// of their child's. Four separate things: each attempt's confirmation, the
+/// published grade, the teacher's feedback on it, and - once released - the
+/// answers.
+export const V1AssessmentResults = z.strictObject({
+  assessment: V1Assessment,
+  studentId: Id,
+  opensAt: Timestamp.nullable(),
+  /// The close time for this student, with any extension.
+  closesAt: Timestamp.nullable(),
+  attemptsAllowed: z.number().int().min(1),
+  attemptsUsed: z.number().int().min(0),
+  /// Whether the caller - the student themself - can submit now.
+  canAttempt: z.boolean(),
+  answersReleased: z.boolean(),
+  attempts: z.array(V1AssessmentAttemptDetail),
+  grade: V1GradeResult.nullable(),
+});
+export type V1AssessmentResults = z.infer<typeof V1AssessmentResults>;
+
+/// A paper grade's attachments: the class's shared ones (no studentId) or
+/// one student's own. Private until that student's grade is published.
+export const V1UpdateGradeAttachmentsRequest = z.strictObject({
+  studentId: Id.optional(),
+  /// Uploads of purpose `paper_scan` for this class.
+  attachmentFileIds: z.array(Id).max(10).optional(),
+  detachFileIds: removedIds(10),
+  links: contentLinks(10),
+  removeLinkIds: removedIds(10),
+});
+export type V1UpdateGradeAttachmentsRequest = z.infer<
+  typeof V1UpdateGradeAttachmentsRequest
+>;
+
+export const V1GradeAttachments = z.strictObject({
+  gradeResultId: Id.optional(),
+  attachments: z.array(V1FileAttachment).max(10),
+  links: z.array(V1ContentLink).max(10),
+});
+export type V1GradeAttachments = z.infer<typeof V1GradeAttachments>;
 
 export const V1GradeResultPage = z.strictObject({
   items: z.array(V1GradeResult),
@@ -740,6 +995,9 @@ export const V1GradebookGrade = z.strictObject({
   updatedAt: Timestamp,
   /// How many times the published mark has been corrected.
   corrections: z.number().int().min(0),
+  /// This student's own attachments on the grade.
+  attachments: z.array(V1FileAttachment).max(10).optional(),
+  links: z.array(V1ContentLink).max(10).optional(),
 });
 export type V1GradebookGrade = z.infer<typeof V1GradebookGrade>;
 
@@ -761,6 +1019,9 @@ export const V1GradebookItem = V1Assessment.extend({
     published: z.number().int().min(0),
     withdrawn: z.number().int().min(0),
   }),
+  /// The class's shared attachments: the question paper, general feedback.
+  sharedAttachments: z.array(V1FileAttachment).max(10).optional(),
+  sharedLinks: z.array(V1ContentLink).max(10).optional(),
 });
 export type V1GradebookItem = z.infer<typeof V1GradebookItem>;
 
@@ -966,6 +1227,12 @@ export const V1EditResourceRequest = z.strictObject({
   /// A clean `lesson_resource` upload for the lesson's class. The file it
   /// replaces is kept for the school; students see only the new one.
   replaceFileId: Id.optional(),
+  /// More `lesson_resource` uploads for the lesson's class, and files and
+  /// links to take off it. What is not named carries on to the new version.
+  attachmentFileIds: z.array(Id).max(10).optional(),
+  detachFileIds: removedIds(10),
+  links: contentLinks(10),
+  removeLinkIds: removedIds(10),
 });
 export type V1EditResourceRequest = z.infer<typeof V1EditResourceRequest>;
 
@@ -974,6 +1241,8 @@ export const V1UpdateWorkMaterialsRequest = z.strictObject({
   /// Taken off the work: hidden from the class, kept for the school.
   detachFileIds: z.array(Id).max(5),
   attachmentFileIds: attachmentFileIds(),
+  links: contentLinks(10),
+  removeLinkIds: removedIds(10),
 });
 export type V1UpdateWorkMaterialsRequest = z.infer<
   typeof V1UpdateWorkMaterialsRequest

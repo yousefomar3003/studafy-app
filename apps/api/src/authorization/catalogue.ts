@@ -415,6 +415,33 @@ export const PERMISSION_CATALOGUE = {
     "resource",
     "Edit a lesson, or replace its file, keeping earlier versions.",
   ),
+  // Online assessments (ADR-0036). Teacher actions are the class's own
+  // lead and co-teachers'; results are the student's own or a linked
+  // parent's child's, read-only.
+  "assessment.design": resource(
+    "assessment",
+    "Edit an online assessment's questions (before any attempt) and settings as its teacher.",
+  ),
+  "assessment.access": resource(
+    "assessment",
+    "Give one enrolled student more time or attempts as the class's teacher.",
+  ),
+  "assessment.results": guardianResource(
+    "assessment",
+    "Read one's own attempts, published grade and released answers, or a linked child's.",
+  ),
+  "assessment_attempt.read": resource(
+    "assessment_attempt",
+    "Read an attempt with its answers and marks as the class's staff.",
+  ),
+  "assessment_attempt.mark": resource(
+    "assessment_attempt",
+    "Mark an attempt's written answers as the class's lead or co-teacher.",
+  ),
+  "gradebook.attachments": resource(
+    "assessment",
+    "Attach shared or per-student files and links to a paper grade as its teacher.",
+  ),
   "wellbeing_event.list": resource(
     "school_class_or_student",
     "List visibility-filtered wellbeing records.",

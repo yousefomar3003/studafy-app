@@ -1938,6 +1938,69 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     resourceParams(),
   ),
+  // Online assessments: the builder, attempts, marking and release, and a
+  // paper grade's attachments (ADR-0036).
+  cataloguePost(
+    "updateAssessmentDesign",
+    "/v1/assessments/{assessmentId}/design",
+    "assessment.design",
+    Academic.V1UpdateAssessmentDesignRequest,
+    "V1UpdateAssessmentDesignRequest",
+    Academic.V1Assessment,
+    "V1Assessment",
+    200,
+    assessmentParams(),
+  ),
+  cataloguePost(
+    "grantAssessmentAccess",
+    "/v1/assessments/{assessmentId}/access",
+    "assessment.access",
+    Academic.V1GrantAssessmentAccessRequest,
+    "V1GrantAssessmentAccessRequest",
+    Academic.V1AssessmentAccessGrant,
+    "V1AssessmentAccessGrant",
+    200,
+    assessmentParams(),
+  ),
+  catalogueGet(
+    "getAssessmentResults",
+    "/v1/assessment-results/{assessmentId}",
+    "assessment.results",
+    Academic.V1AssessmentResults,
+    "V1AssessmentResults",
+    assessmentParams(),
+    Academic.V1PageQuery,
+  ),
+  catalogueGet(
+    "getAssessmentAttempt",
+    "/v1/assessment-attempts/{attemptId}",
+    "assessment_attempt.read",
+    Academic.V1AssessmentAttemptDetail,
+    "V1AssessmentAttemptDetail",
+    attemptParams(),
+  ),
+  cataloguePost(
+    "markAssessmentAttempt",
+    "/v1/assessment-attempts/{attemptId}/mark",
+    "assessment_attempt.mark",
+    Academic.V1MarkAssessmentAttemptRequest,
+    "V1MarkAssessmentAttemptRequest",
+    Academic.V1AssessmentAttemptDetail,
+    "V1AssessmentAttemptDetail",
+    200,
+    attemptParams(),
+  ),
+  cataloguePost(
+    "updateGradeAttachments",
+    "/v1/assessments/{assessmentId}/grade-attachments",
+    "gradebook.attachments",
+    Academic.V1UpdateGradeAttachmentsRequest,
+    "V1UpdateGradeAttachmentsRequest",
+    Academic.V1GradeAttachments,
+    "V1GradeAttachments",
+    200,
+    assessmentParams(),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -1960,6 +2023,9 @@ function assessmentParams() {
 }
 function gradeParams() {
   return params("gradeResultId");
+}
+function attemptParams() {
+  return params("attemptId");
 }
 function membershipParams() {
   return params("membershipId");
