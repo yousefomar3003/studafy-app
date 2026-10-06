@@ -1215,6 +1215,10 @@ class AppL10nAr extends AppL10n {
       'لا توجد حصص بعد. أضِف حصة ليعرف سجل الحضور موعد هذا الفصل.';
 
   @override
+  String get scheduleDuplicate =>
+      'حصتان في اليوم والوقت نفسيهما. غيّر إحداهما.';
+
+  @override
   String get scheduleEndBeforeStart => 'لا يمكن أن تنتهي الحصة قبل أن تبدأ.';
 
   @override

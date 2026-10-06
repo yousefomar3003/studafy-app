@@ -1189,6 +1189,10 @@ class AppL10nEn extends AppL10n {
       'No meetings yet. Add one so the register knows when this class meets.';
 
   @override
+  String get scheduleDuplicate =>
+      'Two lessons are on the same day and time. Change one of them.';
+
+  @override
   String get scheduleEndBeforeStart => 'A meeting cannot end before it starts.';
 
   @override

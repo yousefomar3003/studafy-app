@@ -131,7 +131,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     super.initState();
     feed = widget.initialFeed;
     selectedStudentId = _studentFrom(widget);
-    future = _load();
+    future = _watched();
     _loadChoices();
   }
 
@@ -148,7 +148,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     final chosen = _studentFrom(widget);
     if (chosen != _studentFrom(oldWidget) && chosen != selectedStudentId) {
       selectedStudentId = chosen;
-      future = _load();
+      future = _watched();
     }
   }
 
@@ -176,6 +176,12 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     }
     return null;
   }
+
+  /// A load the list will show. Marked handled at once: a load replaced
+  /// before the list rebuilt - two refreshes in one frame, an account
+  /// switch - has no listener, and its failure would otherwise surface as
+  /// an uncaught error. The list still sees every failure it shows.
+  Future<List<AcademicRecord>> _watched() => _load()..ignore();
 
   Future<List<AcademicRecord>> _load() async {
     if (_combined) {
@@ -373,7 +379,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
 
   void _refresh() {
     setState(() {
-      future = _load();
+      future = _watched();
     });
   }
 
@@ -522,7 +528,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               onSelected: (id) {
                 setState(() {
                   selectedStudentId = id;
-                  future = _load();
+                  future = _watched();
                 });
                 widget.onStudentChanged?.call(id);
               },
@@ -544,7 +550,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                   : subjectIcon(choices.firstWhere((c) => c.id == id).name),
               onSelected: (id) => setState(() {
                 selectedClassId = id;
-                future = _load();
+                future = _watched();
               }),
             ),
             const SizedBox(height: 10),
@@ -556,7 +562,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             icon: _feedIcon,
             onSelected: (value) => setState(() {
               feed = value;
-              future = _load();
+              future = _watched();
             }),
           ),
           if (canAddWellbeing)

@@ -341,6 +341,7 @@ class AttachmentsEditor extends StatefulWidget {
     this.maxFiles = 5,
     this.maxLinks = 10,
     this.enabled = true,
+    this.filesBlockedReason,
   });
 
   final FilePurpose purpose;
@@ -358,6 +359,11 @@ class AttachmentsEditor extends StatefulWidget {
   final int maxLinks;
   final bool enabled;
 
+  /// Why files cannot be added yet - "choose the class first". The add
+  /// buttons still show, so the teacher can see files are possible; a tap
+  /// says this instead of picking a file.
+  final String? filesBlockedReason;
+
   @override
   State<AttachmentsEditor> createState() => _AttachmentsEditorState();
 }
@@ -367,6 +373,7 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
   final Set<String> _removedLinks = {};
   final List<LinkDraft> _newLinks = [];
   List<Attachment> _uploads = const [];
+  bool _showBlocked = false;
 
   int get _liveLinks =>
       widget.existingLinks.length - _removedLinks.length + _newLinks.length;
@@ -448,7 +455,32 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
               setState(() => _uploads = items);
               _emit();
             },
+          )
+        else if (uploads != null && widget.filesBlockedReason != null) ...[
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: widget.enabled
+                    ? () => setState(() => _showBlocked = true)
+                    : null,
+                icon: const Icon(Icons.attach_file_rounded),
+                label: Text(l10n.attachmentAttachFile),
+              ),
+              TextButton.icon(
+                onPressed: widget.enabled
+                    ? () => setState(() => _showBlocked = true)
+                    : null,
+                icon: const Icon(Icons.image_outlined),
+                label: Text(l10n.attachmentPhoto),
+              ),
+            ],
           ),
+          if (_showBlocked)
+            Text(
+              widget.filesBlockedReason!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+        ],
         for (final link in widget.existingLinks)
           _ExistingRow(
             icon: Icons.link_rounded,

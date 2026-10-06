@@ -97,6 +97,29 @@ export type V1ScheduleSlot = z.infer<typeof V1ScheduleSlot>;
 export const V1ScheduleSlotInput = V1ScheduleSlot.omit({ id: true });
 export type V1ScheduleSlotInput = z.infer<typeof V1ScheduleSlotInput>;
 
+/** A week's lessons: two at the same day and start time are one lesson
+ * entered twice, refused here rather than by the table's unique key. */
+const V1ScheduleInput = z.array(V1ScheduleSlotInput).max(21).superRefine(
+  (slots, context) => {
+    const seen = new Set<string>();
+    slots.forEach((slot, index) => {
+      const key = [
+        slot.weekday,
+        slot.startsAt.slice(0, 5),
+        slot.effectiveFrom,
+      ].join("|");
+      if (seen.has(key)) {
+        context.addIssue({
+          code: "custom",
+          path: [index, "startsAt"],
+          message: "two lessons start at the same day and time",
+        });
+      }
+      seen.add(key);
+    });
+  },
+);
+
 export const V1AcademicClassroom = z.strictObject({
   id: Id,
   schoolId: Id,
@@ -131,7 +154,7 @@ export const V1CreateClassroomRequest = z.strictObject({
   grade: z.string().trim().max(40),
   section: z.string().trim().max(40),
   room: z.string().trim().max(80).nullable(),
-  schedule: z.array(V1ScheduleSlotInput).max(21),
+  schedule: V1ScheduleInput,
 });
 export type V1CreateClassroomRequest = z.infer<typeof V1CreateClassroomRequest>;
 
@@ -154,7 +177,7 @@ export type V1ArchiveClassroomRequest = z.infer<
 
 export const V1ReplaceScheduleRequest = z.strictObject({
   expectedVersion: Version,
-  schedule: z.array(V1ScheduleSlotInput).max(21),
+  schedule: V1ScheduleInput,
 });
 export type V1ReplaceScheduleRequest = z.infer<typeof V1ReplaceScheduleRequest>;
 

@@ -20,6 +20,7 @@ Future<bool> showCreateClassDialog(
   String section = 'A';
   int weeklySessions = 1;
   String? createFailure;
+  var duplicateSession = false;
   final sessions = <ClassSessionDraft>[
     ClassSessionDraft(weekday: 1, startTime: '08:00', endTime: '08:50'),
   ];
@@ -111,9 +112,11 @@ Future<bool> showCreateClassDialog(
                 onChanged: (value) => setDialog(() {
                   weeklySessions = value ?? 1;
                   while (sessions.length < weeklySessions) {
+                    // A copy of the last lesson, on the next day: the same
+                    // day and time twice is one lesson, and is refused.
                     sessions.add(
                       ClassSessionDraft(
-                        weekday: sessions.last.weekday,
+                        weekday: sessions.last.weekday % 7 + 1,
                         startTime: sessions.last.startTime,
                         endTime: sessions.last.endTime,
                       ),
@@ -234,6 +237,13 @@ Future<bool> showCreateClassDialog(
                     ],
                   ),
                 ),
+              if (duplicateSession)
+                Text(
+                  AppL10n.of(dialogContext).scheduleDuplicate,
+                  style: TextStyle(
+                    color: Theme.of(dialogContext).colorScheme.error,
+                  ),
+                ),
             ],
           ),
         ),
@@ -245,6 +255,13 @@ Future<bool> showCreateClassDialog(
           FilledButton(
             onPressed: () async {
               if (name.text.trim().isEmpty || sessions.isEmpty) return;
+              final times = {
+                for (final s in sessions) '${s.weekday} ${s.startTime}',
+              };
+              setDialog(
+                () => duplicateSession = times.length < sessions.length,
+              );
+              if (duplicateSession) return;
               final draft = NewClassDraft(
                 name: name.text.trim(),
                 grade: grade,

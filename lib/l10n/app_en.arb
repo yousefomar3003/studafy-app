@@ -632,6 +632,7 @@
   "scheduleSaving": "Saving…",
   "scheduleSaved": "Timetable saved.",
   "scheduleEmpty": "No meetings yet. Add one so the register knows when this class meets.",
+  "scheduleDuplicate": "Two lessons are on the same day and time. Change one of them.",
   "scheduleEndBeforeStart": "A meeting cannot end before it starts.",
   "scheduleSaveFailed": "Could not save the timetable. Please try again.",
   "weekdayMon": "Monday",

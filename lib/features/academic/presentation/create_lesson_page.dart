@@ -181,14 +181,14 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
               ),
             ),
             const SizedBox(height: 8),
-            if (uploads == null)
-              Text(l10n.academicAttachmentsUnavailable)
-            else if (_classroomId == null)
-              Text(l10n.lessonPickClassForFiles),
+            if (uploads == null) Text(l10n.academicAttachmentsUnavailable),
             AttachmentsEditor(
               key: _attachmentsKey,
               purpose: FilePurpose.lessonResource,
               schoolId: _classroomId == null ? null : widget.schoolId,
+              filesBlockedReason: _classroomId == null
+                  ? l10n.lessonPickClassForFiles
+                  : null,
               classroomId: _classroomId,
               uploads: uploads,
               source: widget.attachmentSource ?? pickPlatformAttachment,

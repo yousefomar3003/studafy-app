@@ -2089,6 +2089,12 @@ abstract class AppL10n {
   /// **'No meetings yet. Add one so the register knows when this class meets.'**
   String get scheduleEmpty;
 
+  /// No description provided for @scheduleDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Two lessons are on the same day and time. Change one of them.'**
+  String get scheduleDuplicate;
+
   /// No description provided for @scheduleEndBeforeStart.
   ///
   /// In en, this message translates to:

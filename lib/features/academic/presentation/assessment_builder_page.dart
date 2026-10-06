@@ -329,6 +329,9 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                       AttachmentsEditor(
                         purpose: FilePurpose.assignmentMaterial,
                         schoolId: _classroomId == null ? null : widget.schoolId,
+                        filesBlockedReason: _classroomId == null
+                            ? l10n.lessonPickClassForFiles
+                            : null,
                         classroomId: _classroomId,
                         uploads: uploads,
                         source: source,

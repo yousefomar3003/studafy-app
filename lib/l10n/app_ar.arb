@@ -332,6 +332,7 @@
   "scheduleSaving": "جارٍ الحفظ…",
   "scheduleSaved": "تم حفظ الجدول.",
   "scheduleEmpty": "لا توجد حصص بعد. أضِف حصة ليعرف سجل الحضور موعد هذا الفصل.",
+  "scheduleDuplicate": "حصتان في اليوم والوقت نفسيهما. غيّر إحداهما.",
   "scheduleEndBeforeStart": "لا يمكن أن تنتهي الحصة قبل أن تبدأ.",
   "scheduleSaveFailed": "تعذّر حفظ الجدول. يُرجى المحاولة مرة أخرى.",
   "weekdayMon": "الاثنين",
