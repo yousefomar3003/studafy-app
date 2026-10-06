@@ -701,9 +701,9 @@ export const PERMISSION_CATALOGUE = {
     "school_or_classroom",
     "Create an announcement as a school administrator (school-wide) or the classroom's exact writer.",
   ),
-  "announcement.list": resource(
+  "announcement.list": guardianResource(
     "school",
-    "List announcements visible to an active member, filtered per row by classroom relationship.",
+    "List announcements visible to an active member, filtered per row by classroom relationship, or to a linked guardian: those meant for guardians, school-wide or in the child's classes.",
   ),
 
   // API-042 S5: meetings.
