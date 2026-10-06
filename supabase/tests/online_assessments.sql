@@ -6,7 +6,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(61);
+select plan(63);
 
 \set student2_user 'a0460000-0000-4000-8000-0000000000a1'
 \set student2_id 'a0460000-0000-4000-8000-0000000000a2'
@@ -302,6 +302,14 @@ insert into oa select 'paper', pg_temp.cmd(:'teacher_user', 'createAssessment', 
   'classroomId', :'classroom_id', 'title', 'Paper test', 'category', 'test', 'maximumScore', 20,
   'scheduledAt', null, 'delivery', 'paper', 'questions', '[]'::jsonb));
 select (value->'response'->>'id')::uuid as paper_id from oa where name = 'paper' \gset
+select set_config('request.jwt.claim.sub', :'teacher_user', true);
+select ok((private.file050_authorize_target(jsonb_build_object('purpose', 'paper_scan',
+  'schoolId', :'school_id', 'classroomId', :'classroom_id'))->>'allowed')::boolean,
+  'the class''s teacher may upload a paper scan for the class');
+select set_config('request.jwt.claim.sub', :'student_user', true);
+select ok(not coalesce((private.file050_authorize_target(jsonb_build_object('purpose', 'paper_scan',
+  'schoolId', :'school_id', 'classroomId', :'classroom_id'))->>'allowed')::boolean, false),
+  'a student may not');
 select pg_temp.upload(:'shared_file', :'teacher_user', 'paper_scan', :'classroom_id', 'Question paper.pdf');
 select pg_temp.upload(:'own_file', :'teacher_user', 'paper_scan', :'classroom_id', 'Marked sheet 1.pdf');
 select pg_temp.upload(:'other_file', :'teacher_user', 'paper_scan', :'classroom_id', 'Marked sheet 2.pdf');

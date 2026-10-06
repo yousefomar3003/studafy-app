@@ -216,6 +216,44 @@ for each row execute function private.reject_immutable_columns(
 create index if not exists assessment_attempts_student_idx
   on public.assessment_attempts (assessment_id, student_id);
 
+-- Paper scans may be uploaded for a class - the shared question paper, or
+-- a sheet for a student who has no grade row yet - as well as for one grade.
+alter table public.upload_sessions drop constraint if exists file050_upload_target_check;
+alter table public.upload_sessions add constraint file050_upload_target_check check (
+  policy_version='legacy' or case purpose
+    when 'profile_image' then num_nonnulls(classroom_id,assignment_id,student_id,grade_result_id)=0
+    when 'lesson_resource' then classroom_id is not null and num_nonnulls(assignment_id,student_id,grade_result_id)=0
+    when 'assignment_material' then num_nonnulls(classroom_id,assignment_id)=1 and num_nonnulls(student_id,grade_result_id)=0
+    when 'assignment_submission' then assignment_id is not null and student_id is not null and num_nonnulls(classroom_id,grade_result_id)=0
+    when 'paper_scan' then num_nonnulls(classroom_id,grade_result_id)=1 and num_nonnulls(assignment_id,student_id)=0
+    when 'coach_attachment' then student_id is not null and num_nonnulls(classroom_id,assignment_id,grade_result_id)=0
+    when 'message_attachment' then num_nonnulls(classroom_id,assignment_id,student_id,grade_result_id)=0
+    when 'announcement_attachment' then num_nonnulls(classroom_id,assignment_id,student_id,grade_result_id)=0
+    else false end
+) not valid;
+alter table public.upload_sessions validate constraint file050_upload_target_check;
+
+do $$ begin
+  if not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'private' and p.proname = 'file050_authorize_target_pre_paper_class') then
+    alter function private.file050_authorize_target(jsonb)
+      rename to file050_authorize_target_pre_paper_class;
+  end if;
+end $$;
+
+-- A paper scan for a class is a teacher's, as a lesson file is: the class's
+-- lead and co-teachers.
+create or replace function private.file050_authorize_target(p_body jsonb)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  if p_body->>'purpose' = 'paper_scan' and nullif(p_body->>'classroomId', '') is not null then
+    return private.file050_authorize_target_pre_paper_class(
+      jsonb_set(p_body, array['purpose'], '"lesson_resource"'::jsonb));
+  end if;
+  return private.file050_authorize_target_pre_paper_class(p_body);
+end;
+$$;
+
 -- ===========================================================================
 -- 2. Who the caller is to a student
 -- ===========================================================================
@@ -386,7 +424,10 @@ begin
         where b.file_object_id = v_id
           and (u.classroom_id = p_class
             or (select a.classroom_id from public.assignments a
-                where a.id = u.assignment_id) = p_class)) then
+                where a.id = u.assignment_id) = p_class
+            or (select a.classroom_id from public.grade_results g
+                join public.assessments a on a.id = g.assessment_id
+                where g.id = u.grade_result_id) = p_class)) then
       return 'forbidden';
     end if;
     insert into public.file_bindings(school_id, file_object_id, assignment_id,
@@ -2016,6 +2057,8 @@ begin
     'private.api041_assessment_attempts(uuid,jsonb)',
     'private.file051_authorize_download(uuid)',
     'private.file051_authorize_download_pre_assessments(uuid)',
+    'private.file050_authorize_target(jsonb)',
+    'private.file050_authorize_target_pre_paper_class(jsonb)',
     'private.authz_coursework(text,uuid)',
     'private.authz_assessment_results(text,uuid)',
     'private.authz_authorize(text,uuid)',
