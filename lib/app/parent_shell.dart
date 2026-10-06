@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
 import '../core/feedback.dart';
+import '../core/lazy_indexed_stack.dart';
 import '../core/navigation.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
@@ -70,7 +71,7 @@ class _ParentShellState extends State<ParentShell> {
   bool _learningShowsAll = false;
 
   /// The bar is compact while scrolling down, full again on any touch.
-  bool _navCompact = false;
+  final _navCompact = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -81,6 +82,7 @@ class _ParentShellState extends State<ParentShell> {
 
   @override
   void dispose() {
+    _navCompact.dispose();
     ActiveContextController.instance.removeListener(_contextChanged);
     super.dispose();
   }
@@ -107,7 +109,7 @@ class _ParentShellState extends State<ParentShell> {
     if (at >= 0) {
       setState(() {
         index = at;
-        _navCompact = false;
+        _navCompact.value = false;
       });
     }
   }
@@ -175,9 +177,9 @@ class _ParentShellState extends State<ParentShell> {
     final compact = switch (notification.direction) {
       ScrollDirection.reverse => true,
       ScrollDirection.forward => false,
-      ScrollDirection.idle => _navCompact,
+      ScrollDirection.idle => _navCompact.value,
     };
-    if (compact != _navCompact) setState(() => _navCompact = compact);
+    _navCompact.value = compact;
     return false;
   }
 
@@ -272,11 +274,9 @@ class _ParentShellState extends State<ParentShell> {
         _NoChildYet(title: l10n.navLearning)
       else
         AcademicOverviewPage(
-          key: ValueKey((
-            [for (final child in verified) child.studentId].join(),
-            selected?.id,
-            _learningShowsAll,
-          )),
+          // Only a different set of children starts the page afresh. A child
+          // chosen elsewhere is followed in place, keeping the open feed.
+          key: ValueKey([for (final child in verified) child.studentId].join()),
           title: l10n.navLearning,
           subtitle: l10n.learningSubtitle,
           repository: widget.academic,
@@ -336,8 +336,8 @@ class _ParentShellState extends State<ParentShell> {
               ),
           ],
         ),
-      // Re-read when its tab comes into view: an IndexedStack keeps every
-      // page alive. Conversations only - announcements have their own tab.
+      // Re-read when its tab comes into view: it is built ahead, so it is
+      // alive while hidden. Conversations only - announcements have their own tab.
       if (messaging)
         ConversationsPage(
           visible: tabs[index] == _Tab.messages,
@@ -349,48 +349,57 @@ class _ParentShellState extends State<ParentShell> {
       backgroundColor: studafyCanvas,
       body: NotificationListener<UserScrollNotification>(
         onNotification: _onScroll,
-        child: IndexedStack(index: index, children: pages),
+        child: LazyIndexedStack(
+          index: index,
+          // The inbox acknowledges delivery while out of sight.
+          builtAhead: {tabs.indexOf(_Tab.messages)},
+          children: pages,
+        ),
       ),
-      bottomNavigationBar: StudafyNavigationBar(
-        selectedIndex: index,
-        compact: _navCompact,
-        onInteract: () {
-          if (_navCompact) setState(() => _navCompact = false);
-        },
-        onSelected: (value) => setState(() {
-          index = value;
-          _navCompact = false;
-        }),
-        items: [
-          for (final tab in tabs)
-            switch (tab) {
-              _Tab.today => StudafyNavItem(
-                l10n.navToday,
-                Icons.home_outlined,
-                Icons.home_rounded,
-              ),
-              _Tab.learning => StudafyNavItem(
-                l10n.navLearning,
-                Icons.auto_stories_outlined,
-                Icons.auto_stories_rounded,
-              ),
-              _Tab.familyPlus => StudafyNavItem(
-                l10n.insightsTitle,
-                Icons.insights_outlined,
-                Icons.insights_rounded,
-              ),
-              _Tab.announcements => StudafyNavItem(
-                l10n.navAnnouncements,
-                Icons.campaign_outlined,
-                Icons.campaign_rounded,
-              ),
-              _Tab.messages => StudafyNavItem(
-                l10n.navMessages,
-                Icons.send_outlined,
-                Icons.send_rounded,
-              ),
-            },
-        ],
+      bottomNavigationBar: ValueListenableBuilder<bool>(
+        // Only the bar follows scrolling; the tabs are not rebuilt.
+        valueListenable: _navCompact,
+        builder: (context, compact, _) => StudafyNavigationBar(
+          selectedIndex: index,
+          compact: compact,
+          onInteract: () {
+            _navCompact.value = false;
+          },
+          onSelected: (value) => setState(() {
+            index = value;
+            _navCompact.value = false;
+          }),
+          items: [
+            for (final tab in tabs)
+              switch (tab) {
+                _Tab.today => StudafyNavItem(
+                  l10n.navToday,
+                  Icons.home_outlined,
+                  Icons.home_rounded,
+                ),
+                _Tab.learning => StudafyNavItem(
+                  l10n.navLearning,
+                  Icons.auto_stories_outlined,
+                  Icons.auto_stories_rounded,
+                ),
+                _Tab.familyPlus => StudafyNavItem(
+                  l10n.insightsTitle,
+                  Icons.insights_outlined,
+                  Icons.insights_rounded,
+                ),
+                _Tab.announcements => StudafyNavItem(
+                  l10n.navAnnouncements,
+                  Icons.campaign_outlined,
+                  Icons.campaign_rounded,
+                ),
+                _Tab.messages => StudafyNavItem(
+                  l10n.navMessages,
+                  Icons.send_outlined,
+                  Icons.send_rounded,
+                ),
+              },
+          ],
+        ),
       ),
     );
   }

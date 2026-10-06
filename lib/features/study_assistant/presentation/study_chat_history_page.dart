@@ -64,7 +64,8 @@ class _StudyChatHistoryPageState extends State<StudyChatHistoryPage> {
       body: FutureBuilder<List<StudyChat>>(
         future: _chats,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           final chats = snapshot.data ?? const <StudyChat>[];

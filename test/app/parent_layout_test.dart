@@ -86,6 +86,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'tab $tab');
       }
+      // The inbox is the last tab: it knows who is signed in.
+      if (locale.languageCode == 'en') {
+        expect(find.text('Choose a school to see messages.'), findsNothing);
+      }
     });
   }
 }

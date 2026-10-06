@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/app_routes.dart';
+import '../../core/device_settings.dart';
 import '../../core/feedback.dart';
 import '../../core/navigation.dart';
 import '../../core/studafy_domain.dart';
+import '../../data/settings/preferences_device_settings.dart';
 import '../../features/accounts/domain/device_account.dart';
 import '../../features/accounts/presentation/account_switcher_sheet.dart';
 import '../../features/accounts/presentation/create_child_account_page.dart';
@@ -170,6 +174,17 @@ Future<void> switchAccount(
   navigator.pop();
   await progress;
   if (role != null) {
+    // The next launch reopens the account now current, in this role.
+    unawaited(
+      const PreferencesDeviceSettings().write(
+        DeviceSettingKeys.lastRole,
+        switch (role) {
+          StudafyRole.teacher || StudafyRole.schoolAdmin => 'teacher',
+          StudafyRole.parent => 'parent',
+          StudafyRole.student => 'student',
+        },
+      ),
+    );
     await navigator.pushNamedAndRemoveUntil(_route(role), (_) => false);
     return;
   }

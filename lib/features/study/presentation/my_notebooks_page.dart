@@ -28,7 +28,8 @@ class _MyNotebooksPageState extends State<MyNotebooksPage> {
       body: FutureBuilder<List<NotebookGroup>>(
         future: _groups,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {

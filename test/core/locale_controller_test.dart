@@ -188,6 +188,7 @@ void main() {
       );
       addTearDown(next.dispose);
       await next.restore();
+      await next.republishIfPending();
       expect(published, ['ar']);
     });
 
@@ -212,7 +213,7 @@ void main() {
       expect(controller.resolvedLocale, const Locale('ar'));
     });
 
-    test('retries on the next launch after a failed publish', () async {
+    test('retries once signed in on the next launch after a failed publish', () async {
       final settings = InMemoryDeviceSettings();
       final failing = build(
         settings: settings,
@@ -227,6 +228,7 @@ void main() {
         publish: (code) async => published.add(code),
       );
       await next.restore();
+      await next.republishIfPending();
 
       expect(published, ['ar']);
     });
@@ -236,6 +238,27 @@ void main() {
       final first = build(settings: settings, publish: (_) async {});
       await first.restore();
       await first.setLocale(const Locale('ar'));
+
+      final published = <String>[];
+      final next = build(
+        settings: settings,
+        publish: (code) async => published.add(code),
+      );
+      await next.restore();
+      await next.republishIfPending();
+
+      expect(published, isEmpty);
+    });
+
+    test('launching alone sends nothing, so the first frame never waits on '
+        'the network', () async {
+      final settings = InMemoryDeviceSettings();
+      final failing = build(
+        settings: settings,
+        publish: (_) async => throw Exception('offline'),
+      );
+      await failing.restore();
+      await failing.setLocale(const Locale('ar'));
 
       final published = <String>[];
       final next = build(

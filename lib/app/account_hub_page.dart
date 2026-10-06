@@ -164,6 +164,11 @@ class _AccountHubPageState extends State<AccountHubPage> {
   OwnProfile? _own;
   bool _started = false;
 
+  /// True while the profile is being read. The Studafy number's row holds its
+  /// place meanwhile, so the rows below it - Switch account among them - do
+  /// not jump down when the number arrives.
+  bool _ownLoading = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -175,12 +180,13 @@ class _AccountHubPageState extends State<AccountHubPage> {
   Future<void> _loadOwn() async {
     final account = AccountScope.maybeOf(context);
     if (account == null || !account.profileAvailable) return;
+    _ownLoading = true;
     final result = await account.ownProfile();
     if (!mounted) return;
-    result.fold(
-      onSuccess: (own) => setState(() => _own = own),
-      onFailure: (_) {},
-    );
+    setState(() {
+      _ownLoading = false;
+      result.fold(onSuccess: (own) => _own = own, onFailure: (_) {});
+    });
   }
 
   /// Edit name: a prefilled form, saved to the server, then shown
@@ -308,7 +314,7 @@ class _AccountHubPageState extends State<AccountHubPage> {
               // internal account id waits under sign-in and security.
               if (student)
                 const StudafyIdRow()
-              else if (publicId != null)
+              else if (publicId != null || _ownLoading)
                 _AccountIdRow(
                   id: publicId,
                   title: l10n.accountStudafyId,
@@ -450,27 +456,38 @@ class _AccountIdRow extends StatelessWidget {
     this.icon = Icons.badge_rounded,
   });
 
-  final String id;
+  /// Null while it is still being read: the row keeps its place, with
+  /// nothing to copy yet.
+  final String? id;
   final String title;
   final String detail;
   final String copied;
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) => SettingsRow(
-    icon: icon,
-    title: title,
-    subtitle: '$id\n$detail',
-    trailing: Tooltip(
-      message: MaterialLocalizations.of(context).copyButtonLabel,
-      child: const Icon(Icons.copy_rounded, color: studafyMuted, size: 20),
-    ),
-    onTap: () async {
-      final messenger = ScaffoldMessenger.of(context);
-      await Clipboard.setData(ClipboardData(text: id));
-      messenger.showMessage(copied);
-    },
-  );
+  Widget build(BuildContext context) {
+    final id = this.id;
+    return SettingsRow(
+      icon: icon,
+      title: title,
+      subtitle: '${id ?? '…'}\n$detail',
+      trailing: Tooltip(
+        message: MaterialLocalizations.of(context).copyButtonLabel,
+        child: Icon(
+          Icons.copy_rounded,
+          color: id == null ? studafyHairline : studafyMuted,
+          size: 20,
+        ),
+      ),
+      onTap: id == null
+          ? null
+          : () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await Clipboard.setData(ClipboardData(text: id));
+              messenger.showMessage(copied);
+            },
+    );
+  }
 }
 
 /// The plan row: the plan the person has, and the way to the Plans screen.

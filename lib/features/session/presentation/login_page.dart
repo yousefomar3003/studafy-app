@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 
 import '../../../core/app_routes.dart';
+import '../../../core/device_settings.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
@@ -17,9 +18,32 @@ import 'role_page.dart';
 /// The login screen drives [SessionInteractor]; it never touches Supabase,
 /// SQLite, or any repository directly (ARC-011 session slice).
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, required this.role, required this.session});
+  const LoginPage({
+    super.key,
+    required this.role,
+    required this.session,
+    this.settings,
+  });
   final UserRole role;
   final SessionInteractor session;
+
+  /// Remembers the role opened, so the next launch can go straight back to
+  /// it. Without it nothing is remembered.
+  final DeviceSettingsStore? settings;
+
+  static StudafyRole studafyRole(UserRole role) => switch (role) {
+    UserRole.teacher => StudafyRole.teacher,
+    UserRole.parent => StudafyRole.parent,
+    UserRole.student => StudafyRole.student,
+  };
+
+  /// The shells are registered as named routes by the app; the session
+  /// feature never imports the role shells directly.
+  static String routeFor(UserRole role) => switch (role) {
+    UserRole.teacher => teacherRoute,
+    UserRole.parent => parentRoute,
+    UserRole.student => studentRoute,
+  };
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -166,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
     final role = as ?? widget.role;
     completingRemoteLogin = true;
     final result = await widget.session.completeRemoteLogin(
-      role: _studafyRole(role),
+      role: LoginPage.studafyRole(role),
       consentAccepted: accepted,
       locale: Localizations.localeOf(context).languageCode,
       addRole: addRole,
@@ -219,12 +243,6 @@ class _LoginPageState extends State<LoginPage> {
       arguments: role,
     );
   }
-
-  static StudafyRole _studafyRole(UserRole role) => switch (role) {
-    UserRole.teacher => StudafyRole.teacher,
-    UserRole.parent => StudafyRole.parent,
-    UserRole.student => StudafyRole.student,
-  };
 
   static UserRole _userRole(StudafyRole role) => switch (role) {
     StudafyRole.teacher || StudafyRole.schoolAdmin => UserRole.teacher,
@@ -332,7 +350,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _offerOwnRole(StudafyRole own, UserRole chosen) async {
     final l10n = AppL10n.of(context);
     final ownName = _roleName(l10n, own);
-    final chosenName = _roleName(l10n, _studafyRole(chosen));
+    final chosenName = _roleName(l10n, LoginPage.studafyRole(chosen));
     final choice = await showModalBottomSheet<UserRole>(
       context: context,
       showDragHandle: true,
@@ -422,14 +440,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _openRole([UserRole? as]) {
-    // The shells are registered as named routes by the app; the session
-    // feature never imports the role shells directly.
-    final route = switch (as ?? widget.role) {
-      UserRole.teacher => teacherRoute,
-      UserRole.parent => parentRoute,
-      UserRole.student => studentRoute,
-    };
-    Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
+    final role = as ?? widget.role;
+    final settings = widget.settings;
+    if (settings != null && !widget.session.isDemoSession) {
+      unawaited(settings.write(DeviceSettingKeys.lastRole, role.name));
+    }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      LoginPage.routeFor(role),
+      (_) => false,
+    );
   }
 
   /// Set when a provider is tapped before the terms are accepted, so the

@@ -87,7 +87,7 @@ class _StudentFamilyPageState extends State<StudentFamilyPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(AppL10n.of(context).studentFamilyMyFamily)),
-    body: RefreshIndicator(
+    body: StudafyRefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.all(24),

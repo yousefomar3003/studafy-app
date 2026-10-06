@@ -60,8 +60,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (widget.visible && !oldWidget.visible) unawaited(_refresh());
   }
 
+  /// Once the list has been shown, a reload keeps it on screen and swaps in
+  /// what comes back, rather than blanking to a spinner.
+  bool _loaded = false;
+
   Future<void> _refresh() async {
-    setState(() => _loading = true);
+    if (!_loaded) setState(() => _loading = true);
     final interactor = NotificationsScope.of(context);
     await interactor.syncPending();
     final result = await interactor.load();
@@ -72,6 +76,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _nextCursor = page.nextCursor;
         _isFromCache = page.isFromCache;
         _loading = false;
+        _loaded = true;
         _error = null;
       }),
       onFailure: (failure) => setState(() {
@@ -155,7 +160,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               actionLabel: l10n.notificationsFeedRetry,
               onAction: _refresh,
             )
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _refresh,
               child: ListView(
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 32),

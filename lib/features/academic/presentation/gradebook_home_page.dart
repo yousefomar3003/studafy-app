@@ -43,6 +43,9 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
   Map<String, AcademicRecord> _assignments = const {};
   bool _loadingClasses = true;
   bool _loading = false;
+
+  /// The class whose lists are on screen.
+  String? _shownClassId;
   bool _failed = false;
   String? _error;
 
@@ -81,24 +84,30 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
     final selected = _selected;
     if (selected == null) return;
     setState(() {
-      _loading = true;
+      // Coming back to the same class keeps its list on screen; only another
+      // class, whose list is not this one, waits behind the spinner.
+      _loading = _shownClassId != selected.id;
       _failed = false;
       _error = null;
     });
     try {
-      final assessments = await widget.repository.load(
-        AcademicFeed.assessments,
-        classroomId: selected.id,
-      );
-      final assignments = await widget.repository.load(
-        AcademicFeed.assignments,
-        classroomId: selected.id,
-      );
+      // Both at once: neither waits on the other.
+      final (assessments, assignments) = await (
+        widget.repository.load(
+          AcademicFeed.assessments,
+          classroomId: selected.id,
+        ),
+        widget.repository.load(
+          AcademicFeed.assignments,
+          classroomId: selected.id,
+        ),
+      ).wait;
       if (!mounted || selected.id != _selected?.id) return;
       setState(() {
         _assessments = assessments;
         _assignments = {for (final item in assignments) item.id: item};
         _loading = false;
+        _shownClassId = selected.id;
       });
     } on Object {
       if (!mounted) return;
@@ -217,7 +226,7 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
                   },
                 ),
                 Expanded(
-                  child: RefreshIndicator(
+                  child: StudafyRefreshIndicator(
                     onRefresh: _loadClass,
                     child: ListView(
                       padding: const EdgeInsetsDirectional.fromSTEB(

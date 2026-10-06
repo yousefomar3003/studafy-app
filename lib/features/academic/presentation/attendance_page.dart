@@ -151,11 +151,14 @@ class _AttendancePageState extends State<AttendancePage> {
     await _load();
   }
 
-  Future<void> _load() async {
+  /// Reads the register. [quietly] - after a save - keeps the roster on
+  /// screen while the new version comes back, so the teacher does not lose
+  /// their place to a spinner after every save.
+  Future<void> _load({bool quietly = false}) async {
     setState(() {
-      _loading = true;
+      _loading = !quietly;
       _error = null;
-      _saved = null;
+      if (!quietly) _saved = null;
     });
     try {
       if (_schedule.isEmpty) {
@@ -284,15 +287,14 @@ class _AttendancePageState extends State<AttendancePage> {
         );
       }
       if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _saved = saved;
-      });
+      setState(() => _saved = saved);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(saved)));
       // The save moved the session on; reload so an immediate correction
-      // carries the new version instead of a stale one.
-      await _load();
+      // carries the new version instead of a stale one. Saving stays on
+      // until it is in, so a second save cannot go with the old version.
+      await _load(quietly: true);
+      if (mounted) setState(() => _saving = false);
     } on CourseworkRefusal catch (refusal) {
       if (!mounted) return;
       setState(() {

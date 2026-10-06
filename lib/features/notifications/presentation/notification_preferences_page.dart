@@ -209,7 +209,7 @@ class _NotificationPreferencesPageState
         ? const Center(child: CircularProgressIndicator())
         : _error != null
         ? Center(child: Text(_error!))
-        : RefreshIndicator(
+        : StudafyRefreshIndicator(
             onRefresh: _load,
             child: ListView(
               padding: const EdgeInsets.all(16),

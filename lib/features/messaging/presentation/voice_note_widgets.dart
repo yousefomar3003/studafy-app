@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -9,9 +10,12 @@ import '../../../l10n/generated/app_l10n.dart';
 
 /// A voice note in a chat bubble: play, pause, and how far through it is.
 ///
-/// Until the scan has cleared it the note cannot be played - by anyone, the
-/// sender included - so it says it is being checked. The bytes are fetched
-/// on the first play and kept for as long as the bubble is on screen.
+/// Until the scan has cleared it the note cannot be fetched from the server,
+/// so it says it is being checked. The one exception is the sender, on the
+/// phone that recorded it: they play [localBytes], the recording itself,
+/// straight away. Nothing comes from the server for that, and it is their own
+/// voice. Otherwise the bytes are fetched on the first play and kept for as
+/// long as the bubble is on screen.
 class VoiceNoteBubble extends StatefulWidget {
   const VoiceNoteBubble({
     super.key,
@@ -19,9 +23,13 @@ class VoiceNoteBubble extends StatefulWidget {
     required this.uploads,
     required this.player,
     required this.mine,
+    this.localBytes,
   });
 
   final StoredAttachment attachment;
+
+  /// The recording, on the phone that made it. Null everywhere else.
+  final Uint8List? localBytes;
   final FileUploadRepository? uploads;
   final VoicePlayer Function() player;
 
@@ -60,7 +68,7 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
 
   Future<void> _toggle() async {
     final uploads = widget.uploads;
-    if (uploads == null || _loading) return;
+    if ((uploads == null && widget.localBytes == null) || _loading) return;
     final player = _listen();
     if (_playback?.playing ?? false) {
       await player.pause();
@@ -71,6 +79,12 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
       _failed = false;
     });
     try {
+      final local = widget.localBytes;
+      if (local != null) {
+        await player.play(widget.attachment.id, local);
+        return;
+      }
+      if (uploads == null) return;
       final file = await uploads.download(widget.attachment.id);
       // The server says what it is; only a voice note is played as one.
       if (!isVoiceNote(file.mediaType)) throw StateError('not a voice note');
@@ -94,7 +108,7 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
     final l10n = AppL10n.of(context);
     final ink = widget.mine ? Colors.white : studafyInk;
     final muted = widget.mine ? Colors.white70 : studafyMuted;
-    if (!widget.attachment.isReady) {
+    if (!widget.attachment.isReady && widget.localBytes == null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(

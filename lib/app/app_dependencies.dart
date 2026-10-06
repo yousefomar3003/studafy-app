@@ -6,6 +6,7 @@ import '../core/locale_controller.dart';
 import '../core/profile_photo.dart';
 import '../core/runtime_environment.dart';
 import '../core/secure_storage.dart';
+import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../core/telemetry.dart';
 import '../data/backend.dart';
@@ -200,6 +201,8 @@ class AppDependencies {
     // in, and shown when the server cannot be reached.
     final responseCache = OfflineResponseCache(cacheBinder);
     remote?.transport.responseCache = responseCache;
+    StudafyRefreshIndicator.forgetRecentReads =
+        remote?.transport.forgetRecentReads;
     // A synthetic build has no profile to publish to, so it keeps the choice
     // on the device only. Device settings are read in both, so a developer's
     // language choice survives a restart the same way a user's does.

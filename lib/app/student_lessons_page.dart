@@ -176,7 +176,8 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             child: FutureBuilder<List<ClassroomSummary>>(
               future: _classes,
               builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
+                if (snapshot.connectionState != ConnectionState.done &&
+                    !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
@@ -193,7 +194,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
                 }
                 final classes = snapshot.data ?? const <ClassroomSummary>[];
                 final plan = _planCard(l10n);
-                return RefreshIndicator(
+                return StudafyRefreshIndicator(
                   onRefresh: _refresh,
                   child: ListView(
                     padding: const EdgeInsetsDirectional.fromSTEB(

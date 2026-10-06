@@ -26,6 +26,7 @@ class UpcomingMeetingsSection extends StatefulWidget {
     this.repository,
     this.launch = _launch,
     this.now,
+    this.refreshToken = 0,
   });
 
   /// Falls back to [MeetingsScope].
@@ -34,6 +35,10 @@ class UpcomingMeetingsSection extends StatefulWidget {
 
   /// Overrides the clock. Tests supply their own.
   final DateTime Function()? now;
+
+  /// Changed by the host when the person pulls to refresh, so the meetings
+  /// are read again with the rest of the page.
+  final int refreshToken;
 
   @override
   State<UpcomingMeetingsSection> createState() =>
@@ -46,8 +51,18 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _meetings ??= _read();
+  }
+
+  @override
+  void didUpdateWidget(UpcomingMeetingsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refreshToken != oldWidget.refreshToken) _meetings = _read();
+  }
+
+  Future<List<UpcomingMeeting>> _read() {
     final repository = widget.repository ?? MeetingsScope.maybeOf(context);
-    _meetings ??= repository == null
+    return repository == null
         ? Future.value(const <UpcomingMeeting>[])
         : Future.sync(repository.upcoming);
   }
@@ -61,8 +76,19 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
     if (!opened) messenger.showMessage(failed);
   }
 
+  // The section arrives after the page around it, so it grows into place
+  // rather than shoving everything below it down in one jump.
   @override
-  Widget build(BuildContext context) => FutureBuilder<List<UpcomingMeeting>>(
+  Widget build(BuildContext context) => AnimatedSize(
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 220),
+    curve: Curves.easeOutCubic,
+    alignment: AlignmentDirectional.topStart,
+    child: _section(context),
+  );
+
+  Widget _section(BuildContext context) => FutureBuilder<List<UpcomingMeeting>>(
     future: _meetings,
     builder: (context, snapshot) {
       final meetings = snapshot.data ?? const <UpcomingMeeting>[];

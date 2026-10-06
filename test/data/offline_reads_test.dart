@@ -58,6 +58,9 @@ void main() {
       accessToken: () async => 'token',
       refreshSession: () async => false,
       onSessionLost: () {},
+      // What is kept on the device, not the few seconds remembered in
+      // memory, is what these tests are about.
+      recentFor: Duration.zero,
     )..responseCache = cache;
   });
 

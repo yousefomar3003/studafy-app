@@ -484,7 +484,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
       appBar: AppBar(title: Text(l10n.studentLessonsPlans)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.all(16),

@@ -7,6 +7,7 @@ import '../../../core/attachment_opener.dart';
 import '../../../core/attachment_policy.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
+import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
@@ -71,25 +72,30 @@ class _NotebookViewState extends State<NotebookView> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
+  /// Once the notebook has been shown, a reload (after adding a note or a
+  /// photo) keeps it on screen and swaps in the new entries when they come.
+  bool _loaded = false;
+
   Future<void> _load() async {
     if (!mounted) return;
     setState(() {
-      _loading = true;
+      _loading = !_loaded;
       _failed = false;
     });
     try {
+      // Both at once: the plan only decides whether photos are offered.
+      final planRead = widget.study.plan().then<StudyPlan?>(
+        (plan) => plan,
+        onError: (Object _) => null,
+      );
       final entries = await widget.study.notebook(widget.classroomId);
-      StudyPlan? plan;
-      try {
-        plan = await widget.study.plan();
-      } on Object {
-        plan = null;
-      }
+      final plan = await planRead;
       if (!mounted) return;
       setState(() {
         _entries = entries;
         _plan = plan;
         _loading = false;
+        _loaded = true;
       });
     } on Object {
       if (!mounted) return;
@@ -564,7 +570,7 @@ class _NotebookViewState extends State<NotebookView> {
         ),
       );
     }
-    return RefreshIndicator(
+    return StudafyRefreshIndicator(
       onRefresh: _load,
       child: ListView(children: children),
     );

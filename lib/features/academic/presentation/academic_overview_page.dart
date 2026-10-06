@@ -118,11 +118,26 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
   void initState() {
     super.initState();
     feed = widget.initialFeed;
-    selectedStudentId =
-        widget.studentId ??
-        (widget.students.length == 1 ? widget.students.first.id : null);
+    selectedStudentId = _studentFrom(widget);
     future = _load();
     _loadChoices();
+  }
+
+  static String? _studentFrom(AcademicOverviewPage page) =>
+      page.studentId ??
+      (page.students.length == 1 ? page.students.first.id : null);
+
+  /// The child chosen somewhere else (the family home) is followed in place:
+  /// the page keeps the feed it is on - Grades stays Grades - and loads that
+  /// child's. A choice made here has already loaded, so nothing is repeated.
+  @override
+  void didUpdateWidget(AcademicOverviewPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final chosen = _studentFrom(widget);
+    if (chosen != _studentFrom(oldWidget) && chosen != selectedStudentId) {
+      selectedStudentId = chosen;
+      future = _load();
+    }
   }
 
   Future<void> _loadChoices() async {
@@ -350,6 +365,16 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     });
   }
 
+  /// Pull-to-refresh: the indicator stays until the new list is in.
+  Future<void> _pullToRefresh() async {
+    _refresh();
+    try {
+      await future;
+    } on Object {
+      // The list shows the failure.
+    }
+  }
+
   IconData _feedIcon(AcademicFeed value) => switch (value) {
     AcademicFeed.content => Icons.menu_book_rounded,
     AcademicFeed.assignments => Icons.assignment_rounded,
@@ -554,7 +579,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
       FutureBuilder<List<AcademicRecord>>(
         future: future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          // A reload of the same list keeps it on screen until the new one
+          // is in; only a list never shown yet waits behind a spinner.
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
@@ -563,8 +591,8 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
           final loaded = snapshot.data ?? const <AcademicRecord>[];
           final items = _studentWork ? _grouped(loaded) : loaded;
           if (items.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async => _refresh(),
+            return StudafyRefreshIndicator(
+              onRefresh: _pullToRefresh,
               child: ListView(
                 children: [
                   StudafyEmptyState(
@@ -578,8 +606,8 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               ),
             );
           }
-          return RefreshIndicator(
-            onRefresh: () async => _refresh(),
+          return StudafyRefreshIndicator(
+            onRefresh: _pullToRefresh,
             child: ListView.builder(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 24),
               itemCount: items.length,

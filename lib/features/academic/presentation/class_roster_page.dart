@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 
@@ -85,7 +86,7 @@ class _ClassRosterPageState extends State<ClassRosterPage> {
           ? _Message(text: _error!, onRetry: _load)
           : _students.isEmpty
           ? _Message(text: AppL10n.of(context).rosterEmpty)
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _load,
               child: ListView.separated(
                 itemCount: _students.length,

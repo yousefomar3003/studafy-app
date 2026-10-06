@@ -73,6 +73,7 @@ class StudyAssistantPage extends StatefulWidget {
     this.onPlanLimit,
     this.plan,
     this.onUpgrade,
+    this.onBack,
   });
 
   final StudyAssistantInteractor assistant;
@@ -124,6 +125,10 @@ class StudyAssistantPage extends StatefulWidget {
 
   /// Opens the plans. Null offers no upgrade.
   final Future<void> Function()? onUpgrade;
+
+  /// Leaves the helper. Set where it is shown full screen, without the tab
+  /// bar, and the page then offers a back arrow.
+  final VoidCallback? onBack;
 
   @override
   State<StudyAssistantPage> createState() => _StudyAssistantPageState();
@@ -537,6 +542,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         child: Column(
           children: [
             StudafyLargeTitle(
+              leading: switch (widget.onBack) {
+                final back? => BackButton(onPressed: back),
+                null => null,
+              },
               title: l10n.studyAssistantTitle,
               subtitle: l10n.helperSubtitle,
               padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 16, 8),
@@ -730,208 +739,213 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     final plan = _plan;
     final inChat = _turns.isNotEmpty || _asking;
     final canAdd = _canAddMaterial || widget.uploads != null;
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Today's questions are used: say so, and offer the way on.
-          if (_limitHit && !_off)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _Banner(
-                icon: Icons.hourglass_bottom_rounded,
-                // The server's own refusal when there is one; otherwise the
-                // plan says today's questions are used.
-                text: _error ?? l10n.helperLimitReached,
-                actionLabel: _canUpgrade ? l10n.upgradeButton : null,
-                onAction: _canUpgrade ? _upgrade : null,
-              ),
-            )
-          else if (inChat && plan != null && plan.askPerDay > 0)
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 4, 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${plan.name} · '
-                      '${l10n.studyPlansQuestionsTodayAsktodayOfAskperday(plan.askToday, plan.askPerDay)}',
-                      style: const TextStyle(
-                        color: studafyMuted,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ),
-                  if (_canUpgrade)
-                    TextButton(
-                      onPressed: _upgrade,
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(0, 36),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      child: Text(l10n.upgradeButton),
-                    ),
-                ],
-              ),
-            )
-          else if (_remaining != null)
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 4),
-              child: Text(
-                l10n.studyAssistantRemaining(_remaining!),
-                style: const TextStyle(color: studafyMuted, fontSize: 12.5),
-              ),
-            ),
-          if (_error != null && !(_limitHit && !_off))
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 6),
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: studafyDanger, fontSize: 13),
+    // The helper has the whole screen, with no tab bar below, so the field
+    // keeps clear of the home indicator itself.
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Today's questions are used: say so, and offer the way on.
+            if (_limitHit && !_off)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _Banner(
+                  icon: Icons.hourglass_bottom_rounded,
+                  // The server's own refusal when there is one; otherwise the
+                  // plan says today's questions are used.
+                  text: _error ?? l10n.helperLimitReached,
+                  actionLabel: _canUpgrade ? l10n.upgradeButton : null,
+                  onAction: _canUpgrade ? _upgrade : null,
                 ),
-              ),
-            ),
-          if (_status != null)
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 6),
-              child: Text(
-                _status!,
-                style: const TextStyle(color: studafyMuted, fontSize: 12.5),
-              ),
-            ),
-          // What this chat answers from, and the photo going with the next
-          // question - each removable.
-          if (_references.isNotEmpty || _photo != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (_references.isNotEmpty)
-                    Text(
-                      l10n.helperAnsweringFrom,
-                      style: const TextStyle(
-                        color: studafyMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  for (final reference in _references)
-                    InputChip(
-                      avatar: Icon(
-                        reference.kind == ChatReferenceKind.lesson
-                            ? Icons.menu_book_rounded
-                            : Icons.sticky_note_2_outlined,
-                        size: 16,
-                      ),
-                      label: Text(reference.title),
-                      deleteButtonTooltipMessage: l10n.helperRemove,
-                      onDeleted: _asking
-                          ? null
-                          : () => _setReferences([
-                              for (final other in _references)
-                                if (other != reference) other,
-                            ]),
-                    ),
-                  if (_photo case final photo?)
-                    InputChip(
-                      avatar: const Icon(Icons.image_outlined, size: 16),
-                      label: Text(photo.displayName),
-                      deleteButtonTooltipMessage: l10n.helperRemove,
-                      onDeleted: _asking
-                          ? null
-                          : () => setState(() => _photo = null),
-                    ),
-                ],
-              ),
-            ),
-          // One rounded field: add on the leading side, send on the other.
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: studafyHairline),
-              boxShadow: [
-                BoxShadow(
-                  color: studafyAbyss.withValues(alpha: .06),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (canAdd)
-                    IconButton(
-                      tooltip: l10n.helperAdd,
-                      onPressed: _asking || _off ? null : _add,
-                      icon: const Icon(
-                        Icons.add_circle_outline_rounded,
-                        color: studafyNavy,
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _composer,
-                      enabled: !_asking && !_off,
-                      minLines: 1,
-                      maxLines: 6,
-                      maxLength: 1000,
-                      textCapitalization: TextCapitalization.sentences,
-                      textInputAction: TextInputAction.newline,
-                      decoration: InputDecoration(
-                        hintText: l10n.studyAssistantMessageHint,
-                        counterText: '',
-                        isDense: true,
-                        filled: false,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 12,
+              )
+            else if (inChat && plan != null && plan.askPerDay > 0)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 4, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${plan.name} · '
+                        '${l10n.studyPlansQuestionsTodayAsktodayOfAskperday(plan.askToday, plan.askPerDay)}',
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          fontSize: 12.5,
                         ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
                       ),
                     ),
+                    if (_canUpgrade)
+                      TextButton(
+                        onPressed: _upgrade,
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 36),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(l10n.upgradeButton),
+                      ),
+                  ],
+                ),
+              )
+            else if (_remaining != null)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 4),
+                child: Text(
+                  l10n.studyAssistantRemaining(_remaining!),
+                  style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+                ),
+              ),
+            if (_error != null && !(_limitHit && !_off))
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 6),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: studafyDanger, fontSize: 13),
                   ),
-                  const SizedBox(width: 4),
-                  IconButton.filled(
-                    tooltip: l10n.studyAssistantSend,
-                    onPressed: _asking || _off ? null : _send,
-                    style: IconButton.styleFrom(
-                      backgroundColor: studafyNavy,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: studafyHairline,
-                      disabledForegroundColor: studafyMuted,
-                      fixedSize: const Size(44, 44),
-                    ),
-                    icon: _asking
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.arrow_upward_rounded),
+                ),
+              ),
+            if (_status != null)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 6),
+                child: Text(
+                  _status!,
+                  style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+                ),
+              ),
+            // What this chat answers from, and the photo going with the next
+            // question - each removable.
+            if (_references.isNotEmpty || _photo != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (_references.isNotEmpty)
+                      Text(
+                        l10n.helperAnsweringFrom,
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    for (final reference in _references)
+                      InputChip(
+                        avatar: Icon(
+                          reference.kind == ChatReferenceKind.lesson
+                              ? Icons.menu_book_rounded
+                              : Icons.sticky_note_2_outlined,
+                          size: 16,
+                        ),
+                        label: Text(reference.title),
+                        deleteButtonTooltipMessage: l10n.helperRemove,
+                        onDeleted: _asking
+                            ? null
+                            : () => _setReferences([
+                                for (final other in _references)
+                                  if (other != reference) other,
+                              ]),
+                      ),
+                    if (_photo case final photo?)
+                      InputChip(
+                        avatar: const Icon(Icons.image_outlined, size: 16),
+                        label: Text(photo.displayName),
+                        deleteButtonTooltipMessage: l10n.helperRemove,
+                        onDeleted: _asking
+                            ? null
+                            : () => setState(() => _photo = null),
+                      ),
+                  ],
+                ),
+              ),
+            // One rounded field: add on the leading side, send on the other.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: studafyHairline),
+                boxShadow: [
+                  BoxShadow(
+                    color: studafyAbyss.withValues(alpha: .06),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (canAdd)
+                      IconButton(
+                        tooltip: l10n.helperAdd,
+                        onPressed: _asking || _off ? null : _add,
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: studafyNavy,
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _composer,
+                        enabled: !_asking && !_off,
+                        minLines: 1,
+                        maxLines: 6,
+                        maxLength: 1000,
+                        textCapitalization: TextCapitalization.sentences,
+                        textInputAction: TextInputAction.newline,
+                        decoration: InputDecoration(
+                          hintText: l10n.studyAssistantMessageHint,
+                          counterText: '',
+                          isDense: true,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 12,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton.filled(
+                      tooltip: l10n.studyAssistantSend,
+                      onPressed: _asking || _off ? null : _send,
+                      style: IconButton.styleFrom(
+                        backgroundColor: studafyNavy,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: studafyHairline,
+                        disabledForegroundColor: studafyMuted,
+                        fixedSize: const Size(44, 44),
+                      ),
+                      icon: _asking
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.arrow_upward_rounded),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

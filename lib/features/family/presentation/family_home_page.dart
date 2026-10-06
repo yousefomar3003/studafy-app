@@ -75,14 +75,21 @@ class FamilyHomePageState extends State<FamilyHomePage> {
     unawaited(_load());
   }
 
+  /// Once the page has been shown, a pull keeps it on screen and swaps in
+  /// what comes back, rather than blanking to a spinner.
+  bool _loaded = false;
+
   Future<void> _load() async {
-    setState(() => _loading = true);
+    if (!_loaded) setState(() => _loading = true);
     final interactor = FamilyScope.of(context);
+    // Both at once: neither waits on the other.
+    final approvalsRead = interactor.pendingApprovals();
     final children = await interactor.children();
-    final approvals = await interactor.pendingApprovals();
+    final approvals = await approvalsRead;
     if (!mounted) return;
     setState(() {
       _loading = false;
+      _loaded = true;
       _approvals = approvals;
       children.fold(
         onSuccess: (list) {
@@ -198,7 +205,7 @@ class FamilyHomePageState extends State<FamilyHomePage> {
                 onAction: _load,
               ),
             )
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),

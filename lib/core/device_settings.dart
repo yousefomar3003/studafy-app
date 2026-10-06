@@ -34,6 +34,11 @@ abstract final class DeviceSettingKeys {
   /// Set once the welcome slides have been seen or skipped on this device,
   /// so they are shown once, not at every sign-in.
   static const introSeen = 'settings.intro.seen';
+
+  /// The role (`teacher`, `parent` or `student`) last opened on this device,
+  /// so a launch with a session still signed in goes straight back to it
+  /// instead of asking again. Only the role: never who.
+  static const lastRole = 'settings.session.lastRole';
 }
 
 /// In-memory store for tests and synthetic builds.

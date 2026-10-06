@@ -106,6 +106,29 @@ class ApiFamilyRepository
     // Only a child with a link row is ever queried; the server re-checks
     // that the link is verified on every read.
     if (schoolId == null) throw Failure.notFound;
+    // Grades and attendance at once: neither waits on the other, and each
+    // may take several pages. Future.wait rather than a record's wait, as it
+    // rethrows the first failure as it was, so _guard still tells a refusal
+    // from a dropped connection.
+    final both = await Future.wait<Object>([
+      _gradesFor(schoolId, studentId),
+      _attendanceFor(schoolId, studentId),
+    ], eagerError: true);
+    final (scored, percentTotal) = both[0] as (int, double);
+    final (present, late, absent, excused) = both[1] as (int, int, int, int);
+
+    return ChildProgress(
+      gradedCount: scored,
+      averagePercent: scored == 0 ? null : percentTotal / scored,
+      present: present,
+      late: late,
+      absent: absent,
+      excused: excused,
+    );
+  });
+
+  /// How many published grades the child has, and their percentages summed.
+  Future<(int, double)> _gradesFor(String schoolId, String studentId) async {
     var scored = 0;
     var percentTotal = 0.0;
     String? cursor;
@@ -126,9 +149,16 @@ class ApiFamilyRepository
       cursor = grades.nextCursor;
       if (cursor == null) break;
     }
+    return (scored, percentTotal);
+  }
 
+  /// The child's attendance marks: present, late, absent, excused.
+  Future<(int, int, int, int)> _attendanceFor(
+    String schoolId,
+    String studentId,
+  ) async {
     var present = 0, late = 0, absent = 0, excused = 0;
-    cursor = null;
+    String? cursor;
     for (var page = 0; page < _maxPages; page++) {
       final attendance = await _client.listAttendance(
         schoolId: schoolId,
@@ -151,16 +181,8 @@ class ApiFamilyRepository
       cursor = attendance.nextCursor;
       if (cursor == null) break;
     }
-
-    return ChildProgress(
-      gradedCount: scored,
-      averagePercent: scored == 0 ? null : percentTotal / scored,
-      present: present,
-      late: late,
-      absent: absent,
-      excused: excused,
-    );
-  });
+    return (present, late, absent, excused);
+  }
 
   @override
   Future<List<PurchaseApprovalRequest>> pending() => _guard(() async {

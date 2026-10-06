@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/file_upload_repository.dart';
+import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
 import 'package:studafy/features/study_assistant/data/file_study_chat_store.dart';
@@ -65,6 +66,55 @@ void main() {
     id: 'lesson-1',
     title: 'Cells',
   );
+
+  testWidgets('the nav bar steps aside while a question is typed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: StudyAssistantPage(
+            assistant: StudyAssistantInteractor(
+              repository: _Recording(),
+              telemetry: const NoopTelemetry(),
+            ),
+          ),
+          bottomNavigationBar: StudafyNavigationBar(
+            selectedIndex: 0,
+            onSelected: (_) {},
+            items: const [
+              StudafyNavItem('Today', Icons.home_outlined, Icons.home),
+              StudafyNavItem('NavHelper', Icons.star_outline, Icons.star),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('NavHelper'), findsOneWidget);
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(find.text('NavHelper'), findsNothing);
+  });
+
+  testWidgets('shown full screen, it offers a way back', (tester) async {
+    var back = 0;
+    await tester.pumpWidget(
+      localizedApp(
+        home: StudyAssistantPage(
+          assistant: StudyAssistantInteractor(
+            repository: _Recording(),
+            telemetry: const NoopTelemetry(),
+          ),
+          onBack: () => back++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    expect(back, 1);
+  });
 
   testWidgets('class material chosen for a chat goes with every question', (
     tester,

@@ -16,7 +16,10 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    timer = Timer(const Duration(seconds: 2), () {
+    // No fixed wait: the role screen shows the same mark while it decides
+    // whether a session can go straight back in, so holding here only adds
+    // time to every launch.
+    timer = Timer(Duration.zero, () {
       if (mounted) {
         // Named route so the app supplies the session dependencies; the
         // splash stays dependency-free.

@@ -151,7 +151,7 @@ void main() {
   testWidgets('a recorded note is uploaded as audio and sent with no text', (
     tester,
   ) async {
-    final (chat, uploads, mic, _) = await open(tester);
+    final (chat, uploads, mic, speaker) = await open(tester);
 
     await tester.tap(find.byTooltip('Record a voice note'));
     await tester.pump();
@@ -167,9 +167,41 @@ void main() {
     expect(upload.bytes, mic.bytes);
     expect(chat.sent.single.body, '');
     expect(chat.sent.single.fileIds, ['file-1']);
-    // Just sent, so still being checked - the sender cannot play it yet
-    // either.
+    // Still being checked on the server, but the sender plays their own
+    // recording from this phone at once - nothing is fetched for it.
+    expect(find.text('Checking voice message…'), findsNothing);
+    await tester.tap(find.byTooltip('Play voice message'));
+    await tester.pumpAndSettle();
+    expect(speaker.played, ['file-1']);
+    expect(uploads.downloaded, isEmpty);
+  });
+
+  testWidgets("someone else's note still waits for the check", (
+    tester,
+  ) async {
+    await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _teacher,
+          body: '',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'voice-1',
+              displayName: 'Voice message',
+              sizeBytes: 8,
+              scanState: 'quarantined',
+              mediaType: 'audio/mp4',
+            ),
+          ],
+        ),
+      ],
+    );
     expect(find.text('Checking voice message…'), findsOne);
+    expect(find.byTooltip('Play voice message'), findsNothing);
   });
 
   testWidgets('a voice note that failed to send is sent again as it is', (

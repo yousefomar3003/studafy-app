@@ -117,7 +117,7 @@ class _BlockedPeoplePageState extends State<BlockedPeoplePage> {
                 onAction: _load,
               ),
             )
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),

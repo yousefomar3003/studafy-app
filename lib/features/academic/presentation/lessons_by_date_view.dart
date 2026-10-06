@@ -69,7 +69,8 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
   Widget build(BuildContext context) => FutureBuilder<List<AcademicRecord>>(
     future: _lessons,
     builder: (context, snapshot) {
-      if (snapshot.connectionState != ConnectionState.done) {
+      if (snapshot.connectionState != ConnectionState.done &&
+          !snapshot.hasData) {
         return const Center(child: CircularProgressIndicator());
       }
       if (snapshot.hasError) {
@@ -162,7 +163,7 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
           ),
         );
       }
-      return RefreshIndicator(
+      return StudafyRefreshIndicator(
         onRefresh: () async {
           final next = _load();
           setState(() => _lessons = next);

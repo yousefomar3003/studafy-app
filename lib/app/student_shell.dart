@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollDirection;
 
 import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
+import '../core/lazy_indexed_stack.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_components.dart';
@@ -103,23 +104,32 @@ class _StudentShellState extends State<StudentShell> {
     setState(() {
       index = target.$1;
       if (target.$2 case final feed?) _workFeed = feed;
-      _navCompact = false;
+      _navCompact.value = false;
     });
     return true;
   }
 
   /// The bar is compact while the student scrolls down a page, and full
   /// again as soon as they scroll back up or touch it - as on the teacher's.
-  bool _navCompact = false;
+  final _navCompact = ValueNotifier<bool>(false);
+
+  /// The tab the helper was opened from, to go back to.
+  int _beforeHelper = 0;
+
+  @override
+  void dispose() {
+    _navCompact.dispose();
+    super.dispose();
+  }
 
   bool _onScroll(UserScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
     final compact = switch (notification.direction) {
       ScrollDirection.reverse => true,
       ScrollDirection.forward => false,
-      ScrollDirection.idle => _navCompact,
+      ScrollDirection.idle => _navCompact.value,
     };
-    if (compact != _navCompact) setState(() => _navCompact = compact);
+    _navCompact.value = compact;
     return false;
   }
 
@@ -288,6 +298,8 @@ class _StudentShellState extends State<StudentShell> {
       ),
       if (assistant != null)
         StudyAssistantPage(
+          // Full screen, like a chat: the bar is away while it is open.
+          onBack: () => setState(() => index = _beforeHelper),
           assistant: assistant,
           chats: widget.studyChats,
           switchedOn: switch (widget.study) {
@@ -357,6 +369,8 @@ class _StudentShellState extends State<StudentShell> {
           asRole: MessagingRole.student,
         ),
     ];
+    final helper = pages.indexWhere((page) => page is StudyAssistantPage);
+    final helperIndex = helper < 0 ? null : helper;
     final classes = widget.classes;
     if (_hasNoClassYet && classes != null) {
       return Scaffold(
@@ -374,49 +388,63 @@ class _StudentShellState extends State<StudentShell> {
       // than a floating button that sat over the cards and the bar.
       body: NotificationListener<UserScrollNotification>(
         onNotification: _onScroll,
-        child: IndexedStack(index: index, children: pages),
+        child: LazyIndexedStack(
+          index: index,
+          // The inbox acknowledges delivery while out of sight.
+          builtAhead: {if (messaging) messagesIndex},
+          children: pages,
+        ),
       ),
-      bottomNavigationBar: StudafyNavigationBar(
-        selectedIndex: index,
-        compact: _navCompact,
-        onInteract: () {
-          if (_navCompact) setState(() => _navCompact = false);
-        },
-        onSelected: (value) => setState(() {
-          index = value;
-          _navCompact = false;
-        }),
-        items: [
-          StudafyNavItem(
-            AppL10n.of(context).navToday,
-            Icons.home_outlined,
-            Icons.home_rounded,
-          ),
-          StudafyNavItem(
-            AppL10n.of(context).feedContent,
-            Icons.auto_stories_outlined,
-            Icons.auto_stories_rounded,
-          ),
-          StudafyNavItem(
-            AppL10n.of(context).navWork,
-            Icons.assignment_outlined,
-            Icons.assignment_rounded,
-          ),
-          if (assistant != null)
-            StudafyNavItem(
-              AppL10n.of(context).studyAssistantTab,
-              Icons.auto_awesome_outlined,
-              Icons.auto_awesome_rounded,
+      // The helper is a chat and has the whole screen; its back arrow
+      // returns to the tab it was opened from.
+      bottomNavigationBar: index == helperIndex
+          ? null
+          : ValueListenableBuilder<bool>(
+              // Only the bar follows scrolling; the tabs are not rebuilt.
+              valueListenable: _navCompact,
+              builder: (context, compact, _) => StudafyNavigationBar(
+                selectedIndex: index,
+                compact: compact,
+                onInteract: () {
+                  _navCompact.value = false;
+                },
+                onSelected: (value) => setState(() {
+                  if (value == helperIndex) _beforeHelper = index;
+                  index = value;
+                  _navCompact.value = false;
+                }),
+                items: [
+                  StudafyNavItem(
+                    AppL10n.of(context).navToday,
+                    Icons.home_outlined,
+                    Icons.home_rounded,
+                  ),
+                  StudafyNavItem(
+                    AppL10n.of(context).feedContent,
+                    Icons.auto_stories_outlined,
+                    Icons.auto_stories_rounded,
+                  ),
+                  StudafyNavItem(
+                    AppL10n.of(context).navWork,
+                    Icons.assignment_outlined,
+                    Icons.assignment_rounded,
+                  ),
+                  if (assistant != null)
+                    StudafyNavItem(
+                      AppL10n.of(context).studyAssistantTab,
+                      Icons.auto_awesome_outlined,
+                      Icons.auto_awesome_rounded,
+                    ),
+                  if (messaging)
+                    StudafyNavItem(
+                      AppL10n.of(context).navMessages,
+                      Icons.send_outlined,
+                      Icons.send_rounded,
+                    ),
+                ],
+                accent: studafyNavy,
+              ),
             ),
-          if (messaging)
-            StudafyNavItem(
-              AppL10n.of(context).navMessages,
-              Icons.send_outlined,
-              Icons.send_rounded,
-            ),
-        ],
-        accent: studafyNavy,
-      ),
     );
   }
 }

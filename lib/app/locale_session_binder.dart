@@ -33,8 +33,10 @@ class LocaleSessionBinder {
     final profile = _context.profile;
     if (profile == null || !_seeded.add(profile.id)) return;
     // Deliberately not awaited: sign-in must not block on this, and a failure
-    // leaves the device showing the language it already had.
+    // leaves the device showing the language it already had. A choice that
+    // failed to reach the profile last time is sent now there is a session.
     _seed();
+    controller.republishIfPending();
   }
 
   Future<void> _seed() async {

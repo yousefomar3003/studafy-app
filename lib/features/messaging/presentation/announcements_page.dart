@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_components.dart';
+import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
 import 'conversations_page.dart';
@@ -154,7 +155,8 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
       FutureBuilder<List<(Announcement, AnnouncementSource)>>(
         future: _items,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
@@ -171,7 +173,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
           }
           final items = snapshot.data ?? const [];
           final labelled = widget.sources.length > 1;
-          return RefreshIndicator(
+          return StudafyRefreshIndicator(
             onRefresh: () async {
               final next = _load();
               setState(() => _items = next);

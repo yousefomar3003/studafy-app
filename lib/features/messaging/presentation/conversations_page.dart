@@ -8,6 +8,7 @@ import '../../../core/feedback.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_domain.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
@@ -70,6 +71,10 @@ class _ConversationsPageState extends State<ConversationsPage>
   /// False while this tab is off screen: nothing is loading, so a spinner
   /// would be a lie and would never stop.
   late bool _loading = widget.visible;
+
+  /// Once a list has been shown, a reload keeps it on screen and swaps in
+  /// the new one when it arrives, instead of blanking to a spinner.
+  bool _loaded = false;
   bool _enabled = true;
   Failure? _failure;
 
@@ -79,9 +84,25 @@ class _ConversationsPageState extends State<ConversationsPage>
   Timer? _acknowledger;
   bool _foreground = true;
 
+  /// Who the list was loaded for, so a different person - or someone
+  /// arriving after the page was built - is loaded afresh.
+  String? _loadedFor;
+
+  void _contextChanged() {
+    if (!mounted) return;
+    final userId = messagingIdentity()?.userId;
+    if (userId == _loadedFor) return;
+    if (widget.visible && userId != null) {
+      unawaited(_load());
+    } else {
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    ActiveContextController.instance.addListener(_contextChanged);
     WidgetsBinding.instance.addObserver(this);
     if (widget.visible) unawaited(_load());
     // After the first frame: the scope is an inherited widget.
@@ -94,6 +115,7 @@ class _ConversationsPageState extends State<ConversationsPage>
 
   @override
   void dispose() {
+    ActiveContextController.instance.removeListener(_contextChanged);
     _acknowledger?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -136,7 +158,12 @@ class _ConversationsPageState extends State<ConversationsPage>
       setState(() => _loading = false);
       return;
     }
-    setState(() => _loading = true);
+    if (identity.userId != _loadedFor) {
+      // Someone else's list must not stay up while theirs loads.
+      _loaded = false;
+      _loadedFor = identity.userId;
+    }
+    if (!_loaded) setState(() => _loading = true);
     final interactor = MessagingScope.of(context);
     final schoolId = identity.schoolId;
     // Whether a school has messaging switched on is a question about that
@@ -144,10 +171,12 @@ class _ConversationsPageState extends State<ConversationsPage>
     // verified - has no school to ask about, and is not blocked by one
     // either: their conversation list spans every school they are a
     // participant in.
-    final enabled = schoolId == null
+    // Both at once: neither waits on the other.
+    final enabledRead = schoolId == null
         ? null
-        : await interactor.messagingEnabled(schoolId);
+        : interactor.messagingEnabled(schoolId);
     final list = await interactor.conversations();
+    final enabled = await enabledRead;
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -169,6 +198,7 @@ class _ConversationsPageState extends State<ConversationsPage>
                       item,
                 ];
           _failure = null;
+          _loaded = true;
           _acknowledge();
         },
         onFailure: (failure) => _failure = failure,
@@ -270,14 +300,10 @@ class _ConversationsPageState extends State<ConversationsPage>
           const SizedBox(width: 4),
         ],
       ),
+      // No one signed in yet - the account is still being loaded or
+      // switched. The page loads as soon as they are; see _contextChanged.
       body: identity == null
-          ? Center(
-              child: StudafyEmptyState(
-                icon: Icons.school_outlined,
-                title: l10n.msgTitle,
-                message: l10n.msgNoSchool,
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : !widget.showAnnouncements
           ? _messages(identity.userId, schoolId)
           : Column(
@@ -325,7 +351,7 @@ class _ConversationsPageState extends State<ConversationsPage>
         ),
       );
     }
-    return RefreshIndicator(
+    return StudafyRefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 24),
@@ -379,7 +405,8 @@ class _ConversationsPageState extends State<ConversationsPage>
     return FutureBuilder<List<Announcement>>(
       future: _announcements ??= _loadAnnouncements(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
@@ -395,7 +422,7 @@ class _ConversationsPageState extends State<ConversationsPage>
           );
         }
         final items = snapshot.data ?? const <Announcement>[];
-        return RefreshIndicator(
+        return StudafyRefreshIndicator(
           onRefresh: () async {
             final next = _loadAnnouncements();
             setState(() => _announcements = next);

@@ -81,7 +81,7 @@ class _FamilyInsightsPageState extends State<FamilyInsightsPage> {
               ),
             );
           }
-          return RefreshIndicator(
+          return StudafyRefreshIndicator(
             onRefresh: () async => setState(() {
               _future = _load();
             }),

@@ -65,18 +65,31 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
     unawaited(_load());
   }
 
+  /// Once the page has been shown, a reload (pull, or the bell) keeps it on
+  /// screen and swaps in the new figures together when they are all in.
+  bool _loaded = false;
+
   Future<void> _load() async {
-    setState(() => _loading = true);
+    if (!_loaded) setState(() => _loading = true);
     final notifications = NotificationsScope.of(context);
+    // Both at once, then every class at once: one after another, a teacher
+    // with six classes waited on fourteen round trips in a row.
+    final unreadRead = notifications.unreadCount();
     final classes = await widget.classes.loadClasses();
-    final unread = await notifications.unreadCount();
-    if (!mounted) return;
     final list = classes.fold(
       onSuccess: (items) => items,
       onFailure: (_) => const <ClassroomSummary>[],
     );
+    final perClass = await Future.wait([
+      for (final classroom in list) _loadClass(classroom),
+    ]);
+    final unread = await unreadRead;
+    if (!mounted) return;
+    // All in one go, so the page never says "nothing outstanding" while the
+    // classes' work is still on its way.
     setState(() {
       _loading = false;
+      _loaded = true;
       _unread = unread.fold(onSuccess: (n) => n, onFailure: (_) => 0);
       classes.fold(
         onSuccess: (items) {
@@ -85,46 +98,40 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
         },
         onFailure: (_) => _failed = true,
       );
+      _work = [for (final (work, _) in perClass) ...work];
+      _outstanding = [for (final (_, sections) in perClass) ...sections]
+        ..sort((a, b) => b.startsAt.compareTo(a.startsAt));
     });
-    // Each class is asked separately, and a class that fails is skipped
-    // rather than emptying the whole page: a teacher with four classes and
-    // one bad response should still see the other three.
-    final work = <_TodayWork>[];
-    final outstanding = <_TodaySection>[];
-    for (final classroom in list) {
-      try {
-        final assignments = await widget.academic.load(
-          AcademicFeed.assignments,
-          classroomId: classroom.id.value,
-        );
-        for (final record in assignments) {
-          work.add(_TodayWork(title: record.title, className: classroom.name));
-        }
-      } on Object {
-        // Skipped on purpose; see above.
-      }
-      try {
-        final sessions = await widget.academic.lessonSessions(
-          classroom.id.value,
-        );
-        for (final session in sessions.where((item) => !item.filed)) {
-          outstanding.add(
+  }
+
+  /// One class's work and unfiled lessons. Each class is asked separately,
+  /// and a class that fails is skipped rather than emptying the whole page:
+  /// a teacher with four classes and one bad response should still see the
+  /// other three.
+  Future<(List<_TodayWork>, List<_TodaySection>)> _loadClass(
+    ClassroomSummary classroom,
+  ) async {
+    final id = classroom.id.value;
+    Future<T?> skipped<T>(Future<T> read) =>
+        read.then<T?>((value) => value, onError: (Object _) => null);
+    final (assignments, sessions) = await (
+      skipped(widget.academic.load(AcademicFeed.assignments, classroomId: id)),
+      skipped(widget.academic.lessonSessions(id)),
+    ).wait;
+    return (
+      [
+        for (final record in assignments ?? const <AcademicRecord>[])
+          _TodayWork(title: record.title, className: classroom.name),
+      ],
+      [
+        for (final session in sessions ?? const <LessonSession>[])
+          if (!session.filed)
             _TodaySection(
               startsAt: session.startsAt,
               className: classroom.name,
             ),
-          );
-        }
-      } on Object {
-        // Skipped on purpose; see above.
-      }
-    }
-    if (!mounted) return;
-    setState(() {
-      _work = work;
-      _outstanding = outstanding
-        ..sort((a, b) => b.startsAt.compareTo(a.startsAt));
-    });
+      ],
+    );
   }
 
   @override
@@ -158,7 +165,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
           const AccountButton(),
         ],
       ),
-      body: RefreshIndicator(
+      body: StudafyRefreshIndicator(
         onRefresh: _load,
         child: ListView(
           padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),

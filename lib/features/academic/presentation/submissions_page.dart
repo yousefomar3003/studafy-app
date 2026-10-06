@@ -281,7 +281,7 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
                   ),
                   const Divider(height: 1),
                   Expanded(
-                    child: RefreshIndicator(
+                    child: StudafyRefreshIndicator(
                       onRefresh: _load,
                       child: ListView.separated(
                         itemCount: _students.length,
