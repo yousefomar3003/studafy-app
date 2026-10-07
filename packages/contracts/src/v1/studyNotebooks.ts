@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { V1Flashcard, V1QuizQuestion } from "./studyPlans";
+import { V1MaterialRefs } from "./materialSelection";
 
 /**
  * A student's study notebooks (2026-10-07): one per lesson, or per chosen
@@ -197,6 +198,11 @@ export const V1StudyNotebook = z.strictObject({
   personal: V1NotebookPersonal,
   personalVersion: z.number().int().positive(),
   sources: z.array(V1NotebookSource).max(100),
+  /** The lesson's own text is part of it. */
+  includeText: z.boolean(),
+  /** Made from the whole lesson: files added to it later are read on an
+   * update. Otherwise exactly the files marked [chosen]. */
+  wholeLesson: z.boolean(),
   sets: z.array(V1NotebookSetSummary).max(40),
   generatedAt: Timestamp.nullable(),
 });
@@ -204,8 +210,14 @@ export type V1StudyNotebook = z.infer<typeof V1StudyNotebook>;
 
 export const V1CreateStudyNotebookRequest = z.strictObject({
   resourceId: Id,
-  /** The lesson's files and links to read; empty for all of it. */
+  /** The lesson's files and links to read; empty for all of it. Older apps
+   * send this; newer ones send [references]. */
   sourceIds: z.array(Id).max(20),
+  /** Exactly what to make it from, all on [resourceId]: the whole lesson,
+   * or its text and chosen files and links (2026-10-07). */
+  references: V1MaterialRefs.optional(),
+  /** Go on without chosen files that cannot be read now. */
+  skipUnavailable: z.boolean().optional(),
   title: z.string().trim().min(1).max(120).optional(),
   language: z.enum(["ar", "en"]).optional(),
 });
@@ -215,6 +227,7 @@ export type V1CreateStudyNotebookRequest = z.infer<
 
 export const V1RegenerateStudyNotebookRequest = z.strictObject({
   sourceIds: z.array(Id).max(20).optional(),
+  skipUnavailable: z.boolean().optional(),
   language: z.enum(["ar", "en"]).optional(),
 });
 export type V1RegenerateStudyNotebookRequest = z.infer<

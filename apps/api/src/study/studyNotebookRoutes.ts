@@ -34,7 +34,13 @@ import {
   type ModelPrices,
   OUTPUT_TOKENS,
 } from "./metering";
-import { gatherMaterial, type MaterialRepository } from "./material";
+import type { MaterialRepository } from "./material";
+import {
+  gatherScope,
+  type MaterialRef,
+  resolveSelection,
+  selectionProblem,
+} from "./selection";
 import { STUDY_SET_MATERIAL_CHARS } from "./routes";
 
 /**
@@ -136,6 +142,25 @@ function setOf(value: unknown): Record<string, unknown> {
   };
 }
 
+/** A notebook's material as references: the whole lesson, or its text
+ * (when kept) and the chosen files and links. */
+export function notebookRefs(
+  resourceId: string,
+  sourceIds: string[],
+  includeText: boolean,
+  wholeLesson: boolean,
+): MaterialRef[] {
+  if (wholeLesson) return [{ kind: "lesson", id: resourceId }];
+  return [
+    ...(includeText ? [{ kind: "text" as const, id: resourceId }] : []),
+    ...sourceIds.map((id) => ({
+      kind: "file" as const,
+      id,
+      lessonId: resourceId,
+    })),
+  ];
+}
+
 export function createStudyNotebookRoutes(
   deps: StudyNotebookDependencies,
   authorization: AuthorizationDependencies,
@@ -168,14 +193,36 @@ export function createStudyNotebookRoutes(
     try {
       const assistant = deps.assistant;
       if (!assistant) return await fail("provider_unavailable");
-      const gathered = await gatherMaterial(deps.material, context, {
-        lessonIds: [String(started["resourceId"])],
-        sourceIds: (started["sourceIds"] ?? []) as string[],
-        question: "",
-        budgetChars: STUDY_SET_MATERIAL_CHARS,
-        mode: "coverage",
-      });
-      if (gathered.pending) return await fail("material_processing");
+      // Exactly what the notebook was made from. A file that can no longer
+      // be read is left out and listed in the notebook, with a retry.
+      const selection = await resolveSelection(
+        deps.material,
+        context,
+        notebookRefs(
+          String(started["resourceId"]),
+          (started["sourceIds"] ?? []) as string[],
+          started["includeText"] !== false,
+          started["wholeLesson"] !== false,
+        ),
+        { skipUnavailable: true },
+      );
+      if (!selection.ok) {
+        return await fail(
+          selection.outcome === "not_found"
+            ? "lesson_unavailable"
+            : "no_readable_material",
+        );
+      }
+      const gathered = await gatherScope(
+        deps.material,
+        context,
+        selection.scope,
+        {
+          question: "",
+          budgetChars: STUDY_SET_MATERIAL_CHARS,
+          mode: "coverage",
+        },
+      );
       const readable = gathered.passages.filter((p) => p.text.trim());
       if (readable.reduce((n, p) => n + p.text.length, 0) < 40) {
         return await fail("no_readable_material");
@@ -267,12 +314,41 @@ export function createStudyNotebookRoutes(
       const input = validatedBody<{
         resourceId: string;
         sourceIds: string[];
+        references?: MaterialRef[];
+        skipUnavailable?: boolean;
         title?: string;
       }>(c);
+      // A notebook is made from one lesson: every reference must be on it.
+      const refs = input.references ??
+        notebookRefs(
+          input.resourceId,
+          input.sourceIds,
+          true,
+          input.sourceIds.length === 0,
+        );
+      if (
+        refs.some((r) =>
+          r.kind === "note" ||
+          (r.kind === "lesson" || r.kind === "text"
+            ? r.id !== input.resourceId
+            : r.lessonId !== input.resourceId)
+        )
+      ) {
+        return problem(c, "INVALID_REQUEST", 400);
+      }
+      const selection = await resolveSelection(deps.material, context, refs, {
+        skipUnavailable: input.skipUnavailable === true,
+      });
+      if (!selection.ok) return selectionProblem(c, selection);
+      const lesson = selection.scope.lessons[0]!;
       const started = await deps.notebooks.call(context, "create", {
         classroomId: routeParam(c, "classroomId"),
         resourceId: input.resourceId,
-        sourceIds: input.sourceIds,
+        // The whole lesson stays whole - new files are read on an update;
+        // otherwise exactly the files chosen that can be read.
+        sourceIds: lesson.wholeLesson ? [] : lesson.kept.map((k) => k.id),
+        wholeLesson: lesson.wholeLesson,
+        includeText: lesson.includeText,
         ...(input.title ? { title: input.title } : {}),
       });
       if (started["outcome"] !== "ok") {
@@ -333,7 +409,36 @@ export function createStudyNotebookRoutes(
     async (c) => {
       if (!ready()) return problem(c, "AI_FEATURE_DISABLED", 409);
       const context = resolvedSchoolDbContext(c);
-      const input = validatedBody<{ sourceIds?: string[] }>(c);
+      const input = validatedBody<
+        { sourceIds?: string[]; skipUnavailable?: boolean }
+      >(c);
+      // The chosen files must still be readable, or the student says to go
+      // on without them - an update never quietly reads less.
+      const current = await deps.notebooks.call(context, "get", {
+        id: notebookId(c),
+      });
+      if (current["outcome"] !== "ok") {
+        return refusal(c, String(current["outcome"]));
+      }
+      const notebook = current["notebook"] as Record<string, unknown>;
+      const summary = notebook["summary"] as Record<string, unknown>;
+      const chosen = ((notebook["sources"] ?? []) as Record<string, unknown>[])
+        .filter((s) => s["chosen"] === true).map((s) => String(s["id"]));
+      const whole = input.sourceIds
+        ? input.sourceIds.length === 0
+        : notebook["wholeLesson"] !== false;
+      const check = await resolveSelection(
+        deps.material,
+        context,
+        notebookRefs(
+          String(summary["resourceId"]),
+          input.sourceIds ?? chosen,
+          notebook["includeText"] !== false,
+          whole,
+        ),
+        { skipUnavailable: input.skipUnavailable === true },
+      );
+      if (!check.ok) return selectionProblem(c, check);
       const started = await deps.notebooks.call(context, "regenerate", {
         id: notebookId(c),
         ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}),

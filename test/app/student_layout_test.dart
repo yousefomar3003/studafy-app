@@ -26,6 +26,7 @@ class _Helper implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async => const StudyAnswer(answer: 'Answer');
 }
 

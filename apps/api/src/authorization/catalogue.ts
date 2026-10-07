@@ -699,6 +699,16 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Change, update, delete or practise from one of the actor's own study notebooks.",
   },
+  // Exactly the chosen material, for AI study tools (2026-10-07). Each
+  // lesson and file is checked against the actor on the request.
+  "material_set.generate": {
+    resource: "material_selection",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Make or reopen a quiz or flashcards from class material the actor chose and can see, on Studafy Max.",
+  },
   "meeting.list": {
     resource: "meeting",
     scope: "self",

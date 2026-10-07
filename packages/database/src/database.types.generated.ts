@@ -5507,6 +5507,7 @@ export type Database = {
           headings: Json;
           icon: string | null;
           id: string;
+          include_text: boolean;
           model: string | null;
           owner_id: string;
           page_style: string;
@@ -5521,6 +5522,7 @@ export type Database = {
           title: string;
           unreadable: Json;
           updated_at: string;
+          whole_lesson: boolean;
         };
         Insert: {
           classroom_id: string;
@@ -5536,6 +5538,7 @@ export type Database = {
           headings?: Json;
           icon?: string | null;
           id?: string;
+          include_text?: boolean;
           model?: string | null;
           owner_id: string;
           page_style?: string;
@@ -5550,6 +5553,7 @@ export type Database = {
           title: string;
           unreadable?: Json;
           updated_at?: string;
+          whole_lesson?: boolean;
         };
         Update: {
           classroom_id?: string;
@@ -5565,6 +5569,7 @@ export type Database = {
           headings?: Json;
           icon?: string | null;
           id?: string;
+          include_text?: boolean;
           model?: string | null;
           owner_id?: string;
           page_style?: string;
@@ -5579,6 +5584,7 @@ export type Database = {
           title?: string;
           unreadable?: Json;
           updated_at?: string;
+          whole_lesson?: boolean;
         };
         Relationships: [
           {

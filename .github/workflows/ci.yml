@@ -363,6 +363,7 @@ jobs:
           supabase/tests/online_assessments.sql
           supabase/tests/grounded_material.sql
           supabase/tests/study_notebooks.sql
+          supabase/tests/material_selection.sql
 
       # API-042: every school-operations slice - account, communications,
       # family, invitations, meetings, notifications, roster, school

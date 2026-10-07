@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/material_selection.dart';
+
 /// A student's AI allowance, in tokens (ADR-0037): one allowance for the
 /// helper and every other AI study tool. Free resets weekly, the paid plans
 /// monthly.
@@ -24,8 +26,9 @@ class HelperAllowance {
   double get usedFraction =>
       total <= 0 ? 1 : (used / total).clamp(0, 1).toDouble();
 
-  /// Under a fifth left: the student is told before it runs out.
-  bool get low => remaining > 0 && remaining < total * 0.2;
+  /// A quarter or less left - the bar's "Running low": the student is told
+  /// before it runs out.
+  bool get low => remaining > 0 && used >= total * 0.75;
 
   /// Nothing left to ask with.
   bool get exhausted => remaining <= 0;
@@ -170,7 +173,9 @@ class HelperAbilities {
   final bool photos;
 }
 
-enum ChatReferenceKind { lesson, file, link, note }
+/// A whole lesson; its own text alone; one file or link on it; or one of
+/// the student's notes (ADR-0039).
+enum ChatReferenceKind { lesson, text, file, link, note }
 
 /// A lesson, one file or link on a lesson, or one of the student's notes the
 /// helper answers from. Only which one travels; the server reads the
@@ -182,6 +187,8 @@ class ChatReference {
     required this.id,
     required this.title,
     this.lessonId,
+    this.lessonTitle,
+    this.classLabel,
   });
 
   final ChatReferenceKind kind;
@@ -191,11 +198,17 @@ class ChatReference {
   /// The lesson a file or link belongs to.
   final String? lessonId;
 
+  /// Its lesson's title and class, to say what the chat answers from.
+  final String? lessonTitle;
+  final String? classLabel;
+
   Map<String, Object?> toJson() => {
     'kind': kind.name,
     'id': id,
     'title': title,
     'lessonId': ?lessonId,
+    'lessonTitle': ?lessonTitle,
+    'classLabel': ?classLabel,
   };
 
   static ChatReference? fromJson(Object? json) {
@@ -207,11 +220,15 @@ class ChatReference {
     final title = json['title'];
     if (kind == null || id is! String || title is! String) return null;
     final lesson = json['lessonId'];
+    final lessonTitle = json['lessonTitle'];
+    final classLabel = json['classLabel'];
     return ChatReference(
       kind: kind,
       id: id,
       title: title,
       lessonId: lesson is String ? lesson : null,
+      lessonTitle: lessonTitle is String ? lessonTitle : null,
+      classLabel: classLabel is String ? classLabel : null,
     );
   }
 
@@ -322,6 +339,7 @@ class StudyChat {
     required this.updatedAt,
     this.turns = const [],
     this.references = const [],
+    this.marks = const [],
   });
 
   final String id;
@@ -335,6 +353,10 @@ class StudyChat {
   /// The lessons and notes this chat answers from.
   final List<ChatReference> references;
 
+  /// Where in the chat the material it answers from changed, so the
+  /// student can see which answers used what.
+  final List<ChatContextMark> marks;
+
   StudyChat withTurns(List<ChatTurn> next) => StudyChat(
     id: id,
     title: title,
@@ -342,16 +364,20 @@ class StudyChat {
     updatedAt: next.isEmpty ? updatedAt : next.last.at,
     turns: next,
     references: references,
+    marks: marks,
   );
 
-  StudyChat withReferences(List<ChatReference> next) => StudyChat(
-    id: id,
-    title: title,
-    createdAt: createdAt,
-    updatedAt: updatedAt,
-    turns: turns,
-    references: next,
-  );
+  /// [next] from now on; marked in the chat when it already has turns.
+  StudyChat withReferences(List<ChatReference> next, {ChatContextMark? mark}) =>
+      StudyChat(
+        id: id,
+        title: title,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        turns: turns,
+        references: next,
+        marks: [...marks, ?mark],
+      );
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -360,6 +386,7 @@ class StudyChat {
     'updatedAt': updatedAt.toUtc().toIso8601String(),
     'turns': [for (final turn in turns) turn.toJson()],
     'references': [for (final reference in references) reference.toJson()],
+    'marks': [for (final mark in marks) mark.toJson()],
   };
 
   static StudyChat? fromJson(Object? json) {
@@ -382,9 +409,125 @@ class StudyChat {
         for (final item in json['references'] as List<dynamic>? ?? const [])
           ?ChatReference.fromJson(item),
       ],
+      marks: [
+        for (final item in json['marks'] as List<dynamic>? ?? const [])
+          ?ChatContextMark.fromJson(item),
+      ],
     );
   }
 }
+
+/// The material a chat answers from changed here: [label] says to what,
+/// empty for none.
+@immutable
+class ChatContextMark {
+  const ChatContextMark({required this.at, required this.label});
+
+  final DateTime at;
+  final String label;
+
+  Map<String, Object?> toJson() => {
+    'at': at.toUtc().toIso8601String(),
+    'label': label,
+  };
+
+  static ChatContextMark? fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final at = DateTime.tryParse('${json['at']}');
+    final label = json['label'];
+    if (at == null || label is! String) return null;
+    return ChatContextMark(at: at.toLocal(), label: label);
+  }
+}
+
+/// The chat's references as a selection, for the picker and the line that
+/// says what the chat answers from.
+MaterialSelection selectionOfReferences(List<ChatReference> references) {
+  final lessons = <String, LessonSelection>{};
+  final notes = <NoteSelection>[];
+  for (final r in references) {
+    if (r.kind == ChatReferenceKind.note) {
+      notes.add(
+        NoteSelection(id: r.id, title: r.title, classLabel: r.classLabel ?? ''),
+      );
+      continue;
+    }
+    final lessonId =
+        r.kind == ChatReferenceKind.lesson || r.kind == ChatReferenceKind.text
+        ? r.id
+        : r.lessonId;
+    if (lessonId == null) continue;
+    final current =
+        lessons[lessonId] ??
+        LessonSelection(
+          lessonId: lessonId,
+          title:
+              r.kind == ChatReferenceKind.lesson ||
+                  r.kind == ChatReferenceKind.text
+              ? r.title
+              : r.lessonTitle ?? '',
+          classroomId: '',
+          classLabel: r.classLabel ?? '',
+          includeText: false,
+          sourceIds: const {},
+        );
+    lessons[lessonId] = switch (r.kind) {
+      ChatReferenceKind.lesson => current.copyWith(
+        includeText: true,
+        wholeLesson: true,
+      ),
+      ChatReferenceKind.text => current.copyWith(includeText: true),
+      _ => LessonSelection(
+        lessonId: current.lessonId,
+        title: current.title,
+        classroomId: current.classroomId,
+        classLabel: current.classLabel,
+        includeText: current.includeText,
+        sourceIds: {...current.sourceIds, r.id},
+        sourceNames: {...current.sourceNames, r.id: r.title},
+        wholeLesson: current.wholeLesson,
+      ),
+    };
+  }
+  return MaterialSelection(lessons: lessons.values.toList(), notes: notes);
+}
+
+/// A selection as the chat keeps it.
+List<ChatReference> referencesOfSelection(MaterialSelection selection) => [
+  for (final lesson in selection.lessons)
+    if (lesson.wholeLesson)
+      ChatReference(
+        kind: ChatReferenceKind.lesson,
+        id: lesson.lessonId,
+        title: lesson.title,
+        classLabel: lesson.classLabel,
+      )
+    else ...[
+      if (lesson.includeText)
+        ChatReference(
+          kind: ChatReferenceKind.text,
+          id: lesson.lessonId,
+          title: lesson.title,
+          classLabel: lesson.classLabel,
+        ),
+      for (final id in lesson.sourceIds)
+        ChatReference(
+          kind: ChatReferenceKind.file,
+          id: id,
+          title: lesson.sourceNames[id] ?? '',
+          lessonId: lesson.lessonId,
+          lessonTitle: lesson.title,
+          classLabel: lesson.classLabel,
+        ),
+    ],
+  for (final note in selection.notes)
+    ChatReference(
+      kind: ChatReferenceKind.note,
+      id: note.id,
+      title: note.title,
+      classLabel: note.classLabel,
+    ),
+];
 
 /// Asks the study assistant a question.
 ///
@@ -404,6 +547,7 @@ abstract class StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   });
 }
 

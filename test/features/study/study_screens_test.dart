@@ -477,16 +477,18 @@ void main() {
       expect(find.text('Quizzes made from your lessons'), findsOne);
       // The store's own price, in the student's currency.
       expect(find.text(r'$5.99 / month'), findsOne);
-      // Every plan in AI tokens: Free a week at a time, with an estimate of
-      // what that buys, and never "unlimited".
-      expect(find.text('40,000 of 40,000 AI tokens left'), findsOne);
-      expect(find.text('Renews every Monday · next on Mon, Oct 12'), findsOne);
+      // Usage as a bar and a label - Free a week at a time - never a count
+      // of tokens, and never "unlimited".
+      expect(find.text('Plenty available'), findsOne);
+      expect(find.text('Resets every Monday · next on Mon, Oct 12'), findsOne);
       expect(
         find.text(
-          '40,000 AI tokens a week - about 10 questions on your lessons (an estimate)',
+          'Light AI use - a few questions about your lessons each week',
         ),
         findsOne,
       );
+      expect(find.textContaining('token'), findsNothing);
+      expect(find.textContaining('40,000'), findsNothing);
       expect(find.textContaining('nlimited'), findsNothing);
       expect(find.textContaining('questions a day'), findsNothing);
     });
@@ -499,7 +501,10 @@ void main() {
         plans(_Study(tier: StudyPlanTier.plus), _Store()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2,250,000 of 3,000,000 AI tokens left'), findsOne);
+      // A quarter of the month used: plenty left, shown as a bar.
+      expect(find.text('Plenty available'), findsOne);
+      expect(find.text('Resets on Sun, Nov 1'), findsOne);
+      expect(find.textContaining('2,250,000'), findsNothing);
       expect(find.text('Your plan'), findsOne);
     });
 

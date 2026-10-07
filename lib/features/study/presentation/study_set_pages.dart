@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/feedback.dart';
+import '../../../core/material_selection.dart';
+import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
@@ -22,11 +24,16 @@ class StudySetButtons extends StatefulWidget {
     required this.lessonTitle,
     required this.plan,
     required this.onOpenPlans,
+    this.pick,
   });
 
   final StudyRepository study;
   final String resourceId;
   final String lessonTitle;
+
+  /// Chooses exactly what the quiz or flashcards are made from, starting
+  /// with this lesson (ADR-0039). Null makes them from the whole lesson.
+  final MaterialPicker? pick;
 
   /// The caller's plan, read once by the host for the whole list.
   final StudyPlan? plan;
@@ -44,6 +51,24 @@ class _StudySetButtonsState extends State<StudySetButtons> {
   bool get _locked => !(widget.plan?.canMakeStudySets ?? false);
 
   Future<void> _open(StudySetKind kind) async {
+    final pick = widget.pick;
+    if (pick != null) {
+      await openStudySetFromSelection(
+        context,
+        study: widget.study,
+        pick: pick,
+        kind: kind,
+        request: MaterialPickRequest(
+          action: kind == StudySetKind.quiz
+              ? MaterialAction.quiz
+              : MaterialAction.flashcards,
+          preselectLessonId: widget.resourceId,
+        ),
+        plan: widget.plan,
+        onOpenPlans: widget.onOpenPlans,
+      );
+      return;
+    }
     final messenger = ScaffoldMessenger.of(context);
     if (_switchedOff) {
       messenger.showMessage(AppL10n.of(context).studySetSwitchedOff);
@@ -64,7 +89,7 @@ class _StudySetButtonsState extends State<StudySetButtons> {
         builder: (_) => StudySetPage(
           title: widget.lessonTitle,
           kind: kind,
-          load: () => widget.study.studySet(widget.resourceId, kind),
+          load: (_) => widget.study.studySet(widget.resourceId, kind),
           plan: widget.plan,
           onOpenPlans: widget.onOpenPlans,
         ),
@@ -121,6 +146,52 @@ class _StudySetButtonsState extends State<StudySetButtons> {
   }
 }
 
+/// A quiz or flashcards from material the student chooses: the plan is
+/// checked first, then the picker shows exactly what will be used, and
+/// only that is sent (ADR-0039).
+Future<void> openStudySetFromSelection(
+  BuildContext context, {
+  required StudyRepository study,
+  required MaterialPicker pick,
+  required StudySetKind kind,
+  required MaterialPickRequest request,
+  required StudyPlan? plan,
+  required VoidCallback onOpenPlans,
+}) async {
+  final l10n = AppL10n.of(context);
+  if (!(plan?.studySetsOn ?? true)) {
+    ScaffoldMessenger.of(context).showMessage(l10n.studySetSwitchedOff);
+    return;
+  }
+  if (!(plan?.canMakeStudySets ?? false)) {
+    await showUpgradePrompt(
+      context,
+      reason: UpgradeReason.feature,
+      plan: plan,
+      needs: StudyPlanTier.max,
+      onUpgrade: onOpenPlans,
+    );
+    return;
+  }
+  final selection = await pick(context, request);
+  if (selection == null || selection.isEmpty || !context.mounted) return;
+  await Navigator.of(context).pushOnce(
+    MaterialPageRoute<void>(
+      builder: (_) => StudySetPage(
+        title: kind == StudySetKind.quiz
+            ? l10n.studySetQuiz
+            : l10n.studySetFlashcards,
+        kind: kind,
+        selection: selection,
+        load: (skip) =>
+            study.selectionStudySet(kind, selection, skipUnavailable: skip),
+        plan: plan,
+        onOpenPlans: onOpenPlans,
+      ),
+    ),
+  );
+}
+
 /// Quizzes and flashcards, named at the top of a class's lessons so a
 /// student sees them before there is a lesson to make one from - and sees
 /// that they come with Studafy Max, when their plan does not include them.
@@ -130,11 +201,15 @@ class StudyToolsCard extends StatelessWidget {
     required this.plan,
     required this.hasLessons,
     required this.onOpenPlans,
+    this.onMake,
   });
 
   final StudyPlan? plan;
   final bool hasLessons;
   final VoidCallback onOpenPlans;
+
+  /// Makes one from material the student chooses.
+  final void Function(StudySetKind kind)? onMake;
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +217,7 @@ class StudyToolsCard extends StatelessWidget {
     final plan = this.plan;
     final off = plan != null && !plan.studySetsOn;
     final locked = !off && !(plan?.canMakeStudySets ?? false);
-    return Padding(
+    final card = Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: FeatureCard(
         onTap: locked ? onOpenPlans : null,
@@ -192,6 +267,33 @@ class StudyToolsCard extends StatelessWidget {
         ),
       ),
     );
+    final make = onMake;
+    if (make == null || off || locked || !hasLessons) return card;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        card,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => make(StudySetKind.quiz),
+                icon: const Icon(Icons.quiz_outlined, size: 18),
+                label: Text(l10n.pickActionQuiz),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => make(StudySetKind.flashcards),
+                icon: const Icon(Icons.style_outlined, size: 18),
+                label: Text(l10n.pickActionFlashcards),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -207,11 +309,18 @@ class StudySetPage extends StatefulWidget {
     required this.load,
     this.plan,
     this.onOpenPlans,
+    this.selection,
   });
 
   final String title;
   final StudySetKind kind;
-  final Future<StudySet> Function() load;
+
+  /// Makes or reopens it; true goes on without chosen files that cannot be
+  /// read now.
+  final Future<StudySet> Function(bool skipUnavailable) load;
+
+  /// What was chosen, to name files that cannot be read.
+  final MaterialSelection? selection;
   final StudyPlan? plan;
   final VoidCallback? onOpenPlans;
 
@@ -222,6 +331,7 @@ class StudySetPage extends StatefulWidget {
 class _StudySetPageState extends State<StudySetPage> {
   StudySet? _set;
   StudyRefusal? _refusal;
+  MaterialUnavailableException? _unavailable;
 
   @override
   void initState() {
@@ -229,14 +339,25 @@ class _StudySetPageState extends State<StudySetPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool skipUnavailable = false}) async {
     setState(() {
       _set = null;
       _refusal = null;
+      _unavailable = null;
     });
     try {
-      final set = await widget.load();
+      final set = await widget.load(skipUnavailable);
       if (mounted) setState(() => _set = set);
+    } on MaterialUnavailableException catch (error) {
+      if (!mounted) return;
+      setState(() => _unavailable = error);
+      // Named, never dropped: the student decides.
+      final go = await confirmContinueWithout(
+        context,
+        error,
+        selection: widget.selection,
+      );
+      if (go && mounted) await _load(skipUnavailable: true);
     } on StudyException catch (error) {
       if (mounted) setState(() => _refusal = error.refusal);
     } on Object {
@@ -252,14 +373,33 @@ class _StudySetPageState extends State<StudySetPage> {
     if (set != null) {
       final empty = quiz ? set.questions.isEmpty : set.cards.isEmpty;
       if (!empty) {
+        final from = set.scope == null || set.scope!.lessons.isEmpty
+            ? null
+            : scopeLine(l10n, set.scope!);
         return quiz
-            ? QuizPage(title: widget.title, questions: set.questions)
-            : FlashcardsPage(title: widget.title, cards: set.cards);
+            ? QuizPage(
+                title: widget.title,
+                questions: set.questions,
+                madeFrom: from,
+              )
+            : FlashcardsPage(
+                title: widget.title,
+                cards: set.cards,
+                madeFrom: from,
+              );
       }
     }
     final refusal = _refusal;
     final Widget body;
-    if (set == null && refusal == null) {
+    if (_unavailable != null) {
+      body = StudafyEmptyState(
+        icon: Icons.hourglass_top_rounded,
+        title: l10n.unavailableTitle,
+        message: l10n.unavailableBody,
+        actionLabel: l10n.nbRetry,
+        onAction: _load,
+      );
+    } else if (set == null && refusal == null) {
       body = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -327,10 +467,18 @@ class _StudySetPageState extends State<StudySetPage> {
 /// A quiz: answer every question, then check - the score, which were
 /// right, and why each answer is the answer. Try again starts over.
 class QuizPage extends StatefulWidget {
-  const QuizPage({super.key, required this.title, required this.questions});
+  const QuizPage({
+    super.key,
+    required this.title,
+    required this.questions,
+    this.madeFrom,
+  });
 
   final String title;
   final List<QuizQuestion> questions;
+
+  /// The lessons and files it was made from.
+  final String? madeFrom;
 
   @override
   State<QuizPage> createState() => _QuizPageState();
@@ -381,6 +529,7 @@ class _QuizPageState extends State<QuizPage> {
         controller: _scroll,
         padding: const EdgeInsets.all(16),
         children: [
+          if (widget.madeFrom case final from?) MadeFromLine(from),
           if (_checked)
             FeatureCard(
               tint: _score == count ? studafyTeal : studafyNavy,
@@ -634,10 +783,18 @@ class _Option extends StatelessWidget {
 /// Previous and Next step through them; at the end, the count you knew and
 /// a round of just the ones you are still learning.
 class FlashcardsPage extends StatefulWidget {
-  const FlashcardsPage({super.key, required this.title, required this.cards});
+  const FlashcardsPage({
+    super.key,
+    required this.title,
+    required this.cards,
+    this.madeFrom,
+  });
 
   final String title;
   final List<Flashcard> cards;
+
+  /// The lessons and files they were made from.
+  final String? madeFrom;
 
   @override
   State<FlashcardsPage> createState() => _FlashcardsPageState();
@@ -727,6 +884,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (widget.madeFrom case final from?) MadeFromLine(from),
                     Text(
                       l10n.cardsProgress('${_index + 1}', '$count'),
                       textAlign: TextAlign.center,
@@ -900,4 +1058,33 @@ class _FlipCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Made from: Cells (lesson text, Leaf.pdf)": so the student can check
+/// what a result used.
+class MadeFromLine extends StatelessWidget {
+  const MadeFromLine(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 2),
+          child: Icon(Icons.source_outlined, size: 16, color: studafyMuted),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            AppL10n.of(context).madeFrom(text),
+            style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+          ),
+        ),
+      ],
+    ),
+  );
 }

@@ -53,8 +53,11 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async {
-    final keep = photoFileIds.isEmpty;
+    // Going on without unreadable files is a different answer from the
+    // one with them, so it is neither read from nor kept in the cache.
+    final keep = photoFileIds.isEmpty && !skipUnavailable;
     final maxAgeHere = references.isEmpty
         ? maxAge
         : const Duration(days: 1) < maxAge
@@ -95,6 +98,7 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
       photoFileIds: photoFileIds,
       requestId: requestId,
       language: language,
+      skipUnavailable: skipUnavailable,
     );
     // Something could not be read yet: next time it may be, so the answer
     // is not kept.

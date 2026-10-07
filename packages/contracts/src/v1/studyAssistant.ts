@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { V1AiAllowance } from "./studyPlans";
+import { V1MaterialRef, V1MaterialScope } from "./materialSelection";
 
 /// One question a student typed, and nothing else.
 ///
@@ -22,16 +23,15 @@ export const V1StudyAssistantAskRequest = z.strictObject({
   /// before it is sent on. The app sends what fits the plan's chat memory
   /// (`chatMemoryChars` on the study plan); the server trims it to that too.
   history: z.array(V1StudyAssistantTurn).max(400).optional(),
-  /// Class material to answer from: a lesson the student can see (with all
-  /// its files and links), one file or link on such a lesson, or one of
+  /// Class material to answer from, exactly as chosen (2026-10-07): a whole
+  /// lesson, a lesson's own text, one file or link on a lesson, or one of
   /// their own notes. The server reads the material itself - the app sends
-  /// only which ones - and skips any the student may not read (ADR-0037).
-  references: z.array(z.strictObject({
-    kind: z.enum(["lesson", "file", "link", "note"]),
-    id: z.string().uuid(),
-    /// The lesson a file or link belongs to.
-    lessonId: z.string().uuid().optional(),
-  })).max(5).optional(),
+  /// only which ones - and refuses any the student may not read; a chosen
+  /// file that cannot be read is named in a MATERIAL_UNAVAILABLE refusal
+  /// unless `skipUnavailable` (ADR-0037, ADR-0039).
+  references: z.array(V1MaterialRef).max(40).optional(),
+  /// Go on without chosen files that cannot be read now.
+  skipUnavailable: z.boolean().optional(),
   /// The app's language, so the answer is in it.
   language: z.enum(["ar", "en"]).optional(),
   /// The same id for a retry of the same question: a retry is never charged
@@ -67,6 +67,8 @@ export const V1StudyAssistantAskResponse = z.strictObject({
   })).max(40),
   /// What is left of the allowance after this answer.
   allowance: V1AiAllowance,
+  /// The class material this answer was given, when there was any.
+  scope: V1MaterialScope.nullable().optional(),
 });
 export type V1StudyAssistantAskResponse = z.infer<
   typeof V1StudyAssistantAskResponse

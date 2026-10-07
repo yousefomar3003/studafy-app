@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
+import '../core/ai_usage.dart';
 import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
 import '../core/lazy_indexed_stack.dart';
+import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_components.dart';
@@ -29,9 +31,9 @@ import '../features/study_assistant/presentation/study_assistant_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 import 'assessment_navigation.dart';
+import 'material_picker.dart';
 import 'student_lessons_page.dart';
 import 'student_today_page.dart';
-import 'study_reference_picker.dart';
 
 class StudentShell extends StatefulWidget {
   const StudentShell({
@@ -196,6 +198,18 @@ class _StudentShellState extends State<StudentShell> {
     return SubscriptionEntry(
       open: _openPlans,
       currentPlan: () async => studyPlanCopy[(await study.plan()).tier]!.name,
+      // What the server metered, shown as a bar and a label only.
+      usage: () async {
+        final plan = await study.plan();
+        return AiUsageSnapshot(
+          planName: studyPlanCopy[plan.tier]!.name,
+          used: plan.allowance.used,
+          total: plan.allowance.total,
+          resetsAt: plan.allowance.resetsAt,
+          weekly: plan.allowance.weekly,
+          canUpgrade: plan.tier.next != null,
+        );
+      },
     );
   }
 
@@ -348,14 +362,20 @@ class _StudentShellState extends State<StudentShell> {
             null => null,
           },
           pickReferences: switch ((widget.classes, widget.study)) {
-            (final classes?, final study?) =>
-              (context, current) => pickStudyReferences(
+            (final classes?, final study?) => (context, current) async {
+              final picked = await pickMaterials(
                 context,
+                MaterialPickRequest(
+                  action: MaterialAction.helper,
+                  initial: selectionOfReferences(current),
+                  allowNotes: true,
+                ),
                 classes: classes,
                 academic: repository,
                 study: study,
-                current: current,
-              ),
+              );
+              return picked == null ? null : referencesOfSelection(picked);
+            },
             _ => null,
           },
           uploads: widget.fileUploads,

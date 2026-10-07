@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/ai_usage.dart';
 import '../core/feedback.dart';
 import '../core/language_picker.dart';
 import '../core/navigation.dart';
@@ -29,12 +30,15 @@ import 'session_scope.dart';
 /// person has now. Supplied by a shell that sells plans; absent otherwise.
 @immutable
 class SubscriptionEntry {
-  const SubscriptionEntry({required this.open, this.currentPlan});
+  const SubscriptionEntry({required this.open, this.currentPlan, this.usage});
 
   final Future<void> Function(BuildContext context) open;
 
   /// The current plan's name, shown under the row.
   final Future<String?> Function()? currentPlan;
+
+  /// The plan's AI usage, as the server has it, for the AI usage section.
+  final Future<AiUsageSnapshot?> Function()? usage;
 }
 
 /// Opens the shared account screen. Every role shell shows it, because
@@ -354,6 +358,11 @@ class _AccountHubPageState extends State<AccountHubPage> {
               ),
             ],
           ),
+          if (subscription?.usage != null)
+            SettingsGroup(
+              title: l10n.usageSectionTitle,
+              children: [_AiUsageSection(entry: subscription!)],
+            ),
           if (subscription != null)
             SettingsGroup(
               title: l10n.accountSectionSubscription,
@@ -491,6 +500,69 @@ class _AccountIdRow extends StatelessWidget {
 }
 
 /// The plan row: the plan the person has, and the way to the Plans screen.
+/// How much AI use is left, as a bar and a label - never a count - with
+/// when it resets and the way to more.
+class _AiUsageSection extends StatefulWidget {
+  const _AiUsageSection({required this.entry});
+
+  final SubscriptionEntry entry;
+
+  @override
+  State<_AiUsageSection> createState() => _AiUsageSectionState();
+}
+
+class _AiUsageSectionState extends State<_AiUsageSection> {
+  AiUsageSnapshot? _usage;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final usage = await widget.entry.usage!();
+      if (mounted) {
+        setState(() {
+          _usage = usage;
+          _failed = usage == null;
+        });
+      }
+    } on Object {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final usage = _usage;
+    if (usage == null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: _failed
+            ? TextButton.icon(
+                onPressed: () {
+                  setState(() => _failed = false);
+                  _load();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(AppL10n.of(context).usageLoadFailed),
+              )
+            : const LinearProgressIndicator(),
+      );
+    }
+    return AiUsageCard(
+      usage: usage,
+      onPlans: () async {
+        await widget.entry.open(context);
+        await _load();
+      },
+    );
+  }
+}
+
 class _SubscriptionRow extends StatefulWidget {
   const _SubscriptionRow({required this.entry});
 

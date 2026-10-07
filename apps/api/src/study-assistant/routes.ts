@@ -31,7 +31,15 @@ import {
   type ModelPrices,
   OUTPUT_TOKENS,
 } from "../study/metering";
-import { gatherMaterial, type MaterialRepository } from "../study/material";
+import type { MaterialRepository } from "../study/material";
+import {
+  gatherScope,
+  type MaterialRef,
+  type ResolvedScope,
+  resolveSelection,
+  scopeJson,
+  selectionProblem,
+} from "../study/selection";
 import { outcomeProblem } from "../platform/outcomes";
 import { membershipDbContext } from "../platform/dbContext";
 
@@ -58,12 +66,6 @@ export interface StudyAssistantDependencies {
  */
 export const MATERIAL_CHARS = { free: 6_000, plus: 16_000, max: 24_000 };
 
-type Reference = {
-  kind: "lesson" | "file" | "link" | "note";
-  id: string;
-  lessonId?: string;
-};
-
 /**
  * The study assistant's one route.
  *
@@ -89,7 +91,8 @@ export function createStudyAssistantRoutes(
       const body = validatedBody<{
         question: string;
         history?: StudyTurn[];
-        references?: Reference[];
+        references?: MaterialRef[];
+        skipUnavailable?: boolean;
         attachmentFileIds?: string[];
         language?: "ar" | "en";
         requestId?: string;
@@ -158,26 +161,25 @@ export function createStudyAssistantRoutes(
       // one by one, and the student's own notes. What they may read is
       // decided in SQL on this request.
       const budget = MATERIAL_CHARS[planName] ?? MATERIAL_CHARS.free;
-      const lessonIds = [
-        ...new Set(
-          references.flatMap((r) =>
-            r.kind === "lesson" ? [r.id] : r.lessonId ? [r.lessonId] : []
-          ),
-        ),
-      ];
-      const sourceIds = references
-        .filter((r) => r.kind === "file" || r.kind === "link")
-        .map((r) => r.id);
       const history = body.history ?? [];
       const lastStudentTurn = [...history].reverse()
         .find((turn) => turn.role === "student")?.text;
-      const gathered = deps.material && lessonIds.length > 0
-        ? await gatherMaterial(deps.material, context, {
-          lessonIds,
-          // A lesson chosen whole means all of its sources.
-          sourceIds: references.some((r) => r.kind === "lesson")
-            ? []
-            : sourceIds,
+      // Exactly what was chosen, checked on this request: a lesson they
+      // cannot see, or a file not on its lesson, refuses the question; a
+      // chosen file that cannot be read is named, never dropped silently.
+      let resolved: ResolvedScope | null = null;
+      if (references.length > 0 && deps.material) {
+        const selection = await resolveSelection(
+          deps.material,
+          context,
+          references,
+          { skipUnavailable: body.skipUnavailable === true, allowNotes: true },
+        );
+        if (!selection.ok) return selectionProblem(c, selection);
+        resolved = selection.scope;
+      }
+      const gathered = deps.material && resolved && resolved.lessons.length > 0
+        ? await gatherScope(deps.material, context, resolved, {
           question: body.question,
           ...(lastStudentTurn ? { followUp: lastStudentTurn } : {}),
           budgetChars: budget,
@@ -278,6 +280,9 @@ export function createStudyAssistantRoutes(
           reason: u.code.slice(0, 60),
         })),
         allowance,
+        scope: resolved && resolved.lessons.length > 0
+          ? scopeJson(resolved)
+          : null,
       });
       return parsed.success
         ? c.json(parsed.data)

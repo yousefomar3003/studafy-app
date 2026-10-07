@@ -1837,7 +1837,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get studySetThisMonthSAiAllowance =>
-      'You\'ve used your AI tokens. They renew on your plan\'s reset date.';
+      'You\'ve reached your AI usage limit. It resets on your plan\'s reset date.';
 
   @override
   String get studySetThisLessonHasNoText =>
@@ -3895,7 +3895,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get upgradeAllowanceBody =>
-      'Your AI tokens are used. They renew on your plan\'s reset date, or with a bigger plan.';
+      'You\'ve reached your AI usage limit. It resets on your plan\'s reset date, or a bigger plan gives you more.';
 
   @override
   String upgradeFeatureTitle(String plan) {
@@ -5754,22 +5754,12 @@ class AppL10nEn extends AppL10n {
   String get gradeClassFiles => 'For the class';
 
   @override
-  String helperTokensLeft(String remaining, String total, String date) {
-    return '$remaining of $total AI tokens left · renews $date';
-  }
-
-  @override
   String get helperTokensUsed =>
-      'You\'ve used your AI tokens. Your question is still here.';
+      'You\'ve reached your AI usage limit. Your question is still here.';
 
   @override
   String helperTokensUsedUntil(String date) {
-    return 'You\'ve used your AI tokens. They renew on $date - your question is still here.';
-  }
-
-  @override
-  String helperTokensLow(String line) {
-    return 'Running low: $line.';
+    return 'You\'ve reached your AI usage limit. It resets on $date - your question is still here.';
   }
 
   @override
@@ -5810,14 +5800,14 @@ class AppL10nEn extends AppL10n {
   String get pickerOneFile => 'Or one file or link';
 
   @override
-  String get tokensWhatAreThey => 'What are AI tokens?';
+  String get tokensWhatAreThey => 'How does AI usage work?';
 
   @override
   String get tokensExplained =>
-      'The AI reads and writes in small pieces of text called tokens - about three-quarters of a word each. Your question, the parts of your lessons it reads, the earlier messages in the chat and its answer all use tokens. The helper, notes, quizzes and flashcards share one allowance.';
+      'Every question, summary, quiz, flashcard set and notebook uses some of your plan\'s AI usage. Longer files, longer chats and photos use more. Everything shares one allowance, shown as a bar, and it resets on a set date. When it runs out, your work is kept and you can carry on after it resets.';
 
   @override
-  String get tokensGuideTitle => 'Roughly what things use';
+  String get tokensGuideTitle => 'What uses a little, and what uses more';
 
   @override
   String get tokensGuideShortQuestion => 'A short question';
@@ -5832,13 +5822,8 @@ class AppL10nEn extends AppL10n {
   String get tokensGuidePhoto => 'A whiteboard or homework photo';
 
   @override
-  String tokensAbout(String amount) {
-    return 'about $amount';
-  }
-
-  @override
   String get tokensGuideEstimate =>
-      'These are estimates. The exact count comes from the AI for each request: longer files, answers and chats use more.';
+      'Your usage is shown as a bar - there is nothing to count.';
 
   @override
   String get readingTitle => 'Reading for the AI helper';
@@ -5904,17 +5889,12 @@ class AppL10nEn extends AppL10n {
   String get readingFailed => 'it couldn\'t be read';
 
   @override
-  String studyPlansTokensLeft(String remaining, String total) {
-    return '$remaining of $total AI tokens left';
-  }
-
-  @override
   String studyPlansTokensRenewWeekly(String date) {
-    return 'Renews every Monday · next on $date';
+    return 'Resets every Monday · next on $date';
   }
 
   @override
-  String get studyPlansTokensLow => 'Running low on AI tokens.';
+  String get studyPlansTokensLow => 'Running low on AI usage.';
 
   @override
   String get studyPlansFeatureAskLessons =>
@@ -5922,22 +5902,22 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get studyPlansFeatureFreeTokens =>
-      '40,000 AI tokens a week - about 10 questions on your lessons (an estimate)';
+      'Light AI use - a few questions about your lessons each week';
 
   @override
   String get studyPlansFeaturePlusTokens =>
-      '3,000,000 AI tokens a month - about 700 questions on your lessons (an estimate)';
+      'Regular AI use - questions, notes and notebooks on most days';
 
   @override
   String get studyPlansFeatureMaxTokens =>
-      '6,000,000 AI tokens a month - about 1,400 questions on your lessons (an estimate)';
+      'Heavy AI use - twice Plus, for daily quizzes, flashcards and notebooks';
 
   @override
-  String get upgradeTokensTitle => 'You\'ve used your AI tokens';
+  String get upgradeTokensTitle => 'You\'ve reached your AI usage limit';
 
   @override
   String upgradeTokensBody(String date) {
-    return 'They renew on $date. A bigger plan has more tokens.';
+    return 'It resets on $date. Your work is kept. A bigger plan gives you more.';
   }
 
   @override
@@ -6027,7 +6007,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get nbSheetTokens =>
-      'Writing a notebook uses AI tokens from your plan. Opening it again is free.';
+      'Writing a notebook uses some of your plan\'s AI usage. Opening it again is free.';
 
   @override
   String get nbSourceReading => 'Still being read';
@@ -6069,7 +6049,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get nbFailTokens =>
-      'Your AI tokens are used up. They renew with your plan.';
+      'You\'ve reached your AI usage limit. It resets with your plan; your notes are kept.';
 
   @override
   String get nbFailPlan => 'Study notebooks come with Studafy Plus.';
@@ -6378,4 +6358,247 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get cardsAnswer => 'Answer';
+
+  @override
+  String get pickTitle => 'Choose material';
+
+  @override
+  String get pickSearch => 'Search lessons and files';
+
+  @override
+  String get pickAllClasses => 'All classes';
+
+  @override
+  String get pickSelectClass => 'Select entire class';
+
+  @override
+  String pickSelectClassTitle(String name) {
+    return 'Select all of $name?';
+  }
+
+  @override
+  String pickSelectClassBody(int lessons, int files) {
+    return 'This chooses all $lessons lessons and their $files files and links that can be read. You can review and remove anything before continuing.';
+  }
+
+  @override
+  String get pickSelectClassConfirm => 'Select all';
+
+  @override
+  String pickTooManyLessons(int max) {
+    return 'Up to $max lessons can be used at once.';
+  }
+
+  @override
+  String get pickSingleLesson =>
+      'A notebook is made from one lesson: choose its text and the files to use.';
+
+  @override
+  String get pickLessonText => 'Lesson text';
+
+  @override
+  String get pickWholeLesson => 'whole lesson';
+
+  @override
+  String get pickWholeLessonDetail => 'Whole lesson, all attachments';
+
+  @override
+  String get pickPartOfLesson => 'Part of the lesson';
+
+  @override
+  String get pickAllAttachments => 'all attachments';
+
+  @override
+  String pickAttachments(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+      zero: 'no attachments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pickLessons(int count) {
+    return '$count lessons';
+  }
+
+  @override
+  String pickClasses(int count) {
+    return '$count classes';
+  }
+
+  @override
+  String pickLessonNamed(String title) {
+    return 'Lesson: $title';
+  }
+
+  @override
+  String get pickTextOnly => 'lesson text only';
+
+  @override
+  String pickNotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count notes',
+      one: '1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickNothing => 'Nothing chosen yet';
+
+  @override
+  String get pickReview => 'Review';
+
+  @override
+  String get pickReviewTitle => 'What will be used';
+
+  @override
+  String get pickRemove => 'Remove';
+
+  @override
+  String get pickSelected => 'Selected';
+
+  @override
+  String get pickShowFiles => 'Show its text and files';
+
+  @override
+  String get pickStillReading => 'Still being read';
+
+  @override
+  String pickWaitingNotIncluded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files are still being read and are not included yet.',
+      one: '1 file is still being read and is not included yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickNoMatch => 'Nothing matches your search.';
+
+  @override
+  String get pickLoadFailed => 'Your lessons could not be loaded.';
+
+  @override
+  String get pickActionSummary => 'Summarise selected materials';
+
+  @override
+  String get pickActionQuiz => 'Create quiz from selection';
+
+  @override
+  String get pickActionFlashcards => 'Create flashcards from selection';
+
+  @override
+  String get pickActionNotebook => 'Create notebook from selection';
+
+  @override
+  String get pickActionHelper => 'Use selection in AI Helper';
+
+  @override
+  String madeFrom(String sources) {
+    return 'Made from: $sources';
+  }
+
+  @override
+  String get unavailableTitle => 'Some chosen files can\'t be used right now';
+
+  @override
+  String get unavailableBody =>
+      'Nothing has been made yet. Try again later, or continue without these:';
+
+  @override
+  String get unavailableFile => 'A chosen file';
+
+  @override
+  String get unavailableLater => 'Try again later';
+
+  @override
+  String get unavailableContinue => 'Continue without them';
+
+  @override
+  String get helperNoMaterial => 'Not using class material';
+
+  @override
+  String get helperChooseMaterial => 'Choose';
+
+  @override
+  String get helperChangeMaterial => 'Change';
+
+  @override
+  String helperMaterialChangedMark(String label) {
+    return 'From here: $label';
+  }
+
+  @override
+  String get helperMaterialRemovedMark => 'From here: no class material';
+
+  @override
+  String get notebookMakingNotes => 'Making your notes…';
+
+  @override
+  String get usageSectionTitle => 'AI usage';
+
+  @override
+  String usagePlan(String plan) {
+    return '$plan plan';
+  }
+
+  @override
+  String get usagePlenty => 'Plenty available';
+
+  @override
+  String get usageLow => 'Running low';
+
+  @override
+  String get usageReached => 'Limit reached';
+
+  @override
+  String get usageReachedDetail =>
+      'Your chats, notes and notebooks are kept. You can carry on when it resets, or upgrade now.';
+
+  @override
+  String usageLine(String level, String date) {
+    return '$level · resets $date';
+  }
+
+  @override
+  String usageBarLabel(String level) {
+    return 'AI usage: $level';
+  }
+
+  @override
+  String usageResets(String date) {
+    return 'Resets on $date';
+  }
+
+  @override
+  String usageResetsWeekly(String date) {
+    return 'Resets every Monday · next on $date';
+  }
+
+  @override
+  String get usageUpgrade => 'Upgrade and compare plans';
+
+  @override
+  String get usageComparePlans => 'Compare plans';
+
+  @override
+  String get usageLoadFailed => 'Your AI usage could not be loaded. Try again';
+
+  @override
+  String get usageCostLight => 'uses a little';
+
+  @override
+  String get usageCostMedium => 'uses some';
+
+  @override
+  String get usageCostMore => 'uses more';
 }

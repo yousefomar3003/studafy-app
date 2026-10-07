@@ -7,6 +7,8 @@ import '../../../core/attachment_opener.dart';
 import '../../../core/attachment_policy.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
+import '../../../core/material_selection.dart';
+import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -30,6 +32,7 @@ class NotebookView extends StatefulWidget {
     this.source,
     this.pickLesson,
     this.header,
+    this.pick,
     this.readyTimeout = const Duration(seconds: 40),
     this.readyPoll = const Duration(seconds: 2),
   });
@@ -55,6 +58,10 @@ class NotebookView extends StatefulWidget {
 
   /// Shown above the notes: the class's study notebooks.
   final Widget? header;
+
+  /// Chooses exactly what study notes are made from (ADR-0039). Null makes
+  /// them from a whole lesson.
+  final MaterialPicker? pick;
 
   /// How long to wait for a new photo to clear the scan, and how often to ask.
   final Duration readyTimeout;
@@ -221,8 +228,63 @@ class _NotebookViewState extends State<NotebookView> {
           title: lesson.title,
           body: lesson.text,
         );
+      } else if (widget.pick != null) {
+        setState(() => _working = null);
+        await _summarise(preselect: lesson.id);
+        return;
       } else {
         await widget.study.lessonNotes(lesson.id);
+      }
+      _say(l10n.notebookLessonCopied);
+      await _load();
+    } on StudyException catch (error) {
+      await _refused(error.refusal);
+    } finally {
+      if (mounted) setState(() => _working = null);
+    }
+  }
+
+  /// Study notes from exactly the material the student chooses, filed
+  /// here, ending with what they were made from.
+  Future<void> _summarise({String? preselect}) async {
+    final pick = widget.pick;
+    if (pick == null) return;
+    final l10n = AppL10n.of(context);
+    if (!(_plan?.canSnapWhiteboard ?? false)) {
+      await _refused(StudyRefusal.planRequired);
+      return;
+    }
+    final selection = await pick(
+      context,
+      MaterialPickRequest(
+        action: MaterialAction.summary,
+        preselectLessonId: preselect,
+        onlyClassroomId: widget.classroomId,
+      ),
+    );
+    if (selection == null || selection.isEmpty || !mounted) return;
+    final language = Localizations.localeOf(context).languageCode;
+    setState(() => _working = l10n.notebookMakingNotes);
+    var skip = false;
+    try {
+      while (true) {
+        try {
+          await widget.study.summarise(
+            widget.classroomId,
+            selection,
+            skipUnavailable: skip,
+            language: language,
+          );
+          break;
+        } on MaterialUnavailableException catch (error) {
+          if (!mounted || skip) return;
+          skip = await confirmContinueWithout(
+            context,
+            error,
+            selection: selection,
+          );
+          if (!skip) return;
+        }
       }
       _say(l10n.notebookLessonCopied);
       await _load();
@@ -422,6 +484,16 @@ class _NotebookViewState extends State<NotebookView> {
               onPressed: _working != null ? null : _fromLesson,
               icon: const Icon(Icons.menu_book_rounded),
               label: Text(AppL10n.of(context).notebookFromLesson),
+            ),
+          if (widget.pick != null)
+            FilledButton.tonalIcon(
+              onPressed: _working != null ? null : () => _summarise(),
+              icon: Icon(
+                locked
+                    ? Icons.lock_outline_rounded
+                    : Icons.auto_awesome_rounded,
+              ),
+              label: Text(AppL10n.of(context).pickActionSummary),
             ),
           if (canUpload)
             FilledButton.icon(

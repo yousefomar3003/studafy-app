@@ -52,6 +52,10 @@ export const ErrorCode = {
   // The lesson's files are still being read (ADR-0037): a quiz, flashcards
   // or notes made now would miss them.
   MATERIAL_PROCESSING: "MATERIAL_PROCESSING",
+  // Chosen files or links that cannot be used now: the request names them
+  // (`errors`, path `sources/<id>`) so the student can try again or go on
+  // without them. Never widened or narrowed silently.
+  MATERIAL_UNAVAILABLE: "MATERIAL_UNAVAILABLE",
   // The same AI request is still being answered.
   AI_REQUEST_IN_PROGRESS: "AI_REQUEST_IN_PROGRESS",
   AI_FEATURE_DISABLED: "AI_FEATURE_DISABLED",

@@ -19,6 +19,8 @@ const SUBJECT = "00000000-0000-4000-8000-000000000001";
 const LESSON = "00000000-0000-4000-8000-0000000000d1";
 const PDF = "00000000-0000-4000-8000-0000000000e1";
 const LINK = "00000000-0000-4000-8000-0000000000e2";
+const CLASSROOM = "00000000-0000-4000-8000-0000000000c1";
+const OTHER_LESSON = "00000000-0000-4000-8000-0000000000d2";
 const PHOTO = "00000000-0000-4000-8000-0000000000f1";
 
 const allowance = {
@@ -69,10 +71,13 @@ function app(options: {
   const material: MaterialRepository = options.material ?? {
     call: async (_c, operation, input) => {
       if (operation === "lessons") {
+        const asked = (input["resourceIds"] ?? []) as string[];
         return {
           outcome: "ok",
-          lessons: [{
+          lessons: !asked.includes(LESSON) ? [] : [{
             resourceId: LESSON,
+            versionId: "00000000-0000-4000-8000-0000000000f1",
+            classroomId: CLASSROOM,
             title: "Photosynthesis",
             body: "Plants make food from light.",
             grade: "7",
@@ -180,7 +185,11 @@ function ask(routes: Hono<AuthorizationEnv>, extra: Record<string, unknown>) {
   });
 }
 
-const lessonRef = { references: [{ kind: "lesson", id: LESSON }] };
+// The whole lesson, going on without its video link, which cannot be read.
+const lessonRef = {
+  references: [{ kind: "lesson", id: LESSON }],
+  skipUnavailable: true,
+};
 
 describe("answering from a lesson", () => {
   test("sends the lesson and its best passages, and cites them", async () => {
@@ -215,6 +224,25 @@ describe("answering from a lesson", () => {
     expect(body["allowance"]).toEqual(allowance);
   });
 
+  test("a chosen file that cannot be read is named, not dropped", async () => {
+    const { routes, seen } = app({});
+    const res = await ask(routes, {
+      references: [{ kind: "lesson", id: LESSON }],
+    });
+    expect(res.status).toBe(409);
+    const problem = await res.json() as {
+      code: string;
+      errors: { path: string; code: string }[];
+    };
+    expect(problem.code).toBe("MATERIAL_UNAVAILABLE");
+    expect(problem.errors).toEqual([
+      { path: `sources/${LINK}`, code: "link_video" },
+    ]);
+    // Nothing was read, asked or charged.
+    expect(seen.retrieves).toEqual([]);
+    expect(seen.reserves).toEqual([]);
+  });
+
   test("tells the model, and the student, what could not be read", async () => {
     const { routes, seen } = app({});
     const body = await (await ask(routes, lessonRef)).json() as Record<
@@ -238,6 +266,51 @@ describe("answering from a lesson", () => {
     expect(seen.retrieves[0]!["sourceIds"]).toEqual([PDF]);
     expect(seen.extras[0]!.passages?.some((p) => p.sourceKind === "lesson"))
       .toBe(false);
+  });
+
+  test("the answer says exactly what it was given", async () => {
+    const { routes } = app({});
+    const body = await (await ask(routes, lessonRef)).json() as {
+      scope: Record<string, unknown>;
+    };
+    expect(body.scope).toEqual({
+      lessons: [{
+        resourceId: LESSON,
+        classroomId: CLASSROOM,
+        title: "Photosynthesis",
+        includeText: true,
+        wholeLesson: false,
+        sources: [{ id: PDF, kind: "file", name: "Leaf.pdf" }],
+      }],
+      skipped: [{ id: LINK, name: "Video", reason: "link_video" }],
+    });
+  });
+
+  test("a lesson's text alone reads no files at all", async () => {
+    const { routes, seen } = app({});
+    await ask(routes, { references: [{ kind: "text", id: LESSON }] });
+    expect(seen.retrieves).toEqual([]);
+    expect(seen.extras[0]!.passages?.map((p) => p.sourceKind)).toEqual([
+      "lesson",
+    ]);
+  });
+
+  test("a lesson the student cannot see refuses the question", async () => {
+    const { routes, seen } = app({});
+    const res = await ask(routes, {
+      references: [{ kind: "lesson", id: OTHER_LESSON }],
+    });
+    expect(res.status).toBe(404);
+    expect(seen.questions).toEqual([]);
+  });
+
+  test("a file that is not on the lesson named refuses the question", async () => {
+    const { routes, seen } = app({});
+    const res = await ask(routes, {
+      references: [{ kind: "file", id: OTHER_LESSON, lessonId: LESSON }],
+    });
+    expect(res.status).toBe(400);
+    expect(seen.questions).toEqual([]);
   });
 
   test("a named page is looked up; a summary reads across everything", async () => {

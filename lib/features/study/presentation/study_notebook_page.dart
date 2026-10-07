@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/ai_tokens.dart';
 import '../../../core/feedback.dart';
+import '../../../core/material_selection.dart';
+import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
@@ -224,9 +226,23 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
     );
     if (!sure || !mounted) return;
     try {
-      final summary = await widget.study.updateNotebook(widget.notebookId);
+      StudyNotebookSummary summary;
+      try {
+        summary = await widget.study.updateNotebook(widget.notebookId);
+      } on MaterialUnavailableException catch (error) {
+        // A chosen file cannot be read now: named, and only left out if
+        // the student says so.
+        if (!mounted) return;
+        if (!await confirmContinueWithout(context, error)) return;
+        summary = await widget.study.updateNotebook(
+          widget.notebookId,
+          skipUnavailable: true,
+        );
+      }
       widget.onChanged?.call(summary);
       await _load();
+    } on MaterialUnavailableException {
+      messenger.showMessage(l10n.unavailableTitle);
     } on StudyException catch (error) {
       if (!mounted) return;
       final reason = upgradeReasonFor(error.refusal);
@@ -634,7 +650,7 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
         builder: (_) => StudySetPage(
           title: notebook.summary.title,
           kind: kind,
-          load: () =>
+          load: (_) =>
               widget.study.notebookStudySet(widget.notebookId, kind, keys),
           plan: widget.plan,
           onOpenPlans: widget.onOpenPlans,
@@ -1232,6 +1248,7 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
     final notebook = _notebook!;
     return _paper(1, pages.length, [
       _title(l10n.nbContents),
+      _madeFrom(),
       if (notebook.summary.updateAvailable) _updateBanner(),
       if (notebook.unreadable.isNotEmpty) _unreadable(),
       for (var i = 2; i < pages.length; i++)
@@ -1284,6 +1301,26 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
         ],
       ),
     ]);
+  }
+
+  /// The lesson and exactly what of it this notebook was made from.
+  Widget _madeFrom() {
+    final l10n = AppL10n.of(context);
+    final notebook = _notebook!;
+    final chosen = [
+      for (final source in notebook.sources)
+        if (source.chosen) source.name,
+    ];
+    final parts = notebook.wholeLesson
+        ? [l10n.pickWholeLessonDetail]
+        : [if (notebook.includeText) l10n.pickLessonText, ...chosen];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        l10n.madeFrom('${notebook.summary.lessonTitle} (${parts.join(', ')})'),
+        style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+      ),
+    );
   }
 
   Widget _updateBanner() {

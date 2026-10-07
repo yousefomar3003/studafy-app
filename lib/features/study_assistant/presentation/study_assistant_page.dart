@@ -3,15 +3,18 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/ai_tokens.dart';
+import '../../../core/ai_usage.dart';
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_policy.dart';
 import '../../../core/failures.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/material_selection.dart';
+import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
+import '../../../core/result.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
@@ -252,15 +255,38 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     }
   }
 
+  /// The material the chat answers from, from now on. In a chat that has
+  /// begun, the change is marked where it happened, so earlier answers are
+  /// not mistaken for ones made from the new material.
   void _setReferences(List<ChatReference> next) => setState(() {
     final chat = _chat;
     if (chat == null) {
       _draftReferences = next;
     } else {
-      _chat = chat.withReferences(next);
+      _chat = chat.withReferences(
+        next,
+        mark: chat.turns.isEmpty
+            ? null
+            : ChatContextMark(
+                at: widget.now(),
+                label: next.isEmpty
+                    ? ''
+                    : materialSummary(
+                        AppL10n.of(context),
+                        selectionOfReferences(next),
+                      ),
+              ),
+      );
       unawaited(widget.chats?.save(_chat!).catchError((Object _) {}));
     }
   });
+
+  Future<void> _changeMaterial() async {
+    final pick = widget.pickReferences;
+    if (pick == null) return;
+    final picked = await pick(context, _references);
+    if (picked != null && mounted) _setReferences(picked);
+  }
 
   bool get _canAddMaterial =>
       _abilities.classMaterial && widget.pickReferences != null;
@@ -306,8 +332,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     );
     if (choice == null || !mounted) return;
     if (choice == 'material') {
-      final picked = await widget.pickReferences!(context, _references);
-      if (picked != null && mounted) _setReferences(picked);
+      await _changeMaterial();
       return;
     }
     final source = widget.attachmentSource;
@@ -511,6 +536,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
 
     // A new photo is scanned before it can be read; wait for it.
     final deadline = DateTime.now().add(widget.photoReadyTimeout);
+    var skipUnavailable = false;
     while (true) {
       final result = await widget.assistant.ask(
         question,
@@ -519,8 +545,27 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         photoFileIds: photoIds,
         requestId: requestId,
         language: language,
+        skipUnavailable: skipUnavailable,
       );
       if (!mounted) return;
+      // Chosen files that cannot be read now are named; the student says
+      // whether to go on without them. Nothing is left out quietly.
+      if (result
+          case FailureResult(failure: final MaterialUnavailableException gone)
+          when !skipUnavailable) {
+        final go = await confirmContinueWithout(
+          context,
+          gone,
+          selection: selectionOfReferences(references),
+        );
+        if (!mounted) return;
+        if (!go) {
+          giveBack(l10n.unavailableTitle);
+          return;
+        }
+        skipUnavailable = true;
+        continue;
+      }
       final retry = result.fold(
         onSuccess: (StudyAnswer value) {
           final answered = _chat!.withTurns([
@@ -645,6 +690,9 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                 ],
               ),
             ),
+            // What the chat answers from stays in view whenever it uses
+            // class material, and wherever material can be chosen.
+            if (_canAddMaterial || _references.isNotEmpty) _contextBar(l10n),
             Expanded(child: _conversation(l10n)),
             _composerBar(l10n),
           ],
@@ -673,15 +721,92 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     );
   }
 
-  /// "36,800 of 40,000 AI tokens left · renews 13 Oct".
-  String _tokensLine(AppL10n l10n, HelperAllowance allowance) {
-    final number = NumberFormat.decimalPattern(
-      Localizations.localeOf(context).toLanguageTag(),
-    );
-    return l10n.helperTokensLeft(
-      number.format(allowance.remaining),
-      number.format(allowance.total),
-      MaterialLocalizations.of(context).formatMediumDate(allowance.resetsAt),
+  /// "Plenty available · resets 13 Oct": usage as a label, never a count.
+  String _tokensLine(AppL10n l10n, HelperAllowance allowance) => aiUsageLine(
+    context,
+    level: aiUsageLevel(used: allowance.used, total: allowance.total),
+    resetsAt: allowance.resetsAt,
+  );
+
+  /// What the helper answers from, always in view above the conversation,
+  /// with the way to change it.
+  Widget _contextBar(AppL10n l10n) {
+    final references = _references;
+    final using = references.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+      child: Material(
+        color: using
+            ? Color.alphaBlend(studafyNavy.withValues(alpha: .06), Colors.white)
+            : studafyWash,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: using ? studafyNavy : studafyHairline),
+        ),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 4, 6),
+          child: Row(
+            children: [
+              Icon(
+                using ? Icons.menu_book_rounded : Icons.public_rounded,
+                size: 18,
+                color: using ? studafyNavy : studafyMuted,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Semantics(
+                  liveRegion: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        using
+                            ? l10n.helperAnsweringFrom
+                            : l10n.helperNoMaterial,
+                        style: const TextStyle(
+                          color: studafyMuted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (using)
+                        Text(
+                          materialSummary(
+                            l10n,
+                            selectionOfReferences(references),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: studafyInk,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_canAddMaterial)
+                TextButton(
+                  onPressed: _asking ? null : _changeMaterial,
+                  child: Text(
+                    using
+                        ? l10n.helperChangeMaterial
+                        : l10n.helperChooseMaterial,
+                  ),
+                ),
+              if (using)
+                IconButton(
+                  tooltip: l10n.helperRemove,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _asking ? null : () => _setReferences(const []),
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -802,9 +927,15 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         ],
       );
     }
-    // Newest at the bottom, where the eye and the keyboard are.
+    // Newest at the bottom, where the eye and the keyboard are. Where the
+    // material changed is marked between the turns.
+    final marks = _chat?.marks ?? const <ChatContextMark>[];
+    final timeline = <(DateTime, Widget)>[
+      for (final turn in turns) (turn.at, _Bubble(turn: turn)),
+      for (final mark in marks) (mark.at, _ContextMarkRow(mark: mark)),
+    ]..sort((a, b) => a.$1.compareTo(b.$1));
     final items = [
-      for (final turn in turns) _Bubble(turn: turn),
+      for (final item in timeline) item.$2,
       if (_asking) _Thinking(label: l10n.studyAssistantBusy),
     ];
     return ListView(
@@ -867,7 +998,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _Banner(
                   icon: Icons.battery_alert_rounded,
-                  text: l10n.helperTokensLow(_tokensLine(l10n, allowance)),
+                  text: _tokensLine(l10n, allowance),
                   actionLabel: _canUpgrade ? l10n.upgradeButton : null,
                   onAction: _canUpgrade ? _upgrade : null,
                 ),
@@ -917,9 +1048,9 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                   style: const TextStyle(color: studafyMuted, fontSize: 12.5),
                 ),
               ),
-            // What this chat answers from, and the photo going with the next
-            // question - each removable.
-            if (_references.isNotEmpty || _photo != null)
+            // The photo going with the next question, removable. What the
+            // chat answers from is shown above the conversation.
+            if (_photo != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Wrap(
@@ -927,34 +1058,6 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    if (_references.isNotEmpty)
-                      Text(
-                        l10n.helperAnsweringFrom,
-                        style: const TextStyle(
-                          color: studafyMuted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    for (final reference in _references)
-                      InputChip(
-                        avatar: Icon(switch (reference.kind) {
-                          ChatReferenceKind.lesson => Icons.menu_book_rounded,
-                          ChatReferenceKind.file =>
-                            Icons.insert_drive_file_outlined,
-                          ChatReferenceKind.link => Icons.link_rounded,
-                          ChatReferenceKind.note =>
-                            Icons.sticky_note_2_outlined,
-                        }, size: 16),
-                        label: Text(reference.title),
-                        deleteButtonTooltipMessage: l10n.helperRemove,
-                        onDeleted: _asking
-                            ? null
-                            : () => _setReferences([
-                                for (final other in _references)
-                                  if (other != reference) other,
-                              ]),
-                      ),
                     if (_photo case final photo?)
                       InputChip(
                         avatar: ClipRRect(
@@ -1345,4 +1448,43 @@ class _Thinking extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// "From here: Biology · 8A · Lesson: Cells · 2 attachments" - where the
+/// chat's material changed.
+class _ContextMarkRow extends StatelessWidget {
+  const _ContextMarkRow({required this.mark});
+
+  final ChatContextMark mark;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          const Expanded(child: Divider()),
+          Flexible(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                mark.label.isEmpty
+                    ? l10n.helperMaterialRemovedMark
+                    : l10n.helperMaterialChangedMark(mark.label),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: studafyMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const Expanded(child: Divider()),
+        ],
+      ),
+    );
+  }
 }

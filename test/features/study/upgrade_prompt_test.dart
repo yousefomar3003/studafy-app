@@ -51,25 +51,27 @@ void main() {
     await tester.tap(find.text('limit'));
     await tester.pumpAndSettle();
 
-    expect(find.text("You've used your AI tokens"), findsOne);
+    expect(find.text("You've reached your AI usage limit"), findsOne);
     expect(
-      find.text('They renew on Mon, Oct 12. A bigger plan has more tokens.'),
+      find.text(
+        'It resets on Mon, Oct 12. Your work is kept. A bigger plan gives you more.',
+      ),
       findsOne,
     );
     expect(find.text('What Studafy Plus unlocks'), findsOne);
     expect(
-      find.text(
-        '3,000,000 AI tokens a month - about 700 questions on your lessons (an estimate)',
-      ),
+      find.text('Regular AI use - questions, notes and notebooks on most days'),
       findsOne,
     );
-    // No plan promises unlimited AI.
+    // No plan promises unlimited AI, and no counts are shown.
     expect(find.textContaining('nlimited'), findsNothing);
+    expect(find.textContaining('token'), findsNothing);
+    expect(find.textContaining(RegExp(r'\d,\d{3}')), findsNothing);
 
     await tester.tap(find.text('Upgrade'));
     await tester.pumpAndSettle();
     expect(opened, ['plans']);
-    expect(find.text("You've used your AI tokens"), findsNothing);
+    expect(find.text("You've reached your AI usage limit"), findsNothing);
   });
 
   testWidgets('Plus out of tokens is offered Max', (tester) async {
@@ -79,11 +81,11 @@ void main() {
     );
     await tester.tap(find.text('limit'));
     await tester.pumpAndSettle();
-    expect(find.text("You've used your AI tokens"), findsOne);
+    expect(find.text("You've reached your AI usage limit"), findsOne);
     expect(find.text('What Studafy Max unlocks'), findsOne);
     expect(
       find.text(
-        '6,000,000 AI tokens a month - about 1,400 questions on your lessons (an estimate)',
+        'Heavy AI use - twice Plus, for daily quizzes, flashcards and notebooks',
       ),
       findsOne,
     );

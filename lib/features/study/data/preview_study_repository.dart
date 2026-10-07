@@ -1,3 +1,4 @@
+import '../../../core/material_selection.dart';
 import '../domain/study.dart';
 import '../domain/study_notebook.dart';
 
@@ -77,6 +78,8 @@ class PreviewStudyRepository implements StudyRepository {
     required String resourceId,
     required List<String> sourceIds,
     String? title,
+    MaterialSelection? selection,
+    bool skipUnavailable = false,
   }) => throw const StudyException(StudyRefusal.planRequired);
 
   @override
@@ -87,6 +90,7 @@ class PreviewStudyRepository implements StudyRepository {
   Future<StudyNotebookSummary> updateNotebook(
     String notebookId, {
     List<String>? sourceIds,
+    bool skipUnavailable = false,
   }) => throw const StudyException(StudyRefusal.planRequired);
 
   @override
@@ -111,4 +115,19 @@ class PreviewStudyRepository implements StudyRepository {
     StudySetKind kind,
     List<String> sectionKeys,
   ) => throw const StudyException(StudyRefusal.unavailable);
+
+  @override
+  Future<StudySet> selectionStudySet(
+    StudySetKind kind,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+  }) => throw const StudyException(StudyRefusal.unavailable);
+
+  @override
+  Future<NotebookEntry> summarise(
+    String classroomId,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+    String? language,
+  }) => throw const StudyException(StudyRefusal.planRequired);
 }

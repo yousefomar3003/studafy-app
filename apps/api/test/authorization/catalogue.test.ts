@@ -27,6 +27,7 @@ import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import { createStudyRoutes } from "../../src/study/routes";
 import { createLessonReadingRoutes } from "../../src/study/readingRoutes";
 import { createStudyNotebookRoutes } from "../../src/study/studyNotebookRoutes";
+import { createSelectionRoutes } from "../../src/study/selectionRoutes";
 import { createNotebookRoutes } from "../../src/study/notebookRoutes";
 import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
@@ -571,6 +572,25 @@ function routeTable() {
       {
         notebooks: { call: async () => ({ outcome: "forbidden" }) },
         material: { call: async () => ({ outcome: "invalid" }) },
+        repository: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        assistant: null,
+        lessonToolsEnabled: false,
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createSelectionRoutes(
+      {
+        material: { call: async () => ({ outcome: "invalid" }) },
+        outputs: { call: async () => ({ outcome: "forbidden" }) },
         repository: {
           usage: async () => ({ outcome: "ok" }),
           query: async () => null,

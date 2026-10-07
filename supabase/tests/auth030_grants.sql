@@ -96,6 +96,8 @@ select is(
     'api054_ai_material',
     -- ADR-0038: a student's own study notebooks, ownership checked per call.
     'api055_study_notebooks',
+    -- ADR-0039: results kept per exact selection, access re-checked per read.
+    'api056_material_outputs',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

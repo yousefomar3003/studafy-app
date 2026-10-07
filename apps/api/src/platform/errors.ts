@@ -191,7 +191,7 @@ const DEFINITIONS: Record<
   AI_ALLOWANCE_USED: {
     title: "AI allowance used",
     detail:
-      "There are not enough AI tokens left for this. They renew on the plan's reset date, or with a bigger plan.",
+      "The AI usage limit for this plan has been reached. It resets on the plan's reset date, or a bigger plan gives more.",
   },
   AI_REQUEST_IN_PROGRESS: {
     title: "Already being answered",
@@ -201,6 +201,11 @@ const DEFINITIONS: Record<
     title: "Material still being read",
     detail:
       "The lesson's files are still being read. Try again in a minute so nothing is left out.",
+  },
+  MATERIAL_UNAVAILABLE: {
+    title: "Some chosen material cannot be used",
+    detail:
+      "Some of the chosen files or links cannot be used right now. Try again later, or continue without them.",
   },
   AI_FEATURE_DISABLED: {
     title: "Not available",

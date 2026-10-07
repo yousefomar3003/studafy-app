@@ -1,4 +1,5 @@
 import '../../../core/failures.dart';
+import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/study_assistant_repository.dart';
@@ -60,6 +61,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async {
     final recent = history.isEmpty
         ? const <ChatTurn>[]
@@ -83,12 +85,17 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
               ? null
               : [
                   for (final reference in references)
-                    {
-                      'kind': reference.kind.name,
-                      'id': reference.id,
-                      'lessonId': ?reference.lessonId,
-                    },
+                    V1MaterialRefDto(
+                      kind: reference.kind.name,
+                      id: reference.id,
+                      lessonId:
+                          reference.kind == ChatReferenceKind.file ||
+                              reference.kind == ChatReferenceKind.link
+                          ? reference.lessonId
+                          : null,
+                    ),
                 ],
+          skipUnavailable: skipUnavailable ? true : null,
           attachmentFileIds: photoFileIds.isEmpty ? null : photoFileIds,
           language: language == 'ar' || language == 'en' ? language : null,
           requestId: requestId,
@@ -113,6 +120,14 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
         ),
       );
     } on V1ApiException catch (error) {
+      // Chosen files that cannot be read now, named for the student.
+      if (error.code == 'MATERIAL_UNAVAILABLE') {
+        throw MaterialUnavailableException({
+          for (final entry in error.fieldErrors.entries)
+            if (entry.key.startsWith('sources/'))
+              entry.key.substring('sources/'.length): entry.value,
+        });
+      }
       throw _failure(error) ?? error;
     }
   }

@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'studafy_design.dart';
 
-/// What AI tokens are, in plain words, with a rough guide to what things
-/// use (ADR-0037). Every figure is labelled an estimate: the real count is
-/// what the AI provider reports for each request.
+/// How AI usage works, in plain words, with what uses a little and what
+/// uses more (ADR-0037, ADR-0039). No counts: usage is shown as a bar.
 Future<void> showTokenGuide(BuildContext context) {
   final l10n = AppL10n.of(context);
   return showModalBottomSheet<void>(
@@ -36,11 +35,12 @@ Future<void> showTokenGuide(BuildContext context) {
               ),
             ),
             const SizedBox(height: 6),
+            // Relative, never counted: what uses a little and what more.
             for (final (label, amount) in [
-              (l10n.tokensGuideShortQuestion, l10n.tokensAbout('1,000')),
-              (l10n.tokensGuideLessonQuestion, l10n.tokensAbout('3,000–5,000')),
-              (l10n.tokensGuideNotes, l10n.tokensAbout('8,000–15,000')),
-              (l10n.tokensGuidePhoto, l10n.tokensAbout('17,000')),
+              (l10n.tokensGuideShortQuestion, l10n.usageCostLight),
+              (l10n.tokensGuideLessonQuestion, l10n.usageCostMedium),
+              (l10n.tokensGuideNotes, l10n.usageCostMore),
+              (l10n.tokensGuidePhoto, l10n.usageCostMore),
             ])
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),

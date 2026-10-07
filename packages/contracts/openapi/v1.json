@@ -24654,6 +24654,247 @@
           }
         ]
       }
+    },
+    "/v1/study-sets": {
+      "post": {
+        "operationId": "generateSelectionStudySet",
+        "summary": "generateSelectionStudySet",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "material_set.generate",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "generateSelectionStudySet",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1SelectionStudySet"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1SelectionStudySetRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/classrooms/{classroomId}/notebook/summary": {
+      "post": {
+        "operationId": "summariseMaterial",
+        "summary": "summariseMaterial",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "notebook.write",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "201": {
+            "description": "summariseMaterial",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1NotebookEntry"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1SummariseMaterialRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -24803,6 +25044,7 @@
               "PLAN_REQUIRED",
               "AI_ALLOWANCE_USED",
               "MATERIAL_PROCESSING",
+              "MATERIAL_UNAVAILABLE",
               "AI_REQUEST_IN_PROGRESS",
               "AI_FEATURE_DISABLED",
               "PHOTO_NOT_READY",
@@ -29151,6 +29393,12 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
+          "references": {
+            "$ref": "#/components/schemas/V1MaterialRefs"
+          },
+          "skipUnavailable": {
+            "type": "boolean"
+          },
           "title": {
             "type": "string",
             "minLength": 1,
@@ -32384,6 +32632,151 @@
         ],
         "additionalProperties": false
       },
+      "V1MaterialRef": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "lesson",
+              "text",
+              "file",
+              "link",
+              "note"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "lessonId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "V1MaterialRefs": {
+        "minItems": 1,
+        "maxItems": 40,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/V1MaterialRef"
+        }
+      },
+      "V1MaterialScope": {
+        "type": "object",
+        "properties": {
+          "lessons": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "resourceId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "classroomId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                "includeText": {
+                  "type": "boolean"
+                },
+                "wholeLesson": {
+                  "type": "boolean"
+                },
+                "sources": {
+                  "maxItems": 40,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "file",
+                          "link"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 300
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "resourceId",
+                "classroomId",
+                "title",
+                "includeText",
+                "wholeLesson",
+                "sources"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "skipped": {
+            "maxItems": 40,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 60
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "lessons",
+          "skipped"
+        ],
+        "additionalProperties": false
+      },
       "V1MaterialSource": {
         "type": "object",
         "properties": {
@@ -35187,6 +35580,9 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
+          "skipUnavailable": {
+            "type": "boolean"
+          },
           "language": {
             "type": "string",
             "enum": [
@@ -36411,6 +36807,89 @@
         ],
         "additionalProperties": false
       },
+      "V1SelectionStudySet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "quiz",
+              "flashcards"
+            ]
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/V1QuizQuestion"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cards": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/V1Flashcard"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope": {
+            "$ref": "#/components/schemas/V1MaterialScope"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "questions",
+          "cards",
+          "scope",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "V1SelectionStudySetRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "quiz",
+              "flashcards"
+            ]
+          },
+          "references": {
+            "$ref": "#/components/schemas/V1MaterialRefs"
+          },
+          "skipUnavailable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "references"
+        ],
+        "additionalProperties": false
+      },
       "V1SendMessageRequest": {
         "type": "object",
         "properties": {
@@ -36673,37 +37152,14 @@
             }
           },
           "references": {
-            "maxItems": 5,
+            "maxItems": 40,
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "kind": {
-                  "type": "string",
-                  "enum": [
-                    "lesson",
-                    "file",
-                    "link",
-                    "note"
-                  ]
-                },
-                "id": {
-                  "type": "string",
-                  "format": "uuid",
-                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                },
-                "lessonId": {
-                  "type": "string",
-                  "format": "uuid",
-                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                }
-              },
-              "required": [
-                "kind",
-                "id"
-              ],
-              "additionalProperties": false
+              "$ref": "#/components/schemas/V1MaterialRef"
             }
+          },
+          "skipUnavailable": {
+            "type": "boolean"
           },
           "language": {
             "type": "string",
@@ -36835,6 +37291,16 @@
           },
           "allowance": {
             "$ref": "#/components/schemas/V1AiAllowance"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/V1MaterialScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -36904,6 +37370,12 @@
               "$ref": "#/components/schemas/V1NotebookSource"
             }
           },
+          "includeText": {
+            "type": "boolean"
+          },
+          "wholeLesson": {
+            "type": "boolean"
+          },
           "sets": {
             "maxItems": 40,
             "type": "array",
@@ -36933,6 +37405,8 @@
           "personal",
           "personalVersion",
           "sources",
+          "includeText",
+          "wholeLesson",
           "sets",
           "generatedAt"
         ],
@@ -37564,6 +38038,28 @@
         "required": [
           "featureKey",
           "derivation"
+        ],
+        "additionalProperties": false
+      },
+      "V1SummariseMaterialRequest": {
+        "type": "object",
+        "properties": {
+          "references": {
+            "$ref": "#/components/schemas/V1MaterialRefs"
+          },
+          "skipUnavailable": {
+            "type": "boolean"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "en"
+            ]
+          }
+        },
+        "required": [
+          "references"
         ],
         "additionalProperties": false
       },

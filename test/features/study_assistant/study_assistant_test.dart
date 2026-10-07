@@ -134,7 +134,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Class material'));
     await tester.pumpAndSettle();
-    expect(find.text('Cells'), findsOne);
+    // What the chat answers from is shown above it.
+    expect(find.text('Answering from'), findsOne);
+    expect(find.textContaining('Lesson: Cells'), findsOne);
 
     await ask(tester, 'What is a nucleus?');
     await ask(tester, 'And a membrane?');
@@ -252,7 +254,7 @@ void main() {
     await tester.pumpAndSettle();
     await ask(tester, 'Anything at all');
 
-    expect(find.textContaining("You've used your AI tokens"), findsOne);
+    expect(find.textContaining("You've reached your AI usage limit"), findsOne);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       'Anything at all',
@@ -326,10 +328,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Studafy Free'), findsOne);
-    expect(
-      find.text('30,000 of 40,000 AI tokens left · renews Mon, Oct 12'),
-      findsOne,
-    );
+    // A quarter used: plenty left, as a label - no counts.
+    expect(find.text('Plenty available · resets Mon, Oct 12'), findsOne);
+    expect(find.textContaining('40,000'), findsNothing);
     expect(find.text('Studafy Plus adds:'), findsOne);
     expect(find.text('3,000,000 AI tokens a month'), findsOne);
     await tester.tap(find.text('Upgrade'));
@@ -337,7 +338,7 @@ void main() {
     expect(upgrades, 1);
   });
 
-  testWidgets('what tokens are is explained, with estimates marked', (
+  testWidgets('how AI usage works is explained without any counts', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -347,10 +348,37 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('What are AI tokens?'));
+    await tester.tap(find.text('How does AI usage work?'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('three-quarters of a word'), findsOne);
-    expect(find.textContaining('These are estimates.'), findsOne);
+    expect(find.textContaining('shares one allowance'), findsOne);
+    expect(find.text('uses a little'), findsOne);
+    expect(find.textContaining('token'), findsNothing);
+    expect(find.textContaining(RegExp(r'\d{1,3},\d{3}')), findsNothing);
+  });
+
+  testWidgets('changing the material mid-chat is marked in the chat', (
+    tester,
+  ) async {
+    final repository = _Recording();
+    await tester.pumpWidget(
+      page(
+        repository,
+        abilities: const HelperAbilities(classMaterial: true),
+        pick: const [cells],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await ask(tester, 'What is a cell?');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Choose'));
+    await tester.pumpAndSettle();
+    expect(find.text('From here: Lesson: Cells · all attachments'), findsOne);
+
+    await tester.tap(find.byTooltip('Remove').first);
+    await tester.pumpAndSettle();
+    expect(find.text('From here: no class material'), findsOne);
+    expect(find.text('Not using class material'), findsOne);
   });
 
   testWidgets('on the top plan nothing is sold', (tester) async {
@@ -386,7 +414,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.textContaining("You've used your AI tokens. They renew on"),
+      find.textContaining("You've reached your AI usage limit. It resets on"),
       findsOne,
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Upgrade').last);
@@ -407,7 +435,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('Running low: 5,000 of 40,000'), findsOne);
+    expect(find.text('Running low · resets Mon, Oct 12'), findsWidgets);
+    expect(find.textContaining('5,000'), findsNothing);
   });
 
   testWidgets('an answer from class material shows its sources', (
@@ -476,7 +505,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Cells'), findsOne);
+    expect(find.textContaining('Lesson: Cells'), findsOne);
     expect(openWith.value, isNull);
     await ask(tester, 'Summarise this lesson');
     expect(repository.referencesSent.single, [cells]);
@@ -707,6 +736,7 @@ class _Recording implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async {
     requestIds.add(requestId);
     languages.add(language);
@@ -749,6 +779,7 @@ class _Refusing implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async => throw Failure(code, 'English fallback');
 }
 
@@ -767,6 +798,7 @@ class _Held implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async {
     questions.add(question);
     await _gate.future;

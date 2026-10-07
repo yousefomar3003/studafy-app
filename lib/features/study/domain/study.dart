@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/file_upload_repository.dart';
+import '../../../core/material_selection.dart';
 import 'study_notebook.dart';
 
 /// A student's plan (2026-09-27).
@@ -56,8 +57,8 @@ class AiAllowance {
   double get usedFraction =>
       total <= 0 ? 1 : (used / total).clamp(0, 1).toDouble();
 
-  /// Under a fifth left.
-  bool get low => remaining > 0 && remaining < total * 0.2;
+  /// A quarter or less left: the usage bar's "Running low".
+  bool get low => remaining > 0 && used >= total * 0.75;
 
   bool get exhausted => remaining <= 0;
 }
@@ -172,11 +173,15 @@ class StudySet {
     required this.kind,
     this.questions = const [],
     this.cards = const [],
+    this.scope,
   });
 
   final StudySetKind kind;
   final List<QuizQuestion> questions;
   final List<Flashcard> cards;
+
+  /// What it was made from, when the server said.
+  final MaterialScopeInfo? scope;
 }
 
 /// Why a study action was refused, in terms the screen can act on.
@@ -267,6 +272,24 @@ abstract interface class StudyRepository implements StudyNotebookRepository {
 
   /// Studafy Plus: study notes made from a lesson, filed in its class.
   Future<NotebookEntry> lessonNotes(String resourceId);
+
+  /// Studafy Max: a quiz or flashcards from exactly [selection]. Throws
+  /// [MaterialUnavailableException] naming chosen files that cannot be read
+  /// now, unless [skipUnavailable].
+  Future<StudySet> selectionStudySet(
+    StudySetKind kind,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+  });
+
+  /// Studafy Plus: study notes from exactly [selection], filed in
+  /// [classroomId]'s notebook, ending with what they were made from.
+  Future<NotebookEntry> summarise(
+    String classroomId,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+    String? language,
+  });
 }
 
 /// A plan as the store offers it, for the Plans screen.

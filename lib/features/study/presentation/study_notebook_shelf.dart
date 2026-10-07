@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/feedback.dart';
+import '../../../core/material_selection.dart';
+import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
-import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
 import '../domain/study_notebook.dart';
@@ -107,7 +108,7 @@ class NotebookHost {
     required this.className,
     required this.plan,
     required this.onOpenPlans,
-    required this.loadSources,
+    required this.pick,
   });
 
   final StudyRepository study;
@@ -120,9 +121,8 @@ class NotebookHost {
   final StudyPlan? Function() plan;
   final VoidCallback onOpenPlans;
 
-  /// A lesson's files and links and how far each has been read.
-  final Future<List<NotebookSourceChoice>> Function(String resourceId)
-  loadSources;
+  /// Chooses exactly what a notebook is made from (ADR-0039).
+  final MaterialPicker pick;
 
   bool get _locked => !(plan()?.canSnapWhiteboard ?? true);
 
@@ -135,7 +135,8 @@ class NotebookHost {
         onUpgrade: onOpenPlans,
       );
 
-  /// Asks which of the lesson's material to use, then starts the notebook.
+  /// Shows the lesson and what of it will be used - its text and each file
+  /// and link, to keep or leave out - then starts the notebook.
   Future<void> create(
     BuildContext context, {
     required String resourceId,
@@ -151,30 +152,49 @@ class NotebookHost {
       await _upgrade(context, UpgradeReason.feature);
       return;
     }
-    final request = await showCreateNotebookSheet(
+    final selection = await pick(
       context,
-      className: className,
-      lessonTitle: lessonTitle,
-      sources: loadSources(resourceId),
+      MaterialPickRequest(
+        action: MaterialAction.notebook,
+        preselectLessonId: resourceId,
+        onlyClassroomId: tracker.classroomId,
+        singleLesson: true,
+      ),
     );
-    if (request == null || !context.mounted) return;
-    try {
-      final summary = await study.createNotebook(
-        tracker.classroomId,
-        resourceId: resourceId,
-        sourceIds: request.sourceIds,
-        title: request.title,
-      );
-      tracker.put(summary);
-      messenger.showMessage(l10n.nbStarted);
-    } on StudyException catch (error) {
-      if (!context.mounted) return;
-      final reason = upgradeReasonFor(error.refusal);
-      if (reason != null) {
-        await _upgrade(context, reason);
+    if (selection == null || selection.lessons.isEmpty || !context.mounted) {
+      return;
+    }
+    var skip = false;
+    while (true) {
+      try {
+        final summary = await study.createNotebook(
+          tracker.classroomId,
+          resourceId: selection.lessons.first.lessonId,
+          sourceIds: const [],
+          selection: selection,
+          skipUnavailable: skip,
+        );
+        tracker.put(summary);
+        messenger.showMessage(l10n.nbStarted);
+        return;
+      } on MaterialUnavailableException catch (error) {
+        if (!context.mounted || skip) return;
+        skip = await confirmContinueWithout(
+          context,
+          error,
+          selection: selection,
+        );
+        if (!skip) return;
+      } on StudyException catch (error) {
+        if (!context.mounted) return;
+        final reason = upgradeReasonFor(error.refusal);
+        if (reason != null) {
+          await _upgrade(context, reason);
+          return;
+        }
+        messenger.showMessage(notebookRefusalText(l10n, error.refusal));
         return;
       }
-      messenger.showMessage(notebookRefusalText(l10n, error.refusal));
     }
   }
 
@@ -202,17 +222,28 @@ class NotebookHost {
     final l10n = AppL10n.of(context);
     final sure = await confirmNotebookUpdate(context);
     if (!sure || !context.mounted) return;
-    try {
-      tracker.put(await study.updateNotebook(summary.id));
-      messenger.showMessage(l10n.nbStarted);
-    } on StudyException catch (error) {
-      if (!context.mounted) return;
-      final reason = upgradeReasonFor(error.refusal);
-      if (reason != null) {
-        await _upgrade(context, reason);
+    var skip = false;
+    while (true) {
+      try {
+        tracker.put(
+          await study.updateNotebook(summary.id, skipUnavailable: skip),
+        );
+        messenger.showMessage(l10n.nbStarted);
+        return;
+      } on MaterialUnavailableException catch (error) {
+        if (!context.mounted || skip) return;
+        skip = await confirmContinueWithout(context, error);
+        if (!skip) return;
+      } on StudyException catch (error) {
+        if (!context.mounted) return;
+        final reason = upgradeReasonFor(error.refusal);
+        if (reason != null) {
+          await _upgrade(context, reason);
+          return;
+        }
+        messenger.showMessage(notebookRefusalText(l10n, error.refusal));
         return;
       }
-      messenger.showMessage(notebookRefusalText(l10n, error.refusal));
     }
   }
 }
@@ -465,265 +496,6 @@ class _ShelfCover extends StatelessWidget {
                       ],
                     ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// What the student chose in the create sheet.
-@immutable
-class NotebookCreateRequest {
-  const NotebookCreateRequest({required this.sourceIds, this.title});
-
-  /// Empty for the whole lesson.
-  final List<String> sourceIds;
-  final String? title;
-}
-
-/// Before a notebook is made: the class and lesson it is from, its files
-/// and links with how far each has been read, and - unless the whole lesson
-/// is used - which of them to make it from.
-Future<NotebookCreateRequest?> showCreateNotebookSheet(
-  BuildContext context, {
-  required String className,
-  required String lessonTitle,
-  required Future<List<NotebookSourceChoice>> sources,
-}) => showModalBottomSheet<NotebookCreateRequest>(
-  context: context,
-  isScrollControlled: true,
-  showDragHandle: true,
-  builder: (_) => _CreateNotebookSheet(
-    className: className,
-    lessonTitle: lessonTitle,
-    sources: sources,
-  ),
-);
-
-class _CreateNotebookSheet extends StatefulWidget {
-  const _CreateNotebookSheet({
-    required this.className,
-    required this.lessonTitle,
-    required this.sources,
-  });
-
-  final String className;
-  final String lessonTitle;
-  final Future<List<NotebookSourceChoice>> sources;
-
-  @override
-  State<_CreateNotebookSheet> createState() => _CreateNotebookSheetState();
-}
-
-class _CreateNotebookSheetState extends State<_CreateNotebookSheet> {
-  late final _title = TextEditingController(text: widget.lessonTitle);
-  List<NotebookSourceChoice>? _sources;
-  bool _failed = false;
-  bool _whole = true;
-  final _chosen = <String>{};
-
-  @override
-  void initState() {
-    super.initState();
-    _load(widget.sources);
-  }
-
-  Future<void> _load(Future<List<NotebookSourceChoice>> sources) async {
-    try {
-      final list = await sources;
-      if (!mounted) return;
-      setState(() {
-        _sources = list;
-        _chosen
-          ..clear()
-          ..addAll([
-            for (final s in list)
-              if (s.ready) s.id,
-          ]);
-      });
-    } on Object {
-      if (mounted) setState(() => _failed = true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _title.dispose();
-    super.dispose();
-  }
-
-  String? get _problem {
-    final sources = _sources ?? const <NotebookSourceChoice>[];
-    final l10n = AppL10n.of(context);
-    if (_whole) {
-      return sources.any((s) => s.processing) ? l10n.nbSheetWaitReading : null;
-    }
-    if (_chosen.isEmpty) return l10n.nbSheetPickOne;
-    return null;
-  }
-
-  void _submit() {
-    if (_problem != null) return;
-    final title = _title.text.trim();
-    Navigator.pop(
-      context,
-      NotebookCreateRequest(
-        sourceIds: _whole ? const [] : _chosen.toList(),
-        title: title.isEmpty || title == widget.lessonTitle ? null : title,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    final sources = _sources;
-    final problem = sources == null ? null : _problem;
-    Widget fact(String label, String value) => Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 72,
-            child: Text(label, style: const TextStyle(color: studafyMuted)),
-          ),
-          Expanded(
-            child: UserContentText(
-              value,
-              style: const TextStyle(
-                color: studafyInk,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsetsDirectional.fromSTEB(
-          16,
-          0,
-          16,
-          16 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * .85,
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Text(
-                l10n.nbSheetTitle,
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              fact(l10n.nbSheetClass, widget.className),
-              fact(l10n.nbSheetLesson, widget.lessonTitle),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _title,
-                maxLength: 120,
-                decoration: InputDecoration(labelText: l10n.nbSheetName),
-              ),
-              Text(
-                l10n.nbSheetSources,
-                style: const TextStyle(
-                  color: studafyInk,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (sources == null)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: _failed
-                        ? Text(l10n.readingLoadFailed)
-                        : const CircularProgressIndicator(),
-                  ),
-                )
-              else ...[
-                RadioGroup<bool>(
-                  groupValue: _whole,
-                  onChanged: (value) => setState(() => _whole = value ?? true),
-                  child: Column(
-                    children: [
-                      RadioListTile<bool>(
-                        value: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(l10n.nbSheetWhole),
-                        subtitle: Text(
-                          sources.isEmpty
-                              ? l10n.nbSheetNoFiles
-                              : l10n.nbSheetWholeDetail,
-                        ),
-                      ),
-                      if (sources.isNotEmpty)
-                        RadioListTile<bool>(
-                          value: false,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(l10n.nbSheetChoose),
-                        ),
-                    ],
-                  ),
-                ),
-                for (final source in sources)
-                  CheckboxListTile(
-                    contentPadding: const EdgeInsetsDirectional.only(start: 8),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    value: _whole ? source.ready : _chosen.contains(source.id),
-                    onChanged: _whole || !source.ready
-                        ? null
-                        : (on) => setState(
-                            () => on == true
-                                ? _chosen.add(source.id)
-                                : _chosen.remove(source.id),
-                          ),
-                    secondary: Icon(
-                      source.isLink
-                          ? Icons.link_rounded
-                          : Icons.insert_drive_file_outlined,
-                    ),
-                    title: UserContentText(source.name),
-                    subtitle: source.ready
-                        ? null
-                        : Text(
-                            source.processing
-                                ? l10n.nbSourceReading
-                                : l10n.nbSourceUnreadable,
-                            style: TextStyle(
-                              color: source.processing
-                                  ? studafyMuted
-                                  : studafyDanger,
-                            ),
-                          ),
-                  ),
-              ],
-              if (problem != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    problem,
-                    style: const TextStyle(color: studafyDanger),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.nbSheetTokens,
-                style: const TextStyle(color: studafyMuted, fontSize: 12.5),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: sources == null || problem != null ? null : _submit,
-                icon: const Icon(Icons.auto_stories_rounded),
-                label: Text(l10n.nbCreate),
-              ),
-            ],
           ),
         ),
       ),

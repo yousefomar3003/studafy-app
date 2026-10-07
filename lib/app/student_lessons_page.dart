@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/file_upload_repository.dart';
+import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_components.dart';
@@ -11,7 +12,6 @@ import '../features/academic/presentation/lessons_by_date_view.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/study/domain/study.dart';
-import '../features/study/domain/study_notebook.dart';
 import '../features/study/presentation/my_notebooks_page.dart';
 import '../features/study/presentation/notebook_view.dart';
 import '../features/study/presentation/study_notebook_shelf.dart';
@@ -19,6 +19,7 @@ import '../features/study/presentation/study_plan_copy.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'material_picker.dart';
 
 /// The student's Lessons tab: their classes, and in each class its lessons by
 /// date and their own notebook for it.
@@ -104,6 +105,13 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             schoolId: widget.schoolId,
             initialTab: tab,
             onAskHelper: widget.onAskHelper,
+            pick: (context, request) => pickMaterials(
+              context,
+              request,
+              classes: widget.classes,
+              academic: widget.academic,
+              study: widget.study,
+            ),
           ),
         ),
       );
@@ -388,7 +396,11 @@ class StudentClassPage extends StatefulWidget {
     this.schoolId,
     this.initialTab = 0,
     this.onAskHelper,
+    this.pick,
   });
+
+  /// Chooses exactly what an AI study tool uses (ADR-0039).
+  final MaterialPicker? pick;
 
   /// 0 opens the lessons, 1 the notebook.
   final int initialTab;
@@ -422,8 +434,13 @@ class _StudentClassPageState extends State<StudentClassPage> {
     className: widget.classroom.name,
     plan: () => _plan,
     onOpenPlans: _openPlans,
-    loadSources: _sources,
+    pick: (context, request) => (widget.pick ?? _noPicker)(context, request),
   );
+
+  static Future<MaterialSelection?> _noPicker(
+    BuildContext context,
+    MaterialPickRequest request,
+  ) async => null;
 
   @override
   void initState() {
@@ -437,17 +454,6 @@ class _StudentClassPageState extends State<StudentClassPage> {
     _notebooks.dispose();
     super.dispose();
   }
-
-  Future<List<NotebookSourceChoice>> _sources(String resourceId) async => [
-    for (final source in await widget.academic.lessonReading(resourceId))
-      NotebookSourceChoice(
-        id: source.id,
-        isLink: source.isLink,
-        name: source.name,
-        state: source.state.name,
-        reason: source.reason,
-      ),
-  ];
 
   Future<void> _loadPlan() async {
     try {
@@ -641,6 +647,22 @@ class _StudentClassPageState extends State<StudentClassPage> {
                 plan: _plan,
                 hasLessons: hasLessons,
                 onOpenPlans: _openPlans,
+                // From here nothing is chosen yet: the student chooses.
+                onMake: widget.pick == null
+                    ? null
+                    : (kind) => openStudySetFromSelection(
+                        context,
+                        study: widget.study,
+                        pick: widget.pick!,
+                        kind: kind,
+                        request: MaterialPickRequest(
+                          action: kind == StudySetKind.quiz
+                              ? MaterialAction.quiz
+                              : MaterialAction.flashcards,
+                        ),
+                        plan: _plan,
+                        onOpenPlans: _openPlans,
+                      ),
               ),
               actionsFor: (context, lesson) => Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -671,6 +693,7 @@ class _StudentClassPageState extends State<StudentClassPage> {
                     lessonTitle: lesson.title,
                     plan: _plan,
                     onOpenPlans: _openPlans,
+                    pick: widget.pick,
                   ),
                 ],
               ),
@@ -684,6 +707,7 @@ class _StudentClassPageState extends State<StudentClassPage> {
               onOpenPlans: _openPlans,
               pickLesson: _pickLesson,
               header: StudyNotebookShelf(host: _host),
+              pick: widget.pick,
             ),
           ],
         ),

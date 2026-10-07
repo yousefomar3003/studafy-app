@@ -29,6 +29,10 @@ import { createStudyRoutes } from "../study/routes";
 import { PostgresMaterialRepository } from "../study/material";
 import { createLessonReadingRoutes } from "../study/readingRoutes";
 import {
+  createSelectionRoutes,
+  PostgresMaterialOutputRepository,
+} from "../study/selectionRoutes";
+import {
   createStudyNotebookRoutes,
   PostgresStudyNotebookRepository,
 } from "../study/studyNotebookRoutes";
@@ -658,6 +662,22 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // Exactly the chosen material (2026-10-07), appended after notebooks.
+  const selectionTools = sql && materialRepository && studyRepository &&
+      idempotencyDependencies
+    ? createSelectionRoutes(
+      {
+        material: materialRepository,
+        outputs: new PostgresMaterialOutputRepository(sql),
+        repository: studyRepository,
+        prices: aiPrices,
+        assistant: aiAssistant,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   const modules = [
     academic,
     schoolAdmin,
@@ -693,6 +713,7 @@ export function buildRoutes(platform: Platform) {
     coursework,
     lessonReading,
     studyNotebooks,
+    selectionTools,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

@@ -40,6 +40,7 @@ class _Helper implements StudyAssistantRepository {
     List<String> photoFileIds = const [],
     String? requestId,
     String? language,
+    bool skipUnavailable = false,
   }) async {
     asked.add(question);
     return StudyAnswer(answer: 'Answer ${asked.length}');

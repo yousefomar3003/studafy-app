@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/study.dart';
@@ -35,6 +36,17 @@ class ApiStudyRepository implements StudyRepository {
       return await run();
     } on StudyException {
       rethrow;
+    } on V1ApiException catch (error) {
+      // Chosen files that cannot be read now, named so the student can try
+      // again or go on without them.
+      if (error.code == 'MATERIAL_UNAVAILABLE') {
+        throw MaterialUnavailableException({
+          for (final entry in error.fieldErrors.entries)
+            if (entry.key.startsWith('sources/'))
+              entry.key.substring('sources/'.length): entry.value,
+        });
+      }
+      throw StudyException(_refusal(error));
     } on Object catch (error) {
       throw StudyException(_refusal(error));
     }
@@ -163,9 +175,11 @@ class ApiStudyRepository implements StudyRepository {
   static StudySet _set(
     StudySetKind kind,
     List<V1QuizQuestionDto>? questions,
-    List<V1FlashcardDto>? cards,
-  ) => StudySet(
+    List<V1FlashcardDto>? cards, {
+    MaterialScopeInfo? scope,
+  }) => StudySet(
     kind: kind,
+    scope: scope,
     questions: [
       for (final q in questions ?? const <V1QuizQuestionDto>[])
         QuizQuestion(
@@ -192,18 +206,70 @@ class ApiStudyRepository implements StudyRepository {
       });
 
   @override
+  Future<StudySet> selectionStudySet(
+    StudySetKind kind,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+  }) => _guard(() async {
+    final dto = await _client.generateSelectionStudySet(
+      V1SelectionStudySetRequestDto.fromJson(
+        _json({
+          'kind': kind.name,
+          'references': selection.toJson(),
+          if (skipUnavailable) 'skipUnavailable': true,
+        }),
+      ),
+      idempotencyKey: _key('selection-${kind.name}'),
+    );
+    return _set(
+      kind,
+      dto.questions,
+      dto.cards,
+      scope: MaterialScopeInfo.fromJson(_json(dto.scope.toJson())),
+    );
+  });
+
+  @override
+  Future<NotebookEntry> summarise(
+    String classroomId,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+    String? language,
+  }) => _guard(() async {
+    return _entry(
+      await _client.summariseMaterial(
+        V1SummariseMaterialRequestDto.fromJson(
+          _json({
+            'references': selection.toJson(),
+            if (skipUnavailable) 'skipUnavailable': true,
+            if (language == 'ar' || language == 'en') 'language': language,
+          }),
+        ),
+        classroomId: classroomId,
+        idempotencyKey: _key('summary'),
+      ),
+    );
+  });
+
+  @override
   Future<StudyNotebookSummary> createNotebook(
     String classroomId, {
     required String resourceId,
     required List<String> sourceIds,
     String? title,
+    MaterialSelection? selection,
+    bool skipUnavailable = false,
   }) => _guard(() async {
     final dto = await _client.createStudyNotebook(
-      V1CreateStudyNotebookRequestDto.fromJson({
-        'resourceId': resourceId,
-        'sourceIds': sourceIds,
-        'title': ?title,
-      }),
+      V1CreateStudyNotebookRequestDto.fromJson(
+        _json({
+          'resourceId': resourceId,
+          'sourceIds': sourceIds,
+          'title': ?title,
+          if (selection != null) 'references': selection.toJson(),
+          if (skipUnavailable) 'skipUnavailable': true,
+        }),
+      ),
       classroomId: classroomId,
       idempotencyKey: _key('notebook'),
     );
@@ -220,9 +286,13 @@ class ApiStudyRepository implements StudyRepository {
   Future<StudyNotebookSummary> updateNotebook(
     String notebookId, {
     List<String>? sourceIds,
+    bool skipUnavailable = false,
   }) => _guard(() async {
     final dto = await _client.regenerateStudyNotebook(
-      V1RegenerateStudyNotebookRequestDto.fromJson({'sourceIds': ?sourceIds}),
+      V1RegenerateStudyNotebookRequestDto.fromJson({
+        'sourceIds': ?sourceIds,
+        if (skipUnavailable) 'skipUnavailable': true,
+      }),
       notebookId: notebookId,
       idempotencyKey: _key('notebook-update'),
     );

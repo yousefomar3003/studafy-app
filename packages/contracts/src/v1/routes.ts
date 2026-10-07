@@ -40,6 +40,7 @@ import * as StudyAssistant from "./studyAssistant";
 import * as FamilyInsights from "./familyInsights";
 import * as StudyPlans from "./studyPlans";
 import * as StudyNotebooks from "./studyNotebooks";
+import * as MaterialSelection from "./materialSelection";
 import * as ManagedAccounts from "./managedAccounts";
 
 export interface V1RouteContract {
@@ -2108,6 +2109,28 @@ export const V1_ROUTE_CATALOGUE = [
     "V1NotebookStudySet",
     201,
     params("notebookId"),
+  ),
+  // Exactly the chosen material, for every AI study tool (2026-10-07).
+  cataloguePost(
+    "generateSelectionStudySet",
+    "/v1/study-sets",
+    "material_set.generate",
+    MaterialSelection.V1SelectionStudySetRequest,
+    "V1SelectionStudySetRequest",
+    MaterialSelection.V1SelectionStudySet,
+    "V1SelectionStudySet",
+    201,
+  ),
+  cataloguePost(
+    "summariseMaterial",
+    "/v1/classrooms/{classroomId}/notebook/summary",
+    "notebook.write",
+    MaterialSelection.V1SummariseMaterialRequest,
+    "V1SummariseMaterialRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    201,
+    params("classroomId"),
   ),
 ] as const satisfies readonly V1RouteContract[];
 

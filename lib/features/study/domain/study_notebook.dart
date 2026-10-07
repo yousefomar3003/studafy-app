@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/material_selection.dart';
 import 'study.dart';
 
 /// A student's study notebook (2026-10-07): made by the AI from one lesson -
@@ -569,6 +570,8 @@ class StudyNotebook {
     this.sources = const [],
     this.sets = const [],
     this.generatedAt,
+    this.includeText = true,
+    this.wholeLesson = true,
   });
 
   factory StudyNotebook.fromJson(Map<String, dynamic> json) => StudyNotebook(
@@ -597,7 +600,15 @@ class StudyNotebook {
     generatedAt: json['generatedAt'] == null
         ? null
         : DateTime.parse(json['generatedAt'] as String).toLocal(),
+    includeText: json['includeText'] as bool? ?? true,
+    wholeLesson: json['wholeLesson'] as bool? ?? true,
   );
+
+  /// The lesson's own text is part of it.
+  final bool includeText;
+
+  /// Made from the whole lesson: files added later are read on an update.
+  final bool wholeLesson;
 
   final StudyNotebookSummary summary;
   final String className;
@@ -630,6 +641,8 @@ class StudyNotebook {
     sources: sources,
     sets: sets,
     generatedAt: generatedAt,
+    includeText: includeText,
+    wholeLesson: wholeLesson,
   );
 }
 
@@ -699,29 +712,6 @@ class NotebookConflict implements Exception {
   final StudyNotebook? latest;
 }
 
-/// A file or link a student can choose to make a notebook from.
-@immutable
-class NotebookSourceChoice {
-  const NotebookSourceChoice({
-    required this.id,
-    required this.isLink,
-    required this.name,
-    required this.state,
-    this.reason,
-  });
-
-  final String id;
-  final bool isLink;
-  final String name;
-
-  /// 'processing', 'ready', 'unsupported' or 'failed'.
-  final String state;
-  final String? reason;
-
-  bool get ready => state == 'ready';
-  bool get processing => state == 'processing';
-}
-
 /// A student's study notebooks.
 abstract interface class StudyNotebookRepository {
   Future<List<StudyNotebookSummary>> notebooks(String classroomId);
@@ -733,6 +723,8 @@ abstract interface class StudyNotebookRepository {
     required String resourceId,
     required List<String> sourceIds,
     String? title,
+    MaterialSelection? selection,
+    bool skipUnavailable = false,
   });
 
   Future<StudyNotebook> openNotebook(String notebookId);
@@ -742,6 +734,7 @@ abstract interface class StudyNotebookRepository {
   Future<StudyNotebookSummary> updateNotebook(
     String notebookId, {
     List<String>? sourceIds,
+    bool skipUnavailable = false,
   });
 
   Future<StudyNotebookSummary> saveNotebookSettings(

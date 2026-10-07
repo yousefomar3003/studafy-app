@@ -457,6 +457,46 @@ suite("Study notebooks over real SQL", () => {
     expect(notebook.sets[0]?.outdated).toBe(true);
   });
 
+  test("a notebook from chosen material keeps exactly that choice", async () => {
+    const res = await request(
+      `/v1/classrooms/${CLASSROOM}/study-notebooks`,
+      STUDENT,
+      {
+        method: "POST",
+        body: {
+          resourceId: LESSON,
+          sourceIds: [],
+          references: [{ kind: "text", id: LESSON }],
+        },
+      },
+    );
+    expect(res.status).toBe(201);
+    const id = ((await res.json()) as { id: string }).id;
+    await settle();
+    const notebook = await (await open(id)).json() as {
+      includeText: boolean;
+      wholeLesson: boolean;
+    };
+    // Its text alone: not the whole lesson, so files added later stay out.
+    expect(notebook.includeText).toBe(true);
+    expect(notebook.wholeLesson).toBe(false);
+
+    // Material from another lesson is not part of this lesson's notebook.
+    const other = await request(
+      `/v1/classrooms/${CLASSROOM}/study-notebooks`,
+      STUDENT,
+      {
+        method: "POST",
+        body: {
+          resourceId: LESSON,
+          sourceIds: [],
+          references: [{ kind: "text", id: CLASSROOM }],
+        },
+      },
+    );
+    expect(other.status).toBe(400);
+  });
+
   test("the student can delete it", async () => {
     const res = await request(
       `/v1/study-notebooks/${notebookId}/delete`,

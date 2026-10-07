@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/material_selection.dart';
 import 'package:studafy/features/study/domain/study.dart';
 import 'package:studafy/features/study/domain/study_notebook.dart';
 import 'package:studafy/features/study/presentation/notes_text.dart';
@@ -27,6 +28,23 @@ void main() {
   );
 
   group('a lesson\'s notebook button', () {
+    // The picker as the student leaves it: the lesson's text and one file,
+    // the one still being read left out.
+    const chosen = MaterialSelection(
+      lessons: [
+        LessonSelection(
+          lessonId: 'l1',
+          title: 'Photosynthesis',
+          classroomId: 'c1',
+          classLabel: 'Biology · 8A',
+          includeText: true,
+          sourceIds: {'f1'},
+          sourceNames: {'f1': 'Leaf.pdf'},
+        ),
+      ],
+    );
+    final requests = <MaterialPickRequest>[];
+
     Widget button(_Notebooks study, NotebookTracker tracker, StudyPlan plan) =>
         localizedApp(
           home: Scaffold(
@@ -38,20 +56,10 @@ void main() {
                   className: 'Biology 8A',
                   plan: () => plan,
                   onOpenPlans: () {},
-                  loadSources: (_) async => const [
-                    NotebookSourceChoice(
-                      id: 'f1',
-                      isLink: false,
-                      name: 'Leaf.pdf',
-                      state: 'ready',
-                    ),
-                    NotebookSourceChoice(
-                      id: 'f2',
-                      isLink: false,
-                      name: 'Board.png',
-                      state: 'processing',
-                    ),
-                  ],
+                  pick: (context, request) async {
+                    requests.add(request);
+                    return chosen;
+                  },
                 ),
                 resourceId: 'l1',
                 lessonTitle: 'Photosynthesis',
@@ -78,25 +86,20 @@ void main() {
       expect(find.text('Create notebook'), findsOne);
 
       await tester.tap(find.text('Create notebook'));
-      await tester.pumpAndSettle();
-      // The sheet names the class, the lesson and its files.
-      expect(find.text('Biology 8A'), findsOne);
-      expect(find.text('Leaf.pdf'), findsOne);
-      expect(find.text('Still being read'), findsOne);
-      // The whole lesson waits for the file still being read...
-      expect(find.textContaining('still being read. Wait a minute'), findsOne);
-      // ...so the student chooses only the file that is ready.
-      await tester.tap(find.text('Only the files and links I choose'));
-      await tester.pumpAndSettle();
-      // The sheet's button, over the lesson's own.
-      await tester.tap(
-        find.widgetWithText(FilledButton, 'Create notebook').last,
-      );
       // A spinner turns while it is written, so the frames never settle.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
+      // The picker opened on this lesson, for one lesson of this class.
+      expect(requests.single.action, MaterialAction.notebook);
+      expect(requests.single.preselectLessonId, 'l1');
+      expect(requests.single.onlyClassroomId, 'c1');
+      expect(requests.single.singleLesson, isTrue);
+      // Exactly what was chosen is sent: the text and one file.
       expect(study.created.single.$1, 'l1');
-      expect(study.created.single.$2, ['f1']);
+      expect(study.selections.single!.toJson(), [
+        {'kind': 'text', 'id': 'l1'},
+        {'kind': 'file', 'id': 'f1', 'lessonId': 'l1'},
+      ]);
       expect(find.text('Creating…'), findsOne);
 
       // Written in the background; the button follows on the next look.
@@ -312,6 +315,7 @@ void main() {
 class _Notebooks implements StudyRepository {
   final created = <(String, List<String>)>[];
   final saved = <NotebookPersonal>[];
+  final selections = <MaterialSelection?>[];
   int updates = 0;
   final _summaries = <String, Map<String, Object?>>{};
   NotebookPersonal _personal = const NotebookPersonal();
@@ -375,8 +379,11 @@ class _Notebooks implements StudyRepository {
     required String resourceId,
     required List<String> sourceIds,
     String? title,
+    MaterialSelection? selection,
+    bool skipUnavailable = false,
   }) async {
     created.add((resourceId, sourceIds));
+    selections.add(selection);
     final id = 'n${created.length}';
     _summaries[id] = {..._summary('creating'), 'id': id};
     return _of(id);
@@ -420,6 +427,7 @@ class _Notebooks implements StudyRepository {
   Future<StudyNotebookSummary> updateNotebook(
     String notebookId, {
     List<String>? sourceIds,
+    bool skipUnavailable = false,
   }) async {
     updates++;
     _summaries[notebookId] = {..._summaries[notebookId]!, 'status': 'creating'};

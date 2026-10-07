@@ -103,6 +103,7 @@ describe("problem details contract", () => {
       "LESSON_HAS_NO_TEXT",
       "MANAGED_CHILD_LIMIT",
       "MATERIAL_PROCESSING",
+      "MATERIAL_UNAVAILABLE",
       "MESSAGING_DISABLED",
       "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
