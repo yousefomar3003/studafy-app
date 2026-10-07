@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 /// A student's AI allowance, in tokens (ADR-0037): one allowance for the
@@ -231,6 +233,7 @@ class ChatTurn {
     required this.text,
     required this.at,
     this.photoName,
+    this.photoThumb,
     this.citations = const [],
     this.unreadable = const [],
   });
@@ -243,6 +246,20 @@ class ChatTurn {
   /// in the upload pipeline.
   final String? photoName;
 
+  /// A small copy of that photo, kept on the device with the chat, so the
+  /// chat shows the photo itself.
+  final Uint8List? photoThumb;
+
+  ChatTurn withPhotoThumb(Uint8List thumb) => ChatTurn(
+    role: role,
+    text: text,
+    at: at,
+    photoName: photoName,
+    photoThumb: thumb,
+    citations: citations,
+    unreadable: unreadable,
+  );
+
   /// An answer's sources, and what it could not read.
   final List<AnswerCitation> citations;
   final List<UnreadableSource> unreadable;
@@ -252,6 +269,7 @@ class ChatTurn {
     'text': text,
     'at': at.toUtc().toIso8601String(),
     'photoName': ?photoName,
+    if (photoThumb case final thumb?) 'photoThumb': base64Encode(thumb),
     if (citations.isNotEmpty)
       'citations': [for (final c in citations) c.toJson()],
     if (unreadable.isNotEmpty)
@@ -272,6 +290,16 @@ class ChatTurn {
       text: text,
       at: at.toLocal(),
       photoName: photo is String ? photo : null,
+      photoThumb: switch (json['photoThumb']) {
+        final String encoded => () {
+          try {
+            return base64Decode(encoded);
+          } on FormatException {
+            return null;
+          }
+        }(),
+        _ => null,
+      },
       citations: [
         for (final item in json['citations'] as List<dynamic>? ?? const [])
           ?AnswerCitation.fromJson(item),

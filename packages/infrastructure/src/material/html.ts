@@ -43,7 +43,8 @@ export function htmlToSections(html: string): {
       .trim() ?? "",
   ) || null;
   // Prefer the article itself when the page marks one.
-  const main = html.match(/<(article|main)(?:\s[^>]*)?>[\s\S]*?<\/\1>/i)?.[0] ?? html;
+  const main = html.match(/<(article|main)(?:\s[^>]*)?>[\s\S]*?<\/\1>/i)?.[0] ??
+    html;
   const cleaned = main
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(

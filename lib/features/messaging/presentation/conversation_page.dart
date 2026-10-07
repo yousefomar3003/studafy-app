@@ -666,6 +666,14 @@ class _ConversationPageState extends State<ConversationPage> {
         }
         final message = _messages[index];
         final mine = message.senderId == widget.myUserId;
+        // Only photos: shown as themselves, with no bubble around them.
+        final photoOnly =
+            message.body.isEmpty &&
+            message.attachments.isNotEmpty &&
+            message.attachments.every(
+              (note) => (note.mediaType ?? '').startsWith('image/'),
+            );
+        final onBubble = mine && !photoOnly;
         return Align(
           key: ValueKey(message.id),
           alignment: mine
@@ -681,24 +689,29 @@ class _ConversationPageState extends State<ConversationPage> {
               onLongPress: () => _reportMessage(message),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
+                padding: photoOnly
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 constraints: const BoxConstraints(maxWidth: 320),
-                decoration: BoxDecoration(
-                  gradient: mine ? studafyActionGradient : null,
-                  color: mine ? null : Colors.white,
-                  border: mine ? null : Border.all(color: studafyHairline),
-                  borderRadius: BorderRadiusDirectional.only(
-                    topStart: const Radius.circular(18),
-                    topEnd: const Radius.circular(18),
-                    bottomStart: Radius.circular(mine ? 18 : 6),
-                    bottomEnd: Radius.circular(mine ? 6 : 18),
-                  ),
-                ),
+                decoration: photoOnly
+                    ? null
+                    : BoxDecoration(
+                        gradient: mine ? studafyActionGradient : null,
+                        color: mine ? null : Colors.white,
+                        border: mine
+                            ? null
+                            : Border.all(color: studafyHairline),
+                        borderRadius: BorderRadiusDirectional.only(
+                          topStart: const Radius.circular(18),
+                          topEnd: const Radius.circular(18),
+                          bottomStart: Radius.circular(mine ? 18 : 6),
+                          bottomEnd: Radius.circular(mine ? 6 : 18),
+                        ),
+                      ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: photoOnly && mine
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     if (!mine)
                       Text(
@@ -724,7 +737,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     for (final note in message.attachments)
                       if ((note.mediaType ?? '').startsWith('image/'))
                         Padding(
-                          padding: const EdgeInsets.only(top: 6),
+                          padding: EdgeInsets.only(top: photoOnly ? 2 : 6),
                           child: AttachmentImage(
                             key: ValueKey('image-${note.id}'),
                             attachment: note,
@@ -769,12 +782,15 @@ class _ConversationPageState extends State<ConversationPage> {
                           ),
                           style: TextStyle(
                             fontSize: 10,
-                            color: mine ? Colors.white70 : studafyMuted,
+                            color: onBubble ? Colors.white70 : studafyMuted,
                           ),
                         ),
                         if (mine && message.status != null) ...[
                           const SizedBox(width: 4),
-                          MessageTicks(status: message.status!),
+                          MessageTicks(
+                            status: message.status!,
+                            onBubble: onBubble,
+                          ),
                         ],
                       ],
                     ),
@@ -1074,9 +1090,12 @@ class _MenuLine extends StatelessWidget {
 /// WhatsApp's ticks on one of my messages: one grey when sent, two grey when
 /// it has reached everyone, two blue once everyone has read it.
 class MessageTicks extends StatelessWidget {
-  const MessageTicks({super.key, required this.status});
+  const MessageTicks({super.key, required this.status, this.onBubble = true});
 
   final MessageStatus status;
+
+  /// On the navy bubble; false under a photo shown without one.
+  final bool onBubble;
 
   /// Readable on the navy bubble, and close to the blue people know.
   static const readColor = Color(0xFF53BDEB);
@@ -1086,12 +1105,12 @@ class MessageTicks extends StatelessWidget {
     final (icon, color, label) = switch (status) {
       MessageStatus.sent => (
         Icons.done_rounded,
-        Colors.white70,
+        onBubble ? Colors.white70 : studafyMuted,
         AppL10n.of(context).conversationSent,
       ),
       MessageStatus.delivered => (
         Icons.done_all_rounded,
-        Colors.white70,
+        onBubble ? Colors.white70 : studafyMuted,
         AppL10n.of(context).conversationDelivered,
       ),
       MessageStatus.read => (

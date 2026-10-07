@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -572,6 +573,63 @@ void main() {
       TextDirection.rtl,
     );
     expect(find.text('مساعد الدراسة'), findsOneWidget);
+  });
+
+  test('a photo kept with the chat comes back with it', () {
+    final thumb = Uint8List.fromList([137, 80, 78, 71, 1, 2, 3]);
+    final turn = ChatTurn(
+      role: ChatRole.student,
+      text: 'What is this?',
+      at: DateTime.utc(2026, 10, 7, 12),
+      photoName: 'board.jpg',
+      photoThumb: thumb,
+    );
+    final back = ChatTurn.fromJson(
+      jsonDecode(jsonEncode(turn.toJson())) as Map<String, dynamic>,
+    )!;
+    expect(back.photoThumb, thumb);
+    expect(back.photoName, 'board.jpg');
+  });
+
+  testWidgets('a question with a photo shows the photo, not its file name', (
+    tester,
+  ) async {
+    // A real 1x1 PNG, as the chat keeps it.
+    final png = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+    final store = _MemoryChats()
+      ..saved.add(
+        StudyChat(
+          id: 'c1',
+          title: 'What is this?',
+          createdAt: DateTime(2026, 10, 7),
+          updatedAt: DateTime(2026, 10, 7),
+          turns: [
+            ChatTurn(
+              role: ChatRole.student,
+              text: 'What is this?',
+              at: DateTime(2026, 10, 7, 12),
+              photoName: 'image_picker_ABC.jpg',
+              photoThumb: png,
+            ),
+            ChatTurn(
+              role: ChatRole.assistant,
+              text: 'A whiteboard.',
+              at: DateTime(2026, 10, 7, 12, 1),
+            ),
+          ],
+        ),
+      );
+    await tester.pumpWidget(page(_Recording(), chats: store));
+    await tester.pumpAndSettle();
+    expect(find.text('image_picker_ABC.jpg'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Image && w.semanticLabel == 'image_picker_ABC.jpg',
+      ),
+      findsOne,
+    );
   });
 
   group('chats on the device', () {

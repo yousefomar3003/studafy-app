@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -491,6 +493,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
       _error = message;
     });
 
+    // The photo is shown in the chat as itself: a small copy, made beside
+    // the question and kept on the device with the chat.
+    if (photo != null) unawaited(_keepThumbnail(at, photo.bytes));
+
     final photoIds = <String>[];
     if (photo != null) {
       final id = await _uploadPhoto(photo);
@@ -570,6 +576,34 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
       await Future<void>.delayed(widget.photoReadyPoll);
       if (!mounted) return;
     }
+  }
+
+  /// A copy of [bytes] at most 480 px wide, put on the question asked at
+  /// [at]. Nothing is shown in its place if it cannot be made.
+  Future<void> _keepThumbnail(DateTime at, Uint8List bytes) async {
+    Uint8List? thumb;
+    try {
+      final codec = await ui.instantiateImageCodec(bytes, targetWidth: 480);
+      final frame = await codec.getNextFrame();
+      final data = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      thumb = data?.buffer.asUint8List();
+      frame.image.dispose();
+      codec.dispose();
+    } on Object {
+      return;
+    }
+    if (thumb == null || !mounted) return;
+    final chat = _chat;
+    if (chat == null) return;
+    final turns = [
+      for (final turn in chat.turns)
+        turn.at == at && turn.role == ChatRole.student
+            ? turn.withPhotoThumb(thumb)
+            : turn,
+    ];
+    final next = chat.withTurns(turns);
+    setState(() => _chat = next);
+    unawaited(widget.chats?.save(next).catchError((Object _) {}));
   }
 
   @override
@@ -923,7 +957,18 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                       ),
                     if (_photo case final photo?)
                       InputChip(
-                        avatar: const Icon(Icons.image_outlined, size: 16),
+                        avatar: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.memory(
+                            photo.bytes,
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.cover,
+                            cacheWidth: 72,
+                            errorBuilder: (_, _, _) =>
+                                const Icon(Icons.image_outlined, size: 16),
+                          ),
+                        ),
                         label: Text(photo.displayName),
                         deleteButtonTooltipMessage: l10n.helperRemove,
                         onDeleted: _asking
@@ -1164,7 +1209,21 @@ class _Bubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (turn.photoName case final photo?)
+              if (turn.photoThumb case final thumb?)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      thumb,
+                      width: 220,
+                      fit: BoxFit.cover,
+                      semanticLabel: turn.photoName,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+                )
+              else if (turn.photoName case final photo?)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(

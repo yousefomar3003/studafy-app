@@ -6,7 +6,7 @@ import type {
   StudyImage,
   StudyTurn,
 } from "@studafy/infrastructure";
-import { sha256Hex } from "@studafy/infrastructure";
+import { prepareImage, sha256Hex } from "@studafy/infrastructure";
 import type { NotebookRepository } from "../study/notebookRoutes";
 import {
   type ChatMemoryBudgets,
@@ -142,7 +142,16 @@ export function createStudyAssistantRoutes(
         if (await sha256Hex(bytes) !== object["storedSha256"]) {
           return problem(c, "SERVICE_UNAVAILABLE", 503);
         }
-        images.push({ bytes, mediaType: String(object["mediaType"]) });
+        // At most 1,600 px on its longest side: a full phone photo costs far
+        // more tokens, takes longer, and reads no better.
+        try {
+          images.push({
+            bytes: await prepareImage(bytes),
+            mediaType: "image/jpeg",
+          });
+        } catch {
+          images.push({ bytes, mediaType: String(object["mediaType"]) });
+        }
       }
 
       // The material: lessons and their files and links, chosen whole or
@@ -244,6 +253,10 @@ export function createStudyAssistantRoutes(
           error_kind: error instanceof StudyAssistantError
             ? error.kind
             : "unknown",
+          provider_status: error instanceof StudyAssistantError
+            ? error.status ?? null
+            : null,
+          with_photo: images.length > 0,
         });
         return problem(c, "SERVICE_UNAVAILABLE", 503);
       }

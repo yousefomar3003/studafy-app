@@ -1,6 +1,7 @@
 import { type Context, Hono } from "hono";
 import { v1Route } from "@studafy/contracts";
 import {
+  prepareImage,
   type PrivateFileStorage,
   sha256Hex,
   StorageUnavailableError,
@@ -96,6 +97,9 @@ export function createStudyRoutes(
     log?.warn("study_ai_failed", {
       feature,
       error_kind: error instanceof StudyAssistantError ? error.kind : "unknown",
+      provider_status: error instanceof StudyAssistantError
+        ? error.status ?? null
+        : null,
     });
     if (error instanceof StudyAssistantError && error.kind === "unreadable") {
       return problem(c, "PHOTO_UNREADABLE", 422);
@@ -305,7 +309,18 @@ export function createStudyRoutes(
           context,
           "whiteboard",
           holdFor(deps.prices, 0, OUTPUT_TOKENS.long, 1),
-          () => assistant.whiteboardNotes(bytes, String(object["mediaType"])),
+          async () => {
+            // A board photo is read at most 1,600 px wide, like any other.
+            let sent = bytes;
+            let type = String(object["mediaType"]);
+            try {
+              sent = await prepareImage(bytes);
+              type = "image/jpeg";
+            } catch {
+              // Sent as stored.
+            }
+            return await assistant.whiteboardNotes(sent, type);
+          },
         );
       } catch (error) {
         return providerFailure(c, "whiteboard", error);

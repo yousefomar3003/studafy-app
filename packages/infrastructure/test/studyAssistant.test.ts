@@ -152,3 +152,34 @@ describe("study assistant egress", () => {
     });
   });
 });
+
+describe("a provider briefly busy", () => {
+  test("is asked once more, and the answer is used", async () => {
+    let calls = 0;
+    const assistant = assistantWith(
+      (async () => {
+        calls++;
+        return calls === 1
+          ? new Response("busy", { status: 503 })
+          : reply("An answer.");
+      }) as unknown as typeof fetch,
+    );
+    expect((await assistant.ask("hello there")).answer).toBe("An answer.");
+    expect(calls).toBe(2);
+  });
+
+  test("a refusal is not retried, and its status is kept for the log", async () => {
+    let calls = 0;
+    const assistant = assistantWith(
+      (async () => {
+        calls++;
+        return new Response("bad request", { status: 400 });
+      }) as unknown as typeof fetch,
+    );
+    await expect(assistant.ask("hello there")).rejects.toMatchObject({
+      kind: "unavailable",
+      status: 400,
+    });
+    expect(calls).toBe(1);
+  });
+});

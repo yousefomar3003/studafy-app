@@ -65,11 +65,16 @@ export type StudySetResult =
 export class StudyAssistantError extends Error {
   constructor(
     readonly kind: "unavailable" | "refused" | "empty" | "unreadable",
+    /** The provider's HTTP status, when it answered with an error. */
+    readonly status?: number,
   ) {
     super(`study_assistant_${kind}`);
     this.name = "StudyAssistantError";
   }
 }
+
+/** Statuses worth one more try: busy, or a passing server fault. */
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
 
 /** One earlier turn of the same chat. */
 export interface StudyTurn {
@@ -189,32 +194,48 @@ export function createStudyAssistant(
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const started = Date.now();
     try {
-      const response = await fetchImpl(endpoint, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: maxTokens,
-          temperature,
-          // Qwen3.5 thinks before answering by default, and the thinking
-          // counts against max_tokens: a 600-token budget came back cut
-          // off mid-sentence, or empty, after ~9s. Off, the same question
-          // gets a complete answer in ~2s. A short explanation for a
-          // student does not need a reasoning trace.
-          reasoning: { enabled: false },
-          messages: [
-            { role: "system", content: system },
-            ...earlier,
-            { role: "user", content: user },
-          ],
-        }),
-      });
-      if (!response.ok) throw new StudyAssistantError("unavailable");
+      const send = () =>
+        fetchImpl(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            authorization: `Bearer ${apiKey}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: maxTokens,
+            temperature,
+            // Qwen3.5 thinks before answering by default, and the thinking
+            // counts against max_tokens: a 600-token budget came back cut
+            // off mid-sentence, or empty, after ~9s. Off, the same question
+            // gets a complete answer in ~2s. A short explanation for a
+            // student does not need a reasoning trace.
+            reasoning: { enabled: false },
+            messages: [
+              { role: "system", content: system },
+              ...earlier,
+              { role: "user", content: user },
+            ],
+          }),
+        });
+      let response = await send();
+      // One more try when the provider was briefly busy, while there is
+      // time for it inside the request's own limit.
+      if (
+        RETRYABLE.has(response.status) &&
+        Date.now() - started < timeoutMs / 2
+      ) {
+        await response.body?.cancel().catch(() => {});
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        response = await send();
+      }
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
+        throw new StudyAssistantError("unavailable", response.status);
+      }
       const body = await response.json() as {
         choices?: { message?: { content?: string } }[];
         usage?: { prompt_tokens?: number; completion_tokens?: number };

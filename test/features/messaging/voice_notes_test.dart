@@ -238,6 +238,43 @@ void main() {
     expect(find.text('Open this link?'), findsOne);
   });
 
+  testWidgets('a photo sent on its own has no bubble around it', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _me,
+          body: '',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'photo-1',
+              displayName: 'image_picker_ABC.jpg',
+              sizeBytes: 8,
+              scanState: 'clean',
+              mediaType: 'image/jpeg',
+            ),
+          ],
+        ),
+      ],
+    );
+    final framed = find.ancestor(
+      of: find.byType(AttachmentImage),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).gradient != null,
+      ),
+    );
+    expect(find.byType(AttachmentImage), findsOne);
+    expect(framed, findsNothing);
+  });
+
   testWidgets('a voice note that failed to send is sent again as it is', (
     tester,
   ) async {
