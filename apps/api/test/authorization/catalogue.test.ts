@@ -26,6 +26,7 @@ import { createOnboardingRoutes } from "../../src/onboarding/routes";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import { createStudyRoutes } from "../../src/study/routes";
 import { createLessonReadingRoutes } from "../../src/study/readingRoutes";
+import { createStudyNotebookRoutes } from "../../src/study/studyNotebookRoutes";
 import { createNotebookRoutes } from "../../src/study/notebookRoutes";
 import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
@@ -560,6 +561,25 @@ function routeTable() {
     "/",
     createLessonReadingRoutes(
       { material: { call: async () => ({ outcome: "invalid" }) } },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createStudyNotebookRoutes(
+      {
+        notebooks: { call: async () => ({ outcome: "forbidden" }) },
+        material: { call: async () => ({ outcome: "invalid" }) },
+        repository: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        assistant: null,
+        lessonToolsEnabled: false,
+      },
       authorization,
       idempotency,
     ),

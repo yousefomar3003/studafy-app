@@ -237,29 +237,124 @@ export type Database = {
           },
         ];
       };
+      assessment_access_grants: {
+        Row: {
+          assessment_id: string;
+          closes_at: string | null;
+          created_at: string;
+          extra_attempts: number;
+          granted_by: string | null;
+          id: string;
+          reason: string | null;
+          school_id: string;
+          student_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          assessment_id: string;
+          closes_at?: string | null;
+          created_at?: string;
+          extra_attempts?: number;
+          granted_by?: string | null;
+          id?: string;
+          reason?: string | null;
+          school_id: string;
+          student_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          assessment_id?: string;
+          closes_at?: string | null;
+          created_at?: string;
+          extra_attempts?: number;
+          granted_by?: string | null;
+          id?: string;
+          reason?: string | null;
+          school_id?: string;
+          student_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assessment_access_grants_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName:
+              "assessment_access_grants_school_id_assessment_id_fkey";
+            columns: ["school_id", "assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "assessment_access_grants_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName:
+              "assessment_access_grants_school_id_student_id_fkey";
+            columns: ["school_id", "student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
       assessment_answers: {
         Row: {
           answer_text: string;
           attempt_id: string;
+          auto_score: number | null;
+          awarded_score: number | null;
           created_at: string;
+          feedback: string | null;
+          marked_at: string | null;
+          marked_by: string | null;
           question_id: string;
           school_id: string;
+          selected: Json | null;
         };
         Insert: {
           answer_text: string;
           attempt_id: string;
+          auto_score?: number | null;
+          awarded_score?: number | null;
           created_at?: string;
+          feedback?: string | null;
+          marked_at?: string | null;
+          marked_by?: string | null;
           question_id: string;
           school_id: string;
+          selected?: Json | null;
         };
         Update: {
           answer_text?: string;
           attempt_id?: string;
+          auto_score?: number | null;
+          awarded_score?: number | null;
           created_at?: string;
+          feedback?: string | null;
+          marked_at?: string | null;
+          marked_by?: string | null;
           question_id?: string;
           school_id?: string;
+          selected?: Json | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "assessment_answers_marked_by_fkey";
+            columns: ["marked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "assessment_answers_school_id_attempt_id_fkey";
             columns: ["school_id", "attempt_id"];
@@ -286,8 +381,14 @@ export type Database = {
       assessment_attempts: {
         Row: {
           assessment_id: string;
+          attempt_number: number | null;
+          awarded_score: number | null;
           created_at: string;
+          feedback: string | null;
           id: string;
+          marked_at: string | null;
+          marked_by: string | null;
+          needs_marking: boolean;
           operation_id: string;
           school_id: string;
           student_id: string;
@@ -296,8 +397,14 @@ export type Database = {
         };
         Insert: {
           assessment_id: string;
+          attempt_number?: number | null;
+          awarded_score?: number | null;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
+          marked_at?: string | null;
+          marked_by?: string | null;
+          needs_marking?: boolean;
           operation_id: string;
           school_id: string;
           student_id: string;
@@ -306,8 +413,14 @@ export type Database = {
         };
         Update: {
           assessment_id?: string;
+          attempt_number?: number | null;
+          awarded_score?: number | null;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
+          marked_at?: string | null;
+          marked_by?: string | null;
+          needs_marking?: boolean;
           operation_id?: string;
           school_id?: string;
           student_id?: string;
@@ -315,6 +428,13 @@ export type Database = {
           version?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "assessment_attempts_marked_by_fkey";
+            columns: ["marked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "assessment_attempts_school_id_assessment_id_fkey";
             columns: ["school_id", "assessment_id"];
@@ -340,35 +460,50 @@ export type Database = {
       };
       assessment_questions: {
         Row: {
+          answer_key: Json | null;
           assessment_id: string;
           created_at: string;
           id: string;
+          kind: string;
+          marking_guidance: string | null;
           maximum_score: number;
+          options: Json;
           position: number;
           preferred_answer: string | null;
           prompt: string;
+          required: boolean;
           school_id: string;
           updated_at: string;
         };
         Insert: {
+          answer_key?: Json | null;
           assessment_id: string;
           created_at?: string;
           id?: string;
+          kind?: string;
+          marking_guidance?: string | null;
           maximum_score: number;
+          options?: Json;
           position: number;
           preferred_answer?: string | null;
           prompt: string;
+          required?: boolean;
           school_id: string;
           updated_at?: string;
         };
         Update: {
+          answer_key?: Json | null;
           assessment_id?: string;
           created_at?: string;
           id?: string;
+          kind?: string;
+          marking_guidance?: string | null;
           maximum_score?: number;
+          options?: Json;
           position?: number;
           preferred_answer?: string | null;
           prompt?: string;
+          required?: boolean;
           school_id?: string;
           updated_at?: string;
         };
@@ -391,17 +526,23 @@ export type Database = {
       };
       assessments: {
         Row: {
+          answer_release: string;
+          answers_released_at: string | null;
           assignment_id: string | null;
+          attempt_policy: string;
           category: string;
           category_weight: number | null;
           classroom_id: string;
+          closes_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           delivery: string;
           gradebook_version: number;
           id: string;
+          max_attempts: number;
           maximum_score: number;
+          opens_at: string | null;
           published_at: string | null;
           scheduled_at: string | null;
           school_id: string;
@@ -411,17 +552,23 @@ export type Database = {
           version: number;
         };
         Insert: {
+          answer_release?: string;
+          answers_released_at?: string | null;
           assignment_id?: string | null;
+          attempt_policy?: string;
           category: string;
           category_weight?: number | null;
           classroom_id: string;
+          closes_at?: string | null;
           created_at?: string;
           created_by: string;
           deleted_at?: string | null;
           delivery?: string;
           gradebook_version?: number;
           id?: string;
+          max_attempts?: number;
           maximum_score: number;
+          opens_at?: string | null;
           published_at?: string | null;
           scheduled_at?: string | null;
           school_id: string;
@@ -431,17 +578,23 @@ export type Database = {
           version?: number;
         };
         Update: {
+          answer_release?: string;
+          answers_released_at?: string | null;
           assignment_id?: string | null;
+          attempt_policy?: string;
           category?: string;
           category_weight?: number | null;
           classroom_id?: string;
+          closes_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           delivery?: string;
           gradebook_version?: number;
           id?: string;
+          max_attempts?: number;
           maximum_score?: number;
+          opens_at?: string | null;
           published_at?: string | null;
           scheduled_at?: string | null;
           school_id?: string;
@@ -1591,6 +1744,118 @@ export type Database = {
           },
         ];
       };
+      content_links: {
+        Row: {
+          assessment_id: string | null;
+          assessment_question_id: string | null;
+          assignment_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          detached_at: string | null;
+          detached_by: string | null;
+          grade_result_id: string | null;
+          id: string;
+          position: number;
+          resource_version_id: string | null;
+          role: string;
+          school_id: string;
+          title: string;
+          url: string;
+        };
+        Insert: {
+          assessment_id?: string | null;
+          assessment_question_id?: string | null;
+          assignment_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          detached_at?: string | null;
+          detached_by?: string | null;
+          grade_result_id?: string | null;
+          id?: string;
+          position?: number;
+          resource_version_id?: string | null;
+          role?: string;
+          school_id: string;
+          title: string;
+          url: string;
+        };
+        Update: {
+          assessment_id?: string | null;
+          assessment_question_id?: string | null;
+          assignment_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          detached_at?: string | null;
+          detached_by?: string | null;
+          grade_result_id?: string | null;
+          id?: string;
+          position?: number;
+          resource_version_id?: string | null;
+          role?: string;
+          school_id?: string;
+          title?: string;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "content_links_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_links_detached_by_fkey";
+            columns: ["detached_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_links_school_id_assessment_id_fkey";
+            columns: ["school_id", "assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName:
+              "content_links_school_id_assessment_question_id_fkey";
+            columns: ["school_id", "assessment_question_id"];
+            isOneToOne: false;
+            referencedRelation: "assessment_questions";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "content_links_school_id_assignment_id_fkey";
+            columns: ["school_id", "assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "content_links_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "content_links_school_id_grade_result_id_fkey";
+            columns: ["school_id", "grade_result_id"];
+            isOneToOne: false;
+            referencedRelation: "grade_results";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "content_links_school_id_resource_version_id_fkey";
+            columns: ["school_id", "resource_version_id"];
+            isOneToOne: false;
+            referencedRelation: "resource_versions";
+            referencedColumns: ["school_id", "id"];
+          },
+        ];
+      };
       conversation_participants: {
         Row: {
           conversation_id: string;
@@ -1913,14 +2178,17 @@ export type Database = {
           ai_grading_draft_id: string | null;
           announcement_id: string | null;
           assessment_id: string | null;
+          assessment_question_id: string | null;
           assignment_id: string | null;
           created_at: string;
           detached_at: string | null;
           detached_by: string | null;
           file_object_id: string;
+          grade_result_id: string | null;
           id: string;
           message_id: string | null;
           resource_version_id: string | null;
+          role: string;
           school_id: string;
           submission_attempt_id: string | null;
           upload_session_id: string | null;
@@ -1929,14 +2197,17 @@ export type Database = {
           ai_grading_draft_id?: string | null;
           announcement_id?: string | null;
           assessment_id?: string | null;
+          assessment_question_id?: string | null;
           assignment_id?: string | null;
           created_at?: string;
           detached_at?: string | null;
           detached_by?: string | null;
           file_object_id: string;
+          grade_result_id?: string | null;
           id?: string;
           message_id?: string | null;
           resource_version_id?: string | null;
+          role?: string;
           school_id: string;
           submission_attempt_id?: string | null;
           upload_session_id?: string | null;
@@ -1945,14 +2216,17 @@ export type Database = {
           ai_grading_draft_id?: string | null;
           announcement_id?: string | null;
           assessment_id?: string | null;
+          assessment_question_id?: string | null;
           assignment_id?: string | null;
           created_at?: string;
           detached_at?: string | null;
           detached_by?: string | null;
           file_object_id?: string;
+          grade_result_id?: string | null;
           id?: string;
           message_id?: string | null;
           resource_version_id?: string | null;
+          role?: string;
           school_id?: string;
           submission_attempt_id?: string | null;
           upload_session_id?: string | null;
@@ -1998,6 +2272,20 @@ export type Database = {
             columns: ["school_id", "announcement_id"];
             isOneToOne: false;
             referencedRelation: "announcements";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_binding_grade_school_fk";
+            columns: ["school_id", "grade_result_id"];
+            isOneToOne: false;
+            referencedRelation: "grade_results";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "file_binding_question_school_fk";
+            columns: ["school_id", "assessment_question_id"];
+            isOneToOne: false;
+            referencedRelation: "assessment_questions";
             referencedColumns: ["school_id", "id"];
           },
           {
@@ -5149,6 +5437,176 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      study_notebook_sets: {
+        Row: {
+          content_version: number;
+          created_at: string;
+          id: string;
+          items: Json;
+          kind: string;
+          model: string;
+          notebook_id: string;
+          owner_id: string;
+          section_keys: string[];
+        };
+        Insert: {
+          content_version: number;
+          created_at?: string;
+          id?: string;
+          items: Json;
+          kind: string;
+          model: string;
+          notebook_id: string;
+          owner_id: string;
+          section_keys?: string[];
+        };
+        Update: {
+          content_version?: number;
+          created_at?: string;
+          id?: string;
+          items?: Json;
+          kind?: string;
+          model?: string;
+          notebook_id?: string;
+          owner_id?: string;
+          section_keys?: string[];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "study_notebook_sets_notebook_id_fkey";
+            columns: ["notebook_id"];
+            isOneToOne: false;
+            referencedRelation: "study_notebooks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "study_notebook_sets_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      study_notebooks: {
+        Row: {
+          classroom_id: string;
+          color: string;
+          content: Json | null;
+          content_version: number;
+          created_at: string;
+          deleted_at: string | null;
+          failure: string | null;
+          generated_at: string | null;
+          generation: number;
+          generation_started_at: string;
+          headings: Json;
+          icon: string | null;
+          id: string;
+          model: string | null;
+          owner_id: string;
+          page_style: string;
+          personal: Json;
+          personal_version: number;
+          resource_id: string;
+          school_id: string;
+          source_fingerprint: string | null;
+          source_ids: string[];
+          status: string;
+          subtitle: string | null;
+          title: string;
+          unreadable: Json;
+          updated_at: string;
+        };
+        Insert: {
+          classroom_id: string;
+          color?: string;
+          content?: Json | null;
+          content_version?: number;
+          created_at?: string;
+          deleted_at?: string | null;
+          failure?: string | null;
+          generated_at?: string | null;
+          generation?: number;
+          generation_started_at?: string;
+          headings?: Json;
+          icon?: string | null;
+          id?: string;
+          model?: string | null;
+          owner_id: string;
+          page_style?: string;
+          personal?: Json;
+          personal_version?: number;
+          resource_id: string;
+          school_id: string;
+          source_fingerprint?: string | null;
+          source_ids?: string[];
+          status?: string;
+          subtitle?: string | null;
+          title: string;
+          unreadable?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          classroom_id?: string;
+          color?: string;
+          content?: Json | null;
+          content_version?: number;
+          created_at?: string;
+          deleted_at?: string | null;
+          failure?: string | null;
+          generated_at?: string | null;
+          generation?: number;
+          generation_started_at?: string;
+          headings?: Json;
+          icon?: string | null;
+          id?: string;
+          model?: string | null;
+          owner_id?: string;
+          page_style?: string;
+          personal?: Json;
+          personal_version?: number;
+          resource_id?: string;
+          school_id?: string;
+          source_fingerprint?: string | null;
+          source_ids?: string[];
+          status?: string;
+          subtitle?: string | null;
+          title?: string;
+          unreadable?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "study_notebooks_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "study_notebooks_resource_id_fkey";
+            columns: ["resource_id"];
+            isOneToOne: false;
+            referencedRelation: "resources";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "study_notebooks_school_id_classroom_id_fkey";
+            columns: ["school_id", "classroom_id"];
+            isOneToOne: false;
+            referencedRelation: "classrooms";
+            referencedColumns: ["school_id", "id"];
+          },
+          {
+            foreignKeyName: "study_notebooks_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
             referencedColumns: ["id"];
           },
         ];

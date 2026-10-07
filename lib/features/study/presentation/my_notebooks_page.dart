@@ -4,6 +4,7 @@ import '../../../core/navigation.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
+import 'notes_text.dart';
 
 /// Every notebook the student has, one per class. A class the teacher has
 /// deleted is still here, marked as gone: the notes were always the
@@ -116,7 +117,7 @@ class _NoteView extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
-        UserContentText(entry.body),
+        NotesText(entry.body),
       ],
     ),
   );

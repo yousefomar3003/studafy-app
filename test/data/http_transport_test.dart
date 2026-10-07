@@ -243,6 +243,14 @@ void main() {
       expect(calls, 4);
     });
 
+    test('a notebook being written is always asked about again', () async {
+      await transport.get('/v1/classrooms/c1/study-notebooks');
+      await transport.get('/v1/classrooms/c1/study-notebooks');
+      await transport.get('/v1/study-notebooks/n1');
+      await transport.get('/v1/study-notebooks/n1');
+      expect(calls, 4);
+    });
+
     test('reads that are never kept are never remembered', () async {
       await transport.get('/v1/me');
       await transport.get('/v1/me');

@@ -11,6 +11,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
+import 'notes_text.dart';
 import 'upgrade_prompt.dart';
 
 /// A student's own notebook for one class, newest first, grouped by day.
@@ -28,6 +29,7 @@ class NotebookView extends StatefulWidget {
     this.uploads,
     this.source,
     this.pickLesson,
+    this.header,
     this.readyTimeout = const Duration(seconds: 40),
     this.readyPoll = const Duration(seconds: 2),
   });
@@ -50,6 +52,9 @@ class NotebookView extends StatefulWidget {
   /// Lessons live in another feature, so the host supplies the picker; null
   /// hides "From a lesson".
   final Future<LessonChoice?> Function(BuildContext context)? pickLesson;
+
+  /// Shown above the notes: the class's study notebooks.
+  final Widget? header;
 
   /// How long to wait for a new photo to clear the scan, and how often to ask.
   final Duration readyTimeout;
@@ -462,7 +467,7 @@ class _NotebookViewState extends State<NotebookView> {
         ),
       );
     }
-    final children = <Widget>[_actions()];
+    final children = <Widget>[?widget.header, _actions()];
     if (_working != null) {
       children.add(
         Padding(
@@ -559,7 +564,7 @@ class _NotebookViewState extends State<NotebookView> {
                 ),
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: 10),
-                  child: UserContentText(entry.body),
+                  child: NotesText(entry.body),
                 ),
                 if (entry.photo case final photo?)
                   StoredAttachmentList(

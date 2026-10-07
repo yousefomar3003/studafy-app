@@ -39,6 +39,7 @@ import * as Onboarding from "./onboarding";
 import * as StudyAssistant from "./studyAssistant";
 import * as FamilyInsights from "./familyInsights";
 import * as StudyPlans from "./studyPlans";
+import * as StudyNotebooks from "./studyNotebooks";
 import * as ManagedAccounts from "./managedAccounts";
 
 export interface V1RouteContract {
@@ -2020,7 +2021,93 @@ export const V1_ROUTE_CATALOGUE = [
     StudyPlans.V1LessonMaterial,
     "V1LessonMaterial",
     200,
-    z.strictObject({ resourceId: z.string().uuid(), sourceId: z.string().uuid() }),
+    z.strictObject({
+      resourceId: z.string().uuid(),
+      sourceId: z.string().uuid(),
+    }),
+  ),
+  // Study notebooks (2026-10-07). Appended.
+  catalogueGet(
+    "listStudyNotebooks",
+    "/v1/classrooms/{classroomId}/study-notebooks",
+    "notebook.read",
+    StudyNotebooks.V1StudyNotebookList,
+    "V1StudyNotebookList",
+    params("classroomId"),
+  ),
+  cataloguePost(
+    "createStudyNotebook",
+    "/v1/classrooms/{classroomId}/study-notebooks",
+    "notebook.write",
+    StudyNotebooks.V1CreateStudyNotebookRequest,
+    "V1CreateStudyNotebookRequest",
+    StudyNotebooks.V1StudyNotebookSummary,
+    "V1StudyNotebookSummary",
+    201,
+    params("classroomId"),
+  ),
+  catalogueGet(
+    "getStudyNotebook",
+    "/v1/study-notebooks/{notebookId}",
+    "study_notebook.read",
+    StudyNotebooks.V1StudyNotebook,
+    "V1StudyNotebook",
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "regenerateStudyNotebook",
+    "/v1/study-notebooks/{notebookId}/regenerate",
+    "study_notebook.write",
+    StudyNotebooks.V1RegenerateStudyNotebookRequest,
+    "V1RegenerateStudyNotebookRequest",
+    StudyNotebooks.V1StudyNotebookSummary,
+    "V1StudyNotebookSummary",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "updateStudyNotebookSettings",
+    "/v1/study-notebooks/{notebookId}/settings",
+    "study_notebook.write",
+    StudyNotebooks.V1StudyNotebookSettingsRequest,
+    "V1StudyNotebookSettingsRequest",
+    StudyNotebooks.V1StudyNotebookSummary,
+    "V1StudyNotebookSummary",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "saveStudyNotebookPersonal",
+    "/v1/study-notebooks/{notebookId}/personal",
+    "study_notebook.write",
+    StudyNotebooks.V1StudyNotebookPersonalRequest,
+    "V1StudyNotebookPersonalRequest",
+    StudyNotebooks.V1StudyNotebook,
+    "V1StudyNotebook",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "deleteStudyNotebook",
+    "/v1/study-notebooks/{notebookId}/delete",
+    "study_notebook.write",
+    StudyNotebooks.V1DeleteStudyNotebookRequest,
+    "V1DeleteStudyNotebookRequest",
+    StudyNotebooks.V1DeleteStudyNotebookResponse,
+    "V1DeleteStudyNotebookResponse",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "makeNotebookStudySet",
+    "/v1/study-notebooks/{notebookId}/study-set",
+    "study_notebook.write",
+    StudyNotebooks.V1NotebookStudySetRequest,
+    "V1NotebookStudySetRequest",
+    StudyNotebooks.V1NotebookStudySet,
+    "V1NotebookStudySet",
+    201,
+    params("notebookId"),
   ),
 ] as const satisfies readonly V1RouteContract[];
 

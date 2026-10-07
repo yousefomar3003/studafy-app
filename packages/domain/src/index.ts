@@ -118,6 +118,7 @@ export {
   isUnreadableReply,
   lessonPrompt,
   parseFlashcards,
+  parseJsonReply,
   parseQuiz,
   type QuizQuestion,
   redactForProvider,
@@ -148,3 +149,16 @@ export {
   type UnreadableSource,
   wantsWholeMaterial,
 } from "./study/grounding";
+export {
+  NOTEBOOK_PART_KEYS,
+  NOTEBOOK_PROMPT,
+  type NotebookCitation,
+  type NotebookContent,
+  type NotebookExample,
+  type NotebookItem,
+  type NotebookSection,
+  type NotebookTerm,
+  notebookText,
+  parseNotebook,
+  sectionKey,
+} from "./study/notebook";

@@ -137,10 +137,14 @@ class V1HttpTransport implements V1JsonTransport {
   );
 
   /// Reads that are live - a chat polled for new messages and ticks, the
-  /// inbox, notifications - are kept on the device like any other, but
-  /// never reused from the last few seconds: a poll that got the previous
-  /// answer back would show nothing new.
-  static final _live = RegExp(r'^/v1/(conversations|notifications)(/|\?|$)');
+  /// inbox, notifications, study notebooks followed while they are written
+  /// - are kept on the device like any other, but never reused from the
+  /// last few seconds: a poll that got the previous answer back would show
+  /// nothing new.
+  static final _live = RegExp(
+    r'^/v1/(conversations|notifications|study-notebooks)(/|\?|$)'
+    r'|^/v1/classrooms/[^/?]+/study-notebooks(\?|$)',
+  );
 
   /// Commands that only read something the server made once and keeps: a
   /// lesson's quiz or flashcards. Kept like a read.

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/file_upload_repository.dart';
+import 'study_notebook.dart';
 
 /// A student's plan (2026-09-27).
 ///
@@ -93,6 +94,9 @@ class StudyPlan {
 
   /// Quizzes and flashcards are switched on for this server.
   bool get studySetsOn => _on('quiz') && _on('flashcards');
+
+  /// Study notebooks are written by the AI on this server.
+  bool get notebooksOn => _on('notes');
 
   /// Class material may be shared with the helper: the same switch that
   /// sends lessons to the AI for quizzes.
@@ -242,7 +246,7 @@ class NotebookGroup {
   final List<NotebookEntry> entries;
 }
 
-abstract interface class StudyRepository {
+abstract interface class StudyRepository implements StudyNotebookRepository {
   Future<StudyPlan> plan();
   Future<List<NotebookEntry>> notebook(String classroomId);
   Future<NotebookEntry> addNote(

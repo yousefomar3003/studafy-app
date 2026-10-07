@@ -2715,6 +2715,116 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1StudyNotebookListDto> listStudyNotebooks({
+    required String classroomId,
+  }) async => V1StudyNotebookListDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/classrooms/{classroomId}/study-notebooks', {
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1StudyNotebookSummaryDto> createStudyNotebook(
+    V1CreateStudyNotebookRequestDto request, {
+    required String classroomId,
+    String? idempotencyKey,
+  }) async => V1StudyNotebookSummaryDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/classrooms/{classroomId}/study-notebooks', {
+        'classroomId': classroomId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1StudyNotebookDto> getStudyNotebook({
+    required String notebookId,
+  }) async => V1StudyNotebookDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/study-notebooks/{notebookId}', {
+        'notebookId': notebookId,
+      }, {}),
+    ),
+  );
+
+  Future<V1StudyNotebookSummaryDto> regenerateStudyNotebook(
+    V1RegenerateStudyNotebookRequestDto request, {
+    required String notebookId,
+    String? idempotencyKey,
+  }) async => V1StudyNotebookSummaryDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/study-notebooks/{notebookId}/regenerate', {
+        'notebookId': notebookId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1StudyNotebookSummaryDto> updateStudyNotebookSettings(
+    V1StudyNotebookSettingsRequestDto request, {
+    required String notebookId,
+    String? idempotencyKey,
+  }) async => V1StudyNotebookSummaryDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/study-notebooks/{notebookId}/settings', {
+        'notebookId': notebookId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1StudyNotebookDto> saveStudyNotebookPersonal(
+    V1StudyNotebookPersonalRequestDto request, {
+    required String notebookId,
+    String? idempotencyKey,
+  }) async => V1StudyNotebookDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/study-notebooks/{notebookId}/personal', {
+        'notebookId': notebookId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1DeleteStudyNotebookResponseDto> deleteStudyNotebook(
+    V1DeleteStudyNotebookRequestDto request, {
+    required String notebookId,
+    String? idempotencyKey,
+  }) async => V1DeleteStudyNotebookResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/study-notebooks/{notebookId}/delete', {
+        'notebookId': notebookId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1NotebookStudySetDto> makeNotebookStudySet(
+    V1NotebookStudySetRequestDto request, {
+    required String notebookId,
+    String? idempotencyKey,
+  }) async => V1NotebookStudySetDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/study-notebooks/{notebookId}/study-set', {
+        'notebookId': notebookId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -6126,6 +6236,35 @@ class V1CreateStudentRequestDto {
   };
 }
 
+class V1CreateStudyNotebookRequestDto {
+  const V1CreateStudyNotebookRequestDto({
+    required this.resourceId,
+    required this.sourceIds,
+    this.title,
+    this.language,
+  });
+
+  factory V1CreateStudyNotebookRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1CreateStudyNotebookRequestDto(
+        resourceId: json['resourceId'] as String,
+        sourceIds: (json['sourceIds'] as List<dynamic>).cast<String>(),
+        title: json['title'] as String?,
+        language: json['language'] as String?,
+      );
+
+  final String resourceId;
+  final List<String> sourceIds;
+  final String? title;
+  final String? language;
+
+  Map<String, Object?> toJson() => {
+    'resourceId': resourceId,
+    'sourceIds': sourceIds,
+    'title': ?title,
+    'language': ?language,
+  };
+}
+
 class V1CreateTeacherWorkspaceRequestDto {
   const V1CreateTeacherWorkspaceRequestDto({
     this.name,
@@ -6451,6 +6590,27 @@ class V1DeleteNotebookEntryResponseDto {
   final bool deleted;
 
   Map<String, Object?> toJson() => {'id': id, 'deleted': deleted};
+}
+
+class V1DeleteStudyNotebookRequestDto {
+  const V1DeleteStudyNotebookRequestDto();
+
+  factory V1DeleteStudyNotebookRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1DeleteStudyNotebookRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1DeleteStudyNotebookResponseDto {
+  const V1DeleteStudyNotebookResponseDto({required this.deleted});
+
+  factory V1DeleteStudyNotebookResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1DeleteStudyNotebookResponseDto(deleted: json['deleted'] as bool);
+
+  final bool deleted;
+
+  Map<String, Object?> toJson() => {'deleted': deleted};
 }
 
 class V1DeletionCancelRequestDto {
@@ -9443,6 +9603,87 @@ class V1MyNotebooksDto {
   Map<String, Object?> toJson() => {'classes': classes};
 }
 
+class V1NotebookCitationDto {
+  const V1NotebookCitationDto({
+    required this.name,
+    required this.page,
+    required this.slide,
+  });
+
+  factory V1NotebookCitationDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookCitationDto(
+        name: json['name'] as String,
+        page: json['page'] as int?,
+        slide: json['slide'] as int?,
+      );
+
+  final String name;
+  final int? page;
+  final int? slide;
+
+  Map<String, Object?> toJson() => {'name': name, 'page': page, 'slide': slide};
+}
+
+class V1NotebookContentDto {
+  const V1NotebookContentDto({
+    required this.overview,
+    required this.objectives,
+    required this.keyTerms,
+    required this.sections,
+    required this.examples,
+    required this.facts,
+    required this.mistakes,
+    required this.summary,
+  });
+
+  factory V1NotebookContentDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookContentDto(
+        overview: json['overview'] as String?,
+        objectives: (json['objectives'] as List<dynamic>).cast<String>(),
+        keyTerms: [
+          for (final item in json['keyTerms'] as List<dynamic>)
+            V1NotebookTermDto.fromJson(item as Map<String, dynamic>),
+        ],
+        sections: [
+          for (final item in json['sections'] as List<dynamic>)
+            V1NotebookSectionDto.fromJson(item as Map<String, dynamic>),
+        ],
+        examples: [
+          for (final item in json['examples'] as List<dynamic>)
+            V1NotebookExampleDto.fromJson(item as Map<String, dynamic>),
+        ],
+        facts: [
+          for (final item in json['facts'] as List<dynamic>)
+            V1NotebookItemDto.fromJson(item as Map<String, dynamic>),
+        ],
+        mistakes: [
+          for (final item in json['mistakes'] as List<dynamic>)
+            V1NotebookItemDto.fromJson(item as Map<String, dynamic>),
+        ],
+        summary: (json['summary'] as List<dynamic>).cast<String>(),
+      );
+
+  final String? overview;
+  final List<String> objectives;
+  final List<V1NotebookTermDto> keyTerms;
+  final List<V1NotebookSectionDto> sections;
+  final List<V1NotebookExampleDto> examples;
+  final List<V1NotebookItemDto> facts;
+  final List<V1NotebookItemDto> mistakes;
+  final List<String> summary;
+
+  Map<String, Object?> toJson() => {
+    'overview': overview,
+    'objectives': objectives,
+    'keyTerms': [for (final item in keyTerms) item.toJson()],
+    'sections': [for (final item in sections) item.toJson()],
+    'examples': [for (final item in examples) item.toJson()],
+    'facts': [for (final item in facts) item.toJson()],
+    'mistakes': [for (final item in mistakes) item.toJson()],
+    'summary': summary,
+  };
+}
+
 class V1NotebookEntryDto {
   const V1NotebookEntryDto({
     required this.id,
@@ -9488,6 +9729,150 @@ class V1NotebookEntryDto {
   };
 }
 
+class V1NotebookExampleDto {
+  const V1NotebookExampleDto({
+    required this.title,
+    required this.steps,
+    required this.cite,
+  });
+
+  factory V1NotebookExampleDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookExampleDto(
+        title: json['title'] as String,
+        steps: (json['steps'] as List<dynamic>).cast<String>(),
+        cite: json['cite'] == null
+            ? null
+            : V1NotebookCitationDto.fromJson(
+                json['cite'] as Map<String, dynamic>,
+              ),
+      );
+
+  final String title;
+  final List<String> steps;
+  final V1NotebookCitationDto? cite;
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'steps': steps,
+    'cite': cite?.toJson(),
+  };
+}
+
+class V1NotebookHeadingDto {
+  const V1NotebookHeadingDto({required this.key, required this.title});
+
+  factory V1NotebookHeadingDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookHeadingDto(
+        key: json['key'] as String,
+        title: json['title'] as String,
+      );
+
+  final String key;
+  final String title;
+
+  Map<String, Object?> toJson() => {'key': key, 'title': title};
+}
+
+class V1NotebookHighlightDto {
+  const V1NotebookHighlightDto({
+    required this.sectionKey,
+    required this.index,
+    required this.color,
+  });
+
+  factory V1NotebookHighlightDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookHighlightDto(
+        sectionKey: json['sectionKey'] as String,
+        index: json['index'] as int,
+        color: json['color'] as String,
+      );
+
+  final String sectionKey;
+  final int index;
+  final String color;
+
+  Map<String, Object?> toJson() => {
+    'sectionKey': sectionKey,
+    'index': index,
+    'color': color,
+  };
+}
+
+class V1NotebookItemDto {
+  const V1NotebookItemDto({
+    required this.text,
+    required this.cite,
+    required this.extra,
+  });
+
+  factory V1NotebookItemDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookItemDto(
+        text: json['text'] as String,
+        cite: json['cite'] == null
+            ? null
+            : V1NotebookCitationDto.fromJson(
+                json['cite'] as Map<String, dynamic>,
+              ),
+        extra: json['extra'] as bool,
+      );
+
+  final String text;
+  final V1NotebookCitationDto? cite;
+  final bool extra;
+
+  Map<String, Object?> toJson() => {
+    'text': text,
+    'cite': cite?.toJson(),
+    'extra': extra,
+  };
+}
+
+class V1NotebookNoteDto {
+  const V1NotebookNoteDto({
+    required this.id,
+    required this.sectionKey,
+    required this.text,
+  });
+
+  factory V1NotebookNoteDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookNoteDto(
+        id: json['id'] as String,
+        sectionKey: json['sectionKey'] as String,
+        text: json['text'] as String,
+      );
+
+  final String id;
+  final String sectionKey;
+  final String text;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'sectionKey': sectionKey,
+    'text': text,
+  };
+}
+
+class V1NotebookOwnSectionDto {
+  const V1NotebookOwnSectionDto({
+    required this.id,
+    required this.title,
+    required this.body,
+  });
+
+  factory V1NotebookOwnSectionDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookOwnSectionDto(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        body: json['body'] as String,
+      );
+
+  final String id;
+  final String title;
+  final String body;
+
+  Map<String, Object?> toJson() => {'id': id, 'title': title, 'body': body};
+}
+
 class V1NotebookPageDto {
   const V1NotebookPageDto({required this.items, required this.nextCursor});
 
@@ -9507,6 +9892,275 @@ class V1NotebookPageDto {
     'items': [for (final item in items) item.toJson()],
     'nextCursor': nextCursor,
   };
+}
+
+class V1NotebookPersonalDto {
+  const V1NotebookPersonalDto({
+    required this.notes,
+    required this.sections,
+    required this.bookmarks,
+    required this.highlights,
+  });
+
+  factory V1NotebookPersonalDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookPersonalDto(
+        notes: [
+          for (final item in json['notes'] as List<dynamic>)
+            V1NotebookNoteDto.fromJson(item as Map<String, dynamic>),
+        ],
+        sections: [
+          for (final item in json['sections'] as List<dynamic>)
+            V1NotebookOwnSectionDto.fromJson(item as Map<String, dynamic>),
+        ],
+        bookmarks: (json['bookmarks'] as List<dynamic>).cast<String>(),
+        highlights: [
+          for (final item in json['highlights'] as List<dynamic>)
+            V1NotebookHighlightDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1NotebookNoteDto> notes;
+  final List<V1NotebookOwnSectionDto> sections;
+  final List<String> bookmarks;
+  final List<V1NotebookHighlightDto> highlights;
+
+  Map<String, Object?> toJson() => {
+    'notes': [for (final item in notes) item.toJson()],
+    'sections': [for (final item in sections) item.toJson()],
+    'bookmarks': bookmarks,
+    'highlights': [for (final item in highlights) item.toJson()],
+  };
+}
+
+class V1NotebookSectionDto {
+  const V1NotebookSectionDto({
+    required this.key,
+    required this.heading,
+    required this.paragraphs,
+    required this.points,
+    required this.cites,
+    required this.extra,
+  });
+
+  factory V1NotebookSectionDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookSectionDto(
+        key: json['key'] as String,
+        heading: json['heading'] as String,
+        paragraphs: (json['paragraphs'] as List<dynamic>).cast<String>(),
+        points: (json['points'] as List<dynamic>).cast<String>(),
+        cites: [
+          for (final item in json['cites'] as List<dynamic>)
+            V1NotebookCitationDto.fromJson(item as Map<String, dynamic>),
+        ],
+        extra: json['extra'] as bool,
+      );
+
+  final String key;
+  final String heading;
+  final List<String> paragraphs;
+  final List<String> points;
+  final List<V1NotebookCitationDto> cites;
+  final bool extra;
+
+  Map<String, Object?> toJson() => {
+    'key': key,
+    'heading': heading,
+    'paragraphs': paragraphs,
+    'points': points,
+    'cites': [for (final item in cites) item.toJson()],
+    'extra': extra,
+  };
+}
+
+class V1NotebookSetSummaryDto {
+  const V1NotebookSetSummaryDto({
+    required this.id,
+    required this.kind,
+    required this.sectionKeys,
+    required this.count,
+    required this.outdated,
+    required this.createdAt,
+  });
+
+  factory V1NotebookSetSummaryDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookSetSummaryDto(
+        id: json['id'] as String,
+        kind: json['kind'] as String,
+        sectionKeys: (json['sectionKeys'] as List<dynamic>).cast<String>(),
+        count: json['count'] as int,
+        outdated: json['outdated'] as bool,
+        createdAt: json['createdAt'] as String,
+      );
+
+  final String id;
+  final String kind;
+  final List<String> sectionKeys;
+  final int count;
+  final bool outdated;
+  final String createdAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'kind': kind,
+    'sectionKeys': sectionKeys,
+    'count': count,
+    'outdated': outdated,
+    'createdAt': createdAt,
+  };
+}
+
+class V1NotebookSourceDto {
+  const V1NotebookSourceDto({
+    required this.id,
+    required this.kind,
+    required this.name,
+    required this.state,
+    required this.reason,
+    required this.chosen,
+  });
+
+  factory V1NotebookSourceDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookSourceDto(
+        id: json['id'] as String,
+        kind: json['kind'] as String,
+        name: json['name'] as String,
+        state: json['state'] as String,
+        reason: json['reason'] as String?,
+        chosen: json['chosen'] as bool,
+      );
+
+  final String id;
+  final String kind;
+  final String name;
+  final String state;
+  final String? reason;
+  final bool chosen;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'kind': kind,
+    'name': name,
+    'state': state,
+    'reason': reason,
+    'chosen': chosen,
+  };
+}
+
+class V1NotebookStudySetDto {
+  const V1NotebookStudySetDto({
+    required this.id,
+    required this.notebookId,
+    required this.kind,
+    required this.sectionKeys,
+    required this.outdated,
+    required this.questions,
+    required this.cards,
+    required this.createdAt,
+  });
+
+  factory V1NotebookStudySetDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookStudySetDto(
+        id: json['id'] as String,
+        notebookId: json['notebookId'] as String,
+        kind: json['kind'] as String,
+        sectionKeys: (json['sectionKeys'] as List<dynamic>).cast<String>(),
+        outdated: json['outdated'] as bool,
+        questions: json['questions'] == null
+            ? null
+            : [
+                for (final item in json['questions'] as List<dynamic>)
+                  V1QuizQuestionDto.fromJson(item as Map<String, dynamic>),
+              ],
+        cards: json['cards'] == null
+            ? null
+            : [
+                for (final item in json['cards'] as List<dynamic>)
+                  V1FlashcardDto.fromJson(item as Map<String, dynamic>),
+              ],
+        createdAt: json['createdAt'] as String,
+      );
+
+  final String id;
+  final String notebookId;
+  final String kind;
+  final List<String> sectionKeys;
+  final bool outdated;
+  final List<V1QuizQuestionDto>? questions;
+  final List<V1FlashcardDto>? cards;
+  final String createdAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'notebookId': notebookId,
+    'kind': kind,
+    'sectionKeys': sectionKeys,
+    'outdated': outdated,
+    'questions': questions,
+    'cards': cards,
+    'createdAt': createdAt,
+  };
+}
+
+class V1NotebookStudySetRequestDto {
+  const V1NotebookStudySetRequestDto({
+    required this.kind,
+    required this.sectionKeys,
+  });
+
+  factory V1NotebookStudySetRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookStudySetRequestDto(
+        kind: json['kind'] as String,
+        sectionKeys: (json['sectionKeys'] as List<dynamic>).cast<String>(),
+      );
+
+  final String kind;
+  final List<String> sectionKeys;
+
+  Map<String, Object?> toJson() => {'kind': kind, 'sectionKeys': sectionKeys};
+}
+
+class V1NotebookTermDto {
+  const V1NotebookTermDto({
+    required this.term,
+    required this.definition,
+    required this.cite,
+  });
+
+  factory V1NotebookTermDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookTermDto(
+        term: json['term'] as String,
+        definition: json['definition'] as String,
+        cite: json['cite'] == null
+            ? null
+            : V1NotebookCitationDto.fromJson(
+                json['cite'] as Map<String, dynamic>,
+              ),
+      );
+
+  final String term;
+  final String definition;
+  final V1NotebookCitationDto? cite;
+
+  Map<String, Object?> toJson() => {
+    'term': term,
+    'definition': definition,
+    'cite': cite?.toJson(),
+  };
+}
+
+class V1NotebookUnreadableDto {
+  const V1NotebookUnreadableDto({required this.name, required this.reason});
+
+  factory V1NotebookUnreadableDto.fromJson(Map<String, dynamic> json) =>
+      V1NotebookUnreadableDto(
+        name: json['name'] as String,
+        reason: json['reason'] as String,
+      );
+
+  final String name;
+  final String reason;
+
+  Map<String, Object?> toJson() => {'name': name, 'reason': reason};
 }
 
 class V1NotificationDto {
@@ -10132,6 +10786,27 @@ class V1RedeemClassJoinLinkResponseDto {
     'schoolId': schoolId,
     'classroomId': classroomId,
     'classroomName': classroomName,
+  };
+}
+
+class V1RegenerateStudyNotebookRequestDto {
+  const V1RegenerateStudyNotebookRequestDto({this.sourceIds, this.language});
+
+  factory V1RegenerateStudyNotebookRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RegenerateStudyNotebookRequestDto(
+    sourceIds: json['sourceIds'] == null
+        ? null
+        : (json['sourceIds'] as List<dynamic>).cast<String>(),
+    language: json['language'] as String?,
+  );
+
+  final List<String>? sourceIds;
+  final String? language;
+
+  Map<String, Object?> toJson() => {
+    'sourceIds': ?sourceIds,
+    'language': ?language,
   };
 }
 
@@ -11376,6 +12051,239 @@ class V1StudyAssistantAskResponseDto {
     'citations': citations,
     'unreadable': unreadable,
     'allowance': allowance.toJson(),
+  };
+}
+
+class V1StudyNotebookDto {
+  const V1StudyNotebookDto({
+    required this.summary,
+    required this.className,
+    required this.content,
+    required this.unreadable,
+    required this.headings,
+    required this.personal,
+    required this.personalVersion,
+    required this.sources,
+    required this.sets,
+    required this.generatedAt,
+  });
+
+  factory V1StudyNotebookDto.fromJson(Map<String, dynamic> json) =>
+      V1StudyNotebookDto(
+        summary: V1StudyNotebookSummaryDto.fromJson(
+          json['summary'] as Map<String, dynamic>,
+        ),
+        className: json['className'] as String,
+        content: json['content'] == null
+            ? null
+            : V1NotebookContentDto.fromJson(
+                json['content'] as Map<String, dynamic>,
+              ),
+        unreadable: [
+          for (final item in json['unreadable'] as List<dynamic>)
+            V1NotebookUnreadableDto.fromJson(item as Map<String, dynamic>),
+        ],
+        headings: [
+          for (final item in json['headings'] as List<dynamic>)
+            V1NotebookHeadingDto.fromJson(item as Map<String, dynamic>),
+        ],
+        personal: V1NotebookPersonalDto.fromJson(
+          json['personal'] as Map<String, dynamic>,
+        ),
+        personalVersion: json['personalVersion'] as int,
+        sources: [
+          for (final item in json['sources'] as List<dynamic>)
+            V1NotebookSourceDto.fromJson(item as Map<String, dynamic>),
+        ],
+        sets: [
+          for (final item in json['sets'] as List<dynamic>)
+            V1NotebookSetSummaryDto.fromJson(item as Map<String, dynamic>),
+        ],
+        generatedAt: json['generatedAt'] as String?,
+      );
+
+  final V1StudyNotebookSummaryDto summary;
+  final String className;
+  final V1NotebookContentDto? content;
+  final List<V1NotebookUnreadableDto> unreadable;
+  final List<V1NotebookHeadingDto> headings;
+  final V1NotebookPersonalDto personal;
+  final int personalVersion;
+  final List<V1NotebookSourceDto> sources;
+  final List<V1NotebookSetSummaryDto> sets;
+  final String? generatedAt;
+
+  Map<String, Object?> toJson() => {
+    'summary': summary.toJson(),
+    'className': className,
+    'content': content?.toJson(),
+    'unreadable': [for (final item in unreadable) item.toJson()],
+    'headings': [for (final item in headings) item.toJson()],
+    'personal': personal.toJson(),
+    'personalVersion': personalVersion,
+    'sources': [for (final item in sources) item.toJson()],
+    'sets': [for (final item in sets) item.toJson()],
+    'generatedAt': generatedAt,
+  };
+}
+
+class V1StudyNotebookListDto {
+  const V1StudyNotebookListDto({required this.items});
+
+  factory V1StudyNotebookListDto.fromJson(Map<String, dynamic> json) =>
+      V1StudyNotebookListDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1StudyNotebookSummaryDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1StudyNotebookSummaryDto> items;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+  };
+}
+
+class V1StudyNotebookPersonalRequestDto {
+  const V1StudyNotebookPersonalRequestDto({
+    required this.expectedVersion,
+    required this.personal,
+  });
+
+  factory V1StudyNotebookPersonalRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1StudyNotebookPersonalRequestDto(
+    expectedVersion: json['expectedVersion'] as int,
+    personal: V1NotebookPersonalDto.fromJson(
+      json['personal'] as Map<String, dynamic>,
+    ),
+  );
+
+  final int expectedVersion;
+  final V1NotebookPersonalDto personal;
+
+  Map<String, Object?> toJson() => {
+    'expectedVersion': expectedVersion,
+    'personal': personal.toJson(),
+  };
+}
+
+class V1StudyNotebookSettingsRequestDto {
+  const V1StudyNotebookSettingsRequestDto({
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.icon,
+    required this.pageStyle,
+    required this.headings,
+  });
+
+  factory V1StudyNotebookSettingsRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1StudyNotebookSettingsRequestDto(
+    title: json['title'] as String,
+    subtitle: json['subtitle'] as String?,
+    color: json['color'] as String,
+    icon: json['icon'] as String?,
+    pageStyle: json['pageStyle'] as String,
+    headings: [
+      for (final item in json['headings'] as List<dynamic>)
+        V1NotebookHeadingDto.fromJson(item as Map<String, dynamic>),
+    ],
+  );
+
+  final String title;
+  final String? subtitle;
+  final String color;
+  final String? icon;
+  final String pageStyle;
+  final List<V1NotebookHeadingDto> headings;
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'subtitle': subtitle,
+    'color': color,
+    'icon': icon,
+    'pageStyle': pageStyle,
+    'headings': [for (final item in headings) item.toJson()],
+  };
+}
+
+class V1StudyNotebookSummaryDto {
+  const V1StudyNotebookSummaryDto({
+    required this.id,
+    required this.classroomId,
+    required this.resourceId,
+    required this.lessonTitle,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.icon,
+    required this.pageStyle,
+    required this.status,
+    required this.failure,
+    required this.updateAvailable,
+    required this.contentVersion,
+    required this.sourceCount,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory V1StudyNotebookSummaryDto.fromJson(Map<String, dynamic> json) =>
+      V1StudyNotebookSummaryDto(
+        id: json['id'] as String,
+        classroomId: json['classroomId'] as String,
+        resourceId: json['resourceId'] as String,
+        lessonTitle: json['lessonTitle'] as String,
+        title: json['title'] as String,
+        subtitle: json['subtitle'] as String?,
+        color: json['color'] as String,
+        icon: json['icon'] as String?,
+        pageStyle: json['pageStyle'] as String,
+        status: json['status'] as String,
+        failure: json['failure'] as String?,
+        updateAvailable: json['updateAvailable'] as bool,
+        contentVersion: json['contentVersion'] as int,
+        sourceCount: json['sourceCount'] as int,
+        createdAt: json['createdAt'] as String,
+        updatedAt: json['updatedAt'] as String,
+      );
+
+  final String id;
+  final String classroomId;
+  final String resourceId;
+  final String lessonTitle;
+  final String title;
+  final String? subtitle;
+  final String color;
+  final String? icon;
+  final String pageStyle;
+  final String status;
+  final String? failure;
+  final bool updateAvailable;
+  final int contentVersion;
+  final int sourceCount;
+  final String createdAt;
+  final String updatedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'classroomId': classroomId,
+    'resourceId': resourceId,
+    'lessonTitle': lessonTitle,
+    'title': title,
+    'subtitle': subtitle,
+    'color': color,
+    'icon': icon,
+    'pageStyle': pageStyle,
+    'status': status,
+    'failure': failure,
+    'updateAvailable': updateAvailable,
+    'contentVersion': contentVersion,
+    'sourceCount': sourceCount,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
   };
 }
 

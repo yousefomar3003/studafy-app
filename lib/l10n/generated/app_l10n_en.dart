@@ -5943,4 +5943,439 @@ class AppL10nEn extends AppL10n {
   @override
   String get studySetMaterialProcessing =>
       'The lesson\'s files are still being read. Try again in a minute so nothing is left out.';
+
+  @override
+  String get nbCreate => 'Create notebook';
+
+  @override
+  String get nbCreating => 'Creating…';
+
+  @override
+  String get nbOpen => 'Open notebook';
+
+  @override
+  String get nbUpdateAvailable => 'Update available';
+
+  @override
+  String get nbFailedShort => 'Couldn\'t be made';
+
+  @override
+  String get nbRetry => 'Try again';
+
+  @override
+  String get nbUpdate => 'Update notebook';
+
+  @override
+  String get nbNewVersion => 'Create another version';
+
+  @override
+  String get nbMore => 'More';
+
+  @override
+  String get nbStarted =>
+      'Your notebook is being written. It takes about a minute.';
+
+  @override
+  String get nbShelfTitle => 'Study notebooks';
+
+  @override
+  String get nbShelfEmpty =>
+      'Make an organised notebook from any lesson: tap Create notebook under it in Lessons.';
+
+  @override
+  String get nbShelfLocked =>
+      'Study notebooks made from your lessons come with Studafy Plus.';
+
+  @override
+  String get nbShelfFailed => 'Your notebooks could not be loaded. Try again';
+
+  @override
+  String get nbSheetTitle => 'New study notebook';
+
+  @override
+  String get nbSheetClass => 'Class';
+
+  @override
+  String get nbSheetLesson => 'Lesson';
+
+  @override
+  String get nbSheetName => 'Notebook name';
+
+  @override
+  String get nbSheetSources => 'Made from';
+
+  @override
+  String get nbSheetWhole => 'The whole lesson';
+
+  @override
+  String get nbSheetWholeDetail =>
+      'Its text and every file and link that can be read';
+
+  @override
+  String get nbSheetNoFiles =>
+      'This lesson has no files or links; the notebook is made from its text.';
+
+  @override
+  String get nbSheetChoose => 'Only the files and links I choose';
+
+  @override
+  String get nbSheetPickOne => 'Choose at least one file or link.';
+
+  @override
+  String get nbSheetWaitReading =>
+      'Some of the lesson\'s files are still being read. Wait a minute, or choose only the ones that are ready.';
+
+  @override
+  String get nbSheetTokens =>
+      'Writing a notebook uses AI tokens from your plan. Opening it again is free.';
+
+  @override
+  String get nbSourceReading => 'Still being read';
+
+  @override
+  String get nbSourceUnreadable => 'Can\'t be read';
+
+  @override
+  String get nbUpdateConfirmTitle => 'Update this notebook?';
+
+  @override
+  String get nbUpdateConfirmBody =>
+      'The AI part is written again from the lesson as it is now. Your notes, highlights, bookmarks and sections stay as they are.';
+
+  @override
+  String get nbUpdateBanner =>
+      'The lesson has changed since this notebook was written.';
+
+  @override
+  String get nbDeleteTitle => 'Delete notebook';
+
+  @override
+  String get nbDeleteBody =>
+      'The notebook and your notes in it are deleted. This can\'t be undone.';
+
+  @override
+  String get nbWriting => 'Writing your notebook…';
+
+  @override
+  String get nbWritingDetail =>
+      'This takes about a minute. You can leave this page - it keeps going.';
+
+  @override
+  String get nbFailedTitle => 'The notebook could not be written';
+
+  @override
+  String get nbFailNoMaterial =>
+      'The lesson has nothing that can be read to make a notebook from.';
+
+  @override
+  String get nbFailTokens =>
+      'Your AI tokens are used up. They renew with your plan.';
+
+  @override
+  String get nbFailPlan => 'Study notebooks come with Studafy Plus.';
+
+  @override
+  String get nbFailGeneric =>
+      'Something went wrong while writing it. Nothing was charged.';
+
+  @override
+  String get nbLoadFailed => 'The notebook could not be opened.';
+
+  @override
+  String get nbCoverPage => 'Cover';
+
+  @override
+  String nbCoverFrom(String lesson) {
+    return 'From: $lesson';
+  }
+
+  @override
+  String nbCoverWritten(String date) {
+    return 'Written $date';
+  }
+
+  @override
+  String get nbOpenContents => 'Contents';
+
+  @override
+  String get nbContents => 'Contents';
+
+  @override
+  String nbPageOf(String page, String count) {
+    return 'Page $page of $count';
+  }
+
+  @override
+  String get nbOverview => 'Overview';
+
+  @override
+  String get nbObjectives => 'Learning objectives';
+
+  @override
+  String get nbKeyTerms => 'Key terms';
+
+  @override
+  String get nbExamples => 'Worked examples';
+
+  @override
+  String get nbFacts => 'Facts, rules and formulas';
+
+  @override
+  String get nbMistakes => 'Common mistakes';
+
+  @override
+  String get nbSummary => 'Revision summary';
+
+  @override
+  String get nbPractice => 'Practice';
+
+  @override
+  String get nbExtra => 'Extra explanation - not from the lesson\'s files';
+
+  @override
+  String get nbExtraShort => 'extra explanation';
+
+  @override
+  String nbCitePage(String name, String page) {
+    return '$name, page $page';
+  }
+
+  @override
+  String nbCiteSlide(String name, String slide) {
+    return '$name, slide $slide';
+  }
+
+  @override
+  String get nbUnreadableTitle =>
+      'Not in this notebook - these could not be read:';
+
+  @override
+  String get nbReadAgain => 'Update to try again';
+
+  @override
+  String get nbAddNote => 'Add a note';
+
+  @override
+  String get nbEditNote => 'Edit note';
+
+  @override
+  String get nbNoteHint => 'In your own words (leave empty to delete)';
+
+  @override
+  String get nbMyNote => 'My note';
+
+  @override
+  String get nbHighlight => 'Highlight';
+
+  @override
+  String get nbRemoveHighlight => 'Remove highlight';
+
+  @override
+  String get nbColorYellow => 'Yellow';
+
+  @override
+  String get nbColorGreen => 'Green';
+
+  @override
+  String get nbColorBlue => 'Blue';
+
+  @override
+  String get nbColorPink => 'Pink';
+
+  @override
+  String get nbBookmark => 'Bookmark this page';
+
+  @override
+  String get nbRemoveBookmark => 'Remove bookmark';
+
+  @override
+  String get nbBookmarked => 'Bookmarked';
+
+  @override
+  String get nbAddSection => 'Add my own section';
+
+  @override
+  String get nbArrange => 'Arrange my sections';
+
+  @override
+  String get nbSectionTitle => 'Section title';
+
+  @override
+  String get nbSectionBody => 'Write anything';
+
+  @override
+  String get nbSectionEmpty => 'Nothing here yet. Tap Write to start.';
+
+  @override
+  String get nbEditSection => 'Write';
+
+  @override
+  String get nbDeleteSection => 'Delete section';
+
+  @override
+  String get nbMySection => 'My section';
+
+  @override
+  String get nbRenameHeading => 'Rename heading';
+
+  @override
+  String get nbResetHeading => 'Use the original';
+
+  @override
+  String get nbSettings => 'Cover and pages';
+
+  @override
+  String get nbSettingsTitle => 'Name';
+
+  @override
+  String get nbSettingsSubtitle => 'Subtitle';
+
+  @override
+  String get nbColor => 'Colour';
+
+  @override
+  String get nbIcon => 'Icon';
+
+  @override
+  String get nbPageStyle => 'Pages';
+
+  @override
+  String get nbLined => 'Lined';
+
+  @override
+  String get nbPlain => 'Plain';
+
+  @override
+  String get nbGrid => 'Grid';
+
+  @override
+  String get nbSaving => 'Saving…';
+
+  @override
+  String get nbSaved => 'Saved';
+
+  @override
+  String get nbSaveFailed => 'Not saved - tap to try again';
+
+  @override
+  String get nbPracticeIntro =>
+      'Test yourself on this notebook - all of it, or the sections you choose.';
+
+  @override
+  String get nbPracticeLocked => 'Quizzes and flashcards come with Studafy Max';
+
+  @override
+  String get nbQuizWhole => 'Quiz on the whole notebook';
+
+  @override
+  String get nbCardsWhole => 'Flashcards for the whole notebook';
+
+  @override
+  String get nbChooseSections => 'Choose sections';
+
+  @override
+  String get nbChooseSectionsTitle => 'Practise these sections';
+
+  @override
+  String get nbMakeQuiz => 'Quiz';
+
+  @override
+  String get nbMakeCards => 'Flashcards';
+
+  @override
+  String get nbMadeSets => 'Made from this notebook';
+
+  @override
+  String get nbSetWhole => 'Whole notebook';
+
+  @override
+  String get nbSetOutdated => 'from an older version - opens a new one';
+
+  @override
+  String get setMakingQuiz => 'Making your quiz…';
+
+  @override
+  String get setMakingCards => 'Making your flashcards…';
+
+  @override
+  String get setMakingDetail =>
+      'This takes a few seconds. Once made, it opens straight away next time.';
+
+  @override
+  String get setEmpty =>
+      'There was not enough in the lesson to make this from.';
+
+  @override
+  String get setFailed => 'That did not work';
+
+  @override
+  String get setFailedDetail => 'Nothing was charged. Try again in a moment.';
+
+  @override
+  String get setSeePlans => 'See plans';
+
+  @override
+  String quizQuestionOf(String number, String count) {
+    return 'Question $number of $count';
+  }
+
+  @override
+  String get quizSubmit => 'Check my answers';
+
+  @override
+  String get quizAnswerAll => 'Answer every question, then check.';
+
+  @override
+  String quizScoreLine(String score, String count) {
+    return 'You got $score of $count right';
+  }
+
+  @override
+  String get quizCorrect => 'Correct';
+
+  @override
+  String get quizWrong => 'Not quite';
+
+  @override
+  String cardsProgress(String number, String count) {
+    return 'Card $number of $count';
+  }
+
+  @override
+  String get cardsTapToFlip => 'Tap the card to turn it over';
+
+  @override
+  String get cardsDidYouKnow => 'Did you know it?';
+
+  @override
+  String get cardsKnew => 'I knew it';
+
+  @override
+  String get cardsLearning => 'Still learning';
+
+  @override
+  String get cardsDone => 'All done!';
+
+  @override
+  String cardsKnewCount(String known, String count) {
+    return 'You knew $known of $count';
+  }
+
+  @override
+  String get cardsLearningOnly => 'Practise the ones I\'m learning';
+
+  @override
+  String get cardsAgain => 'Go through them all again';
+
+  @override
+  String get cardsPrevious => 'Previous';
+
+  @override
+  String get cardsNext => 'Next';
+
+  @override
+  String get cardsQuestion => 'Question';
+
+  @override
+  String get cardsAnswer => 'Answer';
 }

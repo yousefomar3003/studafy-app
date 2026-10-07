@@ -29,7 +29,10 @@ import {
   lessonPrompt,
   materialBlock,
   type MaterialPassage,
+  NOTEBOOK_PROMPT,
+  type NotebookContent,
   parseFlashcards,
+  parseNotebook,
   parseQuiz,
   type QuizQuestion,
   redactForProvider,
@@ -48,6 +51,12 @@ export interface StudyAssistantOptions {
   maxOutputTokens?: number;
   /** Ceiling for whiteboard notes and study sets, which run longer. */
   maxLongOutputTokens?: number;
+  /** A whole notebook: its output ceiling and time, run in the background. */
+  notebookOutputTokens?: number;
+  /** A quiz or flashcards: six questions with explanations in Arabic need
+   * more room than an answer. */
+  studySetOutputTokens?: number;
+  notebookTimeoutMs?: number;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 }
@@ -72,6 +81,9 @@ export class StudyAssistantError extends Error {
     this.name = "StudyAssistantError";
   }
 }
+
+/** The fewest usable items a study set is kept with. */
+export const STUDY_SET_MINIMUM = { quiz: 3, flashcards: 4 } as const;
 
 /** Statuses worth one more try: busy, or a passing server fault. */
 const RETRYABLE = new Set([429, 500, 502, 503, 504]);
@@ -141,6 +153,15 @@ export interface StudyAssistant {
   ): Promise<StudySetResult>;
   /** Study notes made from a lesson's text (Studafy Plus). */
   lessonNotes(title: string, lessonText: string): Promise<StudyAssistantReply>;
+  /**
+   * A structured study notebook from labelled material (2026-10-07).
+   * Throws "empty" when the reply is not a usable notebook.
+   */
+  notebook(
+    title: string,
+    passages: MaterialPassage[],
+    extras?: { unreadable?: UnreadableSource[]; learner?: LearnerProfile },
+  ): Promise<{ content: NotebookContent; usage?: StudyUsage }>;
 }
 
 type Message = { role: "system" | "user" | "assistant"; content: Content };
@@ -171,6 +192,9 @@ export function createStudyAssistant(
     maxOutputTokens = 600,
     maxLongOutputTokens = 1400,
     timeoutMs = 20_000,
+    notebookOutputTokens = 3_500,
+    studySetOutputTokens = 1_400,
+    notebookTimeoutMs = 120_000,
     fetchImpl = fetch,
   } = options;
 
@@ -185,6 +209,7 @@ export function createStudyAssistant(
     maxTokens: number,
     earlier: Message[] = [],
     temperature = 0.3,
+    timeLimitMs = timeoutMs,
   ): Promise<{ text: string; usage?: StudyUsage }> {
     const endpoint = new URL("/v1/chat/completions", allowed);
     // The allowlist, enforced rather than assumed: the origin that ends up
@@ -193,7 +218,7 @@ export function createStudyAssistant(
       throw new StudyAssistantError("refused");
     }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeLimitMs);
     const started = Date.now();
     try {
       const send = () =>
@@ -226,7 +251,7 @@ export function createStudyAssistant(
       // time for it inside the request's own limit.
       if (
         RETRYABLE.has(response.status) &&
-        Date.now() - started < timeoutMs / 2
+        Date.now() - started < timeLimitMs / 2
       ) {
         await response.body?.cancel().catch(() => {});
         await new Promise((resolve) => setTimeout(resolve, 600));
@@ -382,19 +407,44 @@ export function createStudyAssistant(
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
+    async notebook(title, passages, extras = {}) {
+      const system = [
+        NOTEBOOK_PROMPT,
+        learnerLine(extras.learner ?? {}),
+        materialBlock(passages, extras.unreadable ?? []),
+      ].filter((part) => part.length > 0).join("\n\n");
+      const { text, usage } = await complete(
+        system,
+        `Make the study notebook for the lesson: ${redactForProvider(title)}`,
+        notebookOutputTokens,
+        [],
+        0.2,
+        notebookTimeoutMs,
+      );
+      const content = parseNotebook(text, passages);
+      if (!content) throw new StudyAssistantError("empty");
+      return { content, ...(usage ? { usage } : {}) };
+    },
+
     async studySet(kind, title, lessonText): Promise<StudySetResult> {
       const { text, usage } = await complete(
         STUDY_PROMPTS[kind],
         lessonPrompt(title, lessonText),
-        maxLongOutputTokens,
+        studySetOutputTokens,
       );
+      // Too few usable items is not a quiz: fail, and the hold is released,
+      // rather than keep a one-question "quiz" for everyone.
       if (kind === "quiz") {
         const questions = parseQuiz(text);
-        if (questions.length === 0) throw new StudyAssistantError("empty");
+        if (questions.length < STUDY_SET_MINIMUM.quiz) {
+          throw new StudyAssistantError("empty");
+        }
         return { kind, questions, ...(usage ? { usage } : {}) };
       }
       const cards = parseFlashcards(text);
-      if (cards.length === 0) throw new StudyAssistantError("empty");
+      if (cards.length < STUDY_SET_MINIMUM.flashcards) {
+        throw new StudyAssistantError("empty");
+      }
       return { kind, cards, ...(usage ? { usage } : {}) };
     },
   };

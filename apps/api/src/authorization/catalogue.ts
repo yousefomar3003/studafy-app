@@ -682,6 +682,23 @@ export const PERMISSION_CATALOGUE = {
     "resource",
     "Ask for a lesson's file or link to be read again for the study helper. Teachers of the lesson only.",
   ),
+  // A student's own study notebooks (2026-10-07). The database checks on
+  // every call that the notebook is the actor's and its lesson still theirs.
+  "study_notebook.read": {
+    resource: "study_notebook",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Open one of the actor's own study notebooks.",
+  },
+  "study_notebook.write": {
+    resource: "study_notebook",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Change, update, delete or practise from one of the actor's own study notebooks.",
+  },
   "meeting.list": {
     resource: "meeting",
     scope: "self",

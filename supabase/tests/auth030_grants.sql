@@ -94,6 +94,8 @@ select is(
     'api051_publish_file',
     -- ADR-0037: class material for the study helper, checked per request.
     'api054_ai_material',
+    -- ADR-0038: a student's own study notebooks, ownership checked per call.
+    'api055_study_notebooks',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

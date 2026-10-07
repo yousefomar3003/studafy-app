@@ -117,4 +117,5 @@ export {
 } from "./studyAssistant";
 export * from "./familyInsights";
 export * from "./studyPlans";
+export * from "./studyNotebooks";
 export * from "./managedAccounts";

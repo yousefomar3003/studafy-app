@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/study.dart';
+import '../domain/study_notebook.dart';
 
 class ApiStudyRepository implements StudyRepository {
   const ApiStudyRepository(this._client);
@@ -154,21 +157,142 @@ class ApiStudyRepository implements StudyRepository {
           resourceId: resourceId,
           idempotencyKey: _key('set-${kind.name}'),
         );
-        return StudySet(
-          kind: kind,
-          questions: [
-            for (final q in dto.questions ?? const <V1QuizQuestionDto>[])
-              QuizQuestion(
-                question: q.question,
-                options: q.options,
-                answerIndex: q.answerIndex,
-                explanation: q.explanation,
-              ),
-          ],
-          cards: [
-            for (final c in dto.cards ?? const <V1FlashcardDto>[])
-              Flashcard(front: c.front, back: c.back),
-          ],
-        );
+        return _set(kind, dto.questions, dto.cards);
       });
+
+  static StudySet _set(
+    StudySetKind kind,
+    List<V1QuizQuestionDto>? questions,
+    List<V1FlashcardDto>? cards,
+  ) => StudySet(
+    kind: kind,
+    questions: [
+      for (final q in questions ?? const <V1QuizQuestionDto>[])
+        QuizQuestion(
+          question: q.question,
+          options: q.options,
+          answerIndex: q.answerIndex,
+          explanation: q.explanation,
+        ),
+    ],
+    cards: [
+      for (final c in cards ?? const <V1FlashcardDto>[])
+        Flashcard(front: c.front, back: c.back),
+    ],
+  );
+
+  @override
+  Future<List<StudyNotebookSummary>> notebooks(String classroomId) =>
+      _guard(() async {
+        final list = await _client.listStudyNotebooks(classroomId: classroomId);
+        return [
+          for (final item in list.items)
+            StudyNotebookSummary.fromJson(item.toJson().cast()),
+        ];
+      });
+
+  @override
+  Future<StudyNotebookSummary> createNotebook(
+    String classroomId, {
+    required String resourceId,
+    required List<String> sourceIds,
+    String? title,
+  }) => _guard(() async {
+    final dto = await _client.createStudyNotebook(
+      V1CreateStudyNotebookRequestDto.fromJson({
+        'resourceId': resourceId,
+        'sourceIds': sourceIds,
+        'title': ?title,
+      }),
+      classroomId: classroomId,
+      idempotencyKey: _key('notebook'),
+    );
+    return StudyNotebookSummary.fromJson(dto.toJson().cast());
+  });
+
+  @override
+  Future<StudyNotebook> openNotebook(String notebookId) => _guard(() async {
+    final dto = await _client.getStudyNotebook(notebookId: notebookId);
+    return StudyNotebook.fromJson(_json(dto.toJson()));
+  });
+
+  @override
+  Future<StudyNotebookSummary> updateNotebook(
+    String notebookId, {
+    List<String>? sourceIds,
+  }) => _guard(() async {
+    final dto = await _client.regenerateStudyNotebook(
+      V1RegenerateStudyNotebookRequestDto.fromJson({'sourceIds': ?sourceIds}),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-update'),
+    );
+    return StudyNotebookSummary.fromJson(dto.toJson().cast());
+  });
+
+  @override
+  Future<StudyNotebookSummary> saveNotebookSettings(
+    String notebookId,
+    NotebookSettings settings,
+  ) => _guard(() async {
+    final dto = await _client.updateStudyNotebookSettings(
+      V1StudyNotebookSettingsRequestDto.fromJson(_json(settings.toJson())),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-settings'),
+    );
+    return StudyNotebookSummary.fromJson(dto.toJson().cast());
+  });
+
+  @override
+  Future<StudyNotebook> saveNotebookPersonal(
+    String notebookId, {
+    required int expectedVersion,
+    required NotebookPersonal personal,
+  }) async {
+    try {
+      final dto = await _client.saveStudyNotebookPersonal(
+        V1StudyNotebookPersonalRequestDto.fromJson(
+          _json({
+            'expectedVersion': expectedVersion,
+            'personal': personal.toJson(),
+          }),
+        ),
+        notebookId: notebookId,
+        idempotencyKey: _key('notebook-personal'),
+      );
+      return StudyNotebook.fromJson(_json(dto.toJson()));
+    } on V1ApiException catch (error) {
+      if (error.code == 'VERSION_CONFLICT') throw const NotebookConflict(null);
+      throw StudyException(_refusal(error));
+    } on Object catch (error) {
+      throw StudyException(_refusal(error));
+    }
+  }
+
+  @override
+  Future<void> deleteNotebook(String notebookId) => _guard(() async {
+    await _client.deleteStudyNotebook(
+      const V1DeleteStudyNotebookRequestDto(),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-delete'),
+    );
+  });
+
+  @override
+  Future<StudySet> notebookStudySet(
+    String notebookId,
+    StudySetKind kind,
+    List<String> sectionKeys,
+  ) => _guard(() async {
+    final dto = await _client.makeNotebookStudySet(
+      V1NotebookStudySetRequestDto(kind: kind.name, sectionKeys: sectionKeys),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-set-${kind.name}'),
+    );
+    return _set(kind, dto.questions, dto.cards);
+  });
+
+  /// A DTO's map, as plain JSON all the way down, the shape the domain
+  /// models and request DTOs read.
+  static Map<String, dynamic> _json(Map<String, Object?> value) =>
+      jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
 }

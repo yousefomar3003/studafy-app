@@ -8,6 +8,7 @@ import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/lessons_by_date_view.dart';
 import 'package:studafy/features/study/domain/study.dart';
+import 'package:studafy/features/study/domain/study_notebook.dart';
 import 'package:studafy/features/study/presentation/my_notebooks_page.dart';
 import 'package:studafy/features/study/presentation/notebook_view.dart';
 import 'package:studafy/features/study/presentation/study_plans_page.dart';
@@ -260,7 +261,9 @@ void main() {
       expect(find.text('Studafy Max'), findsNothing);
     });
 
-    testWidgets('on Max, a quiz marks each answer', (tester) async {
+    testWidgets('on Max, a quiz is answered, then checked and explained', (
+      tester,
+    ) async {
       tall(tester);
       final study = _Study();
       await tester.pumpWidget(buttons(study, planOf(StudyPlanTier.max), []));
@@ -270,22 +273,73 @@ void main() {
 
       expect(study.setsRequested, [('l1', StudySetKind.quiz)]);
       expect(find.text('0 of 1 answered'), findsOne);
+      // Nothing is marked until the student checks.
       await tester.tap(find.text('Roots'));
       await tester.pumpAndSettle();
-      expect(find.text('You scored 0 of 1'), findsOne);
+      expect(find.text('In the chloroplasts.'), findsNothing);
+      // An answer can still be changed before checking.
+      await tester.tap(find.text('Nucleus'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Check my answers'));
+      await tester.pumpAndSettle();
+      expect(find.text('0 / 1'), findsOne);
+      expect(find.text('You got 0 of 1 right'), findsOne);
+      expect(find.text('Not quite'), findsOne);
       expect(find.text('In the chloroplasts.'), findsOne);
+
+      // Try again starts over, and the right answer scores.
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chloroplasts'));
+      await tester.pump();
+      await tester.tap(find.text('Check my answers'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 / 1'), findsOne);
+      expect(find.text('Correct'), findsOne);
     });
 
-    testWidgets('on Max, flashcards turn over', (tester) async {
+    testWidgets('a quiz that could not be made says so, and tries again', (
+      tester,
+    ) async {
+      tall(tester);
+      final study = _Study()..failSetsTimes = 1;
+      await tester.pumpWidget(buttons(study, planOf(StudyPlanTier.max), []));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quiz'));
+      await tester.pumpAndSettle();
+      expect(find.text('That did not work'), findsOne);
+      expect(
+        find.text('Nothing was charged. Try again in a moment.'),
+        findsOne,
+      );
+
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(study.setsRequested, hasLength(2));
+      expect(find.text('Check my answers'), findsOne);
+    });
+
+    testWidgets('on Max, flashcards turn over and count what you knew', (
+      tester,
+    ) async {
+      tall(tester);
       final study = _Study();
       await tester.pumpWidget(buttons(study, planOf(StudyPlanTier.max), []));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Flashcards'));
       await tester.pumpAndSettle();
+      expect(find.text('Card 1 of 1'), findsOne);
       expect(find.text('Chlorophyll'), findsOne);
       await tester.tap(find.text('Chlorophyll'));
       await tester.pumpAndSettle();
       expect(find.text('The green pigment'), findsOne);
+      await tester.tap(find.text('Still learning'));
+      await tester.pumpAndSettle();
+      expect(find.text('All done!'), findsOne);
+      expect(find.text('You knew 0 of 1'), findsOne);
+      await tester.tap(find.text("Practise the ones I'm learning"));
+      await tester.pumpAndSettle();
+      expect(find.text('Chlorophyll'), findsOne);
     });
   });
 
@@ -742,6 +796,14 @@ class _Study implements StudyRepository {
   Future<List<NotebookEntry>> notebook(String classroomId) async =>
       List.of(entries);
 
+  // Study notebooks have their own tests (study_notebook_test.dart).
+  @override
+  Future<List<StudyNotebookSummary>> notebooks(String classroomId) async =>
+      const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   @override
   Future<NotebookEntry> addNote(
     String classroomId, {
@@ -787,9 +849,16 @@ class _Study implements StudyRepository {
   Future<void> deleteNote(String entryId) async =>
       entries.removeWhere((e) => e.id == entryId);
 
+  /// How many study set requests fail before one works.
+  int failSetsTimes = 0;
+
   @override
   Future<StudySet> studySet(String resourceId, StudySetKind kind) async {
     setsRequested.add((resourceId, kind));
+    if (failSetsTimes > 0) {
+      failSetsTimes--;
+      throw const StudyException(StudyRefusal.failed);
+    }
     return kind == StudySetKind.quiz
         ? const StudySet(
             kind: StudySetKind.quiz,

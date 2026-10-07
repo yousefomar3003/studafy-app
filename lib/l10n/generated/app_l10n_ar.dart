@@ -5938,4 +5938,433 @@ class AppL10nAr extends AppL10n {
   @override
   String get studySetMaterialProcessing =>
       'ما زالت ملفات الدرس قيد القراءة. حاول بعد دقيقة كي لا يفوتك شيء.';
+
+  @override
+  String get nbCreate => 'إنشاء دفتر';
+
+  @override
+  String get nbCreating => 'جارٍ الإنشاء…';
+
+  @override
+  String get nbOpen => 'فتح الدفتر';
+
+  @override
+  String get nbUpdateAvailable => 'يتوفر تحديث';
+
+  @override
+  String get nbFailedShort => 'تعذّر إنشاؤه';
+
+  @override
+  String get nbRetry => 'حاول مرة أخرى';
+
+  @override
+  String get nbUpdate => 'تحديث الدفتر';
+
+  @override
+  String get nbNewVersion => 'إنشاء نسخة أخرى';
+
+  @override
+  String get nbMore => 'المزيد';
+
+  @override
+  String get nbStarted => 'يُكتب دفترك الآن. يستغرق ذلك دقيقة تقريبًا.';
+
+  @override
+  String get nbShelfTitle => 'دفاتر المذاكرة';
+
+  @override
+  String get nbShelfEmpty =>
+      'اصنع دفترًا منظّمًا من أي درس: اضغط «إنشاء دفتر» أسفله في الدروس.';
+
+  @override
+  String get nbShelfLocked =>
+      'دفاتر المذاكرة المصنوعة من دروسك متاحة مع Studafy Plus.';
+
+  @override
+  String get nbShelfFailed => 'تعذّر تحميل دفاترك. حاول مرة أخرى';
+
+  @override
+  String get nbSheetTitle => 'دفتر مذاكرة جديد';
+
+  @override
+  String get nbSheetClass => 'الصف';
+
+  @override
+  String get nbSheetLesson => 'الدرس';
+
+  @override
+  String get nbSheetName => 'اسم الدفتر';
+
+  @override
+  String get nbSheetSources => 'مصنوع من';
+
+  @override
+  String get nbSheetWhole => 'الدرس كاملًا';
+
+  @override
+  String get nbSheetWholeDetail => 'نصّه وكل ملف ورابط يمكن قراءته';
+
+  @override
+  String get nbSheetNoFiles =>
+      'لا يحتوي هذا الدرس على ملفات أو روابط؛ يُصنع الدفتر من نصّه.';
+
+  @override
+  String get nbSheetChoose => 'الملفات والروابط التي أختارها فقط';
+
+  @override
+  String get nbSheetPickOne => 'اختر ملفًا أو رابطًا واحدًا على الأقل.';
+
+  @override
+  String get nbSheetWaitReading =>
+      'لا تزال بعض ملفات الدرس قيد القراءة. انتظر دقيقة، أو اختر الجاهز منها فقط.';
+
+  @override
+  String get nbSheetTokens =>
+      'كتابة الدفتر تستهلك رموز الذكاء الاصطناعي من خطتك. فتحه مرة أخرى مجاني.';
+
+  @override
+  String get nbSourceReading => 'لا يزال قيد القراءة';
+
+  @override
+  String get nbSourceUnreadable => 'لا يمكن قراءته';
+
+  @override
+  String get nbUpdateConfirmTitle => 'تحديث هذا الدفتر؟';
+
+  @override
+  String get nbUpdateConfirmBody =>
+      'يُعاد كتابة الجزء المصنوع بالذكاء الاصطناعي من الدرس بحالته الحالية. تبقى ملاحظاتك وتظليلاتك وإشاراتك وأقسامك كما هي.';
+
+  @override
+  String get nbUpdateBanner => 'تغيّر الدرس منذ كتابة هذا الدفتر.';
+
+  @override
+  String get nbDeleteTitle => 'حذف الدفتر';
+
+  @override
+  String get nbDeleteBody =>
+      'سيُحذف الدفتر وملاحظاتك فيه. لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get nbWriting => 'جارٍ كتابة دفترك…';
+
+  @override
+  String get nbWritingDetail =>
+      'يستغرق ذلك دقيقة تقريبًا. يمكنك مغادرة هذه الصفحة وسيستمر العمل.';
+
+  @override
+  String get nbFailedTitle => 'تعذّرت كتابة الدفتر';
+
+  @override
+  String get nbFailNoMaterial =>
+      'لا يحتوي الدرس على شيء يمكن قراءته لصنع دفتر منه.';
+
+  @override
+  String get nbFailTokens => 'نفدت رموز الذكاء الاصطناعي لديك. تتجدد مع خطتك.';
+
+  @override
+  String get nbFailPlan => 'دفاتر المذاكرة متاحة مع Studafy Plus.';
+
+  @override
+  String get nbFailGeneric => 'حدث خطأ أثناء كتابته. لم يُخصم شيء.';
+
+  @override
+  String get nbLoadFailed => 'تعذّر فتح الدفتر.';
+
+  @override
+  String get nbCoverPage => 'الغلاف';
+
+  @override
+  String nbCoverFrom(String lesson) {
+    return 'من: $lesson';
+  }
+
+  @override
+  String nbCoverWritten(String date) {
+    return 'كُتب في $date';
+  }
+
+  @override
+  String get nbOpenContents => 'المحتويات';
+
+  @override
+  String get nbContents => 'المحتويات';
+
+  @override
+  String nbPageOf(String page, String count) {
+    return 'صفحة $page من $count';
+  }
+
+  @override
+  String get nbOverview => 'نظرة عامة';
+
+  @override
+  String get nbObjectives => 'أهداف التعلّم';
+
+  @override
+  String get nbKeyTerms => 'المصطلحات الأساسية';
+
+  @override
+  String get nbExamples => 'أمثلة محلولة';
+
+  @override
+  String get nbFacts => 'حقائق وقواعد وصيغ';
+
+  @override
+  String get nbMistakes => 'أخطاء شائعة';
+
+  @override
+  String get nbSummary => 'ملخص المراجعة';
+
+  @override
+  String get nbPractice => 'تدرّب';
+
+  @override
+  String get nbExtra => 'شرح إضافي - ليس من ملفات الدرس';
+
+  @override
+  String get nbExtraShort => 'شرح إضافي';
+
+  @override
+  String nbCitePage(String name, String page) {
+    return '$name، صفحة $page';
+  }
+
+  @override
+  String nbCiteSlide(String name, String slide) {
+    return '$name، شريحة $slide';
+  }
+
+  @override
+  String get nbUnreadableTitle =>
+      'غير موجود في هذا الدفتر - تعذّرت قراءة ما يلي:';
+
+  @override
+  String get nbReadAgain => 'حدّث للمحاولة مجددًا';
+
+  @override
+  String get nbAddNote => 'إضافة ملاحظة';
+
+  @override
+  String get nbEditNote => 'تعديل الملاحظة';
+
+  @override
+  String get nbNoteHint => 'بكلماتك (اتركه فارغًا للحذف)';
+
+  @override
+  String get nbMyNote => 'ملاحظتي';
+
+  @override
+  String get nbHighlight => 'تظليل';
+
+  @override
+  String get nbRemoveHighlight => 'إزالة التظليل';
+
+  @override
+  String get nbColorYellow => 'أصفر';
+
+  @override
+  String get nbColorGreen => 'أخضر';
+
+  @override
+  String get nbColorBlue => 'أزرق';
+
+  @override
+  String get nbColorPink => 'وردي';
+
+  @override
+  String get nbBookmark => 'وضع إشارة على هذه الصفحة';
+
+  @override
+  String get nbRemoveBookmark => 'إزالة الإشارة';
+
+  @override
+  String get nbBookmarked => 'عليها إشارة';
+
+  @override
+  String get nbAddSection => 'إضافة قسم خاص بي';
+
+  @override
+  String get nbArrange => 'ترتيب أقسامي';
+
+  @override
+  String get nbSectionTitle => 'عنوان القسم';
+
+  @override
+  String get nbSectionBody => 'اكتب ما تشاء';
+
+  @override
+  String get nbSectionEmpty => 'لا شيء هنا بعد. اضغط «كتابة» للبدء.';
+
+  @override
+  String get nbEditSection => 'كتابة';
+
+  @override
+  String get nbDeleteSection => 'حذف القسم';
+
+  @override
+  String get nbMySection => 'قسمي';
+
+  @override
+  String get nbRenameHeading => 'إعادة تسمية العنوان';
+
+  @override
+  String get nbResetHeading => 'استخدام الأصلي';
+
+  @override
+  String get nbSettings => 'الغلاف والصفحات';
+
+  @override
+  String get nbSettingsTitle => 'الاسم';
+
+  @override
+  String get nbSettingsSubtitle => 'عنوان فرعي';
+
+  @override
+  String get nbColor => 'اللون';
+
+  @override
+  String get nbIcon => 'الأيقونة';
+
+  @override
+  String get nbPageStyle => 'الصفحات';
+
+  @override
+  String get nbLined => 'مسطّرة';
+
+  @override
+  String get nbPlain => 'سادة';
+
+  @override
+  String get nbGrid => 'مربعات';
+
+  @override
+  String get nbSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get nbSaved => 'تم الحفظ';
+
+  @override
+  String get nbSaveFailed => 'لم يُحفظ - اضغط للمحاولة مجددًا';
+
+  @override
+  String get nbPracticeIntro =>
+      'اختبر نفسك في هذا الدفتر - كله، أو الأقسام التي تختارها.';
+
+  @override
+  String get nbPracticeLocked => 'الاختبارات والبطاقات متاحة مع Studafy Max';
+
+  @override
+  String get nbQuizWhole => 'اختبار في الدفتر كله';
+
+  @override
+  String get nbCardsWhole => 'بطاقات للدفتر كله';
+
+  @override
+  String get nbChooseSections => 'اختيار أقسام';
+
+  @override
+  String get nbChooseSectionsTitle => 'تدرّب على هذه الأقسام';
+
+  @override
+  String get nbMakeQuiz => 'اختبار';
+
+  @override
+  String get nbMakeCards => 'بطاقات';
+
+  @override
+  String get nbMadeSets => 'مصنوع من هذا الدفتر';
+
+  @override
+  String get nbSetWhole => 'الدفتر كله';
+
+  @override
+  String get nbSetOutdated => 'من نسخة أقدم - يفتح نسخة جديدة';
+
+  @override
+  String get setMakingQuiz => 'جارٍ إعداد اختبارك…';
+
+  @override
+  String get setMakingCards => 'جارٍ إعداد بطاقاتك…';
+
+  @override
+  String get setMakingDetail =>
+      'يستغرق ذلك بضع ثوانٍ. بعد إعداده يُفتح فورًا في المرة القادمة.';
+
+  @override
+  String get setEmpty => 'لم يكن في الدرس ما يكفي لإعداد ذلك.';
+
+  @override
+  String get setFailed => 'لم ينجح ذلك';
+
+  @override
+  String get setFailedDetail => 'لم يُخصم شيء. حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get setSeePlans => 'عرض الخطط';
+
+  @override
+  String quizQuestionOf(String number, String count) {
+    return 'السؤال $number من $count';
+  }
+
+  @override
+  String get quizSubmit => 'تحقّق من إجاباتي';
+
+  @override
+  String get quizAnswerAll => 'أجب عن كل الأسئلة، ثم تحقّق.';
+
+  @override
+  String quizScoreLine(String score, String count) {
+    return 'أجبت $score من $count إجابة صحيحة';
+  }
+
+  @override
+  String get quizCorrect => 'صحيح';
+
+  @override
+  String get quizWrong => 'ليس تمامًا';
+
+  @override
+  String cardsProgress(String number, String count) {
+    return 'البطاقة $number من $count';
+  }
+
+  @override
+  String get cardsTapToFlip => 'اضغط على البطاقة لقلبها';
+
+  @override
+  String get cardsDidYouKnow => 'هل كنت تعرفها؟';
+
+  @override
+  String get cardsKnew => 'عرفتها';
+
+  @override
+  String get cardsLearning => 'ما زلت أتعلمها';
+
+  @override
+  String get cardsDone => 'انتهيت!';
+
+  @override
+  String cardsKnewCount(String known, String count) {
+    return 'عرفت $known من $count';
+  }
+
+  @override
+  String get cardsLearningOnly => 'تدرّب على ما زلت أتعلمه';
+
+  @override
+  String get cardsAgain => 'راجعها كلها مرة أخرى';
+
+  @override
+  String get cardsPrevious => 'السابق';
+
+  @override
+  String get cardsNext => 'التالي';
+
+  @override
+  String get cardsQuestion => 'السؤال';
+
+  @override
+  String get cardsAnswer => 'الإجابة';
 }

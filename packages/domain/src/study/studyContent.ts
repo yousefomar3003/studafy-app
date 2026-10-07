@@ -126,17 +126,44 @@ export function lessonPrompt(title: string, lessonText: string): string {
 }
 
 /** A reply's JSON, tolerating a fenced code block around it; null if none. */
-function parseJsonReply(text: string): unknown {
+export function parseJsonReply(text: string): unknown {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const raw = (fenced ? fenced[1]! : text).trim();
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    return JSON.parse(raw.slice(start, end + 1));
-  } catch {
-    return null;
+  if (start < 0) return null;
+  if (end > start) {
+    try {
+      return JSON.parse(raw.slice(start, end + 1));
+    } catch {
+      // Possibly cut off at the length limit: salvaged below.
+    }
   }
+  return salvageTruncated(raw.slice(start));
+}
+
+/**
+ * A reply cut off at the output limit, as far as it is whole: the list it
+ * was writing is closed after its last complete item. A quiz that ran out
+ * of room keeps the questions it finished instead of failing outright.
+ */
+function salvageTruncated(raw: string): unknown {
+  let tries = 0;
+  for (
+    let end = raw.lastIndexOf("}");
+    end > 0 && tries < 60;
+    end = raw.lastIndexOf("}", end - 1), tries++
+  ) {
+    const head = raw.slice(0, end + 1);
+    for (const tail of ["]}", "]}]}", "}", ""]) {
+      try {
+        return JSON.parse(head + tail);
+      } catch {
+        // Try a shorter prefix.
+      }
+    }
+  }
+  return null;
 }
 
 function clip(value: unknown, max: number): string | null {
@@ -156,6 +183,7 @@ export function parseQuiz(reply: string): QuizQuestion[] {
     ?.questions;
   if (!Array.isArray(list)) return [];
   const out: QuizQuestion[] = [];
+  const seen = new Set<string>();
   for (const item of list.slice(0, 30)) {
     const q = item as Record<string, unknown>;
     const question = clip(q["question"], 500);
@@ -168,6 +196,14 @@ export function parseQuiz(reply: string): QuizQuestion[] {
       typeof answerIndex !== "number" || !Number.isInteger(answerIndex) ||
       answerIndex < 0 || answerIndex > 3
     ) continue;
+    // The same question twice, or two options that are the same answer,
+    // make a broken question rather than a harder one.
+    const normal = question.toLowerCase().replace(/\s+/g, " ");
+    const distinct = new Set(
+      (options as string[]).map((o) => o.toLowerCase().replace(/\s+/g, " ")),
+    );
+    if (seen.has(normal) || distinct.size !== 4) continue;
+    seen.add(normal);
     out.push({
       question,
       options: options as string[],
@@ -183,11 +219,21 @@ export function parseFlashcards(reply: string): Flashcard[] {
   const list = (parseJsonReply(reply) as { cards?: unknown } | null)?.cards;
   if (!Array.isArray(list)) return [];
   const out: Flashcard[] = [];
+  const seen = new Set<string>();
   for (const item of list.slice(0, 30)) {
     const c = item as Record<string, unknown>;
     const front = clip(c["front"], 300);
     const back = clip(c["back"], 600);
-    if (front && back) out.push({ front, back });
+    if (!front || !back) continue;
+    const normal = front.toLowerCase().replace(/\s+/g, " ");
+    // A card whose answer is its question teaches nothing.
+    if (
+      seen.has(normal) || normal === back.toLowerCase().replace(/\s+/g, " ")
+    ) {
+      continue;
+    }
+    seen.add(normal);
+    out.push({ front, back });
   }
   return out;
 }

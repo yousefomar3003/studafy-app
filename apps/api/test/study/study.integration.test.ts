@@ -83,6 +83,10 @@ const assistant: StudyAssistant = {
       usage: { inputTokens: 500, outputTokens: 200, model: "stub" },
     };
   },
+  notebook: async () => {
+    calls.push("notebook");
+    throw new Error("not used here");
+  },
   studySet: async (kind) => {
     calls.push(kind);
     const usage = { inputTokens: 280, outputTokens: 600, model: "stub" };

@@ -11,8 +11,10 @@ import '../features/academic/presentation/lessons_by_date_view.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/study/domain/study.dart';
+import '../features/study/domain/study_notebook.dart';
 import '../features/study/presentation/my_notebooks_page.dart';
 import '../features/study/presentation/notebook_view.dart';
+import '../features/study/presentation/study_notebook_shelf.dart';
 import '../features/study/presentation/study_plan_copy.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
@@ -408,11 +410,44 @@ class StudentClassPage extends StatefulWidget {
 class _StudentClassPageState extends State<StudentClassPage> {
   StudyPlan? _plan;
 
+  /// The class's study notebooks: the lesson buttons and the shelf show
+  /// the same ones, and both follow one being written.
+  late final _notebooks = NotebookTracker(
+    repository: widget.study,
+    classroomId: widget.classroom.id.value,
+  );
+  late final _host = NotebookHost(
+    study: widget.study,
+    tracker: _notebooks,
+    className: widget.classroom.name,
+    plan: () => _plan,
+    onOpenPlans: _openPlans,
+    loadSources: _sources,
+  );
+
   @override
   void initState() {
     super.initState();
     _loadPlan();
+    _notebooks.load();
   }
+
+  @override
+  void dispose() {
+    _notebooks.dispose();
+    super.dispose();
+  }
+
+  Future<List<NotebookSourceChoice>> _sources(String resourceId) async => [
+    for (final source in await widget.academic.lessonReading(resourceId))
+      NotebookSourceChoice(
+        id: source.id,
+        isLink: source.isLink,
+        name: source.name,
+        state: source.state.name,
+        reason: source.reason,
+      ),
+  ];
 
   Future<void> _loadPlan() async {
     try {
@@ -619,6 +654,17 @@ class _StudentClassPageState extends State<StudentClassPage> {
                         label: Text(AppL10n.of(context).helperAskAboutLesson),
                       ),
                     ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: LessonNotebookButton(
+                        host: _host,
+                        resourceId: lesson.id,
+                        lessonTitle: lesson.title,
+                      ),
+                    ),
+                  ),
                   StudySetButtons(
                     study: widget.study,
                     resourceId: lesson.id,
@@ -637,6 +683,7 @@ class _StudentClassPageState extends State<StudentClassPage> {
               source: pickPlatformAttachment,
               onOpenPlans: _openPlans,
               pickLesson: _pickLesson,
+              header: StudyNotebookShelf(host: _host),
             ),
           ],
         ),

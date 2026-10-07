@@ -6,7 +6,7 @@ import type {
 } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
-import { committedJson, idempotency } from "../platform/idempotency";
+import { idempotency } from "../platform/idempotency";
 import { problem } from "../platform/errors";
 import {
   routeParam,
@@ -93,7 +93,7 @@ export function createLessonReadingRoutes(
         sources: found["sources"] ?? [],
       });
       return parsed.success
-        ? committedJson(c, parsed.data, 200)
+        ? c.json(parsed.data, 200)
         : problem(c, "INTERNAL_ERROR", 500);
     },
   );

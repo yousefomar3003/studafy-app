@@ -28,6 +28,10 @@ import { PostgresStudyRepository } from "../study/repository";
 import { createStudyRoutes } from "../study/routes";
 import { PostgresMaterialRepository } from "../study/material";
 import { createLessonReadingRoutes } from "../study/readingRoutes";
+import {
+  createStudyNotebookRoutes,
+  PostgresStudyNotebookRepository,
+} from "../study/studyNotebookRoutes";
 import { createFamilyInsightsRoutes } from "../family-insights/routes";
 import { PostgresFamilyInsightsRepository } from "../family-insights/repository";
 import { PostgresOnboardingRepository } from "../onboarding/repository";
@@ -638,6 +642,22 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // A student's study notebooks (2026-10-07), appended after ADR-0037.
+  const studyNotebooks = sql && materialRepository && studyRepository &&
+      idempotencyDependencies
+    ? createStudyNotebookRoutes(
+      {
+        notebooks: new PostgresStudyNotebookRepository(sql),
+        material: materialRepository,
+        repository: studyRepository,
+        prices: aiPrices,
+        assistant: aiAssistant,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   const modules = [
     academic,
     schoolAdmin,
@@ -672,6 +692,7 @@ export function buildRoutes(platform: Platform) {
     notebooks,
     coursework,
     lessonReading,
+    studyNotebooks,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(
