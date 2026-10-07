@@ -154,14 +154,18 @@ function parseExpression(
       const parsed = "[for (final item in json['" + wireName +
         "'] as List<dynamic>) " + itemReference +
         "Dto.fromJson(item as Map<String, dynamic>)]";
-      return required
+      // A required list may still be null (a quiz has no cards): checked,
+      // or `null as List` throws and the whole response fails to read.
+      return required && !isNullable(schema)
         ? parsed
         : `json['${wireName}'] == null ? null : ${parsed}`;
     }
     const parsed = `(json['${wireName}'] as List<dynamic>).cast<${
       dartType(effective.items).replace(/\?$/, "")
     }>()`;
-    return required ? parsed : `json['${wireName}'] == null ? null : ${parsed}`;
+    return required && !isNullable(schema)
+      ? parsed
+      : `json['${wireName}'] == null ? null : ${parsed}`;
   }
   return `json['${wireName}'] as ${propertyType(schema, required)}`;
 }

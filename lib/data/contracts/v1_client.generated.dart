@@ -4155,8 +4155,9 @@ class V1AttemptAnswerDto {
           json['question'] as Map<String, dynamic>,
         ),
         answerText: json['answerText'] as String?,
-        selectedOptionIds: (json['selectedOptionIds'] as List<dynamic>)
-            .cast<String>(),
+        selectedOptionIds: json['selectedOptionIds'] == null
+            ? null
+            : (json['selectedOptionIds'] as List<dynamic>).cast<String>(),
         choice: json['choice'] as bool?,
         autoScore: json['autoScore'] as num?,
         awardedScore: json['awardedScore'] as num?,
@@ -11429,14 +11430,18 @@ class V1StudySetDto {
     id: json['id'] as String,
     resourceId: json['resourceId'] as String,
     kind: json['kind'] as String,
-    questions: [
-      for (final item in json['questions'] as List<dynamic>)
-        V1QuizQuestionDto.fromJson(item as Map<String, dynamic>),
-    ],
-    cards: [
-      for (final item in json['cards'] as List<dynamic>)
-        V1FlashcardDto.fromJson(item as Map<String, dynamic>),
-    ],
+    questions: json['questions'] == null
+        ? null
+        : [
+            for (final item in json['questions'] as List<dynamic>)
+              V1QuizQuestionDto.fromJson(item as Map<String, dynamic>),
+          ],
+    cards: json['cards'] == null
+        ? null
+        : [
+            for (final item in json['cards'] as List<dynamic>)
+              V1FlashcardDto.fromJson(item as Map<String, dynamic>),
+          ],
     createdAt: json['createdAt'] as String,
   );
 
