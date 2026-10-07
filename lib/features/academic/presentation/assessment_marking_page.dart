@@ -5,14 +5,17 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'assessment_builder_page.dart';
 import 'assessment_page.dart';
+import 'coursework_messages.dart';
 
 /// A teacher's view of an online assessment (ADR-0036): every submission,
-/// what still needs marking, and the actions around it - edit, give one
-/// student more time or attempts, publish the grades, release the answers.
+/// where each one's marking stands, and the actions around it - edit, give
+/// one student more time or attempts, publish the grades, release the
+/// answers.
 class AssessmentMarkingPage extends StatefulWidget {
   const AssessmentMarkingPage({
     super.key,
@@ -38,6 +41,10 @@ class AssessmentMarkingPage extends StatefulWidget {
 class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
   List<AttemptDetail>? _attempts;
   OnlineAssessment? _assessment;
+
+  /// The class's gradebook for this work: every enrolled student, with the
+  /// grade each has - so those who handed nothing in are listed too.
+  PaperGradebook? _sheet;
   bool _failed = false;
   bool _busy = false;
 
@@ -50,16 +57,18 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
   Future<void> _load() async {
     setState(() => _failed = false);
     try {
-      final (attempts, records) = await (
+      final (attempts, records, sheet) = await (
         widget.repository.attempts(widget.assessmentId),
         widget.repository.load(
           AcademicFeed.assessments,
           classroomId: widget.classroomId,
         ),
+        widget.repository.paperGradebook(widget.assessmentId),
       ).wait;
       if (!mounted) return;
       setState(() {
         _attempts = attempts;
+        _sheet = sheet;
         _assessment = records
             .where((r) => r.id == widget.assessmentId)
             .firstOrNull
@@ -70,30 +79,60 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
     }
   }
 
-  Future<void> _run(Future<String> Function() action) async {
+  Future<void> _run(Future<String?> Function() action) async {
     if (_busy) return;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
+    String? message;
     try {
-      messenger.showMessage(await action());
+      message = await action();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+    if (message != null) messenger.showMessage(message);
     await _load();
   }
 
+  /// Publishes every grade that is fully marked, after saying how many will
+  /// be seen and how many stay back. Unmarked work is never released.
   Future<void> _publishGrades() => _run(() async {
     final l10n = AppL10n.of(context);
     try {
       final sheet = await widget.repository.paperGradebook(widget.assessmentId);
       if (sheet.item.ready == 0) return l10n.markNothingToPublish;
+      if (!mounted) return null;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.markPublishTitle),
+          content: Text(
+            l10n.paperGradesPublishBody(sheet.item.ready, sheet.item.unmarked),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.linksCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.paperGradesPublish),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return null;
       final done = await widget.repository.publishGrades(
         widget.assessmentId,
         sheet.item.gradebookVersion,
       );
       return l10n.markPublished(done.published);
+    } on CourseworkRefusal catch (refusal) {
+      // Someone marked or published in between: the list is read again.
+      return refusal.problem == CourseworkProblem.invalidState
+          ? l10n.markNothingToPublish
+          : courseworkMessage(l10n, refusal);
     } on Object {
-      return l10n.courseworkFailed;
+      return l10n.markPublishFailed;
     }
   });
 
@@ -157,6 +196,65 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
     if (granted ?? false) messenger.showMessage(l10n.markGranted);
   }
 
+  /// Records, changes or removes the absence of a student who handed
+  /// nothing in. Unpublished, it is a draft; published, it is corrected with
+  /// a reason, as any published mark is.
+  Future<void> _absence(PaperGradebookRow row) => _run(() async {
+    final l10n = AppL10n.of(context);
+    final sheet = _sheet;
+    if (sheet == null) return null;
+    final grade = row.grade;
+    final published = grade?.state == PaperGradeState.published;
+    final choice = await showDialog<_AbsenceChoice>(
+      context: context,
+      builder: (_) => _AbsenceDialog(
+        name: row.displayName,
+        absent: grade?.mark == GradeMark.absent,
+        published: published,
+        notes: grade?.feedback ?? '',
+      ),
+    );
+    if (choice == null || !mounted) return null;
+    try {
+      if (published) {
+        await widget.repository.correctGrades(
+          widget.assessmentId,
+          choice.reason!,
+          [
+            GradeCorrection(
+              gradeId: grade!.id,
+              expectedVersion: grade.version,
+              mark: choice.mark!,
+              feedback: choice.notes,
+            ),
+          ],
+        );
+        return l10n.markAbsenceCorrected;
+      }
+      await widget.repository.saveGradeDrafts(
+        widget.assessmentId,
+        sheet.item.gradebookVersion,
+        [
+          GradeDraft(
+            studentId: row.studentId,
+            expectedVersion: grade?.version ?? 0,
+            mark: choice.mark,
+            feedback: choice.mark == null ? null : choice.notes,
+          ),
+        ],
+      );
+      return choice.mark == null
+          ? l10n.markAbsenceRemoved
+          : l10n.markAbsenceSaved;
+    } on CourseworkRefusal catch (refusal) {
+      return refusal.problem == CourseworkProblem.invalidState
+          ? l10n.markAbsenceRefused
+          : courseworkMessage(l10n, refusal);
+    } on Object {
+      return l10n.markAbsenceFailed;
+    }
+  });
+
   Future<void> _open(AttemptDetail attempt) async {
     await Navigator.of(context).pushOnce<void>(
       MaterialPageRoute<void>(
@@ -178,6 +276,25 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
     final l10n = AppL10n.of(context);
     final attempts = _attempts;
     final max = _assessment?.maximumScore;
+    int count(MarkingStatus status) =>
+        attempts?.where((a) => a.markingStatus == status).length ?? 0;
+    final toMark =
+        count(MarkingStatus.notMarked) + count(MarkingStatus.partlyMarked);
+    final submitted = {
+      for (final a in attempts ?? const <AttemptDetail>[]) a.studentId,
+    };
+    final missing = [
+      for (final row in _sheet?.rows ?? const <PaperGradebookRow>[])
+        if (!submitted.contains(row.studentId) &&
+            (row.enrolled || row.grade != null))
+          row,
+    ];
+    final absent = missing
+        .where((row) => row.grade?.mark == GradeMark.absent)
+        .length;
+    final notSubmitted = missing
+        .where((row) => rosterStatus(row) == MarkingStatus.notSubmitted)
+        .length;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -214,7 +331,7 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                       )
                     : const CircularProgressIndicator(),
               )
-            : RefreshIndicator(
+            : StudafyRefreshIndicator(
                 onRefresh: _load,
                 child: ListView(
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 32),
@@ -233,8 +350,36 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                         ),
                       ],
                     ),
+                    if (attempts.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          l10n.markSummary(
+                            toMark,
+                            count(MarkingStatus.marked),
+                            count(MarkingStatus.published),
+                          ),
+                          style: const TextStyle(color: studafyMuted),
+                        ),
+                      ),
+                    if (missing.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 4),
+                        child: Text(
+                          l10n.markRosterSummary(notSubmitted, absent),
+                          style: const TextStyle(color: studafyMuted),
+                        ),
+                      ),
+                    if (_failed)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          l10n.markRefreshFailed,
+                          style: const TextStyle(color: studafyDanger),
+                        ),
+                      ),
                     const SizedBox(height: 8),
-                    if (attempts.isEmpty)
+                    if (attempts.isEmpty && missing.isEmpty)
                       StudafyEmptyState(
                         icon: Icons.inbox_outlined,
                         title: l10n.markNone,
@@ -243,14 +388,14 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: FeatureCard(
-                          onTap: () => _open(attempt),
+                          onTap: _busy ? null : () => _open(attempt),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    UserContentText(
                                       attempt.studentName ?? '',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w800,
@@ -267,32 +412,279 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                                         color: studafyMuted,
                                       ),
                                     ),
+                                    if (attempt.awardedScore case final score?
+                                        when max != null)
+                                      Text(
+                                        l10n.markDone(
+                                          _number(score),
+                                          _number(max),
+                                        ),
+                                        style: const TextStyle(
+                                          color: studafyMuted,
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),
-                              StatusPill(
-                                label: attempt.needsMarking ?? false
-                                    ? l10n.markNeeds
-                                    : l10n.markDone(
-                                        _number(attempt.awardedScore ?? 0),
-                                        max == null ? '' : _number(max),
-                                      ),
-                                icon: attempt.needsMarking ?? false
-                                    ? Icons.edit_note_rounded
-                                    : Icons.check_circle_rounded,
-                                color: attempt.needsMarking ?? false
-                                    ? studafyDanger
-                                    : studafyTeal,
-                              ),
+                              const SizedBox(width: 8),
+                              MarkingStatusPill(status: attempt.markingStatus),
                             ],
                           ),
                         ),
                       ),
+                    if (missing.isNotEmpty) ...[
+                      SectionHeader(l10n.markNotSubmittedSection),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          l10n.markNotSubmittedHint,
+                          style: const TextStyle(color: studafyMuted),
+                        ),
+                      ),
+                      for (final row in missing)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: FeatureCard(
+                            onTap: _busy ? null : () => _absence(row),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      UserContentText(
+                                        row.displayName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      if ((row.grade?.feedback ?? '')
+                                          .trim()
+                                          .isNotEmpty)
+                                        UserContentText(
+                                          row.grade!.feedback!,
+                                          style: const TextStyle(
+                                            color: studafyMuted,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                MarkingStatusPill(status: rosterStatus(row)),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ],
                 ),
               ),
       ),
     );
+  }
+}
+
+/// Where a student who handed nothing in stands.
+@visibleForTesting
+MarkingStatus rosterStatus(PaperGradebookRow row) {
+  final grade = row.grade;
+  final published = grade?.state == PaperGradeState.published;
+  return switch (grade?.mark) {
+    GradeMark.absent =>
+      published ? MarkingStatus.absentPublished : MarkingStatus.absent,
+    GradeMark.notGraded when published => MarkingStatus.notGradedPublished,
+    _ => MarkingStatus.notSubmitted,
+  };
+}
+
+/// What the teacher chose for a non-submitter: a mark ('absent', or null to
+/// clear it; 'not_graded' when correcting a published absence), notes, and
+/// - for a published grade - the reason.
+class _AbsenceChoice {
+  const _AbsenceChoice({this.mark, this.notes, this.reason});
+
+  final GradeMark? mark;
+  final String? notes;
+  final String? reason;
+}
+
+class _AbsenceDialog extends StatefulWidget {
+  const _AbsenceDialog({
+    required this.name,
+    required this.absent,
+    required this.published,
+    required this.notes,
+  });
+
+  final String name;
+  final bool absent;
+  final bool published;
+  final String notes;
+
+  @override
+  State<_AbsenceDialog> createState() => _AbsenceDialogState();
+}
+
+class _AbsenceDialogState extends State<_AbsenceDialog> {
+  late final _notes = TextEditingController(text: widget.notes);
+  final _reason = TextEditingController();
+  late GradeMark _mark = widget.absent ? GradeMark.notGraded : GradeMark.absent;
+
+  @override
+  void dispose() {
+    _notes.dispose();
+    _reason.dispose();
+    super.dispose();
+  }
+
+  String? get _trimmedNotes =>
+      _notes.text.trim().isEmpty ? null : _notes.text.trim();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final published = widget.published;
+    final reasonOk = _reason.text.trim().length >= 3;
+    return AlertDialog(
+      title: UserContentText(widget.name),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              published ? l10n.markAbsencePublishedBody : l10n.markAbsenceBody,
+            ),
+            if (published) ...[
+              const SizedBox(height: 8),
+              RadioGroup<GradeMark>(
+                groupValue: _mark,
+                onChanged: (value) => setState(() => _mark = value ?? _mark),
+                child: Column(
+                  children: [
+                    RadioListTile<GradeMark>(
+                      value: GradeMark.absent,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.markStatusAbsent),
+                    ),
+                    RadioListTile<GradeMark>(
+                      value: GradeMark.notGraded,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.markAbsenceExcused),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            TextField(
+              controller: _notes,
+              maxLength: 5000,
+              minLines: 1,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: l10n.markAbsenceNotes,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            if (published)
+              TextField(
+                controller: _reason,
+                maxLength: 500,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: l10n.markCorrectionReason,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.linksCancel),
+        ),
+        if (widget.absent && !published)
+          TextButton(
+            onPressed: () => Navigator.pop(context, const _AbsenceChoice()),
+            child: Text(l10n.markAbsenceRemove),
+          ),
+        FilledButton(
+          onPressed: published && !reasonOk
+              ? null
+              : () => Navigator.pop(
+                  context,
+                  _AbsenceChoice(
+                    mark: published ? _mark : GradeMark.absent,
+                    notes: _trimmedNotes,
+                    reason: published ? _reason.text.trim() : null,
+                  ),
+                ),
+          child: Text(
+            published
+                ? l10n.markSaveCorrection
+                : widget.absent
+                ? l10n.markAbsenceSaveNotes
+                : l10n.markAbsenceMark,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Where a submission's marking stands, in words and an icon - never colour
+/// alone.
+class MarkingStatusPill extends StatelessWidget {
+  const MarkingStatusPill({super.key, required this.status});
+
+  final MarkingStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return switch (status) {
+      MarkingStatus.notMarked => StatusPill(
+        label: l10n.markStatusNotMarked,
+        icon: Icons.edit_note_rounded,
+        color: studafyDanger,
+      ),
+      MarkingStatus.partlyMarked => StatusPill(
+        label: l10n.markStatusPartly,
+        icon: Icons.pending_outlined,
+        color: studafyCyan,
+      ),
+      MarkingStatus.marked => StatusPill(
+        label: l10n.markStatusMarked,
+        icon: Icons.task_alt_rounded,
+        color: studafyMuted,
+      ),
+      MarkingStatus.published => StatusPill(
+        label: l10n.markStatusPublished,
+        icon: Icons.check_circle_rounded,
+      ),
+      MarkingStatus.notSubmitted => StatusPill(
+        label: l10n.markStatusNotSubmitted,
+        icon: Icons.hourglass_empty_rounded,
+        color: studafyMuted,
+      ),
+      MarkingStatus.absent => StatusPill(
+        label: l10n.markStatusAbsent,
+        icon: Icons.event_busy_rounded,
+        color: studafyCyan,
+      ),
+      MarkingStatus.absentPublished => StatusPill(
+        label: l10n.markStatusAbsentPublished,
+        icon: Icons.event_busy_rounded,
+      ),
+      MarkingStatus.notGradedPublished => StatusPill(
+        label: l10n.markStatusNotGradedPublished,
+        icon: Icons.do_not_disturb_on_outlined,
+      ),
+    };
   }
 }
 
@@ -445,8 +837,14 @@ class _GrantDialogState extends State<_GrantDialog> {
   }
 }
 
-/// Marking one attempt: every answer with the key, the automatic mark where
-/// there is one, and a score and comment the teacher can set or change.
+/// Marking one attempt: every answer with the question, its files, the key,
+/// the automatic mark where there is one, and a score and comment the
+/// teacher can set or change.
+///
+/// Saving keeps the marks as a draft only the class's teachers see; they
+/// reach the student and their parents when the grades are published. Once
+/// they are, a change is a correction and asks for a reason. Nothing typed is
+/// lost to a failed save, and leaving with unsaved marks asks first.
 class MarkAttemptPage extends StatefulWidget {
   const MarkAttemptPage({
     super.key,
@@ -472,6 +870,14 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
   final Map<String, TextEditingController> _comments = {};
   final _overall = TextEditingController();
 
+  /// What the server last held, to tell an unsaved change from a saved one.
+  Map<String, String> _savedScores = const {};
+  Map<String, String> _savedComments = const {};
+  String _savedOverall = '';
+
+  /// Questions whose score cannot be saved as typed, with why.
+  final Map<String, String> _invalid = {};
+
   @override
   void initState() {
     super.initState();
@@ -490,6 +896,32 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
   static String _number(double value) =>
       value == value.roundToDouble() ? value.toInt().toString() : '$value';
 
+  bool get _dirty {
+    if (_overall.text.trim() != _savedOverall) return true;
+    for (final entry in _scores.entries) {
+      if (entry.value.text.trim() != (_savedScores[entry.key] ?? '')) {
+        return true;
+      }
+    }
+    for (final entry in _comments.entries) {
+      if (entry.value.text.trim() != (_savedComments[entry.key] ?? '')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _remember(AttemptDetail attempt) {
+    _savedScores = {
+      for (final a in attempt.answers)
+        a.question.id: a.awardedScore == null ? '' : _number(a.awardedScore!),
+    };
+    _savedComments = {
+      for (final a in attempt.answers) a.question.id: a.feedback ?? '',
+    };
+    _savedOverall = (attempt.feedback ?? '').trim();
+  }
+
   Future<void> _load() async {
     setState(() => _failed = false);
     try {
@@ -497,14 +929,13 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
       if (!mounted) return;
       setState(() {
         _attempt = attempt;
-        _overall.text = attempt.feedback ?? '';
+        _remember(attempt);
+        _overall.text = _savedOverall;
         for (final a in attempt.answers) {
-          _scores[a.question.id] = TextEditingController(
-            text: a.awardedScore == null ? '' : _number(a.awardedScore!),
-          );
-          _comments[a.question.id] = TextEditingController(
-            text: a.feedback ?? '',
-          );
+          (_scores[a.question.id] ??= TextEditingController()).text =
+              _savedScores[a.question.id]!;
+          (_comments[a.question.id] ??= TextEditingController()).text =
+              _savedComments[a.question.id]!;
         }
       });
     } on Object {
@@ -512,157 +943,387 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
     }
   }
 
+  /// Asks why a published grade is changing. Null when the teacher backs out.
+  Future<String?> _askReason() => showDialog<String>(
+    context: context,
+    builder: (_) => const _CorrectionReasonDialog(),
+  );
+
   Future<void> _save() async {
+    if (_saving) return;
     final l10n = AppL10n.of(context);
     final attempt = _attempt;
     if (attempt == null) return;
     final marks = <AnswerMark>[];
+    final invalid = <String, String>{};
     for (final a in attempt.answers) {
-      final text = _scores[a.question.id]!.text.trim();
-      final comment = _comments[a.question.id]!.text.trim();
-      if (text.isEmpty) continue;
-      final score = double.tryParse(text);
+      final id = a.question.id;
+      final text = _scores[id]!.text.trim();
+      final comment = _comments[id]!.text.trim();
+      if (text.isEmpty) {
+        // A comment needs a mark to travel with; an empty score is simply
+        // not marked yet.
+        if (comment != (_savedComments[id] ?? '')) {
+          invalid[id] = l10n.markScoreNeededForComment;
+        }
+        continue;
+      }
+      final score = double.tryParse(text.replaceAll(',', '.'));
       if (score == null || score < 0 || score > a.question.maximumScore) {
-        setState(
-          () =>
-              _error = l10n.markScoreInvalid(_number(a.question.maximumScore)),
-        );
-        return;
+        invalid[id] = l10n.markScoreInvalid(_number(a.question.maximumScore));
+        continue;
       }
       if (score != a.awardedScore || comment != (a.feedback ?? '')) {
         marks.add(
           AnswerMark(
-            questionId: a.question.id,
+            questionId: id,
             score: score,
             feedback: comment.isEmpty ? null : comment,
           ),
         );
       }
     }
+    final overall = _overall.text.trim();
+    final overallChanged = overall != _savedOverall;
+    if (invalid.isNotEmpty) {
+      setState(() {
+        _invalid
+          ..clear()
+          ..addAll(invalid);
+        _error = l10n.markFixHighlighted;
+      });
+      return;
+    }
+    // A published absence this attempt came after is replaced from here,
+    // even with nothing typed: saving applies the attempt's mark.
+    if (marks.isEmpty && !overallChanged && !attempt.publishedAbsent) {
+      setState(() {
+        _invalid.clear();
+        _error = null;
+      });
+      ScaffoldMessenger.of(context).showMessage(l10n.markNothingChanged);
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
+      _invalid.clear();
     });
     final messenger = ScaffoldMessenger.of(context);
-    try {
-      final updated = await widget.repository.markAttempt(
-        attempt.id,
-        marks,
-        feedback: _overall.text.trim().isEmpty ? null : _overall.text.trim(),
-      );
-      if (!mounted) return;
-      setState(() {
-        _attempt = updated;
-        _saving = false;
-      });
-      messenger.showMessage(l10n.markSaved);
-    } on Object {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = l10n.markSaveFailed;
-      });
+    // Whether a change is a correction is the server's to say: only a change
+    // to a published mark or score is, and it alone needs a reason. So the
+    // save goes as it is, and a reason is asked for only when the server
+    // refuses it without one - which changes nothing until it is given.
+    String? reason;
+    while (true) {
+      try {
+        final updated = await widget.repository.markAttempt(
+          attempt.id,
+          marks,
+          // Only sent when it changed; an empty one clears it.
+          feedback: overallChanged ? overall : null,
+          correctionReason: reason,
+        );
+        if (!mounted) return;
+        setState(() {
+          _attempt = updated;
+          _remember(updated);
+          _saving = false;
+        });
+        messenger.showMessage(
+          reason != null
+              ? l10n.markCorrected
+              : updated.published
+              ? l10n.markSavedPublished
+              : l10n.markDraftSaved,
+        );
+        return;
+      } on CourseworkRefusal catch (refusal) {
+        if (!mounted) return;
+        if (refusal.problem == CourseworkProblem.reasonRequired &&
+            reason == null) {
+          // Nothing is saving while the teacher writes the reason.
+          setState(() => _saving = false);
+          reason = await _askReason();
+          if (!mounted) return;
+          if (reason != null) {
+            setState(() => _saving = true);
+            continue;
+          }
+          // Backed out: nothing was saved, and everything typed stays.
+          setState(() {
+            _saving = false;
+            _error = l10n.markCorrectionCancelled;
+          });
+          return;
+        }
+        setState(() {
+          _saving = false;
+          _error = courseworkMessage(l10n, refusal);
+        });
+        return;
+      } on Object {
+        if (!mounted) return;
+        setState(() {
+          _saving = false;
+          _error = l10n.markSaveFailed;
+        });
+        return;
+      }
     }
+  }
+
+  Future<bool> _confirmLeave() async {
+    final l10n = AppL10n.of(context);
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.markUnsavedTitle),
+        content: Text(l10n.markUnsavedBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.markUnsavedKeep),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: studafyDanger),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.markUnsavedDiscard),
+          ),
+        ],
+      ),
+    );
+    return leave ?? false;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final attempt = _attempt;
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.studentName)),
-      body: SafeArea(
-        child: attempt == null
-            ? Center(
-                child: _failed
-                    ? StudafyEmptyState(
-                        icon: Icons.wifi_off_rounded,
-                        title: l10n.takeLoadFailed,
-                        actionLabel: l10n.takeRetry,
-                        onAction: _load,
-                      )
-                    : const CircularProgressIndicator(),
-              )
-            : ListView(
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 32),
-                children: [
-                  for (final answer in attempt.answers)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: FeatureCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            AnswerReview(answer: answer),
-                            if (answer.autoScore != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 6),
-                                child: Text(
-                                  l10n.markAuto,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _scores[answer.question.id],
-                              enabled: !_saving,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
+    final total = attempt?.answers.fold<double>(
+      0,
+      (sum, a) => sum + a.question.maximumScore,
+    );
+    return PopScope(
+      canPop: _saving || attempt == null || !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final navigator = Navigator.of(context);
+        if (await _confirmLeave()) navigator.pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: UserContentText(attempt?.studentName ?? widget.studentName),
+        ),
+        body: SafeArea(
+          child: attempt == null
+              ? Center(
+                  child: _failed
+                      ? StudafyEmptyState(
+                          icon: Icons.wifi_off_rounded,
+                          title: l10n.takeLoadFailed,
+                          actionLabel: l10n.takeRetry,
+                          onAction: _load,
+                        )
+                      : const CircularProgressIndicator(),
+                )
+              : ListView(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 32),
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            attempt.awardedScore == null || total == null
+                                ? l10n.markStillToMark
+                                : l10n.markDone(
+                                    _number(attempt.awardedScore!),
+                                    _number(total),
                                   ),
-                              decoration: InputDecoration(
-                                labelText: l10n.markScoreLabel(
-                                  _number(answer.question.maximumScore),
-                                ),
-                                border: const OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _comments[answer.question.id],
-                              enabled: !_saving,
-                              minLines: 1,
-                              maxLines: 4,
-                              maxLength: 5000,
-                              decoration: InputDecoration(
-                                labelText: l10n.markAnswerFeedback,
-                                border: const OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                            ),
-                          ],
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                         ),
-                      ),
+                        MarkingStatusPill(status: attempt.markingStatus),
+                      ],
                     ),
-                  TextField(
-                    controller: _overall,
-                    enabled: !_saving,
-                    minLines: 2,
-                    maxLines: 6,
-                    maxLength: 5000,
-                    decoration: InputDecoration(
-                      labelText: l10n.markOverallFeedback,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  if (_error != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(top: 6, bottom: 12),
                       child: Text(
-                        _error!,
+                        attempt.publishedAbsent
+                            ? l10n.markPublishedAbsentNotice
+                            : attempt.published
+                            ? l10n.markPublishedNotice
+                            : l10n.markDraftNotice,
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                          color: attempt.publishedAbsent
+                              ? studafyDanger
+                              : studafyMuted,
                         ),
                       ),
                     ),
-                  FilledButton(
-                    onPressed: _saving ? null : _save,
-                    child: Text(l10n.markSave),
-                  ),
-                ],
-              ),
+                    for (final answer in attempt.answers)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: FeatureCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              AnswerReview(
+                                answer: answer,
+                                teacherView: true,
+                                showMark: false,
+                              ),
+                              if (answer.autoScore != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    l10n.markAutoScore(
+                                      _number(answer.autoScore!),
+                                      _number(answer.question.maximumScore),
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
+                                  ),
+                                ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _scores[answer.question.id],
+                                enabled: !_saving,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: (_) => setState(() {}),
+                                decoration: InputDecoration(
+                                  labelText: l10n.markScoreLabel(
+                                    _number(answer.question.maximumScore),
+                                  ),
+                                  errorText: _invalid[answer.question.id],
+                                  border: const OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _comments[answer.question.id],
+                                enabled: !_saving,
+                                minLines: 1,
+                                maxLines: 4,
+                                maxLength: 5000,
+                                onChanged: (_) => setState(() {}),
+                                decoration: InputDecoration(
+                                  labelText: l10n.markAnswerFeedback,
+                                  border: const OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    TextField(
+                      controller: _overall,
+                      enabled: !_saving,
+                      minLines: 2,
+                      maxLines: 6,
+                      maxLength: 5000,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.markOverallFeedback,
+                        helperText: l10n.markOverallFeedbackHelp,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    FilledButton.icon(
+                      onPressed: _saving ? null : _save,
+                      icon: _saving
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save_outlined),
+                      label: Text(
+                        attempt.publishedAbsent
+                            ? l10n.markReplaceAbsence
+                            : attempt.published
+                            ? l10n.markSaveChanges
+                            : l10n.markSaveDraft,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
       ),
+    );
+  }
+}
+
+/// The reason for changing a grade the student and parents already see.
+/// Owns its controller, so it is not disposed while the dialog closes.
+class _CorrectionReasonDialog extends StatefulWidget {
+  const _CorrectionReasonDialog();
+
+  @override
+  State<_CorrectionReasonDialog> createState() =>
+      _CorrectionReasonDialogState();
+}
+
+class _CorrectionReasonDialogState extends State<_CorrectionReasonDialog> {
+  final _reason = TextEditingController();
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final ready = _reason.text.trim().length >= 3;
+    return AlertDialog(
+      title: Text(l10n.markCorrectionTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.markCorrectionBody),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _reason,
+            autofocus: true,
+            maxLength: 500,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: l10n.markCorrectionReason,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.linksCancel),
+        ),
+        FilledButton(
+          onPressed: ready
+              ? () => Navigator.pop(context, _reason.text.trim())
+              : null,
+          child: Text(l10n.markSaveCorrection),
+        ),
+      ],
     );
   }
 }

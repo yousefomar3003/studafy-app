@@ -2908,19 +2908,20 @@ class AppL10nAr extends AppL10n {
   String get accountExportFailed => 'لم ينجح ذلك. يرجى المحاولة مرة أخرى.';
 
   @override
-  String get todayWork => 'الأعمال التي أسندتها';
+  String get todayWork => 'أعمال عليك إسنادها';
 
   @override
-  String get todayWorkEmpty => 'لم تُسند أي عمل بعد.';
+  String get todayWorkEmpty =>
+      'لا شيء لإسناده الآن. تظهر هنا المسودات والأعمال المفتوحة أو القادمة.';
 
   @override
   String get todaySections => 'حصص تنتظر المحتوى';
 
   @override
-  String get todaySectionsEmpty => 'كل حصة درّستها تم رفع محتواها.';
+  String get todaySectionsEmpty => 'لكل حصة درّستها درس يراه طلاب الفصل.';
 
   @override
-  String get todaySectionsOutstanding => 'المحتوى غير مرفوع';
+  String get todaySectionsOutstanding => 'لا يوجد درس بعد';
 
   @override
   String get todayTitle => 'اليوم';
@@ -6595,4 +6596,281 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get usageCostMore => 'يستهلك أكثر';
+
+  @override
+  String get markPublishTitle => 'نشر الدرجات؟';
+
+  @override
+  String get markPublishFailed =>
+      'لم تُنشر الدرجات. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String markSummary(int toMark, int marked, int published) {
+    return '$toMark للتصحيح · $marked جاهزة للنشر · $published منشورة';
+  }
+
+  @override
+  String get markRefreshFailed =>
+      'تعذّر تحديث القائمة. اسحب للأسفل للمحاولة مرة أخرى.';
+
+  @override
+  String get markStatusNotMarked => 'مُسلَّم · لم يُصحَّح';
+
+  @override
+  String get markStatusPartly => 'مُسلَّم · صُحِّح جزئيًا';
+
+  @override
+  String get markStatusMarked => 'مُصحَّح · غير منشور';
+
+  @override
+  String get markStatusPublished => 'منشور';
+
+  @override
+  String get markScoreNeededForComment =>
+      'ضع درجة مع كل تعليق، أو احذف التعليق.';
+
+  @override
+  String get markNothingChanged => 'لم يتغيّر شيء منذ آخر حفظ.';
+
+  @override
+  String get markCorrected =>
+      'حُفظ التصحيح. يرى الطالب وأولياء أمره الدرجة الجديدة.';
+
+  @override
+  String get markDraftSaved =>
+      'حُفظت كمسودة. لا يراها الطلاب وأولياء الأمور حتى تنشر الدرجات.';
+
+  @override
+  String get markUnsavedTitle => 'المغادرة دون حفظ؟';
+
+  @override
+  String get markUnsavedBody => 'ستضيع الدرجات والتعليقات التي لم تحفظها.';
+
+  @override
+  String get markUnsavedKeep => 'متابعة التصحيح';
+
+  @override
+  String get markUnsavedDiscard => 'تجاهل التغييرات';
+
+  @override
+  String get markStillToMark => 'قيد التصحيح';
+
+  @override
+  String get markPublishedNotice =>
+      'منشور: يرى الطالب وأولياء أمره هذه الدرجة. يُحفظ أي تغيير كتصحيح مع ذكر السبب.';
+
+  @override
+  String get markDraftNotice =>
+      'لم تُنشر بعد: لا يرى هذه الدرجات إلا معلمو الفصل.';
+
+  @override
+  String markAutoScore(String score, String max) {
+    return 'صُحِّح تلقائيًا: $score من $max';
+  }
+
+  @override
+  String get markOverallFeedbackHelp => 'تظهر مع الدرجة بعد نشرها.';
+
+  @override
+  String get markSaveCorrection => 'حفظ التصحيح';
+
+  @override
+  String get markSaveDraft => 'حفظ كمسودة';
+
+  @override
+  String get markCorrectionTitle => 'تصحيح درجة منشورة';
+
+  @override
+  String get markCorrectionBody =>
+      'يرى الطالب وأولياء أمره هذه الدرجة بالفعل. اذكر سبب تغييرها؛ يُحفظ السبب مع التغيير.';
+
+  @override
+  String get markCorrectionReason => 'سبب التغيير';
+
+  @override
+  String markOutOf(String max) {
+    return 'من $max';
+  }
+
+  @override
+  String get markStudentAnswer => 'إجابة الطالب';
+
+  @override
+  String get gradebookOnlineHint =>
+      'يُجاب عن هذا العمل في التطبيق. صحّحه من إجابات كل طالب.';
+
+  @override
+  String get gradebookOpenAnswers => 'فتح الإجابات المقدَّمة';
+
+  @override
+  String get todayWorkDraft => 'مسودة · لم يُسنَد بعد';
+
+  @override
+  String todayWorkExamOn(String date) {
+    return 'الاختبار في $date';
+  }
+
+  @override
+  String todayWorkOpens(String date) {
+    return 'يُفتح في $date';
+  }
+
+  @override
+  String get todayWorkScheduled => 'مجدول';
+
+  @override
+  String todayWorkDue(String date) {
+    return 'موعد التسليم $date';
+  }
+
+  @override
+  String todayWorkCloses(String date) {
+    return 'يُغلق في $date';
+  }
+
+  @override
+  String get todayWorkOpen => 'مفتوح';
+
+  @override
+  String get todayWorkKindAssignment => 'واجب';
+
+  @override
+  String get todayWorkKindOnlineExam => 'اختبار إلكتروني';
+
+  @override
+  String get todayWorkKindPaperExam => 'اختبار ورقي';
+
+  @override
+  String get todayWorkFinish => 'نشر';
+
+  @override
+  String get todayWorkUnknown =>
+      'تعذّر تحميل بعض الفصول، لذا قد تنقص هنا بعض الأعمال.';
+
+  @override
+  String get todayPartlyLoaded => 'تعذّر تحميل بعض الفصول.';
+
+  @override
+  String get todaySectionsUnknown =>
+      'تعذّر تحميل بعض الفصول، لذا قد تنقص هنا بعض الحصص.';
+
+  @override
+  String get todaySectionDraft => 'الدرس مسودة · لا يراه الطلاب';
+
+  @override
+  String get todaySectionPublish => 'نشر';
+
+  @override
+  String get todaySectionAdd => 'إضافة درس';
+
+  @override
+  String todayMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'و$count عناصر أخرى',
+      one: 'وعنصر آخر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lessonForSection(String when) {
+    return 'لحصة $when';
+  }
+
+  @override
+  String get markFixHighlighted => 'صحّح الدرجات المحدَّدة، ثم احفظ مرة أخرى.';
+
+  @override
+  String get sectionsPublished => 'الدرس منشور';
+
+  @override
+  String get scheduleLoadFailed => 'تعذّر تحميل الجدول. حاول مرة أخرى.';
+
+  @override
+  String get markSavedPublished =>
+      'حُفظ. لم يتطلّب أي تغيير في الدرجة المنشورة تصحيحًا.';
+
+  @override
+  String get markCorrectionCancelled =>
+      'لم يُحفظ. يتطلّب تغيير درجة منشورة ذكر السبب؛ ما زالت درجاتك هنا.';
+
+  @override
+  String get markPublishedAbsentNotice =>
+      'نُشر غيابه، لكن هذا الطالب سلّم عمله لاحقًا. احفظ لاستبدال الغياب بهذه الدرجة؛ سيُطلب منك ذكر السبب.';
+
+  @override
+  String get markReplaceAbsence => 'استبدال الغياب';
+
+  @override
+  String get markSaveChanges => 'حفظ التغييرات';
+
+  @override
+  String get markAbsenceCorrected =>
+      'حُفظ التصحيح. يرى الطالب وأولياء أمره التغيير.';
+
+  @override
+  String get markAbsenceRemoved => 'أُزيل الغياب.';
+
+  @override
+  String get markAbsenceSaved => 'سُجّل غائبًا. لن يراه أحد حتى تنشر الدرجات.';
+
+  @override
+  String get markAbsenceRefused =>
+      'سلّم هذا الطالب عمله، لذا لا يمكن تسجيله غائبًا.';
+
+  @override
+  String get markAbsenceFailed =>
+      'لم يُحفظ ذلك. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get markNotSubmittedSection => 'لم يسلّموا';
+
+  @override
+  String get markNotSubmittedHint =>
+      'اضغط على طالب لتسجيل غيابه. لا يُحتسب الغياب صفرًا أبدًا.';
+
+  @override
+  String markRosterSummary(int notSubmitted, int absent) {
+    return '$notSubmitted لم يسلّموا · $absent غائبون';
+  }
+
+  @override
+  String get markStatusNotSubmitted => 'لم يسلّم';
+
+  @override
+  String get markStatusAbsent => 'غائب';
+
+  @override
+  String get markStatusAbsentPublished => 'غائب · منشور';
+
+  @override
+  String get markStatusNotGradedPublished => 'بلا درجة · منشور';
+
+  @override
+  String get markAbsenceBody =>
+      'سجّل أن هذا الطالب كان غائبًا. يبقى خاصًا حتى تنشر الدرجات، ولا يُحتسب صفرًا.';
+
+  @override
+  String get markAbsencePublishedBody =>
+      'هذا الغياب منشور. تغييره تصحيح: اذكر السبب، ويُحفظ مع التغيير.';
+
+  @override
+  String get markAbsenceExcused => 'بلا درجة (معذور)';
+
+  @override
+  String get markAbsenceNotes => 'ملاحظات (اختياري)';
+
+  @override
+  String get markAbsenceRemove => 'إزالة الغياب';
+
+  @override
+  String get markAbsenceSaveNotes => 'حفظ الملاحظات';
+
+  @override
+  String get markAbsenceMark => 'تسجيل غائب';
+
+  @override
+  String get takeChildAttempts => 'المحاولات';
 }

@@ -88,6 +88,8 @@ class ApiAcademicRepository implements AcademicRepository {
               deadline: _deadline(x),
               timeZone: x.timeZone,
               links: contentLinksFrom(x.links),
+              dueAt: _when(x.dueAt),
+              closesAt: _when(x.closesAt),
             ),
         ];
       case AcademicFeed.assessments:
@@ -115,6 +117,7 @@ class ApiAcademicRepository implements AcademicRepository {
               date: _when(x.publishedAt),
               links: contentLinksFrom(x.links),
               online: x.delivery == 'paper' ? null : onlineAssessmentFrom(x),
+              scheduledAt: _when(x.scheduledAt),
             ),
         ];
       case AcademicFeed.grades:
@@ -211,7 +214,8 @@ class ApiAcademicRepository implements AcademicRepository {
   Future<void> createResource(TextResourceDraft draft) =>
       _done('resource:${draft.classroomId}:${draft.title}:${draft.body}:'
           '${draft.audience}:${draft.attachmentFileIds.join(',')}:'
-          '${draft.links.map((l) => l.url).join(',')}', (key) async {
+          '${draft.links.map((l) => l.url).join(',')}:'
+          '${draft.lessonSessionId}', (key) async {
         final created = await _client.createResource(
           V1CreateResourceRequestDto(
             schoolId: _schoolId,
@@ -783,6 +787,7 @@ class ApiAcademicRepository implements AcademicRepository {
             endsAt: endsAt,
             filed: item.filedAt != null,
             title: item.title,
+            content: SectionContent.parse(item.contentState),
           ),
         );
       }
@@ -1487,7 +1492,13 @@ class ApiAcademicRepository implements AcademicRepository {
     String attemptId,
     List<AnswerMark> marks, {
     String? feedback,
-  }) => _online.markAttempt(attemptId, marks, feedback: feedback);
+    String? correctionReason,
+  }) => _online.markAttempt(
+    attemptId,
+    marks,
+    feedback: feedback,
+    correctionReason: correctionReason,
+  );
 
   @override
   Future<void> grantAccess(

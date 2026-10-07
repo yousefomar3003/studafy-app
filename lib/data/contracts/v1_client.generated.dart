@@ -3502,6 +3502,9 @@ class V1AssessmentAttemptDetailDto {
     this.awardedScore,
     this.feedback,
     this.answers,
+    this.studentName,
+    this.gradeState,
+    this.gradeMark,
   });
 
   factory V1AssessmentAttemptDetailDto.fromJson(Map<String, dynamic> json) =>
@@ -3522,6 +3525,9 @@ class V1AssessmentAttemptDetailDto {
                 for (final item in json['answers'] as List<dynamic>)
                   V1AttemptAnswerDto.fromJson(item as Map<String, dynamic>),
               ],
+        studentName: json['studentName'] as String?,
+        gradeState: json['gradeState'] as String?,
+        gradeMark: json['gradeMark'] as String?,
       );
 
   final String id;
@@ -3535,6 +3541,9 @@ class V1AssessmentAttemptDetailDto {
   final num? awardedScore;
   final String? feedback;
   final List<V1AttemptAnswerDto>? answers;
+  final String? studentName;
+  final String? gradeState;
+  final String? gradeMark;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -3549,6 +3558,9 @@ class V1AssessmentAttemptDetailDto {
     'feedback': ?feedback,
     if (answers != null)
       'answers': [for (final item in answers!) item.toJson()],
+    'studentName': ?studentName,
+    'gradeState': ?gradeState,
+    'gradeMark': ?gradeMark,
   };
 }
 
@@ -3590,6 +3602,9 @@ class V1AssessmentAttemptSummaryDto {
     required this.studentName,
     required this.needsMarking,
     required this.awardedScore,
+    this.gradeState,
+    this.pendingAnswers,
+    this.manualAnswers,
   });
 
   factory V1AssessmentAttemptSummaryDto.fromJson(Map<String, dynamic> json) =>
@@ -3604,6 +3619,9 @@ class V1AssessmentAttemptSummaryDto {
         studentName: json['studentName'] as String,
         needsMarking: json['needsMarking'] as bool,
         awardedScore: json['awardedScore'] as num?,
+        gradeState: json['gradeState'] as String?,
+        pendingAnswers: json['pendingAnswers'] as int?,
+        manualAnswers: json['manualAnswers'] as int?,
       );
 
   final String id;
@@ -3616,6 +3634,9 @@ class V1AssessmentAttemptSummaryDto {
   final String studentName;
   final bool needsMarking;
   final num? awardedScore;
+  final String? gradeState;
+  final int? pendingAnswers;
+  final int? manualAnswers;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -3628,6 +3649,9 @@ class V1AssessmentAttemptSummaryDto {
     'studentName': studentName,
     'needsMarking': needsMarking,
     'awardedScore': awardedScore,
+    'gradeState': ?gradeState,
+    'pendingAnswers': ?pendingAnswers,
+    'manualAnswers': ?manualAnswers,
   };
 }
 
@@ -8526,6 +8550,7 @@ class V1LessonSessionDto {
     required this.status,
     required this.filedAt,
     required this.version,
+    this.contentState,
   });
 
   factory V1LessonSessionDto.fromJson(Map<String, dynamic> json) =>
@@ -8538,6 +8563,7 @@ class V1LessonSessionDto {
         status: json['status'] as String,
         filedAt: json['filedAt'] as String?,
         version: json['version'] as int,
+        contentState: json['contentState'] as String?,
       );
 
   final String id;
@@ -8548,6 +8574,7 @@ class V1LessonSessionDto {
   final String status;
   final String? filedAt;
   final int version;
+  final String? contentState;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -8558,6 +8585,7 @@ class V1LessonSessionDto {
     'status': status,
     'filedAt': filedAt,
     'version': version,
+    'contentState': ?contentState,
   };
 }
 
@@ -8689,7 +8717,11 @@ class V1ManagedChildSessionRequestDto {
 }
 
 class V1MarkAssessmentAttemptRequestDto {
-  const V1MarkAssessmentAttemptRequestDto({required this.marks, this.feedback});
+  const V1MarkAssessmentAttemptRequestDto({
+    required this.marks,
+    this.feedback,
+    this.correctionReason,
+  });
 
   factory V1MarkAssessmentAttemptRequestDto.fromJson(
     Map<String, dynamic> json,
@@ -8699,14 +8731,17 @@ class V1MarkAssessmentAttemptRequestDto {
         V1AnswerMarkDto.fromJson(item as Map<String, dynamic>),
     ],
     feedback: json['feedback'] as String?,
+    correctionReason: json['correctionReason'] as String?,
   );
 
   final List<V1AnswerMarkDto> marks;
   final String? feedback;
+  final String? correctionReason;
 
   Map<String, Object?> toJson() => {
     'marks': [for (final item in marks) item.toJson()],
     'feedback': ?feedback,
+    'correctionReason': ?correctionReason,
   };
 }
 

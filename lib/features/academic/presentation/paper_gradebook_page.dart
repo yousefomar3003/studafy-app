@@ -371,8 +371,41 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
     }
   }
 
+  /// Marks typed and not saved are not dropped by a stray back gesture.
+  Future<bool> _confirmLeave() async {
+    final l10n = AppL10n.of(context);
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.markUnsavedTitle),
+        content: Text(l10n.markUnsavedBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.markUnsavedKeep),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.markUnsavedDiscard),
+          ),
+        ],
+      ),
+    );
+    return leave ?? false;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PopScope(
+    canPop: _saving || _dirty.isEmpty,
+    onPopInvokedWithResult: (didPop, _) async {
+      if (didPop) return;
+      final navigator = Navigator.of(context);
+      if (await _confirmLeave()) navigator.pop();
+    },
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final sheet = _sheet;
     return Scaffold(

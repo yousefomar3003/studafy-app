@@ -94,17 +94,22 @@ class TeacherCreateActions {
       ActiveContextController.instance.membership?.schoolId;
 
   /// A lesson: notes and files for a class, which students see by date.
-  Future<void> newLesson(BuildContext context, {String? classroomId}) =>
-      _openForm(
-        context,
-        (classes) => CreateLessonPage(
-          repository: dependencies.academic,
-          classes: classes,
-          initialClassroomId: classroomId,
-          schoolId: _schoolId,
-          uploads: dependencies.fileUploads,
-        ),
-      );
+  /// With [section], it is filed for that section of [classroomId].
+  Future<void> newLesson(
+    BuildContext context, {
+    String? classroomId,
+    LessonSession? section,
+  }) => _openForm(
+    context,
+    (classes) => CreateLessonPage(
+      repository: dependencies.academic,
+      classes: classes,
+      initialClassroomId: classroomId,
+      section: section,
+      schoolId: _schoolId,
+      uploads: dependencies.fileUploads,
+    ),
+  );
 
   /// An exam or other assessment: answered online, built from questions
   /// (ADR-0036), or sat on paper and marked in the gradebook.

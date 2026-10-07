@@ -221,6 +221,12 @@ export const V1LessonSession = z.strictObject({
    */
   filedAt: Timestamp.nullable(),
   version: Version,
+  /**
+   * The lessons filed for this section: 'published' once one the class can
+   * see is filed, 'draft' while the only ones are drafts (told to the
+   * class's teachers alone), else 'none'. A draft never counts as content.
+   */
+  contentState: z.enum(["none", "draft", "published"]).optional(),
 });
 export type V1LessonSession = z.infer<typeof V1LessonSession>;
 export const V1LessonSessionPage = z.strictObject({
@@ -704,10 +710,24 @@ export const V1AssessmentAttempt = z.strictObject({
 export type V1AssessmentAttempt = z.infer<typeof V1AssessmentAttempt>;
 
 /// One attempt in the teacher's marking list.
+/// The state of the student's grade for the work, for the class's
+/// teachers: null before any mark exists.
+const V1AttemptGradeState = z.enum([
+  "draft",
+  "reviewed",
+  "published",
+  "withdrawn",
+])
+  .nullable();
+
 export const V1AssessmentAttemptSummary = V1AssessmentAttempt.extend({
   studentName: z.string(),
   needsMarking: z.boolean(),
   awardedScore: z.number().nullable(),
+  gradeState: V1AttemptGradeState.optional(),
+  /// Answers a person still has to mark, and how many need a person at all.
+  pendingAnswers: z.number().int().min(0).optional(),
+  manualAnswers: z.number().int().min(0).optional(),
 });
 export type V1AssessmentAttemptSummary = z.infer<
   typeof V1AssessmentAttemptSummary
@@ -739,6 +759,11 @@ export const V1AssessmentAttemptDetail = V1AssessmentAttempt.extend({
   awardedScore: z.number().nullable().optional(),
   feedback: z.string().nullable().optional(),
   answers: z.array(V1AttemptAnswer).optional(),
+  /// For the class's teachers only: the student's name, and the state and
+  /// mark of their grade - so a published absence is told from a score.
+  studentName: z.string().optional(),
+  gradeState: V1AttemptGradeState.optional(),
+  gradeMark: z.enum(["scored", "absent", "not_graded"]).nullable().optional(),
 });
 export type V1AssessmentAttemptDetail = z.infer<
   typeof V1AssessmentAttemptDetail
@@ -756,6 +781,10 @@ export const V1MarkAssessmentAttemptRequest = z.strictObject({
   marks: z.array(V1AnswerMark).max(100),
   /// Feedback on the attempt as a whole.
   feedback: z.string().trim().max(5000).nullable().optional(),
+  /// Required when the student's grade is already published and the change
+  /// moves its mark or score: that is a correction. A change to the
+  /// feedback alone needs none.
+  correctionReason: z.string().trim().min(3).max(500).optional(),
 });
 export type V1MarkAssessmentAttemptRequest = z.infer<
   typeof V1MarkAssessmentAttemptRequest

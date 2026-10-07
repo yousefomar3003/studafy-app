@@ -9,7 +9,11 @@ import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
+import '../features/academic/presentation/class_roster_page.dart';
+import '../features/academic/presentation/class_schedule_page.dart';
+import '../features/academic/presentation/class_sections_page.dart';
 import '../features/academic/presentation/gradebook_home_page.dart';
+import '../features/academic/presentation/paper_gradebook_page.dart';
 import '../features/academic/presentation/submissions_page.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
@@ -48,7 +52,13 @@ class _TeacherShellState extends State<TeacherShell> {
 
   late final _create = TeacherCreateActions(widget.dependencies);
 
-  Future<void> _openClassroom(ClassroomSummary classroom) async {
+  /// Told whenever the create button's work is done, so Today reads again.
+  final _changes = _Changes();
+
+  Future<void> _openClassroom(
+    ClassroomSummary classroom, {
+    AcademicFeed feed = AcademicFeed.content,
+  }) async {
     final academic = widget.dependencies.academic;
     await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
@@ -57,7 +67,7 @@ class _TeacherShellState extends State<TeacherShell> {
           classroomId: classroom.id.value,
           title: classroom.name,
           teacherTools: true,
-          initialFeed: AcademicFeed.content,
+          initialFeed: feed,
           // Marks are kept in the Gradebook tab.
           availableFeeds: const [
             AcademicFeed.content,
@@ -92,8 +102,10 @@ class _TeacherShellState extends State<TeacherShell> {
             ),
           ),
           // No row of tools across the class: attendance and marks are in
-          // the "+" menu and the Gradebook tab, as everything else is. The
-          // one thing only a class can do - deleting it - is in its menu.
+          // the "+" menu and the Gradebook tab, as everything else is. What
+          // only a class has - its students, its timetable, its sections,
+          // and deleting it - is in its menu. Without the timetable here, a
+          // class with none (or a wrong one) could never take a register.
           appBarActions: [
             Builder(
               builder: (pageContext) => PopupMenuButton<VoidCallback>(
@@ -101,6 +113,38 @@ class _TeacherShellState extends State<TeacherShell> {
                 icon: const Icon(Icons.more_horiz_rounded),
                 onSelected: (action) => action(),
                 itemBuilder: (_) => [
+                  _menuItem(
+                    Icons.groups_rounded,
+                    AppL10n.of(pageContext).rosterAction,
+                    () => Navigator.of(pageContext).pushOnce(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ClassRosterPage(
+                          repository: academic,
+                          classroomId: classroom.id.value,
+                          classroomName: classroom.name,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _menuItem(
+                    Icons.calendar_month_rounded,
+                    AppL10n.of(pageContext).scheduleAction,
+                    () => _openTimetable(pageContext, classroom),
+                  ),
+                  _menuItem(
+                    Icons.event_note_rounded,
+                    AppL10n.of(pageContext).sectionsAction,
+                    () => Navigator.of(pageContext).pushOnce(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ClassSectionsPage(
+                          repository: academic,
+                          classroomId: classroom.id.value,
+                          classroomName: classroom.name,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const PopupMenuDivider(),
                   PopupMenuItem(
                     value: () => _deleteClass(pageContext, classroom),
                     child: Row(
@@ -125,6 +169,53 @@ class _TeacherShellState extends State<TeacherShell> {
         ),
       ),
     );
+  }
+
+  static PopupMenuItem<VoidCallback> _menuItem(
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) => PopupMenuItem(
+    value: onTap,
+    child: Row(
+      children: [
+        Icon(icon, size: 20, color: studafyNavy),
+        const SizedBox(width: 12),
+        Text(label),
+      ],
+    ),
+  );
+
+  /// The class's weekly timetable, read first so the editor starts from
+  /// what is there. Registers can only be taken for meetings on it.
+  Future<void> _openTimetable(
+    BuildContext pageContext,
+    ClassroomSummary classroom,
+  ) async {
+    final l10n = AppL10n.of(pageContext);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(pageContext);
+    final academic = widget.dependencies.academic;
+    List<ClassSessionSlot> slots;
+    try {
+      slots = await academic.classroomSchedule(classroom.id.value);
+    } on Object {
+      messenger.showMessage(l10n.scheduleLoadFailed);
+      return;
+    }
+    await navigator.pushOnce(
+      MaterialPageRoute<void>(
+        builder: (_) => ClassSchedulePage(
+          repository: academic,
+          classroomId: classroom.id.value,
+          classroomName: classroom.name,
+          expectedVersion: classroom.version,
+          initialSlots: slots,
+        ),
+      ),
+    );
+    // A saved timetable moves the class's version on.
+    if (mounted) setState(() => _classesKey = UniqueKey());
   }
 
   /// Bumped after a class is deleted, so the class lists read again.
@@ -174,10 +265,10 @@ class _TeacherShellState extends State<TeacherShell> {
     if (mounted) setState(() => _classesKey = UniqueKey());
   }
 
-  void _openSubmissions(AcademicRecord record) {
+  Future<void> _openSubmissions(AcademicRecord record) async {
     final classroomId = record.classroomId;
     if (classroomId == null) return;
-    Navigator.of(context).pushOnce(
+    await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (_) => SubmissionsPage(
           repository: widget.dependencies.academic,
@@ -199,7 +290,43 @@ class _TeacherShellState extends State<TeacherShell> {
   @override
   void dispose() {
     _navCompact.dispose();
+    _changes.dispose();
     super.dispose();
+  }
+
+  /// Where a piece of work on Today leads: a draft to its class's list,
+  /// where it is published or changed; set work to what came back.
+  Future<void> _openWork(TeacherWorkItem item) async {
+    final academic = widget.dependencies.academic;
+    final record = item.record;
+    switch ((item.kind, item.status)) {
+      case (TeacherWorkKind.assignment, TeacherWorkStatus.draft):
+        await _openClassroom(item.classroom, feed: AcademicFeed.assignments);
+      case (TeacherWorkKind.assignment, _):
+        await _openSubmissions(record);
+      case (TeacherWorkKind.onlineExam, TeacherWorkStatus.draft):
+        await _openClassroom(item.classroom, feed: AcademicFeed.assessments);
+      case (TeacherWorkKind.onlineExam, _):
+        await openAssessmentForTeacher(
+          context,
+          academic,
+          record.id,
+          record.title,
+          classroomId: item.classroom.id.value,
+          uploads: widget.dependencies.fileUploads,
+        );
+      case (TeacherWorkKind.paperExam, _):
+        await Navigator.of(context).pushOnce(
+          MaterialPageRoute<void>(
+            builder: (_) => PaperGradebookPage(
+              repository: academic,
+              assessmentId: record.id,
+              attachments: academic,
+              classroomId: item.classroom.id.value,
+            ),
+          ),
+        );
+    }
   }
 
   bool _onScroll(UserScrollNotification notification) {
@@ -227,7 +354,17 @@ class _TeacherShellState extends State<TeacherShell> {
           key: ValueKey(('today', _classesKey)),
           classes: widget.dependencies.classes,
           academic: widget.dependencies.academic,
+          visible: index == 0,
+          changes: _changes,
           onOpenClassroom: _openClassroom,
+          onOpenWork: _openWork,
+          onAddLesson: (classroom, section) => _create.newLesson(
+            tabContext,
+            classroomId: classroom.id.value,
+            section: section,
+          ),
+          onOpenLessons: (classroom) =>
+              _openClassroom(classroom, feed: AcademicFeed.content),
           // No messages button here: the Inbox tab is the one way in.
           onOpenNotifications: () => open(const NotificationsPage()),
           onSeeAllClasses: () => setState(() => index = 1),
@@ -327,7 +464,10 @@ class _TeacherShellState extends State<TeacherShell> {
       floatingActionButton: Builder(
         builder: (tabContext) => StudafyCreateButton(
           label: l10n.teacherCreateAction,
-          onPressed: () => _create.openCreateMenu(tabContext),
+          onPressed: () async {
+            await _create.openCreateMenu(tabContext);
+            _changes.changed();
+          },
         ),
       ),
       bottomNavigationBar: ValueListenableBuilder<bool>(
@@ -404,4 +544,9 @@ class _TabHeader extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// A signal with nothing to carry: something was created or changed.
+class _Changes extends ChangeNotifier {
+  void changed() => notifyListeners();
 }

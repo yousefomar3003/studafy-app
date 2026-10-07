@@ -25906,6 +25906,40 @@
             "items": {
               "$ref": "#/components/schemas/V1AttemptAnswer"
             }
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "gradeState": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "reviewed",
+                  "published",
+                  "withdrawn"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gradeMark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "scored",
+                  "absent",
+                  "not_graded"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -25995,6 +26029,32 @@
               "number",
               "null"
             ]
+          },
+          "gradeState": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "reviewed",
+                  "published",
+                  "withdrawn"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pendingAnswers": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "manualAnswers": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -32401,6 +32461,14 @@
             "type": "integer",
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
+          },
+          "contentState": {
+            "type": "string",
+            "enum": [
+              "none",
+              "draft",
+              "published"
+            ]
           }
         },
         "required": [
@@ -32569,6 +32637,11 @@
                 "type": "null"
               }
             ]
+          },
+          "correctionReason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
           }
         },
         "required": [

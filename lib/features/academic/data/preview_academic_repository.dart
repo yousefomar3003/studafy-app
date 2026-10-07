@@ -335,7 +335,13 @@ class PreviewAcademicRepository implements AcademicRepository {
     String attemptId,
     List<AnswerMark> marks, {
     String? feedback,
-  }) => _online.markAttempt(attemptId, marks, feedback: feedback);
+    String? correctionReason,
+  }) => _online.markAttempt(
+    attemptId,
+    marks,
+    feedback: feedback,
+    correctionReason: correctionReason,
+  );
 
   @override
   Future<void> grantAccess(

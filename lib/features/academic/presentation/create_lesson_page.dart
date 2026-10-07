@@ -4,6 +4,7 @@ import '../../../core/attachment_field.dart';
 import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -24,6 +25,7 @@ class CreateLessonPage extends StatefulWidget {
     this.schoolId,
     this.uploads,
     this.attachmentSource,
+    this.section,
   });
 
   final AcademicContentRepository repository;
@@ -31,6 +33,11 @@ class CreateLessonPage extends StatefulWidget {
 
   /// Preselected when opened from inside a class.
   final String? initialClassroomId;
+
+  /// The section of [initialClassroomId] this lesson is for, when opened
+  /// from a section still waiting for its lesson. The lesson is filed for
+  /// it, so the section has its content once the lesson is published.
+  final LessonSession? section;
 
   /// The school the files are filed under. Without one there is nowhere to
   /// upload to, and the attach control is not offered.
@@ -50,6 +57,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   final _title = TextEditingController();
   final _notes = TextEditingController();
   String? _classroomId;
+
+  /// Dropped if the teacher picks another class: a section belongs to one.
+  LessonSession? _section;
   FileAudience _audience = FileAudience.both;
   bool _saving = false;
   String? _error;
@@ -67,6 +77,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     _classroomId =
         widget.initialClassroomId ??
         (widget.classes.length == 1 ? widget.classes.single.id : null);
+    _section = widget.initialClassroomId == null ? null : widget.section;
   }
 
   @override
@@ -113,6 +124,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           publish: true,
           attachmentFileIds: changes.attachFileIds,
           links: changes.addLinks,
+          lessonSessionId: _section?.id,
         ),
       );
       if (!mounted) return;
@@ -154,10 +166,26 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   : (value) => setState(() {
                       if (value == _classroomId) return;
                       _classroomId = value;
+                      _section = null;
                       _attachments = const AttachmentsEditorValue();
                       _attachmentsKey = UniqueKey();
                     }),
             ),
+            if (_section case final section?)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: InputChip(
+                  avatar: const Icon(Icons.event_note_rounded, size: 18),
+                  label: Text(
+                    l10n.lessonForSection(
+                      studafyDateTime(context, section.startsAt),
+                    ),
+                  ),
+                  onDeleted: _saving
+                      ? null
+                      : () => setState(() => _section = null),
+                ),
+              ),
             const SizedBox(height: 12),
             TextField(
               controller: _title,

@@ -242,6 +242,7 @@ class PreviewOnlineAssessments implements OnlineAssessmentRepository {
     String attemptId,
     List<AnswerMark> marks, {
     String? feedback,
+    String? correctionReason,
   }) async {
     for (final entry in _attempts.entries) {
       final index = entry.value.indexWhere((t) => t.id == attemptId);
@@ -277,8 +278,11 @@ class PreviewOnlineAssessments implements OnlineAssessmentRepository {
         awardedScore: pending
             ? null
             : answers.fold<double>(0, (sum, a) => sum + (a.awardedScore ?? 0)),
-        feedback: feedback ?? t.feedback,
+        feedback: feedback == null
+            ? t.feedback
+            : (feedback.trim().isEmpty ? null : feedback),
         answers: answers,
+        gradeState: t.gradeState,
       );
       entry.value[index] = updated;
       return updated;

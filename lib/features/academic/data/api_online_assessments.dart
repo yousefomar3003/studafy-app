@@ -219,6 +219,9 @@ class ApiOnlineAssessments implements OnlineAssessmentRepository {
           attemptNumber: a.attemptNumber,
           needsMarking: a.needsMarking,
           awardedScore: a.awardedScore?.toDouble(),
+          gradeState: a.gradeState,
+          pendingAnswers: a.pendingAnswers,
+          manualAnswers: a.manualAnswers,
         ),
     ];
   }
@@ -232,9 +235,10 @@ class ApiOnlineAssessments implements OnlineAssessmentRepository {
     String attemptId,
     List<AnswerMark> marks, {
     String? feedback,
+    String? correctionReason,
   }) => _run(
     'mark:$attemptId:${marks.map((m) => '${m.questionId}=${m.score}/'
-        '${m.feedback}').join('|')}:$feedback',
+        '${m.feedback}').join('|')}:$feedback:$correctionReason',
     (key) async => attemptFrom(
       await _client.markAssessmentAttempt(
         V1MarkAssessmentAttemptRequestDto(
@@ -246,7 +250,9 @@ class ApiOnlineAssessments implements OnlineAssessmentRepository {
                 feedback: mark.feedback,
               ),
           ],
+          // Null leaves the comment as it was; an empty one clears it.
           feedback: feedback,
+          correctionReason: correctionReason,
         ),
         attemptId: attemptId,
         idempotencyKey: key,
@@ -418,6 +424,9 @@ AttemptDetail attemptFrom(V1AssessmentAttemptDetailDto dto) => AttemptDetail(
   needsMarking: dto.needsMarking,
   awardedScore: dto.awardedScore?.toDouble(),
   feedback: dto.feedback,
+  studentName: dto.studentName,
+  gradeState: dto.gradeState,
+  gradeMark: dto.gradeMark,
   answers: [
     for (final a in dto.answers ?? const <V1AttemptAnswerDto>[])
       AttemptAnswer(

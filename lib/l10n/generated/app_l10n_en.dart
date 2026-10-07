@@ -2889,20 +2889,21 @@ class AppL10nEn extends AppL10n {
   String get accountExportFailed => 'That did not work. Please try again.';
 
   @override
-  String get todayWork => 'Work you have set';
+  String get todayWork => 'Work you have to set';
 
   @override
-  String get todayWorkEmpty => 'You have not set any work yet.';
+  String get todayWorkEmpty =>
+      'Nothing to set right now. Drafts, and work that is open or coming up, appear here.';
 
   @override
   String get todaySections => 'Sections needing content';
 
   @override
   String get todaySectionsEmpty =>
-      'Every section you have taught has its content filed.';
+      'Every section you have taught has a lesson your class can see.';
 
   @override
-  String get todaySectionsOutstanding => 'Content outstanding';
+  String get todaySectionsOutstanding => 'No lesson yet';
 
   @override
   String get todayTitle => 'Today';
@@ -6601,4 +6602,286 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get usageCostMore => 'uses more';
+
+  @override
+  String get markPublishTitle => 'Publish grades?';
+
+  @override
+  String get markPublishFailed =>
+      'Grades were not published. Check your connection and try again.';
+
+  @override
+  String markSummary(int toMark, int marked, int published) {
+    return '$toMark to mark · $marked ready to publish · $published published';
+  }
+
+  @override
+  String get markRefreshFailed =>
+      'The list could not be refreshed. Pull down to try again.';
+
+  @override
+  String get markStatusNotMarked => 'Submitted · not graded';
+
+  @override
+  String get markStatusPartly => 'Submitted · partly graded';
+
+  @override
+  String get markStatusMarked => 'Graded · not published';
+
+  @override
+  String get markStatusPublished => 'Published';
+
+  @override
+  String get markScoreNeededForComment =>
+      'Give a score with each comment, or clear the comment.';
+
+  @override
+  String get markNothingChanged => 'Nothing has changed since the last save.';
+
+  @override
+  String get markCorrected =>
+      'Correction saved. The student and their parents see the new mark.';
+
+  @override
+  String get markDraftSaved =>
+      'Saved as a draft. Students and parents can\'t see it until you publish the grades.';
+
+  @override
+  String get markUnsavedTitle => 'Leave without saving?';
+
+  @override
+  String get markUnsavedBody =>
+      'Marks and comments you have not saved will be lost.';
+
+  @override
+  String get markUnsavedKeep => 'Keep marking';
+
+  @override
+  String get markUnsavedDiscard => 'Discard changes';
+
+  @override
+  String get markStillToMark => 'Still being marked';
+
+  @override
+  String get markPublishedNotice =>
+      'Published: the student and their parents see this grade. A change is saved as a correction, with a reason.';
+
+  @override
+  String get markDraftNotice =>
+      'Not published yet: only the class\'s teachers can see these marks.';
+
+  @override
+  String markAutoScore(String score, String max) {
+    return 'Marked automatically: $score of $max';
+  }
+
+  @override
+  String get markOverallFeedbackHelp =>
+      'Shown with the grade once it is published.';
+
+  @override
+  String get markSaveCorrection => 'Save correction';
+
+  @override
+  String get markSaveDraft => 'Save draft';
+
+  @override
+  String get markCorrectionTitle => 'Correct a published grade';
+
+  @override
+  String get markCorrectionBody =>
+      'The student and their parents already see this grade. Say why it is changing; the reason is kept with the change.';
+
+  @override
+  String get markCorrectionReason => 'Reason for the change';
+
+  @override
+  String markOutOf(String max) {
+    return 'out of $max';
+  }
+
+  @override
+  String get markStudentAnswer => 'Student\'s answer';
+
+  @override
+  String get gradebookOnlineHint =>
+      'This work is answered in the app. Mark it from each student\'s answers.';
+
+  @override
+  String get gradebookOpenAnswers => 'Open submissions';
+
+  @override
+  String get todayWorkDraft => 'Draft · not set yet';
+
+  @override
+  String todayWorkExamOn(String date) {
+    return 'Exam on $date';
+  }
+
+  @override
+  String todayWorkOpens(String date) {
+    return 'Opens $date';
+  }
+
+  @override
+  String get todayWorkScheduled => 'Scheduled';
+
+  @override
+  String todayWorkDue(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String todayWorkCloses(String date) {
+    return 'Closes $date';
+  }
+
+  @override
+  String get todayWorkOpen => 'Open';
+
+  @override
+  String get todayWorkKindAssignment => 'Assignment';
+
+  @override
+  String get todayWorkKindOnlineExam => 'Online exam';
+
+  @override
+  String get todayWorkKindPaperExam => 'Paper exam';
+
+  @override
+  String get todayWorkFinish => 'Publish';
+
+  @override
+  String get todayWorkUnknown =>
+      'Some classes could not be loaded, so work may be missing here.';
+
+  @override
+  String get todayPartlyLoaded => 'Some classes could not be loaded.';
+
+  @override
+  String get todaySectionsUnknown =>
+      'Some classes could not be loaded, so sections may be missing here.';
+
+  @override
+  String get todaySectionDraft => 'Lesson in draft · not visible to students';
+
+  @override
+  String get todaySectionPublish => 'Publish';
+
+  @override
+  String get todaySectionAdd => 'Add lesson';
+
+  @override
+  String todayMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'and $count more',
+      one: 'and 1 more',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lessonForSection(String when) {
+    return 'For the lesson on $when';
+  }
+
+  @override
+  String get markFixHighlighted =>
+      'Fix the highlighted marks, then save again.';
+
+  @override
+  String get sectionsPublished => 'Lesson published';
+
+  @override
+  String get scheduleLoadFailed =>
+      'The timetable could not be loaded. Try again.';
+
+  @override
+  String get markSavedPublished =>
+      'Saved. Nothing about the published grade needed a correction.';
+
+  @override
+  String get markCorrectionCancelled =>
+      'Not saved. A change to a published mark needs a reason; your marks are still here.';
+
+  @override
+  String get markPublishedAbsentNotice =>
+      'Published as absent, but this student handed work in afterwards. Save to replace the absence with this mark; you will be asked why.';
+
+  @override
+  String get markReplaceAbsence => 'Replace the absence';
+
+  @override
+  String get markSaveChanges => 'Save changes';
+
+  @override
+  String get markAbsenceCorrected =>
+      'Correction saved. The student and their parents see the change.';
+
+  @override
+  String get markAbsenceRemoved => 'Absence removed.';
+
+  @override
+  String get markAbsenceSaved =>
+      'Marked absent. Nobody sees it until you publish the grades.';
+
+  @override
+  String get markAbsenceRefused =>
+      'This student has handed work in, so they can\'t be marked absent.';
+
+  @override
+  String get markAbsenceFailed =>
+      'That wasn\'t saved. Check your connection and try again.';
+
+  @override
+  String get markNotSubmittedSection => 'Not submitted';
+
+  @override
+  String get markNotSubmittedHint =>
+      'Tap a student to mark them absent. An absence is never counted as zero.';
+
+  @override
+  String markRosterSummary(int notSubmitted, int absent) {
+    return '$notSubmitted not submitted · $absent absent';
+  }
+
+  @override
+  String get markStatusNotSubmitted => 'Not submitted';
+
+  @override
+  String get markStatusAbsent => 'Absent';
+
+  @override
+  String get markStatusAbsentPublished => 'Absent · published';
+
+  @override
+  String get markStatusNotGradedPublished => 'Not graded · published';
+
+  @override
+  String get markAbsenceBody =>
+      'Record that this student was absent. It stays private until you publish the grades, and it is not a zero.';
+
+  @override
+  String get markAbsencePublishedBody =>
+      'This absence is published. Changing it is a correction: say why, and it is kept with the change.';
+
+  @override
+  String get markAbsenceExcused => 'Not graded (excused)';
+
+  @override
+  String get markAbsenceNotes => 'Notes (optional)';
+
+  @override
+  String get markAbsenceRemove => 'Remove absence';
+
+  @override
+  String get markAbsenceSaveNotes => 'Save notes';
+
+  @override
+  String get markAbsenceMark => 'Mark absent';
+
+  @override
+  String get takeChildAttempts => 'Attempts';
 }

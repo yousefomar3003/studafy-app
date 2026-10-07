@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
+import 'package:studafy/features/academic/presentation/assessment_marking_page.dart';
 import 'package:studafy/features/academic/presentation/gradebook_home_page.dart';
+import 'package:studafy/features/academic/presentation/paper_gradebook_page.dart';
 
 import '../../support/localized_app.dart';
 
@@ -31,6 +35,23 @@ void main() {
     await tester.pumpAndSettle();
     return academic;
   }
+
+  testWidgets('online work opens its submissions; paper work its grade '
+      'sheet', (tester) async {
+    await open(tester);
+    await tester.tap(find.text('Quiz 1'));
+    await tester.pumpAndSettle();
+    // Where each student's answers are read and marked - not a list of
+    // bare score boxes.
+    expect(find.byType(AssessmentMarkingPage), findsOneWidget);
+    expect(find.text('No one has submitted yet.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Midterm (paper)'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(PaperGradebookPage), findsOneWidget);
+  });
 
   testWidgets('marks are grouped paper and online, draft or published', (
     tester,
@@ -65,6 +86,33 @@ void main() {
 }
 
 class _Academic implements AcademicRepository {
+  @override
+  Future<List<AttemptDetail>> attempts(String assessmentId) async => const [];
+
+  /// Online work's roster is empty here; the paper sheet stays loading, as
+  /// only its opening is under test.
+  @override
+  Future<PaperGradebook> paperGradebook(String assessmentId) =>
+      assessmentId == 'assessment-paper'
+      ? Completer<PaperGradebook>().future
+      : Future.value(
+          const PaperGradebook(
+            item: PaperGradebookItem(
+              id: 'assessment-online',
+              title: 'Quiz 1',
+              category: 'quiz',
+              maximumScore: 10,
+              state: 'published',
+              version: 2,
+              gradebookVersion: 1,
+              unmarked: 0,
+              ready: 0,
+              published: 0,
+            ),
+            rows: [],
+          ),
+        );
+
   final loads = <(AcademicFeed, String?)>[];
 
   @override

@@ -5007,13 +5007,13 @@ abstract class AppL10n {
   /// No description provided for @todayWork.
   ///
   /// In en, this message translates to:
-  /// **'Work you have set'**
+  /// **'Work you have to set'**
   String get todayWork;
 
   /// No description provided for @todayWorkEmpty.
   ///
   /// In en, this message translates to:
-  /// **'You have not set any work yet.'**
+  /// **'Nothing to set right now. Drafts, and work that is open or coming up, appear here.'**
   String get todayWorkEmpty;
 
   /// No description provided for @todaySections.
@@ -5025,13 +5025,13 @@ abstract class AppL10n {
   /// No description provided for @todaySectionsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Every section you have taught has its content filed.'**
+  /// **'Every section you have taught has a lesson your class can see.'**
   String get todaySectionsEmpty;
 
   /// No description provided for @todaySectionsOutstanding.
   ///
   /// In en, this message translates to:
-  /// **'Content outstanding'**
+  /// **'No lesson yet'**
   String get todaySectionsOutstanding;
 
   /// No description provided for @todayTitle.
@@ -11321,6 +11321,468 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'uses more'**
   String get usageCostMore;
+
+  /// No description provided for @markPublishTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish grades?'**
+  String get markPublishTitle;
+
+  /// No description provided for @markPublishFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades were not published. Check your connection and try again.'**
+  String get markPublishFailed;
+
+  /// No description provided for @markSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{toMark} to mark · {marked} ready to publish · {published} published'**
+  String markSummary(int toMark, int marked, int published);
+
+  /// No description provided for @markRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The list could not be refreshed. Pull down to try again.'**
+  String get markRefreshFailed;
+
+  /// No description provided for @markStatusNotMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted · not graded'**
+  String get markStatusNotMarked;
+
+  /// No description provided for @markStatusPartly.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted · partly graded'**
+  String get markStatusPartly;
+
+  /// No description provided for @markStatusMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded · not published'**
+  String get markStatusMarked;
+
+  /// No description provided for @markStatusPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get markStatusPublished;
+
+  /// No description provided for @markScoreNeededForComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Give a score with each comment, or clear the comment.'**
+  String get markScoreNeededForComment;
+
+  /// No description provided for @markNothingChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has changed since the last save.'**
+  String get markNothingChanged;
+
+  /// No description provided for @markCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction saved. The student and their parents see the new mark.'**
+  String get markCorrected;
+
+  /// No description provided for @markDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as a draft. Students and parents can\'t see it until you publish the grades.'**
+  String get markDraftSaved;
+
+  /// No description provided for @markUnsavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave without saving?'**
+  String get markUnsavedTitle;
+
+  /// No description provided for @markUnsavedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks and comments you have not saved will be lost.'**
+  String get markUnsavedBody;
+
+  /// No description provided for @markUnsavedKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep marking'**
+  String get markUnsavedKeep;
+
+  /// No description provided for @markUnsavedDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get markUnsavedDiscard;
+
+  /// No description provided for @markStillToMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Still being marked'**
+  String get markStillToMark;
+
+  /// No description provided for @markPublishedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Published: the student and their parents see this grade. A change is saved as a correction, with a reason.'**
+  String get markPublishedNotice;
+
+  /// No description provided for @markDraftNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Not published yet: only the class\'s teachers can see these marks.'**
+  String get markDraftNotice;
+
+  /// No description provided for @markAutoScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked automatically: {score} of {max}'**
+  String markAutoScore(String score, String max);
+
+  /// No description provided for @markOverallFeedbackHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown with the grade once it is published.'**
+  String get markOverallFeedbackHelp;
+
+  /// No description provided for @markSaveCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Save correction'**
+  String get markSaveCorrection;
+
+  /// No description provided for @markSaveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save draft'**
+  String get markSaveDraft;
+
+  /// No description provided for @markCorrectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct a published grade'**
+  String get markCorrectionTitle;
+
+  /// No description provided for @markCorrectionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The student and their parents already see this grade. Say why it is changing; the reason is kept with the change.'**
+  String get markCorrectionBody;
+
+  /// No description provided for @markCorrectionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for the change'**
+  String get markCorrectionReason;
+
+  /// No description provided for @markOutOf.
+  ///
+  /// In en, this message translates to:
+  /// **'out of {max}'**
+  String markOutOf(String max);
+
+  /// No description provided for @markStudentAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Student\'s answer'**
+  String get markStudentAnswer;
+
+  /// No description provided for @gradebookOnlineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This work is answered in the app. Mark it from each student\'s answers.'**
+  String get gradebookOnlineHint;
+
+  /// No description provided for @gradebookOpenAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Open submissions'**
+  String get gradebookOpenAnswers;
+
+  /// No description provided for @todayWorkDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft · not set yet'**
+  String get todayWorkDraft;
+
+  /// No description provided for @todayWorkExamOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam on {date}'**
+  String todayWorkExamOn(String date);
+
+  /// No description provided for @todayWorkOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens {date}'**
+  String todayWorkOpens(String date);
+
+  /// No description provided for @todayWorkScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get todayWorkScheduled;
+
+  /// No description provided for @todayWorkDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String todayWorkDue(String date);
+
+  /// No description provided for @todayWorkCloses.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes {date}'**
+  String todayWorkCloses(String date);
+
+  /// No description provided for @todayWorkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get todayWorkOpen;
+
+  /// No description provided for @todayWorkKindAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment'**
+  String get todayWorkKindAssignment;
+
+  /// No description provided for @todayWorkKindOnlineExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Online exam'**
+  String get todayWorkKindOnlineExam;
+
+  /// No description provided for @todayWorkKindPaperExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Paper exam'**
+  String get todayWorkKindPaperExam;
+
+  /// No description provided for @todayWorkFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get todayWorkFinish;
+
+  /// No description provided for @todayWorkUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Some classes could not be loaded, so work may be missing here.'**
+  String get todayWorkUnknown;
+
+  /// No description provided for @todayPartlyLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Some classes could not be loaded.'**
+  String get todayPartlyLoaded;
+
+  /// No description provided for @todaySectionsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Some classes could not be loaded, so sections may be missing here.'**
+  String get todaySectionsUnknown;
+
+  /// No description provided for @todaySectionDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson in draft · not visible to students'**
+  String get todaySectionDraft;
+
+  /// No description provided for @todaySectionPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get todaySectionPublish;
+
+  /// No description provided for @todaySectionAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add lesson'**
+  String get todaySectionAdd;
+
+  /// No description provided for @todayMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{and 1 more} other{and {count} more}}'**
+  String todayMore(int count);
+
+  /// No description provided for @lessonForSection.
+  ///
+  /// In en, this message translates to:
+  /// **'For the lesson on {when}'**
+  String lessonForSection(String when);
+
+  /// No description provided for @markFixHighlighted.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix the highlighted marks, then save again.'**
+  String get markFixHighlighted;
+
+  /// No description provided for @sectionsPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson published'**
+  String get sectionsPublished;
+
+  /// No description provided for @scheduleLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The timetable could not be loaded. Try again.'**
+  String get scheduleLoadFailed;
+
+  /// No description provided for @markSavedPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. Nothing about the published grade needed a correction.'**
+  String get markSavedPublished;
+
+  /// No description provided for @markCorrectionCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved. A change to a published mark needs a reason; your marks are still here.'**
+  String get markCorrectionCancelled;
+
+  /// No description provided for @markPublishedAbsentNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Published as absent, but this student handed work in afterwards. Save to replace the absence with this mark; you will be asked why.'**
+  String get markPublishedAbsentNotice;
+
+  /// No description provided for @markReplaceAbsence.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace the absence'**
+  String get markReplaceAbsence;
+
+  /// No description provided for @markSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get markSaveChanges;
+
+  /// No description provided for @markAbsenceCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction saved. The student and their parents see the change.'**
+  String get markAbsenceCorrected;
+
+  /// No description provided for @markAbsenceRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence removed.'**
+  String get markAbsenceRemoved;
+
+  /// No description provided for @markAbsenceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked absent. Nobody sees it until you publish the grades.'**
+  String get markAbsenceSaved;
+
+  /// No description provided for @markAbsenceRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'This student has handed work in, so they can\'t be marked absent.'**
+  String get markAbsenceRefused;
+
+  /// No description provided for @markAbsenceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That wasn\'t saved. Check your connection and try again.'**
+  String get markAbsenceFailed;
+
+  /// No description provided for @markNotSubmittedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Not submitted'**
+  String get markNotSubmittedSection;
+
+  /// No description provided for @markNotSubmittedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a student to mark them absent. An absence is never counted as zero.'**
+  String get markNotSubmittedHint;
+
+  /// No description provided for @markRosterSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{notSubmitted} not submitted · {absent} absent'**
+  String markRosterSummary(int notSubmitted, int absent);
+
+  /// No description provided for @markStatusNotSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not submitted'**
+  String get markStatusNotSubmitted;
+
+  /// No description provided for @markStatusAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent'**
+  String get markStatusAbsent;
+
+  /// No description provided for @markStatusAbsentPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent · published'**
+  String get markStatusAbsentPublished;
+
+  /// No description provided for @markStatusNotGradedPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Not graded · published'**
+  String get markStatusNotGradedPublished;
+
+  /// No description provided for @markAbsenceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Record that this student was absent. It stays private until you publish the grades, and it is not a zero.'**
+  String get markAbsenceBody;
+
+  /// No description provided for @markAbsencePublishedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This absence is published. Changing it is a correction: say why, and it is kept with the change.'**
+  String get markAbsencePublishedBody;
+
+  /// No description provided for @markAbsenceExcused.
+  ///
+  /// In en, this message translates to:
+  /// **'Not graded (excused)'**
+  String get markAbsenceExcused;
+
+  /// No description provided for @markAbsenceNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (optional)'**
+  String get markAbsenceNotes;
+
+  /// No description provided for @markAbsenceRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove absence'**
+  String get markAbsenceRemove;
+
+  /// No description provided for @markAbsenceSaveNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save notes'**
+  String get markAbsenceSaveNotes;
+
+  /// No description provided for @markAbsenceMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark absent'**
+  String get markAbsenceMark;
+
+  /// No description provided for @takeChildAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts'**
+  String get takeChildAttempts;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

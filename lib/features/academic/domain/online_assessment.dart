@@ -279,6 +279,29 @@ class AttemptAnswer {
   bool get awaitingMark => awardedScore == null;
 }
 
+/// Where a submission stands for the teacher marking it.
+enum MarkingStatus {
+  /// Written answers wait for a person and none is marked yet.
+  notMarked,
+
+  /// Some written answers are marked, others still wait.
+  partlyMarked,
+
+  /// Every answer has a mark; the grade is a draft nobody else can see.
+  marked,
+
+  /// The grade is published to the student and their parents.
+  published,
+
+  /// The rest are for a student with nothing handed in: nothing recorded
+  /// yet; recorded absent, privately; published as absent; or, corrected
+  /// after publication, not graded. Absence is never a score.
+  notSubmitted,
+  absent,
+  absentPublished,
+  notGradedPublished,
+}
+
 /// An attempt. [answers] is empty for a student or parent until released.
 @immutable
 class AttemptDetail {
@@ -292,6 +315,10 @@ class AttemptDetail {
     this.awardedScore,
     this.feedback,
     this.answers = const [],
+    this.gradeState,
+    this.gradeMark,
+    this.pendingAnswers,
+    this.manualAnswers,
   });
 
   final String id;
@@ -303,6 +330,38 @@ class AttemptDetail {
   final double? awardedScore;
   final String? feedback;
   final List<AttemptAnswer> answers;
+
+  /// For the class's teachers: the student's grade - 'draft', 'reviewed',
+  /// 'published' or 'withdrawn' - or null before there is one.
+  final String? gradeState;
+
+  /// For the class's teachers: how the grade is marked - 'scored', 'absent'
+  /// or 'not_graded' - or null while unmarked.
+  final String? gradeMark;
+
+  /// For the class's teachers, in the marking list: answers still waiting
+  /// for a person, and how many need a person at all.
+  final int? pendingAnswers;
+  final int? manualAnswers;
+
+  bool get published => gradeState == 'published';
+
+  /// Published as absent, though this attempt was handed in afterwards:
+  /// the teacher replaces the absence, as a correction, from here.
+  bool get publishedAbsent => published && gradeMark == 'absent';
+
+  MarkingStatus get markingStatus {
+    if (published) return MarkingStatus.published;
+    if (!(needsMarking ?? false)) return MarkingStatus.marked;
+    final pending =
+        pendingAnswers ?? answers.where((answer) => answer.awaitingMark).length;
+    final manual =
+        manualAnswers ??
+        answers.where((answer) => answer.autoScore == null).length;
+    return pending < manual
+        ? MarkingStatus.partlyMarked
+        : MarkingStatus.notMarked;
+  }
 }
 
 /// A published grade with the teacher's feedback and attachments.
@@ -428,10 +487,16 @@ abstract interface class OnlineAssessmentRepository {
   /// Every attempt, for the class's staff.
   Future<List<AttemptDetail>> attempts(String assessmentId);
   Future<AttemptDetail> attempt(String attemptId);
+
+  /// Saves marks and feedback. While the grade is unpublished they are a
+  /// draft only the class's teachers see. Once it is published, a change is
+  /// a correction and needs [correctionReason]; without one the server
+  /// refuses it ([CourseworkProblem.reasonRequired]) and changes nothing.
   Future<AttemptDetail> markAttempt(
     String attemptId,
     List<AnswerMark> marks, {
     String? feedback,
+    String? correctionReason,
   });
 
   /// More time ([closesAt]) or attempts for one student.

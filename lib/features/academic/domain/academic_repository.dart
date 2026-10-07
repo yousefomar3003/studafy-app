@@ -40,6 +40,9 @@ class AcademicRecord {
     this.assessmentId,
     this.resourceType,
     this.online,
+    this.dueAt,
+    this.closesAt,
+    this.scheduledAt,
   });
 
   /// A separate instance with the same values - so the same assignment,
@@ -69,12 +72,22 @@ class AcademicRecord {
     assessmentId: assessmentId,
     resourceType: resourceType,
     online: online,
+    dueAt: dueAt,
+    closesAt: closesAt,
+    scheduledAt: scheduledAt,
   );
   final String id;
   final String title;
   final String detail;
   final String state;
   final int version;
+
+  /// Assignments: when the work is due, and when hand-ins close if later.
+  final DateTime? dueAt;
+  final DateTime? closesAt;
+
+  /// Assessments: the date the work is set for, such as a paper exam's day.
+  final DateTime? scheduledAt;
 
   /// Set on graded assignments: what the work is marked out of.
   final double? maximumScore;
@@ -442,6 +455,25 @@ class SubmissionAttempt {
   final List<StoredAttachment> attachments;
 }
 
+/// Whether a lesson the class can see is filed for a section.
+enum SectionContent {
+  /// No lesson is filed for it.
+  none,
+
+  /// Only drafts are filed, which the class cannot see. Told to the class's
+  /// teachers alone.
+  draft,
+
+  /// A lesson the class can see is filed for it.
+  published;
+
+  static SectionContent parse(String? value) => switch (value) {
+    'published' => SectionContent.published,
+    'draft' => SectionContent.draft,
+    _ => SectionContent.none,
+  };
+}
+
 /// One meeting of a class that has taken place.
 @immutable
 class LessonSession {
@@ -451,16 +483,24 @@ class LessonSession {
     required this.endsAt,
     required this.filed,
     this.title,
+    this.content = SectionContent.none,
   });
 
   final String id;
   final DateTime startsAt;
   final DateTime endsAt;
 
-  /// Whether the content taught in it has been filed. An unfiled section is
-  /// the one the school wants chased.
+  /// Whether the section was closed. Closing is a separate step, and says
+  /// nothing about whether the class can see a lesson for it; [content]
+  /// does.
   final bool filed;
   final String? title;
+  final SectionContent content;
+
+  /// Taught, and the class still has no lesson for it: what the school
+  /// wants chased. A draft does not count.
+  bool get needsContent =>
+      content != SectionContent.published && !startsAt.isAfter(DateTime.now());
 }
 
 /// One student's mark for one assessment.

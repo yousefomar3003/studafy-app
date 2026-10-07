@@ -105,7 +105,7 @@ class _AssessmentPageState extends State<AssessmentPage> {
                       )
                     : const CircularProgressIndicator(),
               )
-            : RefreshIndicator(
+            : StudafyRefreshIndicator(
                 onRefresh: _load,
                 child: ListView(
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 32),
@@ -167,7 +167,7 @@ class _AssessmentPageState extends State<AssessmentPage> {
         ),
       ),
       if (r.attempts.isNotEmpty) ...[
-        SectionHeader(l10n.takeYourAttempts),
+        SectionHeader(parent ? l10n.takeChildAttempts : l10n.takeYourAttempts),
         for (final attempt in r.attempts)
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -200,12 +200,16 @@ class _AssessmentPageState extends State<AssessmentPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            grade.score == null
-                ? l10n.takeGradePending
-                : l10n.takeScore(
-                    _number(grade.score!),
-                    _number(grade.maximumScore),
-                  ),
+            // An absence is said as one, never as a zero or as "pending".
+            switch (grade.mark) {
+              'absent' => l10n.paperGradesAbsent,
+              'not_graded' => l10n.paperGradesNotGraded,
+              _ when grade.score == null => l10n.takeGradePending,
+              _ => l10n.takeScore(
+                _number(grade.score!),
+                _number(grade.maximumScore),
+              ),
+            },
             style: theme.textTheme.headlineSmall,
           ),
           if ((grade.feedback ?? '').trim().isNotEmpty) ...[
@@ -261,10 +265,22 @@ class _AssessmentPageState extends State<AssessmentPage> {
 /// One answer beside the correct one, with its mark and the teacher's
 /// comment. Shared by the student's review and the teacher's marking.
 class AnswerReview extends StatelessWidget {
-  const AnswerReview({super.key, required this.answer, this.showKey = true});
+  const AnswerReview({
+    super.key,
+    required this.answer,
+    this.showKey = true,
+    this.teacherView = false,
+    this.showMark = true,
+  });
 
   final AttemptAnswer answer;
   final bool showKey;
+
+  /// Marking: the answer is the student's, not the reader's.
+  final bool teacherView;
+
+  /// Off where the page shows the mark in a field of its own.
+  final bool showMark;
 
   static String _number(double value) =>
       value == value.roundToDouble() ? value.toInt().toString() : '$value';
@@ -325,23 +341,44 @@ class AnswerReview extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text(q.prompt, style: theme.textTheme.titleSmall)),
-            Text(
-              awarded == null
-                  ? l10n.takeBeingMarked
-                  : l10n.takeScore(_number(awarded), _number(q.maximumScore)),
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: awarded == null
-                    ? studafyMuted
-                    : awarded >= q.maximumScore
-                    ? studafyTeal
-                    : studafyInk,
+            Expanded(
+              child: UserContentText(
+                q.prompt,
+                style: theme.textTheme.titleSmall,
               ),
             ),
+            if (showMark)
+              Text(
+                awarded == null
+                    ? l10n.takeBeingMarked
+                    : l10n.takeScore(_number(awarded), _number(q.maximumScore)),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: awarded == null
+                      ? studafyMuted
+                      : awarded >= q.maximumScore
+                      ? studafyTeal
+                      : studafyInk,
+                ),
+              )
+            else
+              Text(
+                l10n.markOutOf(_number(q.maximumScore)),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: studafyMuted,
+                ),
+              ),
           ],
         ),
+        AttachmentsView(
+          attachments: q.attachments,
+          links: q.links,
+          dense: true,
+        ),
         const SizedBox(height: 6),
-        Text(l10n.takeYourAnswer, style: theme.textTheme.labelSmall),
+        Text(
+          teacherView ? l10n.markStudentAnswer : l10n.takeYourAnswer,
+          style: theme.textTheme.labelSmall,
+        ),
         given == null
             ? Text(
                 l10n.takeNoAnswer,

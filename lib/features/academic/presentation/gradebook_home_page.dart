@@ -6,6 +6,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'assessment_marking_page.dart';
 import 'coursework_messages.dart';
 import 'gradebook_item_dialog.dart';
 import 'gradebook_page.dart';
@@ -118,27 +119,26 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
     }
   }
 
-  /// Paper work recorded after the fact is marked on its own grade sheet.
-  static bool _isPaperSheet(AcademicRecord item) =>
-      item.delivery == 'paper' && item.markedAssignmentId == null;
-
+  /// Work answered in the app is marked from what each student answered;
+  /// work done on paper - a paper exam, or the mark for an assignment - on
+  /// the class's grade sheet, with drafts, publishing and corrections.
   Future<void> _open(AcademicRecord item) async {
     final selected = _selected;
     if (selected == null) return;
     await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
-        builder: (_) => _isPaperSheet(item)
+        builder: (_) => item.delivery == 'paper'
             ? PaperGradebookPage(
                 repository: widget.repository,
                 assessmentId: item.id,
                 attachments: widget.repository,
                 classroomId: selected.id,
               )
-            : ClassGradebookPage(
+            : AssessmentMarkingPage(
                 repository: widget.repository,
+                assessmentId: item.id,
+                title: item.title,
                 classroomId: selected.id,
-                classroomName: selected.name,
-                initialAssessmentId: item.id,
               ),
       ),
     );
