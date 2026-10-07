@@ -26,8 +26,9 @@ This section supersedes the study-AI sections below wherever they conflict.
     access it.
   - Before the next deploy, the owner should decide whether that database
     is still a test target.
-- **Phone build.** An iOS release build was made (see the commit report),
-  but not installed or distributed. It points at the hosted test API from
+- **Phone build.** An iOS profile build (signed, team `DX87P72856`) is at
+  `build/ios/iphoneos/Runner.app` (45.6 MB, built 2026-10-08). It was not
+  installed or distributed. It points at the hosted test API from
   `config/dart-defines.device.json`, which does not yet have `0005` and
   `0006`.
 
