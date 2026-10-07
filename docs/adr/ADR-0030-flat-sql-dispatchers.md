@@ -99,3 +99,19 @@ dispatcher:
   surface pinned by `auth030_grants.sql` is unchanged.
 - The names of the old generations are gone. The Family+ test that proved the
   ungated query was not callable now proves it does not exist.
+
+## Addendum (2026-10-08): wraps already applied
+
+`202610060001` and `202610070001` broke the rule, and both are applied to the
+hosted database, so they cannot be edited. `202610070005` unwinds them:
+
+- the exclusive layer around `authz_authorize` is flattened, with zero
+  differences across 314,976 recorded decisions;
+- the four middleware layers' inner functions are renamed for what they do.
+
+The gate now reports a wrap after `202609280001` unless a later migration
+renames that history-named function to a non-history name, or drops it
+(`scripts/migration-wraps.ts`, with tests). The schema the migrations build
+still holds no new `_pre_` layer. Without the unwinding migration the gate
+reports all five.
+

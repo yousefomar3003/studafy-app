@@ -133,6 +133,15 @@ export async function removeFixtures(
 
     if (deleted.length > 0) {
       await tx`delete from public.audit_events where entity_id = any(${deleted}::uuid[])`;
+      // Quizzes, flashcards and notes kept by the material they were made
+      // from (ADR-0039) carry no school: they go with their lessons, or a
+      // rerun on the same database is served the last run's copy.
+      const [outputs] = await tx<{ present: boolean }[]>`
+        select to_regclass('private.material_outputs') is not null as present`;
+      if (outputs?.present) {
+        await tx`delete from private.material_outputs
+          where resource_ids && ${deleted}::uuid[]`;
+      }
     }
     if (requests.length > 0) {
       await tx`delete from public.audit_events where request_id = any(${requests})`;

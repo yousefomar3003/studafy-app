@@ -9,6 +9,7 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import { extractImports } from "./import-scan";
 
 const rootArg = process.argv.find((arg) => arg.startsWith("--root"));
 const root = resolve(
@@ -108,24 +109,6 @@ function listSourceFiles(dir: string): string[] {
   return entries
     .map((entry) => join(srcDir, String(entry)))
     .filter((path) => path.endsWith(".ts") && statSync(path).isFile());
-}
-
-const IMPORT_PATTERNS: RegExp[] = [
-  /\bimport\s[^;]*?\bfrom\s*["']([^"']+)["']/g,
-  /\bimport\s*["']([^"']+)["']/g,
-  /\bexport\s[^;]*?\bfrom\s*["']([^"']+)["']/g,
-  /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
-];
-
-function extractImports(source: string): string[] {
-  const specifiers = new Set<string>();
-  for (const pattern of IMPORT_PATTERNS) {
-    for (const match of source.matchAll(pattern)) {
-      const specifier = match[1];
-      if (specifier) specifiers.add(specifier);
-    }
-  }
-  return [...specifiers];
 }
 
 function packageName(specifier: string): string | null {

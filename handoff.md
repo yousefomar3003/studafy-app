@@ -2,6 +2,160 @@
 
 Date: 2026-10-07. Branch: `feat/mvp-school-operations-and-hosted-testing` (not merged to `main`).
 
+## Latest (2026-10-08): exam marking, absence, Today lists, checks (ADR-0040)
+
+This section supersedes the study-AI sections below wherever they conflict.
+
+### Status
+
+- **Committed** on this branch; see the git log. Not pushed.
+- **Not deployed.**
+  - The Frankfurt test database has migrations up to `202610070004` only.
+  - `202610070005` (unwound wraps) and `202610070006` (absence and
+    feedback-only edits) are **not** applied there.
+  - The deployed `studafy-api-test` predates them. Until both migrations
+    and an API deploy go out, the hosted test copy:
+    - refuses absences for online work;
+    - asks for a reason on feedback-only edits.
+- **The hosted database is the planned production database.**
+  - ADR-0035 says production depends on "the Frankfurt database". The one
+    hosted Supabase project, `cyrngoqnhqflzovlybbr`, serves the test copy
+    now.
+  - The production app `studafy-api` is suspended, not removed.
+  - Auto mode blocks reading it as a production read. This session did not
+    access it.
+  - Before the next deploy, the owner should decide whether that database
+    is still a test target.
+- **Phone build.** An iOS release build was made (see the commit report),
+  but not installed or distributed. It points at the hosted test API from
+  `config/dart-defines.device.json`, which does not yet have `0005` and
+  `0006`.
+
+### What works now
+
+**Exam marking**
+- Every online exam opens its submissions from the Teaching, class and
+  Gradebook lists.
+- The submissions list shows the whole class:
+  - submitted (not graded, or partly graded);
+  - graded (a private draft);
+  - published;
+  - not submitted, absent, absent (published), and not graded (published).
+- Each student's answers are shown question by question, with the key, the
+  automatic mark, the score and comment fields, and the feedback.
+- Marks save as a private draft. Publishing asks first and never notifies
+  twice.
+
+**Corrections**
+- After publication, only a change to the **mark or score** needs a reason.
+- The app sends the save and asks for a reason only if the server refuses
+  without one.
+- Feedback-only edits are applied, kept in the grade history (non-material,
+  no reason), and not announced. Answer comments never touch the grade.
+- An unchanged save sends nothing.
+
+**Absence**
+- A teacher marks a non-submitter absent, with optional notes. It is never
+  a score, and it stays private until published.
+- Published, it shows as "Missed the exam" to the student and their
+  parents.
+- A draft absence can be removed. A published one is corrected with a
+  reason, for example to "Not graded (excused)".
+- If the student hands in after an absence:
+  - an unpublished absence is replaced, and that is recorded;
+  - a published absence stands until the teacher replaces it, with a
+    reason, from the attempt.
+
+**Refresh**
+- Pull-to-refresh on the results and submissions pages now asks the server
+  again. It used to reuse a copy up to 20 seconds old.
+
+**Today lists**
+- These are as in ADR-0040 (2026-10-07 entries).
+
+**Checks**
+- `check:migrations` passes. Forward migration `202610070005` unwinds the
+  five wraps:
+  - `authz_authorize` is flattened, with 0 differences across 314,976
+    recorded decisions;
+  - four inner functions are renamed for what they do.
+- The gate accepts a wrap only once a later migration unwinds it; see the
+  ADR-0030 addendum and `scripts/migration-wraps.ts`.
+- `check:bounds` passes. The import scan now reads tokens
+  (`scripts/import-scan.ts`) and finds the same 747 real imports in 185
+  files; the old one read "from" inside comments and strings.
+- The fixture teardown now removes cached study outputs
+  (`private.material_outputs`). Before, the material-selection suite failed
+  on any second run against the same database.
+
+### Evidence (2026-10-08)
+
+**Local checks** (throwaway Supabase stack, reset)
+- 56 of 56 pgTAP suites, in CI order;
+- 987 backend, scripts and ops tests pass, 1 skipped;
+- 762 Flutter tests;
+- analyze, lint, format, typecheck, generated code, bounds, the migration
+  gate and `db lint` are clean.
+
+**Device run** (iPhone 18 Pro simulator, iOS 27)
+- `integration_test/exam_workflow_device_test.dart`, driven by
+  `flutter drive`, passed. This is an automated run, not a person's
+  hands-on test.
+- It used the real screens, repositories and HTTP transport against a
+  local API on the throwaway database, with synthetic accounts:
+  - `dev.teacher`, `dev.student` and `dev.parent` at
+    `synthetic.studafy.test`;
+  - "Dev Absentee", a student with no account.
+- It covered:
+  - building and publishing an exam;
+  - the student answering and submitting;
+  - the teacher seeing both students and an out-of-range score refused;
+  - a draft save sent once despite a double tap, and kept private;
+  - marking the absentee absent, then publishing;
+  - the student (after a pull to refresh) and the parent (read-only) seeing
+    3 of 4 and the feedback;
+  - a feedback edit with no prompt;
+  - a mark correction with a reason;
+  - correcting the absence to not graded;
+  - everything still in place after reopening.
+- The run needs `E2E_API_URL`, `E2E_SUPABASE_URL`, `E2E_ANON_KEY` and
+  `E2E_PASSWORD`.
+
+**AI and messaging, real model** (local API, Together `Qwen/Qwen3.5-9B`,
+synthetic lesson)
+- A quiz is refused on the free plan.
+- On Max:
+  - quiz: 6 questions in 7.9 s, and the same selection returns the kept
+    quiz;
+  - flashcards: 8 cards;
+  - a summary saved to the class notebook;
+  - a helper answer grounded in the chosen lesson;
+  - a background notebook reaching `ready`.
+- A lesson the student cannot see is refused (404).
+- Usage moves and the app's plan carries no token counts.
+- An exhausted allowance is refused (`AI_ALLOWANCE_USED`).
+- Messaging, once the school's switch is on: the teacher starts a
+  conversation, the parent reads and replies.
+
+### Blockers and findings
+
+- **No hands-on testing.** No person tapped through the app. No
+  non-intrusive input tool is installed (idb, XCUITest runner), and
+  scripting the Mac's mouse would take over the owner's desktop.
+- **Payments:** no App Store or Google Play sandbox credentials on this
+  machine.
+- **Push:** no FCM or APNs credentials, so no real push delivery was
+  tested.
+- **Hosted:** no reads or writes this session (see Status).
+- **Quiz timeouts.** `fly.api.toml` (production) does not set
+  `API_REQUEST_TIMEOUT_MS`. The default of 10 s leaves the model 8.5 s, and
+  quizzes take 6–9 s, so they would time out there. `fly.test.api.toml`
+  sets 20 s.
+- **Paper sheet.** The paper grade sheet still requires a reason for a
+  comment-only change to a published mark; online marking no longer does.
+- **Snackbar.** A save confirmation covers the bottom Save button for a few
+  seconds on a phone.
+
 ## 1. Goal
 
 Make Studafy's AI study features dependable and clear for students:
