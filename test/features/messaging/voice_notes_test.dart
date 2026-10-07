@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
+import 'package:studafy/core/coursework_attachments.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/core/voice_note.dart';
@@ -200,6 +201,41 @@ void main() {
     );
     expect(find.text('Checking voice message…'), findsOne);
     expect(find.byTooltip('Play voice message'), findsNothing);
+  });
+
+  testWidgets('a photo in a message is shown as the photo, not a file row', (
+    tester,
+  ) async {
+    final (_, uploads, _, _) = await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _teacher,
+          body: 'Here is the board: www.example.com/board',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'photo-1',
+              displayName: 'image_picker_ABC.jpg',
+              sizeBytes: 8,
+              scanState: 'clean',
+              mediaType: 'image/jpeg',
+            ),
+          ],
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(AttachmentImage), findsOne);
+    // Fetched to show it, and not listed by its file name as well.
+    expect(uploads.downloaded, ['photo-1']);
+    expect(find.text('image_picker_ABC.jpg'), findsNothing);
+    // The link in the text is a link.
+    await tester.tapOnText(find.textRange.ofSubstring('www.example.com/board'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open this link?'), findsOne);
   });
 
   testWidgets('a voice note that failed to send is sent again as it is', (

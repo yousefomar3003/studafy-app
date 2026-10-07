@@ -25,6 +25,7 @@ export {
 } from "./files/eicar";
 export {
   jpegMetadataPayloads,
+  jpegOrientation,
   type JpegParseResult,
   type JpegSegment,
   parseJpeg,

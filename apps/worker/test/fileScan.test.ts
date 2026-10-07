@@ -156,7 +156,7 @@ describe("FILE-051 scan processor", () => {
     expect(queue.finishes[0]).toMatchObject({
       outcome: "clean",
       storedSha256: storedSha,
-      transformPolicyVersion: "file051-structural-strip-v1",
+      transformPolicyVersion: "file051-structural-strip-v2",
     });
     expect(new TextDecoder().decode(storage.written!)).not.toContain("GPS");
   });

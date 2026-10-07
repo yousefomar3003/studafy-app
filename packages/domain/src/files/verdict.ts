@@ -53,7 +53,8 @@ export type SafeMediaType =
 /** Version of this scan policy, recorded on every scanned object. */
 export const SCAN_POLICY_VERSION = "file051-v1";
 /** Version of the image metadata-strip transformation. */
-export const TRANSFORM_POLICY_VERSION = "file051-structural-strip-v1";
+// v2 (2026-10-07): keeps the restart interval and the orientation.
+export const TRANSFORM_POLICY_VERSION = "file051-structural-strip-v2";
 
 export async function analyzeBytes(
   bytes: Uint8Array,

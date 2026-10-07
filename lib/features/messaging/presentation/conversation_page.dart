@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
@@ -707,13 +709,28 @@ class _ConversationPageState extends State<ConversationPage> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                    // Links in a message are links, and say where they go
+                    // before they open.
                     if (message.body.isNotEmpty)
-                      Text(
+                      LinkedText(
                         message.body,
+                        chat: true,
+                        linkColor: mine ? Colors.white : null,
                         style: TextStyle(
                           color: mine ? Colors.white : studafyInk,
                         ),
                       ),
+                    // A photo is shown as itself; tapped, it opens full size.
+                    for (final note in message.attachments)
+                      if ((note.mediaType ?? '').startsWith('image/'))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: AttachmentImage(
+                            key: ValueKey('image-${note.id}'),
+                            attachment: note,
+                            uploads: _uploads,
+                          ),
+                        ),
                     for (final note in message.attachments)
                       if (isVoiceNote(note.mediaType))
                         VoiceNoteBubble(
@@ -725,14 +742,18 @@ class _ConversationPageState extends State<ConversationPage> {
                           localBytes: mine ? _myRecordings[note.id] : null,
                         ),
                     if (message.attachments.any(
-                      (note) => !isVoiceNote(note.mediaType),
+                      (note) =>
+                          !isVoiceNote(note.mediaType) &&
+                          !(note.mediaType ?? '').startsWith('image/'),
                     ))
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: StoredAttachmentList(
                           attachments: [
                             for (final note in message.attachments)
-                              if (!isVoiceNote(note.mediaType)) note,
+                              if (!isVoiceNote(note.mediaType) &&
+                                  !(note.mediaType ?? '').startsWith('image/'))
+                                note,
                           ],
                           dense: true,
                           color: mine ? Colors.white70 : studafyMuted,

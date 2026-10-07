@@ -29,6 +29,27 @@ Uri? safeLink(String value) {
 
 final _linkPattern = RegExp(r'https://[^\s<>"]+');
 
+/// Links as people type them in a chat: https, http, or a bare www. address.
+final _chatLinkPattern = RegExp(
+  r'(?:https?://|www\.)[^\s<>"]+',
+  caseSensitive: false,
+);
+
+/// A link typed in a chat, ready to open, or null. A www. address is opened
+/// over https; nothing with credentials or without a real host is a link.
+Uri? chatLink(String raw) {
+  final value = raw.toLowerCase().startsWith('www.') ? 'https://$raw' : raw;
+  final uri = Uri.tryParse(value);
+  if (uri == null ||
+      (uri.scheme != 'https' && uri.scheme != 'http') ||
+      uri.host.isEmpty ||
+      !uri.host.contains('.') ||
+      uri.userInfo.isNotEmpty) {
+    return null;
+  }
+  return uri;
+}
+
 /// [body] with [links] on their own lines beneath it.
 String textWithLinks(String body, List<Uri> links) {
   final trimmed = body.trim();
@@ -153,10 +174,24 @@ class _AddLinkDialogState extends State<_AddLinkDialog> {
 /// A teacher's text, with its https links tappable. A tap shows the site
 /// and asks first.
 class LinkedText extends StatefulWidget {
-  const LinkedText(this.text, {super.key, this.style, this.openLink});
+  const LinkedText(
+    this.text, {
+    super.key,
+    this.style,
+    this.openLink,
+    this.chat = false,
+    this.linkColor,
+  });
 
   final String text;
   final TextStyle? style;
+
+  /// A message: http and bare www. links are links too, as people type them.
+  /// Every one still shows where it goes and asks before opening.
+  final bool chat;
+
+  /// The link colour, where the theme's would not read - a sent bubble.
+  final Color? linkColor;
 
   /// Opens a link outside the app. Tests supply their own.
   final Future<bool> Function(Uri url)? openLink;
@@ -220,11 +255,14 @@ class _LinkedTextState extends State<LinkedText> {
     }
     _recognizers.clear();
     final text = widget.text;
-    final matches = _linkPattern.allMatches(text).toList();
+    final matches = (widget.chat ? _chatLinkPattern : _linkPattern)
+        .allMatches(text)
+        .toList();
     if (matches.isEmpty) return UserContentText(text, style: widget.style);
     final linkStyle = (widget.style ?? const TextStyle()).copyWith(
-      color: Theme.of(context).colorScheme.primary,
+      color: widget.linkColor ?? Theme.of(context).colorScheme.primary,
       decoration: TextDecoration.underline,
+      decorationColor: widget.linkColor,
     );
     final spans = <InlineSpan>[];
     var cursor = 0;
@@ -232,8 +270,14 @@ class _LinkedTextState extends State<LinkedText> {
       if (match.start > cursor) {
         spans.add(TextSpan(text: text.substring(cursor, match.start)));
       }
-      final raw = match.group(0)!;
-      final link = safeLink(raw);
+      var raw = match.group(0)!;
+      // "see www.example.com." - the full stop ends the sentence, not the
+      // address.
+      final trailing = RegExp(r'[.,;:!?)\]]+$').firstMatch(raw)?.group(0);
+      if (trailing != null) {
+        raw = raw.substring(0, raw.length - trailing.length);
+      }
+      final link = widget.chat ? chatLink(raw) : safeLink(raw);
       if (link == null) {
         spans.add(TextSpan(text: raw));
       } else {
@@ -244,6 +288,7 @@ class _LinkedTextState extends State<LinkedText> {
           TextSpan(text: raw, style: linkStyle, recognizer: recognizer),
         );
       }
+      if (trailing != null) spans.add(TextSpan(text: trailing));
       cursor = match.end;
     }
     if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));

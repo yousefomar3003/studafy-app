@@ -83,6 +83,35 @@ class AttachmentsView extends StatelessWidget {
   }
 }
 
+/// One attached photo, shown as itself: a preview that opens full size.
+/// [width] by [height], cropped to fill. Used where a photo is the message,
+/// as in a chat.
+class AttachmentImage extends StatelessWidget {
+  const AttachmentImage({
+    super.key,
+    required this.attachment,
+    this.uploads,
+    this.width = 220,
+    this.height = 165,
+  });
+
+  final StoredAttachment attachment;
+
+  /// Falls back to the app's [UploadsScope].
+  final FileUploadRepository? uploads;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => _ImageThumb(
+    attachment: attachment,
+    uploads: uploads,
+    autoLoad: true,
+    size: width,
+    height: height,
+  );
+}
+
 /// Image bytes already fetched this session, by file id, so a list that
 /// rebuilds does not ask for a new grant each time.
 final Map<String, Uint8List> _thumbnails = {};
@@ -93,12 +122,16 @@ class _ImageThumb extends StatefulWidget {
     required this.uploads,
     required this.autoLoad,
     required this.size,
+    this.height,
   });
 
   final StoredAttachment attachment;
   final FileUploadRepository? uploads;
   final bool autoLoad;
   final double size;
+
+  /// Defaults to [size]: a square.
+  final double? height;
 
   @override
   State<_ImageThumb> createState() => _ImageThumbState();
@@ -115,6 +148,20 @@ class _ImageThumbState extends State<_ImageThumb> {
     super.initState();
     if (widget.autoLoad) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ImageThumb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Just cleared by the scan: show it now, not on the next visit.
+    if (widget.autoLoad &&
+        widget.attachment.isReady &&
+        !oldWidget.attachment.isReady &&
+        _bytes == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
     }
   }
 
@@ -196,7 +243,7 @@ class _ImageThumbState extends State<_ImageThumb> {
           borderRadius: BorderRadius.circular(12),
           child: Container(
             width: widget.size,
-            height: widget.size,
+            height: widget.height ?? widget.size,
             color: studafyWash,
             child: content,
           ),
