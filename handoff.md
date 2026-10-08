@@ -8,14 +8,27 @@ The full report, with evidence for each finding, is
 `docs/evidence/launch-readiness/2026-10-08-security-audit.md`. This section
 supersedes the ones below where they conflict.
 
-### Status
+### Status (deployed 2026-10-08)
 
-- **Uncommitted.** Every change is in the working tree; nothing was committed,
-  pushed or deployed. The four files that must stay uncommitted (end of
-  section 6) are unchanged.
-- **New migration:** `202610080001_wellbeing_creator_needs_membership.sql`.
-  It is applied only to the throwaway stack. The Frankfurt database also
-  lacks `202610070005` and `202610070006`.
+- **Committed** as `9c23c03` (not pushed). The four files that must stay
+  uncommitted (end of section 6) are unchanged.
+- **Backup first.** An encrypted, restore-checked backup was taken before the
+  migrations: 136 tables, 715 rows, at `202610070004`. It is in
+  `~/studafy-backups/` and its private key is `~/studafy-backup.key`; move the
+  key to a password manager. The backup excludes Storage file contents.
+- **Hosted database.** `202610070005`, `202610070006` and `202610080001` were
+  applied with `db push`; no reset, and the history is up to date.
+- **Deployed.** `studafy-api-test` and `studafy-worker-test` run `9c23c03`.
+  - `DATABASE_CA_CERT` is the Supabase root CA. It matches the pooler's
+    fingerprint, and the certificate is verified.
+  - `/readyz` is ready.
+  - The forged-header check now logs one `ip_hash`.
+  - The worker shows no errors.
+- **GitHub.** The `backups` environment has `BACKUP_AGE_RECIPIENTS`. Its
+  `BACKUP_DATABASE_URL` waits for the `studafy_backup` role.
+- **Denied in auto mode** (left for the owner): creating `studafy_backup` and
+  setting the runtime-role passwords, a privilege grant. Steps are in
+  `docs/deployment/backups.md` and `docs/deployment/fly-io.md`.
 
 ### Fixed and verified locally
 
