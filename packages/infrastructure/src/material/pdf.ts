@@ -8,6 +8,7 @@
  * the file was already cleared by the scan.
  */
 import type { MaterialSection } from "./chunks";
+import { MAX_IMAGE_PIXELS } from "@studafy/domain";
 import { encodeJpeg } from "./image";
 
 /** Reads one page image; the reply's text and what it cost. */
@@ -74,6 +75,9 @@ export async function extractPdf(
     useSystemFonts: false,
     stopAtErrors: false,
     isOffscreenCanvasSupported: false,
+    // An embedded image is decoded to pixels when a page is drawn; without
+    // a cap one PDF could ask for gigabytes (security audit 2026-10-08).
+    maxImageSize: MAX_IMAGE_PIXELS,
     verbosity: 0,
   });
   const document = await task.promise;

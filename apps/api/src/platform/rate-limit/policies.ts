@@ -32,7 +32,8 @@ export type RateLimitFlow =
   | "authenticatedApi"
   | "adminApi"
   | "billingPurchase"
-  | "storeWebhook";
+  | "storeWebhook"
+  | "studyGeneration";
 
 export interface FlowPolicy {
   flow: RateLimitFlow;
@@ -158,6 +159,14 @@ export const RATE_LIMIT_FLOWS: Record<RateLimitFlow, FlowPolicy> = {
     rationale:
       "Purchase, restore and parental challenges require a fail-closed account budget.",
   },
+  studyGeneration: {
+    flow: "studyGeneration",
+    subject: "account",
+    policy: { kind: "slidingWindow", limit: 30, windowSeconds: 300 },
+    failClosed: true,
+    rationale:
+      "Every call costs provider money; the token ledger caps spend, this caps rate and concurrency pressure, and fails closed.",
+  },
   storeWebhook: {
     flow: "storeWebhook",
     subject: "ip",
@@ -270,6 +279,10 @@ export function flowFor(
   if (/^\/v1\/billing\/purchase-approvals\/[^/]+\/decision$/.test(path)) {
     return { flow: "billingPurchase", weight: 1 };
   }
+  // AI generation: each call reaches the paid model provider.
+  if (method === "post" && isStudyGenerationPath(path)) {
+    return { flow: "studyGeneration", weight: 1 };
+  }
   // Internal surfaces first: they are all privileged and low-volume.
   if (path.startsWith("/internal/")) {
     return { flow: "adminApi", weight: 2 };
@@ -347,6 +360,21 @@ export function flowFor(
     flow: "authenticatedApi",
     weight: 1,
   };
+}
+
+/** POST routes that call the model provider (security audit 2026-10-08). */
+const STUDY_GENERATION_PATHS: readonly RegExp[] = [
+  /^\/v1\/study-assistant\/ask$/,
+  /^\/v1\/study-sets$/,
+  /^\/v1\/classrooms\/[^/]+\/notebook\/(summary|whiteboard)$/,
+  /^\/v1\/classrooms\/[^/]+\/study-notebooks$/,
+  /^\/v1\/resources\/[^/]+\/(lesson-notes|study-set)$/,
+  /^\/v1\/resources\/[^/]+\/reading\/[^/]+\/retry$/,
+  /^\/v1\/study-notebooks\/[^/]+\/(regenerate|study-set)$/,
+];
+
+export function isStudyGenerationPath(path: string): boolean {
+  return STUDY_GENERATION_PATHS.some((pattern) => pattern.test(path));
 }
 
 /**

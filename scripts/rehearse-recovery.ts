@@ -1,4 +1,11 @@
 import postgres from "postgres";
+import { databaseTls } from "../packages/database/src/index.ts";
+
+/** Encrypted unless the database is on this machine (packages/database). */
+const tls = (url: string) => {
+  const ssl = databaseTls(url, process.env.DATABASE_CA_CERT);
+  return ssl === undefined ? {} : { ssl };
+};
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");
@@ -71,7 +78,7 @@ const countQuery = `
   ) counts
 `;
 
-const source = postgres(databaseUrl, { max: 1 });
+const source = postgres(databaseUrl, { ...tls(databaseUrl), max: 1 });
 let recovery: ReturnType<typeof postgres> | undefined;
 try {
   const [sourceFingerprint] = await source.unsafe(countQuery);
@@ -142,7 +149,10 @@ try {
 
   const recoveryUrl = new URL(databaseUrl);
   recoveryUrl.pathname = `/${recoveryDatabase}`;
-  recovery = postgres(recoveryUrl.toString(), { max: 1 });
+  recovery = postgres(recoveryUrl.toString(), {
+    ...tls(recoveryUrl.toString()),
+    max: 1,
+  });
   const [recoveryFingerprint] = await recovery.unsafe(countQuery);
 
   const expected = JSON.stringify(sourceFingerprint?.jsonb_object_agg);

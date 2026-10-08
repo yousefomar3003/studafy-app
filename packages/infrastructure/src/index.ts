@@ -47,6 +47,7 @@ export {
   checkRedis,
   closeRedis,
   createRedis,
+  isPlaintextRemoteRedis,
   type Redis,
   type RedisOptions,
   RedisUnavailableError,

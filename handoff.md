@@ -2,7 +2,69 @@
 
 Date: 2026-10-07. Branch: `feat/mvp-school-operations-and-hosted-testing` (not merged to `main`).
 
-## Latest (2026-10-08): exam marking, absence, Today lists, checks (ADR-0040)
+## Latest (2026-10-08, later): security audit (ADR-0041)
+
+The full report, with evidence for each finding, is
+`docs/evidence/launch-readiness/2026-10-08-security-audit.md`. This section
+supersedes the ones below where they conflict.
+
+### Status
+
+- **Uncommitted.** Every change is in the working tree; nothing was committed,
+  pushed or deployed. The four files that must stay uncommitted (end of
+  section 6) are unchanged.
+- **New migration:** `202610080001_wellbeing_creator_needs_membership.sql`.
+  It is applied only to the throwaway stack. The Frankfurt database also
+  lacks `202610070005` and `202610070006`.
+
+### Fixed and verified locally
+
+1. **Client IP spoofing.** IP limits were bypassable through caller-written
+   headers; this was confirmed on the test copy via `ip_hash` in `fly logs`.
+   Fixed with `CLIENT_IP_SOURCE` (`fly` on the test copy, `cloudflare` in
+   production) and the opt-in `ORIGIN_REQUIRE_CLOUDFLARE`.
+2. **Database TLS.** Postgres connections were plaintext. Every non-loopback
+   connection is now TLS; `DATABASE_CA_CERT` adds verification.
+3. **Database role.** Production refuses the `postgres` login (ADR-0014
+   runtime roles); elsewhere it logs `database_privileged_role`.
+4. **AI metering.** Billed AI failures are charged instead of released. The
+   new `studyGeneration` limit allows 30 per 5 minutes and fails closed.
+5. **Image pixel cap.** 50 MP, enforced in the scan, `prepareImage` and
+   pdf.js. A 389 KB bomb had reached 481 MB of memory.
+6. **Wellbeing notes.** A removed teacher could still read their
+   safeguarding notes through PostgREST; fixed by the migration.
+7. **Redis.** Command timeout of 2 s, plus a warning for plaintext remote
+   Redis.
+
+### Checks (throwaway stack on 55722, reset)
+
+- pgTAP: 56 files in CI order, all pass.
+- Backend: 1,010 pass, 1 skipped, 0 fail.
+- Gates: typecheck, lint, format, bounds, migrations, `generate:check` and
+  `db lint` are clean.
+- `verify-auth-lifecycle.ts` passes 26/26 as `studafy_api_runtime`.
+- No Dart changes, so Flutter tests were not re-run.
+
+### Owner actions (blocking, hosted)
+
+1. **Backups.** None has ever succeeded. `BACKUP_DATABASE_URL` and
+   `BACKUP_AGE_RECIPIENTS` are missing, and the daily workflow fails.
+2. **Redis.** The hosted Redis is plaintext over the internet. Move to a
+   `rediss://` endpoint.
+3. **Database logins.** Set the runtime role passwords (the worker role
+   also needs `login`) and switch both `DATABASE_URL` secrets; see
+   `docs/deployment/fly-io.md`.
+4. **Fly cleanup.**
+   - Delete the AWS IAM key and revoke the `FLY_API_TOKEN` stored in the
+     suspended `studafy-api`.
+   - Unset the unused secrets there.
+   - Destroy the stray `studafy` app.
+   - Delete (don't commit) `.github/workflows/fly-deploy.yml`.
+5. **Deploy.** Decide whether the Frankfurt database is still a test
+   target. Then apply `0005`, `0006` and `202610080001`, and deploy the
+   test API and worker.
+
+## Earlier (2026-10-08): exam marking, absence, Today lists, checks (ADR-0040)
 
 This section supersedes the study-AI sections below wherever they conflict.
 

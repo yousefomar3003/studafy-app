@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(38);
+select plan(40);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', :'admin_user', true);
@@ -147,6 +147,23 @@ select throws_like(
   '%Immutable relationship column cannot be changed%',
   'submission assignment identity is structurally immutable'
 );
+
+-- Security audit 2026-10-08: the author of a wellbeing note reads it only
+-- while still a member of its school. Revoked and unassigned, the author of
+-- a safeguarding-restricted note used to keep reading it through PostgREST.
+reset role;
+select set_config('request.jwt.claim.sub', :'teacher_user', true);
+set local role authenticated;
+select is((select count(*) from public.wellbeing_events where id=:'restricted_wellbeing_id'), 1::bigint,
+  'the author reads their restricted wellbeing note while a member');
+reset role;
+update public.memberships set status = 'revoked', active = false
+  where user_id = :'teacher_user' and school_id = :'school_id';
+update public.classroom_staff set status = 'ended', ends_at = now() - interval '1 second'
+  where user_id = :'teacher_user' and school_id = :'school_id';
+set local role authenticated;
+select is((select count(*) from public.wellbeing_events where id=:'restricted_wellbeing_id'), 0::bigint,
+  'a removed author can no longer read their restricted wellbeing note');
 
 select * from finish();
 rollback;

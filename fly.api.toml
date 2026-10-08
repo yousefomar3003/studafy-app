@@ -14,6 +14,11 @@ primary_region = "fra"
 [env]
   ENVIRONMENT = "production"
   API_PORT = "8080"
+  # Client addresses: CF-Connecting-IP only from Cloudflare's ranges, else
+  # Fly-Client-IP (security audit 2026-10-08). Once api.studafy.com is
+  # proxied by Cloudflare, also set ORIGIN_REQUIRE_CLOUDFLARE = "true" so
+  # studafy-api.fly.dev cannot be used to step around Cloudflare.
+  CLIENT_IP_SOURCE = "cloudflare"
   LOG_LEVEL = "info"
   # OPS-090: keep every warning, error, failed and slow request; keep 1 in 10
   # ordinary successes and 1 in 100 unread-badge polls.

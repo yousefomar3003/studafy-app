@@ -11,6 +11,10 @@ primary_region = "fra"
 [env]
   ENVIRONMENT = "development"
   API_PORT = "8080"
+  # No Cloudflare in front of *.fly.dev: client addresses come from Fly's
+  # own Fly-Client-IP, never X-Forwarded-For, which a caller can write
+  # (security audit 2026-10-08).
+  CLIENT_IP_SOURCE = "fly"
   LOG_LEVEL = "info"
   LOG_SAMPLE_SUCCESS_RATE = "0.1"
   LOG_SAMPLE_ROUTINE_RATE = "0.01"

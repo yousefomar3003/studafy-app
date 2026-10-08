@@ -4,6 +4,7 @@
  * size costs ten times the tokens and reads no better.
  */
 import type { Canvas } from "@napi-rs/canvas";
+import { imageWithinPixelCap } from "@studafy/domain";
 
 const MAX_SIDE = 1_600;
 
@@ -13,6 +14,11 @@ export async function encodeJpeg(canvas: Canvas): Promise<Uint8Array> {
 
 /** A JPEG or PNG, decoded, shrunk if large, and re-encoded as JPEG. */
 export async function prepareImage(bytes: Uint8Array): Promise<Uint8Array> {
+  // Never decode what the header says would not fit: a small file can
+  // declare billions of pixels (packages/domain files/dimensions.ts).
+  if (!imageWithinPixelCap(bytes)) {
+    throw new Error("image exceeds the pixel cap");
+  }
   const { createCanvas, loadImage } = await import("@napi-rs/canvas");
   const image = await loadImage(Buffer.from(bytes));
   const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height));

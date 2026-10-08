@@ -1,4 +1,5 @@
 import { describeWorkerEnv, loadWorkerEnv } from "./bootstrap/config";
+import { usesPrivilegedDatabaseRole } from "@studafy/config";
 import {
   buildBillingRuntime,
   buildNotificationRuntime,
@@ -23,6 +24,7 @@ import {
   FcmPushSender,
   FileSecurityScanner,
   GoogleCalendarConferenceProvider,
+  isPlaintextRemoteRedis,
   ResendEmailSender,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
@@ -68,6 +70,16 @@ const logger = createJsonLogger(
 // OPS-061 queue posture: the queue allocation must be non-evicting and
 // persisted. Production refuses to start otherwise; development logs what
 // it finds so the operator runbook can catch drift early.
+if (usesPrivilegedDatabaseRole(env.DATABASE_URL)) {
+  // Production refuses this; elsewhere it runs outside ADR-0014's
+  // least-privilege boundary.
+  logger.warn("database_privileged_role", { environment: env.ENVIRONMENT });
+}
+if (isPlaintextRemoteRedis(env.REDIS_URL)) {
+  // Production refuses this (enforceWorkerFailClosed); elsewhere it is
+  // allowed but loud: queue jobs and the password cross the network in clear.
+  logger.warn("redis_plaintext_remote", { environment: env.ENVIRONMENT });
+}
 const postureRedis = createRedis(env.REDIS_URL, {
   connectTimeout: 3,
   maxRetriesPerRequest: 1,
@@ -117,6 +129,7 @@ let sharedSql: Sql | undefined;
 function database(): Sql {
   sharedSql ??= createDatabase(env.DATABASE_URL!, {
     max: env.DATABASE_POOL_MAX,
+    ...(env.DATABASE_CA_CERT ? { caCert: env.DATABASE_CA_CERT } : {}),
   });
   return sharedSql;
 }

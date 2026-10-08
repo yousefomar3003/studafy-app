@@ -96,6 +96,14 @@ export {
 } from "./files/deliveryToken";
 export { type DedupeEligibilityInput, isDedupeEligible } from "./files/dedup";
 export {
+  type ImageDimensions,
+  imageDimensions,
+  imageExceedsPixelCap,
+  imageWithinPixelCap,
+  MAX_IMAGE_PIXELS,
+  MAX_IMAGE_SIDE,
+} from "./files/dimensions";
+export {
   APPLE_SUBSCRIPTION_STATUS,
   type AppleNotificationType,
   appleRenewalStatus,

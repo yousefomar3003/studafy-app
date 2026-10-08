@@ -46,6 +46,16 @@ const disabledSwitchFlag = z.enum(["true", "false"]).default("false")
 const enabledSwitchFlag = z.enum(["true", "false"]).default("true")
   .transform((value) => value === "true");
 
+/**
+ * Postgres connections leave the machine over the internet (Fly to the
+ * Supabase pooler), so they are encrypted unless the host is this machine
+ * (packages/database). DATABASE_CA_CERT, the PEM of the Supabase root CA
+ * (Dashboard > Database > SSL), also verifies the server's certificate.
+ */
+const databaseTlsFields = {
+  DATABASE_CA_CERT: z.string().min(1).optional(),
+};
+
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
   TURNSTILE_ENABLED: disabledSwitchFlag,
@@ -226,6 +236,17 @@ export const apiEnvSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: z.string().min(1).optional(),
   GOOGLE_PUBSUB_AUDIENCE: url.optional(),
+  // Where the client address for IP rate limits and the access log comes
+  // from (apps/api/src/platform/clientIp.ts). Unset: `cloudflare` in
+  // production, which trusts CF-Connecting-IP only from Cloudflare's own
+  // ranges; `forwarded` elsewhere, which trusts X-Forwarded-For and so is
+  // for local work only. A deployment on Fly without Cloudflare sets `fly`.
+  CLIENT_IP_SOURCE: z.enum(["fly", "cloudflare", "forwarded"]).optional(),
+  // Refuse every request (but /healthz) that did not come through
+  // Cloudflare. On once api.studafy.com is proxied by Cloudflare, so its WAF
+  // and edge limits cannot be bypassed through *.fly.dev.
+  ORIGIN_REQUIRE_CLOUDFLARE: disabledSwitchFlag,
+  ...databaseTlsFields,
 }).superRefine((value, context) => {
   if (!value.PAY071_BILLING_ENABLED) return;
   if (!value.PAY071_ENVIRONMENT) {
@@ -235,10 +256,15 @@ export const apiEnvSchema = z.object({
       message: "required when billing is enabled",
     });
   }
-});
+}).transform((value) => ({
+  ...value,
+  CLIENT_IP_SOURCE: value.CLIENT_IP_SOURCE ??
+    (value.ENVIRONMENT === "production" ? "cloudflare" : "forwarded"),
+}));
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
 
 export const workerEnvSchema = z.object({
+  ...databaseTlsFields,
   ENVIRONMENT: Environment,
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
@@ -544,6 +570,62 @@ function refuseStorageSplit(env: {
   }
 }
 
+/**
+ * A production connection string may not turn TLS off. The client encrypts
+ * every non-local connection by default (packages/database); this refuses
+ * the one way to opt out of that by configuration.
+ */
+function refusePlaintextDatabase(value: string | undefined): void {
+  if (!value) return;
+  try {
+    const mode = new URL(value).searchParams.get("sslmode");
+    if (mode === "disable" || mode === "allow") {
+      throw new ConfigError(
+        "Production DATABASE_URL must not disable TLS (sslmode).",
+      );
+    }
+  } catch (error) {
+    if (error instanceof ConfigError) throw error;
+  }
+}
+
+/** Supabase's own roles: owners, or able to bypass row-level security. */
+const PRIVILEGED_DATABASE_ROLES = new Set([
+  "postgres",
+  "supabase_admin",
+  "supabase_auth_admin",
+  "supabase_storage_admin",
+  "service_role",
+  "authenticator",
+]);
+
+/**
+ * True when [url] logs in as a privileged role. The pooler's user name is
+ * `<role>.<project ref>`, so only the part before the first dot counts.
+ *
+ * The API and worker were built to run as `studafy_api_runtime` and
+ * `studafy_worker_runtime` (ADR-0014): no table grants, EXECUTE on their
+ * dispatchers only. Logged in as `postgres` - which owns every object and
+ * bypasses RLS - one SQL injection or one dispatcher bug reads everything.
+ */
+export function usesPrivilegedDatabaseRole(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const user = decodeURIComponent(new URL(url).username);
+    return PRIVILEGED_DATABASE_ROLES.has(user.split(".")[0] ?? "");
+  } catch {
+    return false;
+  }
+}
+
+function refusePrivilegedDatabaseRole(url: string | undefined): void {
+  if (usesPrivilegedDatabaseRole(url)) {
+    throw new ConfigError(
+      "Production DATABASE_URL must log in as the service's runtime role (studafy_api_runtime / studafy_worker_runtime), not a Supabase administrative role.",
+    );
+  }
+}
+
 export function enforceApiFailClosed(env: ApiEnv): void {
   // One key per purpose, in every environment: a key that can also sign a
   // cursor or a rate-limit bucket would let one leak compromise the others.
@@ -576,6 +658,15 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   }
   if (env.ENVIRONMENT !== "production") return;
   refuseStorageSplit(env);
+  refusePlaintextDatabase(env.DATABASE_URL);
+  refusePrivilegedDatabaseRole(env.DATABASE_URL);
+  if (env.CLIENT_IP_SOURCE === "forwarded") {
+    // X-Forwarded-For is whatever the caller wrote: every IP limit would be
+    // one header away from bypass.
+    throw new ConfigError(
+      "Production must not read client addresses from X-Forwarded-For (CLIENT_IP_SOURCE=forwarded).",
+    );
+  }
   const missing: string[] = [];
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
   if (!env.REDIS_URL) missing.push("REDIS_URL");
@@ -627,6 +718,8 @@ export function enforceApiFailClosed(env: ApiEnv): void {
 export function enforceWorkerFailClosed(env: WorkerEnv): void {
   if (env.ENVIRONMENT !== "production") return;
   refuseStorageSplit(env);
+  refusePlaintextDatabase(env.DATABASE_URL);
+  refusePrivilegedDatabaseRole(env.DATABASE_URL);
   const posture = redisUrlPostureProblems(env.REDIS_URL);
   if (posture.length > 0) {
     throw new ConfigError(
@@ -672,6 +765,9 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     },
     sentry_configured: Boolean(env.SENTRY_DSN),
     allowed_origins: env.API_ALLOWED_ORIGINS,
+    client_ip_source: env.CLIENT_IP_SOURCE,
+    origin_require_cloudflare: env.ORIGIN_REQUIRE_CLOUDFLARE,
+    database_ca_configured: Boolean(env.DATABASE_CA_CERT),
     max_body_bytes: env.API_MAX_BODY_BYTES,
     request_timeout_ms: env.API_REQUEST_TIMEOUT_MS,
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,

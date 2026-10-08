@@ -64,8 +64,9 @@ const app = createApp({
       ...(env.RATE_LIMIT_HMAC_SIGNING_KEY
         ? { hmacKey: env.RATE_LIMIT_HMAC_SIGNING_KEY }
         : {}),
-      trustCloudflare: env.ENVIRONMENT === "production",
+      clientIpSource: env.CLIENT_IP_SOURCE,
     },
+    requireCloudflare: env.ORIGIN_REQUIRE_CLOUDFLARE,
   },
   ...(env.RATE_LIMIT_ENABLED
     ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }

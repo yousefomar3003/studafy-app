@@ -23,7 +23,7 @@ async function flyEnv(file: string): Promise<Record<string, string>> {
 // Synthetic stand-ins for the secrets set with `fly secrets set`.
 const secrets = {
   DATABASE_URL:
-    "postgresql://postgres.synthetic:synthetic@aws-0-eu-central-1.pooler.supabase.com:5432/postgres",
+    "postgresql://studafy_api_runtime.synthetic:synthetic@aws-0-eu-central-1.pooler.supabase.com:5432/postgres",
   REDIS_URL: "rediss://default:synthetic@redis.synthetic.example:6380",
   SUPABASE_URL: "https://synthetic.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-role-key-000000000000",
@@ -49,6 +49,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.LOG_SAMPLE_ROUTINE_RATE).toBe(0.01);
     // ADR-0034: on only at launch, after the DPA and DPIA.
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
+    // Security audit 2026-10-08: never X-Forwarded-For in production.
+    expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
   });
 
   test("the worker", async () => {
@@ -60,9 +62,57 @@ describe("Fly configs pass production validation", () => {
     expect(env.FILE051_SCAN_ENABLED).toBe(true);
   });
 
+  test("production refuses client addresses from X-Forwarded-For", async () => {
+    const fly = await flyEnv("fly.api.toml");
+    const env = parseEnv(apiEnvSchema, {
+      ...fly,
+      ...secrets,
+      CLIENT_IP_SOURCE: "forwarded",
+    });
+    expect(() => enforceApiFailClosed(env)).toThrow(/X-Forwarded-For/);
+  });
+
+  test("production refuses a database URL that turns TLS off", async () => {
+    const fly = await flyEnv("fly.api.toml");
+    const env = parseEnv(apiEnvSchema, {
+      ...fly,
+      ...secrets,
+      DATABASE_URL: `${secrets.DATABASE_URL}?sslmode=disable`,
+    });
+    expect(() => enforceApiFailClosed(env)).toThrow(/TLS/);
+  });
+
+  test("production refuses a privileged database login", async () => {
+    const fly = await flyEnv("fly.api.toml");
+    for (
+      const user of ["postgres.synthetic", "postgres", "supabase_admin"]
+    ) {
+      const env = parseEnv(apiEnvSchema, {
+        ...fly,
+        ...secrets,
+        DATABASE_URL:
+          `postgresql://${user}:x@aws-0-eu-central-1.pooler.supabase.com:5432/postgres`,
+      });
+      expect(() => enforceApiFailClosed(env)).toThrow(/runtime role/);
+    }
+    const worker = await flyEnv("fly.worker.toml");
+    expect(() =>
+      enforceWorkerFailClosed(
+        parseEnv(workerEnvSchema, {
+          ...worker,
+          ...secrets,
+          DATABASE_URL:
+            "postgresql://postgres.synthetic:x@aws-0-eu-central-1.pooler.supabase.com:5432/postgres",
+        }),
+      )
+    ).toThrow(/runtime role/);
+  });
+
   test("the test copy loads in development mode", async () => {
     const api = await flyEnv("fly.test.api.toml");
     expect(api.ENVIRONMENT).toBe("development");
+    // *.fly.dev has no Cloudflare in front: Fly's own header only.
+    expect(api.CLIENT_IP_SOURCE).toBe("fly");
     expect(() =>
       enforceApiFailClosed(parseEnv(apiEnvSchema, { ...api, ...secrets }))
     ).not.toThrow();

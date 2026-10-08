@@ -23,7 +23,14 @@
  * Without --apply it reports what it would do and changes nothing.
  */
 import postgres from "postgres";
+import { databaseTls } from "../packages/database/src/index.ts";
 import { readdir } from "node:fs/promises";
+
+/** Encrypted unless the database is on this machine (packages/database). */
+const tls = (url: string) => {
+  const ssl = databaseTls(url, process.env.DATABASE_CA_CERT);
+  return ssl === undefined ? {} : { ssl };
+};
 
 const args = process.argv.slice(2);
 const apply = args.includes("--apply");
@@ -53,8 +60,16 @@ function readEnv(text: string): Record<string, string> {
 const sourceUrl = readEnv(await Bun.file(".env.hosted").text())["DATABASE_URL"];
 if (!sourceUrl) throw new Error("DATABASE_URL missing from .env.hosted");
 
-const source = postgres(sourceUrl, { max: 1, connect_timeout: 20 });
-const target = postgres(targetUrl, { max: 1, connect_timeout: 20 });
+const source = postgres(sourceUrl, {
+  ...tls(sourceUrl),
+  max: 1,
+  connect_timeout: 20,
+});
+const target = postgres(targetUrl, {
+  ...tls(targetUrl),
+  max: 1,
+  connect_timeout: 20,
+});
 
 try {
   const files = (await readdir("supabase/migrations"))

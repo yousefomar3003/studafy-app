@@ -139,7 +139,30 @@ export class AiMeter {
     try {
       value = await call();
     } catch (error) {
-      await this.repository.usage(context, "release", { usageId });
+      // A reply the provider produced but that could not be used, or a
+      // request that timed out after it was sent, was still paid for:
+      // releasing it made such failures free to repeat without limit
+      // (security audit 2026-10-08). It is settled to what the provider
+      // reported, or to the hold when it reported nothing. Only a call
+      // that never reached the provider, or that it refused, is released.
+      const failed = error as { billed?: unknown; usage?: StudyUsage };
+      if (failed?.billed === true) {
+        await this.repository.usage(context, "settle", {
+          usageId,
+          costMicroUsd: failed.usage
+            ? costMicroUsd(
+              this.prices,
+              failed.usage.inputTokens,
+              failed.usage.outputTokens,
+            )
+            : hold.microUsd,
+          inputTokens: failed.usage?.inputTokens ?? null,
+          outputTokens: failed.usage?.outputTokens ?? null,
+          model: failed.usage?.model ?? null,
+        });
+      } else {
+        await this.repository.usage(context, "release", { usageId });
+      }
       throw error;
     }
     const usage = value.usage;

@@ -50,7 +50,9 @@ function harness(options: {
       allowedOrigins: options.allowedOrigins,
       limits: options,
       ...(options.hmacKey
-        ? { identity: { hmacKey: options.hmacKey, trustCloudflare: false } }
+        ? {
+          identity: { hmacKey: options.hmacKey, clientIpSource: "forwarded" },
+        }
         : {}),
     },
   };

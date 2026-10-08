@@ -74,7 +74,8 @@ Keep the file outside the repository and delete it afterwards.
 **API**, from a file such as `~/studafy-api.secrets`:
 
 ```
-DATABASE_URL=...            # Frankfurt project, pooler
+DATABASE_URL=...            # Frankfurt project, pooler, as studafy_api_runtime (below)
+DATABASE_CA_CERT=...        # optional: Supabase root CA PEM, verifies the server
 REDIS_URL=rediss://...
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -94,7 +95,21 @@ fly secrets import --config fly.api.toml < ~/studafy-api.secrets
 fly deploy --config fly.api.toml
 ```
 
-**Worker**, the same way, with `DATABASE_URL`, `REDIS_URL`, `SUPABASE_URL`,
+**Database roles (ADR-0041).** Production refuses to start as `postgres` or
+another Supabase administrative role. Once, in the SQL editor, give the
+runtime roles their own passwords (generate them; never reuse):
+
+```sql
+alter role studafy_api_runtime login password '<generated>';
+alter role studafy_worker_runtime login password '<generated>';
+```
+
+On the pooler their user names are `studafy_api_runtime.<project ref>` and
+`studafy_worker_runtime.<project ref>`. Every non-local connection is
+encrypted; set `DATABASE_CA_CERT` (Dashboard → Database → SSL) to verify the
+certificate too, and turn on "Enforce SSL" there.
+
+**Worker**, the same way, with `DATABASE_URL` (as `studafy_worker_runtime`), `REDIS_URL`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_URL`,
 `MALWARE_SCANNER_API_KEY` and `SENTRY_DSN`:
 
@@ -119,8 +134,11 @@ under the Supabase plan's connection limit.
 
 **Domain.** `fly certs add api.studafy.com --config fly.api.toml`, then point
 the DNS record at Fly as it instructs. If the record is proxied through
-Cloudflare, client addresses come from Cloudflare's header, which is what
-the API trusts in production.
+Cloudflare, client addresses come from Cloudflare's header, but only for
+connections Fly saw arrive from Cloudflare's ranges (`CLIENT_IP_SOURCE`,
+ADR-0041); anything else keys on `Fly-Client-IP`. Once proxied, set
+`ORIGIN_REQUIRE_CLOUDFLARE = "true"` so `studafy-api.fly.dev` cannot be used
+to step around Cloudflare's rules.
 
 `scripts/fly-config.test.ts` checks in CI that both Fly configs pass the
 same production validation the processes run at start-up.

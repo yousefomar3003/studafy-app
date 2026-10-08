@@ -76,10 +76,29 @@ export class StudyAssistantError extends Error {
     readonly kind: "unavailable" | "refused" | "empty" | "unreadable",
     /** The provider's HTTP status, when it answered with an error. */
     readonly status?: number,
+    /**
+     * What the provider reported for a reply it produced but that could not
+     * be used (empty, unreadable, too few quiz items). It was paid for.
+     */
+    readonly usage?: StudyUsage,
+    /**
+     * True when the provider may have done (and billed) the work although
+     * no usable reply came back: a timeout or a dropped connection after the
+     * request was sent. False when nothing reached it or it refused.
+     */
+    readonly billed: boolean = usage !== undefined,
   ) {
     super(`study_assistant_${kind}`);
     this.name = "StudyAssistantError";
   }
+}
+
+/** The same failure, carrying the usage of the reply it was made from. */
+function unusable(
+  kind: "empty" | "unreadable",
+  usage: StudyUsage | undefined,
+): StudyAssistantError {
+  return new StudyAssistantError(kind, undefined, usage, true);
 }
 
 /** The fewest usable items a study set is kept with. */
@@ -220,6 +239,9 @@ export function createStudyAssistant(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeLimitMs);
     const started = Date.now();
+    // Once a request is on its way, a failure without an answer may still
+    // have been billed by the provider.
+    let sent = false;
     try {
       const send = () =>
         fetchImpl(endpoint, {
@@ -246,6 +268,7 @@ export function createStudyAssistant(
             ],
           }),
         });
+      sent = true;
       let response = await send();
       // One more try when the provider was briefly busy, while there is
       // time for it inside the request's own limit.
@@ -267,7 +290,6 @@ export function createStudyAssistant(
         model?: string;
       };
       const text = body.choices?.[0]?.message?.content?.trim();
-      if (!text) throw new StudyAssistantError("empty");
       const usage = body.usage &&
           Number.isInteger(body.usage.prompt_tokens) &&
           Number.isInteger(body.usage.completion_tokens)
@@ -277,10 +299,11 @@ export function createStudyAssistant(
           model: body.model ?? model,
         }
         : undefined;
+      if (!text) throw unusable("empty", usage);
       return { text, ...(usage ? { usage } : {}) };
     } catch (error) {
       if (error instanceof StudyAssistantError) throw error;
-      throw new StudyAssistantError("unavailable");
+      throw new StudyAssistantError("unavailable", undefined, undefined, sent);
     } finally {
       clearTimeout(timer);
     }
@@ -366,9 +389,7 @@ export function createStudyAssistant(
         [],
         0,
       );
-      if (isUnreadableReply(text)) {
-        throw new StudyAssistantError("unreadable");
-      }
+      if (isUnreadableReply(text)) throw unusable("unreadable", usage);
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
@@ -392,9 +413,7 @@ export function createStudyAssistant(
         ],
         maxLongOutputTokens,
       );
-      if (isUnreadableReply(text)) {
-        throw new StudyAssistantError("unreadable");
-      }
+      if (isUnreadableReply(text)) throw unusable("unreadable", usage);
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
@@ -422,7 +441,7 @@ export function createStudyAssistant(
         notebookTimeoutMs,
       );
       const content = parseNotebook(text, passages);
-      if (!content) throw new StudyAssistantError("empty");
+      if (!content) throw unusable("empty", usage);
       return { content, ...(usage ? { usage } : {}) };
     },
 
@@ -437,13 +456,13 @@ export function createStudyAssistant(
       if (kind === "quiz") {
         const questions = parseQuiz(text);
         if (questions.length < STUDY_SET_MINIMUM.quiz) {
-          throw new StudyAssistantError("empty");
+          throw unusable("empty", usage);
         }
         return { kind, questions, ...(usage ? { usage } : {}) };
       }
       const cards = parseFlashcards(text);
       if (cards.length < STUDY_SET_MINIMUM.flashcards) {
-        throw new StudyAssistantError("empty");
+        throw unusable("empty", usage);
       }
       return { kind, cards, ...(usage ? { usage } : {}) };
     },

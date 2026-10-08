@@ -12,6 +12,7 @@ import {
   requestContext,
   type RequestIdentityOptions,
   requestTelemetry,
+  requireCloudflareOrigin,
   secureResponseHeaders,
   totalTimeout,
 } from "../platform/middleware";
@@ -60,6 +61,8 @@ export interface AppDependencies {
     now?: () => number;
     /** Identity fields for the access log. Omitted leaves `ip_hash` null. */
     identity?: RequestIdentityOptions;
+    /** Refuse traffic that did not come through Cloudflare (ORIGIN_REQUIRE_CLOUDFLARE). */
+    requireCloudflare?: boolean;
   };
 }
 
@@ -89,6 +92,9 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   // controls run before authentication, validation, authorization and use cases.
   app.use("*", requestContext(now));
   app.use("*", secureResponseHeaders(deps.info.environment));
+  if (deps.platform?.requireCloudflare) {
+    app.use("*", requireCloudflareOrigin());
+  }
   app.use("*", requestTelemetry(deps.logger, now, deps.platform?.identity));
   app.use(
     "*",
