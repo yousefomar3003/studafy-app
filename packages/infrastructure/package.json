@@ -20,5 +20,8 @@
     "googleapis": "^181.0.0",
     "ioredis": "6.0.0",
     "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "@studafy/test-support": "workspace:*"
   }
 }

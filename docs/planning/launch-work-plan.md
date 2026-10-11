@@ -32,7 +32,7 @@ the `PR-xx` codes point at its issue register.
 
 ## Stage 1: Protect the work (now)
 
-- [ ] **1.1 Push the branch to GitHub** (PR-13) · *Claude* · 10 min
+- [x] **1.1 Push the branch to GitHub** (PR-13) — done 2026-10-11, `21afe7d`; 0 commits left unpushed · *Claude* · 10 min
   - 31 commits since 2026-10-03 exist only on this Mac, and the test copy
     runs them.
   - **Done when:** `git rev-list --count origin/feat/mvp-school-operations-and-hosted-testing..HEAD`
@@ -300,3 +300,4 @@ iOS.
 | Date | Item | Result |
 |---|---|---|
 | 2026-10-11 | Plan created | From the readiness assessment |
+| 2026-10-11 | 1.1 | Branch pushed (32 commits); `origin` matches local |
