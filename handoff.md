@@ -24,8 +24,11 @@ supersedes the ones below where they conflict.
   - `/readyz` is ready.
   - The forged-header check now logs one `ip_hash`.
   - The worker shows no errors.
-- **GitHub.** The `backups` environment has `BACKUP_AGE_RECIPIENTS`. Its
-  `BACKUP_DATABASE_URL` waits for the `studafy_backup` role.
+- **Backups are automatic (2026-10-11).** The owner created
+  `studafy_backup` and set `BACKUP_DATABASE_URL` in the `backups`
+  environment. The first workflow run passed its restore check (136 tables,
+  641 rows, at `202610080001`). It runs daily and keeps each backup for
+  30 days.
 - **Denied in auto mode** (left for the owner): creating `studafy_backup` and
   setting the runtime-role passwords, a privilege grant. Steps are in
   `docs/deployment/backups.md` and `docs/deployment/fly-io.md`.
