@@ -1,45 +1,46 @@
 # Studafy Privacy Policy
 
-**Last updated:** 30 September 2026
-**Version:** 1.2 (consent version `2026-09-30.2`)
+**Last updated:** 12 October 2026\
+**Version:** 1.3
 
-> **BEFORE PUBLISHING — READ THIS**
->
-> This policy was written from the application's actual data flows: every
-> table, every third party and every transfer described below was taken from
-> the code and the database, not from a template. That makes it accurate, but
-> accuracy is not the same as legal sufficiency.
->
-> **It has not been reviewed by a lawyer, and it must be before it is
-> published.** Studafy processes the personal data of children, which is the
-> most heavily regulated category of processing there is. Placeholders in
-> `[SQUARE BRACKETS]` are facts only you can supply.
->
-> Statements in §6 and §12 are **not yet true** and are marked. Do not
-> publish this document until they are, or until those sections are corrected.
->
-> The in-app summaries (`policyPrivacyBody` and `policyTermsBody` in
-> `lib/l10n/app_en.arb` and `app_ar.arb`) must say the same things as this
-> document and `terms-of-use.md`. Change them together, publish a new consent
-> version, and bump `termsPolicyVersion` in `lib/core/account_lifecycle.dart`.
+<!--
+BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
+site's build strips every HTML comment).
 
-### What changed in version 1.1
+This policy was written from the application's actual data flows: every
+table, every third party and every transfer described below was taken from
+the code and the database, not from a template. That makes it accurate, but
+accuracy is not the same as legal sufficiency. It has not been reviewed by a
+lawyer, and it must be. Studafy processes the personal data of children.
 
-- The study helper and the Studafy Plus and Max tools now send more than a
-  typed question to the AI provider. §6 says exactly what.
-- Paper marks, marks kept as drafts until the teacher publishes them, and
-  corrections that keep the mark they replaced (§3.4, §9).
-- Attendance corrections, the reason given for each, and the history kept
-  of every change (§3.4, §9).
-- Hand-in deadlines, extensions and late hand-ins (§3.4).
-- Lessons and material that a teacher edits or replaces: the earlier files
-  are kept for the school (§3.8, §9).
-- Child accounts that a parent creates and manages, and several accounts on
-  one device (§3.1, §5).
-- Family+ insights for parents (§3.5).
-- Voice notes in messages, meeting links, and read receipts (§3.6).
-- Encrypted daily backups (§7.2, §10).
-- There is no school administrator in this version of the app (§3.3, §7.1).
+It is published temporarily at /privacy (ops/legal-site, launch plan 4.3)
+because Google Play needs a link. The open items are in TODO(legal)
+comments next to the text they affect, and in the list at the end.
+
+The in-app summaries (policyPrivacyBody and policyTermsBody in
+lib/l10n/app_en.arb and app_ar.arb) must say the same things as this
+document and terms-of-use.md. Version 1.3 corrects facts (regions,
+providers, what deletion removes); it does not change what anyone agreed
+to, so the consent version is unchanged. A substantive change needs a new
+consent version and a bump of termsPolicyVersion in
+lib/core/account_lifecycle.dart.
+
+The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
+together.
+-->
+
+### What changed in version 1.3
+
+- Who we are: our company details (§1).
+- Where our providers process data, and two providers added: the service
+  that checks uploaded files for malware, and Google Calendar for meeting
+  invitations (§7.2).
+- What the AI study tools receive: also the class's grade level and the
+  app's language, and, to read a teacher's scanned file, images of its
+  pages (§6).
+- What deleting an account removes (§9, §11).
+- Android backups: the app's data on the phone is not copied to cloud
+  backups (§13).
 
 ---
 
@@ -51,16 +52,16 @@ work done on paper — record attendance, and communicate with students and
 their guardians. It lets a student see and hand in that work and keep their
 own notes, and it lets a parent follow their child's progress.
 
-**Data controller:** [REGISTERED COMPANY NAME], a company registered in
-Ireland under number [COMPANY NUMBER], with its registered office at
-[REGISTERED ADDRESS].
+**Data controller:** Studafy Limited, a company registered in Ireland under
+number 822430, with its registered office at 4/5 The Square, Cahir,
+Co. Tipperary, Ireland.
 
-**Contact for privacy questions:** [PRIVACY CONTACT EMAIL]
+**Contact for privacy questions:** hello@studafy.com
 
-**Data Protection Officer:** [DPO NAME AND CONTACT, or the sentence "We have
+<!-- TODO(legal): Data Protection Officer. Either name one, or state "We have
 not appointed a Data Protection Officer because we are not required to under
-Article 37 GDPR." — take advice before choosing. Systematic monitoring of
-children at scale is exactly the case where one is usually required.]
+Article 37 GDPR." Take advice first: systematic monitoring of children at
+scale is exactly the case where one is usually required. -->
 
 **EU/EEA supervisory authority:** The Data Protection Commission (Ireland),
 21 Fitzwilliam Square South, Dublin 2, D02 RD28. www.dataprotection.ie
@@ -99,7 +100,8 @@ The long version follows, and it governs. This summary is for orientation.
   published mark that is later corrected keeps a record of the old mark, who
   changed it, when and why, and the family is told when the mark changes.
 - We do **not** sell personal data, use it for advertising, or build
-  advertising profiles. We show no third-party advertising.
+  advertising profiles. We show no advertising, and the app contains no
+  advertising or analytics software.
 - Subscriptions are billed by **Apple** and **Google**, not by us. We never
   see your card.
 - **Some optional study tools send content to an AI provider outside the
@@ -110,7 +112,7 @@ The long version follows, and it governs. This summary is for orientation.
 - Children's data is treated as sensitive in practice, whatever its formal
   classification.
 - You can ask for a copy of your data, or for your account to be deleted,
-  from inside the app.
+  from inside the app or by writing to us.
 
 ---
 
@@ -123,13 +125,15 @@ The long version follows, and it governs. This summary is for orientation.
 | Name (display name) | To show who you are to your class | Your sign-in provider, or you |
 | Email address | To identify your account and send service messages | Your sign-in provider |
 | Sign-in provider identifier | To recognise you on return | Google, Microsoft or Apple |
+| Studafy ID (a number) | So a parent can ask to link to a student | Generated |
 | Language preference | To show the app in your language (English or Arabic) | You |
-| Gender (male, female or prefer not to answer), only if you choose to give it | To address you correctly; it is shown to nobody else, including your school | You |
+| Gender (male, female or prefer not to answer) | To address you correctly; it is shown to nobody else, including your school | You |
 | Account status and creation date | To operate the account | Generated |
 
 **We do not store passwords.** You sign in with Google, Microsoft or Apple,
 and only they verify your credential. We receive a confirmation that it was
-you, plus your name and email.
+you, plus your name and email. If Apple shares your full name, the app does
+not pass it on to us.
 
 **Child accounts a parent manages.** A parent can create a student account
 for a child who has no email address or phone of their own. The parent gives
@@ -146,18 +150,24 @@ device.
 ### 3.2 Devices and sessions
 
 We record which devices hold a session for your account, when each was last
-used, and a coarse description of the device (for example "iPhone, Safari").
-This is what lets you see where you are signed in and sign out a device you
-no longer have.
+used, and a coarse description of the device (for example "iPhone, version
+2.3"). This is what lets you see where you are signed in and sign out a
+device you no longer have. If you allow notifications, we also hold your
+device's push token.
 
 We record security events on your account — sign-ins, sign-outs, session
 revocations, two-factor enrolment and changes to linked sign-in identities.
 
 **IP addresses.** We use your IP address to apply rate limits and to detect
-abuse. We do **not** store it in readable form: it is converted to a keyed
-one-way hash before it is written anywhere, so our records show that two
+abuse. In our own records and logs we do **not** store it in readable form:
+it is converted to a keyed one-way hash first, so our records show that two
 requests came from the same source without recording where that source is.
-The same applies to our operational logs.
+The service that handles sign-in for us (Supabase) keeps the IP address of
+sign-in events in its own security logs.
+
+<!-- TODO(legal): confirm on the hosted project how long Supabase Auth keeps
+IP addresses in auth.audit_log_entries and auth.sessions, and state it here
+and in §10. -->
 
 ### 3.3 School, class and role
 
@@ -208,8 +218,9 @@ This is the substance of the service.
   whether a lock was overridden — see §9.
 - **Wellbeing notes:** pastoral observations recorded by teachers.
 - **A student's own notebook:** notes a student writes for each class, photos
-  of the board they take, and study notes, quizzes and flashcards they make
-  with the tools in §6.
+  of the board they take, and study notebooks, notes, quizzes and flashcards
+  they make with the tools in §6, with their own notes, highlights and
+  bookmarks.
 
 Wellbeing notes and pastoral records can be sensitive. They are visible only
 to the class's teachers, and to a family only where a teacher chooses to
@@ -218,7 +229,7 @@ share a note with them. They are never visible to other students.
 ### 3.5 Family links and Family+
 
 A parent is connected to a student by a **guardian link**. To create one, a
-parent enters the student's Studafy identifier; **the student then approves or
+parent enters the student's Studafy ID; **the student then approves or
 declines the request on their own device**. We record who asked, who
 approved, when, and the stated relationship. A child account a parent
 created is linked to that parent automatically.
@@ -249,9 +260,10 @@ each conversation, when a message was delivered and read, announcements sent
 to a class, and meetings a teacher arranges with their invitations and
 delivery records.
 
-**Meetings:** Studafy does not host video calls. A teacher creates the call
-in Google Meet and adds its link; we store the link and the invitation, and
-the call itself takes place in Google Meet under Google's terms.
+**Meetings:** Studafy does not host video calls. When a teacher arranges a
+meeting, we create it in Google Calendar with a Google Meet link and Google
+emails the invitations to the people invited. The call itself takes place in
+Google Meet under Google's terms.
 
 We also hold your notification preferences, your registered push devices, and
 a record of which notifications were sent and delivered. Push and email
@@ -271,9 +283,11 @@ how a student can report something and how it can be acted on.
 
 ### 3.8 Files
 
-Files you upload — documents, photos and voice notes — what they are
-attached to, their size and type, scan results, and time-limited grants
-permitting a specific person to download a specific file.
+Files you upload — documents (PDF, Word and PowerPoint), photos and voice
+notes — what they are attached to, their size and type, scan results, and
+time-limited grants permitting a specific person to download a specific
+file. Every uploaded file is checked for malware before anyone can download
+it (§7.2).
 
 **When a teacher replaces or removes a file.** If a teacher replaces a
 lesson's file, or takes a file off an assignment, the class no longer sees
@@ -288,7 +302,9 @@ it started, renews and ends, and records of store transactions.
 **We never receive your card number, bank details or billing address.**
 Payment is taken by Apple or Google under their own terms and their own
 privacy policies. We receive only a confirmation that a purchase or renewal
-occurred, and an opaque transaction identifier.
+occurred, and an opaque transaction identifier. So that a purchase is
+credited to the right account, the app gives the store an identifier for
+your account that means nothing outside Studafy.
 
 For a student subscription, where a parent's approval is required, we record
 that a request was made and how it was decided. Where a parent buys a
@@ -296,10 +312,9 @@ subscription for a child, we record who paid and which child it is for.
 
 ### 3.10 AI usage
 
-For the tools in §6, how much each account used them — the number of
-requests and their cost — so that daily and monthly limits can be applied.
-We store the notes, quizzes and flashcards a tool made, not the conversation
-that produced them.
+For the tools in §6, how much each account used them, so that the plan's
+allowance can be applied. We store the notes, quizzes, flashcards and study
+notebooks a tool made, not the conversation that produced them.
 
 ### 3.11 Consents
 
@@ -310,9 +325,13 @@ for a child account, that the parent accepted them on the child's behalf.
 
 - **Audit records** of significant actions — see §9.
 - **Technical logs** of requests: the time, the route, whether it succeeded,
-  how long it took, a request identifier, a hashed IP and a coarse client
-  type. These are automatically stripped of passwords, tokens, keys and other
-  secrets before they are written.
+  how long it took, a request identifier, your account identifier, a hashed
+  IP and a coarse client type. Most successful requests are not logged at
+  all. Logs are automatically stripped of passwords, tokens, keys and other
+  secrets, and of message and file content, before they are written.
+- **Error reports** when the app or our servers fail: what broke and where in
+  the code, the device model, operating system and app version. They carry no
+  name, email, account identifier, message content or photos.
 - **Short-lived cache and rate-limit records**, keyed by hashed identifiers.
 
 ---
@@ -325,7 +344,7 @@ for a child account, that the parent accepted them on the child's behalf.
 | Providing the app to an individual account holder | Performance of our contract with you |
 | Keeping marks private until published, and a history of changes to marks and attendance | The school's legal obligations and legitimate interests in accurate records; legitimate interests in accountability |
 | Telling a family when a mark is published or changed | Contract; legitimate interests in keeping families informed |
-| Keeping accounts secure; preventing abuse | Legitimate interests: protecting users, particularly children |
+| Keeping accounts secure; preventing abuse; checking files for malware | Legitimate interests: protecting users, particularly children |
 | Sending service messages you need to receive | Contract |
 | Sending optional notifications | Consent, withdrawable in settings |
 | Billing and subscription management | Contract |
@@ -339,8 +358,12 @@ interest is overridden by your rights, and given particular weight to the
 fact that many of our users are children. You may object to processing based
 on legitimate interests — see §11.
 
-**We do not use your personal data to train any AI or machine-learning model,
-and we do not permit our providers to.**
+**We do not use your personal data to train any AI or machine-learning
+model.**
+
+<!-- TODO(legal): once the data processing agreement with the AI provider is
+signed and forbids training on our data, add: "and we do not permit our
+providers to." Do not add it before. -->
 
 ---
 
@@ -365,9 +388,12 @@ Studafy is designed for school use and most of its students are children.
   go to the school first.
 
 If you believe a child has provided us with personal data in a way that
-requires consent that was not given, contact us at
-[PRIVACY CONTACT EMAIL] and we will investigate and, where appropriate,
-delete it.
+requires consent that was not given, contact us at hello@studafy.com and we
+will investigate and, where appropriate, delete it.
+
+<!-- TODO(legal): the age of digital consent (Ireland: 16) and whether a
+parent's consent is needed for students under it outside a school
+(decision log DL-037). -->
 
 ---
 
@@ -379,11 +405,18 @@ provider. They are switched on only where we have enabled them.
 
 | Tool | Who can use it | What is sent to the AI provider |
 |---|---|---|
-| **Study helper** (ask a question) | Every student, with a daily limit | The question typed, and the most recent turns of the same chat so a follow-up makes sense. Where the student chooses to, the text of a lesson from their class or of their own notes. |
+| **Study helper** (ask a question) | Every student, within their plan's allowance | The question typed, and the most recent turns of the same chat so a follow-up makes sense. Where the student chooses to, the text of the lessons and files they pick from their class, or of their own notes. |
 | **A photo in the study helper** | Studafy Plus and Max | The photo the student attaches, with their question |
 | **Whiteboard to notes** | Studafy Plus and Max | The photo of the board the student takes |
-| **Lesson to study notes** | Studafy Plus and Max | The text of the teacher's lesson |
-| **Quizzes and flashcards** | Studafy Max | The text of the teacher's lesson |
+| **Lesson summaries and study notebooks** | Studafy Plus and Max | The text of the lessons and files the student picks |
+| **Quizzes and flashcards** | Studafy Max | The text of the lessons and files the student picks |
+
+With every request we also send the class's grade level (for example
+"grade 7") and the app's language, so that the answer suits the student.
+
+**Reading a teacher's file.** So that these tools can use a lesson's files,
+we extract their text. Where a file is scanned or made of pictures, images of
+its pages are sent to the AI provider to read the text from them.
 
 **Before anything is sent**, we remove email addresses, long number sequences
 and web links from typed text.
@@ -392,37 +425,34 @@ and web links from typed text.
 school or class name, their marks, their attendance, their messages, or
 anybody else's work.
 
-**What we keep:** the notes, quizzes and flashcards a tool produced. Notes
-and study sets made from a teacher's lesson are shared by the students of
-that class, because they come from the teacher's lesson alone. Notes made
-from a student's own photo belong to that student and are deleted when they
-delete them. **Study helper chats are kept only on the student's device**,
-and are deleted from it when the student signs out; we do not store them.
+**What we keep:** the notes, quizzes, flashcards and study notebooks a tool
+produced. Notes and study sets made from a teacher's lesson are shared by the
+students of that class, because they come from the teacher's lesson alone.
+Notes and notebooks a student made belong to that student and are deleted
+when they delete them or their account. **Study helper chats are kept only on
+the student's device**, and are deleted from it when the student signs out;
+we do not store them.
 
 **Our provider:** Together Computer, Inc. (Together AI), using the model
-`Qwen/Qwen3.5-9B`, processing on infrastructure located in
-[PROVIDER PROCESSING LOCATIONS].
+`Qwen/Qwen3.5-9B`. Its processing may take place outside the EEA (see §8).
 
-**Limits:** each account has a daily limit on questions. Each paid plan has a
-monthly limit on how much AI it can use.
+<!-- TODO(legal): state the provider's processing locations and its retention
+of requests, from the signed DPA. -->
+
+**Limits:** each plan has an allowance of how much AI it can use, shown in
+the app as a bar.
 
 **Accuracy:** answers and notes are generated by a language model and **can
 be wrong**. They are study support, not a source of truth, and should never
 be handed in as a student's own work. **AI never marks a student's work** in
 Studafy; marks come only from teachers.
 
-> **OUTSTANDING — MUST BE RESOLVED BEFORE PUBLICATION**
->
-> As at the date above, **no signed data processing agreement is in place
-> with the AI provider, and no Data Protection Impact Assessment covering AI
-> processing of children's data — including photos and lesson material — has
-> been completed.** Both are required: a written processor contract by
-> Article 28(3) GDPR, and a DPIA by Article 35 where processing is likely to
-> result in high risk, which the combination of children's data and
-> automated processing is understood to be.
->
-> Until both exist, this section cannot honestly be published and these
-> tools should not be offered to children.
+<!-- TODO(legal) - OUTSTANDING, MUST BE RESOLVED BEFORE THESE TOOLS ARE
+OFFERED TO CHILDREN: as at the date above, no signed data processing
+agreement is in place with the AI provider, and no Data Protection Impact
+Assessment covering AI processing of children's data (including photos and
+lesson material) has been completed. Both are required: a written processor
+contract by Article 28(3) GDPR, and a DPIA by Article 35. -->
 
 ---
 
@@ -445,22 +475,26 @@ own purposes.
 
 | Provider | What they process | Where |
 |---|---|---|
-| **Supabase** (database, authentication, file storage) | Substantially all application data | [CURRENTLY AWS ap-northeast-1, Tokyo — MOVING TO eu-central-1, Frankfurt. State the live region at publication.] |
+| **Supabase** (database, sign-in, file storage) | Substantially all application data | Frankfurt, Germany |
 | **Fly.io** (application hosting) | Requests passing through our servers while they are handled | Frankfurt, Germany |
-| **Axiom** (operational logs) | Technical logs: request times, outcomes and error codes, with account ids and hashed network addresses. Most successful requests are not kept; logs are deleted after 30 days | [REGION — choose EU] |
-| **Sentry** (error reports) | What broke and where in our code. No names, emails, message content or photos: we switch off its collection of personal data and mask anything that looks like it | [REGION — choose EU] |
-| **Amazon Web Services** (optionally a backup copy) | Encrypted backups where enabled | [REGION] |
-| **GitHub** (Microsoft) (backup storage) | Encrypted daily backups, which GitHub cannot read | [REGION] |
-| **Redis** (rate limits, short-lived caches) | Hashed identifiers and counters | [REGION] |
+| **Axiom** (operational logs) | Technical logs: request times, outcomes and error codes, with account identifiers and hashed network addresses. Most successful requests are not kept; logs are deleted after 30 days | Frankfurt, Germany |
+| **Sentry** (error reports) | What broke and where in our code, with the device model and versions. No names, emails, message content or photos | Germany |
+| **A malware-scanning service** | Each uploaded file, to check it before anyone can download it | See §8 |
+| **GitHub** (Microsoft) (backup storage) | Encrypted daily backups, which GitHub cannot read | See §8 |
+| **Redis** (rate limits, short-lived caches, background jobs) | Hashed identifiers, counters and job references | See §8 |
 | **Google** (Sign in with Google) | Your identity at sign-in | Global |
 | **Microsoft** (Sign in with Microsoft) | Your identity at sign-in | Global |
 | **Apple** (Sign in with Apple) | Your identity at sign-in | Global |
 | **Cloudflare** (Turnstile) | A bot check when a parent looks up a student | Global |
-| **Together AI** (AI study tools) | What §6 lists | [LOCATION] |
-| **Resend** (email) | Your email address and the message | [REGION] |
-| **Google Firebase Cloud Messaging** (push) | Your device token and the fixed notification text | Global |
-| **Google Meet** (meeting links) | The call itself, when you join a meeting link | Global |
+| **Together AI** (AI study tools) | What §6 lists | See §8 |
+| **Resend** (email) | Your email address and the fixed message | See §8 |
+| **Google Firebase Cloud Messaging** (push) | Your device's push token and the fixed notification text | Global |
+| **Google Calendar and Meet** (meetings) | The meeting's title and times, and the email addresses of the people invited; the call itself, when you join | Global |
 | **Apple** and **Google** (subscriptions) | Purchases, as independent controllers under their own policies | Global |
+
+<!-- TODO(legal): name the malware-scanning provider once chosen, and state
+its region. State the regions of Redis, Resend and Together AI. If backups are
+also copied to AWS S3, add Amazon Web Services and its region. -->
 
 ### 7.3 Others
 
@@ -476,24 +510,39 @@ own purposes.
 
 ## 8. International transfers
 
-Your data may be processed outside the country you are in — including outside
-the EEA, and outside Jordan.
+Our main systems — the database, file storage, application servers, logs
+and error reports — are in Germany. Some providers in §7.2 may process data
+outside the EEA, and outside Jordan.
 
 Where data leaves the EEA we rely on the European Commission's **Standard
-Contractual Clauses**, or on an adequacy decision where one covers the
-destination. You may request a copy of the safeguards in place by writing to
-[PRIVACY CONTACT EMAIL].
+Contractual Clauses**, or on an adequacy decision (such as the EU–US Data
+Privacy Framework) where one covers the destination. You may request a copy
+of the safeguards in place by writing to hello@studafy.com.
 
-[CONFIRM the mechanism for each provider in §7.2 before publishing — the AI
-provider and GitHub in particular. A provider located in the United States
-without SCCs in its contract is a transfer without a legal basis.]
+<!-- TODO(legal): confirm the mechanism for each provider in §7.2 before
+publishing on the own domain - the AI provider, GitHub, Resend and the
+scanner in particular. A provider in the United States without SCCs or
+DPF certification is a transfer without a legal basis. -->
 
 ---
 
-## 9. Records we cannot delete on request
+## 9. What deleting an account removes, and what it keeps
 
-Some records exist so that the service can be held to account, and they are
-written in a way that prevents them being altered or removed.
+**When an account is deleted** (14 days after the request, see §11), we:
+
+- remove the ability to sign in and erase the email address, name and
+  sign-in details;
+- replace the name on the profile, and on class rosters, with "Deleted user"
+  or "Deleted student", and clear the gender;
+- end every membership, guardian link and conversation the account was in;
+- delete its devices and push registrations, notification settings and
+  notifications, consents, blocks, data exports, notebooks and study
+  notebooks, AI usage records, and personal photos (photos for the notebook
+  or the study helper);
+- remove its email address from invitations.
+
+Some records exist so that the service can be held to account, or belong to
+the school, and are kept:
 
 **Audit records.** Every significant action — creating a class, granting or
 removing a role, saving, publishing or correcting marks, changing attendance,
@@ -512,6 +561,9 @@ record being accurate, and see how it changed.
 every file a teacher replaced or took off a lesson or assignment, is kept for
 the school.
 
+**Messages already sent.** A message you sent stays with the people you sent
+it to, shown as from "Deleted user".
+
 **Membership history.** The record that a role was granted, suspended or
 revoked is kept even after the role ends.
 
@@ -520,11 +572,10 @@ legally required to keep attendance, assessment and safeguarding records for
 a defined period. These stay with the school when your account is deleted.
 The app shows you which records these are before you confirm a deletion.
 
+**Payment records** are kept as tax and accounting law requires.
+
 **Legal holds.** Where data is relevant to a legal claim or an investigation,
 we may be required to preserve it until that concludes.
-
-Audit and history records identify who acted. That is their purpose, and it
-means a name may remain in them after an account is otherwise deleted.
 
 ---
 
@@ -537,14 +588,19 @@ means a name may remain in them after an account is otherwise deleted.
 | Academic records, marks, their history and attendance where a school is controller | As the school's retention policy requires |
 | Earlier hand-ins and replaced or removed files | As the school's retention policy requires |
 | Messages and voice notes | While the conversation exists, subject to school policy |
-| Audit records | [STATE A PERIOD — commonly 6–7 years. Must be defined.] |
-| Technical logs | [STATE A PERIOD — currently 30 days in CloudWatch if configured as documented] |
+| Audit records | While the records they describe are kept |
+| Technical logs | 30 days |
 | Rate-limit and cache records | Minutes to hours |
-| Backups | Encrypted, taken daily, kept for 30 days, then overwritten |
-| Study helper chats | On the student's device only, until they sign out; not kept by us. [CONFIRM AND STATE the provider's retention.] |
-| Notes, quizzes and flashcards made by the AI tools | Until the student deletes them, or while the lesson they came from exists |
+| Data exports | 7 days after they are ready |
+| Backups | Encrypted, taken daily, kept for 30 days, then deleted |
+| Study helper chats | On the student's device only, until they sign out; not kept by us |
+| Notes, quizzes, flashcards and study notebooks made by the AI tools | Until the student deletes them or their account, or while the lesson they came from exists |
 | Billing records | As tax and accounting law requires, typically 6–7 years |
 | Files | While attached to something, subject to school policy |
+
+<!-- TODO(legal): define a fixed period for audit records (commonly 6-7
+years), the AI provider's retention of requests, Sentry's retention of error
+reports, and Supabase Auth's retention of sign-in IP addresses. -->
 
 ---
 
@@ -568,9 +624,11 @@ applies, you have the right to:
   Protection Commission.
 
 **How to exercise them:** for account deletion and data export, use the app —
-Account, then Delete account or Download my data. A parent does this for a
-child account they manage. For anything else, write to
-[PRIVACY CONTACT EMAIL].
+Account, then Sign-in and security, then Delete account; or Account, then
+Download my data. A parent does this for a
+child account they manage. You can also ask for deletion without the app:
+see [Delete your account](delete-account). For anything else, write to
+hello@studafy.com.
 
 We respond within **one month**. If a request is complex we may extend by two
 further months and will tell you why.
@@ -589,13 +647,15 @@ and tell you we have done so, because it is the school's decision to make.
   records. A class's marks, attendance and hand-ins can be read and changed
   only by that class's own teachers.
 - Sensitive operations require recent re-authentication.
-- Data is encrypted in transit. Files are stored privately and are reachable
-  only through single-use grants that expire within minutes.
+- Data is encrypted in transit, including between our own servers and the
+  database. Files are stored privately and are reachable only through
+  single-use grants that expire within minutes.
 - Uploaded files are scanned before they can be downloaded, and photos and
   voice notes are rewritten to remove hidden metadata.
 - Passwords, tokens, keys and other secrets are stripped from logs
   automatically before they are written.
-- IP addresses are hashed with a keyed function rather than stored.
+- IP addresses are hashed with a keyed function rather than stored in our
+  records.
 - Requests are rate-limited, and abuse-prone operations fail closed.
 - Backups are encrypted before they leave our systems, with a key held
   outside every service that stores them.
@@ -604,8 +664,8 @@ No service can promise perfect security. **If a breach occurs that is likely
 to put your rights at risk, we will notify our supervisory authority within
 72 hours and tell affected users without undue delay.**
 
-> **OUTSTANDING:** we have a documented breach-notification duty above but no
-> written incident response procedure. Write one before publishing this.
+<!-- TODO(legal): the breach-notification duty above is documented, but there
+is no written incident response procedure yet. Write one. -->
 
 ---
 
@@ -617,9 +677,10 @@ have opened and of files you have downloaded so the app works when your
 connection is poor, your study helper chats, and your profile photo if you
 add one. **A profile photo is never uploaded to our servers**: it stays on
 the device where you chose it, nobody else sees it, and it is deleted when
-that account signs out. An answer you are writing
-is not saved until you hand it in. Each account's data is kept apart, and all of it is cleared from the
-device when that account signs out.
+that account signs out. An answer you are writing is not saved until you
+hand it in. Each account's data is kept apart, and all of it is cleared from
+the device when that account signs out. **On Android, none of this is copied
+to your phone's cloud backup.**
 
 Cloudflare Turnstile sets what is needed to complete its bot check.
 
@@ -646,33 +707,29 @@ again.
 
 ## 16. Contact
 
-[REGISTERED COMPANY NAME]
-[REGISTERED ADDRESS]
-[PRIVACY CONTACT EMAIL]
+Studafy Limited\
+4/5 The Square, Cahir, Co. Tipperary, Ireland\
+Company number 822430\
+hello@studafy.com
 
 You may complain to the Data Protection Commission (Ireland) at
 www.dataprotection.ie, or to your local supervisory authority, at any time.
 You do not have to contact us first.
 
----
+<!--
+WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
 
-## Appendix A — What to complete before publishing
-
-1. Every `[SQUARE BRACKET]` placeholder.
-2. **§6** — the DPA with Together AI and the DPIA. Both are outstanding. The
-   DPIA must cover photos of students' work and whiteboards, and lesson
-   material.
-3. **§8** — confirm the transfer mechanism for each provider individually,
-   including Fly.io, Axiom and Sentry (ADR-0035). Sign each one's DPA and
-   choose their EU data regions before production data reaches them.
-4. **§10** — define the retention periods left open.
-5. **§12** — write the incident response procedure.
-6. **Legal review.** This document describes processing of children's data by
-   an Irish-registered controller. It should not be published without a
-   lawyer reading it.
-7. **App Store and Play privacy declarations must match this document.** In
-   particular, both stores require you to declare that user content —
-   including photos — is sent to a third party for the AI tools. A
-   declaration that contradicts this policy is treated as a false
-   declaration, and apps are removed for it.
-8. **The Arabic in-app text** must be reviewed by a native legal translator.
+1. Every TODO(legal) comment above.
+2. §6: the DPA with Together AI and the DPIA. Both are outstanding. The DPIA
+   must cover photos of students' work and whiteboards, and lesson material.
+3. §8: the transfer mechanism for each provider individually, including
+   Fly.io, Axiom and Sentry (ADR-0035). Sign each one's DPA.
+4. §10: the retention periods left open.
+5. §12: the incident response procedure.
+6. Legal review. This document describes processing of children's data by
+   an Irish-registered controller.
+7. The store declarations (docs/store/google-play-data-safety.md and
+   docs/store/app-store-privacy-labels.md) must match this document.
+8. The Arabic translation (docs/legal/ar/privacy-policy.md) and the Arabic
+   in-app text must be reviewed by a native legal translator.
+-->
