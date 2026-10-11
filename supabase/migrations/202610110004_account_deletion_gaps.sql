@@ -17,6 +17,13 @@
 --   * deletes consents, notifications, queued notifications to the account
 --     and push registrations (0008 only revoked them through a trigger);
 --   * ends a managed child's link to the parent who managed it;
+--   * deletes, in the same transaction, every child account the person
+--     manages (ADR-0031): a managed child has no sign-in of its own, so
+--     without its parent nobody could ever use or delete it. Each child gets
+--     its own request, recording why; a child under legal hold waits, and
+--     the claim loop deletes it once the hold ends. The deletion screen
+--     names these children before the parent confirms
+--     (private.auth_deletion_impact, re-issued below);
 --   * replaces the account's email on invitations it accepted or that were
 --     waiting for it, and revokes the waiting ones;
 --   * marks the account's personal-only files (profile image, notebook
@@ -41,6 +48,8 @@ declare
   req public.account_deletion_requests%rowtype;
   subject uuid;
   subject_email text;
+  child uuid;
+  child_request uuid;
 begin
   select * into req from public.account_deletion_requests
   where id = p_request_id for update;
@@ -106,6 +115,31 @@ begin
   delete from public.platform_operators where user_id = subject;
   delete from private.managed_accounts where child_id = subject;
 
+  -- 3a. The child accounts this person manages go with them. Each runs
+  --     through this same function, so a held child is left for later.
+  for child in
+    select m.child_id from private.managed_accounts m
+    join public.profiles p on p.id = m.child_id
+    where m.guardian_id = subject and p.deleted_at is null
+    order by m.child_id
+  loop
+    select r.id into child_request from public.account_deletion_requests r
+    where r.user_id = child and r.state in ('grace_period', 'executing');
+    if child_request is null then
+      insert into public.account_deletion_requests (
+        user_id, execute_after, reason_code, impact_snapshot)
+      values (child, now(), 'undisclosed', jsonb_build_object(
+        'cause', 'managing_guardian_deleted',
+        'guardianDeletionRequestId', req.id))
+      returning id into child_request;
+    else
+      update public.account_deletion_requests
+        set execute_after = least(execute_after, now()), version = version + 1
+        where id = child_request;
+    end if;
+    perform private.account_deletion_execute(child_request);
+  end loop;
+
   -- 4. Personal-only data with no retention purpose.
   delete from public.user_blocks where blocker_id = subject or blocked_id = subject;
   delete from public.notification_preferences where user_id = subject;
@@ -146,6 +180,85 @@ begin
     jsonb_build_object('classification', req.education_record_classification),
     'account-deletion-' || req.id::text);
   return 'completed';
+end;
+$$;
+
+-- The deletion screen's summary also names the child accounts the person
+-- manages, because deleting the parent deletes them (step 3a above).
+-- Re-issued from 202609130006; otherwise unchanged. create or replace keeps
+-- its owner and its grant to studafy_api_runtime.
+create or replace function private.auth_deletion_impact()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  actor uuid := auth.uid();
+begin
+  if actor is null then
+    return null;
+  end if;
+
+  return jsonb_build_object(
+    'memberships', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'school_name', s.name, 'role', m.role
+      ) order by s.name), '[]'::jsonb)
+      from public.memberships m
+      join public.schools s on s.id = m.school_id
+      where m.user_id = actor and m.active and m.status = 'active'
+    ),
+    'retained_school_records', jsonb_build_object(
+      'attendance', (
+        select count(*) from public.attendance_records a
+        join public.students st on st.id = a.student_id
+        where st.user_id = actor
+      ),
+      'grades', (
+        select count(*) from public.grade_results g
+        join public.students st on st.id = g.student_id
+        where st.user_id = actor
+      ),
+      'submissions', (
+        select count(*) from public.submissions sub
+        join public.students st on st.id = sub.student_id
+        where st.user_id = actor
+      ),
+      'wellbeing', (
+        select count(*) from public.wellbeing_events w
+        join public.students st on st.id = w.student_id
+        where st.user_id = actor
+      )
+    ),
+    'deleted_personal_data', jsonb_build_object(
+      'profile', 1,
+      'devices', (
+        select count(*) from public.auth_devices d where d.user_id = actor
+      ),
+      'consents', (
+        select count(*) from public.consent_records c where c.user_id = actor
+      ),
+      'notifications', (
+        select count(*) from public.notifications n where n.user_id = actor
+      )
+    ),
+    'guardian_links', (
+      select count(*) from public.guardian_links gl
+      where gl.guardian_id = actor and gl.status = 'verified'
+    ),
+    'active_entitlements', (
+      select count(*) from public.entitlements e
+      where e.user_id = actor and e.status = 'active'
+    ),
+    'managed_child_accounts', (
+      select coalesce(jsonb_agg(p.display_name order by p.display_name), '[]'::jsonb)
+      from private.managed_accounts m
+      join public.profiles p on p.id = m.child_id
+      where m.guardian_id = actor and p.deleted_at is null
+    )
+  );
 end;
 $$;
 

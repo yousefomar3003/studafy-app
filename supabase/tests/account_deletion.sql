@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(38);
+select plan(44);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
@@ -80,6 +80,29 @@ values
    'application/pdf', 'application/pdf', repeat('d', 64), repeat('d', 64), 10, 'clean', now(),
    :'leaver', 'assignment_submission', 'essay.pdf');
 
+-- Two child accounts the leaver manages (ADR-0031); one is under legal hold.
+\set kid 'de1e0000-0000-4000-8000-000000000004'
+\set held_kid 'de1e0000-0000-4000-8000-000000000005'
+insert into auth.users (
+  id, email, encrypted_password, aud, role, email_confirmed_at, created_at,
+  updated_at, instance_id, confirmation_token, recovery_token, email_change,
+  email_change_token_new, email_change_token_current, phone_change_token,
+  raw_app_meta_data, raw_user_meta_data
+) values
+  (:'kid', 'kid@managed.studafy.invalid', '', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"Kai Kid"}'::jsonb),
+  (:'held_kid', 'heldkid@managed.studafy.invalid', '', 'authenticated', 'authenticated', now(), now(), now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}'::jsonb, '{"full_name":"Hal Kid"}'::jsonb);
+update public.profiles set display_name = 'Kai Kid' where id = :'kid';
+update public.profiles set display_name = 'Hal Kid' where id = :'held_kid';
+insert into private.managed_accounts (child_id, guardian_id) values
+  (:'kid', :'leaver'), (:'held_kid', :'leaver');
+insert into public.legal_holds (school_id, subject_user_id, reason, ticket_ref, granted_by)
+values (:'school_id', :'held_kid', 'Open safeguarding investigation', 'TICK-DL051-KID', :'teacher_user');
+
+select set_config('request.jwt.claim.sub', :'leaver', true);
+select is(private.auth_deletion_impact()->'managed_child_accounts', '["Hal Kid", "Kai Kid"]'::jsonb,
+  'the deletion screen names the child accounts that will be deleted too');
+select set_config('request.jwt.claim.sub', '', true);
+
 -- The worker's privileges are exactly the two entry points.
 select ok(has_function_privilege('studafy_worker_runtime', 'private.account_deletion_claim(integer)', 'execute'),
   'the worker can claim due requests');
@@ -146,6 +169,19 @@ select ok((select retention_until <= now() from public.file_objects
 select is((select retention_until from public.file_objects
   where id = 'de1e0000-0000-4000-8000-0000000000f2'), null,
   'a hand-in stays: it is the school''s record');
+
+-- A managed child goes with the parent; a held child waits for its hold.
+select is((select status::text from public.profiles where id = :'kid'), 'deleted',
+  'a child account the parent managed is deleted with the parent');
+select is((select email from auth.users where id = :'kid'),
+  'deleted+de1e0000-0000-4000-8000-000000000004@deleted.invalid', 'the child can no longer sign in');
+select is((select impact_snapshot->>'cause' from public.account_deletion_requests
+  where user_id = :'kid' and state = 'completed'), 'managing_guardian_deleted',
+  'the child''s own request records why it was deleted');
+select is((select display_name from public.profiles where id = :'held_kid'), 'Hal Kid',
+  'a child under legal hold is not deleted yet');
+select ok((select state = 'grace_period' and execute_after <= now() from public.account_deletion_requests
+  where user_id = :'held_kid'), 'the held child''s deletion waits, due, for the hold to end');
 
 -- Authority ends.
 select is((select count(*) from public.memberships where user_id = :'leaver' and active), 0::bigint,

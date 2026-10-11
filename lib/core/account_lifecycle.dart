@@ -26,9 +26,14 @@ class DeletionImpact {
     required this.retainedSchoolRecords,
     required this.deletedPersonalRecords,
     required this.gracePeriodDays,
+    this.managedChildAccounts = const [],
   });
 
   final List<String> schools;
+
+  /// Names of the child accounts this person manages. Deleting the account
+  /// deletes them too: nobody else can sign in to them (ADR-0031).
+  final List<String> managedChildAccounts;
   final Map<String, int> retainedSchoolRecords;
   final Map<String, int> deletedPersonalRecords;
   final int gracePeriodDays;

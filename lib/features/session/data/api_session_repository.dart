@@ -453,6 +453,7 @@ class ApiSessionRepository implements SessionRepository {
         'notifications': impact.deletedPersonalData.notifications,
       },
       gracePeriodDays: impact.gracePeriodDays,
+      managedChildAccounts: impact.managedChildAccounts,
     );
   }
 

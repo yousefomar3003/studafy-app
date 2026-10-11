@@ -205,6 +205,31 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
             ],
           ),
         ),
+        if (summary.managedChildAccounts.isNotEmpty) ...[
+          const SizedBox(height: 22),
+          _SettingsLabel(AppL10n.of(context).deleteChildAccountsHeading),
+          const SizedBox(height: 8),
+          FeatureCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(bottom: 10),
+                  child: Text(
+                    AppL10n.of(context).deleteChildAccountsBody,
+                    style: const TextStyle(color: studafyMuted),
+                  ),
+                ),
+                for (final child in summary.managedChildAccounts)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    // The name the parent gave the child account.
+                    child: UserContentText(child),
+                  ),
+              ],
+            ),
+          ),
+        ],
         if (summary.schools.isNotEmpty) ...[
           const SizedBox(height: 22),
           _SettingsLabel(AppL10n.of(context).deleteSchoolAccessHeading),

@@ -314,6 +314,13 @@ class AppL10nAr extends AppL10n {
   String get deleteSchoolAccessHeading => 'صلاحيات المدارس التي ستنتهي';
 
   @override
+  String get deleteChildAccountsHeading => 'حسابات الأطفال التي ستُحذف أيضًا';
+
+  @override
+  String get deleteChildAccountsBody =>
+      'أنت تدير حسابات الأطفال هذه. لا يستطيع أحد غيرك تسجيل الدخول إليها، لذا تُحذف مع حسابك بعد الأيام الأربعة عشر نفسها.';
+
+  @override
   String get deleteWhyHeading => 'أخبرنا بالسبب';
 
   @override
