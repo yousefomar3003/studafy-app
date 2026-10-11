@@ -133,7 +133,11 @@ select is(
     -- Family+ gate: a verified guardian link plus a live parent_insights
     -- entitlement, with the store environment read from the server's own
     -- single-row table rather than the request (202609240002).
-    'parent_insights_has_access'
+    'parent_insights_has_access',
+    -- Notebooks an API instance stopped writing (202610110003): claimed with
+    -- a lease, their payload built as the owner, who must still see the
+    -- lesson (launch plan 2.7).
+    'study_notebooks_resume'
   ],
   'API runtime role executes exactly the reviewed auth, idempotency, academic, file, and billing surface'
 );

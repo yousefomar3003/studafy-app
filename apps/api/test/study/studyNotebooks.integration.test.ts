@@ -28,6 +28,7 @@ import { PostgresMaterialRepository } from "../../src/study/material";
 import {
   createStudyNotebookRoutes,
   PostgresStudyNotebookRepository,
+  startNotebookRecovery,
 } from "../../src/study/studyNotebookRoutes";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
 
@@ -505,5 +506,50 @@ suite("Study notebooks over real SQL", () => {
     );
     expect(res.status).toBe(200);
     expect((await open(notebookId)).status).toBe(404);
+  });
+  test("a notebook an instance stopped writing is written again (launch plan 2.7)", async () => {
+    const deps = {
+      notebooks: new PostgresStudyNotebookRepository(sql),
+      material: new PostgresMaterialRepository(sql),
+      repository: new PostgresStudyRepository(sql),
+      prices: PRICES,
+      assistant,
+      lessonToolsEnabled: true,
+    };
+    const context = {
+      subject: STUDENT,
+      schoolId: SCHOOL,
+      requestId: crypto.randomUUID(),
+      aal2: false,
+    };
+    // Started the way the route starts one, then never written: the
+    // instance that took the request stopped.
+    const started = await deps.notebooks.call(context, "create", {
+      classroomId: CLASSROOM,
+      resourceId: LESSON,
+      sourceIds: [],
+      wholeLesson: true,
+      includeText: true,
+    });
+    expect(started["outcome"]).toBe("ok");
+    const id = String(started["notebookId"]);
+    const recovery = startNotebookRecovery(deps)!;
+    try {
+      // Within the time a write takes, it is left alone.
+      expect(await recovery.runOnce()).toBe(0);
+      await sql`update public.study_notebooks
+        set generation_started_at = now() - interval '5 minutes'
+        where id = ${id}::uuid`;
+      const before = await tokens(STUDENT);
+      expect(await recovery.runOnce()).toBe(1);
+      const notebook = await (await open(id)).json() as Notebook;
+      expect(notebook.summary.status).toBe("ready");
+      // Charged once, for the write that finished.
+      expect(await tokens(STUDENT)).toBeGreaterThan(before);
+      // Finished: nothing left to resume.
+      expect(await recovery.runOnce()).toBe(0);
+    } finally {
+      recovery.close();
+    }
   });
 });

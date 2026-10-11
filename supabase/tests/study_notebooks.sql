@@ -6,7 +6,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(36);
+select plan(43);
 
 \set other_student_user 'a0550000-0000-4000-8000-0000000000a1'
 \set pdf_file 'a0550000-0000-4000-8000-0000000000f1'
@@ -185,6 +185,32 @@ select is((pg_temp.nb(:'student_user', 'get', jsonb_build_object('id', :'nb_id')
   'Remember this', 'and the student''s notes are untouched');
 select is((pg_temp.nb(:'student_user', 'get', jsonb_build_object('id', :'nb_id'))->'notebook'->'content'->>'overview'),
   'Leaves make food.', 'as is the last good AI part');
+
+-- ---------------------------------------------------------------------------
+-- Resumed after an instance stopped writing (2026-10-11, launch plan 2.7)
+-- ---------------------------------------------------------------------------
+select is(pg_temp.nb(:'student_user', 'regenerate', jsonb_build_object('id', :'nb_id'))->'summary'->>'status',
+  'creating', 'a new generation starts');
+select is(jsonb_array_length(private.study_notebooks_resume(5)), 0,
+  'a write still in progress is left alone');
+update public.study_notebooks set generation_started_at = now() - interval '5 minutes'
+  where id = :'nb_id';
+select is((select r->>'notebookId' || ' ' || (r->>'outcome') || ' ' || (r->>'ownerId') || ' ' ||
+    (r->>'resume') || ' ' || (r->>'lessonTitle' is not null)::text
+  from jsonb_array_elements(private.study_notebooks_resume(5)) r),
+  :'nb_id' || ' ok ' || :'student_user' || ' 1 true',
+  'a stopped write is claimed once, with its payload built as its owner');
+select is(jsonb_array_length(private.study_notebooks_resume(5)), 0,
+  'and not again while another instance holds it');
+update public.study_notebooks set generation_lease_until = now() - interval '1 second'
+  where id = :'nb_id';
+select is((private.study_notebooks_resume(5)->0->>'resume'), '2', 'a lapsed lease lets it be resumed a second time');
+update public.study_notebooks set generation_lease_until = now() - interval '1 second'
+  where id = :'nb_id';
+select is(jsonb_array_length(private.study_notebooks_resume(5)), 0,
+  'but not a third: the ten-minute rule then shows it failed, with its retry');
+select is(pg_temp.nb(:'student_user', 'fail', jsonb_build_object('id', :'nb_id', 'generation', 3,
+  'reason', 'provider_unavailable'))->>'outcome', 'ok', 'it can still be recorded as failed');
 
 -- ---------------------------------------------------------------------------
 -- Practice from it

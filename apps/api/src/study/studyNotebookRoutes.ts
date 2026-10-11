@@ -1,3 +1,4 @@
+import type { Logger } from "@studafy/observability";
 import { type Context, Hono } from "hono";
 import { v1Route } from "@studafy/contracts";
 import type { Sql } from "@studafy/database";
@@ -66,6 +67,12 @@ export interface StudyNotebookRepository {
     operation: string,
     input: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;
+  /**
+   * Claims notebooks left "creating" by an instance that stopped mid-write
+   * (`private.study_notebooks_resume`), each with its start payload built
+   * as its owner.
+   */
+  resumable?(limit: number): Promise<Record<string, unknown>[]>;
 }
 
 export class PostgresStudyNotebookRepository
@@ -85,6 +92,13 @@ export class PostgresStudyNotebookRepository
       `;
       return rows[0]?.result ?? { outcome: "invalid" };
     });
+  }
+
+  async resumable(limit: number): Promise<Record<string, unknown>[]> {
+    const rows = await this.sql<{ result: Record<string, unknown>[] }[]>`
+      select private.study_notebooks_resume(${limit}) as result
+    `;
+    return rows[0]?.result ?? [];
   }
 }
 
@@ -161,28 +175,25 @@ export function notebookRefs(
   ];
 }
 
-export function createStudyNotebookRoutes(
+/**
+ * Writes a notebook's AI part: the chosen material, the model, then the saved
+ * notebook - or the reason it failed, which the app shows with a retry. Never
+ * throws. Used by the request that starts a notebook and by the recovery that
+ * resumes one an instance stopped writing.
+ */
+export function createNotebookWriter(
   deps: StudyNotebookDependencies,
-  authorization: AuthorizationDependencies,
-  idempotencyDependencies: IdempotencyDependencies,
-): Hono<AuthorizationEnv> {
-  const routes = new Hono<AuthorizationEnv>();
-  const log = authorization.logger;
+  log?: Logger,
+): (
+  context: RequestDbContext,
+  started: Record<string, unknown>,
+  resume?: number,
+) => Promise<void> {
   const meter = new AiMeter(deps.repository, deps.prices);
-  const background = deps.background ??
-    ((work: Promise<void>) => void work.catch(() => {}));
-  const refusal = (c: Context<AuthorizationEnv>, outcome: string) =>
-    outcomeProblem(c, outcome, NOTEBOOK_OUTCOMES);
-  const ready = () => deps.assistant !== null && deps.lessonToolsEnabled;
-
-  /**
-   * Writes the notebook's AI part: the chosen material, the model, then the
-   * saved notebook - or the reason it failed, which the app shows with a
-   * retry. Never throws.
-   */
-  async function generate(
+  return async function generate(
     context: RequestDbContext,
     started: Record<string, unknown>,
+    resume = 0,
   ): Promise<void> {
     const id = String(started["notebookId"]);
     const generation = Number(started["generation"]);
@@ -236,7 +247,11 @@ export function createStudyNotebookRoutes(
             unreadable: gathered.unreadable,
             learner: gathered.grade ? { grade: gathered.grade } : {},
           }),
-        `notebook:${id}:${generation}`,
+        // A resumed write has its own key: the stopped one's hold may still
+        // be live, and must not make this one look like a duplicate.
+        resume > 0
+          ? `notebook:${id}:${generation}:resume:${resume}`
+          : `notebook:${id}:${generation}`,
       );
       if (!metered.ok) return await fail(metered.outcome);
       await deps.notebooks.call(context, "finish", {
@@ -266,7 +281,79 @@ export function createStudyNotebookRoutes(
           : "provider_unavailable",
       );
     }
-  }
+  };
+}
+
+/**
+ * Resumes notebooks an API instance stopped writing (launch plan 2.7): once a
+ * minute, claims a few with a lease and writes them again as their owners.
+ * Off without a provider or the lesson-tools switch. The timer does not keep
+ * the process alive.
+ */
+export function startNotebookRecovery(
+  deps: StudyNotebookDependencies,
+  log?: Logger,
+  intervalMs = 60_000,
+): { runOnce(): Promise<number>; close(): void } | null {
+  const claim = deps.notebooks.resumable?.bind(deps.notebooks);
+  if (!claim || !deps.assistant || !deps.lessonToolsEnabled) return null;
+  const write = createNotebookWriter(deps, log);
+  let running = false;
+  const runOnce = async (): Promise<number> => {
+    if (running) return 0;
+    running = true;
+    try {
+      const claimed = await claim(5);
+      for (const started of claimed) {
+        const context: RequestDbContext = {
+          subject: String(started["ownerId"]),
+          schoolId: String(started["schoolId"]),
+          requestId: crypto.randomUUID(),
+          aal2: false,
+        };
+        if (started["outcome"] !== "ok") {
+          await deps.notebooks.call(context, "fail", {
+            id: started["notebookId"],
+            generation: started["generation"],
+            reason: "lesson_unavailable",
+          }).catch(() => {});
+          continue;
+        }
+        await write(context, started, Number(started["resume"] ?? 1));
+      }
+      if (claimed.length > 0) {
+        log?.info("study_notebooks_resumed", { count: claimed.length });
+      }
+      return claimed.length;
+    } catch (error) {
+      log?.warn("study_notebook_recovery_failed", {
+        error_name: error instanceof Error ? error.name : "unknown",
+      });
+      return 0;
+    } finally {
+      running = false;
+    }
+  };
+  const timer = setInterval(() => void runOnce(), intervalMs);
+  (timer as { unref?: () => void }).unref?.();
+  return { runOnce, close: () => clearInterval(timer) };
+}
+
+export function createStudyNotebookRoutes(
+  deps: StudyNotebookDependencies,
+  authorization: AuthorizationDependencies,
+  idempotencyDependencies: IdempotencyDependencies,
+): Hono<AuthorizationEnv> {
+  const routes = new Hono<AuthorizationEnv>();
+  const log = authorization.logger;
+  const meter = new AiMeter(deps.repository, deps.prices);
+  const background = deps.background ??
+    ((work: Promise<void>) => void work.catch(() => {}));
+  const refusal = (c: Context<AuthorizationEnv>, outcome: string) =>
+    outcomeProblem(c, outcome, NOTEBOOK_OUTCOMES);
+  const ready = () => deps.assistant !== null && deps.lessonToolsEnabled;
+
+  const generate = createNotebookWriter(deps, log);
 
   // -------------------------------------------------------------------------
   // A class's notebooks, and making one.
