@@ -136,6 +136,31 @@ export function scrubEvent<T extends Sentry.ErrorEvent>(event: T): T {
   return event;
 }
 
+/**
+ * The release a deploy reports as: the package version plus what identifies
+ * the build (launch plan 4.7). Without it every deploy shared one release
+ * ("0.1.0"), so an error could not be tied to the deploy that caused it.
+ * SENTRY_RELEASE (a git SHA, say) wins; otherwise Fly's deployment tag from
+ * FLY_IMAGE_REF ("registry.fly.io/studafy-api:deployment-01J..."), which
+ * every Fly machine has; otherwise the bare version (local runs).
+ */
+export function releaseId(
+  version: string,
+  source: Record<string, string | undefined> = process.env,
+): string {
+  const explicit = source.SENTRY_RELEASE?.trim();
+  if (explicit) {
+    return `${version}+${explicit.replace(/[^\w.-]/g, "-").slice(0, 64)}`;
+  }
+  const image = source.FLY_IMAGE_REF;
+  const tag = image?.includes(":")
+    ? image.slice(image.lastIndexOf(":") + 1)
+    : "";
+  return tag
+    ? `${version}+${tag.replace(/[^\w.-]/g, "-").slice(0, 64)}`
+    : version;
+}
+
 export function createSentryReporter(
   options: SentryReporterOptions,
 ): ErrorReporter {

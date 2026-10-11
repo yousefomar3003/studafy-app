@@ -383,7 +383,39 @@ export const workerEnvSchema = z.object({
   // scan without it, because structural validation is not signature-grade.
   MALWARE_SCANNER_URL: url.optional(),
   MALWARE_SCANNER_API_KEY: z.string().min(20).optional(),
+  // Launch plan 4.7: background-work alerts to Telegram. Off by default; on,
+  // it needs the bot token and chat id. Each check compares one number with
+  // its threshold; one incident sends one message, a reminder after the
+  // cooldown while it lasts, and one when it clears.
+  QUEUE_ALERTS_ENABLED: disabledSwitchFlag,
+  TELEGRAM_BOT_TOKEN: z.string().min(20).optional(),
+  TELEGRAM_CHAT_ID: z.string().regex(/^-?\d+$|^@\w+$/).optional(),
+  QUEUE_ALERT_INTERVAL_MS: z.coerce.number().int().min(5_000).max(3_600_000)
+    .default(60_000),
+  // Waiting jobs (or pending outbox rows, or quarantined files).
+  QUEUE_ALERT_MAX_DEPTH: z.coerce.number().int().min(1).default(500),
+  // Age of the oldest waiting item.
+  QUEUE_ALERT_MAX_AGE_SECONDS: z.coerce.number().int().min(10).default(300),
+  // New failed jobs (or dead letters) within the window.
+  QUEUE_ALERT_MAX_FAILED_PER_WINDOW: z.coerce.number().int().min(1).default(
+    10,
+  ),
+  QUEUE_ALERT_WINDOW_SECONDS: z.coerce.number().int().min(60).default(300),
+  // Work waiting but nothing completed for this long: a stuck consumer.
+  QUEUE_ALERT_STALL_SECONDS: z.coerce.number().int().min(60).default(600),
+  QUEUE_ALERT_COOLDOWN_SECONDS: z.coerce.number().int().min(60).default(1800),
 }).superRefine((value, context) => {
+  if (
+    value.QUEUE_ALERTS_ENABLED &&
+    (!value.TELEGRAM_BOT_TOKEN || !value.TELEGRAM_CHAT_ID)
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["TELEGRAM_BOT_TOKEN"],
+      message:
+        "queue alerts need TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID (QUEUE_ALERTS_ENABLED)",
+    });
+  }
   const dependentKeys = [
     "DATABASE_URL",
     "SUPABASE_URL",
@@ -907,6 +939,19 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
         env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON &&
           env.GOOGLE_CALENDAR_ORGANIZER_EMAIL,
       ),
+    },
+    queueAlerts: {
+      enabled: env.QUEUE_ALERTS_ENABLED,
+      telegramConfigured: Boolean(
+        env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID,
+      ),
+      intervalMs: env.QUEUE_ALERT_INTERVAL_MS,
+      maxDepth: env.QUEUE_ALERT_MAX_DEPTH,
+      maxAgeSeconds: env.QUEUE_ALERT_MAX_AGE_SECONDS,
+      maxFailedPerWindow: env.QUEUE_ALERT_MAX_FAILED_PER_WINDOW,
+      windowSeconds: env.QUEUE_ALERT_WINDOW_SECONDS,
+      stallSeconds: env.QUEUE_ALERT_STALL_SECONDS,
+      cooldownSeconds: env.QUEUE_ALERT_COOLDOWN_SECONDS,
     },
     accountRights: {
       deletionExecutorEnabled: env.ACCOUNT_DELETION_EXECUTOR_ENABLED,
