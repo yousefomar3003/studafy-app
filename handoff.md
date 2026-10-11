@@ -21,6 +21,24 @@ instructions.
 - **Database:** migrations up to `202610110003` on hosted; the API, worker
   and iPhone build are deployed.
 
+**Claude's remaining items (need nothing from the owner), in order:**
+
+| Order | Item | What | Effort |
+|---|---|---|---|
+| 1 | 4.3 | Host the privacy policy and terms on a temporary public page (the existing Cloudflare account, `studafy.workers.dev`), because Google Play needs the link (Y8) | 0.5 day |
+| 2 | 3.6 | Draft the Google Play Data safety answers from the code | 2 h |
+| 3 | 5.5 | iOS privacy manifest and App Store privacy labels, ready for when Apple approves | 2 h |
+| 4 | 4.7 | Telegram alerts on worker backlog; check Sentry and Axiom retention and scrubbing | 1 day |
+| 5 | 4.8 | Re-run capacity with exams, notebooks and AI routes | 1 day |
+| 6 | 7.1 | Test gaps (Family+ insights, notifications, material reading), accessibility checks per screen, simulator device tests in CI | 2–3 days |
+| 7 | 7.2 | Bring stale docs up to date (README, credentials map, ADR statuses) | 0.5 day |
+
+**Blocked on the owner:**
+- 2.3, 2.4 and 2.5 (needs Y2, Y3, Y4);
+- 3.1 to 3.9, the Android track (needs Y5, the app ID);
+- stage 5, iOS (needs the Apple account);
+- 2.8 waits for the next lesson-save rejection, now logged with the field.
+
 **What to work on:** `docs/planning/launch-work-plan.md`, top to bottom. It
 turns the production readiness assessment
 (`docs/evidence/launch-readiness/2026-10-11-production-readiness.md`, issues
