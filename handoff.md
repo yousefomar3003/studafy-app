@@ -5,6 +5,22 @@ Updated: 2026-10-11. Branch: `feat/mvp-school-operations-and-hosted-testing`
 
 ## Start here (2026-10-11)
 
+**Owner's checklist:** the "★ Your to-do" section at the top of
+`docs/planning/launch-work-plan.md` (Y1–Y9), with step-by-step
+instructions.
+
+**Done since the assessment (2026-10-11), all on the test copy:**
+- **Stage 1:** PR #20 merged; `main` CI is green.
+- **2.1:** account deletion and export executors are on.
+- **2.2:** production timeout set to 20 s.
+- **2.6:** comment-only paper corrections need no reason; the marking notice
+  sits above Save.
+- **2.7:** notebooks a stopped instance left are resumed.
+- **2.10:** re-authentication needs a fresh sign-in.
+- **3.2:** INTERNET is in the release manifest.
+- **Database:** migrations up to `202610110003` on hosted; the API, worker
+  and iPhone build are deployed.
+
 **What to work on:** `docs/planning/launch-work-plan.md`, top to bottom. It
 turns the production readiness assessment
 (`docs/evidence/launch-readiness/2026-10-11-production-readiness.md`, issues
@@ -28,7 +44,7 @@ assessment.
     plus the logging change `34e4d6f`.
   - Supabase: `cyrngoqnhqflzovlybbr`. The owner created every account in it
     for testing: preserve its data, never reset it.
-  - Migrations are up to date there (latest `202610110001`).
+  - Migrations are up to date there (latest `202610110003`).
 - **Phone:** the iPhone 14 Pro has the 2026-10-11 profile build, pointing at
   the test copy.
 - **Backups:**

@@ -16,6 +16,87 @@ the `PR-xx` codes point at its issue register.
 - New problems go into the right stage with a new line; keep the order by
   priority.
 
+## ★ Your to-do (start here)
+
+Everything below needs you: an account, a payment, a decision or a
+signature. Do them roughly in this order. When one is done, tell Claude
+"done with Y1" (and so on), and give **file paths** for anything secret,
+never the secret itself in chat.
+
+**Y1 · Try the new build on your iPhone (30 min) — plan 2.9**
+The 2026-10-11 build is installed. Try each, in English and then Arabic, and
+report what failed with the time and the message:
+- Teacher: add a lesson with a **Word file and a PDF**.
+- Student: hand in an assignment with a **photo** and a **Word file**.
+- Teacher: open that assignment's submissions and **open the student's file**.
+- Teacher: correct a published paper mark by **changing only the comment**:
+  it should save without asking for a reason.
+- Teacher: mark an online exam: the "Saved" message now shows **above** the
+  Save button.
+- Any account: Profile → **Download my data**, or **Delete account** (use a
+  spare test account for deletion). It now asks you to **sign in again**
+  first: that is the new safety check.
+
+**Y2 · Database logins (10 min) — plan 2.3**
+1. Terminal: `openssl rand -base64 32 | tr -d '/+='`, run **twice**, for two
+   passwords. Keep them in Apple Passwords.
+2. Supabase → project `cyrngoqnhqflzovlybbr` → SQL Editor → New query. Paste,
+   with your two passwords in place of `PASSWORD_1` / `PASSWORD_2`:
+   ```sql
+   alter role studafy_api_runtime login password 'PASSWORD_1';
+   alter role studafy_worker_runtime login password 'PASSWORD_2';
+   ```
+   Run. Expect "Success. No rows returned."
+3. Put the two passwords in a file only you can read, for example
+   `~/studafy-runtime-passwords.txt`, one per line, labelled api and worker.
+   Tell Claude the file path. Claude switches the Fly connection strings and
+   redeploys.
+
+**Y3 · Encrypted Redis (15 min) — plan 2.4**
+1. Sign up at upstash.com (free). Create a Redis database in region
+   **eu-central-1 (Frankfurt)**, with TLS on (the default).
+2. Copy its `rediss://…` connection URL into a file, for example
+   `~/studafy-redis-url.txt`. Tell Claude the path.
+
+**Y4 · Clean up old access (20 min) — plan 2.5**
+1. AWS console → IAM → Users → the Studafy user → Security credentials:
+   **delete** the access key.
+2. Fly: the suspended `studafy-api` app stores a Fly API token. Fly dashboard
+   → Account → Access Tokens: **revoke** the token you created for GitHub
+   deploys (or all you no longer use).
+3. Tell Claude "go". Claude removes the unused secrets, destroys the stray
+   `studafy` Fly app and deletes `fly-deploy.yml`.
+
+**Y5 · Decide the app ID (decision, 5 min) — plan 3.1**
+Today: `com.studafy.light`. Decided in September: `io.studafy.app`. It can
+**never change** after the first Google Play upload. Tell Claude which one.
+(Recommendation: `io.studafy.app`, as decided, if you own `studafy.io`.)
+
+**Y6 · Android release key (20 min, after Y5) — plan 3.3**
+Claude will give you one command that creates the upload key. You choose its
+password, keep the key file and password in Apple Passwords plus a USB copy.
+Losing it makes app updates painful.
+
+**Y7 · Firebase for push notifications (30 min, after Y5) — plan 3.8**
+1. console.firebase.google.com → Add project "Studafy".
+2. Add an Android app with the ID from Y5. Download `google-services.json`.
+3. Project settings → Service accounts → Generate new private key (a JSON).
+4. Save both files outside the project folder. Tell Claude the two paths.
+
+**Y8 · Google Play listing (1–2 h) — plan 3.6**
+Create the app in Play Console with the ID from Y5. Fill in content rating,
+target audience (children: Google's **Families policy** applies), and
+the privacy policy URL (Claude can host a page first). Claude drafts the
+**Data safety** answers for you.
+
+**Y9 · Later, when ready**
+- Apple account approved → tell Claude (stage 5: Sign in with Apple, iOS
+  push, TestFlight).
+- Choose a malware-scanning vendor (stage 4.4).
+- Domains: own `studafy.com` / `studafy.io`? (stage 4.2).
+- AI provider data agreement (DPA) and DPIA (stage 6).
+- Backup key: copy `~/studafy-backup.key` to a USB stick.
+
 ## Where things stand (2026-10-11)
 
 - **Apple Developer account:** applied for, waiting on email verification.
@@ -27,6 +108,9 @@ the `PR-xx` codes point at its issue register.
 - **Backups:** daily, encrypted, including uploaded files, restore-checked.
 - **Release builds:** blocked on purpose (SEC-001) until the gates in this
   plan pass.
+- **Claude's open items** that need nothing from you: 2.8 (wait for the next
+  lesson-save rejection), 4.3 hosted policy page (needs a domain or a
+  temporary host), 4.7 alerts, 4.8 capacity, 7.1 test gaps, 7.2 docs.
 
 ---
 
@@ -55,7 +139,7 @@ the `PR-xx` codes point at its issue register.
     yours.
   - **Done when:** the synthetic account is deleted after the grace period,
     and its export downloads.
-- [ ] **2.10 Real re-authentication before deletion, export and device sign-out**
+- [x] **2.10 Real re-authentication before deletion, export and device sign-out** — done 2026-10-11 (`7b7b0db`); on the test copy; real-token check passed locally; *You* confirm on the phone (Y1)
   (PR-30) · *Claude* · 1–2 days
   - Found 2026-10-11. The app asks for a "re-authenticated" grant without
     the person signing in again, and the server issues it to any valid
@@ -94,12 +178,12 @@ the `PR-xx` codes point at its issue register.
     stray `studafy` app and deletes `.github/workflows/fly-deploy.yml`.
   - **Done when:** `fly apps list` shows no `studafy`, and the suspended app
     holds only the secrets it uses.
-- [ ] **2.6 Two screen fixes** (PR-21) · *Claude* · 0.5 day
+- [x] **2.6 Two screen fixes** (PR-21) — done 2026-10-11 (`76b0c1e`): comment-only paper corrections need no reason (migration `202610110002`, on hosted); marking confirmation shown above Save · *Claude* · 0.5 day
   - The paper grade sheet should not ask for a reason when only the comment
     changes (online marking already doesn't).
   - The save confirmation should not cover the Save button on phones.
   - **Done when:** widget tests pass and both are checked on the simulator.
-- [ ] **2.7 Notebook writing in the background worker** (PR-23) · *Claude* ·
+- [x] **2.7 Notebook writing in the background worker** (PR-23) — done 2026-10-11 (`67fd09a`), differently: API instances resume notebooks a stopped instance left (lease, max 2 resumes; migration `202610110003`, on hosted); tested by leaving one half-started · *Claude* ·
   1 day
   - It runs inside the API today and is lost if the machine stops.
   - **Done when:** a notebook still finishes after the API restarts mid-way.
@@ -128,7 +212,7 @@ iOS.
     `io.studafy.app`. **It can never change after the first Play upload.**
   - **Done when:** you pick one and Claude applies it everywhere (Android,
     iOS, Supabase redirects, Google sign-in client).
-- [ ] **3.2 Internet permission in the release manifest** (PR-02) · *Claude* ·
+- [x] **3.2 Internet permission in the release manifest** (PR-02) — done 2026-10-11 (`16ba19d`) in the main manifest, pinned by a test; the release-bundle check runs at 3.5 (the SEC-001 block stops even a release manifest merge until then) · *Claude* ·
   10 min
   - Without it a release build cannot reach the server.
   - **Done when:** `aapt dump permissions` on a release bundle lists
@@ -319,4 +403,10 @@ iOS.
 | 2026-10-11 | 1.2 | Android build moved to its own job (Gradle cached, memory capped, arm64 only): 11–12 min, was timing out at 30. Typecheck failed on a clean install: `@studafy/test-support` was undeclared in `domain` and `infrastructure`; reproduced and fixed in a fresh clone. Two consecutive green CI runs |
 | 2026-10-11 | 2.1 | Hosted had 0 pending deletion/export requests (read-only check), so enabling touched no account. Local end-to-end with both executors (synthetic user): export requested, built, downloaded with the profile; deletion requested, held for the grace period, executed once due (due time moved forward on the local DB only), profile de-identified, old session refused, sign-in refused: 14/14. Test worker deployed; startup shows both executors on, no errors |
 | 2026-10-11 | finding | Re-authentication grants are issued without a fresh sign-in (PR-30): added as 2.10 |
+| 2026-10-11 | 2.2 | `fly.api.toml` `API_REQUEST_TIMEOUT_MS=20000`, pinned by the Fly config test |
+| 2026-10-11 | 2.6 | Paper comment-only corrections without a reason (pgTAP +3, widget test); marking notice inline, no snackbar (widget test) |
+| 2026-10-11 | 2.10 | Grant only when `amr` sign-in is within 600 s; 403 `RECENT_SIGN_IN_REQUIRED`; app signs in again with the same provider and same account, else restores the session. Real local tokens: fresh 200, refreshed after 65 s with a 60 s window 403, signed in again 200 |
+| 2026-10-11 | 2.7 | Resume of stalled notebooks (pgTAP +7; integration test half-started → ready, charged once) |
+| 2026-10-11 | 3.2 | INTERNET and label "Studafy" in the main Android manifest; test reads it |
+| 2026-10-11 | deploy | Backup (restore check passed, 7 files) → migrations `202610110002`, `202610110003` on hosted → API and worker deployed (ready, no errors) → new iPhone build installed |
 | 2026-10-11 | 1.3 | PR #20 retitled and described for its 50+ commits; all 7 CI jobs green; merged by owner's instruction as `c3c1278`; `main` CI green |
