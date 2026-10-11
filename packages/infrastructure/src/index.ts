@@ -9,6 +9,7 @@ export {
   createSentryReporter,
   type ErrorReporter,
   logLineReport,
+  releaseId,
   safeFields,
   scrubEvent,
   scrubText,
@@ -21,7 +22,18 @@ export {
   type QueueRedisPosture,
   readQueueRedisPosture,
 } from "./queuePosture";
-export { oldestWaitingAgeMs, type QueueStats, queueStats } from "./queues";
+export {
+  oldestActiveAgeMs,
+  oldestWaitingAgeMs,
+  type QueueStats,
+  queueStats,
+} from "./queues";
+export {
+  type AlertSender,
+  AlertSendError,
+  TelegramAlertSender,
+  type TelegramConfig,
+} from "./alerts/telegram";
 export {
   CacheConfigError,
   type CacheEnvelope,

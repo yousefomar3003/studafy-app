@@ -19,6 +19,7 @@ import {
   createRedis,
   createSentryReporter,
   isPlaintextRemoteRedis,
+  releaseId,
   SupabaseManagedAccountIssuer,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
@@ -51,11 +52,12 @@ export function buildPlatform() {
 
   // OPS-090: unexpected errors to Sentry when a DSN is set, with nothing
   // personal in them.
+  const release = releaseId(apiVersion);
   const errorReporter = env.SENTRY_DSN
     ? createSentryReporter({
       dsn: env.SENTRY_DSN,
       environment: env.ENVIRONMENT,
-      release: apiVersion,
+      release,
       service: "api",
     })
     : undefined;
@@ -76,7 +78,9 @@ export function buildPlatform() {
         routineRate: env.LOG_SAMPLE_ROUTINE_RATE,
         slowRequestMs: env.LOG_SLOW_REQUEST_MS,
       }),
-    ),
+      // The test copy and production ship to one Axiom dataset; every line
+      // says which it came from, and which deploy (launch plan 4.7).
+    ).child({ environment: env.ENVIRONMENT, release }),
   );
 
   logStartup(logger, {
