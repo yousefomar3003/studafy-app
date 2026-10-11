@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   flutter:
-    name: Flutter quality and debug build
+    name: Flutter quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -75,9 +75,57 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
-      # SEC-001 intentionally permits only a synthetic debug artifact.
+  # The Android build has its own job (2026-10-11). Inside the Flutter job it
+  # ran past that job's 30 minutes, and once the runner itself disappeared
+  # with no log: the project lets Gradle take an 8 GB heap plus 4 GB of
+  # metaspace, with the Kotlin daemon beside it, on a 16 GB runner. Here
+  # Gradle is cached and held to what the runner has; developers' machines
+  # keep the project setting.
+  android-debug-build:
+    name: Android synthetic debug build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      # User-level Gradle properties win over the project's, so only CI is
+      # capped.
+      - name: Fit Gradle into the runner's memory
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError'
+            echo 'kotlin.daemon.jvmargs=-Xmx2g'
+            echo 'org.gradle.workers.max=2'
+          } >> ~/.gradle/gradle.properties
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # SEC-001 intentionally permits only a synthetic debug artifact. One
+      # architecture is enough to prove the app builds; arm64 is what phones
+      # run.
       - name: Verify synthetic debug build
-        run: flutter build apk --debug --dart-define=APP_ENV=synthetic
+        run: >-
+          flutter build apk --debug --target-platform android-arm64
+          --dart-define=APP_ENV=synthetic
 
   edge-functions:
     name: Edge Function quality
