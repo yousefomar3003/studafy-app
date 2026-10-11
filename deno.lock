@@ -1100,6 +1100,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@supabase/supabase-js@2.116.0",
         "npm:@types/bun@1.4.2",
         "npm:postgres@3.4.9",
         "npm:supabase@2.117.0",

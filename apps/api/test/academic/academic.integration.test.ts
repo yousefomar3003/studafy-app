@@ -51,8 +51,15 @@ const STUDENT_ROW = "5f410000-0000-4000-8000-0000000000e1";
 const CURSOR_KEY = "api041-integration-cursor-key-0000000001";
 
 /** Fixed deadlines so an idempotent retry hashes the identical body. */
-const FIRST_DUE_AT = "2026-10-01T10:00:00.000Z";
-const FIRST_CLOSES_AT = "2026-10-02T10:00:00.000Z";
+// Relative to now, rounded to the hour: fixed dates turned these tests red
+// the moment the hand-in window they described had closed.
+const HOUR_MS = 3_600_000;
+const DAY_MS = 86_400_000;
+const NOW_HOUR = Math.floor(Date.now() / HOUR_MS) * HOUR_MS;
+const daysFromNow = (days: number) =>
+  new Date(NOW_HOUR + days * DAY_MS).toISOString();
+const FIRST_DUE_AT = daysFromNow(1);
+const FIRST_CLOSES_AT = daysFromNow(2);
 
 function firstAssignmentBody() {
   return {
@@ -543,7 +550,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         classroomId: CLASS_A,
         title: "Concurrent publication fixture",
         instructions: null,
-        dueAt: "2026-10-03T10:00:00.000Z",
+        dueAt: daysFromNow(3),
         closesAt: null,
       },
     });
@@ -1134,7 +1141,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         classroomId: CLASS_A,
         title: "Assistant must not create",
         instructions: null,
-        dueAt: "2026-10-05T10:00:00.000Z",
+        dueAt: daysFromNow(5),
         closesAt: null,
       },
     });
