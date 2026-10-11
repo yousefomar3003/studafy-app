@@ -4986,10 +4986,16 @@ abstract class AppL10n {
   /// **'Request received. We are preparing your copy.'**
   String get accountExportRequested;
 
+  /// A destructive account action needs a fresh sign-in, which was cancelled or came back as another account.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to confirm it\'s you, then try once more.'**
+  String get accountRecentSignInNeeded;
+
   /// No description provided for @accountExportReauth.
   ///
   /// In en, this message translates to:
-  /// **'For your security, sign out and sign in again first.'**
+  /// **'Sign in again to confirm it\'s you, then try once more.'**
   String get accountExportReauth;
 
   /// No description provided for @accountExportExpired.

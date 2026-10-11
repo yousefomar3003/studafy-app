@@ -1699,7 +1699,11 @@
   "accountExportReady": "Your copy is ready for 7 days.",
   "accountExportDownload": "Download",
   "accountExportRequested": "Request received. We are preparing your copy.",
-  "accountExportReauth": "For your security, sign out and sign in again first.",
+  "accountRecentSignInNeeded": "Sign in again to confirm it's you, then try once more.",
+  "@accountRecentSignInNeeded": {
+    "description": "A destructive account action needs a fresh sign-in, which was cancelled or came back as another account."
+  },
+  "accountExportReauth": "Sign in again to confirm it's you, then try once more.",
   "accountExportExpired": "That copy has expired. Request a new one.",
   "accountExportFailed": "That did not work. Please try again.",
   "todayWork": "Work you have to set",

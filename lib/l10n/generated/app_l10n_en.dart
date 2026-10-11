@@ -2878,8 +2878,12 @@ class AppL10nEn extends AppL10n {
       'Request received. We are preparing your copy.';
 
   @override
+  String get accountRecentSignInNeeded =>
+      'Sign in again to confirm it\'s you, then try once more.';
+
+  @override
   String get accountExportReauth =>
-      'For your security, sign out and sign in again first.';
+      'Sign in again to confirm it\'s you, then try once more.';
 
   @override
   String get accountExportExpired =>

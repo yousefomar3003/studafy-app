@@ -168,6 +168,7 @@ export function buildPlatform() {
       clockSkewSeconds: env.AUTH_CLOCK_SKEW_SECONDS,
       revocationBudgetSeconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
       reauthTtlSeconds: env.AUTH_REAUTH_TTL_SECONDS,
+      recentSignInSeconds: env.AUTH_RECENT_SIGN_IN_SECONDS,
       deletionGraceDays: env.AUTH_DELETION_GRACE_DAYS,
       // Development alone signs in against the hosted project while keeping
       // DATABASE_URL on local Postgres, so it alone needs profiles created on

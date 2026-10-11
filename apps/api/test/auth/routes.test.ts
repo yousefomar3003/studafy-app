@@ -662,6 +662,64 @@ describe("admin MFA", () => {
   });
 });
 
+describe("re-authentication needs a recent sign-in (launch plan 2.10)", () => {
+  const now = () => Math.floor(Date.now() / 1000);
+
+  test("a session signed in an hour ago gets no grant", async () => {
+    const h = await harness();
+    const response = await h.request("/v1/auth/reauth/verify", {
+      method: "POST",
+      token: await validToken({
+        amr: [{ method: "oauth", timestamp: now() - 3600 }],
+      }),
+      body: JSON.stringify({ purpose: "account_deletion" }),
+    });
+    expect(response.status).toBe(403);
+    expect((await response.json() as { code: string }).code).toBe(
+      "RECENT_SIGN_IN_REQUIRED",
+    );
+  });
+
+  test("refreshing the token does not count as signing in", async () => {
+    // A refresh mints a new token (new iat) but keeps the sign-in's amr.
+    const h = await harness();
+    const response = await h.request("/v1/auth/reauth/verify", {
+      method: "POST",
+      token: await validToken({
+        issuedAt: now(),
+        amr: [{ method: "oauth", timestamp: now() - 7200 }],
+      }),
+      body: JSON.stringify({ purpose: "device_revoke" }),
+    });
+    expect(response.status).toBe(403);
+  });
+
+  test("a session with no sign-in record gets no grant", async () => {
+    const h = await harness();
+    const response = await h.request("/v1/auth/reauth/verify", {
+      method: "POST",
+      token: await validToken({ amr: [] }),
+      body: JSON.stringify({ purpose: "account_data_export" }),
+    });
+    expect(response.status).toBe(403);
+  });
+
+  test("signing in again moments ago is enough", async () => {
+    const h = await harness();
+    const response = await h.request("/v1/auth/reauth/verify", {
+      method: "POST",
+      token: await validToken({
+        amr: [
+          { method: "oauth", timestamp: now() - 7200 },
+          { method: "oauth", timestamp: now() - 30 },
+        ],
+      }),
+      body: JSON.stringify({ purpose: "account_deletion" }),
+    });
+    expect(response.status).toBe(200);
+  });
+});
+
 describe("identity linking", () => {
   test("linking refuses when no provider verifier is configured", async () => {
     // Fail closed: an unconfigured provider must not be linkable.

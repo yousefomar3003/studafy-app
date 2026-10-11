@@ -28,6 +28,10 @@ const DEFINITIONS: Record<
     title: "Recent authentication required",
     detail: "Confirm it is you before continuing.",
   },
+  RECENT_SIGN_IN_REQUIRED: {
+    title: "Sign in again",
+    detail: "Sign in again to confirm it is you, then try once more.",
+  },
   MFA_REQUIRED: {
     title: "Two-factor authentication required",
     detail: "Two-factor authentication is required for this action.",

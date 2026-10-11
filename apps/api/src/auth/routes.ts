@@ -269,6 +269,28 @@ export function createAuthRoutes(
         return problem(c, "MFA_REQUIRED", 403);
       }
 
+      // And only when the person actually signed in moments ago (launch
+      // plan 2.10). Before, any live session got a grant, so a stolen token
+      // or an unlocked phone could request account deletion. `amr` records
+      // when each sign-in method was last used and survives a refresh, so
+      // a long-lived session cannot pass by refreshing. 403, not 401: the
+      // session is valid, and the app signs the person in again, then
+      // retries.
+      const nowSeconds = Math.floor((deps.now?.() ?? Date.now()) / 1000);
+      const lastSignIn = actor.token.authMethods.reduce(
+        (latest, method) => Math.max(latest, method.timestamp),
+        0,
+      );
+      if (nowSeconds - lastSignIn > (deps.recentSignInSeconds ?? 600)) {
+        await recordAuthEvent(deps, actor.token.subject, {
+          eventType: "reauth_failed",
+          outcome: "denied",
+          reasonCode: "sign_in_not_recent",
+          requestId: c.get("requestId"),
+        });
+        return problem(c, "RECENT_SIGN_IN_REQUIRED", 403);
+      }
+
       const grant = opaqueGrant();
       const expiresAt = await deps.repository.issueReauthGrant(
         actor.token.subject,

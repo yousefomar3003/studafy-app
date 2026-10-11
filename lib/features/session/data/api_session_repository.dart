@@ -12,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     show SignOutScope;
 
 import '../../../core/account_lifecycle.dart';
+import '../../../core/failures.dart';
 import '../../../core/ids.dart';
 import '../../../core/secure_storage.dart';
 import '../../../core/studafy_domain.dart';
@@ -349,11 +350,57 @@ class ApiSessionRepository implements SessionRepository {
   @override
   Future<void> confirmRecentAuth(ReauthPurpose purpose) async {
     final wire = _purposeWire(purpose);
-    final verified = await _client.verifyReauth(
-      V1ReauthVerifyRequestDto(purpose: wire),
+    final verified = await withRecentSignIn(
+      () => _client.verifyReauth(V1ReauthVerifyRequestDto(purpose: wire)),
+      _signInAgain,
     );
     // Held for exactly one request; the transport clears it after sending.
     _transport.useReauthGrant(verified.grant);
+  }
+
+  /// Signs the same person in again with the provider they used, so the
+  /// server sees a sign-in from moments ago (launch plan 2.10).
+  ///
+  /// The provider's chooser may hand back another account. Then the session
+  /// the person was in is put back and nothing proceeds: a grant must never
+  /// be issued to, or used by, an account other than the one acting.
+  Future<void> _signInAgain() async {
+    final auth = _auth.auth;
+    final user = auth.currentUser;
+    final previous = auth.currentSession?.refreshToken;
+    final provider = loginProviderFor(user?.appMetadata['provider']);
+    if (user == null || previous == null || provider == null) {
+      // A managed child account has no provider of its own to sign in with.
+      throw const Failure.recentSignIn(
+        'For your security, sign out and sign in again, then try once more.',
+      );
+    }
+    final next = Completer<Session>();
+    final subscription = auth.onAuthStateChange.listen((state) {
+      final session = state.session;
+      if (state.event == AuthChangeEvent.signedIn &&
+          session != null &&
+          !next.isCompleted) {
+        next.complete(session);
+      }
+    }, onError: (Object _) {});
+    try {
+      await signInWithProvider(provider);
+      final session = await next.future.timeout(const Duration(minutes: 3));
+      if (session.user.id != user.id) {
+        await auth.setSession(previous);
+        throw const Failure.recentSignIn(
+          'That was a different account. Sign in with this account to '
+          'continue.',
+        );
+      }
+    } on TimeoutException {
+      throw const Failure.recentSignIn(
+        'Sign-in was not completed. Try again when you are ready.',
+      );
+    } finally {
+      await subscription.cancel();
+    }
   }
 
   @override
@@ -463,4 +510,29 @@ class ApiSessionRepository implements SessionRepository {
         LoginProvider.microsoft => OAuthProvider.azure,
         LoginProvider.apple => OAuthProvider.apple,
       };
+}
+
+/// The provider a Supabase user signed up with, or null for one that cannot
+/// be signed in with again from here (a managed child's magic link, email).
+LoginProvider? loginProviderFor(Object? provider) => switch (provider) {
+  'google' => LoginProvider.google,
+  'azure' => LoginProvider.microsoft,
+  'apple' => LoginProvider.apple,
+  _ => null,
+};
+
+/// Runs [attempt]; if the server answers that a recent sign-in is needed,
+/// runs [signInAgain] and tries exactly once more. Anything else - and a
+/// second refusal - reaches the caller unchanged.
+Future<T> withRecentSignIn<T>(
+  Future<T> Function() attempt,
+  Future<void> Function() signInAgain,
+) async {
+  try {
+    return await attempt();
+  } on V1ApiException catch (error) {
+    if (error.code != 'RECENT_SIGN_IN_REQUIRED') rethrow;
+  }
+  await signInAgain();
+  return await attempt();
 }

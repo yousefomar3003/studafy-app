@@ -2897,8 +2897,12 @@ class AppL10nAr extends AppL10n {
   String get accountExportRequested => 'تم استلام الطلب. نجهّز نسختك الآن.';
 
   @override
+  String get accountRecentSignInNeeded =>
+      'سجّل الدخول مرة أخرى للتأكد من هويتك، ثم حاول مرة أخرى.';
+
+  @override
   String get accountExportReauth =>
-      'لحمايتك، سجّل الخروج ثم سجّل الدخول مرة أخرى أولاً.';
+      'سجّل الدخول مرة أخرى للتأكد من هويتك، ثم حاول مرة أخرى.';
 
   @override
   String get accountExportExpired =>
