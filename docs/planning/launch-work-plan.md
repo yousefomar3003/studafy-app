@@ -47,7 +47,7 @@ the `PR-xx` codes point at its issue register.
 
 ## Stage 2: A safe, complete test copy (pilot-ready)
 
-- [ ] **2.1 Account deletion and data export actually run** (PR-10) ·
+- [x] **2.1 Account deletion and data export actually run** (PR-10) — done 2026-10-11: on in `fly.test.worker.toml` and `fly.worker.toml`, test worker deployed; local end-to-end 14/14 (see log) ·
   *Claude* · 0.5–1 day
   - Turn on `ACCOUNT_DELETION_EXECUTOR_ENABLED` and
     `DATA_EXPORT_EXECUTOR_ENABLED` on the test worker.
@@ -55,6 +55,21 @@ the `PR-xx` codes point at its issue register.
     yours.
   - **Done when:** the synthetic account is deleted after the grace period,
     and its export downloads.
+- [ ] **2.10 Real re-authentication before deletion, export and device sign-out**
+  (PR-30) · *Claude* · 1–2 days
+  - Found 2026-10-11. The app asks for a "re-authenticated" grant without
+    the person signing in again, and the server issues it to any valid
+    session, so an unlocked phone or a stolen session token is enough to
+    request account deletion. The 14-day grace period and cancel soften it,
+    but with push and email off the owner is not told.
+  - Fix: the server issues a grant only when the session's sign-in
+    (`amr` timestamp) is recent (for example 5 minutes); the app signs in
+    with the provider again first. Managed child accounts need their own
+    rule (the guardian confirms). Also notify the account when deletion is
+    requested, once push/email exist.
+  - **Done when:** a grant is refused for an old session and issued right
+    after a fresh sign-in (API tests), and the app flow works on the
+    simulator.
 - [ ] **2.2 Production request timeout** (PR-15) · *Claude* · 10 min
   - Add `API_REQUEST_TIMEOUT_MS = "20000"` to `fly.api.toml`. Quizzes and
     notebooks take longer than the 10 s default.
@@ -302,4 +317,6 @@ iOS.
 | 2026-10-11 | Plan created | From the readiness assessment |
 | 2026-10-11 | 1.1 | Branch pushed (32 commits); `origin` matches local |
 | 2026-10-11 | 1.2 | Android build moved to its own job (Gradle cached, memory capped, arm64 only): 11–12 min, was timing out at 30. Typecheck failed on a clean install: `@studafy/test-support` was undeclared in `domain` and `infrastructure`; reproduced and fixed in a fresh clone. Two consecutive green CI runs |
+| 2026-10-11 | 2.1 | Hosted had 0 pending deletion/export requests (read-only check), so enabling touched no account. Local end-to-end with both executors (synthetic user): export requested, built, downloaded with the profile; deletion requested, held for the grace period, executed once due (due time moved forward on the local DB only), profile de-identified, old session refused, sign-in refused: 14/14. Test worker deployed; startup shows both executors on, no errors |
+| 2026-10-11 | finding | Re-authentication grants are issued without a fresh sign-in (PR-30): added as 2.10 |
 | 2026-10-11 | 1.3 | PR #20 retitled and described for its 50+ commits; all 7 CI jobs green; merged by owner's instruction as `c3c1278`; `main` CI green |

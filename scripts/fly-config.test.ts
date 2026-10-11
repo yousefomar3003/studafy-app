@@ -60,6 +60,9 @@ describe("Fly configs pass production validation", () => {
     expect(() => enforceWorkerFailClosed(env)).not.toThrow();
     expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(true);
     expect(env.FILE051_SCAN_ENABLED).toBe(true);
+    // Launch plan 2.1: account deletion and data export must complete.
+    expect(env.ACCOUNT_DELETION_EXECUTOR_ENABLED).toBe(true);
+    expect(env.DATA_EXPORT_EXECUTOR_ENABLED).toBe(true);
   });
 
   test("production refuses client addresses from X-Forwarded-For", async () => {

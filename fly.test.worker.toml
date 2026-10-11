@@ -17,6 +17,11 @@ primary_region = "fra"
   FILE051_SCAN_ENABLED = "true"
   FILE050_CLEANUP_ENABLED = "true"
   DB_HOUSEKEEPING_ENABLED = "true"
+  # Account rights (DL-051): deletions run after their 14-day grace period,
+  # exports are built for download. Without these a request is accepted and
+  # never carried out (launch plan 2.1).
+  ACCOUNT_DELETION_EXECUTOR_ENABLED = "true"
+  DATA_EXPORT_EXECUTOR_ENABLED = "true"
   PAY071_BILLING_ENABLED = "false"
   # ADR-0037: lesson files and links read for the study helper. The model
   # key (AI_API_KEY) is a secret; the origin and model are not.
