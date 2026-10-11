@@ -37,12 +37,16 @@ applied, and the API, worker and phone build are deployed.
 - 765 Flutter tests pass.
 - The simulator test passes.
 
-**Backups (PR #32).** File backups need PR #32 on `main` (a root dependency
-for `export-storage.ts`, the `deno.lock` entry, and the dated-test fix). Its
-CI is green except "Verify synthetic debug build": the GitHub runner timed out
-or failed with no log, while the same build succeeds locally.
-`BACKUP_INCLUDE_STORAGE` is `false` until it merges; the secrets and the
-`main`-only environment rule are set.
+**Backups include files (2026-10-11).** PR #32 was merged into `main`
+(`feac3b4`) on the owner's instruction, although CI's "Verify synthetic debug
+build" step failed on GitHub's runner; the same build passes locally.
+`BACKUP_INCLUDE_STORAGE=true`. Test run 38143723528:
+- 7 files (4.1 MB, none missing) were exported;
+- the restore check passed (136 tables);
+- the 8.2 MB encrypted artifact decrypts with the owner's key and contains
+  the files.
+
+The `backups` environment can be used only from `main`.
 
 ## Latest (2026-10-08, later): security audit (ADR-0041)
 
