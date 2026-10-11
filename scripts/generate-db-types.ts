@@ -3,13 +3,20 @@ import { unlink } from "node:fs/promises";
 const outputPath = "packages/database/src/database.types.generated.ts";
 const checkOnly = Bun.argv.includes("--check");
 
+// DB_TYPES_DB_URL points at another database with every migration applied -
+// a throwaway stack - so generating never needs the developer's own local
+// database. Unset, the local stack is used as before.
+const source = Bun.env.DB_TYPES_DB_URL
+  ? ["--db-url", Bun.env.DB_TYPES_DB_URL]
+  : ["--local"];
+
 const process = Bun.spawn([
   "bunx",
   "supabase",
   "gen",
   "types",
   "typescript",
-  "--local",
+  ...source,
   "--schema",
   "public",
 ], {
