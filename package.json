@@ -46,6 +46,7 @@
     "jsrsasign": "^11.1.5"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "2.116.0",
     "@types/bun": "1.4.2",
     "postgres": "3.4.9",
     "supabase": "2.117.0",
