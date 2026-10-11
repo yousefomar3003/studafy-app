@@ -1,10 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Every screen talks to the Studafy API. Flutter adds this only to the
+         debug and profile manifests, so a release build without it could not
+         reach the server at all (launch plan 3.2). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Voice notes in messages. Asked for only when someone first records. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Push notifications on Android 13 and later. Asked for at sign-in. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="studafy"
+        android:label="Studafy"
         android:name="${applicationName}"
         android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/ic_launcher">
