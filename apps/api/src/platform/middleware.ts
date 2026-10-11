@@ -297,6 +297,19 @@ function subjectOf(c: Context<PlatformEnv>): string | null {
   return typeof subject === "string" && subject.length > 0 ? subject : null;
 }
 
+/** The refusal a handler answered with (platform/errors.ts), if any. */
+function problemFields(c: Context<PlatformEnv>): Record<string, unknown> {
+  const problem = (c as unknown as Context).get("problem") as
+    | { code?: unknown; fields?: unknown }
+    | undefined;
+  if (!problem || typeof problem.code !== "string") return {};
+  const fields = Array.isArray(problem.fields) ? problem.fields : [];
+  return {
+    problem_code: problem.code,
+    ...(fields.length ? { invalid_fields: fields } : {}),
+  };
+}
+
 export function requestTelemetry(
   logger: Logger,
   now: () => number = Date.now,
@@ -330,6 +343,7 @@ export function requestTelemetry(
           ? hmacSubject(identity.hmacKey, "log_ip", address)
           : null,
         ua_family: userAgentFamily(c.req.header("user-agent")),
+        ...problemFields(c),
         // A request no route matched is logged under the wildcard it fell
         // through to, which says nothing about what was asked for. The path
         // carries only ids, never a query string, so it is safe to record

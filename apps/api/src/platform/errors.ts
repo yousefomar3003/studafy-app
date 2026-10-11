@@ -312,6 +312,17 @@ export function problem<E extends Env>(
   options: ProblemOptions = {},
 ): Response {
   const requestId = (c.var as { requestId?: unknown }).requestId;
+  // For the access log: which refusal, and which fields - never their
+  // values - so a 4xx in the logs says why without a reproduction.
+  (c as unknown as { set(key: string, value: unknown): void }).set(
+    "problem",
+    {
+      code,
+      fields: (options.errors ?? []).slice(0, 16).map((error) =>
+        `${error.path}:${error.code}`
+      ),
+    },
+  );
   return c.json(
     problemBody(
       code,
