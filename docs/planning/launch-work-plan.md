@@ -37,11 +37,11 @@ the `PR-xx` codes point at its issue register.
     runs them.
   - **Done when:** `git rev-list --count origin/feat/mvp-school-operations-and-hosted-testing..HEAD`
     prints 0.
-- [ ] **1.2 Make CI reliable** (PR-14) · *Claude* · 1–2 h
+- [x] **1.2 Make CI reliable** (PR-14) — done 2026-10-11 (Android build in its own job; missing test-support dependency fixed in `c334412`); runs 38151306142 and 38152183833 fully green · *Claude* · 1–2 h
   - The Flutter job's Android build times out or fails on GitHub's runner.
     Cache Gradle and Flutter, give the APK build its own job and time limit.
   - **Done when:** two CI runs in a row are fully green.
-- [ ] **1.3 Open a pull request from the branch to `main`** · *Claude*, merge by
+- [ ] **1.3 Open a pull request from the branch to `main`** — PR #20 updated and green; waiting for *You* to merge · *Claude*, merge by
   *You* · 30 min
   - **Done when:** `main` contains everything and CI is green on `main`.
 
@@ -301,3 +301,5 @@ iOS.
 |---|---|---|
 | 2026-10-11 | Plan created | From the readiness assessment |
 | 2026-10-11 | 1.1 | Branch pushed (32 commits); `origin` matches local |
+| 2026-10-11 | 1.2 | Android build moved to its own job (Gradle cached, memory capped, arm64 only): 11–12 min, was timing out at 30. Typecheck failed on a clean install: `@studafy/test-support` was undeclared in `domain` and `infrastructure`; reproduced and fixed in a fresh clone. Two consecutive green CI runs |
+| 2026-10-11 | 1.3 | PR #20 retitled and described for its 50+ commits; all 7 CI jobs green |
