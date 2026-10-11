@@ -55,7 +55,9 @@ class AttachmentPolicy {
   static const assignmentSubmission = AttachmentPolicy(
     purpose: FilePurpose.assignmentSubmission,
     maximumSizeBytes: 10 * 1024 * 1024,
-    allowedMediaTypes: {..._document, ..._image},
+    // Word and PowerPoint too (2026-10-11): students hand in what their
+    // teachers attach (migration 202610110001).
+    allowedMediaTypes: {..._document, ..._office, ..._image},
   );
   static const paperScan = AttachmentPolicy(
     purpose: FilePurpose.paperScan,

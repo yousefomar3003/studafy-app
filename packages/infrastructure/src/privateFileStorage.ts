@@ -2,7 +2,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { detectOoxmlMediaType, MP4_AUDIO_BRANDS } from "@studafy/domain";
 
 export const FILE_BUCKET = "private-school-files";
-export const SIGNED_UPLOAD_TTL_SECONDS = 2 * 60 * 60;
+// 30 minutes: ample for a 25 MB file on a slow phone connection, and an
+// abandoned upload stops counting against the person's open uploads
+// (file_quota_policies.user_active_sessions) after this long, not two hours.
+export const SIGNED_UPLOAD_TTL_SECONDS = 30 * 60;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 export interface UploadCapability {

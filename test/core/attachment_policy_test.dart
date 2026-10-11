@@ -19,17 +19,19 @@ void main() {
       expect(AttachmentPolicy.profileImage.maximumSizeBytes, 5242880);
     });
 
-    test('Word and PowerPoint only where a teacher files material', () {
+    test('Word and PowerPoint on teacher material and on hand-ins', () {
       // ADR-0037: the scan reads their ZIP structure and refuses macros,
-      // embedded objects and remote templates. Old binary .doc files and
-      // plain ZIPs are never offered anywhere.
+      // embedded objects and remote templates. Students hand in what their
+      // teachers attach (2026-10-11). Old binary .doc files and plain ZIPs
+      // are never offered anywhere.
       const modern = [AttachmentPolicy.docx, AttachmentPolicy.pptx];
       const never = ['application/msword', 'application/zip'];
       for (final purpose in FilePurpose.values) {
         final policy = AttachmentPolicy.of(purpose);
         final teacherMaterial =
             purpose == FilePurpose.lessonResource ||
-            purpose == FilePurpose.assignmentMaterial;
+            purpose == FilePurpose.assignmentMaterial ||
+            purpose == FilePurpose.assignmentSubmission;
         for (final type in modern) {
           expect(
             policy.allowedMediaTypes.contains(type),

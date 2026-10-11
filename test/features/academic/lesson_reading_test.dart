@@ -130,10 +130,11 @@ void main() {
     expect(find.text('Read again'), findsNothing);
   });
 
-  test('Word and PowerPoint go on lessons and work, not on hand-ins', () {
+  test('Word and PowerPoint go on lessons, work and hand-ins', () {
     for (final policy in [
       AttachmentPolicy.lessonResource,
       AttachmentPolicy.assignmentMaterial,
+      AttachmentPolicy.assignmentSubmission,
     ]) {
       expect(
         policy.refuse(mediaType: AttachmentPolicy.docx, sizeBytes: 100),
@@ -145,13 +146,6 @@ void main() {
       );
       expect(policy.pickerExtensions, containsAll(['docx', 'pptx']));
     }
-    expect(
-      AttachmentPolicy.assignmentSubmission.refuse(
-        mediaType: AttachmentPolicy.docx,
-        sizeBytes: 100,
-      ),
-      AttachmentRefusal.mediaType,
-    );
     expect(
       AttachmentPolicy.lessonResource.refuse(
         mediaType: 'application/msword',

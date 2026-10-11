@@ -456,27 +456,18 @@ class V1HttpTransport implements V1JsonTransport {
       throw Failure.forbidden;
     }
     try {
-      final request = await _client.getUrl(url).timeout(_timeout);
-      request.followRedirects = false;
-      final token = await _accessToken();
-      if (token != null) {
-        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      var (status, bytes) = await _bytesOnce(url);
+      // A 401 is the sign-in check refusing an expired token, before the
+      // link is looked at, so the link is still unspent: refresh once and
+      // retry, as every other request does. Opening a file an hour after
+      // signing in used to fail here every time. Any other refusal means
+      // the link itself was spent or withdrawn, and only a new link helps.
+      if (status == 401 && await _refreshSession()) {
+        (status, bytes) = await _bytesOnce(url);
       }
-      if (deviceId != null) {
-        request.headers.set('X-Studafy-Device', deviceId!);
-      }
-      final response = await request.close().timeout(_timeout);
-      final builder = BytesBuilder(copy: false);
-      // A deadline on each pause rather than the whole file, so a large
-      // file on a slow connection still arrives, and a stalled one fails.
-      await for (final chunk in response.timeout(_timeout)) {
-        builder.add(chunk);
-      }
-      // No refresh-and-retry: the grant was spent by this request whatever
-      // its outcome, so a second attempt needs a new link, not a new token.
-      if (response.statusCode == 401) throw Failure.unauthorized;
-      if (response.statusCode != 200) throw Failure.notFound;
-      return builder.takeBytes();
+      if (status == 401) throw Failure.unauthorized;
+      if (status != 200) throw Failure.notFound;
+      return bytes;
     } on SocketException {
       throw Failure.network;
     } on TimeoutException {
@@ -484,6 +475,27 @@ class V1HttpTransport implements V1JsonTransport {
     } on HttpException {
       throw Failure.network;
     }
+  }
+
+  /// One authenticated GET of a delivery link: its status and its bytes.
+  Future<(int, Uint8List)> _bytesOnce(Uri url) async {
+    final request = await _client.getUrl(url).timeout(_timeout);
+    request.followRedirects = false;
+    final token = await _accessToken();
+    if (token != null) {
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+    }
+    if (deviceId != null) {
+      request.headers.set('X-Studafy-Device', deviceId!);
+    }
+    final response = await request.close().timeout(_timeout);
+    final builder = BytesBuilder(copy: false);
+    // A deadline on each pause rather than the whole file, so a large
+    // file on a slow connection still arrives, and a stalled one fails.
+    await for (final chunk in response.timeout(_timeout)) {
+      builder.add(chunk);
+    }
+    return (response.statusCode, builder.takeBytes());
   }
 
   V1ApiException _exceptionFrom(_RawResponse response) {
