@@ -434,7 +434,7 @@ class PreviewAcademicRepository implements AcademicRepository {
   @override
   Future<void> correctGrades(
     String assessmentId,
-    String reason,
+    String? reason,
     List<GradeCorrection> entries,
   ) async {}
 

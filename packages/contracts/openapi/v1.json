@@ -25003,6 +25003,7 @@
               "UNAUTHENTICATED",
               "REAUTH_REQUIRED",
               "MFA_REQUIRED",
+              "RECENT_SIGN_IN_REQUIRED",
               "FORBIDDEN",
               "RATE_LIMITED",
               "INVALID_REQUEST",
@@ -27473,6 +27474,7 @@
           "UNAUTHENTICATED",
           "REAUTH_REQUIRED",
           "MFA_REQUIRED",
+          "RECENT_SIGN_IN_REQUIRED",
           "FORBIDDEN",
           "NOT_FOUND",
           "RATE_LIMITED",
@@ -28684,7 +28686,6 @@
           }
         },
         "required": [
-          "reason",
           "entries"
         ],
         "additionalProperties": false

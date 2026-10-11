@@ -5,6 +5,40 @@ Updated: 2026-10-11. Branch: `feat/mvp-school-operations-and-hosted-testing`
 
 ## Start here (2026-10-11)
 
+**Owner's checklist:** the "★ Your to-do" section at the top of
+`docs/planning/launch-work-plan.md` (Y1–Y9), with step-by-step
+instructions.
+
+**Done since the assessment (2026-10-11), all on the test copy:**
+- **Stage 1:** PR #20 merged; `main` CI is green.
+- **2.1:** account deletion and export executors are on.
+- **2.2:** production timeout set to 20 s.
+- **2.6:** comment-only paper corrections need no reason; the marking notice
+  sits above Save.
+- **2.7:** notebooks a stopped instance left are resumed.
+- **2.10:** re-authentication needs a fresh sign-in.
+- **3.2:** INTERNET is in the release manifest.
+- **Database:** migrations up to `202610110003` on hosted; the API, worker
+  and iPhone build are deployed.
+
+**Claude's remaining items (need nothing from the owner), in order:**
+
+| Order | Item | What | Effort |
+|---|---|---|---|
+| 1 | 4.3 | Host the privacy policy and terms on a temporary public page (the existing Cloudflare account, `studafy.workers.dev`), because Google Play needs the link (Y8) | 0.5 day |
+| 2 | 3.6 | Draft the Google Play Data safety answers from the code | 2 h |
+| 3 | 5.5 | iOS privacy manifest and App Store privacy labels, ready for when Apple approves | 2 h |
+| 4 | 4.7 | Telegram alerts on worker backlog; check Sentry and Axiom retention and scrubbing | 1 day |
+| 5 | 4.8 | Re-run capacity with exams, notebooks and AI routes | 1 day |
+| 6 | 7.1 | Test gaps (Family+ insights, notifications, material reading), accessibility checks per screen, simulator device tests in CI | 2–3 days |
+| 7 | 7.2 | Bring stale docs up to date (README, credentials map, ADR statuses) | 0.5 day |
+
+**Blocked on the owner:**
+- 2.3, 2.4 and 2.5 (needs Y2, Y3, Y4);
+- 3.1 to 3.9, the Android track (needs Y5, the app ID);
+- stage 5, iOS (needs the Apple account);
+- 2.8 waits for the next lesson-save rejection, now logged with the field.
+
 **What to work on:** `docs/planning/launch-work-plan.md`, top to bottom. It
 turns the production readiness assessment
 (`docs/evidence/launch-readiness/2026-10-11-production-readiness.md`, issues
@@ -28,7 +62,7 @@ assessment.
     plus the logging change `34e4d6f`.
   - Supabase: `cyrngoqnhqflzovlybbr`. The owner created every account in it
     for testing: preserve its data, never reset it.
-  - Migrations are up to date there (latest `202610110001`).
+  - Migrations are up to date there (latest `202610110003`).
 - **Phone:** the iPhone 14 Pro has the 2026-10-11 profile build, pointing at
   the test copy.
 - **Backups:**

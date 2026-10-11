@@ -119,6 +119,7 @@ describe("problem details contract", () => {
       "REASON_REQUIRED",
       "REAUTH_REQUIRED",
       "RECEIPT_INVALID",
+      "RECENT_SIGN_IN_REQUIRED",
       "REQUEST_TIMEOUT",
       "SERVICE_UNAVAILABLE",
       "STORAGE_UNAVAILABLE",

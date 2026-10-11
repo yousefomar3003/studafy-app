@@ -35,6 +35,7 @@ import {
 import {
   createStudyNotebookRoutes,
   PostgresStudyNotebookRepository,
+  startNotebookRecovery,
 } from "../study/studyNotebookRoutes";
 import { createFamilyInsightsRoutes } from "../family-insights/routes";
 import { PostgresFamilyInsightsRepository } from "../family-insights/repository";
@@ -647,21 +648,28 @@ export function buildRoutes(platform: Platform) {
     )
     : undefined;
   // A student's study notebooks (2026-10-07), appended after ADR-0037.
-  const studyNotebooks = sql && materialRepository && studyRepository &&
-      idempotencyDependencies
+  const studyNotebookDeps = sql && materialRepository && studyRepository
+    ? {
+      notebooks: new PostgresStudyNotebookRepository(sql),
+      material: materialRepository,
+      repository: studyRepository,
+      prices: aiPrices,
+      assistant: aiAssistant,
+      lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+    }
+    : undefined;
+  const studyNotebooks = studyNotebookDeps && idempotencyDependencies
     ? createStudyNotebookRoutes(
-      {
-        notebooks: new PostgresStudyNotebookRepository(sql),
-        material: materialRepository,
-        repository: studyRepository,
-        prices: aiPrices,
-        assistant: aiAssistant,
-        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
-      },
+      studyNotebookDeps,
       authorization,
       idempotencyDependencies,
     )
     : undefined;
+  // Notebooks an instance stopped writing are written again (launch plan
+  // 2.7); every instance runs this, and the database lease keeps them apart.
+  if (studyNotebookDeps) {
+    startNotebookRecovery(studyNotebookDeps, authorization.logger);
+  }
   // Exactly the chosen material (2026-10-07), appended after notebooks.
   const selectionTools = sql && materialRepository && studyRepository &&
       idempotencyDependencies

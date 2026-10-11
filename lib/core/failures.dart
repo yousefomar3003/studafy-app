@@ -15,6 +15,10 @@ class Failure {
   static const validationCode = 'VALIDATION';
   static const unknownCode = 'UNKNOWN';
 
+  /// The server needs a fresh sign-in before a destructive account action,
+  /// and it could not be completed (launch plan 2.10).
+  static const recentSignInCode = 'RECENT_SIGN_IN';
+
   static const network = Failure(
     networkCode,
     'Studafy could not reach the school system. Check your connection and '
@@ -36,6 +40,10 @@ class Failure {
     unknownCode,
     'Something went wrong. Please try again.',
   );
+
+  /// The fresh sign-in was cancelled, could not be offered, or came back as
+  /// another account.
+  const Failure.recentSignIn(String message) : this(recentSignInCode, message);
 
   const Failure.unsupported(String message) : this(unsupportedCode, message);
   const Failure.validation(String message) : this(validationCode, message);

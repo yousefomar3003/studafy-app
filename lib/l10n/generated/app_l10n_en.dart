@@ -2878,8 +2878,12 @@ class AppL10nEn extends AppL10n {
       'Request received. We are preparing your copy.';
 
   @override
+  String get accountRecentSignInNeeded =>
+      'Sign in again to confirm it\'s you, then try once more.';
+
+  @override
   String get accountExportReauth =>
-      'For your security, sign out and sign in again first.';
+      'Sign in again to confirm it\'s you, then try once more.';
 
   @override
   String get accountExportExpired =>
@@ -4343,6 +4347,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get gradeCorrectionReasonHint => 'e.g. added up page 3 again';
+
+  @override
+  String get gradeCorrectionReasonWhen =>
+      'Needed only when the mark or score changes.';
 
   @override
   String get gradeCorrectionReasonTooShort =>

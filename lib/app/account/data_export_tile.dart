@@ -55,7 +55,9 @@ class _DataExportTileState extends State<DataExportTile> {
         _say('export.requested');
       },
       onFailure: (failure) => _say(
-        failure.code == 'REAUTH_REQUIRED' ? 'export.reauth' : 'export.failed',
+        failure.code == Failure.recentSignInCode
+            ? 'export.reauth'
+            : 'export.failed',
       ),
     );
   }

@@ -54,6 +54,12 @@ export interface AuthDependencies {
   clockSkewSeconds: number;
   revocationBudgetSeconds: number;
   reauthTtlSeconds: number;
+  /**
+   * How long ago the session's last real sign-in (an `amr` timestamp, which
+   * a token refresh does not move) may be for a re-authentication grant.
+   * Absent: 600 seconds.
+   */
+  recentSignInSeconds?: number;
   deletionGraceDays: number;
   now?: () => number;
   /**

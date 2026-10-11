@@ -207,6 +207,11 @@ export const apiEnvSchema = z.object({
     .default(0),
   // Recent-auth grants are short by design: long enough to complete one
   // privileged action, too short to be worth stealing.
+  // How recently the person must have signed in (not just refreshed a
+  // token) to be given a re-authentication grant for deletion, export,
+  // device sign-out and the like (launch plan 2.10).
+  AUTH_RECENT_SIGN_IN_SECONDS: z.coerce.number().int().min(60).max(3600)
+    .default(600),
   AUTH_REAUTH_TTL_SECONDS: z.coerce.number().int().min(30).max(1800)
     .default(300),
   AUTH_DELETION_GRACE_DAYS: z.coerce.number().int().min(1).max(90).default(14),
@@ -792,6 +797,7 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     auth_clock_skew_seconds: env.AUTH_CLOCK_SKEW_SECONDS,
     auth_revocation_budget_seconds: env.AUTH_REVOCATION_BUDGET_SECONDS,
     auth_reauth_ttl_seconds: env.AUTH_REAUTH_TTL_SECONDS,
+    auth_recent_sign_in_seconds: env.AUTH_RECENT_SIGN_IN_SECONDS,
     auth_deletion_grace_days: env.AUTH_DELETION_GRACE_DAYS,
     cursor_signing_key_configured: Boolean(env.API_CURSOR_SIGNING_KEY),
     class_join_codes_enabled: Boolean(env.CLASS_JOIN_CODE_KEY),

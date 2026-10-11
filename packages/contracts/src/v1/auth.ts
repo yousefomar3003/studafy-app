@@ -23,6 +23,7 @@ export const V1AuthErrorCode = z.enum([
   "UNAUTHENTICATED",
   "REAUTH_REQUIRED",
   "MFA_REQUIRED",
+  "RECENT_SIGN_IN_REQUIRED",
   "FORBIDDEN",
   "NOT_FOUND",
   "RATE_LIMITED",

@@ -51,6 +51,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
     // Security audit 2026-10-08: never X-Forwarded-For in production.
     expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
+    // Launch plan 2.2: AI calls need longer than the 10 s default.
+    expect(env.API_REQUEST_TIMEOUT_MS).toBe(20_000);
   });
 
   test("the worker", async () => {
@@ -60,6 +62,9 @@ describe("Fly configs pass production validation", () => {
     expect(() => enforceWorkerFailClosed(env)).not.toThrow();
     expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(true);
     expect(env.FILE051_SCAN_ENABLED).toBe(true);
+    // Launch plan 2.1: account deletion and data export must complete.
+    expect(env.ACCOUNT_DELETION_EXECUTOR_ENABLED).toBe(true);
+    expect(env.DATA_EXPORT_EXECUTOR_ENABLED).toBe(true);
   });
 
   test("production refuses client addresses from X-Forwarded-For", async () => {

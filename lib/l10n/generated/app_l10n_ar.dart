@@ -2897,8 +2897,12 @@ class AppL10nAr extends AppL10n {
   String get accountExportRequested => 'تم استلام الطلب. نجهّز نسختك الآن.';
 
   @override
+  String get accountRecentSignInNeeded =>
+      'سجّل الدخول مرة أخرى للتأكد من هويتك، ثم حاول مرة أخرى.';
+
+  @override
   String get accountExportReauth =>
-      'لحمايتك، سجّل الخروج ثم سجّل الدخول مرة أخرى أولاً.';
+      'سجّل الدخول مرة أخرى للتأكد من هويتك، ثم حاول مرة أخرى.';
 
   @override
   String get accountExportExpired =>
@@ -4335,6 +4339,10 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get gradeCorrectionReasonHint => 'مثال: أعدت جمع درجات الصفحة 3';
+
+  @override
+  String get gradeCorrectionReasonWhen =>
+      'مطلوب فقط عند تغيير العلامة أو الدرجة.';
 
   @override
   String get gradeCorrectionReasonTooShort => 'اذكر سببًا من 3 أحرف على الأقل.';

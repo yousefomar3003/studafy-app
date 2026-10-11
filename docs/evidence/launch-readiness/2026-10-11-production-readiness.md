@@ -173,8 +173,8 @@ loses ten days of work.
 | Study notebooks, AI helper, quizzes, flashcards, summaries | Implemented and verified with the real model locally (2026-10-08); **legally blocked** | Production `AI_LESSON_TOOLS_ENABLED=false`; DPA/DPIA missing | PR-07 |
 | AI reading of lesson files (OCR) | Implemented; off in production | `AI_MATERIAL_INDEX_ENABLED` off | Follows PR-07 |
 | Subscriptions (Plus, Max, Family+) | **Implemented, never run against stores** | Billing off; no sandbox credentials; products unlisted outside synthetic | PR-11 |
-| Account deletion | **Broken in effect** | Request works; executor off in production | PR-10 |
-| Data export (download my data) | **Broken in effect** | Same | PR-10 |
+| Account deletion | Fixed on the test copy (2026-10-11) | Executor on in test and production configs; local end-to-end passes | Re-auth weakness PR-30 |
+| Data export (download my data) | Fixed on the test copy (2026-10-11) | Same | — |
 | Reports, blocks, moderation, legal holds | Implemented, tested | SAFE-043 suites | Who operates moderation? (unverified, PR-28) |
 | Support access | Implemented, tested (operator-only, MFA) | `api042_support_access` | Operator tooling unverified |
 | File scanning | Implemented, structural only | No malware engine (`MALWARE_SCANNER_*` absent) | PR-06 |
@@ -401,6 +401,24 @@ Each entry: severity · category · confirmed / risk / unverified.
   - rerun `scripts/scale` on a throwaway copy with the new routes;
   - size the production database;
   - check `DATABASE_POOL_MAX` against the plan's connection limit.
+
+**PR-30 · "Recent sign-in" not enforced for destructive account actions · High · security · confirmed (found 2026-10-11, after this report)**
+- **Evidence:**
+  - `POST /v1/auth/reauth/verify` mints a single-use grant for any
+    authenticated session (`apps/api/src/auth/routes.ts`,
+    `private.auth_issue_reauth_grant`); nothing checks that the person just
+    signed in;
+  - the app calls it directly (`confirmRecentAuth` in
+    `api_session_repository.dart`);
+  - the token's `amr` sign-in timestamps are parsed but never used.
+- **Impact:** a stolen access token or an unlocked phone can request account
+  deletion, export the user's data, or sign out devices. Deletion waits 14
+  days and can be cancelled, but with push and email off the owner is not
+  told.
+- **Fix:** issue grants only when an `amr` timestamp is recent; the app
+  re-signs-in first; a separate rule for managed child accounts; notify on
+  deletion requests.
+- **Verify:** API tests for an old and a fresh session; a simulator flow.
 
 ### P2 — important
 

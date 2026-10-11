@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/account_lifecycle.dart';
+import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
@@ -327,8 +328,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     setState(() => submitting = false);
     result.fold(
       onSuccess: (request) => setState(() => scheduled = request),
-      onFailure: (failure) =>
-          ScaffoldMessenger.of(context).showMessage(failure.message),
+      onFailure: (failure) => ScaffoldMessenger.of(context).showMessage(
+        failure.code == Failure.recentSignInCode
+            ? AppL10n.of(context).accountRecentSignInNeeded
+            : failure.message,
+      ),
     );
   }
 

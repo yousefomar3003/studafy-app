@@ -19,6 +19,9 @@ primary_region = "fra"
   # proxied by Cloudflare, also set ORIGIN_REQUIRE_CLOUDFLARE = "true" so
   # studafy-api.fly.dev cannot be used to step around Cloudflare.
   CLIENT_IP_SOURCE = "cloudflare"
+  # AI answers from class material, quizzes (6-9 s) and notebooks (8-14 s)
+  # need more than the 10 s default, as on the test copy (launch plan 2.2).
+  API_REQUEST_TIMEOUT_MS = "20000"
   LOG_LEVEL = "info"
   # OPS-090: keep every warning, error, failed and slow request; keep 1 in 10
   # ordinary successes and 1 in 100 unread-badge polls.

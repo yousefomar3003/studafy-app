@@ -1148,7 +1148,7 @@ abstract interface class PaperGradebookRepository {
   );
   Future<void> correctGrades(
     String assessmentId,
-    String reason,
+    String? reason,
     List<GradeCorrection> entries,
   );
   Future<List<GradeChange>> gradeHistory(String gradeId);
