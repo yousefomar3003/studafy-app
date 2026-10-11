@@ -2,6 +2,48 @@
 
 Date: 2026-10-07. Branch: `feat/mvp-school-operations-and-hosted-testing` (not merged to `main`).
 
+## Latest (2026-10-11): uploads and hand-ins fixed on the phone
+
+**Reproduced and fixed.** Reproduced on the iOS simulator with the real
+screens against a local API, worker and Storage
+(`integration_test/coursework_files_device_test.dart`, seeded by a local
+script). Commit `0ba0fd0`.
+
+- **Word and PowerPoint.** Storage refused `.docx` and `.pptx` (415) after the
+  API had granted the upload: the bucket's allow-list never gained the Office
+  types from `202610070001`. A lesson with a Word file showed "That file could
+  not be uploaded" and could not be saved. Migration `202610110001` makes the
+  bucket allow exactly what the purposes allow, and pgTAP checks it.
+- **Blocked uploads.** Failed uploads kept one of only 3 open upload slots for
+  2 hours, which blocked every upload. There are now 10 slots, and links last
+  30 minutes.
+- **Students may hand in Word and PowerPoint.** This reverses an earlier test
+  rule; the owner may revert it.
+- **Opening files.** The app sent an expired token and gave up on the 401. It
+  now refreshes and retries once.
+- **No submissions on the test copy.** The hosted database had none ever, so
+  teachers had nothing to grade: student hand-ins had never reached the
+  server.
+- **Access log reasons.** The access log now records `problem_code` and
+  `invalid_fields` (`34e4d6f`). An earlier hosted lesson save failed with a
+  400 that is still unexplained; the next one will name the field.
+
+**Hosted.** A backup ran first (restore check passed). `202610110001` was
+applied, and the API, worker and phone build are deployed.
+
+**Checks**
+- 37 of 37 pgTAP CI steps pass.
+- 1,013 backend tests pass.
+- 765 Flutter tests pass.
+- The simulator test passes.
+
+**Backups (PR #32).** File backups need PR #32 on `main` (a root dependency
+for `export-storage.ts`, the `deno.lock` entry, and the dated-test fix). Its
+CI is green except "Verify synthetic debug build": the GitHub runner timed out
+or failed with no log, while the same build succeeds locally.
+`BACKUP_INCLUDE_STORAGE` is `false` until it merges; the secrets and the
+`main`-only environment rule are set.
+
 ## Latest (2026-10-08, later): security audit (ADR-0041)
 
 The full report, with evidence for each finding, is
