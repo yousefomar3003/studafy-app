@@ -21,12 +21,16 @@ const repository: StudyRepository = {
   usage: async () => ({
     outcome: "ok",
     plan: "max",
-    features: ["ask", "whiteboard", "quiz", "flashcards"],
+    features: ["ask", "whiteboard", "notes", "quiz", "flashcards"],
+    allowance: {
+      period: "month",
+      total: 6_000_000,
+      used: 0,
+      remaining: 6_000_000,
+      resetsAt: "2026-11-01T00:00:00Z",
+    },
     capMicroUsd: 1_600_000,
     committedMicroUsd: 0,
-    askToday: 0,
-    askPerDay: 60,
-    resetsAt: "2026-10-01T00:00:00Z",
   }),
   query: async () => null,
   command: async () => ({ outcome: "invalid" }),
@@ -89,24 +93,31 @@ describe("what the plan summary says is available", () => {
   test("lesson tools on but no photo storage: no whiteboard notes", async () => {
     expect(
       await available({ assistant: true, lessonTools: true, storage: false }),
-    ).toEqual(["ask", "quiz", "flashcards"]);
+    ).toEqual(["ask", "notes", "quiz", "flashcards"]);
   });
 
   test("everything configured: everything", async () => {
     expect(
       await available({ assistant: true, lessonTools: true, storage: true }),
-    ).toEqual(["ask", "whiteboard", "quiz", "flashcards"]);
+    ).toEqual(["ask", "whiteboard", "notes", "quiz", "flashcards"]);
   });
 });
 
 describe("the hold for a question", () => {
   const prices = { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 };
 
-  test("grows with the chat sent along, so the cap can never be passed", () => {
-    const alone = holdFor(prices, "ask");
-    const withChat = holdFor(prices, "ask", 8 * 2_000);
+  test("grows with what is sent along, so neither limit can be passed", () => {
+    const alone = holdFor(prices, 0, 600);
+    const withChat = holdFor(prices, 8 * 2_000, 600);
     // 16,000 characters at two a token is 8,000 more input tokens.
-    expect(withChat - alone).toBe(costMicroUsd(prices, 8_000, 0));
+    expect(withChat.tokens - alone.tokens).toBe(8_000);
+    expect(withChat.microUsd - alone.microUsd).toBe(
+      costMicroUsd(prices, 8_000, 0),
+    );
+  });
+
+  test("a photo is held at a full phone photo's tokens", () => {
+    expect(holdFor(prices, 0, 1_400, 1).tokens).toBe(700 + 16_000 + 1_400);
   });
 });
 
@@ -150,9 +161,17 @@ describe("chat memory by plan", () => {
           },
           repository: {
             usage: async (_context, operation) =>
-              operation === "reserve"
-                ? { outcome: "ok", usageId: "u1" }
-                : { outcome: "ok", plan, askPerDay: 10, askToday: 1 },
+              operation === "reserve" ? { outcome: "ok", usageId: "u1" } : {
+                outcome: "ok",
+                plan,
+                allowance: {
+                  period: "week",
+                  total: 40_000,
+                  used: 0,
+                  remaining: 40_000,
+                  resetsAt: "2026-10-12T00:00:00Z",
+                },
+              },
             query: async () => null,
             command: async () => ({ outcome: "invalid" }),
           },

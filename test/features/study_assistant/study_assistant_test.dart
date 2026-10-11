@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/file_upload_repository.dart';
+import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
 import 'package:studafy/features/study_assistant/data/file_study_chat_store.dart';
@@ -66,6 +68,55 @@ void main() {
     title: 'Cells',
   );
 
+  testWidgets('the nav bar steps aside while a question is typed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: StudyAssistantPage(
+            assistant: StudyAssistantInteractor(
+              repository: _Recording(),
+              telemetry: const NoopTelemetry(),
+            ),
+          ),
+          bottomNavigationBar: StudafyNavigationBar(
+            selectedIndex: 0,
+            onSelected: (_) {},
+            items: const [
+              StudafyNavItem('Today', Icons.home_outlined, Icons.home),
+              StudafyNavItem('NavHelper', Icons.star_outline, Icons.star),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('NavHelper'), findsOneWidget);
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(find.text('NavHelper'), findsNothing);
+  });
+
+  testWidgets('shown full screen, it offers a way back', (tester) async {
+    var back = 0;
+    await tester.pumpWidget(
+      localizedApp(
+        home: StudyAssistantPage(
+          assistant: StudyAssistantInteractor(
+            repository: _Recording(),
+            telemetry: const NoopTelemetry(),
+          ),
+          onBack: () => back++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    expect(back, 1);
+  });
+
   testWidgets('class material chosen for a chat goes with every question', (
     tester,
   ) async {
@@ -83,7 +134,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Class material'));
     await tester.pumpAndSettle();
-    expect(find.text('Cells'), findsOne);
+    // What the chat answers from is shown above it.
+    expect(find.text('Answering from'), findsOne);
+    expect(find.textContaining('Lesson: Cells'), findsOne);
 
     await ask(tester, 'What is a nucleus?');
     await ask(tester, 'And a membrane?');
@@ -195,11 +248,13 @@ void main() {
   testWidgets('a refused question goes back in the box, explained', (
     tester,
   ) async {
-    await tester.pumpWidget(page(_Refusing(StudyAssistantFailure.dailyLimit)));
+    await tester.pumpWidget(
+      page(_Refusing(StudyAssistantFailure.allowanceUsed)),
+    );
     await tester.pumpAndSettle();
     await ask(tester, 'Anything at all');
 
-    expect(find.textContaining("used all of today's questions"), findsOne);
+    expect(find.textContaining("You've reached your AI usage limit"), findsOne);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       'Anything at all',
@@ -213,13 +268,13 @@ void main() {
     final limits = <String>[];
     await tester.pumpWidget(
       page(
-        _Refusing(StudyAssistantFailure.dailyLimit),
+        _Refusing(StudyAssistantFailure.allowanceUsed),
         onPlanLimit: (_, code) async => limits.add(code),
       ),
     );
     await tester.pumpAndSettle();
     await ask(tester, 'One more');
-    expect(limits, [StudyAssistantFailure.dailyLimit]);
+    expect(limits, [StudyAssistantFailure.allowanceUsed]);
   });
 
   testWidgets('a missing helper is not "this record no longer exists"', (
@@ -246,19 +301,26 @@ void main() {
     expect(repository.questions, isEmpty);
   });
 
-  testWidgets('the plan, its questions today and what upgrading adds', (
+  HelperAllowance tokens(int remaining, {int total = 40000}) => HelperAllowance(
+    weekly: total == 40000,
+    total: total,
+    used: total - remaining,
+    remaining: remaining,
+    resetsAt: DateTime(2026, 10, 12),
+  );
+
+  testWidgets('the plan, its tokens left and what upgrading adds', (
     tester,
   ) async {
     var upgrades = 0;
     await tester.pumpWidget(
       page(
         _Recording(),
-        plan: const HelperPlan(
+        plan: HelperPlan(
           name: 'Studafy Free',
-          askToday: 4,
-          askPerDay: 10,
+          allowance: tokens(30000),
           upgradeTo: 'Studafy Plus',
-          upgradeBenefits: ['40 questions a day'],
+          upgradeBenefits: const ['3,000,000 AI tokens a month'],
         ),
         onUpgrade: () async => upgrades++,
       ),
@@ -266,19 +328,67 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Studafy Free'), findsOne);
-    expect(find.text('Questions today: 4 of 10'), findsOne);
+    // A quarter used: plenty left, as a label - no counts.
+    expect(find.text('Plenty available · resets Mon, Oct 12'), findsOne);
+    expect(find.textContaining('40,000'), findsNothing);
     expect(find.text('Studafy Plus adds:'), findsOne);
-    expect(find.text('40 questions a day'), findsOne);
+    expect(find.text('3,000,000 AI tokens a month'), findsOne);
     await tester.tap(find.text('Upgrade'));
     await tester.pumpAndSettle();
     expect(upgrades, 1);
+  });
+
+  testWidgets('how AI usage works is explained without any counts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      page(
+        _Recording(),
+        plan: HelperPlan(name: 'Studafy Free', allowance: tokens(30000)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('How does AI usage work?'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('shares one allowance'), findsOne);
+    expect(find.text('uses a little'), findsOne);
+    expect(find.textContaining('token'), findsNothing);
+    expect(find.textContaining(RegExp(r'\d{1,3},\d{3}')), findsNothing);
+  });
+
+  testWidgets('changing the material mid-chat is marked in the chat', (
+    tester,
+  ) async {
+    final repository = _Recording();
+    await tester.pumpWidget(
+      page(
+        repository,
+        abilities: const HelperAbilities(classMaterial: true),
+        pick: const [cells],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await ask(tester, 'What is a cell?');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Choose'));
+    await tester.pumpAndSettle();
+    expect(find.text('From here: Lesson: Cells · all attachments'), findsOne);
+
+    await tester.tap(find.byTooltip('Remove').first);
+    await tester.pumpAndSettle();
+    expect(find.text('From here: no class material'), findsOne);
+    expect(find.text('Not using class material'), findsOne);
   });
 
   testWidgets('on the top plan nothing is sold', (tester) async {
     await tester.pumpWidget(
       page(
         _Recording(),
-        plan: const HelperPlan(name: 'Studafy Max', askToday: 1, askPerDay: 60),
+        plan: HelperPlan(
+          name: 'Studafy Max',
+          allowance: tokens(5000000, total: 6000000),
+        ),
         onUpgrade: () async {},
       ),
     );
@@ -287,29 +397,119 @@ void main() {
     expect(find.text('Upgrade'), findsNothing);
   });
 
+  testWidgets('with the tokens used, it says when they renew and the way on', (
+    tester,
+  ) async {
+    var upgrades = 0;
+    await tester.pumpWidget(
+      page(
+        _Recording(),
+        plan: HelperPlan(
+          name: 'Studafy Free',
+          allowance: tokens(0),
+          upgradeTo: 'Studafy Plus',
+        ),
+        onUpgrade: () async => upgrades++,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining("You've reached your AI usage limit. It resets on"),
+      findsOne,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Upgrade').last);
+    await tester.pumpAndSettle();
+    expect(upgrades, 1);
+  });
+
+  testWidgets('running low is said before it runs out', (tester) async {
+    await tester.pumpWidget(
+      page(
+        _Recording(),
+        plan: HelperPlan(
+          name: 'Studafy Free',
+          allowance: tokens(5000),
+          upgradeTo: 'Studafy Plus',
+        ),
+        onUpgrade: () async {},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Running low · resets Mon, Oct 12'), findsWidgets);
+    expect(find.textContaining('5,000'), findsNothing);
+  });
+
+  testWidgets('an answer from class material shows its sources', (
+    tester,
+  ) async {
+    final repository = _Recording();
+    await tester.pumpWidget(
+      page(
+        repository,
+        abilities: const HelperAbilities(classMaterial: true),
+        pick: const [cells],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Add material or a photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Class material'));
+    await tester.pumpAndSettle();
+    await ask(tester, 'How do leaves breathe?');
+
+    expect(find.text('Sources'), findsOne);
+    expect(find.text('[1] Leaf.pdf, p. 3'), findsOne);
+    // Asked in the app's language, with an id kept for a retry.
+    expect(repository.languages.single, 'en');
+    expect(repository.requestIds.single, isNotNull);
+  });
+
   testWidgets(
-    'with today\'s questions used, it says so and offers the way on',
+    'a photo still being checked is asked again as the same request',
     (tester) async {
-      var upgrades = 0;
+      final repository = _Recording(notReadyTimes: 2);
+      final uploads = _Uploads();
       await tester.pumpWidget(
         page(
-          _Recording(),
-          plan: const HelperPlan(
-            name: 'Studafy Free',
-            askToday: 10,
-            askPerDay: 10,
-            upgradeTo: 'Studafy Plus',
-          ),
-          onUpgrade: () async => upgrades++,
+          repository,
+          abilities: const HelperAbilities(photos: true),
+          uploads: uploads,
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining("You've used today's questions"), findsOne);
-      await tester.tap(find.widgetWithText(FilledButton, 'Upgrade').last);
+      await tester.tap(find.byTooltip('Add material or a photo'));
       await tester.pumpAndSettle();
-      expect(upgrades, 1);
+      await tester.tap(find.text('Photo from library'));
+      await tester.pumpAndSettle();
+      await ask(tester, 'Check my working');
+
+      expect(repository.requestIds, hasLength(3));
+      expect(repository.requestIds.toSet(), hasLength(1));
     },
   );
+
+  testWidgets('opened from a lesson, a new chat starts about it', (
+    tester,
+  ) async {
+    final openWith = ValueNotifier<List<ChatReference>?>([cells]);
+    final repository = _Recording();
+    await tester.pumpWidget(
+      localizedApp(
+        home: StudyAssistantPage(
+          assistant: StudyAssistantInteractor(
+            repository: repository,
+            telemetry: const NoopTelemetry(),
+          ),
+          openWith: openWith,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Lesson: Cells'), findsOne);
+    expect(openWith.value, isNull);
+    await ask(tester, 'Summarise this lesson');
+    expect(repository.referencesSent.single, [cells]);
+  });
 
   testWidgets('chats are kept, and an old one can be opened again', (
     tester,
@@ -404,6 +604,63 @@ void main() {
     expect(find.text('مساعد الدراسة'), findsOneWidget);
   });
 
+  test('a photo kept with the chat comes back with it', () {
+    final thumb = Uint8List.fromList([137, 80, 78, 71, 1, 2, 3]);
+    final turn = ChatTurn(
+      role: ChatRole.student,
+      text: 'What is this?',
+      at: DateTime.utc(2026, 10, 7, 12),
+      photoName: 'board.jpg',
+      photoThumb: thumb,
+    );
+    final back = ChatTurn.fromJson(
+      jsonDecode(jsonEncode(turn.toJson())) as Map<String, dynamic>,
+    )!;
+    expect(back.photoThumb, thumb);
+    expect(back.photoName, 'board.jpg');
+  });
+
+  testWidgets('a question with a photo shows the photo, not its file name', (
+    tester,
+  ) async {
+    // A real 1x1 PNG, as the chat keeps it.
+    final png = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    );
+    final store = _MemoryChats()
+      ..saved.add(
+        StudyChat(
+          id: 'c1',
+          title: 'What is this?',
+          createdAt: DateTime(2026, 10, 7),
+          updatedAt: DateTime(2026, 10, 7),
+          turns: [
+            ChatTurn(
+              role: ChatRole.student,
+              text: 'What is this?',
+              at: DateTime(2026, 10, 7, 12),
+              photoName: 'image_picker_ABC.jpg',
+              photoThumb: png,
+            ),
+            ChatTurn(
+              role: ChatRole.assistant,
+              text: 'A whiteboard.',
+              at: DateTime(2026, 10, 7, 12, 1),
+            ),
+          ],
+        ),
+      );
+    await tester.pumpWidget(page(_Recording(), chats: store));
+    await tester.pumpAndSettle();
+    expect(find.text('image_picker_ABC.jpg'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Image && w.semanticLabel == 'image_picker_ABC.jpg',
+      ),
+      findsOne,
+    );
+  });
+
   group('chats on the device', () {
     late Directory directory;
     setUp(() => directory = Directory.systemTemp.createTempSync('chats'));
@@ -468,6 +725,8 @@ class _Recording implements StudyAssistantRepository {
   final List<List<ChatTurn>> histories = [];
   final List<List<ChatReference>> referencesSent = [];
   final List<List<String>> photosSent = [];
+  final List<String?> requestIds = [];
+  final List<String?> languages = [];
 
   @override
   Future<StudyAnswer> ask(
@@ -475,7 +734,12 @@ class _Recording implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async {
+    requestIds.add(requestId);
+    languages.add(language);
     if (photoFileIds.isNotEmpty && notReadyTimes > 0) {
       notReadyTimes--;
       throw const Failure(StudyAssistantFailure.photoNotReady, 'checking');
@@ -486,7 +750,18 @@ class _Recording implements StudyAssistantRepository {
     photosSent.add(photoFileIds);
     return StudyAnswer(
       answer: 'Answer ${questions.length}',
-      remainingToday: 29,
+      citations: references.isEmpty
+          ? const []
+          : const [
+              AnswerCitation(n: 1, kind: 'file', name: 'Leaf.pdf', page: 3),
+            ],
+      allowance: HelperAllowance(
+        weekly: true,
+        total: 40000,
+        used: 3000 * questions.length,
+        remaining: 40000 - 3000 * questions.length,
+        resetsAt: DateTime(2026, 10, 12),
+      ),
     );
   }
 }
@@ -502,6 +777,9 @@ class _Refusing implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async => throw Failure(code, 'English fallback');
 }
 
@@ -518,10 +796,13 @@ class _Held implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async {
     questions.add(question);
     await _gate.future;
-    return const StudyAnswer(answer: 'An answer.', remainingToday: 29);
+    return const StudyAnswer(answer: 'An answer.');
   }
 }
 

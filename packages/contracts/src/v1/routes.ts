@@ -39,6 +39,8 @@ import * as Onboarding from "./onboarding";
 import * as StudyAssistant from "./studyAssistant";
 import * as FamilyInsights from "./familyInsights";
 import * as StudyPlans from "./studyPlans";
+import * as StudyNotebooks from "./studyNotebooks";
+import * as MaterialSelection from "./materialSelection";
 import * as ManagedAccounts from "./managedAccounts";
 
 export interface V1RouteContract {
@@ -1938,6 +1940,198 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     resourceParams(),
   ),
+  // Online assessments: the builder, attempts, marking and release, and a
+  // paper grade's attachments (ADR-0036).
+  cataloguePost(
+    "updateAssessmentDesign",
+    "/v1/assessments/{assessmentId}/design",
+    "assessment.design",
+    Academic.V1UpdateAssessmentDesignRequest,
+    "V1UpdateAssessmentDesignRequest",
+    Academic.V1Assessment,
+    "V1Assessment",
+    200,
+    assessmentParams(),
+  ),
+  cataloguePost(
+    "grantAssessmentAccess",
+    "/v1/assessments/{assessmentId}/access",
+    "assessment.access",
+    Academic.V1GrantAssessmentAccessRequest,
+    "V1GrantAssessmentAccessRequest",
+    Academic.V1AssessmentAccessGrant,
+    "V1AssessmentAccessGrant",
+    200,
+    assessmentParams(),
+  ),
+  catalogueGet(
+    "getAssessmentResults",
+    "/v1/assessment-results/{assessmentId}",
+    "assessment.results",
+    Academic.V1AssessmentResults,
+    "V1AssessmentResults",
+    assessmentParams(),
+    Academic.V1PageQuery,
+  ),
+  catalogueGet(
+    "getAssessmentAttempt",
+    "/v1/assessment-attempts/{attemptId}",
+    "assessment_attempt.read",
+    Academic.V1AssessmentAttemptDetail,
+    "V1AssessmentAttemptDetail",
+    attemptParams(),
+  ),
+  cataloguePost(
+    "markAssessmentAttempt",
+    "/v1/assessment-attempts/{attemptId}/mark",
+    "assessment_attempt.mark",
+    Academic.V1MarkAssessmentAttemptRequest,
+    "V1MarkAssessmentAttemptRequest",
+    Academic.V1AssessmentAttemptDetail,
+    "V1AssessmentAttemptDetail",
+    200,
+    attemptParams(),
+  ),
+  cataloguePost(
+    "updateGradeAttachments",
+    "/v1/assessments/{assessmentId}/grade-attachments",
+    "gradebook.attachments",
+    Academic.V1UpdateGradeAttachmentsRequest,
+    "V1UpdateGradeAttachmentsRequest",
+    Academic.V1GradeAttachments,
+    "V1GradeAttachments",
+    200,
+    assessmentParams(),
+  ),
+  // ADR-0037: how far a lesson's files and links have been read for the
+  // study helper, and reading one again. Appended.
+  catalogueGet(
+    "listLessonReading",
+    "/v1/resources/{resourceId}/reading",
+    "lesson_reading.read",
+    StudyPlans.V1LessonMaterial,
+    "V1LessonMaterial",
+    params("resourceId"),
+  ),
+  cataloguePost(
+    "retryLessonReading",
+    "/v1/resources/{resourceId}/reading/{sourceId}/retry",
+    "lesson_reading.retry",
+    StudyPlans.V1RetryLessonMaterialRequest,
+    "V1RetryLessonMaterialRequest",
+    StudyPlans.V1LessonMaterial,
+    "V1LessonMaterial",
+    200,
+    z.strictObject({
+      resourceId: z.string().uuid(),
+      sourceId: z.string().uuid(),
+    }),
+  ),
+  // Study notebooks (2026-10-07). Appended.
+  catalogueGet(
+    "listStudyNotebooks",
+    "/v1/classrooms/{classroomId}/study-notebooks",
+    "notebook.read",
+    StudyNotebooks.V1StudyNotebookList,
+    "V1StudyNotebookList",
+    params("classroomId"),
+  ),
+  cataloguePost(
+    "createStudyNotebook",
+    "/v1/classrooms/{classroomId}/study-notebooks",
+    "notebook.write",
+    StudyNotebooks.V1CreateStudyNotebookRequest,
+    "V1CreateStudyNotebookRequest",
+    StudyNotebooks.V1StudyNotebookSummary,
+    "V1StudyNotebookSummary",
+    201,
+    params("classroomId"),
+  ),
+  catalogueGet(
+    "getStudyNotebook",
+    "/v1/study-notebooks/{notebookId}",
+    "study_notebook.read",
+    StudyNotebooks.V1StudyNotebook,
+    "V1StudyNotebook",
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "regenerateStudyNotebook",
+    "/v1/study-notebooks/{notebookId}/regenerate",
+    "study_notebook.write",
+    StudyNotebooks.V1RegenerateStudyNotebookRequest,
+    "V1RegenerateStudyNotebookRequest",
+    StudyNotebooks.V1StudyNotebookSummary,
+    "V1StudyNotebookSummary",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "updateStudyNotebookSettings",
+    "/v1/study-notebooks/{notebookId}/settings",
+    "study_notebook.write",
+    StudyNotebooks.V1StudyNotebookSettingsRequest,
+    "V1StudyNotebookSettingsRequest",
+    StudyNotebooks.V1StudyNotebookSummary,
+    "V1StudyNotebookSummary",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "saveStudyNotebookPersonal",
+    "/v1/study-notebooks/{notebookId}/personal",
+    "study_notebook.write",
+    StudyNotebooks.V1StudyNotebookPersonalRequest,
+    "V1StudyNotebookPersonalRequest",
+    StudyNotebooks.V1StudyNotebook,
+    "V1StudyNotebook",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "deleteStudyNotebook",
+    "/v1/study-notebooks/{notebookId}/delete",
+    "study_notebook.write",
+    StudyNotebooks.V1DeleteStudyNotebookRequest,
+    "V1DeleteStudyNotebookRequest",
+    StudyNotebooks.V1DeleteStudyNotebookResponse,
+    "V1DeleteStudyNotebookResponse",
+    200,
+    params("notebookId"),
+  ),
+  cataloguePost(
+    "makeNotebookStudySet",
+    "/v1/study-notebooks/{notebookId}/study-set",
+    "study_notebook.write",
+    StudyNotebooks.V1NotebookStudySetRequest,
+    "V1NotebookStudySetRequest",
+    StudyNotebooks.V1NotebookStudySet,
+    "V1NotebookStudySet",
+    201,
+    params("notebookId"),
+  ),
+  // Exactly the chosen material, for every AI study tool (2026-10-07).
+  cataloguePost(
+    "generateSelectionStudySet",
+    "/v1/study-sets",
+    "material_set.generate",
+    MaterialSelection.V1SelectionStudySetRequest,
+    "V1SelectionStudySetRequest",
+    MaterialSelection.V1SelectionStudySet,
+    "V1SelectionStudySet",
+    201,
+  ),
+  cataloguePost(
+    "summariseMaterial",
+    "/v1/classrooms/{classroomId}/notebook/summary",
+    "notebook.write",
+    MaterialSelection.V1SummariseMaterialRequest,
+    "V1SummariseMaterialRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    201,
+    params("classroomId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {
@@ -1960,6 +2154,9 @@ function assessmentParams() {
 }
 function gradeParams() {
   return params("gradeResultId");
+}
+function attemptParams() {
+  return params("attemptId");
 }
 function membershipParams() {
   return params("membershipId");

@@ -7,6 +7,24 @@ export interface RedisOptions {
   connectTimeout?: number;
   /** Fast-fail readiness probes instead of unbounded background retries. */
   maxRetriesPerRequest?: number;
+  /**
+   * Milliseconds a single command may take. Without it a Redis that accepts
+   * the connection but stops answering held every rate-limited request
+   * until the whole request timed out, instead of failing over to the
+   * documented fallback. Never use this client for blocking commands.
+   */
+  commandTimeoutMs?: number;
+}
+
+/** True for a plaintext Redis URL whose host is not this machine. */
+export function isPlaintextRemoteRedis(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "redis:" &&
+      !["localhost", "127.0.0.1", "::1", "[::1]"].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -52,6 +70,7 @@ export function createRedis(
   return new Redis(url, {
     connectTimeout: (options.connectTimeout ?? 3) * 1000,
     maxRetriesPerRequest: options.maxRetriesPerRequest ?? 1,
+    commandTimeout: options.commandTimeoutMs ?? 2000,
     lazyConnect: false,
   });
 }

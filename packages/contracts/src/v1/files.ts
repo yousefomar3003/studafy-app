@@ -56,6 +56,9 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     "image/jpeg",
     "image/png",
     "image/webp",
+    // Word and PowerPoint, on lessons and assignments (ADR-0037).
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ]),
   sha256: Sha256,
   classroomId: Id.optional(),
@@ -93,16 +96,27 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     Record<V1UploadablePurpose, (keyof typeof present)[]>
   > = { assignment_submission: ["studentId"] };
   // Material names the work it belongs to when that already exists, or the
-  // class it is being written for when it does not yet - exactly one.
-  if (value.purpose === "assignment_material") {
-    if (present.assignmentId === present.classroomId) {
+  // class it is being written for when it does not yet - exactly one. A
+  // paper scan is likewise for one grade, or for the class (ADR-0036): the
+  // shared question paper, or a sheet for a student not yet marked.
+  const either = {
+    assignment_material: "assignmentId",
+    paper_scan: "gradeResultId",
+  } as const;
+  if (
+    value.purpose === "assignment_material" || value.purpose === "paper_scan"
+  ) {
+    const own = either[value.purpose];
+    if (present[own] === present.classroomId) {
       context.addIssue({
         code: "custom",
-        path: ["assignmentId"],
-        message: "name exactly one of assignmentId or classroomId",
+        path: [own],
+        message: `name exactly one of ${own} or classroomId`,
       });
     }
-    for (const key of ["studentId", "gradeResultId"] as const) {
+    const others = (["assignmentId", "studentId", "gradeResultId"] as const)
+      .filter((key) => key !== own);
+    for (const key of others) {
       if (present[key]) {
         context.addIssue({
           code: "custom",

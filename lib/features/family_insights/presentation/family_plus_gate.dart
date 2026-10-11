@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
-import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/parent_subscription_repository.dart';
 
@@ -90,20 +90,26 @@ class _FamilyPlusGateState extends State<FamilyPlusGate> {
     final active = _active;
     if (active == true) return widget.insights;
     return Scaffold(
-      backgroundColor: studafyCanvas,
-      appBar: AppBar(
-        title: Text(AppL10n.of(context).insightsTitle),
-        actions: widget.actions,
+      body: Column(
+        children: [
+          StudafyLargeTitle(
+            title: AppL10n.of(context).insightsTitle,
+            subtitle: AppL10n.of(context).familyPlusHeadline(widget.childName),
+            actions: widget.actions,
+          ),
+          Expanded(
+            child: active == null
+                ? const Center(child: CircularProgressIndicator())
+                : FamilyPlusOffer(
+                    key: ValueKey(widget.studentId),
+                    subscriptions: widget.subscriptions,
+                    studentId: widget.studentId,
+                    childName: widget.childName,
+                    openLink: widget.openLink,
+                  ),
+          ),
+        ],
       ),
-      body: active == null
-          ? const Center(child: CircularProgressIndicator())
-          : FamilyPlusOffer(
-              key: ValueKey(widget.studentId),
-              subscriptions: widget.subscriptions,
-              studentId: widget.studentId,
-              childName: widget.childName,
-              openLink: widget.openLink,
-            ),
     );
   }
 }
@@ -274,52 +280,63 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
       );
     }
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: current
-            ? const BorderSide(color: studafyCyan, width: 2)
-            : BorderSide.none,
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.family_restroom_rounded, color: studafyNavy),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      l10n.familyPlusPlanName(plan.seats),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: current
+              ? const BorderSide(color: studafyTeal, width: 2)
+              : const BorderSide(color: studafyHairline),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.family_restroom_rounded,
+                      color: studafyNavy,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l10n.familyPlusPlanName(plan.seats),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-                  if (current) Chip(label: Text(l10n.familyPlusYourPlan)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                price,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                    if (current)
+                      StatusPill(
+                        label: l10n.familyPlusYourPlan,
+                        icon: Icons.check_circle_rounded,
+                        color: studafyTeal,
+                      ),
+                  ],
                 ),
-              ),
-              if (trial != null) ...[const SizedBox(height: 4), Text(trial)],
-              const SizedBox(height: 4),
-              Text(
-                l10n.familyPlusPlanDetail(plan.seats),
-                style: theme.textTheme.bodySmall,
-              ),
-              if (action != null) ...[const SizedBox(height: 12), action],
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  price,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (trial != null) ...[const SizedBox(height: 4), Text(trial)],
+                const SizedBox(height: 4),
+                Text(
+                  l10n.familyPlusPlanDetail(plan.seats),
+                  style: theme.textTheme.bodySmall,
+                ),
+                if (action != null) ...[const SizedBox(height: 12), action],
+              ],
+            ),
           ),
         ),
       ),
@@ -333,80 +350,79 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
     final subscriptions = widget.subscriptions;
     final held = _status.plan;
 
+    final ends = _status.endsAt;
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 32),
       children: [
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: studafyNavy,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.insights_rounded, color: Colors.white, size: 32),
-              const SizedBox(height: 12),
-              UserContentText(
-                l10n.familyPlusHeadline(widget.childName),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.familyPlusIntro,
-                style: const TextStyle(color: Colors.white70, height: 1.4),
-              ),
-            ],
-          ),
+        // Where the parent stands, first: the plan they have, or none.
+        PlanSummaryCard(
+          eyebrow: l10n.familyPlusCurrentPlan,
+          planName: held == null
+              ? l10n.familyPlusNoPlan
+              : 'Family+ · ${l10n.familyPlusPlanName(held.seats)}',
+          detail: held == null
+              ? l10n.familyPlusIntro
+              : [
+                  l10n.familyPlusCoveredCount(_status.coveredStudentIds.length),
+                  if (ends != null)
+                    l10n.familyPlusEnds(
+                      MaterialLocalizations.of(context)
+                          .formatMediumDate(ends.toLocal()),
+                    ),
+                ].join(' · '),
         ),
-        const SizedBox(height: 18),
         if (held != null && !_status.covers(widget.studentId))
           Padding(
-            padding: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.only(top: 12),
             child: StudafyStatusCard(
               icon: Icons.group_add_outlined,
               title: l10n.familyPlusNotCoveredTitle,
               message: l10n.familyPlusNotCovered(held.seats, widget.childName),
             ),
           ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final feature in [
-                  l10n.familyPlusFeatureFocus,
-                  l10n.familyPlusFeatureClasses,
-                  l10n.familyPlusFeatureChart,
-                  l10n.familyPlusFeatureMissing,
-                  l10n.familyPlusFeatureTrends,
-                  l10n.familyPlusFeatureSchool,
-                ])
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          size: 18,
-                          color: studafyCyan,
+        // The plans, straight away - nothing to scroll past to find them.
+        SectionHeader(l10n.familyPlusPlansTitle),
+        for (final plan in FamilyPlusPlan.values) _planCard(plan),
+        SectionHeader(l10n.familyPlusWhatYouGet),
+        FeatureCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final feature in [
+                l10n.familyPlusFeatureFocus,
+                l10n.familyPlusFeatureClasses,
+                l10n.familyPlusFeatureChart,
+                l10n.familyPlusFeatureMissing,
+                l10n.familyPlusFeatureTrends,
+                l10n.familyPlusFeatureSchool,
+              ])
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: studafyTeal,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          feature,
+                          style: const TextStyle(
+                            color: studafyInk,
+                            height: 1.35,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(feature)),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: 14),
-        for (final plan in FamilyPlusPlan.values) _planCard(plan),
+        const SizedBox(height: 12),
         if (subscriptions == null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),

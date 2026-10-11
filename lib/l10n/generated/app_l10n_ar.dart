@@ -1215,6 +1215,10 @@ class AppL10nAr extends AppL10n {
       'لا توجد حصص بعد. أضِف حصة ليعرف سجل الحضور موعد هذا الفصل.';
 
   @override
+  String get scheduleDuplicate =>
+      'حصتان في اليوم والوقت نفسيهما. غيّر إحداهما.';
+
+  @override
   String get scheduleEndBeforeStart => 'لا يمكن أن تنتهي الحصة قبل أن تبدأ.';
 
   @override
@@ -1365,21 +1369,6 @@ class AppL10nAr extends AppL10n {
   @override
   String get studyAssistantCheckWork =>
       'قد تكون الإجابات خاطئة. تحقق من أي شيء تسلّمه.';
-
-  @override
-  String studyAssistantRemaining(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بقي $count سؤال اليوم',
-      many: 'بقي $count سؤالًا اليوم',
-      few: 'بقيت $count أسئلة اليوم',
-      two: 'بقي سؤالان اليوم',
-      one: 'بقي سؤال واحد اليوم',
-      zero: 'لم تتبقَ أسئلة اليوم',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get studyAssistantTab => 'المساعد';
@@ -1878,7 +1867,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studySetThisMonthSAiAllowance =>
-      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر. يتجدد في أول الشهر.';
+      'وصلت إلى حد استخدام الذكاء الاصطناعي. يُعاد ضبطه في موعد تجديد خطتك.';
 
   @override
   String get studySetThisLessonHasNoText =>
@@ -1912,19 +1901,6 @@ class AppL10nAr extends AppL10n {
   @override
   String studySetCardPageOfCardscountTap(Object page, Object cardsCount) {
     return 'البطاقة $page من $cardsCount - اضغط لقلبها';
-  }
-
-  @override
-  String studyPlansQuestionsTodayAsktodayOfAskperday(
-    Object askToday,
-    Object askPerDay,
-  ) {
-    return 'أسئلة اليوم: $askToday من $askPerDay';
-  }
-
-  @override
-  String studyPlansAiUsedThisMonthRound(Object round) {
-    return 'الاستخدام هذا الشهر: $round٪';
   }
 
   @override
@@ -2422,17 +2398,11 @@ class AppL10nAr extends AppL10n {
   String get studyPlansFeatureNotebook => 'دفتر خاص بك لكل صف';
 
   @override
-  String get studyPlansFeatureTenQuestions => '10 أسئلة يوميًا للمساعد الدراسي';
-
-  @override
   String get studyPlansFeatureEverythingInFree => 'كل ما في الخطة المجانية';
 
   @override
   String get studyPlansFeatureWhiteboard =>
       'صوّر السبورة واحصل على ملاحظات حقيقية في دفترك';
-
-  @override
-  String get studyPlansFeatureFortyQuestions => '40 سؤالًا يوميًا';
 
   @override
   String get studyPlansFeatureEverythingInPlus => 'كل ما في Plus';
@@ -2442,9 +2412,6 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studyPlansFeatureFlashcards => 'بطاقات مراجعة من دروسك';
-
-  @override
-  String get studyPlansFeatureSixtyQuestions => '60 سؤالًا يوميًا';
 
   @override
   String get studentTodayMakeTodayYours => 'اجعل اليوم يومك.';
@@ -2941,19 +2908,20 @@ class AppL10nAr extends AppL10n {
   String get accountExportFailed => 'لم ينجح ذلك. يرجى المحاولة مرة أخرى.';
 
   @override
-  String get todayWork => 'الأعمال التي أسندتها';
+  String get todayWork => 'أعمال عليك إسنادها';
 
   @override
-  String get todayWorkEmpty => 'لم تُسند أي عمل بعد.';
+  String get todayWorkEmpty =>
+      'لا شيء لإسناده الآن. تظهر هنا المسودات والأعمال المفتوحة أو القادمة.';
 
   @override
   String get todaySections => 'حصص تنتظر المحتوى';
 
   @override
-  String get todaySectionsEmpty => 'كل حصة درّستها تم رفع محتواها.';
+  String get todaySectionsEmpty => 'لكل حصة درّستها درس يراه طلاب الفصل.';
 
   @override
-  String get todaySectionsOutstanding => 'المحتوى غير مرفوع';
+  String get todaySectionsOutstanding => 'لا يوجد درس بعد';
 
   @override
   String get todayTitle => 'اليوم';
@@ -3425,10 +3393,6 @@ class AppL10nAr extends AppL10n {
   @override
   String get studyAssistantUnavailable =>
       'تعذّر على مساعد الدراسة الإجابة الآن. حاول مرة أخرى بعد قليل.';
-
-  @override
-  String get studyAssistantDailyLimit =>
-      'لقد استخدمت كل أسئلة اليوم. يمكنك السؤال مرة أخرى غدًا.';
 
   @override
   String get accountsSwitchAccount => 'تبديل الحساب';
@@ -3928,20 +3892,8 @@ class AppL10nAr extends AppL10n {
   String get helperNoClasses => 'انضم إلى صف لتستخدم دروسه هنا.';
 
   @override
-  String get upgradeDailyLimitTitle => 'لقد استخدمت أسئلة اليوم';
-
-  @override
-  String upgradeDailyLimitBody(int count) {
-    return 'تتضمن خطتك $count سؤالًا في اليوم. يمكنك السؤال مجددًا غدًا.';
-  }
-
-  @override
-  String get upgradeAllowanceTitle =>
-      'استُخدم رصيد الذكاء الاصطناعي لهذا الشهر';
-
-  @override
   String get upgradeAllowanceBody =>
-      'يتجدد رصيد الذكاء الاصطناعي في خطتك في اليوم الأول من الشهر القادم.';
+      'وصلت إلى حد استخدام الذكاء الاصطناعي. يُعاد ضبطه في موعد تجديد خطتك، أو تمنحك خطة أكبر المزيد.';
 
   @override
   String upgradeFeatureTitle(String plan) {
@@ -3955,9 +3907,6 @@ class AppL10nAr extends AppL10n {
   String upgradeWhatUnlocks(String plan) {
     return 'ما تتيحه $plan';
   }
-
-  @override
-  String get upgradeLargerAllowance => 'رصيد شهري أكبر للذكاء الاصطناعي';
 
   @override
   String get upgradeButton => 'ترقية';
@@ -4214,7 +4163,7 @@ class AppL10nAr extends AppL10n {
   String get paperGradesScore => 'درجة';
 
   @override
-  String get paperGradesAbsent => 'غائب';
+  String get paperGradesAbsent => 'لم يحضر الاختبار';
 
   @override
   String get paperGradesNotGraded => 'بلا تقييم';
@@ -4680,20 +4629,20 @@ class AppL10nAr extends AppL10n {
   String get wellbeingWhoSees => 'من يمكنه قراءتها؟';
 
   @override
-  String get wellbeingSeeStaff => 'طاقم الصف فقط';
+  String get wellbeingSeeStaff => 'أنت فقط';
 
   @override
-  String get wellbeingSeeStaffDetail => 'معلمو هذا الصف فقط.';
+  String get wellbeingSeeStaffDetail => 'تبقى لك بصفتك معلم هذا الصف.';
 
   @override
-  String get wellbeingSeeGuardians => 'الطاقم وأولياء الأمور';
+  String get wellbeingSeeGuardians => 'أنت وأولياء الأمور';
 
   @override
   String get wellbeingSeeGuardiansDetail =>
       'وأيضًا أولياء أمور الطالب المرتبطون.';
 
   @override
-  String get wellbeingSeeStudent => 'الطاقم وأولياء الأمور والطالب';
+  String get wellbeingSeeStudent => 'أنت وأولياء الأمور والطالب';
 
   @override
   String get wellbeingSeeStudentDetail => 'وأيضًا أولياء الأمور والطالب نفسه.';
@@ -4964,10 +4913,6 @@ class AppL10nAr extends AppL10n {
   String get helperSubtitle => 'اسأل عن أي شيء تدرسه';
 
   @override
-  String get helperLimitReached =>
-      'لقد استخدمت أسئلة اليوم. قم بالترقية للحصول على المزيد يوميًا، أو اسأل مجددًا غدًا.';
-
-  @override
   String get helperRecentChats => 'المحادثات الأخيرة';
 
   @override
@@ -5027,4 +4972,1905 @@ class AppL10nAr extends AppL10n {
   @override
   String get accountSwitchRoleTeacherParent =>
       'التنقّل بين التدريس ومتابعة أطفالك.';
+
+  @override
+  String get accountName => 'الاسم';
+
+  @override
+  String get accountEditName => 'تعديل الاسم';
+
+  @override
+  String get accountEditNameTitle => 'تعديل اسمك';
+
+  @override
+  String get accountNameHelp => 'هكذا يراك معلموك وزملاؤك وعائلتك.';
+
+  @override
+  String get accountNameInvalid => 'أدخل اسمًا لا يزيد عن 160 حرفًا.';
+
+  @override
+  String get accountNameSaved => 'تم حفظ الاسم';
+
+  @override
+  String get accountNameFailed => 'تعذّر حفظ اسمك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get accountSaveAction => 'حفظ';
+
+  @override
+  String get accountCancelAction => 'إلغاء';
+
+  @override
+  String get accountPublicIdDetail =>
+      'قد يطلب دعم Studafy هذا الرقم. لا يمكن استخدامه لرؤية حسابك أو للارتباط بطفل.';
+
+  @override
+  String get navAnnouncements => 'الإعلانات';
+
+  @override
+  String get announcementsSubtitle => 'أخبار مدارس أطفالك';
+
+  @override
+  String get announcementsAllChildren => 'كل الأطفال';
+
+  @override
+  String get announcementsNoChildren => 'اربط طفلًا لرؤية إعلانات مدرسته.';
+
+  @override
+  String announcementsFrom(String school, String children) {
+    return '$school · أطفالك: $children';
+  }
+
+  @override
+  String get learningSubtitle =>
+      'الدروس والواجبات والاختبارات والدرجات والحضور';
+
+  @override
+  String get learningFilterByChild => 'التصفية حسب الطفل';
+
+  @override
+  String get learningNoChildrenTitle => 'لا يوجد طفل مرتبط بعد';
+
+  @override
+  String get learningNoChildrenBody =>
+      'اربط طفلًا من صفحة اليوم لمتابعة دروسه وواجباته ودرجاته هنا.';
+
+  @override
+  String get parentTodaySubtitle => 'يوم أطفالك في لمحة';
+
+  @override
+  String get parentQuickLink => 'ربط طفل';
+
+  @override
+  String get parentQuickLearning => 'التعلّم';
+
+  @override
+  String get parentQuickAnnouncements => 'الإعلانات';
+
+  @override
+  String get parentQuickMessages => 'مراسلة معلم';
+
+  @override
+  String get parentChildrenSection => 'أطفالك';
+
+  @override
+  String get parentNoChildrenTitle => 'اربط طفلك الأول';
+
+  @override
+  String get parentNoChildrenBody =>
+      'اطلب من طفلك معرّف Studafy الخاص به. يوافق على الطلب من جهازه.';
+
+  @override
+  String get parentChildOpen => 'فتح';
+
+  @override
+  String get parentLinkSearching => 'جارٍ التحقق…';
+
+  @override
+  String get familyPlusNoPlan => 'لا توجد خطة Family+ بعد';
+
+  @override
+  String familyPlusCoveredCount(int count) {
+    return 'تغطي $count من أطفالك';
+  }
+
+  @override
+  String familyPlusEnds(String date) {
+    return 'فعّالة حتى $date';
+  }
+
+  @override
+  String get familyPlusWhatYouGet => 'ما تضيفه Family+';
+
+  @override
+  String get familyPlusPlansTitle => 'اختر خطة';
+
+  @override
+  String get familyPlusManagePlan => 'الخطة';
+
+  @override
+  String get famLinkCheckFailed =>
+      'لم يكتمل التحقق الأمني. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get famLinkAlready =>
+      'لقد طلبت ربط هذا الطفل من قبل، أو أنه مرتبط بالفعل.';
+
+  @override
+  String get famLinkIdHelp =>
+      'يجده طفلك في ملفه الشخصي، تحت معرّف Studafy الخاص بك.';
+
+  @override
+  String get familyPlusCurrentPlan => 'الخطة الحالية';
+
+  @override
+  String get paperGradesOtherMark => 'علامة أخرى';
+
+  @override
+  String get paperGradesEnterScore => 'إدخال درجة بدلًا من ذلك';
+
+  @override
+  String get courseworkInvalidState => 'لا يمكن تنفيذ ذلك الآن.';
+
+  @override
+  String get attendanceNotOnTimetable =>
+      'لم يكن هذا الدرس في جدول الصف في ذلك التاريخ، لذا لا يوجد له سجل حضور.';
+
+  @override
+  String get attendanceSaveFailed =>
+      'تعذّر حفظ الحضور. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String loginOtherRoleTitle(String role) {
+    return 'هذا البريد مستخدم بالفعل كحساب $role';
+  }
+
+  @override
+  String loginOtherRoleBody(String own, String chosen) {
+    return 'تابع كـ$own، أو استخدم هذا الحساب أيضًا كـ$chosen. يمكنك التبديل بينهما في أي وقت من ملفك الشخصي.';
+  }
+
+  @override
+  String loginAlsoUseAs(String role) {
+    return 'استخدمه أيضًا كـ$role';
+  }
+
+  @override
+  String get attachmentsTitle => 'المرفقات';
+
+  @override
+  String get attachmentsLinks => 'الروابط';
+
+  @override
+  String get attachmentsFiles => 'الملفات';
+
+  @override
+  String get attachmentsAddLink => 'إضافة رابط';
+
+  @override
+  String get attachmentsLinkTitle => 'العنوان الذي يراه القراء';
+
+  @override
+  String get attachmentsLinkAddress => 'العنوان (https://…)';
+
+  @override
+  String get attachmentsLinkTitleRequired => 'أضف عنوانًا للرابط.';
+
+  @override
+  String get attachmentsRemove => 'إزالة';
+
+  @override
+  String get attachmentsKeep => 'إبقاء';
+
+  @override
+  String get attachmentsRemovedOnSave => 'سيُزال عند الحفظ';
+
+  @override
+  String get attachmentsUploading => 'انتظر حتى يكتمل رفع الملفات.';
+
+  @override
+  String get attachmentsFailed => 'أعد محاولة رفع الملفات التي فشلت أو أزلها.';
+
+  @override
+  String attachmentsTooManyLinks(int count) {
+    return 'يمكنك إضافة $count روابط كحد أقصى.';
+  }
+
+  @override
+  String get attachmentsImagePreview => 'اضغط للعرض';
+
+  @override
+  String get attachmentsChecking => 'قيد الفحص';
+
+  @override
+  String get attachmentsNotAvailable => 'غير متاح';
+
+  @override
+  String get questionKindSingle => 'إجابة واحدة';
+
+  @override
+  String get questionKindMultiple => 'إجابات متعددة';
+
+  @override
+  String get questionKindTrueFalse => 'صح أو خطأ';
+
+  @override
+  String get questionKindShort => 'إجابة قصيرة';
+
+  @override
+  String get questionKindEssay => 'مقال';
+
+  @override
+  String get builderNewTitle => 'تقييم إلكتروني جديد';
+
+  @override
+  String get builderEditTitle => 'تعديل التقييم';
+
+  @override
+  String get builderTitleLabel => 'العنوان';
+
+  @override
+  String get builderClassLabel => 'الصف';
+
+  @override
+  String get builderCategoryLabel => 'النوع';
+
+  @override
+  String get builderCategoryQuiz => 'اختبار قصير';
+
+  @override
+  String get builderCategoryExam => 'امتحان';
+
+  @override
+  String get builderCategoryAssessment => 'تقييم';
+
+  @override
+  String get builderQuestions => 'الأسئلة';
+
+  @override
+  String get builderAddQuestion => 'إضافة سؤال';
+
+  @override
+  String builderTotal(String points) {
+    return 'المجموع: $points درجة';
+  }
+
+  @override
+  String builderQuestionNumber(int number) {
+    return 'السؤال $number';
+  }
+
+  @override
+  String get builderPrompt => 'السؤال';
+
+  @override
+  String get builderPoints => 'الدرجات';
+
+  @override
+  String get builderRequired => 'إلزامي';
+
+  @override
+  String builderOption(int number) {
+    return 'الخيار $number';
+  }
+
+  @override
+  String get builderAddOption => 'إضافة خيار';
+
+  @override
+  String get builderRemoveOption => 'إزالة الخيار';
+
+  @override
+  String get builderMarkCorrectOne => 'حدد الإجابة الصحيحة.';
+
+  @override
+  String get builderMarkCorrectAll => 'حدد كل الإجابات الصحيحة.';
+
+  @override
+  String get builderTrue => 'صح';
+
+  @override
+  String get builderFalse => 'خطأ';
+
+  @override
+  String get builderCorrectIs => 'الإجابة الصحيحة هي';
+
+  @override
+  String get builderAccepted => 'الإجابات المقبولة، واحدة في كل سطر';
+
+  @override
+  String get builderAcceptedHint => 'اتركه فارغًا لتصححه بنفسك.';
+
+  @override
+  String get builderModelAnswer => 'الإجابة النموذجية';
+
+  @override
+  String get builderGuidance => 'إرشادات التصحيح';
+
+  @override
+  String get builderPrivateHint => 'لا يراه أحد غيرك حتى تُنشر الإجابات.';
+
+  @override
+  String get builderMoveUp => 'نقل لأعلى';
+
+  @override
+  String get builderMoveDown => 'نقل لأسفل';
+
+  @override
+  String get builderDuplicate => 'تكرار';
+
+  @override
+  String get builderDelete => 'حذف';
+
+  @override
+  String get builderSettings => 'الإعدادات';
+
+  @override
+  String get builderOpens => 'يفتح';
+
+  @override
+  String get builderCloses => 'يُغلق';
+
+  @override
+  String get builderNotSet => 'غير محدد';
+
+  @override
+  String get builderNow => 'الآن';
+
+  @override
+  String get builderAttempts => 'عدد المحاولات المسموحة';
+
+  @override
+  String get builderPolicy => 'أي محاولة تُحتسب';
+
+  @override
+  String get builderPolicyBest => 'الأفضل';
+
+  @override
+  String get builderPolicyLatest => 'الأخيرة';
+
+  @override
+  String get builderRelease => 'متى يرى الطلاب الإجابات';
+
+  @override
+  String get builderReleaseAfterClose => 'بعد إغلاقه للجميع';
+
+  @override
+  String get builderReleaseAfterGrading => 'بعد انتهاء التصحيح ونشر الدرجات';
+
+  @override
+  String get builderReleaseManual => 'عندما أنشرها بنفسي';
+
+  @override
+  String get builderReleaseNote =>
+      'لا تظهر الإجابات أبدًا ما دام بإمكان أي طالب تقديمه.';
+
+  @override
+  String get builderMaterial => 'مواد للتقييم كله';
+
+  @override
+  String get builderPreview => 'معاينة كطالب';
+
+  @override
+  String get builderSaveDraft => 'حفظ كمسودة';
+
+  @override
+  String get builderPublish => 'نشر';
+
+  @override
+  String get builderSaved => 'تم الحفظ.';
+
+  @override
+  String get builderPublished => 'تم النشر للصف.';
+
+  @override
+  String get builderSaveFailed => 'تعذر الحفظ. راجع الأسئلة وحاول مرة أخرى.';
+
+  @override
+  String get builderLocked =>
+      'قدّم أحد الطلاب بالفعل، لذا لم يعد بالإمكان تغيير الأسئلة. أما الإعدادات فيمكن تغييرها.';
+
+  @override
+  String get builderNeedTitle => 'أضف عنوانًا.';
+
+  @override
+  String get builderNeedClass => 'اختر صفًا.';
+
+  @override
+  String get builderNeedQuestion => 'أضف سؤالًا واحدًا على الأقل.';
+
+  @override
+  String get builderNeedClose => 'حدد موعد الإغلاق.';
+
+  @override
+  String get builderCloseAfterOpen => 'يجب أن يُغلق بعد أن يفتح.';
+
+  @override
+  String builderProblemPrompt(int number) {
+    return 'السؤال $number: اكتب نص السؤال.';
+  }
+
+  @override
+  String builderProblemPoints(int number) {
+    return 'السؤال $number: حدد له درجات.';
+  }
+
+  @override
+  String builderProblemOptions(int number) {
+    return 'السؤال $number: أضف خيارين مكتملين على الأقل.';
+  }
+
+  @override
+  String builderProblemCorrect(int number) {
+    return 'السؤال $number: حدد الإجابة الصحيحة.';
+  }
+
+  @override
+  String builderProblemTrueFalse(int number) {
+    return 'السؤال $number: اختر صح أو خطأ كإجابة.';
+  }
+
+  @override
+  String builderProblemFiles(int number) {
+    return 'السؤال $number: انتظر حتى تُرفع ملفاته.';
+  }
+
+  @override
+  String get builderOnlineChoice => 'يُجاب عنه إلكترونيًا';
+
+  @override
+  String get builderOnlineChoiceDetail =>
+      'يجيب الطلاب في التطبيق، وتُصحَّح أسئلة الاختيار تلقائيًا.';
+
+  @override
+  String get builderPaperChoice => 'على الورق';
+
+  @override
+  String get builderPaperChoiceDetail =>
+      'يؤديه الطلاب في الصف، وتُدخل أنت الدرجات.';
+
+  @override
+  String takeOpens(String time) {
+    return 'يفتح $time';
+  }
+
+  @override
+  String takeCloses(String time) {
+    return 'يُغلق $time';
+  }
+
+  @override
+  String get takeClosed => 'مغلق';
+
+  @override
+  String get takeNotOpen => 'لم يُفتح بعد';
+
+  @override
+  String takeAttemptsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولة متبقية',
+      many: '$count محاولة متبقية',
+      few: '$count محاولات متبقية',
+      two: 'محاولتان متبقيتان',
+      one: 'محاولة واحدة متبقية',
+      zero: 'لا توجد محاولات متبقية',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeStart => 'ابدأ';
+
+  @override
+  String get takeAgain => 'حاول مرة أخرى';
+
+  @override
+  String get takeSubmit => 'إرسال الإجابات';
+
+  @override
+  String get takeSubmitTitle => 'إرسال إجاباتك؟';
+
+  @override
+  String get takeSubmitBody => 'لا يمكنك تغييرها بعد الإرسال.';
+
+  @override
+  String get takeLeaveTitle => 'المغادرة دون إرسال؟';
+
+  @override
+  String get takeLeaveBody => 'لن يتم حفظ إجاباتك.';
+
+  @override
+  String get takeLeave => 'مغادرة';
+
+  @override
+  String get takeStay => 'البقاء';
+
+  @override
+  String takeMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'أجب عن الأسئلة الإلزامية الـ$count المتبقية.',
+      many: 'أجب عن الأسئلة الإلزامية الـ$count المتبقية.',
+      few: 'أجب عن الأسئلة الإلزامية الـ$count المتبقية.',
+      two: 'أجب عن السؤالين الإلزاميين المتبقيين.',
+      one: 'أجب عن السؤال الإلزامي المتبقي.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeSubmitted => 'تم الإرسال. سينشر معلمك النتائج.';
+
+  @override
+  String get takeSubmitFailed =>
+      'لم تُرسل إجاباتك. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get takeWindowClosed => 'أُغلق هذا التقييم، لذا لا يمكن إرساله.';
+
+  @override
+  String get takeRequired => 'إلزامي';
+
+  @override
+  String get takeOptional => 'اختياري';
+
+  @override
+  String get takeTypeAnswer => 'إجابتك';
+
+  @override
+  String get takeChooseOne => 'اختر واحدة';
+
+  @override
+  String get takeChooseAll => 'اختر كل ما ينطبق';
+
+  @override
+  String takePoints(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count درجة',
+      many: '$count درجة',
+      few: '$count درجات',
+      two: 'درجتان',
+      one: 'درجة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeYourAttempts => 'محاولاتك';
+
+  @override
+  String takeAttemptLine(int number, String time) {
+    return 'المحاولة $number · $time';
+  }
+
+  @override
+  String get takeNotReleased => 'ستظهر الإجابات هنا بعد أن ينشرها معلمك.';
+
+  @override
+  String get takeGrade => 'الدرجة';
+
+  @override
+  String get takeGradePending => 'لم تُنشر بعد';
+
+  @override
+  String get takeFeedback => 'ملاحظات المعلم';
+
+  @override
+  String get takeAnswers => 'الإجابات';
+
+  @override
+  String get takeYourAnswer => 'إجابتك';
+
+  @override
+  String get takeCorrectAnswer => 'الإجابة الصحيحة';
+
+  @override
+  String get takeAcceptedAnswers => 'الإجابات المقبولة';
+
+  @override
+  String get takeNoAnswer => 'لا توجد إجابة';
+
+  @override
+  String get takeBeingMarked => 'قيد التصحيح';
+
+  @override
+  String takeScore(String score, String max) {
+    return '$score من $max';
+  }
+
+  @override
+  String get takeLoadFailed => 'تعذر التحميل.';
+
+  @override
+  String get takeRetry => 'حاول مرة أخرى';
+
+  @override
+  String get takeReadOnly =>
+      'يمكنك رؤية نتائج طفلك هنا. هو وحده من يمكنه أداء التقييم.';
+
+  @override
+  String get takeOpenAssessment => 'فتح';
+
+  @override
+  String get markSubmissions => 'الإجابات المقدَّمة';
+
+  @override
+  String get markNone => 'لم يقدّم أحد بعد.';
+
+  @override
+  String get markNeeds => 'بحاجة إلى تصحيح';
+
+  @override
+  String markDone(String score, String max) {
+    return 'مصحَّح: $score من $max';
+  }
+
+  @override
+  String get markAuto => 'مصحَّح تلقائيًا';
+
+  @override
+  String markScoreLabel(String max) {
+    return 'الدرجة (من $max)';
+  }
+
+  @override
+  String get markAnswerFeedback => 'تعليق على هذه الإجابة';
+
+  @override
+  String get markOverallFeedback => 'ملاحظات للطالب';
+
+  @override
+  String get markSave => 'حفظ الدرجات';
+
+  @override
+  String get markSaved => 'تم حفظ الدرجات.';
+
+  @override
+  String get markSaveFailed =>
+      'لم تُحفظ الدرجات. تحقق من كل درجة وحاول مرة أخرى.';
+
+  @override
+  String markScoreInvalid(String max) {
+    return 'أدخل درجة من 0 إلى $max.';
+  }
+
+  @override
+  String get markPublishGrades => 'نشر الدرجات';
+
+  @override
+  String markPublished(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'نُشرت $count درجة.',
+      many: 'نُشرت $count درجة.',
+      few: 'نُشرت $count درجات.',
+      two: 'نُشرت درجتان.',
+      one: 'نُشرت درجة واحدة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markNothingToPublish => 'لا يوجد شيء جاهز للنشر بعد.';
+
+  @override
+  String get markReleaseNow => 'نشر الإجابات الآن';
+
+  @override
+  String get markReleased => 'تم نشر الإجابات.';
+
+  @override
+  String get markReleaseRefused =>
+      'لا يمكن نشر الإجابات إلا بعد إغلاقه للجميع.';
+
+  @override
+  String get markEditQuestions => 'تعديل الأسئلة والإعدادات';
+
+  @override
+  String get markGrantAccess => 'وقت أو محاولات إضافية';
+
+  @override
+  String get markGrantStudent => 'الطالب';
+
+  @override
+  String get markGrantUntil => 'مفتوح له حتى';
+
+  @override
+  String get markGrantExtra => 'محاولات إضافية';
+
+  @override
+  String get markGrantGive => 'منح';
+
+  @override
+  String get markGranted => 'تم.';
+
+  @override
+  String get markGrantFailed => 'تعذر المنح.';
+
+  @override
+  String markAnswersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count إجابة',
+      many: '$count إجابة',
+      few: '$count إجابات',
+      two: 'إجابتان',
+      one: 'إجابة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markOpenSubmissions => 'الإجابات والتصحيح';
+
+  @override
+  String get paperShared => 'للصف كله';
+
+  @override
+  String get paperSharedHint =>
+      'ورقة الأسئلة أو مخطط التصحيح أو ملاحظات عامة. يراها كل طالب بعد نشر درجته.';
+
+  @override
+  String paperForStudent(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get paperForStudentHint =>
+      'لا يراها إلا هذا الطالب ووالداه، بعد نشر الدرجة.';
+
+  @override
+  String get paperAttachments => 'المرفقات';
+
+  @override
+  String get paperAttachmentsSaved => 'تم حفظ المرفقات.';
+
+  @override
+  String get paperAttachmentsFailed => 'لم تُحفظ المرفقات.';
+
+  @override
+  String get paperAttachmentsSaveFirst =>
+      'احفظ الدرجات أولًا، ثم عدّل المرفقات.';
+
+  @override
+  String get paperSave => 'حفظ';
+
+  @override
+  String get gradeYourFiles => 'ملفاتك';
+
+  @override
+  String get gradeClassFiles => 'للصف';
+
+  @override
+  String get helperTokensUsed =>
+      'وصلت إلى حد استخدام الذكاء الاصطناعي. سؤالك ما زال هنا.';
+
+  @override
+  String helperTokensUsedUntil(String date) {
+    return 'وصلت إلى حد استخدام الذكاء الاصطناعي. يُعاد ضبطه في $date، وسؤالك ما زال هنا.';
+  }
+
+  @override
+  String get helperStillAnswering => 'ما زال يجري الرد على هذا السؤال.';
+
+  @override
+  String helperCouldNotRead(String name, String reason) {
+    return 'تعذرت قراءة $name: $reason.';
+  }
+
+  @override
+  String get helperSources => 'المصادر';
+
+  @override
+  String helperCitationPage(int n) {
+    return 'ص $n';
+  }
+
+  @override
+  String helperCitationSlide(int n) {
+    return 'الشريحة $n';
+  }
+
+  @override
+  String helperCitationLesson(String name) {
+    return '$name (الدرس)';
+  }
+
+  @override
+  String helperCitationNote(String name) {
+    return '$name (ملاحظتك)';
+  }
+
+  @override
+  String get helperAskAboutLesson => 'اسأل المساعد الذكي';
+
+  @override
+  String get pickerOneFile => 'أو ملف أو رابط واحد';
+
+  @override
+  String get tokensWhatAreThey => 'كيف يعمل استخدام الذكاء الاصطناعي؟';
+
+  @override
+  String get tokensExplained =>
+      'كل سؤال وملخص واختبار ومجموعة بطاقات ودفتر يستهلك جزءًا من استخدام الذكاء الاصطناعي في خطتك. الملفات والمحادثات الأطول والصور تستهلك أكثر. كل ذلك يتشارك رصيدًا واحدًا يظهر كشريط، ويُعاد ضبطه في موعد محدد. عند نفاده يُحفظ عملك ويمكنك المتابعة بعد إعادة الضبط.';
+
+  @override
+  String get tokensGuideTitle => 'ما يستهلك قليلًا وما يستهلك أكثر';
+
+  @override
+  String get tokensGuideShortQuestion => 'سؤال قصير';
+
+  @override
+  String get tokensGuideLessonQuestion => 'سؤال عن ملفات درس';
+
+  @override
+  String get tokensGuideNotes => 'ملخص أو اختبار أو بطاقات من درس';
+
+  @override
+  String get tokensGuidePhoto => 'صورة سبورة أو واجب';
+
+  @override
+  String get tokensGuideEstimate => 'يظهر استخدامك كشريط - لا حاجة إلى العدّ.';
+
+  @override
+  String get readingTitle => 'القراءة للمساعد الذكي';
+
+  @override
+  String get readingExplained =>
+      'تُقرأ الملفات والروابط مرة واحدة ليجيب المساعد الذكي منها. تُقرأ الصفحات الممسوحة والصور أيضًا ضمن الحد الشهري للقراءة في المدرسة.';
+
+  @override
+  String get readingReady => 'جاهز للمساعد الذكي';
+
+  @override
+  String get readingPartly => 'قُرئ جزئيًا - لم تُقرأ بعض الصفحات';
+
+  @override
+  String get readingStateProcessing => 'جارٍ القراءة…';
+
+  @override
+  String readingStateCannot(String reason) {
+    return 'تتعذر القراءة: $reason';
+  }
+
+  @override
+  String get readingRetry => 'اقرأ مجددًا';
+
+  @override
+  String get readingRetried => 'ستُقرأ مجددًا بعد قليل.';
+
+  @override
+  String get readingRetryFailed => 'تعذر ذلك. حاول مجددًا.';
+
+  @override
+  String get readingLoadFailed => 'تعذر التحقق من الملفات.';
+
+  @override
+  String get readingNothing => 'لا توجد ملفات أو روابط في هذا الدرس.';
+
+  @override
+  String get readingProcessing => 'ما زال قيد القراءة';
+
+  @override
+  String get readingScannedSkipped => 'لم تُقرأ صفحاته الممسوحة';
+
+  @override
+  String get readingNoText => 'لا يحتوي على نص مقروء';
+
+  @override
+  String get readingUnsupportedType => 'لا يمكن قراءة هذا النوع من الملفات';
+
+  @override
+  String get readingLinkSignIn => 'يحتاج الرابط إلى تسجيل دخول';
+
+  @override
+  String get readingLinkVideo => 'إنه فيديو';
+
+  @override
+  String get readingLinkGone => 'الرابط لم يعد يعمل';
+
+  @override
+  String get readingLinkUnreachable => 'تعذر فتح الرابط';
+
+  @override
+  String get readingFailed => 'تعذرت قراءته';
+
+  @override
+  String studyPlansTokensRenewWeekly(String date) {
+    return 'يُعاد ضبطه كل اثنين · التالي في $date';
+  }
+
+  @override
+  String get studyPlansTokensLow => 'استخدام الذكاء الاصطناعي يقترب من الحد.';
+
+  @override
+  String get studyPlansFeatureAskLessons =>
+      'اسأل المساعد الذكي عن دروسك وملفاتها';
+
+  @override
+  String get studyPlansFeatureFreeTokens =>
+      'استخدام خفيف للذكاء الاصطناعي - بضعة أسئلة عن دروسك كل أسبوع';
+
+  @override
+  String get studyPlansFeaturePlusTokens =>
+      'استخدام منتظم للذكاء الاصطناعي - أسئلة وملاحظات ودفاتر في معظم الأيام';
+
+  @override
+  String get studyPlansFeatureMaxTokens =>
+      'استخدام مكثف للذكاء الاصطناعي - ضعف Plus، لاختبارات وبطاقات ودفاتر يومية';
+
+  @override
+  String get upgradeTokensTitle => 'وصلت إلى حد استخدام الذكاء الاصطناعي';
+
+  @override
+  String upgradeTokensBody(String date) {
+    return 'يُعاد ضبطه في $date. عملك محفوظ. تمنحك خطة أكبر المزيد.';
+  }
+
+  @override
+  String get studySetMaterialProcessing =>
+      'ما زالت ملفات الدرس قيد القراءة. حاول بعد دقيقة كي لا يفوتك شيء.';
+
+  @override
+  String get nbCreate => 'إنشاء دفتر';
+
+  @override
+  String get nbCreating => 'جارٍ الإنشاء…';
+
+  @override
+  String get nbOpen => 'فتح الدفتر';
+
+  @override
+  String get nbUpdateAvailable => 'يتوفر تحديث';
+
+  @override
+  String get nbFailedShort => 'تعذّر إنشاؤه';
+
+  @override
+  String get nbRetry => 'حاول مرة أخرى';
+
+  @override
+  String get nbUpdate => 'تحديث الدفتر';
+
+  @override
+  String get nbNewVersion => 'إنشاء نسخة أخرى';
+
+  @override
+  String get nbMore => 'المزيد';
+
+  @override
+  String get nbStarted => 'يُكتب دفترك الآن. يستغرق ذلك دقيقة تقريبًا.';
+
+  @override
+  String get nbShelfTitle => 'دفاتر المذاكرة';
+
+  @override
+  String get nbShelfEmpty =>
+      'اصنع دفترًا منظّمًا من أي درس: اضغط «إنشاء دفتر» أسفله في الدروس.';
+
+  @override
+  String get nbShelfLocked =>
+      'دفاتر المذاكرة المصنوعة من دروسك متاحة مع Studafy Plus.';
+
+  @override
+  String get nbShelfFailed => 'تعذّر تحميل دفاترك. حاول مرة أخرى';
+
+  @override
+  String get nbSheetTitle => 'دفتر مذاكرة جديد';
+
+  @override
+  String get nbSheetClass => 'الصف';
+
+  @override
+  String get nbSheetLesson => 'الدرس';
+
+  @override
+  String get nbSheetName => 'اسم الدفتر';
+
+  @override
+  String get nbSheetSources => 'مصنوع من';
+
+  @override
+  String get nbSheetWhole => 'الدرس كاملًا';
+
+  @override
+  String get nbSheetWholeDetail => 'نصّه وكل ملف ورابط يمكن قراءته';
+
+  @override
+  String get nbSheetNoFiles =>
+      'لا يحتوي هذا الدرس على ملفات أو روابط؛ يُصنع الدفتر من نصّه.';
+
+  @override
+  String get nbSheetChoose => 'الملفات والروابط التي أختارها فقط';
+
+  @override
+  String get nbSheetPickOne => 'اختر ملفًا أو رابطًا واحدًا على الأقل.';
+
+  @override
+  String get nbSheetWaitReading =>
+      'لا تزال بعض ملفات الدرس قيد القراءة. انتظر دقيقة، أو اختر الجاهز منها فقط.';
+
+  @override
+  String get nbSheetTokens =>
+      'كتابة الدفتر تستهلك جزءًا من استخدام الذكاء الاصطناعي في خطتك. فتحه مرة أخرى مجاني.';
+
+  @override
+  String get nbSourceReading => 'لا يزال قيد القراءة';
+
+  @override
+  String get nbSourceUnreadable => 'لا يمكن قراءته';
+
+  @override
+  String get nbUpdateConfirmTitle => 'تحديث هذا الدفتر؟';
+
+  @override
+  String get nbUpdateConfirmBody =>
+      'يُعاد كتابة الجزء المصنوع بالذكاء الاصطناعي من الدرس بحالته الحالية. تبقى ملاحظاتك وتظليلاتك وإشاراتك وأقسامك كما هي.';
+
+  @override
+  String get nbUpdateBanner => 'تغيّر الدرس منذ كتابة هذا الدفتر.';
+
+  @override
+  String get nbDeleteTitle => 'حذف الدفتر';
+
+  @override
+  String get nbDeleteBody =>
+      'سيُحذف الدفتر وملاحظاتك فيه. لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get nbWriting => 'جارٍ كتابة دفترك…';
+
+  @override
+  String get nbWritingDetail =>
+      'يستغرق ذلك دقيقة تقريبًا. يمكنك مغادرة هذه الصفحة وسيستمر العمل.';
+
+  @override
+  String get nbFailedTitle => 'تعذّرت كتابة الدفتر';
+
+  @override
+  String get nbFailNoMaterial =>
+      'لا يحتوي الدرس على شيء يمكن قراءته لصنع دفتر منه.';
+
+  @override
+  String get nbFailTokens =>
+      'وصلت إلى حد استخدام الذكاء الاصطناعي. يُعاد ضبطه مع خطتك، وملاحظاتك محفوظة.';
+
+  @override
+  String get nbFailPlan => 'دفاتر المذاكرة متاحة مع Studafy Plus.';
+
+  @override
+  String get nbFailGeneric => 'حدث خطأ أثناء كتابته. لم يُخصم شيء.';
+
+  @override
+  String get nbLoadFailed => 'تعذّر فتح الدفتر.';
+
+  @override
+  String get nbCoverPage => 'الغلاف';
+
+  @override
+  String nbCoverFrom(String lesson) {
+    return 'من: $lesson';
+  }
+
+  @override
+  String nbCoverWritten(String date) {
+    return 'كُتب في $date';
+  }
+
+  @override
+  String get nbOpenContents => 'المحتويات';
+
+  @override
+  String get nbContents => 'المحتويات';
+
+  @override
+  String nbPageOf(String page, String count) {
+    return 'صفحة $page من $count';
+  }
+
+  @override
+  String get nbOverview => 'نظرة عامة';
+
+  @override
+  String get nbObjectives => 'أهداف التعلّم';
+
+  @override
+  String get nbKeyTerms => 'المصطلحات الأساسية';
+
+  @override
+  String get nbExamples => 'أمثلة محلولة';
+
+  @override
+  String get nbFacts => 'حقائق وقواعد وصيغ';
+
+  @override
+  String get nbMistakes => 'أخطاء شائعة';
+
+  @override
+  String get nbSummary => 'ملخص المراجعة';
+
+  @override
+  String get nbPractice => 'تدرّب';
+
+  @override
+  String get nbExtra => 'شرح إضافي - ليس من ملفات الدرس';
+
+  @override
+  String get nbExtraShort => 'شرح إضافي';
+
+  @override
+  String nbCitePage(String name, String page) {
+    return '$name، صفحة $page';
+  }
+
+  @override
+  String nbCiteSlide(String name, String slide) {
+    return '$name، شريحة $slide';
+  }
+
+  @override
+  String get nbUnreadableTitle =>
+      'غير موجود في هذا الدفتر - تعذّرت قراءة ما يلي:';
+
+  @override
+  String get nbReadAgain => 'حدّث للمحاولة مجددًا';
+
+  @override
+  String get nbAddNote => 'إضافة ملاحظة';
+
+  @override
+  String get nbEditNote => 'تعديل الملاحظة';
+
+  @override
+  String get nbNoteHint => 'بكلماتك (اتركه فارغًا للحذف)';
+
+  @override
+  String get nbMyNote => 'ملاحظتي';
+
+  @override
+  String get nbHighlight => 'تظليل';
+
+  @override
+  String get nbRemoveHighlight => 'إزالة التظليل';
+
+  @override
+  String get nbColorYellow => 'أصفر';
+
+  @override
+  String get nbColorGreen => 'أخضر';
+
+  @override
+  String get nbColorBlue => 'أزرق';
+
+  @override
+  String get nbColorPink => 'وردي';
+
+  @override
+  String get nbBookmark => 'وضع إشارة على هذه الصفحة';
+
+  @override
+  String get nbRemoveBookmark => 'إزالة الإشارة';
+
+  @override
+  String get nbBookmarked => 'عليها إشارة';
+
+  @override
+  String get nbAddSection => 'إضافة قسم خاص بي';
+
+  @override
+  String get nbArrange => 'ترتيب أقسامي';
+
+  @override
+  String get nbSectionTitle => 'عنوان القسم';
+
+  @override
+  String get nbSectionBody => 'اكتب ما تشاء';
+
+  @override
+  String get nbSectionEmpty => 'لا شيء هنا بعد. اضغط «كتابة» للبدء.';
+
+  @override
+  String get nbEditSection => 'كتابة';
+
+  @override
+  String get nbDeleteSection => 'حذف القسم';
+
+  @override
+  String get nbMySection => 'قسمي';
+
+  @override
+  String get nbRenameHeading => 'إعادة تسمية العنوان';
+
+  @override
+  String get nbResetHeading => 'استخدام الأصلي';
+
+  @override
+  String get nbSettings => 'الغلاف والصفحات';
+
+  @override
+  String get nbSettingsTitle => 'الاسم';
+
+  @override
+  String get nbSettingsSubtitle => 'عنوان فرعي';
+
+  @override
+  String get nbColor => 'اللون';
+
+  @override
+  String get nbIcon => 'الأيقونة';
+
+  @override
+  String get nbPageStyle => 'الصفحات';
+
+  @override
+  String get nbLined => 'مسطّرة';
+
+  @override
+  String get nbPlain => 'سادة';
+
+  @override
+  String get nbGrid => 'مربعات';
+
+  @override
+  String get nbSaving => 'جارٍ الحفظ…';
+
+  @override
+  String get nbSaved => 'تم الحفظ';
+
+  @override
+  String get nbSaveFailed => 'لم يُحفظ - اضغط للمحاولة مجددًا';
+
+  @override
+  String get nbPracticeIntro =>
+      'اختبر نفسك في هذا الدفتر - كله، أو الأقسام التي تختارها.';
+
+  @override
+  String get nbPracticeLocked => 'الاختبارات والبطاقات متاحة مع Studafy Max';
+
+  @override
+  String get nbQuizWhole => 'اختبار في الدفتر كله';
+
+  @override
+  String get nbCardsWhole => 'بطاقات للدفتر كله';
+
+  @override
+  String get nbChooseSections => 'اختيار أقسام';
+
+  @override
+  String get nbChooseSectionsTitle => 'تدرّب على هذه الأقسام';
+
+  @override
+  String get nbMakeQuiz => 'اختبار';
+
+  @override
+  String get nbMakeCards => 'بطاقات';
+
+  @override
+  String get nbMadeSets => 'مصنوع من هذا الدفتر';
+
+  @override
+  String get nbSetWhole => 'الدفتر كله';
+
+  @override
+  String get nbSetOutdated => 'من نسخة أقدم - يفتح نسخة جديدة';
+
+  @override
+  String get setMakingQuiz => 'جارٍ إعداد اختبارك…';
+
+  @override
+  String get setMakingCards => 'جارٍ إعداد بطاقاتك…';
+
+  @override
+  String get setMakingDetail =>
+      'يستغرق ذلك بضع ثوانٍ. بعد إعداده يُفتح فورًا في المرة القادمة.';
+
+  @override
+  String get setEmpty => 'لم يكن في الدرس ما يكفي لإعداد ذلك.';
+
+  @override
+  String get setFailed => 'لم ينجح ذلك';
+
+  @override
+  String get setFailedDetail => 'لم يُخصم شيء. حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get setSeePlans => 'عرض الخطط';
+
+  @override
+  String quizQuestionOf(String number, String count) {
+    return 'السؤال $number من $count';
+  }
+
+  @override
+  String get quizSubmit => 'تحقّق من إجاباتي';
+
+  @override
+  String get quizAnswerAll => 'أجب عن كل الأسئلة، ثم تحقّق.';
+
+  @override
+  String quizScoreLine(String score, String count) {
+    return 'أجبت $score من $count إجابة صحيحة';
+  }
+
+  @override
+  String get quizCorrect => 'صحيح';
+
+  @override
+  String get quizWrong => 'ليس تمامًا';
+
+  @override
+  String cardsProgress(String number, String count) {
+    return 'البطاقة $number من $count';
+  }
+
+  @override
+  String get cardsTapToFlip => 'اضغط على البطاقة لقلبها';
+
+  @override
+  String get cardsDidYouKnow => 'هل كنت تعرفها؟';
+
+  @override
+  String get cardsKnew => 'عرفتها';
+
+  @override
+  String get cardsLearning => 'ما زلت أتعلمها';
+
+  @override
+  String get cardsDone => 'انتهيت!';
+
+  @override
+  String cardsKnewCount(String known, String count) {
+    return 'عرفت $known من $count';
+  }
+
+  @override
+  String get cardsLearningOnly => 'تدرّب على ما زلت أتعلمه';
+
+  @override
+  String get cardsAgain => 'راجعها كلها مرة أخرى';
+
+  @override
+  String get cardsPrevious => 'السابق';
+
+  @override
+  String get cardsNext => 'التالي';
+
+  @override
+  String get cardsQuestion => 'السؤال';
+
+  @override
+  String get cardsAnswer => 'الإجابة';
+
+  @override
+  String get pickTitle => 'اختر المواد';
+
+  @override
+  String get pickSearch => 'ابحث في الدروس والملفات';
+
+  @override
+  String get pickAllClasses => 'كل الصفوف';
+
+  @override
+  String get pickSelectClass => 'اختيار الصف كاملًا';
+
+  @override
+  String pickSelectClassTitle(String name) {
+    return 'اختيار كل $name؟';
+  }
+
+  @override
+  String pickSelectClassBody(int lessons, int files) {
+    return 'يختار ذلك كل الدروس ($lessons) وملفاتها وروابطها القابلة للقراءة ($files). يمكنك المراجعة وإزالة أي شيء قبل المتابعة.';
+  }
+
+  @override
+  String get pickSelectClassConfirm => 'اختيار الكل';
+
+  @override
+  String pickTooManyLessons(int max) {
+    return 'يمكن استخدام $max دروس كحد أقصى في المرة الواحدة.';
+  }
+
+  @override
+  String get pickSingleLesson =>
+      'يُصنع الدفتر من درس واحد: اختر نصّه والملفات التي ستُستخدم.';
+
+  @override
+  String get pickLessonText => 'نص الدرس';
+
+  @override
+  String get pickWholeLesson => 'الدرس كاملًا';
+
+  @override
+  String get pickWholeLessonDetail => 'الدرس كاملًا بكل المرفقات';
+
+  @override
+  String get pickPartOfLesson => 'جزء من الدرس';
+
+  @override
+  String get pickAllAttachments => 'كل المرفقات';
+
+  @override
+  String pickAttachments(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مرفق',
+      many: '$count مرفقًا',
+      few: '$count مرفقات',
+      two: 'مرفقان',
+      one: 'مرفق واحد',
+      zero: 'بلا مرفقات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pickLessons(int count) {
+    return '$count دروس';
+  }
+
+  @override
+  String pickClasses(int count) {
+    return '$count صفوف';
+  }
+
+  @override
+  String pickLessonNamed(String title) {
+    return 'الدرس: $title';
+  }
+
+  @override
+  String get pickTextOnly => 'نص الدرس فقط';
+
+  @override
+  String pickNotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ملاحظة',
+      many: '$count ملاحظة',
+      few: '$count ملاحظات',
+      two: 'ملاحظتان',
+      one: 'ملاحظة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickNothing => 'لم يُختر شيء بعد';
+
+  @override
+  String get pickReview => 'مراجعة';
+
+  @override
+  String get pickReviewTitle => 'ما سيُستخدم';
+
+  @override
+  String get pickRemove => 'إزالة';
+
+  @override
+  String get pickSelected => 'مختار';
+
+  @override
+  String get pickShowFiles => 'عرض نصّه وملفاته';
+
+  @override
+  String get pickStillReading => 'لا يزال قيد القراءة';
+
+  @override
+  String pickWaitingNotIncluded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ملفات لا تزال قيد القراءة ولم تُضمَّن بعد.',
+      one: 'ملف واحد لا يزال قيد القراءة ولم يُضمَّن بعد.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickNoMatch => 'لا شيء يطابق بحثك.';
+
+  @override
+  String get pickLoadFailed => 'تعذّر تحميل دروسك.';
+
+  @override
+  String get pickActionSummary => 'لخّص المواد المختارة';
+
+  @override
+  String get pickActionQuiz => 'أنشئ اختبارًا من المختار';
+
+  @override
+  String get pickActionFlashcards => 'أنشئ بطاقات من المختار';
+
+  @override
+  String get pickActionNotebook => 'أنشئ دفترًا من المختار';
+
+  @override
+  String get pickActionHelper => 'استخدم المختار في المساعد الذكي';
+
+  @override
+  String madeFrom(String sources) {
+    return 'مصنوع من: $sources';
+  }
+
+  @override
+  String get unavailableTitle => 'تعذّر استخدام بعض الملفات المختارة الآن';
+
+  @override
+  String get unavailableBody =>
+      'لم يُصنع شيء بعد. حاول لاحقًا، أو تابع بدون ما يلي:';
+
+  @override
+  String get unavailableFile => 'ملف مختار';
+
+  @override
+  String get unavailableLater => 'حاول لاحقًا';
+
+  @override
+  String get unavailableContinue => 'تابع بدونها';
+
+  @override
+  String get helperNoMaterial => 'لا يستخدم مواد الصف';
+
+  @override
+  String get helperChooseMaterial => 'اختيار';
+
+  @override
+  String get helperChangeMaterial => 'تغيير';
+
+  @override
+  String helperMaterialChangedMark(String label) {
+    return 'من هنا: $label';
+  }
+
+  @override
+  String get helperMaterialRemovedMark => 'من هنا: بدون مواد الصف';
+
+  @override
+  String get notebookMakingNotes => 'جارٍ إعداد ملاحظاتك…';
+
+  @override
+  String get usageSectionTitle => 'استخدام الذكاء الاصطناعي';
+
+  @override
+  String usagePlan(String plan) {
+    return 'خطة $plan';
+  }
+
+  @override
+  String get usagePlenty => 'متاح بوفرة';
+
+  @override
+  String get usageLow => 'يقترب من الحد';
+
+  @override
+  String get usageReached => 'تم بلوغ الحد';
+
+  @override
+  String get usageReachedDetail =>
+      'محادثاتك وملاحظاتك ودفاترك محفوظة. يمكنك المتابعة بعد إعادة الضبط، أو الترقية الآن.';
+
+  @override
+  String usageLine(String level, String date) {
+    return '$level · يُعاد ضبطه في $date';
+  }
+
+  @override
+  String usageBarLabel(String level) {
+    return 'استخدام الذكاء الاصطناعي: $level';
+  }
+
+  @override
+  String usageResets(String date) {
+    return 'يُعاد ضبطه في $date';
+  }
+
+  @override
+  String usageResetsWeekly(String date) {
+    return 'يُعاد ضبطه كل اثنين · التالي في $date';
+  }
+
+  @override
+  String get usageUpgrade => 'الترقية ومقارنة الخطط';
+
+  @override
+  String get usageComparePlans => 'مقارنة الخطط';
+
+  @override
+  String get usageLoadFailed => 'تعذّر تحميل استخدامك. حاول مرة أخرى';
+
+  @override
+  String get usageCostLight => 'يستهلك قليلًا';
+
+  @override
+  String get usageCostMedium => 'يستهلك قدرًا متوسطًا';
+
+  @override
+  String get usageCostMore => 'يستهلك أكثر';
+
+  @override
+  String get markPublishTitle => 'نشر الدرجات؟';
+
+  @override
+  String get markPublishFailed =>
+      'لم تُنشر الدرجات. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String markSummary(int toMark, int marked, int published) {
+    return '$toMark للتصحيح · $marked جاهزة للنشر · $published منشورة';
+  }
+
+  @override
+  String get markRefreshFailed =>
+      'تعذّر تحديث القائمة. اسحب للأسفل للمحاولة مرة أخرى.';
+
+  @override
+  String get markStatusNotMarked => 'مُسلَّم · لم يُصحَّح';
+
+  @override
+  String get markStatusPartly => 'مُسلَّم · صُحِّح جزئيًا';
+
+  @override
+  String get markStatusMarked => 'مُصحَّح · غير منشور';
+
+  @override
+  String get markStatusPublished => 'منشور';
+
+  @override
+  String get markScoreNeededForComment =>
+      'ضع درجة مع كل تعليق، أو احذف التعليق.';
+
+  @override
+  String get markNothingChanged => 'لم يتغيّر شيء منذ آخر حفظ.';
+
+  @override
+  String get markCorrected =>
+      'حُفظ التصحيح. يرى الطالب وأولياء أمره الدرجة الجديدة.';
+
+  @override
+  String get markDraftSaved =>
+      'حُفظت كمسودة. لا يراها الطلاب وأولياء الأمور حتى تنشر الدرجات.';
+
+  @override
+  String get markUnsavedTitle => 'المغادرة دون حفظ؟';
+
+  @override
+  String get markUnsavedBody => 'ستضيع الدرجات والتعليقات التي لم تحفظها.';
+
+  @override
+  String get markUnsavedKeep => 'متابعة التصحيح';
+
+  @override
+  String get markUnsavedDiscard => 'تجاهل التغييرات';
+
+  @override
+  String get markStillToMark => 'قيد التصحيح';
+
+  @override
+  String get markPublishedNotice =>
+      'منشور: يرى الطالب وأولياء أمره هذه الدرجة. يُحفظ أي تغيير كتصحيح مع ذكر السبب.';
+
+  @override
+  String get markDraftNotice =>
+      'لم تُنشر بعد: لا يرى هذه الدرجات إلا معلمو الفصل.';
+
+  @override
+  String markAutoScore(String score, String max) {
+    return 'صُحِّح تلقائيًا: $score من $max';
+  }
+
+  @override
+  String get markOverallFeedbackHelp => 'تظهر مع الدرجة بعد نشرها.';
+
+  @override
+  String get markSaveCorrection => 'حفظ التصحيح';
+
+  @override
+  String get markSaveDraft => 'حفظ كمسودة';
+
+  @override
+  String get markCorrectionTitle => 'تصحيح درجة منشورة';
+
+  @override
+  String get markCorrectionBody =>
+      'يرى الطالب وأولياء أمره هذه الدرجة بالفعل. اذكر سبب تغييرها؛ يُحفظ السبب مع التغيير.';
+
+  @override
+  String get markCorrectionReason => 'سبب التغيير';
+
+  @override
+  String markOutOf(String max) {
+    return 'من $max';
+  }
+
+  @override
+  String get markStudentAnswer => 'إجابة الطالب';
+
+  @override
+  String get gradebookOnlineHint =>
+      'يُجاب عن هذا العمل في التطبيق. صحّحه من إجابات كل طالب.';
+
+  @override
+  String get gradebookOpenAnswers => 'فتح الإجابات المقدَّمة';
+
+  @override
+  String get todayWorkDraft => 'مسودة · لم يُسنَد بعد';
+
+  @override
+  String todayWorkExamOn(String date) {
+    return 'الاختبار في $date';
+  }
+
+  @override
+  String todayWorkOpens(String date) {
+    return 'يُفتح في $date';
+  }
+
+  @override
+  String get todayWorkScheduled => 'مجدول';
+
+  @override
+  String todayWorkDue(String date) {
+    return 'موعد التسليم $date';
+  }
+
+  @override
+  String todayWorkCloses(String date) {
+    return 'يُغلق في $date';
+  }
+
+  @override
+  String get todayWorkOpen => 'مفتوح';
+
+  @override
+  String get todayWorkKindAssignment => 'واجب';
+
+  @override
+  String get todayWorkKindOnlineExam => 'اختبار إلكتروني';
+
+  @override
+  String get todayWorkKindPaperExam => 'اختبار ورقي';
+
+  @override
+  String get todayWorkFinish => 'نشر';
+
+  @override
+  String get todayWorkUnknown =>
+      'تعذّر تحميل بعض الفصول، لذا قد تنقص هنا بعض الأعمال.';
+
+  @override
+  String get todayPartlyLoaded => 'تعذّر تحميل بعض الفصول.';
+
+  @override
+  String get todaySectionsUnknown =>
+      'تعذّر تحميل بعض الفصول، لذا قد تنقص هنا بعض الحصص.';
+
+  @override
+  String get todaySectionDraft => 'الدرس مسودة · لا يراه الطلاب';
+
+  @override
+  String get todaySectionPublish => 'نشر';
+
+  @override
+  String get todaySectionAdd => 'إضافة درس';
+
+  @override
+  String todayMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'و$count عناصر أخرى',
+      one: 'وعنصر آخر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lessonForSection(String when) {
+    return 'لحصة $when';
+  }
+
+  @override
+  String get markFixHighlighted => 'صحّح الدرجات المحدَّدة، ثم احفظ مرة أخرى.';
+
+  @override
+  String get sectionsPublished => 'الدرس منشور';
+
+  @override
+  String get scheduleLoadFailed => 'تعذّر تحميل الجدول. حاول مرة أخرى.';
+
+  @override
+  String get markSavedPublished =>
+      'حُفظ. لم يتطلّب أي تغيير في الدرجة المنشورة تصحيحًا.';
+
+  @override
+  String get markCorrectionCancelled =>
+      'لم يُحفظ. يتطلّب تغيير درجة منشورة ذكر السبب؛ ما زالت درجاتك هنا.';
+
+  @override
+  String get markPublishedAbsentNotice =>
+      'نُشر غيابه، لكن هذا الطالب سلّم عمله لاحقًا. احفظ لاستبدال الغياب بهذه الدرجة؛ سيُطلب منك ذكر السبب.';
+
+  @override
+  String get markReplaceAbsence => 'استبدال الغياب';
+
+  @override
+  String get markSaveChanges => 'حفظ التغييرات';
+
+  @override
+  String get markAbsenceCorrected =>
+      'حُفظ التصحيح. يرى الطالب وأولياء أمره التغيير.';
+
+  @override
+  String get markAbsenceRemoved => 'أُزيل الغياب.';
+
+  @override
+  String get markAbsenceSaved => 'سُجّل غائبًا. لن يراه أحد حتى تنشر الدرجات.';
+
+  @override
+  String get markAbsenceRefused =>
+      'سلّم هذا الطالب عمله، لذا لا يمكن تسجيله غائبًا.';
+
+  @override
+  String get markAbsenceFailed =>
+      'لم يُحفظ ذلك. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get markNotSubmittedSection => 'لم يسلّموا';
+
+  @override
+  String get markNotSubmittedHint =>
+      'اضغط على طالب لتسجيل غيابه. لا يُحتسب الغياب صفرًا أبدًا.';
+
+  @override
+  String markRosterSummary(int notSubmitted, int absent) {
+    return '$notSubmitted لم يسلّموا · $absent غائبون';
+  }
+
+  @override
+  String get markStatusNotSubmitted => 'لم يسلّم';
+
+  @override
+  String get markStatusAbsent => 'غائب';
+
+  @override
+  String get markStatusAbsentPublished => 'غائب · منشور';
+
+  @override
+  String get markStatusNotGradedPublished => 'بلا درجة · منشور';
+
+  @override
+  String get markAbsenceBody =>
+      'سجّل أن هذا الطالب كان غائبًا. يبقى خاصًا حتى تنشر الدرجات، ولا يُحتسب صفرًا.';
+
+  @override
+  String get markAbsencePublishedBody =>
+      'هذا الغياب منشور. تغييره تصحيح: اذكر السبب، ويُحفظ مع التغيير.';
+
+  @override
+  String get markAbsenceExcused => 'بلا درجة (معذور)';
+
+  @override
+  String get markAbsenceNotes => 'ملاحظات (اختياري)';
+
+  @override
+  String get markAbsenceRemove => 'إزالة الغياب';
+
+  @override
+  String get markAbsenceSaveNotes => 'حفظ الملاحظات';
+
+  @override
+  String get markAbsenceMark => 'تسجيل غائب';
+
+  @override
+  String get takeChildAttempts => 'المحاولات';
 }

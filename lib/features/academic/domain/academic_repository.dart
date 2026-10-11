@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/file_upload_repository.dart';
+import 'online_assessment.dart';
+
+export 'online_assessment.dart';
 
 enum AcademicFeed {
   content,
@@ -30,12 +33,61 @@ class AcademicRecord {
     this.outOf,
     this.deadline,
     this.timeZone,
+    this.links = const [],
+    this.sharedAttachments = const [],
+    this.sharedLinks = const [],
+    this.feedback,
+    this.assessmentId,
+    this.resourceType,
+    this.online,
+    this.dueAt,
+    this.closesAt,
+    this.scheduledAt,
   });
+
+  /// A separate instance with the same values - so the same assignment,
+  /// shown once for each of two siblings, is two rows that can each say
+  /// whose they are.
+  AcademicRecord copy() => AcademicRecord(
+    id: id,
+    title: title,
+    detail: detail,
+    state: state,
+    version: version,
+    classroomId: classroomId,
+    attachments: attachments,
+    maximumScore: maximumScore,
+    markedAssignmentId: markedAssignmentId,
+    date: date,
+    delivery: delivery,
+    mark: mark,
+    score: score,
+    outOf: outOf,
+    deadline: deadline,
+    timeZone: timeZone,
+    links: links,
+    sharedAttachments: sharedAttachments,
+    sharedLinks: sharedLinks,
+    feedback: feedback,
+    assessmentId: assessmentId,
+    resourceType: resourceType,
+    online: online,
+    dueAt: dueAt,
+    closesAt: closesAt,
+    scheduledAt: scheduledAt,
+  );
   final String id;
   final String title;
   final String detail;
   final String state;
   final int version;
+
+  /// Assignments: when the work is due, and when hand-ins close if later.
+  final DateTime? dueAt;
+  final DateTime? closesAt;
+
+  /// Assessments: the date the work is set for, such as a paper exam's day.
+  final DateTime? scheduledAt;
 
   /// Set on graded assignments: what the work is marked out of.
   final double? maximumScore;
@@ -45,7 +97,9 @@ class AcademicRecord {
   /// but the gradebook still needs it - it is where the mark is entered.
   final String? markedAssignmentId;
 
-  /// When the record was published - a lesson's date. Null where the feed
+  /// When the record happened: a lesson's, work's or exam's publishing
+  /// time, when a mark was released or a note written - and for an
+  /// attendance mark, when the lesson it is for began. Null where the feed
   /// does not carry one.
   final DateTime? date;
 
@@ -72,6 +126,25 @@ class AcademicRecord {
 
   /// Assignments: the school's time zone, in which deadlines are set.
   final String? timeZone;
+
+  /// Titled links on a lesson, work or a grade.
+  final List<ContentLink> links;
+
+  /// Grades only: the class's shared attachments (the question paper), and
+  /// the teacher's feedback. Present once the grade is published.
+  final List<StoredAttachment> sharedAttachments;
+  final List<ContentLink> sharedLinks;
+  final String? feedback;
+
+  /// Grades only: the assessment the mark is for.
+  final String? assessmentId;
+
+  /// Lessons only: 'file' for a lesson that is one file (replaced whole),
+  /// otherwise notes with any number of files and links.
+  final String? resourceType;
+
+  /// Assessments only: its window, attempts and release, for an online one.
+  final OnlineAssessment? online;
 }
 
 /// How a student did on marked work. Absent and not graded carry no score
@@ -120,6 +193,20 @@ class SubmissionDeadline {
 /// Deliberately a plain pair rather than the classes slice's own summary
 /// type: this page must not import another feature, so the shell that owns
 /// both supplies the list.
+/// A child whose record a guardian can read, for filtering by child.
+@immutable
+class StudentChoice {
+  const StudentChoice({
+    required this.id,
+    required this.name,
+    this.schoolName = '',
+  });
+
+  final String id;
+  final String name;
+  final String schoolName;
+}
+
 @immutable
 class ClassChoice {
   const ClassChoice({required this.id, required this.name});
@@ -137,10 +224,17 @@ class TextResourceDraft {
     this.lessonSessionId,
     this.audience = 'both',
     this.publish = false,
+    this.attachmentFileIds = const [],
+    this.links = const [],
   });
   final String classroomId;
   final String title;
   final String body;
+
+  /// Completed `lesson_resource` uploads for [classroomId]: the lesson's own
+  /// files, bound with it.
+  final List<String> attachmentFileIds;
+  final List<LinkDraft> links;
 
   /// Publish straight away, so the class sees it. Otherwise it is a draft
   /// only its teachers can see until they publish it.
@@ -166,10 +260,14 @@ class AssignmentDraft {
     this.attachmentFileIds = const [],
     this.publish = true,
     this.maximumScore,
+    this.links = const [],
   });
   final String classroomId;
   final String title;
   final String instructions;
+
+  /// Titled links on the work.
+  final List<LinkDraft> links;
   final DateTime dueAt;
   final DateTime? closesAt;
 
@@ -270,6 +368,8 @@ class ClassSessionSlot {
     required this.weekday,
     required this.startsAt,
     required this.endsAt,
+    this.effectiveFrom,
+    this.effectiveUntil,
   });
 
   /// ISO-8601 weekday: Monday is 1, Sunday is 7.
@@ -278,6 +378,23 @@ class ClassSessionSlot {
   /// Wall-clock start, `HH:mm` or `HH:mm:ss`, in the school's timezone.
   final String startsAt;
   final String endsAt;
+
+  /// The days the class keeps this slot: from when the timetable said so,
+  /// until it changed. Null is open-ended. A lesson outside them was never
+  /// on the timetable, and the server refuses a register for it.
+  final DateTime? effectiveFrom;
+  final DateTime? effectiveUntil;
+
+  /// Whether the class meets in this slot on [day].
+  bool appliesOn(DateTime day) {
+    if (day.weekday != weekday) return false;
+    final date = DateTime(day.year, day.month, day.day);
+    final from = effectiveFrom;
+    final until = effectiveUntil;
+    if (from != null && date.isBefore(from)) return false;
+    if (until != null && date.isAfter(until)) return false;
+    return true;
+  }
 }
 
 /// How a student was marked for one session.
@@ -338,6 +455,25 @@ class SubmissionAttempt {
   final List<StoredAttachment> attachments;
 }
 
+/// Whether a lesson the class can see is filed for a section.
+enum SectionContent {
+  /// No lesson is filed for it.
+  none,
+
+  /// Only drafts are filed, which the class cannot see. Told to the class's
+  /// teachers alone.
+  draft,
+
+  /// A lesson the class can see is filed for it.
+  published;
+
+  static SectionContent parse(String? value) => switch (value) {
+    'published' => SectionContent.published,
+    'draft' => SectionContent.draft,
+    _ => SectionContent.none,
+  };
+}
+
 /// One meeting of a class that has taken place.
 @immutable
 class LessonSession {
@@ -347,16 +483,24 @@ class LessonSession {
     required this.endsAt,
     required this.filed,
     this.title,
+    this.content = SectionContent.none,
   });
 
   final String id;
   final DateTime startsAt;
   final DateTime endsAt;
 
-  /// Whether the content taught in it has been filed. An unfiled section is
-  /// the one the school wants chased.
+  /// Whether the section was closed. Closing is a separate step, and says
+  /// nothing about whether the class can see a lesson for it; [content]
+  /// does.
   final bool filed;
   final String? title;
+  final SectionContent content;
+
+  /// Taught, and the class still has no lesson for it: what the school
+  /// wants chased. A draft does not count.
+  bool get needsContent =>
+      content != SectionContent.published && !startsAt.isAfter(DateTime.now());
 }
 
 /// One student's mark for one assessment.
@@ -582,6 +726,8 @@ class PaperGradebookItem {
     required this.published,
     this.weight,
     this.scheduledAt,
+    this.sharedAttachments = const [],
+    this.sharedLinks = const [],
   });
 
   final String id;
@@ -590,6 +736,11 @@ class PaperGradebookItem {
   final double maximumScore;
   final String state;
   final int version;
+
+  /// The class's shared attachments: the question paper, general feedback.
+  /// Each student sees them once their own grade is published.
+  final List<StoredAttachment> sharedAttachments;
+  final List<ContentLink> sharedLinks;
 
   /// Sent back when saving and publishing, so the teacher publishes exactly
   /// the sheet they saw.
@@ -632,7 +783,13 @@ class PaperGrade {
     this.score,
     this.feedback,
     this.corrections = 0,
+    this.attachments = const [],
+    this.links = const [],
   });
+
+  /// This student's own attachments: a marked sheet, personal feedback.
+  final List<StoredAttachment> attachments;
+  final List<ContentLink> links;
 
   final String id;
   final PaperGradeState state;
@@ -738,6 +895,10 @@ class AssignmentExtension {
 /// code, when a bulk command refused only some of them.
 enum CourseworkProblem {
   versionConflict,
+
+  /// The thing asked for does not exist in the state asked - a register
+  /// for a lesson that was never on the class's timetable.
+  invalidState,
   entriesInvalid,
   reasonRequired,
   attendanceLocked,
@@ -783,6 +944,7 @@ abstract interface class AcademicContentRepository {
     String? title,
     String? body,
     String? replaceFileId,
+    AttachmentChanges attachments = const AttachmentChanges(),
   });
 }
 
@@ -836,6 +998,8 @@ abstract interface class AssignmentRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   });
 
   /// Reopens the work for the whole class until [closesAtLocal].
@@ -859,6 +1023,8 @@ abstract interface class AssessmentRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   });
   Future<void> submitAssessment(
     String assessmentId,
@@ -1008,8 +1174,65 @@ abstract interface class WellbeingRepository {
 ///
 /// The union of the slice interfaces above. A screen that needs one slice
 /// asks for that interface, so its tests fake only what it uses.
+/// How far a lesson's file or link has been read for the AI helper
+/// (ADR-0037).
+enum ReadingState {
+  processing,
+  ready,
+  unsupported,
+  failed;
+
+  static ReadingState parse(String value) => switch (value) {
+    'ready' => ReadingState.ready,
+    'unsupported' => ReadingState.unsupported,
+    'failed' => ReadingState.failed,
+    _ => ReadingState.processing,
+  };
+}
+
+/// One file or link on a lesson, as the AI helper can (or cannot) read it.
+@immutable
+class LessonReadingSource {
+  const LessonReadingSource({
+    required this.id,
+    required this.isLink,
+    required this.name,
+    required this.state,
+    this.reason,
+    this.pages,
+    this.skippedPages,
+  });
+
+  final String id;
+  final bool isLink;
+  final String name;
+  final ReadingState state;
+
+  /// Why it could not be read, or 'partly_read'; a code the app words.
+  final String? reason;
+  final int? pages;
+  final int? skippedPages;
+
+  /// Read, but not all of it: pages past a limit or scans not read.
+  bool get partly => state == ReadingState.ready && (skippedPages ?? 0) > 0;
+}
+
+/// The AI helper's reading of lessons' files and links (ADR-0037).
+abstract interface class LessonReadingRepository {
+  /// Each file and link on the lesson and how far it has been read. A
+  /// teacher sees any lesson they teach; a student one they can see.
+  Future<List<LessonReadingSource>> lessonReading(String resourceId);
+
+  /// Reads one again after it failed or could not be read. Teachers only.
+  Future<List<LessonReadingSource>> retryLessonReading(
+    String resourceId,
+    String sourceId,
+  );
+}
+
 abstract interface class AcademicRepository
     implements
+        LessonReadingRepository,
         AcademicContentRepository,
         AssignmentRepository,
         AssessmentRepository,
@@ -1017,4 +1240,5 @@ abstract interface class AcademicRepository
         AttendanceRepository,
         GradeRepository,
         PaperGradebookRepository,
-        WellbeingRepository {}
+        WellbeingRepository,
+        OnlineAssessmentRepository {}

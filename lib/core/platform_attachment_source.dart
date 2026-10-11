@@ -68,6 +68,8 @@ String _mediaTypeFor(String name, {String fallback = 'application/pdf'}) {
     'webp' => 'image/webp',
     'm4a' => 'audio/mp4',
     'jpg' || 'jpeg' => 'image/jpeg',
+    'docx' => AttachmentPolicy.docx,
+    'pptx' => AttachmentPolicy.pptx,
     _ => fallback,
   };
 }

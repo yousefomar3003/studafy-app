@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(36);
+select plan(39);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set other_school_id '22222222-2222-4222-8222-222222222222'
@@ -163,6 +163,30 @@ select is(private.api050_query('createFileDownloadIntent',(select file_object_id
 select set_config('request.jwt.claim.sub','eeee0000-0000-4000-8000-000000000005',true);
 select set_config('studafy.school_id',:'other_school_id',true);
 select is(private.api050_prepare_completion(:'upload_id')->>'outcome','not_found','another tenant cannot resolve the server-owned object path');
+
+-- 2026-10-11: Storage must accept every type an upload purpose accepts, or
+-- the API grants a slot that Storage then refuses (Word and PowerPoint did).
+reset role;
+select is(
+  (select count(*)
+   from public.file_purpose_policies p
+   cross join unnest(p.allowed_media_types) as t(media_type)
+   join storage.buckets b on b.id = 'private-school-files'
+   where p.enabled and not (t.media_type = any(b.allowed_mime_types))),
+  0::bigint,
+  'the storage bucket accepts every media type an enabled upload purpose accepts');
+select ok(
+  (select 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' = any(allowed_media_types)
+   from public.file_purpose_policies where purpose = 'assignment_submission'),
+  'students may hand in Word files');
+-- This suite lowers the limit for its own concurrency checks above, so the
+-- column default is what a school gets.
+select is(
+  (select column_default from information_schema.columns
+   where table_schema = 'public' and table_name = 'file_quota_policies'
+     and column_name = 'user_active_sessions'),
+  '10',
+  'an abandoned upload no longer blocks a person after three');
 
 select * from finish();
 rollback;

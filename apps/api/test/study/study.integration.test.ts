@@ -23,7 +23,8 @@ import { PostgresAuthorizationRepository } from "../../src/authorization/reposit
 import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { PostgresStudyRepository } from "../../src/study/repository";
 import { createStudyRoutes } from "../../src/study/routes";
-import { costMicroUsd, holdFor } from "../../src/study/metering";
+import { PostgresMaterialRepository } from "../../src/study/material";
+import { costMicroUsd, holdFor, OUTPUT_TOKENS } from "../../src/study/metering";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import { sha256Hex } from "@studafy/infrastructure";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
@@ -61,8 +62,12 @@ const assistant: StudyAssistant = {
     calls.push("ask");
     return {
       answer: "An answer.",
-      usage: { inputTokens: 200, outputTokens: 100, model: "stub" },
+      usage: { inputTokens: 200, outputTokens: 100, model: "Qwen/Qwen3.5-9B" },
     };
+  },
+  transcribe: async () => {
+    calls.push("transcribe");
+    return { answer: "A page." };
   },
   whiteboardNotes: async () => {
     calls.push("whiteboard");
@@ -77,6 +82,10 @@ const assistant: StudyAssistant = {
       answer: "# Cells\n\n- The cell is the unit of life",
       usage: { inputTokens: 500, outputTokens: 200, model: "stub" },
     };
+  },
+  notebook: async () => {
+    calls.push("notebook");
+    throw new Error("not used here");
   },
   studySet: async (kind) => {
     calls.push(kind);
@@ -295,6 +304,8 @@ suite("Studafy Plus / Max over real SQL", () => {
           storage: {
             openObject: async () => ({ bytes: PHOTO_BYTES }),
           } as never,
+          // The lesson's material, read through the real SQL (ADR-0037).
+          material: new PostgresMaterialRepository(sql),
         },
         authorization,
         idempotency,
@@ -330,13 +341,20 @@ suite("Studafy Plus / Max over real SQL", () => {
     const body = await res.json() as {
       plan: string;
       features: string[];
-      allowanceUsed: number;
-      askPerDay: number;
+      allowance: Record<string, unknown>;
     };
     expect(body.plan).toBe("free");
     expect(body.features).toEqual(["ask"]);
-    expect(body.allowanceUsed).toBe(0);
-    expect(body.askPerDay).toBe(10);
+    expect(body.allowance).toMatchObject({
+      period: "week",
+      total: 40_000,
+      used: 0,
+      remaining: 40_000,
+    });
+    // Free resets every Monday, 00:00 UTC.
+    const resets = new Date(String(body.allowance["resetsAt"]));
+    expect(resets.getUTCDay()).toBe(1);
+    expect(resets.getUTCHours()).toBe(0);
   });
 
   test("a typed note goes in that class's notebook, dated", async () => {
@@ -381,22 +399,54 @@ suite("Studafy Plus / Max over real SQL", () => {
       .toBe(404);
   });
 
-  test("the free question box stops at ten a day", async () => {
-    for (let i = 0; i < 10; i++) {
-      const res = await request("/v1/study-assistant/ask", CLASSMATE, {
-        method: "POST",
-        body: { question: `Question number ${i}?` },
-      });
-      expect(res.status).toBe(200);
-    }
-    const eleventh = await request("/v1/study-assistant/ask", CLASSMATE, {
+  test("a free question is charged the tokens the provider reported", async () => {
+    await sql`delete from private.ai_usage where user_id = ${CLASSMATE}::uuid`;
+    const res = await request("/v1/study-assistant/ask", CLASSMATE, {
+      method: "POST",
+      body: { question: "What is a cell?" },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as {
+      allowance: { used: number; remaining: number };
+    };
+    // 200 in + 100 out, the reference model's tokens counting one each.
+    expect(body.allowance.used).toBe(300);
+    expect(body.allowance.remaining).toBe(40_000 - 300);
+  });
+
+  test("when the week's tokens are used, the question costs nothing", async () => {
+    await sql`
+      insert into private.ai_usage (user_id, feature, plan, month, status,
+        reserved_micro_usd, cost_micro_usd, metered_tokens, settled_at)
+      values (${CLASSMATE}::uuid, 'ask', 'free',
+        date_trunc('month', now() at time zone 'utc')::date, 'settled',
+        0, 0, 39_000, now())`;
+    const before = calls.length;
+    const res = await request("/v1/study-assistant/ask", CLASSMATE, {
       method: "POST",
       body: { question: "One more question?" },
     });
-    expect(eleventh.status).toBe(429);
-    expect(((await eleventh.json()) as { code: string }).code).toBe(
-      "AI_DAILY_LIMIT",
+    expect(res.status).toBe(429);
+    expect(((await res.json()) as { code: string }).code).toBe(
+      "AI_ALLOWANCE_USED",
     );
+    expect(calls.length).toBe(before);
+  });
+
+  test("last week's tokens do not count this week", async () => {
+    await sql`delete from private.ai_usage where user_id = ${CLASSMATE}::uuid`;
+    await sql`
+      insert into private.ai_usage (user_id, feature, plan, month, status,
+        reserved_micro_usd, cost_micro_usd, metered_tokens, created_at, settled_at)
+      values (${CLASSMATE}::uuid, 'ask', 'free',
+        date_trunc('month', now() at time zone 'utc')::date, 'settled',
+        0, 0, 40_000, private.ai_period_start('week') - interval '1 second',
+        now())`;
+    const plan = await request("/v1/me/study-plan", CLASSMATE);
+    expect(
+      ((await plan.json()) as { allowance: { used: number } }).allowance.used,
+    )
+      .toBe(0);
   });
 
   test("whiteboard notes need Studafy Plus", async () => {
@@ -523,43 +573,88 @@ suite("Studafy Plus / Max over real SQL", () => {
     // Never over the cap.
     expect(await spent(STUDENT)).toBeLessThanOrEqual(1_600_000);
 
-    const plan = await request("/v1/me/study-plan", STUDENT);
-    expect(((await plan.json()) as { allowanceUsed: number }).allowanceUsed)
-      .toBeGreaterThan(0.99);
+    // The dollar cap is the backstop under the tokens: it held even though
+    // this student's token count was nowhere near 6,000,000.
   });
 
-  test("two requests at once cannot both slip under the cap", async () => {
+  test("two requests at once cannot both slip under the allowance", async () => {
     // Room for exactly one whiteboard hold on Plus.
     await grant(CLASSMATE, "plus");
     await sql`delete from private.ai_usage where user_id = ${CLASSMATE}::uuid`;
-    const hold = holdFor(PRICES, "whiteboard");
+    const hold = holdFor(PRICES, 0, OUTPUT_TOKENS.long, 1);
     await sql`
       insert into private.ai_usage (user_id, feature, plan, month, status,
-        reserved_micro_usd, cost_micro_usd, settled_at)
+        reserved_micro_usd, cost_micro_usd, metered_tokens, settled_at)
       values (${CLASSMATE}::uuid, 'whiteboard', 'plus',
         date_trunc('month', now() at time zone 'utc')::date, 'settled',
-        0, ${800_000 - hold - Math.floor(hold / 2)}, now())`;
+        0, 0, ${3_000_000 - hold.tokens - Math.floor(hold.tokens / 2)}, now())`;
+    const repository = new PostgresStudyRepository(sql);
+    const outcomes = await Promise.all([1, 2, 3].map(() =>
+      repository.usage(
+        {
+          subject: CLASSMATE,
+          schoolId: null,
+          requestId: crypto.randomUUID(),
+          aal2: false,
+        },
+        "reserve",
+        {
+          feature: "whiteboard",
+          estimateMicroUsd: hold.microUsd,
+          estimateTokens: hold.tokens,
+        },
+      )
+    ));
+    expect(outcomes.filter((o) => o["outcome"] === "ok")).toHaveLength(1);
+    expect(
+      outcomes.filter((o) => o["outcome"] === "allowance_exhausted"),
+    ).toHaveLength(2);
+  });
+
+  test("a retried request is answered again, never charged twice", async () => {
+    await sql`delete from private.ai_usage where user_id = ${OUTSIDER}::uuid`;
     const repository = new PostgresStudyRepository(sql);
     const context = {
-      subject: CLASSMATE,
+      subject: OUTSIDER,
       schoolId: null,
       requestId: crypto.randomUUID(),
       aal2: false,
     };
-    const outcomes = await Promise.all([1, 2, 3].map(() =>
-      repository.usage(
-        { ...context, requestId: crypto.randomUUID() },
-        "reserve",
-        { feature: "whiteboard", estimateMicroUsd: hold },
-      )
-    ));
-    expect(outcomes.filter((o) => o["outcome"] === "ok")).toHaveLength(1);
-    expect(outcomes.filter((o) => o["outcome"] === "monthly_cap")).toHaveLength(
-      2,
-    );
+    const reserve = () =>
+      repository.usage(context, "reserve", {
+        feature: "ask",
+        estimateMicroUsd: 500,
+        estimateTokens: 2_000,
+        requestKey: "ask:retry-test",
+      });
+    const first = await reserve();
+    expect(first["outcome"]).toBe("ok");
+    // Still running: the same request again is refused, not run twice.
+    expect((await reserve())["outcome"]).toBe("in_progress");
+    await repository.usage(context, "settle", {
+      usageId: first["usageId"],
+      costMicroUsd: 100,
+      inputTokens: 400,
+      outputTokens: 100,
+      model: "Qwen/Qwen3.5-9B",
+    });
+    // Answered already: once more, free.
+    const replay = await reserve();
+    expect(replay).toMatchObject({ outcome: "ok", replay: true });
+    const settled = await repository.usage(context, "settle", {
+      usageId: replay["usageId"],
+      costMicroUsd: 100,
+      inputTokens: 400,
+      outputTokens: 100,
+      model: "Qwen/Qwen3.5-9B",
+    });
+    expect(settled["meteredTokens"]).toBe(0);
+    expect((await reserve())["outcome"]).toBe("duplicate");
+    const summary = await repository.usage(context, "summary", {});
+    expect((summary["allowance"] as { used: number }).used).toBe(500);
   });
 
-  test("a hold for a call that failed is released, and costs nothing", async () => {
+  test("a model that costs more counts more", async () => {
     await sql`delete from private.ai_usage where user_id = ${OUTSIDER}::uuid`;
     const repository = new PostgresStudyRepository(sql);
     const context = {
@@ -571,6 +666,57 @@ suite("Studafy Plus / Max over real SQL", () => {
     const reserved = await repository.usage(context, "reserve", {
       feature: "ask",
       estimateMicroUsd: 500,
+      estimateTokens: 2_000,
+    });
+    const settled = await repository.usage(context, "settle", {
+      usageId: reserved["usageId"],
+      costMicroUsd: 100,
+      inputTokens: 400,
+      outputTokens: 100,
+      // Not in private.ai_model_rates: counted at twice the reference.
+      model: "someone/else",
+    });
+    expect(settled["meteredTokens"]).toBe(1_000);
+  });
+
+  test("upgrading mid-month gives the bigger allowance, minus what was used", async () => {
+    await sql`delete from private.ai_usage where user_id = ${OUTSIDER}::uuid`;
+    await sql`delete from private.study_plan_grants where user_id = ${OUTSIDER}::uuid`;
+    await sql`
+      insert into private.ai_usage (user_id, feature, plan, month, status,
+        reserved_micro_usd, cost_micro_usd, metered_tokens, settled_at)
+      values (${OUTSIDER}::uuid, 'ask', 'free',
+        date_trunc('month', now() at time zone 'utc')::date, 'settled',
+        0, 0, 12_000, now())`;
+    await grant(OUTSIDER, "plus");
+    const plan = await request("/v1/me/study-plan", OUTSIDER);
+    const body = await plan.json() as {
+      plan: string;
+      allowance: Record<string, unknown>;
+    };
+    expect(body.plan).toBe("plus");
+    expect(body.allowance).toMatchObject({
+      period: "month",
+      total: 3_000_000,
+      used: 12_000,
+      remaining: 2_988_000,
+    });
+  });
+
+  test("a hold for a call that failed is released, and costs nothing", async () => {
+    await sql`delete from private.ai_usage where user_id = ${OUTSIDER}::uuid`;
+    const repository = new PostgresStudyRepository(sql);
+    const context = {
+      subject: OUTSIDER,
+      schoolId: null,
+      requestId: crypto.randomUUID(),
+      aal2: false,
+    };
+    await sql`delete from private.study_plan_grants where user_id = ${OUTSIDER}::uuid`;
+    const reserved = await repository.usage(context, "reserve", {
+      feature: "ask",
+      estimateMicroUsd: 500,
+      estimateTokens: 2_000,
     });
     expect(reserved["outcome"]).toBe("ok");
     await repository.usage(context, "release", {
@@ -578,5 +724,6 @@ suite("Studafy Plus / Max over real SQL", () => {
     });
     const summary = await repository.usage(context, "summary", {});
     expect(summary["committedMicroUsd"]).toBe(0);
+    expect((summary["allowance"] as { used: number }).used).toBe(0);
   });
 });

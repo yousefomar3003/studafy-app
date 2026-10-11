@@ -1,6 +1,10 @@
 import { describeApiEnv, loadApiEnv } from "../bootstrap/config";
 import { type DependentCheck } from "../bootstrap/app";
-import { authIssuer, authJwksUrl } from "@studafy/config";
+import {
+  authIssuer,
+  authJwksUrl,
+  usesPrivilegedDatabaseRole,
+} from "@studafy/config";
 import { AuthContextRepository } from "../auth/context";
 import { JwksKeySource } from "../auth/jwks";
 import { PostgresAuthorizationRepository } from "../authorization/repository";
@@ -13,11 +17,17 @@ import {
   checkRedis,
   createCloudWatchSink,
   createRedis,
+  createSentryReporter,
+  isPlaintextRemoteRedis,
   SupabaseManagedAccountIssuer,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { checkDatabase, createDatabase } from "@studafy/database";
-import { createJsonLogger, logStartup } from "@studafy/observability";
+import {
+  createJsonLogger,
+  createLogSampler,
+  logStartup,
+} from "@studafy/observability";
 import { version as apiVersion } from "../../package.json";
 
 /**
@@ -39,11 +49,34 @@ export function buildPlatform() {
     })
     : undefined;
 
+  // OPS-090: unexpected errors to Sentry when a DSN is set, with nothing
+  // personal in them.
+  const errorReporter = env.SENTRY_DSN
+    ? createSentryReporter({
+      dsn: env.SENTRY_DSN,
+      environment: env.ENVIRONMENT,
+      release: apiVersion,
+      service: "api",
+    })
+    : undefined;
+
   const logger = createRedactingLogger(
-    createJsonLogger("api", apiVersion, env.LOG_LEVEL, (line) => {
-      console.log(line);
-      cloudwatch?.record(line);
-    }),
+    createJsonLogger(
+      "api",
+      apiVersion,
+      env.LOG_LEVEL,
+      (line) => {
+        console.log(line);
+        cloudwatch?.record(line);
+        // Error-level lines only; the reporter ignores the rest.
+        errorReporter?.captureLogLine(line);
+      },
+      createLogSampler({
+        successRate: env.LOG_SAMPLE_SUCCESS_RATE,
+        routineRate: env.LOG_SAMPLE_ROUTINE_RATE,
+        slowRequestMs: env.LOG_SLOW_REQUEST_MS,
+      }),
+    ),
   );
 
   logStartup(logger, {
@@ -53,9 +86,22 @@ export function buildPlatform() {
   });
 
   const sql = env.DATABASE_URL
-    ? createDatabase(env.DATABASE_URL, { max: env.DATABASE_POOL_MAX })
+    ? createDatabase(env.DATABASE_URL, {
+      max: env.DATABASE_POOL_MAX,
+      ...(env.DATABASE_CA_CERT ? { caCert: env.DATABASE_CA_CERT } : {}),
+    })
     : undefined;
+  if (usesPrivilegedDatabaseRole(env.DATABASE_URL)) {
+    // Production refuses this; elsewhere it runs, but outside ADR-0014's
+    // least-privilege boundary (RLS bypassed, every table writable).
+    logger.warn("database_privileged_role", { environment: env.ENVIRONMENT });
+  }
   const redis = env.REDIS_URL ? createRedis(env.REDIS_URL) : undefined;
+  if (env.REDIS_URL && isPlaintextRemoteRedis(env.REDIS_URL)) {
+    // Production refuses this outright; elsewhere it is allowed but loud:
+    // the Redis password and every key cross the network in clear.
+    logger.warn("redis_plaintext_remote", { environment: env.ENVIRONMENT });
+  }
 
   const databaseCheck: DependentCheck | undefined = sql
     ? () => checkDatabase(sql)
@@ -82,7 +128,7 @@ export function buildPlatform() {
     secret: rateLimitSecret,
     redis: redis ?? null,
     logger,
-    trustCloudflare: env.ENVIRONMENT === "production",
+    clientIpSource: env.CLIENT_IP_SOURCE,
   });
 
   // The session-context cache: version-keyed (membershipVersion, revocation
@@ -165,6 +211,7 @@ export function buildPlatform() {
   return {
     env,
     cloudwatch,
+    errorReporter,
     logger,
     sql,
     redis,

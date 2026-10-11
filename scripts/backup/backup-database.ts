@@ -22,6 +22,13 @@
 import { chmod, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import postgres from "postgres";
+import { databaseTls } from "../../packages/database/src/index.ts";
+
+/** Encrypted unless the database is on this machine (packages/database). */
+const tls = (url: string) => {
+  const ssl = databaseTls(url, process.env.DATABASE_CA_CERT);
+  return ssl === undefined ? {} : { ssl };
+};
 
 const url = process.env.BACKUP_DATABASE_URL;
 if (!url) throw new Error("BACKUP_DATABASE_URL is required.");
@@ -47,6 +54,7 @@ for (
 }
 
 const sql = postgres(url, {
+  ...tls(url),
   max: 1,
   prepare: false,
   onnotice: () => {},

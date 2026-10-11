@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/failures.dart';
+import 'package:studafy/data/contracts/response_cache.dart';
 import 'package:studafy/data/contracts/v1_http_transport.dart';
 
 void main() {
@@ -135,6 +138,8 @@ void main() {
       accessToken: () async => token,
       refreshSession: () async => false,
       onSessionLost: () {},
+      // Only reads in flight here; remembered answers are tested below.
+      recentFor: Duration.zero,
     );
     try {
       final both = await Future.wait([
@@ -163,4 +168,167 @@ void main() {
       await server.close(force: true);
     }
   });
+
+  group('reads answered moments ago', () {
+    late HttpServer server;
+    late StreamSubscription<HttpRequest> serving;
+    late V1HttpTransport transport;
+    var calls = 0;
+    var now = DateTime(2026, 10, 4, 9);
+
+    setUp(() async {
+      calls = 0;
+      now = DateTime(2026, 10, 4, 9);
+      server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      serving = server.listen((request) async {
+        await utf8.decoder.bind(request).join();
+        calls += 1;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'n': calls}));
+        await request.response.close();
+      });
+      transport = V1HttpTransport(
+        baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+        accessToken: () async => 'token',
+        refreshSession: () async => false,
+        onSessionLost: () {},
+        now: () => now,
+      );
+    });
+
+    tearDown(() async {
+      transport.close();
+      await serving.cancel();
+      await server.close(force: true);
+    });
+
+    test('are reused for a few seconds, then read again', () async {
+      expect(await transport.get('/v1/classrooms'), {'n': 1});
+      now = now.add(const Duration(seconds: 5));
+      expect(await transport.get('/v1/classrooms'), {'n': 1});
+      expect(calls, 1);
+
+      now = now.add(const Duration(seconds: 30));
+      expect(await transport.get('/v1/classrooms'), {'n': 2});
+    });
+
+    test('are forgotten by any change sent, so it is read back', () async {
+      await transport.get('/v1/classrooms');
+      await transport.post('/v1/classrooms', {'name': '7B'});
+      expect(await transport.get('/v1/classrooms'), {'n': 3});
+    });
+
+    test('are forgotten when the person asks for fresh', () async {
+      await transport.get('/v1/classrooms');
+      transport.forgetRecentReads();
+      expect(await transport.get('/v1/classrooms'), {'n': 2});
+    });
+
+    test(
+      'a read on its way while a change is sent is not remembered',
+      () async {
+        final before = transport.get('/v1/classrooms');
+        final change = transport.post('/v1/classrooms', {'name': '7B'});
+        await Future.wait([before, change]);
+        await transport.get('/v1/classrooms');
+        expect(calls, 3);
+      },
+    );
+
+    test('a chat polled for new messages always asks the server', () async {
+      await transport.get('/v1/conversations/c1/messages');
+      await transport.get('/v1/conversations/c1/messages');
+      await transport.get('/v1/notifications?limit=20');
+      await transport.get('/v1/notifications?limit=20');
+      expect(calls, 4);
+    });
+
+    test('a notebook being written is always asked about again', () async {
+      await transport.get('/v1/classrooms/c1/study-notebooks');
+      await transport.get('/v1/classrooms/c1/study-notebooks');
+      await transport.get('/v1/study-notebooks/n1');
+      await transport.get('/v1/study-notebooks/n1');
+      expect(calls, 4);
+    });
+
+    test('reads that are never kept are never remembered', () async {
+      await transport.get('/v1/me');
+      await transport.get('/v1/me');
+      expect(calls, 2);
+    });
+  });
+
+  test('a response that stalls part-way fails instead of spinning', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final serving = server.listen((request) async {
+      request.response
+        ..headers.contentType = ContentType.json
+        ..contentLength = 100
+        ..write('{"items": [');
+      await request.response.flush();
+      // ...and never finishes.
+    });
+    final transport = V1HttpTransport(
+      baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      accessToken: () async => 'token',
+      refreshSession: () async => false,
+      onSessionLost: () {},
+      timeout: const Duration(milliseconds: 200),
+    );
+    try {
+      await expectLater(
+        transport.get('/v1/classrooms'),
+        throwsA(
+          predicate<Object>(
+            (e) => Failure.fromError(e).code == Failure.networkCode,
+          ),
+        ),
+      );
+    } finally {
+      transport.close();
+      await serving.cancel();
+      await server.close(force: true);
+    }
+  });
+
+  test('keeping a copy on the device never holds up the answer', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final serving = server.listen((request) async {
+      request.response
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode({'items': []}));
+      await request.response.close();
+    });
+    final cache = _StuckCache();
+    final transport = V1HttpTransport(
+      baseUri: Uri.parse('http://127.0.0.1:${server.port}'),
+      accessToken: () async => 'token',
+      refreshSession: () async => false,
+      onSessionLost: () {},
+    )..responseCache = cache;
+    try {
+      expect(await transport.get('/v1/classrooms'), {'items': []});
+      expect(cache.writes, 1);
+    } finally {
+      cache.release.complete();
+      transport.close();
+      await serving.cancel();
+      await server.close(force: true);
+    }
+  });
+}
+
+/// A device cache whose writes never finish until released.
+class _StuckCache implements ResponseCache {
+  final release = Completer<void>();
+  var writes = 0;
+
+  @override
+  Future<Map<String, dynamic>?> read(String key) async => null;
+
+  @override
+  Future<void> write(String key, Map<String, dynamic> body) {
+    writes += 1;
+    return release.future;
+  }
 }

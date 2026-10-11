@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../../core/runtime_environment.dart';
 import '../../../l10n/generated/app_l10n.dart';
 
 /// Loads the existing API's widget page. Never carries access tokens or secrets.
@@ -20,7 +21,11 @@ class _FamilyChallengePageState extends State<FamilyChallengePage> {
   void initState() {
     super.initState();
     final url = widget.url;
-    final local = ['localhost', '127.0.0.1'].contains(url.host);
+    final local = plainHttpAllowedFor(
+      url.host,
+      production:
+          StudafyRuntime.policy.environment == StudafyEnvironment.production,
+    );
     if ((url.scheme != 'https' && !(url.scheme == 'http' && local)) ||
         url.userInfo.isNotEmpty ||
         url.path != '/auth/bot-check') {
@@ -94,4 +99,20 @@ class _FamilyChallengePageState extends State<FamilyChallengePage> {
           : WebViewWidget(controller: _controller!),
     );
   }
+}
+
+/// Whether the security check may be loaded over plain HTTP from [host].
+///
+/// Only this device or a private network (a development API on the same
+/// Wi-Fi, as the phone build uses), and never in production, where the page
+/// must come over HTTPS.
+bool plainHttpAllowedFor(String host, {required bool production}) {
+  if (['localhost', '127.0.0.1'].contains(host)) return true;
+  if (production) return false;
+  final parts = host.split('.').map(int.tryParse).toList();
+  if (parts.length != 4 || parts.any((p) => p == null || p < 0 || p > 255)) {
+    return false;
+  }
+  final [a, b, _, _] = parts.cast<int>();
+  return a == 10 || (a == 172 && b >= 16 && b <= 31) || (a == 192 && b == 168);
 }

@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/study.dart';
+import '../domain/study_notebook.dart';
 
 class ApiStudyRepository implements StudyRepository {
   const ApiStudyRepository(this._client);
@@ -18,7 +22,7 @@ class ApiStudyRepository implements StudyRepository {
     return switch (error.code) {
       'PLAN_REQUIRED' => StudyRefusal.planRequired,
       'AI_ALLOWANCE_USED' => StudyRefusal.allowanceUsed,
-      'AI_DAILY_LIMIT' => StudyRefusal.dailyLimit,
+      'MATERIAL_PROCESSING' => StudyRefusal.materialProcessing,
       'PHOTO_NOT_READY' => StudyRefusal.photoNotReady,
       'PHOTO_UNREADABLE' => StudyRefusal.photoUnreadable,
       'LESSON_HAS_NO_TEXT' => StudyRefusal.lessonHasNoText,
@@ -32,6 +36,17 @@ class ApiStudyRepository implements StudyRepository {
       return await run();
     } on StudyException {
       rethrow;
+    } on V1ApiException catch (error) {
+      // Chosen files that cannot be read now, named so the student can try
+      // again or go on without them.
+      if (error.code == 'MATERIAL_UNAVAILABLE') {
+        throw MaterialUnavailableException({
+          for (final entry in error.fieldErrors.entries)
+            if (entry.key.startsWith('sources/'))
+              entry.key.substring('sources/'.length): entry.value,
+        });
+      }
+      throw StudyException(_refusal(error));
     } on Object catch (error) {
       throw StudyException(_refusal(error));
     }
@@ -61,10 +76,13 @@ class ApiStudyRepository implements StudyRepository {
     final dto = await _client.getStudyPlan();
     return StudyPlan(
       tier: StudyPlanTier.parse(dto.plan),
-      allowanceUsed: dto.allowanceUsed.toDouble(),
-      resetsAt: DateTime.parse(dto.resetsAt).toLocal(),
-      askToday: dto.askToday,
-      askPerDay: dto.askPerDay,
+      allowance: AiAllowance(
+        weekly: dto.allowance.period == 'week',
+        total: dto.allowance.total,
+        used: dto.allowance.used,
+        remaining: dto.allowance.remaining,
+        resetsAt: DateTime.parse(dto.allowance.resetsAt).toLocal(),
+      ),
       available: dto.available?.toSet(),
     );
   });
@@ -151,21 +169,200 @@ class ApiStudyRepository implements StudyRepository {
           resourceId: resourceId,
           idempotencyKey: _key('set-${kind.name}'),
         );
-        return StudySet(
-          kind: kind,
-          questions: [
-            for (final q in dto.questions ?? const <V1QuizQuestionDto>[])
-              QuizQuestion(
-                question: q.question,
-                options: q.options,
-                answerIndex: q.answerIndex,
-                explanation: q.explanation,
-              ),
-          ],
-          cards: [
-            for (final c in dto.cards ?? const <V1FlashcardDto>[])
-              Flashcard(front: c.front, back: c.back),
-          ],
-        );
+        return _set(kind, dto.questions, dto.cards);
       });
+
+  static StudySet _set(
+    StudySetKind kind,
+    List<V1QuizQuestionDto>? questions,
+    List<V1FlashcardDto>? cards, {
+    MaterialScopeInfo? scope,
+  }) => StudySet(
+    kind: kind,
+    scope: scope,
+    questions: [
+      for (final q in questions ?? const <V1QuizQuestionDto>[])
+        QuizQuestion(
+          question: q.question,
+          options: q.options,
+          answerIndex: q.answerIndex,
+          explanation: q.explanation,
+        ),
+    ],
+    cards: [
+      for (final c in cards ?? const <V1FlashcardDto>[])
+        Flashcard(front: c.front, back: c.back),
+    ],
+  );
+
+  @override
+  Future<List<StudyNotebookSummary>> notebooks(String classroomId) =>
+      _guard(() async {
+        final list = await _client.listStudyNotebooks(classroomId: classroomId);
+        return [
+          for (final item in list.items)
+            StudyNotebookSummary.fromJson(item.toJson().cast()),
+        ];
+      });
+
+  @override
+  Future<StudySet> selectionStudySet(
+    StudySetKind kind,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+  }) => _guard(() async {
+    final dto = await _client.generateSelectionStudySet(
+      V1SelectionStudySetRequestDto.fromJson(
+        _json({
+          'kind': kind.name,
+          'references': selection.toJson(),
+          if (skipUnavailable) 'skipUnavailable': true,
+        }),
+      ),
+      idempotencyKey: _key('selection-${kind.name}'),
+    );
+    return _set(
+      kind,
+      dto.questions,
+      dto.cards,
+      scope: MaterialScopeInfo.fromJson(_json(dto.scope.toJson())),
+    );
+  });
+
+  @override
+  Future<NotebookEntry> summarise(
+    String classroomId,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+    String? language,
+  }) => _guard(() async {
+    return _entry(
+      await _client.summariseMaterial(
+        V1SummariseMaterialRequestDto.fromJson(
+          _json({
+            'references': selection.toJson(),
+            if (skipUnavailable) 'skipUnavailable': true,
+            if (language == 'ar' || language == 'en') 'language': language,
+          }),
+        ),
+        classroomId: classroomId,
+        idempotencyKey: _key('summary'),
+      ),
+    );
+  });
+
+  @override
+  Future<StudyNotebookSummary> createNotebook(
+    String classroomId, {
+    required String resourceId,
+    required List<String> sourceIds,
+    String? title,
+    MaterialSelection? selection,
+    bool skipUnavailable = false,
+  }) => _guard(() async {
+    final dto = await _client.createStudyNotebook(
+      V1CreateStudyNotebookRequestDto.fromJson(
+        _json({
+          'resourceId': resourceId,
+          'sourceIds': sourceIds,
+          'title': ?title,
+          if (selection != null) 'references': selection.toJson(),
+          if (skipUnavailable) 'skipUnavailable': true,
+        }),
+      ),
+      classroomId: classroomId,
+      idempotencyKey: _key('notebook'),
+    );
+    return StudyNotebookSummary.fromJson(dto.toJson().cast());
+  });
+
+  @override
+  Future<StudyNotebook> openNotebook(String notebookId) => _guard(() async {
+    final dto = await _client.getStudyNotebook(notebookId: notebookId);
+    return StudyNotebook.fromJson(_json(dto.toJson()));
+  });
+
+  @override
+  Future<StudyNotebookSummary> updateNotebook(
+    String notebookId, {
+    List<String>? sourceIds,
+    bool skipUnavailable = false,
+  }) => _guard(() async {
+    final dto = await _client.regenerateStudyNotebook(
+      V1RegenerateStudyNotebookRequestDto.fromJson({
+        'sourceIds': ?sourceIds,
+        if (skipUnavailable) 'skipUnavailable': true,
+      }),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-update'),
+    );
+    return StudyNotebookSummary.fromJson(dto.toJson().cast());
+  });
+
+  @override
+  Future<StudyNotebookSummary> saveNotebookSettings(
+    String notebookId,
+    NotebookSettings settings,
+  ) => _guard(() async {
+    final dto = await _client.updateStudyNotebookSettings(
+      V1StudyNotebookSettingsRequestDto.fromJson(_json(settings.toJson())),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-settings'),
+    );
+    return StudyNotebookSummary.fromJson(dto.toJson().cast());
+  });
+
+  @override
+  Future<StudyNotebook> saveNotebookPersonal(
+    String notebookId, {
+    required int expectedVersion,
+    required NotebookPersonal personal,
+  }) async {
+    try {
+      final dto = await _client.saveStudyNotebookPersonal(
+        V1StudyNotebookPersonalRequestDto.fromJson(
+          _json({
+            'expectedVersion': expectedVersion,
+            'personal': personal.toJson(),
+          }),
+        ),
+        notebookId: notebookId,
+        idempotencyKey: _key('notebook-personal'),
+      );
+      return StudyNotebook.fromJson(_json(dto.toJson()));
+    } on V1ApiException catch (error) {
+      if (error.code == 'VERSION_CONFLICT') throw const NotebookConflict(null);
+      throw StudyException(_refusal(error));
+    } on Object catch (error) {
+      throw StudyException(_refusal(error));
+    }
+  }
+
+  @override
+  Future<void> deleteNotebook(String notebookId) => _guard(() async {
+    await _client.deleteStudyNotebook(
+      const V1DeleteStudyNotebookRequestDto(),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-delete'),
+    );
+  });
+
+  @override
+  Future<StudySet> notebookStudySet(
+    String notebookId,
+    StudySetKind kind,
+    List<String> sectionKeys,
+  ) => _guard(() async {
+    final dto = await _client.makeNotebookStudySet(
+      V1NotebookStudySetRequestDto(kind: kind.name, sectionKeys: sectionKeys),
+      notebookId: notebookId,
+      idempotencyKey: _key('notebook-set-${kind.name}'),
+    );
+    return _set(kind, dto.questions, dto.cards);
+  });
+
+  /// A DTO's map, as plain JSON all the way down, the shape the domain
+  /// models and request DTOs read.
+  static Map<String, dynamic> _json(Map<String, Object?> value) =>
+      jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
 }

@@ -61,13 +61,13 @@ select ok(not (private.ai_plan_limits('plus')->'features') ? 'quiz'
 -- 4. The ledger refuses before any provider is called.
 select set_config('request.jwt.claim.sub', :'student_user', true);
 select is(private.api047_ai_usage('reserve', jsonb_build_object(
-  'feature','whiteboard','estimateMicroUsd',5000))->>'outcome', 'plan_required',
+  'feature','whiteboard','estimateMicroUsd',5000,'estimateTokens',1000))->>'outcome', 'plan_required',
   'a free student cannot reserve a whiteboard call');
 select is(private.api047_ai_usage('reserve', jsonb_build_object(
-  'feature','ask','estimateMicroUsd',400))->>'outcome', 'ok',
+  'feature','ask','estimateMicroUsd',400,'estimateTokens',1000))->>'outcome', 'ok',
   'a free student can ask a question');
 select is(private.api047_ai_usage('reserve', jsonb_build_object(
-  'feature','ask','estimateMicroUsd',100001))->>'outcome', 'invalid',
+  'feature','ask','estimateMicroUsd',100001,'estimateTokens',1000))->>'outcome', 'invalid',
   'no single call may hold more than ten cents');
 insert into private.study_plan_grants(user_id, plan, reason, ends_at)
   values (:'student_user', 'plus', 'pgTAP cap check', now() + interval '1 day');
@@ -75,16 +75,16 @@ insert into private.ai_usage(user_id, feature, plan, month, status, reserved_mic
   values (:'student_user', 'whiteboard', 'plus', date_trunc('month', now() at time zone 'utc')::date,
     'settled', 0, 796000);
 select is(private.api047_ai_usage('reserve', jsonb_build_object(
-  'feature','whiteboard','estimateMicroUsd',5000))->>'outcome', 'monthly_cap',
+  'feature','whiteboard','estimateMicroUsd',5000,'estimateTokens',1000))->>'outcome', 'monthly_cap',
   'a reservation that would pass the monthly cap is refused');
 select is(private.api047_ai_usage('reserve', jsonb_build_object(
-  'feature','whiteboard','estimateMicroUsd',3000))->>'outcome', 'ok',
+  'feature','whiteboard','estimateMicroUsd',3000,'estimateTokens',1000))->>'outcome', 'ok',
   'a reservation that still fits is allowed');
 select is(private.api047_ai_usage('summary', '{}')->>'committedMicroUsd', '799400',
   -- 796000 settled + the 400 question hold above + this 3000 hold.
   'a live hold counts against the cap before it settles');
 select is(private.api047_ai_usage('reserve', jsonb_build_object(
-  'feature','whiteboard','estimateMicroUsd',2000))->>'outcome', 'monthly_cap',
+  'feature','whiteboard','estimateMicroUsd',2000,'estimateTokens',1000))->>'outcome', 'monthly_cap',
   'the hold leaves no room for a second call that would pass the cap');
 select is(private.api047_ai_usage('release', jsonb_build_object(
   'usageId', (select id from private.ai_usage where user_id=:'student_user'

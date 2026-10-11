@@ -1,4 +1,5 @@
 import type { LogLevel } from "@studafy/contracts";
+import type { LogSampler } from "./sampling";
 
 export interface Logger {
   debug(event: string, fields?: Record<string, unknown>): void;
@@ -46,11 +47,17 @@ function normalize(fields: Record<string, unknown>): Record<string, unknown> {
   return output;
 }
 
+/**
+ * A JSON-lines logger. [sampler], when given, decides per line whether it
+ * is kept (see `createLogSampler`); without one every line at or above
+ * [level] is written.
+ */
 export function createJsonLogger(
   service: string,
   version: string,
   level: LogLevel,
   sink: LogSink = (line) => console.log(line),
+  sampler?: LogSampler,
 ): Logger {
   function emit(
     entryLevel: LogLevel,
@@ -58,6 +65,8 @@ export function createJsonLogger(
     fields: Record<string, unknown>,
   ): void {
     if (LEVEL_WEIGHT[entryLevel] < LEVEL_WEIGHT[level]) return;
+    const decision = sampler?.(entryLevel, event, fields);
+    if (decision && !decision.keep) return;
     const line = JSON.stringify({
       timestamp: new Date().toISOString(),
       level: entryLevel,
@@ -65,6 +74,9 @@ export function createJsonLogger(
       version,
       event,
       ...normalize(fields),
+      ...(decision?.keep && decision.sampleRate !== undefined
+        ? { sample_rate: decision.sampleRate }
+        : {}),
     });
     sink(line);
   }

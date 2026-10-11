@@ -6,6 +6,7 @@ import '../domain/academic_repository.dart';
 String courseworkMessage(AppL10n l10n, CourseworkRefusal refusal) =>
     switch (refusal.problem) {
       CourseworkProblem.versionConflict => l10n.courseworkVersionConflict,
+      CourseworkProblem.invalidState => l10n.courseworkInvalidState,
       CourseworkProblem.entriesInvalid => l10n.courseworkEntriesInvalid,
       CourseworkProblem.reasonRequired => l10n.courseworkReasonRequired,
       CourseworkProblem.attendanceLocked => l10n.courseworkAttendanceLocked,

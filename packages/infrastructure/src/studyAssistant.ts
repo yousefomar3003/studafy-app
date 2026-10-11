@@ -10,10 +10,11 @@
  *      so a swapped environment variable cannot redirect children's questions
  *      to a new destination.
  *   2. It forwarded lesson-material bodies with no redaction. This one sends
- *      only what the student typed - and, for a follow-up, the last few turns
- *      of the same chat, which the student's device supplies - never their
- *      name, their id, their school, their marks or any material the app
- *      holds. Nothing is read from the database to build the prompt.
+ *      what the student typed, the last few turns of the same chat, and -
+ *      behind AI_LESSON_TOOLS_ENABLED (ADR-0029, ADR-0037) - passages of
+ *      the class material that student may read, all redacted. Material is
+ *      wrapped as labelled data the model is told never to obey. Never the
+ *      student's name, id, school or marks.
  *
  * It also never sees a service-role credential: the provider key is the only
  * secret it holds, and it is used for exactly one host.
@@ -21,15 +22,24 @@
 
 import {
   type Flashcard,
+  GROUNDED_RULES,
   isUnreadableReply,
+  learnerLine,
+  type LearnerProfile,
   lessonPrompt,
+  materialBlock,
+  type MaterialPassage,
+  NOTEBOOK_PROMPT,
+  type NotebookContent,
   parseFlashcards,
+  parseNotebook,
   parseQuiz,
   type QuizQuestion,
   redactForProvider,
   STUDY_PROMPTS,
   type StudySetKind,
   type StudyUsage,
+  type UnreadableSource,
 } from "@studafy/domain";
 
 export interface StudyAssistantOptions {
@@ -41,6 +51,12 @@ export interface StudyAssistantOptions {
   maxOutputTokens?: number;
   /** Ceiling for whiteboard notes and study sets, which run longer. */
   maxLongOutputTokens?: number;
+  /** A whole notebook: its output ceiling and time, run in the background. */
+  notebookOutputTokens?: number;
+  /** A quiz or flashcards: six questions with explanations in Arabic need
+   * more room than an answer. */
+  studySetOutputTokens?: number;
+  notebookTimeoutMs?: number;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 }
@@ -58,11 +74,38 @@ export type StudySetResult =
 export class StudyAssistantError extends Error {
   constructor(
     readonly kind: "unavailable" | "refused" | "empty" | "unreadable",
+    /** The provider's HTTP status, when it answered with an error. */
+    readonly status?: number,
+    /**
+     * What the provider reported for a reply it produced but that could not
+     * be used (empty, unreadable, too few quiz items). It was paid for.
+     */
+    readonly usage?: StudyUsage,
+    /**
+     * True when the provider may have done (and billed) the work although
+     * no usable reply came back: a timeout or a dropped connection after the
+     * request was sent. False when nothing reached it or it refused.
+     */
+    readonly billed: boolean = usage !== undefined,
   ) {
     super(`study_assistant_${kind}`);
     this.name = "StudyAssistantError";
   }
 }
+
+/** The same failure, carrying the usage of the reply it was made from. */
+function unusable(
+  kind: "empty" | "unreadable",
+  usage: StudyUsage | undefined,
+): StudyAssistantError {
+  return new StudyAssistantError(kind, undefined, usage, true);
+}
+
+/** The fewest usable items a study set is kept with. */
+export const STUDY_SET_MINIMUM = { quiz: 3, flashcards: 4 } as const;
+
+/** Statuses worth one more try: busy, or a passing server fault. */
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
 
 /** One earlier turn of the same chat. */
 export interface StudyTurn {
@@ -88,13 +131,34 @@ export interface StudyImage {
   mediaType: string;
 }
 
+/** What a question is asked with, besides the chat. */
+export interface AskExtras {
+  /** Passages of class material, already chosen and fitted to the budget. */
+  passages?: MaterialPassage[];
+  /** Sources the student chose that could not be read. */
+  unreadable?: UnreadableSource[];
+  /** Photos the student attached. */
+  images?: StudyImage[];
+  learner?: LearnerProfile;
+}
+
 export interface StudyAssistant {
   /** [history] is the chat so far, oldest first, already fitted to the
    * plan's chat memory. */
   ask(
     question: string,
     history?: StudyTurn[],
-    extras?: { references?: StudyReference[]; images?: StudyImage[] },
+    extras?: AskExtras,
+  ): Promise<StudyAssistantReply>;
+  /**
+   * The writing on one scanned page, or the writing and a plain account of
+   * one image, for the material index. Throws "unreadable" when there is
+   * nothing to read.
+   */
+  transcribe(
+    image: Uint8Array,
+    mediaType: string,
+    kind: "page" | "image",
   ): Promise<StudyAssistantReply>;
   /** Notes from a whiteboard photo. Throws "unreadable" for a blank one. */
   whiteboardNotes(
@@ -108,6 +172,15 @@ export interface StudyAssistant {
   ): Promise<StudySetResult>;
   /** Study notes made from a lesson's text (Studafy Plus). */
   lessonNotes(title: string, lessonText: string): Promise<StudyAssistantReply>;
+  /**
+   * A structured study notebook from labelled material (2026-10-07).
+   * Throws "empty" when the reply is not a usable notebook.
+   */
+  notebook(
+    title: string,
+    passages: MaterialPassage[],
+    extras?: { unreadable?: UnreadableSource[]; learner?: LearnerProfile },
+  ): Promise<{ content: NotebookContent; usage?: StudyUsage }>;
 }
 
 type Message = { role: "system" | "user" | "assistant"; content: Content };
@@ -138,6 +211,9 @@ export function createStudyAssistant(
     maxOutputTokens = 600,
     maxLongOutputTokens = 1400,
     timeoutMs = 20_000,
+    notebookOutputTokens = 3_500,
+    studySetOutputTokens = 1_400,
+    notebookTimeoutMs = 120_000,
     fetchImpl = fetch,
   } = options;
 
@@ -151,6 +227,8 @@ export function createStudyAssistant(
     user: Content,
     maxTokens: number,
     earlier: Message[] = [],
+    temperature = 0.3,
+    timeLimitMs = timeoutMs,
   ): Promise<{ text: string; usage?: StudyUsage }> {
     const endpoint = new URL("/v1/chat/completions", allowed);
     // The allowlist, enforced rather than assumed: the origin that ends up
@@ -159,40 +237,59 @@ export function createStudyAssistant(
       throw new StudyAssistantError("refused");
     }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeLimitMs);
+    const started = Date.now();
+    // Once a request is on its way, a failure without an answer may still
+    // have been billed by the provider.
+    let sent = false;
     try {
-      const response = await fetchImpl(endpoint, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: maxTokens,
-          temperature: 0.3,
-          // Qwen3.5 thinks before answering by default, and the thinking
-          // counts against max_tokens: a 600-token budget came back cut
-          // off mid-sentence, or empty, after ~9s. Off, the same question
-          // gets a complete answer in ~2s. A short explanation for a
-          // student does not need a reasoning trace.
-          reasoning: { enabled: false },
-          messages: [
-            { role: "system", content: system },
-            ...earlier,
-            { role: "user", content: user },
-          ],
-        }),
-      });
-      if (!response.ok) throw new StudyAssistantError("unavailable");
+      const send = () =>
+        fetchImpl(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            authorization: `Bearer ${apiKey}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: maxTokens,
+            temperature,
+            // Qwen3.5 thinks before answering by default, and the thinking
+            // counts against max_tokens: a 600-token budget came back cut
+            // off mid-sentence, or empty, after ~9s. Off, the same question
+            // gets a complete answer in ~2s. A short explanation for a
+            // student does not need a reasoning trace.
+            reasoning: { enabled: false },
+            messages: [
+              { role: "system", content: system },
+              ...earlier,
+              { role: "user", content: user },
+            ],
+          }),
+        });
+      sent = true;
+      let response = await send();
+      // One more try when the provider was briefly busy, while there is
+      // time for it inside the request's own limit.
+      if (
+        RETRYABLE.has(response.status) &&
+        Date.now() - started < timeLimitMs / 2
+      ) {
+        await response.body?.cancel().catch(() => {});
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        response = await send();
+      }
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
+        throw new StudyAssistantError("unavailable", response.status);
+      }
       const body = await response.json() as {
         choices?: { message?: { content?: string } }[];
         usage?: { prompt_tokens?: number; completion_tokens?: number };
         model?: string;
       };
       const text = body.choices?.[0]?.message?.content?.trim();
-      if (!text) throw new StudyAssistantError("empty");
       const usage = body.usage &&
           Number.isInteger(body.usage.prompt_tokens) &&
           Number.isInteger(body.usage.completion_tokens)
@@ -202,10 +299,11 @@ export function createStudyAssistant(
           model: body.model ?? model,
         }
         : undefined;
+      if (!text) throw unusable("empty", usage);
       return { text, ...(usage ? { usage } : {}) };
     } catch (error) {
       if (error instanceof StudyAssistantError) throw error;
-      throw new StudyAssistantError("unavailable");
+      throw new StudyAssistantError("unavailable", undefined, undefined, sent);
     } finally {
       clearTimeout(timer);
     }
@@ -215,9 +313,10 @@ export function createStudyAssistant(
     async ask(
       question: string,
       history: StudyTurn[] = [],
-      extras: { references?: StudyReference[]; images?: StudyImage[] } = {},
+      extras: AskExtras = {},
     ): Promise<StudyAssistantReply> {
-      const references = extras.references ?? [];
+      const passages = extras.passages ?? [];
+      const unreadable = extras.unreadable ?? [];
       const images = extras.images ?? [];
       for (const image of images) {
         if (
@@ -235,16 +334,15 @@ export function createStudyAssistant(
           content: redactForProvider(turn.text.slice(0, STUDY_TURN_MAX_CHARS)),
         }));
       // The material goes in the instructions, not as something the student
-      // said: it is the ground to answer from, redacted like the question.
-      const system = references.length === 0 ? STUDY_PROMPTS.ask : [
+      // said: labelled, wrapped, and declared to be data, never orders.
+      const grounded = passages.length > 0 || unreadable.length > 0;
+      const system = [
         STUDY_PROMPTS.ask,
-        STUDY_PROMPTS.askReferences,
-        ...references.map((reference) =>
-          `### ${redactForProvider(reference.title)}\n${
-            redactForProvider(reference.text)
-          }`
-        ),
-      ].join("\n\n");
+        learnerLine(extras.learner ?? {}),
+        ...(grounded
+          ? [GROUNDED_RULES, materialBlock(passages, unreadable)]
+          : []),
+      ].filter((part) => part.length > 0).join("\n\n");
       const user: Content = images.length === 0
         ? redactForProvider(question)
         : [
@@ -259,9 +357,39 @@ export function createStudyAssistant(
       const { text, usage } = await complete(
         system,
         user,
-        images.length === 0 ? maxOutputTokens : maxLongOutputTokens,
+        images.length === 0 && !grounded
+          ? maxOutputTokens
+          : maxLongOutputTokens,
         earlier,
       );
+      return { answer: text, ...(usage ? { usage } : {}) };
+    },
+
+    async transcribe(image, mediaType, kind): Promise<StudyAssistantReply> {
+      if (mediaType !== "image/jpeg" && mediaType !== "image/png") {
+        throw new StudyAssistantError("refused");
+      }
+      const { text, usage } = await complete(
+        kind === "page"
+          ? STUDY_PROMPTS.transcribePage
+          : STUDY_PROMPTS.describeImage,
+        [
+          {
+            type: "text",
+            text: kind === "page"
+              ? "Transcribe this page."
+              : "Read this image.",
+          },
+          {
+            type: "image_url",
+            image_url: { url: `data:${mediaType};base64,${base64(image)}` },
+          },
+        ],
+        maxLongOutputTokens,
+        [],
+        0,
+      );
+      if (isUnreadableReply(text)) throw unusable("unreadable", usage);
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
@@ -285,9 +413,7 @@ export function createStudyAssistant(
         ],
         maxLongOutputTokens,
       );
-      if (isUnreadableReply(text)) {
-        throw new StudyAssistantError("unreadable");
-      }
+      if (isUnreadableReply(text)) throw unusable("unreadable", usage);
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
@@ -300,19 +426,44 @@ export function createStudyAssistant(
       return { answer: text, ...(usage ? { usage } : {}) };
     },
 
+    async notebook(title, passages, extras = {}) {
+      const system = [
+        NOTEBOOK_PROMPT,
+        learnerLine(extras.learner ?? {}),
+        materialBlock(passages, extras.unreadable ?? []),
+      ].filter((part) => part.length > 0).join("\n\n");
+      const { text, usage } = await complete(
+        system,
+        `Make the study notebook for the lesson: ${redactForProvider(title)}`,
+        notebookOutputTokens,
+        [],
+        0.2,
+        notebookTimeoutMs,
+      );
+      const content = parseNotebook(text, passages);
+      if (!content) throw unusable("empty", usage);
+      return { content, ...(usage ? { usage } : {}) };
+    },
+
     async studySet(kind, title, lessonText): Promise<StudySetResult> {
       const { text, usage } = await complete(
         STUDY_PROMPTS[kind],
         lessonPrompt(title, lessonText),
-        maxLongOutputTokens,
+        studySetOutputTokens,
       );
+      // Too few usable items is not a quiz: fail, and the hold is released,
+      // rather than keep a one-question "quiz" for everyone.
       if (kind === "quiz") {
         const questions = parseQuiz(text);
-        if (questions.length === 0) throw new StudyAssistantError("empty");
+        if (questions.length < STUDY_SET_MINIMUM.quiz) {
+          throw unusable("empty", usage);
+        }
         return { kind, questions, ...(usage ? { usage } : {}) };
       }
       const cards = parseFlashcards(text);
-      if (cards.length === 0) throw new StudyAssistantError("empty");
+      if (cards.length < STUDY_SET_MINIMUM.flashcards) {
+        throw unusable("empty", usage);
+      }
       return { kind, cards, ...(usage ? { usage } : {}) };
     },
   };

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 
 import '../../../core/app_routes.dart';
+import '../../../core/device_settings.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
@@ -17,9 +18,32 @@ import 'role_page.dart';
 /// The login screen drives [SessionInteractor]; it never touches Supabase,
 /// SQLite, or any repository directly (ARC-011 session slice).
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, required this.role, required this.session});
+  const LoginPage({
+    super.key,
+    required this.role,
+    required this.session,
+    this.settings,
+  });
   final UserRole role;
   final SessionInteractor session;
+
+  /// Remembers the role opened, so the next launch can go straight back to
+  /// it. Without it nothing is remembered.
+  final DeviceSettingsStore? settings;
+
+  static StudafyRole studafyRole(UserRole role) => switch (role) {
+    UserRole.teacher => StudafyRole.teacher,
+    UserRole.parent => StudafyRole.parent,
+    UserRole.student => StudafyRole.student,
+  };
+
+  /// The shells are registered as named routes by the app; the session
+  /// feature never imports the role shells directly.
+  static String routeFor(UserRole role) => switch (role) {
+    UserRole.teacher => teacherRoute,
+    UserRole.parent => parentRoute,
+    UserRole.student => studentRoute,
+  };
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -156,16 +180,20 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(closeInAppWebView());
   }
 
-  Future<void> _completeRemoteLogin({UserRole? as}) async {
+  Future<void> _completeRemoteLogin({
+    UserRole? as,
+    bool addRole = false,
+  }) async {
     if (!mounted || completingRemoteLogin || widget.session.isDemoSession) {
       return;
     }
     final role = as ?? widget.role;
     completingRemoteLogin = true;
     final result = await widget.session.completeRemoteLogin(
-      role: _studafyRole(role),
+      role: LoginPage.studafyRole(role),
       consentAccepted: accepted,
       locale: Localizations.localeOf(context).languageCode,
+      addRole: addRole,
     );
     completingRemoteLogin = false;
     result.fold(
@@ -179,6 +207,9 @@ class _LoginPageState extends State<LoginPage> {
           case LoginOutcome.wrongRole:
             final own = widget.session.accountRole;
             if (own != null) unawaited(_explainWrongRole(own));
+          case LoginOutcome.otherRole:
+            final own = widget.session.accountRole;
+            if (own != null) unawaited(_offerOwnRole(own, role));
         }
       },
       onFailure: (failure) {
@@ -212,12 +243,6 @@ class _LoginPageState extends State<LoginPage> {
       arguments: role,
     );
   }
-
-  static StudafyRole _studafyRole(UserRole role) => switch (role) {
-    UserRole.teacher => StudafyRole.teacher,
-    UserRole.parent => StudafyRole.parent,
-    UserRole.student => StudafyRole.student,
-  };
 
   static UserRole _userRole(StudafyRole role) => switch (role) {
     StudafyRole.teacher || StudafyRole.schoolAdmin => UserRole.teacher,
@@ -319,15 +344,112 @@ class _LoginPageState extends State<LoginPage> {
     await widget.session.signOut();
   }
 
+  /// This email is already used in the other adult role. Nothing has been
+  /// entered: the person goes on in the role they have, or adds the one
+  /// they chose - an adult may be both, and switches between them.
+  Future<void> _offerOwnRole(StudafyRole own, UserRole chosen) async {
+    final l10n = AppL10n.of(context);
+    final ownName = _roleName(l10n, own);
+    final chosenName = _roleName(l10n, LoginPage.studafyRole(chosen));
+    final choice = await showModalBottomSheet<UserRole>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: studafyWash,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    own == StudafyRole.parent
+                        ? Icons.family_restroom_rounded
+                        : Icons.school_rounded,
+                    color: studafyNavy,
+                    size: 30,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.loginOtherRoleTitle(ownName.toLowerCase()),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: studafyInk,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.loginOtherRoleBody(
+                  ownName.toLowerCase(),
+                  chosenName.toLowerCase(),
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: studafyMuted, height: 1.45),
+              ),
+              const SizedBox(height: 22),
+              FilledButton(
+                onPressed: () => Navigator.pop(sheet, _userRole(own)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                child: Text(l10n.loginContinueAs(ownName)),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => Navigator.pop(sheet, chosen),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(l10n.loginAlsoUseAs(chosenName.toLowerCase())),
+              ),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(sheet),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(l10n.loginUseDifferentEmail),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice != null) {
+      await _completeRemoteLogin(as: choice, addRole: choice == chosen);
+      return;
+    }
+    setState(() {
+      signingIn = false;
+      error = null;
+    });
+    await widget.session.signOut();
+  }
+
   void _openRole([UserRole? as]) {
-    // The shells are registered as named routes by the app; the session
-    // feature never imports the role shells directly.
-    final route = switch (as ?? widget.role) {
-      UserRole.teacher => teacherRoute,
-      UserRole.parent => parentRoute,
-      UserRole.student => studentRoute,
-    };
-    Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
+    final role = as ?? widget.role;
+    final settings = widget.settings;
+    if (settings != null && !widget.session.isDemoSession) {
+      unawaited(settings.write(DeviceSettingKeys.lastRole, role.name));
+    }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      LoginPage.routeFor(role),
+      (_) => false,
+    );
   }
 
   /// Set when a provider is tapped before the terms are accepted, so the

@@ -48,9 +48,16 @@ class _ClassesPageState extends State<ClassesPage> {
   }
 
   void _refresh() {
+    if (!mounted) return;
     setState(() {
       _future = widget.classes.loadClasses();
     });
+  }
+
+  /// Pull-to-refresh: the indicator stays until the new list is in.
+  Future<void> _pullToRefresh() async {
+    _refresh();
+    await _future;
   }
 
   @override
@@ -66,10 +73,14 @@ class _ClassesPageState extends State<ClassesPage> {
               onSuccess: (value) => value,
               onFailure: (_) => const <ClassroomSummary>[],
             );
-            final waiting = snapshot.connectionState == ConnectionState.waiting;
+            // A reload keeps the list where it is; only the first load,
+            // with nothing to show yet, waits on a spinner.
+            final waiting =
+                snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData;
             final list = classrooms ?? const <ClassroomSummary>[];
-            return RefreshIndicator(
-              onRefresh: () async => _refresh(),
+            return StudafyRefreshIndicator(
+              onRefresh: _pullToRefresh,
               child: ListView(
                 padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),
                 children: [

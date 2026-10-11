@@ -1189,6 +1189,10 @@ class AppL10nEn extends AppL10n {
       'No meetings yet. Add one so the register knows when this class meets.';
 
   @override
+  String get scheduleDuplicate =>
+      'Two lessons are on the same day and time. Change one of them.';
+
+  @override
   String get scheduleEndBeforeStart => 'A meeting cannot end before it starts.';
 
   @override
@@ -1341,18 +1345,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get studyAssistantCheckWork =>
       'Answers can be wrong. Check anything you hand in.';
-
-  @override
-  String studyAssistantRemaining(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count questions left today',
-      one: '1 question left today',
-      zero: 'No questions left today',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get studyAssistantTab => 'Helper';
@@ -1845,7 +1837,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get studySetThisMonthSAiAllowance =>
-      'This month\'s AI allowance is used. It renews on the 1st.';
+      'You\'ve reached your AI usage limit. It resets on your plan\'s reset date.';
 
   @override
   String get studySetThisLessonHasNoText =>
@@ -1880,19 +1872,6 @@ class AppL10nEn extends AppL10n {
   @override
   String studySetCardPageOfCardscountTap(Object page, Object cardsCount) {
     return 'Card $page of $cardsCount - tap to turn over';
-  }
-
-  @override
-  String studyPlansQuestionsTodayAsktodayOfAskperday(
-    Object askToday,
-    Object askPerDay,
-  ) {
-    return 'Questions today: $askToday of $askPerDay';
-  }
-
-  @override
-  String studyPlansAiUsedThisMonthRound(Object round) {
-    return 'AI used this month: $round%';
   }
 
   @override
@@ -2395,18 +2374,11 @@ class AppL10nEn extends AppL10n {
   String get studyPlansFeatureNotebook => 'Your own notebook for each class';
 
   @override
-  String get studyPlansFeatureTenQuestions =>
-      '10 questions a day to the study helper';
-
-  @override
   String get studyPlansFeatureEverythingInFree => 'Everything in Free';
 
   @override
   String get studyPlansFeatureWhiteboard =>
       'Snap the whiteboard - get real notebook notes';
-
-  @override
-  String get studyPlansFeatureFortyQuestions => '40 questions a day';
 
   @override
   String get studyPlansFeatureEverythingInPlus => 'Everything in Plus';
@@ -2416,9 +2388,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get studyPlansFeatureFlashcards => 'Flashcards made from your lessons';
-
-  @override
-  String get studyPlansFeatureSixtyQuestions => '60 questions a day';
 
   @override
   String get studentTodayMakeTodayYours => 'Make today yours.';
@@ -2920,20 +2889,21 @@ class AppL10nEn extends AppL10n {
   String get accountExportFailed => 'That did not work. Please try again.';
 
   @override
-  String get todayWork => 'Work you have set';
+  String get todayWork => 'Work you have to set';
 
   @override
-  String get todayWorkEmpty => 'You have not set any work yet.';
+  String get todayWorkEmpty =>
+      'Nothing to set right now. Drafts, and work that is open or coming up, appear here.';
 
   @override
   String get todaySections => 'Sections needing content';
 
   @override
   String get todaySectionsEmpty =>
-      'Every section you have taught has its content filed.';
+      'Every section you have taught has a lesson your class can see.';
 
   @override
-  String get todaySectionsOutstanding => 'Content outstanding';
+  String get todaySectionsOutstanding => 'No lesson yet';
 
   @override
   String get todayTitle => 'Today';
@@ -3419,10 +3389,6 @@ class AppL10nEn extends AppL10n {
   @override
   String get studyAssistantUnavailable =>
       'The study helper could not answer just now. Please try again in a moment.';
-
-  @override
-  String get studyAssistantDailyLimit =>
-      'You have used all of today\'s questions. You can ask again tomorrow.';
 
   @override
   String get accountsSwitchAccount => 'Switch account';
@@ -3929,19 +3895,8 @@ class AppL10nEn extends AppL10n {
   String get helperNoClasses => 'Join a class to use its lessons here.';
 
   @override
-  String get upgradeDailyLimitTitle => 'You\'ve used today\'s questions';
-
-  @override
-  String upgradeDailyLimitBody(int count) {
-    return 'Your plan includes $count questions a day. You can ask again tomorrow.';
-  }
-
-  @override
-  String get upgradeAllowanceTitle => 'This month\'s AI allowance is used';
-
-  @override
   String get upgradeAllowanceBody =>
-      'Your plan\'s AI allowance renews on the 1st of next month.';
+      'You\'ve reached your AI usage limit. It resets on your plan\'s reset date, or a bigger plan gives you more.';
 
   @override
   String upgradeFeatureTitle(String plan) {
@@ -3955,9 +3910,6 @@ class AppL10nEn extends AppL10n {
   String upgradeWhatUnlocks(String plan) {
     return 'What $plan unlocks';
   }
-
-  @override
-  String get upgradeLargerAllowance => 'A larger monthly AI allowance';
 
   @override
   String get upgradeButton => 'Upgrade';
@@ -4217,7 +4169,7 @@ class AppL10nEn extends AppL10n {
   String get paperGradesScore => 'Score';
 
   @override
-  String get paperGradesAbsent => 'Absent';
+  String get paperGradesAbsent => 'Missed the exam';
 
   @override
   String get paperGradesNotGraded => 'Not graded';
@@ -4685,20 +4637,21 @@ class AppL10nEn extends AppL10n {
   String get wellbeingWhoSees => 'Who can read it?';
 
   @override
-  String get wellbeingSeeStaff => 'Class staff only';
+  String get wellbeingSeeStaff => 'Only you';
 
   @override
-  String get wellbeingSeeStaffDetail => 'Only this class\'s teachers.';
+  String get wellbeingSeeStaffDetail =>
+      'Kept to you, as this class\'s teacher.';
 
   @override
-  String get wellbeingSeeGuardians => 'Staff and parents';
+  String get wellbeingSeeGuardians => 'You and the parents';
 
   @override
   String get wellbeingSeeGuardiansDetail =>
       'Also the student\'s linked parents.';
 
   @override
-  String get wellbeingSeeStudent => 'Staff, parents and the student';
+  String get wellbeingSeeStudent => 'You, the parents and the student';
 
   @override
   String get wellbeingSeeStudentDetail =>
@@ -4971,10 +4924,6 @@ class AppL10nEn extends AppL10n {
   String get helperSubtitle => 'Ask about anything you\'re studying';
 
   @override
-  String get helperLimitReached =>
-      'You\'ve used today\'s questions. Upgrade for more each day, or ask again tomorrow.';
-
-  @override
   String get helperRecentChats => 'Recent chats';
 
   @override
@@ -5035,4 +4984,1904 @@ class AppL10nEn extends AppL10n {
   @override
   String get accountSwitchRoleTeacherParent =>
       'Move between teaching and following your children.';
+
+  @override
+  String get accountName => 'Name';
+
+  @override
+  String get accountEditName => 'Edit name';
+
+  @override
+  String get accountEditNameTitle => 'Edit your name';
+
+  @override
+  String get accountNameHelp =>
+      'This is how your teachers, classmates and family see you.';
+
+  @override
+  String get accountNameInvalid => 'Enter a name of up to 160 characters.';
+
+  @override
+  String get accountNameSaved => 'Name saved';
+
+  @override
+  String get accountNameFailed =>
+      'Your name couldn\'t be saved. Please try again.';
+
+  @override
+  String get accountSaveAction => 'Save';
+
+  @override
+  String get accountCancelAction => 'Cancel';
+
+  @override
+  String get accountPublicIdDetail =>
+      'Studafy support may ask for this number. It can\'t be used to see your account or to link to a child.';
+
+  @override
+  String get navAnnouncements => 'Announcements';
+
+  @override
+  String get announcementsSubtitle => 'News from your children\'s schools';
+
+  @override
+  String get announcementsAllChildren => 'All children';
+
+  @override
+  String get announcementsNoChildren =>
+      'Link a child to see their school\'s announcements.';
+
+  @override
+  String announcementsFrom(String school, String children) {
+    return '$school · $children';
+  }
+
+  @override
+  String get learningSubtitle => 'Lessons, work, tests, grades and attendance';
+
+  @override
+  String get learningFilterByChild => 'Filter by child';
+
+  @override
+  String get learningNoChildrenTitle => 'No child linked yet';
+
+  @override
+  String get learningNoChildrenBody =>
+      'Link a child from Today to follow their lessons, work and grades here.';
+
+  @override
+  String get parentTodaySubtitle => 'Your children\'s day at a glance';
+
+  @override
+  String get parentQuickLink => 'Link a child';
+
+  @override
+  String get parentQuickLearning => 'Learning';
+
+  @override
+  String get parentQuickAnnouncements => 'Announcements';
+
+  @override
+  String get parentQuickMessages => 'Message a teacher';
+
+  @override
+  String get parentChildrenSection => 'Your children';
+
+  @override
+  String get parentNoChildrenTitle => 'Link your first child';
+
+  @override
+  String get parentNoChildrenBody =>
+      'Ask your child for their Studafy ID. They approve the request on their own device.';
+
+  @override
+  String get parentChildOpen => 'Open';
+
+  @override
+  String get parentLinkSearching => 'Checking…';
+
+  @override
+  String get familyPlusNoPlan => 'No Family+ plan yet';
+
+  @override
+  String familyPlusCoveredCount(int count) {
+    return 'Covers $count of your children';
+  }
+
+  @override
+  String familyPlusEnds(String date) {
+    return 'Active until $date';
+  }
+
+  @override
+  String get familyPlusWhatYouGet => 'What Family+ adds';
+
+  @override
+  String get familyPlusPlansTitle => 'Choose a plan';
+
+  @override
+  String get familyPlusManagePlan => 'Plan';
+
+  @override
+  String get famLinkCheckFailed =>
+      'The security check didn\'t go through. Please try again.';
+
+  @override
+  String get famLinkAlready =>
+      'You\'ve already asked to link this child, or they\'re linked already.';
+
+  @override
+  String get famLinkIdHelp =>
+      'Your child finds it on their Profile, under Your Studafy ID.';
+
+  @override
+  String get familyPlusCurrentPlan => 'Current plan';
+
+  @override
+  String get paperGradesOtherMark => 'Other mark';
+
+  @override
+  String get paperGradesEnterScore => 'Enter a score instead';
+
+  @override
+  String get courseworkInvalidState =>
+      'That can\'t be done for this right now.';
+
+  @override
+  String get attendanceNotOnTimetable =>
+      'This lesson wasn\'t on the class\'s timetable on that date, so it has no register.';
+
+  @override
+  String get attendanceSaveFailed =>
+      'The attendance couldn\'t be saved. Please try again.';
+
+  @override
+  String loginOtherRoleTitle(String role) {
+    return 'This email is already a $role account';
+  }
+
+  @override
+  String loginOtherRoleBody(String own, String chosen) {
+    return 'Continue as a $own, or also use this account as a $chosen. You can switch between the two any time from your profile.';
+  }
+
+  @override
+  String loginAlsoUseAs(String role) {
+    return 'Also use it as a $role';
+  }
+
+  @override
+  String get attachmentsTitle => 'Attachments';
+
+  @override
+  String get attachmentsLinks => 'Links';
+
+  @override
+  String get attachmentsFiles => 'Files';
+
+  @override
+  String get attachmentsAddLink => 'Add link';
+
+  @override
+  String get attachmentsLinkTitle => 'Title readers see';
+
+  @override
+  String get attachmentsLinkAddress => 'Address (https://…)';
+
+  @override
+  String get attachmentsLinkTitleRequired => 'Give the link a title.';
+
+  @override
+  String get attachmentsRemove => 'Remove';
+
+  @override
+  String get attachmentsKeep => 'Keep';
+
+  @override
+  String get attachmentsRemovedOnSave => 'Removed when you save';
+
+  @override
+  String get attachmentsUploading => 'Wait for the files to finish uploading.';
+
+  @override
+  String get attachmentsFailed =>
+      'Retry or remove the files that failed to upload.';
+
+  @override
+  String attachmentsTooManyLinks(int count) {
+    return 'You can add up to $count links.';
+  }
+
+  @override
+  String get attachmentsImagePreview => 'Tap to view';
+
+  @override
+  String get attachmentsChecking => 'Being checked';
+
+  @override
+  String get attachmentsNotAvailable => 'Not available';
+
+  @override
+  String get questionKindSingle => 'Single answer';
+
+  @override
+  String get questionKindMultiple => 'Multiple answers';
+
+  @override
+  String get questionKindTrueFalse => 'True or false';
+
+  @override
+  String get questionKindShort => 'Short answer';
+
+  @override
+  String get questionKindEssay => 'Essay';
+
+  @override
+  String get builderNewTitle => 'New online assessment';
+
+  @override
+  String get builderEditTitle => 'Edit assessment';
+
+  @override
+  String get builderTitleLabel => 'Title';
+
+  @override
+  String get builderClassLabel => 'Class';
+
+  @override
+  String get builderCategoryLabel => 'Type';
+
+  @override
+  String get builderCategoryQuiz => 'Quiz';
+
+  @override
+  String get builderCategoryExam => 'Exam';
+
+  @override
+  String get builderCategoryAssessment => 'Assessment';
+
+  @override
+  String get builderQuestions => 'Questions';
+
+  @override
+  String get builderAddQuestion => 'Add question';
+
+  @override
+  String builderTotal(String points) {
+    return 'Total points: $points';
+  }
+
+  @override
+  String builderQuestionNumber(int number) {
+    return 'Question $number';
+  }
+
+  @override
+  String get builderPrompt => 'Question';
+
+  @override
+  String get builderPoints => 'Points';
+
+  @override
+  String get builderRequired => 'Required';
+
+  @override
+  String builderOption(int number) {
+    return 'Option $number';
+  }
+
+  @override
+  String get builderAddOption => 'Add option';
+
+  @override
+  String get builderRemoveOption => 'Remove option';
+
+  @override
+  String get builderMarkCorrectOne => 'Tick the correct answer.';
+
+  @override
+  String get builderMarkCorrectAll => 'Tick every correct answer.';
+
+  @override
+  String get builderTrue => 'True';
+
+  @override
+  String get builderFalse => 'False';
+
+  @override
+  String get builderCorrectIs => 'The correct answer is';
+
+  @override
+  String get builderAccepted => 'Accepted answers, one per line';
+
+  @override
+  String get builderAcceptedHint => 'Leave empty to mark it yourself.';
+
+  @override
+  String get builderModelAnswer => 'Model answer';
+
+  @override
+  String get builderGuidance => 'Marking guidance';
+
+  @override
+  String get builderPrivateHint =>
+      'Only you see this until answers are released.';
+
+  @override
+  String get builderMoveUp => 'Move up';
+
+  @override
+  String get builderMoveDown => 'Move down';
+
+  @override
+  String get builderDuplicate => 'Duplicate';
+
+  @override
+  String get builderDelete => 'Delete';
+
+  @override
+  String get builderSettings => 'Settings';
+
+  @override
+  String get builderOpens => 'Opens';
+
+  @override
+  String get builderCloses => 'Closes';
+
+  @override
+  String get builderNotSet => 'Not set';
+
+  @override
+  String get builderNow => 'Now';
+
+  @override
+  String get builderAttempts => 'Attempts allowed';
+
+  @override
+  String get builderPolicy => 'Which attempt counts';
+
+  @override
+  String get builderPolicyBest => 'The best';
+
+  @override
+  String get builderPolicyLatest => 'The latest';
+
+  @override
+  String get builderRelease => 'When students see the answers';
+
+  @override
+  String get builderReleaseAfterClose => 'After it closes for everyone';
+
+  @override
+  String get builderReleaseAfterGrading =>
+      'After marking is done and grades are published';
+
+  @override
+  String get builderReleaseManual => 'When I release them';
+
+  @override
+  String get builderReleaseNote =>
+      'Answers are never shown while any student can still attempt it.';
+
+  @override
+  String get builderMaterial => 'Material for the whole assessment';
+
+  @override
+  String get builderPreview => 'Preview as a student';
+
+  @override
+  String get builderSaveDraft => 'Save draft';
+
+  @override
+  String get builderPublish => 'Publish';
+
+  @override
+  String get builderSaved => 'Saved.';
+
+  @override
+  String get builderPublished => 'Published to the class.';
+
+  @override
+  String get builderSaveFailed =>
+      'Could not save. Check the questions and try again.';
+
+  @override
+  String get builderLocked =>
+      'A student has already submitted, so the questions can no longer change. Settings still can.';
+
+  @override
+  String get builderNeedTitle => 'Give it a title.';
+
+  @override
+  String get builderNeedClass => 'Choose a class.';
+
+  @override
+  String get builderNeedQuestion => 'Add at least one question.';
+
+  @override
+  String get builderNeedClose => 'Set when it closes.';
+
+  @override
+  String get builderCloseAfterOpen => 'It must close after it opens.';
+
+  @override
+  String builderProblemPrompt(int number) {
+    return 'Question $number: write the question.';
+  }
+
+  @override
+  String builderProblemPoints(int number) {
+    return 'Question $number: give it points.';
+  }
+
+  @override
+  String builderProblemOptions(int number) {
+    return 'Question $number: add at least two filled-in options.';
+  }
+
+  @override
+  String builderProblemCorrect(int number) {
+    return 'Question $number: mark the correct answer.';
+  }
+
+  @override
+  String builderProblemTrueFalse(int number) {
+    return 'Question $number: choose true or false as the answer.';
+  }
+
+  @override
+  String builderProblemFiles(int number) {
+    return 'Question $number: wait for its files to upload.';
+  }
+
+  @override
+  String get builderOnlineChoice => 'Answered online';
+
+  @override
+  String get builderOnlineChoiceDetail =>
+      'Students answer in the app; choice questions are marked for you.';
+
+  @override
+  String get builderPaperChoice => 'On paper';
+
+  @override
+  String get builderPaperChoiceDetail =>
+      'Students sit it in class; you enter the marks.';
+
+  @override
+  String takeOpens(String time) {
+    return 'Opens $time';
+  }
+
+  @override
+  String takeCloses(String time) {
+    return 'Closes $time';
+  }
+
+  @override
+  String get takeClosed => 'Closed';
+
+  @override
+  String get takeNotOpen => 'Not open yet';
+
+  @override
+  String takeAttemptsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attempts left',
+      one: '1 attempt left',
+      zero: 'No attempts left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeStart => 'Start';
+
+  @override
+  String get takeAgain => 'Try again';
+
+  @override
+  String get takeSubmit => 'Submit answers';
+
+  @override
+  String get takeSubmitTitle => 'Submit your answers?';
+
+  @override
+  String get takeSubmitBody => 'You can\'t change them after submitting.';
+
+  @override
+  String get takeLeaveTitle => 'Leave without submitting?';
+
+  @override
+  String get takeLeaveBody => 'Your answers will not be kept.';
+
+  @override
+  String get takeLeave => 'Leave';
+
+  @override
+  String get takeStay => 'Stay';
+
+  @override
+  String takeMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Answer the $count required questions that are left.',
+      one: 'Answer the required question that is left.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeSubmitted =>
+      'Submitted. Your teacher will release the results.';
+
+  @override
+  String get takeSubmitFailed =>
+      'Your answers were not sent. Check your connection and try again.';
+
+  @override
+  String get takeWindowClosed => 'This has closed, so it can\'t be submitted.';
+
+  @override
+  String get takeRequired => 'Required';
+
+  @override
+  String get takeOptional => 'Optional';
+
+  @override
+  String get takeTypeAnswer => 'Your answer';
+
+  @override
+  String get takeChooseOne => 'Choose one';
+
+  @override
+  String get takeChooseAll => 'Choose all that apply';
+
+  @override
+  String takePoints(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count points',
+      one: '1 point',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get takeYourAttempts => 'Your attempts';
+
+  @override
+  String takeAttemptLine(int number, String time) {
+    return 'Attempt $number · $time';
+  }
+
+  @override
+  String get takeNotReleased =>
+      'Answers will appear here once your teacher releases them.';
+
+  @override
+  String get takeGrade => 'Grade';
+
+  @override
+  String get takeGradePending => 'Not published yet';
+
+  @override
+  String get takeFeedback => 'Teacher\'s feedback';
+
+  @override
+  String get takeAnswers => 'Answers';
+
+  @override
+  String get takeYourAnswer => 'Your answer';
+
+  @override
+  String get takeCorrectAnswer => 'Correct answer';
+
+  @override
+  String get takeAcceptedAnswers => 'Accepted answers';
+
+  @override
+  String get takeNoAnswer => 'No answer';
+
+  @override
+  String get takeBeingMarked => 'Being marked';
+
+  @override
+  String takeScore(String score, String max) {
+    return '$score of $max';
+  }
+
+  @override
+  String get takeLoadFailed => 'This could not load.';
+
+  @override
+  String get takeRetry => 'Try again';
+
+  @override
+  String get takeReadOnly =>
+      'You can see your child\'s results here. Only they can sit it.';
+
+  @override
+  String get takeOpenAssessment => 'Open';
+
+  @override
+  String get markSubmissions => 'Submissions';
+
+  @override
+  String get markNone => 'No one has submitted yet.';
+
+  @override
+  String get markNeeds => 'Needs marking';
+
+  @override
+  String markDone(String score, String max) {
+    return 'Marked: $score of $max';
+  }
+
+  @override
+  String get markAuto => 'Marked automatically';
+
+  @override
+  String markScoreLabel(String max) {
+    return 'Score (out of $max)';
+  }
+
+  @override
+  String get markAnswerFeedback => 'Comment on this answer';
+
+  @override
+  String get markOverallFeedback => 'Feedback for the student';
+
+  @override
+  String get markSave => 'Save marks';
+
+  @override
+  String get markSaved => 'Marks saved.';
+
+  @override
+  String get markSaveFailed =>
+      'Marks were not saved. Check each score and try again.';
+
+  @override
+  String markScoreInvalid(String max) {
+    return 'Enter a score from 0 to $max.';
+  }
+
+  @override
+  String get markPublishGrades => 'Publish grades';
+
+  @override
+  String markPublished(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count grades published.',
+      one: '1 grade published.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markNothingToPublish => 'Nothing is ready to publish yet.';
+
+  @override
+  String get markReleaseNow => 'Release answers now';
+
+  @override
+  String get markReleased => 'Answers released.';
+
+  @override
+  String get markReleaseRefused =>
+      'Answers can only be released once it has closed for everyone.';
+
+  @override
+  String get markEditQuestions => 'Edit questions and settings';
+
+  @override
+  String get markGrantAccess => 'More time or attempts';
+
+  @override
+  String get markGrantStudent => 'Student';
+
+  @override
+  String get markGrantUntil => 'Open for them until';
+
+  @override
+  String get markGrantExtra => 'Extra attempts';
+
+  @override
+  String get markGrantGive => 'Give';
+
+  @override
+  String get markGranted => 'Done.';
+
+  @override
+  String get markGrantFailed => 'That could not be given.';
+
+  @override
+  String markAnswersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count submissions',
+      one: '1 submission',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markOpenSubmissions => 'Submissions and marking';
+
+  @override
+  String get paperShared => 'For the whole class';
+
+  @override
+  String get paperSharedHint =>
+      'The question paper, a mark scheme or general feedback. Each student sees these once their own mark is published.';
+
+  @override
+  String paperForStudent(String name) {
+    return 'For $name';
+  }
+
+  @override
+  String get paperForStudentHint =>
+      'Only this student and their parents see these, once the mark is published.';
+
+  @override
+  String get paperAttachments => 'Attachments';
+
+  @override
+  String get paperAttachmentsSaved => 'Attachments saved.';
+
+  @override
+  String get paperAttachmentsFailed => 'Attachments were not saved.';
+
+  @override
+  String get paperAttachmentsSaveFirst =>
+      'Save the marks first, then change attachments.';
+
+  @override
+  String get paperSave => 'Save';
+
+  @override
+  String get gradeYourFiles => 'Your files';
+
+  @override
+  String get gradeClassFiles => 'For the class';
+
+  @override
+  String get helperTokensUsed =>
+      'You\'ve reached your AI usage limit. Your question is still here.';
+
+  @override
+  String helperTokensUsedUntil(String date) {
+    return 'You\'ve reached your AI usage limit. It resets on $date - your question is still here.';
+  }
+
+  @override
+  String get helperStillAnswering => 'This question is still being answered.';
+
+  @override
+  String helperCouldNotRead(String name, String reason) {
+    return 'Couldn\'t read $name: $reason.';
+  }
+
+  @override
+  String get helperSources => 'Sources';
+
+  @override
+  String helperCitationPage(int n) {
+    return 'p. $n';
+  }
+
+  @override
+  String helperCitationSlide(int n) {
+    return 'slide $n';
+  }
+
+  @override
+  String helperCitationLesson(String name) {
+    return '$name (lesson)';
+  }
+
+  @override
+  String helperCitationNote(String name) {
+    return '$name (your note)';
+  }
+
+  @override
+  String get helperAskAboutLesson => 'Ask the AI helper';
+
+  @override
+  String get pickerOneFile => 'Or one file or link';
+
+  @override
+  String get tokensWhatAreThey => 'How does AI usage work?';
+
+  @override
+  String get tokensExplained =>
+      'Every question, summary, quiz, flashcard set and notebook uses some of your plan\'s AI usage. Longer files, longer chats and photos use more. Everything shares one allowance, shown as a bar, and it resets on a set date. When it runs out, your work is kept and you can carry on after it resets.';
+
+  @override
+  String get tokensGuideTitle => 'What uses a little, and what uses more';
+
+  @override
+  String get tokensGuideShortQuestion => 'A short question';
+
+  @override
+  String get tokensGuideLessonQuestion => 'A question about a lesson\'s files';
+
+  @override
+  String get tokensGuideNotes => 'Notes, a quiz or flashcards from a lesson';
+
+  @override
+  String get tokensGuidePhoto => 'A whiteboard or homework photo';
+
+  @override
+  String get tokensGuideEstimate =>
+      'Your usage is shown as a bar - there is nothing to count.';
+
+  @override
+  String get readingTitle => 'Reading for the AI helper';
+
+  @override
+  String get readingExplained =>
+      'Files and links are read once so the AI helper can answer from them. Scanned pages and pictures are read too, within the school\'s monthly reading limit.';
+
+  @override
+  String get readingReady => 'Ready for the AI helper';
+
+  @override
+  String get readingPartly => 'Partly read - some pages were not read';
+
+  @override
+  String get readingStateProcessing => 'Reading…';
+
+  @override
+  String readingStateCannot(String reason) {
+    return 'Can\'t be read: $reason';
+  }
+
+  @override
+  String get readingRetry => 'Read again';
+
+  @override
+  String get readingRetried => 'It will be read again shortly.';
+
+  @override
+  String get readingRetryFailed => 'That could not be done. Try again.';
+
+  @override
+  String get readingLoadFailed => 'Could not check the files.';
+
+  @override
+  String get readingNothing => 'This lesson has no files or links.';
+
+  @override
+  String get readingProcessing => 'it is still being read';
+
+  @override
+  String get readingScannedSkipped => 'its scanned pages weren\'t read';
+
+  @override
+  String get readingNoText => 'it has no readable text';
+
+  @override
+  String get readingUnsupportedType => 'this kind of file can\'t be read';
+
+  @override
+  String get readingLinkSignIn => 'the link needs a sign-in';
+
+  @override
+  String get readingLinkVideo => 'it\'s a video';
+
+  @override
+  String get readingLinkGone => 'the link no longer works';
+
+  @override
+  String get readingLinkUnreachable => 'the link couldn\'t be opened';
+
+  @override
+  String get readingFailed => 'it couldn\'t be read';
+
+  @override
+  String studyPlansTokensRenewWeekly(String date) {
+    return 'Resets every Monday · next on $date';
+  }
+
+  @override
+  String get studyPlansTokensLow => 'Running low on AI usage.';
+
+  @override
+  String get studyPlansFeatureAskLessons =>
+      'Ask the AI helper about your lessons and their files';
+
+  @override
+  String get studyPlansFeatureFreeTokens =>
+      'Light AI use - a few questions about your lessons each week';
+
+  @override
+  String get studyPlansFeaturePlusTokens =>
+      'Regular AI use - questions, notes and notebooks on most days';
+
+  @override
+  String get studyPlansFeatureMaxTokens =>
+      'Heavy AI use - twice Plus, for daily quizzes, flashcards and notebooks';
+
+  @override
+  String get upgradeTokensTitle => 'You\'ve reached your AI usage limit';
+
+  @override
+  String upgradeTokensBody(String date) {
+    return 'It resets on $date. Your work is kept. A bigger plan gives you more.';
+  }
+
+  @override
+  String get studySetMaterialProcessing =>
+      'The lesson\'s files are still being read. Try again in a minute so nothing is left out.';
+
+  @override
+  String get nbCreate => 'Create notebook';
+
+  @override
+  String get nbCreating => 'Creating…';
+
+  @override
+  String get nbOpen => 'Open notebook';
+
+  @override
+  String get nbUpdateAvailable => 'Update available';
+
+  @override
+  String get nbFailedShort => 'Couldn\'t be made';
+
+  @override
+  String get nbRetry => 'Try again';
+
+  @override
+  String get nbUpdate => 'Update notebook';
+
+  @override
+  String get nbNewVersion => 'Create another version';
+
+  @override
+  String get nbMore => 'More';
+
+  @override
+  String get nbStarted =>
+      'Your notebook is being written. It takes about a minute.';
+
+  @override
+  String get nbShelfTitle => 'Study notebooks';
+
+  @override
+  String get nbShelfEmpty =>
+      'Make an organised notebook from any lesson: tap Create notebook under it in Lessons.';
+
+  @override
+  String get nbShelfLocked =>
+      'Study notebooks made from your lessons come with Studafy Plus.';
+
+  @override
+  String get nbShelfFailed => 'Your notebooks could not be loaded. Try again';
+
+  @override
+  String get nbSheetTitle => 'New study notebook';
+
+  @override
+  String get nbSheetClass => 'Class';
+
+  @override
+  String get nbSheetLesson => 'Lesson';
+
+  @override
+  String get nbSheetName => 'Notebook name';
+
+  @override
+  String get nbSheetSources => 'Made from';
+
+  @override
+  String get nbSheetWhole => 'The whole lesson';
+
+  @override
+  String get nbSheetWholeDetail =>
+      'Its text and every file and link that can be read';
+
+  @override
+  String get nbSheetNoFiles =>
+      'This lesson has no files or links; the notebook is made from its text.';
+
+  @override
+  String get nbSheetChoose => 'Only the files and links I choose';
+
+  @override
+  String get nbSheetPickOne => 'Choose at least one file or link.';
+
+  @override
+  String get nbSheetWaitReading =>
+      'Some of the lesson\'s files are still being read. Wait a minute, or choose only the ones that are ready.';
+
+  @override
+  String get nbSheetTokens =>
+      'Writing a notebook uses some of your plan\'s AI usage. Opening it again is free.';
+
+  @override
+  String get nbSourceReading => 'Still being read';
+
+  @override
+  String get nbSourceUnreadable => 'Can\'t be read';
+
+  @override
+  String get nbUpdateConfirmTitle => 'Update this notebook?';
+
+  @override
+  String get nbUpdateConfirmBody =>
+      'The AI part is written again from the lesson as it is now. Your notes, highlights, bookmarks and sections stay as they are.';
+
+  @override
+  String get nbUpdateBanner =>
+      'The lesson has changed since this notebook was written.';
+
+  @override
+  String get nbDeleteTitle => 'Delete notebook';
+
+  @override
+  String get nbDeleteBody =>
+      'The notebook and your notes in it are deleted. This can\'t be undone.';
+
+  @override
+  String get nbWriting => 'Writing your notebook…';
+
+  @override
+  String get nbWritingDetail =>
+      'This takes about a minute. You can leave this page - it keeps going.';
+
+  @override
+  String get nbFailedTitle => 'The notebook could not be written';
+
+  @override
+  String get nbFailNoMaterial =>
+      'The lesson has nothing that can be read to make a notebook from.';
+
+  @override
+  String get nbFailTokens =>
+      'You\'ve reached your AI usage limit. It resets with your plan; your notes are kept.';
+
+  @override
+  String get nbFailPlan => 'Study notebooks come with Studafy Plus.';
+
+  @override
+  String get nbFailGeneric =>
+      'Something went wrong while writing it. Nothing was charged.';
+
+  @override
+  String get nbLoadFailed => 'The notebook could not be opened.';
+
+  @override
+  String get nbCoverPage => 'Cover';
+
+  @override
+  String nbCoverFrom(String lesson) {
+    return 'From: $lesson';
+  }
+
+  @override
+  String nbCoverWritten(String date) {
+    return 'Written $date';
+  }
+
+  @override
+  String get nbOpenContents => 'Contents';
+
+  @override
+  String get nbContents => 'Contents';
+
+  @override
+  String nbPageOf(String page, String count) {
+    return 'Page $page of $count';
+  }
+
+  @override
+  String get nbOverview => 'Overview';
+
+  @override
+  String get nbObjectives => 'Learning objectives';
+
+  @override
+  String get nbKeyTerms => 'Key terms';
+
+  @override
+  String get nbExamples => 'Worked examples';
+
+  @override
+  String get nbFacts => 'Facts, rules and formulas';
+
+  @override
+  String get nbMistakes => 'Common mistakes';
+
+  @override
+  String get nbSummary => 'Revision summary';
+
+  @override
+  String get nbPractice => 'Practice';
+
+  @override
+  String get nbExtra => 'Extra explanation - not from the lesson\'s files';
+
+  @override
+  String get nbExtraShort => 'extra explanation';
+
+  @override
+  String nbCitePage(String name, String page) {
+    return '$name, page $page';
+  }
+
+  @override
+  String nbCiteSlide(String name, String slide) {
+    return '$name, slide $slide';
+  }
+
+  @override
+  String get nbUnreadableTitle =>
+      'Not in this notebook - these could not be read:';
+
+  @override
+  String get nbReadAgain => 'Update to try again';
+
+  @override
+  String get nbAddNote => 'Add a note';
+
+  @override
+  String get nbEditNote => 'Edit note';
+
+  @override
+  String get nbNoteHint => 'In your own words (leave empty to delete)';
+
+  @override
+  String get nbMyNote => 'My note';
+
+  @override
+  String get nbHighlight => 'Highlight';
+
+  @override
+  String get nbRemoveHighlight => 'Remove highlight';
+
+  @override
+  String get nbColorYellow => 'Yellow';
+
+  @override
+  String get nbColorGreen => 'Green';
+
+  @override
+  String get nbColorBlue => 'Blue';
+
+  @override
+  String get nbColorPink => 'Pink';
+
+  @override
+  String get nbBookmark => 'Bookmark this page';
+
+  @override
+  String get nbRemoveBookmark => 'Remove bookmark';
+
+  @override
+  String get nbBookmarked => 'Bookmarked';
+
+  @override
+  String get nbAddSection => 'Add my own section';
+
+  @override
+  String get nbArrange => 'Arrange my sections';
+
+  @override
+  String get nbSectionTitle => 'Section title';
+
+  @override
+  String get nbSectionBody => 'Write anything';
+
+  @override
+  String get nbSectionEmpty => 'Nothing here yet. Tap Write to start.';
+
+  @override
+  String get nbEditSection => 'Write';
+
+  @override
+  String get nbDeleteSection => 'Delete section';
+
+  @override
+  String get nbMySection => 'My section';
+
+  @override
+  String get nbRenameHeading => 'Rename heading';
+
+  @override
+  String get nbResetHeading => 'Use the original';
+
+  @override
+  String get nbSettings => 'Cover and pages';
+
+  @override
+  String get nbSettingsTitle => 'Name';
+
+  @override
+  String get nbSettingsSubtitle => 'Subtitle';
+
+  @override
+  String get nbColor => 'Colour';
+
+  @override
+  String get nbIcon => 'Icon';
+
+  @override
+  String get nbPageStyle => 'Pages';
+
+  @override
+  String get nbLined => 'Lined';
+
+  @override
+  String get nbPlain => 'Plain';
+
+  @override
+  String get nbGrid => 'Grid';
+
+  @override
+  String get nbSaving => 'Saving…';
+
+  @override
+  String get nbSaved => 'Saved';
+
+  @override
+  String get nbSaveFailed => 'Not saved - tap to try again';
+
+  @override
+  String get nbPracticeIntro =>
+      'Test yourself on this notebook - all of it, or the sections you choose.';
+
+  @override
+  String get nbPracticeLocked => 'Quizzes and flashcards come with Studafy Max';
+
+  @override
+  String get nbQuizWhole => 'Quiz on the whole notebook';
+
+  @override
+  String get nbCardsWhole => 'Flashcards for the whole notebook';
+
+  @override
+  String get nbChooseSections => 'Choose sections';
+
+  @override
+  String get nbChooseSectionsTitle => 'Practise these sections';
+
+  @override
+  String get nbMakeQuiz => 'Quiz';
+
+  @override
+  String get nbMakeCards => 'Flashcards';
+
+  @override
+  String get nbMadeSets => 'Made from this notebook';
+
+  @override
+  String get nbSetWhole => 'Whole notebook';
+
+  @override
+  String get nbSetOutdated => 'from an older version - opens a new one';
+
+  @override
+  String get setMakingQuiz => 'Making your quiz…';
+
+  @override
+  String get setMakingCards => 'Making your flashcards…';
+
+  @override
+  String get setMakingDetail =>
+      'This takes a few seconds. Once made, it opens straight away next time.';
+
+  @override
+  String get setEmpty =>
+      'There was not enough in the lesson to make this from.';
+
+  @override
+  String get setFailed => 'That did not work';
+
+  @override
+  String get setFailedDetail => 'Nothing was charged. Try again in a moment.';
+
+  @override
+  String get setSeePlans => 'See plans';
+
+  @override
+  String quizQuestionOf(String number, String count) {
+    return 'Question $number of $count';
+  }
+
+  @override
+  String get quizSubmit => 'Check my answers';
+
+  @override
+  String get quizAnswerAll => 'Answer every question, then check.';
+
+  @override
+  String quizScoreLine(String score, String count) {
+    return 'You got $score of $count right';
+  }
+
+  @override
+  String get quizCorrect => 'Correct';
+
+  @override
+  String get quizWrong => 'Not quite';
+
+  @override
+  String cardsProgress(String number, String count) {
+    return 'Card $number of $count';
+  }
+
+  @override
+  String get cardsTapToFlip => 'Tap the card to turn it over';
+
+  @override
+  String get cardsDidYouKnow => 'Did you know it?';
+
+  @override
+  String get cardsKnew => 'I knew it';
+
+  @override
+  String get cardsLearning => 'Still learning';
+
+  @override
+  String get cardsDone => 'All done!';
+
+  @override
+  String cardsKnewCount(String known, String count) {
+    return 'You knew $known of $count';
+  }
+
+  @override
+  String get cardsLearningOnly => 'Practise the ones I\'m learning';
+
+  @override
+  String get cardsAgain => 'Go through them all again';
+
+  @override
+  String get cardsPrevious => 'Previous';
+
+  @override
+  String get cardsNext => 'Next';
+
+  @override
+  String get cardsQuestion => 'Question';
+
+  @override
+  String get cardsAnswer => 'Answer';
+
+  @override
+  String get pickTitle => 'Choose material';
+
+  @override
+  String get pickSearch => 'Search lessons and files';
+
+  @override
+  String get pickAllClasses => 'All classes';
+
+  @override
+  String get pickSelectClass => 'Select entire class';
+
+  @override
+  String pickSelectClassTitle(String name) {
+    return 'Select all of $name?';
+  }
+
+  @override
+  String pickSelectClassBody(int lessons, int files) {
+    return 'This chooses all $lessons lessons and their $files files and links that can be read. You can review and remove anything before continuing.';
+  }
+
+  @override
+  String get pickSelectClassConfirm => 'Select all';
+
+  @override
+  String pickTooManyLessons(int max) {
+    return 'Up to $max lessons can be used at once.';
+  }
+
+  @override
+  String get pickSingleLesson =>
+      'A notebook is made from one lesson: choose its text and the files to use.';
+
+  @override
+  String get pickLessonText => 'Lesson text';
+
+  @override
+  String get pickWholeLesson => 'whole lesson';
+
+  @override
+  String get pickWholeLessonDetail => 'Whole lesson, all attachments';
+
+  @override
+  String get pickPartOfLesson => 'Part of the lesson';
+
+  @override
+  String get pickAllAttachments => 'all attachments';
+
+  @override
+  String pickAttachments(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+      zero: 'no attachments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pickLessons(int count) {
+    return '$count lessons';
+  }
+
+  @override
+  String pickClasses(int count) {
+    return '$count classes';
+  }
+
+  @override
+  String pickLessonNamed(String title) {
+    return 'Lesson: $title';
+  }
+
+  @override
+  String get pickTextOnly => 'lesson text only';
+
+  @override
+  String pickNotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count notes',
+      one: '1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickNothing => 'Nothing chosen yet';
+
+  @override
+  String get pickReview => 'Review';
+
+  @override
+  String get pickReviewTitle => 'What will be used';
+
+  @override
+  String get pickRemove => 'Remove';
+
+  @override
+  String get pickSelected => 'Selected';
+
+  @override
+  String get pickShowFiles => 'Show its text and files';
+
+  @override
+  String get pickStillReading => 'Still being read';
+
+  @override
+  String pickWaitingNotIncluded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files are still being read and are not included yet.',
+      one: '1 file is still being read and is not included yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pickNoMatch => 'Nothing matches your search.';
+
+  @override
+  String get pickLoadFailed => 'Your lessons could not be loaded.';
+
+  @override
+  String get pickActionSummary => 'Summarise selected materials';
+
+  @override
+  String get pickActionQuiz => 'Create quiz from selection';
+
+  @override
+  String get pickActionFlashcards => 'Create flashcards from selection';
+
+  @override
+  String get pickActionNotebook => 'Create notebook from selection';
+
+  @override
+  String get pickActionHelper => 'Use selection in AI Helper';
+
+  @override
+  String madeFrom(String sources) {
+    return 'Made from: $sources';
+  }
+
+  @override
+  String get unavailableTitle => 'Some chosen files can\'t be used right now';
+
+  @override
+  String get unavailableBody =>
+      'Nothing has been made yet. Try again later, or continue without these:';
+
+  @override
+  String get unavailableFile => 'A chosen file';
+
+  @override
+  String get unavailableLater => 'Try again later';
+
+  @override
+  String get unavailableContinue => 'Continue without them';
+
+  @override
+  String get helperNoMaterial => 'Not using class material';
+
+  @override
+  String get helperChooseMaterial => 'Choose';
+
+  @override
+  String get helperChangeMaterial => 'Change';
+
+  @override
+  String helperMaterialChangedMark(String label) {
+    return 'From here: $label';
+  }
+
+  @override
+  String get helperMaterialRemovedMark => 'From here: no class material';
+
+  @override
+  String get notebookMakingNotes => 'Making your notes…';
+
+  @override
+  String get usageSectionTitle => 'AI usage';
+
+  @override
+  String usagePlan(String plan) {
+    return '$plan plan';
+  }
+
+  @override
+  String get usagePlenty => 'Plenty available';
+
+  @override
+  String get usageLow => 'Running low';
+
+  @override
+  String get usageReached => 'Limit reached';
+
+  @override
+  String get usageReachedDetail =>
+      'Your chats, notes and notebooks are kept. You can carry on when it resets, or upgrade now.';
+
+  @override
+  String usageLine(String level, String date) {
+    return '$level · resets $date';
+  }
+
+  @override
+  String usageBarLabel(String level) {
+    return 'AI usage: $level';
+  }
+
+  @override
+  String usageResets(String date) {
+    return 'Resets on $date';
+  }
+
+  @override
+  String usageResetsWeekly(String date) {
+    return 'Resets every Monday · next on $date';
+  }
+
+  @override
+  String get usageUpgrade => 'Upgrade and compare plans';
+
+  @override
+  String get usageComparePlans => 'Compare plans';
+
+  @override
+  String get usageLoadFailed => 'Your AI usage could not be loaded. Try again';
+
+  @override
+  String get usageCostLight => 'uses a little';
+
+  @override
+  String get usageCostMedium => 'uses some';
+
+  @override
+  String get usageCostMore => 'uses more';
+
+  @override
+  String get markPublishTitle => 'Publish grades?';
+
+  @override
+  String get markPublishFailed =>
+      'Grades were not published. Check your connection and try again.';
+
+  @override
+  String markSummary(int toMark, int marked, int published) {
+    return '$toMark to mark · $marked ready to publish · $published published';
+  }
+
+  @override
+  String get markRefreshFailed =>
+      'The list could not be refreshed. Pull down to try again.';
+
+  @override
+  String get markStatusNotMarked => 'Submitted · not graded';
+
+  @override
+  String get markStatusPartly => 'Submitted · partly graded';
+
+  @override
+  String get markStatusMarked => 'Graded · not published';
+
+  @override
+  String get markStatusPublished => 'Published';
+
+  @override
+  String get markScoreNeededForComment =>
+      'Give a score with each comment, or clear the comment.';
+
+  @override
+  String get markNothingChanged => 'Nothing has changed since the last save.';
+
+  @override
+  String get markCorrected =>
+      'Correction saved. The student and their parents see the new mark.';
+
+  @override
+  String get markDraftSaved =>
+      'Saved as a draft. Students and parents can\'t see it until you publish the grades.';
+
+  @override
+  String get markUnsavedTitle => 'Leave without saving?';
+
+  @override
+  String get markUnsavedBody =>
+      'Marks and comments you have not saved will be lost.';
+
+  @override
+  String get markUnsavedKeep => 'Keep marking';
+
+  @override
+  String get markUnsavedDiscard => 'Discard changes';
+
+  @override
+  String get markStillToMark => 'Still being marked';
+
+  @override
+  String get markPublishedNotice =>
+      'Published: the student and their parents see this grade. A change is saved as a correction, with a reason.';
+
+  @override
+  String get markDraftNotice =>
+      'Not published yet: only the class\'s teachers can see these marks.';
+
+  @override
+  String markAutoScore(String score, String max) {
+    return 'Marked automatically: $score of $max';
+  }
+
+  @override
+  String get markOverallFeedbackHelp =>
+      'Shown with the grade once it is published.';
+
+  @override
+  String get markSaveCorrection => 'Save correction';
+
+  @override
+  String get markSaveDraft => 'Save draft';
+
+  @override
+  String get markCorrectionTitle => 'Correct a published grade';
+
+  @override
+  String get markCorrectionBody =>
+      'The student and their parents already see this grade. Say why it is changing; the reason is kept with the change.';
+
+  @override
+  String get markCorrectionReason => 'Reason for the change';
+
+  @override
+  String markOutOf(String max) {
+    return 'out of $max';
+  }
+
+  @override
+  String get markStudentAnswer => 'Student\'s answer';
+
+  @override
+  String get gradebookOnlineHint =>
+      'This work is answered in the app. Mark it from each student\'s answers.';
+
+  @override
+  String get gradebookOpenAnswers => 'Open submissions';
+
+  @override
+  String get todayWorkDraft => 'Draft · not set yet';
+
+  @override
+  String todayWorkExamOn(String date) {
+    return 'Exam on $date';
+  }
+
+  @override
+  String todayWorkOpens(String date) {
+    return 'Opens $date';
+  }
+
+  @override
+  String get todayWorkScheduled => 'Scheduled';
+
+  @override
+  String todayWorkDue(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String todayWorkCloses(String date) {
+    return 'Closes $date';
+  }
+
+  @override
+  String get todayWorkOpen => 'Open';
+
+  @override
+  String get todayWorkKindAssignment => 'Assignment';
+
+  @override
+  String get todayWorkKindOnlineExam => 'Online exam';
+
+  @override
+  String get todayWorkKindPaperExam => 'Paper exam';
+
+  @override
+  String get todayWorkFinish => 'Publish';
+
+  @override
+  String get todayWorkUnknown =>
+      'Some classes could not be loaded, so work may be missing here.';
+
+  @override
+  String get todayPartlyLoaded => 'Some classes could not be loaded.';
+
+  @override
+  String get todaySectionsUnknown =>
+      'Some classes could not be loaded, so sections may be missing here.';
+
+  @override
+  String get todaySectionDraft => 'Lesson in draft · not visible to students';
+
+  @override
+  String get todaySectionPublish => 'Publish';
+
+  @override
+  String get todaySectionAdd => 'Add lesson';
+
+  @override
+  String todayMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'and $count more',
+      one: 'and 1 more',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lessonForSection(String when) {
+    return 'For the lesson on $when';
+  }
+
+  @override
+  String get markFixHighlighted =>
+      'Fix the highlighted marks, then save again.';
+
+  @override
+  String get sectionsPublished => 'Lesson published';
+
+  @override
+  String get scheduleLoadFailed =>
+      'The timetable could not be loaded. Try again.';
+
+  @override
+  String get markSavedPublished =>
+      'Saved. Nothing about the published grade needed a correction.';
+
+  @override
+  String get markCorrectionCancelled =>
+      'Not saved. A change to a published mark needs a reason; your marks are still here.';
+
+  @override
+  String get markPublishedAbsentNotice =>
+      'Published as absent, but this student handed work in afterwards. Save to replace the absence with this mark; you will be asked why.';
+
+  @override
+  String get markReplaceAbsence => 'Replace the absence';
+
+  @override
+  String get markSaveChanges => 'Save changes';
+
+  @override
+  String get markAbsenceCorrected =>
+      'Correction saved. The student and their parents see the change.';
+
+  @override
+  String get markAbsenceRemoved => 'Absence removed.';
+
+  @override
+  String get markAbsenceSaved =>
+      'Marked absent. Nobody sees it until you publish the grades.';
+
+  @override
+  String get markAbsenceRefused =>
+      'This student has handed work in, so they can\'t be marked absent.';
+
+  @override
+  String get markAbsenceFailed =>
+      'That wasn\'t saved. Check your connection and try again.';
+
+  @override
+  String get markNotSubmittedSection => 'Not submitted';
+
+  @override
+  String get markNotSubmittedHint =>
+      'Tap a student to mark them absent. An absence is never counted as zero.';
+
+  @override
+  String markRosterSummary(int notSubmitted, int absent) {
+    return '$notSubmitted not submitted · $absent absent';
+  }
+
+  @override
+  String get markStatusNotSubmitted => 'Not submitted';
+
+  @override
+  String get markStatusAbsent => 'Absent';
+
+  @override
+  String get markStatusAbsentPublished => 'Absent · published';
+
+  @override
+  String get markStatusNotGradedPublished => 'Not graded · published';
+
+  @override
+  String get markAbsenceBody =>
+      'Record that this student was absent. It stays private until you publish the grades, and it is not a zero.';
+
+  @override
+  String get markAbsencePublishedBody =>
+      'This absence is published. Changing it is a correction: say why, and it is kept with the change.';
+
+  @override
+  String get markAbsenceExcused => 'Not graded (excused)';
+
+  @override
+  String get markAbsenceNotes => 'Notes (optional)';
+
+  @override
+  String get markAbsenceRemove => 'Remove absence';
+
+  @override
+  String get markAbsenceSaveNotes => 'Save notes';
+
+  @override
+  String get markAbsenceMark => 'Mark absent';
+
+  @override
+  String get takeChildAttempts => 'Attempts';
 }

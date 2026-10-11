@@ -5,6 +5,7 @@ import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/academic_repository.dart';
+import 'api_online_assessments.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
   /// [context] is the signed-in person's active school and child; it is
@@ -14,6 +15,9 @@ class ApiAcademicRepository implements AcademicRepository {
   final V1ApiClient _client;
   final ActiveContextController _context;
   final _keys = PendingIdempotencyKeys();
+
+  /// Online assessments and coursework attachments (ADR-0036).
+  late final _online = ApiOnlineAssessments(_client, _keys, _refusing);
 
   String get _schoolId {
     final value = _context.membership;
@@ -53,13 +57,13 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.body ?? '',
               state: x.state,
               version: x.version,
-              date: x.publishedAt == null
-                  ? null
-                  : DateTime.tryParse(x.publishedAt!)?.toLocal(),
+              date: _when(x.publishedAt),
               classroomId: x.classroomId,
-              // The lesson's current file, which students and families
-              // download from the lesson itself.
+              // The lesson's files, which students and families download
+              // from the lesson itself, and its links.
               attachments: _attachments(x.attachments),
+              links: contentLinksFrom(x.links),
+              resourceType: x.resourceType,
             ),
         ];
       case AcademicFeed.assignments:
@@ -80,8 +84,12 @@ class ApiAcademicRepository implements AcademicRepository {
               classroomId: x.classroomId,
               attachments: _attachments(x.attachments),
               maximumScore: x.maximumScore?.toDouble(),
+              date: _when(x.publishedAt),
               deadline: _deadline(x),
               timeZone: x.timeZone,
+              links: contentLinksFrom(x.links),
+              dueAt: _when(x.dueAt),
+              closesAt: _when(x.closesAt),
             ),
         ];
       case AcademicFeed.assessments:
@@ -106,6 +114,10 @@ class ApiAcademicRepository implements AcademicRepository {
               attachments: _attachments(x.attachments),
               markedAssignmentId: x.assignmentId,
               delivery: x.delivery,
+              date: _when(x.publishedAt),
+              links: contentLinksFrom(x.links),
+              online: x.delivery == 'paper' ? null : onlineAssessmentFrom(x),
+              scheduledAt: _when(x.scheduledAt),
             ),
         ];
       case AcademicFeed.grades:
@@ -133,6 +145,13 @@ class ApiAcademicRepository implements AcademicRepository {
                   (x.score == null ? null : GradeMark.scored),
               score: x.score?.toDouble(),
               outOf: x.maximumScore.toDouble(),
+              date: _when(x.publishedAt),
+              assessmentId: x.assessmentId,
+              feedback: x.feedback,
+              attachments: _attachments(x.attachments),
+              links: contentLinksFrom(x.links),
+              sharedAttachments: _attachments(x.sharedAttachments),
+              sharedLinks: contentLinksFrom(x.sharedLinks),
             ),
         ];
       case AcademicFeed.attendance:
@@ -142,6 +161,7 @@ class ApiAcademicRepository implements AcademicRepository {
           studentId: studentId,
           pageSize: 100,
         );
+        // Newest lesson first: a mark is read by the day it was for.
         return [
           for (final x in page.items)
             AcademicRecord(
@@ -150,8 +170,10 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.reason ?? '',
               state: x.state,
               version: 1,
+              classroomId: x.classroomId,
+              date: _when(x.startsAt),
             ),
-        ];
+        ]..sort(_newestFirst);
       case AcademicFeed.wellbeing:
         final page = await _client.listWellbeing(
           schoolId: _schoolId,
@@ -167,15 +189,33 @@ class ApiAcademicRepository implements AcademicRepository {
               detail: x.context ?? '',
               state: x.kind,
               version: 1,
+              classroomId: x.classroomId,
+              date: _when(x.createdAt),
             ),
         ];
     }
   }
 
+  /// A wire timestamp as local time; null when absent or unreadable.
+  static DateTime? _when(String? at) =>
+      at == null ? null : DateTime.tryParse(at)?.toLocal();
+
+  /// Dated records before undated ones, the most recent first.
+  static int _newestFirst(AcademicRecord a, AcademicRecord b) {
+    final first = a.date;
+    final second = b.date;
+    if (first == null || second == null) {
+      return first == null ? (second == null ? 0 : 1) : -1;
+    }
+    return second.compareTo(first);
+  }
+
   @override
   Future<void> createResource(TextResourceDraft draft) =>
       _done('resource:${draft.classroomId}:${draft.title}:${draft.body}:'
-          '${draft.audience}', (key) async {
+          '${draft.audience}:${draft.attachmentFileIds.join(',')}:'
+          '${draft.links.map((l) => l.url).join(',')}:'
+          '${draft.lessonSessionId}', (key) async {
         final created = await _client.createResource(
           V1CreateResourceRequestDto(
             schoolId: _schoolId,
@@ -185,6 +225,10 @@ class ApiAcademicRepository implements AcademicRepository {
             body: draft.body,
             audience: draft.audience,
             lessonSessionId: draft.lessonSessionId,
+            attachmentFileIds: draft.attachmentFileIds.isEmpty
+                ? null
+                : draft.attachmentFileIds,
+            links: draft.links.isEmpty ? null : linkDtos(draft.links),
           ),
           idempotencyKey: key,
         );
@@ -223,9 +267,13 @@ class ApiAcademicRepository implements AcademicRepository {
     String? title,
     String? body,
     String? replaceFileId,
+    AttachmentChanges attachments = const AttachmentChanges(),
   }) => _refusing(
     () => _done(
-      'resource-edit:$resourceId:$expectedVersion:$title:$body:$replaceFileId',
+      'resource-edit:$resourceId:$expectedVersion:$title:$body:$replaceFileId:'
+      '${attachments.attachFileIds.join(',')}:${attachments.detachFileIds.join(',')}:'
+      '${attachments.addLinks.map((l) => l.url).join(',')}:'
+      '${attachments.removeLinkIds.join(',')}',
       (key) async {
         await _client.editResource(
           V1EditResourceRequestDto(
@@ -233,6 +281,18 @@ class ApiAcademicRepository implements AcademicRepository {
             title: title,
             body: body,
             replaceFileId: replaceFileId,
+            attachmentFileIds: attachments.attachFileIds.isEmpty
+                ? null
+                : attachments.attachFileIds,
+            detachFileIds: attachments.detachFileIds.isEmpty
+                ? null
+                : attachments.detachFileIds,
+            links: attachments.addLinks.isEmpty
+                ? null
+                : linkDtos(attachments.addLinks),
+            removeLinkIds: attachments.removeLinkIds.isEmpty
+                ? null
+                : attachments.removeLinkIds,
           ),
           resourceId: resourceId,
           idempotencyKey: key,
@@ -273,7 +333,8 @@ class ApiAcademicRepository implements AcademicRepository {
     // different request, not a replay of the first.
     'assignment:${draft.classroomId}:${draft.title}:'
     '${draft.dueAt.toUtc().toIso8601String()}:'
-    '${draft.attachmentFileIds.join(',')}',
+    '${draft.attachmentFileIds.join(',')}:'
+    '${draft.links.map((l) => l.url).join(',')}',
     (key) async {
       final created = await _client.createAssignment(
         V1CreateAssignmentRequestDto(
@@ -291,6 +352,7 @@ class ApiAcademicRepository implements AcademicRepository {
           attachmentFileIds: draft.attachmentFileIds.isEmpty
               ? null
               : draft.attachmentFileIds,
+          links: draft.links.isEmpty ? null : linkDtos(draft.links),
         ),
         idempotencyKey: key,
       );
@@ -469,6 +531,11 @@ class ApiAcademicRepository implements AcademicRepository {
           weekday: slot.weekday,
           startsAt: slot.startsAt,
           endsAt: slot.endsAt,
+          effectiveFrom: DateTime.tryParse(slot.effectiveFrom),
+          effectiveUntil: switch (slot.effectiveUntil) {
+            final until? => DateTime.tryParse(until),
+            null => null,
+          },
         ),
     ];
   }
@@ -583,9 +650,12 @@ class ApiAcademicRepository implements AcademicRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   }) => _refusing(
     () => _done('materials:$assignmentId:$expectedVersion:'
-        '${detachFileIds.join(',')}:${attachmentFileIds.join(',')}', (
+        '${detachFileIds.join(',')}:${attachmentFileIds.join(',')}:'
+        '${addLinks.map((l) => l.url).join(',')}:${removeLinkIds.join(',')}', (
       key,
     ) async {
       await _client.updateAssignmentMaterials(
@@ -595,6 +665,8 @@ class ApiAcademicRepository implements AcademicRepository {
           attachmentFileIds: attachmentFileIds.isEmpty
               ? null
               : attachmentFileIds,
+          links: addLinks.isEmpty ? null : linkDtos(addLinks),
+          removeLinkIds: removeLinkIds.isEmpty ? null : removeLinkIds,
         ),
         assignmentId: assignmentId,
         idempotencyKey: key,
@@ -608,9 +680,12 @@ class ApiAcademicRepository implements AcademicRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   }) => _refusing(
     () => _done('exam-materials:$assessmentId:$expectedVersion:'
-        '${detachFileIds.join(',')}:${attachmentFileIds.join(',')}', (
+        '${detachFileIds.join(',')}:${attachmentFileIds.join(',')}:'
+        '${addLinks.map((l) => l.url).join(',')}:${removeLinkIds.join(',')}', (
       key,
     ) async {
       await _client.updateAssessmentMaterials(
@@ -620,6 +695,8 @@ class ApiAcademicRepository implements AcademicRepository {
           attachmentFileIds: attachmentFileIds.isEmpty
               ? null
               : attachmentFileIds,
+          links: addLinks.isEmpty ? null : linkDtos(addLinks),
+          removeLinkIds: removeLinkIds.isEmpty ? null : removeLinkIds,
         ),
         assessmentId: assessmentId,
         idempotencyKey: key,
@@ -710,6 +787,7 @@ class ApiAcademicRepository implements AcademicRepository {
             endsAt: endsAt,
             filed: item.filedAt != null,
             title: item.title,
+            content: SectionContent.parse(item.contentState),
           ),
         );
       }
@@ -1044,6 +1122,8 @@ class ApiAcademicRepository implements AcademicRepository {
         scheduledAt: x.scheduledAt == null
             ? null
             : DateTime.tryParse(x.scheduledAt!)?.toLocal(),
+        sharedAttachments: _attachments(x.sharedAttachments),
+        sharedLinks: contentLinksFrom(x.sharedLinks),
       );
       for (final row in page.items) {
         final grade = row.grade;
@@ -1067,6 +1147,8 @@ class ApiAcademicRepository implements AcademicRepository {
                     score: grade.score?.toDouble(),
                     feedback: grade.feedback,
                     corrections: grade.corrections,
+                    attachments: _attachments(grade.attachments),
+                    links: contentLinksFrom(grade.links),
                   ),
           ),
         );
@@ -1223,6 +1305,7 @@ class ApiAcademicRepository implements AcademicRepository {
     } on V1ApiException catch (error) {
       final problem = switch (error.code) {
         'VERSION_CONFLICT' => CourseworkProblem.versionConflict,
+        'INVALID_STATE' => CourseworkProblem.invalidState,
         'GRADE_ENTRIES_INVALID' => CourseworkProblem.entriesInvalid,
         'REASON_REQUIRED' => CourseworkProblem.reasonRequired,
         'ATTENDANCE_LOCKED' => CourseworkProblem.attendanceLocked,
@@ -1351,6 +1434,98 @@ class ApiAcademicRepository implements AcademicRepository {
     );
   });
 
+  // -------------------------------------------------------------------------
+  // Online assessments (ADR-0036), delegated.
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<OnlineAssessment> createOnlineAssessment(
+    OnlineAssessmentDraft draft,
+  ) => _online.createOnlineAssessment(draft);
+
+  @override
+  Future<List<AssessmentQuestion>> authoringQuestions(String assessmentId) =>
+      _online.authoringQuestions(assessmentId);
+
+  @override
+  Future<List<AssessmentQuestion>> questions(String assessmentId) =>
+      _online.questions(assessmentId);
+
+  @override
+  Future<OnlineAssessment> updateAssessmentDesign(
+    String assessmentId,
+    int expectedVersion, {
+    String? title,
+    List<QuestionDraft>? questions,
+    AssessmentSettings? settings,
+    bool releaseAnswersNow = false,
+    AttachmentChanges attachments = const AttachmentChanges(),
+  }) => _online.updateAssessmentDesign(
+    assessmentId,
+    expectedVersion,
+    title: title,
+    questions: questions,
+    settings: settings,
+    releaseAnswersNow: releaseAnswersNow,
+    attachments: attachments,
+  );
+
+  @override
+  Future<AttemptConfirmation> submitAnswers(
+    String assessmentId,
+    List<StudentAnswer> answers,
+  ) => _online.submitAnswers(assessmentId, answers);
+
+  @override
+  Future<AssessmentResults> results(String assessmentId, {String? studentId}) =>
+      _online.results(assessmentId, studentId: studentId);
+
+  @override
+  Future<List<AttemptDetail>> attempts(String assessmentId) =>
+      _online.attempts(assessmentId);
+
+  @override
+  Future<AttemptDetail> attempt(String attemptId) => _online.attempt(attemptId);
+
+  @override
+  Future<AttemptDetail> markAttempt(
+    String attemptId,
+    List<AnswerMark> marks, {
+    String? feedback,
+    String? correctionReason,
+  }) => _online.markAttempt(
+    attemptId,
+    marks,
+    feedback: feedback,
+    correctionReason: correctionReason,
+  );
+
+  @override
+  Future<void> grantAccess(
+    String assessmentId,
+    String studentId, {
+    DateTime? closesAt,
+    int extraAttempts = 0,
+    String? reason,
+  }) => _online.grantAccess(
+    assessmentId,
+    studentId,
+    closesAt: closesAt,
+    extraAttempts: extraAttempts,
+    reason: reason,
+  );
+
+  @override
+  Future<GradeAttachments> updateGradeAttachments(
+    String assessmentId,
+    AttachmentChanges changes, {
+    String? studentId,
+  }) => _online.updateGradeAttachments(
+    assessmentId,
+    changes,
+    studentId: studentId,
+  );
+
   static List<StoredAttachment> _attachments(
     List<V1FileAttachmentDto>? items,
   ) => [
@@ -1363,4 +1538,34 @@ class ApiAcademicRepository implements AcademicRepository {
         mediaType: dto.mediaType,
       ),
   ];
+
+  static List<LessonReadingSource> _reading(V1LessonMaterialDto dto) => [
+    for (final source in dto.sources)
+      LessonReadingSource(
+        id: source.id,
+        isLink: source.kind == 'link',
+        name: source.name,
+        state: ReadingState.parse(source.state),
+        reason: source.reason,
+        pages: source.pages,
+        skippedPages: source.skippedPages,
+      ),
+  ];
+
+  @override
+  Future<List<LessonReadingSource>> lessonReading(String resourceId) async =>
+      _reading(await _client.listLessonReading(resourceId: resourceId));
+
+  @override
+  Future<List<LessonReadingSource>> retryLessonReading(
+    String resourceId,
+    String sourceId,
+  ) async => _reading(
+    await _client.retryLessonReading(
+      const V1RetryLessonMaterialRequestDto(),
+      resourceId: resourceId,
+      sourceId: sourceId,
+      idempotencyKey: newIdempotencyKey('reading-retry'),
+    ),
+  );
 }

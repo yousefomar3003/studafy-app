@@ -510,6 +510,42 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     expect(body.items.some((a) => a.title === "Term dates")).toBe(true);
   });
 
+  // Most parents link by the child's Studafy ID and hold no membership.
+  // GUARDIAN is one: the link to a child with a live enrolment is what lets
+  // them read the school's announcements meant for parents.
+  test("a parent linked by the child's ID reads the school's announcements", async () => {
+    const term = "5f450000-0000-4000-8000-0000000000d1";
+    const classroom = "5f450000-0000-4000-8000-0000000000d2";
+
+    // A link to a child in no class yet reaches nothing.
+    const before = await request(`/v1/announcements?schoolId=${SCHOOL}`, {
+      subject: GUARDIAN,
+    });
+    expect(before.status).toBe(404);
+
+    await sql`
+      insert into public.terms (id, school_id, name, starts_on, ends_on, active)
+      values (${term}::uuid, ${SCHOOL}::uuid, 'Comms Term', current_date - 30, current_date + 90, true)`;
+    await sql`
+      insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id)
+      values (${classroom}::uuid, ${SCHOOL}::uuid, ${term}::uuid, 'Comms Class', 'G6', 'A', ${TEACHER}::uuid)`;
+    await sql`
+      insert into public.enrollments (classroom_id, student_id, active)
+      values (${classroom}::uuid, ${STUDENT_ROW}::uuid, true)`;
+    try {
+      const list = await request(`/v1/announcements?schoolId=${SCHOOL}`, {
+        subject: GUARDIAN,
+      });
+      expect(list.status).toBe(200);
+      const body = await list.json() as { items: { title: string }[] };
+      expect(body.items.some((a) => a.title === "Term dates")).toBe(true);
+    } finally {
+      await sql`delete from public.enrollments where classroom_id = ${classroom}::uuid`;
+      await sql`delete from public.classrooms where id = ${classroom}::uuid`;
+      await sql`delete from public.terms where id = ${term}::uuid`;
+    }
+  });
+
   // -------------------------------------------------------------------------
   // Chat and announcement attachments.
   //

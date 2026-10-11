@@ -63,7 +63,7 @@ function harnessDependencies() {
     secret: SECRET,
     redis: redisUrl ? createRedis(redisUrl) : null,
     logger,
-    trustCloudflare: false,
+    clientIpSource: "forwarded",
   });
   if (deps.redis) clients.push({ quit: () => closeRedis(deps.redis!) });
   return { deps, collector };
@@ -102,6 +102,31 @@ describe("flow registry coverage (OPS-060)", () => {
       const expectedWeight = route.operationId.startsWith("list") ? 2 : 1;
       expect(classification.weight).toBe(expectedWeight);
     }
+  });
+
+  test("every model-calling route is on the fail-closed AI budget", () => {
+    const ai = [
+      "/v1/study-assistant/ask",
+      "/v1/study-sets",
+      "/v1/classrooms/{classroomId}/notebook/summary",
+      "/v1/classrooms/{classroomId}/notebook/whiteboard",
+      "/v1/classrooms/{classroomId}/study-notebooks",
+      "/v1/resources/{resourceId}/lesson-notes",
+      "/v1/resources/{resourceId}/study-set",
+      "/v1/resources/{resourceId}/reading/{sourceId}/retry",
+      "/v1/study-notebooks/{notebookId}/regenerate",
+      "/v1/study-notebooks/{notebookId}/study-set",
+    ];
+    for (const path of ai) {
+      expect(flowFor("post", path)).toEqual({
+        flow: "studyGeneration",
+        weight: 1,
+      });
+    }
+    expect(RATE_LIMIT_FLOWS.studyGeneration.failClosed).toBe(true);
+    // Reads of the same resources stay ordinary.
+    expect(flowFor("get", "/v1/classrooms/{classroomId}/study-notebooks").flow)
+      .toBe("authenticatedApi");
   });
 
   test("spot checks match the operator catalogue", () => {

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
+import '../core/ai_usage.dart';
 import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
+import '../core/lazy_indexed_stack.dart';
+import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_components.dart';
@@ -16,6 +19,7 @@ import '../features/classes/presentation/join_class_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
+import '../features/notifications/domain/notification.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study/domain/study.dart';
 import '../features/study/presentation/study_plan_copy.dart';
@@ -26,9 +30,10 @@ import '../features/study_assistant/domain/study_assistant_repository.dart';
 import '../features/study_assistant/presentation/study_assistant_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
+import 'assessment_navigation.dart';
+import 'material_picker.dart';
 import 'student_lessons_page.dart';
 import 'student_today_page.dart';
-import 'study_reference_picker.dart';
 
 class StudentShell extends StatefulWidget {
   const StudentShell({
@@ -77,18 +82,76 @@ class StudentShell extends StatefulWidget {
 class _StudentShellState extends State<StudentShell> {
   int index = 0;
 
+  /// The tab Work opens on; a notification about marks opens Grades.
+  AcademicFeed _workFeed = AcademicFeed.assignments;
+
+  /// Opens what a notification is about, in this student's app.
+  bool _openNotification(NotificationItem item) {
+    final key = item.templateKey;
+    final messagesIndex = 3 + (widget.studyAssistant == null ? 0 : 1);
+    final (int, AcademicFeed?)? target = switch (key.split('.').first) {
+      'academic' when key.contains('grade') => (2, AcademicFeed.grades),
+      'academic' when key.contains('assessment') => (
+        2,
+        AcademicFeed.assessments,
+      ),
+      'academic' when key.contains('resource') => (1, null),
+      'academic' => (2, AcademicFeed.assignments),
+      'communications' when MessagingScope.isAvailable(context) => (
+        messagesIndex,
+        null,
+      ),
+      _ => null,
+    };
+    if (target == null) return false;
+    setState(() {
+      index = target.$1;
+      if (target.$2 case final feed?) _workFeed = feed;
+      _navCompact.value = false;
+    });
+    return true;
+  }
+
   /// The bar is compact while the student scrolls down a page, and full
   /// again as soon as they scroll back up or touch it - as on the teacher's.
-  bool _navCompact = false;
+  final _navCompact = ValueNotifier<bool>(false);
+
+  /// The tab the helper was opened from, to go back to.
+  int _beforeHelper = 0;
+
+  /// Where the helper is among the tabs, as last built; and a lesson to
+  /// start a chat about, when opened from one (ADR-0037).
+  int? _helperIndex;
+  final _openHelperWith = ValueNotifier<List<ChatReference>?>(null);
+
+  void _askHelperAbout(String lessonId, String title) {
+    final helper = _helperIndex;
+    if (helper == null) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _openHelperWith.value = [
+      ChatReference(kind: ChatReferenceKind.lesson, id: lessonId, title: title),
+    ];
+    setState(() {
+      if (index != helper) _beforeHelper = index;
+      index = helper;
+    });
+  }
+
+  @override
+  void dispose() {
+    _navCompact.dispose();
+    _openHelperWith.dispose();
+    super.dispose();
+  }
 
   bool _onScroll(UserScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
     final compact = switch (notification.direction) {
       ScrollDirection.reverse => true,
       ScrollDirection.forward => false,
-      ScrollDirection.idle => _navCompact,
+      ScrollDirection.idle => _navCompact.value,
     };
-    if (compact != _navCompact) setState(() => _navCompact = compact);
+    _navCompact.value = compact;
     return false;
   }
 
@@ -104,8 +167,8 @@ class _StudentShellState extends State<StudentShell> {
     );
   }
 
-  /// The plan as the helper shows it: its name, today's questions, and what
-  /// the next plan adds - nothing to upgrade to on Studafy Max.
+  /// The plan as the helper shows it: its name, its AI tokens, and what the
+  /// next plan adds - nothing to upgrade to on Studafy Max.
   Future<HelperPlan?> _helperPlan(BuildContext context) async {
     final study = widget.study;
     if (study == null) return null;
@@ -114,8 +177,13 @@ class _StudentShellState extends State<StudentShell> {
     final next = plan.tier.next;
     return HelperPlan(
       name: studyPlanCopy[plan.tier]!.name,
-      askToday: plan.askToday,
-      askPerDay: plan.askPerDay,
+      allowance: HelperAllowance(
+        weekly: plan.allowance.weekly,
+        total: plan.allowance.total,
+        used: plan.allowance.used,
+        remaining: plan.allowance.remaining,
+        resetsAt: plan.allowance.resetsAt,
+      ),
       upgradeTo: next == null ? null : studyPlanCopy[next]!.name,
       upgradeBenefits: next == null
           ? const []
@@ -130,6 +198,18 @@ class _StudentShellState extends State<StudentShell> {
     return SubscriptionEntry(
       open: _openPlans,
       currentPlan: () async => studyPlanCopy[(await study.plan()).tier]!.name,
+      // What the server metered, shown as a bar and a label only.
+      usage: () async {
+        final plan = await study.plan();
+        return AiUsageSnapshot(
+          planName: studyPlanCopy[plan.tier]!.name,
+          used: plan.allowance.used,
+          total: plan.allowance.total,
+          resetsAt: plan.allowance.resetsAt,
+          weekly: plan.allowance.weekly,
+          canUpgrade: plan.tier.next != null,
+        );
+      },
     );
   }
 
@@ -191,6 +271,7 @@ class _StudentShellState extends State<StudentShell> {
         classes: widget.classes,
         onJoinClass: widget.classes == null ? null : _joinClass,
         subscription: _subscription,
+        onOpenNotification: _openNotification,
       ),
       // Lessons are free (2026-09-27): every class, its lessons by date and
       // the student's own notebook for it.
@@ -202,6 +283,7 @@ class _StudentShellState extends State<StudentShell> {
           studyPlans: widget.studyPlans,
           uploads: widget.fileUploads,
           schoolId: ActiveContextController.instance.membership?.schoolId,
+          onAskHelper: assistant == null ? null : _askHelperAbout,
         )
       else
         AcademicOverviewPage(
@@ -212,13 +294,15 @@ class _StudentShellState extends State<StudentShell> {
           loadClassChoices: widget.classes == null ? null : _classChoices,
         ),
       AcademicOverviewPage(
+        // Re-keyed when a notification picks the tab Work opens on.
+        key: ValueKey(_workFeed),
         repository: repository,
         studentId: studentId,
         // A tab of its own, so a large title like the others, and no
         // profile button: that lives on Today.
         title: AppL10n.of(context).navWork,
         subtitle: AppL10n.of(context).workSubtitle,
-        initialFeed: AcademicFeed.assignments,
+        initialFeed: _workFeed,
         availableFeeds: const [
           AcademicFeed.assignments,
           AcademicFeed.assessments,
@@ -227,6 +311,8 @@ class _StudentShellState extends State<StudentShell> {
           AcademicFeed.wellbeing,
         ],
         loadClassChoices: widget.classes == null ? null : _classChoices,
+        onOpenAssessment: (id, title, _) =>
+            openAssessmentForLearner(context, repository, id, title),
         // Only published work can be handed in; a draft is not the
         // student's to see as open.
         onOpenRecord: (record) async {
@@ -241,6 +327,7 @@ class _StudentShellState extends State<StudentShell> {
                 deadline: record.deadline,
                 instructions: record.detail,
                 material: record.attachments,
+                links: record.links,
                 uploads: widget.fileUploads,
                 schoolId: ActiveContextController.instance.membership?.schoolId,
                 studentId: studentId,
@@ -254,6 +341,9 @@ class _StudentShellState extends State<StudentShell> {
       ),
       if (assistant != null)
         StudyAssistantPage(
+          // Full screen, like a chat: the bar is away while it is open.
+          onBack: () => setState(() => index = _beforeHelper),
+          openWith: _openHelperWith,
           assistant: assistant,
           chats: widget.studyChats,
           switchedOn: switch (widget.study) {
@@ -272,14 +362,20 @@ class _StudentShellState extends State<StudentShell> {
             null => null,
           },
           pickReferences: switch ((widget.classes, widget.study)) {
-            (final classes?, final study?) =>
-              (context, current) => pickStudyReferences(
+            (final classes?, final study?) => (context, current) async {
+              final picked = await pickMaterials(
                 context,
+                MaterialPickRequest(
+                  action: MaterialAction.helper,
+                  initial: selectionOfReferences(current),
+                  allowNotes: true,
+                ),
                 classes: classes,
                 academic: repository,
                 study: study,
-                current: current,
-              ),
+              );
+              return picked == null ? null : referencesOfSelection(picked);
+            },
             _ => null,
           },
           uploads: widget.fileUploads,
@@ -296,8 +392,8 @@ class _StudentShellState extends State<StudentShell> {
               if (!context.mounted) return;
               await showUpgradePrompt(
                 context,
-                reason: code == StudyAssistantFailure.dailyLimit
-                    ? UpgradeReason.dailyQuestions
+                reason: code == StudyAssistantFailure.allowanceUsed
+                    ? UpgradeReason.tokensUsed
                     : UpgradeReason.feature,
                 plan: plan,
                 // Photos to the helper are Studafy Plus.
@@ -323,6 +419,9 @@ class _StudentShellState extends State<StudentShell> {
           asRole: MessagingRole.student,
         ),
     ];
+    final helper = pages.indexWhere((page) => page is StudyAssistantPage);
+    final helperIndex = helper < 0 ? null : helper;
+    _helperIndex = helperIndex;
     final classes = widget.classes;
     if (_hasNoClassYet && classes != null) {
       return Scaffold(
@@ -340,49 +439,63 @@ class _StudentShellState extends State<StudentShell> {
       // than a floating button that sat over the cards and the bar.
       body: NotificationListener<UserScrollNotification>(
         onNotification: _onScroll,
-        child: IndexedStack(index: index, children: pages),
+        child: LazyIndexedStack(
+          index: index,
+          // The inbox acknowledges delivery while out of sight.
+          builtAhead: {if (messaging) messagesIndex},
+          children: pages,
+        ),
       ),
-      bottomNavigationBar: StudafyNavigationBar(
-        selectedIndex: index,
-        compact: _navCompact,
-        onInteract: () {
-          if (_navCompact) setState(() => _navCompact = false);
-        },
-        onSelected: (value) => setState(() {
-          index = value;
-          _navCompact = false;
-        }),
-        items: [
-          StudafyNavItem(
-            AppL10n.of(context).navToday,
-            Icons.home_outlined,
-            Icons.home_rounded,
-          ),
-          StudafyNavItem(
-            AppL10n.of(context).feedContent,
-            Icons.auto_stories_outlined,
-            Icons.auto_stories_rounded,
-          ),
-          StudafyNavItem(
-            AppL10n.of(context).navWork,
-            Icons.assignment_outlined,
-            Icons.assignment_rounded,
-          ),
-          if (assistant != null)
-            StudafyNavItem(
-              AppL10n.of(context).studyAssistantTab,
-              Icons.auto_awesome_outlined,
-              Icons.auto_awesome_rounded,
+      // The helper is a chat and has the whole screen; its back arrow
+      // returns to the tab it was opened from.
+      bottomNavigationBar: index == helperIndex
+          ? null
+          : ValueListenableBuilder<bool>(
+              // Only the bar follows scrolling; the tabs are not rebuilt.
+              valueListenable: _navCompact,
+              builder: (context, compact, _) => StudafyNavigationBar(
+                selectedIndex: index,
+                compact: compact,
+                onInteract: () {
+                  _navCompact.value = false;
+                },
+                onSelected: (value) => setState(() {
+                  if (value == helperIndex) _beforeHelper = index;
+                  index = value;
+                  _navCompact.value = false;
+                }),
+                items: [
+                  StudafyNavItem(
+                    AppL10n.of(context).navToday,
+                    Icons.home_outlined,
+                    Icons.home_rounded,
+                  ),
+                  StudafyNavItem(
+                    AppL10n.of(context).feedContent,
+                    Icons.auto_stories_outlined,
+                    Icons.auto_stories_rounded,
+                  ),
+                  StudafyNavItem(
+                    AppL10n.of(context).navWork,
+                    Icons.assignment_outlined,
+                    Icons.assignment_rounded,
+                  ),
+                  if (assistant != null)
+                    StudafyNavItem(
+                      AppL10n.of(context).studyAssistantTab,
+                      Icons.auto_awesome_outlined,
+                      Icons.auto_awesome_rounded,
+                    ),
+                  if (messaging)
+                    StudafyNavItem(
+                      AppL10n.of(context).navMessages,
+                      Icons.send_outlined,
+                      Icons.send_rounded,
+                    ),
+                ],
+                accent: studafyNavy,
+              ),
             ),
-          if (messaging)
-            StudafyNavItem(
-              AppL10n.of(context).navMessages,
-              Icons.send_outlined,
-              Icons.send_rounded,
-            ),
-        ],
-        accent: studafyNavy,
-      ),
     );
   }
 }

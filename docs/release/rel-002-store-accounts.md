@@ -184,7 +184,7 @@ Each account produces artifacts that must never enter Git. Full register in
 | App Store Connect record, name reservation | — |
 | TestFlight distribution | Phases 3–10 (a functional, server-backed app) |
 | Play internal testing track | Phases 3–10 |
-| IAP product creation (`studafy_parent_insights_monthly`) | PAY-071, and legal approval of paid insights |
+| IAP product creation: `studafy_plus_monthly`, `studafy_max_monthly`, `studafy_family_plus_monthly`, `studafy_family_plus_8_monthly` (ADR-0034; one subscription group for the two Family+ tiers) | The accounts above. Plus and Max also need the provider DPA and minors' DPIA before release |
 | Submission | Every gate in `docs/planning/instructions.md` §20 |
 
 Obtaining the accounts does **not** shorten the engineering path. It removes the
@@ -202,6 +202,8 @@ This record closes when all of the following hold:
 - [ ] Account Holder and a backup admin named for both accounts
 - [ ] Every credential in §5 stored per its custody rule
 - [ ] Renewal reminder set for the Apple annual membership
+- [ ] The four launch subscriptions (ADR-0034) created in App Store Connect and
+      Google Play Console with exactly those product ids
 
 Signing material, privacy manifests, and the native cutover remain open under
 `DL-015` and are tracked by `docs/planning/instructions.md` §21.

@@ -1,4 +1,5 @@
 import '../../../core/failures.dart';
+import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/study_assistant_repository.dart';
@@ -58,6 +59,9 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async {
     final recent = history.isEmpty
         ? const <ChatTurn>[]
@@ -81,16 +85,49 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
               ? null
               : [
                   for (final reference in references)
-                    {'kind': reference.kind.name, 'id': reference.id},
+                    V1MaterialRefDto(
+                      kind: reference.kind.name,
+                      id: reference.id,
+                      lessonId:
+                          reference.kind == ChatReferenceKind.file ||
+                              reference.kind == ChatReferenceKind.link
+                          ? reference.lessonId
+                          : null,
+                    ),
                 ],
+          skipUnavailable: skipUnavailable ? true : null,
           attachmentFileIds: photoFileIds.isEmpty ? null : photoFileIds,
+          language: language == 'ar' || language == 'en' ? language : null,
+          requestId: requestId,
         ),
       );
+      final allowance = response.allowance;
       return StudyAnswer(
         answer: response.answer,
-        remainingToday: response.remainingToday,
+        citations: [
+          for (final item in response.citations) ?AnswerCitation.fromJson(item),
+        ],
+        unreadable: [
+          for (final item in response.unreadable)
+            ?UnreadableSource.fromJson(item),
+        ],
+        allowance: HelperAllowance(
+          weekly: allowance.period == 'week',
+          total: allowance.total,
+          used: allowance.used,
+          remaining: allowance.remaining,
+          resetsAt: DateTime.parse(allowance.resetsAt).toLocal(),
+        ),
       );
     } on V1ApiException catch (error) {
+      // Chosen files that cannot be read now, named for the student.
+      if (error.code == 'MATERIAL_UNAVAILABLE') {
+        throw MaterialUnavailableException({
+          for (final entry in error.fieldErrors.entries)
+            if (entry.key.startsWith('sources/'))
+              entry.key.substring('sources/'.length): entry.value,
+        });
+      }
       throw _failure(error) ?? error;
     }
   }
@@ -114,10 +151,16 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
         'The study helper is not available.',
       );
     }
-    if (error.code == StudyAssistantFailure.dailyLimit) {
+    if (error.code == StudyAssistantFailure.allowanceUsed) {
       return const Failure(
-        StudyAssistantFailure.dailyLimit,
-        "Today's questions are used.",
+        StudyAssistantFailure.allowanceUsed,
+        'Not enough AI tokens are left for this question.',
+      );
+    }
+    if (error.code == StudyAssistantFailure.inProgress) {
+      return const Failure(
+        StudyAssistantFailure.inProgress,
+        'This question is still being answered.',
       );
     }
     // A server with no AI provider does not mount the route at all, so the

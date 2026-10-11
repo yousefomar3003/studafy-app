@@ -590,12 +590,16 @@ class StudafyLargeTitle extends StatelessWidget {
     this.subtitle,
     this.actions = const [],
     this.padding = const EdgeInsetsDirectional.fromSTEB(20, 14, 16, 6),
+    this.leading,
   });
 
   final String title;
   final String? subtitle;
   final List<Widget> actions;
   final EdgeInsetsGeometry padding;
+
+  /// Before the title: a back button on a page shown without its tab bar.
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -605,6 +609,11 @@ class StudafyLargeTitle extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          if (leading case final leading?)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 4),
+              child: leading,
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

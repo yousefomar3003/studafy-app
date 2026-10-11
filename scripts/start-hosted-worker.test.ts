@@ -26,15 +26,22 @@ test("hosted worker keeps the same project checks as the hosted API", () => {
   ).toThrow();
 });
 
-test("hosted worker runs for files only, whatever the file asks for", () => {
+test("hosted worker runs files and notifications, nothing else", () => {
   const result = hostedWorkerEnvironment({
     ...env,
     DB_HOUSEKEEPING_ENABLED: "true",
-    OPS061_NOTIFICATIONS_ENABLED: "true",
     PAY071_BILLING_ENABLED: "true",
   });
   expect(result.FILE051_SCAN_ENABLED).toBe("true");
   expect(result.DB_HOUSEKEEPING_ENABLED).toBe("false");
-  expect(result.OPS061_NOTIFICATIONS_ENABLED).toBe("false");
   expect(result.PAY071_BILLING_ENABLED).toBe("false");
+});
+
+test("in-app notifications are delivered unless the file turns them off", () => {
+  expect(hostedWorkerEnvironment(env).OPS061_NOTIFICATIONS_ENABLED)
+    .toBe("true");
+  expect(
+    hostedWorkerEnvironment({ ...env, OPS061_NOTIFICATIONS_ENABLED: "false" })
+      .OPS061_NOTIFICATIONS_ENABLED,
+  ).toBe("false");
 });

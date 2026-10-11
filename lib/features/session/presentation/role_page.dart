@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/device_settings.dart';
@@ -40,10 +42,59 @@ class _RolePageState extends State<RolePage> {
     if (settings == null) {
       _showIntro = false;
     } else {
-      settings.read(DeviceSettingKeys.introSeen).then((seen) {
-        if (mounted) setState(() => _showIntro = seen == null);
-      });
+      unawaited(_decide(settings));
     }
+  }
+
+  /// Shows the slides on a first launch; otherwise, when a session is still
+  /// signed in and this device remembers the role it last opened, goes
+  /// straight back into that role instead of asking for it again.
+  Future<void> _decide(DeviceSettingsStore settings) async {
+    final [seen, last] = await Future.wait([
+      settings.read(DeviceSettingKeys.introSeen),
+      settings.read(DeviceSettingKeys.lastRole),
+    ]);
+    if (!mounted) return;
+    final role = UserRole.values.asNameMap()[last];
+    final session = widget.session;
+    // While another account is being added, the session still here is the
+    // one being added *to*: the person came to sign in as someone else, so
+    // the picker shows and nothing is resumed.
+    if (seen != null &&
+        role != null &&
+        session.hasCurrentSession &&
+        !session.isDemoSession &&
+        !session.addingAccount &&
+        await _resume(role)) {
+      return;
+    }
+    if (mounted) setState(() => _showIntro = seen == null);
+  }
+
+  /// True when the role was opened. Anything else - a failure, an account
+  /// that is not this role, a teacher still to set up - falls back to the
+  /// picker, where the login screen handles it as it always has.
+  Future<bool> _resume(UserRole role) async {
+    final result = await widget.session.completeRemoteLogin(
+      role: LoginPage.studafyRole(role),
+      consentAccepted: false,
+      locale: Localizations.localeOf(context).languageCode,
+    );
+    if (!mounted) return true;
+    final ready = result.fold(
+      onSuccess: (outcome) =>
+          outcome == LoginOutcome.ready ||
+          (outcome == LoginOutcome.needsOnboarding && role != UserRole.teacher),
+      onFailure: (_) => false,
+    );
+    if (ready) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        LoginPage.routeFor(role),
+        (_) => false,
+      );
+    }
+    return ready;
   }
 
   void _finishIntro() {
@@ -55,11 +106,13 @@ class _RolePageState extends State<RolePage> {
   Widget build(BuildContext c) {
     final showIntro = _showIntro;
     if (showIntro == null) {
+      // The splash's mark stays up while the device settings are read and a
+      // signed-in session is resumed, so launch reads as one screen.
       return const Scaffold(
         backgroundColor: studafyAbyss,
         body: DecoratedBox(
           decoration: BoxDecoration(gradient: studafyOceanGradient),
-          child: SizedBox.expand(),
+          child: Center(child: StudafyLogo(size: 64, onDark: true)),
         ),
       );
     }
@@ -123,8 +176,11 @@ class _RolePageState extends State<RolePage> {
                 ? null
                 : () => Navigator.of(c).pushOnce(
                     MaterialPageRoute(
-                      builder: (_) =>
-                          LoginPage(role: selected!, session: widget.session),
+                      builder: (_) => LoginPage(
+                        role: selected!,
+                        session: widget.session,
+                        settings: widget.settings,
+                      ),
                     ),
                   ),
           ),

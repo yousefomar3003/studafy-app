@@ -25,6 +25,7 @@ export {
 } from "./files/eicar";
 export {
   jpegMetadataPayloads,
+  jpegOrientation,
   type JpegParseResult,
   type JpegSegment,
   parseJpeg,
@@ -60,6 +61,21 @@ export {
   parseMp4,
 } from "./files/mp4";
 export {
+  detectOoxmlMediaType,
+  DOCX_MEDIA_TYPE,
+  OOXML_TOTAL_INFLATE_CAP_BYTES,
+  type OoxmlKind,
+  ooxmlKindOf,
+  type OoxmlParseResult,
+  type OoxmlRejectReason,
+  parseOoxml,
+  PPTX_MEDIA_TYPE,
+  readZipDirectory,
+  readZipEntry,
+  type ZipDirectory,
+  type ZipEntry,
+} from "./files/ooxml";
+export {
   analyzeBytes,
   type AnalyzeResult,
   SCAN_POLICY_VERSION,
@@ -79,6 +95,14 @@ export {
   verifyDeliveryToken,
 } from "./files/deliveryToken";
 export { type DedupeEligibilityInput, isDedupeEligible } from "./files/dedup";
+export {
+  type ImageDimensions,
+  imageDimensions,
+  imageExceedsPixelCap,
+  imageWithinPixelCap,
+  MAX_IMAGE_PIXELS,
+  MAX_IMAGE_SIDE,
+} from "./files/dimensions";
 export {
   APPLE_SUBSCRIPTION_STATUS,
   type AppleNotificationType,
@@ -102,6 +126,7 @@ export {
   isUnreadableReply,
   lessonPrompt,
   parseFlashcards,
+  parseJsonReply,
   parseQuiz,
   type QuizQuestion,
   redactForProvider,
@@ -117,3 +142,31 @@ export {
   CONTEXT_RESERVE_TOKENS,
   fitChatMemory,
 } from "./study/chatMemory";
+export {
+  type Citation,
+  GROUNDED_RULES,
+  learnerLine,
+  type LearnerProfile,
+  materialBlock,
+  type MaterialPassage,
+  namedLocations,
+  passageLabel,
+  type PassageSource,
+  resolveCitations,
+  tokenBound,
+  type UnreadableSource,
+  wantsWholeMaterial,
+} from "./study/grounding";
+export {
+  NOTEBOOK_PART_KEYS,
+  NOTEBOOK_PROMPT,
+  type NotebookCitation,
+  type NotebookContent,
+  type NotebookExample,
+  type NotebookItem,
+  type NotebookSection,
+  type NotebookTerm,
+  notebookText,
+  parseNotebook,
+  sectionKey,
+} from "./study/notebook";

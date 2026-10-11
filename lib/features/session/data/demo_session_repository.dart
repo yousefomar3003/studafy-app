@@ -61,6 +61,9 @@ class DemoSessionRepository implements SessionRepository {
   Future<void> recordAccountKind(AccountKind kind) async {}
 
   @override
+  Future<bool> hasLinkedChildren() async => false;
+
+  @override
   Future<void> signOut({
     SignOutScope scope = SignOutScope.currentDevice,
   }) async {}

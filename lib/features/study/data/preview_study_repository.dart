@@ -1,4 +1,6 @@
+import '../../../core/material_selection.dart';
 import '../domain/study.dart';
+import '../domain/study_notebook.dart';
 
 /// Synthetic builds: a free plan and an empty notebook; nothing is paid.
 class PreviewStudyRepository implements StudyRepository {
@@ -63,4 +65,69 @@ class PreviewStudyRepository implements StudyRepository {
   @override
   Future<NotebookEntry> lessonNotes(String resourceId) =>
       throw const StudyException(StudyRefusal.planRequired);
+
+  // Study notebooks are written by the AI on Studafy Plus: a synthetic
+  // build has none and cannot make one.
+  @override
+  Future<List<StudyNotebookSummary>> notebooks(String classroomId) async =>
+      const [];
+
+  @override
+  Future<StudyNotebookSummary> createNotebook(
+    String classroomId, {
+    required String resourceId,
+    required List<String> sourceIds,
+    String? title,
+    MaterialSelection? selection,
+    bool skipUnavailable = false,
+  }) => throw const StudyException(StudyRefusal.planRequired);
+
+  @override
+  Future<StudyNotebook> openNotebook(String notebookId) =>
+      throw const StudyException(StudyRefusal.failed);
+
+  @override
+  Future<StudyNotebookSummary> updateNotebook(
+    String notebookId, {
+    List<String>? sourceIds,
+    bool skipUnavailable = false,
+  }) => throw const StudyException(StudyRefusal.planRequired);
+
+  @override
+  Future<StudyNotebookSummary> saveNotebookSettings(
+    String notebookId,
+    NotebookSettings settings,
+  ) => throw const StudyException(StudyRefusal.failed);
+
+  @override
+  Future<StudyNotebook> saveNotebookPersonal(
+    String notebookId, {
+    required int expectedVersion,
+    required NotebookPersonal personal,
+  }) => throw const StudyException(StudyRefusal.failed);
+
+  @override
+  Future<void> deleteNotebook(String notebookId) async {}
+
+  @override
+  Future<StudySet> notebookStudySet(
+    String notebookId,
+    StudySetKind kind,
+    List<String> sectionKeys,
+  ) => throw const StudyException(StudyRefusal.unavailable);
+
+  @override
+  Future<StudySet> selectionStudySet(
+    StudySetKind kind,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+  }) => throw const StudyException(StudyRefusal.unavailable);
+
+  @override
+  Future<NotebookEntry> summarise(
+    String classroomId,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+    String? language,
+  }) => throw const StudyException(StudyRefusal.planRequired);
 }

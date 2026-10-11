@@ -61,8 +61,19 @@ dependencies:
   path_provider: ^2.1.6
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
+  sentry_flutter: ^9.30.1
+
+# path_provider_foundation 2.6.0 calls into iOS through package:objective_c,
+# which in debug builds checks every native object by listing all of the
+# runtime's classes on the main thread. On the iOS 27 simulator that listing
+# deadlocks while iOS loads a Face ID UI class, and the app froze on its
+# launch screen (and Sentry reported "App Hanging"). 2.5.1 uses a platform
+# channel instead. Drop this once objective_c no longer does that check.
+dependency_overrides:
+  path_provider_foundation: 2.5.1
 
 dev_dependencies:
+  sentry_dart_plugin: ^3.4.0
   flutter_test:
     sdk: flutter
   integration_test:
@@ -100,6 +111,7 @@ flutter:
   # background made transparent so it sits on any light surface.
   assets:
     - assets/brand/studafy_wordmark.png
+    - assets/brand/studafy_wordmark_white.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -131,3 +143,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: true
+  project: flutter
+  org: studafy-limited

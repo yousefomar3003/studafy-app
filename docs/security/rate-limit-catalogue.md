@@ -26,12 +26,17 @@ The former `aiCoach` and `aiGrading` flows were retired by AI-072
 | `adminApi` | account | sliding window, 120 / 5 min, cost ×2 per op | yes | `/internal/*` (support access, moderation, legal holds), school-admin command surface (`/v1/schools*`, `/v1/memberships/*` POST), `/v1/control-panel/*` |
 | `billingPurchase` | account | fixed window, 20 / hour | yes | declared — lands with BIL-051's surface |
 | `storeWebhook` | ip | fixed window, 600 / min | yes | declared — store-webhook gateway rule (OPS-051) |
+| `studyGeneration` | account | sliding window, 30 / 5 min | yes | every POST that calls the model provider: `/v1/study-assistant/ask`, `/v1/study-sets`, class notebook summary and whiteboard notes, study notebooks (create, regenerate, study set), lesson notes, lesson study sets and reading retries (security audit 2026-10-08). The token ledger still caps spend; this caps rate |
 
 Subject scoping:
 
 - `ip` subjects are keyed by a normalized network prefix — the address for
-  IPv4 (and IPv4-mapped IPv6), a /64 aggregate for IPv6. Production trusts
-  only `cf-connecting-ip`.
+  IPv4 (and IPv4-mapped IPv6), a /64 aggregate for IPv6. The address comes
+  from `CLIENT_IP_SOURCE` (`apps/api/src/platform/clientIp.ts`): production
+  trusts `cf-connecting-ip` only when Fly saw the connection come from a
+  Cloudflare range, and otherwise keys on `Fly-Client-IP`, which a client
+  cannot write. `forwarded` (X-Forwarded-For) is for local work and refused
+  in production.
 - `account` and `tenant` subjects are keyed by HMAC digests; **raw
   identifiers are never written to Redis keys**.
 - `Retry-After` is always present on 429 and bounded to one hour.

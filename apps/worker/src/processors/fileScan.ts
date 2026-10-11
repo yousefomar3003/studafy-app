@@ -262,7 +262,10 @@ export function startFileScan(
   storage: PrivateFileStorage,
   scanner: FileScanner,
   logger: Logger,
-  intervalMs = 5_000,
+  // Every second: a voice note or a photo cannot be opened until it is
+  // scanned, so a person is waiting on this. A claim that finds nothing is
+  // one cheap SKIP LOCKED query; the backlog report stays once a minute.
+  intervalMs = 1_000,
 ): FileScanRuntime {
   const processor = createFileScanProcessor(
     postgresScanQueue(sql),

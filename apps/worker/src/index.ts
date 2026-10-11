@@ -1,4 +1,5 @@
 import { describeWorkerEnv, loadWorkerEnv } from "./bootstrap/config";
+import { usesPrivilegedDatabaseRole } from "@studafy/config";
 import {
   buildBillingRuntime,
   buildNotificationRuntime,
@@ -6,6 +7,7 @@ import {
 } from "./bootstrap/queues";
 import {
   createJsonLogger,
+  createLogSampler,
   installGracefulShutdown,
   logShutdownStep,
   logStartup,
@@ -16,15 +18,22 @@ import {
   assertQueueRedisPosture,
   closeRedis,
   createRedis,
+  createSentryReporter,
+  createStudyAssistant,
   ExternalMalwareScannerClient,
   FcmPushSender,
   FileSecurityScanner,
   GoogleCalendarConferenceProvider,
+  isPlaintextRemoteRedis,
   ResendEmailSender,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { startFileCleanup } from "./processors/fileCleanup";
 import { startFileScan } from "./processors/fileScan";
+import {
+  postgresMaterialQueue,
+  startMaterialIndex,
+} from "./processors/materialIndex";
 import { startFileRetentionSweep } from "./processors/retentionSweep";
 import { startAccountDeletionExecutor } from "./processors/accountDeletion";
 import { startDataExportExecutor } from "./processors/dataExport";
@@ -33,11 +42,44 @@ import { startChannelDelivery } from "./processors/channelDelivery";
 import { startHousekeeping } from "./processors/housekeeping";
 
 const env = loadWorkerEnv();
-const logger = createJsonLogger("worker", workerVersion, env.LOG_LEVEL);
+// OPS-090: failed jobs and polls reach Sentry when a DSN is set, grouped
+// by event; routine "job done" lines are sampled in production.
+const errorReporter = env.SENTRY_DSN
+  ? createSentryReporter({
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT,
+    release: workerVersion,
+    service: "worker",
+  })
+  : undefined;
+const logger = createJsonLogger(
+  "worker",
+  workerVersion,
+  env.LOG_LEVEL,
+  (line) => {
+    console.log(line);
+    errorReporter?.captureLogLine(line);
+  },
+  createLogSampler({
+    successRate: env.LOG_SAMPLE_SUCCESS_RATE,
+    routineRate: env.LOG_SAMPLE_ROUTINE_RATE,
+    slowRequestMs: env.LOG_SLOW_REQUEST_MS,
+  }),
+);
 
 // OPS-061 queue posture: the queue allocation must be non-evicting and
 // persisted. Production refuses to start otherwise; development logs what
 // it finds so the operator runbook can catch drift early.
+if (usesPrivilegedDatabaseRole(env.DATABASE_URL)) {
+  // Production refuses this; elsewhere it runs outside ADR-0014's
+  // least-privilege boundary.
+  logger.warn("database_privileged_role", { environment: env.ENVIRONMENT });
+}
+if (isPlaintextRemoteRedis(env.REDIS_URL)) {
+  // Production refuses this (enforceWorkerFailClosed); elsewhere it is
+  // allowed but loud: queue jobs and the password cross the network in clear.
+  logger.warn("redis_plaintext_remote", { environment: env.ENVIRONMENT });
+}
 const postureRedis = createRedis(env.REDIS_URL, {
   connectTimeout: 3,
   maxRetriesPerRequest: 1,
@@ -87,12 +129,14 @@ let sharedSql: Sql | undefined;
 function database(): Sql {
   sharedSql ??= createDatabase(env.DATABASE_URL!, {
     max: env.DATABASE_POOL_MAX,
+    ...(env.DATABASE_CA_CERT ? { caCert: env.DATABASE_CA_CERT } : {}),
   });
   return sharedSql;
 }
 
 const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
-    env.FILE051_RETENTION_ENABLED || env.OPS061_NOTIFICATIONS_ENABLED ||
+    env.FILE051_RETENTION_ENABLED || env.AI_MATERIAL_INDEX_ENABLED ||
+    env.OPS061_NOTIFICATIONS_ENABLED ||
     env.PAY071_BILLING_ENABLED
   ? database()
   : undefined;
@@ -126,6 +170,38 @@ const scan = fileWorkerSql && storage && env.FILE051_SCAN_ENABLED
   : undefined;
 const retention = fileWorkerSql && storage && env.FILE051_RETENTION_ENABLED
   ? startFileRetentionSweep(fileWorkerSql, storage, logger)
+  : undefined;
+
+// ADR-0037: lesson files and links read for the study helper. The model
+// reads scanned pages and pictures only behind the same switch as every
+// other path that sends lesson material to the provider (ADR-0029).
+const materialReader = env.AI_API_KEY && env.AI_BASE_URL &&
+    env.AI_LESSON_TOOLS_ENABLED
+  ? createStudyAssistant({
+    apiKey: env.AI_API_KEY,
+    baseUrl: env.AI_BASE_URL,
+    model: env.AI_MODEL,
+    maxLongOutputTokens: 1_800,
+    timeoutMs: 60_000,
+  })
+  : null;
+const materialIndex = fileWorkerSql && storage && env.AI_MATERIAL_INDEX_ENABLED
+  ? startMaterialIndex({
+    queue: postgresMaterialQueue(fileWorkerSql),
+    storage,
+    assistant: materialReader,
+    limits: {
+      ocrPagesPerFile: 60,
+      textPagesPerFile: 500,
+      charsPerDocument: 600_000,
+      linkMaxBytes: 3_000_000,
+    },
+    prices: {
+      inputUsdPerMTok: env.AI_PRICE_INPUT_USD_PER_MTOK,
+      outputUsdPerMTok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
+    },
+    logger,
+  }, env.AI_MATERIAL_POLL_INTERVAL_MS)
   : undefined;
 
 // OPS-061: the transactional outbox drain. The dispatcher polls the
@@ -270,6 +346,7 @@ installGracefulShutdown({
     await billing?.close();
     await scan?.close();
     await retention?.close();
+    await materialIndex?.close();
     await cleanup?.close();
     await accountDeletion?.close();
     await dataExport?.close();
@@ -278,5 +355,6 @@ installGracefulShutdown({
     await housekeeping?.close();
     if (sharedSql) await closeDatabase(sharedSql);
     await runtime.close();
+    await errorReporter?.flush();
   },
 });

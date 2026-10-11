@@ -41,6 +41,44 @@ describe("Turnstile", () => {
       ).toBe(false);
     }
   });
+  test("a testing-key answer counts only where testing keys are allowed", async () => {
+    // What siteverify returns for Cloudflare's always-pass testing secret:
+    // no action, and a testing marker.
+    const testing = {
+      success: true,
+      hostname: "example.com",
+      metadata: { result_with_testing_key: true },
+    };
+    const dev = { ...options, hostnames: ["example.com"] };
+    expect(await verifyTurnstile(dev, "token", result(testing))).toBe(false);
+    expect(
+      await verifyTurnstile(
+        { ...dev, allowTestingKeys: true },
+        "token",
+        result(testing),
+      ),
+    ).toBe(true);
+    // Still an exact, allowlisted hostname, and still a success.
+    for (
+      const change of [{ hostname: "evil.test" }, { success: false }]
+    ) {
+      expect(
+        await verifyTurnstile(
+          { ...dev, allowTestingKeys: true },
+          "token",
+          result({ ...testing, ...change }),
+        ),
+      ).toBe(false);
+    }
+    // A real widget's answer is unchanged by the flag: the action must match.
+    expect(
+      await verifyTurnstile(
+        { ...options, allowTestingKeys: true },
+        "token",
+        result({ success: true, hostname: "api.example.com", action: "login" }),
+      ),
+    ).toBe(false);
+  });
   test("rejects malformed tokens and unconfigured hostnames without calling Cloudflare", async () => {
     const never: SiteverifyFetch = async () => {
       throw new Error("must not run");

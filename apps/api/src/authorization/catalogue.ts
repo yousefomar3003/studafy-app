@@ -415,6 +415,33 @@ export const PERMISSION_CATALOGUE = {
     "resource",
     "Edit a lesson, or replace its file, keeping earlier versions.",
   ),
+  // Online assessments (ADR-0036). Teacher actions are the class's own
+  // lead and co-teachers'; results are the student's own or a linked
+  // parent's child's, read-only.
+  "assessment.design": resource(
+    "assessment",
+    "Edit an online assessment's questions (before any attempt) and settings as its teacher.",
+  ),
+  "assessment.access": resource(
+    "assessment",
+    "Give one enrolled student more time or attempts as the class's teacher.",
+  ),
+  "assessment.results": guardianResource(
+    "assessment",
+    "Read one's own attempts, published grade and released answers, or a linked child's.",
+  ),
+  "assessment_attempt.read": resource(
+    "assessment_attempt",
+    "Read an attempt with its answers and marks as the class's staff.",
+  ),
+  "assessment_attempt.mark": resource(
+    "assessment_attempt",
+    "Mark an attempt's written answers as the class's lead or co-teacher.",
+  ),
+  "gradebook.attachments": resource(
+    "assessment",
+    "Attach shared or per-student files and links to a paper grade as its teacher.",
+  ),
   "wellbeing_event.list": resource(
     "school_class_or_student",
     "List visibility-filtered wellbeing records.",
@@ -646,6 +673,42 @@ export const PERMISSION_CATALOGUE = {
     "resource",
     "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max.",
   ),
+  // ADR-0037: a lesson's files and links as read for the study helper.
+  "lesson_reading.read": resource(
+    "resource",
+    "See how far a lesson's files and links have been read for the study helper: a teacher of the lesson, or anyone who can see it.",
+  ),
+  "lesson_reading.retry": resource(
+    "resource",
+    "Ask for a lesson's file or link to be read again for the study helper. Teachers of the lesson only.",
+  ),
+  // A student's own study notebooks (2026-10-07). The database checks on
+  // every call that the notebook is the actor's and its lesson still theirs.
+  "study_notebook.read": {
+    resource: "study_notebook",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Open one of the actor's own study notebooks.",
+  },
+  "study_notebook.write": {
+    resource: "study_notebook",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Change, update, delete or practise from one of the actor's own study notebooks.",
+  },
+  // Exactly the chosen material, for AI study tools (2026-10-07). Each
+  // lesson and file is checked against the actor on the request.
+  "material_set.generate": {
+    resource: "material_selection",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Make or reopen a quiz or flashcards from class material the actor chose and can see, on Studafy Max.",
+  },
   "meeting.list": {
     resource: "meeting",
     scope: "self",
@@ -701,9 +764,9 @@ export const PERMISSION_CATALOGUE = {
     "school_or_classroom",
     "Create an announcement as a school administrator (school-wide) or the classroom's exact writer.",
   ),
-  "announcement.list": resource(
+  "announcement.list": guardianResource(
     "school",
-    "List announcements visible to an active member, filtered per row by classroom relationship.",
+    "List announcements visible to an active member, filtered per row by classroom relationship, or to a linked guardian: those meant for guardians, school-wide or in the child's classes.",
   ),
 
   // API-042 S5: meetings.

@@ -210,7 +210,7 @@ describe("jpeg", () => {
     const transform = transformBytes(jpeg, "image/jpeg");
     expect(transform.bytes).not.toBeNull();
     expect(transform.transformPolicyVersion).toBe(
-      "file051-structural-strip-v1",
+      "file051-structural-strip-v2",
     );
     const once = transform.bytes!;
     const twice = transformBytes(once, "image/jpeg").bytes!;

@@ -11,11 +11,17 @@
   "dependencies": {
     "@apple/app-store-server-library": "3.1.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.1137.0",
+    "@napi-rs/canvas": "1.0.10",
+    "@sentry/bun": "11.2.0",
     "@studafy/domain": "workspace:*",
     "@supabase/supabase-js": "2.116.0",
     "bullmq": "6.3.4",
     "google-auth-library": "^11.1.0",
     "googleapis": "^181.0.0",
-    "ioredis": "6.0.0"
+    "ioredis": "6.0.0",
+    "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "@studafy/test-support": "workspace:*"
   }
 }

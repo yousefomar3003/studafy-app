@@ -17,6 +17,13 @@
  */
 import { FcmPushSender } from "@studafy/infrastructure";
 import postgres from "postgres";
+import { databaseTls } from "../packages/database/src/index.ts";
+
+/** Encrypted unless the database is on this machine (packages/database). */
+const tls = (url: string) => {
+  const ssl = databaseTls(url, process.env.DATABASE_CA_CERT);
+  return ssl === undefined ? {} : { ssl };
+};
 
 const args = Bun.argv.slice(2);
 const option = (name: string) => {
@@ -60,7 +67,11 @@ if (!user || !/^[0-9a-f-]{36}$/i.test(user)) {
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");
 
-const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} });
+const sql = postgres(databaseUrl, {
+  ...tls(databaseUrl),
+  max: 1,
+  onnotice: () => {},
+});
 try {
   const [account] = await sql<{ devices: number; school: string | null }[]>`
     select

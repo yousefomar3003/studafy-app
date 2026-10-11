@@ -85,7 +85,6 @@ class LocaleController extends ChangeNotifier with WidgetsBindingObserver {
     _preference = _parse(stored);
     _resolved = _resolve();
     notifyListeners();
-    await _republishIfPending();
   }
 
   /// The operating system's language changed while the app was running.
@@ -156,7 +155,11 @@ class LocaleController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Retries a publish that failed while the app was last running, so a locale
   /// chosen offline still reaches the profile.
-  Future<void> _republishIfPending() async {
+  ///
+  /// Called once someone is signed in, not from [restore]: before the first
+  /// frame there may be no session to publish for, and a request there only
+  /// holds the launch screen up.
+  Future<void> republishIfPending() async {
     if (publishToServer == null) return;
     final published = await settings.read(DeviceSettingKeys.publishedLocale);
     if (published == _resolved.languageCode) return;

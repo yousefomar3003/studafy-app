@@ -1,0 +1,62 @@
+# Studafy API - TEST copy on Fly.io (ADR-0035). Same as the Mac-hosted
+# setup: development mode, Cloudflare test Turnstile keys, the Frankfurt
+# Supabase project. Not production: see fly.api.toml for that.
+#   fly deploy --config fly.test.api.toml
+app = "studafy-api-test"
+primary_region = "fra"
+
+[build]
+  dockerfile = "apps/api/Dockerfile"
+
+[env]
+  ENVIRONMENT = "development"
+  API_PORT = "8080"
+  # No Cloudflare in front of *.fly.dev: client addresses come from Fly's
+  # own Fly-Client-IP, never X-Forwarded-For, which a caller can write
+  # (security audit 2026-10-08).
+  CLIENT_IP_SOURCE = "fly"
+  LOG_LEVEL = "info"
+  LOG_SAMPLE_SUCCESS_RATE = "0.1"
+  LOG_SAMPLE_ROUTINE_RATE = "0.01"
+  LOG_SLOW_REQUEST_MS = "2000"
+  DATABASE_POOL_MAX = "10"
+  # Answers from class material run longer than a plain question (ADR-0037).
+  API_REQUEST_TIMEOUT_MS = "20000"
+  TURNSTILE_ENABLED = "true"
+  # What Cloudflare's test keys report; development accepts them only.
+  TURNSTILE_HOSTNAMES = "example.com"
+  FILE050_NEW_INTENTS_ENABLED = "true"
+  FILE051_PUBLISH_ENABLED = "true"
+  FILE051_DELIVERY_ENABLED = "true"
+  FILE051_DELIVERY_PUBLIC_BASE_URL = "https://studafy-api-test.fly.dev"
+  AI_BASE_URL = "https://api.together.xyz"
+  AI_MODEL = "Qwen/Qwen3.5-9B"
+  # Synthetic lesson material only on the test copy (ADR-0034).
+  AI_LESSON_TOOLS_ENABLED = "true"
+  PAY071_BILLING_ENABLED = "false"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = "stop"
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "15s"
+    timeout = "3s"
+    grace_period = "10s"
+
+[deploy]
+  strategy = "rolling"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

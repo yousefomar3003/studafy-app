@@ -6,6 +6,7 @@ import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/presentation/assessment_builder_page.dart';
 import '../features/academic/presentation/attendance_page.dart';
 import '../features/academic/presentation/create_assignment_page.dart';
 import '../features/academic/presentation/create_exam_page.dart';
@@ -93,10 +94,54 @@ class TeacherCreateActions {
       ActiveContextController.instance.membership?.schoolId;
 
   /// A lesson: notes and files for a class, which students see by date.
-  Future<void> newLesson(BuildContext context, {String? classroomId}) =>
-      _openForm(
+  /// With [section], it is filed for that section of [classroomId].
+  Future<void> newLesson(
+    BuildContext context, {
+    String? classroomId,
+    LessonSession? section,
+  }) => _openForm(
+    context,
+    (classes) => CreateLessonPage(
+      repository: dependencies.academic,
+      classes: classes,
+      initialClassroomId: classroomId,
+      section: section,
+      schoolId: _schoolId,
+      uploads: dependencies.fileUploads,
+    ),
+  );
+
+  /// An exam or other assessment: answered online, built from questions
+  /// (ADR-0036), or sat on paper and marked in the gradebook.
+  Future<void> newExam(BuildContext context, {String? classroomId}) async {
+    final l10n = AppL10n.of(context);
+    final online = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.quiz_rounded),
+              title: Text(l10n.builderOnlineChoice),
+              subtitle: Text(l10n.builderOnlineChoiceDetail),
+              onTap: () => Navigator.pop(sheetContext, true),
+            ),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: Text(l10n.builderPaperChoice),
+              subtitle: Text(l10n.builderPaperChoiceDetail),
+              onTap: () => Navigator.pop(sheetContext, false),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (online == null || !context.mounted) return;
+    if (online) {
+      return _openForm(
         context,
-        (classes) => CreateLessonPage(
+        (classes) => AssessmentBuilderPage(
           repository: dependencies.academic,
           classes: classes,
           initialClassroomId: classroomId,
@@ -104,9 +149,11 @@ class TeacherCreateActions {
           uploads: dependencies.fileUploads,
         ),
       );
+    }
+    return _newPaperExam(context, classroomId: classroomId);
+  }
 
-  /// An exam or other assessment, marked in the gradebook, with its paper.
-  Future<void> newExam(BuildContext context, {String? classroomId}) =>
+  Future<void> _newPaperExam(BuildContext context, {String? classroomId}) =>
       _openForm(
         context,
         (classes) => CreateExamPage(

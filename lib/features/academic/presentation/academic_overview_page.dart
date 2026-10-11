@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
-import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/navigation.dart';
@@ -14,6 +14,7 @@ import '../domain/academic_repository.dart';
 import 'create_wellbeing_page.dart';
 import 'edit_lesson_sheet.dart';
 import 'edit_materials_sheet.dart';
+import 'lesson_reading_sheet.dart';
 
 /// Typed, server-authoritative academic feed used by remote teacher, student,
 /// and guardian shells. Draft input remains in memory when a request fails;
@@ -27,6 +28,7 @@ class AcademicOverviewPage extends StatefulWidget {
     this.teacherTools = false,
     this.initialFeed = AcademicFeed.assignments,
     this.actions = const [],
+    this.appBarActions = const [],
     this.onOpenRecord,
     this.availableFeeds = AcademicFeed.values,
     this.title,
@@ -35,9 +37,25 @@ class AcademicOverviewPage extends StatefulWidget {
     this.uploads,
     this.schoolId,
     this.attachmentSource,
+    this.students = const [],
+    this.onStudentChanged,
+    this.onOpenStudentRecord,
+    this.onOpenAssessment,
   });
 
   final AcademicRepository repository;
+
+  /// The children a guardian follows. With more than one, the page offers
+  /// "All children" and each child; with one, it is simply that child.
+  final List<StudentChoice> students;
+
+  /// Called when the person picks a child (null for all of them).
+  final ValueChanged<String?>? onStudentChanged;
+
+  /// Opens a piece of work for the child it belongs to - in the combined
+  /// view the page knows whose each row is. Wins over [onOpenRecord].
+  final void Function(AcademicRecord record, StudentChoice? student)?
+  onOpenStudentRecord;
   final List<AcademicFeed> availableFeeds;
   final String? title;
 
@@ -58,10 +76,24 @@ class AcademicOverviewPage extends StatefulWidget {
   /// Opens one assignment row. A student taps one to hand work in; the other
   /// feeds never call it, since every handler expects an assignment.
   final void Function(AcademicRecord record)? onOpenRecord;
+
+  /// Opens an online assessment (ADR-0036): to sit it and see results, or -
+  /// for a teacher - to mark it. Given the assessment's id and title, and
+  /// in the combined view whose row it is. Also opened from a grade for
+  /// online work.
+  final void Function(
+    String assessmentId,
+    String title,
+    StudentChoice? student,
+  )?
+  onOpenAssessment;
   final AcademicFeed initialFeed;
 
-  /// App bar actions supplied by the host shell, such as its account entry.
+  /// A row of controls supplied by the host shell, under the title.
   final List<Widget> actions;
+
+  /// Controls in the app bar itself, such as a page's options menu.
+  final List<Widget> appBarActions;
 
   /// Lets a teacher attach files to what they are filing. Null - or a null
   /// [schoolId] - leaves the attachment control out entirely rather than
@@ -86,12 +118,39 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
   String? selectedClassId;
   List<ClassChoice> choices = const [];
 
+  /// The child being shown; null is every child, when there are several.
+  String? selectedStudentId;
+
+  /// Whose each loaded row is. Rows of different children are different
+  /// objects even for the same assignment, so this is exact.
+  final _owners = Expando<StudentChoice>();
+
+  bool get _combined => widget.students.length > 1 && selectedStudentId == null;
+
   @override
   void initState() {
     super.initState();
     feed = widget.initialFeed;
-    future = _load();
+    selectedStudentId = _studentFrom(widget);
+    future = _watched();
     _loadChoices();
+  }
+
+  static String? _studentFrom(AcademicOverviewPage page) =>
+      page.studentId ??
+      (page.students.length == 1 ? page.students.first.id : null);
+
+  /// The child chosen somewhere else (the family home) is followed in place:
+  /// the page keeps the feed it is on - Grades stays Grades - and loads that
+  /// child's. A choice made here has already loaded, so nothing is repeated.
+  @override
+  void didUpdateWidget(AcademicOverviewPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final chosen = _studentFrom(widget);
+    if (chosen != _studentFrom(oldWidget) && chosen != selectedStudentId) {
+      selectedStudentId = chosen;
+      future = _watched();
+    }
   }
 
   Future<void> _loadChoices() async {
@@ -119,12 +178,54 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     return null;
   }
 
+  /// A load the list will show. Marked handled at once: a load replaced
+  /// before the list rebuilt - two refreshes in one frame, an account
+  /// switch - has no listener, and its failure would otherwise surface as
+  /// an uncaught error. The list still sees every failure it shows.
+  Future<List<AcademicRecord>> _watched() => _load()..ignore();
+
   Future<List<AcademicRecord>> _load() async {
+    if (_combined) {
+      // Every child at once, each child's rows labelled with them. A few
+      // children at most, so one request each, side by side.
+      final lists = await Future.wait([
+        for (final student in widget.students)
+          _loadFor(student.id).then((records) {
+            final own = [for (final record in records) record.copy()];
+            for (final record in own) {
+              _owners[record] = student;
+            }
+            return own;
+          }),
+      ]);
+      return _ordered([for (final list in lists) ...list]);
+    }
+    final id = selectedStudentId ?? widget.studentId;
+    final records = await _loadFor(id);
+    final owner = widget.students.where((s) => s.id == id).firstOrNull;
+    if (owner != null) {
+      for (final record in records) {
+        _owners[record] = owner;
+      }
+    }
+    return _ordered(records);
+  }
+
+  Future<List<AcademicRecord>> _loadFor(String? studentId) async {
     final records = await widget.repository.load(
       feed,
       classroomId: widget.classroomId ?? selectedClassId,
-      studentId: widget.studentId,
+      studentId: studentId,
     );
+    return feed == AcademicFeed.assessments
+        ? [
+            for (final record in records)
+              if (record.markedAssignmentId == null) record,
+          ]
+        : records;
+  }
+
+  List<AcademicRecord> _ordered(List<AcademicRecord> records) {
     // Graded coursework is listed with the assignment it marks, not a second
     // time among the tests.
     if (feed == AcademicFeed.grades) {
@@ -137,12 +238,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
           if (record.delivery != 'paper') record,
       ];
     }
-    return feed == AcademicFeed.assessments
-        ? [
-            for (final record in records)
-              if (record.markedAssignmentId == null) record,
-          ]
-        : records;
+    return records;
   }
 
   /// A mark in words. Absent and not graded are said as such - never shown
@@ -180,7 +276,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
   bool get _studentWork =>
       !widget.teacherTools &&
       feed == AcademicFeed.assignments &&
-      widget.onOpenRecord != null;
+      (widget.onOpenRecord != null || widget.onOpenStudentRecord != null);
 
   /// Where a piece of work stands for the person handing it in. Work with no
   /// deadline stays open; the server is the authority either way.
@@ -284,8 +380,18 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
 
   void _refresh() {
     setState(() {
-      future = _load();
+      future = _watched();
     });
+  }
+
+  /// Pull-to-refresh: the indicator stays until the new list is in.
+  Future<void> _pullToRefresh() async {
+    _refresh();
+    try {
+      await future;
+    } on Object {
+      // The list shows the failure.
+    }
   }
 
   IconData _feedIcon(AcademicFeed value) => switch (value) {
@@ -364,7 +470,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     return Scaffold(
       appBar: largeTitle
           ? null
-          : AppBar(title: Text(widget.title ?? l10n.academicTitle)),
+          : AppBar(
+              title: Text(widget.title ?? l10n.academicTitle),
+              actions: widget.appBarActions,
+            ),
       body: Column(
         children: [
           if (largeTitle)
@@ -385,6 +494,48 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                 children: widget.actions,
               ),
             ),
+          // Whose record this is comes first of all: a parent of two thinks
+          // "Layla, then what is due".
+          if (widget.students.length > 1) ...[
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 6),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.filter_list_rounded,
+                    size: 16,
+                    color: studafyMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.learningFilterByChild,
+                    style: const TextStyle(
+                      color: studafyMuted,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PillTabs<String?>(
+              values: [null, for (final student in widget.students) student.id],
+              selected: selectedStudentId,
+              label: (id) => id == null
+                  ? l10n.announcementsAllChildren
+                  : widget.students.firstWhere((s) => s.id == id).name,
+              icon: (id) =>
+                  id == null ? Icons.groups_rounded : Icons.child_care_rounded,
+              onSelected: (id) {
+                setState(() {
+                  selectedStudentId = id;
+                  future = _watched();
+                });
+                widget.onStudentChanged?.call(id);
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
           // The class filter sits above the feed switcher because it is the
           // coarser choice: a student thinks "maths, then what is due", not
           // "assignments, then which class".
@@ -400,7 +551,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                   : subjectIcon(choices.firstWhere((c) => c.id == id).name),
               onSelected: (id) => setState(() {
                 selectedClassId = id;
-                future = _load();
+                future = _watched();
               }),
             ),
             const SizedBox(height: 10),
@@ -412,7 +563,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             icon: _feedIcon,
             onSelected: (value) => setState(() {
               feed = value;
-              future = _load();
+              future = _watched();
             }),
           ),
           if (canAddWellbeing)
@@ -433,7 +584,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             child: AnimatedSwitcher(
               duration: motion,
               child: KeyedSubtree(
-                key: ValueKey((feed, selectedClassId)),
+                key: ValueKey((feed, selectedClassId, selectedStudentId)),
                 child: _feedList(context, l10n),
               ),
             ),
@@ -447,7 +598,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
       FutureBuilder<List<AcademicRecord>>(
         future: future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          // A reload of the same list keeps it on screen until the new one
+          // is in; only a list never shown yet waits behind a spinner.
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
@@ -456,8 +610,8 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
           final loaded = snapshot.data ?? const <AcademicRecord>[];
           final items = _studentWork ? _grouped(loaded) : loaded;
           if (items.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async => _refresh(),
+            return StudafyRefreshIndicator(
+              onRefresh: _pullToRefresh,
               child: ListView(
                 children: [
                   StudafyEmptyState(
@@ -471,8 +625,8 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               ),
             );
           }
-          return RefreshIndicator(
-            onRefresh: () async => _refresh(),
+          return StudafyRefreshIndicator(
+            onRefresh: _pullToRefresh,
             child: ListView.builder(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 24),
               itemCount: items.length,
@@ -482,6 +636,14 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
           );
         },
       );
+
+  /// The lesson an attendance mark is for, as its day and start time.
+  static String? _lessonWhen(BuildContext context, DateTime? startsAt) {
+    if (startsAt == null) return null;
+    final dates = MaterialLocalizations.of(context);
+    return '${dates.formatFullDate(startsAt)} · '
+        '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(startsAt))}';
+  }
 
   Widget _recordCard(
     BuildContext context,
@@ -494,10 +656,26 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     // an assignment screen - hand-in for a student or guardian, the roster
     // for a teacher - so a grade or an assessment tapped here used to open
     // "hand in work" with an id that is not an assignment's.
-    final onOpen = feed == AcademicFeed.assignments
-        ? widget.onOpenRecord
-        : null;
+    final onOpenStudent = widget.onOpenStudentRecord;
+    final openAssessment = widget.onOpenAssessment;
+    final assessmentId = switch (feed) {
+      AcademicFeed.assessments when item.delivery != 'paper' => item.id,
+      AcademicFeed.grades when item.delivery == 'online' => item.assessmentId,
+      _ => null,
+    };
+    final void Function(AcademicRecord)? onOpen =
+        assessmentId != null && openAssessment != null
+        ? (record) =>
+              openAssessment(assessmentId, record.title, _owners[record])
+        : feed != AcademicFeed.assignments
+        ? null
+        : onOpenStudent != null
+        ? (record) => onOpenStudent(record, _owners[record])
+        : widget.onOpenRecord;
+    // In the combined view each row says whose it is, and where.
+    final owner = _combined ? _owners[item] : null;
     final grades = feed == AcademicFeed.grades;
+    final attendance = feed == AcademicFeed.attendance;
     final paper = item.delivery == 'paper';
     final student = _studentWork;
     final window = _window(item);
@@ -506,9 +684,13 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
             (index == 0 || (items[index - 1].delivery == 'paper') != paper)) ||
         (student && (index == 0 || _window(items[index - 1]) != window));
     final className = _className(item);
-    // "Published" says nothing to the person handing work in; whether it is
-    // still open does.
-    final pill = student ? _windowPill(l10n, window) : _statePill(l10n, item);
+    // "Published" says nothing to the person handing work in, or reading
+    // their marks; whether work is still open does.
+    final pill = student
+        ? _windowPill(l10n, window)
+        : grades && !widget.teacherTools
+        ? null
+        : _statePill(l10n, item);
     final labelStyle = Theme.of(context).textTheme.labelSmall
         ?.copyWith(color: studafyMuted, fontWeight: FontWeight.w600);
 
@@ -532,10 +714,29 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
         child: Text(l10n.academicPublish),
       );
     } else if (widget.teacherTools && feed == AcademicFeed.content) {
-      trailing = IconButton(
-        tooltip: l10n.lessonEdit,
-        onPressed: () => _editLesson(item),
-        icon: const Icon(Icons.edit_outlined),
+      trailing = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // How far the lesson's files are read for the AI helper.
+          if (item.attachments.isNotEmpty ||
+              item.links.isNotEmpty ||
+              item.resourceType == 'file')
+            IconButton(
+              tooltip: l10n.readingTitle,
+              onPressed: () => showLessonReadingSheet(
+                context,
+                repository: widget.repository,
+                resourceId: item.id,
+                title: item.title,
+              ),
+              icon: const Icon(Icons.auto_awesome_outlined),
+            ),
+          IconButton(
+            tooltip: l10n.lessonEdit,
+            onPressed: () => _editLesson(item),
+            icon: const Icon(Icons.edit_outlined),
+          ),
+        ],
       );
     } else if (widget.teacherTools &&
         (feed == AcademicFeed.assignments ||
@@ -566,26 +767,98 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titles and details are school-authored content, so they
-                  // render verbatim in their own direction.
-                  UserContentText(
-                    item.title,
-                    style: const TextStyle(
-                      color: studafyInk,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
+                  if (attendance)
+                    // A mark is read by the lesson it was for: the day and
+                    // time are the row's name, the mark its pill.
+                    Text(
+                      _lessonWhen(context, item.date) ?? l10n.feedAttendance,
+                      style: const TextStyle(
+                        color: studafyInk,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )
+                  else
+                    // Titles and details are school-authored content, so
+                    // they render verbatim in their own direction.
+                    UserContentText(
+                      item.title,
+                      style: const TextStyle(
+                        color: studafyInk,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 3),
                   if (grades)
-                    Text(
-                      _markText(l10n, item),
-                      style: const TextStyle(color: studafyInk),
+                    // The mark itself, large: it is what the row is for.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _markText(l10n, item),
+                        style: TextStyle(
+                          color: item.mark == GradeMark.scored
+                              ? studafyDeep
+                              : studafyMuted,
+                          fontSize: item.mark == GradeMark.scored ? 20 : 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     )
                   else if (item.detail.trim().isNotEmpty)
                     LinkedText(item.detail),
                   if (grades && paper)
                     Text(l10n.paperGradesPaperLabel, style: labelStyle),
+                  // A published grade's feedback and attachments: the
+                  // student's own, and the class's shared ones.
+                  if (grades && (item.feedback ?? '').trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: UserContentText(item.feedback!),
+                    ),
+                  if (grades &&
+                      (item.attachments.isNotEmpty ||
+                          item.links.isNotEmpty)) ...[
+                    Text(l10n.gradeYourFiles, style: labelStyle),
+                    AttachmentsView(
+                      attachments: item.attachments,
+                      links: item.links,
+                      uploads: widget.uploads,
+                      dense: true,
+                    ),
+                  ],
+                  if (grades &&
+                      (item.sharedAttachments.isNotEmpty ||
+                          item.sharedLinks.isNotEmpty)) ...[
+                    Text(l10n.gradeClassFiles, style: labelStyle),
+                    AttachmentsView(
+                      attachments: item.sharedAttachments,
+                      links: item.sharedLinks,
+                      uploads: widget.uploads,
+                      dense: true,
+                    ),
+                  ],
+                  if (!attendance && item.date != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 13,
+                            color: studafyMuted,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              MaterialLocalizations.of(context)
+                                  .formatMediumDate(item.date!),
+                              style: labelStyle,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   if (item.deadline case final deadline?)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
@@ -616,19 +889,30 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                       style: labelStyle,
                     ),
                   // The teacher's material, openable from the list itself -
-                  // the only place graded work is shown.
-                  StoredAttachmentList(
-                    attachments: item.attachments,
-                    uploads: widget.uploads,
-                    dense: true,
-                  ),
-                  if (pill != null || className != null)
+                  // the only place graded work is shown. A grade's own
+                  // attachments are shown with its feedback, above.
+                  if (!grades)
+                    AttachmentsView(
+                      attachments: item.attachments,
+                      links: item.links,
+                      uploads: widget.uploads,
+                      dense: true,
+                    ),
+                  if (pill != null || className != null || owner != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Wrap(
                         spacing: 6,
                         runSpacing: 6,
                         children: [
+                          if (owner != null)
+                            StatusPill(
+                              label: owner.schoolName.isEmpty
+                                  ? owner.name
+                                  : '${owner.name} · ${owner.schoolName}',
+                              icon: Icons.child_care_rounded,
+                              color: studafyDeep,
+                            ),
                           ?pill,
                           // Only while the list spans classes. Once it is
                           // narrowed the pill would repeat the chosen tab

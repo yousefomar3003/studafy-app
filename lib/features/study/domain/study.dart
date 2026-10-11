@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/file_upload_repository.dart';
+import '../../../core/material_selection.dart';
+import 'study_notebook.dart';
 
 /// A student's plan (2026-09-27).
 ///
@@ -33,24 +35,52 @@ enum StudyPlanTier {
   };
 }
 
-/// The caller's plan and how much of this month's AI allowance is used.
+/// A plan's AI allowance in tokens (ADR-0037): one allowance for the helper
+/// and every other AI study tool. Free renews every Monday, the paid plans
+/// on the 1st of the month.
+@immutable
+class AiAllowance {
+  const AiAllowance({
+    required this.weekly,
+    required this.total,
+    required this.used,
+    required this.remaining,
+    required this.resetsAt,
+  });
+
+  final bool weekly;
+  final int total;
+  final int used;
+  final int remaining;
+  final DateTime resetsAt;
+
+  double get usedFraction =>
+      total <= 0 ? 1 : (used / total).clamp(0, 1).toDouble();
+
+  /// A quarter or less left: the usage bar's "Running low".
+  bool get low => remaining > 0 && used >= total * 0.75;
+
+  bool get exhausted => remaining <= 0;
+}
+
+/// The caller's plan and its AI allowance.
 @immutable
 class StudyPlan {
   const StudyPlan({
     required this.tier,
-    required this.allowanceUsed,
-    required this.resetsAt,
-    required this.askToday,
-    required this.askPerDay,
+    required this.allowance,
     this.available,
   });
 
   static final free = StudyPlan(
     tier: StudyPlanTier.free,
-    allowanceUsed: 0,
-    resetsAt: DateTime(2100),
-    askToday: 0,
-    askPerDay: 10,
+    allowance: AiAllowance(
+      weekly: true,
+      total: 40000,
+      used: 0,
+      remaining: 40000,
+      resetsAt: DateTime(2100),
+    ),
   );
 
   /// What the server can do right now, whatever the plan: 'ask',
@@ -66,6 +96,9 @@ class StudyPlan {
   /// Quizzes and flashcards are switched on for this server.
   bool get studySetsOn => _on('quiz') && _on('flashcards');
 
+  /// Study notebooks are written by the AI on this server.
+  bool get notebooksOn => _on('notes');
+
   /// Class material may be shared with the helper: the same switch that
   /// sends lessons to the AI for quizzes.
   bool get classMaterialOn => _on('quiz');
@@ -75,11 +108,8 @@ class StudyPlan {
 
   final StudyPlanTier tier;
 
-  /// 0 to 1: how much of the month's AI allowance is spent.
-  final double allowanceUsed;
-  final DateTime resetsAt;
-  final int askToday;
-  final int askPerDay;
+  /// The AI tokens this plan has, how many are used, and when they renew.
+  final AiAllowance allowance;
 
   bool get canSnapWhiteboard => tier.includes(StudyPlanTier.plus);
   bool get canMakeStudySets => tier.includes(StudyPlanTier.max);
@@ -143,11 +173,15 @@ class StudySet {
     required this.kind,
     this.questions = const [],
     this.cards = const [],
+    this.scope,
   });
 
   final StudySetKind kind;
   final List<QuizQuestion> questions;
   final List<Flashcard> cards;
+
+  /// What it was made from, when the server said.
+  final MaterialScopeInfo? scope;
 }
 
 /// Why a study action was refused, in terms the screen can act on.
@@ -155,11 +189,11 @@ enum StudyRefusal {
   /// The plan does not include it: offer the plans.
   planRequired,
 
-  /// This month's AI allowance is spent: it renews on the 1st.
+  /// The AI tokens are used: they renew on the plan's reset date.
   allowanceUsed,
 
-  /// Today's free questions are used.
-  dailyLimit,
+  /// The lesson's files are still being read: try again in a minute.
+  materialProcessing,
 
   /// The whiteboard photo is still being checked.
   photoNotReady,
@@ -217,7 +251,7 @@ class NotebookGroup {
   final List<NotebookEntry> entries;
 }
 
-abstract interface class StudyRepository {
+abstract interface class StudyRepository implements StudyNotebookRepository {
   Future<StudyPlan> plan();
   Future<List<NotebookEntry>> notebook(String classroomId);
   Future<NotebookEntry> addNote(
@@ -238,6 +272,24 @@ abstract interface class StudyRepository {
 
   /// Studafy Plus: study notes made from a lesson, filed in its class.
   Future<NotebookEntry> lessonNotes(String resourceId);
+
+  /// Studafy Max: a quiz or flashcards from exactly [selection]. Throws
+  /// [MaterialUnavailableException] naming chosen files that cannot be read
+  /// now, unless [skipUnavailable].
+  Future<StudySet> selectionStudySet(
+    StudySetKind kind,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+  });
+
+  /// Studafy Plus: study notes from exactly [selection], filed in
+  /// [classroomId]'s notebook, ending with what they were made from.
+  Future<NotebookEntry> summarise(
+    String classroomId,
+    MaterialSelection selection, {
+    bool skipUnavailable = false,
+    String? language,
+  });
 }
 
 /// A plan as the store offers it, for the Plans screen.

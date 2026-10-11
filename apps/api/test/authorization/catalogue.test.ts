@@ -25,6 +25,9 @@ import { createClassJoinRoutes } from "../../src/class-join/routes";
 import { createOnboardingRoutes } from "../../src/onboarding/routes";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import { createStudyRoutes } from "../../src/study/routes";
+import { createLessonReadingRoutes } from "../../src/study/readingRoutes";
+import { createStudyNotebookRoutes } from "../../src/study/studyNotebookRoutes";
+import { createSelectionRoutes } from "../../src/study/selectionRoutes";
 import { createNotebookRoutes } from "../../src/study/notebookRoutes";
 import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
@@ -555,6 +558,52 @@ function routeTable() {
       idempotency,
     ),
   );
+  combined.route(
+    "/",
+    createLessonReadingRoutes(
+      { material: { call: async () => ({ outcome: "invalid" }) } },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createStudyNotebookRoutes(
+      {
+        notebooks: { call: async () => ({ outcome: "forbidden" }) },
+        material: { call: async () => ({ outcome: "invalid" }) },
+        repository: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        assistant: null,
+        lessonToolsEnabled: false,
+      },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createSelectionRoutes(
+      {
+        material: { call: async () => ({ outcome: "invalid" }) },
+        outputs: { call: async () => ({ outcome: "forbidden" }) },
+        repository: {
+          usage: async () => ({ outcome: "ok" }),
+          query: async () => null,
+          command: async () => ({ outcome: "invalid" as const }),
+        },
+        prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
+        assistant: null,
+        lessonToolsEnabled: false,
+      },
+      authorization,
+      idempotency,
+    ),
+  );
   const routes = createAuthRoutes(
     authDependencies,
     authorization,
@@ -634,6 +683,12 @@ describe("permission catalogue", () => {
     const courseworkMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609300001_paper_gradebook.sql`,
     ).text();
+    const onlineAssessmentsMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202610060001_online_assessments.sql`,
+    ).text();
+    const groundedMaterialMigration = await Bun.file(
+      `${import.meta.dir}/../../../../supabase/migrations/202610070001_grounded_material_and_token_allowances.sql`,
+    ).text();
     const submissionHistoryMigration = await Bun.file(
       `${import.meta.dir}/../../../../supabase/migrations/202609260002_submission_history.sql`,
     ).text();
@@ -643,7 +698,7 @@ describe("permission catalogue", () => {
 
     for (const permission of cataloguedResourceActions) {
       expect(
-        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}\n${submissionHistoryMigration}\n${receiptsMigration}\n${notebookMigration}\n${courseworkMigration}`,
+        `${authMigration}\n${academicMigration}\n${schoolAdminMigration}\n${invitationsMigration}\n${familyMigration}\n${communicationsMigration}\n${meetingsMigration}\n${supportAccessMigration}\n${rosterMigration}\n${safetySchemaMigration}\n${safetySurfaceMigration}\n${fileMigration}\n${file051Migration}\n${classJoinMigration}\n${contentPerSectionMigration}\n${submissionHistoryMigration}\n${receiptsMigration}\n${notebookMigration}\n${courseworkMigration}\n${onlineAssessmentsMigration}\n${groundedMaterialMigration}`,
       ).toContain(`'${permission}'`);
     }
   });

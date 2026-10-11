@@ -223,6 +223,12 @@ const COURSEWORK_OPERATIONS = new Set([
   "updateAssignmentMaterials",
   "updateAssessmentMaterials",
   "editResource",
+  "updateAssessmentDesign",
+  "grantAssessmentAccess",
+  "getAssessmentResults",
+  "getAssessmentAttempt",
+  "markAssessmentAttempt",
+  "updateGradeAttachments",
 ]);
 const COURSEWORK_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
   COURSEWORK_OPERATIONS.has(route.operationId)
@@ -231,7 +237,13 @@ const COURSEWORK_ROUTES = V1_ROUTE_CATALOGUE.filter((route) =>
 function courseworkSlice(operation: string): AcademicSlice {
   if (/Attendance/.test(operation)) return "attendance";
   if (/Assignment/.test(operation)) return "assignments";
-  if (/AssessmentMaterials/.test(operation)) return "assessments";
+  if (
+    /AssessmentMaterials|Assessment(Design|Access|Results|Attempt)/.test(
+      operation,
+    )
+  ) {
+    return "assessments";
+  }
   if (/Resource/.test(operation)) return "content";
   return "grades";
 }
@@ -252,7 +264,8 @@ export function createCourseworkRoutes(
           string,
           string
         >;
-        return params["assessmentId"] ?? params["gradeResultId"] ??
+        return params["assessmentId"] ?? params["attemptId"] ??
+          params["gradeResultId"] ??
           params["lessonSessionId"] ?? params["assignmentId"] ??
           params["resourceId"] ?? params["schoolId"] ?? null;
       },

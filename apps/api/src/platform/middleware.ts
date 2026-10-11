@@ -4,6 +4,11 @@ import type { Logger } from "@studafy/observability";
 import { problem } from "./errors";
 import { hmacSubject } from "./rate-limit/policies";
 import {
+  type ClientIpSource,
+  resolveClientAddress,
+  viaCloudflare,
+} from "./clientIp";
+import {
   DEFAULT_PLATFORM_LIMITS,
   type PlatformEnv,
   type PlatformLimits,
@@ -244,6 +249,21 @@ export function totalTimeout(
   };
 }
 
+/**
+ * Refuses requests that reached the Fly origin without passing Cloudflare,
+ * so its WAF, bot rules and edge rate limits cannot be stepped around via
+ * `*.fly.dev` or the app's own addresses. Fly's routing health check calls
+ * `/healthz` on the machine directly, so that path alone is exempt.
+ */
+export function requireCloudflareOrigin(): MiddlewareHandler<PlatformEnv> {
+  return async (c, next) => {
+    if (c.req.path !== "/healthz" && !viaCloudflare((n) => c.req.header(n))) {
+      return problem(c, "FORBIDDEN", 403);
+    }
+    await next();
+  };
+}
+
 /** Coarse client family. Never the full user-agent, which is identifying. */
 export function userAgentFamily(header: string | undefined | null): string {
   if (!header) return "unknown";
@@ -264,8 +284,8 @@ export function userAgentFamily(header: string | undefined | null): string {
 export interface RequestIdentityOptions {
   /** Absent disables `ip_hash`; an unkeyed digest would be reversible. */
   hmacKey?: string;
-  /** Production sits behind Cloudflare, where only its header is trustworthy. */
-  trustCloudflare?: boolean;
+  /** Where the address is read from; see platform/clientIp.ts. */
+  clientIpSource?: ClientIpSource;
 }
 
 /** The authenticated actor, read defensively: `PlatformEnv` does not type it. */
@@ -277,14 +297,17 @@ function subjectOf(c: Context<PlatformEnv>): string | null {
   return typeof subject === "string" && subject.length > 0 ? subject : null;
 }
 
-function clientAddress(
-  c: Context<PlatformEnv>,
-  trustCloudflare: boolean,
-): string | null {
-  const cloudflare = c.req.header("cf-connecting-ip");
-  if (trustCloudflare) return cloudflare ?? null;
-  return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? cloudflare ??
-    null;
+/** The refusal a handler answered with (platform/errors.ts), if any. */
+function problemFields(c: Context<PlatformEnv>): Record<string, unknown> {
+  const problem = (c as unknown as Context).get("problem") as
+    | { code?: unknown; fields?: unknown }
+    | undefined;
+  if (!problem || typeof problem.code !== "string") return {};
+  const fields = Array.isArray(problem.fields) ? problem.fields : [];
+  return {
+    problem_code: problem.code,
+    ...(fields.length ? { invalid_fields: fields } : {}),
+  };
 }
 
 export function requestTelemetry(
@@ -304,7 +327,10 @@ export function requestTelemetry(
       // Read after next(): authentication runs downstream, so the actor only
       // exists by the time the response is being logged.
       const subject = subjectOf(c);
-      const address = clientAddress(c, identity.trustCloudflare ?? false);
+      const address = resolveClientAddress(
+        identity.clientIpSource ?? "forwarded",
+        (name) => c.req.header(name),
+      );
       logger.info("http_request_completed", {
         request_id: c.get("requestId"),
         method: c.req.method,
@@ -317,6 +343,7 @@ export function requestTelemetry(
           ? hmacSubject(identity.hmacKey, "log_ip", address)
           : null,
         ua_family: userAgentFamily(c.req.header("user-agent")),
+        ...problemFields(c),
         // A request no route matched is logged under the wildcard it fell
         // through to, which says nothing about what was asked for. The path
         // carries only ids, never a query string, so it is safe to record

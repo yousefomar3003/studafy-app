@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   flutter:
-    name: Flutter quality and debug build
+    name: Flutter quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -75,9 +75,57 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
-      # SEC-001 intentionally permits only a synthetic debug artifact.
+  # The Android build has its own job (2026-10-11). Inside the Flutter job it
+  # ran past that job's 30 minutes, and once the runner itself disappeared
+  # with no log: the project lets Gradle take an 8 GB heap plus 4 GB of
+  # metaspace, with the Kotlin daemon beside it, on a 16 GB runner. Here
+  # Gradle is cached and held to what the runner has; developers' machines
+  # keep the project setting.
+  android-debug-build:
+    name: Android synthetic debug build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      # User-level Gradle properties win over the project's, so only CI is
+      # capped.
+      - name: Fit Gradle into the runner's memory
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError'
+            echo 'kotlin.daemon.jvmargs=-Xmx2g'
+            echo 'org.gradle.workers.max=2'
+          } >> ~/.gradle/gradle.properties
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # SEC-001 intentionally permits only a synthetic debug artifact. One
+      # architecture is enough to prove the app builds; arm64 is what phones
+      # run.
       - name: Verify synthetic debug build
-        run: flutter build apk --debug --dart-define=APP_ENV=synthetic
+        run: >-
+          flutter build apk --debug --target-platform android-arm64
+          --dart-define=APP_ENV=synthetic
 
   edge-functions:
     name: Edge Function quality
@@ -306,6 +354,18 @@ jobs:
           bunx supabase test db --local
           supabase/tests/one_kind_per_account.sql
 
+      # Every account's numeric Studafy ID, and renaming oneself.
+      - name: Verify numeric Studafy IDs and renaming
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/numeric_public_id.sql
+
+      # Plus, Max and Family+ are sold from launch (ADR-0034).
+      - name: Verify the launch plans are listed
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/paid_plans_listed.sql
+
       # Expired idempotency records are pruned by the worker; live and
       # in-flight ones are kept. Transactional.
       - name: Verify housekeeping
@@ -347,6 +407,11 @@ jobs:
           supabase/tests/attendance_corrections.sql
           supabase/tests/submission_deadlines.sql
           supabase/tests/coursework_files.sql
+          supabase/tests/guardian_announcements.sql
+          supabase/tests/online_assessments.sql
+          supabase/tests/grounded_material.sql
+          supabase/tests/study_notebooks.sql
+          supabase/tests/material_selection.sql
 
       # API-042: every school-operations slice - account, communications,
       # family, invitations, meetings, notifications, roster, school
@@ -572,8 +637,14 @@ jobs:
       - name: Type-check all workspace members
         run: bun run typecheck
 
+      # The Cloudflare Worker that relays alerts to Telegram (ADR-0035).
+      - name: Type-check the alert relay
+        run: bunx tsc -p ops/alert-relay
+
+      # scripts/ holds the launcher and Fly-config checks, ops/ the alert
+      # relay (ADR-0035); neither needs a database.
       - name: Run workspace tests
-        run: bun test apps packages
+        run: bun test apps packages scripts ops
         env:
           REDIS_URL: redis://127.0.0.1:6379
 

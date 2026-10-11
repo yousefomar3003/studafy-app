@@ -87,6 +87,17 @@ const _coreAllowlist = <String>[
   // the attachment picker above.
   // Links a teacher adds to what they post, and how a reader opens them.
   'core/content_links.dart',
+  // The files and titled links on coursework (ADR-0036): the models and the
+  // one view and editor every lesson, assignment, question and grade uses.
+  // AI tokens explained, where a plan or the helper shows an allowance.
+  'core/ai_tokens.dart',
+  // Exactly the class material an AI feature uses, and naming chosen files
+  // that cannot be read (ADR-0039); the AI usage bar shown with a plan.
+  'core/material_selection.dart',
+  'core/material_unavailable_dialog.dart',
+  'core/ai_usage.dart',
+  'core/coursework_models.dart',
+  'core/coursework_attachments.dart',
   'core/voice_note.dart',
   'core/platform_voice_notes.dart',
 ];

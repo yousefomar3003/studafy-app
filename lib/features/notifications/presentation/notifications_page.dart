@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/notification.dart';
@@ -14,7 +15,12 @@ import 'notifications_scope.dart';
 /// whatever grades/notices/assignments/exams happened to be in local SQLite
 /// and never persisted read state anywhere.
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key, this.visible = true});
+  const NotificationsPage({super.key, this.visible = true, this.onOpen});
+
+  /// Opens what a notification is about - the host knows its tabs. Returns
+  /// true when it handled the item, and this page then closes. Null leaves
+  /// a tap at marking the item read.
+  final bool Function(NotificationItem item)? onOpen;
 
   /// Whether this tab is the one on screen.
   ///
@@ -54,8 +60,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (widget.visible && !oldWidget.visible) unawaited(_refresh());
   }
 
+  /// Once the list has been shown, a reload keeps it on screen and swaps in
+  /// what comes back, rather than blanking to a spinner.
+  bool _loaded = false;
+
   Future<void> _refresh() async {
-    setState(() => _loading = true);
+    if (!_loaded) setState(() => _loading = true);
     final interactor = NotificationsScope.of(context);
     await interactor.syncPending();
     final result = await interactor.load();
@@ -66,6 +76,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _nextCursor = page.nextCursor;
         _isFromCache = page.isFromCache;
         _loading = false;
+        _loaded = true;
         _error = null;
       }),
       onFailure: (failure) => setState(() {
@@ -99,6 +110,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ];
     });
     await NotificationsScope.of(context).markAllRead();
+  }
+
+  /// Marks the item read, then opens what it is about when the host can.
+  Future<void> _open(NotificationItem item) async {
+    unawaited(_markRead(item));
+    final open = widget.onOpen;
+    if (open != null && open(item) && mounted) {
+      Navigator.of(context).maybePop();
+    }
   }
 
   Future<void> _markRead(NotificationItem item) async {
@@ -140,10 +160,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
               actionLabel: l10n.notificationsFeedRetry,
               onAction: _refresh,
             )
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _refresh,
               child: ListView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 32),
                 children: [
                   if (_isFromCache)
                     Padding(
@@ -182,50 +202,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       message: l10n.notificationsFeedEmptyMessage,
                     )
                   else
-                    for (final item in _items)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: FeatureCard(
-                          tint: item.isRead ? null : studafyCyan,
-                          onTap: () => _markRead(item),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                item.isRead
-                                    ? Icons.notifications_none_rounded
-                                    : Icons.notifications_active_rounded,
-                                color: item.isRead ? studafyMuted : studafyNavy,
+                    FeatureCard(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          for (final (index, item) in _items.indexed) ...[
+                            if (index > 0)
+                              const Divider(
+                                height: 1,
+                                indent: 66,
+                                color: studafyHairline,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      notificationCopy(l10n, item.title),
-                                      style: TextStyle(
-                                        color: studafyInk,
-                                        fontWeight: item.isRead
-                                            ? FontWeight.w600
-                                            : FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      notificationCopy(l10n, item.detail),
-                                      style: const TextStyle(
-                                        color: studafyMuted,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            _NotificationRow(
+                              item: item,
+                              onTap: () => _open(item),
+                            ),
+                          ],
+                        ],
                       ),
+                    ),
                   if (_nextCursor != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
@@ -241,6 +236,118 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ],
               ),
             ),
+    );
+  }
+}
+
+/// The icon a notification is recognised by, from its kind.
+IconData notificationIcon(String templateKey) =>
+    switch (templateKey.split('.').first) {
+      'academic' =>
+        templateKey.contains('grade')
+            ? Icons.grading_rounded
+            : Icons.assignment_rounded,
+      'communications' =>
+        templateKey.contains('announcement')
+            ? Icons.campaign_rounded
+            : Icons.send_rounded,
+      'family' => Icons.family_restroom_rounded,
+      'billing' => Icons.workspace_premium_rounded,
+      'meetings' => Icons.videocam_rounded,
+      _ => Icons.notifications_rounded,
+    };
+
+class _NotificationRow extends StatelessWidget {
+  const _NotificationRow({required this.item, required this.onTap});
+
+  final NotificationItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final unread = !item.isRead;
+    final localizations = MaterialLocalizations.of(context);
+    final at = item.createdAt.toLocal();
+    final now = DateTime.now();
+    final when =
+        at.year == now.year && at.month == now.month && at.day == now.day
+        ? localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at))
+        : localizations.formatShortMonthDay(at);
+    final title = notificationCopy(l10n, item.title);
+    return Semantics(
+      button: true,
+      label: unread ? '$title. ${l10n.msgUnread}' : title,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconBadge(
+                icon: notificationIcon(item.templateKey),
+                color: unread ? studafyNavy : studafyMuted,
+                size: 38,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ExcludeSemantics(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: studafyInk,
+                          fontSize: 15,
+                          fontWeight: unread
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      notificationCopy(l10n, item.detail),
+                      style: const TextStyle(
+                        color: studafyMuted,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    when,
+                    style: TextStyle(
+                      color: unread ? studafyNavy : studafyMuted,
+                      fontSize: 12,
+                      fontWeight: unread ? FontWeight.w800 : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Unread is a dot and bold text, never colour alone.
+                  if (unread)
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: studafyNavy,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

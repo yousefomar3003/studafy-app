@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
+import 'grade_attachments_sheet.dart';
 import 'grade_correction_sheet.dart';
 import 'gradebook_item_dialog.dart';
 
@@ -18,10 +20,19 @@ class PaperGradebookPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.assessmentId,
+    this.attachments,
+    this.classroomId,
   });
 
   final PaperGradebookRepository repository;
   final String assessmentId;
+
+  /// Saves the files and links on the sheet - the class's and each
+  /// student's own (ADR-0036). Without it the sheet has marks only.
+  final OnlineAssessmentRepository? attachments;
+
+  /// The class the sheet belongs to; scans are uploaded for it.
+  final String? classroomId;
 
   @override
   State<PaperGradebookPage> createState() => _PaperGradebookPageState();
@@ -294,6 +305,39 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
     }
   }
 
+  /// The class's files when [row] is null, otherwise that student's.
+  /// Saving them moves the sheet on a version, so unsaved marks go first.
+  Future<void> _editFiles([PaperGradebookRow? row]) async {
+    final sheet = _sheet;
+    final repository = widget.attachments;
+    if (sheet == null || repository == null || _saving) return;
+    final l10n = AppL10n.of(context);
+    if (_dirty.isNotEmpty) {
+      setState(() => _error = l10n.paperAttachmentsSaveFirst);
+      return;
+    }
+    final saved = await showGradeAttachmentsSheet(
+      context,
+      repository: repository,
+      assessmentId: widget.assessmentId,
+      title: row == null
+          ? l10n.paperShared
+          : l10n.paperForStudent(row.displayName),
+      hint: row == null ? l10n.paperSharedHint : l10n.paperForStudentHint,
+      studentId: row?.studentId,
+      classroomId: widget.classroomId,
+      attachments: row == null
+          ? sheet.item.sharedAttachments
+          : row.grade?.attachments ?? const [],
+      links: row == null
+          ? sheet.item.sharedLinks
+          : row.grade?.links ?? const [],
+    );
+    if (saved != true || !mounted) return;
+    await _load();
+    if (mounted) setState(() => _notice = l10n.paperAttachmentsSaved);
+  }
+
   Future<void> _editItem() async {
     final item = _sheet?.item;
     if (item == null) return;
@@ -327,8 +371,41 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
     }
   }
 
+  /// Marks typed and not saved are not dropped by a stray back gesture.
+  Future<bool> _confirmLeave() async {
+    final l10n = AppL10n.of(context);
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.markUnsavedTitle),
+        content: Text(l10n.markUnsavedBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.markUnsavedKeep),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.markUnsavedDiscard),
+          ),
+        ],
+      ),
+    );
+    return leave ?? false;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PopScope(
+    canPop: _saving || _dirty.isEmpty,
+    onPopInvokedWithResult: (didPop, _) async {
+      if (didPop) return;
+      final navigator = Navigator.of(context);
+      if (await _confirmLeave()) navigator.pop();
+    },
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final sheet = _sheet;
     return Scaffold(
@@ -402,6 +479,13 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
+                  if (widget.attachments != null)
+                    _SharedFilesTile(
+                      count:
+                          sheet.item.sharedAttachments.length +
+                          sheet.item.sharedLinks.length,
+                      onTap: _saving ? null : _editFiles,
+                    ),
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -449,6 +533,9 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
                                     _refused[row.grade?.id],
                                 enabled: !_saving && _editable(row),
                                 onChanged: () => _changed(row.studentId),
+                                onFiles: widget.attachments == null
+                                    ? null
+                                    : () => _editFiles(row),
                                 onCorrect:
                                     row.grade?.state ==
                                         PaperGradeState.published
@@ -504,6 +591,7 @@ class _SheetRow extends StatelessWidget {
     required this.enabled,
     required this.onChanged,
     required this.onCorrect,
+    this.onFiles,
   });
 
   final PaperGradebookRow row;
@@ -516,6 +604,7 @@ class _SheetRow extends StatelessWidget {
   final bool enabled;
   final VoidCallback onChanged;
   final VoidCallback? onCorrect;
+  final VoidCallback? onFiles;
 
   @override
   Widget build(BuildContext context) {
@@ -551,6 +640,21 @@ class _SheetRow extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onFiles != null)
+                IconButton(
+                  tooltip: l10n.paperAttachments,
+                  onPressed: enabled || published ? onFiles : null,
+                  icon: Badge.count(
+                    count:
+                        (grade?.attachments.length ?? 0) +
+                        (grade?.links.length ?? 0),
+                    isLabelVisible:
+                        (grade?.attachments.length ?? 0) +
+                            (grade?.links.length ?? 0) >
+                        0,
+                    child: const Icon(Icons.attach_file_rounded),
+                  ),
+                ),
               Chip(label: Text(status), visualDensity: VisualDensity.compact),
             ],
           ),
@@ -579,61 +683,83 @@ class _SheetRow extends StatelessWidget {
               ],
             )
           else ...[
-            SegmentedButton<GradeMark?>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(
-                  value: GradeMark.scored,
-                  label: Text(l10n.paperGradesScore),
+            // A score is what a teacher enters, so the box is there
+            // straight away. Missing the exam, or not grading it, are the
+            // exceptions - in a menu, and said in words.
+            if (edit.mark == GradeMark.absent ||
+                edit.mark == GradeMark.notGraded)
+              InputChip(
+                avatar: Icon(
+                  edit.mark == GradeMark.absent
+                      ? Icons.event_busy_rounded
+                      : Icons.remove_circle_outline_rounded,
+                  size: 18,
                 ),
-                ButtonSegment(
-                  value: GradeMark.absent,
-                  label: Text(l10n.paperGradesAbsent),
+                label: Text(
+                  edit.mark == GradeMark.absent
+                      ? l10n.paperGradesAbsent
+                      : l10n.paperGradesNotGraded,
                 ),
-                ButtonSegment(
-                  value: GradeMark.notGraded,
-                  label: Text(l10n.paperGradesNotGraded),
-                ),
-              ],
-              emptySelectionAllowed: true,
-              selected: {if (edit.mark != null) edit.mark},
-              onSelectionChanged: enabled
-                  ? (value) {
-                      edit.mark = value.isEmpty ? null : value.first;
-                      if (edit.mark != GradeMark.scored) edit.score.clear();
-                      onChanged();
-                    }
-                  : null,
-            ),
-            if (edit.mark == GradeMark.scored)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 110,
-                      child: TextField(
-                        controller: edit.score,
-                        enabled: enabled,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          labelText: l10n.paperGradesScore,
-                          border: const OutlineInputBorder(),
-                        ),
-                        onChanged: (_) => onChanged(),
+                deleteButtonTooltipMessage: l10n.paperGradesEnterScore,
+                onDeleted: enabled
+                    ? () {
+                        edit.mark = null;
+                        onChanged();
+                      }
+                    : null,
+              )
+            else
+              Row(
+                children: [
+                  SizedBox(
+                    width: 110,
+                    child: TextField(
+                      controller: edit.score,
+                      enabled: enabled,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: l10n.paperGradesScore,
+                      ),
+                      onChanged: (text) {
+                        edit.mark = text.trim().isEmpty
+                            ? null
+                            : GradeMark.scored;
+                        onChanged();
+                      },
                     ),
-                    const SizedBox(width: 8),
-                    Text(
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
                       l10n.paperGradesOutOf(
                         _PaperGradebookPageState._number(maximumScore),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  PopupMenuButton<GradeMark>(
+                    tooltip: l10n.paperGradesOtherMark,
+                    enabled: enabled,
+                    icon: const Icon(Icons.more_horiz_rounded),
+                    onSelected: (mark) {
+                      edit.mark = mark;
+                      edit.score.clear();
+                      onChanged();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: GradeMark.absent,
+                        child: Text(l10n.paperGradesAbsent),
+                      ),
+                      PopupMenuItem(
+                        value: GradeMark.notGraded,
+                        child: Text(l10n.paperGradesNotGraded),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             if (edit.showComment || edit.feedback.text.isNotEmpty)
               Padding(
@@ -699,3 +825,27 @@ String _markText(
         '${l10n.paperGradesOutOf(_PaperGradebookPageState._number(maximumScore))}',
   _ => l10n.paperGradesUnmarked,
 };
+
+/// The files and links every student sees with their published mark.
+class _SharedFilesTile extends StatelessWidget {
+  const _SharedFilesTile({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return ListTile(
+      leading: Badge.count(
+        count: count,
+        isLabelVisible: count > 0,
+        child: const Icon(Icons.folder_shared_outlined),
+      ),
+      title: Text(l10n.paperShared),
+      subtitle: Text(l10n.paperSharedHint),
+      trailing: Icon(forwardChevron(context)),
+      onTap: onTap,
+    );
+  }
+}

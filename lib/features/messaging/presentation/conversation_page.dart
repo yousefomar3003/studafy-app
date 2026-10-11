@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
+import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
@@ -62,7 +66,13 @@ class _ConversationPageState extends State<ConversationPage> {
   final _composer = TextEditingController();
   final List<ChatMessage> _messages = [];
   String? _olderCursor;
+
+  /// A full load is under way; the poll waits for it.
   bool _loading = true;
+
+  /// Once the chat has been shown, a reload (after a report or a block)
+  /// keeps it on screen rather than blanking to a spinner.
+  bool _loaded = false;
   bool _loadingOlder = false;
   bool _sending = false;
   String? _loadError;
@@ -95,6 +105,10 @@ class _ConversationPageState extends State<ConversationPage> {
   /// rather than recorded again.
   RecordedVoiceNote? _unsentVoice;
 
+  /// Notes sent from this screen, by file: the sender plays their own
+  /// recording at once instead of waiting for the server's check.
+  final Map<String, Uint8List> _myRecordings = {};
+
   VoicePlayer _voicePlayer() =>
       _player ??= (widget.voicePlayer ?? PlatformVoicePlayer.new)();
 
@@ -111,9 +125,39 @@ class _ConversationPageState extends State<ConversationPage> {
     _refresher = Timer.periodic(widget.refreshEvery, (_) => _refreshLatest());
   }
 
+  /// While a file in the chat is still being checked, the chat looks again
+  /// every second instead of every few, so a voice note can be played the
+  /// moment it is cleared. A stuck check stops this after a minute; the
+  /// normal refresh carries on.
+  Timer? _soon;
+  int _quickLooks = 0;
+
+  static const _stillChecking = {'quarantined', 'scanning'};
+
+  bool get _awaitingCheck => _messages
+      .take(20)
+      .any(
+        (m) => m.attachments.any((a) => _stillChecking.contains(a.scanState)),
+      );
+
+  void _lookAgainSoon() {
+    if (!mounted || _soon != null) return;
+    if (!_awaitingCheck) {
+      _quickLooks = 0;
+      return;
+    }
+    if (_quickLooks >= 60) return;
+    _quickLooks++;
+    _soon = Timer(const Duration(seconds: 1), () {
+      _soon = null;
+      unawaited(_refreshLatest());
+    });
+  }
+
   @override
   void dispose() {
     _refresher?.cancel();
+    _soon?.cancel();
     _composer.dispose();
     unawaited(_recorder?.dispose());
     unawaited(_player?.dispose());
@@ -127,8 +171,51 @@ class _ConversationPageState extends State<ConversationPage> {
 
   bool _refreshing = false;
 
+  /// Whether anyone can see this chat: not with the app in the background,
+  /// nor with another screen (the people list, a report) on top of it.
+  bool get _inView {
+    // Null before the platform has reported any state: assume in view.
+    final state = WidgetsBinding.instance.lifecycleState;
+    return (state == null || state == AppLifecycleState.resumed) &&
+        (ModalRoute.of(context)?.isCurrent ?? true);
+  }
+
+  /// Puts the newest [page] in place. The page replaces its own stretch of
+  /// time - carrying the latest ticks, and dropping anything removed from
+  /// it. Anything newer stays above it: a message I sent while the page was
+  /// on its way is not in it, and must not vanish until the next read. With
+  /// [keepOlder], older messages already loaded stay below it.
+  List<ChatMessage> _withNewest(
+    List<ChatMessage> page, {
+    required bool keepOlder,
+  }) {
+    if (page.isEmpty) return keepOlder ? [..._messages] : const [];
+    final fresh = {for (final m in page) m.id};
+    final newest = page.first.createdAt;
+    final oldest = page.last.createdAt;
+    return [
+      for (final m in _messages)
+        if (!fresh.contains(m.id) && m.createdAt.isAfter(newest)) m,
+      ...page,
+      if (keepOlder)
+        for (final m in _messages)
+          if (!fresh.contains(m.id) && m.createdAt.isBefore(oldest)) m,
+    ];
+  }
+
+  /// What the screen shows of [messages]: a poll that brings nothing new
+  /// changes nothing, so it rebuilds nothing.
+  static List<Object?> _shown(List<ChatMessage> messages) => [
+    for (final m in messages) ...[
+      m.id,
+      m.status,
+      m.body,
+      for (final a in m.attachments) ...[a.id, a.scanState],
+    ],
+  ];
+
   Future<void> _refreshLatest() async {
-    if (_refreshing || _loading || _sending || !mounted) return;
+    if (_refreshing || _loading || _sending || !mounted || !_inView) return;
     _refreshing = true;
     try {
       final page = await MessagingScope.of(context).messages(_conversation.id);
@@ -139,48 +226,43 @@ class _ConversationPageState extends State<ConversationPage> {
           final arrived = value.items.any(
             (m) => !known.contains(m.id) && m.senderId != widget.myUserId,
           );
-          final fresh = {for (final m in value.items) m.id};
-          // The newest page replaces its own slice (which carries the latest
-          // ticks); anything older that was already loaded stays below it.
-          final oldestFresh = value.items.isEmpty
-              ? null
-              : value.items.last.createdAt;
-          setState(() {
-            final older = [
-              for (final m in _messages)
-                if (!fresh.contains(m.id) &&
-                    (oldestFresh == null || m.createdAt.isBefore(oldestFresh)))
-                  m,
-            ];
-            _messages
-              ..clear()
-              ..addAll(value.items)
-              ..addAll(older);
-          });
+          final merged = _withNewest(value.items, keepOlder: true);
+          if (!listEquals(_shown(merged), _shown(_messages))) {
+            setState(() {
+              _messages
+                ..clear()
+                ..addAll(merged);
+            });
+          }
           if (arrived) _markRead();
         },
         onFailure: (_) {},
       );
     } finally {
       _refreshing = false;
+      _lookAgainSoon();
     }
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     final interactor = MessagingScope.of(context);
+    // Both at once: neither waits on the other.
+    final blocksRead = interactor.blocks(_conversation.schoolId);
     final page = await interactor.messages(_conversation.id);
-    final blocks = await interactor.blocks(_conversation.schoolId);
+    final blocks = await blocksRead;
     if (!mounted) return;
     setState(() {
       _loading = false;
       page.fold(
         onSuccess: (value) {
+          final merged = _withNewest(value.items, keepOlder: false);
           _messages
             ..clear()
-            ..addAll(value.items);
+            ..addAll(merged);
           _olderCursor = value.nextCursor;
           _loadError = null;
+          _loaded = true;
           _markRead();
         },
         onFailure: (failure) =>
@@ -199,6 +281,7 @@ class _ConversationPageState extends State<ConversationPage> {
           if (!block.madeBy(widget.myUserId)) block.blockerId,
       };
     });
+    _lookAgainSoon();
   }
 
   Future<void> _loadOlder() async {
@@ -261,6 +344,19 @@ class _ConversationPageState extends State<ConversationPage> {
             : messagingFailureText(context, failure),
       );
     });
+  }
+
+  /// Whether the composer last showed the microphone (an empty draft)
+  /// rather than send.
+  bool _draftShownEmpty = true;
+
+  /// Editing the draft means it is a new message, not a retry. The button
+  /// beside it follows - send for text, a microphone for an empty draft - so
+  /// the screen is rebuilt only when that flips, not on every keystroke.
+  void _draftChanged(String text) {
+    _pendingClientId = null;
+    final empty = text.trim().isEmpty && _attachments.isEmpty;
+    if (empty != _draftShownEmpty) setState(() {});
   }
 
   FileUploadRepository? get _uploads =>
@@ -351,7 +447,13 @@ class _ConversationPageState extends State<ConversationPage> {
       );
       result.fold(
         onSuccess: (message) {
-          if (mounted) setState(() => _messages.insert(0, message));
+          if (!mounted) return;
+          setState(() {
+            _myRecordings[file.id] = recorded.bytes;
+            _messages.insert(0, message);
+          });
+          _quickLooks = 0;
+          _lookAgainSoon();
         },
         onFailure: (_) => error = l10n.msgVoiceFailed,
       );
@@ -530,7 +632,9 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading && !_loaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_loadError != null) {
       return StudafyStatusCard(
         icon: Icons.error_outline_rounded,
@@ -544,6 +648,13 @@ class _ConversationPageState extends State<ConversationPage> {
       reverse: true,
       padding: const EdgeInsets.all(16),
       itemCount: _messages.length + (_olderCursor == null ? 0 : 1),
+      // Rows follow their message when one arrives above them, so a voice
+      // note that is playing keeps its place and its progress.
+      findChildIndexCallback: (key) {
+        if (key is! ValueKey<String>) return null;
+        final index = _messages.indexWhere((m) => m.id == key.value);
+        return index < 0 ? null : index;
+      },
       itemBuilder: (context, index) {
         if (index == _messages.length) {
           return Center(
@@ -555,7 +666,16 @@ class _ConversationPageState extends State<ConversationPage> {
         }
         final message = _messages[index];
         final mine = message.senderId == widget.myUserId;
+        // Only photos: shown as themselves, with no bubble around them.
+        final photoOnly =
+            message.body.isEmpty &&
+            message.attachments.isNotEmpty &&
+            message.attachments.every(
+              (note) => (note.mediaType ?? '').startsWith('image/'),
+            );
+        final onBubble = mine && !photoOnly;
         return Align(
+          key: ValueKey(message.id),
           alignment: mine
               ? AlignmentDirectional.centerEnd
               : AlignmentDirectional.centerStart,
@@ -569,24 +689,29 @@ class _ConversationPageState extends State<ConversationPage> {
               onLongPress: () => _reportMessage(message),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
+                padding: photoOnly
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 constraints: const BoxConstraints(maxWidth: 320),
-                decoration: BoxDecoration(
-                  gradient: mine ? studafyActionGradient : null,
-                  color: mine ? null : Colors.white,
-                  border: mine ? null : Border.all(color: studafyHairline),
-                  borderRadius: BorderRadiusDirectional.only(
-                    topStart: const Radius.circular(18),
-                    topEnd: const Radius.circular(18),
-                    bottomStart: Radius.circular(mine ? 18 : 6),
-                    bottomEnd: Radius.circular(mine ? 6 : 18),
-                  ),
-                ),
+                decoration: photoOnly
+                    ? null
+                    : BoxDecoration(
+                        gradient: mine ? studafyActionGradient : null,
+                        color: mine ? null : Colors.white,
+                        border: mine
+                            ? null
+                            : Border.all(color: studafyHairline),
+                        borderRadius: BorderRadiusDirectional.only(
+                          topStart: const Radius.circular(18),
+                          topEnd: const Radius.circular(18),
+                          bottomStart: Radius.circular(mine ? 18 : 6),
+                          bottomEnd: Radius.circular(mine ? 6 : 18),
+                        ),
+                      ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: photoOnly && mine
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     if (!mine)
                       Text(
@@ -597,13 +722,28 @@ class _ConversationPageState extends State<ConversationPage> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                    // Links in a message are links, and say where they go
+                    // before they open.
                     if (message.body.isNotEmpty)
-                      Text(
+                      LinkedText(
                         message.body,
+                        chat: true,
+                        linkColor: mine ? Colors.white : null,
                         style: TextStyle(
                           color: mine ? Colors.white : studafyInk,
                         ),
                       ),
+                    // A photo is shown as itself; tapped, it opens full size.
+                    for (final note in message.attachments)
+                      if ((note.mediaType ?? '').startsWith('image/'))
+                        Padding(
+                          padding: EdgeInsets.only(top: photoOnly ? 2 : 6),
+                          child: AttachmentImage(
+                            key: ValueKey('image-${note.id}'),
+                            attachment: note,
+                            uploads: _uploads,
+                          ),
+                        ),
                     for (final note in message.attachments)
                       if (isVoiceNote(note.mediaType))
                         VoiceNoteBubble(
@@ -612,16 +752,21 @@ class _ConversationPageState extends State<ConversationPage> {
                           uploads: _uploads,
                           player: _voicePlayer,
                           mine: mine,
+                          localBytes: mine ? _myRecordings[note.id] : null,
                         ),
                     if (message.attachments.any(
-                      (note) => !isVoiceNote(note.mediaType),
+                      (note) =>
+                          !isVoiceNote(note.mediaType) &&
+                          !(note.mediaType ?? '').startsWith('image/'),
                     ))
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: StoredAttachmentList(
                           attachments: [
                             for (final note in message.attachments)
-                              if (!isVoiceNote(note.mediaType)) note,
+                              if (!isVoiceNote(note.mediaType) &&
+                                  !(note.mediaType ?? '').startsWith('image/'))
+                                note,
                           ],
                           dense: true,
                           color: mine ? Colors.white70 : studafyMuted,
@@ -637,12 +782,15 @@ class _ConversationPageState extends State<ConversationPage> {
                           ),
                           style: TextStyle(
                             fontSize: 10,
-                            color: mine ? Colors.white70 : studafyMuted,
+                            color: onBubble ? Colors.white70 : studafyMuted,
                           ),
                         ),
                         if (mine && message.status != null) ...[
                           const SizedBox(width: 4),
-                          MessageTicks(status: message.status!),
+                          MessageTicks(
+                            status: message.status!,
+                            onBubble: onBubble,
+                          ),
                         ],
                       ],
                     ),
@@ -659,6 +807,7 @@ class _ConversationPageState extends State<ConversationPage> {
   Widget _composerBar() {
     final l10n = AppL10n.of(context);
     final empty = _composer.text.trim().isEmpty && _attachments.isEmpty;
+    _draftShownEmpty = empty;
     final unsent = _unsentVoice;
     return SafeArea(
       top: false,
@@ -773,12 +922,7 @@ class _ConversationPageState extends State<ConversationPage> {
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
                               ),
-                              // Editing the draft means it is a new message,
-                              // not a retry. The button beside it follows:
-                              // send for text, a microphone for an empty
-                              // draft.
-                              onChanged: (_) =>
-                                  setState(() => _pendingClientId = null),
+                              onChanged: _draftChanged,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -946,9 +1090,12 @@ class _MenuLine extends StatelessWidget {
 /// WhatsApp's ticks on one of my messages: one grey when sent, two grey when
 /// it has reached everyone, two blue once everyone has read it.
 class MessageTicks extends StatelessWidget {
-  const MessageTicks({super.key, required this.status});
+  const MessageTicks({super.key, required this.status, this.onBubble = true});
 
   final MessageStatus status;
+
+  /// On the navy bubble; false under a photo shown without one.
+  final bool onBubble;
 
   /// Readable on the navy bubble, and close to the blue people know.
   static const readColor = Color(0xFF53BDEB);
@@ -958,12 +1105,12 @@ class MessageTicks extends StatelessWidget {
     final (icon, color, label) = switch (status) {
       MessageStatus.sent => (
         Icons.done_rounded,
-        Colors.white70,
+        onBubble ? Colors.white70 : studafyMuted,
         AppL10n.of(context).conversationSent,
       ),
       MessageStatus.delivered => (
         Icons.done_all_rounded,
-        Colors.white70,
+        onBubble ? Colors.white70 : studafyMuted,
         AppL10n.of(context).conversationDelivered,
       ),
       MessageStatus.read => (

@@ -189,12 +189,23 @@ const DEFINITIONS: Record<
     detail: "This needs Studafy Plus or Studafy Max.",
   },
   AI_ALLOWANCE_USED: {
-    title: "Monthly allowance used",
-    detail: "This month's AI allowance is used. It renews on the 1st.",
+    title: "AI allowance used",
+    detail:
+      "The AI usage limit for this plan has been reached. It resets on the plan's reset date, or a bigger plan gives more.",
   },
-  AI_DAILY_LIMIT: {
-    title: "Daily limit reached",
-    detail: "You have asked all of today's questions. Try again tomorrow.",
+  AI_REQUEST_IN_PROGRESS: {
+    title: "Already being answered",
+    detail: "This request is still being answered.",
+  },
+  MATERIAL_PROCESSING: {
+    title: "Material still being read",
+    detail:
+      "The lesson's files are still being read. Try again in a minute so nothing is left out.",
+  },
+  MATERIAL_UNAVAILABLE: {
+    title: "Some chosen material cannot be used",
+    detail:
+      "Some of the chosen files or links cannot be used right now. Try again later, or continue without them.",
   },
   AI_FEATURE_DISABLED: {
     title: "Not available",
@@ -301,6 +312,17 @@ export function problem<E extends Env>(
   options: ProblemOptions = {},
 ): Response {
   const requestId = (c.var as { requestId?: unknown }).requestId;
+  // For the access log: which refusal, and which fields - never their
+  // values - so a 4xx in the logs says why without a reproduction.
+  (c as unknown as { set(key: string, value: unknown): void }).set(
+    "problem",
+    {
+      code,
+      fields: (options.errors ?? []).slice(0, 16).map((error) =>
+        `${error.path}:${error.code}`
+      ),
+    },
+  );
   return c.json(
     problemBody(
       code,

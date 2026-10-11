@@ -17,6 +17,13 @@ import { mkdir, rm } from "node:fs/promises";
 import { dirname, join, normalize, sep } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
+import { databaseTls } from "../../packages/database/src/index.ts";
+
+/** Encrypted unless the database is on this machine (packages/database). */
+const tls = (url: string) => {
+  const ssl = databaseTls(url, process.env.DATABASE_CA_CERT);
+  return ssl === undefined ? {} : { ssl };
+};
 
 const databaseUrl = process.env.BACKUP_DATABASE_URL;
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -30,7 +37,11 @@ const out = join(process.env.BACKUP_OUT ?? "backup-out", "storage");
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true, mode: 0o700 });
 
-const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} });
+const sql = postgres(databaseUrl, {
+  ...tls(databaseUrl),
+  max: 1,
+  onnotice: () => {},
+});
 const storage = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 }).storage;

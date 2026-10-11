@@ -8,10 +8,13 @@
  * extending a SQL function by renaming it to `<name>_pre_<change>` and
  * delegating to it grew private.authz_authorize to twenty nested calls.
  * Change a function by replacing it, or add a named handler it dispatches to.
+ * A wrap already applied somewhere is accepted only once a later migration
+ * unwinds it, so the schema the migrations build holds no new layer.
  *
  * Usage: bun scripts/check-migration-immutability.ts [baseRef]
  */
 import { $ } from "bun";
+import { unresolvedWraps } from "./migration-wraps";
 
 const base = process.argv[2] ?? process.env["MIGRATION_BASE_REF"] ??
   "origin/main";
@@ -56,18 +59,17 @@ for (const file of current) {
 }
 
 // Migrations from before the chains were flattened are history; only new
-// ones are held to the rule.
+// ones are held to the rule. An applied migration that broke it cannot be
+// edited, so its wrap passes only once a later migration has unwound it
+// (see migration-wraps.ts).
 const WRAPPING_BANNED_AFTER = `${dir}202609280001_flatten_authorization.sql`;
-const WRAP_RENAME =
-  /\balter\s+function\s+private\.[a-z0-9_]+\s*\([^)]*\)\s+rename\s+to\s+[a-z0-9_]*_(?:pre|before)_[a-z0-9_]*/i;
-for (const file of current) {
-  if (file <= WRAPPING_BANNED_AFTER) continue;
-  const text = await Bun.file(file).text();
-  if (WRAP_RENAME.test(text)) {
-    violations.push(
-      `${file}: renames a function to wrap it; replace it or add a named handler instead (ADR-0030)`,
-    );
-  }
+const texts = await Promise.all(
+  current.map(async (file) => ({ file, text: await Bun.file(file).text() })),
+);
+for (const wrap of unresolvedWraps(texts, WRAPPING_BANNED_AFTER)) {
+  violations.push(
+    `${wrap.file}: renames a function to ${wrap.name} to wrap it, and no later migration unwinds it; replace it or add a named handler instead (ADR-0030)`,
+  );
 }
 
 if (violations.length > 0) {

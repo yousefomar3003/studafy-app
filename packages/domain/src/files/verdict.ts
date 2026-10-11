@@ -8,12 +8,14 @@
  * images, metadata boxes neutralised in place for voice notes, no change for
  * PDFs (CDR is deliberately deferred; see ADR-0023).
  */
+import { imageExceedsPixelCap } from "./dimensions";
 import { containsEicarSignature } from "./eicar";
 import { jpegMetadataPayloads, parseJpeg, stripJpegMetadata } from "./jpeg";
 import { parsePng, pngAncillaryPayloads, stripPngMetadata } from "./png";
 import { parseWebp, stripWebpMetadata, webpMetadataPayloads } from "./webp";
 import { parsePdf } from "./pdf";
 import { mp4MetadataPayloads, neutralizeMp4Metadata, parseMp4 } from "./mp4";
+import { DOCX_MEDIA_TYPE, parseOoxml, PPTX_MEDIA_TYPE } from "./ooxml";
 
 export type ScanVerdict =
   | "clean"
@@ -42,6 +44,8 @@ export interface AnalyzeResult {
 
 export type SafeMediaType =
   | "application/pdf"
+  | typeof DOCX_MEDIA_TYPE
+  | typeof PPTX_MEDIA_TYPE
   | "audio/mp4"
   | "image/jpeg"
   | "image/png"
@@ -50,7 +54,17 @@ export type SafeMediaType =
 /** Version of this scan policy, recorded on every scanned object. */
 export const SCAN_POLICY_VERSION = "file051-v1";
 /** Version of the image metadata-strip transformation. */
-export const TRANSFORM_POLICY_VERSION = "file051-structural-strip-v1";
+// v2 (2026-10-07): keeps the restart interval and the orientation.
+export const TRANSFORM_POLICY_VERSION = "file051-structural-strip-v2";
+
+/**
+ * An image whose declared pixels exceed the cap would exhaust memory when
+ * decoded (files/dimensions.ts): refused like any other decompression bomb.
+ */
+const OVERSIZED_IMAGE: AnalyzeResult = {
+  verdict: "policy_rejected",
+  errorCode: "decompression_limit",
+};
 
 export async function analyzeBytes(
   bytes: Uint8Array,
@@ -64,6 +78,7 @@ export async function analyzeBytes(
     case "image/jpeg": {
       const parsed = parseJpeg(bytes);
       if (!parsed.ok) return mapParseFailure(parsed.reason);
+      if (imageExceedsPixelCap(bytes)) return OVERSIZED_IMAGE;
       for (const payload of jpegMetadataPayloads(bytes, parsed.segments)) {
         if (containsEicarSignature(payload)) {
           return { verdict: "malicious", errorCode: "malware_detected" };
@@ -74,6 +89,7 @@ export async function analyzeBytes(
     case "image/png": {
       const parsed = parsePng(bytes);
       if (!parsed.ok) return mapParseFailure(parsed.reason);
+      if (imageExceedsPixelCap(bytes)) return OVERSIZED_IMAGE;
       for (const payload of pngAncillaryPayloads(bytes, parsed.chunks)) {
         if (containsEicarSignature(payload)) {
           return { verdict: "malicious", errorCode: "malware_detected" };
@@ -92,6 +108,7 @@ export async function analyzeBytes(
         }
         return mapParseFailure(parsed.reason);
       }
+      if (imageExceedsPixelCap(bytes)) return OVERSIZED_IMAGE;
       for (const payload of webpMetadataPayloads(bytes, parsed.chunks)) {
         if (containsEicarSignature(payload)) {
           return { verdict: "malicious", errorCode: "malware_detected" };
@@ -102,6 +119,21 @@ export async function analyzeBytes(
     case "application/pdf": {
       const parsed = await parsePdf(bytes);
       if (!parsed.ok) return mapPdfFailure(parsed.reason);
+      return { verdict: "clean" };
+    }
+    // Word and PowerPoint (ADR-0037): a bounded ZIP walk that refuses
+    // macros, embedded objects and remote templates. Stored unchanged.
+    case DOCX_MEDIA_TYPE:
+    case PPTX_MEDIA_TYPE: {
+      const parsed = parseOoxml(
+        bytes,
+        mediaType === DOCX_MEDIA_TYPE ? "docx" : "pptx",
+      );
+      if (!parsed.ok) {
+        return parsed.reason === "external_reference"
+          ? { verdict: "policy_rejected", errorCode: "external_reference" }
+          : mapPdfFailure(parsed.reason);
+      }
       return { verdict: "clean" };
     }
     case "audio/mp4": {

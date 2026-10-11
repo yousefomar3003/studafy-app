@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/ai_tokens.dart';
+import '../../../core/ai_usage.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
@@ -180,39 +182,32 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     androidPackage: _androidPackage,
   );
 
+  /// The plan's AI usage: a bar and a label, when it resets - never a
+  /// count of tokens, which only the server keeps.
   Widget _usage(StudyPlan plan) {
-    final theme = Theme.of(context);
-    if (plan.tier == StudyPlanTier.free) {
-      return Text(
-        AppL10n.of(context).studyPlansQuestionsTodayAsktodayOfAskperday(
-          plan.askToday,
-          plan.askPerDay,
-        ),
-      );
-    }
-    final renews = MaterialLocalizations.of(context)
-        .formatMediumDate(plan.resetsAt);
+    final l10n = AppL10n.of(context);
+    final allowance = plan.allowance;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          AppL10n.of(
-            context,
-          ).studyPlansAiUsedThisMonthRound((plan.allowanceUsed * 100).round()),
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: plan.allowanceUsed,
-            minHeight: 8,
-            color: plan.allowanceUsed >= 0.9 ? theme.colorScheme.error : null,
+        AiUsageCard(
+          compact: true,
+          usage: AiUsageSnapshot(
+            planName: studyPlanCopy[plan.tier]!.name,
+            used: allowance.used,
+            total: allowance.total,
+            resetsAt: allowance.resetsAt,
+            weekly: allowance.weekly,
+            canUpgrade: plan.tier.next != null,
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          AppL10n.of(context).studyPlansRenewsRenews(renews),
-          style: theme.textTheme.bodySmall,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => showTokenGuide(context),
+            icon: const Icon(Icons.info_outline_rounded, size: 18),
+            label: Text(l10n.tokensWhatAreThey),
+          ),
         ),
       ],
     );
@@ -484,7 +479,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
       appBar: AppBar(title: Text(l10n.studentLessonsPlans)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : StudafyRefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.all(16),

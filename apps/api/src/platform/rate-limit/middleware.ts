@@ -25,6 +25,7 @@ import {
 } from "@studafy/infrastructure";
 import type { Logger } from "@studafy/observability";
 import { problemBody } from "../errors";
+import { type ClientIpSource, resolveClientAddress } from "../clientIp";
 import {
   clientIpPrefix,
   flowFor,
@@ -40,8 +41,8 @@ export interface RateLimitDependencies {
   /** Null runs the limiter in local-only mode (development without Redis). */
   redis: Redis | null;
   logger: Logger;
-  /** Production trusts only Cloudflare's connecting-IP header. */
-  trustCloudflare: boolean;
+  /** Where the client address is read from (platform/clientIp.ts). */
+  clientIpSource: ClientIpSource;
   now?: () => number;
 }
 
@@ -98,17 +99,15 @@ export function createRateLimitDependencies(
   return { ...deps, local: new LocalFallbackLimiter() };
 }
 
-/** Resolves the client IP subject: Cloudflare's header in production. */
+/** Resolves the client IP subject from a source a client cannot write. */
 export function resolveClientIp(
   deps: RateLimitDependencies,
   c: Context,
 ): string | null {
-  const cloudflare = c.req.header("cf-connecting-ip");
-  if (deps.trustCloudflare) return cloudflare ?? null;
-  // Non-production: allow tests and local tooling to present an address via
-  // the standard proxy headers; a direct dev connection keys as unresolved.
-  return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? cloudflare ??
-    null;
+  return resolveClientAddress(
+    deps.clientIpSource,
+    (name) => c.req.header(name),
+  );
 }
 
 interface ActorLike {

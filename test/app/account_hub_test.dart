@@ -10,6 +10,7 @@ import 'package:studafy/features/academic/data/preview_academic_repository.dart'
 import 'package:studafy/features/account/application/account_interactor.dart';
 import 'package:studafy/features/account/domain/account_repository.dart';
 import 'package:studafy/features/account/domain/data_export.dart';
+import 'package:studafy/features/account/domain/profile_repository.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// Apple 5.1.1(v) / Google Play: sign-out and in-app account deletion must
@@ -48,7 +49,30 @@ class _Exports implements DataExportRepository {
   Future<String> download() async => '{}';
 }
 
-Widget _app(Widget home, {DataExportRepository? exports}) => MaterialApp(
+class _Profiles implements ProfileRepository {
+  String name = 'Rana Haddad';
+  final renamed = <String>[];
+
+  @override
+  Future<void> updateLocale(String locale) async {}
+  @override
+  Future<String?> readLocale() async => null;
+  @override
+  Future<OwnProfile> readOwn() async =>
+      OwnProfile(displayName: name, publicId: '4827159360');
+  @override
+  Future<OwnProfile> rename(String displayName) async {
+    renamed.add(displayName);
+    name = displayName;
+    return readOwn();
+  }
+}
+
+Widget _app(
+  Widget home, {
+  DataExportRepository? exports,
+  ProfileRepository? profiles,
+}) => MaterialApp(
   supportedLocales: AppL10n.supportedLocales,
   localizationsDelegates: const [
     AppL10n.delegate,
@@ -57,7 +81,11 @@ Widget _app(Widget home, {DataExportRepository? exports}) => MaterialApp(
     GlobalCupertinoLocalizations.delegate,
   ],
   builder: (context, child) => AccountScope(
-    account: AccountInteractor(_Account(), exports: exports),
+    account: AccountInteractor(
+      _Account(),
+      exports: exports,
+      profiles: profiles,
+    ),
     child: child!,
   ),
   home: home,
@@ -198,24 +226,99 @@ void main() {
     expect(find.text('SIGN-IN AND SECURITY'), findsOne);
   });
 
-  testWidgets('a teacher keeps the account id on the profile', (tester) async {
+  testWidgets(
+    "a teacher's internal account id is kept under sign-in and security",
+    (tester) async {
+      ActiveContextController.instance
+        ..profile = const UserProfile(
+          id: 'user-uuid-2',
+          displayName: 'Rana Haddad',
+          email: 'rana@example.test',
+          memberships: [],
+        )
+        ..membership = const SchoolMembership(
+          id: 'membership-2',
+          schoolId: 'school-1',
+          schoolName: 'Al-Noor International',
+          role: StudafyRole.teacher,
+          active: true,
+        );
+      await tester.pumpWidget(_app(const AccountHubPage()));
+      await tester.pumpAndSettle();
+      // The UUID that read like a link is gone from the profile; it is the
+      // technical id now, explained, with the security controls.
+      expect(find.text('Account ID'), findsNothing);
+      await tester.scrollUntilVisible(find.text('Technical account ID'), 200);
+      expect(find.text('Technical account ID'), findsOne);
+    },
+  );
+
+  testWidgets('anyone can change their name, in any script, and it is saved', (
+    tester,
+  ) async {
     ActiveContextController.instance
       ..profile = const UserProfile(
-        id: 'user-uuid-2',
+        id: 'user-uuid-3',
         displayName: 'Rana Haddad',
         email: 'rana@example.test',
         memberships: [],
       )
-      ..membership = const SchoolMembership(
-        id: 'membership-2',
-        schoolId: 'school-1',
-        schoolName: 'Al-Noor International',
-        role: StudafyRole.teacher,
-        active: true,
-      );
-    await tester.pumpWidget(_app(const AccountHubPage()));
+      ..signedInAs = StudafyRole.parent;
+    final profiles = _Profiles();
+    await tester.pumpWidget(_app(const AccountHubPage(), profiles: profiles));
     await tester.pumpAndSettle();
-    expect(find.text('Account ID'), findsOne);
-    expect(find.text('Technical account ID'), findsNothing);
+
+    // An adult sees their numeric Studafy ID, never the internal UUID.
+    expect(find.textContaining('4827159360'), findsOne);
+    expect(find.textContaining('user-uuid-3'), findsNothing);
+
+    await tester.tap(find.text('Edit name'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Rana Haddad'), findsOne);
+
+    // Blank is refused before it is sent.
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a name of up to 160 characters.'), findsOne);
+    expect(profiles.renamed, isEmpty);
+
+    await tester.enterText(find.byType(TextField), '  رنا   حداد ');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(profiles.renamed, ['رنا حداد']);
+    expect(ActiveContextController.instance.profile?.displayName, 'رنا حداد');
+    expect(find.text('Name saved'), findsOne);
+  });
+
+  test(
+    'a teacher\'s Studafy ID reads as a code; a parent\'s is the number',
+    () {
+      expect(studafyIdFor('9963198566', teacher: true), 'TC-9963198566');
+      expect(studafyIdFor('8279671903', teacher: false), '8279671903');
+    },
+  );
+
+  testWidgets('a teacher sees their Studafy ID as a TC- code', (tester) async {
+    const teaching = SchoolMembership(
+      id: 'membership-t',
+      schoolId: 'school-1',
+      schoolName: 'Rara Nana',
+      role: StudafyRole.teacher,
+      active: true,
+    );
+    ActiveContextController.instance
+      ..profile = const UserProfile(
+        id: 'user-uuid-4',
+        displayName: 'Mr.ahmad',
+        email: 'ahmad@example.test',
+        memberships: [teaching],
+      )
+      ..membership = teaching;
+    await tester.pumpWidget(
+      _app(const AccountHubPage(), profiles: _Profiles()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('TC-4827159360'), findsOne);
   });
 }

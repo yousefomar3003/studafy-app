@@ -1,8 +1,11 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { MP4_AUDIO_BRANDS } from "@studafy/domain";
+import { detectOoxmlMediaType, MP4_AUDIO_BRANDS } from "@studafy/domain";
 
 export const FILE_BUCKET = "private-school-files";
-export const SIGNED_UPLOAD_TTL_SECONDS = 2 * 60 * 60;
+// 30 minutes: ample for a 25 MB file on a slow phone connection, and an
+// abandoned upload stops counting against the person's open uploads
+// (file_quota_policies.user_active_sessions) after this long, not two hours.
+export const SIGNED_UPLOAD_TTL_SECONDS = 30 * 60;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 export interface UploadCapability {
@@ -193,6 +196,11 @@ export function detectMediaType(bytes: Uint8Array): string | null {
     bytes.length >= 12 && ascii(bytes, 4, 8) === "ftyp" &&
     MP4_AUDIO_BRANDS.has(ascii(bytes, 8, 12))
   ) return "audio/mp4";
+  // Word or PowerPoint: a ZIP whose part names say which (ADR-0037). Any
+  // other ZIP is not an accepted type.
+  if (startsWith(bytes, [0x50, 0x4b, 0x03, 0x04])) {
+    return detectOoxmlMediaType(bytes);
+  }
   return null;
 }
 

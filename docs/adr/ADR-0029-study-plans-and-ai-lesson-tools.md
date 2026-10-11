@@ -1,6 +1,8 @@
 # ADR-0029: Free Lessons, Studafy Plus / Max, and a metered AI ledger
 
-- Status: Accepted for local/disposable use
+- Status: Accepted for local/disposable use; superseded in part by
+  [ADR-0034](ADR-0034-paid-plans-live-from-launch.md), which lists the plans
+  in staging and production and ships the lesson AI switched on
 - Date: 2026-09-27
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Supersedes: the Student Notebook paywall (PAY-071 `student_notebook`)

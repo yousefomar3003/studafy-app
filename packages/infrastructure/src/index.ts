@@ -6,6 +6,15 @@ export {
   createCloudWatchSink,
 } from "./cloudwatchLogs";
 export {
+  createSentryReporter,
+  type ErrorReporter,
+  logLineReport,
+  safeFields,
+  scrubEvent,
+  scrubText,
+  type SentryReporterOptions,
+} from "./sentry";
+export {
   assertQueueRedisPosture,
   QueuePostureError,
   queuePostureProblems,
@@ -38,6 +47,7 @@ export {
   checkRedis,
   closeRedis,
   createRedis,
+  isPlaintextRemoteRedis,
   type Redis,
   type RedisOptions,
   RedisUnavailableError,
@@ -114,6 +124,7 @@ export {
   ResendEmailSender,
 } from "./notifications/channelSenders";
 export {
+  type AskExtras,
   createStudyAssistant,
   STUDY_HISTORY_MAX_TURNS,
   type StudyAssistant,
@@ -125,6 +136,40 @@ export {
   type StudySetResult,
   type StudyTurn,
 } from "./studyAssistant";
+export {
+  CHUNK_TARGET_CHARS,
+  chunkSections,
+  type MaterialChunk,
+  type MaterialSection,
+} from "./material/chunks";
+export { decodeEntities, htmlToSections } from "./material/html";
+export {
+  fetchPublicLink,
+  isBlockedAddress,
+  type LinkFailure,
+  type LinkFetch,
+  type Resolver,
+} from "./material/link";
+export {
+  extractDocx,
+  extractPptx,
+  UnreadableDocumentError,
+} from "./material/office";
+export {
+  extractPdf,
+  type PageReader,
+  type PdfExtraction,
+  type ProcessingUsage,
+} from "./material/pdf";
+export { prepareImage } from "./material/image";
+export {
+  type MaterialLimits,
+  type MaterialReadDeps,
+  type MaterialResult,
+  type MaterialSource,
+  readMaterial,
+  type UsageRecord,
+} from "./material/reader";
 export {
   type CreatedChild,
   MANAGED_ACCOUNT_DOMAIN,

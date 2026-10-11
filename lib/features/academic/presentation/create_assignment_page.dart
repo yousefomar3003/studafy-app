@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
-import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
@@ -58,18 +58,14 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
   bool _graded = false;
   bool _saving = false;
   String? _error;
-  List<Attachment> _attachments = const [];
-  List<Uri> _links = const [];
+  AttachmentsEditorValue _attachments = const AttachmentsEditorValue();
 
   /// Rebuilt when the class changes. Material is uploaded for one class and
   /// the server refuses to bind it to another, so switching class starts the
   /// attachments over rather than letting a doomed create be attempted.
   Key _attachmentsKey = UniqueKey();
 
-  bool get _uploading =>
-      _attachments.any((a) => a.stage == AttachmentStage.uploading);
-
-  List<String> get _fileIds => [for (final item in _attachments) ?item.fileId];
+  bool get _uploading => _attachments.uploading;
 
   @override
   void initState() {
@@ -125,6 +121,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
       _ when classroomId == null => l10n.assignmentClassRequired,
       _ when _title.text.trim().isEmpty => l10n.assignmentTitleRequired,
       _ when dueAt == null => l10n.assignmentDueRequired,
+      _ when _attachments.failed => l10n.attachmentsFailed,
       _ when _graded && (score == null || score <= 0) =>
         l10n.assignmentMaxScoreRequired,
       _ => null,
@@ -148,9 +145,10 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
         AssignmentDraft(
           classroomId: classroomId!,
           title: _title.text.trim(),
-          instructions: textWithLinks(_instructions.text, _links),
+          instructions: _instructions.text.trim(),
           dueAt: dueAt!,
-          attachmentFileIds: _fileIds,
+          attachmentFileIds: _attachments.changes.attachFileIds,
+          links: _attachments.changes.addLinks,
           maximumScore: _graded ? score : null,
         ),
       );
@@ -193,7 +191,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
                   : (value) => setState(() {
                       if (value == _classroomId) return;
                       _classroomId = value;
-                      _attachments = const [];
+                      _attachments = const AttachmentsEditorValue();
                       _attachmentsKey = UniqueKey();
                     }),
             ),
@@ -217,25 +215,18 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
                 border: const OutlineInputBorder(),
               ),
             ),
-            if (widget.uploads ?? UploadsScope.maybeOf(context)
-                case final uploads?)
-              if ((widget.schoolId, _classroomId) case (
-                final schoolId?,
-                final classroomId?,
-              ))
-                AttachmentField(
-                  key: _attachmentsKey,
-                  purpose: FilePurpose.assignmentMaterial,
-                  schoolId: schoolId,
-                  classroomId: classroomId,
-                  uploads: uploads,
-                  enabled: !_saving,
-                  source: widget.attachmentSource ?? pickPlatformAttachment,
-                  onChanged: (items) => setState(() => _attachments = items),
-                ),
-            LinksField(
+            AttachmentsEditor(
+              key: _attachmentsKey,
+              purpose: FilePurpose.assignmentMaterial,
+              schoolId: _classroomId == null ? null : widget.schoolId,
+              filesBlockedReason: _classroomId == null
+                  ? l10n.lessonPickClassForFiles
+                  : null,
+              classroomId: _classroomId,
+              uploads: widget.uploads ?? UploadsScope.maybeOf(context),
+              source: widget.attachmentSource ?? pickPlatformAttachment,
               enabled: !_saving,
-              onChanged: (links) => setState(() => _links = links),
+              onChanged: (value) => setState(() => _attachments = value),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(

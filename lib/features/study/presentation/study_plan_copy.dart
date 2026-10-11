@@ -21,7 +21,8 @@ final Map<StudyPlanTier, StudyPlanCopy> studyPlanCopy = {
   StudyPlanTier.free: StudyPlanCopy('Studafy Free', '', [
     (l) => l.studyPlansFeatureLessons,
     (l) => l.studyPlansFeatureNotebook,
-    (l) => l.studyPlansFeatureTenQuestions,
+    (l) => l.studyPlansFeatureAskLessons,
+    (l) => l.studyPlansFeatureFreeTokens,
   ], const []),
   StudyPlanTier.plus: StudyPlanCopy(
     'Studafy Plus',
@@ -29,11 +30,11 @@ final Map<StudyPlanTier, StudyPlanCopy> studyPlanCopy = {
     [
       (l) => l.studyPlansFeatureEverythingInFree,
       (l) => l.studyPlansFeatureWhiteboard,
-      (l) => l.studyPlansFeatureFortyQuestions,
+      (l) => l.studyPlansFeaturePlusTokens,
     ],
     [
       (l) => l.studyPlansFeatureWhiteboard,
-      (l) => l.studyPlansFeatureFortyQuestions,
+      (l) => l.studyPlansFeaturePlusTokens,
     ],
   ),
   StudyPlanTier.max: StudyPlanCopy(
@@ -43,13 +44,12 @@ final Map<StudyPlanTier, StudyPlanCopy> studyPlanCopy = {
       (l) => l.studyPlansFeatureEverythingInPlus,
       (l) => l.studyPlansFeatureQuizzes,
       (l) => l.studyPlansFeatureFlashcards,
-      (l) => l.studyPlansFeatureSixtyQuestions,
+      (l) => l.studyPlansFeatureMaxTokens,
     ],
     [
       (l) => l.studyPlansFeatureQuizzes,
       (l) => l.studyPlansFeatureFlashcards,
-      (l) => l.studyPlansFeatureSixtyQuestions,
-      (l) => l.upgradeLargerAllowance,
+      (l) => l.studyPlansFeatureMaxTokens,
     ],
   ),
 };

@@ -85,6 +85,8 @@ class V1HttpTransport implements V1JsonTransport {
     HttpClient? client,
     this.deviceId,
     Duration timeout = const Duration(seconds: 20),
+    Duration recentFor = const Duration(seconds: 20),
+    DateTime Function() now = DateTime.now,
   }) // Not initializing formals: the fields are private, and `this._baseUri`
     // would put the underscored spelling in every call site.
     // ignore_for_file: prefer_initializing_formals
@@ -92,7 +94,15 @@ class V1HttpTransport implements V1JsonTransport {
        _accessToken = accessToken,
        _refreshSession = refreshSession,
        _timeout = timeout,
-       _client = client ?? HttpClient();
+       _recentFor = recentFor,
+       _now = now,
+       // Kept open longer than the 15s default, so a tap after a short pause
+       // reuses the connection instead of paying a new TLS handshake. Still
+       // under the 60s after which Fly's proxy drops an idle connection.
+       _client = client ?? (HttpClient()..idleTimeout = idleConnectionTimeout);
+
+  /// How long an unused connection to the API is kept for reuse.
+  static const idleConnectionTimeout = Duration(seconds: 50);
 
   final Uri _baseUri;
   final AccessTokenReader _accessToken;
@@ -100,6 +110,8 @@ class V1HttpTransport implements V1JsonTransport {
   final SessionLostCallback onSessionLost;
   final HttpClient _client;
   final Duration _timeout;
+  final Duration _recentFor;
+  final DateTime Function() _now;
 
   /// Opaque per-installation identifier, hashed server-side. Never a hardware
   /// identifier: those are stable across uninstall and across apps.
@@ -124,6 +136,16 @@ class V1HttpTransport implements V1JsonTransport {
     r'|/join-link(\?|$)',
   );
 
+  /// Reads that are live - a chat polled for new messages and ticks, the
+  /// inbox, notifications, study notebooks followed while they are written
+  /// - are kept on the device like any other, but never reused from the
+  /// last few seconds: a poll that got the previous answer back would show
+  /// nothing new.
+  static final _live = RegExp(
+    r'^/v1/(conversations|notifications|study-notebooks)(/|\?|$)'
+    r'|^/v1/classrooms/[^/?]+/study-notebooks(\?|$)',
+  );
+
   /// Commands that only read something the server made once and keeps: a
   /// lesson's quiz or flashcards. Kept like a read.
   static final _keptCommands = RegExp(r'^/v1/resources/[^/?]+/study-set$');
@@ -145,11 +167,9 @@ class V1HttpTransport implements V1JsonTransport {
     if (cache == null) return send();
     try {
       final body = await send();
-      try {
-        await cache.write(key, body);
-      } on Object {
-        // A full or closed cache never fails the request it would have kept.
-      }
+      // Not awaited: the screen has its answer now, and keeping a copy on the
+      // device (encode, then a SQLite write) is no reason to make it wait.
+      unawaited(_keep(cache, key, body));
       return body;
     } on Object catch (error) {
       if (Failure.fromError(error).code != Failure.networkCode) rethrow;
@@ -164,6 +184,18 @@ class V1HttpTransport implements V1JsonTransport {
     }
   }
 
+  Future<void> _keep(
+    ResponseCache cache,
+    String key,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      await cache.write(key, body);
+    } on Object {
+      // A full or closed cache never fails the request it would have kept.
+    }
+  }
+
   /// Presents [grant] on the next request and forgets it afterwards, so a
   /// single-use grant cannot be accidentally replayed by a later call.
   void useReauthGrant(String grant) => _pendingReauthGrant = grant;
@@ -171,12 +203,40 @@ class V1HttpTransport implements V1JsonTransport {
   /// Reads already on their way, by who asked and what for.
   final Map<String, Future<Map<String, dynamic>>> _inFlight = {};
 
+  /// Answers to kept reads from the last few seconds, by who asked and what
+  /// for. See [get].
+  final Map<String, ({DateTime at, Map<String, dynamic> body})> _recent = {};
+
+  /// Bumped by every change sent and by [forgetRecentReads], so a read that
+  /// was already on its way when something changed is not remembered.
+  int _generation = 0;
+
+  static const _recentLimit = 200;
+
+  /// Drops every remembered answer, so the next read of anything goes to the
+  /// server. A pull-to-refresh asks for this: the person wants it fresh.
+  void forgetRecentReads() {
+    _generation++;
+    _recent.clear();
+  }
+
+  /// Anything sent may change what a read would answer, so nothing read
+  /// before it is reused after it - not even a read still on its way.
+  void _changing() {
+    forgetRecentReads();
+    _inFlight.clear();
+  }
+
   /// A read already on its way is shared rather than sent again. Screens
   /// that open together, or a tap repeated while the first is still
-  /// loading, would otherwise each cost the server a full request. Only
-  /// requests still in flight are shared - nothing is reused once it
-  /// completes - and the key carries the caller's token, so two accounts on
-  /// one device never share an answer.
+  /// loading, would otherwise each cost the server a full request.
+  ///
+  /// A kept read answered in the last [_recentFor] is reused too, so tabs and
+  /// screens that ask for the same thing (the classes, the study plan) and a
+  /// screen opened again moments later are instant. Any change sent through
+  /// [post] forgets them all, so what was just sent, submitted or saved is
+  /// always read back fresh. The key carries the caller's token, so two
+  /// accounts on one device never share an answer.
   @override
   Future<Map<String, dynamic>> get(String path) async {
     final token = await _accessToken();
@@ -185,17 +245,37 @@ class V1HttpTransport implements V1JsonTransport {
         ' $path';
     final pending = _inFlight[key];
     if (pending != null) return pending;
-    final request = keeps('GET', path)
+    final kept = keeps('GET', path);
+    final remembered = kept && !_live.hasMatch(path);
+    if (remembered) {
+      final recent = _recent[key];
+      if (recent != null && _now().difference(recent.at) < _recentFor) {
+        return recent.body;
+      }
+    }
+    final generation = _generation;
+    final request = kept
         ? _keeping('GET $path', () => _send('GET', path, null))
         : _send('GET', path, null);
     _inFlight[key] = request;
     try {
-      return await request;
+      final body = await request;
+      if (remembered && generation == _generation) _remember(key, body);
+      return body;
     } finally {
       if (identical(_inFlight[key], request)) {
         unawaited(_inFlight.remove(key));
       }
     }
+  }
+
+  void _remember(String key, Map<String, dynamic> body) {
+    final now = _now();
+    if (_recent.length >= _recentLimit) {
+      _recent.removeWhere((_, entry) => now.difference(entry.at) >= _recentFor);
+      if (_recent.length >= _recentLimit) _recent.clear();
+    }
+    _recent[key] = (at: now, body: body);
   }
 
   @override
@@ -213,9 +293,23 @@ class V1HttpTransport implements V1JsonTransport {
           ? idempotencyKey ?? newIdempotencyKey()
           : idempotencyKey,
     );
-    return keeps('POST', path)
-        ? _keeping('POST $path ${jsonEncode(body)}', send)
-        : send();
+    if (keeps('POST', path)) {
+      return _keeping('POST $path ${jsonEncode(body)}', send);
+    }
+    return _changed(send);
+  }
+
+  /// Sends a change, forgetting remembered reads both before it goes and
+  /// once it lands: a read made while it was on its way may predate it.
+  Future<Map<String, dynamic>> _changed(
+    Future<Map<String, dynamic>> Function() send,
+  ) async {
+    _changing();
+    try {
+      return await send();
+    } finally {
+      _changing();
+    }
   }
 
   Future<Map<String, dynamic>> _send(
@@ -227,7 +321,13 @@ class V1HttpTransport implements V1JsonTransport {
     final grant = _pendingReauthGrant;
     _pendingReauthGrant = null;
 
-    var response = await _attempt(method, path, body, grant, idempotencyKey);
+    var response = await _attemptReading(
+      method,
+      path,
+      body,
+      grant,
+      idempotencyKey,
+    );
     if (response.status == 401) {
       final refreshed = await _refreshSession();
       if (!refreshed) {
@@ -242,6 +342,34 @@ class V1HttpTransport implements V1JsonTransport {
     }
     if (response.status >= 400) throw _exceptionFrom(response);
     return response.body;
+  }
+
+  /// A read that fails to connect is tried once more straight away: a
+  /// connection kept open for reuse can be closed by the server just as it
+  /// is picked up, and a read is safe to repeat. A timeout is not retried -
+  /// the person has already waited long enough. A change is never repeated
+  /// here; its idempotency key lets the person retry it.
+  Future<_RawResponse> _attemptReading(
+    String method,
+    String path,
+    Map<String, Object?>? body,
+    String? reauthGrant,
+    String? idempotencyKey,
+  ) async {
+    // A single-use grant is never presented twice.
+    if (method != 'GET' || reauthGrant != null) {
+      return _attempt(method, path, body, reauthGrant, idempotencyKey);
+    }
+    try {
+      return await _exchange(method, path, body, reauthGrant, idempotencyKey);
+    } on SocketException {
+      // Tried again below.
+    } on HttpException {
+      // Tried again below.
+    } on TimeoutException {
+      throw Failure.network;
+    }
+    return _attempt(method, path, body, reauthGrant, idempotencyKey);
   }
 
   Future<_RawResponse> _attempt(
@@ -296,7 +424,12 @@ class V1HttpTransport implements V1JsonTransport {
     }
 
     final response = await request.close().timeout(_timeout);
-    final text = await response.transform(utf8.decoder).join();
+    // The body has a deadline too: a response that starts and then stalls
+    // would otherwise leave the screen spinning for good.
+    final text = await response
+        .timeout(_timeout)
+        .transform(utf8.decoder)
+        .join();
     Map<String, dynamic> decoded;
     try {
       final parsed = text.isEmpty
@@ -323,25 +456,18 @@ class V1HttpTransport implements V1JsonTransport {
       throw Failure.forbidden;
     }
     try {
-      final request = await _client.getUrl(url).timeout(_timeout);
-      request.followRedirects = false;
-      final token = await _accessToken();
-      if (token != null) {
-        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      var (status, bytes) = await _bytesOnce(url);
+      // A 401 is the sign-in check refusing an expired token, before the
+      // link is looked at, so the link is still unspent: refresh once and
+      // retry, as every other request does. Opening a file an hour after
+      // signing in used to fail here every time. Any other refusal means
+      // the link itself was spent or withdrawn, and only a new link helps.
+      if (status == 401 && await _refreshSession()) {
+        (status, bytes) = await _bytesOnce(url);
       }
-      if (deviceId != null) {
-        request.headers.set('X-Studafy-Device', deviceId!);
-      }
-      final response = await request.close().timeout(_timeout);
-      final builder = BytesBuilder(copy: false);
-      await for (final chunk in response) {
-        builder.add(chunk);
-      }
-      // No refresh-and-retry: the grant was spent by this request whatever
-      // its outcome, so a second attempt needs a new link, not a new token.
-      if (response.statusCode == 401) throw Failure.unauthorized;
-      if (response.statusCode != 200) throw Failure.notFound;
-      return builder.takeBytes();
+      if (status == 401) throw Failure.unauthorized;
+      if (status != 200) throw Failure.notFound;
+      return bytes;
     } on SocketException {
       throw Failure.network;
     } on TimeoutException {
@@ -349,6 +475,27 @@ class V1HttpTransport implements V1JsonTransport {
     } on HttpException {
       throw Failure.network;
     }
+  }
+
+  /// One authenticated GET of a delivery link: its status and its bytes.
+  Future<(int, Uint8List)> _bytesOnce(Uri url) async {
+    final request = await _client.getUrl(url).timeout(_timeout);
+    request.followRedirects = false;
+    final token = await _accessToken();
+    if (token != null) {
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+    }
+    if (deviceId != null) {
+      request.headers.set('X-Studafy-Device', deviceId!);
+    }
+    final response = await request.close().timeout(_timeout);
+    final builder = BytesBuilder(copy: false);
+    // A deadline on each pause rather than the whole file, so a large
+    // file on a slow connection still arrives, and a stalled one fails.
+    await for (final chunk in response.timeout(_timeout)) {
+      builder.add(chunk);
+    }
+    return (response.statusCode, builder.takeBytes());
   }
 
   V1ApiException _exceptionFrom(_RawResponse response) {

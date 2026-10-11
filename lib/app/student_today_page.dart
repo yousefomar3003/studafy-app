@@ -13,6 +13,7 @@ import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/family/presentation/student_family_page.dart';
 import '../features/meetings/presentation/upcoming_meetings_section.dart';
+import '../features/notifications/domain/notification.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
 import '../l10n/generated/app_l10n.dart';
@@ -29,7 +30,11 @@ class StudentTodayPage extends StatefulWidget {
     this.classes,
     this.onJoinClass,
     this.subscription,
+    this.onOpenNotification,
   });
+
+  /// Opens what a tapped notification is about; true when it was handled.
+  final bool Function(NotificationItem item)? onOpenNotification;
   final AcademicContentRepository academic;
   final VoidCallback onWork;
   final VoidCallback onNotebook;
@@ -78,9 +83,15 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
     );
   }
 
+  /// Pulls so far, so the meetings section reads again with the page.
+  int _refreshes = 0;
+
   Future<void> _refresh() async {
     final work = _loadWork();
-    setState(() => _work = work);
+    setState(() {
+      _work = work;
+      _refreshes++;
+    });
     await Future.wait<void>([
       work.then((_) {}, onError: (_) {}),
       _loadUnread(),
@@ -115,7 +126,8 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
             onPressed: () async {
               await Navigator.of(context).pushOnce(
                 MaterialPageRoute<void>(
-                  builder: (_) => const NotificationsPage(),
+                  builder: (_) =>
+                      NotificationsPage(onOpen: widget.onOpenNotification),
                 ),
               );
               unawaited(_loadUnread());
@@ -124,7 +136,7 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
           AccountButton(subscription: widget.subscription),
         ],
       ),
-      body: RefreshIndicator(
+      body: StudafyRefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
           padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),
@@ -138,7 +150,7 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
               icon: Icons.wb_sunny_outlined,
             ),
             // A class meeting the teacher set up in Google Meet.
-            const UpcomingMeetingsSection(),
+            UpcomingMeetingsSection(refreshToken: _refreshes),
             SectionHeader(l10n.todayQuickActions),
             _Shortcut(
               icon: Icons.assignment_rounded,
@@ -195,7 +207,8 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
             FutureBuilder<List<AcademicRecord>>(
               future: _work,
               builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
+                if (snapshot.connectionState != ConnectionState.done &&
+                    !snapshot.hasData) {
                   return const _Loading();
                 }
                 if (snapshot.hasError) {
@@ -403,7 +416,8 @@ class _StudentClassesState extends State<_StudentClasses> {
     return FutureBuilder<List<ClassroomSummary>>(
       future: _classes,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (snapshot.connectionState != ConnectionState.done &&
+            !snapshot.hasData) {
           return const _Loading();
         }
         if (snapshot.hasError) {

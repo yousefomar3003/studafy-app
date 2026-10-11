@@ -78,7 +78,8 @@ class SubmissionHistoryViewState extends State<SubmissionHistoryView> {
     return FutureBuilder<List<SubmissionAttempt>>(
       future: _attempts,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (snapshot.connectionState != ConnectionState.done &&
+            !snapshot.hasData) {
           return widget.hideWhenEmpty
               ? const SizedBox.shrink()
               : const Padding(

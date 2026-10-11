@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
+import 'package:studafy/core/coursework_attachments.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/core/voice_note.dart';
@@ -151,7 +152,7 @@ void main() {
   testWidgets('a recorded note is uploaded as audio and sent with no text', (
     tester,
   ) async {
-    final (chat, uploads, mic, _) = await open(tester);
+    final (chat, uploads, mic, speaker) = await open(tester);
 
     await tester.tap(find.byTooltip('Record a voice note'));
     await tester.pump();
@@ -167,9 +168,111 @@ void main() {
     expect(upload.bytes, mic.bytes);
     expect(chat.sent.single.body, '');
     expect(chat.sent.single.fileIds, ['file-1']);
-    // Just sent, so still being checked - the sender cannot play it yet
-    // either.
+    // Still being checked on the server, but the sender plays their own
+    // recording from this phone at once - nothing is fetched for it.
+    expect(find.text('Checking voice message…'), findsNothing);
+    await tester.tap(find.byTooltip('Play voice message'));
+    await tester.pumpAndSettle();
+    expect(speaker.played, ['file-1']);
+    expect(uploads.downloaded, isEmpty);
+  });
+
+  testWidgets("someone else's note still waits for the check", (tester) async {
+    await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _teacher,
+          body: '',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'voice-1',
+              displayName: 'Voice message',
+              sizeBytes: 8,
+              scanState: 'quarantined',
+              mediaType: 'audio/mp4',
+            ),
+          ],
+        ),
+      ],
+    );
     expect(find.text('Checking voice message…'), findsOne);
+    expect(find.byTooltip('Play voice message'), findsNothing);
+  });
+
+  testWidgets('a photo in a message is shown as the photo, not a file row', (
+    tester,
+  ) async {
+    final (_, uploads, _, _) = await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _teacher,
+          body: 'Here is the board: www.example.com/board',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'photo-1',
+              displayName: 'image_picker_ABC.jpg',
+              sizeBytes: 8,
+              scanState: 'clean',
+              mediaType: 'image/jpeg',
+            ),
+          ],
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(AttachmentImage), findsOne);
+    // Fetched to show it, and not listed by its file name as well.
+    expect(uploads.downloaded, ['photo-1']);
+    expect(find.text('image_picker_ABC.jpg'), findsNothing);
+    // The link in the text is a link.
+    await tester.tapOnText(find.textRange.ofSubstring('www.example.com/board'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open this link?'), findsOne);
+  });
+
+  testWidgets('a photo sent on its own has no bubble around it', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _me,
+          body: '',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'photo-1',
+              displayName: 'image_picker_ABC.jpg',
+              sizeBytes: 8,
+              scanState: 'clean',
+              mediaType: 'image/jpeg',
+            ),
+          ],
+        ),
+      ],
+    );
+    final framed = find.ancestor(
+      of: find.byType(AttachmentImage),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).gradient != null,
+      ),
+    );
+    expect(find.byType(AttachmentImage), findsOne);
+    expect(framed, findsNothing);
   });
 
   testWidgets('a voice note that failed to send is sent again as it is', (

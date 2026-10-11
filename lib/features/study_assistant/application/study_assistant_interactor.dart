@@ -18,6 +18,9 @@ class StudyAssistantInteractor {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async {
     final result = await runCatching(
       () => repository.ask(
@@ -25,6 +28,9 @@ class StudyAssistantInteractor {
         history: history,
         references: references,
         photoFileIds: photoFileIds,
+        requestId: requestId,
+        language: language,
+        skipUnavailable: skipUnavailable,
       ),
     );
     // The question and the answer are both deliberately absent: one is a

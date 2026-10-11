@@ -1,0 +1,30 @@
+# Studafy worker - TEST copy on Fly.io (ADR-0035), paired with
+# fly.test.api.toml. Development mode, like the Mac-hosted worker.
+#   fly deploy --config fly.test.worker.toml
+app = "studafy-worker-test"
+primary_region = "fra"
+
+[build]
+  dockerfile = "apps/worker/Dockerfile"
+
+[env]
+  ENVIRONMENT = "development"
+  LOG_LEVEL = "info"
+  LOG_SAMPLE_SUCCESS_RATE = "0.1"
+  LOG_SAMPLE_ROUTINE_RATE = "0.01"
+  DATABASE_POOL_MAX = "5"
+  OPS061_NOTIFICATIONS_ENABLED = "true"
+  FILE051_SCAN_ENABLED = "true"
+  FILE050_CLEANUP_ENABLED = "true"
+  DB_HOUSEKEEPING_ENABLED = "true"
+  PAY071_BILLING_ENABLED = "false"
+  # ADR-0037: lesson files and links read for the study helper. The model
+  # key (AI_API_KEY) is a secret; the origin and model are not.
+  AI_MATERIAL_INDEX_ENABLED = "true"
+  AI_LESSON_TOOLS_ENABLED = "true"
+  AI_BASE_URL = "https://api.together.xyz"
+  AI_MODEL = "Qwen/Qwen3.5-9B"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

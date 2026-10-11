@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
@@ -69,7 +69,8 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
   Widget build(BuildContext context) => FutureBuilder<List<AcademicRecord>>(
     future: _lessons,
     builder: (context, snapshot) {
-      if (snapshot.connectionState != ConnectionState.done) {
+      if (snapshot.connectionState != ConnectionState.done &&
+          !snapshot.hasData) {
         return const Center(child: CircularProgressIndicator());
       }
       if (snapshot.hasError) {
@@ -78,7 +79,9 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
             icon: Icons.wifi_off_rounded,
             title: AppL10n.of(context).lessonsLessonsCouldNotBeLoaded,
             actionLabel: AppL10n.of(context).studySetTryAgain,
-            onAction: () => setState(() => _lessons = _load()),
+            onAction: () => setState(() {
+              _lessons = _load();
+            }),
           ),
         );
       }
@@ -148,8 +151,9 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
                     const SizedBox(height: 6),
                     LinkedText(lesson.detail),
                   ],
-                  StoredAttachmentList(
+                  AttachmentsView(
                     attachments: lesson.attachments,
+                    links: lesson.links,
                     uploads: widget.uploads,
                   ),
                   if (widget.actionsFor case final actions?)
@@ -160,7 +164,7 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
           ),
         );
       }
-      return RefreshIndicator(
+      return StudafyRefreshIndicator(
         onRefresh: () async {
           final next = _load();
           setState(() => _lessons = next);

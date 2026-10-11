@@ -83,6 +83,13 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
   Future<void> _save() async {
     if (_saving) return;
     final l10n = AppL10n.of(context);
+    final times = {
+      for (final s in _slots) '${s.weekday} ${s.startsAt.substring(0, 5)}',
+    };
+    if (times.length < _slots.length) {
+      setState(() => _error = l10n.scheduleDuplicate);
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;

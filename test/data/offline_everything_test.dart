@@ -38,9 +38,12 @@ class _Helper implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async {
     asked.add(question);
-    return StudyAnswer(answer: 'Answer ${asked.length}', remainingToday: 7);
+    return StudyAnswer(answer: 'Answer ${asked.length}');
   }
 }
 
@@ -144,8 +147,9 @@ void main() {
         final again = await repository.ask('what is photosynthesis? ');
         expect(helper.asked, hasLength(1));
         expect(again.answer, first.answer);
-        // A kept answer uses none of today's questions.
-        expect(again.remainingToday, 7);
+        // A kept answer uses none of the AI tokens: it carries no new
+        // balance, and the server was not asked.
+        expect(again.allowance, isNull);
       },
     );
 

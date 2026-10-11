@@ -26,6 +26,16 @@ import { createOnboardingRoutes } from "../onboarding/routes";
 import { createStudyAssistantRoutes } from "../study-assistant/routes";
 import { PostgresStudyRepository } from "../study/repository";
 import { createStudyRoutes } from "../study/routes";
+import { PostgresMaterialRepository } from "../study/material";
+import { createLessonReadingRoutes } from "../study/readingRoutes";
+import {
+  createSelectionRoutes,
+  PostgresMaterialOutputRepository,
+} from "../study/selectionRoutes";
+import {
+  createStudyNotebookRoutes,
+  PostgresStudyNotebookRepository,
+} from "../study/studyNotebookRoutes";
 import { createFamilyInsightsRoutes } from "../family-insights/routes";
 import { PostgresFamilyInsightsRepository } from "../family-insights/repository";
 import { PostgresOnboardingRepository } from "../onboarding/repository";
@@ -172,6 +182,8 @@ export function buildRoutes(platform: Platform) {
       secret: env.TURNSTILE_SECRET!,
       siteKey: env.TURNSTILE_SITE_KEY!,
       hostnames: env.TURNSTILE_HOSTNAMES,
+      // Cloudflare's testing keys, for local and hosted development only.
+      allowTestingKeys: env.ENVIRONMENT !== "production",
     }
     : undefined;
 
@@ -245,10 +257,15 @@ export function buildRoutes(platform: Platform) {
       // explanation for a student and comes back in ~3-4s.
       maxOutputTokens: 500,
       maxLongOutputTokens: 1_100,
-      timeoutMs: 8_500,
+      // An answer from class material runs longer than a plain one.
+      timeoutMs: Math.max(5_000, env.API_REQUEST_TIMEOUT_MS - 1_500),
     })
     : null;
   const studyRepository = sql ? new PostgresStudyRepository(sql) : null;
+  // Lessons' files and links, read for the AI (ADR-0037).
+  const materialRepository = sql
+    ? new PostgresMaterialRepository(sql)
+    : undefined;
   // How much of a chat the helper remembers, by plan, inside the window.
   const chatMemory = {
     contextWindowTokens: env.AI_CONTEXT_WINDOW_TOKENS,
@@ -286,6 +303,7 @@ export function buildRoutes(platform: Platform) {
         prices: aiPrices,
         chatMemory,
         notebooks: sql ? new PostgresNotebookRepository(sql) : undefined,
+        material: materialRepository,
         storage: privateStorage,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
       },
@@ -384,6 +402,7 @@ export function buildRoutes(platform: Platform) {
       repository: new PostgresAccountRepository(sql),
       cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
       enabledSlices: { account: env.API042_ACCOUNT_RIGHTS_ENABLED },
+      invalidateActorContext,
     }
     : undefined;
   const account = accountDependencies && authDependencies
@@ -437,6 +456,7 @@ export function buildRoutes(platform: Platform) {
         prices: aiPrices,
         assistant: aiAssistant,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+        material: materialRepository,
       },
       authorization,
       idempotencyDependencies,
@@ -518,6 +538,7 @@ export function buildRoutes(platform: Platform) {
         storage: privateStorage,
         chatMemory,
         notebooks: new PostgresNotebookRepository(sql!),
+        material: materialRepository,
       },
       authorization,
       idempotencyDependencies,
@@ -617,6 +638,46 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // ADR-0037, appended last in the catalogue.
+  const lessonReading = materialRepository && idempotencyDependencies
+    ? createLessonReadingRoutes(
+      { material: materialRepository },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
+  // A student's study notebooks (2026-10-07), appended after ADR-0037.
+  const studyNotebooks = sql && materialRepository && studyRepository &&
+      idempotencyDependencies
+    ? createStudyNotebookRoutes(
+      {
+        notebooks: new PostgresStudyNotebookRepository(sql),
+        material: materialRepository,
+        repository: studyRepository,
+        prices: aiPrices,
+        assistant: aiAssistant,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
+  // Exactly the chosen material (2026-10-07), appended after notebooks.
+  const selectionTools = sql && materialRepository && studyRepository &&
+      idempotencyDependencies
+    ? createSelectionRoutes(
+      {
+        material: materialRepository,
+        outputs: new PostgresMaterialOutputRepository(sql),
+        repository: studyRepository,
+        prices: aiPrices,
+        assistant: aiAssistant,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   const modules = [
     academic,
     schoolAdmin,
@@ -650,6 +711,9 @@ export function buildRoutes(platform: Platform) {
     classroomArchive,
     notebooks,
     coursework,
+    lessonReading,
+    studyNotebooks,
+    selectionTools,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

@@ -46,6 +46,16 @@ const disabledSwitchFlag = z.enum(["true", "false"]).default("false")
 const enabledSwitchFlag = z.enum(["true", "false"]).default("true")
   .transform((value) => value === "true");
 
+/**
+ * Postgres connections leave the machine over the internet (Fly to the
+ * Supabase pooler), so they are encrypted unless the host is this machine
+ * (packages/database). DATABASE_CA_CERT, the PEM of the Supabase root CA
+ * (Dashboard > Database > SSL), also verifies the server's certificate.
+ */
+const databaseTlsFields = {
+  DATABASE_CA_CERT: z.string().min(1).optional(),
+};
+
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
   TURNSTILE_ENABLED: disabledSwitchFlag,
@@ -64,6 +74,18 @@ export const apiEnvSchema = z.object({
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(200).default(20),
   REDIS_URL: url.optional(),
   LOG_LEVEL: LogLevelSchema.default("info"),
+  // OPS-090 log volume. 1 keeps every line (local and test). Production
+  // keeps warnings, errors, failed and slow requests always, and samples the
+  // rest: ordinary successes at LOG_SAMPLE_SUCCESS_RATE, routine polling at
+  // LOG_SAMPLE_ROUTINE_RATE.
+  LOG_SAMPLE_SUCCESS_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SAMPLE_ROUTINE_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SLOW_REQUEST_MS: z.coerce.number().int().min(100).max(60_000).default(
+    2_000,
+  ),
+  // Error reports go to Sentry only when a DSN is set. Personal data is
+  // stripped before sending (packages/infrastructure/src/sentry.ts).
+  SENTRY_DSN: url.optional(),
   // CloudWatch shipping is opt-in: both must be set or the API logs only to
   // stdout. Credentials are never configuration — the AWS SDK resolves them
   // from the task/instance role.
@@ -214,6 +236,17 @@ export const apiEnvSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL: z.string().min(1).optional(),
   GOOGLE_PUBSUB_AUDIENCE: url.optional(),
+  // Where the client address for IP rate limits and the access log comes
+  // from (apps/api/src/platform/clientIp.ts). Unset: `cloudflare` in
+  // production, which trusts CF-Connecting-IP only from Cloudflare's own
+  // ranges; `forwarded` elsewhere, which trusts X-Forwarded-For and so is
+  // for local work only. A deployment on Fly without Cloudflare sets `fly`.
+  CLIENT_IP_SOURCE: z.enum(["fly", "cloudflare", "forwarded"]).optional(),
+  // Refuse every request (but /healthz) that did not come through
+  // Cloudflare. On once api.studafy.com is proxied by Cloudflare, so its WAF
+  // and edge limits cannot be bypassed through *.fly.dev.
+  ORIGIN_REQUIRE_CLOUDFLARE: disabledSwitchFlag,
+  ...databaseTlsFields,
 }).superRefine((value, context) => {
   if (!value.PAY071_BILLING_ENABLED) return;
   if (!value.PAY071_ENVIRONMENT) {
@@ -223,13 +256,30 @@ export const apiEnvSchema = z.object({
       message: "required when billing is enabled",
     });
   }
-});
+}).transform((value) => ({
+  ...value,
+  CLIENT_IP_SOURCE: value.CLIENT_IP_SOURCE ??
+    (value.ENVIRONMENT === "production" ? "cloudflare" : "forwarded"),
+}));
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
 
 export const workerEnvSchema = z.object({
+  ...databaseTlsFields,
   ENVIRONMENT: Environment,
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
+  // OPS-090 log volume. 1 keeps every line (local and test). Production
+  // keeps warnings, errors, failed and slow requests always, and samples the
+  // rest: ordinary successes at LOG_SAMPLE_SUCCESS_RATE, routine polling at
+  // LOG_SAMPLE_ROUTINE_RATE.
+  LOG_SAMPLE_SUCCESS_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SAMPLE_ROUTINE_RATE: z.coerce.number().min(0).max(1).default(1),
+  LOG_SLOW_REQUEST_MS: z.coerce.number().int().min(100).max(60_000).default(
+    2_000,
+  ),
+  // Error reports go to Sentry only when a DSN is set. Personal data is
+  // stripped before sending (packages/infrastructure/src/sentry.ts).
+  SENTRY_DSN: url.optional(),
   DATABASE_URL: url.optional(),
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
   // Removes rows that already count as gone (expired idempotency records).
@@ -249,6 +299,25 @@ export const workerEnvSchema = z.object({
   // FILE-051 scan/retention workers stay off unless explicitly enabled.
   FILE051_SCAN_ENABLED: disabledSwitchFlag,
   FILE051_RETENTION_ENABLED: disabledSwitchFlag,
+  // ADR-0037: lesson files and links are read in the background - text
+  // extracted, scanned pages and images read by the model - so a student's
+  // question can be answered from them. Off unless set. Reading with the
+  // model also needs the AI provider below and AI_LESSON_TOOLS_ENABLED;
+  // without them only files with real text are read.
+  AI_MATERIAL_INDEX_ENABLED: disabledSwitchFlag,
+  AI_MATERIAL_POLL_INTERVAL_MS: z.coerce.number().int().min(500).max(60_000)
+    .default(5000),
+  // The same provider and single pinned origin as the API's study helper.
+  AI_API_KEY: z.string().min(1).optional(),
+  AI_BASE_URL: z.url().optional(),
+  AI_MODEL: z.string().min(1).default("Qwen/Qwen3.5-9B"),
+  AI_PRICE_INPUT_USD_PER_MTOK: z.coerce.number().positive().max(100).default(
+    0.17,
+  ),
+  AI_PRICE_OUTPUT_USD_PER_MTOK: z.coerce.number().positive().max(100).default(
+    0.25,
+  ),
+  AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
   // OPS-061. The outbox drain is producer+consumer over BullMQ: the
   // dispatcher claims notification_outbox rows and enqueues deterministic
   // jobs; the processor expands audiences into deliveries. Off by default;
@@ -501,6 +570,62 @@ function refuseStorageSplit(env: {
   }
 }
 
+/**
+ * A production connection string may not turn TLS off. The client encrypts
+ * every non-local connection by default (packages/database); this refuses
+ * the one way to opt out of that by configuration.
+ */
+function refusePlaintextDatabase(value: string | undefined): void {
+  if (!value) return;
+  try {
+    const mode = new URL(value).searchParams.get("sslmode");
+    if (mode === "disable" || mode === "allow") {
+      throw new ConfigError(
+        "Production DATABASE_URL must not disable TLS (sslmode).",
+      );
+    }
+  } catch (error) {
+    if (error instanceof ConfigError) throw error;
+  }
+}
+
+/** Supabase's own roles: owners, or able to bypass row-level security. */
+const PRIVILEGED_DATABASE_ROLES = new Set([
+  "postgres",
+  "supabase_admin",
+  "supabase_auth_admin",
+  "supabase_storage_admin",
+  "service_role",
+  "authenticator",
+]);
+
+/**
+ * True when [url] logs in as a privileged role. The pooler's user name is
+ * `<role>.<project ref>`, so only the part before the first dot counts.
+ *
+ * The API and worker were built to run as `studafy_api_runtime` and
+ * `studafy_worker_runtime` (ADR-0014): no table grants, EXECUTE on their
+ * dispatchers only. Logged in as `postgres` - which owns every object and
+ * bypasses RLS - one SQL injection or one dispatcher bug reads everything.
+ */
+export function usesPrivilegedDatabaseRole(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const user = decodeURIComponent(new URL(url).username);
+    return PRIVILEGED_DATABASE_ROLES.has(user.split(".")[0] ?? "");
+  } catch {
+    return false;
+  }
+}
+
+function refusePrivilegedDatabaseRole(url: string | undefined): void {
+  if (usesPrivilegedDatabaseRole(url)) {
+    throw new ConfigError(
+      "Production DATABASE_URL must log in as the service's runtime role (studafy_api_runtime / studafy_worker_runtime), not a Supabase administrative role.",
+    );
+  }
+}
+
 export function enforceApiFailClosed(env: ApiEnv): void {
   // One key per purpose, in every environment: a key that can also sign a
   // cursor or a rate-limit bucket would let one leak compromise the others.
@@ -533,6 +658,15 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   }
   if (env.ENVIRONMENT !== "production") return;
   refuseStorageSplit(env);
+  refusePlaintextDatabase(env.DATABASE_URL);
+  refusePrivilegedDatabaseRole(env.DATABASE_URL);
+  if (env.CLIENT_IP_SOURCE === "forwarded") {
+    // X-Forwarded-For is whatever the caller wrote: every IP limit would be
+    // one header away from bypass.
+    throw new ConfigError(
+      "Production must not read client addresses from X-Forwarded-For (CLIENT_IP_SOURCE=forwarded).",
+    );
+  }
   const missing: string[] = [];
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
   if (!env.REDIS_URL) missing.push("REDIS_URL");
@@ -584,6 +718,8 @@ export function enforceApiFailClosed(env: ApiEnv): void {
 export function enforceWorkerFailClosed(env: WorkerEnv): void {
   if (env.ENVIRONMENT !== "production") return;
   refuseStorageSplit(env);
+  refusePlaintextDatabase(env.DATABASE_URL);
+  refusePrivilegedDatabaseRole(env.DATABASE_URL);
   const posture = redisUrlPostureProblems(env.REDIS_URL);
   if (posture.length > 0) {
     throw new ConfigError(
@@ -622,7 +758,16 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     environment: env.ENVIRONMENT,
     port: env.API_PORT,
     log_level: env.LOG_LEVEL,
+    log_sampling: {
+      success_rate: env.LOG_SAMPLE_SUCCESS_RATE,
+      routine_rate: env.LOG_SAMPLE_ROUTINE_RATE,
+      slow_request_ms: env.LOG_SLOW_REQUEST_MS,
+    },
+    sentry_configured: Boolean(env.SENTRY_DSN),
     allowed_origins: env.API_ALLOWED_ORIGINS,
+    client_ip_source: env.CLIENT_IP_SOURCE,
+    origin_require_cloudflare: env.ORIGIN_REQUIRE_CLOUDFLARE,
+    database_ca_configured: Boolean(env.DATABASE_CA_CERT),
     max_body_bytes: env.API_MAX_BODY_BYTES,
     request_timeout_ms: env.API_REQUEST_TIMEOUT_MS,
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
@@ -712,6 +857,12 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
   return {
     environment: env.ENVIRONMENT,
     log_level: env.LOG_LEVEL,
+    log_sampling: {
+      success_rate: env.LOG_SAMPLE_SUCCESS_RATE,
+      routine_rate: env.LOG_SAMPLE_ROUTINE_RATE,
+      slow_request_ms: env.LOG_SLOW_REQUEST_MS,
+    },
+    sentry_configured: Boolean(env.SENTRY_DSN),
     redis_url: redactUrl(env.REDIS_URL),
     database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
     database_pool_max: env.DATABASE_POOL_MAX,
@@ -722,6 +873,13 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       notificationsEnabled: env.OPS061_NOTIFICATIONS_ENABLED,
       outboxPollIntervalMs: env.OPS061_OUTBOX_POLL_INTERVAL_MS,
       outboxConcurrency: env.OPS061_OUTBOX_CONCURRENCY,
+    },
+    aiMaterial: {
+      indexEnabled: env.AI_MATERIAL_INDEX_ENABLED,
+      modelReading: Boolean(
+        env.AI_API_KEY && env.AI_BASE_URL && env.AI_LESSON_TOOLS_ENABLED,
+      ),
+      model: env.AI_MODEL,
     },
     file051: {
       scanEnabled: env.FILE051_SCAN_ENABLED,

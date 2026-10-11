@@ -53,4 +53,17 @@ class ApiProfileRepository
       return null;
     }
   }
+
+  @override
+  Future<OwnProfile> readOwn() async => _own(await _client.getProfile());
+
+  @override
+  Future<OwnProfile> rename(String displayName) async => _own(
+    await _client.updateProfile(
+      V1UpdateProfileRequestDto(displayName: displayName),
+    ),
+  );
+
+  static OwnProfile _own(V1ProfileResponseDto dto) =>
+      OwnProfile(displayName: dto.displayName, publicId: dto.publicId);
 }

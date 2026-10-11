@@ -164,7 +164,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     );
   }
 
-  Widget _studentsTab(AppL10n l10n) => RefreshIndicator(
+  Widget _studentsTab(AppL10n l10n) => StudafyRefreshIndicator(
     onRefresh: _load,
     child: ListView(
       padding: const EdgeInsets.all(16),
@@ -226,7 +226,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     ),
   );
 
-  Widget _staffTab(AppL10n l10n) => RefreshIndicator(
+  Widget _staffTab(AppL10n l10n) => StudafyRefreshIndicator(
     onRefresh: _load,
     child: ListView(
       padding: const EdgeInsets.all(16),
@@ -276,7 +276,7 @@ class _ClassroomManagementPageState extends State<ClassroomManagementPage>
     _ => l10n.classroomAdminWholeClass,
   };
 
-  Widget _meetingsTab(AppL10n l10n) => RefreshIndicator(
+  Widget _meetingsTab(AppL10n l10n) => StudafyRefreshIndicator(
     onRefresh: _loadMeetings,
     child: ListView(
       padding: const EdgeInsets.all(16),

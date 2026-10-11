@@ -6,6 +6,7 @@ import '../l10n/generated/app_l10n.dart';
 import 'attachment_policy.dart';
 import 'feedback.dart';
 import 'file_upload_repository.dart';
+import 'idempotency.dart';
 import 'studafy_design.dart';
 
 /// What the person chose, before anything has been sent.
@@ -121,7 +122,6 @@ class AttachmentField extends StatefulWidget {
 
 class AttachmentFieldState extends State<AttachmentField> {
   final List<Attachment> _items = [];
-  int _counter = 0;
 
   /// What was picked for each attachment still on the list, so a failed
   /// upload can be tried again without picking the file again.
@@ -219,7 +219,11 @@ class AttachmentFieldState extends State<AttachmentField> {
       return;
     }
 
-    final localId = 'attachment-${++_counter}';
+    // Unique for every file picked, and kept through its retries: it is the
+    // upload's idempotency key on the server, which remembers keys, so a
+    // counter that starts again at 1 in the next attachment box sent the
+    // same key with a different file and every later upload was refused.
+    final localId = newIdempotencyKey('attachment');
     final name = sanitiseAttachmentName(picked.displayName);
     _picked[localId] = picked;
     setState(() {

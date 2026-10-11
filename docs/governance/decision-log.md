@@ -88,7 +88,8 @@ commitments) so Phase 6 can convert them into approved SLOs with alerting:
 | File objects | Recovery matches academic retention | docs/planning/instructions.md resilience targets | Candidate — pending ops approval (DL-010) |
 | Recovery exercises | Quarterly, reporting achieved restore time, data gap, consistency validation, follow-ups | docs/planning/instructions.md resilience targets | Candidate — pending ops approval (DL-010) |
 
-Known observability gap: there is no production metrics, tracing, alerting, or
-central logging pipeline (OPS-090). Baseline query-plan and latency evidence
+Observability (OPS-090): addressed by ADR-0035 - sampled logs to Axiom, Sentry
+error reports, and email/Telegram alerts. There is still no tracing or metrics
+pipeline beyond Fly's built-in machine metrics. Baseline query-plan and latency evidence
 for the synthetic environment is recorded in `docs/evidence/baselines/`.
 

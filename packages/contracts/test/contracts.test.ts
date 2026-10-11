@@ -10,6 +10,7 @@ import {
   V1AuthErrorCode,
   V1ClassroomListResponse,
   V1ContextMembership,
+  V1CreateClassroomRequest,
   V1CreateUploadIntentRequest,
   V1DeletionImpactResponse,
   V1DeletionRequestRequest,
@@ -17,6 +18,7 @@ import {
   V1Membership,
   V1MeResponse,
   V1ReauthVerifyResponse,
+  V1ReplaceScheduleRequest,
   V1RequestPurchaseApprovalRequest,
   v1Route,
   V1SendMessageRequest,
@@ -74,8 +76,8 @@ describe("problem details contract", () => {
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "AI_ALLOWANCE_USED",
-      "AI_DAILY_LIMIT",
       "AI_FEATURE_DISABLED",
+      "AI_REQUEST_IN_PROGRESS",
       "ATTENDANCE_LOCKED",
       "BENEFICIARY_LINK_INVALID",
       "CAPTCHA_REQUIRED",
@@ -100,6 +102,8 @@ describe("problem details contract", () => {
       "INVALID_STATE",
       "LESSON_HAS_NO_TEXT",
       "MANAGED_CHILD_LIMIT",
+      "MATERIAL_PROCESSING",
+      "MATERIAL_UNAVAILABLE",
       "MESSAGING_DISABLED",
       "METHOD_NOT_ALLOWED",
       "MFA_REQUIRED",
@@ -170,6 +174,24 @@ describe("FILE-050 upload contracts", () => {
         purpose: "profile_image",
         studentId: "dddddddd-0000-4000-8000-000000000001",
       }).success,
+    ).toBe(false);
+  });
+
+  test("a paper scan is for one grade or for the class, never both", () => {
+    const classroomId = "cccccccc-0000-4000-8000-000000000001";
+    const gradeResultId = "eeeeeeee-0000-4000-8000-000000000001";
+    const scan = (targets: Record<string, string>) =>
+      V1CreateUploadIntentRequest.safeParse({
+        ...common,
+        purpose: "paper_scan",
+        ...targets,
+      }).success;
+    expect(scan({ classroomId })).toBe(true);
+    expect(scan({ gradeResultId })).toBe(true);
+    expect(scan({ classroomId, gradeResultId })).toBe(false);
+    expect(scan({})).toBe(false);
+    expect(
+      scan({ classroomId, studentId: "dddddddd-0000-4000-8000-000000000001" }),
     ).toBe(false);
   });
 
@@ -484,5 +506,35 @@ describe("billing: the student plans are accepted", () => {
         }],
       }).success,
     ).toBe(true);
+  });
+});
+
+describe("class schedules", () => {
+  const slot = (weekday: number, startsAt: string) => ({
+    weekday,
+    startsAt,
+    endsAt: "10:00",
+    effectiveFrom: "2026-10-06",
+    effectiveUntil: null,
+  });
+  const create = (schedule: ReturnType<typeof slot>[]) =>
+    V1CreateClassroomRequest.safeParse({
+      schoolId: "bbbbbbbb-0000-4000-8000-000000000001",
+      name: "7B",
+      grade: "7",
+      section: "B",
+      room: null,
+      schedule,
+    }).success;
+
+  test("one lesson entered twice is refused, not left to the table", () => {
+    expect(create([slot(1, "09:00"), slot(2, "09:00")])).toBe(true);
+    expect(create([slot(1, "09:00"), slot(1, "09:00:00")])).toBe(false);
+    expect(
+      V1ReplaceScheduleRequest.safeParse({
+        expectedVersion: 1,
+        schedule: [slot(3, "08:00"), slot(3, "08:00")],
+      }).success,
+    ).toBe(false);
   });
 });

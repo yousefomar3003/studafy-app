@@ -1,0 +1,32 @@
+# Ships every Studafy log line from Fly to Axiom (ADR-0035).
+# Fly's official log shipper (Vector). Deploy from the repository root:
+#   fly deploy --config fly.log-shipper.toml
+# Secrets: ACCESS_TOKEN (fly tokens create readonly) and HTTP_TOKEN (the
+# Axiom ingest token).
+# The API and worker already drop what is not worth keeping (OPS-090), so
+# this forwards everything it receives.
+
+app = "studafy-log-shipper"
+primary_region = "fra"
+
+[build]
+  # Pin to a digest after the first deploy (fly image show).
+  image = "ghcr.io/superfly/fly-log-shipper:latest"
+
+[env]
+  # The Fly organisation whose apps are shipped.
+  ORG = "personal"
+  # Axiom in the EU region accepts data only through its EU edge, and the
+  # shipper's own Axiom output always uses the US address. So logs go out
+  # through its generic HTTP output instead, to the EU edge ingest path.
+  # Do not set AXIOM_TOKEN / AXIOM_DATASET here: that would also switch on
+  # the US-bound output, which the EU dataset refuses.
+  HTTP_URL = "https://eu-central-1.aws.edge.axiom.co/v1/ingest/studafy-production"
+
+[[services]]
+  internal_port = 8686
+  protocol = "tcp"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

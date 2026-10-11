@@ -1,3 +1,4 @@
+import type { ErrorReporter } from "@studafy/infrastructure";
 import { Hono, type MiddlewareHandler } from "hono";
 import {
   ErrorCode,
@@ -11,6 +12,7 @@ import {
   requestContext,
   type RequestIdentityOptions,
   requestTelemetry,
+  requireCloudflareOrigin,
   secureResponseHeaders,
   totalTimeout,
 } from "../platform/middleware";
@@ -26,6 +28,8 @@ export type DependentCheck = () => Promise<void>;
 export interface AppDependencies {
   info: ServiceInfo;
   logger: Logger;
+  /** OPS-090: where unexpected exceptions are reported, when configured. */
+  errorReporter?: Pick<ErrorReporter, "captureException">;
   checks: {
     database?: DependentCheck;
     redis?: DependentCheck;
@@ -57,6 +61,8 @@ export interface AppDependencies {
     now?: () => number;
     /** Identity fields for the access log. Omitted leaves `ip_hash` null. */
     identity?: RequestIdentityOptions;
+    /** Refuse traffic that did not come through Cloudflare (ORIGIN_REQUIRE_CLOUDFLARE). */
+    requireCloudflare?: boolean;
   };
 }
 
@@ -86,6 +92,9 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   // controls run before authentication, validation, authorization and use cases.
   app.use("*", requestContext(now));
   app.use("*", secureResponseHeaders(deps.info.environment));
+  if (deps.platform?.requireCloudflare) {
+    app.use("*", requireCloudflareOrigin());
+  }
   app.use("*", requestTelemetry(deps.logger, now, deps.platform?.identity));
   app.use(
     "*",
@@ -150,6 +159,13 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
   app.notFound((c) => problem(c, ErrorCode.NOT_FOUND, 404));
 
   app.onError((error, c) => {
+    if (!(error instanceof RequestTimeoutError)) {
+      deps.errorReporter?.captureException(error, {
+        request_id: c.get("requestId"),
+        method: c.req.method,
+        route: c.req.routePath || "unmatched",
+      });
+    }
     deps.logger.error("http_error", {
       request_id: c.get("requestId"),
       method: c.req.method,

@@ -80,4 +80,59 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened, [Uri.parse('https://video.example/lesson-2')]);
   });
+
+  test('a chat link is what people type: https, http or www.', () {
+    expect(
+      chatLink('www.example.com/page'),
+      Uri.parse('https://www.example.com/page'),
+    );
+    expect(chatLink('http://example.com'), Uri.parse('http://example.com'));
+    expect(chatLink('https://example.com'), isNotNull);
+    expect(chatLink('javascript:alert(1)'), isNull);
+    expect(chatLink('https://user:pass@example.com'), isNull);
+    expect(chatLink('http://localhost'), isNull);
+  });
+
+  testWidgets('a link in a message opens after saying where it goes', (
+    tester,
+  ) async {
+    final opened = <Uri>[];
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: LinkedText(
+            'Look at www.khanacademy.org/math.',
+            chat: true,
+            openLink: (url) async {
+              opened.add(url);
+              return true;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tapOnText(find.textRange.ofSubstring('www.khanacademy.org'));
+    await tester.pumpAndSettle();
+    // The full stop ends the sentence, not the address.
+    expect(find.text('https://www.khanacademy.org/math'), findsOne);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(opened, [Uri.parse('https://www.khanacademy.org/math')]);
+  });
+
+  testWidgets('outside a chat, only https is a link', (tester) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: const Scaffold(body: LinkedText('See www.example.com')),
+      ),
+    );
+    expect(find.byType(RichText), findsOneWidget);
+    expect(
+      tester.widget<RichText>(find.byType(RichText)).text.toPlainText(),
+      'See www.example.com',
+    );
+    await tester.tap(find.byType(RichText));
+    await tester.pumpAndSettle();
+    expect(find.text('Open this link?'), findsNothing);
+  });
 }

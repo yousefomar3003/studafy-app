@@ -24,6 +24,10 @@ class AccountScope extends InheritedWidget {
     return scope.account;
   }
 
+  /// The account slice, or null where none is composed (some widget tests).
+  static AccountInteractor? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AccountScope>()?.account;
+
   @override
   bool updateShouldNotify(AccountScope oldWidget) =>
       account != oldWidget.account;

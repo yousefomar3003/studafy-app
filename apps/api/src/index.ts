@@ -14,6 +14,7 @@ const platform = buildPlatform();
 const {
   env,
   cloudwatch,
+  errorReporter,
   logger,
   sql,
   redis,
@@ -49,6 +50,7 @@ const app = createApp({
     environment: env.ENVIRONMENT,
   },
   logger,
+  ...(errorReporter ? { errorReporter } : {}),
   checks: { database: databaseCheck, redis: redisCheck },
   platform: {
     allowedOrigins: env.API_ALLOWED_ORIGINS,
@@ -62,8 +64,9 @@ const app = createApp({
       ...(env.RATE_LIMIT_HMAC_SIGNING_KEY
         ? { hmacKey: env.RATE_LIMIT_HMAC_SIGNING_KEY }
         : {}),
-      trustCloudflare: env.ENVIRONMENT === "production",
+      clientIpSource: env.CLIENT_IP_SOURCE,
     },
+    requireCloudflare: env.ORIGIN_REQUIRE_CLOUDFLARE,
   },
   ...(env.RATE_LIMIT_ENABLED
     ? { rateLimit: { edge: rateLimitEdge(rateLimitDependencies) } }
@@ -93,5 +96,6 @@ installGracefulShutdown({
       cloudwatch.close();
       await cloudwatch.flush();
     }
+    await errorReporter?.flush();
   },
 });

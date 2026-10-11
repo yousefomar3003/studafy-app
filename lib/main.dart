@@ -16,6 +16,7 @@ import 'app/studafy_theme.dart';
 import 'app/student_shell.dart';
 import 'app/teacher_shell.dart';
 import 'core/app_routes.dart';
+import 'core/crash_reports.dart';
 import 'core/locale_controller.dart';
 import 'core/runtime_environment.dart';
 import 'core/studafy_design.dart';
@@ -42,7 +43,12 @@ const _localizationsDelegates = <LocalizationsDelegate<Object>>[
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,
 ];
-Future<void> main() async {
+
+/// Crash reports start first (only in builds with a `SENTRY_DSN`), so an
+/// error during start-up is reported too.
+Future<void> main() => CrashReports.run(_start);
+
+Future<void> _start() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Registered before runApp so it precedes the observer WidgetsApp installs
   // and is offered the provider callback first.

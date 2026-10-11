@@ -11,6 +11,13 @@
  *   DATABASE_URL=… bun scripts/redrive-outbox-dlq.ts --all     # redrive all
  */
 import postgres from "postgres";
+import { databaseTls } from "../packages/database/src/index.ts";
+
+/** Encrypted unless the database is on this machine (packages/database). */
+const tls = (url: string) => {
+  const ssl = databaseTls(url, process.env.DATABASE_CA_CERT);
+  return ssl === undefined ? {} : { ssl };
+};
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");
@@ -29,7 +36,7 @@ const mode = args.includes("--all")
   : "list";
 const targetId = mode === "one" ? Number(args[args.indexOf("--id") + 1]) : null;
 
-const sql = postgres(databaseUrl, { max: 1 });
+const sql = postgres(databaseUrl, { ...tls(databaseUrl), max: 1 });
 try {
   const rows = await sql<{ entries: Record<string, unknown>[] }[]>`
     select private.api061_list_dlq(500) as rows

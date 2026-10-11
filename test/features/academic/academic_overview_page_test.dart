@@ -339,7 +339,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Title'),
       'Quiet this week',
     );
-    await tester.tap(find.text('Staff and parents'));
+    await tester.tap(find.text('You and the parents'));
     await tester.ensureVisible(find.text('Save note'));
     await tester.tap(find.text('Save note'));
     await tester.pumpAndSettle();
@@ -441,5 +441,185 @@ void main() {
           .first,
     );
     expect(find.text('Marked'), findsWidgets);
+  });
+
+  testWidgets('a parent filters by child, or sees every child labelled', (
+    tester,
+  ) async {
+    final repository = _FakeAcademicRepository([
+      const AcademicRecord(
+        id: 'w1',
+        title: 'Fractions sheet',
+        detail: '',
+        state: 'published',
+        version: 1,
+      ),
+    ]);
+    final opened = <String?>[];
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: repository,
+          title: 'Learning',
+          subtitle: 'Lessons, work, tests, grades and attendance',
+          availableFeeds: const [AcademicFeed.assignments],
+          students: const [
+            StudentChoice(id: 'layla', name: 'Layla', schoolName: 'Al-Noor'),
+            StudentChoice(id: 'omar', name: 'Omar', schoolName: 'Riverside'),
+          ],
+          onOpenStudentRecord: (record, student) => opened.add(student?.id),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Filter by child'), findsOne);
+    expect(find.text('All children'), findsOne);
+    // Every child asked for, and every row says whose it is.
+    expect({for (final load in repository.loads) load.$3}, {'layla', 'omar'});
+    expect(find.text('Layla · Al-Noor'), findsOne);
+    expect(find.text('Omar · Riverside'), findsOne);
+    await tester.tap(find.text('Fractions sheet').last);
+    expect(opened, ['omar']);
+
+    repository.loads.clear();
+    await tester.tap(find.text('Layla'));
+    await tester.pumpAndSettle();
+    expect(repository.loads.single.$3, 'layla');
+    // One child shown: no per-row label repeating the filter.
+    expect(find.text('Layla · Al-Noor'), findsNothing);
+  });
+
+  testWidgets('a class page has no row of tools - only its options menu', (
+    tester,
+  ) async {
+    var deleted = 0;
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository(records),
+          classroomId: 'class-1',
+          title: 'Biology 9A',
+          teacherTools: true,
+          appBarActions: [
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'Options',
+              onSelected: (action) => action(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: () => deleted++,
+                  child: const Text('Delete class'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final gone in ['Roster', 'Schedule', 'Sections', 'Gradebook']) {
+      expect(find.text(gone), findsNothing, reason: gone);
+    }
+    await tester.tap(find.byTooltip('Options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete class'));
+    await tester.pumpAndSettle();
+    expect(deleted, 1);
+  });
+
+  testWidgets('a student\'s grades show the mark - never attendance words', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository(const [
+            AcademicRecord(
+              id: 'g1',
+              title: 'Algebra test',
+              detail: '',
+              state: 'published',
+              version: 1,
+              delivery: 'paper',
+              mark: GradeMark.scored,
+              score: 45,
+              outOf: 68,
+            ),
+            AcademicRecord(
+              id: 'g2',
+              title: 'Geometry quiz',
+              detail: '',
+              state: 'published',
+              version: 1,
+              delivery: 'paper',
+              mark: GradeMark.absent,
+              outOf: 20,
+            ),
+          ]),
+          initialFeed: AcademicFeed.grades,
+          availableFeeds: const [AcademicFeed.grades],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('45 out of 68'), findsOne);
+    expect(find.text('Missed the exam'), findsOne);
+    for (final word in ['Published', 'Present', 'Absent']) {
+      expect(find.text(word), findsNothing, reason: word);
+    }
+  });
+
+  testWidgets('each attendance mark says the day and time of its lesson', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository([
+            AcademicRecord(
+              id: 'a1',
+              title: 'absent',
+              detail: 'Doctor visit',
+              state: 'absent',
+              version: 1,
+              date: DateTime(2026, 9, 28, 8),
+            ),
+          ]),
+          initialFeed: AcademicFeed.attendance,
+          availableFeeds: const [AcademicFeed.attendance],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Monday, September 28, 2026 · 8:00 AM'), findsOne);
+    expect(find.text('Absent'), findsOne);
+    expect(find.text('Doctor visit'), findsOne);
+    // The wire word is never shown as a title.
+    expect(find.text('absent'), findsNothing);
+  });
+
+  testWidgets('posted work says the day it was set', (tester) async {
+    await tester.pumpWidget(
+      localizedApp(
+        home: AcademicOverviewPage(
+          repository: _FakeAcademicRepository([
+            AcademicRecord(
+              id: 'w1',
+              title: 'Fractions sheet',
+              detail: '',
+              state: 'published',
+              version: 1,
+              date: DateTime(2026, 10, 2, 9, 30),
+            ),
+          ]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fri, Oct 2'), findsOne);
   });
 }

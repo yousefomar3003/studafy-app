@@ -1,4 +1,5 @@
 import '../domain/academic_repository.dart';
+import 'preview_online_assessments.dart';
 
 /// Synthetic-only typed academic adapter. It deliberately keeps its state in
 /// process and is never selected by a remote runtime policy.
@@ -15,6 +16,10 @@ class PreviewAcademicRepository implements AcademicRepository {
 
   final Map<AcademicFeed, List<AcademicRecord>> _records;
   int _sequence = 0;
+
+  late final _online = PreviewOnlineAssessments(
+    onCreated: (record) => _records[AcademicFeed.assessments]!.add(record),
+  );
 
   String _id(String kind) => 'preview-$kind-${++_sequence}';
 
@@ -228,6 +233,7 @@ class PreviewAcademicRepository implements AcademicRepository {
     String? title,
     String? body,
     String? replaceFileId,
+    AttachmentChanges attachments = const AttachmentChanges(),
   }) => _replace(
     AcademicFeed.content,
     resourceId,
@@ -259,6 +265,8 @@ class PreviewAcademicRepository implements AcademicRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   }) async {}
 
   @override
@@ -267,7 +275,99 @@ class PreviewAcademicRepository implements AcademicRepository {
     int expectedVersion, {
     List<String> detachFileIds = const [],
     List<String> attachmentFileIds = const [],
+    List<LinkDraft> addLinks = const [],
+    List<String> removeLinkIds = const [],
   }) async {}
+
+  // Online assessments, in process (ADR-0036).
+
+  @override
+  Future<OnlineAssessment> createOnlineAssessment(
+    OnlineAssessmentDraft draft,
+  ) => _online.createOnlineAssessment(draft);
+
+  @override
+  Future<List<AssessmentQuestion>> authoringQuestions(String assessmentId) =>
+      _online.authoringQuestions(assessmentId);
+
+  @override
+  Future<List<AssessmentQuestion>> questions(String assessmentId) =>
+      _online.questions(assessmentId);
+
+  @override
+  Future<OnlineAssessment> updateAssessmentDesign(
+    String assessmentId,
+    int expectedVersion, {
+    String? title,
+    List<QuestionDraft>? questions,
+    AssessmentSettings? settings,
+    bool releaseAnswersNow = false,
+    AttachmentChanges attachments = const AttachmentChanges(),
+  }) => _online.updateAssessmentDesign(
+    assessmentId,
+    expectedVersion,
+    title: title,
+    questions: questions,
+    settings: settings,
+    releaseAnswersNow: releaseAnswersNow,
+    attachments: attachments,
+  );
+
+  @override
+  Future<AttemptConfirmation> submitAnswers(
+    String assessmentId,
+    List<StudentAnswer> answers,
+  ) => _online.submitAnswers(assessmentId, answers);
+
+  @override
+  Future<AssessmentResults> results(String assessmentId, {String? studentId}) =>
+      _online.results(assessmentId, studentId: studentId);
+
+  @override
+  Future<List<AttemptDetail>> attempts(String assessmentId) =>
+      _online.attempts(assessmentId);
+
+  @override
+  Future<AttemptDetail> attempt(String attemptId) => _online.attempt(attemptId);
+
+  @override
+  Future<AttemptDetail> markAttempt(
+    String attemptId,
+    List<AnswerMark> marks, {
+    String? feedback,
+    String? correctionReason,
+  }) => _online.markAttempt(
+    attemptId,
+    marks,
+    feedback: feedback,
+    correctionReason: correctionReason,
+  );
+
+  @override
+  Future<void> grantAccess(
+    String assessmentId,
+    String studentId, {
+    DateTime? closesAt,
+    int extraAttempts = 0,
+    String? reason,
+  }) => _online.grantAccess(
+    assessmentId,
+    studentId,
+    closesAt: closesAt,
+    extraAttempts: extraAttempts,
+    reason: reason,
+  );
+
+  @override
+  Future<GradeAttachments> updateGradeAttachments(
+    String assessmentId,
+    AttachmentChanges changes, {
+    String? studentId,
+  }) => _online.updateGradeAttachments(
+    assessmentId,
+    changes,
+    studentId: studentId,
+  );
 
   @override
   Future<void> reopenAssignment(
@@ -420,4 +520,14 @@ class PreviewAcademicRepository implements AcademicRepository {
       version: current.version + 1,
     );
   }
+
+  @override
+  Future<List<LessonReadingSource>> lessonReading(String resourceId) async =>
+      const [];
+
+  @override
+  Future<List<LessonReadingSource>> retryLessonReading(
+    String resourceId,
+    String sourceId,
+  ) async => const [];
 }

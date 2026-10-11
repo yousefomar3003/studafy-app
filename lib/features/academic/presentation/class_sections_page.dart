@@ -138,6 +138,9 @@ class _ClassSectionsPageState extends State<ClassSectionsPage> {
               : title.text.trim(),
           body: body.text.trim(),
           lessonSessionId: session.id,
+          // Filed content is for the class: a draft would leave the section
+          // still owing its lesson.
+          publish: true,
         ),
       );
       if (!mounted) return;
@@ -262,17 +265,23 @@ class _SectionTile extends StatelessWidget {
           Row(
             children: [
               Icon(
-                session.filed
+                session.filed || !session.needsContent
                     ? Icons.check_circle_outline
                     : Icons.error_outline,
                 size: 18,
-                color: session.filed
+                color: session.filed || !session.needsContent
                     ? theme.colorScheme.primary
                     : theme.colorScheme.error,
               ),
               const SizedBox(width: 6),
               Text(
-                session.filed ? l10n.sectionsFiled : l10n.sectionsOutstanding,
+                session.filed
+                    ? l10n.sectionsFiled
+                    : switch (session.content) {
+                        SectionContent.published => l10n.sectionsPublished,
+                        SectionContent.draft => l10n.todaySectionDraft,
+                        SectionContent.none => l10n.sectionsOutstanding,
+                      },
                 style: theme.textTheme.bodySmall,
               ),
             ],

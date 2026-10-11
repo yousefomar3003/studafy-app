@@ -16,6 +16,9 @@ export interface AccountDependencies {
   repository: AccountRepository;
   cursorSigningKey: string;
   enabledSlices?: Partial<Record<AccountSlice, boolean>>;
+  /** Drops the cached auth context, which carries the display name, so a
+   * renamed person is not shown their old name until the cache expires. */
+  invalidateActorContext?: (subject: string) => Promise<void>;
 }
 
 export type AccountSlice = "account";
@@ -55,6 +58,14 @@ export function createAccountRoutes(
       selector,
       sliceFor,
       enabledSlices: deps.enabledSlices,
+      ...(deps.invalidateActorContext
+        ? {
+          actorContextChangedBy: {
+            operations: new Set(["updateProfile"]),
+            invalidate: deps.invalidateActorContext,
+          },
+        }
+        : {}),
       // docs/planning/instructions.md section 7: a data export is sensitive enough to need
       // the same fresh re-confirmation account deletion already requires
       // (AUTH-030's account_deletion purpose, apps/api/src/auth/routes.ts) -

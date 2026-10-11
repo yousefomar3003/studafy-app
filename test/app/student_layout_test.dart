@@ -24,7 +24,10 @@ class _Helper implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
-  }) async => const StudyAnswer(answer: 'Answer', remainingToday: 9);
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
+  }) async => const StudyAnswer(answer: 'Answer');
 }
 
 void main() {

@@ -188,6 +188,7 @@ void main() {
       );
       addTearDown(next.dispose);
       await next.restore();
+      await next.republishIfPending();
       expect(published, ['ar']);
     });
 
@@ -212,14 +213,34 @@ void main() {
       expect(controller.resolvedLocale, const Locale('ar'));
     });
 
-    test('retries on the next launch after a failed publish', () async {
+    test(
+      'retries once signed in on the next launch after a failed publish',
+      () async {
+        final settings = InMemoryDeviceSettings();
+        final failing = build(
+          settings: settings,
+          publish: (_) async => throw Exception('offline'),
+        );
+        await failing.restore();
+        await failing.setLocale(const Locale('ar'));
+
+        final published = <String>[];
+        final next = build(
+          settings: settings,
+          publish: (code) async => published.add(code),
+        );
+        await next.restore();
+        await next.republishIfPending();
+
+        expect(published, ['ar']);
+      },
+    );
+
+    test('does not republish a locale the server already has', () async {
       final settings = InMemoryDeviceSettings();
-      final failing = build(
-        settings: settings,
-        publish: (_) async => throw Exception('offline'),
-      );
-      await failing.restore();
-      await failing.setLocale(const Locale('ar'));
+      final first = build(settings: settings, publish: (_) async {});
+      await first.restore();
+      await first.setLocale(const Locale('ar'));
 
       final published = <String>[];
       final next = build(
@@ -227,15 +248,20 @@ void main() {
         publish: (code) async => published.add(code),
       );
       await next.restore();
+      await next.republishIfPending();
 
-      expect(published, ['ar']);
+      expect(published, isEmpty);
     });
 
-    test('does not republish a locale the server already has', () async {
+    test('launching alone sends nothing, so the first frame never waits on '
+        'the network', () async {
       final settings = InMemoryDeviceSettings();
-      final first = build(settings: settings, publish: (_) async {});
-      await first.restore();
-      await first.setLocale(const Locale('ar'));
+      final failing = build(
+        settings: settings,
+        publish: (_) async => throw Exception('offline'),
+      );
+      await failing.restore();
+      await failing.setLocale(const Locale('ar'));
 
       final published = <String>[];
       final next = build(
@@ -391,4 +417,11 @@ class _FakeProfiles implements ProfileRepository {
 
   @override
   Future<void> updateLocale(String locale) async => published.add(locale);
+
+  @override
+  Future<OwnProfile> readOwn() async => const OwnProfile(displayName: '');
+
+  @override
+  Future<OwnProfile> rename(String displayName) async =>
+      OwnProfile(displayName: displayName);
 }

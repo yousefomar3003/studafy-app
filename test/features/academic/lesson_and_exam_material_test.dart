@@ -70,7 +70,41 @@ void main() {
     // Published, not left as a draft the class never sees - the bug that
     // kept a teacher's lesson from reaching students and parents.
     expect(fake.lessons.single.publish, isTrue);
-    expect(files.published, [('file-1', FileAudience.students)]);
+    // The file is the lesson's own, bound with it - not separate material.
+    expect(fake.lessons.single.attachmentFileIds, ['file-1']);
+    expect(files.published, isEmpty);
+  });
+
+  testWidgets('files can be seen before a class is chosen, then added', (
+    tester,
+  ) async {
+    tall(tester);
+    final files = _Files();
+    await tester.pumpWidget(
+      localizedApp(
+        home: CreateLessonPage(
+          repository: CreateWorkFake(),
+          classes: classes,
+          schoolId: 'school-1',
+          uploads: files,
+          attachmentSource: (_, _) async => slides(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose the class first to attach files.'), findsOne);
+    expect(files.uploads, isEmpty);
+
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Grade 8 Physics').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+    expect(files.uploads.single.classroomId, 'c2');
   });
 
   testWidgets('a lesson needs notes or a file', (tester) async {

@@ -77,6 +77,33 @@ void main() {
     expect(find.text('Timetable saved.'), findsOneWidget);
   });
 
+  testWidgets('one meeting entered twice is pointed at, not sent', (
+    tester,
+  ) async {
+    final fake = ScheduleFake();
+    await tester.pumpWidget(
+      _page(
+        fake,
+        slots: const [
+          ClassSessionSlot(weekday: 2, startsAt: '08:00:00', endsAt: '09:00'),
+          ClassSessionSlot(weekday: 2, startsAt: '08:00', endsAt: '08:45'),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Save timetable'));
+    await tester.pumpAndSettle();
+
+    expect(fake.saved, isEmpty);
+    expect(
+      find.text(
+        'Two lessons are on the same day and time. Change one of them.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a removed meeting is not sent', (tester) async {
     final fake = ScheduleFake();
     await tester.pumpWidget(

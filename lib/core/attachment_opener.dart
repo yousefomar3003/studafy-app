@@ -61,6 +61,10 @@ String sharedFileName(String displayName, String? mediaType) {
     'image/png' => 'png',
     'image/webp' => 'webp',
     'audio/mp4' => 'm4a',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' =>
+      'docx',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation' =>
+      'pptx',
     _ => null,
   };
   return extension == null ? name : '$name.$extension';

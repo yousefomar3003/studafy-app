@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/ai_usage.dart';
 import '../core/feedback.dart';
 import '../core/language_picker.dart';
 import '../core/navigation.dart';
@@ -9,6 +12,8 @@ import '../core/profile_photo.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
+import '../features/account/application/account_interactor.dart';
+import '../features/account/domain/profile_repository.dart';
 import '../features/account/presentation/delete_account_page.dart';
 import '../features/notifications/presentation/notification_preferences_page.dart';
 import '../features/session/presentation/account_security_page.dart';
@@ -25,12 +30,15 @@ import 'session_scope.dart';
 /// person has now. Supplied by a shell that sells plans; absent otherwise.
 @immutable
 class SubscriptionEntry {
-  const SubscriptionEntry({required this.open, this.currentPlan});
+  const SubscriptionEntry({required this.open, this.currentPlan, this.usage});
 
   final Future<void> Function(BuildContext context) open;
 
   /// The current plan's name, shown under the row.
   final Future<String?> Function()? currentPlan;
+
+  /// The plan's AI usage, as the server has it, for the AI usage section.
+  final Future<AiUsageSnapshot?> Function()? usage;
 }
 
 /// Opens the shared account screen. Every role shell shows it, because
@@ -145,10 +153,82 @@ class NotificationBellButton extends StatelessWidget {
 /// Grouped as in iOS Settings: who you are, your account, preferences,
 /// notifications, subscription, then sign-in and security - where deleting
 /// the account lives, as on the teacher's profile.
-class AccountHubPage extends StatelessWidget {
+class AccountHubPage extends StatefulWidget {
   const AccountHubPage({super.key, this.subscription});
 
   final SubscriptionEntry? subscription;
+
+  @override
+  State<AccountHubPage> createState() => _AccountHubPageState();
+}
+
+class _AccountHubPageState extends State<AccountHubPage> {
+  /// The person's own profile as the server has it: the name they chose and
+  /// their Studafy number. Null until read, or in builds that cannot read it.
+  OwnProfile? _own;
+  bool _started = false;
+
+  /// True while the profile is being read. The Studafy number's row holds its
+  /// place meanwhile, so the rows below it - Switch account among them - do
+  /// not jump down when the number arrives.
+  bool _ownLoading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    unawaited(_loadOwn());
+  }
+
+  Future<void> _loadOwn() async {
+    final account = AccountScope.maybeOf(context);
+    if (account == null || !account.profileAvailable) return;
+    _ownLoading = true;
+    final result = await account.ownProfile();
+    if (!mounted) return;
+    setState(() {
+      _ownLoading = false;
+      result.fold(onSuccess: (own) => _own = own, onFailure: (_) {});
+    });
+  }
+
+  /// Edit name: a prefilled form, saved to the server, then shown
+  /// everywhere the app reads the name.
+  Future<void> _editName(String current) async {
+    final account = AccountScope.maybeOf(context);
+    if (account == null || !account.profileAvailable) return;
+    final saved = await showModalBottomSheet<OwnProfile>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
+        child: _EditNameSheet(initial: current, account: account),
+      ),
+    );
+    if (saved == null || !mounted) return;
+    final context_ = ActiveContextController.instance;
+    final profile = context_.profile;
+    if (profile != null) {
+      context_.hydrate(
+        authenticatedProfile: UserProfile(
+          id: profile.id,
+          displayName: saved.displayName,
+          email: profile.email,
+          memberships: profile.memberships,
+          accountKind: profile.accountKind,
+        ),
+        activeMembership: context_.membership,
+        student: context_.selectedStudent,
+        termId: context_.activeTermId,
+        signedInAs: context_.signedInAs,
+      );
+    }
+    setState(() => _own = saved);
+    ScaffoldMessenger.of(context)
+        .showMessage(AppL10n.of(context).accountNameSaved);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,8 +239,17 @@ class AccountHubPage extends StatelessWidget {
     final membership = context_.membership;
     final session = SessionScope.maybeOf(context);
     final deviceAccounts = DeviceAccountsScope.maybeOf(context);
-    final student = membership?.role == StudafyRole.student;
-    final subscription = this.subscription;
+    final student =
+        membership?.role == StudafyRole.student ||
+        context_.signedInAs == StudafyRole.student;
+    final subscription = widget.subscription;
+    final account = AccountScope.maybeOf(context);
+    final canRename = profile != null && (account?.profileAvailable ?? false);
+    final name = _own?.displayName ?? profile?.displayName ?? '';
+    final publicId = switch (_own?.publicId) {
+      final number? => studafyIdFor(number, teacher: _isTeacher(profile)),
+      null => null,
+    };
     final accountRows = [
       // Several accounts on one device, Instagram-style, and a parent's
       // child accounts.
@@ -189,7 +278,7 @@ class AccountHubPage extends StatelessWidget {
         padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 40),
         children: [
           AccountProfileHeader(
-            name: profile?.displayName ?? l10n.accountUnknown,
+            name: name.isEmpty ? l10n.accountUnknown : name,
             email: profile?.email ?? '',
             membership: membership,
             roleLabel: membership == null
@@ -203,6 +292,17 @@ class AccountHubPage extends StatelessWidget {
           SettingsGroup(
             title: l10n.accountSectionProfile,
             children: [
+              if (canRename)
+                SettingsRow(
+                  icon: Icons.person_rounded,
+                  title: l10n.accountName,
+                  subtitle: name,
+                  trailing: TextButton(
+                    onPressed: () => _editName(name),
+                    child: Text(l10n.accountEditName),
+                  ),
+                  onTap: () => _editName(name),
+                ),
               if (profile != null)
                 SettingsRow(
                   icon: Icons.photo_camera_rounded,
@@ -213,14 +313,18 @@ class AccountHubPage extends StatelessWidget {
               // A student has one identifier worth knowing: the Studafy ID a
               // parent asks for. Their internal account id is kept out of
               // the way, under sign-in and security.
+              // One ID a person reads out: a student's is the Studafy ID a
+              // parent links with; an adult's is their Studafy number. The
+              // internal account id waits under sign-in and security.
               if (student)
                 const StudafyIdRow()
-              else if (profile != null)
+              else if (publicId != null || _ownLoading)
                 _AccountIdRow(
-                  id: profile.id,
-                  title: l10n.accountAccountId,
-                  detail: l10n.accountAccountIdDetail,
-                  copied: l10n.accountAccountIdCopied,
+                  id: publicId,
+                  title: l10n.accountStudafyId,
+                  detail: l10n.accountPublicIdDetail,
+                  copied: l10n.accountStudafyIdCopied,
+                  icon: Icons.qr_code_rounded,
                 ),
             ],
           ),
@@ -254,6 +358,11 @@ class AccountHubPage extends StatelessWidget {
               ),
             ],
           ),
+          if (subscription?.usage != null)
+            SettingsGroup(
+              title: l10n.usageSectionTitle,
+              children: [_AiUsageSection(entry: subscription!)],
+            ),
           if (subscription != null)
             SettingsGroup(
               title: l10n.accountSectionSubscription,
@@ -288,7 +397,7 @@ class AccountHubPage extends StatelessWidget {
                   ),
                 ),
               DataExportTile(account: AccountScope.of(context)),
-              if (student && profile != null)
+              if (profile != null)
                 _AccountIdRow(
                   id: profile.id,
                   title: l10n.accountTechnicalId,
@@ -356,30 +465,104 @@ class _AccountIdRow extends StatelessWidget {
     this.icon = Icons.badge_rounded,
   });
 
-  final String id;
+  /// Null while it is still being read: the row keeps its place, with
+  /// nothing to copy yet.
+  final String? id;
   final String title;
   final String detail;
   final String copied;
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) => SettingsRow(
-    icon: icon,
-    title: title,
-    subtitle: '$id\n$detail',
-    trailing: Tooltip(
-      message: MaterialLocalizations.of(context).copyButtonLabel,
-      child: const Icon(Icons.copy_rounded, color: studafyMuted, size: 20),
-    ),
-    onTap: () async {
-      final messenger = ScaffoldMessenger.of(context);
-      await Clipboard.setData(ClipboardData(text: id));
-      messenger.showMessage(copied);
-    },
-  );
+  Widget build(BuildContext context) {
+    final id = this.id;
+    return SettingsRow(
+      icon: icon,
+      title: title,
+      subtitle: '${id ?? '…'}\n$detail',
+      trailing: Tooltip(
+        message: MaterialLocalizations.of(context).copyButtonLabel,
+        child: Icon(
+          Icons.copy_rounded,
+          color: id == null ? studafyHairline : studafyMuted,
+          size: 20,
+        ),
+      ),
+      onTap: id == null
+          ? null
+          : () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await Clipboard.setData(ClipboardData(text: id));
+              messenger.showMessage(copied);
+            },
+    );
+  }
 }
 
 /// The plan row: the plan the person has, and the way to the Plans screen.
+/// How much AI use is left, as a bar and a label - never a count - with
+/// when it resets and the way to more.
+class _AiUsageSection extends StatefulWidget {
+  const _AiUsageSection({required this.entry});
+
+  final SubscriptionEntry entry;
+
+  @override
+  State<_AiUsageSection> createState() => _AiUsageSectionState();
+}
+
+class _AiUsageSectionState extends State<_AiUsageSection> {
+  AiUsageSnapshot? _usage;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final usage = await widget.entry.usage!();
+      if (mounted) {
+        setState(() {
+          _usage = usage;
+          _failed = usage == null;
+        });
+      }
+    } on Object {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final usage = _usage;
+    if (usage == null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: _failed
+            ? TextButton.icon(
+                onPressed: () {
+                  setState(() => _failed = false);
+                  _load();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(AppL10n.of(context).usageLoadFailed),
+              )
+            : const LinearProgressIndicator(),
+      );
+    }
+    return AiUsageCard(
+      usage: usage,
+      onPlans: () async {
+        await widget.entry.open(context);
+        await _load();
+      },
+    );
+  }
+}
+
 class _SubscriptionRow extends StatefulWidget {
   const _SubscriptionRow({required this.entry});
 
@@ -481,3 +664,133 @@ Future<void> _choosePhoto(BuildContext context, String userId) async {
     messenger.showMessage(l10n.profilePhotoFailed);
   }
 }
+
+/// Edit name: the current name, ready to change. Saved only when the server
+/// says so; a failure keeps the form open with the typed name.
+class _EditNameSheet extends StatefulWidget {
+  const _EditNameSheet({required this.initial, required this.account});
+
+  final String initial;
+  final AccountInteractor account;
+
+  @override
+  State<_EditNameSheet> createState() => _EditNameSheetState();
+}
+
+class _EditNameSheetState extends State<_EditNameSheet> {
+  late final _name = TextEditingController(text: widget.initial);
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final l10n = AppL10n.of(context);
+    if (normaliseDisplayName(_name.text) == null) {
+      setState(() => _error = l10n.accountNameInvalid);
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final result = await widget.account.rename(_name.text);
+    if (!mounted) return;
+    result.fold(
+      onSuccess: (saved) => Navigator.pop(context, saved),
+      onFailure: (_) => setState(() {
+        _saving = false;
+        _error = l10n.accountNameFailed;
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.accountEditNameTitle,
+              style: const TextStyle(
+                color: studafyInk,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.accountNameHelp,
+              style: const TextStyle(color: studafyMuted, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _name,
+              autofocus: true,
+              enabled: !_saving,
+              maxLength: maxDisplayNameLength,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: l10n.accountName,
+                errorText: _error,
+                counterText: '',
+              ),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              child: _saving
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(l10n.accountSaveAction),
+            ),
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: _saving ? null : () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+              ),
+              child: Text(l10n.accountCancelAction),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Whether this account teaches anywhere, whichever role it is in now.
+bool _isTeacher(UserProfile? profile) =>
+    profile?.memberships.any(
+      (m) => m.active && m.role == StudafyRole.teacher,
+    ) ??
+    false;
+
+/// How an adult's Studafy number is shown: a teacher's reads as a code,
+/// like a student's SJ-..., so it is never taken for a phone number; a
+/// parent's is the plain number. The stored number is the same either way.
+String studafyIdFor(String number, {required bool teacher}) =>
+    teacher ? 'TC-$number' : number;

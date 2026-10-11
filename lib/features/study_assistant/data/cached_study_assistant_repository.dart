@@ -10,9 +10,10 @@ import '../domain/study_assistant_repository.dart';
 ///
 /// The same question with the same earlier turns and the same lessons or
 /// notes gets the answer it got before: instantly, offline, and without using
-/// a question from today's allowance. Questions with a photo always go to
-/// the server. Answers are kept on the device only, like the chats
-/// themselves, per account, for [maxAge], and erased at sign-out.
+/// any of the AI allowance. Questions with a photo always go to the server.
+/// Answers are kept on the device only, like the chats themselves, per
+/// account, for [maxAge] - a day when they came from class material, which
+/// a teacher may change - and erased at sign-out.
 class CachedStudyAssistantRepository implements StudyAssistantRepository {
   CachedStudyAssistantRepository(
     this._inner,
@@ -28,10 +29,6 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
   /// A lesson may be revised, so a kept answer about it does not live
   /// forever.
   final Duration maxAge;
-
-  /// Today's remaining questions as the server last said; a kept answer
-  /// costs none, so it leaves this unchanged.
-  int? _remaining;
 
   static String _key(
     String question,
@@ -54,8 +51,18 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    String? requestId,
+    String? language,
+    bool skipUnavailable = false,
   }) async {
-    final keep = photoFileIds.isEmpty;
+    // Going on without unreadable files is a different answer from the
+    // one with them, so it is neither read from nor kept in the cache.
+    final keep = photoFileIds.isEmpty && !skipUnavailable;
+    final maxAgeHere = references.isEmpty
+        ? maxAge
+        : const Duration(days: 1) < maxAge
+        ? const Duration(days: 1)
+        : maxAge;
     final key = _key(question, history, references);
     if (keep) {
       try {
@@ -65,11 +72,19 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
         if (answer is String &&
             answer.isNotEmpty &&
             at != null &&
-            _now().difference(at) < maxAge) {
+            _now().difference(at) < maxAgeHere) {
           return StudyAnswer(
             answer: answer,
-            remainingToday:
-                _remaining ?? (kept!['remainingToday'] as int? ?? 0),
+            citations: [
+              for (final item
+                  in kept!['citations'] as List<dynamic>? ?? const [])
+                ?AnswerCitation.fromJson(item),
+            ],
+            unreadable: [
+              for (final item
+                  in kept['unreadable'] as List<dynamic>? ?? const [])
+                ?UnreadableSource.fromJson(item),
+            ],
           );
         }
       } on Object {
@@ -81,13 +96,17 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
       history: history,
       references: references,
       photoFileIds: photoFileIds,
+      requestId: requestId,
+      language: language,
+      skipUnavailable: skipUnavailable,
     );
-    _remaining = answer.remainingToday;
-    if (keep) {
+    // Something could not be read yet: next time it may be, so the answer
+    // is not kept.
+    if (keep && answer.unreadable.isEmpty) {
       try {
         await _cache.write(key, {
           'answer': answer.answer,
-          'remainingToday': answer.remainingToday,
+          'citations': [for (final c in answer.citations) c.toJson()],
           'at': _now().toUtc().toIso8601String(),
         });
       } on Object {

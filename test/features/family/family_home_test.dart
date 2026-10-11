@@ -188,8 +188,9 @@ void main() {
     final fake = _Fake([]);
     await tester.pumpWidget(_app(fake));
     await tester.pumpAndSettle();
-    expect(find.text('Start with their ID'), findsOneWidget);
-    await tester.tap(find.text('Link a child'));
+    // No child yet: a short empty state with the one action.
+    expect(find.text('Link your first child'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Link a child'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'NOPE');
     await tester.tap(find.text('Find'));
@@ -316,7 +317,7 @@ void main() {
       _app(_Fake([_verified]), locale: const Locale('ar')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('عائلتي'), findsOneWidget);
+    expect(find.text('أطفالك'), findsOneWidget);
     expect(find.text('مرتبط'), findsOneWidget);
   });
 }

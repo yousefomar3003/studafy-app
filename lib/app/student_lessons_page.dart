@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/file_upload_repository.dart';
+import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_components.dart';
@@ -13,10 +14,12 @@ import '../features/classes/domain/classroom.dart';
 import '../features/study/domain/study.dart';
 import '../features/study/presentation/my_notebooks_page.dart';
 import '../features/study/presentation/notebook_view.dart';
+import '../features/study/presentation/study_notebook_shelf.dart';
 import '../features/study/presentation/study_plan_copy.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
 import '../l10n/generated/app_l10n.dart';
+import 'material_picker.dart';
 
 /// The student's Lessons tab: their classes, and in each class its lessons by
 /// date and their own notebook for it.
@@ -30,6 +33,7 @@ class StudentLessonsPage extends StatefulWidget {
     required this.classes,
     required this.academic,
     required this.study,
+    this.onAskHelper,
     this.studyPlans,
     this.uploads,
     this.schoolId,
@@ -38,6 +42,9 @@ class StudentLessonsPage extends StatefulWidget {
   final ClassListInteractor classes;
   final AcademicRepository academic;
   final StudyRepository study;
+
+  /// Opens the AI helper about one lesson (ADR-0037). Null hides the button.
+  final void Function(String lessonId, String title)? onAskHelper;
   final StudyPlanSubscriptionRepository? studyPlans;
   final FileUploadRepository? uploads;
   final String? schoolId;
@@ -97,6 +104,14 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             uploads: widget.uploads,
             schoolId: widget.schoolId,
             initialTab: tab,
+            onAskHelper: widget.onAskHelper,
+            pick: (context, request) => pickMaterials(
+              context,
+              request,
+              classes: widget.classes,
+              academic: widget.academic,
+              study: widget.study,
+            ),
           ),
         ),
       );
@@ -176,7 +191,8 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             child: FutureBuilder<List<ClassroomSummary>>(
               future: _classes,
               builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
+                if (snapshot.connectionState != ConnectionState.done &&
+                    !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
@@ -185,13 +201,15 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
                       icon: Icons.wifi_off_rounded,
                       title: l10n.studentLessonsYourClassesCouldNotBe,
                       actionLabel: l10n.todayRetry,
-                      onAction: () => setState(() => _classes = _load()),
+                      onAction: () => setState(() {
+                        _classes = _load();
+                      }),
                     ),
                   );
                 }
                 final classes = snapshot.data ?? const <ClassroomSummary>[];
                 final plan = _planCard(l10n);
-                return RefreshIndicator(
+                return StudafyRefreshIndicator(
                   onRefresh: _refresh,
                   child: ListView(
                     padding: const EdgeInsetsDirectional.fromSTEB(
@@ -377,10 +395,18 @@ class StudentClassPage extends StatefulWidget {
     this.uploads,
     this.schoolId,
     this.initialTab = 0,
+    this.onAskHelper,
+    this.pick,
   });
+
+  /// Chooses exactly what an AI study tool uses (ADR-0039).
+  final MaterialPicker? pick;
 
   /// 0 opens the lessons, 1 the notebook.
   final int initialTab;
+
+  /// Opens the AI helper about one lesson. Null hides the button.
+  final void Function(String lessonId, String title)? onAskHelper;
 
   final ClassroomSummary classroom;
   final AcademicRepository academic;
@@ -396,10 +422,37 @@ class StudentClassPage extends StatefulWidget {
 class _StudentClassPageState extends State<StudentClassPage> {
   StudyPlan? _plan;
 
+  /// The class's study notebooks: the lesson buttons and the shelf show
+  /// the same ones, and both follow one being written.
+  late final _notebooks = NotebookTracker(
+    repository: widget.study,
+    classroomId: widget.classroom.id.value,
+  );
+  late final _host = NotebookHost(
+    study: widget.study,
+    tracker: _notebooks,
+    className: widget.classroom.name,
+    plan: () => _plan,
+    onOpenPlans: _openPlans,
+    pick: (context, request) => (widget.pick ?? _noPicker)(context, request),
+  );
+
+  static Future<MaterialSelection?> _noPicker(
+    BuildContext context,
+    MaterialPickRequest request,
+  ) async => null;
+
   @override
   void initState() {
     super.initState();
     _loadPlan();
+    _notebooks.load();
+  }
+
+  @override
+  void dispose() {
+    _notebooks.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPlan() async {
@@ -594,13 +647,55 @@ class _StudentClassPageState extends State<StudentClassPage> {
                 plan: _plan,
                 hasLessons: hasLessons,
                 onOpenPlans: _openPlans,
+                // From here nothing is chosen yet: the student chooses.
+                onMake: widget.pick == null
+                    ? null
+                    : (kind) => openStudySetFromSelection(
+                        context,
+                        study: widget.study,
+                        pick: widget.pick!,
+                        kind: kind,
+                        request: MaterialPickRequest(
+                          action: kind == StudySetKind.quiz
+                              ? MaterialAction.quiz
+                              : MaterialAction.flashcards,
+                        ),
+                        plan: _plan,
+                        onOpenPlans: _openPlans,
+                      ),
               ),
-              actionsFor: (context, lesson) => StudySetButtons(
-                study: widget.study,
-                resourceId: lesson.id,
-                lessonTitle: lesson.title,
-                plan: _plan,
-                onOpenPlans: _openPlans,
+              actionsFor: (context, lesson) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.onAskHelper case final ask?)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        onPressed: () => ask(lesson.id, lesson.title),
+                        icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                        label: Text(AppL10n.of(context).helperAskAboutLesson),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: LessonNotebookButton(
+                        host: _host,
+                        resourceId: lesson.id,
+                        lessonTitle: lesson.title,
+                      ),
+                    ),
+                  ),
+                  StudySetButtons(
+                    study: widget.study,
+                    resourceId: lesson.id,
+                    lessonTitle: lesson.title,
+                    plan: _plan,
+                    onOpenPlans: _openPlans,
+                    pick: widget.pick,
+                  ),
+                ],
               ),
             ),
             NotebookView(
@@ -611,6 +706,8 @@ class _StudentClassPageState extends State<StudentClassPage> {
               source: pickPlatformAttachment,
               onOpenPlans: _openPlans,
               pickLesson: _pickLesson,
+              header: StudyNotebookShelf(host: _host),
+              pick: widget.pick,
             ),
           ],
         ),

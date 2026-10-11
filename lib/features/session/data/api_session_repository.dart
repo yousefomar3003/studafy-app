@@ -203,15 +203,15 @@ class ApiSessionRepository implements SessionRepository {
 
   @override
   Future<UserProfile?> currentProfile() async {
-    final me = await _client.getMe();
+    // Both at once: neither needs the other, and each is a full round trip.
     // The kind is on the profile, which an older server may not have; the
     // memberships then speak for it.
-    AccountKind? kind;
-    try {
-      kind = AccountKind.parse((await _client.getProfile()).accountKind);
-    } on Object {
-      kind = null;
-    }
+    final kindRead = _client.getProfile().then<AccountKind?>(
+      (profile) => AccountKind.parse(profile.accountKind),
+      onError: (Object _) => null,
+    );
+    final me = await _client.getMe();
+    final kind = await kindRead;
     return UserProfile(
       accountKind: kind,
       id: me.id,
@@ -237,6 +237,14 @@ class ApiSessionRepository implements SessionRepository {
   Future<void> recordAccountKind(AccountKind kind) async {
     await _client.updateProfile(
       V1UpdateProfileRequestDto(accountKind: kind.name),
+    );
+  }
+
+  @override
+  Future<bool> hasLinkedChildren() async {
+    final links = await _client.listMyGuardianLinks();
+    return links.items.any(
+      (link) => link.status == 'verified' || link.status == 'pending',
     );
   }
 

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/messaging/application/messaging_interactor.dart';
@@ -155,6 +158,67 @@ void main() {
     expect(fake.read, ['c1']);
   });
 
+  testWidgets('a message sent while a refresh is on its way stays shown', (
+    tester,
+  ) async {
+    final fake = _Receipts([mine('a', MessageStatus.read, 1)]);
+    await tester.pumpWidget(chat(fake, refresh: const Duration(seconds: 4)));
+    await tester.pumpAndSettle();
+
+    // The refresh leaves before the send and comes back after it, without
+    // the new message in it.
+    fake.hold = Completer<void>();
+    await tester.pump(const Duration(seconds: 5));
+    fake.sent = mine('new', MessageStatus.sent, 6);
+    await tester.enterText(find.byType(TextField), 'Mine new');
+    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Mine new'), findsOne);
+
+    fake.hold!.complete();
+    fake.hold = null;
+    await tester.pumpAndSettle();
+    expect(find.text('Mine new'), findsOne);
+    expect(find.text('Mine a'), findsOne);
+  });
+
+  testWidgets('a file still being checked is looked at again every second', (
+    tester,
+  ) async {
+    ChatMessage voice(String scanState) => ChatMessage(
+      id: 'v',
+      conversationId: 'c1',
+      senderId: me,
+      body: '',
+      createdAt: DateTime(2026, 9, 27, 10, 2),
+      status: MessageStatus.sent,
+      attachments: [
+        StoredAttachment(
+          id: 'f1',
+          displayName: 'Voice message',
+          sizeBytes: 100,
+          scanState: scanState,
+          mediaType: 'audio/mp4',
+        ),
+      ],
+    );
+    final fake = _Receipts([voice('quarantined')]);
+    // The usual refresh is an hour away: only the quick look can see it.
+    await tester.pumpWidget(chat(fake));
+    await tester.pumpAndSettle();
+    final before = fake.reads;
+
+    fake.items = [voice('clean')];
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(fake.reads, greaterThan(before));
+
+    // Cleared: back to the usual pace.
+    final settled = fake.reads;
+    await tester.pump(const Duration(seconds: 5));
+    expect(fake.reads, settled);
+  });
+
   testWidgets('the inbox tells the server this device has its messages', (
     tester,
   ) async {
@@ -192,9 +256,31 @@ class _Receipts implements MessagingRepository, SafetyRepository {
   final read = <String>[];
   int acknowledged = 0;
 
+  /// While set, a read of the messages waits for it, answering with what
+  /// was there when it was asked.
+  Completer<void>? hold;
+
+  /// What the next send returns.
+  ChatMessage? sent;
+
+  /// Reads of the messages so far.
+  int reads = 0;
+
   @override
-  Future<MessagePage> messages(String conversationId, {String? cursor}) async =>
-      MessagePage(items: List.of(items));
+  Future<MessagePage> messages(String conversationId, {String? cursor}) async {
+    reads++;
+    final page = MessagePage(items: List.of(items));
+    await hold?.future;
+    return page;
+  }
+
+  @override
+  Future<ChatMessage> send(
+    String conversationId,
+    String body, {
+    required String clientMessageId,
+    List<String> attachmentFileIds = const [],
+  }) async => sent!;
 
   @override
   Future<List<Conversation>> conversations() async => const [];
