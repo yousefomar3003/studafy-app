@@ -70,7 +70,7 @@ the `PR-xx` codes point at its issue register.
   - **Done when:** a grant is refused for an old session and issued right
     after a fresh sign-in (API tests), and the app flow works on the
     simulator.
-- [ ] **2.2 Production request timeout** (PR-15) · *Claude* · 10 min
+- [x] **2.2 Production request timeout** (PR-15) — done 2026-10-11: `fly.api.toml` sets 20000, pinned by the Fly config test · *Claude* · 10 min
   - Add `API_REQUEST_TIMEOUT_MS = "20000"` to `fly.api.toml`. Quizzes and
     notebooks take longer than the 10 s default.
   - **Done when:** the Fly config test passes with the new value.

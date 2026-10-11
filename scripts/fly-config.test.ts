@@ -51,6 +51,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
     // Security audit 2026-10-08: never X-Forwarded-For in production.
     expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
+    // Launch plan 2.2: AI calls need longer than the 10 s default.
+    expect(env.API_REQUEST_TIMEOUT_MS).toBe(20_000);
   });
 
   test("the worker", async () => {
