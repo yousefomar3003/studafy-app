@@ -866,6 +866,11 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
   bool _failed = false;
   bool _saving = false;
   String? _error;
+
+  /// The result of the last save, shown just above the Save button. A
+  /// snackbar there covered the button on phones for a few seconds after
+  /// every save (2026-10-11).
+  String? _notice;
   final Map<String, TextEditingController> _scores = {};
   final Map<String, TextEditingController> _comments = {};
   final _overall = TextEditingController();
@@ -1000,16 +1005,16 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
       setState(() {
         _invalid.clear();
         _error = null;
+        _notice = l10n.markNothingChanged;
       });
-      ScaffoldMessenger.of(context).showMessage(l10n.markNothingChanged);
       return;
     }
     setState(() {
       _saving = true;
       _error = null;
+      _notice = null;
       _invalid.clear();
     });
-    final messenger = ScaffoldMessenger.of(context);
     // Whether a change is a correction is the server's to say: only a change
     // to a published mark or score is, and it alone needs a reason. So the
     // save goes as it is, and a reason is asked for only when the server
@@ -1029,14 +1034,12 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
           _attempt = updated;
           _remember(updated);
           _saving = false;
-        });
-        messenger.showMessage(
-          reason != null
+          _notice = reason != null
               ? l10n.markCorrected
               : updated.published
               ? l10n.markSavedPublished
-              : l10n.markDraftSaved,
-        );
+              : l10n.markDraftSaved;
+        });
         return;
       } on CourseworkRefusal catch (refusal) {
         if (!mounted) return;
@@ -1194,7 +1197,8 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
                                     ),
-                                onChanged: (_) => setState(() {}),
+                                onChanged: (_) =>
+                                    setState(() => _notice = null),
                                 decoration: InputDecoration(
                                   labelText: l10n.markScoreLabel(
                                     _number(answer.question.maximumScore),
@@ -1211,7 +1215,8 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
                                 minLines: 1,
                                 maxLines: 4,
                                 maxLength: 5000,
-                                onChanged: (_) => setState(() {}),
+                                onChanged: (_) =>
+                                    setState(() => _notice = null),
                                 decoration: InputDecoration(
                                   labelText: l10n.markAnswerFeedback,
                                   border: const OutlineInputBorder(),
@@ -1228,7 +1233,7 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
                       minLines: 2,
                       maxLines: 6,
                       maxLength: 5000,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) => setState(() => _notice = null),
                       decoration: InputDecoration(
                         labelText: l10n.markOverallFeedback,
                         helperText: l10n.markOverallFeedbackHelp,
@@ -1242,6 +1247,24 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
                           _error!,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    if (_notice != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle_outline,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_notice!)),
+                            ],
                           ),
                         ),
                       ),

@@ -4345,6 +4345,10 @@ class AppL10nEn extends AppL10n {
   String get gradeCorrectionReasonHint => 'e.g. added up page 3 again';
 
   @override
+  String get gradeCorrectionReasonWhen =>
+      'Needed only when the mark or score changes.';
+
+  @override
   String get gradeCorrectionReasonTooShort =>
       'Give a reason of at least 3 characters.';
 

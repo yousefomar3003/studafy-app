@@ -2444,6 +2444,10 @@
   },
   "gradeCorrectionReason": "Reason for the change",
   "gradeCorrectionReasonHint": "e.g. added up page 3 again",
+  "gradeCorrectionReasonWhen": "Needed only when the mark or score changes.",
+  "@gradeCorrectionReasonWhen": {
+    "description": "Helper under the correction reason: a comment-only change needs no reason."
+  },
   "gradeCorrectionReasonTooShort": "Give a reason of at least 3 characters.",
   "gradeCorrectionSave": "Save correction",
   "gradeCorrectionNotifies": "If the mark changes, the student and their parents are told. A comment-only change is recorded but not announced.",

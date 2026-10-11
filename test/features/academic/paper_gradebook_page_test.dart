@@ -15,7 +15,7 @@ class _SheetFake implements AcademicRepository {
   PaperGradebook sheet;
   final saves = <(int, List<GradeDraft>)>[];
   final publishes = <int>[];
-  final corrections = <(String, List<GradeCorrection>)>[];
+  final corrections = <(String?, List<GradeCorrection>)>[];
   CourseworkRefusal? refuseSave;
   final attachmentSaves = <(String?, AttachmentChanges)>[];
 
@@ -45,7 +45,7 @@ class _SheetFake implements AcademicRepository {
   @override
   Future<void> correctGrades(
     String assessmentId,
-    String reason,
+    String? reason,
     List<GradeCorrection> entries,
   ) async => corrections.add((reason, entries));
 
@@ -329,6 +329,56 @@ void main() {
     expect(entries.single.gradeId, 'g1');
     expect(entries.single.expectedVersion, 3);
     expect(entries.single.score, 18);
+  });
+
+  testWidgets('a comment-only correction needs no reason (2026-10-11)', (
+    tester,
+  ) async {
+    _tall(tester);
+    final fake = _SheetFake(
+      PaperGradebook(
+        item: _item(published: 1),
+        rows: const [
+          PaperGradebookRow(
+            studentId: 's1',
+            displayName: 'Amal',
+            enrolled: true,
+            grade: PaperGrade(
+              id: 'g1',
+              state: PaperGradeState.published,
+              version: 3,
+              mark: GradeMark.scored,
+              score: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpWidget(_page(fake));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Correct'));
+    await tester.pumpAndSettle();
+    expect(find.text('Needed only when the mark or score changes.'), findsOne);
+
+    // Nothing changed: nothing is sent.
+    await tester.tap(find.text('Save correction'));
+    await tester.pumpAndSettle();
+    expect(fake.corrections, isEmpty);
+
+    await tester.tap(find.text('Correct'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Comment (optional)'),
+      'Well argued',
+    );
+    await tester.tap(find.text('Save correction'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Give a reason of at least 3 characters.'), findsNothing);
+    final (reason, entries) = fake.corrections.single;
+    expect(reason, isNull);
+    expect(entries.single.score, 15);
+    expect(entries.single.feedback, 'Well argued');
   });
 
   testWidgets('the sheet reads in Arabic, right to left', (tester) async {

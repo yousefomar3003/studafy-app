@@ -336,6 +336,8 @@ void main() {
         ),
         findsOneWidget,
       );
+      // Shown above the Save button, not in a snackbar that covers it.
+      expect(find.byType(SnackBar), findsNothing);
       expect(find.text('Graded · not published'), findsOneWidget);
     });
 
@@ -823,7 +825,7 @@ class _MarkingList implements AcademicRepository {
   }) async => const [];
 
   final List<GradeDraft> drafts = [];
-  final List<(String, GradeCorrection)> corrections = [];
+  final List<(String?, GradeCorrection)> corrections = [];
 
   @override
   Future<int> saveGradeDrafts(
@@ -838,7 +840,7 @@ class _MarkingList implements AcademicRepository {
   @override
   Future<void> correctGrades(
     String assessmentId,
-    String reason,
+    String? reason,
     List<GradeCorrection> entries,
   ) async {
     for (final entry in entries) {

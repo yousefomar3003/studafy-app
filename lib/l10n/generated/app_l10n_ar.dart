@@ -4337,6 +4337,10 @@ class AppL10nAr extends AppL10n {
   String get gradeCorrectionReasonHint => 'مثال: أعدت جمع درجات الصفحة 3';
 
   @override
+  String get gradeCorrectionReasonWhen =>
+      'مطلوب فقط عند تغيير العلامة أو الدرجة.';
+
+  @override
   String get gradeCorrectionReasonTooShort => 'اذكر سببًا من 3 أحرف على الأقل.';
 
   @override

@@ -28684,7 +28684,6 @@
           }
         },
         "required": [
-          "reason",
           "entries"
         ],
         "additionalProperties": false

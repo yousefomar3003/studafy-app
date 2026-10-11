@@ -1225,6 +1225,7 @@
   "gradeCorrectionTitle": "تصحيح درجة {name}",
   "gradeCorrectionReason": "سبب التعديل",
   "gradeCorrectionReasonHint": "مثال: أعدت جمع درجات الصفحة 3",
+  "gradeCorrectionReasonWhen": "مطلوب فقط عند تغيير العلامة أو الدرجة.",
   "gradeCorrectionReasonTooShort": "اذكر سببًا من 3 أحرف على الأقل.",
   "gradeCorrectionSave": "حفظ التصحيح",
   "gradeCorrectionNotifies": "إذا تغيّرت الدرجة يُبلَّغ الطالب وأولياء أمره. يُسجَّل تعديل الملاحظة وحدها دون إشعار.",

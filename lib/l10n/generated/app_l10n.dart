@@ -7458,6 +7458,12 @@ abstract class AppL10n {
   /// **'e.g. added up page 3 again'**
   String get gradeCorrectionReasonHint;
 
+  /// Helper under the correction reason: a comment-only change needs no reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed only when the mark or score changes.'**
+  String get gradeCorrectionReasonWhen;
+
   /// No description provided for @gradeCorrectionReasonTooShort.
   ///
   /// In en, this message translates to:

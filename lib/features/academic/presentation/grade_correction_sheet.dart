@@ -5,8 +5,9 @@ import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
 
-/// Correcting one published mark: the new mark, a required reason, and every
-/// earlier change to it. Answers true when the mark was corrected.
+/// Correcting one published mark: the new mark, a reason when the mark or
+/// score changes (a comment-only edit needs none), and every earlier change
+/// to it. Answers true when the mark was corrected.
 Future<bool?> showGradeCorrectionSheet(
   BuildContext context, {
   required PaperGradebookRepository repository,
@@ -82,7 +83,21 @@ class _GradeCorrectionSheetState extends State<_GradeCorrectionSheet> {
       );
       return;
     }
-    if (_reason.text.trim().length < 3) {
+    final feedback = _feedback.text.trim().isEmpty
+        ? null
+        : _feedback.text.trim();
+    final previousMark = widget.grade.mark ?? GradeMark.scored;
+    // Only a change to the mark or score itself needs a reason, as the server
+    // decides too; a comment-only edit is applied without one.
+    final material =
+        _mark != previousMark ||
+        (_mark == GradeMark.scored && score != widget.grade.score);
+    if (!material && feedback == widget.grade.feedback) {
+      Navigator.of(context).pop(false);
+      return;
+    }
+    final reason = _reason.text.trim();
+    if (material && reason.length < 3) {
       setState(() => _error = l10n.gradeCorrectionReasonTooShort);
       return;
     }
@@ -93,16 +108,14 @@ class _GradeCorrectionSheetState extends State<_GradeCorrectionSheet> {
     try {
       await widget.repository.correctGrades(
         widget.assessmentId,
-        _reason.text.trim(),
+        reason.length >= 3 ? reason : null,
         [
           GradeCorrection(
             gradeId: widget.grade.id,
             expectedVersion: widget.grade.version,
             mark: _mark,
             score: score,
-            feedback: _feedback.text.trim().isEmpty
-                ? null
-                : _feedback.text.trim(),
+            feedback: feedback,
           ),
         ],
       );
@@ -203,6 +216,7 @@ class _GradeCorrectionSheetState extends State<_GradeCorrectionSheet> {
                 decoration: InputDecoration(
                   labelText: l10n.gradeCorrectionReason,
                   hintText: l10n.gradeCorrectionReasonHint,
+                  helperText: l10n.gradeCorrectionReasonWhen,
                   border: const OutlineInputBorder(),
                 ),
               ),

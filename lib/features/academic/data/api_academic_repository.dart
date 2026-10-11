@@ -1221,7 +1221,7 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> correctGrades(
     String assessmentId,
-    String reason,
+    String? reason,
     List<GradeCorrection> entries,
   ) => _refusing(
     () => _done(

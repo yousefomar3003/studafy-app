@@ -1145,7 +1145,9 @@ export const V1GradeCorrectionEntry = z.strictObject({
 export type V1GradeCorrectionEntry = z.infer<typeof V1GradeCorrectionEntry>;
 
 export const V1CorrectGradesRequest = z.strictObject({
-  reason: Reason,
+  /// Required by the server only when a mark or score changes; a
+  /// comment-only correction may leave it out (2026-10-11).
+  reason: Reason.optional(),
   entries: z.array(V1GradeCorrectionEntry).min(1).max(100),
 });
 export type V1CorrectGradesRequest = z.infer<typeof V1CorrectGradesRequest>;

@@ -7,7 +7,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(47);
+select plan(50);
 
 \set second_student 'abcf0000-0000-4000-8000-0000000000a2'
 \set outside_student 'abcf0000-0000-4000-8000-0000000000a3'
@@ -238,6 +238,22 @@ select is(private.api061_notification_recipients(:'school_id'::uuid, 'academic.g
     :'item_id', (select audience from public.notification_outbox where source_event_id = :'item_id'
       and template_key = 'academic.grades_corrected')),
   array[:'student_user', :'guardian_user']::uuid[], 'the family of the corrected mark is told');
+
+-- 2026-10-11: a comment-only correction needs no reason, as in online
+-- marking; it is kept in the history as not material and not announced.
+select is(pg_temp.cmd(:'teacher_user', 'correctGrades', :'item_id',
+  jsonb_build_object('entries', jsonb_build_array(jsonb_build_object(
+    'gradeResultId', :'second_grade', 'expectedVersion', 3, 'mark', 'absent',
+    'feedback', 'Sat the exam late; arranged a retake'))))
+  ->'response'->>'notified', '0', 'a comment-only correction needs no reason and is not announced');
+select is((select coalesce(reason, '(none)') || ' ' || material::text
+  from public.grade_result_events where grade_result_id = :'second_grade'
+    and event_type = 'corrected' and next_feedback = 'Sat the exam late; arranged a retake'),
+  '(none) false', 'it is recorded without a reason, as not material');
+select is(pg_temp.cmd(:'teacher_user', 'correctGrades', :'item_id',
+  jsonb_build_object('entries', jsonb_build_array(jsonb_build_object(
+    'gradeResultId', :'second_grade', 'expectedVersion', 4, 'mark', 'scored', 'score', 12))))
+  ->>'outcome', 'reason_required', 'changing the mark itself still needs a reason');
 
 -- The single-grade route keeps the old value too.
 select is(pg_temp.cmd(:'teacher_user', 'correctGradeResult', :'first_grade',

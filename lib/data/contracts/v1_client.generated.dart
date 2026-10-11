@@ -5692,25 +5692,22 @@ class V1CorrectGradeRequestDto {
 }
 
 class V1CorrectGradesRequestDto {
-  const V1CorrectGradesRequestDto({
-    required this.reason,
-    required this.entries,
-  });
+  const V1CorrectGradesRequestDto({this.reason, required this.entries});
 
   factory V1CorrectGradesRequestDto.fromJson(Map<String, dynamic> json) =>
       V1CorrectGradesRequestDto(
-        reason: json['reason'] as String,
+        reason: json['reason'] as String?,
         entries: [
           for (final item in json['entries'] as List<dynamic>)
             V1GradeCorrectionEntryDto.fromJson(item as Map<String, dynamic>),
         ],
       );
 
-  final String reason;
+  final String? reason;
   final List<V1GradeCorrectionEntryDto> entries;
 
   Map<String, Object?> toJson() => {
-    'reason': reason,
+    'reason': ?reason,
     'entries': [for (final item in entries) item.toJson()],
   };
 }
