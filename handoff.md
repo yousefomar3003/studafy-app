@@ -1,8 +1,82 @@
-# Handoff: Studafy study AI, notebooks and material selection
+# Handoff: Studafy
 
-Date: 2026-10-07. Branch: `feat/mvp-school-operations-and-hosted-testing` (not merged to `main`).
+Updated: 2026-10-11. Branch: `feat/mvp-school-operations-and-hosted-testing`
+(not merged to `main`; **31 commits not pushed**, see below).
 
-## Latest (2026-10-11): uploads and hand-ins fixed on the phone
+## Start here (2026-10-11)
+
+**What to work on:** `docs/planning/launch-work-plan.md`, top to bottom. It
+turns the production readiness assessment
+(`docs/evidence/launch-readiness/2026-10-11-production-readiness.md`, issues
+`PR-01` to `PR-29`) into ordered steps, each with who does it and a "Done
+when" check. Tick items there, with the date and evidence, as they are done.
+
+**Verdict of the assessment:** not ready for a public launch. Ready for a
+closed pilot on the test copy once stage 2 of the plan is done. The full
+reasoning, feature inventory, scorecard and go-live checklist are in the
+assessment.
+
+**Accounts**
+- **Apple Developer:** applied for; the owner's email is still being
+  verified. iOS store work (Sign in with Apple, push keys, TestFlight,
+  App Store products) waits; it is stage 5 of the plan.
+- **Google Play Console:** open. Android goes first (stage 3).
+
+**State of the system**
+- **Test copy:**
+  - Fly: `studafy-api-test` and `studafy-worker-test`, both running `0ba0fd0`
+    plus the logging change `34e4d6f`.
+  - Supabase: `cyrngoqnhqflzovlybbr`. The owner created every account in it
+    for testing: preserve its data, never reset it.
+  - Migrations are up to date there (latest `202610110001`).
+- **Phone:** the iPhone 14 Pro has the 2026-10-11 profile build, pointing at
+  the test copy.
+- **Backups:**
+  - daily (GitHub Actions, `main`), encrypted, including uploaded files,
+    restore-checked;
+  - kept 30 days;
+  - the key is `~/studafy-backup.key` plus a copy in the owner's Apple
+    Passwords; the offline USB copy is still to do.
+- **Release builds:** blocked on purpose (SEC-001) on iOS and Android, and a
+  production app refuses to start. The plan lifts this in steps.
+
+**Do first (stage 1 of the plan)**
+1. Push the branch: everything since 2026-10-03 exists only on this Mac.
+2. Make CI reliable: the Flutter job's Android build times out on GitHub's
+   runner but builds locally in about 3 minutes.
+3. Open a PR to `main`.
+
+**Waiting on the owner**
+- Database role passwords (SQL in `docs/deployment/fly-io.md`; auto mode
+  refuses to run it).
+- A Redis with TLS.
+- Clean-up of old Fly secrets and the AWS key.
+- The app ID decision (`com.studafy.light` or `io.studafy.app`).
+- AI provider DPA and DPIA.
+- A malware scanner vendor.
+- Domains.
+
+**Rules that still apply**
+- Test with synthetic accounts on a throwaway local stack, never on the
+  owner's accounts.
+- Hosted reads only as needed, read-only.
+- Back up before any hosted migration (`gh workflow run backup.yml`).
+- Keep these four files uncommitted:
+  - `ios/Runner.xcodeproj/project.pbxproj`;
+  - `ios/Runner/RunnerPersonalTeam.entitlements`;
+  - `fly.toml`;
+  - `.github/workflows/fly-deploy.yml`.
+
+**How to reproduce flows locally** (used on 2026-10-11)
+1. Run a local API and worker on a throwaway Supabase stack.
+2. Seed a teacher, student, class and assignment through the real API.
+3. Run `integration_test/coursework_files_device_test.dart` on the
+   simulator.
+
+The seed scripts lived in that session's scratchpad. Recreate them from the
+test file's header if needed.
+
+## Earlier (2026-10-11): uploads and hand-ins fixed on the phone
 
 **Reproduced and fixed.** Reproduced on the iOS simulator with the real
 screens against a local API, worker and Storage
@@ -48,7 +122,7 @@ build" step failed on GitHub's runner; the same build passes locally.
 
 The `backups` environment can be used only from `main`.
 
-## Latest (2026-10-08, later): security audit (ADR-0041)
+## Earlier (2026-10-08, later): security audit (ADR-0041)
 
 The full report, with evidence for each finding, is
 `docs/evidence/launch-readiness/2026-10-08-security-audit.md`. This section
