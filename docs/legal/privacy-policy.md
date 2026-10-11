@@ -539,7 +539,10 @@ DPF certification is a transfer without a legal basis. -->
   notifications, consents, blocks, data exports, notebooks and study
   notebooks, AI usage records, and personal photos (photos for the notebook
   or the study helper);
-- remove its email address from invitations.
+- remove its email address from invitations;
+- delete, in the same way, every child account the person manages: nobody
+  else can sign in to a child account, so it cannot outlive its parent. The
+  deletion screen names these accounts before the parent confirms.
 
 Some records exist so that the service can be held to account, or belong to
 the school, and are kept:

@@ -24,7 +24,9 @@ made by **Studafy Limited**.
    again when asked.
 
 A parent deletes a child account they manage in the same way, from the
-child's account.
+child's account. **Deleting a parent's own account also deletes every child
+account they manage**, because nobody else can sign in to them; the app names
+these accounts before you confirm.
 
 Before you delete, you can download a copy of your data: **Account**, then
 **Download my data**.
