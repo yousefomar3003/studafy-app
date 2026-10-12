@@ -99,3 +99,5 @@ app.*.map.json
 .widget_preview/
 
 sentry.properties
+ops/legal-site/public/
+.wrangler/

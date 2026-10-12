@@ -1,21 +1,30 @@
 # Studafy Terms of Use
 
-**Last updated:** 30 September 2026
-**Version:** 1.1 (consent version `2026-09-30.2`)
+**Last updated:** 12 October 2026\
+**Version:** 1.2
 
-> **BEFORE PUBLISHING — READ THIS**
->
-> These terms were written from what the application actually does. **They
-> have not been reviewed by a lawyer, and they must be before they are
-> published.** Placeholders in `[SQUARE BRACKETS]` are facts only you can
-> supply. The in-app summary is `policyTermsBody` in `lib/l10n/app_en.arb`
-> and `app_ar.arb`; keep it in step with this document, and publish a new
-> consent version when either changes.
+<!--
+BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
+site's build strips every HTML comment).
 
-These terms are an agreement between you and [REGISTERED COMPANY NAME]
-("we", "us") about your use of Studafy. How we handle personal data is set
-out in the **Privacy Policy**, which forms part of these terms. By signing in
-you accept both.
+These terms were written from what the application actually does. They have
+not been reviewed by a lawyer, and they must be. They are published
+temporarily at /terms (ops/legal-site, launch plan 4.3). Open items are in
+TODO(legal) comments. The in-app summary is policyTermsBody in
+lib/l10n/app_en.arb and app_ar.arb; keep it in step with this document, and
+publish a new consent version when either changes substantively. Version
+1.2 adds the company details and fills §13 and §14 with conservative
+wording for counsel to review; the consent version is unchanged.
+
+The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
+together.
+-->
+
+These terms are an agreement between you and Studafy Limited ("we", "us"), a
+company registered in Ireland under number 822430, about your use of
+Studafy. How we handle personal data is set out in the
+[Privacy Policy](privacy), which forms part of these terms. By signing in you
+accept both.
 
 ---
 
@@ -123,17 +132,17 @@ kept by the school after your account is deleted.
 
 ## 8. The AI study tools
 
-The study helper, whiteboard-to-notes, lesson notes, and quizzes and
-flashcards use an AI provider outside Studafy. The Privacy Policy says
-exactly what is sent to it.
+The study helper, whiteboard-to-notes, lesson summaries and study notebooks,
+and quizzes and flashcards use an AI provider outside Studafy. The Privacy
+Policy says exactly what is sent to it.
 
 - These tools are optional, and are available only where we have switched
   them on.
 - **What they produce can be wrong.** Check it before relying on it, and
   never hand it in as your own work.
 - AI never marks work in Studafy.
-- There are daily and monthly limits. We may change the limits, or pause a
-  tool, to keep the service working and affordable.
+- Each plan has an allowance. We may change the allowances, or pause a tool,
+  to keep the service working and affordable.
 
 ## 9. Subscriptions
 
@@ -151,8 +160,9 @@ exactly what is sent to it.
 
 ## 10. Meetings
 
-Studafy does not host video calls. When a teacher shares a meeting link, the
-call takes place in Google Meet under Google's terms.
+Studafy does not host video calls. When a teacher arranges a meeting, the
+invitation is sent through Google Calendar and the call takes place in
+Google Meet under Google's terms.
 
 ## 11. Availability and changes
 
@@ -164,25 +174,37 @@ and, where the law requires it, ask you to accept again.
 
 ## 12. Ending your use
 
-You can delete your account at any time from Account settings; deletion can
-be cancelled for 14 days. A parent does this for a child account they
-manage. Records the school must keep stay with the school, as the app shows
-you before you confirm. We may suspend or close an account that breaks these
-terms, and will tell you why unless the law or a child's safety prevents it.
+You can delete your account at any time from Account settings, or by asking
+us (see [Delete your account](delete-account)); deletion can be cancelled for
+14 days. A parent does this for a child account they manage. Records the
+school must keep stay with the school, as the app shows you before you
+confirm. We may suspend or close an account that breaks these terms, and will
+tell you why unless the law or a child's safety prevents it.
 
 ## 13. Liability
 
-[TO BE WRITTEN WITH COUNSEL. Must not exclude liability that consumer or
-data-protection law does not allow to be excluded, and must be written for
-readers who are children and parents.]
+Nothing in these terms limits or excludes any liability that the law does
+not allow to be limited or excluded, including liability for death or
+personal injury caused by negligence, for fraud, or under consumer and
+data-protection law. Nothing in these terms affects your rights as a
+consumer.
+
+<!-- TODO(legal): write the rest of this section with counsel. It must not
+exclude liability that consumer or data-protection law does not allow to be
+excluded, and must be written for readers who are children and parents. -->
 
 ## 14. Law and disputes
 
-[GOVERNING LAW AND JURISDICTION — TO BE CONFIRMED WITH COUNSEL. Consumers
-keep the protection of the law of the country where they live.]
+These terms are governed by the law of Ireland. If you are a consumer, you
+also keep the protection of the mandatory law of the country where you live,
+and you may bring a claim in the courts of that country.
+
+<!-- TODO(legal): confirm governing law and jurisdiction with counsel,
+including for users in Jordan. -->
 
 ## 15. Contact
 
-[REGISTERED COMPANY NAME]
-[REGISTERED ADDRESS]
-[CONTACT EMAIL]
+Studafy Limited\
+4/5 The Square, Cahir, Co. Tipperary, Ireland\
+Company number 822430\
+hello@studafy.com
