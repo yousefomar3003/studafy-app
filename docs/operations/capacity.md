@@ -1,5 +1,16 @@
 # Capacity: how many users Studafy can serve
 
+> **Re-measured on 2026-10-12** (launch plan 4.8), with online exams, study
+> notebooks and AI tools, and through the real API as well as the database
+> alone: **[docs/capacity/2026-10-12.md](../capacity/2026-10-12.md)**.
+> Headline: about **130 requests/s comfortable (about 1,300 people at once)
+> on a 10-vCPU database, through the API**. The first bottleneck is database
+> CPU. Launch with at least 4 dedicated database vCPUs and
+> `DATABASE_POOL_MAX=10` per process. The figures below are the 2026-09-29
+> database-only measurement. The same screens now cost about 40% more there
+> (300 rather than ~500 requests/s), and the per-vCPU table is superseded by
+> the new report. They are kept for the history of the fixes.
+
 Measured on 2026-09-29 with the scale harness in `scripts/scale`, which
 anyone can rerun (below). Numbers are for the database side, which is where
 this system saturates first; the API scales out by adding instances.

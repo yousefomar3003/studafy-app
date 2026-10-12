@@ -32,6 +32,7 @@
     "alerts:test": "bun apps/worker/src/monitoring/sendTestAlert.ts",
     "scale:prepare": "bash scripts/scale/prepare-scale-db.sh",
     "scale:bench": "bun scripts/scale/bench.ts",
+    "scale:http": "bun scripts/scale/http-load.ts",
     "test:auth:lifecycle": "bun apps/api/scripts/verify-auth-lifecycle.ts",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
