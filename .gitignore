@@ -99,3 +99,4 @@ app.*.map.json
 .widget_preview/
 
 sentry.properties
+device-logs/

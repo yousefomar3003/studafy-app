@@ -63,6 +63,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Studafy Plus'), findsOne);
+      // On a smaller screen (the Android emulator) Max is further down.
+      await tester.scrollUntilVisible(
+        find.text('Studafy Max'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Studafy Max'), findsOne);
       expect(find.textContaining(r'$5.99'), findsWidgets);
       expect(tester.takeException(), isNull);
