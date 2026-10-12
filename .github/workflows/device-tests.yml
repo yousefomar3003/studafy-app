@@ -127,6 +127,15 @@ jobs:
           flutter-version: 3.47.1
           cache: true
 
+      # The emulator's data partition needs more room than a hosted runner
+      # leaves free; these toolchains are never used here.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL" \
+            /usr/local/lib/android/sdk/ndk
+          df -h /
+
       # The emulator needs hardware acceleration, which hosted runners
       # offer through KVM.
       - name: Enable KVM
@@ -155,7 +164,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api34-x86_64-google_apis
+          key: avd-api34-x86_64-google_apis-4g
 
       - name: Create the emulator snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -165,7 +174,8 @@ jobs:
           arch: x86_64
           target: google_apis
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disk-size: 4096M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           disable-animations: false
           script: echo "Emulator snapshot created for the cache."
 
@@ -176,7 +186,8 @@ jobs:
           arch: x86_64
           target: google_apis
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disk-size: 4096M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           disable-animations: true
           script: tools/ci/run-device-tests.sh emulator-5554
 
