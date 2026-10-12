@@ -1,7 +1,7 @@
 # Handoff: Studafy
 
 Updated: 2026-10-12. Everything earlier is on `main`. Today's work is in
-nine open pull requests, #34 to #42, all with CI green. Nothing from today
+ten open pull requests, #34 to #43, all with CI green. Nothing from today
 is deployed.
 
 ## Start here (2026-10-12)
@@ -22,7 +22,7 @@ open for the owner to merge:
 | #40 | 7.1a | Tests: Family+ over HTTP, notification processor, material reading and file scan through Postgres; notification isolation | Green, merge |
 | #41 | 7.1b | Accessibility checks on every main screen (EN, AR, 2× text) and the fixes they found | Green, merge |
 | #42 | 7.1c | Device tests on an iOS simulator and an Android emulator in CI; reduced-motion layout fix | Green, merge |
-| (this) | 7.2 | README, credentials map, ADR statuses, environment matrix, this file, launch-plan notes | Merge |
+| #43 | 7.2 | README, credentials map, ADR statuses, environment matrix, this file, launch-plan notes | Merge |
 
 They are independent and branch from `main`. One overlap: #35 and #37 both
 describe managed-child deletion, consistently.
@@ -38,7 +38,7 @@ describe managed-child deletion, consistently.
 - **Load testing:** only on a local throwaway stack, with AI stubbed.
 
 **Waiting on the owner (new today)**
-1. **Merge #34 to #42 and the 7.2 PR.**
+1. **Merge #34 to #43.**
 2. **Approve the legal-site deploy:**
    `npx wrangler deploy --config ops/legal-site/wrangler.toml` (after
    `npx wrangler login`). It publishes to
