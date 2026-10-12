@@ -250,6 +250,12 @@ class _ConversationsPageState extends State<ConversationsPage>
         ),
       );
 
+  /// Too little room for a labelled button beside the title.
+  bool _compactHeader(BuildContext context) =>
+      MediaQuery.sizeOf(context).width /
+          MediaQuery.textScalerOf(context).scale(1) <
+      360;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -269,7 +275,16 @@ class _ConversationsPageState extends State<ConversationsPage>
         actions: [
           // Labelled, and only here: announcements have their own control
           // inside their own tab, so the two never sit together.
-          if (canStart)
+          // On a narrow phone, or with large text, the labelled button
+          // would squeeze the title to nothing: an icon with its tooltip
+          // read out instead (launch plan 7.1).
+          if (canStart && _compactHeader(context))
+            IconButton(
+              tooltip: l10n.msgNew,
+              icon: const Icon(Icons.edit_square),
+              onPressed: () => _startNew(schoolId, identity.userId),
+            )
+          else if (canStart)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 4),
               child: StudafyPillButton(
@@ -637,10 +652,12 @@ class AnnouncementCard extends StatelessWidget {
                 ),
               ),
               if (announcement.important)
-                StatusPill(
-                  label: l10n.msgImportant,
-                  icon: Icons.priority_high_rounded,
-                  color: studafyDanger,
+                Flexible(
+                  child: StatusPill(
+                    label: l10n.msgImportant,
+                    icon: Icons.priority_high_rounded,
+                    color: studafyDanger,
+                  ),
                 ),
             ],
           ),

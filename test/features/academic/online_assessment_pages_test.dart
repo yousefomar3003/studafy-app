@@ -8,6 +8,7 @@ import 'package:studafy/features/academic/presentation/assessment_marking_page.d
 import 'package:studafy/features/academic/presentation/assessment_page.dart';
 import 'package:studafy/features/academic/presentation/take_assessment_page.dart';
 
+import '../../support/accessibility.dart';
 import '../../support/localized_app.dart';
 
 /// Online assessments as each role sees them (ADR-0036). Who may read a key,
@@ -169,6 +170,31 @@ void main() {
       final attempt = (await repository.attempts(id)).single;
       expect(attempt.answers.first.selectedOptionIds, ['a']);
     });
+
+    // Launch plan 7.1: sitting an exam passes the accessibility checks in
+    // both languages.
+    for (final locale in const [Locale('en'), Locale('ar')]) {
+      testWidgets('sitting an exam is accessible: ${locale.languageCode}', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        _tall(tester);
+        final (repository, id) = await _assessment();
+        await tester.pumpWidget(
+          localizedApp(
+            locale: locale,
+            home: TakeAssessmentPage(
+              title: 'Fractions quiz',
+              repository: repository,
+              assessmentId: id,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await expectAccessible(tester);
+        semantics.dispose();
+      });
+    }
 
     testWidgets('a preview shows the questions and cannot be submitted', (
       tester,

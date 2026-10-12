@@ -98,10 +98,14 @@ class _ClassesPageState extends State<ClassesPage> {
                           ),
                         ),
                       ),
-                      FilledButton.tonalIcon(
-                        onPressed: () => _createClass(context),
-                        icon: const Icon(Icons.add_rounded),
-                        label: Text(AppL10n.of(context).classesCreate),
+                      // May shrink, its label wrapping, with the largest
+                      // text sizes (launch plan 7.1).
+                      Flexible(
+                        child: FilledButton.tonalIcon(
+                          onPressed: () => _createClass(context),
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(AppL10n.of(context).classesCreate),
+                        ),
                       ),
                     ],
                   ),

@@ -11,6 +11,7 @@ import 'package:studafy/features/session/presentation/login_page.dart';
 import 'package:studafy/features/session/presentation/provider_marks.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
 
+import '../../support/accessibility.dart';
 import '../../support/localized_app.dart';
 import '../../support/session_repository_fake.dart';
 
@@ -162,6 +163,55 @@ void main() {
       expect(colour(), isNot(before));
       expect(find.byType(LoginPage), findsOne);
     });
+  });
+
+  // Launch plan 7.1: the first screens anyone sees pass the accessibility
+  // checks (tap targets, labels, contrast), in both languages.
+  group('accessibility', () {
+    for (final locale in const [Locale('en'), Locale('ar')]) {
+      testWidgets('welcome, roles and sign-in: ${locale.languageCode}', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        tall(tester);
+        await tester.pumpWidget(
+          localizedApp(
+            locale: locale,
+            home: RolePage(
+              session: _session(),
+              settings: InMemoryDeviceSettings(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await expectAccessible(tester);
+
+        await tester.pumpWidget(
+          localizedApp(
+            locale: locale,
+            home: RolePage(
+              session: _session(),
+              settings: InMemoryDeviceSettings({
+                DeviceSettingKeys.introSeen: '1',
+              }),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await expectAccessible(tester);
+        for (final role in UserRole.values) {
+          await tester.pumpWidget(
+            localizedApp(
+              locale: locale,
+              home: LoginPage(role: role, session: _session()),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await expectAccessible(tester);
+        }
+        semantics.dispose();
+      });
+    }
   });
 }
 

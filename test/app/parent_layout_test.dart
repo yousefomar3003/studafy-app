@@ -14,6 +14,7 @@ import 'package:studafy/features/messaging/application/messaging_interactor.dart
 import 'package:studafy/features/messaging/domain/messaging.dart';
 import 'package:studafy/features/messaging/presentation/messaging_scope.dart';
 
+import '../support/accessibility.dart';
 import '../support/localized_app.dart';
 
 /// Every parent tab, with two children at two schools, on a small phone, a
@@ -27,6 +28,9 @@ void main() {
     ('phone, large text', const Size(390, 844), 1.6, const Locale('en')),
     ('phone, Arabic', const Size(390, 844), 1, const Locale('ar')),
     ('tablet', const Size(834, 1112), 1, const Locale('en')),
+    // Launch plan 7.1: the largest text size phones offer, in both scripts.
+    ('phone, 2x text', const Size(390, 844), 2, const Locale('en')),
+    ('phone, Arabic, 2x text', const Size(390, 844), 2, const Locale('ar')),
   ];
 
   for (final (name, size, scale, locale) in cases) {
@@ -34,6 +38,9 @@ void main() {
       StudafyRuntime.initialize(
         const RuntimePolicy(StudafyEnvironment.synthetic),
       );
+      // Accessibility on every tab (launch plan 7.1): tap targets, labels,
+      // contrast.
+      final semantics = tester.ensureSemantics();
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -81,15 +88,18 @@ void main() {
       final count = tabs.evaluate().length;
       // Today, Learning, Announcements, Messages.
       expect(count, 4);
+      await expectAccessible(tester);
       for (var tab = 1; tab < count; tab++) {
         await tester.tap(tabs.at(tab));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'tab $tab');
+        await expectAccessible(tester);
       }
       // The inbox is the last tab: it knows who is signed in.
       if (locale.languageCode == 'en') {
         expect(find.text('Choose a school to see messages.'), findsNothing);
       }
+      semantics.dispose();
     });
   }
 }

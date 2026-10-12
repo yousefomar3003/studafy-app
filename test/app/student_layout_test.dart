@@ -12,6 +12,7 @@ import 'package:studafy/features/study/data/preview_study_repository.dart';
 import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
 import 'package:studafy/features/study_assistant/domain/study_assistant_repository.dart';
 
+import '../support/accessibility.dart';
 import '../support/localized_app.dart';
 
 /// Every student tab, on a small phone, a large phone and a tablet, with
@@ -59,10 +60,16 @@ void main() {
     ('phone, large text', const Size(390, 844), 1.6, const Locale('en')),
     ('phone, Arabic', const Size(390, 844), 1, const Locale('ar')),
     ('tablet', const Size(834, 1112), 1, const Locale('en')),
+    // Launch plan 7.1: the largest text size phones offer, in both scripts.
+    ('phone, 2x text', const Size(390, 844), 2, const Locale('en')),
+    ('phone, Arabic, 2x text', const Size(390, 844), 2, const Locale('ar')),
   ];
 
   for (final (name, size, scale, locale) in cases) {
     testWidgets('every student tab lays out: $name', (tester) async {
+      // Accessibility on every tab (launch plan 7.1): tap targets, labels,
+      // contrast.
+      final semantics = tester.ensureSemantics();
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -93,11 +100,14 @@ void main() {
       // Today, Lessons, Work, Helper - by position, so the check holds in
       // either language.
       expect(find.byType(StudafyNavDestination), findsNWidgets(4));
+      await expectAccessible(tester);
       for (var tab = 1; tab < 4; tab++) {
         await tester.tap(find.byType(StudafyNavDestination).at(tab));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'tab $tab');
+        await expectAccessible(tester);
       }
+      semantics.dispose();
     });
   }
 }

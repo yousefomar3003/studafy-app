@@ -5,6 +5,7 @@ import 'package:studafy/features/account/application/account_interactor.dart';
 import 'package:studafy/features/account/domain/account_repository.dart';
 import 'package:studafy/features/account/presentation/delete_account_page.dart';
 
+import '../../support/accessibility.dart';
 import '../../support/localized_app.dart';
 
 /// AUTH-030 in-app account deletion (Apple 5.1.1(v), Google Play).
@@ -67,8 +68,9 @@ DeletionImpact _impact({int attendance = 12, int grades = 4}) => DeletionImpact(
 
 Future<void> pumpPage(
   WidgetTester tester,
-  FakeAccountRepository repository,
-) async {
+  FakeAccountRepository repository, {
+  Locale? locale,
+}) async {
   // The form is a long scrolling list; the default 800x600 surface would leave
   // most of it unbuilt, so the assertions below would pass or fail on layout
   // rather than on content.
@@ -79,6 +81,7 @@ Future<void> pumpPage(
 
   await tester.pumpWidget(
     localizedApp(
+      locale: locale,
       home: DeleteAccountPage(
         email: 'rana@alnoor.edu',
         account: AccountInteractor(repository),
@@ -241,4 +244,21 @@ void main() {
       findsOneWidget,
     );
   });
+
+  // Launch plan 7.1: the whole form, a parent's child accounts included,
+  // passes the accessibility checks in both languages.
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    testWidgets('the deletion form is accessible: ${locale.languageCode}', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pumpPage(
+        tester,
+        FakeAccountRepository(impact: _impact()),
+        locale: locale,
+      );
+      await expectAccessible(tester);
+      semantics.dispose();
+    });
+  }
 }

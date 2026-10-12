@@ -479,7 +479,9 @@ class _LoginPageState extends State<LoginPage> {
       footer: Center(
         child: TextButton.icon(
           onPressed: () => Navigator.pop(c),
-          style: TextButton.styleFrom(foregroundColor: studafyFrost),
+          // White: the paler frost read at 3.4:1 on the lower ocean, under
+          // WCAG's 4.5:1 for text this size (launch plan 7.1).
+          style: TextButton.styleFrom(foregroundColor: Colors.white),
           icon: Icon(backChevron(c)),
           label: Text(l10n.loginChangeRole),
         ),
@@ -567,6 +569,13 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 Checkbox(
                   value: accepted,
+                  // Read out as the whole sentence it agrees to, not just
+                  // "checkbox" (launch plan 7.1).
+                  semanticLabel:
+                      '${l10n.loginConsentPrefix}${l10n.loginTermsOfUse}'
+                              '${l10n.loginConsentAnd}${l10n.loginPrivacyPolicy}'
+                              '${l10n.loginConsentSuffix}'
+                          .trim(),
                   activeColor: studafyDeep,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(5),
@@ -578,6 +587,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 Expanded(
                   child: Wrap(
+                    // The links are taller than their words; keep the line's
+                    // text level with them.
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(l10n.loginConsentPrefix),
                       LinkText(
@@ -672,15 +684,24 @@ class LinkText extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext c) => GestureDetector(
-    onTap: onTap,
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: studafyDeep,
-        fontWeight: FontWeight.w700,
-        decoration: TextDecoration.underline,
-        decorationColor: studafyDeep,
+  Widget build(BuildContext c) => Semantics(
+    link: true,
+    child: GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      // 48 tall: the minimum touch target, though the words stay their
+      // size (launch plan 7.1).
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: studafyDeep,
+            fontWeight: FontWeight.w700,
+            decoration: TextDecoration.underline,
+            decorationColor: studafyDeep,
+          ),
+        ),
       ),
     ),
   );
