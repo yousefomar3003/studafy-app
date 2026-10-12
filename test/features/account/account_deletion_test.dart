@@ -241,4 +241,36 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('a parent is told which child accounts are deleted too', (
+    tester,
+  ) async {
+    final repository = FakeAccountRepository(
+      impact: DeletionImpact(
+        schools: const [],
+        retainedSchoolRecords: const {
+          'attendance': 0,
+          'grades': 0,
+          'submissions': 0,
+          'wellbeing': 0,
+        },
+        deletedPersonalRecords: const {'profile': 1},
+        gracePeriodDays: 14,
+        managedChildAccounts: const ['Kai', 'Lina'],
+      ),
+    );
+    await pumpPage(tester, repository);
+
+    expect(find.text('CHILD ACCOUNTS DELETED TOO'), findsOneWidget);
+    expect(find.text('Kai'), findsOneWidget);
+    expect(find.text('Lina'), findsOneWidget);
+  });
+
+  testWidgets('no child section for someone who manages no child accounts', (
+    tester,
+  ) async {
+    await pumpPage(tester, FakeAccountRepository(impact: _impact()));
+
+    expect(find.text('CHILD ACCOUNTS DELETED TOO'), findsNothing);
+  });
 }

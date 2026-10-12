@@ -241,6 +241,8 @@ export const V1DeletionImpactResponse = z.strictObject({
   deletedPersonalData: V1DeletionDeletedData,
   guardianLinks: z.number().int().min(0),
   activeEntitlements: z.number().int().min(0),
+  /** Names of the child accounts the caller manages; they are deleted too. */
+  managedChildAccounts: z.array(z.string()),
   gracePeriodDays: z.number().int().min(1),
 });
 export type V1DeletionImpactResponse = z.infer<
