@@ -1,6 +1,8 @@
 # ADR-0018: API-040 shared API platform controls
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-14
 - Decision log: DL-039
 - Extends: ADR-0011, ADR-0016 and ADR-0017

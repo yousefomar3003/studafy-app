@@ -1,6 +1,7 @@
 # ADR-0026: AI-072 — remove the AI capability
 
-- Status: Accepted for local/disposable use; superseded in part by
+- Status: Superseded in part by [ADR-0037](ADR-0037-grounded-study-ai-and-token-allowances.md)
+  (grounded study AI, 2026-10-06) and, earlier, by
   [ADR-0029](ADR-0029-study-plans-and-ai-lesson-tools.md), which brings back
   whiteboard notes, quizzes and flashcards behind `AI_LESSON_TOOLS_ENABLED`
 - Date: 2026-09-18

@@ -1,6 +1,8 @@
 # ADR-0041: Client addresses, encrypted and least-privilege database connections, and AI failures that were billed
 
-- Status: Accepted in code; not deployed (see "Rollout")
+- Status: Accepted; deployed to the Fly test copy on 2026-10-08 (see
+  "Rollout"; reviewed 2026-10-12). The owner actions under "Rollout" that
+  remain open are listed in `handoff.md`
 - Date: 2026-10-08
 - Decision owner: repository owner
 - Relates to: ADR-0014 (least-privilege database access), ADR-0024 (rate

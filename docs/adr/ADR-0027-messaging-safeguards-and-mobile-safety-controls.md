@@ -1,6 +1,8 @@
 # ADR-0027: Messaging safeguards and mobile report/block controls
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-19
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Decision log: DL-049

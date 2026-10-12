@@ -1,6 +1,8 @@
 # ADR-0020: API-042 school operations, invitations, family, communications, meetings, notifications, account rights and support access
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-16
 - Decision log: DL-041
 

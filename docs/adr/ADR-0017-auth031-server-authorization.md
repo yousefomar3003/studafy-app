@@ -1,6 +1,8 @@
 # ADR-0017: AUTH-031 server authorization and tenant context
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-14
 - Decision log: DL-038
 - Extends: ADR-0002, ADR-0014 and ADR-0016
