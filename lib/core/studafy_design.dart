@@ -168,7 +168,12 @@ class FeatureCard extends StatelessWidget {
         ),
       ),
     );
-    return onTap == null ? card : StudafyPressable(child: card);
+    // A tappable card is one button to a screen reader, announced by its
+    // own text: without the merge, the tap sat on an unlabelled node and the
+    // words on a separate one (launch plan 7.1).
+    return onTap == null
+        ? card
+        : MergeSemantics(child: StudafyPressable(child: card));
   }
 }
 

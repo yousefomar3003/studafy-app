@@ -672,7 +672,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
             // things a student looks for first, so both are labelled.
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
-              child: Row(
+              // Wraps onto a second line with the largest text sizes.
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   StudafyPillButton(
                     icon: Icons.add_comment_rounded,
@@ -680,7 +683,6 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                     prominent: true,
                     onPressed: _asking || _turns.isEmpty ? null : _newChat,
                   ),
-                  const SizedBox(width: 8),
                   if (widget.chats != null)
                     StudafyPillButton(
                       icon: Icons.history_rounded,
@@ -763,8 +765,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                         using
                             ? l10n.helperAnsweringFrom
                             : l10n.helperNoMaterial,
+                        // Navy: muted grey on the wash background is under
+                        // WCAG's 4.5:1 for text this small (launch plan 7.1).
                         style: const TextStyle(
-                          color: studafyMuted,
+                          color: studafyNavy,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                         ),

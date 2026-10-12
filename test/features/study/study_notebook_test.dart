@@ -7,6 +7,7 @@ import 'package:studafy/features/study/presentation/notes_text.dart';
 import 'package:studafy/features/study/presentation/study_notebook_page.dart';
 import 'package:studafy/features/study/presentation/study_notebook_shelf.dart';
 
+import '../../support/accessibility.dart';
 import '../../support/localized_app.dart';
 
 void main() {
@@ -131,16 +132,36 @@ void main() {
   });
 
   group('the notebook', () {
-    Widget page(_Notebooks study, {StudyPlanTier tier = StudyPlanTier.max}) =>
-        localizedApp(
-          home: StudyNotebookPage(
-            study: study,
-            notebookId: 'n1',
-            plan: planOf(tier),
-            onOpenPlans: () {},
-            poll: const Duration(milliseconds: 50),
-          ),
-        );
+    Widget page(
+      _Notebooks study, {
+      StudyPlanTier tier = StudyPlanTier.max,
+      Locale? locale,
+    }) => localizedApp(
+      locale: locale,
+      home: StudyNotebookPage(
+        study: study,
+        notebookId: 'n1',
+        plan: planOf(tier),
+        onOpenPlans: () {},
+        poll: const Duration(milliseconds: 50),
+      ),
+    );
+
+    // Launch plan 7.1: an open notebook passes the accessibility checks in
+    // both languages.
+    for (final locale in const [Locale('en'), Locale('ar')]) {
+      testWidgets('an open notebook is accessible: ${locale.languageCode}', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        tall(tester);
+        final study = _Notebooks()..seedReady();
+        await tester.pumpWidget(page(study, locale: locale));
+        await tester.pumpAndSettle();
+        await expectAccessible(tester);
+        semantics.dispose();
+      });
+    }
 
     testWidgets('has a cover, contents and numbered pages, only for parts '
         'that have something in them', (tester) async {
