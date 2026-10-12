@@ -225,6 +225,7 @@ export class FakeAuthRepository {
       },
       guardian_links: 0,
       active_entitlements: 0,
+      managed_child_accounts: ["Kai"],
     });
   }
 

@@ -307,6 +307,13 @@ class AppL10nEn extends AppL10n {
   String get deleteSchoolAccessHeading => 'SCHOOL ACCESS THAT ENDS';
 
   @override
+  String get deleteChildAccountsHeading => 'CHILD ACCOUNTS DELETED TOO';
+
+  @override
+  String get deleteChildAccountsBody =>
+      'You manage these child accounts. Nobody else can sign in to them, so they are deleted with your account, after the same 14 days.';
+
+  @override
   String get deleteWhyHeading => 'TELL US WHY';
 
   @override

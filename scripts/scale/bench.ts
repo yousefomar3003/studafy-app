@@ -16,9 +16,21 @@
  * --users     concurrent virtual users to run, one run per value
  * --seconds   length of each run
  * --think     ms a user waits between requests (default 0: flat out)
+ * --classic   only the screens measured on 2026-09-29 (no exams, notebooks
+ *             or AI), to compare like with like
  * --max-p95   fail (exit 1) when any screen's p95 exceeds this many ms, or
  *             any request errors - the CI regression guard
  * Sizes must match the seed: --schools --students --teachers --classes --enrol
+ *   --exams
+ *
+ * Since 2026-10-12 (launch plan 4.8) a visit also covers online exams
+ * (open, answer, hand in; teachers list attempts), study notebooks (list,
+ * open, save notes), the AI usage bar, the material cache behind quizzes and
+ * flashcards, and the database side of an AI question (allowance hold and
+ * settle). The provider call itself is not here: its latency and cost are
+ * modelled separately (docs/capacity/2026-10-12.md). Study routes check
+ * their permission against the session, so they make no authorization call
+ * and run with no school, as the API does.
  */
 import postgres from "postgres";
 
@@ -40,20 +52,24 @@ const userLevels = opt("users", "10,25,50,100").split(",").map(Number);
 const seconds = Number(opt("seconds", "20"));
 const think = Number(opt("think", "0"));
 const maxP95 = Number(opt("max-p95", "0"));
+// --classic: only the screens measured on 2026-09-29, to compare like with like.
+const classic = args.includes("--classic");
 const size = {
   schools: Number(opt("schools", "100")),
   students: Number(opt("students", "500")),
   teachers: Number(opt("teachers", "40")),
   classes: Number(opt("classes", "60")),
   enrol: Number(opt("enrol", "3")),
+  exams: Number(opt("exams", "2")),
 };
 
 function sid(kind: string, a: number, b = 0): string {
   const h = new Bun.CryptoHasher("md5").update(`${kind}:${a}:${b}`).digest(
     "hex",
   );
-  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${
-    h.slice(16, 20)
+  // Version 4 shape, as seed-scale.sql makes them.
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${
+    h.slice(17, 20)
   }-${h.slice(20)}`;
 }
 const pick = (n: number) => 1 + Math.floor(Math.random() * n);
@@ -75,11 +91,20 @@ type Call = {
   operation: string;
   target: string | null;
   input: Record<string, unknown>;
+  /** A command: reserve an idempotency key, then the command dispatcher. */
   write?: boolean;
+  /** For writes: the command dispatcher (api041 academic, api042 the rest). */
+  command?: string;
+  /** A study function called as fn(operation, input), not a dispatcher. */
+  study?: boolean;
+  /** The request a person makes next with what this one returned. */
+  next?: (result: Result) => Call | null;
 };
+/** A follow-up that depends on what this request returned. */
+type Result = Record<string, unknown>;
 
 /** One API request: authorization, then the query, as the API runs them. */
-async function request(call: Call): Promise<void> {
+async function request(call: Call): Promise<Result> {
   if (call.permission) {
     await sql.begin(async (tx) => {
       await tx`select set_config('request.jwt.claim.sub', ${call.subject}, true)`;
@@ -88,24 +113,42 @@ async function request(call: Call): Promise<void> {
       if (!row?.d?.allowed) throw new Error(`denied: ${call.name}`);
     });
   }
-  await sql.begin(async (tx) => {
+  return await sql.begin(async (tx) => {
     await tx`select
       set_config('request.jwt.claim.sub', ${call.subject}, true),
       set_config('studafy.school_id', ${call.school ?? ""}, true),
       set_config('studafy.request_id', ${crypto.randomUUID()}, true)`;
+    if (call.study) {
+      const rows = await tx.unsafe<{ r: Result | null }[]>(
+        `select ${call.dispatcher}($1, $2::jsonb) as r`,
+        [call.operation, tx.json(call.input as never)],
+      );
+      const result = rows[0]?.r;
+      if (!result || (result.outcome && result.outcome !== "ok")) {
+        throw new Error(`${call.name}: ${String(result?.outcome ?? "null")}`);
+      }
+      return result;
+    }
     if (call.write) {
       const [reserved] = await tx<{ r: { id: string } }[]>`
         select private.api_idempotency_reserve(${call.school}::uuid,
           ${"v1." + call.operation}, ${crypto.randomUUID()}, ${
         "0".repeat(64)
       }) as r`;
-      const [done] = await tx<{ r: { outcome: string } }[]>`
-        select private.api042_command(${call.operation}, ${call.target}::uuid,
-          ${tx.json(call.input as never)}, ${reserved!.r.id}::uuid, 1) as r`;
-      if (done?.r?.outcome !== "ok") {
-        throw new Error(`${call.name}: ${done?.r?.outcome}`);
+      const command = call.command ?? "private.api042_command";
+      const done = await tx.unsafe<{ r: Result & { outcome: string } }[]>(
+        `select ${command}($1, $2::uuid, $3::jsonb, $4::uuid, 1) as r`,
+        [
+          call.operation,
+          call.target,
+          tx.json(call.input as never),
+          reserved!.r.id,
+        ],
+      );
+      if (done[0]?.r?.outcome !== "ok") {
+        throw new Error(`${call.name}: ${done[0]?.r?.outcome}`);
       }
-      return;
+      return done[0]!.r;
     }
     const rows = await tx.unsafe<{ r: Record<string, unknown> | null }[]>(
       `select ${call.dispatcher}($1, $2::uuid, $3::jsonb) as r`,
@@ -115,10 +158,207 @@ async function request(call: Call): Promise<void> {
     if (!result || (result.outcome && result.outcome !== "ok")) {
       throw new Error(`${call.name}: ${String(result?.outcome ?? "null")}`);
     }
+    return result;
   });
 }
 
-const page = { limit: 20, position: null };
+// The SQL reads pageSize; `limit` was ignored, so lists returned 50 rows.
+const page = { pageSize: 20, position: null };
+
+const fingerprint = (versionId: string) =>
+  new Bun.CryptoHasher("sha256").update(JSON.stringify([[versionId, 1, []]]))
+    .digest("hex");
+
+/** The screens added since 2026-09-29, for one student (launch plan 4.8). */
+function studentStudy(
+  s: number,
+  n: number,
+  school: string,
+  me: string,
+  c: number,
+): Call[] {
+  const roll = Math.random();
+  if (roll < 0.4) {
+    // Exams: the list, one exam's questions, and sometimes a hand-in.
+    const e = pick(size.exams);
+    const exam = sid("ex", s, c * 1000 + e);
+    const base = { subject: me, school, target: null as string | null };
+    const calls: Call[] = [{
+      ...base,
+      name: "student.exams",
+      permission: "assessment.list",
+      resource: school,
+      dispatcher: "private.api041_query",
+      operation: "listAssessments",
+      input: page,
+    }, {
+      ...base,
+      name: "student.exam.questions",
+      permission: "assessment_question.list",
+      resource: exam,
+      dispatcher: "private.api041_query",
+      operation: "listAssessmentQuestions",
+      target: exam,
+      input: page,
+    }];
+    if (Math.random() < 0.3) {
+      calls.push({
+        ...base,
+        name: "student.exam.submit",
+        permission: "assessment.submit",
+        resource: exam,
+        dispatcher: "",
+        command: "private.api041_command",
+        operation: "submitAssessment",
+        target: exam,
+        write: true,
+        input: {
+          body: {
+            answers: [1, 2, 3, 4, 5].map((q) => {
+              const questionId = sid("eq", s, (c * 1000 + e) * 10 + q);
+              return q <= 3
+                ? { questionId, selectedOptionIds: ["a"] }
+                : { questionId, answerText: "Chlorophyll absorbs light." };
+            }),
+          },
+          params: { assessmentId: exam },
+          responseStatus: 201,
+        },
+      });
+    }
+    return calls;
+  }
+  const study = {
+    subject: me,
+    school: null,
+    target: null,
+    permission: null,
+    resource: null,
+    study: true,
+  };
+  if (roll < 0.8) {
+    // Study notebooks: the class's list, open one, sometimes save notes.
+    const notebook = sid("nb", s, n);
+    const own = sid("cl", s, (n * size.enrol) % size.classes);
+    return [{
+      ...study,
+      school,
+      name: "student.notebooks",
+      permission: "notebook.read",
+      resource: own,
+      dispatcher: "private.api055_study_notebooks",
+      operation: "list",
+      input: { classroomId: own },
+    }, {
+      ...study,
+      name: "student.notebook.open",
+      dispatcher: "private.api055_study_notebooks",
+      operation: "get",
+      input: { id: notebook },
+      next: (opened) => {
+        const version = (opened.notebook as { personalVersion?: number })
+          ?.personalVersion;
+        if (!version || Math.random() >= 0.5) return null;
+        return {
+          ...study,
+          name: "student.notebook.save",
+          dispatcher: "private.api055_study_notebooks",
+          operation: "personal",
+          input: {
+            id: notebook,
+            expectedVersion: version,
+            personal: {
+              notes: [{
+                id: crypto.randomUUID().slice(0, 8),
+                sectionKey: "cells",
+                text: "Revise for Friday.",
+              }],
+              sections: [],
+              bookmarks: [],
+              highlights: [],
+            },
+          },
+        };
+      },
+    }];
+  }
+  // AI: the usage bar, then (on a paid plan) either the database side of a
+  // question - allowance hold and settle; the provider call is modelled
+  // separately - or the material and cache lookups behind a quiz, where a
+  // miss stores the quiz for the next classmate, as the API does.
+  const calls: Call[] = [{
+    ...study,
+    name: "student.ai.plan",
+    dispatcher: "private.api047_ai_usage",
+    operation: "summary",
+    input: {},
+  }];
+  if (n % 10 >= 5) return calls; // Free plan: the bar only.
+  if (Math.random() < 0.6) {
+    calls.push({
+      ...study,
+      name: "student.ai.ask.hold",
+      dispatcher: "private.api047_ai_usage",
+      operation: "reserve",
+      input: { feature: "ask", estimateMicroUsd: 400, estimateTokens: 4000 },
+      next: (held) => ({
+        ...study,
+        name: "student.ai.ask.settle",
+        dispatcher: "private.api047_ai_usage",
+        operation: "settle",
+        input: {
+          usageId: held.usageId,
+          costMicroUsd: 120,
+          inputTokens: 2500,
+          outputTokens: 350,
+          model: "capacity-mock",
+        },
+      }),
+    });
+    return calls;
+  }
+  const lesson = sid("res", s, c * 1000 + pick(3));
+  calls.push({
+    ...study,
+    name: "student.ai.material",
+    dispatcher: "private.api054_ai_material",
+    operation: "lessons",
+    input: { resourceIds: [lesson] },
+    next: (material) => {
+      const versionId = (material.lessons as { versionId: string }[])?.[0]
+        ?.versionId;
+      if (!versionId || n % 10 >= 3) return null; // Quizzes are Max only.
+      const key = { kind: "quiz", fingerprint: fingerprint(versionId) };
+      return {
+        ...study,
+        name: "student.ai.quiz.cache",
+        dispatcher: "private.api056_material_outputs",
+        operation: "get",
+        input: { ...key, resourceIds: [lesson] },
+        next: (cached) =>
+          cached.output ? null : {
+            ...study,
+            name: "student.ai.quiz.store",
+            dispatcher: "private.api056_material_outputs",
+            operation: "put",
+            input: {
+              ...key,
+              resourceIds: [lesson],
+              items: [{
+                prompt: "What is the basic unit of life?",
+                options: ["Cells", "Atoms", "Rocks", "Water"],
+                answer: 0,
+                explanation: "Every living thing is made of cells.",
+              }],
+              scope: { lessons: [{ resourceId: lesson, versionId }] },
+              model: "capacity-mock",
+            },
+          },
+      };
+    },
+  });
+  return calls;
+}
 
 /** The screens one person opens in a visit, as API requests. */
 function visit(): Call[] {
@@ -206,6 +446,9 @@ function visit(): Call[] {
         target: conv,
         input: page,
       },
+      ...(classic
+        ? []
+        : studentStudy(s, n, school, me, (n * size.enrol) % size.classes)),
     ];
   }
   if (role < 0.9) {
@@ -257,6 +500,7 @@ function visit(): Call[] {
   const c = (t - 1) % size.classes;
   const cls = sid("cl", s, c);
   const conv = sid("cv", s, c);
+  const exam = sid("ex", s, c * 1000 + pick(size.exams));
   const base = { subject: me, school, target: null as string | null };
   return [
     {
@@ -298,6 +542,16 @@ function visit(): Call[] {
       target: sid("as", s, c * 1000 + 1),
       input: page,
     },
+    ...(classic ? [] : [{
+      ...base,
+      name: "teacher.exam.attempts",
+      permission: "assessment_attempt.list",
+      resource: exam,
+      dispatcher: "private.api041_query",
+      operation: "listAssessmentAttempts",
+      target: exam,
+      input: page,
+    }]),
     {
       ...base,
       name: "teacher.message",
@@ -330,22 +584,26 @@ async function run(users: number) {
   const end = performance.now() + seconds * 1000;
   await Promise.all(Array.from({ length: users }, async () => {
     while (performance.now() < end) {
-      for (const call of visit()) {
-        if (performance.now() >= end) break;
-        const started = performance.now();
-        try {
-          await request(call);
-          const list = latencies.get(call.name) ?? [];
-          list.push(performance.now() - started);
-          latencies.set(call.name, list);
-          done++;
-        } catch (error) {
-          const key = error instanceof Error
-            ? error.message.slice(0, 80)
-            : "error";
-          errors.set(key, (errors.get(key) ?? 0) + 1);
+      for (const first of visit()) {
+        let call: Call | null = first;
+        while (call && performance.now() < end) {
+          const started = performance.now();
+          try {
+            const result = await request(call);
+            const list = latencies.get(call.name) ?? [];
+            list.push(performance.now() - started);
+            latencies.set(call.name, list);
+            done++;
+            call = call.next?.(result) ?? null;
+          } catch (error) {
+            const key = error instanceof Error
+              ? error.message.slice(0, 80)
+              : "error";
+            errors.set(key, (errors.get(key) ?? 0) + 1);
+            call = null;
+          }
+          if (think) await Bun.sleep(think);
         }
-        if (think) await Bun.sleep(think);
       }
     }
   }));
@@ -365,6 +623,15 @@ async function run(users: number) {
       }))
       .sort((a, b) => b.p95 - a.p95)
       .slice(0, 5),
+    screens: Object.fromEntries(
+      [...latencies.entries()].sort(([a], [b]) => a.localeCompare(b)).map((
+        [name, v],
+      ) => [name, {
+        n: v.length,
+        p50: Math.round(pct(v, 0.5)),
+        p95: Math.round(pct(v, 0.95)),
+      }]),
+    ),
   };
 }
 

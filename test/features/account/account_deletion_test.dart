@@ -245,6 +245,38 @@ void main() {
     );
   });
 
+  testWidgets('a parent is told which child accounts are deleted too', (
+    tester,
+  ) async {
+    final repository = FakeAccountRepository(
+      impact: DeletionImpact(
+        schools: const [],
+        retainedSchoolRecords: const {
+          'attendance': 0,
+          'grades': 0,
+          'submissions': 0,
+          'wellbeing': 0,
+        },
+        deletedPersonalRecords: const {'profile': 1},
+        gracePeriodDays: 14,
+        managedChildAccounts: const ['Kai', 'Lina'],
+      ),
+    );
+    await pumpPage(tester, repository);
+
+    expect(find.text('CHILD ACCOUNTS DELETED TOO'), findsOneWidget);
+    expect(find.text('Kai'), findsOneWidget);
+    expect(find.text('Lina'), findsOneWidget);
+  });
+
+  testWidgets('no child section for someone who manages no child accounts', (
+    tester,
+  ) async {
+    await pumpPage(tester, FakeAccountRepository(impact: _impact()));
+
+    expect(find.text('CHILD ACCOUNTS DELETED TOO'), findsNothing);
+  });
+
   // Launch plan 7.1: the whole form, a parent's child accounts included,
   // passes the accessibility checks in both languages.
   for (final locale in const [Locale('en'), Locale('ar')]) {
@@ -254,7 +286,20 @@ void main() {
       final semantics = tester.ensureSemantics();
       await pumpPage(
         tester,
-        FakeAccountRepository(impact: _impact()),
+        FakeAccountRepository(
+          impact: DeletionImpact(
+            schools: const ['Al-Noor International'],
+            retainedSchoolRecords: const {
+              'attendance': 12,
+              'grades': 4,
+              'submissions': 9,
+              'wellbeing': 0,
+            },
+            deletedPersonalRecords: const {'profile': 1, 'devices': 2},
+            gracePeriodDays: 14,
+            managedChildAccounts: const ['Kai'],
+          ),
+        ),
         locale: locale,
       );
       await expectAccessible(tester);

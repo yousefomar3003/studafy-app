@@ -23,6 +23,11 @@ primary_region = "fra"
   # Uploads are scanned before anyone can open them; abandoned ones cleaned.
   FILE051_SCAN_ENABLED = "true"
   FILE050_CLEANUP_ENABLED = "true"
+  # Removes the bytes of files whose retention has ended. No file purpose
+  # sets a retention period yet, so today this removes only the personal
+  # files (profile image, notebook photo, AI-helper photo) of deleted
+  # accounts (launch plan 3.6b, 202610110004).
+  FILE051_RETENTION_ENABLED = "true"
   DB_HOUSEKEEPING_ENABLED = "true"
   # Account rights (DL-051): App Store 5.1.1(v) and GDPR need deletion and
   # export to complete, not just be requested. They need only the database.

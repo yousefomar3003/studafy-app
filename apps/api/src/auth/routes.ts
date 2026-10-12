@@ -414,6 +414,7 @@ export function createAuthRoutes(
         deleted_personal_data: Record<string, number>;
         guardian_links: number;
         active_entitlements: number;
+        managed_child_accounts?: string[];
       };
       return c.json({
         memberships: raw.memberships.map((membership) => ({
@@ -424,6 +425,7 @@ export function createAuthRoutes(
         deletedPersonalData: raw.deleted_personal_data,
         guardianLinks: raw.guardian_links,
         activeEntitlements: raw.active_entitlements,
+        managedChildAccounts: raw.managed_child_accounts ?? [],
         gracePeriodDays: deps.deletionGraceDays,
       });
     },

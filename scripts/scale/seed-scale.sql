@@ -25,6 +25,7 @@
 \if :{?messages} \else \set messages 50 \endif
 \if :{?notices} \else \set notices 20 \endif
 \if :{?notes} \else \set notes 5 \endif
+\if :{?exams} \else \set exams 2 \endif
 
 select current_database() like '%scale%' as scratch \gset
 \if :scratch
@@ -37,8 +38,13 @@ set session_replication_role = replica;
 set synchronous_commit = off;
 set maintenance_work_mem = '512MB';
 
+-- Shaped as a version 4 UUID (version and variant digits set), because the
+-- API validates ids strictly; bench.ts and http-load.ts derive the same.
 create or replace function pg_temp.sid(kind text, a bigint, b bigint default 0)
-returns uuid language sql immutable as $$ select md5(kind || ':' || a || ':' || b)::uuid $$;
+returns uuid language sql immutable as $$
+  select (substr(h, 1, 12) || '4' || substr(h, 14, 3) || '8' || substr(h, 18, 15))::uuid
+  from (select md5(kind || ':' || a || ':' || b) as h) x
+$$;
 
 \echo 'schools, terms'
 insert into public.schools (id, name, status, timezone, locale)
@@ -61,8 +67,11 @@ select pg_temp.sid(kind, s, n), kind || '.' || s || '.' || n || '@scale.studafy.
   'synthetic-not-a-secret', 'authenticated', 'authenticated', now(), now(), now(),
   '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '{}', '{}'
 from people;
-insert into public.profiles (id, display_name, locale, status, profile_completed_at)
-select pg_temp.sid(kind, s, n), initcap(kind) || ' ' || s || '-' || n, 'en', 'active', now()
+-- public_id is normally minted by a trigger, which is off for the load: a
+-- unique ten-digit number per person instead (^[1-9][0-9]{9}$).
+insert into public.profiles (id, display_name, locale, status, profile_completed_at, public_id)
+select pg_temp.sid(kind, s, n), initcap(kind) || ' ' || s || '-' || n, 'en', 'active', now(),
+  (1000000000 + row_number() over (order by kind, s, n))::text
 from people;
 
 \echo 'memberships'
@@ -203,6 +212,60 @@ insert into public.notebook_entries (school_id, classroom_id, student_id, owner_
 select pg_temp.sid('school', s), pg_temp.sid('cl', s, (n * :enrol) % :classes), pg_temp.sid('st', s, n),
   pg_temp.sid('su', s, n), 'Note ' || k, repeat('Notes. ', 40), 'typed'
 from generate_series(1, :schools) s, generate_series(1, :students) n, generate_series(1, :notes) k;
+
+\echo 'online exams (launch plan 4.8)'
+-- Taken in the app, so a student can open, answer and hand one in. Up to 20
+-- attempts each, so a benchmark can submit the same exam repeatedly.
+insert into public.assessments (id, school_id, classroom_id, title, category, maximum_score, state,
+  published_at, created_by, delivery, max_attempts, answer_release)
+select pg_temp.sid('ex', s, c * 1000 + e), pg_temp.sid('school', s), pg_temp.sid('cl', s, c),
+  'Online exam ' || e, 'exam', 10, 'published', now(), pg_temp.sid('tu', s, 1 + c % :teachers),
+  'online', 20, 'after_close'
+from generate_series(1, :schools) s, generate_series(0, :classes - 1) c, generate_series(1, :exams) e;
+-- Five questions: three choice, one short answer, one essay (which needs marking).
+insert into public.assessment_questions (id, school_id, assessment_id, position, prompt, maximum_score,
+  kind, options, answer_key, required)
+select pg_temp.sid('eq', s, (c * 1000 + e) * 10 + q), pg_temp.sid('school', s),
+  pg_temp.sid('ex', s, c * 1000 + e), q, 'Question ' || q, 2,
+  case when q <= 3 then 'single_choice' when q = 4 then 'short_answer' else 'essay' end,
+  case when q <= 3 then '[{"id":"a","text":"Cells"},{"id":"b","text":"Atoms"},{"id":"c","text":"Rocks"}]'::jsonb
+    else '[]'::jsonb end,
+  case when q <= 3 then '["a"]'::jsonb when q = 4 then '["chlorophyll"]'::jsonb else null end,
+  true
+from generate_series(1, :schools) s, generate_series(0, :classes - 1) c, generate_series(1, :exams) e,
+  generate_series(1, 5) q;
+
+\echo 'study notebooks and paid plans (launch plan 4.8)'
+-- A notebook as the API returns it (V1NotebookContent): two sections.
+create or replace function pg_temp.notebook_content() returns jsonb language sql immutable as $$
+  select jsonb_build_object(
+    'overview', 'How living things are built from cells and make energy from light.',
+    'objectives', jsonb_build_array('Describe a cell', 'Explain photosynthesis'),
+    'keyTerms', jsonb_build_array(jsonb_build_object('term', 'Cell',
+      'definition', 'The basic unit of life.', 'cite', null)),
+    'sections', (select jsonb_agg(jsonb_build_object('key', k, 'heading', h,
+        'paragraphs', jsonb_build_array(repeat('Notes about ' || h || '. ', 40)),
+        'points', jsonb_build_array('Point one', 'Point two'),
+        'cites', '[]'::jsonb, 'extra', false))
+      from (values ('cells', 'Cells'), ('light', 'Photosynthesis')) v(k, h)),
+    'examples', '[]'::jsonb, 'facts', '[]'::jsonb, 'mistakes', '[]'::jsonb,
+    'summary', jsonb_build_array('Cells make up living things.', 'Plants use light to make food.'));
+$$;
+-- One ready notebook per student, from the first lesson of their first class.
+insert into public.study_notebooks (id, school_id, owner_id, classroom_id, resource_id, title, status,
+  content, content_version, generated_at, model, whole_lesson, include_text)
+select pg_temp.sid('nb', s, n), pg_temp.sid('school', s), pg_temp.sid('su', s, n),
+  pg_temp.sid('cl', s, (n * :enrol) % :classes), pg_temp.sid('res', s, ((n * :enrol) % :classes) * 1000 + 1),
+  'Biology notebook', 'ready',
+  pg_temp.notebook_content(),
+  1, now(), 'scale-seed', true, true
+from generate_series(1, :schools) s, generate_series(1, :students) n;
+-- 30% of students on Max and 20% on Plus, as grants (no store purchase).
+insert into private.study_plan_grants (user_id, plan, reason, ends_at)
+select pg_temp.sid('su', s, n), case when n % 10 < 3 then 'max' else 'plus' end, 'capacity test',
+  now() + interval '30 days'
+from generate_series(1, :schools) s, generate_series(1, :students) n
+where n % 10 < 5;
 
 set session_replication_role = origin;
 \echo 'analyze'

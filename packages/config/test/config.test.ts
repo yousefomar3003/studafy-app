@@ -354,6 +354,34 @@ describe("outbox drain configuration (OPS-061)", () => {
     expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe(true);
   });
 
+  test("queue alerts are off by default and need the Telegram bot when on", () => {
+    const base = {
+      ENVIRONMENT: "development",
+      REDIS_URL: "redis://127.0.0.1:6379",
+    };
+    const off = parseEnv(workerEnvSchema, base);
+    expect(off.QUEUE_ALERTS_ENABLED).toBe(false);
+    expect(off.QUEUE_ALERT_MAX_DEPTH).toBe(500);
+    expect(off.QUEUE_ALERT_COOLDOWN_SECONDS).toBe(1800);
+    expect(() =>
+      parseEnv(workerEnvSchema, { ...base, QUEUE_ALERTS_ENABLED: "true" })
+    ).toThrow(/TELEGRAM_BOT_TOKEN/);
+    const on = parseEnv(workerEnvSchema, {
+      ...base,
+      QUEUE_ALERTS_ENABLED: "true",
+      TELEGRAM_BOT_TOKEN: "123456:abcdefghijklmnopqrstuvwxyz",
+      TELEGRAM_CHAT_ID: "-1001234567890",
+      QUEUE_ALERT_MAX_AGE_SECONDS: "120",
+    });
+    expect(on.QUEUE_ALERT_MAX_AGE_SECONDS).toBe(120);
+    // The startup summary says the bot is configured, never its token.
+    expect(JSON.stringify(describeWorkerEnv(on))).not.toContain("abcdefghij");
+    expect(describeWorkerEnv(on).queueAlerts).toMatchObject({
+      enabled: true,
+      telegramConfigured: true,
+    });
+  });
+
   test("poll interval and concurrency are bounded", () => {
     for (const value of ["0", "249", "60001"]) {
       expect(() =>

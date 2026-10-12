@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { ErrorEvent } from "@sentry/bun";
-import { logLineReport, safeFields, scrubEvent, scrubText } from "../src";
+import {
+  logLineReport,
+  releaseId,
+  safeFields,
+  scrubEvent,
+  scrubText,
+} from "../src";
 
 describe("Sentry reports carry nothing personal", () => {
   test("emails, tokens and long numbers are masked in text", () => {
@@ -95,5 +101,24 @@ describe("error log lines become grouped reports", () => {
       logLineReport('{"level":"error","service":"api","event":"http_error"}'),
     ).toBeNull();
     expect(logLineReport("not json")).toBeNull();
+  });
+});
+
+describe("release identity", () => {
+  test("each deploy reports its own release", () => {
+    expect(releaseId("0.1.0", {})).toBe("0.1.0");
+    expect(
+      releaseId("0.1.0", {
+        FLY_IMAGE_REF: "registry.fly.io/studafy-api:deployment-01JABCDEF",
+      }),
+    ).toBe("0.1.0+deployment-01JABCDEF");
+    expect(
+      releaseId("0.1.0", {
+        SENTRY_RELEASE: "4729539",
+        FLY_IMAGE_REF: "registry.fly.io/studafy-api:deployment-01JABCDEF",
+      }),
+    ).toBe("0.1.0+4729539");
+    // Nothing Sentry rejects in a release name gets through.
+    expect(releaseId("0.1.0", { SENTRY_RELEASE: "a/b c" })).toBe("0.1.0+a-b-c");
   });
 });

@@ -589,6 +589,18 @@ abstract class AppL10n {
   /// **'SCHOOL ACCESS THAT ENDS'**
   String get deleteSchoolAccessHeading;
 
+  /// No description provided for @deleteChildAccountsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'CHILD ACCOUNTS DELETED TOO'**
+  String get deleteChildAccountsHeading;
+
+  /// No description provided for @deleteChildAccountsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You manage these child accounts. Nobody else can sign in to them, so they are deleted with your account, after the same 14 days.'**
+  String get deleteChildAccountsBody;
+
   /// No description provided for @deleteWhyHeading.
   ///
   /// In en, this message translates to:

@@ -832,10 +832,13 @@ describe("account deletion", () => {
     });
     const body = await response.json() as {
       retainedSchoolRecords: { attendance: number };
+      managedChildAccounts: string[];
       gracePeriodDays: number;
     };
     expect(body.retainedSchoolRecords.attendance).toBe(12);
     expect(body.gracePeriodDays).toBe(14);
+    // A parent is told which child accounts are deleted with theirs.
+    expect(body.managedChildAccounts).toEqual(["Kai"]);
   });
 
   test("requesting twice returns the live request rather than duplicating", async () => {
