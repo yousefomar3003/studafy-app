@@ -24,14 +24,19 @@ class StoreSubscriptionRepository
     SecureStore? pendingStore,
     Future<QueryPurchaseDetailsResponse> Function(String account)?
     playPurchases,
-  }) : _store = store ?? InAppPurchase.instance,
+  }) : _injectedStore = store,
        // ignore: prefer_initializing_formals
        _billingApi = billingApi,
        _pending = pendingStore ?? InMemorySecureStore(),
        // ignore: prefer_initializing_formals
        _playPurchases = playPurchases;
 
-  final InAppPurchase _store;
+  final InAppPurchase? _injectedStore;
+
+  /// The store, reached only when billing is used: asking for
+  /// `InAppPurchase.instance` opens a Google Play Billing connection, which
+  /// someone who never buys (every teacher) has no reason to open.
+  late final InAppPurchase _store = _injectedStore ?? InAppPurchase.instance;
   final V1BillingApi? _billingApi;
 
   /// The subscriptions this phone's Google account bought. Tests supply

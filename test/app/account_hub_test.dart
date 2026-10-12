@@ -13,6 +13,8 @@ import 'package:studafy/features/account/domain/data_export.dart';
 import 'package:studafy/features/account/domain/profile_repository.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
+import '../support/accessibility.dart';
+
 /// Apple 5.1.1(v) / Google Play: sign-out and in-app account deletion must
 /// be reachable for every role. Before this screen the student shell had no
 /// account entry at all, in any build.
@@ -72,7 +74,9 @@ Widget _app(
   Widget home, {
   DataExportRepository? exports,
   ProfileRepository? profiles,
+  Locale? locale,
 }) => MaterialApp(
+  locale: locale,
   supportedLocales: AppL10n.supportedLocales,
   localizationsDelegates: const [
     AppL10n.delegate,
@@ -97,6 +101,44 @@ void main() {
       ..profile = null
       ..membership = null;
   });
+
+  // Launch plan 7.1: tap targets, labels and contrast, in both languages,
+  // with the data export row shown.
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    testWidgets('the account screen is accessible: ${locale.languageCode}', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      const membership = SchoolMembership(
+        id: 'membership-1',
+        schoolId: 'school-1',
+        schoolName: 'Al-Noor International',
+        role: StudafyRole.student,
+        active: true,
+      );
+      ActiveContextController.instance
+        ..membership = membership
+        ..profile = const UserProfile(
+          id: 'user-1',
+          displayName: 'Sara Al-Amin',
+          email: 'sara@example.test',
+          memberships: [membership],
+        );
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        _app(const AccountHubPage(), exports: _Exports(null), locale: locale),
+      );
+      await tester.pumpAndSettle();
+      await expectAccessible(tester);
+      // The bottom of the screen too: sign-out and the security row.
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -2000));
+      await tester.pumpAndSettle();
+      await expectAccessible(tester);
+      semantics.dispose();
+    });
+  }
 
   testWidgets('the account screen shows the signed-in person, not a sample', (
     tester,

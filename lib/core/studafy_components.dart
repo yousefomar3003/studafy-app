@@ -189,7 +189,8 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
         ),
-        ?action,
+        // May shrink, so a long title or large text never pushes it off.
+        if (action case final action?) Flexible(child: action),
       ],
     ),
   );
@@ -539,7 +540,16 @@ class StudafyEmptyState extends StatelessWidget {
   final VoidCallback? onAction;
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => LayoutBuilder(
+    // In a fixed-height area the largest text sizes no longer fit: scroll
+    // rather than overflow (launch plan 7.1). Inside a list it is already
+    // scrollable.
+    builder: (context, constraints) => constraints.hasBoundedHeight
+        ? SingleChildScrollView(child: _content())
+        : _content(),
+  );
+
+  Widget _content() => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -719,7 +729,8 @@ class StudafyPillButton extends StatelessWidget {
       backgroundColor: prominent ? studafyNavy : Colors.white,
       foregroundColor: prominent ? Colors.white : studafyNavy,
       side: prominent ? null : const BorderSide(color: studafyHairline),
-      minimumSize: const Size(0, 44),
+      // 48: Android's minimum touch target (launch plan 7.1).
+      minimumSize: const Size(0, 48),
       padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 16, 0),
       shape: const StadiumBorder(),
       textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),

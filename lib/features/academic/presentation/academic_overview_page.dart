@@ -507,12 +507,14 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                     color: studafyMuted,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    l10n.learningFilterByChild,
-                    style: const TextStyle(
-                      color: studafyMuted,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                  Flexible(
+                    child: Text(
+                      l10n.learningFilterByChild,
+                      style: const TextStyle(
+                        color: studafyMuted,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],

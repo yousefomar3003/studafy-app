@@ -161,7 +161,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
           // Every notebook, by class - a deleted class's included - and the
           // plans, labelled rather than hidden behind icons.
           SizedBox(
-            height: 52,
+            height: 56,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
