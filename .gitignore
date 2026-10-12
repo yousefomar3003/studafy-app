@@ -101,3 +101,4 @@ app.*.map.json
 sentry.properties
 ops/legal-site/public/
 .wrangler/
+device-logs/

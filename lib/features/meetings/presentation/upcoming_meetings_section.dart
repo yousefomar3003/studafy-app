@@ -79,11 +79,8 @@ class _UpcomingMeetingsSectionState extends State<UpcomingMeetingsSection> {
   // The section arrives after the page around it, so it grows into place
   // rather than shoving everything below it down in one jump.
   @override
-  Widget build(BuildContext context) => AnimatedSize(
-    duration: MediaQuery.disableAnimationsOf(context)
-        ? Duration.zero
-        : const Duration(milliseconds: 220),
-    curve: Curves.easeOutCubic,
+  Widget build(BuildContext context) => StudafyAnimatedSize(
+    duration: const Duration(milliseconds: 220),
     alignment: AlignmentDirectional.topStart,
     child: _section(context),
   );

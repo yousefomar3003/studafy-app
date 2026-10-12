@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:studafy/features/family/presentation/family_challenge_page.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,14 @@ void main() {
     String? received;
     await tester.pumpWidget(
       MaterialApp(
+        // The page's words come from the app's localizations.
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const [
+          AppL10n.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

@@ -406,12 +406,39 @@ class _HiddenWhileTypingState extends State<_HiddenWhileTyping> {
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedSize(
+  Widget build(BuildContext context) => StudafyAnimatedSize(
     duration: widget.duration,
-    curve: Curves.easeOutCubic,
     alignment: Alignment.topCenter,
     child: _typing ? const SizedBox(width: double.infinity) : widget.child,
   );
+}
+
+/// [AnimatedSize], except for people who turned animations off: then the
+/// child is shown at its size straight away. With animations off the
+/// animation finishes inside layout and Flutter's AnimatedSize re-dirties
+/// itself mid-layout (found on an Android emulator with animations removed;
+/// launch plan 7.1).
+class StudafyAnimatedSize extends StatelessWidget {
+  const StudafyAnimatedSize({
+    super.key,
+    required this.duration,
+    required this.child,
+    this.alignment = Alignment.center,
+  });
+
+  final Duration duration;
+  final AlignmentGeometry alignment;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => MediaQuery.disableAnimationsOf(context)
+      ? child
+      : AnimatedSize(
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          alignment: alignment,
+          child: child,
+        );
 }
 
 /// One destination on [StudafyNavigationBar].
@@ -466,9 +493,8 @@ class StudafyNavDestination extends StatelessWidget {
                 color: selected ? accent : studafyMuted,
               ),
             ),
-            AnimatedSize(
+            StudafyAnimatedSize(
               duration: duration,
-              curve: Curves.easeOutCubic,
               child: compact
                   ? const SizedBox(width: double.infinity)
                   : Padding(

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,12 @@ class _Store extends Fake implements StudyPlanSubscriptionRepository {
     selfPurchaseEnabled: true,
     approval: 'requested',
   );
+  // No store on a simulator test: the page shows the plans, never a
+  // purchase sheet.
+  @override
+  SubscriptionStore? get purchaseStore => null;
+  @override
+  Future<StudyPlanSubscription?> subscription() async => null;
   @override
   void addEntitlementListener(VoidCallback listener) {}
   @override
@@ -31,33 +39,40 @@ class _Study extends Fake implements StudyRepository {
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets(
-    'the plans and their disclosures render on iPhone in both languages',
-    (tester) async {
-      for (final language in ['en', 'ar']) {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: studafyTheme(),
-            debugShowCheckedModeBanner: false,
-            locale: Locale(language),
-            supportedLocales: const [Locale('en'), Locale('ar')],
-            localizationsDelegates: const [
-              AppL10n.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            home: StudyPlansPage(study: _Study(), subscriptions: _Store()),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('Studafy Plus'), findsOne);
-        expect(find.text('Studafy Max'), findsOne);
-        expect(find.textContaining(r'$5.99'), findsWidgets);
-        expect(tester.takeException(), isNull);
-        await binding.takeScreenshot('study-plans-$language');
-      }
-    },
-  );
+  testWidgets('the plans and their disclosures render in both languages', (
+    tester,
+  ) async {
+    // Android screenshots need the surface turned into an image first.
+    if (Platform.isAndroid) await binding.convertFlutterSurfaceToImage();
+    for (final language in ['en', 'ar']) {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: studafyTheme(),
+          debugShowCheckedModeBanner: false,
+          locale: Locale(language),
+          supportedLocales: const [Locale('en'), Locale('ar')],
+          localizationsDelegates: const [
+            AppL10n.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: StudyPlansPage(study: _Study(), subscriptions: _Store()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Studafy Plus'), findsOne);
+      // On a smaller screen (the Android emulator) Max is further down.
+      await tester.scrollUntilVisible(
+        find.text('Studafy Max'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Studafy Max'), findsOne);
+      expect(find.textContaining(r'$5.99'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('study-plans-$language');
+    }
+  });
 }
