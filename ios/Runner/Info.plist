@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Studafy uses the camera to photograph the lesson whiteboard for your notebook.</string>
+	<string>Studafy uses the camera when you take a photo to attach to your work or a message, photograph the lesson whiteboard for your notebook, or set a profile picture.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -11,7 +11,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Studafy uses the microphone to record voice notes you send in messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Studafy uses the photos you choose - a profile picture, or a photo of the lesson whiteboard for your notebook.</string>
+	<string>Studafy uses only the photos you choose: to attach to your work or a message, add to your notebook, or set as your profile picture.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
