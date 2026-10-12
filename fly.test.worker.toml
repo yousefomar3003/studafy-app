@@ -16,6 +16,11 @@ primary_region = "fra"
   OPS061_NOTIFICATIONS_ENABLED = "true"
   FILE051_SCAN_ENABLED = "true"
   FILE050_CLEANUP_ENABLED = "true"
+  # Removes the bytes of files whose retention has ended. No file purpose
+  # sets a retention period yet, so today this removes only the personal
+  # files (profile image, notebook photo, AI-helper photo) of deleted
+  # accounts (launch plan 3.6b, 202610110004).
+  FILE051_RETENTION_ENABLED = "true"
   DB_HOUSEKEEPING_ENABLED = "true"
   # Account rights (DL-051): deletions run after their 14-day grace period,
   # exports are built for download. Without these a request is accepted and

@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(16);
+select plan(18);
 
 select ok(
   has_function_privilege('studafy_api_runtime', 'private.api042_command(text,uuid,jsonb,uuid,bigint)', 'execute')
@@ -70,6 +70,25 @@ insert into api042_notif_results values('mark-too-many', private.api042_command(
   ((select result->>'id' from api042_notif_results where name = 'mark-too-many-reservation')::uuid), 1));
 select is((select result->>'outcome' from api042_notif_results where name = 'mark-too-many'), 'invalid',
   'marking more than 100 ids at once is rejected');
+
+-- Launch plan 7.1: nobody can mark someone else's notifications read. The
+-- student names the teacher's three delivery ids; none may change.
+select set_config('request.jwt.claim.sub', :'student_user', true);
+select set_config('studafy.request_id', 'api042-mark-read-foreign', true);
+insert into api042_notif_results values('mark-foreign-reservation', private.api_idempotency_reserve(
+  null, 'v1.markNotificationsRead', 'api042-mark-foreign-1', repeat('9', 64)));
+insert into api042_notif_results values('mark-foreign', private.api042_command(
+  'markNotificationsRead', null, jsonb_build_object('responseStatus', 200, 'body', jsonb_build_object(
+    'ids', (select jsonb_agg(nd.id) from public.notification_deliveries nd
+            where nd.recipient_id = :'teacher_user'))),
+  ((select result->>'id' from api042_notif_results where name = 'mark-foreign-reservation')::uuid), 1));
+select is(coalesce((select result->'response'->>'markedCount' from api042_notif_results where name = 'mark-foreign'), '0'), '0',
+  'a student naming the teacher''s notification ids marks none of them');
+select set_config('request.jwt.claim.sub', :'teacher_user', true);
+select is(
+  (private.api042_query('getUnreadCount', null, '{}'::jsonb)->>'unreadCount')::int,
+  3, 'the teacher''s notifications are all still unread'
+);
 
 select set_config('studafy.request_id', 'api042-mark-read-all', true);
 insert into api042_notif_results values('mark-all-reservation', private.api_idempotency_reserve(

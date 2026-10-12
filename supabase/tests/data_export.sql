@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(12);
+select plan(15);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
@@ -17,6 +17,13 @@ insert into public.conversation_participants (school_id, conversation_id, user_i
 insert into public.messages (school_id, conversation_id, sender_id, client_message_id, body) values
   (:'school_id', 'e0e00000-0000-4000-8000-0000000000c1', :'student_user', gen_random_uuid(), 'my own words'),
   (:'school_id', 'e0e00000-0000-4000-8000-0000000000c1', :'teacher_user', gen_random_uuid(), 'the teacher private reply');
+-- 3.6b: the export also carries gender, notebooks and devices.
+update public.profiles set gender = 'prefer_not_to_say' where id = :'student_user';
+insert into public.push_devices (user_id, platform, token)
+values (:'student_user', 'ios', repeat('e', 40));
+insert into public.notebook_entries (school_id, classroom_id, student_id, owner_id, title, body, source)
+values (:'school_id', 'abcd0000-0000-4000-8000-000000000007', 'abcf0000-0000-4000-8000-000000000008',
+  :'student_user', 'Revision page', 'my notebook words', 'typed');
 insert into public.data_export_requests (id, user_id, status)
 values ('e0e00000-0000-4000-8000-0000000000e1', :'student_user', 'pending');
 
@@ -40,6 +47,14 @@ select ok(not ((private.api042_query('downloadDataExport', null, '{}'))::text li
   'the document never contains messages other people sent');
 select is(private.api042_query('downloadDataExport', null, '{}')->'sections'->'profile'->>'displayName', 'Seed Student',
   'the document includes the profile');
+
+select is(private.api042_query('downloadDataExport', null, '{}')->'sections'->'profile'->>'gender', 'prefer_not_to_say',
+  'the document includes the gender the owner gave');
+select ok((private.api042_query('downloadDataExport', null, '{}')->'sections'->'notebookEntries')::text like '%my notebook words%',
+  'the document includes the owner''s notebook');
+select ok((private.api042_query('downloadDataExport', null, '{}')->'sections'->'devices')::text like '%"notifications"%'
+  and not ((private.api042_query('downloadDataExport', null, '{}'))::text like '%eeeeeeeeee%'),
+  'the document lists devices without the push token');
 
 select set_config('request.jwt.claim.sub', :'teacher_user', true);
 select is(private.api042_query('downloadDataExport', null, '{}')->>'outcome', 'not_found',

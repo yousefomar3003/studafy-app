@@ -224,9 +224,13 @@ webhook events and runs the reconciliation sweep.
 
 ```sh
 flutter build ipa \
-  --dart-define=STUDAFY_TERMS_URL=https://<your-site>/terms \
-  --dart-define=STUDAFY_PRIVACY_URL=https://<your-site>/privacy
+  --dart-define=STUDAFY_TERMS_URL=https://studafy-legal.studafy.workers.dev/terms \
+  --dart-define=STUDAFY_PRIVACY_URL=https://studafy-legal.studafy.workers.dev/privacy
 ```
+
+These are the temporary pages from `ops/legal-site` (launch plan 4.3; see
+[legal-site.md](legal-site.md)). Change both when the pages move to our own
+domain.
 
 `STUDAFY_ANDROID_PACKAGE` defaults to `com.studafy.light`; set it only if the
 Android application id changes. The app's billing environment follows its

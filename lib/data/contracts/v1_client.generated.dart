@@ -6747,6 +6747,7 @@ class V1DeletionImpactResponseDto {
     required this.deletedPersonalData,
     required this.guardianLinks,
     required this.activeEntitlements,
+    required this.managedChildAccounts,
     required this.gracePeriodDays,
   });
 
@@ -6766,6 +6767,8 @@ class V1DeletionImpactResponseDto {
         ),
         guardianLinks: json['guardianLinks'] as int,
         activeEntitlements: json['activeEntitlements'] as int,
+        managedChildAccounts: (json['managedChildAccounts'] as List<dynamic>)
+            .cast<String>(),
         gracePeriodDays: json['gracePeriodDays'] as int,
       );
 
@@ -6774,6 +6777,7 @@ class V1DeletionImpactResponseDto {
   final V1DeletionDeletedDataDto deletedPersonalData;
   final int guardianLinks;
   final int activeEntitlements;
+  final List<String> managedChildAccounts;
   final int gracePeriodDays;
 
   Map<String, Object?> toJson() => {
@@ -6782,6 +6786,7 @@ class V1DeletionImpactResponseDto {
     'deletedPersonalData': deletedPersonalData.toJson(),
     'guardianLinks': guardianLinks,
     'activeEntitlements': activeEntitlements,
+    'managedChildAccounts': managedChildAccounts,
     'gracePeriodDays': gracePeriodDays,
   };
 }

@@ -1,0 +1,29 @@
+# Temporary public home of the privacy policy, terms and account deletion
+# page (launch plan 4.3), in English and Arabic. Static assets only: no
+# Worker script runs. Pages are built from docs/legal by build.ts, which
+# wrangler runs before each deploy.
+#
+# Deploy (owner approves first):
+#   npx wrangler deploy --config ops/legal-site/wrangler.toml
+# URLs on the account's workers.dev subdomain:
+#   https://studafy-legal.studafy.workers.dev/privacy   (and /terms, /delete-account)
+#   https://studafy-legal.studafy.workers.dev/ar/privacy (and /ar/terms, /ar/delete-account)
+#
+# Moving to our own domain is only configuration: every link in the pages is
+# path-absolute or relative. Uncomment the route (the zone must be on the
+# same Cloudflare account), deploy, then point STUDAFY_PRIVACY_URL and
+# STUDAFY_TERMS_URL and the store listings at the new address. Keep
+# workers_dev on for a while so old links still work.
+
+name = "studafy-legal"
+compatibility_date = "2026-10-01"
+workers_dev = true
+# routes = [{ pattern = "legal.studafy.com", custom_domain = true }]
+
+[build]
+command = "bun build.ts"
+
+[assets]
+directory = "./public"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"

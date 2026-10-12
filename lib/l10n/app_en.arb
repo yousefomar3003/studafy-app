@@ -168,6 +168,8 @@
   "deleteSchoolKeepsBody": "Schools are required to keep these education records. They stay with the school, not with your account, and deleting your account does not remove them. Ask your school if you need them corrected or erased.",
   "deleteNoSchoolRecords": "Your school holds no records for this account.",
   "deleteSchoolAccessHeading": "SCHOOL ACCESS THAT ENDS",
+  "deleteChildAccountsHeading": "CHILD ACCOUNTS DELETED TOO",
+  "deleteChildAccountsBody": "You manage these child accounts. Nobody else can sign in to them, so they are deleted with your account, after the same 14 days.",
   "deleteWhyHeading": "TELL US WHY",
   "deleteReasonLabel": "Reason for leaving",
   "deleteReasonNoLongerUsing": "I no longer use Studafy",

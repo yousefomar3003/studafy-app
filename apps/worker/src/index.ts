@@ -25,8 +25,10 @@ import {
   FileSecurityScanner,
   GoogleCalendarConferenceProvider,
   isPlaintextRemoteRedis,
+  releaseId,
   ResendEmailSender,
   SupabasePrivateFileStorage,
+  TelegramAlertSender,
 } from "@studafy/infrastructure";
 import { startFileCleanup } from "./processors/fileCleanup";
 import { startFileScan } from "./processors/fileScan";
@@ -40,15 +42,19 @@ import { startDataExportExecutor } from "./processors/dataExport";
 import { startMeetingProcessor } from "./processors/meetings";
 import { startChannelDelivery } from "./processors/channelDelivery";
 import { startHousekeeping } from "./processors/housekeeping";
+import { queuePrefix } from "./platform/queueInventory";
+import { redisAlertState, startQueueMonitor } from "./monitoring/queueMonitor";
+import { type MonitoredQueue, monitorSources } from "./monitoring/sources";
 
 const env = loadWorkerEnv();
+const release = releaseId(workerVersion);
 // OPS-090: failed jobs and polls reach Sentry when a DSN is set, grouped
 // by event; routine "job done" lines are sampled in production.
 const errorReporter = env.SENTRY_DSN
   ? createSentryReporter({
     dsn: env.SENTRY_DSN,
     environment: env.ENVIRONMENT,
-    release: workerVersion,
+    release,
     service: "worker",
   })
   : undefined;
@@ -65,7 +71,9 @@ const logger = createJsonLogger(
     routineRate: env.LOG_SAMPLE_ROUTINE_RATE,
     slowRequestMs: env.LOG_SLOW_REQUEST_MS,
   }),
-);
+  // The test copy and production ship to one Axiom dataset; every line
+  // says which it came from, and which deploy (launch plan 4.7).
+).child({ environment: env.ENVIRONMENT, release });
 
 // OPS-061 queue posture: the queue allocation must be non-evicting and
 // persisted. Production refuses to start otherwise; development logs what
@@ -335,6 +343,50 @@ const housekeeping = env.DB_HOUSEKEEPING_ENABLED && env.DATABASE_URL
   ? startHousekeeping(database(), logger)
   : undefined;
 
+// Launch plan 4.7: alerts on queue depth, waiting age, failures and stuck
+// workers, to Telegram. Off unless QUEUE_ALERTS_ENABLED and the bot are set.
+const alertRedis = env.QUEUE_ALERTS_ENABLED
+  ? createRedis(env.REDIS_URL)
+  : undefined;
+const monitoredQueues: MonitoredQueue[] = [
+  { name: "smoke", queue: runtime.queue, worker: runtime.worker },
+  ...(notifications
+    ? [{
+      name: "notifications",
+      queue: notifications.queue,
+      worker: notifications.worker,
+    }]
+    : []),
+  ...(billing
+    ? [{ name: "billing-events", queue: billing.queue, worker: billing.worker }]
+    : []),
+];
+const queueMonitor = alertRedis
+  ? startQueueMonitor({
+    sample: monitorSources({
+      queues: monitoredQueues,
+      outboxSql,
+      fileScanSql: env.FILE051_SCAN_ENABLED ? fileWorkerSql : undefined,
+    }),
+    thresholds: {
+      maxDepth: env.QUEUE_ALERT_MAX_DEPTH,
+      maxAgeSeconds: env.QUEUE_ALERT_MAX_AGE_SECONDS,
+      maxFailedPerWindow: env.QUEUE_ALERT_MAX_FAILED_PER_WINDOW,
+      windowSeconds: env.QUEUE_ALERT_WINDOW_SECONDS,
+      stallSeconds: env.QUEUE_ALERT_STALL_SECONDS,
+    },
+    cooldownSeconds: env.QUEUE_ALERT_COOLDOWN_SECONDS,
+    state: redisAlertState(alertRedis, queuePrefix(env.ENVIRONMENT)),
+    sender: new TelegramAlertSender({
+      botToken: env.TELEGRAM_BOT_TOKEN!,
+      chatId: env.TELEGRAM_CHAT_ID!,
+    }),
+    logger,
+    environment: env.ENVIRONMENT,
+    intervalMs: env.QUEUE_ALERT_INTERVAL_MS,
+  })
+  : undefined;
+
 installGracefulShutdown({
   logger,
   onClose: async () => {
@@ -353,6 +405,8 @@ installGracefulShutdown({
     await meetings?.close();
     await channels?.close();
     await housekeeping?.close();
+    await queueMonitor?.close();
+    if (alertRedis) await closeRedis(alertRedis);
     if (sharedSql) await closeDatabase(sharedSql);
     await runtime.close();
     await errorReporter?.flush();

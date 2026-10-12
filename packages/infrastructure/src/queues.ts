@@ -109,3 +109,18 @@ export async function oldestWaitingAgeMs(queue: Queue): Promise<number> {
   if (!oldest?.timestamp) return 0;
   return Math.max(0, Date.now() - oldest.timestamp);
 }
+
+/**
+ * How long the longest-running active job has been processing, in ms, or 0
+ * when none is active. A job active far beyond its expected run time means
+ * a stuck consumer (launch plan 4.7).
+ */
+export async function oldestActiveAgeMs(queue: Queue): Promise<number> {
+  const jobs = await queue.getActive(0, 99);
+  let oldest = 0;
+  for (const job of jobs) {
+    const started = job.processedOn ?? job.timestamp;
+    if (started) oldest = Math.max(oldest, Date.now() - started);
+  }
+  return oldest;
+}
