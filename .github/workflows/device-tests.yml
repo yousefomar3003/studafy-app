@@ -1,0 +1,189 @@
+name: Device tests
+
+# The app on a real iOS simulator and Android emulator (launch plan 7.1):
+# startup, native storage, consent and every role's tabs in English and
+# Arabic, the bot-check bridge, and the plans page. Synthetic build only: no
+# backend, no sign-in, no purchase. Each test's log and screenshots are kept
+# when something fails.
+#
+# macOS minutes count ten times against the Actions allowance, so this runs
+# only when the app itself changes.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "integration_test/**"
+      - "test_driver/**"
+      - "ios/**"
+      - "android/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "tools/ci/run-device-tests.sh"
+      - ".github/workflows/device-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "integration_test/**"
+      - "test_driver/**"
+      - "ios/**"
+      - "android/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "tools/ci/run-device-tests.sh"
+      - ".github/workflows/device-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: device-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ios-simulator:
+    name: iOS simulator
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      - name: Cache Swift packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/org.swift.swiftpm
+          key: ios-spm-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: ios-spm-${{ runner.os }}-
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Boot an iPhone simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          for runtime in sorted(devices, reverse=True):
+              if "iOS" not in runtime:
+                  continue
+              for device in devices[runtime]:
+                  if device["name"].startswith("iPhone"):
+                      print(device["udid"]); sys.exit()
+          sys.exit("no iPhone simulator available")')
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Run the device tests
+        run: tools/ci/run-device-tests.sh "${{ steps.simulator.outputs.udid }}"
+
+      - name: Keep the logs and screenshots
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: device-tests-ios
+          path: device-logs
+          retention-days: 14
+
+  android-emulator:
+    name: Android emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      # The emulator needs hardware acceleration, which hosted runners
+      # offer through KVM.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Fit Gradle into the runner's memory
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError'
+            echo 'kotlin.daemon.jvmargs=-Xmx2g'
+            echo 'org.gradle.workers.max=2'
+          } >> ~/.gradle/gradle.properties
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Cache the emulator image
+        id: avd-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api34-x86_64-google_apis
+
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Emulator snapshot created for the cache."
+
+      - name: Run the device tests
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: tools/ci/run-device-tests.sh emulator-5554
+
+      - name: Keep the logs and screenshots
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: device-tests-android
+          path: device-logs
+          retention-days: 14

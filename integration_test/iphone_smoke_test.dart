@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -11,13 +13,14 @@ import 'package:studafy/features/session/presentation/role_page.dart';
 import 'package:studafy/main.dart';
 
 // Exercises native SQLite, startup, consent, and every role's navigation on
-// an actual simulator. Synthetic data only; OAuth is verified separately.
+// an iOS simulator or Android emulator (CI: .github/workflows/device-tests.yml).
+// Synthetic data only; OAuth is verified separately.
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('all role tabs render in English and Arabic on iPhone', (
-    tester,
-  ) async {
+  testWidgets('all role tabs render in English and Arabic', (tester) async {
+    // Android screenshots need the surface turned into an image first.
+    if (Platform.isAndroid) await binding.convertFlutterSurfaceToImage();
     const policy = RuntimePolicy(StudafyEnvironment.synthetic);
     StudafyRuntime.initialize(policy);
     final dependencies = await AppBootstrap.initialize(policy);
@@ -66,9 +69,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(LoginPage), findsNothing);
 
+        // Teachers have five tabs; students and parents four.
+        final tabs = role == UserRole.teacher ? 5 : 4;
         final destinations = find.byType(StudafyNavDestination);
-        expect(destinations, findsNWidgets(role == UserRole.parent ? 4 : 5));
-        for (var tab = 0; tab < (role == UserRole.parent ? 4 : 5); tab++) {
+        expect(destinations, findsNWidgets(tabs));
+        for (var tab = 0; tab < tabs; tab++) {
           await tester.tap(destinations.at(tab));
           await tester.pump(const Duration(milliseconds: 300));
           await tester.pumpAndSettle();
