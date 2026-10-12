@@ -1,6 +1,8 @@
 # ADR-0031: Managed child accounts and switching accounts on one device
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-28
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Relates to: guardian child mode (`202609250003_guardian_child_mode.sql`),

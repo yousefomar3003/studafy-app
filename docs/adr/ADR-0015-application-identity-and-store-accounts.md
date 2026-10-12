@@ -1,6 +1,8 @@
 # ADR-0015: Application identity and store accounts
 
-- Status: Accepted — identity decided; signing and privacy manifests remain open
+- Status: Accepted — identity decided; signing remains open. The iOS privacy
+  manifest and both stores' privacy answers are drafted (PRs #34 and #36,
+  launch plan 3.6 and 5.5; reviewed 2026-10-12)
 - Date: 2026-09-11
 - Decision log: DL-029 (resolves the identity portion of DL-015)
 

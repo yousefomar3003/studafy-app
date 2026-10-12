@@ -5,7 +5,19 @@ data posture. Evidence date: 2026-09-10. This file records facts; ADR-0004
 holds the rules. The authoritative decision log is
 `docs/governance/decision-log.md`.
 
-## Environments
+## Current environments (reviewed 2026-10-12)
+
+| Environment | Where | Data | Notes |
+|---|---|---|---|
+| **Test copy** | Fly.io `studafy-api-test` and `studafy-worker-test` (Frankfurt, `fra`; `ENVIRONMENT=development`); Supabase project `cyrngoqnhqflzovlybbr` (`eu-central-1`, Frankfurt); Redis Cloud | The owner's test accounts: **preserve, never reset**. Reads only as needed, read-only | Logs to Axiom (`studafy-production`, EU) through `studafy-log-shipper`; errors to Sentry (EU); alerts through the Cloudflare `studafy-alert-relay`; daily encrypted backups (GitHub environment `backups`). Its Redis is still plaintext (owner to move to `rediss://`) |
+| **Production** | Fly.io `studafy-api` (suspended) and `studafy-worker` per `fly.api.toml` / `fly.worker.toml` (`ENVIRONMENT=production`) | None yet | Not live. Whether the Frankfurt project stays the test target or becomes production is the owner's decision (`handoff.md`). Release app builds are blocked (SEC-001) |
+| Throwaway local stacks | Docker on the developer's Mac (e.g. the stack on ports 55721/55722) | Synthetic fixtures and the scale dataset | For pgTAP, integration tests and the capacity harness; reset freely |
+| Local development | Docker (`bunx supabase start`, `bun run dev:stack`) | The developer's own local data | Not for committing test fixtures |
+| Former Tokyo project | `eamewgaptdfqzpmayavx`, AWS `ap-northeast-1` | Synthetic | Superseded by Frankfurt (ADR-0035); not used since 2026-10-03 |
+
+The table below is the original 2026-09-10 evidence, kept as history.
+
+## Environments (2026-09-10)
 
 | Environment | Location | Data | Owner | Credential custody | Notes |
 |---|---|---|---|---|---|

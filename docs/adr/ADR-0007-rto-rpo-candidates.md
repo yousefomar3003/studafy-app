@@ -1,7 +1,10 @@
 # ADR-0007: RTO/RPO provisional candidates
 
 Status: Deferred — formal approval blocks Phase 6 and any production data
-commitment. Decision-log: DL-010. Date: 2026-09-10.
+commitment. Decision-log: DL-010. Date: 2026-09-10. Reviewed 2026-10-12: the
+backup half is in place (ADR-0032). Backups are daily, encrypted, include
+files, are restore-checked and are kept 30 days, which is a recovery point
+of up to 24 hours. Formal RTO and RPO targets are still to be approved.
 
 ## Context
 

@@ -1,6 +1,8 @@
 # ADR-0016: AUTH-030 session lifecycle, token verification and Apple 4.8 posture
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-13
 - Decision log: DL-032, DL-033, DL-034
 - Supersedes: nothing. Extends ADR-0014 (DB-021) without weakening it.

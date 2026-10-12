@@ -1,6 +1,8 @@
 # ADR-0029: Free Lessons, Studafy Plus / Max, and a metered AI ledger
 
-- Status: Accepted for local/disposable use; superseded in part by
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use; superseded in part by
   [ADR-0034](ADR-0034-paid-plans-live-from-launch.md), which lists the plans
   in staging and production and ships the lesson AI switched on
 - Date: 2026-09-27

@@ -1,6 +1,8 @@
 # ADR-0032: Subscription lifecycle, upgrade-at-limit, and independent backups
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-29
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Relates to: ADR-0007 (RTO/RPO), ADR-0009 (store billing), ADR-0029 (plans)

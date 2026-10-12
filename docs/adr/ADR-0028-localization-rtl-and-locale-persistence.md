@@ -1,6 +1,8 @@
 # ADR-0028: Arabic as a switchable language, RTL, and locale persistence
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-20
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Decision log: DL-055

@@ -1,6 +1,8 @@
 # ADR-0033: Paper gradebook, audited corrections, attendance lock rule and deadlines
 
-- Status: Accepted for local/disposable use
+- Status: Accepted; deployed to the Fly test copy, not yet to production
+  (status reviewed 2026-10-12, launch plan 7.2). Originally accepted for
+  local/disposable use
 - Date: 2026-09-30
 - Decision owner: repository owner (GitHub `@yousefomar3003`)
 - Relates to: ADR-0017 (server authorization), ADR-0023 (file delivery),

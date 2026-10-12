@@ -1,9 +1,98 @@
 # Handoff: Studafy
 
-Updated: 2026-10-11. Branch: `feat/mvp-school-operations-and-hosted-testing`
-(not merged to `main`; **31 commits not pushed**, see below).
+Updated: 2026-10-12. Everything earlier is on `main`. Today's work is in
+ten open pull requests, #34 to #43, all with CI green. Nothing from today
+is deployed.
 
-## Start here (2026-10-11)
+## Start here (2026-10-12)
+
+**What happened.** Claude worked through its remaining launch items in the
+owner's order: 3.6, then 3.6b (added), 5.5, 4.3, 4.7, 4.8, 7.1 and 7.2. Item
+1.3 was already done (PR #33 merged; `main` CI green). Each item is one PR,
+open for the owner to merge:
+
+| PR | Item | What | State |
+|---|---|---|---|
+| #34 | 3.6 | Google Play Data safety answers (`docs/store/google-play-data-safety.md`); Android Auto Backup off | Green, merge |
+| #35 | 3.6b | Account deletion removes what it left behind; deleting a parent deletes their managed child accounts (screen names them); export gains gender, notebooks, devices; file retention sweep on | Green, merge, then **back up and apply migration `202610110004` to hosted**, then deploy the worker |
+| #36 | 5.5 | `ios/Runner/PrivacyInfo.xcprivacy`, App Store privacy labels, permission prompts | Green, merge |
+| #37 | 4.3 | Privacy policy 1.3, terms 1.2, deletion page, English and Arabic; static Cloudflare Worker in `ops/legal-site` | Green, merge; **deploy awaits approval** (below) |
+| #38 | 4.7 | Worker backlog alerts to Telegram; Sentry release per deploy; environment on log lines; observability review | Green, merge; set Telegram secrets on the worker |
+| #39 | 4.8 | Capacity re-measured (`docs/capacity/2026-10-12.md`); harness repaired and extended; HTTP load runner | Green, merge; choose the production database size |
+| #40 | 7.1a | Tests: Family+ over HTTP, notification processor, material reading and file scan through Postgres; notification isolation | Green, merge |
+| #41 | 7.1b | Accessibility checks on every main screen (EN, AR, 2× text) and the fixes they found | Green, merge |
+| #42 | 7.1c | Device tests on an iOS simulator and an Android emulator in CI; reduced-motion layout fix | Green, merge |
+| #43 | 7.2 | README, credentials map, ADR statuses, environment matrix, this file, launch-plan notes | Merge |
+
+They are independent and branch from `main`. One overlap: #35 and #37 both
+describe managed-child deletion, consistently.
+
+**Decisions the owner made (2026-10-11 and 12)**
+- **Item order:** 3.6 → 5.5 → 4.3 → 4.7 → 4.8 → 7.1 → 7.2. This overrides
+  the earlier order, which had 4.3 first, so that the policy is written from
+  the audit.
+- **Account deletion:** close the deletion gaps in their own PR. Deleting a
+  parent deletes the child accounts they manage.
+- **Contact:** the public contact and deletion-request email is
+  **hello@studafy.com**.
+- **Load testing:** only on a local throwaway stack, with AI stubbed.
+
+**Waiting on the owner (new today)**
+1. **Merge #34 to #43.**
+2. **Approve the legal-site deploy:**
+   `npx wrangler deploy --config ops/legal-site/wrangler.toml` (after
+   `npx wrangler login`). It publishes to
+   `https://studafy-legal.studafy.workers.dev/privacy`, `/terms` and
+   `/delete-account`, plus `/ar/...`. Deploy it after #35 is live on hosted,
+   because the pages describe that deletion behaviour. Make sure mail to
+   hello@studafy.com arrives.
+3. **Hosted:** back up, then apply `202610110004`, then deploy the worker.
+4. **Telegram alerts:** set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and
+   `QUEUE_ALERTS_ENABLED=true` on the worker, then run `bun run alerts:test`.
+   The commands are in `docs/deployment/queue-alerts.md`.
+5. **Store decisions:** listed at the top of `docs/store/*.md`. They include
+   the malware-scanner vendor, the AI DPA and DPIA, target ages and Families,
+   the Kids category, Sentry "prevent storing IP", retention periods, and
+   Arabic iOS permission strings.
+6. **Production database size:** at least 4 dedicated vCPUs is recommended
+   (`docs/capacity/2026-10-12.md`).
+7. **Legal review** of the English and Arabic legal texts, before moving them
+   to studafy.com. The open items are `TODO(legal)` comments in
+   `docs/legal/`.
+8. **CI cost:** the iOS device job uses macOS minutes (10×). Drop its
+   `pull_request` trigger if that is too much.
+9. **A cleanup choice.** Wrangler's local state, which includes city-level
+   location data from the owner's connection, was committed by mistake in
+   the first commit of `feat/legal-site`. A later commit removed it, and it
+   never reached `main`. To purge it from history: squash-merge #37 and
+   delete the branch, or let Claude force-push a rewrite. Either needs the
+   owner's OK.
+
+**Known issues and findings (not fixed)**
+- **Capacity:** the same screens cost about 40% more in the database than on
+  2026-09-29. The ranked fixes are in the capacity report: per-request access
+  checks first, then the grades list, then homework rows.
+- **AI:** the basic study helper runs whenever `AI_API_KEY` is set, whatever
+  `AI_LESSON_TOOLS_ENABLED` says.
+- **Sentry:** native iOS and Android crashes bypass the Dart scrubber.
+  Verify a native event (observability review).
+- **Supabase Auth** keeps sign-in IP addresses itself. The privacy policy now
+  says so; the retention is still to confirm.
+
+**Next for Claude** (all items in the earlier list are done or in PRs):
+- After the merges and deploys above, tick the launch-plan items whose
+  **Done when** checks then pass.
+- Optional: run the backend-driven device tests (exam workflow, coursework
+  files) in CI on the Android job with a local stack.
+- The capacity fixes, in the report's order.
+
+**Throwaway stack:** `studafy-guardianann` on ports 55721 (API) and 55722
+(database). Its workdir is now in this session's scratchpad (`annstack`).
+Recreate one with `supabase/config.toml` copied, a new `project_id`, and the
+`[db] port` changed. It holds `studafy_scale`, the 11M-row capacity
+database; drop it when space is needed.
+
+## Earlier (2026-10-11): the start of the launch plan
 
 **Owner's checklist:** the "★ Your to-do" section at the top of
 `docs/planning/launch-work-plan.md` (Y1–Y9), with step-by-step
