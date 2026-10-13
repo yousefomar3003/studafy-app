@@ -26,6 +26,12 @@ for test in iphone_smoke_test family_challenge_smoke_test study_plans_smoke_test
     failed=1
   fi
   echo "::endgroup::"
+  # On Android, stop the Kotlin compile daemon and any Gradle daemon between
+  # builds, so the emulator keeps its memory (device-tests.yml).
+  if command -v adb >/dev/null && [ -x android/gradlew ]; then
+    (cd android && ./gradlew --stop >/dev/null 2>&1) || true
+    pkill -f KotlinCompileDaemon 2>/dev/null || true
+  fi
 done
 
 cp -R /tmp/studafy-smoke-screenshots "$out/screenshots" 2>/dev/null || true

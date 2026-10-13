@@ -145,13 +145,17 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Fit Gradle into the runner's memory
+      # The emulator shares the runner's 7 GB with Gradle: smaller heaps and
+      # no daemons left alive between the three test builds. With the build
+      # job's 4 GB + 2 GB daemons the emulator hung and the runner was lost.
+      - name: Fit Gradle beside the emulator
         run: |
           mkdir -p ~/.gradle
           {
-            echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError'
-            echo 'kotlin.daemon.jvmargs=-Xmx2g'
+            echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError'
+            echo 'kotlin.daemon.jvmargs=-Xmx1g'
             echo 'org.gradle.workers.max=2'
+            echo 'org.gradle.daemon=false'
           } >> ~/.gradle/gradle.properties
 
       - name: Install Flutter dependencies
@@ -187,6 +191,7 @@ jobs:
           target: google_apis
           force-avd-creation: false
           disk-size: 4096M
+          ram-size: 2048M
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           disable-animations: true
           script: tools/ci/run-device-tests.sh emulator-5554
