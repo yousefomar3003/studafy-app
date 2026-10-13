@@ -37,6 +37,31 @@ describe managed-child deletion, consistently.
   **hello@studafy.com**.
 - **Load testing:** only on a local throwaway stack, with AI stubbed.
 
+**Done 2026-10-13 (owner asked Claude to do them)**
+- **Backup:** run 38391400311. Restore check passed: 136 tables, 1,645 rows,
+  files included, at `202610110004`'s predecessor.
+- **Hosted migration:** `202610110004` applied (dry run first); hosted is at
+  `202610110004`.
+- **Deployed:** `studafy-api-test` and `studafy-worker-test` from `main` at
+  `3d86381`.
+  - API: `/readyz` ready.
+  - Worker: queue alerts on with Telegram configured; file-retention sweep
+    on; releases tagged per deploy.
+  - Known warnings: plaintext Redis and the `postgres` login.
+- **Telegram:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and
+  `QUEUE_ALERTS_ENABLED=true` are set on the test worker (from
+  `.env.hosted`). A test alert from the deployed worker was accepted by
+  Telegram.
+- **Legal site live** at https://studafy-legal.studafy.workers.dev:
+  - pages: `/privacy`, `/terms`, `/delete-account`, `/ar/...`;
+  - checked: security headers present, no review notes on any page.
+  - Deploy with `bun run legal:deploy`. A wrangler custom build ran from the
+    wrong folder, so `[build]` was replaced by the script.
+- **Rotate the Fly token in `.env.hosted`.** Sourcing that file with the
+  shell echoed part of `FLY_API_TOKEN` (and the public Sentry DSN) into the
+  session output. Revoke and reissue it (`fly tokens list`, `fly tokens
+  revoke`); never `source` that file. Use a parser instead.
+
 **Waiting on the owner (new today)**
 1. **Merge #34 to #43.**
 2. **Approve the legal-site deploy:**

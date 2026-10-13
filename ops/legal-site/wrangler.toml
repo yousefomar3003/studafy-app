@@ -1,10 +1,13 @@
 # Temporary public home of the privacy policy, terms and account deletion
 # page (launch plan 4.3), in English and Arabic. Static assets only: no
-# Worker script runs. Pages are built from docs/legal by build.ts, which
-# wrangler runs before each deploy.
+# Worker script runs. Pages are built from docs/legal by build.ts into
+# ./public, which this publishes.
 #
-# Deploy (owner approves first):
-#   npx wrangler deploy --config ops/legal-site/wrangler.toml
+# Deploy (owner approves first), from the repository root:
+#   bun run legal:deploy
+# which builds, then runs wrangler deploy with this file. (A wrangler custom
+# build runs from wherever wrangler is started, so the build is a separate
+# step rather than [build] here.)
 # URLs on the account's workers.dev subdomain:
 #   https://studafy-legal.studafy.workers.dev/privacy   (and /terms, /delete-account)
 #   https://studafy-legal.studafy.workers.dev/ar/privacy (and /ar/terms, /ar/delete-account)
@@ -19,9 +22,6 @@ name = "studafy-legal"
 compatibility_date = "2026-10-01"
 workers_dev = true
 # routes = [{ pattern = "legal.studafy.com", custom_domain = true }]
-
-[build]
-command = "bun build.ts"
 
 [assets]
 directory = "./public"
