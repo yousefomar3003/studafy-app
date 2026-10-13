@@ -1,10 +1,115 @@
 # Handoff: Studafy
 
-Updated: 2026-10-12. Everything earlier is on `main`. Today's work is in
-ten open pull requests, #34 to #43, all with CI green. Nothing from today
-is deployed.
+Updated: 2026-10-13. Everything is on `main` (`4231aa1`); no pull request is
+open. The test copy runs today's code.
 
-## Start here (2026-10-12)
+## Start here (2026-10-13)
+
+**Where things stand**
+- **Code:** Claude's launch items (3.6, 3.6b, 5.5, 4.3, 4.7, 4.8, 7.1 and
+  7.2) are merged as PRs #34–#43. So are the follow-ups: #44 (Android
+  emulator memory in CI) and #45 (legal deploy script, Arabic iOS permission
+  prompts, DL-056).
+- **CI on `main`:** green for every merge so far, including the device tests
+  on an iOS simulator and an Android emulator. Check the run for `4231aa1`
+  if it is still in progress.
+- **Hosted test copy** (Supabase `cyrngoqnhqflzovlybbr`, Frankfurt):
+  - a backup was taken first; restore check passed (run 38391400311);
+  - migrations are applied up to `202610110004`;
+  - `studafy-api-test` and `studafy-worker-test` run `main` at `3d86381`.
+    #45 changed no server code, so no redeploy is needed for it.
+  - The worker sends backlog alerts to Telegram. A test alert from the
+    deployed worker was received.
+  - The worker also runs the file-retention sweep, and Sentry releases carry
+    the deploy.
+- **Legal site live:** https://studafy-legal.studafy.workers.dev, with
+  `/privacy`, `/terms`, `/delete-account` and `/ar/...`.
+  - Deploy changes with `bun run legal:deploy`.
+  - The texts are drafts awaiting legal review; the review notes are
+    comments in `docs/legal/`, never on the pages.
+- **Owner decisions** (DL-056):
+  - declare under-13s in the store age settings;
+  - not the App Store Kids category;
+  - AI stays off for real students until the Together AI DPA and the DPIA
+    are signed;
+  - production database size later (at least 4 dedicated vCPUs
+    recommended).
+
+**Next steps for the owner, in order**
+1. **Rotate the Fly token in `.env.hosted`.** Part of it was echoed into the
+   2026-10-13 session's output. Use `fly tokens list`, then
+   `fly tokens revoke`, and put the new one in the file. Never `source` that
+   file.
+2. **Sentry dashboard,** for both projects: turn on "Prevent Storing of IP
+   Addresses", "Data Scrubber" and "Use Default Scrubbers". The CI token
+   cannot change project settings.
+3. **Security blockers for production:**
+   - set the runtime role passwords and switch both `DATABASE_URL` secrets
+     (`docs/deployment/fly-io.md`);
+   - move Redis to a `rediss://` endpoint.
+
+   The worker still warns about both.
+4. **Decide the app ID** (Y5: `com.studafy.light` or `io.studafy.app`). That
+   unblocks the Android track and the Play Console listing. Its answers are
+   ready:
+   - Data safety: `docs/store/google-play-data-safety.md`;
+   - privacy URL: the legal site's `/privacy`;
+   - account deletion URL: the legal site's `/delete-account`.
+5. **Choose a malware-scanner vendor.** A production worker refuses to start
+   without one.
+6. **Sign the AI DPA and complete the DPIA** before AI reaches real
+   students.
+7. **Set retention periods** for files, audit records and AI outputs
+   (privacy policy §10), then have a **legal review** of the English and
+   Arabic texts before moving them to studafy.com.
+8. **Cleanup:**
+   - delete the AWS IAM key;
+   - revoke the token in the suspended `studafy-api` and unset its unused
+     secrets;
+   - destroy the stray `studafy` app;
+   - delete the local `.github/workflows/fly-deploy.yml`;
+   - optionally delete the `feat/legal-site` branch. Its first commit holds
+     wrangler's local state with city-level location data; it never reached
+     `main`.
+9. **CI cost:** the iOS device job uses macOS minutes (10×). Drop its
+   `pull_request` trigger in `device-tests.yml` if that is too much.
+
+**Next steps for Claude, in order**
+1. **Capacity fixes** (`docs/capacity/2026-10-12.md`). Each change needs the
+   2026-09-29 zero-difference proof, then a rerun of `bun run scale:bench`
+   and `scale:http`.
+   - Access checks once per request: about 28% of database time.
+   - The grades list built from the caller's own records: 14%.
+   - Homework rows built for the whole page at once: about 25%.
+2. **A phone build pointing at the legal site**
+   (`STUDAFY_PRIVACY_URL`, `STUDAFY_TERMS_URL`), then open both links from
+   the subscription screens. That completes item 4.3's "Done when". It
+   needs the owner's phone.
+3. **Observability recommendations**
+   (`docs/operations/observability-review-2026-10.md`):
+   - check that a native crash carries no installation id;
+   - remove the dead CloudWatch sink;
+   - pin the log-shipper image;
+   - filter Axiom monitors by environment once production exists.
+4. **Optional:** run the backend-driven device tests (exam workflow,
+   coursework files) in CI against a local stack.
+5. **When the owner's inputs arrive:** launch-plan items 2.3–2.5 (Y2–Y4),
+   the Android track 3.x (Y5), and stage 5 for iOS (the Apple account).
+
+**Rules that still apply**
+- Test only on throwaway stacks, never the local working database or the
+  hosted one.
+- Hosted: read-only, and only when needed. Back up before any migration
+  (`gh workflow run backup.yml`).
+- Keep these four local files uncommitted:
+  - `ios/Runner.xcodeproj/project.pbxproj` (the personal signing team);
+  - `ios/Runner/RunnerPersonalTeam.entitlements`;
+  - `fly.toml`;
+  - `.github/workflows/fly-deploy.yml`.
+- Read `.env.hosted` with a parser that never prints values. Never
+  `source` it.
+
+## Earlier (2026-10-12): the store, legal, alerts, capacity and test items
 
 **What happened.** Claude worked through its remaining launch items in the
 owner's order: 3.6, then 3.6b (added), 5.5, 4.3, 4.7, 4.8, 7.1 and 7.2. Item
