@@ -21,6 +21,13 @@ The form must stay consistent with:
 
 ## Needs Yousef's decision
 
+**Decided 2026-10-13** (DL-056):
+- **Ages:** declare the real student ages, under-13s included (school age 5 to 17), plus adults. Families policy applies (item 3).
+- **AI:** off for real students until the Together AI DPA and the DPIA are signed. Leave `AI_API_KEY` unset in production until then (item 2).
+- **Production database size:** deferred until the pilot's numbers are known.
+
+The items below remain open unless marked.
+
 These answers can't be settled from the code alone. Each one says what this
 draft assumes until you decide.
 

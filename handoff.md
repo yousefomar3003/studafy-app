@@ -62,6 +62,13 @@ describe managed-child deletion, consistently.
   session output. Revoke and reissue it (`fly tokens list`, `fly tokens
   revoke`); never `source` that file. Use a parser instead.
 
+**Owner decisions 2026-10-13 (DL-056)**
+- **Ages:** include under-13s in the store age declarations.
+- **App Store:** not the Kids category.
+- **AI:** off for real students until the DPA and DPIA are signed.
+- **Database size:** decided later.
+- **Arabic permission prompts:** added (`ios/Runner/ar.lproj`).
+
 **Waiting on the owner (new today)**
 1. **Merge #34 to #43.**
 2. **Approve the legal-site deploy:**
