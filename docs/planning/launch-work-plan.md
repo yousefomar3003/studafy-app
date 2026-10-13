@@ -281,7 +281,7 @@ iOS.
   - **Done when:** `https://api.studafy.com/readyz` is ready, and a direct
     `*.fly.dev` request is refused.
 - [ ] **4.3 Host the privacy policy and terms** (PR-18) · *Claude* · 0.5 day
-  - *Progress 2026-10-12:* prepared in PR #37. Policy 1.3 and terms 1.2, English and Arabic, plus the account-deletion page, on a static Cloudflare Worker at `/privacy`, `/terms`, `/delete-account` and `/ar/...`. Not deployed: it waits on your approval of `npx wrangler deploy --config ops/legal-site/wrangler.toml` (`docs/deployment/legal-site.md`).
+  - *Progress 2026-10-12:* prepared in PR #37. Policy 1.3 and terms 1.2, English and Arabic, plus the account-deletion page, on a static Cloudflare Worker at `/privacy`, `/terms`, `/delete-account` and `/ar/...`. Deployed 2026-10-13: https://studafy-legal.studafy.workers.dev/privacy and `/terms` answer, with all six pages checked. **Done when** still needs the app built with `STUDAFY_PRIVACY_URL` and `STUDAFY_TERMS_URL` pointing there, and the links opened from the subscription screens.
   - On the domain. Set `STUDAFY_TERMS_URL` and `STUDAFY_PRIVACY_URL` in the
     release build settings.
   - **Done when:** both links open from the subscription screens.
@@ -304,7 +304,7 @@ iOS.
   - One timed restore drill into a new project.
   - **Done when:** the drill's time is recorded in `docs/deployment/backups.md`.
 - [ ] **4.7 Monitoring and alerts** (PR-25) · *Claude* · 1 day
-  - *Progress 2026-10-12:* the worker's backlog alerts to Telegram are built (PR #38, `docs/deployment/queue-alerts.md`). They cover depth, age, failures and stuck workers, with no spam. Sentry releases are now tagged per deploy, and log lines carry the environment. Review: `docs/operations/observability-review-2026-10.md`. **Done when** needs your Telegram secrets on the worker and `bun run alerts:test`.
+  - *Progress 2026-10-12:* the worker's backlog alerts to Telegram are built (PR #38, `docs/deployment/queue-alerts.md`). They cover depth, age, failures and stuck workers, with no spam. Sentry releases are now tagged per deploy, and log lines carry the environment. Review: `docs/operations/observability-review-2026-10.md`. On the test copy since 2026-10-13: the worker's Telegram secrets are set, and a test alert from the deployed worker reached Telegram. Uptime and Sentry/Axiom alerts already go through the relay. **Done when** for production waits on the production apps.
   - Uptime alert on the production URL; alerts on worker backlog
     (`file_scan_backlog`, `outbox_backlog`); AI spend limit at the
     provider.

@@ -1,0 +1,5 @@
+/* Arabic permission prompts (launch plan 5.5). The English ones are in
+   Info.plist; keep both saying the same thing. */
+"NSCameraUsageDescription" = "يستخدم Studafy الكاميرا عندما تلتقط صورة لإرفاقها بعملك أو برسالة، أو لتصوير سبورة الدرس لدفترك، أو لتعيين صورتك الشخصية.";
+"NSPhotoLibraryUsageDescription" = "يستخدم Studafy الصور التي تختارها فقط: لإرفاقها بعملك أو برسالة، أو لإضافتها إلى دفترك، أو لتعيينها صورتك الشخصية.";
+"NSMicrophoneUsageDescription" = "يستخدم Studafy الميكروفون لتسجيل الرسائل الصوتية التي ترسلها في المحادثات.";

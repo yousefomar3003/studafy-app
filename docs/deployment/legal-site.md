@@ -19,7 +19,7 @@ because Google Play needs a privacy policy link and an account deletion link
   every comment, so they never reach a page; a test checks this.
 - **Build:** `ops/legal-site/build.ts` renders them into
   `ops/legal-site/public` (gitignored), with `_headers` (security headers)
-  and `_redirects`. wrangler runs the build before every deploy.
+  and `_redirects`. `bun run legal:deploy` builds, then deploys.
 - **Hosting:** a Cloudflare Worker with static assets only (no script), on
   the account's `studafy.workers.dev` subdomain: `ops/legal-site/wrangler.toml`.
 - **Tests:** `bun test ops/legal-site` (CI runs `bun test ... ops`).
@@ -27,7 +27,7 @@ because Google Play needs a privacy policy link and an account deletion link
 ## Deploy (owner approves)
 
 ```sh
-npx wrangler deploy --config ops/legal-site/wrangler.toml
+bun run legal:deploy    # builds docs/legal into ops/legal-site/public, then wrangler deploy
 ```
 
 It needs a Cloudflare login (`npx wrangler login`) on the account that owns
@@ -38,8 +38,8 @@ Before deploying, check that the deletion behaviour the pages describe is
 live: they describe the executor after launch plan 3.6b
 (`202610110004_account_deletion_gaps.sql`).
 
-To check locally: `cd ops/legal-site && npx wrangler dev`, then open
-`http://localhost:8787/privacy`.
+To check locally: `bun run legal:build && cd ops/legal-site && npx wrangler dev`,
+then open `http://localhost:8787/privacy`.
 
 ## Moving to our own domain
 
