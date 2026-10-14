@@ -50,9 +50,21 @@ afterwards (`docs/deployment/fly-io.md`).
 | Secret | What | Notes |
 |---|---|---|
 | `DATABASE_URL`, `DATABASE_CA_CERT`, `REDIS_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SENTRY_DSN` | As the API, with `studafy_worker_runtime` | |
-| `MALWARE_SCANNER_URL`, `MALWARE_SCANNER_API_KEY` | File scanning | **Vendor not chosen.** A production worker refuses to start without it |
+| `MALWARE_SCANNER_URL`, `MALWARE_SCANNER_API_KEY` | File scanning by the self-hosted ClamAV scanner (below) | Test: `http://studafy-scanner-test.internal:8080/scan`, reachable only over Fly's private network; the key is the scanner's `SCANNER_API_KEY`. A production worker refuses to start without them, and production needs its own scanner app, `studafy-scanner` |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (+ `QUEUE_ALERTS_ENABLED=true`) | Background-work alerts (launch plan 4.7, PR #38) | The alert relay's bot can be reused. Off until set; test with `bun run alerts:test` |
 | `AI_API_KEY` | Reading scanned teacher files (with `AI_MATERIAL_INDEX_ENABLED`) | Same provider and conditions as the API |
+
+### Malware scanner (`fly.scanner.test.toml`)
+
+Self-hosted ClamAV (`infra/scanner/`, PR #50): `studafy-scanner-test` runs on
+Fly's private network only and has no IP addresses.
+
+| Secret | What | Notes |
+|---|---|---|
+| `SCANNER_API_KEY` | The bearer key `POST /scan` requires | `openssl rand -hex 32`, at least 32 characters or the scanner refuses to start. The same value is the worker's `MALWARE_SCANNER_API_KEY`; rotate both together (`fly secrets import --stage` on each, deploy the scanner, then `fly secrets deploy` the worker) |
+
+Production gets its own app, `studafy-scanner`, with the same configuration
+and its own key, before launch.
 
 ### Logs, alerts, backups, legal site
 
@@ -96,7 +108,7 @@ configuration.
 |---|---|
 | Runtime role passwords (`studafy_api_runtime`, `studafy_worker_runtime`) | Owner (SQL in `docs/deployment/fly-io.md`); production refuses `postgres` |
 | A `rediss://` Redis | Owner; production refuses plaintext Redis |
-| Malware scanner URL and key | Vendor choice; a production worker refuses to start without one |
+| Production malware scanner: the `studafy-scanner` app (same configuration as `studafy-scanner-test`) and its own key | Before launch; a production worker refuses to start without one |
 | Apple: Sign in with Apple, APNs key, App Store Connect API key (`.p8`, downloads once), store billing (`APPLE_*`) | The Apple Developer account (stage 5) |
 | Google Play: upload keystore, Play service account (`GOOGLE_SERVICE_ACCOUNT_JSON`), Pub/Sub (`GOOGLE_PUBSUB_*`) | The app ID decision (Y5), then the Android track |
 | FCM server credentials (`FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON`) | Firebase project for push (`docs/deployment/push-notifications.md`) |
