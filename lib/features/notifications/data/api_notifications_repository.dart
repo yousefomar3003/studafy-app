@@ -233,6 +233,7 @@ class ApiNotificationsRepository implements NotificationsRepository {
 /// unrecognized key falls back to the generic copy instead of surfacing a
 /// raw, untranslated localization key to the user.
 const _knownTemplateKeys = <String>{
+  'account.inactive_deletion_warning',
   'academic.assessment_published',
   'academic.assignment_published',
   'academic.grade_published',

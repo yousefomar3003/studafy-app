@@ -1579,6 +1579,7 @@ export type Database = {
       };
       classrooms: {
         Row: {
+          academic_records_purged_at: string | null;
           archived_at: string | null;
           created_at: string;
           grade: string | null;
@@ -1594,6 +1595,7 @@ export type Database = {
           version: number;
         };
         Insert: {
+          academic_records_purged_at?: string | null;
           archived_at?: string | null;
           created_at?: string;
           grade?: string | null;
@@ -1609,6 +1611,7 @@ export type Database = {
           version?: number;
         };
         Update: {
+          academic_records_purged_at?: string | null;
           archived_at?: string | null;
           created_at?: string;
           grade?: string | null;

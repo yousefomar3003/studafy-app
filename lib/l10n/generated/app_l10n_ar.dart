@@ -4079,6 +4079,14 @@ class AppL10nAr extends AppL10n {
       'الإشعارات تعمل على هذا الجهاز.';
 
   @override
+  String get notificationCopyAccountInactiveDeletionWarningTitle =>
+      'سيُحذف حسابك';
+
+  @override
+  String get notificationCopyAccountInactiveDeletionWarningDetail =>
+      'لم يُستخدم هذا الحساب منذ ما يقارب سنتين، لذلك سيُحذف بعد نحو شهر. استخدامك للتطبيق يُبقيه.';
+
+  @override
   String get famLinkHasAccount => 'لدى طفلي حساب في Studafy';
 
   @override

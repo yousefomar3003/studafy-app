@@ -2299,6 +2299,8 @@
   "notificationCopyBillingSubscriptionEndedDetail": "Your subscription has ended. You can subscribe again from Plans.",
   "notificationCopySystemPushTestTitle": "Test notification",
   "notificationCopySystemPushTestDetail": "Notifications are working on this device.",
+  "notificationCopyAccountInactiveDeletionWarningTitle": "Your account will be deleted",
+  "notificationCopyAccountInactiveDeletionWarningDetail": "This account has not been used for nearly two years, so it will be deleted in about a month. Using the app keeps it.",
   "famLinkHasAccount": "My child has a Studafy account",
   "famLinkHasAccountBody": "Find them by the Studafy ID on their profile. They approve the link from their account.",
   "famLinkCreateAccount": "Create an account for my child",

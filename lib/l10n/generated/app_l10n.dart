@@ -7002,6 +7002,18 @@ abstract class AppL10n {
   /// **'Notifications are working on this device.'**
   String get notificationCopySystemPushTestDetail;
 
+  /// No description provided for @notificationCopyAccountInactiveDeletionWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account will be deleted'**
+  String get notificationCopyAccountInactiveDeletionWarningTitle;
+
+  /// No description provided for @notificationCopyAccountInactiveDeletionWarningDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has not been used for nearly two years, so it will be deleted in about a month. Using the app keeps it.'**
+  String get notificationCopyAccountInactiveDeletionWarningDetail;
+
   /// No description provided for @famLinkHasAccount.
   ///
   /// In en, this message translates to:

@@ -60,7 +60,6 @@ DeletionImpact _impact({int attendance = 12, int grades = 4}) => DeletionImpact(
   deletedPersonalRecords: const {
     'profile': 1,
     'devices': 2,
-    'consents': 1,
     'notifications': 7,
   },
   gracePeriodDays: 14,
