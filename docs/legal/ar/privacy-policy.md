@@ -1,18 +1,33 @@
 # سياسة الخصوصية في Studafy
 
-**آخر تحديث:** 12 أكتوبر 2026\
-**الإصدار:** 1.3
+**آخر تحديث:** 14 أكتوبر 2026\
+**الإصدار:** 1.4
 
 <!--
-Arabic translation of docs/legal/privacy-policy.md, version 1.3. Change both
+Arabic translation of docs/legal/privacy-policy.md, version 1.4. Change both
 together. The English version governs if they differ.
-TODO(legal): must be reviewed by a native legal translator before
-publishing on the own domain. The open items are the TODO(legal) comments in
-the English source; they are not repeated here.
+Version 1.4 approved by a lawyer in Jordan, 14 October 2026. The open items
+are the TODO(legal) comments in the English source; they are not repeated
+here.
 -->
 
 > هذه ترجمة عربية للنسخة الإنجليزية من السياسة. إذا اختلفت النسختان، تُعتمد
 > [النسخة الإنجليزية](../privacy).
+
+### ما الذي تغيّر في الإصدار 1.4
+
+- مدة احتفاظنا بالبيانات: مدد محدّدة للسجلات الأكاديمية والرسائل والملفات (12 شهرًا
+  بعد إغلاق الصف، ما لم تحدّد المدرسة مدة خاصة بها)، ولسجلات الأمان والوصول
+  (سنتان)، ولسجلات الموافقات وحذف الحسابات (6 سنوات بعد الحساب)، ولسجلات الفوترة
+  (6 سنوات بعد السنة الضريبية)، وللحسابات غير النشطة (تُحذف بعد سنتين دون تسجيل
+  دخول، مع إشعار قبل 30 يومًا)، ولعناوين IP لتسجيل الدخول لدى Supabase، ولتقارير
+  الأخطاء (القسمان 3.2 و10).
+- تُحفظ التغييرات على الأدوار لمدة سنتين بدلًا من الاحتفاظ بها بشكل دائم (القسمان
+  3.3 و9).
+- عند حذف الحساب يُحفظ سجلّ ما وافق عليه صاحبه لمدة 6 سنوات، وتُحذف سجلات التدقيق
+  بانتهاء مدّتها (القسم 9).
+- تُفحص الملفات المرفوعة بحثًا عن البرمجيات الضارّة على بنيتنا التحتية في
+  فرانكفورت، لا لدى جهة خارجية (القسم 7.2).
 
 ### ما الذي تغيّر في الإصدار 1.3
 

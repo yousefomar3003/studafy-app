@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
-**Last updated:** 12 October 2026\
-**Version:** 1.3
+**Last updated:** 14 October 2026\
+**Version:** 1.4
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -19,15 +19,32 @@ comments next to the text they affect, and in the list at the end.
 
 The in-app summaries (policyPrivacyBody and policyTermsBody in
 lib/l10n/app_en.arb and app_ar.arb) must say the same things as this
-document and terms-of-use.md. Version 1.3 corrects facts (regions,
-providers, what deletion removes); it does not change what anyone agreed
-to, so the consent version is unchanged. A substantive change needs a new
-consent version and a bump of termsPolicyVersion in
-lib/core/account_lifecycle.dart.
+document and terms-of-use.md. Version 1.3 corrected facts (regions,
+providers, what deletion removes) without a new consent version. Version 1.4
+(approved by counsel for publication, 14 October 2026) sets the retention
+periods (DL-057) and changes what the app says about deleting records, so
+it is consent version 2026-10-14 (termsPolicyVersion in
+lib/core/account_lifecycle.dart). A substantive change needs a new consent
+version and a bump of termsPolicyVersion.
 
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 1.4
+
+- How long we keep things: fixed periods for academic records, messages and
+  files (12 months after a class is closed, unless the school sets its
+  own), security and access logs (2 years), consent and account-deletion
+  records (6 years after the account), billing records (6 years after the
+  tax year), inactive accounts (deleted after 2 years without a sign-in,
+  with a warning 30 days before), sign-in IP addresses held by Supabase,
+  and error reports (§3.2, §10).
+- Role changes are kept for 2 years rather than permanently (§3.3, §9).
+- When an account is deleted, the record of what it agreed to is kept for
+  6 years, and audit records are deleted when their period ends (§9).
+- Uploaded files are checked for malware on our own infrastructure in
+  Frankfurt, not by an outside provider (§7.2).
 
 ### What changed in version 1.3
 
