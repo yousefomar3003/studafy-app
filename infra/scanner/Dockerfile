@@ -19,7 +19,9 @@ RUN sed -i -E '/^[[:space:]]*(TCPSocket|TCPAddr|StreamMaxLength|MaxFileSize|MaxS
     'ConcurrentDatabaseReload no' \
     >> /etc/clamav/clamd.conf
 
-COPY server.py entrypoint.sh /app/
+# The build context is the repository root (fly.scanner.test.toml lives
+# there): docker build -f infra/scanner/Dockerfile .
+COPY infra/scanner/server.py infra/scanner/entrypoint.sh /app/
 RUN chmod 0755 /app/server.py /app/entrypoint.sh
 
 EXPOSE 8080
