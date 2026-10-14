@@ -449,7 +449,6 @@ class ApiSessionRepository implements SessionRepository {
       deletedPersonalRecords: {
         'profile': impact.deletedPersonalData.profile,
         'devices': impact.deletedPersonalData.devices,
-        'consents': impact.deletedPersonalData.consents,
         'notifications': impact.deletedPersonalData.notifications,
       },
       gracePeriodDays: impact.gracePeriodDays,

@@ -1149,6 +1149,8 @@
   "notificationCopyBillingSubscriptionEndedDetail": "انتهى اشتراكك. يمكنك الاشتراك مرة أخرى من صفحة الخطط.",
   "notificationCopySystemPushTestTitle": "إشعار تجريبي",
   "notificationCopySystemPushTestDetail": "الإشعارات تعمل على هذا الجهاز.",
+  "notificationCopyAccountInactiveDeletionWarningTitle": "سيُحذف حسابك",
+  "notificationCopyAccountInactiveDeletionWarningDetail": "لم يُستخدم هذا الحساب منذ ما يقارب سنتين، لذلك سيُحذف بعد نحو شهر. استخدامك للتطبيق يُبقيه.",
   "famLinkHasAccount": "لدى طفلي حساب في Studafy",
   "famLinkHasAccountBody": "ابحث عنه برقم Studafy الموجود في ملفه. يوافق على الربط من حسابه.",
   "famLinkCreateAccount": "إنشاء حساب لطفلي",

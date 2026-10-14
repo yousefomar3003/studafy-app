@@ -7,6 +7,10 @@ import '../../../l10n/generated/app_l10n.dart';
 /// and no account data travels in it. An unknown key - a newer server than
 /// this app - reads as a generic update rather than as the raw key.
 String notificationCopy(AppL10n l10n, String key) => switch (key) {
+  'notification.account.inactive_deletion_warning.title' =>
+    l10n.notificationCopyAccountInactiveDeletionWarningTitle,
+  'notification.account.inactive_deletion_warning.detail' =>
+    l10n.notificationCopyAccountInactiveDeletionWarningDetail,
   'notification.academic.assessment_published.title' =>
     l10n.notificationCopyAcademicAssessmentPublishedTitle,
   'notification.academic.assessment_published.detail' =>

@@ -21,8 +21,8 @@ export interface FileRetentionRuntime {
  * hands over one physical object (the dedupe root) only after the database
  * verified every same-school member is past its horizon, unheld and
  * unreferenced; the rows move to `deleted` only after storage confirms the
- * physical deletion. Retention durations themselves stay unset until the
- * human retention decision (§29) — this loop proves the mechanism.
+ * physical deletion. A file's horizon is set by whatever ends its purpose:
+ * account deletion, or the retention schedule below (DL-057).
  */
 export function startFileRetentionSweep(
   sql: Sql,
@@ -79,6 +79,90 @@ export function startFileRetentionSweep(
       return 0;
     }).finally(() => running = null);
   }, intervalMs);
+
+  return {
+    runOnce,
+    async close() {
+      closed = true;
+      clearInterval(timer);
+      await running;
+    },
+  };
+}
+
+export interface RetentionScheduleRuntime {
+  close(): Promise<void>;
+  /** One pass of every purge; returns the counts each one reported. */
+  runOnce(): Promise<Record<string, Record<string, number>>>;
+}
+
+const RETENTION_STEPS = [
+  // Security logs (2 years), consent and deletion records (the account's
+  // life plus 6 years), billing (6 years after the tax year), legacy AI.
+  {
+    name: "records",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.retention_purge_records(5000) as counts`,
+  },
+  // Classes closed 12 months ago (or the school's period), then the
+  // conversations nobody shares a class for any more.
+  {
+    name: "classes",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.retention_purge_classes(5) as counts`,
+  },
+  // Warn at 23 months without activity; request deletion at 24.
+  {
+    name: "inactive_accounts",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.retention_inactive_accounts(100) as counts`,
+  },
+] as const;
+
+/**
+ * DL-057 retention schedule (privacy policy §10). Each step is one bounded
+ * transaction in the database; a step that fails is logged and the others
+ * still run. Files the purges leave unreferenced become due for the FILE-051
+ * sweep above, which deletes their bytes. Logs carry counts only.
+ */
+export function startRetentionSchedule(
+  sql: Sql,
+  logger: Logger,
+  intervalMs = 60 * 60_000,
+): RetentionScheduleRuntime {
+  let closed = false;
+  let running: Promise<unknown> | null = null;
+
+  const runOnce = async () => {
+    const report: Record<string, Record<string, number>> = {};
+    for (const step of RETENTION_STEPS) {
+      if (closed) break;
+      try {
+        const rows = await step.query(sql);
+        const counts = rows[0]?.counts ?? {};
+        report[step.name] = counts;
+        if (Object.values(counts).some((n) => n > 0)) {
+          logger.info("retention_purged", { step: step.name, ...counts });
+        }
+      } catch (error) {
+        logger.error("retention_step_failed", {
+          step: step.name,
+          error_name: error instanceof Error ? error.name : "unknown",
+        });
+      }
+    }
+    return report;
+  };
+
+  const tick = () => {
+    if (running || closed) return;
+    running = runOnce().finally(() => running = null);
+  };
+  const timer = setInterval(tick, intervalMs);
+  tick();
 
   return {
     runOnce,

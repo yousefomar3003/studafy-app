@@ -49,7 +49,7 @@ one month.
   - replace your name on your profile and on class rosters with "Deleted
     user" or "Deleted student", and clear your gender;
   - end your memberships, family links and conversations;
-  - delete your devices and notification settings, notifications, consents,
+  - delete your devices and notification settings, notifications,
     blocks, data exports, notebooks and study notebooks, AI usage records,
     and your personal photos (photos for the notebook or the study helper);
   - remove your email address from invitations.
@@ -64,6 +64,7 @@ account is deleted, without your name:
 - **messages you already sent**, which stay with the people you sent them
   to, shown as from "Deleted user";
 - **audit and security records** of what happened in the app;
+- **consent records** (what you agreed to, and when), for 6 years;
 - **payment records**, for as long as tax and accounting law requires.
 
 Encrypted backups hold a copy for up to 30 days before they are deleted.

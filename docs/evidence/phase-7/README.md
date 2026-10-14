@@ -110,7 +110,16 @@ is exposed meanwhile: the synthetic project has zero rows, no AI Edge Function
    Phase 2 security-owner gate closes, following the usual dry-run procedure,
    then rerun `scripts/verify-synthetic-ai-removal.ts`.
 2. **Retention owner:** decide when to delete legacy rows in the three retired
-   relations wherever any exist.
+   relations wherever any exist. **Decided 2026-10-14 (DL-057):** delete
+   them. `private.retention_purge_records` (migration `202610140001`, run by
+   the worker's retention schedule) deletes every row of
+   `ai_grading_drafts`, `question_suggestions` and `practice_sessions` and
+   releases the files only they held to the FILE-051 sweep. Provider-side
+   deletion step: nothing to delete. These relations were only ever written
+   by the retired `study-coach` and `propose-paper-grade` paths, no AI
+   provider was contracted then, and no AI-provider secret existed in any
+   project (cleanup table above), so no provider received their contents.
+   The security owner still confirms this in the checklist below.
 
 ### Security review and approval packet
 

@@ -163,18 +163,15 @@ abuse. In our own records and logs we do **not** store it in readable form:
 it is converted to a keyed one-way hash first, so our records show that two
 requests came from the same source without recording where that source is.
 The service that handles sign-in for us (Supabase) keeps the IP address of
-sign-in events in its own security logs.
-
-<!-- TODO(legal): confirm on the hosted project how long Supabase Auth keeps
-IP addresses in auth.audit_log_entries and auth.sessions, and state it here
-and in §10. -->
+sign-in events in its own security logs for up to 7 days, and stores it with
+an active session until that session ends.
 
 ### 3.3 School, class and role
 
 Which school or teaching space you belong to, your role in it (teacher,
 student, parent or guardian), when that role was granted, and whether it is
 currently active. A teacher who signs up on their own gets their own teaching
-space. Changes to roles are recorded permanently — see §9.
+space. Changes to roles are recorded and kept for 2 years — see §9 and §10.
 
 **There is no school administrator in this version of Studafy.** Nobody
 holds that role, and no school administrator can see or change a class's
@@ -492,9 +489,9 @@ own purposes.
 | **Google Calendar and Meet** (meetings) | The meeting's title and times, and the email addresses of the people invited; the call itself, when you join | Global |
 | **Apple** and **Google** (subscriptions) | Purchases, as independent controllers under their own policies | Global |
 
-<!-- TODO(legal): name the malware-scanning provider once chosen, and state
-its region. State the regions of Redis, Resend and Together AI. If backups are
-also copied to AWS S3, add Amazon Web Services and its region. -->
+Uploaded files are checked for malware by a scanner we run ourselves, on our
+own infrastructure in the EU (Frankfurt). Files are not sent to any outside
+scanning provider.
 
 ### 7.3 Others
 
@@ -536,7 +533,7 @@ DPF certification is a transfer without a legal basis. -->
   or "Deleted student", and clear the gender;
 - end every membership, guardian link and conversation the account was in;
 - delete its devices and push registrations, notification settings and
-  notifications, consents, blocks, data exports, notebooks and study
+  notifications, blocks, data exports, notebooks and study
   notebooks, AI usage records, and personal photos (photos for the notebook
   or the study helper);
 - remove its email address from invitations;
@@ -551,8 +548,11 @@ the school, and are kept:
 removing a role, saving, publishing or correcting marks, changing attendance,
 giving extra time, editing a lesson, deciding a safety report, accessing a
 student's records under a support grant — is recorded with who did it, what
-changed, and when. These records are append-only by design: they cannot be
-edited or deleted, including by us.
+changed, and when. These records are append-only by design: nobody can edit
+them, including us, and they are deleted only when their period in §10 ends.
+
+**Consent records.** The record of what you agreed to, and when, is kept for
+6 years after the account is deleted (§10).
 
 **The history of a mark and of attendance.** When a published mark is
 corrected, or an attendance mark is changed, the previous value, the new
@@ -568,7 +568,7 @@ the school.
 it to, shown as from "Deleted user".
 
 **Membership history.** The record that a role was granted, suspended or
-revoked is kept even after the role ends.
+revoked is kept even after the role ends, for 2 years from the change (§10).
 
 **Education records.** Where a school is the controller, the school is often
 legally required to keep attendance, assessment and safeguarding records for
@@ -588,22 +588,26 @@ we may be required to preserve it until that concludes.
 |---|---|
 | Account and profile | While the account exists |
 | Deletion grace period | 14 days from request, during which you can cancel |
-| Academic records, marks, their history and attendance where a school is controller | As the school's retention policy requires |
-| Earlier hand-ins and replaced or removed files | As the school's retention policy requires |
-| Messages and voice notes | While the conversation exists, subject to school policy |
-| Audit records | While the records they describe are kept |
+| Academic records, marks, their history and attendance | Where a school is the controller: as the school's retention policy requires. Otherwise, or where the school has given no instruction: deleted 12 months after the class is closed or the teacher's account is deleted |
+| Earlier hand-ins and replaced or removed files | As for academic records above |
+| Messages and voice notes | While the conversation exists, subject to school policy; in any case deleted 12 months after the class is closed |
+| Security and access logs (sign-ins, role changes, access to records) | 2 years |
+| Consent records and records of account deletion | For the life of the account, then 6 years |
 | Technical logs | 30 days |
 | Rate-limit and cache records | Minutes to hours |
 | Data exports | 7 days after they are ready |
 | Backups | Encrypted, taken daily, kept for 30 days, then deleted |
 | Study helper chats | On the student's device only, until they sign out; not kept by us |
 | Notes, quizzes, flashcards and study notebooks made by the AI tools | Until the student deletes them or their account, or while the lesson they came from exists |
-| Billing records | As tax and accounting law requires, typically 6–7 years |
-| Files | While attached to something, subject to school policy |
+| Billing records | 6 years after the end of the tax year they relate to |
+| Files | While attached to something, subject to school policy; in any case deleted 12 months after the class is closed |
+| Inactive accounts | Deleted after 2 years without a sign-in. We warn the account holder by email or in the app 30 days before |
+| Sign-in IP addresses held by Supabase | Up to 7 days in its security logs, and with an active session until it ends |
+| Error reports (Sentry) | Up to 90 days |
 
-<!-- TODO(legal): define a fixed period for audit records (commonly 6-7
-years), the AI provider's retention of requests, Sentry's retention of error
-reports, and Supabase Auth's retention of sign-in IP addresses. -->
+<!-- TODO(legal): the AI provider's retention of requests, pending the AI
+data processing agreement. All periods above are proposed defaults for
+counsel to confirm. -->
 
 ---
 

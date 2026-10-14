@@ -36,7 +36,10 @@ import {
   postgresMaterialQueue,
   startMaterialIndex,
 } from "./processors/materialIndex";
-import { startFileRetentionSweep } from "./processors/retentionSweep";
+import {
+  startFileRetentionSweep,
+  startRetentionSchedule,
+} from "./processors/retentionSweep";
 import { startAccountDeletionExecutor } from "./processors/accountDeletion";
 import { startDataExportExecutor } from "./processors/dataExport";
 import { startMeetingProcessor } from "./processors/meetings";
@@ -343,6 +346,11 @@ const housekeeping = env.DB_HOUSEKEEPING_ENABLED && env.DATABASE_URL
   ? startHousekeeping(database(), logger)
   : undefined;
 
+// DL-057: the retention periods privacy policy §10 promises.
+const retentionSchedule = env.RETENTION_SCHEDULE_ENABLED && env.DATABASE_URL
+  ? startRetentionSchedule(database(), logger)
+  : undefined;
+
 // Launch plan 4.7: alerts on queue depth, waiting age, failures and stuck
 // workers, to Telegram. Off unless QUEUE_ALERTS_ENABLED and the bot are set.
 const alertRedis = env.QUEUE_ALERTS_ENABLED
@@ -405,6 +413,7 @@ installGracefulShutdown({
     await meetings?.close();
     await channels?.close();
     await housekeeping?.close();
+    await retentionSchedule?.close();
     await queueMonitor?.close();
     if (alertRedis) await closeRedis(alertRedis);
     if (sharedSql) await closeDatabase(sharedSql);

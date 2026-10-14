@@ -106,6 +106,12 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
       title: "A mark was updated",
       body: "A teacher has corrected a published mark in Studafy.",
     },
+    // DL-057: the warning a month before an inactive account is deleted.
+    "account.inactive_deletion_warning": {
+      title: "Your account will be deleted",
+      body:
+        "Your Studafy account has not been used for nearly two years, so it will be deleted in about a month. Open the app to keep it.",
+    },
   },
   ar: {
     "billing.subscription_active": {
@@ -138,6 +144,11 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     "academic.grades_corrected": {
       title: "تم تعديل درجة",
       body: "صحّح معلم درجة منشورة في Studafy.",
+    },
+    "account.inactive_deletion_warning": {
+      title: "سيُحذف حسابك",
+      body:
+        "لم يُستخدم حسابك في Studafy منذ ما يقارب سنتين، لذلك سيُحذف بعد نحو شهر. افتح التطبيق للإبقاء عليه.",
     },
   },
 };

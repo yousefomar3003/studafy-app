@@ -4084,6 +4084,14 @@ class AppL10nEn extends AppL10n {
       'Notifications are working on this device.';
 
   @override
+  String get notificationCopyAccountInactiveDeletionWarningTitle =>
+      'Your account will be deleted';
+
+  @override
+  String get notificationCopyAccountInactiveDeletionWarningDetail =>
+      'This account has not been used for nearly two years, so it will be deleted in about a month. Using the app keeps it.';
+
+  @override
   String get famLinkHasAccount => 'My child has a Studafy account';
 
   @override

@@ -364,6 +364,10 @@ export const workerEnvSchema = z.object({
   ACCOUNT_RIGHTS_POLL_INTERVAL_MS: z.coerce.number().int().min(1000).max(
     3_600_000,
   ).default(60_000),
+  // DL-057 retention schedule (privacy policy §10): timed purges of logs,
+  // consent, billing and closed classes, and inactive-account warnings and
+  // deletion requests. Off by default; needs only the database.
+  RETENTION_SCHEDULE_ENABLED: disabledSwitchFlag,
   // DL-052 meeting processor: Google Calendar events with Meet links,
   // created as a Workspace user through domain-wide delegation. Off by
   // default; attendee emails leave Studafy only when this is on, so it needs
@@ -448,6 +452,13 @@ export const workerEnvSchema = z.object({
       code: "custom",
       path: ["DATABASE_URL"],
       message: "required when an account rights executor is enabled",
+    });
+  }
+  if (value.RETENTION_SCHEDULE_ENABLED && !value.DATABASE_URL) {
+    context.addIssue({
+      code: "custom",
+      path: ["DATABASE_URL"],
+      message: "required when the retention schedule is enabled",
     });
   }
   if (value.NOTIFICATION_CHANNELS_ENABLED) {
@@ -957,6 +968,7 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       deletionExecutorEnabled: env.ACCOUNT_DELETION_EXECUTOR_ENABLED,
       exportExecutorEnabled: env.DATA_EXPORT_EXECUTOR_ENABLED,
       pollIntervalMs: env.ACCOUNT_RIGHTS_POLL_INTERVAL_MS,
+      retentionScheduleEnabled: env.RETENTION_SCHEDULE_ENABLED,
     },
     pay071: {
       billingEnabled: env.PAY071_BILLING_ENABLED,
