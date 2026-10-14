@@ -1,0 +1,39 @@
+# Studafy malware scanner - TEST copy on Fly.io (FILE-051): ClamAV behind
+# infra/scanner/server.py, which speaks the ExternalMalwareScannerClient
+# contract. Private only: there is no [http_service] or [[services]] section,
+# so the app gets no public IP. studafy-worker-test reaches it at
+#   http://studafy-scanner-test.internal:8080/scan
+# with MALWARE_SCANNER_URL and MALWARE_SCANNER_API_KEY; the same key is
+# SCANNER_API_KEY here. Production gets its own scanner app later, with the
+# same configuration.
+#   fly deploy -c fly.scanner.test.toml --ha=false
+app = "studafy-scanner-test"
+primary_region = "fra"
+
+[build]
+  dockerfile = "infra/scanner/Dockerfile"
+
+[env]
+  PORT = "8080"
+  MAX_BYTES = "52428800"
+
+# clamd holds the whole signature database in memory.
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "2gb"
+
+[[restart]]
+  policy = "always"
+
+# A machine check, not a service check: there is no public service. The
+# grace period covers clamd loading its database and the startup self-test.
+[checks]
+  [checks.healthz]
+    type = "http"
+    port = 8080
+    method = "get"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "5m"
