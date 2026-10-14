@@ -1,11 +1,5 @@
 export { backoffOptions, type BackoffPolicy, maxDelayMs } from "./backoff";
 export {
-  type CloudWatchLogsSender,
-  type CloudWatchSink,
-  type CloudWatchSinkOptions,
-  createCloudWatchSink,
-} from "./cloudwatchLogs";
-export {
   createSentryReporter,
   type ErrorReporter,
   logLineReport,

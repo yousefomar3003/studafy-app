@@ -15,7 +15,6 @@ import { RedisAuthContextCache } from "../platform/cache/authContextCache";
 import { createRateLimitDependencies } from "../platform/rate-limit/middleware";
 import {
   checkRedis,
-  createCloudWatchSink,
   createRedis,
   createSentryReporter,
   isPlaintextRemoteRedis,
@@ -39,17 +38,6 @@ import { version as apiVersion } from "../../package.json";
 export function buildPlatform() {
   const env = loadApiEnv();
 
-  // CloudWatch is an additional destination, never a replacement: stdout stays
-  // authoritative so a transport outage cannot blind the container logs. The
-  // redacting logger wraps the JSON logger, so the sink only ever sees lines
-  // that have already been through `redactApiFields`.
-  const cloudwatch = env.AWS_REGION && env.AWS_LOG_GROUP
-    ? createCloudWatchSink({
-      region: env.AWS_REGION,
-      logGroupName: env.AWS_LOG_GROUP,
-    })
-    : undefined;
-
   // OPS-090: unexpected errors to Sentry when a DSN is set, with nothing
   // personal in them.
   const release = releaseId(apiVersion);
@@ -69,7 +57,6 @@ export function buildPlatform() {
       env.LOG_LEVEL,
       (line) => {
         console.log(line);
-        cloudwatch?.record(line);
         // Error-level lines only; the reporter ignores the rest.
         errorReporter?.captureLogLine(line);
       },
@@ -215,7 +202,6 @@ export function buildPlatform() {
 
   return {
     env,
-    cloudwatch,
     errorReporter,
     logger,
     sql,

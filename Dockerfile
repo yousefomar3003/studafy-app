@@ -61,5 +61,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 
 # Not `bun run start`: exec'ing bun directly makes it PID 1, so SIGTERM
 # reaches the process and installGracefulShutdown gets its chance to drain
-# in-flight requests and flush the last CloudWatch batch.
+# in-flight requests and flush the last Sentry reports.
 CMD ["bun", "apps/api/src/index.ts"]
