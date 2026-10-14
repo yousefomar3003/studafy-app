@@ -48,6 +48,7 @@ permissions:
 jobs:
   ios-simulator:
     name: iOS simulator
+    if: github.event_name != 'pull_request'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
