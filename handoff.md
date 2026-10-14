@@ -55,8 +55,13 @@ open. The test copy runs today's code.
    - Data safety: `docs/store/google-play-data-safety.md`;
    - privacy URL: the legal site's `/privacy`;
    - account deletion URL: the legal site's `/delete-account`.
-5. **Choose a malware-scanner vendor.** A production worker refuses to start
-   without one.
+5. **Malware scanner: chosen, self-hosted ClamAV** (PR #50).
+   `studafy-scanner-test` runs on Fly's private network only (no IP
+   addresses) with `SCANNER_API_KEY`; the test worker has
+   `MALWARE_SCANNER_URL` (`http://studafy-scanner-test.internal:8080/scan`)
+   and `MALWARE_SCANNER_API_KEY`. Tested end to end on 2026-10-14. Production
+   still needs its own scanner app, `studafy-scanner`, before launch: a
+   production worker refuses to start without one.
 6. **Sign the AI DPA and complete the DPIA** before AI reaches real
    students.
 7. **Set retention periods** for files, audit records and AI outputs
