@@ -22,6 +22,7 @@ of the Mac-hosted API:
 |---|---|---|
 | `studafy-api-test` | `fly.test.api.toml` | https://studafy-api-test.fly.dev |
 | `studafy-worker-test` | `fly.test.worker.toml` | (no HTTP) |
+| `studafy-scanner-test` | `fly.scanner.test.toml` | `http://studafy-scanner-test.internal:8080` (private) |
 
 It uses the same Frankfurt Supabase project, Redis, Sentry and Cloudflare
 test keys as `.env.hosted`. Secrets were piped from `.env.hosted` with
@@ -29,6 +30,37 @@ test keys as `.env.hosted`. Secrets were piped from `.env.hosted` with
 `STUDAFY_API_URL` at it, which must equal its
 `FILE051_DELIVERY_PUBLIC_BASE_URL` or the app refuses download links.
 Redeploy with `fly deploy --config fly.test.api.toml` (and the worker's).
+
+### Malware scanner (FILE-051)
+
+`studafy-scanner-test` is self-hosted ClamAV (`infra/scanner/`): clamd on
+loopback behind a small Python server that speaks the
+`ExternalMalwareScannerClient` contract. A file goes to `POST /scan` with a
+bearer key and comes back `{"clean": true|false}`; anything else is a 503,
+which the worker treats as "try again", never as clean. `GET /healthz` is
+the machine check. If clamd stays unreachable for 5 minutes the server
+exits and Fly restarts the machine.
+
+It is **private**: `fly.scanner.test.toml` has no `[http_service]` or
+`[[services]]`, so it has no public IP (`fly ips list -a
+studafy-scanner-test` shows none). Only apps in the organization reach it,
+over Fly's private IPv6 network, at
+`http://studafy-scanner-test.internal:8080/scan`.
+
+One key, generated with `openssl rand -hex 32` and never written down,
+lives in two places:
+
+| App | Secret |
+|---|---|
+| `studafy-scanner-test` | `SCANNER_API_KEY` |
+| `studafy-worker-test` | `MALWARE_SCANNER_API_KEY`, with `MALWARE_SCANNER_URL=http://studafy-scanner-test.internal:8080/scan` |
+
+To rotate it, stage a new key on both with `fly secrets import --stage`,
+deploy the scanner, then `fly secrets deploy -a studafy-worker-test`.
+Redeploy the scanner with `fly deploy -c fly.scanner.test.toml --ha=false`.
+
+Production gets its own scanner app later, with the same configuration and
+its own key; the test scanner is never shared with production.
 
 ## 0. Move the database to Frankfurt first
 
@@ -119,8 +151,8 @@ fly deploy --config fly.worker.toml
 ```
 
 The worker refuses to start in production without a malware scanner. The
-vendor is still to be chosen (`docs/security/credentials-map.md`), so this is
-a launch dependency.
+scanner is self-hosted ClamAV (see "Malware scanner" above); production
+needs its own scanner app before launch.
 
 **Scaling.** The API runs one warm machine and starts more as traffic grows
 (`soft_limit` 200 concurrent requests per machine). Give it room once:
