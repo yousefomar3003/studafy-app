@@ -126,6 +126,20 @@ cross join lateral jsonb_array_elements(b.out) pg
 cross join lateral jsonb_array_elements(case when jsonb_typeof(pg->'items') = 'array' then pg->'items' else '[]' end) i
 where c.op = 'listAssignments';
 
+-- What the lesson rows compared actually contained.
+select count(*) as lesson_rows,
+  count(*) filter (where jsonb_typeof(i) = 'null') as missing_version,
+  count(*) filter (where jsonb_array_length(i->'attachments') > 0) as with_files,
+  count(*) filter (where jsonb_array_length(i->'attachments') > 1) as with_several_files,
+  count(*) filter (where jsonb_array_length(i->'links') > 0) as with_links,
+  count(*) filter (where i->>'publishedAt' is null and jsonb_typeof(i) = 'object') as unpublished,
+  count(*) filter (where i->>'state' = 'draft') as drafts,
+  count(*) filter (where c.school is null) as on_guardian_path
+from cases c join before_out b using (n)
+cross join lateral jsonb_array_elements(b.out) pg
+cross join lateral jsonb_array_elements(case when jsonb_typeof(pg->'items') = 'array' then pg->'items' else '[]' end) i
+where c.op = 'listResources';
+
 select c.op, c.school is null as tenantless, count(*) as cases,
   count(*) filter (where b.out is distinct from a.out) as differences
 from cases c join before_out b using (n) join after_out a using (n)
