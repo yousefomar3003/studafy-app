@@ -17,8 +17,11 @@ export {
 } from "./sentry";
 export {
   assertQueueRedisPosture,
+  isPersisted,
+  type PostureClient,
   QueuePostureError,
   queuePostureProblems,
+  type QueuePostureSource,
   type QueueRedisPosture,
   readQueueRedisPosture,
 } from "./queuePosture";

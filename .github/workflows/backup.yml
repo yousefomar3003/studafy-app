@@ -4,6 +4,13 @@ name: Backup (database and files)
 # the 48-hour requirement even when one run fails. Each run restores the
 # backup into a throwaway database and checks every table's row count before
 # the backup is kept. Runbook: docs/deployment/backups.md.
+#
+# The repository is public, so a workflow artifact can be downloaded by any
+# signed-in GitHub user. The encrypted backup therefore goes to an off-site
+# S3-compatible bucket (Cloudflare R2, EU jurisdiction) with a 30-day
+# lifecycle rule, and only a small non-sensitive manifest is kept as an
+# artifact. Until the bucket is configured, the ciphertext is kept as an
+# artifact for at most 7 days and the run warns.
 on:
   schedule:
     - cron: "17 2 * * *"
@@ -51,16 +58,75 @@ jobs:
           persist-credentials: false
 
       - name: Check the backup is configured
+        id: config
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           BACKUP_AGE_RECIPIENTS: ${{ vars.BACKUP_AGE_RECIPIENTS }}
+          BACKUP_OFFSITE_ENDPOINT: ${{ secrets.BACKUP_OFFSITE_ENDPOINT }}
+          BACKUP_OFFSITE_BUCKET: ${{ secrets.BACKUP_OFFSITE_BUCKET }}
+          BACKUP_OFFSITE_ACCESS_KEY_ID: ${{ secrets.BACKUP_OFFSITE_ACCESS_KEY_ID }}
+          BACKUP_OFFSITE_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_OFFSITE_SECRET_ACCESS_KEY }}
+          BACKUP_OFFSITE_REGION: ${{ secrets.BACKUP_OFFSITE_REGION }}
+          BACKUP_S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+          BACKUP_AWS_ROLE_ARN: ${{ vars.BACKUP_AWS_ROLE_ARN }}
+          BACKUP_AWS_REGION: ${{ vars.BACKUP_AWS_REGION }}
+          BACKUP_ARTIFACT_RETENTION_DAYS: ${{ vars.BACKUP_ARTIFACT_RETENTION_DAYS }}
         run: |
+          set -euo pipefail
           missing=""
           [ -n "$BACKUP_DATABASE_URL" ] || missing="$missing secret:BACKUP_DATABASE_URL"
           [ -n "$BACKUP_AGE_RECIPIENTS" ] || missing="$missing variable:BACKUP_AGE_RECIPIENTS"
           if [ -n "$missing" ]; then
             echo "::error::The backups environment is missing:$missing (docs/deployment/backups.md)"
             exit 1
+          fi
+
+          # Off-site bucket (primary store): all five secrets or none. A
+          # half-configured destination fails here rather than quietly
+          # falling back to the public artifact.
+          offsite_set=0
+          for name in BACKUP_OFFSITE_ENDPOINT BACKUP_OFFSITE_BUCKET \
+            BACKUP_OFFSITE_ACCESS_KEY_ID BACKUP_OFFSITE_SECRET_ACCESS_KEY \
+            BACKUP_OFFSITE_REGION; do
+            [ -n "${!name}" ] && offsite_set=$((offsite_set + 1))
+          done
+          if [ "$offsite_set" -ne 0 ] && [ "$offsite_set" -ne 5 ]; then
+            echo "::error::The off-site backup is half configured: set all five BACKUP_OFFSITE_* secrets or none (docs/deployment/backups.md)"
+            exit 1
+          fi
+
+          # Optional AWS copy through OIDC: the region is required and must
+          # be in the EU (privacy policy section 8); there is no default.
+          if [ -n "$BACKUP_S3_BUCKET" ]; then
+            if [ -z "$BACKUP_AWS_ROLE_ARN" ] || [ -z "$BACKUP_AWS_REGION" ]; then
+              echo "::error::BACKUP_S3_BUCKET needs BACKUP_AWS_ROLE_ARN and BACKUP_AWS_REGION (an eu-* region, e.g. eu-central-1)"
+              exit 1
+            fi
+            case "$BACKUP_AWS_REGION" in
+              eu-*) ;;
+              *)
+                echo "::error::BACKUP_AWS_REGION $BACKUP_AWS_REGION is outside the EU; use an eu-* region such as eu-central-1"
+                exit 1
+                ;;
+            esac
+          fi
+
+          if [ "$offsite_set" -eq 5 ]; then
+            echo "offsite_bucket=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$offsite_set" -eq 5 ] || [ -n "$BACKUP_S3_BUCKET" ]; then
+            echo "store=offsite" >> "$GITHUB_OUTPUT"
+          else
+            # Fallback: a GitHub artifact, which anyone signed in to GitHub
+            # can download while the repository is public. Ciphertext only,
+            # kept for at most 7 days (docs/deployment/backups.md).
+            days="${BACKUP_ARTIFACT_RETENTION_DAYS:-7}"
+            if ! [[ "$days" =~ ^[1-7]$ ]]; then
+              echo "::error::BACKUP_ARTIFACT_RETENTION_DAYS must be 1-7 (default 7)"
+              exit 1
+            fi
+            echo "store=artifact" >> "$GITHUB_OUTPUT"
+            echo "artifact_days=$days" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Bun
@@ -95,55 +161,137 @@ jobs:
         run: bun scripts/backup/export-storage.ts
 
       - name: Restore into a throwaway database and check it
+        id: restore
         env:
           RESTORE_ADMIN_URL: postgresql://supabase_admin:restore-check-only@127.0.0.1:55432/postgres
           BACKUP_DIR: ${{ runner.temp }}/backup
-        run: bash scripts/backup/restore-database.sh
+        run: |
+          set -euo pipefail
+          bash scripts/backup/restore-database.sh | tee "$RUNNER_TEMP/restore.log"
+          # The script exits non-zero on any mismatch, so reaching this line
+          # means every table restored with its exact row count.
+          grep -q '^restore check passed:' "$RUNNER_TEMP/restore.log"
+          echo "result=passed" >> "$GITHUB_OUTPUT"
 
       - name: Encrypt, then delete the plaintext
         id: encrypt
         env:
           BACKUP_AGE_RECIPIENTS: ${{ vars.BACKUP_AGE_RECIPIENTS }}
           BACKUP_OUT: ${{ runner.temp }}/backup
+          RESTORE_RESULT: ${{ steps.restore.outputs.result }}
+          STORE: ${{ steps.config.outputs.store }}
         run: |
           set -euo pipefail
           name="studafy-backup-$(date -u +%Y%m%dT%H%M%SZ)"
-          mkdir -p "$RUNNER_TEMP/encrypted"
+          mkdir -p "$RUNNER_TEMP/encrypted" "$RUNNER_TEMP/manifest"
           printf '%s\n' "$BACKUP_AGE_RECIPIENTS" > "$RUNNER_TEMP/recipients.txt"
+          tables=$(jq -r '.tables' "$BACKUP_OUT/manifest.json")
+          latest_migration=$(jq -r '.latestMigration' "$BACKUP_OUT/manifest.json")
           tar -C "$BACKUP_OUT" -cf - . \
             | age --encrypt --recipients-file "$RUNNER_TEMP/recipients.txt" \
               --output "$RUNNER_TEMP/encrypted/$name.tar.age"
           rm -rf "$BACKUP_OUT"
           (cd "$RUNNER_TEMP/encrypted" && sha256sum "$name.tar.age" > "$name.tar.age.sha256")
+          bytes=$(stat -c %s "$RUNNER_TEMP/encrypted/$name.tar.age")
+          sum=$(cut -d' ' -f1 "$RUNNER_TEMP/encrypted/$name.tar.age.sha256")
+          # Non-sensitive by construction: no row counts, names, hosts or
+          # buckets. This is the only file kept as an artifact once the
+          # backup itself goes off-site.
+          jq -n \
+            --arg name "$name" \
+            --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson encryptedBytes "$bytes" \
+            --arg sha256 "$sum" \
+            --argjson tables "$tables" \
+            --arg latestMigration "$latest_migration" \
+            --arg restoreCheck "$RESTORE_RESULT" \
+            --arg storedIn "$STORE" \
+            '{format: 1, name: $name, createdAt: $createdAt,
+              encryptedBytes: $encryptedBytes, sha256: $sha256,
+              tables: $tables, latestMigration: $latestMigration,
+              restoreCheck: $restoreCheck, storedIn: $storedIn}' \
+            > "$RUNNER_TEMP/manifest/$name.manifest.json"
           echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "encrypted backup: $(du -h "$RUNNER_TEMP/encrypted/$name.tar.age" | cut -f1)"
 
-      - name: Keep the encrypted backup
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ steps.encrypt.outputs.name }}
-          path: ${{ runner.temp }}/encrypted/
-          retention-days: ${{ vars.BACKUP_RETENTION_DAYS || 30 }}
-          compression-level: 0
-          if-no-files-found: error
+      - name: Copy off-site (primary store)
+        if: steps.config.outputs.offsite_bucket == 'true'
+        env:
+          BACKUP_OFFSITE_ENDPOINT: ${{ secrets.BACKUP_OFFSITE_ENDPOINT }}
+          BACKUP_OFFSITE_BUCKET: ${{ secrets.BACKUP_OFFSITE_BUCKET }}
+          BACKUP_OFFSITE_ACCESS_KEY_ID: ${{ secrets.BACKUP_OFFSITE_ACCESS_KEY_ID }}
+          BACKUP_OFFSITE_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_OFFSITE_SECRET_ACCESS_KEY }}
+          BACKUP_OFFSITE_REGION: ${{ secrets.BACKUP_OFFSITE_REGION }}
+          BACKUP_OFFSITE_PREFIX: ${{ vars.BACKUP_OFFSITE_PREFIX }}
+          ENCRYPTED_DIR: ${{ runner.temp }}/encrypted
+        run: bun scripts/backup/upload-offsite.ts
 
-      - name: Sign in to AWS for the off-site copy
+      - name: Sign in to AWS for the S3 copy
         if: vars.BACKUP_S3_BUCKET != ''
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.BACKUP_AWS_ROLE_ARN }}
-          aws-region: ${{ vars.BACKUP_AWS_REGION || 'il-central-1' }}
+          # Required, EU only: checked in "Check the backup is configured".
+          aws-region: ${{ vars.BACKUP_AWS_REGION }}
 
-      - name: Copy off-site to S3
+      - name: Copy to S3
         if: vars.BACKUP_S3_BUCKET != ''
         env:
           BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
-          NAME: ${{ steps.encrypt.outputs.name }}
         run: |
           for file in "$RUNNER_TEMP/encrypted/"*; do
             aws s3 cp "$file" "s3://$BUCKET/studafy/$(basename "$file")" \
               --sse aws:kms --only-show-errors
           done
+
+      - name: Keep the encrypted backup as an artifact (fallback only)
+        if: steps.config.outputs.store == 'artifact'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.encrypt.outputs.name }}
+          path: ${{ runner.temp }}/encrypted/
+          retention-days: ${{ steps.config.outputs.artifact_days }}
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Delete the local ciphertext
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/encrypted" "$RUNNER_TEMP/backup"
+
+      - name: Keep the manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.encrypt.outputs.name }}-manifest
+          path: ${{ runner.temp }}/manifest/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Summary
+        env:
+          STORE: ${{ steps.config.outputs.store }}
+          ARTIFACT_DAYS: ${{ steps.config.outputs.artifact_days }}
+          NAME: ${{ steps.encrypt.outputs.name }}
+        run: |
+          set -euo pipefail
+          manifest="$RUNNER_TEMP/manifest/$NAME.manifest.json"
+          {
+            echo "## Backup $NAME"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            jq -r 'to_entries[] | "| \(.key) | \(.value) |"' "$manifest"
+            echo
+            if [ "$STORE" = "artifact" ]; then
+              echo "> [!WARNING]"
+              echo "> No off-site store is configured, so the encrypted backup is kept as a"
+              echo "> workflow artifact for $ARTIFACT_DAYS days. In a public repository any"
+              echo "> signed-in GitHub user can download it (ciphertext only). Configure the"
+              echo "> off-site bucket: docs/deployment/backups.md."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$STORE" = "artifact" ]; then
+            echo "::warning::No off-site backup store is configured; the encrypted backup is a public-repository artifact for $ARTIFACT_DAYS days (docs/deployment/backups.md)"
+          fi
 
       - name: Open an issue for a failed backup
         if: failure()
@@ -152,4 +300,4 @@ jobs:
         run: |
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "Backup failed on $(date -u +%Y-%m-%d)" \
-            --body "The scheduled backup failed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. The last good backup is the newest backup artifact. See docs/deployment/backups.md."
+            --body "The scheduled backup failed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. The last good backup is the newest object in the off-site bucket (or, without one, the newest backup artifact). See docs/deployment/backups.md."
