@@ -53,8 +53,8 @@ after the Phase 10 gate, per `docs/planning/instructions.md` §21.5:
 |---|---|---|
 | `android/app/build.gradle.kts:18` | `namespace = "com.example.studafy"` | → `io.studafy.app` |
 | `android/app/build.gradle.kts:29` | `applicationId = "com.example.studafy"` | → `io.studafy.app` |
-| `android/app/build.gradle.kts:46` | debug `signingConfig` | → release config |
-| `android/app/build.gradle.kts:9-15` | SEC-001 `GradleException` | delete |
+| `android/app/build.gradle.kts` `signingConfigs` | upload key from `STUDAFY_ANDROID_KEY_PROPERTIES` (ADR-0042, 2026-10-15) | keep; drop the `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE` opt-in |
+| `android/app/build.gradle.kts` task-graph guard | SEC-001 `GradleException`, narrowed by ADR-0042 to `APP_ENV=development` | delete |
 | `ios/Runner.xcodeproj/project.pbxproj:402,583,605` | `com.example.studafy` | → `io.studafy.app` |
 | `ios/Runner.xcodeproj/project.pbxproj:418,435,450` | `com.example.studafy.RunnerTests` | → `io.studafy.app.RunnerTests` |
 | `ios/Runner.xcodeproj/project.pbxproj:155,239-252` | SEC-001 Release Block phase | delete |
@@ -173,8 +173,11 @@ Each account produces artifacts that must never enter Git. Full register in
 | Play service account JSON | Google Cloud | CI secret; grant **Release manager** only |
 | Android upload keystore | Generated at cutover | Password manager **and** an offline backup |
 
-`.gitignore` already excludes `config/dart-defines.*.json`. Add
-`android/key.properties` and `*.jks` before the cutover.
+`.gitignore` already excludes `config/dart-defines.*.json`,
+`**/key.properties`, `*.jks` and `*.keystore`, and
+`.github/scripts/check-sensitive-files.sh` fails CI if one is ever tracked.
+The release build reads the upload key through a `key.properties` file
+outside the repository (ADR-0042); the keystore itself must be outside it too.
 
 ## 6. Sequencing
 
