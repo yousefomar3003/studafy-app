@@ -10,7 +10,7 @@ holds the rules. The authoritative decision log is
 | Environment | Where | Data | Notes |
 |---|---|---|---|
 | **Test copy** | Fly.io `studafy-api-test` and `studafy-worker-test` (Frankfurt, `fra`; `ENVIRONMENT=development`); Supabase project `cyrngoqnhqflzovlybbr` (`eu-central-1`, Frankfurt); Redis Cloud | The owner's test accounts: **preserve, never reset**. Reads only as needed, read-only | Logs to Axiom (`studafy-production`, EU) through `studafy-log-shipper`; errors to Sentry (EU); alerts through the Cloudflare `studafy-alert-relay`; daily encrypted backups (GitHub environment `backups`). Its Redis is still plaintext (owner to move to `rediss://`) |
-| **Production** | Fly.io `studafy-api` (suspended) and `studafy-worker` per `fly.api.toml` / `fly.worker.toml` (`ENVIRONMENT=production`) | None yet | Not live. Whether the Frankfurt project stays the test target or becomes production is the owner's decision (`handoff.md`). Release app builds are blocked (SEC-001) |
+| **Production** | Fly.io `studafy-api` (suspended), `studafy-worker` and the private `studafy-scanner` per `fly.api.toml` / `fly.worker.toml` / `fly.scanner.toml` (`ENVIRONMENT=production`, `fra`); only `studafy-api` exists so far | None yet | Not live. Creation order and secrets: `docs/deployment/fly-io.md`, "Production deploy checklist". Whether the Frankfurt project stays the test target or becomes production is the owner's decision (`handoff.md`). Release app builds are blocked (SEC-001) |
 | Throwaway local stacks | Docker on the developer's Mac (e.g. the stack on ports 55721/55722) | Synthetic fixtures and the scale dataset | For pgTAP, integration tests and the capacity harness; reset freely |
 | Local development | Docker (`bunx supabase start`, `bun run dev:stack`) | The developer's own local data | Not for committing test fixtures |
 | Former Tokyo project | `eamewgaptdfqzpmayavx`, AWS `ap-northeast-1` | Synthetic | Superseded by Frankfurt (ADR-0035); not used since 2026-10-03 |
@@ -66,7 +66,7 @@ its own decision-log entry.
 | `FILE051_DELIVERY_PUBLIC_BASE_URL` | unset | Origin the delivery links are built on |
 | `FILE051_SCAN_ENABLED` | `false` | Worker. Requires the database and storage settings; production also requires the external scanner |
 | `FILE051_RETENTION_ENABLED` | `false` | Worker retention sweep. No retention durations are configured yet (§29) |
-| `MALWARE_SCANNER_URL` / `MALWARE_SCANNER_API_KEY` | unset | **Secret key.** The one scanner origin; CI or platform secret manager only |
+| `MALWARE_SCANNER_URL` / `MALWARE_SCANNER_API_KEY` | unset | The one scanner origin, and its **secret key** (platform secret manager only). Production's URL is the private `http://studafy-scanner.internal:8080/scan`, set in `fly.worker.toml` |
 
 The worker connects as `studafy_worker_runtime`. That role stays `nologin`
 until a deployment provisions it; the verification scripts give it a

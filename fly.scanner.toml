@@ -1,0 +1,53 @@
+# Studafy malware scanner - PRODUCTION (FILE-051, launch plan 4.4 / A6):
+# ClamAV behind infra/scanner/server.py, which speaks the
+# ExternalMalwareScannerClient contract. The same configuration as
+# fly.scanner.test.toml (scripts/fly-config.test.ts keeps the two equal), with
+# its own app and its own key; the test scanner is never shared with
+# production.
+#
+# Private only: there is no [http_service] or [[services]] section, so the app
+# gets no public IP and nothing outside the Fly organisation can reach it.
+# studafy-worker reaches it over Fly's private network at
+#   http://studafy-scanner.internal:8080/scan
+# (MALWARE_SCANNER_URL in fly.worker.toml). Its only secret is
+# SCANNER_API_KEY, the same value as the worker's MALWARE_SCANNER_API_KEY.
+#
+# Deploy from the repository root (docs/deployment/fly-io.md, "Production
+# deploy checklist"):
+#   fly deploy --config fly.scanner.toml
+# Without --ha=false Fly also keeps a stopped standby machine for this
+# service-less app, started only if the first machine's host fails. Scans
+# wait and retry while the scanner is away; nothing is passed as clean.
+app = "studafy-scanner"
+# Frankfurt, next to the worker and the database.
+primary_region = "fra"
+
+[build]
+  dockerfile = "infra/scanner/Dockerfile"
+
+[env]
+  PORT = "8080"
+  # 50 MiB. Larger bodies are refused (413); clamd's StreamMaxLength in
+  # infra/scanner/Dockerfile is the same.
+  MAX_BYTES = "52428800"
+
+# clamd holds the whole signature database in memory.
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "2gb"
+
+[[restart]]
+  policy = "always"
+
+# A machine check, not a service check: there is no public service. The
+# grace period covers clamd loading its database and the startup self-test.
+[checks]
+  [checks.healthz]
+    type = "http"
+    port = 8080
+    method = "get"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "5m"

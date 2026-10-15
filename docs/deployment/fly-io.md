@@ -59,8 +59,104 @@ To rotate it, stage a new key on both with `fly secrets import --stage`,
 deploy the scanner, then `fly secrets deploy -a studafy-worker-test`.
 Redeploy the scanner with `fly deploy -c fly.scanner.test.toml --ha=false`.
 
-Production gets its own scanner app later, with the same configuration and
-its own key; the test scanner is never shared with production.
+Production has its own scanner app, `studafy-scanner` (`fly.scanner.toml`),
+with the same configuration and its own key; the test scanner is never
+shared with production. See the checklist below.
+
+## Production deploy checklist (launch plan A6, C11)
+
+The production configs are ready: `fly.api.toml`, `fly.worker.toml` and
+`fly.scanner.toml`. `scripts/fly-config.test.ts` pins every rule below in CI,
+so a config that breaks one fails there, not on deploy. Nothing here has been
+run. Each numbered step is one approval: Claude shows the exact commands, the
+owner says "go", Claude runs them and shows the result.
+
+**What each config already sets (no action):**
+
+| Rule | Where |
+|---|---|
+| `ENVIRONMENT = "production"`, app names, region `fra` | all three |
+| `CLIENT_IP_SOURCE = "cloudflare"`, `API_REQUEST_TIMEOUT_MS = "20000"`, Turnstile on for `api.studafy.com`, `/healthz` routing check | `fly.api.toml` |
+| `ORIGIN_REQUIRE_CLOUDFLARE = "false"` until step 6 | `fly.api.toml` |
+| Deletion and export executors, notifications, scanning on; backlog alerts on | `fly.worker.toml` |
+| `RETENTION_SCHEDULE_ENABLED = "false"` until launch plan D3 | `fly.worker.toml` |
+| `MALWARE_SCANNER_URL = "http://studafy-scanner.internal:8080/scan"` (configuration, not a secret: plain HTTP on Fly's private network) | `fly.worker.toml` |
+| No `[http_service]` or `[[services]]`, so no public IP; `/healthz` machine check; restart always | `fly.scanner.toml` |
+
+What only the running process can check, and so the secrets must get right:
+the database login is a runtime role, never `postgres` (ADR-0041); Redis is
+`rediss://` with a password; and the worker's Redis reports
+`maxmemory-policy noeviction` plus persistence through `CONFIG GET`
+(`docs/security/ops061-operator-runbook.md`). A production worker refuses to
+start otherwise, so check before step 3 that the chosen Redis allows
+`CONFIG GET` (some managed plans block it).
+
+**Before step 1 (owner):** the production Supabase project with every
+migration applied and the runtime role passwords set (B2, C7; "Database
+roles" below); a TLS Redis for production; DNS for `api.studafy.com` (B3,
+C8); real Turnstile keys for `api.studafy.com` (C9); the Sentry DSN for
+`studafy-backend`; the Telegram bot token and chat id (the alert relay's can
+be reused). Each secrets file is written outside the repository and deleted
+after import; values never go in chat.
+
+**Secrets per app (names only):**
+
+| App | Required before its deploy | Only with a later decision |
+|---|---|---|
+| `studafy-scanner` | `SCANNER_API_KEY` (`openssl rand -hex 32`, at least 32 characters) | — |
+| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT` (recommended), `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | `AI_API_KEY` (C17); `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON` with `NOTIFICATION_CHANNELS_ENABLED` (C3, C5); billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15); `GOOGLE_CALENDAR_*` with `MEETINGS_PROCESSOR_ENABLED` (B8) |
+| `studafy-api` | `DATABASE_URL` (as `studafy_api_runtime.<ref>`), `DATABASE_CA_CERT` (recommended), `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` (four different `openssl rand -hex 32` keys), `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `SENTRY_DSN` | `AI_API_KEY`, `AI_BASE_URL` (C17: the study helper runs whenever `AI_API_KEY` is set, so never before the DPA and DPIA); billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15) |
+
+Never set `MALWARE_SCANNER_URL` as a secret: it is in `fly.worker.toml`.
+
+**Order, and what the owner approves at each step:**
+
+1. **Create the scanner.** Approve: `fly apps create studafy-scanner`, then
+   `fly secrets import --config fly.scanner.toml < ~/studafy-scanner.secrets`
+   and `fly deploy --config fly.scanner.toml`. Check: `fly ips list -a
+   studafy-scanner` shows no address; `fly checks list -a studafy-scanner`
+   is passing once clamd has loaded (up to 5 minutes). Unlike the test
+   copy, deploy without `--ha=false`: for an app with no services Fly then
+   adds a stopped standby machine, started only if the first one's host
+   fails.
+2. **Create the worker.** Approve: `fly apps create studafy-worker`, then
+   `fly secrets import --config fly.worker.toml < ~/studafy-worker.secrets`
+   and `fly deploy --config fly.worker.toml`. Check the start-up log: no
+   `database_privileged_role`, no `redis_plaintext_remote`, a
+   `queue_redis_posture` line and `worker_ready`.
+3. **Prove the scanner (4.4).** Approve: an EICAR test file and a clean PDF
+   uploaded through production. Done when the EICAR file is refused and the
+   PDF passes.
+4. **Deploy the API.** `studafy-api` already exists (suspended since
+   2026-10-03; it held no secrets on 2026-10-15), so it is not created
+   again. Approve: `fly secrets import --config fly.api.toml <
+   ~/studafy-api.secrets`, `fly deploy --config fly.api.toml`, then `fly
+   scale count 4 --config fly.api.toml` if wanted. Check: start-up log as in
+   step 2; `curl https://studafy-api.fly.dev/readyz` returns 200.
+5. **Domain (C8).** Approve: `fly certs add api.studafy.com --config
+   fly.api.toml`, the DNS record, and the Cloudflare proxy with its WAF and
+   rate rules. Check: `https://api.studafy.com/readyz` returns 200.
+6. **Lock the origin (C8).** A reviewed PR sets `ORIGIN_REQUIRE_CLOUDFLARE =
+   "true"` in `fly.api.toml` and in `scripts/fly-config.test.ts`; approve the
+   merge and the redeploy. Check: a direct `studafy-api.fly.dev` request is
+   refused, `api.studafy.com` still answers.
+7. **Alerts (4.7).** Approve: the relay's uptime check pointed at
+   `https://api.studafy.com/readyz`; a test alert from the deployed worker
+   (`fly ssh console --config fly.worker.toml -C "bun
+   apps/worker/src/monitoring/sendTestAlert.ts"`,
+   `docs/deployment/queue-alerts.md`). The log shipper already ships every
+   app in the organisation; nothing to create.
+8. **Rotate (C12, 4.9).** Approve the rotation of the database password,
+   service-role key and signing keys; old values stop working.
+9. **Later, launch plan D3.** After the store release carrying consent
+   version `2026-10-14`: a reviewed PR sets `RETENTION_SCHEDULE_ENABLED =
+   "true"` in `fly.worker.toml` and the test; approve the merge and `fly
+   deploy --config fly.worker.toml`.
+
+Rollback for any step: `fly releases -a <app>` and `fly deploy --image
+<previous image>`; a scanner or worker can also be stopped with `fly scale
+count 0` without losing work (uploads stay quarantined, jobs wait in Redis
+and the database).
 
 ## 0. Move the database to Frankfurt first
 
@@ -142,8 +238,9 @@ encrypted; set `DATABASE_CA_CERT` (Dashboard → Database → SSL) to verify the
 certificate too, and turn on "Enforce SSL" there.
 
 **Worker**, the same way, with `DATABASE_URL` (as `studafy_worker_runtime`), `REDIS_URL`, `SUPABASE_URL`,
-`SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_URL`,
-`MALWARE_SCANNER_API_KEY` and `SENTRY_DSN`:
+`SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY`, `SENTRY_DSN`,
+`TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (`MALWARE_SCANNER_URL` is in
+`fly.worker.toml`):
 
 ```sh
 fly secrets import --config fly.worker.toml < ~/studafy-worker.secrets
@@ -151,8 +248,8 @@ fly deploy --config fly.worker.toml
 ```
 
 The worker refuses to start in production without a malware scanner. The
-scanner is self-hosted ClamAV (see "Malware scanner" above); production
-needs its own scanner app before launch.
+scanner is self-hosted ClamAV (see "Malware scanner" above); production's is
+`studafy-scanner`, deployed first (see the checklist above).
 
 **Scaling.** The API runs one warm machine and starts more as traffic grows
 (`soft_limit` 200 concurrent requests per machine). Give it room once:
@@ -172,8 +269,9 @@ ADR-0041); anything else keys on `Fly-Client-IP`. Once proxied, set
 `ORIGIN_REQUIRE_CLOUDFLARE = "true"` so `studafy-api.fly.dev` cannot be used
 to step around Cloudflare's rules.
 
-`scripts/fly-config.test.ts` checks in CI that both Fly configs pass the
-same production validation the processes run at start-up.
+`scripts/fly-config.test.ts` checks in CI that the API and worker configs
+pass the same production validation the processes run at start-up, that the
+scanners stay private, and that no Fly config holds a secret.
 
 ## 3. Logs to Axiom
 
