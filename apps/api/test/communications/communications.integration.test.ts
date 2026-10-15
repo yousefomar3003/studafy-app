@@ -563,6 +563,7 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     id: string,
     owner: string,
     purpose: string,
+    scanState = "clean",
   ): Promise<string> {
     const membership = await scalar(
       sql`select id as result from public.memberships
@@ -579,7 +580,8 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
         ${"quarantine/v1/" + id + "/" + id.replace(/-/g, "") + "bbbbbb"},
         ${owner}::uuid, ${owner}::uuid, ${membership}::uuid,
         ${purpose}::public.file_purpose, 'note.pdf', 1024,
-        ${"b".repeat(64)}, 'application/pdf', 'clean', 'file-attach-v1',
+        ${"b".repeat(64)}, 'application/pdf',
+        ${scanState}::public.file_scan_state, 'file-attach-v1',
         now(), 'file051-test')`;
     return id;
   }
@@ -664,6 +666,51 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
       },
     });
     expect(res.status).toBe(403);
+  });
+
+  test("a message with a file the scan refused is refused by name, and not sent", async () => {
+    const REFUSED = "5f450000-0000-4000-8000-0000000000f5";
+    await seedFile(REFUSED, TEACHER, "message_attachment", "rejected");
+    const messages = async () =>
+      await scalar(
+        sql`select count(*)::int as result from public.messages
+            where conversation_id = ${conversationId}::uuid`,
+      );
+    const before = await messages();
+    const res = await request(`/v1/conversations/${conversationId}/messages`, {
+      method: "POST",
+      subject: TEACHER,
+      key: attachKey(4),
+      body: {
+        clientMessageId: "5f450000-0000-4000-8000-0000000000db",
+        body: "Refused scan attached.",
+        attachmentFileIds: [REFUSED],
+      },
+    });
+    expect(res.status).toBe(422);
+    const problem = await res.json() as Record<string, unknown>;
+    expect(problem["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(problem["errors"]).toEqual([
+      { path: "attachmentFileIds.0", code: "file_refused" },
+    ]);
+    // Nothing was sent without it.
+    expect(await messages()).toBe(before);
+  });
+
+  test("a file refused after it was sent stays on the message, as refused", async () => {
+    await sql`update public.file_objects set scan_state = 'rejected',
+      scan_error_code = 'malformed_file' where id = ${CHAT_FILE}::uuid`;
+    const res = await request(
+      `/v1/conversations/${conversationId}/messages?pageSize=30`,
+      { subject: GUARDIAN },
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json() as {
+      items: { attachments: { id: string; scanState: string }[] }[];
+    };
+    const attachment = body.items.flatMap((m) => m.attachments)
+      .find((a) => a.id === CHAT_FILE);
+    expect(attachment?.scanState).toBe("rejected");
   });
 
   test("an announcement carries its attachment to the school", async () => {

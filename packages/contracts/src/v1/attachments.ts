@@ -35,7 +35,12 @@ export const V1FileAttachment = z.strictObject({
   displayName: z.string().min(1).max(255),
   sizeBytes: z.number().int().nonnegative(),
   mediaType: z.string().min(1).max(120).nullable(),
-  /** Only `clean` can be downloaded; anything else is still in the pipeline. */
+  /**
+   * Only `clean` can be downloaded. `quarantined` and `scanning` are still
+   * in the pipeline. `rejected`, `error` and `deleted` mean the scan
+   * removed the file after it was attached (2026-10-15): it stays listed
+   * so readers are told, and is never delivered.
+   */
   scanState: V1FileScanState,
 });
 export type V1FileAttachment = z.infer<typeof V1FileAttachment>;
