@@ -144,11 +144,31 @@ Future<void> _uploadsSettle(WidgetTester tester, String step) async {
   }
 }
 
+/// Scrolls the page until [finder] is on screen, as a person would: on a
+/// small screen a long form builds only what is in view.
+Future<void> _reveal(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty) {
+    final page = find
+        .descendant(
+          of: find.byType(ListView).last,
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      finder,
+      250,
+      scrollable: page,
+      maxScrolls: 80,
+    );
+  }
+  await tester.ensureVisible(finder);
+  await tester.pump(const Duration(milliseconds: 200));
+}
+
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   FocusManager.instance.primaryFocus?.unfocus();
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.ensureVisible(finder);
-  await tester.pump(const Duration(milliseconds: 200));
+  await _reveal(tester, finder);
   await tester.tap(finder);
   await tester.pump(const Duration(milliseconds: 300));
 }
@@ -156,7 +176,7 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 Future<void> _type(WidgetTester tester, Finder finder, String text) async {
   FocusManager.instance.primaryFocus?.unfocus();
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.ensureVisible(finder);
+  await _reveal(tester, finder);
   await tester.enterText(finder, text);
   await tester.pump(const Duration(milliseconds: 300));
 }
