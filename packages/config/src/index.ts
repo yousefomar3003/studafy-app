@@ -5,9 +5,16 @@ import {
   type LogLevel,
   LogLevel as LogLevelSchema,
 } from "@studafy/contracts";
+import { pubSubAudienceMatchesPushPath } from "./storeWebhooks";
 
 export { Environment };
 export type { EnvironmentType, LogLevel };
+export {
+  APP_STORE_NOTIFICATIONS_PATH,
+  PLAY_BILLING_PUBSUB_TOPIC_ID,
+  PLAY_BILLING_PUSH_PATH,
+  pubSubAudienceMatchesPushPath,
+} from "./storeWebhooks";
 
 const url = z.string().min(1).refine((value) => {
   try {
@@ -896,6 +903,9 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       googleConfigured: Boolean(
         env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
           env.GOOGLE_PUBSUB_AUDIENCE,
+      ),
+      googlePushAudienceMatchesRoute: pubSubAudienceMatchesPushPath(
+        env.GOOGLE_PUBSUB_AUDIENCE,
       ),
     },
   };

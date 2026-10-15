@@ -13,6 +13,10 @@
  * enumeration side channel.
  */
 import { createHmac } from "node:crypto";
+import {
+  APP_STORE_NOTIFICATIONS_PATH,
+  PLAY_BILLING_PUSH_PATH,
+} from "@studafy/config";
 import type {
   RateLimitPolicy,
   SlidingWindowPolicy,
@@ -264,7 +268,9 @@ export function flowFor(
   method: "get" | "post",
   path: string,
 ): FlowClassification {
-  if (path === "/webhooks/apple" || path === "/webhooks/google") {
+  if (
+    path === APP_STORE_NOTIFICATIONS_PATH || path === PLAY_BILLING_PUSH_PATH
+  ) {
     return { flow: "storeWebhook", weight: 1 };
   }
   if (path === "/v1/billing/school-settings/self-purchase") {

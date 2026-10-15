@@ -1,5 +1,9 @@
 import { Hono } from "hono";
 import {
+  APP_STORE_NOTIFICATIONS_PATH,
+  PLAY_BILLING_PUSH_PATH,
+} from "@studafy/config";
+import {
   type AppleTransactionVerifier,
   type GooglePurchaseVerifier,
   sha256Hex,
@@ -36,7 +40,7 @@ export function createBillingWebhookRoutes(
 ): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
 
-  routes.post("/webhooks/apple", async (c) => {
+  routes.post(APP_STORE_NOTIFICATIONS_PATH, async (c) => {
     if (!deps.apple) return problem(c, "SERVICE_UNAVAILABLE", 503);
     const raw = await c.req.text();
     let body: { signedPayload?: unknown };
@@ -76,7 +80,7 @@ export function createBillingWebhookRoutes(
     return c.json({ received: true }, 200);
   });
 
-  routes.post("/webhooks/google", async (c) => {
+  routes.post(PLAY_BILLING_PUSH_PATH, async (c) => {
     if (!deps.google) return problem(c, "SERVICE_UNAVAILABLE", 503);
     const authorized = await deps.google.verifier.verifyPubSubToken(
       c.req.header("authorization"),
