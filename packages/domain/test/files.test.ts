@@ -381,6 +381,58 @@ describe("pdf", () => {
     });
   });
 
+  // A slide or design export puts small compressed streams right before
+  // images. The image's own dictionary decides its filter, not a nearby
+  // object's (2026-10-15: a teacher's valid PDF was rejected as malformed).
+  test("accepts an image stream right after a small compressed one", async () => {
+    const jpeg = concat([
+      new Uint8Array([0xff, 0xd8, 0xff, 0xe0]),
+      new Uint8Array(200).map((_, i) => (i * 37) % 256),
+      new Uint8Array([0xff, 0xd9]),
+    ]);
+    const image = concat([
+      asciiBytes(
+        `9 0 obj\n<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
+      ),
+      jpeg,
+      asciiBytes("\nendstream\nendobj\n"),
+    ]);
+    const pdf = buildPdf(new TextDecoder("latin1").decode(image), [FLATE_TEXT]);
+    expect(await analyzeBytes(pdf, "application/pdf")).toEqual({
+      verdict: "clean",
+    });
+  });
+
+  test("still inflates a stream whose own dictionary says FlateDecode", async () => {
+    const notZlib = asciiBytes("these bytes are not a zlib stream at all");
+    expect(
+      await analyzeBytes(buildPdf("", [notZlib]), "application/pdf"),
+    ).toEqual({ verdict: "malformed", errorCode: "malformed_file" });
+  });
+
+  test("an unreadable dictionary falls back to the strict rule", async () => {
+    // A literal string with "<<" in the stream's own dictionary could
+    // mislead a backward scan, so the nearby window decides, as before, and
+    // the compressed JavaScript is still found.
+    const js = new Uint8Array(
+      deflateSync(new TextEncoder().encode("<< /S /JavaScript /JS (x) >>")),
+    );
+    const pdf = concat([
+      asciiBytes("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"),
+      asciiBytes(
+        `2 0 obj\n<< /Filter /FlateDecode /Note (<<) /Length ${js.length} >>\nstream\n`,
+      ),
+      js,
+      asciiBytes(
+        "\nendstream\nendobj\ntrailer\n<< /Size 3 >>\nstartxref\n0\n%%EOF\n",
+      ),
+    ]);
+    expect(await analyzeBytes(pdf, "application/pdf")).toEqual({
+      verdict: "policy_rejected",
+      errorCode: "active_content",
+    });
+  });
+
   test("rejects a decompression bomb by inflated size", async () => {
     // 101 MiB of zeros inflates from a few hundred KiB; the policy cap is
     // 100 MiB, so this stream must be rejected by size, not stored.

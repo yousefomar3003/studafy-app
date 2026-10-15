@@ -1746,6 +1746,22 @@ class AppL10nEn extends AppL10n {
   String get attachmentChecking => 'Checking';
 
   @override
+  String get attachmentRefusedDamaged =>
+      'This file can\'t be used: it looks damaged or unusual. Remove it, or save it again as a PDF and attach that.';
+
+  @override
+  String get attachmentRefusedUnsafe =>
+      'This file was blocked because it may be harmful. Remove it.';
+
+  @override
+  String get attachmentRefusedNotAllowed =>
+      'This file has a password, scripts or other files inside it, which aren\'t allowed. Remove it.';
+
+  @override
+  String get attachmentRefusedOther =>
+      'This file can\'t be used. Remove it and try another.';
+
+  @override
   String get attachmentReady => 'Ready';
 
   @override

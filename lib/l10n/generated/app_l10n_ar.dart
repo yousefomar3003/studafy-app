@@ -1780,6 +1780,22 @@ class AppL10nAr extends AppL10n {
   String get attachmentChecking => 'قيد الفحص';
 
   @override
+  String get attachmentRefusedDamaged =>
+      'لا يمكن استخدام هذا الملف: يبدو تالفًا أو غير معتاد. أزِله، أو احفظه مجددًا بصيغة PDF وأرفقه.';
+
+  @override
+  String get attachmentRefusedUnsafe =>
+      'حُظر هذا الملف لأنه قد يكون ضارًا. أزِله.';
+
+  @override
+  String get attachmentRefusedNotAllowed =>
+      'يحتوي هذا الملف على كلمة مرور أو نصوص برمجية أو ملفات أخرى بداخله، وهذا غير مسموح. أزِله.';
+
+  @override
+  String get attachmentRefusedOther =>
+      'لا يمكن استخدام هذا الملف. أزِله وجرّب ملفًا آخر.';
+
+  @override
   String get attachmentReady => 'جاهز';
 
   @override

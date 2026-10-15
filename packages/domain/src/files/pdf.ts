@@ -85,8 +85,7 @@ export async function parsePdf(bytes: Uint8Array): Promise<PdfParseResult> {
     }
     const dataStart = skipEol(text, streamAt + 6);
     if (dataStart === null) return { ok: false, reason: "malformed" };
-    const dictionaryWindow = text.slice(Math.max(0, streamAt - 512), streamAt);
-    if (dictionaryWindow.includes("/FlateDecode")) {
+    if (declaresFlate(text, streamAt)) {
       const inflated = inflateStreamRegion(bytes, text, dataStart);
       if (inflated === null) return { ok: false, reason: "malformed" };
       if (inflated === "limit") {
@@ -132,6 +131,50 @@ function scanDanger(
         following !== 0x23 && following !== 0x2f; // # /
     if (delimited) return "active_content" as const;
     at = text.indexOf("/JS", at + 3);
+  }
+  return null;
+}
+
+/**
+ * Whether the stream starting at `streamAt` is FlateDecode-compressed,
+ * judged by its own dictionary (the `<< ... >>` directly before `stream`).
+ *
+ * The previous rule looked for `/FlateDecode` anywhere in the 512 characters
+ * before the keyword, which also caught the previous object's dictionary
+ * when a small compressed stream came just before, for example, a JPEG
+ * image. The image was then "inflated", failed, and a valid document was
+ * rejected as malformed. When the stream's own dictionary cannot be read
+ * unambiguously (no `>>` right before the keyword, unbalanced brackets, or a
+ * literal string that could hide `<<` or `>>`), the old, stricter window is
+ * used, so nothing that was inflated before escapes inflation now.
+ */
+function declaresFlate(text: string, streamAt: number): boolean {
+  const own = streamDictionary(text, streamAt);
+  if (own !== null) return own.includes("/FlateDecode");
+  return text.slice(Math.max(0, streamAt - 512), streamAt)
+    .includes("/FlateDecode");
+}
+
+/** Bounded backward scan for the stream's dictionary, or null if unsure. */
+function streamDictionary(text: string, streamAt: number): string | null {
+  let end = streamAt - 1;
+  while (end >= 0 && /\s/.test(text[end]!)) end -= 1;
+  if (end < 1 || text[end] !== ">" || text[end - 1] !== ">") return null;
+  const floor = Math.max(0, streamAt - 64 * 1024);
+  let depth = 0;
+  for (let at = end - 1; at >= floor; at -= 1) {
+    const pair = text.slice(at, at + 2);
+    if (pair === ">>") {
+      depth += 1;
+      at -= 1;
+    } else if (pair === "<<") {
+      depth -= 1;
+      if (depth === 0) {
+        const dictionary = text.slice(at, end + 1);
+        return /[()]/.test(dictionary) ? null : dictionary;
+      }
+      at -= 1;
+    }
   }
   return null;
 }

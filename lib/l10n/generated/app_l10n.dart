@@ -2977,6 +2977,30 @@ abstract class AppL10n {
   /// **'Checking'**
   String get attachmentChecking;
 
+  /// No description provided for @attachmentRefusedDamaged.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be used: it looks damaged or unusual. Remove it, or save it again as a PDF and attach that.'**
+  String get attachmentRefusedDamaged;
+
+  /// No description provided for @attachmentRefusedUnsafe.
+  ///
+  /// In en, this message translates to:
+  /// **'This file was blocked because it may be harmful. Remove it.'**
+  String get attachmentRefusedUnsafe;
+
+  /// No description provided for @attachmentRefusedNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This file has a password, scripts or other files inside it, which aren\'t allowed. Remove it.'**
+  String get attachmentRefusedNotAllowed;
+
+  /// No description provided for @attachmentRefusedOther.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be used. Remove it and try another.'**
+  String get attachmentRefusedOther;
+
   /// No description provided for @attachmentReady.
   ///
   /// In en, this message translates to:
