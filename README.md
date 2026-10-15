@@ -90,12 +90,45 @@ flutter analyze && flutter test
 - **Device tests:** `tools/ci/run-device-tests.sh <device id>` runs the smoke
   tests on a simulator or emulator. CI runs them on both
   (`.github/workflows/device-tests.yml`).
+- **Device tests with a backend:** the online exam and the coursework files
+  tests sign in to a local API. See below.
 - **Capacity:** `bun run scale:prepare`, `scale:bench` and `scale:http`
   (`docs/capacity/`).
 
 CI (`.github/workflows/ci.yml`) runs on pull requests to `main` and on
 `main`. It runs every gate, all pgTAP suites, secret and dependency scans, and
 an Android debug build. It deploys nothing.
+
+### Device tests with a local backend
+
+`integration_test/exam_workflow_device_test.dart` and
+`integration_test/coursework_files_device_test.dart` drive the real screens
+against a local API, worker, Supabase and Redis. They sign in to a synthetic
+school (`dev.teacher`, `dev.student`, `dev.student2` and `dev.parent` at
+`synthetic.studafy.test`, plus "Dev Absentee", who has no account), which
+`scripts/seed-device-tests.ts` creates.
+
+```sh
+bunx supabase db reset --workdir <throwaway stack dir>   # empty stack
+SUPABASE_WORKDIR=<throwaway stack dir> \
+REDIS_URL=redis://127.0.0.1:<throwaway redis port> \
+tools/ci/run-backend-device-tests.sh <device id>
+```
+
+- The script starts the API (port 8090) and the worker with settings it sets
+  itself. It never reads `.env`. It uses no AI key, seeds the school, runs
+  both tests and stops the API and worker.
+- Without `SUPABASE_WORKDIR`, it uses this checkout's stack (`supabase/`, port
+  54322). Use that only if it is a stack you can reset.
+- Use a Redis that no other local API or worker is using.
+- The seed refuses any URL that is not `127.0.0.1` or `localhost`. It also
+  refuses a database that holds any other school. Re-running it on the same
+  stack is safe.
+- The Dart defines, including the generated password, go to the ignored
+  `build/device-tests/defines.json`. Logs and screenshots go to
+  `device-logs/backend/`.
+- CI runs the tests on an Android emulator in
+  `.github/workflows/device-tests-backend.yml`, using a fresh stack each run.
 
 ## Store products
 

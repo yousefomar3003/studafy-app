@@ -1,0 +1,191 @@
+name: Device tests (local backend)
+
+# The two device tests that sign in (launch plan A10): the online exam from
+# building to corrected results, and files on a lesson and a hand-in. Real
+# screens on an Android emulator against a local API, worker, Supabase
+# (database, Auth, Storage) and Redis, all started in this job, with the
+# synthetic school from scripts/seed-device-tests.ts. No hosted service, no
+# secret and no AI provider: the study helper stays off without a key.
+#
+# Its own workflow and job, so the synthetic device tests' emulator
+# (device-tests.yml) gets no extra memory or time pressure. Linux only.
+#
+# Cost: about 15 minutes of Linux time per run. Pull requests run it when
+# the app, these tests or their tooling change; main also runs it when the
+# API, worker or migrations change.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "integration_test/exam_workflow_device_test.dart"
+      - "integration_test/coursework_files_device_test.dart"
+      - "test/support/**"
+      - "test_driver/**"
+      - "android/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "apps/api/**"
+      - "apps/worker/**"
+      - "packages/**"
+      - "supabase/migrations/**"
+      - "supabase/config.toml"
+      - "scripts/seed-device-tests.ts"
+      - "tools/ci/run-backend-device-tests.sh"
+      - ".github/workflows/device-tests-backend.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "integration_test/exam_workflow_device_test.dart"
+      - "integration_test/coursework_files_device_test.dart"
+      - "test/support/**"
+      - "test_driver/**"
+      - "android/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "scripts/seed-device-tests.ts"
+      - "tools/ci/run-backend-device-tests.sh"
+      - ".github/workflows/device-tests-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: device-tests-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android-emulator-backend:
+    name: Android emulator, local backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      # Queues and rate limits, as in ci.yml's database job.
+      redis:
+        image: redis:7.4.4-alpine3.21@sha256:ee9e8748ace004102a267f7b8265dab2c618317df22507b89d16a8add7154273
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      # The emulator's data partition needs more room than a hosted runner
+      # leaves free; these toolchains are never used here.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL" \
+            /usr/local/lib/android/sdk/ndk
+          df -h /
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # As in device-tests.yml: the emulator shares the runner with Gradle,
+      # and here with the local Supabase stack too.
+      - name: Fit Gradle beside the emulator
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError'
+            echo 'kotlin.daemon.jvmargs=-Xmx1g'
+            echo 'org.gradle.workers.max=2'
+            echo 'org.gradle.daemon=false'
+          } >> ~/.gradle/gradle.properties
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Install pinned tool dependencies
+        run: bun install --frozen-lockfile
+
+      # Database, Auth, Storage and the gateway only. Every command is local:
+      # the checkout has no linked project.
+      - name: Start disposable local Supabase stack
+        run: >-
+          bunx supabase start
+          -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+
+      - name: Cache the emulator image
+        id: avd-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api34-x86_64-google_apis-4g
+
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          disk-size: 4096M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
+          disable-animations: false
+          script: echo "Emulator snapshot created for the cache."
+
+      # Starts the API and worker, seeds the synthetic school, runs both
+      # tests, and stops the API and worker.
+      - name: Run the backend device tests
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          disk-size: 4096M
+          ram-size: 2048M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
+          disable-animations: true
+          script: tools/ci/run-backend-device-tests.sh emulator-5554
+
+      - name: Keep the logs and screenshots
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: device-tests-backend-android
+          path: device-logs
+          retention-days: 14
+
+      - name: Stop disposable Supabase stack
+        if: always()
+        run: bunx supabase stop --no-backup
