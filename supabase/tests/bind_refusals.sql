@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(33);
+select plan(46);
 
 \set other_teacher 'a2810000-0000-4000-8000-0000000000a1'
 \set hw_clean 'a2810000-0000-4000-8000-0000000000f1'
@@ -24,6 +24,8 @@ select plan(33);
 \set ann_clean 'a2810000-0000-4000-8000-0000000000f8'
 \set msg_rejected 'a2810000-0000-4000-8000-0000000000f9'
 \set msg_quarantined 'a2810000-0000-4000-8000-0000000000fa'
+\set msg_foreign 'a2810000-0000-4000-8000-0000000000e2'
+\set ann_foreign 'a2810000-0000-4000-8000-0000000000e3'
 \set sub_kept 'a2810000-0000-4000-8000-0000000000fb'
 \set sub_rejected 'a2810000-0000-4000-8000-0000000000fc'
 \set sub_clean 'a2810000-0000-4000-8000-0000000000fd'
@@ -103,6 +105,9 @@ select pg_temp.upload(:'ann_rejected', :'teacher_user', 'announcement_attachment
 select pg_temp.upload(:'ann_clean', :'teacher_user', 'announcement_attachment', :'classroom_id');
 select pg_temp.upload(:'msg_rejected', :'teacher_user', 'message_attachment', null, 'rejected');
 select pg_temp.upload(:'msg_quarantined', :'teacher_user', 'message_attachment', null, 'quarantined');
+-- Clean files of another teacher: forbidden to attach, not refused.
+select pg_temp.upload(:'msg_foreign', :'other_teacher', 'message_attachment', null);
+select pg_temp.upload(:'ann_foreign', :'other_teacher', 'announcement_attachment', :'classroom_id');
 
 create temporary table br(name text primary key, value jsonb);
 
@@ -238,6 +243,78 @@ select pg_temp.scan_refuses(:'msg_quarantined');
 select is(private.api042_message_json((select (value->'response'->>'id')::uuid from br where name = 'msg'))
   ->'attachments'->0->>'scanState', 'rejected',
   'when the scan then refuses it, the message says so');
+
+-- ---------------------------------------------------------------------------
+-- A forbidden attachment keeps nothing (202610150021)
+-- ---------------------------------------------------------------------------
+
+-- What a send or a post writes, apart from the row itself: notifications,
+-- the conversation's activity, audit, and the idempotency record.
+-- Back-dated so a write within this transaction (now() is fixed) shows.
+update public.conversations set updated_at = now() - interval '1 day' where id = :'convo_id';
+update public.conversation_participants set last_read_at = now() - interval '1 day',
+  last_delivered_at = now() - interval '1 day' where conversation_id = :'convo_id';
+create function pg_temp.side_effects() returns jsonb language sql as $$
+  select jsonb_build_object(
+    'messages', (select count(*) from public.messages
+      where conversation_id = (select (value->'response'->>'id')::uuid from br where name = 'convo')),
+    'announcements', (select count(*) from public.announcements
+      where school_id = current_setting('studafy.school_id')::uuid),
+    'notifications', (select count(*) from public.notification_outbox
+      where school_id = current_setting('studafy.school_id')::uuid),
+    'audit', (select count(*) from public.audit_events
+      where school_id = current_setting('studafy.school_id')::uuid),
+    'conversation', (select to_jsonb(c) from public.conversations c
+      where c.id = (select (value->'response'->>'id')::uuid from br where name = 'convo')),
+    'participants', (select jsonb_agg(to_jsonb(cp) order by cp.user_id)
+      from public.conversation_participants cp
+      where cp.conversation_id = (select (value->'response'->>'id')::uuid from br where name = 'convo')),
+    'completed', (select count(*) from public.idempotency_records r
+      where r.actor_id = 'aaaa0000-0000-4000-8000-000000000001'::uuid and r.status = 'completed'));
+$$;
+
+-- The probe sees what an ordinary send writes.
+insert into br select 'fx0', pg_temp.side_effects();
+select is(pg_temp.cmd(:'teacher_user', 'sendMessage', :'convo_id', jsonb_build_object(
+  'clientMessageId', gen_random_uuid(), 'body', 'No file'), 'api042')->>'outcome', 'ok',
+  'a plain message is sent');
+select ok(pg_temp.side_effects()->'notifications' > (select value->'notifications' from br where name = 'fx0')
+  and pg_temp.side_effects()->'messages' > (select value->'messages' from br where name = 'fx0'),
+  'and it writes a message and notifies, so the probe below would see one');
+update public.conversations set updated_at = now() - interval '1 day' where id = :'convo_id';
+update public.conversation_participants set last_read_at = now() - interval '1 day',
+  last_delivered_at = now() - interval '1 day' where conversation_id = :'convo_id';
+
+insert into br select 'fx1', pg_temp.side_effects();
+insert into br select 'send-forbidden', pg_temp.cmd(:'teacher_user', 'sendMessage', :'convo_id',
+  jsonb_build_object('clientMessageId', gen_random_uuid(), 'body', 'Someone else''s file',
+    'attachmentFileIds', jsonb_build_array(:'msg_foreign')), 'api042');
+select is((select value from br where name = 'send-forbidden'), '{"outcome": "forbidden"}'::jsonb,
+  'a message with another teacher''s file is still forbidden, naming nothing');
+select is(pg_temp.side_effects()->'messages', (select value->'messages' from br where name = 'fx1'),
+  'and no message was kept');
+select is(pg_temp.side_effects()->'notifications', (select value->'notifications' from br where name = 'fx1'),
+  'nobody was notified');
+select is(pg_temp.side_effects()->'conversation', (select value->'conversation' from br where name = 'fx1'),
+  'the conversation was not touched');
+select is(pg_temp.side_effects()->'participants', (select value->'participants' from br where name = 'fx1'),
+  'nor anyone''s read or delivered marks');
+select is(pg_temp.side_effects()->'audit', (select value->'audit' from br where name = 'fx1'),
+  'nothing was audited as sent');
+select is(pg_temp.side_effects()->'completed', (select value->'completed' from br where name = 'fx1'),
+  'and the request was not recorded as done, so it is not replayed as a success');
+select is((select count(*) from public.file_bindings where file_object_id = :'msg_foreign'
+  and message_id is not null), 0::bigint, 'the file was not bound');
+
+insert into br select 'fx2', pg_temp.side_effects();
+select is(pg_temp.cmd(:'teacher_user', 'createAnnouncement', null,
+  pg_temp.announcement('Foreign', jsonb_build_array(:'ann_foreign')), 'api042'),
+  '{"outcome": "forbidden"}'::jsonb,
+  'an announcement with another teacher''s file is still forbidden, naming nothing');
+select is(pg_temp.side_effects() - 'completed', (select value - 'completed' from br where name = 'fx2'),
+  'and no announcement, notification, audit or conversation change was kept');
+select is(pg_temp.side_effects()->'completed', (select value->'completed' from br where name = 'fx2'),
+  'nor the request recorded as done');
 
 -- ---------------------------------------------------------------------------
 -- Handing work in
