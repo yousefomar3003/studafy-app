@@ -37,6 +37,8 @@ const secrets = {
   // The scanner vendor is still to be chosen (docs/security/credentials-map.md).
   MALWARE_SCANNER_URL: "https://scanner.synthetic.example",
   MALWARE_SCANNER_API_KEY: "synthetic-scanner-key-0000000000000000",
+  TELEGRAM_BOT_TOKEN: "000000000:synthetic-telegram-token-00000",
+  TELEGRAM_CHAT_ID: "-1000000000000",
 };
 
 describe("Fly configs pass production validation", () => {
@@ -65,6 +67,15 @@ describe("Fly configs pass production validation", () => {
     // Launch plan 2.1: account deletion and data export must complete.
     expect(env.ACCOUNT_DELETION_EXECUTOR_ENABLED).toBe(true);
     expect(env.DATA_EXPORT_EXECUTOR_ENABLED).toBe(true);
+    // DPIA D7: a filed safety report always reaches a reviewer.
+    expect(env.REPORT_ALERTS_ENABLED).toBe(true);
+  });
+
+  test("the production worker refuses report alerts without Telegram", async () => {
+    const fly = await flyEnv("fly.worker.toml");
+    const { TELEGRAM_BOT_TOKEN: _, ...withoutBot } = secrets;
+    expect(() => parseEnv(workerEnvSchema, { ...fly, ...withoutBot }))
+      .toThrow(/REPORT_ALERTS_ENABLED/);
   });
 
   test("production refuses client addresses from X-Forwarded-For", async () => {

@@ -33,6 +33,12 @@ primary_region = "fra"
   # export to complete, not just be requested. They need only the database.
   ACCOUNT_DELETION_EXECUTOR_ENABLED = "true"
   DATA_EXPORT_EXECUTOR_ENABLED = "true"
+  # DPIA D7: every new safety report alerts the reviewers' Telegram chat
+  # (id, kind, priority, school hash; never content). Needs the
+  # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID secrets: without them the
+  # worker refuses to start, because an unseen report is the failure this
+  # prevents (docs/security/safe043-operator-runbook.md).
+  REPORT_ALERTS_ENABLED = "true"
   # Switched on at launch once their own credentials are set (see the doc):
   # PAY071_BILLING_ENABLED (store keys), NOTIFICATION_CHANNELS_ENABLED
   # (Firebase / email), MEETINGS_PROCESSOR_ENABLED.
