@@ -1468,6 +1468,7 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
     StudyRefusal.allowanceUsed => l10n.nbFailTokens,
     StudyRefusal.materialProcessing => l10n.nbSheetWaitReading,
     StudyRefusal.unavailable => l10n.studySetSwitchedOff,
+    StudyRefusal.aiConsent => l10n.aiConsentNeeded,
     _ => l10n.studySetThatDidNotWorkPlease,
   };
 

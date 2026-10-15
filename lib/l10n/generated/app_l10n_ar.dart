@@ -6896,4 +6896,63 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get takeChildAttempts => 'المحاولات';
+
+  @override
+  String get aiConsentTitle => 'أدوات الدراسة بالذكاء الاصطناعي';
+
+  @override
+  String get aiConsentNoticeBody =>
+      'يستخدم مساعد الدراسة وملاحظات الدروس ودفاتر الدراسة والاختبارات والبطاقات التعليمية ذكاءً اصطناعيًا من Together AI، وهي شركة خارج ستودافاي. هذه الأدوات اختيارية.\n\nما الذي يُرسل\nما تكتبه، وآخر الرسائل في المحادثة نفسها، وإذا اخترت ذلك نص درس أو ملاحظاتك الخاصة أو صورة تضيفها.\n\nما الذي لا يُرسل\nبريدك الإلكتروني ومدرستك ودرجاتك وبيانات حسابك. تُستبدل الأسماء التي يعرفها ستودافاي - اسمك وأسماء زملائك ومعلميك ووالديك - بكلمات مثل [student] قبل إرسال أي شيء. تُرسل الصورة كما هي، فلا تصوّر الأسماء أو الوجوه.\n\nمن المفيد أن تعرف\nقد تكون الإجابات خاطئة: تحقّق منها، ولا تسلّمها على أنها عملك أبدًا. تبقى المحادثات على جهازك. الذكاء الاصطناعي لا يصحّح أعمالك أبدًا.\n\nيمكنك إيقاف أدوات الذكاء الاصطناعي في أي وقت من حسابك.';
+
+  @override
+  String get aiConsentAgree => 'أوافق';
+
+  @override
+  String get aiConsentNotNow => 'ليس الآن';
+
+  @override
+  String aiConsentForChild(String name) {
+    return 'أنت توافق نيابةً عن $name، صاحب الحساب الذي تديره.';
+  }
+
+  @override
+  String get aiConsentGuardianNeeded =>
+      'يشغّل ولي الأمر أدوات الدراسة بالذكاء الاصطناعي لهذا الحساب من حسابه الخاص.';
+
+  @override
+  String get aiConsentStudentsOnly =>
+      'أدوات الدراسة بالذكاء الاصطناعي مخصّصة للطلاب المسجّلين في صف.';
+
+  @override
+  String get aiConsentSwitchOn => 'مفعّلة. يمكنك إيقافها في أي وقت.';
+
+  @override
+  String get aiConsentSwitchOff =>
+      'متوقفة. فعّلها لاستخدام مساعد الدراسة والملاحظات والدفاتر والاختبارات والبطاقات التعليمية.';
+
+  @override
+  String aiConsentChildSwitch(String name) {
+    return 'أدوات الدراسة بالذكاء الاصطناعي لـ $name';
+  }
+
+  @override
+  String get aiConsentWithdrawTitle => 'إيقاف أدوات الدراسة بالذكاء الاصطناعي؟';
+
+  @override
+  String get aiConsentWithdrawBody =>
+      'يتوقف مساعد الدراسة والملاحظات والدفاتر والاختبارات والبطاقات التعليمية حتى تُفعَّل من جديد. ويبقى ما صُنع سابقًا.';
+
+  @override
+  String get aiConsentWithdrawAction => 'إيقاف';
+
+  @override
+  String get aiConsentSaveFailed =>
+      'لم يُحفظ ذلك. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get aiConsentReadNotice => 'اقرأ ما الذي يُرسل';
+
+  @override
+  String get aiConsentNeeded =>
+      'أدوات الدراسة بالذكاء الاصطناعي متوقفة لهذا الحساب. يفعّلها الطالب من حسابه، ويفعّلها ولي الأمر لحساب الطفل.';
 }

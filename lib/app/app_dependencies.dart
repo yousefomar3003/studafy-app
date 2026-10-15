@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/ai_consent.dart';
 import '../core/device_settings.dart';
 import '../core/file_upload_repository.dart';
 import '../core/locale_controller.dart';
@@ -64,6 +65,7 @@ import '../features/session/application/session_interactor.dart';
 import '../features/session/data/api_session_repository.dart';
 import '../features/session/data/demo_session_repository.dart';
 import '../features/session/domain/session_repository.dart';
+import '../features/study/data/api_ai_consent_repository.dart';
 import '../features/study/data/api_study_repository.dart';
 import '../features/study/data/preview_study_repository.dart';
 import '../features/study/domain/study.dart';
@@ -97,6 +99,7 @@ class AppDependencies {
     this.studyPlans,
     this.familyPlus,
     required this.study,
+    this.aiConsent,
     required this.account,
     required this.academicApi,
     required this.academic,
@@ -151,6 +154,9 @@ class AppDependencies {
 
   /// Plans, the student's notebook, and quizzes and flashcards.
   final StudyRepository study;
+
+  /// The AI consent (ADR-0043). Null without a backend.
+  final AiConsentRepository? aiConsent;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
@@ -330,6 +336,7 @@ class AppDependencies {
       study: remote == null
           ? PreviewStudyRepository()
           : ApiStudyRepository(remote.api),
+      aiConsent: remote == null ? null : ApiAiConsentRepository(remote.api),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(

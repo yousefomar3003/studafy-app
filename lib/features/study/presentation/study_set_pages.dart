@@ -443,6 +443,7 @@ class _StudySetPageState extends State<StudySetPage> {
           StudyRefusal.lessonHasNoText => l10n.studySetThisLessonHasNoText,
           StudyRefusal.materialProcessing => l10n.studySetMaterialProcessing,
           StudyRefusal.unavailable => l10n.studySetSwitchedOff,
+          StudyRefusal.aiConsent => l10n.aiConsentNeeded,
           _ => l10n.setFailed,
         },
         message: upgrade ? null : l10n.setFailedDetail,

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app/account/account_switching.dart';
 import 'app/account_scope.dart';
+import 'app/ai_consent_binding.dart';
 import 'app/app_bootstrap.dart';
 import 'app/app_dependencies.dart';
 import 'app/class_join_link_guard.dart';
@@ -103,6 +104,7 @@ class StudafyApp extends StatelessWidget {
     final deps = runtimePolicy.blocksApplicationStartup
         ? null
         : (dependencies ?? AppDependencies.forPolicy(runtimePolicy));
+    if (deps != null) attachAiConsentGate(deps.aiConsent, _navigatorKey);
     final routes = deps == null
         ? <String, WidgetBuilder>{}
         : <String, WidgetBuilder>{

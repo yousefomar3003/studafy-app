@@ -408,6 +408,9 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     StudyAssistantFailure.photoNotReady => AppL10n.of(
       context,
     ).helperPhotoFailed,
+    StudyAssistantFailure.consentRequired => AppL10n.of(
+      context,
+    ).aiConsentNeeded,
     _ => failure.message,
   };
 

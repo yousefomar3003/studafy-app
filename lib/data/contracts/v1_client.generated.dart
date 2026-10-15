@@ -2852,6 +2852,48 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1AiConsentStateDto> getStudyToolsConsent() async =>
+      V1AiConsentStateDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/study-tools-consent', {}, {})),
+      );
+
+  Future<V1AiConsentStateDto> updateStudyToolsConsent(
+    V1UpdateAiConsentRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1AiConsentStateDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/study-tools-consent', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1AiConsentStateDto> getManagedChildStudyToolsConsent({
+    required String childId,
+  }) async => V1AiConsentStateDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/me/managed-children/{childId}/study-tools-consent', {
+        'childId': childId,
+      }, {}),
+    ),
+  );
+
+  Future<V1AiConsentStateDto> updateManagedChildStudyToolsConsent(
+    V1UpdateAiConsentRequestDto request, {
+    required String childId,
+    String? idempotencyKey,
+  }) async => V1AiConsentStateDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/managed-children/{childId}/study-tools-consent', {
+        'childId': childId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -3149,6 +3191,61 @@ class V1AiAllowanceDto {
     'used': used,
     'remaining': remaining,
     'resetsAt': resetsAt,
+  };
+}
+
+class V1AiConsentDto {
+  const V1AiConsentDto({
+    required this.version,
+    required this.locale,
+    required this.givenAt,
+    required this.givenAs,
+  });
+
+  factory V1AiConsentDto.fromJson(Map<String, dynamic> json) => V1AiConsentDto(
+    version: json['version'] as String,
+    locale: json['locale'] as String,
+    givenAt: json['givenAt'] as String,
+    givenAs: json['givenAs'] as String,
+  );
+
+  final String version;
+  final String locale;
+  final String givenAt;
+  final String givenAs;
+
+  Map<String, Object?> toJson() => {
+    'version': version,
+    'locale': locale,
+    'givenAt': givenAt,
+    'givenAs': givenAs,
+  };
+}
+
+class V1AiConsentStateDto {
+  const V1AiConsentStateDto({
+    required this.access,
+    required this.version,
+    required this.consent,
+  });
+
+  factory V1AiConsentStateDto.fromJson(Map<String, dynamic> json) =>
+      V1AiConsentStateDto(
+        access: json['access'] as String,
+        version: json['version'] as String?,
+        consent: json['consent'] == null
+            ? null
+            : V1AiConsentDto.fromJson(json['consent'] as Map<String, dynamic>),
+      );
+
+  final String access;
+  final String? version;
+  final V1AiConsentDto? consent;
+
+  Map<String, Object?> toJson() => {
+    'access': access,
+    'version': version,
+    'consent': consent?.toJson(),
   };
 }
 
@@ -12522,6 +12619,7 @@ class V1StudyPlanSummaryDto {
     this.available,
     this.chatMemoryChars,
     required this.allowance,
+    this.aiAccess,
   });
 
   factory V1StudyPlanSummaryDto.fromJson(Map<String, dynamic> json) =>
@@ -12535,6 +12633,7 @@ class V1StudyPlanSummaryDto {
         allowance: V1AiAllowanceDto.fromJson(
           json['allowance'] as Map<String, dynamic>,
         ),
+        aiAccess: json['aiAccess'] as String?,
       );
 
   final String plan;
@@ -12542,6 +12641,7 @@ class V1StudyPlanSummaryDto {
   final List<String>? available;
   final int? chatMemoryChars;
   final V1AiAllowanceDto allowance;
+  final String? aiAccess;
 
   Map<String, Object?> toJson() => {
     'plan': plan,
@@ -12549,6 +12649,7 @@ class V1StudyPlanSummaryDto {
     'available': ?available,
     'chatMemoryChars': ?chatMemoryChars,
     'allowance': allowance.toJson(),
+    'aiAccess': ?aiAccess,
   };
 }
 
@@ -13135,6 +13236,31 @@ class V1UpcomingWorkDto {
     'title': title,
     'dueAt': dueAt,
     'submitted': submitted,
+  };
+}
+
+class V1UpdateAiConsentRequestDto {
+  const V1UpdateAiConsentRequestDto({
+    required this.given,
+    this.version,
+    this.locale,
+  });
+
+  factory V1UpdateAiConsentRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1UpdateAiConsentRequestDto(
+        given: json['given'] as bool,
+        version: json['version'] as String?,
+        locale: json['locale'] as String?,
+      );
+
+  final bool given;
+  final String? version;
+  final String? locale;
+
+  Map<String, Object?> toJson() => {
+    'given': given,
+    'version': ?version,
+    'locale': ?locale,
   };
 }
 

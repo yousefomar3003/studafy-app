@@ -168,6 +168,7 @@ class _NotebookViewState extends State<NotebookView> {
     StudyRefusal.materialProcessing => AppL10n.of(
       context,
     ).studySetMaterialProcessing,
+    StudyRefusal.aiConsent => AppL10n.of(context).aiConsentNeeded,
     _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
   };
 

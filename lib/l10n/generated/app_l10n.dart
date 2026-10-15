@@ -11819,6 +11819,102 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Attempts'**
   String get takeChildAttempts;
+
+  /// No description provided for @aiConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI study tools'**
+  String get aiConsentTitle;
+
+  /// No description provided for @aiConsentNoticeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The study helper, lesson notes, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.'**
+  String get aiConsentNoticeBody;
+
+  /// No description provided for @aiConsentAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree'**
+  String get aiConsentAgree;
+
+  /// No description provided for @aiConsentNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get aiConsentNotNow;
+
+  /// No description provided for @aiConsentForChild.
+  ///
+  /// In en, this message translates to:
+  /// **'You are agreeing for {name}, whose account you manage.'**
+  String aiConsentForChild(String name);
+
+  /// No description provided for @aiConsentGuardianNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'A parent turns on the AI study tools for this account, from their own account.'**
+  String get aiConsentGuardianNeeded;
+
+  /// No description provided for @aiConsentStudentsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI study tools are for students in a class.'**
+  String get aiConsentStudentsOnly;
+
+  /// No description provided for @aiConsentSwitchOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On. You can turn them off at any time.'**
+  String get aiConsentSwitchOn;
+
+  /// No description provided for @aiConsentSwitchOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Turn on to use the study helper, notes, notebooks, quizzes and flashcards.'**
+  String get aiConsentSwitchOff;
+
+  /// No description provided for @aiConsentChildSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'AI study tools for {name}'**
+  String aiConsentChildSwitch(String name);
+
+  /// No description provided for @aiConsentWithdrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off the AI study tools?'**
+  String get aiConsentWithdrawTitle;
+
+  /// No description provided for @aiConsentWithdrawBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The study helper, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.'**
+  String get aiConsentWithdrawBody;
+
+  /// No description provided for @aiConsentWithdrawAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get aiConsentWithdrawAction;
+
+  /// No description provided for @aiConsentSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That was not saved. Check your connection and try again.'**
+  String get aiConsentSaveFailed;
+
+  /// No description provided for @aiConsentReadNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Read what is sent'**
+  String get aiConsentReadNotice;
+
+  /// No description provided for @aiConsentNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.'**
+  String get aiConsentNeeded;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
