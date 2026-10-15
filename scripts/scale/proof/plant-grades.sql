@@ -53,6 +53,7 @@ create temp table plant_assessments as
 select a.id, a.school_id, a.created_by, abs(hashtext(a.id::text || ':case')) % 5 as kind
 from public.assessments a
 where abs(hashtext(a.id::text || ':pick')) % :assessment_every = 0;
+analyze plant_grades, plant_assessments;
 
 -- Grade kinds 0, 2, 3, 4 and 9: three material files. File 1 is bound
 -- twice and for results too; file 2 is deleted; file 3's binding is
@@ -65,11 +66,13 @@ select gen_random_uuid(), p.school_id, 'legacy', 'files/plant-grade/' || p.id ||
   'assignment_material', 'Marked paper ' || n || '.pdf'
 from plant_grades p cross join generate_series(1, 3) n
 where p.kind in (0, 2, 3, 4, 9);
+analyze public.file_objects;
 insert into public.file_bindings (school_id, file_object_id, grade_result_id, role, created_at)
 select p.school_id, fo.id, p.id, 'material',
   now() - case when fo.object_key like '%/3' then interval '5 seconds' else interval '1 minute' end
 from plant_grades p
-join public.file_objects fo on fo.object_key like 'files/plant-grade/' || p.id || '/%'
+join public.file_objects fo on fo.object_key like 'files/plant-grade/%'
+  and split_part(fo.object_key, '/', 3)::uuid = p.id
 where p.kind in (0, 2, 3, 4, 9);
 insert into public.file_bindings (school_id, file_object_id, grade_result_id, role, created_at)
 select p.school_id, fo.id, p.id, r, now()
@@ -96,7 +99,7 @@ from plant_grades p cross join generate_series(1, 4) n
 where p.kind in (1, 2, 3, 4, 9);
 update public.content_links l set detached_at = now(), detached_by = l.created_by
 from plant_grades p
-where p.kind = 1 and l.url = 'https://example.org/grade/' || p.id || '/3';
+where p.kind = 1 and l.grade_result_id = p.id and l.url like '%/3';
 
 -- Grade states and marks.
 update public.grade_results g set state = 'draft', published_at = null, published_by = null
@@ -131,11 +134,13 @@ select gen_random_uuid(), p.school_id, 'legacy', 'files/plant-results/' || p.id 
   'assignment_material', 'Mark scheme ' || n || '.pdf'
 from plant_assessments p cross join generate_series(1, 4) n
 where p.kind in (0, 2);
+analyze public.file_objects;
 insert into public.file_bindings (school_id, file_object_id, assessment_id, role, created_at)
 select p.school_id, fo.id, p.id, case when fo.object_key like '%/4' then 'material' else 'results' end,
   now() - interval '1 minute'
 from plant_assessments p
-join public.file_objects fo on fo.object_key like 'files/plant-results/' || p.id || '/%'
+join public.file_objects fo on fo.object_key like 'files/plant-results/%'
+  and split_part(fo.object_key, '/', 3)::uuid = p.id
 where p.kind in (0, 2);
 update public.file_objects fo set deleted_at = now()
 from plant_assessments p
@@ -152,7 +157,7 @@ from plant_assessments p cross join generate_series(1, 4) n
 where p.kind in (0, 1);
 update public.content_links l set detached_at = now(), detached_by = l.created_by
 from plant_assessments p
-where p.kind = 0 and l.url = 'https://example.org/results/' || p.id || '/2';
+where p.kind = 0 and l.assessment_id = p.id and l.url like '%/2';
 update public.assessments a set category_weight = 25.5
 from plant_assessments p where p.id = a.id and p.kind = 3;
 
