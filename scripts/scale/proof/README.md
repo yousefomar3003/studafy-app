@@ -15,6 +15,17 @@ back.
 | `conversations-differential.sql` | The conversations list (`private.api042_query('listConversations')`) for every sampled person, with pages of 20, 2 and 1 and a malformed position, page by page: the same JSON before and after a migration (fix 5)                                                                                                                                                                                                                                              |
 | `plant-conversations.sql`        | Conversation extras the seed lacks (guardians and other schools' staff as participants, lapsed, suspended, ended and future teacher memberships, deleted student records, people who left, read markers, shared names, direct conversations and equal activity times for the keyset), planted before the conversations proof                                                                                                                                     |
 
+| `plant-grades.sql` | Grade extras the seed lacks (a grade's own files and
+links, its assessment's shared results files and links with material ones that
+must not show, deleted files, detached bindings and links, ties in order, grades
+in every state, absent / not-graded / zero marks, feedback, a category weight, a
+class teacher whose membership is not a teacher's), planted before the grades
+proof (fix 6) | | `grade-rows-differential.sql` | The grades page builder
+against the single-grade builder: every grade, in any state, of every class a
+sampled person teaches, is enrolled in or has a child in, built by
+`api041_grade_json` one at a time and by `api041_grade_rows` a class at a time
+and one at a time, as that person (fix 6) |
+
 Each proof runs in **one transaction**: record, apply the migration, record
 again, compare, roll back. `now()` is fixed inside a transaction, so fields that
 depend on the time (whether work is still open) compare fairly.
@@ -44,10 +55,20 @@ psql "$DB" -X -v plant=scripts/scale/proof/plant-conversations.sql \
   -v migration=supabase/migrations/202610150002_capacity_conversations_rows_per_page.sql \
   -v sample=100 -f scripts/scale/proof/conversations-differential.sql
 
+# The grades list (fix 6), with grades planted (on the pgTAP fixtures add
+# -v seed_grades=1 -v grade_every=1 -v assessment_every=1, and restore the
+# original list functions first with -v pre1=<their old definitions>):
+psql "$DB" -X -v plant=scripts/scale/proof/plant-grades.sql \
+  -v migration=supabase/migrations/202610150040_capacity_grades_rows_per_page.sql \
+  -v sample=1000 -f scripts/scale/proof/differential.sql
+psql "$DB" -X -v plant=scripts/scale/proof/plant-grades.sql \
+  -v migration=supabase/migrations/202610150040_capacity_grades_rows_per_page.sql \
+  -v sample=100 -f scripts/scale/proof/grade-rows-differential.sql
+
 # The access rules themselves, with edge cases planted:
 psql "$DB" -X -v sample=100 -f scripts/scale/proof/access-differential.sql
 ```
 
-Ship only with `differences = 0` and `error_cases = 0`. The homework, lessons
-and conversations proofs also print what the compared rows contained; a zero is
-meaningful only if those counts are not.
+Ship only with `differences = 0` and `error_cases = 0`. The homework, lessons,
+conversations and grades proofs also print what the compared rows contained; a
+zero is meaningful only if those counts are not.
