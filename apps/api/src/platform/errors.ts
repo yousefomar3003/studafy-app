@@ -264,6 +264,11 @@ const DEFINITIONS: Record<
     title: "Work already marked",
     detail: "This work has a published mark and cannot be replaced.",
   },
+  ATTACHMENT_REFUSED: {
+    title: "An attachment was refused",
+    detail:
+      "Nothing was saved. The errors list which files or links to remove and why.",
+  },
 };
 
 export class RequestTimeoutError extends Error {

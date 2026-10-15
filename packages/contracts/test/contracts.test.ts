@@ -78,6 +78,7 @@ describe("problem details contract", () => {
       "AI_ALLOWANCE_USED",
       "AI_FEATURE_DISABLED",
       "AI_REQUEST_IN_PROGRESS",
+      "ATTACHMENT_REFUSED",
       "ATTENDANCE_LOCKED",
       "BENEFICIARY_LINK_INVALID",
       "CAPTCHA_REQUIRED",
