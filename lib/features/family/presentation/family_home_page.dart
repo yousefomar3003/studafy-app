@@ -9,6 +9,7 @@ import '../../../core/result.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/family.dart';
@@ -184,8 +185,7 @@ class FamilyHomePageState extends State<FamilyHomePage> {
         .trim()
         .split(RegExp(r'\s+'))
         .first;
-    final today = MaterialLocalizations.of(context)
-        .formatFullDate(DateTime.now());
+    final today = studafyFullDate(context, DateTime.now());
     return Scaffold(
       appBar: AppBar(
         // The brand heads the home screen, as for every role.

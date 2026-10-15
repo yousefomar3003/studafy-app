@@ -5,6 +5,7 @@ import '../../../core/feedback.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -79,9 +80,8 @@ class _AssessmentPageState extends State<AssessmentPage> {
   }
 
   String _when(DateTime value) {
-    final dates = MaterialLocalizations.of(context);
-    return '${dates.formatMediumDate(value)} '
-        '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
+    return '${studafyMediumDate(context, value)} '
+        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(value))}';
   }
 
   static String _number(double value) =>

@@ -457,9 +457,8 @@ class _DeadlineLine extends StatelessWidget {
   String _when(BuildContext context, String local) {
     final at = DateTime.tryParse(local);
     if (at == null) return local;
-    final localizations = MaterialLocalizations.of(context);
-    return '${localizations.formatMediumDate(at)} '
-        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at))}';
+    return '${studafyMediumDate(context, at)} '
+        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(at))}';
   }
 
   @override

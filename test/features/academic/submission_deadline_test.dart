@@ -52,6 +52,41 @@ void main() {
     expect(find.text('Hand in'), findsOneWidget);
   });
 
+  testWidgets('in Arabic the deadline date and time both use 0-9', (
+    tester,
+  ) async {
+    _tall(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        locale: const Locale('ar'),
+        home: SubmitWorkPage(
+          repository: SubmitFake(),
+          assignmentId: 'a1',
+          assignmentTitle: 'Essay',
+          deadline: const SubmissionDeadline(
+            state: SubmissionWindow.open,
+            deadlineLocal: '2026-10-05T23:59',
+            timeZone: 'Asia/Amman',
+            extendedUntilLocal: '2026-10-07T08:30',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final due = tester.widget<Text>(find.textContaining('Amman')).data!;
+    final extended = tester
+        .widget<Text>(find.textContaining('لديك وقت إضافي'))
+        .data!;
+    for (final line in [due, extended]) {
+      expect(RegExp('[٠-٩۰-۹]').hasMatch(line), isFalse, reason: line);
+    }
+    expect(due, contains('5'));
+    expect(due, contains('11:59'));
+    expect(extended, contains('7'));
+    expect(extended, contains('8:30'));
+  });
+
   testWidgets('after the deadline there is nothing to type into', (
     tester,
   ) async {

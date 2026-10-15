@@ -112,8 +112,7 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
         .trim()
         .split(RegExp(r'\s+'))
         .first;
-    final today = MaterialLocalizations.of(context)
-        .formatFullDate(DateTime.now());
+    final today = studafyFullDate(context, DateTime.now());
     return Scaffold(
       appBar: AppBar(
         // The brand, not the page's name, heads the home screen.

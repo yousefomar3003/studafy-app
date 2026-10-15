@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/family_insights_interactor.dart';
@@ -341,7 +342,7 @@ class _TimelineChart extends StatelessWidget {
       try {
         return monthly
             ? DateFormat.MMM(locale).format(start)
-            : DateFormat.Md(locale).format(start);
+            : studafyNumericMonthDay(context, start);
       } on Object {
         return '${start.month}/${start.day}';
       }

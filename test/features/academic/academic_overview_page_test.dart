@@ -482,6 +482,10 @@ void main() {
       final text = paragraph.text.toPlainText();
       expect(text, contains('(\u2066$zoneId\u2069)'));
       expect(directionOf(tester, line), TextDirection.rtl);
+      // The date beside the time uses the same 0-9 digits: "5", never "٥".
+      expect(text, contains('11:59'));
+      expect(text, contains('5'));
+      expect(RegExp('[٠-٩۰-۹]').hasMatch(text), isFalse, reason: text);
 
       // And it renders that way: "Asia/Amman" is one left-to-right run on one
       // line, with ")" on its left and "(" on its right, as RTL brackets

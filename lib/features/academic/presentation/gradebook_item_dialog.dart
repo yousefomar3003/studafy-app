@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 
 /// What a paper gradebook item is: its name, the kind of work, what it is
@@ -197,8 +198,7 @@ class _GradebookItemDialogState extends State<_GradebookItemDialog> {
               label: Text(
                 _date == null
                     ? l10n.paperItemDate
-                    : MaterialLocalizations.of(context)
-                          .formatMediumDate(_date!),
+                    : studafyMediumDate(context, _date!),
               ),
             ),
             if (_invalid)

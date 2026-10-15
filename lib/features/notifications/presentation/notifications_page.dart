@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/notification.dart';
 import 'notification_copy.dart';
@@ -267,13 +268,12 @@ class _NotificationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final unread = !item.isRead;
-    final localizations = MaterialLocalizations.of(context);
     final at = item.createdAt.toLocal();
     final now = DateTime.now();
     final when =
         at.year == now.year && at.month == now.month && at.day == now.day
-        ? localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at))
-        : localizations.formatShortMonthDay(at);
+        ? studafyTimeOfDay(context, TimeOfDay.fromDateTime(at))
+        : studafyShortMonthDay(context, at);
     final title = notificationCopy(l10n, item.title);
     return Semantics(
       button: true,

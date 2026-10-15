@@ -7,6 +7,7 @@ import '../../../core/navigation.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -224,9 +225,8 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
 
   String _when(BuildContext context, DateTime? value) {
     if (value == null) return AppL10n.of(context).builderNotSet;
-    final dates = MaterialLocalizations.of(context);
-    return '${dates.formatShortDate(value)} '
-        '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
+    return '${studafyShortDate(context, value)} '
+        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(value))}';
   }
 
   void _setSettings({

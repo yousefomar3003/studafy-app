@@ -5,6 +5,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -404,9 +405,10 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                                     Text(
                                       l10n.takeAttemptLine(
                                         attempt.attemptNumber ?? 1,
-                                        MaterialLocalizations.of(
+                                        studafyMediumDate(
                                           context,
-                                        ).formatMediumDate(attempt.submittedAt),
+                                          attempt.submittedAt,
+                                        ),
                                       ),
                                       style: const TextStyle(
                                         color: studafyMuted,
@@ -790,8 +792,8 @@ class _GrantDialogState extends State<_GrantDialog> {
             subtitle: Text(
               until == null
                   ? l10n.builderNotSet
-                  : '${MaterialLocalizations.of(context).formatShortDate(until)} '
-                        '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(until))}',
+                  : '${studafyShortDate(context, until)} '
+                        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(until))}',
             ),
             onTap: _saving ? null : _pick,
           ),
