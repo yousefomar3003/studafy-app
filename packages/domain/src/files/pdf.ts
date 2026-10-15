@@ -250,7 +250,7 @@ function inflateStreamRegion(
     if (bytes[dataEnd - 1] === 0x0d) dataEnd -= 1;
     if (dataEnd <= dataStart) continue;
     const region = bytes.subarray(dataStart, dataEnd);
-    const attempt = tryInflate(region, PDF_STREAM_INFLATE_CAP_BYTES + 1);
+    const attempt = tryInflateEncoded(region);
     if (typeof attempt === "object") return attempt;
     if (attempt === "over-policy") {
       // Output passed the policy cap before the hard ceiling: a bomb or an
@@ -262,6 +262,117 @@ function inflateStreamRegion(
 }
 
 type InflateAttempt = Uint8Array | "over-policy" | "corrupt";
+
+/**
+ * Inflates a stream, first undoing a text encoding stacked in front of the
+ * compression when the bytes are not zlib themselves. ReportLab, for one,
+ * writes every stream as `/Filter [ /ASCII85Decode /FlateDecode ]`, and
+ * every such PDF was rejected as malformed (2026-10-15). Decoding these
+ * means their content is now inspected like any other, not refused. The
+ * text decoders shrink their input, and the inflate caps still apply.
+ */
+function tryInflateEncoded(region: Uint8Array): InflateAttempt {
+  const direct = tryInflate(region, PDF_STREAM_INFLATE_CAP_BYTES + 1);
+  if (direct !== "corrupt") return direct;
+  for (const decode of [decodeAscii85, decodeAsciiHex]) {
+    const decoded = decode(region);
+    if (decoded === null || decoded.byteLength === 0) continue;
+    const attempt = tryInflate(decoded, PDF_STREAM_INFLATE_CAP_BYTES + 1);
+    if (attempt !== "corrupt") return attempt;
+  }
+  return "corrupt";
+}
+
+/** ASCII85Decode (PDF 32000-1, 7.4.3), or null if the bytes are not it. */
+export function decodeAscii85(input: Uint8Array): Uint8Array | null {
+  const out = new Uint8Array(Math.ceil((input.length * 4) / 5) + 4);
+  let length = 0;
+  const group: number[] = [];
+  let ended = false;
+  for (let i = 0; i < input.length && !ended; i += 1) {
+    const c = input[i]!;
+    if (
+      c === 0x20 || c === 0x0a || c === 0x0d || c === 0x09 || c === 0x0c ||
+      c === 0x00
+    ) {
+      continue;
+    }
+    if (c === 0x7e) { // "~>" ends the data
+      if (input[i + 1] !== 0x3e) return null;
+      ended = true;
+      break;
+    }
+    if (c === 0x7a && group.length === 0) { // "z" is four zero bytes
+      length += 4;
+      continue;
+    }
+    if (c < 0x21 || c > 0x75) return null;
+    group.push(c - 0x21);
+    if (group.length === 5) {
+      let value = 0;
+      for (const digit of group) value = value * 85 + digit;
+      if (value > 0xffffffff) return null;
+      out[length++] = (value >>> 24) & 0xff;
+      out[length++] = (value >>> 16) & 0xff;
+      out[length++] = (value >>> 8) & 0xff;
+      out[length++] = value & 0xff;
+      group.length = 0;
+    }
+  }
+  if (!ended) return null;
+  if (group.length === 1) return null;
+  if (group.length > 1) {
+    const kept = group.length - 1;
+    while (group.length < 5) group.push(84);
+    let value = 0;
+    for (const digit of group) value = value * 85 + digit;
+    if (value > 0xffffffff) return null;
+    const bytes = [
+      (value >>> 24) & 0xff,
+      (value >>> 16) & 0xff,
+      (value >>> 8) & 0xff,
+      value & 0xff,
+    ];
+    for (let k = 0; k < kept; k += 1) out[length++] = bytes[k]!;
+  }
+  return out.subarray(0, length);
+}
+
+/** ASCIIHexDecode (PDF 32000-1, 7.4.2), or null if the bytes are not it. */
+export function decodeAsciiHex(input: Uint8Array): Uint8Array | null {
+  const out = new Uint8Array(Math.ceil(input.length / 2) + 1);
+  let length = 0;
+  let high = -1;
+  let ended = false;
+  for (const c of input) {
+    if (
+      c === 0x20 || c === 0x0a || c === 0x0d || c === 0x09 || c === 0x0c ||
+      c === 0x00
+    ) {
+      continue;
+    }
+    if (c === 0x3e) {
+      ended = true;
+      break;
+    }
+    const nibble = c >= 0x30 && c <= 0x39
+      ? c - 0x30
+      : c >= 0x41 && c <= 0x46
+      ? c - 0x37
+      : c >= 0x61 && c <= 0x66
+      ? c - 0x57
+      : -1;
+    if (nibble < 0) return null;
+    if (high < 0) high = nibble;
+    else {
+      out[length++] = (high << 4) | nibble;
+      high = -1;
+    }
+  }
+  if (!ended) return null;
+  if (high >= 0) out[length++] = high << 4;
+  return out.subarray(0, length);
+}
 
 function tryInflate(region: Uint8Array, ceiling: number): InflateAttempt {
   try {

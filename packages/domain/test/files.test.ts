@@ -17,6 +17,7 @@ import {
   transformBytes,
   verifyDeliveryToken,
 } from "../src";
+import { decodeAscii85, decodeAsciiHex } from "../src/files/pdf";
 
 // ---------------------------------------------------------------------------
 // Fixture builders. Everything is synthesized: no binary files in the repo,
@@ -435,6 +436,76 @@ describe("pdf", () => {
       verdict: "policy_rejected",
       errorCode: "active_content",
     });
+  });
+
+  // ReportLab (and others) write streams as [ /ASCII85Decode /FlateDecode ]:
+  // compressed, then text-encoded. Every such PDF was rejected (2026-10-15).
+  function ascii85(bytes: Uint8Array): Uint8Array {
+    let out = "";
+    for (let i = 0; i < bytes.length; i += 4) {
+      const chunk = [0, 1, 2, 3].map((k) => bytes[i + k] ?? 0);
+      const n = Math.min(4, bytes.length - i);
+      let value = ((chunk[0]! << 24) >>> 0) + (chunk[1]! << 16) +
+        (chunk[2]! << 8) + chunk[3]!;
+      if (value === 0 && n === 4) {
+        out += "z";
+        continue;
+      }
+      const digits: string[] = [];
+      for (let k = 0; k < 5; k += 1) {
+        digits.unshift(String.fromCharCode((value % 85) + 33));
+        value = Math.floor(value / 85);
+      }
+      out += digits.slice(0, n + 1).join("");
+    }
+    return asciiBytes(out + "~>");
+  }
+
+  function encodedPdf(payload: string): Uint8Array {
+    const data = ascii85(
+      new Uint8Array(deflateSync(new TextEncoder().encode(payload))),
+    );
+    return concat([
+      asciiBytes("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"),
+      asciiBytes(
+        `2 0 obj\n<< /Filter [ /ASCII85Decode /FlateDecode ] /Length ${data.length} >>\nstream\n`,
+      ),
+      data,
+      asciiBytes(
+        "\nendstream\nendobj\ntrailer\n<< /Size 3 >>\nstartxref\n0\n%%EOF\n",
+      ),
+    ]);
+  }
+
+  test("decodes ASCII85 and ASCIIHex as the PDF standard defines them", () => {
+    expect(new TextDecoder().decode(decodeAscii85(asciiBytes("9jqo^~>"))!))
+      .toBe("Man ");
+    expect(new TextDecoder().decode(decodeAscii85(asciiBytes("z9jqo~>"))!))
+      .toBe("\0\0\0\0Man");
+    expect(new TextDecoder().decode(decodeAsciiHex(asciiBytes("4D 616e>"))!))
+      .toBe("Man");
+    expect(decodeAscii85(asciiBytes("not ascii85 {"))).toBeNull();
+    expect(decodeAsciiHex(asciiBytes("4G>"))).toBeNull();
+  });
+
+  test("accepts a ReportLab-style text-encoded compressed stream", async () => {
+    expect(
+      await analyzeBytes(
+        encodedPdf("BT /F1 12 Tf (TAM SAM SOM) Tj ET"),
+        "application/pdf",
+      ),
+    )
+      .toEqual({ verdict: "clean" });
+  });
+
+  test("still finds JavaScript behind text encoding and compression", async () => {
+    expect(
+      await analyzeBytes(
+        encodedPdf("<< /S /JavaScript /JS (x) >>"),
+        "application/pdf",
+      ),
+    )
+      .toEqual({ verdict: "policy_rejected", errorCode: "active_content" });
   });
 
   test("rejects a decompression bomb by inflated size", async () => {
