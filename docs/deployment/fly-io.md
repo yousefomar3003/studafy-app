@@ -251,6 +251,16 @@ The worker refuses to start in production without a malware scanner. The
 scanner is self-hosted ClamAV (see "Malware scanner" above); production's is
 `studafy-scanner`, deployed first (see the checklist above).
 
+**Study notebooks are written by the worker** (2026-10-16), not the API.
+When the lesson AI is switched on at launch, switch it on in both places:
+the worker needs `AI_API_KEY` (secret), and `AI_BASE_URL` and
+`AI_LESSON_TOOLS_ENABLED=true` in `fly.worker.toml`, exactly as the API
+has them. With the API on and the worker off, notebooks are accepted and
+then wait, unwritten, until they read as failed (with a retry) after ten
+minutes; the worker logs `study-notebooks` in its startup `queues` list when
+it writes them. `AI_NOTEBOOK_CONCURRENCY` (16) is how many are written at
+once.
+
 **Scaling.** The API runs one warm machine and starts more as traffic grows
 (`soft_limit` 200 concurrent requests per machine). Give it room once:
 

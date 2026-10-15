@@ -28,6 +28,8 @@ export function monitorSources(options: {
   queues: MonitoredQueue[];
   outboxSql?: Sql;
   fileScanSql?: Sql;
+  /** Study notebooks waiting to be written (2026-10-16). */
+  notebookSql?: Sql;
 }): () => Promise<Omit<MonitorSnapshot, "at">> {
   const stalled = new Map<string, number>();
   for (const { name, worker } of options.queues) {
@@ -80,6 +82,18 @@ export function monitorSources(options: {
         pending: b.quarantined ?? 0,
         oldestSeconds: b.oldestQuarantineSeconds ?? 0,
         deadLetters: (b.scanDeadLetters ?? 0) + (b.deleteDeadLetters ?? 0),
+      });
+    }
+    if (options.notebookSql) {
+      const rows = await options.notebookSql<
+        { backlog: Record<string, number> }[]
+      >`select private.notebook_jobs_backlog() as backlog`;
+      const b = rows[0]?.backlog ?? {};
+      backlogs.push({
+        name: "study notebooks",
+        pending: b.pending ?? 0,
+        oldestSeconds: b.oldestPendingSeconds ?? 0,
+        deadLetters: b.deadLetters ?? 0,
       });
     }
     return { queues, backlogs };

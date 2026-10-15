@@ -5,6 +5,7 @@ import {
   type PrivateFileStorage,
   sha256Hex,
   StorageUnavailableError,
+  STUDY_SET_MATERIAL_CHARS,
   type StudyAssistant,
   StudyAssistantError,
 } from "@studafy/infrastructure";
@@ -68,8 +69,9 @@ export interface StudyRoutesDependencies {
   aiAccess: AiAccessRepository;
 }
 
-/** Material for a quiz, flashcards or notes: shared, so read generously. */
-export const STUDY_SET_MATERIAL_CHARS = 40_000;
+/** Material for a quiz, flashcards or notes: shared, so read generously.
+ * The same budget as the worker's notebooks. */
+export { STUDY_SET_MATERIAL_CHARS };
 
 function refusal(c: Context<AuthorizationEnv>, outcome: string): Response {
   return outcomeProblem(c, outcome, AI_REFUSALS);

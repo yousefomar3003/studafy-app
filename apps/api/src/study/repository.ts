@@ -2,13 +2,9 @@ import type { Sql } from "@studafy/database";
 import { withRequestContext } from "../platform/dbContext";
 import type { CatalogueCommandResult } from "../platform/dispatchRepository";
 import type { RequestDbContext } from "../platform/dbContext";
+import type { StudyFeature } from "@studafy/infrastructure";
 
-export type StudyFeature =
-  | "ask"
-  | "whiteboard"
-  | "notes"
-  | "quiz"
-  | "flashcards";
+export type { StudyFeature };
 
 export interface UsageReservation {
   outcome: string;

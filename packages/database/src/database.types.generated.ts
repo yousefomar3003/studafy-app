@@ -5529,8 +5529,6 @@ export type Database = {
           failure: string | null;
           generated_at: string | null;
           generation: number;
-          generation_lease_until: string | null;
-          generation_resumes: number;
           generation_started_at: string;
           headings: Json;
           icon: string | null;
@@ -5562,8 +5560,6 @@ export type Database = {
           failure?: string | null;
           generated_at?: string | null;
           generation?: number;
-          generation_lease_until?: string | null;
-          generation_resumes?: number;
           generation_started_at?: string;
           headings?: Json;
           icon?: string | null;
@@ -5595,8 +5591,6 @@ export type Database = {
           failure?: string | null;
           generated_at?: string | null;
           generation?: number;
-          generation_lease_until?: string | null;
-          generation_resumes?: number;
           generation_started_at?: string;
           headings?: Json;
           icon?: string | null;

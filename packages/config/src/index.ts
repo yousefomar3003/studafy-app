@@ -325,6 +325,15 @@ export const workerEnvSchema = z.object({
     0.25,
   ),
   AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
+  // Study notebooks are written here, off the notebook queue (2026-10-16),
+  // whenever the worker has a database, the provider above and
+  // AI_LESSON_TOOLS_ENABLED - the same three things the API checks before it
+  // accepts one. How many are written at once - each mostly waits 8-14 s on
+  // the provider, so this bounds how fast a class's notebooks come back and
+  // the provider's request rate, not CPU - and how often it looks.
+  AI_NOTEBOOK_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(16),
+  AI_NOTEBOOK_POLL_INTERVAL_MS: z.coerce.number().int().min(250).max(60_000)
+    .default(2000),
   // OPS-061. The outbox drain is producer+consumer over BullMQ: the
   // dispatcher claims notification_outbox rows and enqueues deterministic
   // jobs; the processor expands audiences into deliveries. Off by default;
@@ -957,6 +966,14 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
         env.AI_API_KEY && env.AI_BASE_URL && env.AI_LESSON_TOOLS_ENABLED,
       ),
       model: env.AI_MODEL,
+    },
+    studyNotebooks: {
+      writing: Boolean(
+        env.DATABASE_URL && env.AI_API_KEY && env.AI_BASE_URL &&
+          env.AI_LESSON_TOOLS_ENABLED,
+      ),
+      concurrency: env.AI_NOTEBOOK_CONCURRENCY,
+      pollIntervalMs: env.AI_NOTEBOOK_POLL_INTERVAL_MS,
     },
     file051: {
       scanEnabled: env.FILE051_SCAN_ENABLED,

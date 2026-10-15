@@ -37,7 +37,6 @@ import {
 import {
   createStudyNotebookRoutes,
   PostgresStudyNotebookRepository,
-  startNotebookRecovery,
 } from "../study/studyNotebookRoutes";
 import { createFamilyInsightsRoutes } from "../family-insights/routes";
 import { PostgresFamilyInsightsRepository } from "../family-insights/repository";
@@ -675,11 +674,8 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
-  // Notebooks an instance stopped writing are written again (launch plan
-  // 2.7); every instance runs this, and the database lease keeps them apart.
-  if (studyNotebookDeps) {
-    startNotebookRecovery(studyNotebookDeps, authorization.logger);
-  }
+  // Notebooks are written by the worker's notebook queue (2026-10-16); an
+  // API instance stopping mid-request leaves nothing half-written.
   // Exactly the chosen material (2026-10-07), appended after notebooks.
   const selectionTools = sql && materialRepository && studyRepository &&
       aiAccess && idempotencyDependencies

@@ -1,9 +1,9 @@
-import type { Logger } from "@studafy/observability";
 import { type Context, Hono } from "hono";
 import { v1Route } from "@studafy/contracts";
 import type { Sql } from "@studafy/database";
 import { type NotebookContent, notebookText } from "@studafy/domain";
 import {
+  notebookRefs,
   type StudyAssistant,
   StudyAssistantError,
 } from "@studafy/infrastructure";
@@ -37,12 +37,10 @@ import {
 } from "./metering";
 import type { MaterialRepository } from "./material";
 import {
-  gatherScope,
   type MaterialRef,
   resolveSelection,
   selectionProblem,
 } from "./selection";
-import { STUDY_SET_MATERIAL_CHARS } from "./routes";
 import {
   type AiAccessRepository,
   nameRedactedAssistant,
@@ -55,16 +53,17 @@ import {
  * A notebook is made from one lesson - all of it or chosen files and links -
  * and written by the AI in the background: the request that asks for it
  * answers at once with the notebook "creating", and the app polls until it
- * is ready or failed. Generation is metered like any AI call, keyed on the
- * notebook and its generation, so a retried request never pays twice.
+ * is ready or failed. Since 2026-10-16 the writing is the worker's: the
+ * database records the notebook and its job on the notebook queue
+ * (`private.study_notebook_jobs`) in one transaction, and the worker writes
+ * it, metered like any AI call and keyed on the notebook and its
+ * generation, so it is charged once however often it is tried. This
+ * process does no AI work for a notebook and keeps none in memory.
  *
  * Everything else - the cover, the student's notes, deleting - is plain
  * reads and writes through `private.api055_study_notebooks`, which checks on
  * every call that the notebook is the caller's.
  */
-
-/** The longest a notebook's AI reply may be. */
-export const NOTEBOOK_OUTPUT_TOKENS = 3_500;
 
 export interface StudyNotebookRepository {
   call(
@@ -72,12 +71,6 @@ export interface StudyNotebookRepository {
     operation: string,
     input: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;
-  /**
-   * Claims notebooks left "creating" by an instance that stopped mid-write
-   * (`private.study_notebooks_resume`), each with its start payload built
-   * as its owner.
-   */
-  resumable?(limit: number): Promise<Record<string, unknown>[]>;
 }
 
 export class PostgresStudyNotebookRepository
@@ -98,13 +91,6 @@ export class PostgresStudyNotebookRepository
       return rows[0]?.result ?? { outcome: "invalid" };
     });
   }
-
-  async resumable(limit: number): Promise<Record<string, unknown>[]> {
-    const rows = await this.sql<{ result: Record<string, unknown>[] }[]>`
-      select private.study_notebooks_resume(${limit}) as result
-    `;
-    return rows[0]?.result ?? [];
-  }
 }
 
 export interface StudyNotebookDependencies {
@@ -115,8 +101,6 @@ export interface StudyNotebookDependencies {
   /** Null without an AI provider: making a notebook is "not available". */
   assistant: StudyAssistant | null;
   lessonToolsEnabled: boolean;
-  /** Runs work after the response is sent; tests await it. */
-  background?: (work: Promise<void>) => void;
   /** Who may use AI, and the names kept out of it (ADR-0043). */
   aiAccess: AiAccessRepository;
 }
@@ -163,196 +147,6 @@ function setOf(value: unknown): Record<string, unknown> {
   };
 }
 
-/** A notebook's material as references: the whole lesson, or its text
- * (when kept) and the chosen files and links. */
-export function notebookRefs(
-  resourceId: string,
-  sourceIds: string[],
-  includeText: boolean,
-  wholeLesson: boolean,
-): MaterialRef[] {
-  if (wholeLesson) return [{ kind: "lesson", id: resourceId }];
-  return [
-    ...(includeText ? [{ kind: "text" as const, id: resourceId }] : []),
-    ...sourceIds.map((id) => ({
-      kind: "file" as const,
-      id,
-      lessonId: resourceId,
-    })),
-  ];
-}
-
-/**
- * Writes a notebook's AI part: the chosen material, the model, then the saved
- * notebook - or the reason it failed, which the app shows with a retry. Never
- * throws. Used by the request that starts a notebook and by the recovery that
- * resumes one an instance stopped writing.
- */
-export function createNotebookWriter(
-  deps: StudyNotebookDependencies,
-  log?: Logger,
-): (
-  context: RequestDbContext,
-  started: Record<string, unknown>,
-  resume?: number,
-) => Promise<void> {
-  const meter = new AiMeter(deps.repository, deps.prices);
-  return async function generate(
-    context: RequestDbContext,
-    started: Record<string, unknown>,
-    resume = 0,
-  ): Promise<void> {
-    const id = String(started["notebookId"]);
-    const generation = Number(started["generation"]);
-    const fail = async (reason: string) => {
-      await deps.notebooks.call(context, "fail", { id, generation, reason })
-        .catch(() => {});
-    };
-    try {
-      const assistant = deps.assistant;
-      if (!assistant) return await fail("provider_unavailable");
-      // Exactly what the notebook was made from. A file that can no longer
-      // be read is left out and listed in the notebook, with a retry.
-      const selection = await resolveSelection(
-        deps.material,
-        context,
-        notebookRefs(
-          String(started["resourceId"]),
-          (started["sourceIds"] ?? []) as string[],
-          started["includeText"] !== false,
-          started["wholeLesson"] !== false,
-        ),
-        { skipUnavailable: true },
-      );
-      if (!selection.ok) {
-        return await fail(
-          selection.outcome === "not_found"
-            ? "lesson_unavailable"
-            : "no_readable_material",
-        );
-      }
-      const gathered = await gatherScope(
-        deps.material,
-        context,
-        selection.scope,
-        {
-          question: "",
-          budgetChars: STUDY_SET_MATERIAL_CHARS,
-          mode: "coverage",
-        },
-      );
-      const readable = gathered.passages.filter((p) => p.text.trim());
-      if (readable.reduce((n, p) => n + p.text.length, 0) < 40) {
-        return await fail("no_readable_material");
-      }
-      // Names out of the material before it is sent (ADR-0043). The ledger
-      // below refuses an owner who may no longer use AI.
-      const redacted = await nameRedactedAssistant(
-        deps.aiAccess,
-        context,
-        assistant,
-      );
-      const metered = await meter.run(
-        context,
-        "notes",
-        holdFor(deps.prices, gathered.chars, NOTEBOOK_OUTPUT_TOKENS),
-        () =>
-          redacted.notebook(String(started["lessonTitle"] ?? ""), readable, {
-            unreadable: gathered.unreadable,
-            learner: gathered.grade ? { grade: gathered.grade } : {},
-          }),
-        // A resumed write has its own key: the stopped one's hold may still
-        // be live, and must not make this one look like a duplicate.
-        resume > 0
-          ? `notebook:${id}:${generation}:resume:${resume}`
-          : `notebook:${id}:${generation}`,
-      );
-      if (!metered.ok) return await fail(metered.outcome);
-      await deps.notebooks.call(context, "finish", {
-        id,
-        generation,
-        content: metered.value.content,
-        unreadable: gathered.unreadable.slice(0, 100).map((u) => ({
-          name: u.name.slice(0, 300),
-          reason: u.code.slice(0, 60),
-        })),
-        model: metered.value.usage?.model ?? "unknown",
-      });
-    } catch (error) {
-      // Neither the material nor the reply is logged: one is a school's,
-      // the other a third party's words about it.
-      log?.warn("study_notebook_failed", {
-        error_kind: error instanceof StudyAssistantError
-          ? error.kind
-          : "unknown",
-        provider_status: error instanceof StudyAssistantError
-          ? error.status ?? null
-          : null,
-      });
-      await fail(
-        error instanceof StudyAssistantError && error.kind === "empty"
-          ? "unusable_reply"
-          : "provider_unavailable",
-      );
-    }
-  };
-}
-
-/**
- * Resumes notebooks an API instance stopped writing (launch plan 2.7): once a
- * minute, claims a few with a lease and writes them again as their owners.
- * Off without a provider or the lesson-tools switch. The timer does not keep
- * the process alive.
- */
-export function startNotebookRecovery(
-  deps: StudyNotebookDependencies,
-  log?: Logger,
-  intervalMs = 60_000,
-): { runOnce(): Promise<number>; close(): void } | null {
-  const claim = deps.notebooks.resumable?.bind(deps.notebooks);
-  if (!claim || !deps.assistant || !deps.lessonToolsEnabled) return null;
-  const write = createNotebookWriter(deps, log);
-  let running = false;
-  const runOnce = async (): Promise<number> => {
-    if (running) return 0;
-    running = true;
-    try {
-      const claimed = await claim(5);
-      for (const started of claimed) {
-        const context: RequestDbContext = {
-          subject: String(started["ownerId"]),
-          schoolId: String(started["schoolId"]),
-          requestId: crypto.randomUUID(),
-          aal2: false,
-        };
-        if (started["outcome"] !== "ok") {
-          await deps.notebooks.call(context, "fail", {
-            id: started["notebookId"],
-            generation: started["generation"],
-            reason: "lesson_unavailable",
-          }).catch(() => {});
-          continue;
-        }
-        await write(context, started, Number(started["resume"] ?? 1));
-      }
-      if (claimed.length > 0) {
-        log?.info("study_notebooks_resumed", { count: claimed.length });
-      }
-      return claimed.length;
-    } catch (error) {
-      log?.warn("study_notebook_recovery_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
-      });
-      return 0;
-    } finally {
-      running = false;
-    }
-  };
-  const timer = setInterval(() => void runOnce(), intervalMs);
-  (timer as { unref?: () => void }).unref?.();
-  return { runOnce, close: () => clearInterval(timer) };
-}
-
 export function createStudyNotebookRoutes(
   deps: StudyNotebookDependencies,
   authorization: AuthorizationDependencies,
@@ -361,13 +155,9 @@ export function createStudyNotebookRoutes(
   const routes = new Hono<AuthorizationEnv>();
   const log = authorization.logger;
   const meter = new AiMeter(deps.repository, deps.prices);
-  const background = deps.background ??
-    ((work: Promise<void>) => void work.catch(() => {}));
   const refusal = (c: Context<AuthorizationEnv>, outcome: string) =>
     outcomeProblem(c, outcome, NOTEBOOK_OUTCOMES);
   const ready = () => deps.assistant !== null && deps.lessonToolsEnabled;
-
-  const generate = createNotebookWriter(deps, log);
 
   // -------------------------------------------------------------------------
   // A class's notebooks, and making one.
@@ -456,7 +246,7 @@ export function createStudyNotebookRoutes(
       if (started["outcome"] !== "ok") {
         return refusal(c, String(started["outcome"]));
       }
-      background(generate(context, started));
+      // Queued with the notebook: the worker writes it from here.
       const parsed = createRoute.response.safeParse(
         summaryOf(started["summary"]),
       );
@@ -549,7 +339,7 @@ export function createStudyNotebookRoutes(
       if (started["outcome"] !== "ok") {
         return refusal(c, String(started["outcome"]));
       }
-      background(generate(context, started));
+      // Queued with the new generation: the worker writes it from here.
       const parsed = regenerateRoute.response.safeParse(
         summaryOf(started["summary"]),
       );
