@@ -26,7 +26,8 @@
  *     publishAssignment as dev.teacher), as the app makes one.
  *
  * Safe to re-run: nothing is created twice, passwords are reset to
- * E2E_PASSWORD, and the assignment is reused while it is open.
+ * E2E_PASSWORD, and the assignment is reused while it is open and Device
+ * Student has not handed it in (otherwise a fresh one is made).
  *
  * Local and throwaway only. It reads only E2E_* variables - never the
  * DATABASE_URL or SUPABASE_URL a developer's .env holds - refuses any URL
@@ -412,9 +413,17 @@ async function main(): Promise<void> {
       "GET",
       `/v1/assignments?classroomId=${s.filesClassId}&pageSize=100`,
     );
+    // The test hands in once and expects "Hand in", not "Hand in again", so
+    // an assignment Device Student already handed in is not reused.
+    const handedIn = new Set(
+      (await sql<{ assignment_id: string }[]>`
+        select assignment_id from public.submissions
+        where student_id = ${s.deviceStudentId}
+      `).map((row) => row.assignment_id),
+    );
     const open = (page["items"] as Assignment[] | undefined ?? []).find((a) =>
       a.title === s.assignmentTitle && a.state === "published" &&
-      a.closesAt === null &&
+      a.closesAt === null && !handedIn.has(a.id) &&
       Date.parse(a.dueAt) > Date.now() + 24 * 3600 * 1000
     );
     let assignmentId = open?.id;
