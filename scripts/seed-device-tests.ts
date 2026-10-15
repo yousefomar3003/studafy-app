@@ -215,6 +215,15 @@ async function main(): Promise<void> {
       Authorization: `Bearer ${serviceKey}`,
       "Content-Type": "application/json",
     };
+    // Once migration 202610150050 (reviewer access) is applied, Supabase Auth
+    // refuses any new email account whose address the service role did not
+    // register minutes before. Older schemas have no such function, and
+    // need no registration.
+    const [registration] = await sql<{ present: boolean }[]>`
+      select to_regprocedure(
+        'public.allow_provisioned_email_account(text)'
+      ) is not null as present
+    `;
     for (const user of Object.values(s.users)) {
       const taken = await sql<{ id: string }[]>`
         select id from auth.users where lower(email) = ${user.email}
@@ -223,6 +232,9 @@ async function main(): Promise<void> {
         throw new Error(
           `${user.email} exists with another id; reset the stack first.`,
         );
+      }
+      if (!taken[0] && registration?.present) {
+        await sql`select public.allow_provisioned_email_account(${user.email})`;
       }
       const attributes = {
         email: user.email,
