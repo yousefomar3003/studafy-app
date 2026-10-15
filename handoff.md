@@ -1,10 +1,184 @@
 # Handoff: Studafy
 
-Updated: 2026-10-15. `main` is at `4f18c85` (PR #51). Open pull requests:
-#52 (observability), #53 (capacity fixes), #54 (this handoff and the launch
-plan) and #55 (PDF fix). The test worker runs #55's branch.
+Updated: 2026-10-15, evening. `main` is still at `4f18c85` (PR #51): nothing
+was merged or deployed today. **Open: PRs #52–#76, the grades-list PR,
+and one branch not yet pushed (section 1).** The test worker still runs
+#55's branch.
 
-## Start here (2026-10-15)
+## Start here (2026-10-15, evening)
+
+Claude worked through every part-A item of the
+[launch plan](docs/planning/launch-plan-2026-10-15.md) that needed nothing
+from the owner, then the gaps those turned up. Everything is a PR; none is
+merged.
+
+### 1. Owner: do these first
+1. **Publish the notebook-queue branch.** The auto-mode classifier blocked
+   Claude's push, so the work exists only locally (commit `7e9d019`,
+   branch `feat/notebooks-on-worker`, in
+   `.claude/worktrees/agent-a3342e6f363071b09`):
+   `cd .claude/worktrees/agent-a3342e6f363071b09 && git push -u origin feat/notebooks-on-worker && gh pr create --base main --fill`.
+   Don't delete that worktree before pushing.
+2. **Review and merge, in this order** (stacked PRs: retarget the next one
+   to `main` after the one below it merges):
+   1. #54 (this handoff, DL-058) first: #61 adds DL-059 and #72 DL-060 to
+      the same table.
+   2. #55 → #63 → #74 (file refusals).
+   3. #53 → #65 → the grades-list PR (capacity; see table).
+   4. #61 → #62 (Android internal-testing build; #61 changes the SEC-001
+      guards and needs your explicit approval; #62 declares
+      `ITSAppUsesNonExemptEncryption = false` — confirm that is true for
+      your export-compliance answer).
+   5. The rest in any order: #52, #56–#60, #64, #66–#73, #75, #76, the
+      notebook-queue PR.
+
+   Expected conflicts, all mechanical (ask Claude to rebase the PR GitHub
+   flags): the decision-log table; `fly.worker.toml` (#56, #69, #71,
+   notebook queue); the pgTAP step list in `.github/workflows/ci.yml` (keep
+   every added step, in timestamp order); the `.arb` files and the generated
+   l10n files (#55, #63, #68, #74, #75, #76: rerun `flutter gen-l10n`);
+   `auth030_grants.sql`. #60 and #75 work in either order.
+3. **Then say "go" for the test-copy deploy batch** (section 3).
+4. **Decide and do** (details in each PR):
+   - **Backups (#69):** you keep the repo public, so backups move to an
+     off-site EU bucket. Create a Cloudflare R2 bucket (EU jurisdiction,
+     30-day lifecycle on `studafy/`) and a token for it only, then set
+     `BACKUP_OFFSITE_ENDPOINT`, `_BUCKET`, `_ACCESS_KEY_ID`,
+     `_SECRET_ACCESS_KEY`, `_REGION` in the `backups` environment (click
+     steps in `docs/deployment/backups.md`). Until then artifacts are kept 7
+     days, not 30. Before turning it on, the privacy policy §7.2 must list
+     Cloudflare R2.
+   - **Reviewer accounts (#75):** Supabase dashboard settings are in
+     `docs/store/reviewer-access.md` (keep sign-ups on; CAPTCHA off). After
+     the migration, approve
+     `bun --no-env-file scripts/provision-reviewer-school.ts --target hosted --credentials-out ~/studafy-reviewer-credentials.json`.
+     Point mail for `review.studafy.com` at a mailbox you read. Repeat on
+     production before the first store submission.
+   - **Safety reports (#71):** name at least two reviewers (B9) in the
+     runbook table; set `REPORT_ALERTS_ENABLED=true` on the test worker.
+   - **Production Redis:** a paid Redis Cloud plan with AOF every 1 s and
+     `noeviction` (the free plan has no persistence). After the test deploy,
+     check the worker's `queue_redis_posture` log line says the check
+     passed (Redis Cloud's INFO via its proxy is unconfirmed).
+   - **Store copy (#64):** the eight decisions at the top of
+     `docs/store/listing-copy.md` (AI blocks, messaging, Arabic name,
+     title…). The screenshots are iPhone only; Play needs an Android set or
+     crops.
+   - **Lawyers:** the DPIA draft (#57) §12–13, plus: the AI consent notice
+     text and who consents for 13–17-year-olds (#76, ADR-0043); 30 days for
+     helper photos and the export's exclusions (#72, DL-060); policy text
+     updates — §6 photos go to the AI as they are, §7.2 processors
+     (Telegram, the alert relay, R2) and the stale outside-scanner row, §10
+     helper photos, §11 the export lists files rather than including them.
+   - Still open from before: B-list of the launch plan (phone check, Axiom
+     30 days, meetings, named owners, Apple, keystore C1, Firebase C3…).
+
+### 2. What each PR does
+
+| PR | Launch plan | What |
+|---|---|---|
+| #52 | — | Observability: no install id on native crashes, CloudWatch removed, log shipper pinned (earlier) |
+| #53 | 4.8 | Capacity fixes 1–3 (earlier) |
+| #54 | — | This handoff, the launch plan, work-plan ticks (4.8, 5.5, 7.1, 7.2), DL-058 |
+| #55 | — | PDF scan fix and scan messages (earlier) |
+| #56 | A6 | Production Fly configs: `fly.scanner.toml`, rules pinned by tests, deploy checklist in `docs/deployment/fly-io.md` |
+| #57 | A5 | Draft DPIA, `docs/legal/dpia-draft.md` (public repo: keep counsel's annotated copy outside it) |
+| #58 | DPIA D12 | Rate-limit Redis keys hold an HMAC of the IP, not the address |
+| #59 | A7 | Owner guides, `docs/guides/owner/` (C1–C16, B11, B12) |
+| #60 | A10 | Synthetic school seed; backend device tests in CI on Linux (~12 min) |
+| #61 | A3 / 3.5 | Android release bundle only for `APP_ENV=development`; iOS and production stay blocked; upload key via `STUDAFY_ANDROID_KEY_PROPERTIES`, no debug-key fallback (ADR-0042, DL-059) |
+| #62 | — | Release docs say `com.studafy.light`; iOS exempt-encryption key |
+| #63 | A9 / 2.8 | `ATTACHMENT_REFUSED` (422) names the refused file or link; the editor marks it |
+| #64 | A4 | Store listing copy EN/AR with limit checks; 30 iPhone screenshots |
+| #65 | A8 | Capacity 4–5: lessons and conversations a page at a time (about 4× cheaper per call) |
+| #66 | — | `scripts/rehearse-recovery.ts` targets the container behind `DATABASE_URL` (see incident below) |
+| #67 | — | Device tests: per-test limit and one retry for a hang |
+| #68 | — | Arabic: app name, plan names, time zone layout, صف/صفوف for class, Western digits in every date (glossary `docs/l10n/arabic-glossary.md`) |
+| #69 | — | Off-site EU backups (R2/S3), 7-day artifacts until then; Redis posture falls back to INFO |
+| #70 | — | Play voided purchases; Play Pub/Sub names pinned; `scripts/send-test-email.ts` |
+| #71 | DPIA D7 | Telegram alert per safety report (no content); audited `scripts/review-report.ts` |
+| #72 | DPIA D6, D13 | Export v2 (exam answers, hand-ins, file list, voice notes, received messages, mark/attendance history, AI usage); helper photos deleted after 30 days (DL-060) |
+| #73 | — | Inactive-account warning always emailed (once); accounts without a school follow the schedule |
+| #74 | — | Hand-ins, messages, announcements, materials refuse scan-refused files; removed files say so; a forbidden attachment rolls the message back |
+| #75 | — | "Sign in with email" for Studafy-provisioned accounts; new email sign-ups refused; review school script |
+| #76 | DPIA D1–D4 | AI only for students in a class; separate AI consent (parent for managed children); names replaced before the model (ADR-0043) |
+| not pushed | capacity | Notebook writing on the worker queue (`feat/notebooks-on-worker`) |
+| in progress | capacity | Capacity fix 6: the grades list a page at a time (`feat/capacity-grades-paging`, on #65; commit `3af9bf5` local, proof and benchmarks were still running at writing — check `gh pr list` for it) |
+
+### 3. The test-copy deploy batch (Claude, after the merges and your "go")
+1. Back up: `gh workflow run backup.yml`, and wait for the restore check.
+2. `bunx supabase db push --db-url <hosted, port 5432> --dry-run`, then for
+   real. Timestamps interleave across PRs, so if some were applied earlier
+   use `--include-all`. New: `202610140003`–`005`, `202610150001`–`002`,
+   `…0010`, `…0020`, `…0021`, `…0030`, `…0040`, `…0050`, `…0060`, `…0070`,
+   `…0080`, `…0090`, `…0091`.
+3. Straight after: `fly deploy --config fly.test.api.toml`, then
+   `fly.test.worker.toml`, then `fly.log-shipper.toml`. For a few minutes
+   between the migrations and the new API, attachment refusals and AI
+   ledger refusals answer 500; that is acceptable on the test copy. (#63
+   and #76 each give an ideal order; they conflict, and the batch avoids
+   a longer gap.)
+4. Set `REPORT_ALERTS_ENABLED=true` on the test worker (needs your go).
+5. Check: `/readyz`; worker startup (`queue_redis_posture`, notebook
+   processor on); one notebook end to end; a lesson with a refused file
+   shows the file's name.
+6. Build the phone app from `main` (new email sign-in, AI consent, refusal
+   messages). Older builds get `AI_CONSENT_REQUIRED` with no way to consent.
+7. Tick 2.8 when a refused-file save shows the named file on the test copy.
+
+### 4. Incident (2026-10-15)
+While running the CI-order checks for #65, `scripts/rehearse-recovery.ts`
+picked the owner's local working database container by project name
+instead of the throwaway one in `DATABASE_URL`. It took a `pg_dump` of
+`postgres`, created and dropped `studafy_db020_recovery`, and deleted the
+dump; the agent reports nothing of the owner's data was written. Nobody
+inspected that database afterwards. Until #66 merges, **never run that
+script on this Mac.**
+
+### 5. Next for Claude (after the deploy batch)
+- Rebase PRs GitHub reports as conflicting, in the merge order above.
+- Follow-ups found today:
+  - Material date and time pickers still draw Arabic-Indic digits (#68
+    note).
+  - Accounts with neither a school nor an email are never warned, so never
+    deleted (#73 note).
+  - Retention periods missing for: safety reports and evidence, unaccepted
+    invitations, the AI usage ledger, export request rows, scan `error`
+    files (#72; counsel).
+  - Two-person operator grants need a second named operator (B9).
+  - Android screenshots for Play (emulator pass, or crops of the iPhone
+    set).
+  - `GoogleService-Info.plist` must be added to the Runner target when the
+    Firebase file arrives (C3).
+  - Capacity: finish or check fix 6 (grades) if its PR is missing; then
+    `study_lesson` (about 5% of database time).
+- Then part A of the launch plan as decisions arrive (C-steps), and Axiom
+  monitors by environment once production exists.
+
+### Rules (unchanged, plus today's)
+- Test only on throwaway stacks; never the local working database (54322,
+  container `supabase_db_studafy`). The repo `.env` points `DATABASE_URL`
+  at it and Bun loads it, so set `DATABASE_URL` explicitly.
+- Never run `scripts/rehearse-recovery.ts` here until #66 is merged.
+- `supabase db reset` on a throwaway stack wipes every database in it,
+  including the 11M-row `studafy_scale`.
+- Hosted: read-only, only when needed; back up before any migration.
+- Keep `ios/Runner.xcodeproj/project.pbxproj` (personal team) and
+  `ios/Runner/RunnerPersonalTeam.entitlements` uncommitted.
+- Read `.env.hosted` with a parser that never prints values; never
+  `source` it.
+- Ask before any `fly` command that changes something.
+- Throwaway stacks on this Mac: `studafy-guardianann` (55721/55722),
+  `studafy-offgrade` (55621/55622), `studafy-securityfix` (55421/55422)
+  run; the agents' stacks (`a9fix` 5582x, `reviewer` 5592x, `aiaccess`
+  5602x, `ops` 5612x, `billing` 5622x) are stopped. Their workdirs were in
+  the session scratchpad and may be gone; recreate one from
+  `supabase/config.toml` with a new `project_id` and ports.
+- Agent worktrees sit in `.claude/worktrees/`. `.claude/` is untracked:
+  don't commit it. Remove each worktree with `git worktree remove` once its
+  PR merges.
+
+## Earlier (2026-10-15, morning): the launch plan and PRs #52–#55
 
 **The launch plan: [`docs/planning/launch-plan-2026-10-15.md`](docs/planning/launch-plan-2026-10-15.md).**
 Everything left before the Play Store and the App Store, split by who does

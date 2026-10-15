@@ -196,6 +196,7 @@ the privacy policy URL (Claude can host a page first). Claude drafts the
   when it recurs
   - The server now logs which field was refused (`problem_code`,
     `invalid_fields`).
+  - *Progress 2026-10-15:* recurred on the test copy: four `POST /v1/resources` refusals (400 `INVALID_REQUEST`, no `invalid_fields`) from one teacher, 12:58–13:11 UTC, while the scanner was wrongly refusing their PDFs (fixed by PR #55); the same teacher published at 13:33 after the fix. Cause (from the code; hosted data not inspected): a lesson that includes a file the scanner already refused is refused by `coursework_attach_files` with a bare `invalid`, and the app showed "could not be added". Fix in PR #63: `ATTACHMENT_REFUSED` (422) names each refused file or link, the log records it, and the editor marks the file. Tick after #63 is merged and on the test copy.
   - **Done when:** the cause is found and fixed, or a week of use shows no
     recurrence.
 - [ ] **2.9 Hands-on check on your phone** · *You* · 30 min
@@ -315,7 +316,7 @@ iOS.
     provider.
   - Check Sentry and Axiom retention and scrubbing settings.
   - **Done when:** a test alert reaches Telegram for each.
-- [ ] **4.8 Capacity re-check** (PR-19) · *Claude* · 1 day
+- [x] **4.8 Capacity re-check** (PR-19) — done 2026-10-15 for Claude's part: `docs/operations/capacity.md` updated (PR #39, merged `f116338`), with further rounds in PRs #53 and #65; the production size and pool choice moved to launch plan B2 · *Claude* · 1 day
   - *Progress 2026-10-12:* re-measured with exams, notebooks and AI, through the real API (PR #39, `docs/capacity/2026-10-12.md`). About 130 requests/s comfortable on 10 vCPUs; the first bottleneck is database CPU. `docs/operations/capacity.md` is updated. The recommendation is at least 4 dedicated database vCPUs and `DATABASE_POOL_MAX=10` per process; choosing the production size is yours.
   - Re-run `scripts/scale` on a throwaway copy with the routes added since
     2026-09-29 (exams, notebooks, materials, AI).
@@ -354,7 +355,7 @@ iOS.
     sends to iPhones too.
   - **Done when:** `scripts/send-test-notification.ts` prints `sent`, and
     the iPhone shows it, with the app both open and closed.
-- [ ] **5.5 App privacy manifest and App Store privacy labels** (PR-18) ·
+- [x] **5.5 App privacy manifest and App Store privacy labels** (PR-18) — drafted 2026-10-12 (PR #36, merged `31068cc`); submitting them moved to launch plan B12 ·
   *Claude* drafts, *You* submit
   - *Progress 2026-10-12:* `ios/Runner/PrivacyInfo.xcprivacy` and `docs/store/app-store-privacy-labels.md` are drafted (PR #36). The permission prompts name every use. Submission waits on the Apple account.
 - [ ] **5.6 App Store subscriptions in sandbox** (PR-11) · *You* create the
@@ -382,13 +383,13 @@ iOS.
 
 ## Stage 7: Launch
 
-- [ ] **7.1 Tests and coverage gaps closed** (PR-22) · *Claude* · 2–3 days
+- [x] **7.1 Tests and coverage gaps closed** (PR-22) — done 2026-10-15: PRs #40–#42 merged (`b4ff62e`, `ab58973`, `20893d1`); device tests have passed on `main` on both platforms (iOS run 38604971154, Android run 38610730627) but are flaky (an Android emulator crash; an iOS hang to the 60-minute limit), handled by PR #67; backend-driven device tests in CI in PR #60 · *Claude* · 2–3 days
   - *Progress 2026-10-12:* PR #40 adds tests for Family+, notifications, material reading and file scan (backend lines 89.9% → 91.0%). PR #41 adds accessibility checks on every main screen in English, Arabic and at 2× text, with the fixes they found (Flutter tests 774 → 794). PR #42 runs device tests on an iOS simulator and an Android emulator in CI, all green. Merge pending.
   - Family+ insights routes, notification processor, material reading,
     file scan.
   - An accessibility check on each main screen.
   - The simulator device tests running in CI.
-- [ ] **7.2 Documentation brought up to date** (PR-26) · *Claude* · 0.5 day
+- [x] **7.2 Documentation brought up to date** (PR-26) — done 2026-10-12, PR #43 merged (`4e60644`) · *Claude* · 0.5 day
   - *Progress 2026-10-12:* README, credentials map, ADR statuses (index and records), environment matrix and `handoff.md` are refreshed in the 7.2 PR.
   - README, `docs/security/credentials-map.md`, ADR statuses.
 - [ ] **7.3 Release cutover (REL-002)** (PR-01) · *Claude*, approved by *You*
@@ -422,3 +423,5 @@ iOS.
 | 2026-10-11 | 3.2 | INTERNET and label "Studafy" in the main Android manifest; test reads it |
 | 2026-10-11 | deploy | Backup (restore check passed, 7 files) → migrations `202610110002`, `202610110003` on hosted → API and worker deployed (ready, no errors) → new iPhone build installed |
 | 2026-10-11 | 1.3 | PR #20 retitled and described for its 50+ commits; all 7 CI jobs green; merged by owner's instruction as `c3c1278`; `main` CI green |
+| 2026-10-15 | 2.8 | Recurred 12:58–13:11 UTC (4 × `POST /v1/resources` 400, no fields) while PDFs were wrongly refused; cause traced in code to a refused attachment; fix in PR #63 |
+| 2026-10-15 | 4.8, 5.5, 7.1, 7.2 | Ticked with the evidence on each item; owner parts moved to launch plan B2 and B12 |
