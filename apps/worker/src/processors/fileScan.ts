@@ -168,6 +168,7 @@ export function createFileScanProcessor(
         file_id: job.fileId,
         verdict: result.verdict,
         failure_code: result.errorCode ?? "unknown",
+        ...(result.detail ? { detail: result.detail } : {}),
         scan_policy_version: result.scanPolicyVersion,
       });
       return;

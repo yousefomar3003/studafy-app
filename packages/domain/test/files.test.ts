@@ -407,7 +407,11 @@ describe("pdf", () => {
     const notZlib = asciiBytes("these bytes are not a zlib stream at all");
     expect(
       await analyzeBytes(buildPdf("", [notZlib]), "application/pdf"),
-    ).toEqual({ verdict: "malformed", errorCode: "malformed_file" });
+    ).toEqual({
+      verdict: "malformed",
+      errorCode: "malformed_file",
+      detail: "flate_not_zlib",
+    });
   });
 
   test("an unreadable dictionary falls back to the strict rule", async () => {
@@ -459,6 +463,7 @@ describe("pdf", () => {
     expect(eofVerdict).toEqual({
       verdict: "malformed",
       errorCode: "malformed_file",
+      detail: "no_trailer",
     });
   });
 });

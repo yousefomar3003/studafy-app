@@ -42,9 +42,22 @@ export type PdfRejectReason =
   | "malicious"
   | "decompression_limit";
 
+/**
+ * Which structural rule refused a "malformed" document, for the operator's
+ * log only (never file contents): no `%PDF-` header, no `%%EOF`/`startxref`,
+ * too many streams, a `stream` keyword without its end of line, or a
+ * FlateDecode stream whose bytes do not inflate.
+ */
+export type PdfMalformedDetail =
+  | "no_header"
+  | "no_trailer"
+  | "too_many_streams"
+  | "stream_eol"
+  | "flate_not_zlib";
+
 export type PdfParseResult =
   | { ok: true; streamCount: number; inflatedBytes: number }
-  | { ok: false; reason: PdfRejectReason };
+  | { ok: false; reason: PdfRejectReason; detail?: PdfMalformedDetail };
 
 interface DangerPattern {
   needle: string;
@@ -64,10 +77,12 @@ const DANGER_PATTERNS: DangerPattern[] = [
 
 export async function parsePdf(bytes: Uint8Array): Promise<PdfParseResult> {
   const text = asciiOf(bytes);
-  if (!text.startsWith("%PDF-")) return { ok: false, reason: "malformed" };
+  if (!text.startsWith("%PDF-")) {
+    return { ok: false, reason: "malformed", detail: "no_header" };
+  }
   if (text.indexOf("%PDF-", 5) !== -1) return { ok: false, reason: "polyglot" };
   if (!text.includes("%%EOF") || !text.includes("startxref")) {
-    return { ok: false, reason: "malformed" };
+    return { ok: false, reason: "malformed", detail: "no_trailer" };
   }
   const danger = scanDanger(text);
   if (danger) return { ok: false, reason: danger };
@@ -81,13 +96,17 @@ export async function parsePdf(bytes: Uint8Array): Promise<PdfParseResult> {
     if (streamAt === null) break;
     streamCount += 1;
     if (streamCount > MAX_STREAM_CANDIDATES) {
-      return { ok: false, reason: "malformed" };
+      return { ok: false, reason: "malformed", detail: "too_many_streams" };
     }
     const dataStart = skipEol(text, streamAt + 6);
-    if (dataStart === null) return { ok: false, reason: "malformed" };
+    if (dataStart === null) {
+      return { ok: false, reason: "malformed", detail: "stream_eol" };
+    }
     if (declaresFlate(text, streamAt)) {
       const inflated = inflateStreamRegion(bytes, text, dataStart);
-      if (inflated === null) return { ok: false, reason: "malformed" };
+      if (inflated === null) {
+        return { ok: false, reason: "malformed", detail: "flate_not_zlib" };
+      }
       if (inflated === "limit") {
         return { ok: false, reason: "decompression_limit" };
       }
