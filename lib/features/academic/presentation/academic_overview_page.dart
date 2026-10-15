@@ -8,6 +8,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -265,7 +266,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     return switch (deadline.state) {
       SubmissionWindow.closed => l10n.deadlineClosed,
       SubmissionWindow.gradedLocked => l10n.deadlineGraded,
-      SubmissionWindow.open => l10n.deadlineDue(when, deadline.timeZone),
+      SubmissionWindow.open => l10n.deadlineDue(
+        when,
+        studafyTimeZone(deadline.timeZone),
+      ),
     };
   }
 

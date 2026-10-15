@@ -119,7 +119,7 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
       context: context,
       helpText: widget.timeZone == null
           ? title
-          : l10n.deadlineSchoolTime(widget.timeZone!),
+          : l10n.deadlineSchoolTime(studafyTimeZone(widget.timeZone!)),
       initialTime: const TimeOfDay(hour: 23, minute: 59),
     );
     if (time == null || !mounted) return null;

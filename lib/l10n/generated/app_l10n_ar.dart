@@ -190,7 +190,7 @@ class AppL10nAr extends AppL10n {
   String get roleTeacher => 'معلم';
 
   @override
-  String get roleTeacherDetail => 'إدارة الفصول والحضور والتعلّم';
+  String get roleTeacherDetail => 'إدارة الصفوف والحضور والتعلّم';
 
   @override
   String get roleStudent => 'طالب';
@@ -295,7 +295,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get deleteWarningBody =>
-      'سينتهي وصولك إلى ملفك الشخصي وفصولك ورسائلك وملفاتك الشخصية.';
+      'سينتهي وصولك إلى ملفك الشخصي وصفوفك ورسائلك وملفاتك الشخصية.';
 
   @override
   String get deleteWhatGoesHeading => 'ما الذي سيُحذف';
@@ -513,16 +513,16 @@ class AppL10nAr extends AppL10n {
   String get feedWellbeing => 'الرعاية';
 
   @override
-  String get classesTitle => 'فصولي';
+  String get classesTitle => 'صفوفي';
 
   @override
-  String get classesCreate => 'إنشاء فصل';
+  String get classesCreate => 'إنشاء صف';
 
   @override
-  String get classesCreateTitle => 'إنشاء فصل جديد';
+  String get classesCreateTitle => 'إنشاء صف جديد';
 
   @override
-  String get classesNameLabel => 'اسم الفصل';
+  String get classesNameLabel => 'اسم الصف';
 
   @override
   String get classesRoomLabel => 'القاعة';
@@ -574,14 +574,14 @@ class AppL10nAr extends AppL10n {
   String get classesCancel => 'إلغاء';
 
   @override
-  String get classesCreateAction => 'إنشاء الفصل';
+  String get classesCreateAction => 'إنشاء الصف';
 
   @override
   String get classesInviteTitle => 'دعوة الطلاب';
 
   @override
   String get classesInviteBody =>
-      'شارك هذا الرابط الآمن. لا يُضاف الطلاب إلا بعد فتحه والانضمام إلى الفصل.';
+      'شارك هذا الرابط الآمن. لا يُضاف الطلاب إلا بعد فتحه والانضمام إلى الصف.';
 
   @override
   String get classesInviteCodeLabel => 'رمز الصف';
@@ -600,12 +600,12 @@ class AppL10nAr extends AppL10n {
 
   @override
   String classesShareMessage(String link) {
-    return 'انضم إلى فصلي في ستودافاي: $link';
+    return 'انضم إلى صفي في ستودافاي: $link';
   }
 
   @override
   String classesShareMessageWithCode(String link, String code) {
-    return 'انضم إلى فصلي في ستودافاي برمز الصف $code\nأو افتح هذا الرابط: $link';
+    return 'انضم إلى صفي في ستودافاي برمز الصف $code\nأو افتح هذا الرابط: $link';
   }
 
   @override
@@ -701,7 +701,7 @@ class AppL10nAr extends AppL10n {
       'لا تُعقد هذه الحصة في اليوم الذي اخترته.';
 
   @override
-  String get attendanceNoStudents => 'لا يوجد طلاب مسجّلون في هذا الفصل.';
+  String get attendanceNoStudents => 'لا يوجد طلاب مسجّلون في هذا الصف.';
 
   @override
   String get attendanceSaving => 'جارٍ الحفظ…';
@@ -728,11 +728,11 @@ class AppL10nAr extends AppL10n {
   String get rosterNoGuardian => 'لا يوجد وليّ أمر مرتبط بعد';
 
   @override
-  String get rosterEmpty => 'لا يوجد طلاب مسجّلون في هذا الفصل بعد.';
+  String get rosterEmpty => 'لا يوجد طلاب مسجّلون في هذا الصف بعد.';
 
   @override
   String get rosterLoadFailed =>
-      'تعذّر تحميل قائمة الفصل. يُرجى المحاولة مرة أخرى.';
+      'تعذّر تحميل قائمة الصف. يُرجى المحاولة مرة أخرى.';
 
   @override
   String get rosterTryAgain => 'إعادة المحاولة';
@@ -757,7 +757,7 @@ class AppL10nAr extends AppL10n {
   String get assignmentAction => 'واجب جديد';
 
   @override
-  String get assignmentClassLabel => 'الفصل';
+  String get assignmentClassLabel => 'الصف';
 
   @override
   String get assignmentTitleLabel => 'العنوان';
@@ -797,7 +797,7 @@ class AppL10nAr extends AppL10n {
   String get assignmentTitleRequired => 'أدخل عنوانًا للواجب.';
 
   @override
-  String get assignmentClassRequired => 'اختر الفصل المخصص له هذا الواجب.';
+  String get assignmentClassRequired => 'اختر الصف المخصص له هذا الواجب.';
 
   @override
   String get assignmentDueRequired => 'اختر موعد التسليم.';
@@ -822,7 +822,7 @@ class AppL10nAr extends AppL10n {
   String get announcementBodyLabel => 'الرسالة';
 
   @override
-  String get announcementClassLabel => 'الفصل';
+  String get announcementClassLabel => 'الصف';
 
   @override
   String get announcementAudienceLabel => 'من يمكنه رؤية هذا';
@@ -859,7 +859,7 @@ class AppL10nAr extends AppL10n {
   String get announcementBodyRequired => 'اكتب نص الرسالة.';
 
   @override
-  String get announcementClassRequired => 'اختر الفصل الذي تريد الإعلان فيه.';
+  String get announcementClassRequired => 'اختر الصف الذي تريد الإعلان فيه.';
 
   @override
   String get announcementFailed =>
@@ -888,7 +888,7 @@ class AppL10nAr extends AppL10n {
   String get gradebookPublishAssessment => 'نشر وبدء التصحيح';
 
   @override
-  String get gradebookNoStudents => 'لا يوجد طلاب مسجّلون في هذا الفصل.';
+  String get gradebookNoStudents => 'لا يوجد طلاب مسجّلون في هذا الصف.';
 
   @override
   String gradebookScoreOf(String max) {
@@ -985,7 +985,7 @@ class AppL10nAr extends AppL10n {
   String get examAction => 'اختبار جديد';
 
   @override
-  String get examClassLabel => 'الفصل';
+  String get examClassLabel => 'الصف';
 
   @override
   String get examTitleLabel => 'العنوان';
@@ -1018,7 +1018,7 @@ class AppL10nAr extends AppL10n {
   String get examDeliveryOnline => 'داخل التطبيق';
 
   @override
-  String get examDeliveryOnlineDetail => 'يجيب الطلاب على الأسئلة في ستدفاي.';
+  String get examDeliveryOnlineDetail => 'يجيب الطلاب على الأسئلة في ستودافاي.';
 
   @override
   String get examDeliveryPractice => 'تدريب';
@@ -1084,7 +1084,7 @@ class AppL10nAr extends AppL10n {
   String get examTitleRequired => 'أدخل عنوانًا للاختبار.';
 
   @override
-  String get examClassRequired => 'اختر الفصل الذي سيؤدي هذا الاختبار.';
+  String get examClassRequired => 'اختر الصف الذي سيؤدي هذا الاختبار.';
 
   @override
   String get examTotalRequired => 'حدّد مجموع درجات أكبر من صفر.';
@@ -1191,7 +1191,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get scheduleHint =>
-      'يتبع سجل الحضور هذا الجدول، فالفصل الذي يُعقد مرتين أسبوعيًا يحتاج إلى كليهما هنا.';
+      'يتبع سجل الحضور هذا الجدول، فالصف الذي يجتمع مرتين أسبوعيًا يحتاج إلى كليهما هنا.';
 
   @override
   String get scheduleAddSlot => 'إضافة حصة';
@@ -1219,7 +1219,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get scheduleEmpty =>
-      'لا توجد حصص بعد. أضِف حصة ليعرف سجل الحضور موعد هذا الفصل.';
+      'لا توجد حصص بعد. أضِف حصة ليعرف سجل الحضور موعد هذا الصف.';
 
   @override
   String get scheduleDuplicate =>
@@ -1253,7 +1253,7 @@ class AppL10nAr extends AppL10n {
   String get weekdaySun => 'الأحد';
 
   @override
-  String get joinLinkActive => 'يوجد رابط انضمام فعّال لهذا الفصل.';
+  String get joinLinkActive => 'يوجد رابط انضمام فعّال لهذا الصف.';
 
   @override
   String joinLinkUses(int count) {
@@ -1797,7 +1797,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studentTodayYourClassesYourIdeasYour =>
-      'فصولك، أفكارك، وإنجازك القادم.';
+      'صفوفك، أفكارك، وإنجازك القادم.';
 
   @override
   String get studentTodayMyNotebook => 'دفتر دروسي';
@@ -1840,7 +1840,7 @@ class AppL10nAr extends AppL10n {
       'إدارة الطلاب والمعلمين والاجتماعات';
 
   @override
-  String get teacherShellClasses => 'الفصول';
+  String get teacherShellClasses => 'الصفوف';
 
   @override
   String get teacherShellMessages => 'الرسائل';
@@ -2118,7 +2118,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studentFamilyJoinAClassToActivate =>
-      'انضم إلى فصل لتفعيل معرّف الطالب.';
+      'انضم إلى صف لتفعيل معرّف الطالب.';
 
   @override
   String get studentFamilyParentRequests => 'طلبات أولياء الأمور';
@@ -2271,14 +2271,14 @@ class AppL10nAr extends AppL10n {
 
   @override
   String classroomAdminRemoveDisplaynameFromThisClass(Object displayName) {
-    return 'إزالة $displayName من هذا الفصل؟';
+    return 'إزالة $displayName من هذا الصف؟';
   }
 
   @override
   String get classroomAdminStaffRemoved => 'تمت إزالة المعلم.';
 
   @override
-  String get classroomAdminWholeClass => 'الفصل بالكامل';
+  String get classroomAdminWholeClass => 'الصف بالكامل';
 
   @override
   String get classroomAdminScheduleMeeting => 'جدولة اجتماع';
@@ -2328,7 +2328,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String classroomAdminWithdrawDisplaynameFromThisClass(Object displayName) {
-    return 'سحب $displayName من هذا الفصل؟';
+    return 'سحب $displayName من هذا الصف؟';
   }
 
   @override
@@ -2340,7 +2340,7 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String get classroomAdminTargetClass => 'الفصل المستهدف';
+  String get classroomAdminTargetClass => 'الصف المستهدف';
 
   @override
   String get classroomAdminStudentTransferred => 'تم نقل الطالب.';
@@ -2755,8 +2755,13 @@ class AppL10nAr extends AppL10n {
   String get famApprovalsTitle => 'بانتظار موافقتك';
 
   @override
-  String famApprovalsDetail(String name) {
-    return 'طلب $name الاشتراك في دفتر الطالب.';
+  String famApprovalsDetail(String name, String plan) {
+    String _temp0 = intl.Intl.selectLogic(plan, {
+      'studafy_plus': 'Studafy Plus',
+      'studafy_max': 'Studafy Max',
+      'other': 'إحدى خطط ستودافاي',
+    });
+    return 'طلب $name الاشتراك في $_temp0.';
   }
 
   @override
@@ -2929,7 +2934,7 @@ class AppL10nAr extends AppL10n {
   String get todaySections => 'حصص تنتظر المحتوى';
 
   @override
-  String get todaySectionsEmpty => 'لكل حصة درّستها درس يراه طلاب الفصل.';
+  String get todaySectionsEmpty => 'لكل حصة درّستها درس يراه طلاب الصف.';
 
   @override
   String get todaySectionsOutstanding => 'لا يوجد درس بعد';
@@ -2946,7 +2951,7 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String get todayClasses => 'فصولي';
+  String get todayClasses => 'صفوفي';
 
   @override
   String todayStudents(String count) {
@@ -2954,13 +2959,13 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String get todayEmpty => 'لا توجد فصول بعد';
+  String get todayEmpty => 'لا توجد صفوف بعد';
 
   @override
-  String get todayEmptyDetail => 'أنشئ فصلك الأول من تبويب الفصول.';
+  String get todayEmptyDetail => 'أنشئ صفك الأول من تبويب الصفوف.';
 
   @override
-  String get todayError => 'تعذر تحميل الفصول';
+  String get todayError => 'تعذّر تحميل الصفوف';
 
   @override
   String get todayErrorDetail => 'تحقق من اتصالك وحاول مرة أخرى.';
@@ -2978,7 +2983,7 @@ class AppL10nAr extends AppL10n {
   String get navToday => 'اليوم';
 
   @override
-  String get navClasses => 'الفصول';
+  String get navClasses => 'الصفوف';
 
   @override
   String get navTeaching => 'التدريس';
@@ -3044,7 +3049,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopyAcademicAssessmentPublishedDetail =>
-      'أصبح تقييم جديد متاحًا لأحد فصولك.';
+      'أصبح تقييم جديد متاحًا لأحد صفوفك.';
 
   @override
   String get notificationCopyAcademicAssignmentPublishedTitle =>
@@ -3052,7 +3057,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopyAcademicAssignmentPublishedDetail =>
-      'أصبح واجب جديد متاحًا لأحد فصولك.';
+      'أصبح واجب جديد متاحًا لأحد صفوفك.';
 
   @override
   String get notificationCopyAcademicGradePublishedTitle => 'درجة جديدة';
@@ -3081,7 +3086,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopyAcademicResourcePublishedDetail =>
-      'شارك معلمك مادة جديدة لأحد فصولك.';
+      'شارك معلمك مادة جديدة لأحد صفوفك.';
 
   @override
   String get notificationCopyAcademicWellbeingSharedTitle => 'ملاحظة رفاهية';
@@ -3192,7 +3197,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopySchoolAdminClassroomStaffAssignedDetail =>
-      'تم تعيين موظف لأحد الفصول.';
+      'تم تعيين موظف لأحد الصفوف.';
 
   @override
   String get notificationCopySchoolAdminClassroomStaffRemovedTitle =>
@@ -3200,7 +3205,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopySchoolAdminClassroomStaffRemovedDetail =>
-      'تمت إزالة موظف من أحد الفصول.';
+      'تمت إزالة موظف من أحد الصفوف.';
 
   @override
   String get notificationCopySchoolAdminMembershipGrantedTitle =>
@@ -3222,7 +3227,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notificationCopySchoolAdminStudentTransferredDetail =>
-      'تم نقل طالب بين الفصول.';
+      'تم نقل طالب بين الصفوف.';
 
   @override
   String get notificationCopySchoolAdminStudentWithdrawnTitle => 'انسحاب طالب';
@@ -6684,7 +6689,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get markDraftNotice =>
-      'لم تُنشر بعد: لا يرى هذه الدرجات إلا معلمو الفصل.';
+      'لم تُنشر بعد: لا يرى هذه الدرجات إلا معلمو الصف.';
 
   @override
   String markAutoScore(String score, String max) {
@@ -6768,14 +6773,14 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get todayWorkUnknown =>
-      'تعذّر تحميل بعض الفصول، لذا قد تنقص هنا بعض الأعمال.';
+      'تعذّر تحميل بعض الصفوف، لذا قد تنقص هنا بعض الأعمال.';
 
   @override
-  String get todayPartlyLoaded => 'تعذّر تحميل بعض الفصول.';
+  String get todayPartlyLoaded => 'تعذّر تحميل بعض الصفوف.';
 
   @override
   String get todaySectionsUnknown =>
-      'تعذّر تحميل بعض الفصول، لذا قد تنقص هنا بعض الحصص.';
+      'تعذّر تحميل بعض الصفوف، لذا قد تنقص هنا بعض الحصص.';
 
   @override
   String get todaySectionDraft => 'الدرس مسودة · لا يراه الطلاب';

@@ -7,6 +7,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -481,7 +482,7 @@ class _DeadlineLine extends StatelessWidget {
               Text(
                 l10n.deadlineDue(
                   _when(context, deadline.deadlineLocal),
-                  deadline.timeZone,
+                  studafyTimeZone(deadline.timeZone),
                 ),
                 style: style.copyWith(
                   color: studafyInk,

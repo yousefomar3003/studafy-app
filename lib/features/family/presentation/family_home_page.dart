@@ -442,7 +442,8 @@ class _ApprovalCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            AppL10n.of(context).famApprovalsDetail(request.studentName),
+            AppL10n.of(context)
+                .famApprovalsDetail(request.studentName, request.featureKey),
             style: const TextStyle(color: studafyInk),
           ),
           const SizedBox(height: 8),

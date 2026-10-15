@@ -44,7 +44,10 @@ String familyText(
     ),
     'progress.source' => l.famProgressSource,
     'approvals.title' => l.famApprovalsTitle,
-    'approvals.detail' => l.famApprovalsDetail(args['name'] ?? ''),
+    'approvals.detail' => l.famApprovalsDetail(
+      args['name'] ?? '',
+      args['plan'] ?? '',
+    ),
     'approvals.approve' => l.famApprovalsApprove,
     'approvals.decline' => l.famApprovalsDecline,
     'approvals.done' => l.famApprovalsDone,

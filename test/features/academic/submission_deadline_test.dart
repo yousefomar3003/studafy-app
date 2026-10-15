@@ -43,7 +43,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('(Asia/Riyadh)'), findsOneWidget);
+    expect(
+      find.textContaining('(\u2066Asia/\u2060Riyadh\u2069)'),
+      findsOneWidget,
+    );
     expect(find.textContaining('11:59'), findsWidgets);
     expect(find.textContaining('You have extra time until'), findsOneWidget);
     expect(find.text('Hand in'), findsOneWidget);

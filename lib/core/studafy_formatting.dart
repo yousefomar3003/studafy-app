@@ -54,6 +54,19 @@ String studafyTime(BuildContext context, DateTime when) =>
 String studafyDateTime(BuildContext context, DateTime when) =>
     '${studafyShortDate(context, when)} · ${studafyTime(context, when)}';
 
+/// An IANA time zone id ("Asia/Amman") ready to sit inside a sentence.
+///
+/// The id is Latin with a slash, so inside Arabic copy such as
+/// "موعد التسليم … (Asia/Amman)" it was laid out as part of the right-to-left
+/// sentence: the line could break after the slash and the brackets paired
+/// with the wrong ends, showing "(Asia/ Amman)". A left-to-right isolate
+/// (U+2066 … U+2069) keeps the id one left-to-right run that the
+/// surrounding text treats as a single neutral character, so the brackets
+/// in the translation stay around it in either language, and a word joiner
+/// (U+2060) after each slash keeps the id on one line.
+String studafyTimeZone(String zone) =>
+    '\u2066${zone.replaceAll('/', '/\u2060')}\u2069';
+
 /// A plain number — a grade, a count, a percentage.
 String studafyNumber(BuildContext context, num value) => _toWesternDigits(
   NumberFormat.decimalPattern(_localeOf(context)).format(value),
