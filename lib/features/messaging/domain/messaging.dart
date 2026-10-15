@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/failures.dart';
 import '../../../core/file_upload_repository.dart';
 
 /// Coarse role of a person in a school conversation. Display-only: the
@@ -275,4 +276,17 @@ abstract interface class SafetyRepository {
   Future<void> unblock(String blockId);
 
   Future<List<BlockedPerson>> blocks(String schoolId);
+}
+
+/// The server would not attach a file to a message or announcement, and
+/// nothing was sent. [rows] maps each refused file's request path
+/// (`attachmentFileIds.1`) to a fixed reason code (`file_refused`,
+/// `file_not_found`, ...), so the composer can mark it.
+class AttachmentRefusedFailure extends Failure {
+  const AttachmentRefusedFailure(this.rows)
+    : super(attachmentRefusedCode, attachmentRefusedCode);
+
+  static const attachmentRefusedCode = 'ATTACHMENT_REFUSED';
+
+  final Map<String, String> rows;
 }

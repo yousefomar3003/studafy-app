@@ -24,6 +24,9 @@ Future<T> _guard<T>(Future<T> Function() action) async {
     return await action();
   } on V1ApiException catch (error) {
     if (error.isUnauthenticated) throw Failure.unauthorized;
+    if (error.code == AttachmentRefusedFailure.attachmentRefusedCode) {
+      throw AttachmentRefusedFailure(error.fieldErrors);
+    }
     if (messagingFailureCodes.contains(error.code)) {
       throw Failure(error.code, error.code);
     }

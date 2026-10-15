@@ -3013,6 +3013,18 @@ abstract class AppL10n {
   /// **'This file is no longer available. Remove it and attach it again.'**
   String get attachmentNotAcceptedGone;
 
+  /// Shown in place of an attached file that the security scan refused after it was attached; it cannot be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'This file was removed by the safety check.'**
+  String get attachmentRemovedBySafetyCheck;
+
+  /// Short label under an attached file name, or on a photo, that the security scan removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed by the safety check'**
+  String get attachmentRemovedShort;
+
   /// No description provided for @attachmentNotAcceptedInUse.
   ///
   /// In en, this message translates to:
@@ -4614,6 +4626,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get msgErrorUnknown;
+
+  /// Error when the server refused a file attached to a message or announcement; the refused file is marked.
+  ///
+  /// In en, this message translates to:
+  /// **'A file was not accepted, so nothing was sent. Remove the file marked, then try again.'**
+  String get msgErrorAttachmentRefused;
 
   /// No description provided for @famTitle.
   ///

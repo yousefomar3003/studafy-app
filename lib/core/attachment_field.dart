@@ -77,6 +77,17 @@ class Attachment {
   );
 }
 
+/// The files of [items] a form sends, in order: uploaded and either clean
+/// or still being checked. A failed upload, or a file the scan or the server
+/// refused, is left out - sending it again would only be refused again.
+List<String> sendableFileIds(Iterable<Attachment> items) => [
+  for (final item in items)
+    if (item.fileId != null &&
+        (item.stage == AttachmentStage.ready ||
+            item.stage == AttachmentStage.quarantined))
+      item.fileId!,
+];
+
 /// Attach documents and photos to whatever is being written.
 ///
 /// The widget owns the upload rather than the host form because the pipeline

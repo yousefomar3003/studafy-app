@@ -1804,6 +1804,12 @@ class AppL10nAr extends AppL10n {
       'لم يعد هذا الملف متاحًا. أزِله وأرفقه مرة أخرى.';
 
   @override
+  String get attachmentRemovedBySafetyCheck => 'أزال فحص الأمان هذا الملف.';
+
+  @override
+  String get attachmentRemovedShort => 'أزاله فحص الأمان';
+
+  @override
   String get attachmentNotAcceptedInUse =>
       'هذا الملف مُرفق بالفعل. أزِله، ثم احفظ مرة أخرى.';
 
@@ -2694,6 +2700,10 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get msgErrorUnknown => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get msgErrorAttachmentRefused =>
+      'لم يُقبل ملف، لذا لم يُرسَل شيء. أزِل الملف المُعلَّم، ثم حاول مرة أخرى.';
 
   @override
   String get famTitle => 'عائلتي';

@@ -89,6 +89,12 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
   final _historyKey = GlobalKey<SubmissionHistoryViewState>();
   final Set<String> _keep = {};
 
+  /// Carried-over files the server would not carry over (the scan has
+  /// removed them since), and why. Unticked, and no longer sent.
+  final Map<String, String> _refusedKept = {};
+
+  final _attachmentsKey = GlobalKey<AttachmentFieldState>();
+
   /// Something has been handed in already, so sending replaces it.
   bool _handedIn = false;
 
@@ -116,11 +122,12 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
 
-  /// Only files the server actually has. A failed upload is simply absent
+  /// Only files the server actually has, in the order sent. A failed
+  /// upload, or a file the scan or the server refused, is simply absent
   /// rather than blocking the hand-in.
   List<String> get _readyFileIds => [
     ..._keep,
-    for (final item in _attachments) ?item.fileId,
+    ...sendableFileIds(_attachments),
   ];
 
   @override
@@ -143,11 +150,13 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
     });
     final done = l10n.submitDone;
     final failed = l10n.submitFailed;
+    // A refusal names a file by its place in this list.
+    final sent = _readyFileIds;
     try {
       await widget.repository.submitAssignment(
         widget.assignmentId,
         _answer.text.trim(),
-        attachmentFileIds: _readyFileIds,
+        attachmentFileIds: sent,
         // The same field for both callers. A student naming their own record
         // takes the ordinary path; a guardian naming their child's is
         // authorised on the verified link and recorded against them.
@@ -157,6 +166,11 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
       Navigator.of(context).pop(done);
     } on CourseworkRefusal catch (refusal) {
       if (!mounted) return;
+      // A refused file is marked where it is, and left out of the next
+      // hand-in; nothing was handed in.
+      if (refusal.problem == CourseworkProblem.attachmentRefused) {
+        _markRefused(l10n, sent, refusal.rows);
+      }
       setState(() {
         _sending = false;
         _error = courseworkMessage(l10n, refusal);
@@ -168,6 +182,25 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
         _error = failed;
       });
     }
+  }
+
+  void _markRefused(AppL10n l10n, List<String> sent, Map<String, String> rows) {
+    final kept = <String, String>{};
+    for (final MapEntry(key: path, value: reason) in rows.entries) {
+      final index = path.startsWith('attachmentFileIds.')
+          ? int.tryParse(path.substring('attachmentFileIds.'.length))
+          : null;
+      if (index == null || index < 0 || index >= sent.length) continue;
+      if (_keep.contains(sent[index])) {
+        kept[sent[index]] = attachmentNotAcceptedText(l10n, reason);
+      }
+    }
+    markRefusedFiles(l10n, _attachmentsKey.currentState, sent, rows);
+    if (kept.isEmpty) return;
+    setState(() {
+      _refusedKept.addAll(kept);
+      _keep.removeAll(kept.keys);
+    });
   }
 
   @override
@@ -291,7 +324,17 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
                           controlAffinity: ListTileControlAffinity.leading,
                           value: _keep.contains(file.id),
                           title: Text(file.displayName),
-                          onChanged: _sending
+                          subtitle: _refusedKept[file.id] == null
+                              ? null
+                              : Text(
+                                  _refusedKept[file.id]!,
+                                  style: const TextStyle(
+                                    color: studafyDanger,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                          onChanged:
+                              _sending || _refusedKept.containsKey(file.id)
                               ? null
                               : (value) => setState(() {
                                   if (value ?? false) {
@@ -330,6 +373,7 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
                     // either way.
                     if (uploads != null && widget.schoolId != null)
                       AttachmentField(
+                        key: _attachmentsKey,
                         purpose: FilePurpose.assignmentSubmission,
                         schoolId: widget.schoolId!,
                         assignmentId: widget.assignmentId,

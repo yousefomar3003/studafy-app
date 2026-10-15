@@ -108,17 +108,25 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
     final l10n = AppL10n.of(context);
     final ink = widget.mine ? Colors.white : studafyInk;
     final muted = widget.mine ? Colors.white70 : studafyMuted;
-    if (!widget.attachment.isReady && widget.localBytes == null) {
+    // Removed by the scan: not played, even from the sender's own copy.
+    final removed = widget.attachment.isRemoved;
+    if (removed || (!widget.attachment.isReady && widget.localBytes == null)) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.hourglass_top_rounded, size: 18, color: muted),
+            Icon(
+              removed ? Icons.gpp_bad_outlined : Icons.hourglass_top_rounded,
+              size: 18,
+              color: muted,
+            ),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
-                l10n.msgVoiceChecking,
+                removed
+                    ? l10n.attachmentRemovedBySafetyCheck
+                    : l10n.msgVoiceChecking,
                 style: TextStyle(color: muted, fontSize: 12),
               ),
             ),
