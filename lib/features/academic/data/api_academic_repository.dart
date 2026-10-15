@@ -211,34 +211,35 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> createResource(TextResourceDraft draft) =>
-      _done('resource:${draft.classroomId}:${draft.title}:${draft.body}:'
-          '${draft.audience}:${draft.attachmentFileIds.join(',')}:'
-          '${draft.links.map((l) => l.url).join(',')}:'
-          '${draft.lessonSessionId}', (key) async {
-        final created = await _client.createResource(
-          V1CreateResourceRequestDto(
-            schoolId: _schoolId,
-            classroomId: draft.classroomId,
-            title: draft.title,
-            resourceType: 'lesson_note',
-            body: draft.body,
-            audience: draft.audience,
-            lessonSessionId: draft.lessonSessionId,
-            attachmentFileIds: draft.attachmentFileIds.isEmpty
-                ? null
-                : draft.attachmentFileIds,
-            links: draft.links.isEmpty ? null : linkDtos(draft.links),
-          ),
-          idempotencyKey: key,
-        );
-        // A lesson is created as a draft, which students and parents never
-        // see. Inside the same retry scope, so a retry replays the create
-        // and publishes that rather than filing a second copy.
-        if (draft.publish && created.state == 'draft') {
-          await publishResource(created.id, created.version);
-        }
-      });
+  Future<void> createResource(TextResourceDraft draft) => _refusing(
+    () => _done('resource:${draft.classroomId}:${draft.title}:${draft.body}:'
+        '${draft.audience}:${draft.attachmentFileIds.join(',')}:'
+        '${draft.links.map((l) => l.url).join(',')}:'
+        '${draft.lessonSessionId}', (key) async {
+      final created = await _client.createResource(
+        V1CreateResourceRequestDto(
+          schoolId: _schoolId,
+          classroomId: draft.classroomId,
+          title: draft.title,
+          resourceType: 'lesson_note',
+          body: draft.body,
+          audience: draft.audience,
+          lessonSessionId: draft.lessonSessionId,
+          attachmentFileIds: draft.attachmentFileIds.isEmpty
+              ? null
+              : draft.attachmentFileIds,
+          links: draft.links.isEmpty ? null : linkDtos(draft.links),
+        ),
+        idempotencyKey: key,
+      );
+      // A lesson is created as a draft, which students and parents never
+      // see. Inside the same retry scope, so a retry replays the create
+      // and publishes that rather than filing a second copy.
+      if (draft.publish && created.state == 'draft') {
+        await publishResource(created.id, created.version);
+      }
+    }),
+  );
 
   @override
   Future<void> reviseResource(
@@ -328,60 +329,62 @@ class ApiAcademicRepository implements AcademicRepository {
       );
 
   @override
-  Future<void> createAssignment(AssignmentDraft draft) => _done(
-    // The files are part of the work: retrying with a different set is a
-    // different request, not a replay of the first.
-    'assignment:${draft.classroomId}:${draft.title}:'
-    '${draft.dueAt.toUtc().toIso8601String()}:'
-    '${draft.attachmentFileIds.join(',')}:'
-    '${draft.links.map((l) => l.url).join(',')}',
-    (key) async {
-      final created = await _client.createAssignment(
-        V1CreateAssignmentRequestDto(
-          classroomId: draft.classroomId,
-          title: draft.title,
-          instructions: draft.instructions,
-          dueAt: draft.dueAt.toUtc().toIso8601String(),
-          closesAt: draft.closesAt?.toUtc().toIso8601String(),
-          // The time the teacher picked, as a wall-clock time: the server
-          // reads it on the school's clock, whatever this device's zone.
-          dueLocal: _wallClock(draft.dueAt),
-          closesLocal: draft.closesAt == null
-              ? null
-              : _wallClock(draft.closesAt!),
-          attachmentFileIds: draft.attachmentFileIds.isEmpty
-              ? null
-              : draft.attachmentFileIds,
-          links: draft.links.isEmpty ? null : linkDtos(draft.links),
-        ),
-        idempotencyKey: key,
-      );
-      // Inside the same retry scope: if publishing fails, a retry replays
-      // the create (same key, same response) and publishes that, rather
-      // than creating a second copy.
-      if (draft.publish && created.state == 'draft') {
-        await publishAssignment(created.id, created.version);
-      }
-      // Graded: the mark lives on an assessment linked to this assignment,
-      // which is what the gradebook reads. The student still hands in the
-      // assignment itself.
-      final score = draft.maximumScore;
-      if (score != null) {
-        await createAssessment(
-          AssessmentDraft(
+  Future<void> createAssignment(AssignmentDraft draft) => _refusing(
+    () => _done(
+      // The files are part of the work: retrying with a different set is a
+      // different request, not a replay of the first.
+      'assignment:${draft.classroomId}:${draft.title}:'
+      '${draft.dueAt.toUtc().toIso8601String()}:'
+      '${draft.attachmentFileIds.join(',')}:'
+      '${draft.links.map((l) => l.url).join(',')}',
+      (key) async {
+        final created = await _client.createAssignment(
+          V1CreateAssignmentRequestDto(
             classroomId: draft.classroomId,
             title: draft.title,
-            maximumScore: score,
-            questions: const [],
-            category: 'assignment',
-            delivery: 'paper',
-            scheduledAt: draft.dueAt,
-            publish: draft.publish,
-            assignmentId: created.id,
+            instructions: draft.instructions,
+            dueAt: draft.dueAt.toUtc().toIso8601String(),
+            closesAt: draft.closesAt?.toUtc().toIso8601String(),
+            // The time the teacher picked, as a wall-clock time: the server
+            // reads it on the school's clock, whatever this device's zone.
+            dueLocal: _wallClock(draft.dueAt),
+            closesLocal: draft.closesAt == null
+                ? null
+                : _wallClock(draft.closesAt!),
+            attachmentFileIds: draft.attachmentFileIds.isEmpty
+                ? null
+                : draft.attachmentFileIds,
+            links: draft.links.isEmpty ? null : linkDtos(draft.links),
           ),
+          idempotencyKey: key,
         );
-      }
-    },
+        // Inside the same retry scope: if publishing fails, a retry replays
+        // the create (same key, same response) and publishes that, rather
+        // than creating a second copy.
+        if (draft.publish && created.state == 'draft') {
+          await publishAssignment(created.id, created.version);
+        }
+        // Graded: the mark lives on an assessment linked to this assignment,
+        // which is what the gradebook reads. The student still hands in the
+        // assignment itself.
+        final score = draft.maximumScore;
+        if (score != null) {
+          await createAssessment(
+            AssessmentDraft(
+              classroomId: draft.classroomId,
+              title: draft.title,
+              maximumScore: score,
+              questions: const [],
+              category: 'assignment',
+              delivery: 'paper',
+              scheduledAt: draft.dueAt,
+              publish: draft.publish,
+              assignmentId: created.id,
+            ),
+          );
+        }
+      },
+    ),
   );
 
   @override
@@ -1311,6 +1314,7 @@ class ApiAcademicRepository implements AcademicRepository {
         'ATTENDANCE_LOCKED' => CourseworkProblem.attendanceLocked,
         'SUBMISSION_LOCKED' => CourseworkProblem.submissionLocked,
         'WINDOW_CLOSED' => CourseworkProblem.windowClosed,
+        'ATTACHMENT_REFUSED' => CourseworkProblem.attachmentRefused,
         'FORBIDDEN' || 'NOT_FOUND' => CourseworkProblem.notAllowed,
         _ => null,
       };

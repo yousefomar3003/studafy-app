@@ -1796,6 +1796,26 @@ class AppL10nAr extends AppL10n {
       'لا يمكن استخدام هذا الملف. أزِله وجرّب ملفًا آخر.';
 
   @override
+  String get attachmentNotAcceptedScan =>
+      'لم يجتز هذا الملف فحص الأمان. أزِله، ثم احفظ مرة أخرى.';
+
+  @override
+  String get attachmentNotAcceptedGone =>
+      'لم يعد هذا الملف متاحًا. أزِله وأرفقه مرة أخرى.';
+
+  @override
+  String get attachmentNotAcceptedInUse =>
+      'هذا الملف مُرفق بالفعل. أزِله، ثم احفظ مرة أخرى.';
+
+  @override
+  String get attachmentNotAcceptedHere =>
+      'لا يمكن إضافة هذا الملف هنا. أزِله، ثم احفظ مرة أخرى.';
+
+  @override
+  String get linkNotAccepted =>
+      'لا يمكن إضافة هذا الرابط. أزِله، ثم احفظ مرة أخرى.';
+
+  @override
   String get attachmentReady => 'جاهز';
 
   @override
@@ -4158,6 +4178,10 @@ class AppL10nAr extends AppL10n {
       'لم تنجح العملية. تحقق من اتصالك وحاول مرة أخرى.';
 
   @override
+  String get courseworkAttachmentRefused =>
+      'لم يُقبل ملف أو رابط، لذا لم يُحفظ شيء. أزِل ما هو مُعلَّم، ثم احفظ مرة أخرى.';
+
+  @override
   String paperGradesTitle(String title) {
     return 'كشف الدرجات: $title';
   }
@@ -5208,7 +5232,8 @@ class AppL10nAr extends AppL10n {
   String get attachmentsUploading => 'انتظر حتى يكتمل رفع الملفات.';
 
   @override
-  String get attachmentsFailed => 'أعد محاولة رفع الملفات التي فشلت أو أزلها.';
+  String get attachmentsFailed =>
+      'أعد المحاولة أو أزِل الملفات والروابط المُعلَّمة بأنها فشلت أو لم تُقبل.';
 
   @override
   String attachmentsTooManyLinks(int count) {
@@ -5404,6 +5429,11 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get builderSaveFailed => 'تعذر الحفظ. راجع الأسئلة وحاول مرة أخرى.';
+
+  @override
+  String builderQuestionAttachmentRefused(int number) {
+    return 'السؤال $number: لم يُقبل ملف أو رابط. أزِله، ثم احفظ مرة أخرى.';
+  }
 
   @override
   String get builderLocked =>

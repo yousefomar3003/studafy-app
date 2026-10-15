@@ -412,37 +412,96 @@ class AttachmentsEditor extends StatefulWidget {
   final String? filesBlockedReason;
 
   @override
-  State<AttachmentsEditor> createState() => _AttachmentsEditorState();
+  State<AttachmentsEditor> createState() => AttachmentsEditorState();
 }
 
-class _AttachmentsEditorState extends State<AttachmentsEditor> {
+/// Why the server would not attach a file, from its fixed reason code
+/// (`file_refused`, `file_not_found`, ...), and what to do about it.
+String attachmentNotAcceptedText(AppL10n l10n, String reason) =>
+    switch (reason) {
+      'file_refused' => l10n.attachmentNotAcceptedScan,
+      'file_not_found' => l10n.attachmentNotAcceptedGone,
+      'file_already_attached' || 'duplicate' => l10n.attachmentNotAcceptedInUse,
+      _ => l10n.attachmentNotAcceptedHere,
+    };
+
+class AttachmentsEditorState extends State<AttachmentsEditor> {
   final Set<String> _detached = {};
   final Set<String> _removedLinks = {};
   final List<LinkDraft> _newLinks = [];
   List<Attachment> _uploads = const [];
   bool _showBlocked = false;
+  final _field = GlobalKey<AttachmentFieldState>();
+
+  /// New links the server would not add, and why. By identity: two links
+  /// can be the same text, and only the one sent at that place is refused.
+  final Map<LinkDraft, String> _refusedLinks = Map.identity();
 
   int get _liveLinks =>
       widget.existingLinks.length - _removedLinks.length + _newLinks.length;
 
+  /// The new files, in the order they are sent - the order the server
+  /// names them by.
+  List<String> get _attachFileIds => [
+    for (final item in _uploads)
+      if (item.fileId != null &&
+          (item.stage == AttachmentStage.ready ||
+              item.stage == AttachmentStage.quarantined))
+        item.fileId!,
+  ];
+
   void _emit() => widget.onChanged?.call(
     AttachmentsEditorValue(
       changes: AttachmentChanges(
-        attachFileIds: [
-          for (final item in _uploads)
-            if (item.fileId != null &&
-                (item.stage == AttachmentStage.ready ||
-                    item.stage == AttachmentStage.quarantined))
-              item.fileId!,
-        ],
+        attachFileIds: _attachFileIds,
         detachFileIds: [..._detached],
         addLinks: [..._newLinks],
         removeLinkIds: [..._removedLinks],
       ),
       uploading: _uploads.any((a) => a.stage == AttachmentStage.uploading),
-      failed: _uploads.any((a) => a.stage == AttachmentStage.failed),
+      // A link the server refused holds the form like a failed upload,
+      // until it is removed.
+      failed:
+          _uploads.any((a) => a.stage == AttachmentStage.failed) ||
+          _refusedLinks.isNotEmpty,
     ),
   );
+
+  /// Marks what the server would not attach, from a refusal's rows: each
+  /// request path (`attachmentFileIds.2`, `links.0`, under [prefix] when
+  /// this editor is one part of a larger request) to its reason code, as
+  /// sent with the changes this editor last reported. A marked file or
+  /// link shows why, and holds the form until it is removed. Returns how
+  /// many were marked; rows for anything else are left alone.
+  int markNotAccepted(Map<String, String> rows, {String prefix = ''}) {
+    final l10n = AppL10n.of(context);
+    final sent = _attachFileIds;
+    var marked = 0;
+    for (final MapEntry(key: path, value: reason) in rows.entries) {
+      if (!path.startsWith(prefix)) continue;
+      final parts = path.substring(prefix.length).split('.');
+      final index = parts.length == 2 ? int.tryParse(parts[1]) : null;
+      if (index == null || index < 0) continue;
+      if (parts[0] == 'attachmentFileIds' && index < sent.length) {
+        final field = _field.currentState;
+        if (field != null &&
+            field.markNotAccepted(
+              sent[index],
+              attachmentNotAcceptedText(l10n, reason),
+            )) {
+          marked++;
+        }
+      } else if (parts[0] == 'links' && index < _newLinks.length) {
+        _refusedLinks[_newLinks[index]] = l10n.linkNotAccepted;
+        marked++;
+      }
+    }
+    if (marked > 0) {
+      setState(() {});
+      _emit();
+    }
+    return marked;
+  }
 
   Future<void> _addLink() async {
     final l10n = AppL10n.of(context);
@@ -488,6 +547,7 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
           ),
         if (uploads != null && schoolId != null && widget.source != null)
           AttachmentField(
+            key: _field,
             purpose: widget.purpose,
             schoolId: schoolId,
             classroomId: widget.classroomId,
@@ -546,19 +606,31 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.link_rounded),
+            leading: Icon(
+              _refusedLinks.containsKey(link)
+                  ? Icons.error_outline_rounded
+                  : Icons.link_rounded,
+              color: _refusedLinks.containsKey(link)
+                  ? Theme.of(context).colorScheme.error
+                  : null,
+            ),
             title: Text(link.title),
             subtitle: Text(
-              Uri.tryParse(link.url)?.host ?? link.url,
-              maxLines: 1,
+              _refusedLinks[link] ?? Uri.tryParse(link.url)?.host ?? link.url,
+              maxLines: _refusedLinks.containsKey(link) ? 3 : 1,
               overflow: TextOverflow.ellipsis,
+              style: _refusedLinks.containsKey(link)
+                  ? TextStyle(color: Theme.of(context).colorScheme.error)
+                  : null,
             ),
             trailing: IconButton(
               tooltip: l10n.attachmentsRemove,
               icon: const Icon(Icons.close_rounded),
               onPressed: widget.enabled
                   ? () {
-                      setState(() => _newLinks.removeAt(index));
+                      setState(() {
+                        _refusedLinks.remove(_newLinks.removeAt(index));
+                      });
                       _emit();
                     }
                   : null,

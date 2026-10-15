@@ -8,6 +8,7 @@ import '../../../core/studafy_domain.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'coursework_messages.dart';
 
 /// Edits the files and links on a paper grade (ADR-0036): the class's
 /// shared ones when [studentId] is null, otherwise one student's own. They
@@ -73,13 +74,18 @@ class _GradeAttachmentsSheet extends StatefulWidget {
 
 class _GradeAttachmentsSheetState extends State<_GradeAttachmentsSheet> {
   AttachmentsEditorValue _value = const AttachmentsEditorValue();
+  final _editor = GlobalKey<AttachmentsEditorState>();
   bool _saving = false;
   String? _error;
 
   Future<void> _save() async {
     final l10n = AppL10n.of(context);
     if (!_value.ready) {
-      setState(() => _error = l10n.attachmentsUploading);
+      setState(
+        () => _error = _value.failed
+            ? l10n.attachmentsFailed
+            : l10n.attachmentsUploading,
+      );
       return;
     }
     if (_value.changes.isEmpty) {
@@ -97,11 +103,16 @@ class _GradeAttachmentsSheetState extends State<_GradeAttachmentsSheet> {
         studentId: widget.studentId,
       );
       if (mounted) Navigator.of(context).pop(true);
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) return;
+      // Marked first: marking reports a change, which clears the error.
+      final refusal = attachmentRefusalIn(error);
+      if (refusal != null) _editor.currentState?.markNotAccepted(refusal.rows);
       setState(() {
         _saving = false;
-        _error = l10n.paperAttachmentsFailed;
+        _error = refusal != null
+            ? l10n.courseworkAttachmentRefused
+            : l10n.paperAttachmentsFailed;
       });
     }
   }
@@ -126,6 +137,7 @@ class _GradeAttachmentsSheetState extends State<_GradeAttachmentsSheet> {
             Text(widget.hint, style: theme.textTheme.bodySmall),
             const SizedBox(height: 12),
             AttachmentsEditor(
+              key: _editor,
               purpose: FilePurpose.paperScan,
               schoolId: ActiveContextController.instance.membership?.schoolId,
               uploads: widget.uploads,

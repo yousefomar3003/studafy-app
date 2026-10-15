@@ -56,6 +56,7 @@ class _EditLessonSheetState extends State<_EditLessonSheet> {
   late final _body = TextEditingController(text: widget.lesson.detail);
   List<Attachment> _replacement = const [];
   AttachmentsEditorValue _attachments = const AttachmentsEditorValue();
+  final _editor = GlobalKey<AttachmentsEditorState>();
   bool _saving = false;
   String? _error;
 
@@ -97,6 +98,9 @@ class _EditLessonSheetState extends State<_EditLessonSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } on CourseworkRefusal catch (refusal) {
       if (!mounted) return;
+      if (refusal.problem == CourseworkProblem.attachmentRefused) {
+        _editor.currentState?.markNotAccepted(refusal.rows);
+      }
       setState(() {
         _saving = false;
         _error = courseworkMessage(l10n, refusal);
@@ -152,6 +156,7 @@ class _EditLessonSheetState extends State<_EditLessonSheet> {
                 ),
               if (!_hasFile)
                 AttachmentsEditor(
+                  key: _editor,
                   purpose: FilePurpose.lessonResource,
                   schoolId: classroomId == null ? null : schoolId,
                   classroomId: classroomId,

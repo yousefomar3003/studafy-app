@@ -8,6 +8,7 @@ import '../../../core/studafy_formatting.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'coursework_messages.dart';
 
 /// Adding a lesson to a class: its title, the teacher's notes, and the files
 /// that go with it - slides, a worksheet, a photo of the board.
@@ -67,7 +68,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
 
   /// Files are uploaded for one class, and the server refuses to bind them
   /// to another, so changing the class starts the files over.
-  Key _attachmentsKey = UniqueKey();
+  GlobalKey<AttachmentsEditorState> _editor = GlobalKey();
 
   bool get _uploading => _attachments.uploading;
 
@@ -129,11 +130,16 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       );
       if (!mounted) return;
       Navigator.of(context).pop(created);
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) return;
+      // A refused file or link is named and marked, instead of "try again":
+      // the same request would be refused the same way. Once the marked
+      // ones are removed, the lesson saves.
+      final refusal = attachmentRefusalIn(error);
+      if (refusal != null) _editor.currentState?.markNotAccepted(refusal.rows);
       setState(() {
         _saving = false;
-        _error = failed;
+        _error = refusal != null ? l10n.courseworkAttachmentRefused : failed;
       });
     }
   }
@@ -168,7 +174,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       _classroomId = value;
                       _section = null;
                       _attachments = const AttachmentsEditorValue();
-                      _attachmentsKey = UniqueKey();
+                      _editor = GlobalKey();
                     }),
             ),
             if (_section case final section?)
@@ -211,7 +217,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
             const SizedBox(height: 8),
             if (uploads == null) Text(l10n.academicAttachmentsUnavailable),
             AttachmentsEditor(
-              key: _attachmentsKey,
+              key: _editor,
               purpose: FilePurpose.lessonResource,
               schoolId: _classroomId == null ? null : widget.schoolId,
               filesBlockedReason: _classroomId == null
