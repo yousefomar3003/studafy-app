@@ -143,12 +143,12 @@ select is(pg_temp.cmd(:'teacher_user', 'createAssignment', null, jsonb_build_obj
   'classroomId', :'classroom_id', 'title', 'Bad link', 'instructions', null,
   'dueAt', now() + interval '1 day', 'closesAt', null,
   'links', jsonb_build_array(jsonb_build_object('title', 'x', 'url', 'javascript:alert(1)'))))->>'outcome',
-  'invalid', 'a link that is not https is refused');
+  'attachment_refused', 'a link that is not https is refused');
 select is(pg_temp.cmd(:'teacher_user', 'createAssignment', null, jsonb_build_object(
   'classroomId', :'classroom_id', 'title', 'Creds', 'instructions', null,
   'dueAt', now() + interval '1 day', 'closesAt', null,
   'links', jsonb_build_array(jsonb_build_object('title', 'x', 'url', 'https://user:pw@evil.example.com/'))))->>'outcome',
-  'invalid', 'so is one carrying credentials');
+  'attachment_refused', 'so is one carrying credentials');
 
 select is(pg_temp.cmd(:'teacher_user', 'publishAssessment', :'quiz_id',
   jsonb_build_object('expectedVersion', (select version from public.assessments where id = :'quiz_id')))->>'outcome',
