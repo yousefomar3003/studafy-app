@@ -158,20 +158,20 @@ the privacy policy URL (Claude can host a page first). Claude drafts the
   - Add `API_REQUEST_TIMEOUT_MS = "20000"` to `fly.api.toml`. Quizzes and
     notebooks take longer than the 10 s default.
   - **Done when:** the Fly config test passes with the new value.
-- [ ] **2.3 Restricted database logins** (PR-08) · *You* run the SQL, then
+- [x] **2.3 Restricted database logins** (PR-08) — done 2026-10-14 by the owner: both runtime roles have passwords, the worker role can log in, both test apps connect as them, and the `postgres` password was reset; the API's startup log (2026-10-14 13:49) has no `database_privileged_role` · *You* run the SQL, then
   *Claude* · 30 min
   - In the Supabase SQL editor, give `studafy_api_runtime` and
     `studafy_worker_runtime` passwords (the exact SQL is in
     `docs/deployment/fly-io.md`, "Database roles"). Then Claude switches
     both Fly `DATABASE_URL` secrets and redeploys.
   - **Done when:** the startup logs no longer show `database_privileged_role`.
-- [ ] **2.4 Encrypted Redis** (PR-08) · *You* create it, then *Claude* ·
+- [x] **2.4 Encrypted Redis** (PR-08) — done 2026-10-14 by the owner: a Redis Cloud database in Frankfurt over TLS (`rediss://`) for both test apps; the US database is deleted; no `redis_plaintext_remote` in the startup log · *You* create it, then *Claude* ·
   30 min
   - Create a Redis with TLS: Upstash, region `eu-central-1` (free tier has
     TLS), or a paid Redis Cloud plan. Give Claude the file path holding its
     `rediss://` URL, never the URL itself in chat.
   - **Done when:** the startup logs no longer show `redis_plaintext_remote`.
-- [ ] **2.5 Clean up old Fly apps and secrets** (PR-16) · *You* · 30 min
+- [x] **2.5 Clean up old Fly apps and secrets** (PR-16) — done 2026-10-14 by the owner: `studafy-api`'s token revoked and its 43 secrets removed, `studafy` destroyed (absent from `fly apps list`), the full-access org token replaced by per-app deploy tokens, the local `fly-deploy.yml` deleted; AWS dropped · *You* · 30 min
   - Delete the AWS IAM key in the AWS console.
   - Revoke the Fly token stored in the suspended `studafy-api` app.
   - Then say "go" and Claude unsets the unused secrets there, destroys the
@@ -207,7 +207,7 @@ the privacy policy URL (Claude can host a page first). Claude drafts the
 Your Play Console account is open, so Android can reach real testers before
 iOS.
 
-- [ ] **3.1 Decide the app ID** (PR-04) · *You* · decision
+- [x] **3.1 Decide the app ID** (PR-04) — decided 2026-10-14 (DL-058): **`com.studafy.light`**, already claimed in the Google Play organization account and already the Android `applicationId` and iOS bundle id. The sign-in and class-join link scheme stays `io.studafy.app`; nothing to change in code · *You* · decision
   - Today: `com.studafy.light`. Decided on 2026-09-11 (DL-029):
     `io.studafy.app`. **It can never change after the first Play upload.**
   - **Done when:** you pick one and Claude applies it everywhere (Android,

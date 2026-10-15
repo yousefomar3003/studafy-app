@@ -1,9 +1,109 @@
 # Handoff: Studafy
 
-Updated: 2026-10-13. Everything is on `main` (`4231aa1`); no pull request is
-open. The test copy runs today's code.
+Updated: 2026-10-15. `main` is at `4f18c85` (PR #51). Open pull requests:
+#52 (observability) and #53 (capacity fixes). Neither is deployed.
 
-## Start here (2026-10-13)
+## Start here (2026-10-15)
+
+**Done since 2026-10-13** (the owner's list and Claude's work)
+- **Security:** the leaked Fly token was rotated; Sentry scrubs data and
+  stores no IP addresses for the whole organization; both runtime roles
+  have passwords and the test apps connect as them (no
+  `database_privileged_role`); the `postgres` password was reset; Redis is
+  a TLS Redis Cloud database in Frankfurt (no `redis_plaintext_remote`).
+  Launch plan 2.3–2.5 are ticked.
+- **App ID:** `com.studafy.light` (DL-058, launch plan 3.1). The link scheme
+  stays `io.studafy.app`.
+- **Malware scanner:** self-hosted ClamAV, `studafy-scanner-test`, private
+  network only; the test worker uses it; tested end to end (PRs #50, #51).
+- **Retention and policy:** the retention schedule (DL-057, PR #47; the
+  purge is behind `RETENTION_SCHEDULE_ENABLED`); privacy policy 1.4 approved
+  by counsel in both languages and live; the in-app text and consent version
+  `2026-10-14` (PR #48).
+- **Cleanup:** `studafy-api` holds no secrets, `studafy` is destroyed, deploy
+  tokens are per app, the stray local Fly files are gone. AWS was dropped.
+- **CI:** the iOS simulator job runs on `main` only (PR #49).
+
+**Open pull requests (Claude, 2026-10-15)**
+- **#52 Observability** (`feat/observability-fixes`):
+  - a native crash carried the Sentry installation id on iOS and Android
+    (and Android Dart events the device id). The app now sets one constant
+    user, `anonymous`, pins the SDKs' installation id to zeros before they
+    start, and the Dart scrubber drops the device id;
+  - the dead CloudWatch sink and its AWS dependency are removed;
+  - the log shipper image is pinned by digest.
+  - After merging: redeploy the log shipper
+    (`fly deploy --config fly.log-shipper.toml`), and check one real native
+    crash from a test build in Sentry (`user.id` `anonymous`, Android
+    `device.id` all zeros).
+- **#53 Capacity fixes 1–3** (`feat/capacity-fixes`): access rules once per
+  call, grades from the caller's own records, homework rows a page at a
+  time. Zero differences against the old code (lists page by page for the
+  scale sample and every pgTAP fixture; 145,684 access decisions with edge
+  cases planted). About twice the capacity: through the API at 1,000
+  people, p50 2.6 s to 89 ms and p95 5.5 s to 762 ms; peak 153 to 310
+  req/s (`docs/capacity/2026-10-14.md`). The proof scripts are in
+  `scripts/scale/proof/`. After merging: back up, then apply
+  `202610140003`–`202610140005` to the hosted test database (SQL only; no
+  redeploy).
+
+**Next steps for the owner**
+1. **On the iPhone** (a profile build pointing at the legal site was
+   installed on 2026-10-15): open Study plans, and Family+ as a parent, tap
+   Terms and Privacy, and confirm both open the live pages. This completes
+   launch plan 4.3's "Done when".
+2. **Review and merge #52 and #53**, then the steps after each above.
+3. **Still open:**
+
+| Item | When |
+|---|---|
+| AI DPA and DPIA | Paused by the owner |
+| Production scanner (`studafy-scanner`, same config as the test one) | Before launch |
+| Production purges (`RETENTION_SCHEDULE_ENABLED = "true"` in `fly.worker.toml`) | After the app release with consent version `2026-10-14` |
+| Test purges: check the first run's logs | Any time |
+| Supabase: upgrade to Pro | Before real students |
+| Axiom: set the dataset retention to 30 days | Any time |
+| Google Play: add the privacy policy link | Before publishing |
+| Apple: register `com.studafy.light` | When the account is approved |
+| Lawyers: retention for safeguarding notes, school-wide announcements, other notifications and roster rows with no account | Next follow-up |
+| The duplicate `github-actions-api` token and the two unused GitHub secrets | Any time |
+| Optional: delete the `feat/legal-site` branch (its first commit holds wrangler's local location data; the repository is now public, and PR #37's commits keep it even after the branch goes) | Any time |
+| The local iOS files | Stay uncommitted |
+
+**Next steps for Claude, in order**
+1. **Android track** (now that the app ID is decided): 3.5, lifting the
+   Android release block for internal testing only, is a reviewed change to
+   the SEC-001 guards and waits for the owner's go-ahead; 3.3 (upload key)
+   and 3.4 (release SHA-1 in Google Cloud) need the owner first; then 3.7,
+   the first internal-testing build.
+2. **Capacity, next round** (`docs/capacity/2026-10-14.md`): the lessons
+   and conversations lists a page at a time (about 26% of database time
+   now), then notebook writing on the worker queue, then a load test against
+   a staging project of the production size.
+3. **Axiom monitors filtered by environment**, once production exists.
+4. **Optional: backend-driven device tests in CI.** The exam and coursework
+   device tests need a synthetic school (`dev.teacher`, `dev.student`,
+   `dev.parent` at `synthetic.studafy.test`, fixed ids) that was seeded by
+   hand and is not in the repository. Running them in CI means committing
+   that seed and starting Supabase, Redis and the API in the emulator job.
+5. **When the Apple account is approved:** stage 5 (iOS).
+
+**Rules that still apply**
+- Test only on throwaway stacks, never the local working database or the
+  hosted one. Integration tests pick up `.env`'s `DATABASE_URL` (the local
+  working database) unless `DATABASE_URL` is set explicitly.
+- Hosted: read-only, and only when needed. Back up before any migration
+  (`gh workflow run backup.yml`).
+- Keep the local iOS signing files uncommitted:
+  `ios/Runner.xcodeproj/project.pbxproj` (the personal team) and
+  `ios/Runner/RunnerPersonalTeam.entitlements`. Never `git reset --hard`
+  or check out over them: stash everything or rebase.
+- Read `.env.hosted` with a parser that never prints values. Never
+  `source` it.
+- Ask before any `fly` command that changes something; read-only ones
+  (`fly logs`, `fly status`) are fine.
+
+## Earlier (2026-10-13): all merged, test copy deployed
 
 **Where things stand**
 - **Code:** Claude's launch items (3.6, 3.6b, 5.5, 4.3, 4.7, 4.8, 7.1 and
