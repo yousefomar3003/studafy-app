@@ -484,6 +484,11 @@ jobs:
       - name: Verify the retention schedule
         run: bunx supabase test db --local supabase/tests/retention_schedule.sql
 
+      - name: Verify the inactive-account warning email
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/inactive_account_warning_email.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:plans:tenancy
 

@@ -160,6 +160,16 @@ export function channelCopy(templateKey: string, locale: string): ChannelCopy {
     copy[language].generic!;
 }
 
+/**
+ * The last line of a required service notice (the inactive-account
+ * warning), which is emailed whatever the person's email preferences.
+ */
+export function serviceNoticeFooter(locale: string): string {
+  return locale === "ar"
+    ? "هذا إشعار ضروري بخصوص حسابك، لذلك يُرسل حتى لو أوقفت رسائل البريد الإلكتروني من Studafy."
+    : "This is a required notice about your account, so it is sent even if you have turned off emails from Studafy.";
+}
+
 /** Every category exists in both languages; used by the parity test. */
 export function channelCopyCategories(): Record<"en" | "ar", string[]> {
   return {

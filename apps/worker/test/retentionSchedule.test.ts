@@ -14,7 +14,7 @@ function fakeSql(results: Record<string, Record<string, number> | Error>) {
     const result = results[step]!;
     return result instanceof Error
       ? Promise.reject(result)
-      : Promise.resolve([{ counts: result }]);
+      : Promise.resolve([{ counts: result, pending: 0 }]);
   }) as unknown as Sql;
   return { sql, calls };
 }
@@ -24,6 +24,7 @@ test("every purge runs each pass, and one failing does not stop the rest", async
     retention_purge_records: { audit_events: 12, consent_records: 0 },
     retention_purge_classes: new Error("lock timeout"),
     retention_inactive_accounts: { warned: 2, deletion_requested: 0 },
+    inactive_warning_email_pending: {},
   });
   const collector = new LogCollector();
   const logger = createJsonLogger("worker", "test", "debug", collector.sink);
@@ -36,6 +37,8 @@ test("every purge runs each pass, and one failing does not stop the rest", async
     "retention_purge_records",
     "retention_purge_classes",
     "retention_inactive_accounts",
+    // No email provider here: the warning emails only count what waits.
+    "inactive_warning_email_pending",
   ]);
   const logged = collector.parsed();
   expect(
@@ -53,6 +56,7 @@ test("a pass that removes nothing logs nothing", async () => {
     retention_purge_records: { audit_events: 0 },
     retention_purge_classes: { classes_purged: 0 },
     retention_inactive_accounts: { warned: 0 },
+    inactive_warning_email_pending: {},
   });
   const collector = new LogCollector();
   const logger = createJsonLogger("worker", "test", "debug", collector.sink);

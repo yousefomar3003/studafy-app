@@ -1,6 +1,7 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
-import type { PrivateFileStorage } from "@studafy/infrastructure";
+import type { EmailSender, PrivateFileStorage } from "@studafy/infrastructure";
+import { sendInactiveWarningEmails } from "./inactiveWarningEmail";
 
 interface RetentionJob {
   jobId: number;
@@ -126,12 +127,15 @@ const RETENTION_STEPS = [
  * DL-057 retention schedule (privacy policy §10). Each step is one bounded
  * transaction in the database; a step that fails is logged and the others
  * still run. Files the purges leave unreferenced become due for the FILE-051
- * sweep above, which deletes their bytes. Logs carry counts only.
+ * sweep above, which deletes their bytes. After the purges, the
+ * inactive-account warnings are emailed (`email`, the worker's Resend
+ * sender; without one, the waiting count is logged). Logs carry counts only.
  */
 export function startRetentionSchedule(
   sql: Sql,
   logger: Logger,
   intervalMs = 60 * 60_000,
+  options: { email?: EmailSender } = {},
 ): RetentionScheduleRuntime {
   let closed = false;
   let running: Promise<unknown> | null = null;
@@ -150,6 +154,18 @@ export function startRetentionSchedule(
       } catch (error) {
         logger.error("retention_step_failed", {
           step: step.name,
+          error_name: error instanceof Error ? error.name : "unknown",
+        });
+      }
+    }
+    if (!closed) {
+      try {
+        report.inactive_warning_emails = {
+          ...await sendInactiveWarningEmails(sql, options.email, logger),
+        };
+      } catch (error) {
+        logger.error("retention_step_failed", {
+          step: "inactive_warning_emails",
           error_name: error instanceof Error ? error.name : "unknown",
         });
       }
