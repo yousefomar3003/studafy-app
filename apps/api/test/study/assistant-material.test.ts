@@ -14,6 +14,7 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import type { NotebookRepository } from "../../src/study/notebookRoutes";
 import type { MaterialRepository } from "../../src/study/material";
+import { fakeAiAccess } from "../support/aiAccess";
 
 const SUBJECT = "00000000-0000-4000-8000-000000000001";
 const LESSON = "00000000-0000-4000-8000-0000000000d1";
@@ -118,6 +119,7 @@ function app(options: {
     "/",
     createStudyAssistantRoutes(
       {
+        aiAccess: fakeAiAccess(),
         assistant: {
           ask: async (question, _h, extras) => {
             seen.questions.push(question);

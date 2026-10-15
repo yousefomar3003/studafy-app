@@ -468,3 +468,69 @@ export function createStudyAssistant(
     },
   };
 }
+
+/**
+ * The same assistant, with the names of the people a student can see taken
+ * out of everything it sends (ADR-0043, DPIA D1): the question, every turn
+ * of the chat, the material's text, titles, headings and file names, and a
+ * study set's or notebook's lesson. Built per request, from the names the
+ * database returns for that student, and wrapped around the provider client
+ * before any call is made.
+ *
+ * Photos are passed through untouched. Nothing here can find a name written
+ * in an image, so the app tells the student not to photograph one.
+ */
+export function withNameRedaction<A extends Partial<StudyAssistant>>(
+  assistant: A,
+  redact: (text: string) => string,
+): A {
+  const passage = (p: MaterialPassage): MaterialPassage => ({
+    ...p,
+    name: redact(p.name),
+    text: redact(p.text),
+    ...(p.lessonTitle ? { lessonTitle: redact(p.lessonTitle) } : {}),
+    ...(p.heading ? { heading: redact(p.heading) } : {}),
+  });
+  const source = (s: UnreadableSource): UnreadableSource => ({
+    ...s,
+    name: redact(s.name),
+  });
+  const wrapped: Partial<StudyAssistant> = { ...assistant };
+  const { ask, studySet, lessonNotes, notebook } = assistant;
+  if (ask) {
+    wrapped.ask = (question, history = [], extras = {}) =>
+      ask.call(
+        assistant,
+        redact(question),
+        history.map((turn) => ({ ...turn, text: redact(turn.text) })),
+        {
+          ...extras,
+          ...(extras.passages
+            ? { passages: extras.passages.map(passage) }
+            : {}),
+          ...(extras.unreadable
+            ? { unreadable: extras.unreadable.map(source) }
+            : {}),
+        },
+      );
+  }
+  if (studySet) {
+    wrapped.studySet = (kind, title, lessonText) =>
+      studySet.call(assistant, kind, redact(title), redact(lessonText));
+  }
+  if (lessonNotes) {
+    wrapped.lessonNotes = (title, lessonText) =>
+      lessonNotes.call(assistant, redact(title), redact(lessonText));
+  }
+  if (notebook) {
+    wrapped.notebook = (title, passages, extras = {}) =>
+      notebook.call(assistant, redact(title), passages.map(passage), {
+        ...extras,
+        ...(extras.unreadable
+          ? { unreadable: extras.unreadable.map(source) }
+          : {}),
+      });
+  }
+  // transcribe and whiteboardNotes carry only an image: passed through.
+  return wrapped as A;
+}

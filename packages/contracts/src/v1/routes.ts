@@ -42,6 +42,7 @@ import * as StudyPlans from "./studyPlans";
 import * as StudyNotebooks from "./studyNotebooks";
 import * as MaterialSelection from "./materialSelection";
 import * as ManagedAccounts from "./managedAccounts";
+import * as AiConsent from "./aiConsent";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -2131,6 +2132,44 @@ export const V1_ROUTE_CATALOGUE = [
     "V1NotebookEntry",
     201,
     params("classroomId"),
+  ),
+  // The AI consent (ADR-0043). Appended. A student agrees to the AI notice
+  // or withdraws; a parent does it for a child account they manage.
+  catalogueGet(
+    "getStudyToolsConsent",
+    "/v1/me/study-tools-consent",
+    "study_tools_consent.read",
+    AiConsent.V1AiConsentState,
+    "V1AiConsentState",
+  ),
+  cataloguePost(
+    "updateStudyToolsConsent",
+    "/v1/me/study-tools-consent",
+    "study_tools_consent.write",
+    AiConsent.V1UpdateAiConsentRequest,
+    "V1UpdateAiConsentRequest",
+    AiConsent.V1AiConsentState,
+    "V1AiConsentState",
+    200,
+  ),
+  catalogueGet(
+    "getManagedChildStudyToolsConsent",
+    "/v1/me/managed-children/{childId}/study-tools-consent",
+    "managed_child.study_tools_consent",
+    AiConsent.V1AiConsentState,
+    "V1AiConsentState",
+    params("childId"),
+  ),
+  cataloguePost(
+    "updateManagedChildStudyToolsConsent",
+    "/v1/me/managed-children/{childId}/study-tools-consent",
+    "managed_child.study_tools_consent",
+    AiConsent.V1UpdateAiConsentRequest,
+    "V1UpdateAiConsentRequest",
+    AiConsent.V1AiConsentState,
+    "V1AiConsentState",
+    200,
+    params("childId"),
   ),
 ] as const satisfies readonly V1RouteContract[];
 

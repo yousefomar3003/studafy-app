@@ -72,6 +72,12 @@ export const ErrorCode = {
   REASON_REQUIRED: "REASON_REQUIRED",
   ATTENDANCE_LOCKED: "ATTENDANCE_LOCKED",
   SUBMISSION_LOCKED: "SUBMISSION_LOCKED",
+  // The AI study tools (ADR-0043): students in a class only, and only with
+  // a current AI consent - the student's own, or for a managed child
+  // account their parent's.
+  AI_STUDENTS_ONLY: "AI_STUDENTS_ONLY",
+  AI_CONSENT_REQUIRED: "AI_CONSENT_REQUIRED",
+  AI_GUARDIAN_CONSENT_REQUIRED: "AI_GUARDIAN_CONSENT_REQUIRED",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 

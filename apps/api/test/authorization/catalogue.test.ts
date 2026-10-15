@@ -28,6 +28,7 @@ import { createStudyRoutes } from "../../src/study/routes";
 import { createLessonReadingRoutes } from "../../src/study/readingRoutes";
 import { createStudyNotebookRoutes } from "../../src/study/studyNotebookRoutes";
 import { createSelectionRoutes } from "../../src/study/selectionRoutes";
+import { createAiConsentRoutes } from "../../src/study/aiConsentRoutes";
 import { createNotebookRoutes } from "../../src/study/notebookRoutes";
 import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
@@ -65,6 +66,7 @@ import { declaredPermission } from "../../src/authorization/middleware";
 import { FakeAuthRepository } from "../auth/fake-repository";
 import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
 import { VersionedTenantContextCache } from "../../src/authorization/cache";
+import { fakeAiAccess } from "../support/aiAccess";
 
 function routeTable() {
   const logger = createJsonLogger(
@@ -400,6 +402,7 @@ function routeTable() {
     "/",
     createStudyAssistantRoutes(
       {
+        aiAccess: fakeAiAccess(),
         assistant: { ask: async () => ({ answer: "stub" }) },
         repository: {
           usage: async () => ({ outcome: "ok" }),
@@ -469,6 +472,7 @@ function routeTable() {
     "/",
     createStudyRoutes(
       {
+        aiAccess: fakeAiAccess(),
         repository: {
           usage: async () => ({ outcome: "ok" }),
           query: async () => null,
@@ -530,6 +534,7 @@ function routeTable() {
     "/",
     createNotebookRoutes(
       {
+        aiAccess: fakeAiAccess(),
         notebooks: { call: async () => ({ outcome: "forbidden" }) },
         study: {
           usage: async () => ({ outcome: "ok" }),
@@ -570,6 +575,7 @@ function routeTable() {
     "/",
     createStudyNotebookRoutes(
       {
+        aiAccess: fakeAiAccess(),
         notebooks: { call: async () => ({ outcome: "forbidden" }) },
         material: { call: async () => ({ outcome: "invalid" }) },
         repository: {
@@ -589,6 +595,7 @@ function routeTable() {
     "/",
     createSelectionRoutes(
       {
+        aiAccess: fakeAiAccess(),
         material: { call: async () => ({ outcome: "invalid" }) },
         outputs: { call: async () => ({ outcome: "forbidden" }) },
         repository: {
@@ -600,6 +607,14 @@ function routeTable() {
         assistant: null,
         lessonToolsEnabled: false,
       },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createAiConsentRoutes(
+      { repository: fakeAiAccess() },
       authorization,
       idempotency,
     ),

@@ -42,9 +42,16 @@ import {
 } from "../study/selection";
 import { outcomeProblem } from "../platform/outcomes";
 import { membershipDbContext } from "../platform/dbContext";
+import {
+  type AiAccessRepository,
+  nameRedactedAssistant,
+  requireAiAccess,
+} from "../study/aiAccess";
 
 export interface StudyAssistantDependencies {
   assistant: Pick<StudyAssistant, "ask">;
+  /** Who may use AI, and the names kept out of it (ADR-0043). */
+  aiAccess: AiAccessRepository;
   /** The AI ledger: the token allowance, and the dollar cap beneath it. */
   repository: StudyRepository;
   prices: ModelPrices;
@@ -87,6 +94,8 @@ export function createStudyAssistantRoutes(
     "/v1/study-assistant/ask",
     validateRouteInput(route),
     requirePermission(authorization, "study_assistant.ask"),
+    // Students in a class with a current AI consent only (ADR-0043).
+    requireAiAccess(deps.aiAccess),
     async (c: Context<AuthorizationEnv>) => {
       const body = validatedBody<{
         question: string;
@@ -231,12 +240,19 @@ export function createStudyAssistantRoutes(
 
       let reply;
       try {
+        // The names of the people the student can see are replaced in
+        // everything sent, before the call (ADR-0043, DPIA D1).
+        const assistant = await nameRedactedAssistant(
+          deps.aiAccess,
+          context,
+          deps.assistant,
+        );
         reply = await meter.run(
           context,
           "ask",
           hold,
           () =>
-            deps.assistant.ask(body.question, fitted, {
+            assistant.ask(body.question, fitted, {
               passages,
               unreadable: gathered?.unreadable ?? [],
               images,

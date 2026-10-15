@@ -582,12 +582,14 @@ export const PERMISSION_CATALOGUE = {
     resource: "study_assistant",
     scope: "self",
     concealDeniedResource: false,
-    // Reads nothing that belongs to a school - the question is the entire
-    // input - so there is no tenant to require, and a student who has not
-    // joined a class yet can still use it.
+    // A question belongs to the student, not to a school, so there is no
+    // tenant to require. Who may ask is decided by the AI gate after this
+    // (ADR-0043): a student with an active class enrollment and a current
+    // AI consent, re-checked by the AI ledger in SQL before any token is
+    // held. Parents, teachers and accounts with no class are refused.
     tenantRequired: false,
     description:
-      "Ask the study assistant a question. The request body is the whole prompt; no school data is read.",
+      "Ask the study assistant a question: students with an active class enrollment and a current AI consent only, checked in SQL (private.ai_access).",
   },
   "onboarding.teacher_workspace": {
     resource: "teacher_workspace",
@@ -671,7 +673,7 @@ export const PERMISSION_CATALOGUE = {
   ),
   "study_set.generate": resource(
     "resource",
-    "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max.",
+    "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max: students in a class only (ADR-0043).",
   ),
   // ADR-0037: a lesson's files and links as read for the study helper.
   "lesson_reading.read": resource(
@@ -707,7 +709,7 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: false,
     tenantRequired: false,
     description:
-      "Make or reopen a quiz or flashcards from class material the actor chose and can see, on Studafy Max.",
+      "Make or reopen a quiz or flashcards from class material the actor chose and can see, on Studafy Max: students with a current AI consent only (ADR-0043).",
   },
   "meeting.list": {
     resource: "meeting",
@@ -1221,6 +1223,33 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description:
       "Issue a one-time sign-in for a child account the caller manages. Audited.",
+  },
+  // The AI consent (ADR-0043). Self-scoped: the SQL behind each re-derives
+  // the caller from auth.uid(), refuses a managed child consenting for
+  // itself, and answers a child operation only for the managing parent.
+  "study_tools_consent.read": {
+    resource: "study_tools_consent",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read whether the actor may use the AI study tools, and their AI consent.",
+  },
+  "study_tools_consent.write": {
+    resource: "study_tools_consent",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Agree to the current AI notice, or withdraw; a managed child account may only withdraw.",
+  },
+  "managed_child.study_tools_consent": {
+    resource: "managed_child",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Read, give or withdraw the AI consent of a child account the caller manages.",
   },
 } as const satisfies Record<string, PermissionDefinition>;
 

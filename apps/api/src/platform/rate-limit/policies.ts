@@ -398,7 +398,15 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   // One child's insights, not a page of them: the trailing literal would
   // otherwise read as a collection.
   "/v1/family/insights",
+  // The account's AI consent (ADR-0043).
+  "/v1/me/study-tools-consent",
 ]);
+
+/** Single reads whose path ends in a literal after a parameter. */
+const SINGLE_READ_PATTERNS: readonly RegExp[] = [
+  // One managed child's AI consent (ADR-0043).
+  /^\/v1\/me\/managed-children\/[^/]+\/study-tools-consent$/,
+];
 
 /** Matches both the canonical {param} segment and a real uuid value. */
 const PARAMETER_SEGMENT =
@@ -409,5 +417,6 @@ function isCollectionRead(path: string): boolean {
   // single-resource read; everything else is a cursor-paged collection.
   const last = path.slice(path.lastIndexOf("/") + 1);
   if (PARAMETER_SEGMENT.test(last)) return false;
+  if (SINGLE_READ_PATTERNS.some((pattern) => pattern.test(path))) return false;
   return !SINGLE_READ_PATHS.has(path);
 }

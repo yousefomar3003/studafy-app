@@ -26,6 +26,11 @@ import {
 import { outcomeProblem } from "../platform/outcomes";
 import type { StudyRepository } from "./repository";
 import {
+  type AiAccessRepository,
+  nameRedactedAssistant,
+  requireAiAccess,
+} from "./aiAccess";
+import {
   AI_REFUSALS,
   AiMeter,
   holdFor,
@@ -110,6 +115,8 @@ export interface NotebookRoutesDependencies {
   lessonToolsEnabled: boolean;
   /** Lessons' files and links, read for the AI (ADR-0037). */
   material?: MaterialRepository;
+  /** Who may use AI, and the names kept out of it (ADR-0043). */
+  aiAccess: AiAccessRepository;
 }
 
 function toEntry(entry: Record<string, unknown>) {
@@ -173,6 +180,7 @@ export function createNotebookRoutes(
       "study_set.generate",
       (c) => validatedParams<Record<string, string>>(c).resourceId ?? null,
     ),
+    requireAiAccess(deps.aiAccess),
     idempotency(idempotencyDependencies, notesRoute.operationId, "required"),
     async (c) => {
       const assistant = deps.assistant;
@@ -222,12 +230,18 @@ export function createNotebookRoutes(
       if (!body) {
         let notes;
         try {
+          // Names out of the lesson before it is sent (ADR-0043).
+          const redacted = await nameRedactedAssistant(
+            deps.aiAccess,
+            db,
+            assistant,
+          );
           // Plus's AI note-making, metered like the whiteboard.
           notes = await meter.run(
             db,
             "notes",
             holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
-            () => assistant.lessonNotes(title, text),
+            () => redacted.lessonNotes(title, text),
           );
         } catch (error) {
           log?.warn("study_ai_failed", {

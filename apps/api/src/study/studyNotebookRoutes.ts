@@ -43,6 +43,11 @@ import {
   selectionProblem,
 } from "./selection";
 import { STUDY_SET_MATERIAL_CHARS } from "./routes";
+import {
+  type AiAccessRepository,
+  nameRedactedAssistant,
+  requireAiAccess,
+} from "./aiAccess";
 
 /**
  * A student's study notebooks (2026-10-07).
@@ -112,6 +117,8 @@ export interface StudyNotebookDependencies {
   lessonToolsEnabled: boolean;
   /** Runs work after the response is sent; tests await it. */
   background?: (work: Promise<void>) => void;
+  /** Who may use AI, and the names kept out of it (ADR-0043). */
+  aiAccess: AiAccessRepository;
 }
 
 const NOTEBOOK_OUTCOMES: OutcomeTable = {
@@ -238,12 +245,19 @@ export function createNotebookWriter(
       if (readable.reduce((n, p) => n + p.text.length, 0) < 40) {
         return await fail("no_readable_material");
       }
+      // Names out of the material before it is sent (ADR-0043). The ledger
+      // below refuses an owner who may no longer use AI.
+      const redacted = await nameRedactedAssistant(
+        deps.aiAccess,
+        context,
+        assistant,
+      );
       const metered = await meter.run(
         context,
         "notes",
         holdFor(deps.prices, gathered.chars, NOTEBOOK_OUTPUT_TOKENS),
         () =>
-          assistant.notebook(String(started["lessonTitle"] ?? ""), readable, {
+          redacted.notebook(String(started["lessonTitle"] ?? ""), readable, {
             unreadable: gathered.unreadable,
             learner: gathered.grade ? { grade: gathered.grade } : {},
           }),
@@ -394,6 +408,7 @@ export function createStudyNotebookRoutes(
       "notebook.write",
       (c) => validatedParams<Record<string, string>>(c).classroomId ?? null,
     ),
+    requireAiAccess(deps.aiAccess),
     idempotency(idempotencyDependencies, createRoute.operationId, "required"),
     async (c) => {
       if (!ready()) return problem(c, "AI_FEATURE_DISABLED", 409);
@@ -488,6 +503,7 @@ export function createStudyNotebookRoutes(
     "/v1/study-notebooks/:notebookId/regenerate",
     validateRouteInput(regenerateRoute),
     requirePermission(authorization, "study_notebook.write"),
+    requireAiAccess(deps.aiAccess),
     idempotency(
       idempotencyDependencies,
       regenerateRoute.operationId,
@@ -619,6 +635,7 @@ export function createStudyNotebookRoutes(
     "/v1/study-notebooks/:notebookId/study-set",
     validateRouteInput(setRoute),
     requirePermission(authorization, "study_notebook.write"),
+    requireAiAccess(deps.aiAccess),
     idempotency(idempotencyDependencies, setRoute.operationId, "required"),
     async (c) => {
       const assistant = deps.assistant;
@@ -652,12 +669,17 @@ export function createStudyNotebookRoutes(
 
       let generated;
       try {
+        const redacted = await nameRedactedAssistant(
+          deps.aiAccess,
+          context,
+          assistant,
+        );
         generated = await meter.run(
           context,
           input.kind,
           holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
           () =>
-            assistant.studySet(input.kind, String(found["title"] ?? ""), text),
+            redacted.studySet(input.kind, String(found["title"] ?? ""), text),
           // The same notebook version and sections: one charge, however
           // often the request is retried.
           `nbset:${id}:${input.kind}:${version}:${keys.join(",")}`.slice(

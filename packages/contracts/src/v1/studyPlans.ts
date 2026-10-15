@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { V1FileAttachment } from "./attachments";
+import { V1AiAccess } from "./aiConsent";
 
 const Id = z.string().uuid();
 const Timestamp = z.string().datetime({ offset: true });
@@ -58,6 +59,13 @@ export const V1StudyPlanSummary = z.strictObject({
    */
   chatMemoryChars: z.number().int().nonnegative().optional(),
   allowance: V1AiAllowance,
+  /**
+   * Whether this account may use the AI study tools (ADR-0043). Anything
+   * but "ok" or a consent still to give means `available` is empty: the
+   * tools are for students in a class. Absent from servers older than
+   * 2026-10-15.
+   */
+  aiAccess: V1AiAccess.optional(),
 });
 export type V1StudyPlanSummary = z.infer<typeof V1StudyPlanSummary>;
 

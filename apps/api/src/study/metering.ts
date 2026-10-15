@@ -2,6 +2,7 @@ import { type StudyUsage, tokenBound } from "@studafy/domain";
 import type { RequestDbContext } from "../platform/dbContext";
 import type { OutcomeTable } from "../platform/outcomes";
 import type { StudyFeature, StudyRepository } from "./repository";
+import { AI_ACCESS_REFUSALS } from "./aiAccess";
 
 /**
  * Metering for every AI call (ADR-0029, ADR-0037).
@@ -71,6 +72,9 @@ export function holdFor(
 
 /** The refusals an AI call can meet before anything is spent. */
 export const AI_REFUSALS: OutcomeTable = {
+  // Not a student in a class, or no current AI consent (ADR-0043): the
+  // ledger's own check, under the routes' AI gate.
+  ...AI_ACCESS_REFUSALS,
   plan_required: ["PLAN_REQUIRED", 403],
   allowance_exhausted: ["AI_ALLOWANCE_USED", 429],
   monthly_cap: ["AI_ALLOWANCE_USED", 429],

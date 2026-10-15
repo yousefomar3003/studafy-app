@@ -120,3 +120,4 @@ export * from "./studyPlans";
 export * from "./studyNotebooks";
 export * from "./materialSelection";
 export * from "./managedAccounts";
+export * from "./aiConsent";
