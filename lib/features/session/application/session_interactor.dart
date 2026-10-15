@@ -134,6 +134,38 @@ class SessionInteractor {
     return result;
   }
 
+  /// Signs in with an email and password - only for accounts Studafy set up
+  /// (the store reviewers'). Completes with null once a session exists; it
+  /// then arrives through [sessionChanges] like any other, and the login
+  /// screen finishes the sign-in exactly as it does for a provider.
+  Future<PasswordSignInError?> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    // Never the address: telemetry carries no personal data.
+    telemetry.event('session_password_started');
+    _setStatus(SessionStatus.authenticating);
+    try {
+      await repository.signInWithPassword(email: email, password: password);
+      return null;
+    } on PasswordSignInException catch (failure) {
+      _setStatus(SessionStatus.signedOut);
+      telemetry.event('session_password_failed', {
+        'reason': failure.error.name,
+      });
+      return failure.error;
+    } catch (_) {
+      _setStatus(SessionStatus.signedOut);
+      telemetry.event('session_password_failed', {'reason': 'unavailable'});
+      return PasswordSignInError.unavailable;
+    }
+  }
+
+  /// Registers how a password account is asked for its password again
+  /// before a sensitive action. The app installs one above its navigator.
+  void usePasswordReauthPrompt(PasswordReauthPrompt? prompt) =>
+      repository.usePasswordReauthPrompt(prompt);
+
   /// Hydrates the authenticated context after a remote session appears:
   /// consent, profile, matching membership, and the school's active term.
   ///

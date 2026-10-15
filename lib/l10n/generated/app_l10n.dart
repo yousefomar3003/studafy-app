@@ -11819,6 +11819,114 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Attempts'**
   String get takeChildAttempts;
+
+  /// Secondary sign-in for accounts Studafy provisions itself, such as app store reviewers'. There is no sign-up or password reset on this path.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email'**
+  String get loginWithEmail;
+
+  /// No description provided for @loginEmailNote.
+  ///
+  /// In en, this message translates to:
+  /// **'For accounts set up by Studafy.'**
+  String get loginEmailNote;
+
+  /// No description provided for @loginEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get loginEmailLabel;
+
+  /// No description provided for @loginPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get loginPasswordLabel;
+
+  /// No description provided for @loginShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get loginShowPassword;
+
+  /// No description provided for @loginHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get loginHidePassword;
+
+  /// No description provided for @loginEmailSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get loginEmailSubmit;
+
+  /// No description provided for @loginEmailMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email address.'**
+  String get loginEmailMissing;
+
+  /// No description provided for @loginEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get loginEmailInvalid;
+
+  /// No description provided for @loginPasswordMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password.'**
+  String get loginPasswordMissing;
+
+  /// No description provided for @loginEmailWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That email and password don\'t match an account set up by Studafy.'**
+  String get loginEmailWrong;
+
+  /// No description provided for @loginEmailTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a few minutes, then try again.'**
+  String get loginEmailTooMany;
+
+  /// No description provided for @loginEmailOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach Studafy. Check your connection and try again.'**
+  String get loginEmailOffline;
+
+  /// No description provided for @loginEmailUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Email sign-in isn\'t available right now. Please try again later.'**
+  String get loginEmailUnavailable;
+
+  /// No description provided for @reauthPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm it\'s you'**
+  String get reauthPasswordTitle;
+
+  /// No description provided for @reauthPasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the password for {email}.'**
+  String reauthPasswordBody(String email);
+
+  /// No description provided for @reauthPasswordConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get reauthPasswordConfirm;
+
+  /// No description provided for @reauthPasswordCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get reauthPasswordCancel;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

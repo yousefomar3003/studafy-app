@@ -25,6 +25,7 @@ import 'features/family/presentation/family_scope.dart';
 import 'features/meetings/presentation/meetings_scope.dart';
 import 'features/messaging/presentation/messaging_scope.dart';
 import 'features/notifications/presentation/notifications_scope.dart';
+import 'features/session/presentation/password_reauth_dialog.dart';
 import 'features/session/presentation/role_page.dart';
 import 'features/session/presentation/splash_page.dart';
 import 'l10n/generated/app_l10n.dart';
@@ -74,6 +75,13 @@ Future<void> _start() async {
   }
   try {
     final dependencies = await AppBootstrap.initialize(runtimePolicy);
+    // A password account (the store reviewers') proves a recent sign-in by
+    // typing its password again; the dialog opens over whatever is showing.
+    dependencies.session.usePasswordReauthPrompt((email) async {
+      final navigatorContext = _navigatorKey.currentContext;
+      if (navigatorContext == null) return null;
+      return showPasswordReauthDialog(navigatorContext, email);
+    });
     runApp(
       StudafyApp(runtimePolicy: runtimePolicy, dependencies: dependencies),
     );

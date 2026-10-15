@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, SocketException;
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -44,6 +44,7 @@ class ApiSessionRepository implements SessionRepository {
   final V1ApiClient _client;
   final SecureStore _secureStore;
   final SupabaseClient? _supabase;
+  PasswordReauthPrompt? _passwordPrompt;
 
   SupabaseClient get _auth => _supabase ?? StudafyBackend.client;
 
@@ -157,6 +158,30 @@ class ApiSessionRepository implements SessionRepository {
       scopes: provider == LoginProvider.microsoft ? 'email' : null,
     );
     if (!launched) throw StateError('Could not open the sign-in browser.');
+  }
+
+  @override
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    final AuthResponse response;
+    try {
+      response = await _auth.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } catch (error) {
+      throw PasswordSignInException(passwordSignInErrorFor(error));
+    }
+    if (response.session == null) {
+      throw const PasswordSignInException(PasswordSignInError.unavailable);
+    }
+  }
+
+  @override
+  void usePasswordReauthPrompt(PasswordReauthPrompt? prompt) {
+    _passwordPrompt = prompt;
   }
 
   /// Native Sign in with Apple (Apple guideline 4.8).
@@ -368,6 +393,10 @@ class ApiSessionRepository implements SessionRepository {
     final auth = _auth.auth;
     final user = auth.currentUser;
     final previous = auth.currentSession?.refreshToken;
+    if (user != null && previous != null && isPasswordAccount(user)) {
+      await _passwordSignInAgain(user, previous);
+      return;
+    }
     final provider = loginProviderFor(user?.appMetadata['provider']);
     if (user == null || previous == null || provider == null) {
       // A managed child account has no provider of its own to sign in with.
@@ -400,6 +429,53 @@ class ApiSessionRepository implements SessionRepository {
       );
     } finally {
       await subscription.cancel();
+    }
+  }
+
+  /// The password path of [_signInAgain]: the person types their password
+  /// again and it is checked by the same sign-in an OAuth account goes
+  /// through, so the server sees a password sign-in from moments ago - the
+  /// `amr` entry it counts is method-agnostic.
+  ///
+  /// The address is the account's own, never typed, so the result can only
+  /// be this account; the id is still compared, as for OAuth.
+  Future<void> _passwordSignInAgain(User user, String previous) async {
+    final prompt = _passwordPrompt;
+    final email = user.email ?? '';
+    if (prompt == null || email.isEmpty) {
+      throw const Failure.recentSignIn(
+        'For your security, sign out and sign in again, then try once more.',
+      );
+    }
+    final password = await prompt(email);
+    if (password == null || password.isEmpty) {
+      throw const Failure.recentSignIn(
+        'Sign-in was not completed. Try again when you are ready.',
+      );
+    }
+    final AuthResponse response;
+    try {
+      response = await _auth.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } catch (error) {
+      throw Failure.recentSignIn(switch (passwordSignInErrorFor(error)) {
+        PasswordSignInError.invalidCredentials =>
+          'That password is not right. Try again.',
+        PasswordSignInError.tooManyAttempts =>
+          'Too many attempts. Wait a few minutes, then try again.',
+        PasswordSignInError.network => Failure.network.message,
+        PasswordSignInError.unavailable =>
+          'Sign-in was not completed. Try again when you are ready.',
+      });
+    }
+    if (response.session?.user.id != user.id) {
+      await _auth.auth.setSession(previous);
+      throw const Failure.recentSignIn(
+        'That was a different account. Sign in with this account to '
+        'continue.',
+      );
     }
   }
 
@@ -520,6 +596,40 @@ LoginProvider? loginProviderFor(Object? provider) => switch (provider) {
   'apple' => LoginProvider.apple,
   _ => null,
 };
+
+/// Whether [user] signs in with an email and password: an account Studafy
+/// provisioned (the store reviewers'). A managed child account is also an
+/// `email` identity, but it has no password - it is entered only through
+/// its parent - so it is never asked for one.
+bool isPasswordAccount(User user) =>
+    user.appMetadata['provider'] == 'email' &&
+    user.appMetadata['studafy_managed_by'] == null &&
+    !(user.email ?? '').endsWith('.invalid');
+
+/// What a failed password sign-in means to the person, from what the auth
+/// client threw. A wrong address and a wrong password are the same answer.
+PasswordSignInError passwordSignInErrorFor(Object error) {
+  if (error is AuthRetryableFetchException) {
+    // No status at all: the request never got an answer.
+    return error.statusCode == null
+        ? PasswordSignInError.network
+        : PasswordSignInError.unavailable;
+  }
+  if (error is AuthException) {
+    if (error.statusCode == '429' || error.code == 'over_request_rate_limit') {
+      return PasswordSignInError.tooManyAttempts;
+    }
+    if (error.code == 'invalid_credentials' ||
+        (error.statusCode == '400' && error.code == null)) {
+      return PasswordSignInError.invalidCredentials;
+    }
+    return PasswordSignInError.unavailable;
+  }
+  if (error is SocketException || error is TimeoutException) {
+    return PasswordSignInError.network;
+  }
+  return PasswordSignInError.unavailable;
+}
 
 /// Runs [attempt]; if the server answers that a recent sign-in is needed,
 /// runs [signInAgain] and tries exactly once more. Anything else - and a

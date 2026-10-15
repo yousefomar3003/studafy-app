@@ -6346,6 +6346,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      allow_provisioned_email_account: {
+        Args: { requested_email: string };
+        Returns: undefined;
+      };
       mark_notifications_read: { Args: never; Returns: number };
       record_policy_consent: {
         Args: {

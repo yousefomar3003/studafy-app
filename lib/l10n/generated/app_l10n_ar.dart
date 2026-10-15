@@ -6896,4 +6896,64 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get takeChildAttempts => 'المحاولات';
+
+  @override
+  String get loginWithEmail => 'تسجيل الدخول بالبريد الإلكتروني';
+
+  @override
+  String get loginEmailNote => 'للحسابات التي أعدّتها Studafy.';
+
+  @override
+  String get loginEmailLabel => 'البريد الإلكتروني';
+
+  @override
+  String get loginPasswordLabel => 'كلمة المرور';
+
+  @override
+  String get loginShowPassword => 'إظهار كلمة المرور';
+
+  @override
+  String get loginHidePassword => 'إخفاء كلمة المرور';
+
+  @override
+  String get loginEmailSubmit => 'تسجيل الدخول';
+
+  @override
+  String get loginEmailMissing => 'أدخل عنوان بريدك الإلكتروني.';
+
+  @override
+  String get loginEmailInvalid => 'أدخل عنوان بريد إلكتروني صحيحًا.';
+
+  @override
+  String get loginPasswordMissing => 'أدخل كلمة المرور.';
+
+  @override
+  String get loginEmailWrong =>
+      'البريد الإلكتروني وكلمة المرور لا يطابقان حسابًا أعدّته Studafy.';
+
+  @override
+  String get loginEmailTooMany =>
+      'محاولات كثيرة جدًا. انتظر بضع دقائق ثم حاول مرة أخرى.';
+
+  @override
+  String get loginEmailOffline =>
+      'تعذّر الوصول إلى Studafy. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get loginEmailUnavailable =>
+      'تسجيل الدخول بالبريد الإلكتروني غير متاح الآن. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get reauthPasswordTitle => 'تأكيد هويتك';
+
+  @override
+  String reauthPasswordBody(String email) {
+    return 'أدخل كلمة المرور للحساب $email.';
+  }
+
+  @override
+  String get reauthPasswordConfirm => 'تأكيد';
+
+  @override
+  String get reauthPasswordCancel => 'إلغاء';
 }

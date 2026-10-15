@@ -73,6 +73,17 @@ async function createUser(
   email: string,
   appMetadata: Record<string, unknown> = {},
 ): Promise<string> {
+  // Email sign-up is refused unless the service role registered the address
+  // first (202610150050); a previous run's account needs no registration.
+  await fetch(`${SUPABASE_URL}/rest/v1/rpc/allow_provisioned_email_account`, {
+    method: "POST",
+    headers: {
+      apikey: SERVICE_KEY,
+      authorization: `Bearer ${SERVICE_KEY}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ requested_email: email }),
+  });
   const response = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
     method: "POST",
     headers: {

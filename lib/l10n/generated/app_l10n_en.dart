@@ -6907,4 +6907,64 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get takeChildAttempts => 'Attempts';
+
+  @override
+  String get loginWithEmail => 'Sign in with email';
+
+  @override
+  String get loginEmailNote => 'For accounts set up by Studafy.';
+
+  @override
+  String get loginEmailLabel => 'Email';
+
+  @override
+  String get loginPasswordLabel => 'Password';
+
+  @override
+  String get loginShowPassword => 'Show password';
+
+  @override
+  String get loginHidePassword => 'Hide password';
+
+  @override
+  String get loginEmailSubmit => 'Sign in';
+
+  @override
+  String get loginEmailMissing => 'Enter your email address.';
+
+  @override
+  String get loginEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get loginPasswordMissing => 'Enter your password.';
+
+  @override
+  String get loginEmailWrong =>
+      'That email and password don\'t match an account set up by Studafy.';
+
+  @override
+  String get loginEmailTooMany =>
+      'Too many attempts. Wait a few minutes, then try again.';
+
+  @override
+  String get loginEmailOffline =>
+      'Couldn\'t reach Studafy. Check your connection and try again.';
+
+  @override
+  String get loginEmailUnavailable =>
+      'Email sign-in isn\'t available right now. Please try again later.';
+
+  @override
+  String get reauthPasswordTitle => 'Confirm it\'s you';
+
+  @override
+  String reauthPasswordBody(String email) {
+    return 'Enter the password for $email.';
+  }
+
+  @override
+  String get reauthPasswordConfirm => 'Confirm';
+
+  @override
+  String get reauthPasswordCancel => 'Cancel';
 }

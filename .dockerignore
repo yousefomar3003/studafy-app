@@ -27,7 +27,7 @@ pubspec.lock
 
 supabase
 docs
-scripts/seed-reviewer-tenant.ts
+scripts/provision-reviewer-school.ts
 **/*.test.ts
 **/test/
 coverage
