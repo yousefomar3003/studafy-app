@@ -62,6 +62,10 @@ backend_env=(
   ENVIRONMENT=development
   LOG_LEVEL=info
   API_PORT="$port"
+  # The most the API allows. A shared runner (or a laptop building the app)
+  # can be slow enough that Storage's first signed upload alone takes
+  # seconds; the default 10 s then fails an upload that is not broken.
+  API_REQUEST_TIMEOUT_MS=30000
   DATABASE_URL="$STACK_DB_URL"
   REDIS_URL="$redis_url"
   SUPABASE_URL="$STACK_API_URL"

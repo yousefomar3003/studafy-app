@@ -248,6 +248,19 @@ async function main(): Promise<void> {
       }
     }
 
+    // Storage must hold the files bucket (a migration makes it). Asking also
+    // wakes Storage, whose first request can take seconds.
+    const bucket = await fetch(
+      `${auth}/storage/v1/bucket/private-school-files`,
+      { headers: admin },
+    );
+    if (!bucket.ok) {
+      throw new Error(
+        `Storage has no private-school-files bucket (${bucket.status}).`,
+      );
+    }
+    await bucket.body?.cancel();
+
     // 2. The school, mirroring createTeacherWorkspace, class join and
     //    guardian link verification. Fixed ids, so every insert is a no-op
     //    on a re-run.

@@ -193,6 +193,8 @@ void main() {
     tester,
   ) async {
     expect(_apiUrl, isNotEmpty, reason: 'E2E_API_URL is not set');
+    // Android screenshots need the surface turned into an image first.
+    if (Platform.isAndroid) await _binding.convertFlutterSurfaceToImage();
     tester.testTextInput.register();
     final teacher = _account(await _signIn(_teacherEmail));
     final student = _account(await _signIn(_studentEmail));
