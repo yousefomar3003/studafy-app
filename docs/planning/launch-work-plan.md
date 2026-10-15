@@ -5,6 +5,11 @@ current test copy to a store launch. It follows the production readiness
 assessment (`docs/evidence/launch-readiness/2026-10-11-production-readiness.md`);
 the `PR-xx` codes point at its issue register.
 
+**The current plan by owner (2026-10-15) is
+[`launch-plan-2026-10-15.md`](launch-plan-2026-10-15.md):** what Claude
+does alone, what only you can do, and what you start and Claude finishes.
+The numbered items below are the detail behind it.
+
 ## How to use this file
 
 - Work top to bottom: each stage assumes the one before it.

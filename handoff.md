@@ -1,9 +1,50 @@
 # Handoff: Studafy
 
 Updated: 2026-10-15. `main` is at `4f18c85` (PR #51). Open pull requests:
-#52 (observability) and #53 (capacity fixes). Neither is deployed.
+#52 (observability), #53 (capacity fixes), #54 (this handoff and the launch
+plan) and #55 (PDF fix). The test worker runs #55's branch.
 
 ## Start here (2026-10-15)
+
+**The launch plan: [`docs/planning/launch-plan-2026-10-15.md`](docs/planning/launch-plan-2026-10-15.md).**
+Everything left before the Play Store and the App Store, split by who does
+it:
+- **A. Claude without you:**
+  - after the merges: the test deploys;
+  - ticking finished items;
+  - the Android internal-testing release change (needs your approval);
+  - store listing copy and screenshots;
+  - a draft DPIA;
+  - production configs;
+  - guides for your steps;
+  - the next capacity round.
+- **B. Only you:**
+  - decide AI at launch, the production database (a new Supabase project on
+    Pro) and the domains;
+  - merge #52–#55;
+  - the phone check;
+  - Axiom retention;
+  - meetings yes or no;
+  - named owners;
+  - the lawyers' open questions;
+  - Apple;
+  - the store listings.
+- **C. You start, Claude finishes:**
+  - the upload keystore and release SHA-1;
+  - Firebase;
+  - Resend;
+  - Play and App Store billing products;
+  - the production Supabase project and its sign-in providers;
+  - DNS, Turnstile and backup storage;
+  - approving production deploys and key rotation;
+  - Sign in with Apple and the APNs key;
+  - the TestFlight and Play uploads.
+- **D. Launch day:** remove the release blocks (SEC-001), the go-live
+  checklist, then the production retention purge.
+
+The fastest route to a store is Android internal testing on the test copy:
+merge, then the keystore, SHA-1 and Firebase, while Claude allows the
+internal-testing release build.
 
 **Done since 2026-10-13** (the owner's list and Claude's work)
 - **Security:** the leaked Fly token was rotated; Sentry scrubs data and
@@ -25,6 +66,19 @@ Updated: 2026-10-15. `main` is at `4f18c85` (PR #51). Open pull requests:
 - **CI:** the iOS simulator job runs on `main` only (PR #49).
 
 **Open pull requests (Claude, 2026-10-15)**
+- **#55 PDFs and scan messages** (`fix/pdf-stream-filter`). A teacher's
+  PDFs were refused as "malformed", for two reasons:
+  - a small compressed part just before an image was misread;
+  - ReportLab, the usual way Claude makes PDFs, writes every part as
+    `[ /ASCII85Decode /FlateDecode ]`, which the check could not decode.
+
+  Both are fixed, with tests that hidden scripts are still caught. The app
+  now says why a file is refused instead of "Checking" for ever, and the
+  worker logs which PDF rule refused a file (`detail`).
+  - On the test copy: `studafy-worker-test` runs this branch (deployed
+    13:27 UTC), and the phone has the matching build. The owner's PDF then
+    scanned clean (13:33).
+  - After merging: redeploy the test worker from `main`.
 - **#52 Observability** (`feat/observability-fixes`):
   - a native crash carried the Sentry installation id on iOS and Android
     (and Android Dart events the device id). The app now sets one constant
@@ -47,12 +101,14 @@ Updated: 2026-10-15. `main` is at `4f18c85` (PR #51). Open pull requests:
   `202610140003`–`202610140005` to the hosted test database (SQL only; no
   redeploy).
 
-**Next steps for the owner**
+**Next steps for the owner** (the full list is part B and C of the launch
+plan)
 1. **On the iPhone** (a profile build pointing at the legal site was
    installed on 2026-10-15): open Study plans, and Family+ as a parent, tap
    Terms and Privacy, and confirm both open the live pages. This completes
    launch plan 4.3's "Done when".
-2. **Review and merge #52 and #53**, then the steps after each above.
+2. **Review and merge #52, #53, #54 and #55**, then the steps after each
+   above.
 3. **Still open:**
 
 | Item | When |
@@ -70,7 +126,8 @@ Updated: 2026-10-15. `main` is at `4f18c85` (PR #51). Open pull requests:
 | Optional: delete the `feat/legal-site` branch (its first commit holds wrangler's local location data; the repository is now public, and PR #37's commits keep it even after the branch goes) | Any time |
 | The local iOS files | Stay uncommitted |
 
-**Next steps for Claude, in order**
+**Next steps for Claude, in order** (the full list is part A of the launch
+plan)
 1. **Android track** (now that the app ID is decided): 3.5, lifting the
    Android release block for internal testing only, is a reviewed change to
    the SEC-001 guards and waits for the owner's go-ahead; 3.3 (upload key)
