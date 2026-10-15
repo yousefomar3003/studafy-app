@@ -49,7 +49,10 @@ for an offer with a **1 month** free trial
 | Test copy | `https://studafy-api-test.fly.dev/webhooks/google` |
 | Production (after the domain, C8) | `https://api.studafy.com/webhooks/google` |
 
-The topic name is not in the code. The docs use `play-billing`.
+The topic name is `play-billing`. The code names it too
+(`PLAY_BILLING_PUBSUB_TOPIC_ID` in `packages/config/src/storeWebhooks.ts`,
+with the push path `PLAY_BILLING_PUSH_PATH`), and a test keeps this guide and
+the code in step (PR #70).
 
 ## Part A: payments profile
 
