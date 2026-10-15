@@ -6,10 +6,10 @@
  * operator-facing catalogue (docs/security/rate-limit-catalogue.md), so a
  * drift test can prove the two never diverge.
  *
- * Subject scoping: "ip" limits are keyed by a normalized client network
- * prefix (never the raw address - a /64 aggregate for IPv6, the address for
- * IPv4), "account" and "tenant" by HMAC digests. Raw identifiers are never
- * written into Redis keys, so the key namespace itself is not an
+ * Subject scoping: "ip" limits are keyed by an HMAC digest of a normalized
+ * client network prefix (a /64 aggregate for IPv6, the address for IPv4),
+ * "account" and "tenant" by HMAC digests of their ids. Raw identifiers are
+ * never written into Redis keys, so the key namespace itself is not an
  * enumeration side channel.
  */
 import { createHmac } from "node:crypto";
