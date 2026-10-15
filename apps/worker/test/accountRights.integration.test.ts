@@ -1,7 +1,8 @@
 /**
  * DL-051 executors against a real local Postgres: the worker loops pick up
  * due work, complete it, and leave nothing pending. The SQL state machines
- * are covered in supabase/tests/account_deletion.sql and data_export.sql.
+ * are covered in supabase/tests/account_deletion.sql and data_export.sql
+ * (what the export holds, DL-060).
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createDatabase, type Sql } from "@studafy/database";
@@ -92,5 +93,29 @@ suite("DL-051 account rights executors", () => {
     `;
     expect(rows[0]?.status).toBe("ready");
     expect(rows[0]?.byte_size).toBeGreaterThan(0);
+
+    // DL-060: the v2 document has every section, even for a new account.
+    const [doc] = await sql<
+      { format: string; sections: Record<string, unknown> }[]
+    >`
+      select p.payload->>'format' as format, p.payload->'sections' as sections
+      from public.data_export_requests d
+      join public.data_export_payloads p on p.request_id = d.id
+      where d.user_id = ${EXPORTER}::uuid
+    `;
+    expect(doc?.format).toBe("studafy-export/v2");
+    expect(Object.keys(doc?.sections ?? {})).toEqual(
+      expect.arrayContaining([
+        "about",
+        "studentRecords",
+        "conversations",
+        "messagesSent",
+        "messagesReceived",
+        "filesUploaded",
+        "aiUsage",
+        "managedChildAccounts",
+      ]),
+    );
+    expect(doc?.sections["messagesReceived"]).toEqual([]);
   });
 });

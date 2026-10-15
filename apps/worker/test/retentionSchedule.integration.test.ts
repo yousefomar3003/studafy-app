@@ -15,6 +15,8 @@ const databaseUrl = process.env["DATABASE_URL"];
 const suite = integrationSuite(describe);
 
 const IDLE = "d1057000-0000-4000-8000-0000000000a1";
+const SCHOOL = "d1057000-0000-4000-8000-0000000000b1";
+const PHOTO = "d1057000-0000-4000-8000-0000000000c1";
 let sql: Sql;
 
 class Rollback extends Error {}
@@ -28,7 +30,7 @@ suite("DL-057 retention schedule", () => {
     if (sql) await sql.end({ timeout: 5 });
   });
 
-  test("one pass purges old logs and warns an idle account", async () => {
+  test("one pass purges old logs, warns an idle account and expires helper photos", async () => {
     const collector = new LogCollector();
     const logger = createJsonLogger("worker", "test", "debug", collector.sink);
     let checked = false;
@@ -46,6 +48,21 @@ suite("DL-057 retention schedule", () => {
       await tx`
         insert into public.audit_events (action, entity_type, entity_id, created_at)
         values ('worker_test.old', 'profile', ${IDLE}::uuid, now() - interval '25 months')
+      `;
+
+      // A study helper photo uploaded 31 days ago (DL-060).
+      await tx`
+        insert into public.schools (id, name, status)
+        values (${SCHOOL}::uuid, 'Worker retention school', 'active')
+      `;
+      await tx`
+        insert into public.file_objects (id, school_id, bucket, object_key,
+          uploader_id, owner_id, size_bytes, declared_media_type, sha256,
+          scan_state, scanned_at, purpose, display_name, created_at)
+        values (${PHOTO}::uuid, ${SCHOOL}::uuid, 'legacy',
+          'files/worker-retention-photo', ${IDLE}::uuid, ${IDLE}::uuid, 10,
+          'image/jpeg', ${"9".repeat(64)}, 'clean', now(),
+          'assistant_attachment', 'Photo.jpg', now() - interval '31 days')
       `;
 
       const runtime = startRetentionSchedule(
@@ -66,6 +83,11 @@ suite("DL-057 retention schedule", () => {
         where user_id = ${IDLE}::uuid
       `;
       expect(warning).toEqual({ school: null });
+      const [photo] = await tx<{ due: boolean }[]>`
+        select retention_until <= now() as due from public.file_objects
+        where id = ${PHOTO}::uuid
+      `;
+      expect(photo).toEqual({ due: true });
       checked = true;
       throw new Rollback();
     }).catch((error) => {
@@ -78,6 +100,7 @@ suite("DL-057 retention schedule", () => {
       .map((line) => line.step);
     expect(steps).toContain("records");
     expect(steps).toContain("inactive_accounts");
+    expect(steps).toContain("helper_photos");
     expect(collector.events()).not.toContain("retention_step_failed");
 
     const [gone] = await sql<{ n: number }[]>`
