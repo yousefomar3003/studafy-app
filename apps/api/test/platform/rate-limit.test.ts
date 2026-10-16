@@ -29,10 +29,13 @@ const clients: { quit: () => Promise<unknown> }[] = [];
  * shared-by-shape keys this suite creates (every flow key embeds a
  * per-run unique subject), so cleaning these three is sufficient.
  */
+const SECRET = "a-rate-limit-test-hmac-secret-32-bytes";
+const edgeKey = (ip: string) =>
+  `rl:publicDefault:ip:${hmacSubject(SECRET, "ip", ip)}`;
 const EDGE_KEYS = [
   "rl:publicDefault:ip:unresolved",
-  "rl:publicDefault:ip:192.0.2.7",
-  "rl:publicDefault:ip:192.0.2.8",
+  edgeKey("192.0.2.7"),
+  edgeKey("192.0.2.8"),
 ];
 
 afterAll(async () => {
@@ -46,8 +49,6 @@ afterAll(async () => {
   }
   await Promise.all(clients.map((client) => client.quit()));
 });
-
-const SECRET = "a-rate-limit-test-hmac-secret-32-bytes";
 
 /** Fresh limiter dependencies per test; keys are deleted by callers first. */
 function harnessDependencies() {
@@ -278,7 +279,7 @@ describe("edge limiter enforcement", () => {
     async () => {
       const { deps } = harnessDependencies();
       const ip = "192.0.2.7";
-      const key = "rl:publicDefault:ip:192.0.2.7";
+      const key = edgeKey(ip);
       if (deps.redis) await deps.redis.del(key);
       const app = edgeRunner(deps);
       const limit = RATE_LIMIT_FLOWS.publicDefault.policy.limit;
@@ -295,13 +296,17 @@ describe("edge limiter enforcement", () => {
         }
       }
       expect(limited).toBe(3);
+      if (deps.redis) {
+        expect(await deps.redis.exists(key)).toBe(1);
+        expect(await deps.redis.keys(`*${ip}*`)).toEqual([]);
+      }
     },
   );
 
   redisTest("the prefix budget spans paths and methods", async () => {
     const { deps } = harnessDependencies();
     const ip = "192.0.2.8";
-    if (deps.redis) await deps.redis.del(`rl:publicDefault:ip:${ip}`);
+    if (deps.redis) await deps.redis.del(edgeKey(ip));
     const app = edgeRunner(deps);
     const limit = RATE_LIMIT_FLOWS.publicDefault.policy.limit;
     for (let i = 0; i < limit - 1; i++) {
