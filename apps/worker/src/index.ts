@@ -357,7 +357,16 @@ const housekeeping = env.DB_HOUSEKEEPING_ENABLED && env.DATABASE_URL
 
 // DL-057: the retention periods privacy policy §10 promises.
 const retentionSchedule = env.RETENTION_SCHEDULE_ENABLED && env.DATABASE_URL
-  ? startRetentionSchedule(database(), logger)
+  ? startRetentionSchedule(database(), logger, undefined, {
+    // The inactive-account warning is a required notice: emailed whatever
+    // the person's preferences, through the same sender as other email.
+    email: env.RESEND_API_KEY && env.EMAIL_FROM_ADDRESS
+      ? new ResendEmailSender({
+        apiKey: env.RESEND_API_KEY,
+        from: env.EMAIL_FROM_ADDRESS,
+      })
+      : undefined,
+  })
   : undefined;
 
 // DPIA D7: a filed safety report alerts the reviewers' Telegram chat (id,
