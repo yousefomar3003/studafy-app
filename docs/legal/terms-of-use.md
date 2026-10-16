@@ -1,7 +1,7 @@
 # Studafy Terms of Use
 
-**Last updated:** 12 October 2026\
-**Version:** 1.2
+**Last updated:** 17 October 2026\
+**Version:** 1.3
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -15,6 +15,13 @@ lib/l10n/app_en.arb and app_ar.arb; keep it in step with this document, and
 publish a new consent version when either changes substantively. Version
 1.2 adds the company details and fills §13 and §14 with conservative
 wording for counsel to review; the consent version is unchanged.
+
+Version 1.3 (17 October 2026) was published by the owner's decision WITHOUT
+legal review (DL-068), with privacy policy 1.5, as consent version
+2026-10-17. It says that Studafy reviews safety reports and may act on them
+(DL-063, DL-066), that the AI study tools are on for students in a class
+after a separate consent (DL-062, ADR-0043), and that Studafy creates no
+meetings (DL-065). Counsel is to review it later.
 
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
@@ -69,9 +76,17 @@ You agree not to:
 - hand in another person's work, or work made by the AI tools, as your own;
 - copy, scrape or resell the service or its content.
 
-We may remove content and suspend or close accounts that break these rules,
-particularly where a child's safety is at risk. Anyone can report a message
-or a person, or block someone, from inside the app.
+Anyone can report a message, a conversation or a person, or block someone,
+from inside the app. **Studafy reviews reports**: there is no school
+administrator in this version of the app, so reports come to a named person
+at Studafy, who can be reached at hello@studafy.com. We may remove content,
+warn someone, and suspend or close accounts that break these rules,
+particularly where a child's safety is at risk. The person who made a
+report is told when it has been resolved.
+
+<!-- TODO(legal): one person reviews every report for now (DL-063, DL-066).
+Confirm whether we should commit to response times here, and whether the
+reporter must be told the outcome (questions-for-counsel 5.1). -->
 
 ## 4. For teachers
 
@@ -133,16 +148,22 @@ kept by the school after your account is deleted.
 ## 8. The AI study tools
 
 The study helper, whiteboard-to-notes, lesson summaries and study notebooks,
-and quizzes and flashcards use an AI provider outside Studafy. The Privacy
-Policy says exactly what is sent to it.
+and quizzes and flashcards use an AI provider outside Studafy, Together AI.
+The Privacy Policy says exactly what is sent to it.
 
-- These tools are optional, and are available only where we have switched
-  them on.
+- These tools are optional. They are only for students who belong to a
+  class, and only after the student agrees to them separately; for a child
+  account a parent manages, the parent agrees. They can be turned off at
+  any time.
+- Names Studafy knows are replaced before anything is sent, but photos are
+  sent as they are. Do not photograph names or faces, and do not type other
+  people's personal details.
 - **What they produce can be wrong.** Check it before relying on it, and
   never hand it in as your own work.
 - AI never marks work in Studafy.
-- Each plan has an allowance. We may change the allowances, or pause a tool,
-  to keep the service working and affordable.
+- Each plan has an allowance, which renews every week on the free plan and
+  every month on the paid plans. We may change the allowances, or pause a
+  tool, to keep the service working and affordable.
 
 ## 9. Subscriptions
 
@@ -160,9 +181,9 @@ Policy says exactly what is sent to it.
 
 ## 10. Meetings
 
-Studafy does not host video calls. When a teacher arranges a meeting, the
-invitation is sent through Google Calendar and the call takes place in
-Google Meet under Google's terms.
+Studafy does not host video calls and does not create meetings. A teacher
+may share a link to a Google Meet call; when you open it, the call takes
+place in Google Meet, under Google's terms and privacy policy.
 
 ## 11. Availability and changes
 
@@ -208,3 +229,6 @@ Studafy Limited\
 4/5 The Square, Cahir, Co. Tipperary, Ireland\
 Company number 822430\
 hello@studafy.com
+
+These terms, the Privacy Policy and our other legal pages are at
+legal.studafy.com.
