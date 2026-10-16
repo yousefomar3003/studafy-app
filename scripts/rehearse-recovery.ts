@@ -36,24 +36,35 @@ async function run(command: string, args: string[]): Promise<string> {
   return stdout.trim();
 }
 
+// The container that publishes DATABASE_URL's port, never one picked by
+// project name: on a machine with several local stacks, a name filter can
+// land on a working database the URL never pointed at.
+const port = parsed.port || "5432";
 const containers = (
   await run("docker", [
     "ps",
     "--filter",
-    "label=com.supabase.cli.project=studafy",
-    "--filter",
     "name=supabase_db_",
     "--format",
-    "{{.Names}}",
+    "{{.Names}}\t{{.Ports}}",
   ])
-).split("\n").filter(Boolean);
+)
+  .split("\n")
+  .filter(Boolean)
+  .map((line) => line.split("\t"))
+  .filter(([, ports]) =>
+    (ports ?? "").split(", ").some((mapping) =>
+      new RegExp(`:${port}->5432/tcp$`).test(mapping)
+    )
+  )
+  .map(([name]) => name!);
 
 if (
   containers.length !== 1 ||
   !/^supabase_db_[a-zA-Z0-9_.-]+$/.test(containers[0]!)
 ) {
   throw new Error(
-    `Expected exactly one local Supabase database container; found ${containers.length}.`,
+    `Expected exactly one local Supabase database container on port ${port}; found ${containers.length}.`,
   );
 }
 
