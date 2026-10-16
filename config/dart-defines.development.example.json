@@ -5,5 +5,7 @@
   "STUDAFY_API_URL": "http://127.0.0.1:8080",
   "TURNSTILE_ENABLED": false,
   "APPLE_SIGN_IN_ENABLED": false,
-  "SENTRY_DSN": ""
+  "SENTRY_DSN": "",
+  "STUDAFY_PRIVACY_URL": "https://studafy-legal.studafy.workers.dev/privacy",
+  "STUDAFY_TERMS_URL": "https://studafy-legal.studafy.workers.dev/terms"
 }
