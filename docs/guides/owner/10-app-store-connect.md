@@ -16,7 +16,7 @@ parts B to D). Time: part A 30 minutes; parts B to D 1 to 2 hours.
 | What | Value |
 |---|---|
 | Category | **Education** (not the Kids category; DL-056) |
-| Privacy policy URL | `https://studafy-legal.studafy.workers.dev/privacy` |
+| Privacy policy URL | `https://legal.studafy.com/privacy` |
 | Support URL | `https://studafy.com` (or a support page) |
 | Contact | `hello@studafy.com` |
 | Devices | iPhone and iPad (the app supports both, so iPad screenshots are needed) |

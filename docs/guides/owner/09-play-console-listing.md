@@ -24,8 +24,8 @@ hours.
 | Free or paid | **Free** (subscriptions are inside the app) |
 | Category | Education |
 | Contact email | `hello@studafy.com` |
-| Privacy policy | `https://studafy-legal.studafy.workers.dev/privacy` |
-| Delete account page | `https://studafy-legal.studafy.workers.dev/delete-account` |
+| Privacy policy | `https://legal.studafy.com/privacy` |
+| Delete account page | `https://legal.studafy.com/delete-account` |
 
 The two links change when the legal pages move to the domain (C8).
 

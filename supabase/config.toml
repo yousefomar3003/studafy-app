@@ -13,12 +13,13 @@ max_rows = 1000
 enabled = true
 
 # The owned HTTPS callback is the primary redirect target (Universal Link on
-# iOS, App Link on Android). Domain verification is blocked on the domain and
-# the Apple Team ID, so the custom scheme stays in the allowlist as a proven
-# fallback rather than being removed before its replacement works.
-site_url = "https://app.studafy.io/auth/callback"
+# iOS, App Link on Android) on app.studafy.com (DL-067). Domain verification
+# is blocked on the Apple Team ID and the Play App Signing fingerprint, so the
+# custom scheme stays in the allowlist as a proven fallback rather than being
+# removed before its replacement works.
+site_url = "https://app.studafy.com/auth/callback"
 additional_redirect_urls = [
-  "https://app.studafy.io/auth/callback",
+  "https://app.studafy.com/auth/callback",
   "io.studafy.app://login-callback",
 ]
 

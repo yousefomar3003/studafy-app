@@ -137,8 +137,8 @@ The whole app works in English and in Arabic, with a right-to-left layout in Ara
 Lessons, homework, marks and attendance are free. Family+ is an optional monthly subscription for parents. It renews automatically until you cancel it, which you can do at any time in your Google Play subscriptions.
 
 Questions or feedback: hello@studafy.com
-Privacy policy: https://studafy-legal.studafy.workers.dev/privacy
-Terms of use: https://studafy-legal.studafy.workers.dev/terms
+Privacy policy: https://legal.studafy.com/privacy
+Terms of use: https://legal.studafy.com/terms
 ```
 
 **Optional AI block** (B1). If AI is on at launch, paste it after the "For
@@ -226,8 +226,8 @@ The first test release of Studafy. Please try signing in, joining a class with a
 الدروس والواجبات والدرجات والحضور مجانية. أما Family+ فاشتراك شهري اختياري لأولياء الأمور، يتجدد تلقائيًا حتى تلغيه، ويمكنك إلغاؤه في أي وقت من اشتراكاتك في Google Play.
 
 للأسئلة والملاحظات: hello@studafy.com
-سياسة الخصوصية: https://studafy-legal.studafy.workers.dev/ar/privacy
-شروط الاستخدام: https://studafy-legal.studafy.workers.dev/ar/terms
+سياسة الخصوصية: https://legal.studafy.com/ar/privacy
+شروط الاستخدام: https://legal.studafy.com/ar/terms
 ```
 
 **Optional AI block** (B1). If AI is on at launch, paste it after the
@@ -322,8 +322,8 @@ SUBSCRIPTIONS
 Lessons, homework, marks and attendance are free. Family+ is an optional monthly subscription for parents. Payment is charged to your Apple Account when you confirm the purchase. The subscription renews automatically unless you cancel it at least 24 hours before the end of the current period. You can manage or cancel it in your App Store account settings.
 
 Questions or feedback: hello@studafy.com
-Privacy policy: https://studafy-legal.studafy.workers.dev/privacy
-Terms of use: https://studafy-legal.studafy.workers.dev/terms
+Privacy policy: https://legal.studafy.com/privacy
+Terms of use: https://legal.studafy.com/terms
 ```
 
 **Optional AI block** (B1). If AI is on at launch, paste it after the "For
@@ -431,8 +431,8 @@ This follows the app's first welcome slide, "يومك الدراسي كله في
 الدروس والواجبات والدرجات والحضور مجانية. أما Family+ فاشتراك شهري اختياري لأولياء الأمور. يُخصم المبلغ من حساب Apple عند تأكيد الشراء، ويتجدد الاشتراك تلقائيًا ما لم تلغه قبل نهاية الفترة الحالية بأربع وعشرين ساعة على الأقل. ويمكنك إدارته أو إلغاؤه من إعدادات حسابك في App Store.
 
 للأسئلة والملاحظات: hello@studafy.com
-سياسة الخصوصية: https://studafy-legal.studafy.workers.dev/ar/privacy
-شروط الاستخدام: https://studafy-legal.studafy.workers.dev/ar/terms
+سياسة الخصوصية: https://legal.studafy.com/ar/privacy
+شروط الاستخدام: https://legal.studafy.com/ar/terms
 ```
 
 **Optional AI block** (B1). If AI is on at launch, paste it after the
@@ -477,26 +477,26 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 |---|---:|---:|---|---|
 | `play.en.title` | 27 | 30 | characters | yes |
 | `play.en.short` | 79 | 80 | characters | yes |
-| `play.en.full` | 2669 | 4000 | characters | yes |
-| `play.en.full + play.en.ai` | 3198 | 4000 | characters | yes |
+| `play.en.full` | 2637 | 4000 | characters | yes |
+| `play.en.full + play.en.ai` | 3166 | 4000 | characters | yes |
 | `play.en.whatsnew` | 257 | 500 | characters | yes |
 | `play.ar.title` | 26 | 30 | characters | yes |
 | `play.ar.short` | 77 | 80 | characters | yes |
-| `play.ar.full` | 2334 | 4000 | characters | yes |
-| `play.ar.full + play.ar.ai` | 2814 | 4000 | characters | yes |
+| `play.ar.full` | 2302 | 4000 | characters | yes |
+| `play.ar.full + play.ar.ai` | 2782 | 4000 | characters | yes |
 | `play.ar.whatsnew` | 227 | 500 | characters | yes |
 | `ios.en.name` | 27 | 30 | characters | yes |
 | `ios.en.subtitle` | 22 | 30 | characters | yes |
 | `ios.en.promo` | 138 | 170 | characters | yes |
-| `ios.en.description` | 2819 | 4000 | characters | yes |
-| `ios.en.description + ios.en.ai` | 3381 | 4000 | characters | yes |
+| `ios.en.description` | 2787 | 4000 | characters | yes |
+| `ios.en.description + ios.en.ai` | 3349 | 4000 | characters | yes |
 | `ios.en.keywords` | 94 | 100 | UTF-8 bytes | yes |
 | `ios.en.whatsnew` | 257 | 4000 | characters | yes |
 | `ios.ar.name` | 26 | 30 | characters | yes |
 | `ios.ar.subtitle` | 25 | 30 | characters | yes |
 | `ios.ar.promo` | 138 | 170 | characters | yes |
-| `ios.ar.description` | 2465 | 4000 | characters | yes |
-| `ios.ar.description + ios.ar.ai` | 2974 | 4000 | characters | yes |
+| `ios.ar.description` | 2433 | 4000 | characters | yes |
+| `ios.ar.description + ios.ar.ai` | 2942 | 4000 | characters | yes |
 | `ios.ar.keywords` | 100 | 100 | UTF-8 bytes | yes |
 | `ios.ar.whatsnew` | 227 | 4000 | characters | yes |
 <!-- counts:end -->

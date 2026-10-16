@@ -25,9 +25,10 @@ What Google sign-in in the release build **does** need:
    **"In production"**. In "Testing", only listed test users can sign in.
 
 The release **SHA-256** is needed later, for Android App Links: the file
-`https://app.studafy.io/.well-known/assetlinks.json`
-(`docs/release/auth030-site-association.md`; that doc still shows the old
-package name `io.studafy.app`; the real one is `com.studafy.light`).
+`https://app.studafy.com/.well-known/assetlinks.json`
+(`docs/release/auth030-site-association.md`; package `com.studafy.light`).
+The legal-site Worker serves that file with a placeholder until you have
+the fingerprint.
 
 So in this guide you: (A) copy the fingerprints, (B) check the consent
 screen. Part C is optional.

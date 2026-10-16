@@ -11,10 +11,10 @@ and points production at it.
 
 - **Decision B2:** a new project on the **Pro** plan, and its size (at least
   4 dedicated CPUs; `docs/capacity/2026-10-12.md`).
-- **Decision B3:** the domain for the sign-in page and legal pages. This
-  guide uses `app.studafy.io`, as the code does today
-  (`supabase/config.toml`, the Android manifest and the iOS entitlements).
-  If you choose another domain, tell Claude first: those files change too.
+- **Decision B3 (DL-067):** the domains are on `studafy.com`. Sign-in
+  links use `app.studafy.com` (`supabase/config.toml`, the Android manifest
+  and the iOS entitlements); the legal pages are on `legal.studafy.com`
+  (`docs/deployment/legal-site.md`).
 - Google Cloud (the project for Firebase and billing) and a Microsoft Azure
   login.
 - The private folder `~/studafy-secrets` ([README](README.md)).
@@ -26,8 +26,8 @@ and points production at it.
 | Project name | `studafy-production` |
 | Region | **Central EU (Frankfurt)**, `eu-central-1` |
 | Provider callback (Google, Microsoft) | `https://<project-ref>.supabase.co/auth/v1/callback` |
-| Site URL | `https://app.studafy.io/auth/callback` |
-| Redirect URLs | `io.studafy.app://login-callback` and `https://app.studafy.io/auth/callback` |
+| Site URL | `https://app.studafy.com/auth/callback` |
+| Redirect URLs | `io.studafy.app://login-callback` and `https://app.studafy.com/auth/callback` |
 
 `<project-ref>` is the 20-letter ID in the project's address,
 `supabase.com/dashboard/project/<project-ref>`. The app always returns to
@@ -83,9 +83,9 @@ and points production at it.
 ## Part C: URLs and the email provider
 
 1. **"Authentication"** → **"URL Configuration"**:
-   - "Site URL": `https://app.studafy.io/auth/callback`;
+   - "Site URL": `https://app.studafy.com/auth/callback`;
    - "Redirect URLs" → **"Add URL"**: `io.studafy.app://login-callback`;
-   - **"Add URL"**: `https://app.studafy.io/auth/callback`;
+   - **"Add URL"**: `https://app.studafy.com/auth/callback`;
    - **"Save"**.
 2. **"Authentication"** → **"Sign In / Providers"**:
    - **"Email": keep it enabled.** Parents' managed child accounts sign in
@@ -109,10 +109,10 @@ and points production at it.
    - App logo: leave empty for now (a logo needs Google's brand review,
      which takes days);
    - Application home page: `https://studafy.com`;
-   - Privacy policy: `https://studafy-legal.studafy.workers.dev/privacy`;
-   - Terms of service: `https://studafy-legal.studafy.workers.dev/terms`;
+   - Privacy policy: `https://legal.studafy.com/privacy`;
+   - Terms of service: `https://legal.studafy.com/terms`;
    - Authorized domains: `<project-ref>.supabase.co` (if refused,
-     `supabase.co`), `studafy.com`, `studafy.workers.dev`;
+     `supabase.co`), `studafy.com`;
    - Developer contact: your email. **"Save"**.
 4. **"Audience"**: "External" → **"Publish app"** → "In production".
 5. **"Data access"** → **"Add or remove scopes"**: `openid`,

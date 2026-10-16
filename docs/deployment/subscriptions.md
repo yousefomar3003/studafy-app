@@ -233,8 +233,8 @@ webhook events and runs the reconciliation sweep.
 
 ```sh
 flutter build ipa \
-  --dart-define=STUDAFY_TERMS_URL=https://studafy-legal.studafy.workers.dev/terms \
-  --dart-define=STUDAFY_PRIVACY_URL=https://studafy-legal.studafy.workers.dev/privacy
+  --dart-define=STUDAFY_TERMS_URL=https://legal.studafy.com/terms \
+  --dart-define=STUDAFY_PRIVACY_URL=https://legal.studafy.com/privacy
 ```
 
 These are the temporary pages from `ops/legal-site` (launch plan 4.3; see

@@ -1,27 +1,32 @@
-# Temporary public home of the privacy policy, terms and account deletion
-# page (launch plan 4.3), in English and Arabic. Static assets only: no
-# Worker script runs. Pages are built from docs/legal by build.ts into
-# ./public, which this publishes.
+# Public home of the privacy policy, terms and account deletion page
+# (launch plan 4.3), in English and Arabic, and of the app-link association
+# files (AUTH-030). Static assets only: no Worker script runs. Pages are
+# built from docs/legal, and the association files from src/app-links.ts,
+# by build.ts into ./public, which this publishes.
 #
 # Deploy (owner approves first), from the repository root:
 #   bun run legal:deploy
 # which builds, then runs wrangler deploy with this file. (A wrangler custom
 # build runs from wherever wrangler is started, so the build is a separate
 # step rather than [build] here.)
-# URLs on the account's workers.dev subdomain:
-#   https://studafy-legal.studafy.workers.dev/privacy   (and /terms, /delete-account)
-#   https://studafy-legal.studafy.workers.dev/ar/privacy (and /ar/terms, /ar/delete-account)
 #
-# Moving to our own domain is only configuration: every link in the pages is
-# path-absolute or relative. Uncomment the route (the zone must be on the
-# same Cloudflare account), deploy, then point STUDAFY_PRIVACY_URL and
-# STUDAFY_TERMS_URL and the store listings at the new address. Keep
-# workers_dev on for a while so old links still work.
+# Hosts (DL-067: our domains are on studafy.com, whose zone is on this
+# Cloudflare account). Workers custom domains: Cloudflare creates and owns
+# the DNS record and certificate for each host listed here, and nothing else
+# in the zone (studafy.com and www stay on Vercel; never add them here).
+#   https://legal.studafy.com/privacy   (and /terms, /delete-account, /ar/...)
+#   https://app.studafy.com/.well-known/apple-app-site-association
+#   https://app.studafy.com/.well-known/assetlinks.json
+# Static assets cannot tell hosts apart, so each host serves every file: the
+# legal pages also answer on app.studafy.com and the association files on
+# legal.studafy.com. Neither matters; the app only claims app.studafy.com.
+# The old workers.dev address stays on so links already handed out work:
+#   https://studafy-legal.studafy.workers.dev/privacy
 
 name = "studafy-legal"
 compatibility_date = "2026-10-01"
 workers_dev = true
-# routes = [{ pattern = "legal.studafy.com", custom_domain = true }]
+routes = [{ pattern = "legal.studafy.com", custom_domain = true }, { pattern = "app.studafy.com", custom_domain = true }]
 
 [assets]
 directory = "./public"
