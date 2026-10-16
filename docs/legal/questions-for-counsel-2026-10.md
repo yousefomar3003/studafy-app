@@ -80,9 +80,14 @@ downloaded by any GitHub user. Is that acceptable for the interim?
 
 3.3 **Inactive accounts.** After 23 months without a sign-in the account
 holder is warned by email (always, whatever their email settings) and in
-the app, and the account is deleted at 24 months (PR #73). An account with
-neither a school nor an email address can't be warned, so it is never
-deleted automatically. Acceptable?
+the app, and the account is deleted at 24 months (PR #73). People with no
+school are warned by email only. If that email can't be delivered (a hard
+bounce, a refused address, or no address at all), we keep the account and
+flag it to the operator once a day; we don't delete it without a warning.
+The operator then checks the address, tries to reach the person another way,
+or decides with you what to do
+(`docs/security/inactive-account-warnings-runbook.md`). Is keeping these
+accounts, possibly past 24 months, the right call?
 
 ## 4. Data subject rights (policy §11)
 

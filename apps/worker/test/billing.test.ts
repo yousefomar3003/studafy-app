@@ -20,6 +20,7 @@ import {
   type ReconciliationCandidate,
 } from "../src/billing/billingDispatch";
 import { createBillingDispatcher } from "../src/billing/dispatcher";
+import type { DispatchRecordOutcome } from "../src/outbox/outboxDispatch";
 import {
   type BillingVerifierDependencies,
   createBillingEventProcessor,
@@ -44,7 +45,7 @@ class FakeDispatch implements BillingDispatchPort {
   finishOutcomeByEvent = new Map<number, BillingFinishOutcome>();
   reconcileOutcomes: Array<[string, Record<string, unknown>]> = [];
   scan: ReconciliationCandidate[] = [];
-  recordResult = true;
+  recordResult: DispatchRecordOutcome = "recorded";
   releaseResult = true;
 
   async claim() {
@@ -642,6 +643,39 @@ describe("PAY-071 billing dispatcher", () => {
       7,
       "billing-event-7",
     ]]);
+  });
+
+  test("why the job id was not recorded decides the log level", async () => {
+    const levels: Record<string, Array<[string, string]>> = {};
+    for (
+      const outcome of [
+        "recorded",
+        "already_finished",
+        "lease_lost",
+      ] as const
+    ) {
+      const dispatch = new FakeDispatch();
+      dispatch.recordResult = outcome;
+      dispatch.claimed = [dispatchRow()];
+      const { collector, logger } = testLogger();
+      const dispatcher = createBillingDispatcher(
+        dispatch,
+        fakeQueueJobs(new Map()),
+        logger,
+      );
+      await dispatcher.runOnce();
+      levels[outcome] = collector.parsed()
+        .filter((line) => String(line.event).startsWith("billing_dispatch_"))
+        .map((line) => [String(line.level), String(line.event)]);
+      expect(dispatch.released).toEqual([]);
+    }
+    expect(levels).toEqual({
+      recorded: [],
+      // The processor finished the event before the id was recorded.
+      already_finished: [["info", "billing_dispatch_already_finished"]],
+      // Another dispatcher holds it, or it is gone: worth a look.
+      lease_lost: [["warn", "billing_dispatch_record_lost"]],
+    });
   });
 
   test("a row already carrying a completed job is re-enqueued idempotently", async () => {

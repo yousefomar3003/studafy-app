@@ -117,9 +117,17 @@ export function createOutboxDispatcher(
         row.outboxId,
         enqueuedId,
       );
-      if (!recorded) {
-        // The lease was lost mid-dispatch: the idempotent expansion makes
-        // a possible duplicate enqueue harmless; the next claim reconciles.
+      if (recorded === "already_finished") {
+        // The usual, harmless race: the job ran as soon as it was added and
+        // the processor finished the row before its id could be recorded.
+        logger.info("outbox_dispatch_already_finished", {
+          outbox_id: row.outboxId,
+        });
+      } else if (recorded === "lease_lost") {
+        // Another dispatcher holds the row (this one's lease went stale), or
+        // the row is gone. The deterministic job id and the idempotent
+        // expansion make a duplicate enqueue harmless; that dispatcher's
+        // claim reconciles the row against the live job.
         logger.warn("outbox_dispatch_record_lost", {
           outbox_id: row.outboxId,
         });

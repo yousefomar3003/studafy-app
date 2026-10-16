@@ -8,7 +8,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(38);
+select plan(42);
 
 \set idle_student 'f0570000-0000-4000-8000-000000000002'
 \set idle_loner 'f0570000-0000-4000-8000-000000000003'
@@ -104,8 +104,12 @@ select is((pg_temp.warning(:'idle_loner')).email_provider_message_id, 'resend-1'
 
 select is(private.inactive_warning_email_finish(:'idle_parent', true, null, false, 'resend-3'), 'sent',
   'the parent is emailed');
+select is(private.inactive_warning_email_undeliverable(), 0,
+  'nothing is undeliverable while every email may still go');
 select is(private.inactive_warning_email_finish(:'idle_nomail', false, 'NO_ADDRESS', true, null), 'failed',
   'no address stops at once');
+select is(private.inactive_warning_email_undeliverable(), 1,
+  'a person with no school whose warning cannot be emailed is counted for the operator (202610160030)');
 select is(private.inactive_warning_email_finish(:'idle_student', false, 'PROVIDER_UNAVAILABLE_503', false, null),
   'retry', 'a provider outage is retried');
 select is(pg_temp.claimed(private.inactive_warning_email_claim(20)), '',
@@ -162,6 +166,13 @@ select ok((select execute_after >= (pg_temp.warning(:'idle_loner')).emailed_at +
   'and is deleted 30 days or more after the email');
 select is(private.inactive_warning_email_pending(), 0,
   'nobody with a deletion request is emailed the warning again');
+select is(private.inactive_warning_email_undeliverable(), 1,
+  'the account that was never reached is kept, and still counted');
+-- Only people with no school: someone warned in the app was reached.
+update private.inactive_account_warnings set notified_school_id = :'school_id'
+  where user_id = :'idle_nomail';
+select is(private.inactive_warning_email_undeliverable(), 0,
+  'a failed email to someone warned in the app is not counted');
 
 -- ---------------------------------------------------------------------------
 -- Only the worker sends.
@@ -171,14 +182,17 @@ select ok(has_function_privilege('studafy_worker_runtime', 'private.inactive_war
     'private.inactive_warning_email_finish(uuid,boolean,text,boolean,text)', 'execute')
   and has_function_privilege('studafy_worker_runtime', 'private.inactive_warning_email_pending()', 'execute')
   and has_function_privilege('studafy_worker_runtime', 'private.channel_fanout(integer)', 'execute')
-  and has_function_privilege('studafy_worker_runtime', 'private.retention_inactive_accounts(integer)', 'execute'),
+  and has_function_privilege('studafy_worker_runtime', 'private.retention_inactive_accounts(integer)', 'execute')
+  and has_function_privilege('studafy_worker_runtime', 'private.inactive_warning_email_undeliverable()', 'execute'),
   'the worker claims and finishes warning emails');
 select ok(not has_function_privilege('studafy_api_runtime', 'private.inactive_warning_email_claim(integer)', 'execute')
   and not has_function_privilege('authenticated', 'private.inactive_warning_email_claim(integer)', 'execute')
   and not has_function_privilege('service_role',
     'private.inactive_warning_email_finish(uuid,boolean,text,boolean,text)', 'execute')
   and not has_function_privilege('studafy_worker_runtime',
-    'private.inactive_warning_email_due(private.inactive_account_warnings)', 'execute'),
+    'private.inactive_warning_email_due(private.inactive_account_warnings)', 'execute')
+  and not has_function_privilege('studafy_api_runtime', 'private.inactive_warning_email_undeliverable()', 'execute')
+  and not has_function_privilege('authenticated', 'private.inactive_warning_email_undeliverable()', 'execute'),
   'nobody else does');
 
 select * from finish();

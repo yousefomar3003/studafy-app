@@ -69,6 +69,16 @@ Every sample logs `queue_monitor_tick`. This line is never sampled away.
    It prints `alerts:test sent to chat ...` and Telegram shows
    `TEST Studafy development: queue alerts reach this chat (...)` (the test copy runs as `development`).
 
+## Inactive-account warnings that could not be emailed
+
+When queue alerts are on and the retention schedule runs
+(`RETENTION_SCHEDULE_ENABLED`), the hourly retention pass also reports how
+many warnings to people with no school could not be emailed. While that count
+is above zero, the same chat gets one `ALERT` a day, then `STILL HAPPENING`
+once a day, then `RESOLVED`. It uses the same Redis state, so each message is
+sent once. The message has the count only. What to do:
+`docs/security/inactive-account-warnings-runbook.md`.
+
 ## Safety report alerts (DPIA D7)
 
 A separate switch on the same bot and chat: `REPORT_ALERTS_ENABLED`
