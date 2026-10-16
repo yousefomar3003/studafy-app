@@ -34,10 +34,19 @@ import { PostgresIdempotencyRepository } from "../../src/platform/idempotency";
 import { requestContext } from "../../src/platform/middleware";
 
 const databaseUrl = process.env["DATABASE_URL"];
-const suite = integrationSuite(describe);
 
+/**
+ * The Auth server must belong to the same stack as DATABASE_URL. The default
+ * (54321) is only that stack's when the database is the default one (54322),
+ * as in CI. Pointed at any other database, the suite needs
+ * AUTH_INTEGRATION_SUPABASE_URL, or it would reach a different stack's Auth
+ * (on 2026-10-15 it reached the owner's working one).
+ */
 const AUTH_URL = process.env["AUTH_INTEGRATION_SUPABASE_URL"] ??
-  "http://127.0.0.1:54321";
+  (databaseUrl && new URL(databaseUrl).port === "54322"
+    ? "http://127.0.0.1:54321"
+    : "");
+const suite = AUTH_URL ? integrationSuite(describe) : describe.skip;
 /** The Supabase CLI's well-known local service key: not a secret. */
 const SERVICE_KEY = process.env["AUTH_INTEGRATION_SERVICE_ROLE_KEY"] ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
