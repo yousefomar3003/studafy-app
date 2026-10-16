@@ -15,6 +15,13 @@ export const V1MeResponse = z.strictObject({
   displayName: z.string().min(1),
   memberships: z.array(V1Membership),
   activeTermId: z.string().uuid().nullable(),
+  /**
+   * True only for a platform operator (a `public.platform_operators` row,
+   * added out of band): the app then offers the safety-report review area.
+   * It opens nothing by itself; every review route is checked again by the
+   * database. Optional so an app reading an older server sees it absent.
+   */
+  platformOperator: z.boolean().optional(),
 });
 export type V1MeResponse = z.infer<typeof V1MeResponse>;
 

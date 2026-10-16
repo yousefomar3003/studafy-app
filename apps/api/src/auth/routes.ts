@@ -100,6 +100,9 @@ export function createAuthRoutes(
           active: membership.active,
         })),
         activeTermId: context.memberships[0]?.active_term_id ?? null,
+        // Only what the app needs to offer the safety-review area; the
+        // review routes are refused by the database to anyone else.
+        platformOperator: context.platformOperator === true,
       });
     },
   );

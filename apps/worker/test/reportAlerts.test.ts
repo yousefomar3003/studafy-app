@@ -64,6 +64,7 @@ test("the message carries id, kind, priority and the school hash only", () => {
   expect(text).toContain("School: #0123456789abcdef");
   expect(text).toContain("Filed: 2026-10-15 09:30 UTC");
   expect(text).not.toContain("attempt");
+  expect(text).toContain("Review in the app: Account, Safety reports");
   expect(reportAlertText(row("r-1", 3), "production")).toContain(
     "(delivery attempt 3)",
   );

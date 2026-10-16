@@ -18,6 +18,7 @@ import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/profile_repository.dart';
 import '../features/account/presentation/delete_account_page.dart';
 import '../features/notifications/presentation/notification_preferences_page.dart';
+import '../features/safety_review/presentation/safety_reports_page.dart';
 import '../features/session/presentation/account_security_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account/account_switching.dart';
@@ -220,6 +221,7 @@ class _AccountHubPageState extends State<AccountHubPage> {
           email: profile.email,
           memberships: profile.memberships,
           accountKind: profile.accountKind,
+          platformOperator: profile.platformOperator,
         ),
         activeMembership: context_.membership,
         student: context_.selectedStudent,
@@ -246,6 +248,7 @@ class _AccountHubPageState extends State<AccountHubPage> {
         context_.signedInAs == StudafyRole.student;
     final subscription = widget.subscription;
     final account = AccountScope.maybeOf(context);
+    final safetyReview = AccountScope.safetyReviewOf(context);
     final canRename = profile != null && (account?.profileAvailable ?? false);
     final name = _own?.displayName ?? profile?.displayName ?? '';
     final publicId = switch (_own?.publicId) {
@@ -378,6 +381,38 @@ class _AccountHubPageState extends State<AccountHubPage> {
             SettingsGroup(
               title: l10n.accountSectionSubscription,
               children: [_SubscriptionRow(entry: subscription)],
+            ),
+          // The platform operator's safety-report review (DL-063): only for
+          // an account the server marks as an operator (GET /v1/me), never
+          // inferred here. The server checks every step again.
+          if (profile?.platformOperator == true && safetyReview != null)
+            SettingsGroup(
+              title: l10n.safetyReviewSection,
+              children: [
+                SettingsRow(
+                  icon: Icons.report_outlined,
+                  title: l10n.safetyReviewTitle,
+                  subtitle: l10n.safetyReviewEntrySubtitle,
+                  onTap: () => Navigator.of(context).pushOnce(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SafetyReportsPage(
+                        review: safetyReview,
+                        // Setting up an authenticator happens where it
+                        // always does: Account -> Security.
+                        onOpenSecurity: (pageContext) async {
+                          if (session == null) return;
+                          await Navigator.of(pageContext).pushOnce(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  AccountSecurityPage(session: session),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           SettingsGroup(
             title: l10n.accountSecurity,

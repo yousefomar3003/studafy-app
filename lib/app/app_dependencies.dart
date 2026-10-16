@@ -58,6 +58,9 @@ import '../features/notifications/domain/notifications_repository.dart';
 import '../features/notifications/domain/push_registrar.dart';
 import '../features/onboarding/application/teacher_workspace_interactor.dart';
 import '../features/onboarding/data/api_teacher_workspace_repository.dart';
+import '../features/safety_review/application/safety_review_interactor.dart';
+import '../features/safety_review/data/api_safety_review_repository.dart';
+import '../features/safety_review/data/supabase_second_factor.dart';
 import '../features/school_operations/data/api_school_operations_repository.dart';
 import '../features/school_operations/data/preview_school_operations_repository.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
@@ -100,6 +103,7 @@ class AppDependencies {
     this.familyPlus,
     required this.study,
     this.aiConsent,
+    this.safetyReview,
     required this.account,
     required this.academicApi,
     required this.academic,
@@ -157,6 +161,10 @@ class AppDependencies {
 
   /// The AI consent (ADR-0043). Null without a backend.
   final AiConsentRepository? aiConsent;
+
+  /// The platform operator's safety-report review (DL-063). Null without a
+  /// backend; offered only to an account the server marks as an operator.
+  final SafetyReviewInteractor? safetyReview;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
@@ -337,6 +345,14 @@ class AppDependencies {
           ? PreviewStudyRepository()
           : ApiStudyRepository(remote.api),
       aiConsent: remote == null ? null : ApiAiConsentRepository(remote.api),
+      safetyReview: remote == null
+          ? null
+          : SafetyReviewInteractor(
+              ApiSafetyReviewRepository(
+                remote.api,
+                verify: SupabaseSecondFactor().verify,
+              ),
+            ),
       // Cross-feature wiring belongs here, not in either feature: the account
       // slice gets the session's deletion operations as plain functions.
       account: AccountInteractor(

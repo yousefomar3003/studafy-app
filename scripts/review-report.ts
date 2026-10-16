@@ -1,7 +1,8 @@
 /**
  * Reviews one safety report (DPIA D7; docs/security/safe043-operator-runbook.md,
  * "Reviewing a report"). For the platform operator who received a report
- * alert in Telegram.
+ * alert in Telegram. The app's Account, Safety reports is the normal path
+ * (same commands, same audit); this script is the fallback.
  *
  *   bun --no-env-file scripts/review-report.ts show <reportId>
  *   bun --no-env-file scripts/review-report.ts resolve <reportId> \

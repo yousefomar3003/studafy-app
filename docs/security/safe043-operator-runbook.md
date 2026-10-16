@@ -55,7 +55,7 @@ Report: 3f6c...-...
 Kind: message, priority: high
 School: #9a0c51e2b7d4f018
 Filed: 2026-10-15 09:30 UTC
-Review with scripts/review-report.ts under a moderation grant (safe043 runbook).
+Review in the app: Account, Safety reports (safe043 runbook).
 ```
 
 That is everything it carries: the report id, its kind (message,
@@ -86,7 +86,62 @@ takes it, so two reviewers do not both start. If a report names an
 imminent risk to someone, go straight to **Incident response order**
 below; the clock for that is now, not the table.
 
-### 3. Get a grant (MFA; one reviewer or two)
+### 3. Review in the app (the normal path)
+
+The app does steps 3 to 4 below for you, through the same API commands and
+the same audit. Once, beforehand: your account is a platform operator (the
+out-of-band `platform_operators` row), and an authenticator app is set up
+on it in **Account, Security** (the code is the second factor every grant
+needs).
+
+1. **Account, Safety reports** (the "Platform" group). The row is there only
+   when `GET /v1/me` says `platformOperator: true`; the device never decides
+   it, and every step below is checked again by the database. The list is
+   every open report on the platform, most urgent first: kind, priority,
+   age, status and the first block of its id (match it with the alert's
+   `Report:`). Never the content. Nothing on this screen or the next is kept
+   on the phone (`/internal` reads are never cached).
+2. **Tap the report.** Write why you are opening it (8 or more characters;
+   recorded as the grant's reason), then the 6-digit authenticator code.
+   The app presents the code to Supabase Auth (an MFA challenge and its
+   verification), so the session is AAL2, then requests a 60-minute grant
+   scoped to that one report (`ticketRef` is the report id,
+   `requiresSecondApprover: false`), approves it (single-reviewer mode) and
+   starts it. A report you already hold a grant for opens straight away,
+   or after the code alone on a session that has not presented one.
+3. **Read.** What the reporter wrote, what was captured with the report
+   (the reported message, the conversation subject), evidence and history;
+   the reporter stays masked unless the report was escalated. Read it on
+   the phone only; do not screenshot it or paste it into the chat. Each
+   open writes `report_review_opened` (or `_refused`) to `audit_events`
+   with `"via": "app"` and the request id.
+4. **Decide.** Choose upheld, partly upheld, not upheld or no action, write
+   the note (8-2000 characters: what was decided and why, without copying
+   the reported content) and **Record decision**. The app triages the
+   report first if it is still waiting, then resolves it: `report_events`,
+   `audit_events` (`report_triaged`, `report_resolved`) and the reporter's
+   "your report was resolved" notification follow, as with the script.
+
+When the app stops, it says why:
+
+| The app says | Meaning | Do |
+|---|---|---|
+| Set up two-factor sign-in first | No verified authenticator on the account | Its button opens Account, Security; set one up and come back |
+| That code did not match | Supabase Auth refused the code | Check the phone's clock; enter the newest code |
+| Your access has ended | No active grant covers the report: it expired (60 minutes), was revoked, or never covered it | **Ask for access again** (a new reason and code) |
+| A second reviewer has to approve | Single-reviewer mode no longer applies (a second operator exists, or the setting is off) | The other reviewer approves the grant (fallback below) |
+| This report changed | Someone else decided it, it was escalated, or its version moved | **Reload** |
+| This account is not a platform operator | The server does not take the account as one | The out-of-band `platform_operators` row |
+
+Escalating, holds and revoking a grant early are not in the app: use the
+API routes (fallback below). An escalated or closed report opens read-only.
+
+### 4. Fallback: the review script and the raw API
+
+Use this when the app cannot be (no phone at hand, the app or its sign-in
+down), or for anything the app does not do.
+
+#### Get a grant (MFA; one reviewer or two)
 
 The reviewer needs an *active* moderation grant for the report's school,
 best scoped to the report itself. Run `show` first: without a grant it
@@ -114,7 +169,7 @@ sessions** steps below): request with `schoolId` from the output,
 The grant's `approvedBy` equals its `requestedBy` in single-reviewer mode,
 so the audit shows which grants had only one person.
 
-### 4. Read and decide
+#### Read and decide
 
 ```sh
 bun --no-env-file scripts/review-report.ts show <reportId>
@@ -124,7 +179,13 @@ prints the report as the moderation queue would: details, evidence
 snapshot, events, reporter masked (`reporterId: null`) unless the report was
 escalated. Read it in your terminal only; do not paste it into the chat or a
 ticket. Each `show` writes `report_review_opened` (or `_refused`) to
-`audit_events`.
+`audit_events` with `"via": "scripts/review-report.ts"`.
+
+The same read over the API, with your AAL2 session and the grant active:
+`GET /internal/safety-review/reports/{reportId}` (403 without a grant
+covering it). `GET /internal/safety-review/reports` lists the open
+reports as metadata, with the school id a grant is requested for; both
+answer only a platform operator.
 
 Decide:
 
@@ -148,7 +209,8 @@ Decide:
 ### 5. Close out
 
 Revoke the grant when done (`POST .../revoke`) rather than waiting for it
-to expire, and reply in the chat with the resolution (`upheld`, `not_upheld`,
+to expire (a grant from the app ends by itself after 60 minutes; revoke it
+through the API if it must end sooner), and reply in the chat with the resolution (`upheld`, `not_upheld`,
 `partial` or `no_action`, nothing more).
 
 Audit one review:
@@ -164,8 +226,14 @@ from private.report_alerts where report_id = :report_id;
 
 Reports never expose themselves through any `/v1` read. In this release
 there is no school administrator, so the queue is opened only by a platform
-operator under a grant (see **Reviewing a report** above); the routes are `/internal/moderation/overview` (health counts) and
-`/internal/moderation/queue` (rows). Reporter identity is **masked**
+operator under a grant (see **Reviewing a report** above): in the app, or
+through `/internal/safety-review/reports` (every open report as metadata)
+and `/internal/safety-review/reports/{reportId}` (one report, under a
+grant, audited). The school-scoped routes `/internal/moderation/overview`
+(health counts) and `/internal/moderation/queue` (rows) need a membership
+of the school as well, which an operator does not have. Triage and resolve
+(below) take an operator's grant without a membership (202610160050).
+Reporter identity is **masked**
 (`reporterId: null`) until the report is escalated — this is deliberate, so
 an admin who can see what was reported cannot see who reported it unless the
 report was escalated.
@@ -264,7 +332,9 @@ step, only the requester starts the grant, it expires (15-480 minutes) and
 can be revoked, and every request, approval, start, report read
 (`report_review_opened`/`_refused`), triage and resolution is in
 `audit_events` as before. The Telegram alert for each report is
-unchanged.
+unchanged. The app (**Reviewing a report**, step 3) requests every grant
+with `requiresSecondApprover: false` and approves it itself; when the mode
+does not apply it says a second reviewer has to approve instead.
 
 Check it, as postgres (SQL editor or a session connection):
 

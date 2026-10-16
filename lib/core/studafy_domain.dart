@@ -29,6 +29,7 @@ class UserProfile {
     required this.email,
     required this.memberships,
     this.accountKind,
+    this.platformOperator = false,
   });
 
   final String id;
@@ -39,6 +40,12 @@ class UserProfile {
   /// Which kind of account this is, as the server decided it; null when
   /// nothing has yet (and from older servers).
   final AccountKind? accountKind;
+
+  /// The server says this account is a platform operator (GET /v1/me), so
+  /// the account screen offers the safety-report review. Never inferred on
+  /// the device; it opens nothing by itself, since the server checks every
+  /// review step again.
+  final bool platformOperator;
 
   /// The kind the server reported, or else what the memberships show.
   AccountKind? get effectiveKind {

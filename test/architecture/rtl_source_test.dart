@@ -23,6 +23,7 @@ void main() {
     'lib/features/messaging/presentation',
     'lib/features/family/presentation',
     'lib/features/notifications/presentation',
+    'lib/features/safety_review/presentation',
     'lib/app',
     'lib/core',
   ];

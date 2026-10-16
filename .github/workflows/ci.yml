@@ -590,6 +590,12 @@ jobs:
       - name: Verify safety reports with one reviewer (DL-063)
         run: bunx supabase test db --local supabase/tests/safety_single_reviewer.sql
 
+      # The app's review area: an operator-only metadata queue, the audited
+      # read under a grant, and triage/resolve with no school membership.
+      # Transactional.
+      - name: Verify the operator's safety review in the app (DL-063)
+        run: bunx supabase test db --local supabase/tests/safety_review_app.sql
+
       # On call: the drill drives the real SQL dispatcher through the whole
       # safeguarding lifecycle and exits non-zero on any step failing.
       - name: Run SAFE-043 moderation drill

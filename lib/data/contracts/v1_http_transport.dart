@@ -128,9 +128,11 @@ class V1HttpTransport implements V1JsonTransport {
   /// (always the store's current word), single-use file and export links,
   /// upload progress, a class's join link, and the safeguarding records
   /// (wellbeing, reports, content controls), which must not sit on a phone
-  /// a family shares.
+  /// a family shares. Nothing an operator reads under `/internal` (a safety
+  /// report under review) is kept either, or reused from a moment ago.
   static final _neverKept = RegExp(
     r'^/v1/(auth|billing|files|uploads|reports|wellbeing|control-panel)(/|\?|$)'
+    r'|^/internal/'
     r'|^/v1/me(\?|$)'
     r'|^/v1/account/export-'
     r'|/join-link(\?|$)',

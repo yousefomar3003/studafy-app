@@ -49,6 +49,10 @@ const SAFETY_ROUTES = catalogueRoutesNamed([
   "startModerationAccess",
   "revokeModerationAccess",
   "listModerationAccess",
+  // The platform operator's review path in the app (DL-063), behind the
+  // moderation slice's flag like the rest of the moderation cluster.
+  "listSafetyReviewReports",
+  "openSafetyReviewReport",
 ]);
 
 function selector(c: Context<AuthorizationEnv>): string | null {

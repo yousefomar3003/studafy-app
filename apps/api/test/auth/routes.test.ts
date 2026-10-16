@@ -131,6 +131,42 @@ describe("authenticated context", () => {
     };
     expect(body.id).toBe(SUBJECT);
     expect(body.memberships[0]!.role).toBe("teacher");
+    expect((body as { platformOperator?: boolean }).platformOperator).toBe(
+      false,
+    );
+  });
+
+  test("GET /v1/me says a platform operator is one, from the database context", async () => {
+    const h = await harness();
+    h.repository.contexts.set(SUBJECT, baseContext({ platformOperator: true }));
+    const response = await h.request("/v1/me", { token: await validToken() });
+    expect(response.status).toBe(200);
+    const body = await response.json() as { platformOperator: boolean };
+    expect(body.platformOperator).toBe(true);
+  });
+
+  test("GET /v1/me reads a context cached before the field existed as no operator", async () => {
+    const h = await harness();
+    const context = baseContext();
+    delete context.platformOperator;
+    h.repository.contexts.set(SUBJECT, context);
+    const response = await h.request("/v1/me", { token: await validToken() });
+    const body = await response.json() as { platformOperator: boolean };
+    expect(body.platformOperator).toBe(false);
+  });
+
+  test("an operator claim in the token is never trusted", async () => {
+    const h = await harness();
+    const response = await h.request("/v1/me", {
+      token: await validToken({
+        extraClaims: {
+          app_metadata: { platform_operator: true },
+          platform_operator: true,
+        },
+      }),
+    });
+    const body = await response.json() as { platformOperator: boolean };
+    expect(body.platformOperator).toBe(false);
   });
 
   test("GET /v1/auth/context echoes the membership version", async () => {

@@ -48,6 +48,18 @@ void main() {
       );
       expect(serialized['activeTermId'], original['activeTermId']);
     });
+
+    test('reads the platform-operator flag, and its absence on an older '
+        'server', () {
+      final original = fixture['me'] as Map<String, dynamic>;
+      expect(V1MeResponseDto.fromJson(original).platformOperator, isNull);
+      final operator = V1MeResponseDto.fromJson({
+        ...original,
+        'platformOperator': true,
+      });
+      expect(operator.platformOperator, isTrue);
+      expect(operator.toJson()['platformOperator'], isTrue);
+    });
   });
 
   group('V1ClassroomListResponseDto contract drift', () {

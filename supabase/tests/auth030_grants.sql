@@ -134,7 +134,11 @@ select is(
     -- Family+ gate: a verified guardian link plus a live parent_insights
     -- entitlement, with the store environment read from the server's own
     -- single-row table rather than the request (202609240002).
-    'parent_insights_has_access'
+    'parent_insights_has_access',
+    -- DL-063: the platform operator's review area in the app (202610160050).
+    -- Refuses anyone who is not a platform operator; opening a report needs
+    -- an active grant covering it and is audited.
+    'safety_review_query'
     -- 'study_notebooks_resume' (202610110003) was retired by 202610160000:
     -- notebooks are written by the worker's queue, not the API.
   ],

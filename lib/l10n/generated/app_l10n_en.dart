@@ -7089,4 +7089,340 @@ class AppL10nEn extends AppL10n {
   @override
   String get aiConsentNeeded =>
       'The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.';
+
+  @override
+  String get safetyReviewSection => 'Platform';
+
+  @override
+  String get safetyReviewTitle => 'Safety reports';
+
+  @override
+  String get safetyReviewEntrySubtitle =>
+      'Review reports filed on Studafy. Only platform operators see this.';
+
+  @override
+  String get safetyReviewLoadFailed => 'Could not load the reports.';
+
+  @override
+  String get safetyReviewUnavailable =>
+      'Could not reach Studafy. Check your connection and try again.';
+
+  @override
+  String get safetyReviewTryAgain => 'Try again';
+
+  @override
+  String get safetyReviewEmptyTitle => 'No open reports';
+
+  @override
+  String get safetyReviewEmptyBody =>
+      'New reports also arrive in the safety alert chat.';
+
+  @override
+  String get safetyReviewNotOperator =>
+      'This account is not a platform operator.';
+
+  @override
+  String get safetyReviewListFooter =>
+      'Only what the alert shows is listed here. A report\'s content opens only with access you ask for, and every step is recorded.';
+
+  @override
+  String get safetyReviewSecondApproverBanner =>
+      'A second reviewer now has to approve each access request. Ask them, or follow the operator runbook.';
+
+  @override
+  String get safetyReviewKindMessage => 'Message report';
+
+  @override
+  String get safetyReviewKindConversation => 'Conversation report';
+
+  @override
+  String get safetyReviewKindUser => 'Report about a person';
+
+  @override
+  String get safetyReviewPriorityCritical => 'Critical';
+
+  @override
+  String get safetyReviewPriorityHigh => 'High';
+
+  @override
+  String get safetyReviewPriorityMedium => 'Medium';
+
+  @override
+  String get safetyReviewPriorityLow => 'Low';
+
+  @override
+  String safetyReviewReportId(String id) {
+    return 'Report $id';
+  }
+
+  @override
+  String get safetyReviewFiledJustNow => 'Filed just now';
+
+  @override
+  String safetyReviewFiledMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filed $count minutes ago',
+      one: 'Filed 1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String safetyReviewFiledHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filed $count hours ago',
+      one: 'Filed 1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String safetyReviewFiledDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filed $count days ago',
+      one: 'Filed 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get safetyReviewAccessOpen => 'Access open';
+
+  @override
+  String get safetyReviewStatusSubmitted => 'New';
+
+  @override
+  String get safetyReviewStatusQueued => 'Waiting';
+
+  @override
+  String get safetyReviewStatusUnderReview => 'Under review';
+
+  @override
+  String get safetyReviewStatusOnHold => 'On hold';
+
+  @override
+  String get safetyReviewStatusEscalated => 'Escalated';
+
+  @override
+  String get safetyReviewStatusResolved => 'Resolved';
+
+  @override
+  String get safetyReviewStatusWithdrawn => 'Withdrawn';
+
+  @override
+  String get safetyReviewReasonTitle => 'Why are you opening this report?';
+
+  @override
+  String get safetyReviewReasonBody =>
+      'Opening a report gives you access to it for 60 minutes. Your reason is recorded with the access, and every read and decision is recorded too.';
+
+  @override
+  String get safetyReviewReasonLabel => 'Reason';
+
+  @override
+  String get safetyReviewReasonHint =>
+      'For example: alert received in the safety chat';
+
+  @override
+  String get safetyReviewTextTooShort => 'Write at least 8 characters.';
+
+  @override
+  String get safetyReviewContinue => 'Continue';
+
+  @override
+  String get safetyReviewCodeTitle => 'Confirm it is you';
+
+  @override
+  String get safetyReviewCodeBody =>
+      'Enter the 6-digit code from your authenticator app.';
+
+  @override
+  String get safetyReviewCodeLabel => 'Authenticator code';
+
+  @override
+  String get safetyReviewCodeDigits => 'Enter the 6 digits.';
+
+  @override
+  String get safetyReviewOpenReport => 'Open report';
+
+  @override
+  String get safetyReviewWrongCode =>
+      'That code did not match. Check that your phone\'s clock is right, then try the newest code.';
+
+  @override
+  String get safetyReviewNotEnrolledTitle => 'Set up two-factor sign-in first';
+
+  @override
+  String get safetyReviewNotEnrolledBody =>
+      'Reviewing reports needs a code from an authenticator app. Set one up in Account, Security, then come back.';
+
+  @override
+  String get safetyReviewOpenSecurity => 'Open account security';
+
+  @override
+  String get safetyReviewWorking => 'Opening the report';
+
+  @override
+  String get safetyReviewGrantEndedTitle => 'Your access has ended';
+
+  @override
+  String get safetyReviewGrantEndedBody =>
+      'Access to a report lasts 60 minutes, or until it is revoked. Ask again to keep reviewing.';
+
+  @override
+  String get safetyReviewAskAgain => 'Ask for access again';
+
+  @override
+  String get safetyReviewSecondApproverTitle =>
+      'A second reviewer has to approve';
+
+  @override
+  String get safetyReviewSecondApproverBody =>
+      'There is now more than one reviewer, so another reviewer must approve your access. Ask them to approve it, or follow the operator runbook.';
+
+  @override
+  String get safetyReviewChangedTitle => 'This report changed';
+
+  @override
+  String get safetyReviewChangedBody =>
+      'Someone else updated it, or it was escalated. Reload to see where it stands.';
+
+  @override
+  String get safetyReviewReload => 'Reload';
+
+  @override
+  String get safetyReviewDetailsHeading => 'What the reporter wrote';
+
+  @override
+  String get safetyReviewSnapshotHeading => 'What was reported';
+
+  @override
+  String get safetyReviewSnapshotMessage => 'Message';
+
+  @override
+  String get safetyReviewSnapshotSubject => 'Conversation subject';
+
+  @override
+  String get safetyReviewSnapshotSentAt => 'Sent';
+
+  @override
+  String get safetyReviewSnapshotSender => 'Sender account';
+
+  @override
+  String get safetyReviewSnapshotConversation => 'Conversation';
+
+  @override
+  String get safetyReviewSnapshotState => 'Conversation state';
+
+  @override
+  String get safetyReviewNothingCaptured =>
+      'Nothing was captured with this report.';
+
+  @override
+  String get safetyReviewEvidenceHeading => 'Evidence';
+
+  @override
+  String get safetyReviewEvidenceMessage => 'Message';
+
+  @override
+  String get safetyReviewEvidenceAttachment => 'File';
+
+  @override
+  String get safetyReviewEvidenceNote => 'Note';
+
+  @override
+  String get safetyReviewNoEvidence => 'No evidence attached.';
+
+  @override
+  String get safetyReviewHistoryHeading => 'History';
+
+  @override
+  String get safetyReviewEventSubmitted => 'Filed';
+
+  @override
+  String get safetyReviewEventQueued => 'Queued';
+
+  @override
+  String get safetyReviewEventTriage => 'Opened for review';
+
+  @override
+  String get safetyReviewEventResolve => 'Decided';
+
+  @override
+  String get safetyReviewEventAppeal => 'Appealed';
+
+  @override
+  String get safetyReviewEventEscalate => 'Escalated';
+
+  @override
+  String get safetyReviewReporterMasked =>
+      'The reporter\'s identity stays hidden unless the report is escalated.';
+
+  @override
+  String get safetyReviewDecisionHeading => 'Your decision';
+
+  @override
+  String get safetyReviewOutcomeUpheld => 'Upheld';
+
+  @override
+  String get safetyReviewOutcomeUpheldDetail =>
+      'The rules were broken and action was taken.';
+
+  @override
+  String get safetyReviewOutcomePartial => 'Partly upheld';
+
+  @override
+  String get safetyReviewOutcomePartialDetail =>
+      'Part of the report was upheld.';
+
+  @override
+  String get safetyReviewOutcomeNotUpheld => 'Not upheld';
+
+  @override
+  String get safetyReviewOutcomeNotUpheldDetail => 'The rules were not broken.';
+
+  @override
+  String get safetyReviewOutcomeNoAction => 'No action';
+
+  @override
+  String get safetyReviewOutcomeNoActionDetail => 'Nothing here to act on.';
+
+  @override
+  String get safetyReviewNoteLabel => 'Note';
+
+  @override
+  String get safetyReviewNoteHint =>
+      'What you decided and why. Do not copy the reported content.';
+
+  @override
+  String get safetyReviewRecord => 'Record decision';
+
+  @override
+  String get safetyReviewConfirmTitle => 'Record this decision?';
+
+  @override
+  String safetyReviewConfirmBody(String outcome) {
+    return 'The report closes as \"$outcome\" and the reporter is told it was resolved. It cannot be undone here.';
+  }
+
+  @override
+  String get safetyReviewCancel => 'Cancel';
+
+  @override
+  String get safetyReviewRecorded => 'Decision recorded.';
+
+  @override
+  String get safetyReviewNotDecidable =>
+      'This report cannot be decided here: it is escalated or closed. Follow the operator runbook.';
+
+  @override
+  String safetyReviewResolvedAs(String outcome) {
+    return 'Resolved: $outcome';
+  }
 }

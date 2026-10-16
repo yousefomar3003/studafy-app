@@ -42,6 +42,13 @@ export interface SessionContext {
   memberships: ContextMembership[];
   membershipVersion: string;
   mfaEnrolled: boolean;
+  /**
+   * A `public.platform_operators` row exists for this account. Reported to
+   * the app (GET /v1/me) so it offers the safety-review area; it grants
+   * nothing here, where every operator route is decided by the database.
+   * Absent in a context cached before the field existed: read it as false.
+   */
+  platformOperator?: boolean;
 }
 
 interface RawContext {
@@ -55,6 +62,7 @@ interface RawContext {
   memberships: ContextMembership[];
   membership_version: string;
   mfa_enrolled: boolean;
+  platform_operator?: boolean;
 }
 
 /**
@@ -164,6 +172,7 @@ export class AuthContextRepository {
         memberships: raw.memberships ?? [],
         membershipVersion: raw.membership_version,
         mfaEnrolled: raw.mfa_enrolled,
+        platformOperator: raw.platform_operator === true,
       };
     };
     if (!this.#cache) return await loader();
