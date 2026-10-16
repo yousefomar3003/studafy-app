@@ -82,6 +82,21 @@ FCM_PROJECT_ID=… FCM_SERVICE_ACCOUNT_JSON='…' \
   bun scripts/send-test-notification.ts --token <FCM token from a debug build>
 ```
 
+To check email (Resend), send one test email to an address you can read,
+with the worker's `RESEND_API_KEY` and `EMAIL_FROM_ADDRESS` in the
+environment (from the host's secret store, never typed into a file):
+
+```sh
+RESEND_API_KEY=… EMAIL_FROM_ADDRESS=… \
+  bun --no-env-file scripts/send-test-email.ts you@example.com
+```
+
+It goes through the worker's own sender (`ResendEmailSender`) and prints
+`sent <Resend message id>`, or `error <code>` (for example
+`PROVIDER_AUTH_401` for a wrong key, `EMAIL_ADDRESS_REJECTED`). It never
+prints the key, the sender or the address. A user receives email only for
+the categories they turned email on for (email is off by default).
+
 Tested so far (2026-09-29, local): the test notification is queued, fans
 out to push for a registered device, and is claimed by the push sender.
 Delivery to a real phone needs your Firebase project, the APNs key and the

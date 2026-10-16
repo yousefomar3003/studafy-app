@@ -959,3 +959,172 @@ describe("subscription lifecycle (202609290004)", () => {
     expect(google.ackCalls).toBe(0);
   });
 });
+
+/**
+ * Recorded-shape Play RTDN `DeveloperNotification` messages (the decoded
+ * Pub/Sub `message.data`), as documented for voided purchases: version,
+ * packageName, eventTimeMillis and voidedPurchaseNotification with
+ * purchaseToken, orderId, productType (1 subscription, 2 one-time) and
+ * refundType (1 full refund, 2 quantity-based partial refund).
+ */
+function voidedRtdn(
+  overrides: Record<string, unknown> = {},
+  envelope: Record<string, unknown> = {},
+): string {
+  return JSON.stringify({
+    version: "1.0",
+    packageName: "com.studafy.app",
+    eventTimeMillis: "1760518800000",
+    voidedPurchaseNotification: {
+      purchaseToken: "gpa.token-voided-1",
+      orderId: "GPA.3384-5512-9087-12345",
+      productType: 1,
+      refundType: 1,
+      ...overrides,
+    },
+    ...envelope,
+  });
+}
+
+function voidedProcessor(google = new FakeGoogleVerifier()) {
+  const dispatch = new FakeDispatch();
+  const log = testLogger();
+  const process = createBillingEventProcessor(
+    dispatch,
+    { environment: "production", apple: null, google: googleEnv(google) },
+    log.logger,
+  );
+  const finished: Array<Record<string, unknown>> = [];
+  const original = dispatch.finishEvent.bind(dispatch);
+  dispatch.finishEvent = async (eventId, body) => {
+    finished.push(body);
+    return original(eventId, body);
+  };
+  const run = (eventId: number, rawPayload: string, attemptsMade = 0) => {
+    dispatch.payloads.set(eventId, {
+      platform: "play_store",
+      environment: "production",
+      rawPayload,
+    });
+    return process(job(`billing-event-${eventId}`, {
+      platform: "play_store",
+      environment: "production",
+      transactionId: String(eventId),
+    }, attemptsMade));
+  };
+  return { dispatch, google, collector: log.collector, finished, run };
+}
+
+describe("Google Play voided purchases", () => {
+  test("a refunded subscription is matched by its token and ends as refunded", async () => {
+    const { google, collector, finished, run } = voidedProcessor();
+
+    const result = await run(21, voidedRtdn());
+
+    expect(result).toEqual({ ok: true });
+    expect(finished).toEqual([{
+      platform: "play_store",
+      environment: "production",
+      voided: true,
+      transactionId: "gpa.token-voided-1",
+      state: "refunded",
+    }]);
+    // The ledger finds the purchase by token; a void is never re-read as a
+    // subscription state, and nothing is acknowledged.
+    expect(google.verifyCalls).toBe(0);
+    expect(google.ackCalls).toBe(0);
+    expect(collector.events()).toContain("billing_voided_purchase");
+    expect(collector.events()).toContain("billing_job_completed");
+    expect(collector.events()).not.toContain("billing_job_retry");
+    // The token and the order id never reach the logs.
+    const logged = collector.lines.join("\n");
+    expect(logged).not.toContain("gpa.token-voided-1");
+    expect(logged).not.toContain("GPA.3384");
+  });
+
+  test("a subscription voided without a full refund is revoked", async () => {
+    const { finished, run } = voidedProcessor();
+    await run(22, voidedRtdn({ refundType: 2 }));
+    expect(finished[0]).toMatchObject({ voided: true, state: "revoked" });
+
+    const missing = voidedProcessor();
+    await missing.run(23, voidedRtdn({ refundType: undefined }));
+    expect(missing.finished[0]).toMatchObject({ state: "revoked" });
+  });
+
+  test("a voided one-time product is a logged skip, not an error", async () => {
+    const { google, collector, finished, run } = voidedProcessor();
+
+    const result = await run(24, voidedRtdn({ productType: 2 }));
+
+    expect(result).toEqual({ ok: true });
+    expect(finished).toEqual([{
+      platform: "play_store",
+      environment: "production",
+      noop: true,
+    }]);
+    expect(google.verifyCalls).toBe(0);
+    const skipped = collector.parsed().find((entry) =>
+      entry.event === "billing_voided_purchase_skipped"
+    );
+    expect(skipped).toMatchObject({ product_type: 2, refund_type: 1 });
+    expect(skipped?.level).not.toBe("error");
+    expect(collector.events()).not.toContain("billing_job_retry");
+    expect(collector.events()).not.toContain("billing_job_exhausted");
+  });
+
+  test("an unknown product type is skipped the same way", async () => {
+    const { finished, collector, run } = voidedProcessor();
+    await run(25, voidedRtdn({ productType: 9 }));
+    expect(finished[0]).toMatchObject({ noop: true });
+    expect(collector.events()).toContain("billing_voided_purchase_skipped");
+  });
+
+  test("a void for another app's package is never applied", async () => {
+    const { finished, collector, run } = voidedProcessor();
+    await expect(
+      run(26, voidedRtdn({}, { packageName: "com.other.app" })),
+    ).rejects.toThrow(/package name mismatch/);
+    expect(finished).toEqual([]);
+    expect(collector.events()).toContain("billing_job_retry");
+
+    const noPackage = voidedProcessor();
+    await expect(
+      noPackage.run(27, voidedRtdn({}, { packageName: undefined })),
+    ).rejects.toThrow(/package name mismatch/);
+    expect(noPackage.finished).toEqual([]);
+  });
+
+  test("a void without a purchase token dead-letters on the final attempt", async () => {
+    const { dispatch, finished, collector, run } = voidedProcessor();
+    await expect(
+      run(28, voidedRtdn({ purchaseToken: "" }), 7),
+    ).rejects.toThrow();
+    expect(finished).toEqual([]);
+    expect(dispatch.failed.map(([eventId]) => eventId)).toEqual([28]);
+    expect(collector.events()).toContain("billing_job_exhausted");
+  });
+
+  test("a token the ledger has not seen yet retries like any unknown transaction", async () => {
+    const { dispatch, collector, run } = voidedProcessor();
+    dispatch.finishOutcomeByEvent.set(29, "retry");
+    await expect(run(29, voidedRtdn())).rejects.toThrow(
+      "billing original transaction unknown",
+    );
+    expect(collector.events()).toContain(
+      "billing_job_retry_unknown_transaction",
+    );
+  });
+
+  test("a redelivered void sends the same body; the ledger makes it a no-op", async () => {
+    const { finished, run } = voidedProcessor();
+    await run(30, voidedRtdn());
+    // billing_finish_event answers `completed` for an event it already
+    // completed, without touching the ledger again.
+    const again = await run(30, voidedRtdn());
+    // The worker holds no state between deliveries: what stops a second
+    // revocation is billing_finish_event (supabase/tests/voided_purchases.sql).
+    expect(finished[1]).toEqual(finished[0]);
+    expect(again).toEqual({ ok: true });
+  });
+});
