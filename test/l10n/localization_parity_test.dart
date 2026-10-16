@@ -53,6 +53,8 @@ void main() {
       'languageEnglish',
       'languageArabic',
       'loginConsentSuffix',
+      // Plan names stay in Latin letters (docs/l10n/arabic-glossary.md).
+      'insightsTitle',
     };
 
     final untranslated = messageKeys(english)
