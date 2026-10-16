@@ -21,6 +21,7 @@ import 'core/crash_reports.dart';
 import 'core/locale_controller.dart';
 import 'core/runtime_environment.dart';
 import 'core/studafy_design.dart';
+import 'core/studafy_material_localizations.dart';
 import 'core/uploads_scope.dart';
 import 'features/family/presentation/family_scope.dart';
 import 'features/meetings/presentation/meetings_scope.dart';
@@ -41,6 +42,8 @@ final _navigatorKey = GlobalKey<NavigatorState>();
 /// strings and the right-to-left direction for Arabic.
 const _localizationsDelegates = <LocalizationsDelegate<Object>>[
   AppL10n.delegate,
+  // Before Flutter's, as the first match wins: Arabic pickers keep 0-9.
+  StudafyArabicMaterialLocalizations.delegate,
   GlobalMaterialLocalizations.delegate,
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,
