@@ -508,8 +508,8 @@ class _LoginPageState extends State<LoginPage> {
       footer: Center(
         child: TextButton.icon(
           onPressed: () => Navigator.pop(c),
-          // White: the paler frost read at 3.4:1 on the lower ocean, under
-          // WCAG's 4.5:1 for text this size (launch plan 7.1).
+          // White on the navy backdrop (16:1); WCAG asks 4.5:1 for text this
+          // size (launch plan 7.1).
           style: TextButton.styleFrom(foregroundColor: Colors.white),
           icon: Icon(backChevron(c)),
           label: Text(l10n.loginChangeRole),
@@ -676,7 +676,7 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 /// A provider's sign-in button: its real logo and "Continue with ...", on
-/// the soft surface of the ocean screens.
+/// the soft surface of the navy screens.
 class SocialButton extends StatelessWidget {
   const SocialButton({
     super.key,

@@ -107,8 +107,10 @@ flutter:
   # drift the same way it does for the generated /v1 client.
   generate: true
 
-  # The Studafy wordmark, cropped from the brand artwork with its white
-  # background made transparent so it sits on any light surface.
+  # The Studafy wordmark: navy for white surfaces, white for the navy launch
+  # and sign-in screens. Flutter bundles the 2.0x/ and 3.0x/ variants next to
+  # each file by itself. Regenerated from assets/brand/source/ by
+  # scripts/brand/generate-icons.py.
   assets:
     - assets/brand/studafy_wordmark.png
     - assets/brand/studafy_wordmark_white.png

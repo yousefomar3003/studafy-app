@@ -510,6 +510,23 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 
 ---
 
+## Store icons
+
+The brand changed on 2026-10-16: a white "S" on navy `#161551` is the icon
+everywhere outside the app, and the "studafy" wordmark is white on navy at
+launch and sign-in, navy on white inside the app.
+
+- **Google Play:** `docs/store/play_icon_512.png`, 512 × 512, 24-bit RGB,
+  no alpha (Play rounds the corners itself).
+- **App Store:** the 1024 × 1024 marketing icon in the build,
+  `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png`,
+  no alpha. Nothing to upload separately.
+- Both, and every in-app and launch size, come from `assets/brand/source/`
+  through `scripts/brand/generate-icons.py`.
+
+The screenshots below were taken before the new brand: their wordmark,
+navy and sign-in backdrop are the old ones. Retake them before submitting.
+
 ## Screenshots
 
 ### What was taken

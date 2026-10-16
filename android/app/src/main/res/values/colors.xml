@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The brand navy (studafyNavy in lib/core/studafy_design.dart): behind
+         the adaptive icon's S and every launch screen. -->
+    <color name="brand_navy">#161551</color>
+    <color name="ic_launcher_background">#161551</color>
+</resources>

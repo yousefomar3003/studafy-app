@@ -264,7 +264,7 @@ class StudafyCreateButton extends StatelessWidget {
           gradient: const LinearGradient(
             begin: AlignmentDirectional.topStart,
             end: AlignmentDirectional.bottomEnd,
-            colors: [studafyDeep, studafyTeal],
+            colors: [studafyDeep, studafyIndigo],
           ),
           boxShadow: [
             BoxShadow(

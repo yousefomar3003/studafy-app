@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
 // Brand roles. Every screen reads these names, so the whole app follows the
-// ocean palette below: white is the primary surface, the deep blue is the
-// accent for actions and selection, and the steel blue carries secondary
-// text. The names predate the palette and are kept so nothing else changes.
-const studafyNavy = Color(0xFF0A4174);
+// palette below: white is the primary surface, the brand navy is the accent
+// for actions and selection, and the steel blue carries secondary text. The
+// names predate the palette and are kept so nothing else changes.
+
+/// The brand navy (#161551): the colour of the S icon, the wordmark and
+/// every launch screen. Also android/.../values/colors.xml and the iOS
+/// LaunchScreen.storyboard.
+const studafyNavy = Color(0xFF161551);
 const studafyCyan = Color(0xFF4E8EA2);
-const studafyInk = Color(0xFF001D39);
+const studafyInk = Color(0xFF0E0D3A);
 const studafyMuted = Color(0xFF49769F);
 
 /// The page behind cards: white with the faintest frost, so a white card
@@ -20,52 +24,56 @@ const studafyWash = Color(0xFFEFF5FA);
 /// Errors stay red: they are a warning, not a brand choice.
 const studafyDanger = Color(0xFFB3261E);
 
-// The ocean palette, darkest to lightest. The welcome, sign-in and intro
-// screens are built from it; the rest of the app moves to it screen by
-// screen.
-const studafyAbyss = Color(0xFF001D39);
-const studafyDeep = Color(0xFF0A4174);
+// The palette, darkest to lightest: the brand navy with a deeper and a
+// lighter step of the same blue for gradients, then the cooler blues that
+// carry secondary text and quiet fills.
+const studafyAbyss = Color(0xFF0E0D3A);
+const studafyDeep = studafyNavy;
+
+/// The lighter step of the navy: the far end of gradients. White text on it
+/// is 10:1.
+const studafyIndigo = Color(0xFF34319A);
 const studafySteel = Color(0xFF49769F);
 const studafyTeal = Color(0xFF4E8EA2);
 const studafyMist = Color(0xFF6EA2B3);
 const studafySky = Color(0xFF7BBDE8);
 const studafyFrost = Color(0xFFBDD8E9);
 
-/// The deep-water backdrop behind the welcome and sign-in screens.
-const studafyOceanGradient = LinearGradient(
-  begin: AlignmentDirectional.topStart,
-  end: AlignmentDirectional.bottomEnd,
-  colors: [studafyAbyss, studafyDeep, studafyTeal],
-  stops: [0, .55, 1],
-);
+/// The solid backdrop of the launch, welcome, sign-in and intro screens:
+/// the brand navy, so the native launch screen, the white wordmark and the
+/// first Flutter frames read as one surface.
+const studafyBackdrop = studafyNavy;
 
-/// Primary actions on the ocean screens.
+/// Primary actions on the welcome and sign-in screens, and the bubbles of
+/// one's own messages: navy to its lighter step, white text 10:1 or more.
 const studafyActionGradient = LinearGradient(
   begin: AlignmentDirectional.centerStart,
   end: AlignmentDirectional.centerEnd,
-  colors: [studafyDeep, studafyTeal],
+  colors: [studafyDeep, studafyIndigo],
 );
 
-/// The brand wordmark artwork: "studafy" with the sparkle cross over the t.
+/// The brand wordmark, "studafy" in navy, for white and light surfaces
+/// inside the app. 1x/2.0x/3.0x variants, from assets/brand/source/
+/// (scripts/brand/generate-icons.py).
 const studafyWordmarkAsset = 'assets/brand/studafy_wordmark.png';
 
-/// The same artwork for dark backgrounds: white letters, the cross still in
-/// its own cyan.
+/// The same wordmark in white, for the navy launch, welcome and sign-in
+/// screens.
 const studafyWordmarkOnDarkAsset = 'assets/brand/studafy_wordmark_white.png';
 
 /// Width over height of [studafyWordmarkAsset], so space is reserved for it
 /// before the image has decoded and the header never jumps.
-const studafyWordmarkAspect = 3.34;
+const studafyWordmarkAspect = 3.2173;
 
 /// Brand lockup shared by the session flow and every shell.
 ///
 /// The real wordmark artwork everywhere: navy on light surfaces, and white
-/// (with the cross kept cyan) on the ocean backdrop of the first screens.
+/// on the navy backdrop of the first screens.
 class StudafyLogo extends StatelessWidget {
   const StudafyLogo({super.key, this.size = 46, this.onDark = false});
   final double size;
 
-  /// White wordmark for the ocean backdrop.
+  /// White wordmark for the navy backdrop.
   final bool onDark;
   @override
   Widget build(BuildContext c) {
@@ -88,36 +96,15 @@ class StudafyLogo extends StatelessWidget {
     );
   }
 
-  Widget _drawn() => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: size * .56,
-        height: size * .56,
-        margin: EdgeInsetsDirectional.only(end: size * .05),
-        decoration: BoxDecoration(
-          color: onDark
-              ? studafyFrost.withValues(alpha: .22)
-              : studafyCyan.withValues(alpha: .14),
-          borderRadius: BorderRadius.circular(size * .18),
-        ),
-        child: Icon(
-          Icons.add_rounded,
-          color: onDark ? studafySky : studafyCyan,
-          size: size * .45,
-        ),
-      ),
-      Text(
-        'studafy',
-        style: TextStyle(
-          fontSize: size,
-          height: 1,
-          letterSpacing: -2,
-          fontWeight: FontWeight.w900,
-          color: onDark ? Colors.white : studafyNavy,
-        ),
-      ),
-    ],
+  Widget _drawn() => Text(
+    'studafy',
+    style: TextStyle(
+      fontSize: size,
+      height: 1,
+      letterSpacing: -2,
+      fontWeight: FontWeight.w900,
+      color: onDark ? Colors.white : studafyNavy,
+    ),
   );
 }
 
@@ -639,7 +626,7 @@ class StudafyHero extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [studafyAbyss, studafyDeep, studafyTeal],
+              colors: [studafyAbyss, studafyDeep, studafyIndigo],
               begin: AlignmentDirectional.topStart,
               end: AlignmentDirectional.bottomEnd,
             ),

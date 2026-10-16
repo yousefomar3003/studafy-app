@@ -68,7 +68,7 @@ class AccountProfileHeader extends StatelessWidget {
       gradient: const LinearGradient(
         begin: AlignmentDirectional.topStart,
         end: AlignmentDirectional.bottomEnd,
-        colors: [studafyAbyss, studafyDeep, studafyTeal],
+        colors: [studafyAbyss, studafyDeep, studafyIndigo],
       ),
     ),
     child: Column(

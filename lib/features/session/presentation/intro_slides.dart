@@ -84,85 +84,80 @@ class _IntroSlidesState extends State<IntroSlides> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: studafyAbyss,
-        body: DecoratedBox(
-          decoration: const BoxDecoration(gradient: studafyOceanGradient),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(24, 12, 12, 0),
-                  child: Row(
-                    children: [
-                      const StudafyLogo(size: 28, onDark: true),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: widget.onDone,
-                        style: TextButton.styleFrom(
-                          foregroundColor: studafyFrost,
-                        ),
-                        child: Text(l10n.introSkip),
+        backgroundColor: studafyBackdrop,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(24, 12, 12, 0),
+                child: Row(
+                  children: [
+                    const StudafyLogo(size: 28, onDark: true),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: widget.onDone,
+                      style: TextButton.styleFrom(
+                        foregroundColor: studafyFrost,
                       ),
-                    ],
-                  ),
+                      child: Text(l10n.introSkip),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: PageView(
-                    controller: _pages,
-                    onPageChanged: (index) => setState(() => _index = index),
-                    children: [for (final slide in slides) slide],
-                  ),
+              ),
+              Expanded(
+                child: PageView(
+                  controller: _pages,
+                  onPageChanged: (index) => setState(() => _index = index),
+                  children: [for (final slide in slides) slide],
                 ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 24),
-                  child: Column(
-                    children: [
-                      Semantics(
-                        label: l10n.introPageOf(_index + 1, slides.length),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            for (var i = 0; i < slides.length; i++)
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 220),
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                height: 8,
-                                width: i == _index ? 26 : 8,
-                                decoration: BoxDecoration(
-                                  color: i == _index
-                                      ? studafySky
-                                      : studafyFrost.withValues(alpha: .35),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 24),
+                child: Column(
+                  children: [
+                    Semantics(
+                      label: l10n.introPageOf(_index + 1, slides.length),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < slides.length; i++)
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              height: 8,
+                              width: i == _index ? 26 : 8,
+                              decoration: BoxDecoration(
+                                color: i == _index
+                                    ? studafySky
+                                    : studafyFrost.withValues(alpha: .35),
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: () => _next(slides.length),
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(56),
-                            backgroundColor: Colors.white,
-                            foregroundColor: studafyDeep,
-                            shape: const StadiumBorder(),
-                            textStyle: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
                             ),
-                          ),
-                          child: Text(last ? l10n.introStart : l10n.introNext),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => _next(slides.length),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(56),
+                          backgroundColor: Colors.white,
+                          foregroundColor: studafyDeep,
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        child: Text(last ? l10n.introStart : l10n.introNext),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
