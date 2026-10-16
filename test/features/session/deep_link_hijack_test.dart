@@ -20,7 +20,7 @@ void main() {
   group('a legitimate callback', () {
     test('the HTTPS App Link is accepted', () {
       final outcome = inspect(
-        'https://app.studafy.io/auth/callback?code=auth-code-1&state=state-abc123',
+        'https://app.studafy.com/auth/callback?code=auth-code-1&state=state-abc123',
       );
       expect(outcome, isA<AuthCallbackAccepted>());
       expect((outcome as AuthCallbackAccepted).code, 'auth-code-1');
@@ -50,17 +50,17 @@ void main() {
       'io.studafy.app://login-callback-evil?code=c1&state=state-abc123',
       'io.studafy.app://logincallback?code=c1&state=state-abc123',
       // The right host, an attacker-chosen path.
-      'https://app.studafy.io/auth/callback-evil?code=c1&state=state-abc123',
-      'https://app.studafy.io/evil?code=c1&state=state-abc123',
+      'https://app.studafy.com/auth/callback-evil?code=c1&state=state-abc123',
+      'https://app.studafy.com/evil?code=c1&state=state-abc123',
       // A lookalike domain.
-      'https://app-studafy.io/auth/callback?code=c1&state=state-abc123',
-      'https://app.studafy.io.evil.test/auth/callback?code=c1&state=state-abc123',
+      'https://app-studafy.com/auth/callback?code=c1&state=state-abc123',
+      'https://app.studafy.com.evil.test/auth/callback?code=c1&state=state-abc123',
       // Downgrade to plaintext.
-      'http://app.studafy.io/auth/callback?code=c1&state=state-abc123',
+      'http://app.studafy.com/auth/callback?code=c1&state=state-abc123',
       // Credentials in the authority, an old parser-confusion trick.
-      'https://app.studafy.io@evil.test/auth/callback?code=c1&state=state-abc123',
+      'https://app.studafy.com@evil.test/auth/callback?code=c1&state=state-abc123',
       // A non-default port on the right host.
-      'https://app.studafy.io:8443/auth/callback?code=c1&state=state-abc123',
+      'https://app.studafy.com:8443/auth/callback?code=c1&state=state-abc123',
     ]) {
       test('refuses $hostile', () {
         expect(
@@ -73,7 +73,7 @@ void main() {
 
     test('host comparison is case-insensitive for a genuine target', () {
       final outcome = inspect(
-        'https://APP.STUDAFY.IO/auth/callback?code=c1&state=state-abc123',
+        'https://APP.STUDAFY.COM/auth/callback?code=c1&state=state-abc123',
       );
       expect(outcome, isA<AuthCallbackAccepted>());
     });

@@ -58,7 +58,7 @@ class AuthCallbackGuard {
 
   /// Callback targets this app claims, most-preferred first.
   static const defaultTargets = <String>[
-    'https://app.studafy.io/auth/callback',
+    'https://app.studafy.com/auth/callback',
     'io.studafy.app://login-callback',
   ];
 

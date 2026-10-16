@@ -2,6 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  ANDROID_SHA256,
+  APP_ID,
+  APPLE_TEAM_ID,
+  appLinksPending,
+  CALLBACK_PATH,
+} from "../src/app-links.ts";
 import { inline, render, sectionId, stripComments } from "../src/markdown.ts";
 import { build, pagePath, PAGES } from "../src/site.ts";
 
@@ -119,5 +126,81 @@ describe("the built site", () => {
     expect(read("_headers")).toContain("frame-ancestors 'none'");
     expect(read("_redirects")).toContain("/ /privacy 302");
     expect(read("404.html")).toContain("Page not found");
+  });
+});
+
+describe("app-link association files (app.studafy.com)", () => {
+  const repo = join(root, "..", "..");
+  const source = (path: string) => readFileSync(join(repo, path), "utf8");
+  const host = "app.studafy.com";
+
+  test("apple-app-site-association claims only the callback, for the app", () => {
+    const aasa = JSON.parse(read(".well-known/apple-app-site-association"));
+    expect(aasa).toEqual({
+      applinks: {
+        details: [
+          {
+            appIDs: [`${APPLE_TEAM_ID}.com.studafy.light`],
+            components: [
+              { "/": "/auth/callback" },
+              { "/": "/auth/callback/*" },
+            ],
+          },
+        ],
+      },
+    });
+    expect(read("_headers")).toMatch(
+      /\/\.well-known\/apple-app-site-association\n\s+Content-Type: application\/json/,
+    );
+  });
+
+  test("assetlinks.json names the package and one signing fingerprint", () => {
+    expect(JSON.parse(read(".well-known/assetlinks.json"))).toEqual([
+      {
+        relation: ["delegate_permission/common.handle_all_urls"],
+        target: {
+          namespace: "android_app",
+          package_name: "com.studafy.light",
+          sha256_cert_fingerprints: [ANDROID_SHA256],
+        },
+      },
+    ]);
+  });
+
+  test("identifiers are real values or clearly marked placeholders", () => {
+    expect(APPLE_TEAM_ID).toMatch(/^(PENDING_[A-Z_]+|[A-Z0-9]{10})$/);
+    expect(ANDROID_SHA256).toMatch(
+      /^(PENDING_[A-Z0-9_]+|([0-9A-F]{2}:){31}[0-9A-F]{2})$/,
+    );
+    expect(appLinksPending()).toBe(
+      APPLE_TEAM_ID.startsWith("PENDING") ||
+        ANDROID_SHA256.startsWith("PENDING"),
+    );
+  });
+
+  test("the app, its manifests and Supabase claim the same domain and path", () => {
+    const callback = `https://${host}${CALLBACK_PATH}`;
+    expect(source("lib/features/session/domain/auth_callback.dart"))
+      .toContain(`'${callback}'`);
+    const manifest = source("android/app/src/main/AndroidManifest.xml");
+    expect(manifest).toContain(`android:host="${host}"`);
+    expect(manifest).toContain(`android:pathPrefix="${CALLBACK_PATH}"`);
+    expect(source("android/app/build.gradle.kts")).toContain(
+      `applicationId = "${APP_ID}"`,
+    );
+    expect(source("ios/Runner/Runner.entitlements")).toContain(
+      `<string>applinks:${host}</string>`,
+    );
+    expect(source("supabase/config.toml")).toContain(`"${callback}"`);
+  });
+
+  test("the Worker answers on the legal and app hosts, and on workers.dev", () => {
+    const toml = source("ops/legal-site/wrangler.toml");
+    const routes = toml.split("\n").find((l) => l.startsWith("routes"));
+    expect(routes).toContain(
+      '{ pattern = "legal.studafy.com", custom_domain = true }',
+    );
+    expect(routes).toContain(`{ pattern = "${host}", custom_domain = true }`);
+    expect(toml).toMatch(/^workers_dev = true$/m);
   });
 });

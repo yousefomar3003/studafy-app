@@ -1,10 +1,12 @@
-// Builds the temporary public legal site (launch plan 4.3): the privacy
-// policy, the terms and the account deletion page, in English and Arabic,
-// from the Markdown in docs/legal. Every link is path-absolute or relative,
-// so moving to our own domain is only a route in wrangler.toml.
+// Builds the public legal site (launch plan 4.3): the privacy policy, the
+// terms and the account deletion page, in English and Arabic, from the
+// Markdown in docs/legal, plus the app-link association files
+// (app-links.ts). Every link is path-absolute or relative, so a host is only
+// a route in wrangler.toml.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { appleAppSiteAssociation, assetLinks } from "./app-links.ts";
 import { escapeHtml, render } from "./markdown.ts";
 
 export type Locale = "en" | "ar";
@@ -147,6 +149,9 @@ const HEADERS = `/*
   Strict-Transport-Security: max-age=31536000
   Content-Security-Policy: default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   Cache-Control: public, max-age=300
+
+/.well-known/apple-app-site-association
+  Content-Type: application/json
 `;
 
 const REDIRECTS = `/ /privacy 302
@@ -188,6 +193,9 @@ export function build(options: BuildOptions): string[] {
   }
   write("404.html", notFoundHtml());
   write("styles.css", readFileSync(options.stylesheet, "utf8"));
+  // The app-link association files (app-links.ts), for app.studafy.com.
+  write(".well-known/apple-app-site-association", appleAppSiteAssociation());
+  write(".well-known/assetlinks.json", assetLinks());
   write("_headers", HEADERS);
   write("_redirects", REDIRECTS);
   return written;

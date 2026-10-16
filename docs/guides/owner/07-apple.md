@@ -17,7 +17,7 @@ minutes, after Apple approves the Developer account.
 | App name | `Studafy` |
 | SKU | `studafy-ios` (any unique text; customers never see it) |
 | Capabilities | Associated Domains, Push Notifications, Sign In with Apple |
-| Associated domain in the app | `applinks:app.studafy.io` (`ios/Runner/Runner.entitlements`) |
+| Associated domain in the app | `applinks:app.studafy.com` (`ios/Runner/Runner.entitlements`) |
 | Sender for Apple's email relay | `no-reply@studafy.com` |
 
 ## Part A: your Team ID

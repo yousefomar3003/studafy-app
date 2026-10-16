@@ -56,9 +56,9 @@ draft assumes until you decide.
    - uploaded files.
 
    (Source: `apps/worker/src/processors/accountDeletion.ts`, `supabase/migrations/202609190008_account_deletion_executor.sql`.) The deletion answers below describe the behaviour **after 3.6b**.
-9. **Web deletion URL.** Item 4.3 will publish
-   `https://studafy-legal.studafy.workers.dev/delete-account`. Change it here if
-   the page moves to `studafy.com`.
+9. **Web deletion URL.** Published by item 4.3 at
+   `https://legal.studafy.com/delete-account` (DL-067; the old
+   `studafy-legal.studafy.workers.dev` address still answers).
 
 ---
 
@@ -69,7 +69,7 @@ draft assumes until you decide.
 | Does your app collect or share any of the required user data types? | **Yes** | Sign-in, profiles, class work and messages, all listed below. Answering "no" while users sign in is an automatic rejection (`docs/planning/instructions.md` §24.3). |
 | Is all of the user data collected by your app encrypted in transit? | **Yes** | See the encryption notes below this table. |
 | Which of the following methods of account creation does your app support? | **Username and password: no. OAuth: yes** (Google, Microsoft, Apple). **Other: yes**, a parent creates a managed child account without an email. | `lib/features/session/data/api_session_repository.dart:138-193`; ADR-0031; `lib/app/account/account_switching.dart` |
-| Delete account URL | `https://studafy-legal.studafy.workers.dev/delete-account` (item 4.3) | Decision 9 |
+| Delete account URL | `https://legal.studafy.com/delete-account` (item 4.3) | Decision 9 |
 | Do you provide a way for users to request that some or all of their data is deleted, without requiring them to delete their account? | **No** | There is no partial-deletion request flow. People can delete their own notebook notes and highlights in the app, but there is no general "delete my data" request short of deleting the account. |
 
 **Encryption in transit:**

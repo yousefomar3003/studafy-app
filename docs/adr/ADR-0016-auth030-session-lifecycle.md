@@ -116,7 +116,7 @@ Claiming it would be untrue. If account creation later becomes invitation-only
 
 ### The owned HTTPS callback is preferred; the custom scheme is a proven fallback
 
-`https://app.studafy.io/auth/callback` is the primary redirect target, declared
+`https://app.studafy.com/auth/callback` is the primary redirect target, declared
 as an Android App Link and an iOS associated domain. Because any app can
 register a custom URI scheme, `io.studafy.app://login-callback` stays only as a
 fallback until domain verification is possible.

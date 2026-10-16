@@ -37,7 +37,7 @@
 
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:app.studafy.io</string>
+		<string>applinks:app.studafy.com</string>
 	</array>
 </dict>
 </plist>
