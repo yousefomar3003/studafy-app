@@ -5,6 +5,7 @@ import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -62,7 +63,7 @@ class _LessonsByDateViewState extends State<LessonsByDateView> {
     if (day == today.subtract(const Duration(days: 1))) {
       return AppL10n.of(context).notebookYesterday;
     }
-    return MaterialLocalizations.of(context).formatFullDate(day);
+    return studafyFullDate(context, day);
   }
 
   @override

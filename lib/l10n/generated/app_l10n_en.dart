@@ -2779,8 +2779,13 @@ class AppL10nEn extends AppL10n {
   String get famApprovalsTitle => 'Waiting for your approval';
 
   @override
-  String famApprovalsDetail(String name) {
-    return '$name asked to subscribe to Student Notebook.';
+  String famApprovalsDetail(String name, String plan) {
+    String _temp0 = intl.Intl.selectLogic(plan, {
+      'studafy_plus': 'Studafy Plus',
+      'studafy_max': 'Studafy Max',
+      'other': 'a Studafy plan',
+    });
+    return '$name asked to subscribe to $_temp0.';
   }
 
   @override

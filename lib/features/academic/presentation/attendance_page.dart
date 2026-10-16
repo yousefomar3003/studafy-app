@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
@@ -614,8 +615,7 @@ class _DayAndSlotPicker extends StatelessWidget {
                         // "Monday's lesson", and it shows at a glance why a
                         // day has none.
                         Text(
-                          MaterialLocalizations.of(context)
-                              .formatFullDate(date),
+                          studafyFullDate(context, date),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: studafyInk,
@@ -1022,8 +1022,7 @@ class _AttendanceHistorySheet extends StatelessWidget {
                   ),
                   subtitle: Text(
                     [
-                      MaterialLocalizations.of(context)
-                          .formatShortDate(change.at),
+                      studafyShortDate(context, change.at),
                       ?change.actorName,
                       ?change.reason,
                       if (change.override) l10n.attendanceHistoryOverride,

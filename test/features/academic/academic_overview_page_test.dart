@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/studafy_components.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
@@ -442,6 +443,74 @@ void main() {
     );
     expect(find.text('Marked'), findsWidgets);
   });
+
+  testWidgets(
+    'in Arabic the school time zone stays whole inside its brackets',
+    (tester) async {
+      await tester.pumpWidget(
+        localizedApp(
+          locale: const Locale('ar'),
+          home: AcademicOverviewPage(
+            repository: _FakeAcademicRepository([
+              const AcademicRecord(
+                id: 'c',
+                title: 'Poster',
+                detail: '',
+                state: 'published',
+                version: 1,
+                deadline: SubmissionDeadline(
+                  state: SubmissionWindow.open,
+                  deadlineLocal: '2026-10-05T23:59',
+                  timeZone: 'Asia/Amman',
+                ),
+              ),
+            ]),
+            title: 'Work',
+            availableFeeds: const [AcademicFeed.assignments],
+            onOpenRecord: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The id is wrapped in a left-to-right isolate, inside the brackets,
+      // with a word joiner after the slash.
+      const zoneId = 'Asia/\u2060Amman';
+      final line = find.textContaining(zoneId);
+      expect(line, findsOneWidget);
+      final paragraph = tester.renderObject<RenderParagraph>(line);
+      final text = paragraph.text.toPlainText();
+      expect(text, contains('(\u2066$zoneId\u2069)'));
+      expect(directionOf(tester, line), TextDirection.rtl);
+      // The date beside the time uses the same 0-9 digits: "5", never "٥".
+      expect(text, contains('11:59'));
+      expect(text, contains('5'));
+      expect(RegExp('[٠-٩۰-۹]').hasMatch(text), isFalse, reason: text);
+
+      // And it renders that way: "Asia/Amman" is one left-to-right run on one
+      // line, with ")" on its left and "(" on its right, as RTL brackets
+      // mirror. Before, the line broke after the slash.
+      Rect box(int start, int end) => paragraph
+          .getBoxesForSelection(
+            TextSelection(baseOffset: start, extentOffset: end),
+          )
+          .map((b) => b.toRect())
+          .reduce((a, b) => a.expandToInclude(b));
+      final zoneStart = text.indexOf(zoneId);
+      final zoneEnd = zoneStart + zoneId.length;
+      final zone = box(zoneStart, zoneEnd);
+      final asia = box(zoneStart, zoneStart + 4);
+      final amman = box(zoneEnd - 5, zoneEnd);
+      final open = box(text.indexOf('('), text.indexOf('(') + 1);
+      final close = box(text.indexOf(')'), text.indexOf(')') + 1);
+      expect(asia.top, amman.top);
+      expect(open.top, zone.top);
+      expect(close.top, zone.top);
+      expect(asia.right, lessThanOrEqualTo(amman.left));
+      expect(close.right, lessThanOrEqualTo(zone.left));
+      expect(open.left, greaterThanOrEqualTo(zone.right));
+    },
+  );
 
   testWidgets('a parent filters by child, or sees every child labelled', (
     tester,

@@ -241,8 +241,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
     if (mounted) await _load();
   }
 
-  String _date(DateTime value) =>
-      MaterialLocalizations.of(context).formatMediumDate(value);
+  String _date(DateTime value) => studafyMediumDate(context, value);
 
   String _workStatus(AppL10n l10n, TeacherWorkItem item) {
     final date = item.date;
@@ -272,8 +271,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
     final l10n = AppL10n.of(context);
     final profile = ActiveContextController.instance.profile;
     final firstName = (profile?.displayName ?? '').trim().split(' ').first;
-    final today = MaterialLocalizations.of(context)
-        .formatFullDate(DateTime.now());
+    final today = studafyFullDate(context, DateTime.now());
     final students = _classes.fold<int>(0, (sum, c) => sum + c.studentCount);
     return Scaffold(
       appBar: AppBar(

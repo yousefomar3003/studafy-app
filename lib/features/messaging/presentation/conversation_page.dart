@@ -16,6 +16,7 @@ import '../../../core/navigation.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/platform_voice_notes.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../core/voice_note.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -797,7 +798,8 @@ class _ConversationPageState extends State<ConversationPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          MaterialLocalizations.of(context).formatTimeOfDay(
+                          studafyTimeOfDay(
+                            context,
                             TimeOfDay.fromDateTime(message.createdAt.toLocal()),
                           ),
                           style: TextStyle(

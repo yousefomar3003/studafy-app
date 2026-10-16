@@ -9,6 +9,7 @@ import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/messaging.dart';
@@ -492,11 +493,10 @@ class _ConversationTile extends StatelessWidget {
   String _when(BuildContext context) {
     final at = conversation.updatedAt.toLocal();
     final now = DateTime.now();
-    final localizations = MaterialLocalizations.of(context);
     if (at.year == now.year && at.month == now.month && at.day == now.day) {
-      return localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at));
+      return studafyTimeOfDay(context, TimeOfDay.fromDateTime(at));
     }
-    return localizations.formatShortMonthDay(at);
+    return studafyShortMonthDay(context, at);
   }
 
   @override
@@ -620,8 +620,10 @@ class AnnouncementCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      MaterialLocalizations.of(context)
-                          .formatMediumDate(announcement.createdAt.toLocal()),
+                      studafyMediumDate(
+                        context,
+                        announcement.createdAt.toLocal(),
+                      ),
                       style: const TextStyle(color: studafyMuted, fontSize: 12),
                     ),
                     if (from case final source?)

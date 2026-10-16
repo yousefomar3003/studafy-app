@@ -92,6 +92,39 @@ void main() {
     );
   });
 
+  test('dates and times shown in the app keep Western digits', () {
+    // MaterialLocalizations and intl give Arabic-Indic digits under `ar`;
+    // the app shows 0-9 in both languages (core/studafy_formatting.dart).
+    // Every screen formats through that file, which converts the digits.
+    final direct = RegExp(
+      r'\.format(MediumDate|FullDate|ShortDate|CompactDate|ShortMonthDay|'
+      r'MonthYear|TimeOfDay|Year|Hour|Minute|Decimal)\(|'
+      r'\b(DateFormat|NumberFormat)\.(?!EEEE\(|MMM\()[A-Za-z]+\(',
+    );
+    final offences = <String>[];
+    for (final file in Directory(
+      'lib',
+    ).listSync(recursive: true).whereType<File>()) {
+      final path = file.path.replaceAll(r'\', '/');
+      if (!path.endsWith('.dart') ||
+          path.contains('/generated/') ||
+          path.endsWith('core/studafy_formatting.dart')) {
+        continue;
+      }
+      for (final match in direct.allMatches(file.readAsStringSync())) {
+        offences.add('$path: ${match.group(0)}');
+      }
+    }
+
+    expect(
+      offences,
+      isEmpty,
+      reason:
+          'use the studafy* formatters in core/studafy_formatting.dart:\n'
+          '${offences.join('\n')}',
+    );
+  });
+
   test('copy is never looked up by a runtime value', () {
     // The one shape that would break "we never translate user content":
     // handing the lookup a value instead of a key written in the source. A

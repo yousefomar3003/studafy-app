@@ -4788,11 +4788,11 @@ abstract class AppL10n {
   /// **'Waiting for your approval'**
   String get famApprovalsTitle;
 
-  /// No description provided for @famApprovalsDetail.
+  /// A child asked a parent to approve a student plan. {plan} is the plan's feature key from the server (studafy_plus or studafy_max); any other key falls back to a generic plan name. Keep "Studafy Plus" and "Studafy Max" as product names.
   ///
   /// In en, this message translates to:
-  /// **'{name} asked to subscribe to Student Notebook.'**
-  String famApprovalsDetail(String name);
+  /// **'{name} asked to subscribe to {plan, select, studafy_plus{Studafy Plus} studafy_max{Studafy Max} other{a Studafy plan}}.'**
+  String famApprovalsDetail(String name, String plan);
 
   /// No description provided for @famApprovalsApprove.
   ///

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 
 /// The shape of a Google Meet link; the server enforces the same.
@@ -62,9 +63,7 @@ Future<MeetingDraft?> showScheduleMeetingDialog(
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.classroomAdminStarts),
-                    subtitle: Text(
-                      MaterialLocalizations.of(context).formatFullDate(starts),
-                    ),
+                    subtitle: Text(studafyFullDate(context, starts)),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
                       final d = await showDatePicker(

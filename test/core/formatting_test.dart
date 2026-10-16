@@ -77,6 +77,54 @@ void main() {
       expect(RegExp(r'[؀-ۿ]').hasMatch(arabic), isTrue);
     });
 
+    testWidgets('the Material date and time formats keep 0-9 digits', (
+      tester,
+    ) async {
+      final when = DateTime(2026, 10, 5, 23, 59);
+      final arabic = await underLocale(
+        tester,
+        const Locale('ar'),
+        (context) => [
+          studafyMediumDate(context, when),
+          studafyFullDate(context, when),
+          studafyShortDate(context, when),
+          studafyShortMonthDay(context, when),
+          studafyNumericMonthDay(context, when),
+          studafyTimeOfDay(context, TimeOfDay.fromDateTime(when)),
+        ],
+      );
+
+      for (final text in arabic) {
+        expect(RegExp('[٠-٩۰-۹]').hasMatch(text), isFalse, reason: text);
+      }
+      // Day and month names stay Arabic; the numbers are Western.
+      expect(arabic[0], contains('5'));
+      expect(RegExp(r'[؀-ۿ]').hasMatch(arabic[0]), isTrue);
+      expect(arabic[1], contains('2026'));
+      expect(arabic[5], contains('11:59'));
+    });
+
+    testWidgets('and English is unchanged', (tester) async {
+      final when = DateTime(2026, 10, 5, 23, 59);
+      final english = await underLocale(
+        tester,
+        const Locale('en'),
+        (context) => [
+          studafyMediumDate(context, when),
+          studafyFullDate(context, when),
+          studafyShortMonthDay(context, when),
+          studafyTimeOfDay(context, TimeOfDay.fromDateTime(when)),
+        ],
+      );
+
+      expect(english, [
+        'Mon, Oct 5',
+        'Monday, October 5, 2026',
+        'Oct 5',
+        '11:59 PM',
+      ]);
+    });
+
     testWidgets('weekday names are not left in English', (tester) async {
       final arabic = await underLocale(
         tester,

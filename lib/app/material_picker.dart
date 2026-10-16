@@ -6,6 +6,7 @@ import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
+import '../core/studafy_formatting.dart';
 import '../core/user_content_text.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/classes/application/class_list_interactor.dart';
@@ -712,8 +713,7 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
                           Text(
                             [
                               if (lesson.date case final date?)
-                                MaterialLocalizations.of(context)
-                                    .formatMediumDate(date),
+                                studafyMediumDate(context, date),
                               l10n.pickAttachments(count),
                               if (value == true)
                                 l10n.pickWholeLessonDetail

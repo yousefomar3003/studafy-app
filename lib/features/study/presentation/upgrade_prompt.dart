@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
 import 'study_plan_copy.dart';
@@ -84,8 +85,7 @@ class UpgradePrompt extends StatelessWidget {
         switch (plan?.allowance) {
           final allowance? when allowance.resetsAt.year < 2100 =>
             l10n.upgradeTokensBody(
-              MaterialLocalizations.of(context)
-                  .formatMediumDate(allowance.resetsAt),
+              studafyMediumDate(context, allowance.resetsAt),
             ),
           _ => l10n.upgradeAllowanceBody,
         },

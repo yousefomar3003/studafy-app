@@ -6,6 +6,7 @@ import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
+import '../core/studafy_formatting.dart';
 import '../core/user_content_text.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/lessons_by_date_view.dart';
@@ -502,10 +503,7 @@ class _StudentClassPageState extends State<StudentClassPage> {
                   title: Text(lesson.title),
                   subtitle: lesson.date == null
                       ? null
-                      : Text(
-                          MaterialLocalizations.of(sheetContext)
-                              .formatMediumDate(lesson.date!),
-                        ),
+                      : Text(studafyMediumDate(sheetContext, lesson.date!)),
                   onTap: () => Navigator.pop(
                     sheetContext,
                     LessonChoice(
