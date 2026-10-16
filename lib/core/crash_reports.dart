@@ -8,6 +8,16 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// bodies, no printed lines or tapped-widget breadcrumbs (they can hold
 /// names and message text), no breadcrumb data, and emails, long numbers
 /// and tokens are masked in any text that is sent.
+///
+/// No per-install identifier either. The native SDKs fill one in where the
+/// Dart [scrubEvent] never runs: on native (iOS, NDK, Java) crashes, ANRs and
+/// sessions they use an "installation id" as `user.id` when no user is set,
+/// and Android also puts it in `device.id` and every session's `did`.
+/// Three layers keep it out: [anonymise] sets one constant user for everyone,
+/// which the SDK syncs to the native scope so native crashes carry it instead;
+/// [scrubEvent] drops any device id from Dart events; and the native apps
+/// (MainActivity.kt, AppDelegate.swift) give every install the same
+/// installation id before Sentry starts.
 abstract final class CrashReports {
   static const dsn = String.fromEnvironment('SENTRY_DSN');
   static const environment = String.fromEnvironment(
@@ -17,17 +27,35 @@ abstract final class CrashReports {
 
   static bool get enabled => dsn.isNotEmpty;
 
+  /// The one user every report carries, so the native SDKs never fall back
+  /// to their per-install id.
+  static const anonymousUserId = 'anonymous';
+
   /// Starts reporting, then runs [app]. Without a DSN it only runs [app].
   static Future<void> run(Future<void> Function() app) async {
     if (!enabled) return app();
-    await SentryFlutter.init(configure, appRunner: app);
+    await SentryFlutter.init(
+      configure,
+      appRunner: () async {
+        await Sentry.configureScope(anonymise);
+        await app();
+      },
+    );
   }
+
+  /// Sets the constant user. Scope sync copies it to the native SDKs, whose
+  /// crash and ANR reports then use it instead of the installation id.
+  static Future<void> anonymise(Scope scope) =>
+      scope.setUser(SentryUser(id: anonymousUserId));
 
   static void configure(SentryFlutterOptions options) {
     options
       ..dsn = dsn
       ..environment = environment
       ..sendDefaultPii = false
+      // Carries the constant user from [anonymise] to the native SDKs. On by
+      // default; set here so it cannot be switched off unnoticed.
+      ..enableScopeSync = true
       // Errors and crashes only: no performance tracing.
       ..tracesSampleRate = null
       // The view hierarchy is off by default and stays off.
@@ -63,6 +91,15 @@ abstract final class CrashReports {
     event
       ..user = null
       ..request = null;
+    // On Android the device context comes from the native SDK, with the
+    // installation id as its `id`.
+    if (event.contexts.device case final device?) {
+      event.contexts.device = SentryDevice.fromJson(
+        device.toJson()
+          ..remove('id')
+          ..remove('device_unique_identifier'),
+      );
+    }
     if (event.message case final message?) {
       event.message = SentryMessage(scrubText(message.formatted));
     }

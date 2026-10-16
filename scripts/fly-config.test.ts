@@ -148,4 +148,15 @@ describe("Fly configs pass production validation", () => {
       }
     }
   });
+
+  test("the log shipper image is pinned to a digest", async () => {
+    const parsed = Bun.TOML.parse(
+      await Bun.file("fly.log-shipper.toml").text(),
+    ) as { build?: { image?: string } };
+    // A floating tag would let a new upstream image change where logs go
+    // without review (observability review, October 2026).
+    expect(parsed.build?.image).toMatch(
+      /^ghcr\.io\/superfly\/fly-log-shipper:[\w.-]+@sha256:[0-9a-f]{64}$/,
+    );
+  });
 });

@@ -424,10 +424,11 @@ plan)
    needs the owner's phone.
 3. **Observability recommendations**
    (`docs/operations/observability-review-2026-10.md`):
-   - check that a native crash carries no installation id;
-   - remove the dead CloudWatch sink;
-   - pin the log-shipper image;
-   - filter Axiom monitors by environment once production exists.
+   - done 2026-10-14: native crashes carry no installation id, the
+     CloudWatch sink is gone, the log-shipper image is pinned (redeploy the
+     shipper to pick the pin up);
+   - still open: filter Axiom monitors by environment once production
+     exists.
 4. **Optional:** run the backend-driven device tests (exam workflow,
    coursework files) in CI against a local stack.
 5. **When the owner's inputs arrive:** launch-plan items 2.3–2.5 (Y2–Y4),

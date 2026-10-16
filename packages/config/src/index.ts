@@ -86,11 +86,6 @@ export const apiEnvSchema = z.object({
   // Error reports go to Sentry only when a DSN is set. Personal data is
   // stripped before sending (packages/infrastructure/src/sentry.ts).
   SENTRY_DSN: url.optional(),
-  // CloudWatch shipping is opt-in: both must be set or the API logs only to
-  // stdout. Credentials are never configuration — the AWS SDK resolves them
-  // from the task/instance role.
-  AWS_REGION: z.string().min(1).optional(),
-  AWS_LOG_GROUP: z.string().min(1).optional(),
   // The study assistant. Off unless the key is present, so a build without
   // one simply has no AI surface rather than a broken tab.
   //
@@ -822,8 +817,6 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     database_pool_max: env.DATABASE_POOL_MAX,
     redis_url: env.REDIS_URL ? redactUrl(env.REDIS_URL) : null,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
-    aws_region: env.AWS_REGION ?? null,
-    cloudwatch_configured: Boolean(env.AWS_REGION && env.AWS_LOG_GROUP),
     ai: {
       // Never the key itself, and never the model's own output.
       enabled: Boolean(env.AI_API_KEY && env.AI_BASE_URL),

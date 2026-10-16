@@ -1,7 +1,10 @@
 # Deploying the API to AWS App Runner (eu-central-1)
 
 > **Superseded** by [fly-io.md](fly-io.md) (ADR-0035, 2026-10-02). Kept for
-> reference only.
+> reference only. The CloudWatch log sink it relies on
+> (`packages/infrastructure/src/cloudwatchLogs.ts`, `AWS_REGION`,
+> `AWS_LOG_GROUP`) was removed in October 2026; logs go to Axiom through
+> `fly.log-shipper.toml`.
 
 ## Why this exists
 

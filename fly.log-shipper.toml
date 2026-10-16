@@ -10,8 +10,15 @@ app = "studafy-log-shipper"
 primary_region = "fra"
 
 [build]
-  # Pin to a digest after the first deploy (fly image show).
-  image = "ghcr.io/superfly/fly-log-shipper:latest"
+  # Pinned to an immutable digest, so a new upstream image cannot change where
+  # logs go without review. The tag stays for readability; Fly pulls the
+  # digest. Resolved 2026-10-14 from `latest` (single linux/amd64 manifest,
+  # image built 2026-01-13) with
+  #   docker buildx imagetools inspect ghcr.io/superfly/fly-log-shipper:latest
+  # To update: run that again, read the upstream changes
+  # (github.com/superfly/fly-log-shipper), replace the digest below, then
+  # `fly deploy --config fly.log-shipper.toml` and check lines still reach Axiom.
+  image = "ghcr.io/superfly/fly-log-shipper:latest@sha256:844d084753fa29f2f45e3fa37711615793816859929727fb4f01a11c62a3c642"
 
 [env]
   # The Fly organisation whose apps are shipped.

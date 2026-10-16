@@ -194,8 +194,11 @@ fly deploy --config fly.log-shipper.toml
 ```
 
 After the first deploy, check `['studafy-production'] | take 20` in Axiom
-shows lines, then pin the image to its digest
-(`fly image show --config fly.log-shipper.toml`).
+shows lines. The image is pinned to a digest in `fly.log-shipper.toml`; to
+move to a newer one, run
+`docker buildx imagetools inspect ghcr.io/superfly/fly-log-shipper:latest`,
+review the upstream changes, replace the digest, redeploy and check Axiom
+again.
 
 **What is kept (OPS-090).** The API and worker keep every warning and error,
 every failed (4xx/5xx) or slow (at least 2 s) request, sign-in refusals, the
