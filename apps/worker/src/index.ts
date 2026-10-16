@@ -1,5 +1,9 @@
 import { describeWorkerEnv, loadWorkerEnv } from "./bootstrap/config";
-import { usesPrivilegedDatabaseRole } from "@studafy/config";
+import {
+  billingActive,
+  billingStoresConfigured,
+  usesPrivilegedDatabaseRole,
+} from "@studafy/config";
 import {
   buildBillingRuntime,
   buildNotificationRuntime,
@@ -131,7 +135,10 @@ try {
 const activeQueues = env.OPS061_NOTIFICATIONS_ENABLED
   ? ["smoke", "notifications"]
   : ["smoke"];
-if (env.PAY071_BILLING_ENABLED) activeQueues.push("billing-events");
+// PAY-071 runs once a store's credentials are complete (billingActive);
+// production keeps the switch on so the keys alone start it.
+const billingOn = billingActive(env);
+if (billingOn) activeQueues.push("billing-events");
 if (
   env.DATABASE_URL && env.AI_API_KEY && env.AI_BASE_URL &&
   env.AI_LESSON_TOOLS_ENABLED
@@ -168,7 +175,7 @@ function database(): Sql {
 const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
     env.FILE051_RETENTION_ENABLED || env.AI_MATERIAL_INDEX_ENABLED ||
     env.OPS061_NOTIFICATIONS_ENABLED ||
-    env.PAY071_BILLING_ENABLED
+    billingOn
   ? database()
   : undefined;
 const storage = fileWorkerSql && (env.STORAGE_URL ?? env.SUPABASE_URL) &&
@@ -293,9 +300,15 @@ if (notifications) {
 // re-verifies against Apple/Google and converges the ledger. The
 // reconciliation sweep is the loss backstop (re-verify open transactions +
 // the Google 3-day acknowledgement window).
-const billingSql: Sql | undefined = env.PAY071_BILLING_ENABLED
-  ? database()
-  : undefined;
+if (env.PAY071_BILLING_ENABLED && !billingOn) {
+  // Expected in production until the App Store or Play keys are imported:
+  // nothing is processed, and the API mounts no billing routes either.
+  logger.warn("billing_waiting_for_store_keys", {
+    environment_set: Boolean(env.PAY071_ENVIRONMENT),
+    ...billingStoresConfigured(env),
+  });
+}
+const billingSql: Sql | undefined = billingOn ? database() : undefined;
 const billing = billingSql
   ? buildBillingRuntime(env.REDIS_URL, billingSql, logger, env)
   : undefined;

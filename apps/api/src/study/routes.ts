@@ -154,6 +154,10 @@ export function createStudyRoutes(
         ...(typeof summary["access"] === "string"
           ? { aiAccess: summary["access"] }
           : {}),
+        // The tools exist on this server; whether this account may use them
+        // is aiAccess and available above (access is still refused by
+        // requireAiAccess on every AI route).
+        aiEnabled: Boolean(deps.assistant),
         ...(deps.chatMemory
           ? {
             chatMemoryChars:

@@ -381,6 +381,8 @@
   "studyAssistantBusy": "جارٍ التفكير…",
   "studyAssistantCheckWork": "قد تكون الإجابات خاطئة. تحقق من أي شيء تسلّمه.",
   "studyAssistantTab": "المساعد",
+  "studyHelperNeedsClassTitle": "انضم إلى صف لاستخدام المساعد الدراسي",
+  "studyHelperNeedsClassBody": "يعمل المساعد الدراسي مع صفوفك ودروسها. انضم إلى صف معلمك، ثم اسأله ما تشاء هنا.",
   "joinClassAlreadyStaff": "أنت معلم في هذه المدرسة، لذا لا يمكنك الانضمام إلى أحد صفوفها كطالب. اطلب من طالب فتح الرابط من حسابه.",
   "academicAllClasses": "كل الصفوف",
   "insightsTitle": "\u2066Family+\u2069",

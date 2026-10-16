@@ -228,9 +228,11 @@ export const apiEnvSchema = z.object({
     .default(300),
   AUTH_DELETION_GRACE_DAYS: z.coerce.number().int().min(1).max(90).default(14),
 
-  // PAY-071. Off by default, like every other module switch; the store
-  // billing machinery is built even while the paid products stay gated at
-  // the catalogue layer (storefront_listed), not by leaving this off.
+  // PAY-071. Off by default, like every other module switch. On, billing
+  // still runs only once a store's credentials are complete (billingActive):
+  // production keeps it on (DL-070) so the keys alone start it. The paid
+  // plans are listed for production (202610020002), so storefront_listed is
+  // not what keeps them off sale.
   PAY071_BILLING_ENABLED: disabledSwitchFlag,
   PAY071_ENVIRONMENT: z.enum([
     "synthetic",
@@ -594,6 +596,57 @@ export class ConfigError extends Error {
     super(message);
     this.name = "ConfigError";
   }
+}
+
+/** The store credentials billing reads (the same names in API and worker). */
+export interface BillingStoreEnv {
+  PAY071_BILLING_ENABLED: boolean;
+  PAY071_ENVIRONMENT?: string | undefined;
+  APPLE_BUNDLE_ID?: string | undefined;
+  APPLE_ENVIRONMENT?: string | undefined;
+  APPLE_ISSUER_ID?: string | undefined;
+  APPLE_KEY_ID?: string | undefined;
+  APPLE_PRIVATE_KEY?: string | undefined;
+  APPLE_ROOT_CERTIFICATES_BASE64?: string | undefined;
+  GOOGLE_PACKAGE_NAME?: string | undefined;
+  GOOGLE_SERVICE_ACCOUNT_JSON?: string | undefined;
+  GOOGLE_PUBSUB_AUDIENCE?: string | undefined;
+  GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL?: string | undefined;
+}
+
+/**
+ * Which stores have every credential their verifier needs: the same sets
+ * the API's and worker's verifiers are built from.
+ */
+export function billingStoresConfigured(
+  env: BillingStoreEnv,
+): { apple: boolean; google: boolean } {
+  return {
+    apple: Boolean(
+      env.APPLE_BUNDLE_ID && env.APPLE_ENVIRONMENT && env.APPLE_ISSUER_ID &&
+        env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY &&
+        env.APPLE_ROOT_CERTIFICATES_BASE64,
+    ),
+    google: Boolean(
+      env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
+        env.GOOGLE_PUBSUB_AUDIENCE && env.GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL,
+    ),
+  };
+}
+
+/**
+ * PAY-071 runs only when its switch is on AND at least one store's
+ * credentials are complete. Production keeps the switch on
+ * (fly.api.toml, fly.worker.toml), so billing starts by itself the moment
+ * the App Store or Play keys are imported, and until then the billing
+ * routes are not mounted: the app's plan pages say payments are not set up,
+ * exactly as with the switch off, and no purchase can be taken that the
+ * server could not verify.
+ */
+export function billingActive(env: BillingStoreEnv): boolean {
+  if (!env.PAY071_BILLING_ENABLED || !env.PAY071_ENVIRONMENT) return false;
+  const stores = billingStoresConfigured(env);
+  return stores.apple || stores.google;
 }
 
 export function parseEnv<T>(
@@ -963,15 +1016,10 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     },
     pay071: {
       billingEnabled: env.PAY071_BILLING_ENABLED,
+      billingActive: billingActive(env),
       environment: env.PAY071_ENVIRONMENT ?? null,
-      appleConfigured: Boolean(
-        env.APPLE_BUNDLE_ID && env.APPLE_ISSUER_ID && env.APPLE_KEY_ID &&
-          env.APPLE_PRIVATE_KEY && env.APPLE_ROOT_CERTIFICATES_BASE64,
-      ),
-      googleConfigured: Boolean(
-        env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
-          env.GOOGLE_PUBSUB_AUDIENCE,
-      ),
+      appleConfigured: billingStoresConfigured(env).apple,
+      googleConfigured: billingStoresConfigured(env).google,
       googlePushAudienceMatchesRoute: pubSubAudienceMatchesPushPath(
         env.GOOGLE_PUBSUB_AUDIENCE,
       ),
@@ -1065,16 +1113,11 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     },
     pay071: {
       billingEnabled: env.PAY071_BILLING_ENABLED,
+      billingActive: billingActive(env),
       environment: env.PAY071_ENVIRONMENT ?? null,
       reconciliationEnabled: env.PAY071_RECONCILIATION_ENABLED,
-      appleConfigured: Boolean(
-        env.APPLE_BUNDLE_ID && env.APPLE_ISSUER_ID && env.APPLE_KEY_ID &&
-          env.APPLE_PRIVATE_KEY && env.APPLE_ROOT_CERTIFICATES_BASE64,
-      ),
-      googleConfigured: Boolean(
-        env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
-          env.GOOGLE_PUBSUB_AUDIENCE,
-      ),
+      appleConfigured: billingStoresConfigured(env).apple,
+      googleConfigured: billingStoresConfigured(env).google,
     },
   };
 }

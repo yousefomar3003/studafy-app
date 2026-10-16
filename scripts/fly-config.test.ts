@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import {
   apiEnvSchema,
+  billingActive,
   enforceApiFailClosed,
   enforceWorkerFailClosed,
   parseEnv,
@@ -69,6 +70,15 @@ const secrets = {
   TELEGRAM_CHAT_ID: "-1000000000000",
 };
 
+// Synthetic stand-ins for a complete set of Play billing keys.
+const playKeys = {
+  GOOGLE_PACKAGE_NAME: "com.studafy.light",
+  GOOGLE_SERVICE_ACCOUNT_JSON: '{"type":"service_account"}',
+  GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL:
+    "pubsub@synthetic.iam.gserviceaccount.com",
+  GOOGLE_PUBSUB_AUDIENCE: "https://api.studafy.com/webhooks/google",
+};
+
 /** The production apps, each in Frankfurt next to the database. */
 const PRODUCTION = {
   api: { file: "fly.api.toml", app: "studafy-api" },
@@ -93,6 +103,22 @@ describe("Fly configs pass production validation", () => {
     // Launch plan 2.2: AI calls need longer than the 10 s default.
     expect(env.API_REQUEST_TIMEOUT_MS).toBe(20_000);
     expect(env.RATE_LIMIT_ENABLED).toBe(true);
+    // DL-070: uploads are on in production, scanned before delivery.
+    expect(env.FILE050_NEW_INTENTS_ENABLED).toBe(true);
+    expect(env.FILE051_PUBLISH_ENABLED).toBe(true);
+    expect(env.FILE051_DELIVERY_ENABLED).toBe(true);
+    // DL-070: billing is switched on but runs only once a store's keys are
+    // complete; with none it mounts nothing and the API still starts.
+    expect(env.PAY071_BILLING_ENABLED).toBe(true);
+    expect(env.PAY071_ENVIRONMENT).toBe("production");
+    expect(billingActive(env)).toBe(false);
+    const withPlay = parseEnv(apiEnvSchema, {
+      ...fly,
+      ...secrets,
+      ...playKeys,
+    });
+    expect(() => enforceApiFailClosed(withPlay)).not.toThrow();
+    expect(billingActive(withPlay)).toBe(true);
   });
 
   test("the worker", async () => {
@@ -109,6 +135,26 @@ describe("Fly configs pass production validation", () => {
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(true);
     // DPIA D7: a filed safety report always reaches a reviewer.
     expect(env.REPORT_ALERTS_ENABLED).toBe(true);
+    // DL-070: abandoned uploads are cleaned; email and push are on and run
+    // per channel once their keys exist, so the worker starts without them.
+    expect(env.FILE050_CLEANUP_ENABLED).toBe(true);
+    expect(env.NOTIFICATION_CHANNELS_ENABLED).toBe(true);
+    expect(env.RESEND_API_KEY).toBeUndefined();
+    expect(env.FCM_PROJECT_ID).toBeUndefined();
+    expect(env.PAY071_BILLING_ENABLED).toBe(true);
+    expect(env.PAY071_RECONCILIATION_ENABLED).toBe(true);
+    expect(billingActive(env)).toBe(false);
+    const withKeys = parseEnv(workerEnvSchema, {
+      ...fly,
+      ...secrets,
+      ...playKeys,
+      RESEND_API_KEY: "re_synthetic_000000000000",
+      EMAIL_FROM_ADDRESS: "Studafy <hello@studafy.com>",
+      FCM_PROJECT_ID: "studafy-synthetic",
+      FCM_SERVICE_ACCOUNT_JSON: '{"type":"service_account"}',
+    });
+    expect(() => enforceWorkerFailClosed(withKeys)).not.toThrow();
+    expect(billingActive(withKeys)).toBe(true);
   });
 
   test("the production worker refuses report alerts without Telegram", async () => {
@@ -321,6 +367,13 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe("true");
     // DL-063: messaging launches; the switch stays to turn it off fast.
     expect(env.MESSAGING_ENABLED).toBe("true");
+    // DL-070: uploads on; the three switches are the server's kill switch.
+    expect(env.FILE050_NEW_INTENTS_ENABLED).toBe("true");
+    expect(env.FILE051_PUBLISH_ENABLED).toBe("true");
+    expect(env.FILE051_DELIVERY_ENABLED).toBe("true");
+    // DL-070: billing on, active once a store's keys are imported.
+    expect(env.PAY071_BILLING_ENABLED).toBe("true");
+    expect(env.PAY071_ENVIRONMENT).toBe("production");
   });
 
   test("the worker: production mode, executors on, retention purge off", async () => {
@@ -336,6 +389,13 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(env.OPS061_NOTIFICATIONS_ENABLED).toBe("true");
     expect(env.FILE051_SCAN_ENABLED).toBe("true");
     expect(env.QUEUE_ALERTS_ENABLED).toBe("true");
+    // DL-070: uploads cleaned; email/push and billing on, each running once
+    // its keys are secrets.
+    expect(env.FILE050_CLEANUP_ENABLED).toBe("true");
+    expect(env.NOTIFICATION_CHANNELS_ENABLED).toBe("true");
+    expect(env.PAY071_BILLING_ENABLED).toBe("true");
+    expect(env.PAY071_ENVIRONMENT).toBe("production");
+    expect(env.PAY071_RECONCILIATION_ENABLED).toBe("true");
     // Launch plan D3: off until the store release carrying consent version
     // 2026-10-14 is live. Turning it on changes this line, with the owner's
     // "go".

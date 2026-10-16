@@ -24,9 +24,13 @@ export interface ChannelDeliveryRuntime {
 /**
  * DL-053 email/push delivery. Each pass fans recent in-app notifications
  * out to the channels their recipients allow, then sends due deliveries on
- * every channel that has a configured sender. A channel without a sender is
- * never claimed, so its deliveries wait rather than fail. Logs carry ids and
- * outcomes, never addresses, tokens or copy.
+ * every channel that has a configured sender. Only channels with a sender
+ * are fanned out or claimed (DL-070): production runs this before the
+ * Resend and Firebase keys exist, and a channel without a sender must not
+ * collect deliveries it would send late once its key arrives. With no
+ * sender at all a pass does nothing; in-app notifications are delivered by
+ * the outbox drain either way. Logs carry ids and outcomes, never
+ * addresses, tokens or copy.
  */
 export function startChannelDelivery(
   sql: Sql,
@@ -36,6 +40,13 @@ export function startChannelDelivery(
 ): ChannelDeliveryRuntime {
   let closed = false;
   let running: Promise<number> | null = null;
+  const configured = (["email", "push"] as const).filter((channel) =>
+    senders[channel] !== undefined
+  );
+  logger.info("channel_delivery_configured", {
+    email: senders.email !== undefined,
+    push: senders.push !== undefined,
+  });
 
   const finish = async (
     job: ChannelJob,
@@ -121,10 +132,10 @@ export function startChannelDelivery(
   };
 
   const runOnce = async (): Promise<number> => {
-    if (closed) return 0;
-    await sql`select private.channel_fanout(200)`;
+    if (closed || configured.length === 0) return 0;
+    await sql`select private.channel_fanout(200, ${configured}::text[])`;
     let sent = 0;
-    for (const channel of ["email", "push"] as const) {
+    for (const channel of configured) {
       const sender = senders[channel];
       if (!sender) continue;
       const rows = await sql<{ jobs: ChannelJob[] }[]>`

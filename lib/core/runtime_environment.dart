@@ -34,25 +34,28 @@ class RuntimePolicy {
   bool get requiresRemoteBackend => !isSynthetic;
 
   // SEC-001 containment is deliberately not controlled by an environment
-  // variable. Re-enabling either capability requires a reviewed code change.
+  // variable. Changing either capability requires a reviewed code change.
   //
   // AI grading stays hard-false: ADR-0026 removed it, and nothing here may
   // bring it back as a side effect.
   bool get allowsAiGrading => false;
 
-  /// Uploads are on everywhere the app actually runs.
+  /// Uploads are on everywhere the app runs, production included.
   ///
   /// FILE-050/051 shipped the whole pipeline - per-purpose media allowlists
-  /// and size caps, quarantine, structural analysis, metadata stripping, and
-  /// single-use user-bound delivery grants - and the client adapter was
-  /// written but never wired. This is the reviewed change that wires it.
+  /// and size caps, upload intents, quarantine, structural analysis,
+  /// metadata stripping, and single-use user-bound delivery grants - and
+  /// the client adapter sends real bytes through it.
   ///
-  /// Production is excluded and stays excluded: the worker refuses to run
-  /// without an external malware provider, and none is contracted, so a
-  /// production upload would fail closed anyway. Keeping it false here means
-  /// the app never even offers the control.
-  bool get allowsRemoteFileUploads =>
-      environment != StudafyEnvironment.production;
+  /// Production was held back while no malware scanner existed. It has one
+  /// now: the private ClamAV scanner `studafy-scanner` (fly.scanner.toml),
+  /// which the production worker must reach before it scans anything, and
+  /// the owner turned production uploads on on 2026-10-17 (DL-070). The
+  /// protections are all server-side and stay: the API's
+  /// FILE050_NEW_INTENTS_ENABLED / FILE051_PUBLISH_ENABLED /
+  /// FILE051_DELIVERY_ENABLED and the worker's FILE051_SCAN_ENABLED are the
+  /// kill switches, and nothing is delivered until the scan passes.
+  bool get allowsRemoteFileUploads => true;
 
   /// What stops this production build from starting: every way its
   /// compiled defines miss the production contract. Empty outside

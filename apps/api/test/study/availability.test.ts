@@ -18,9 +18,12 @@ import { fakeAiAccess } from "../support/aiAccess";
 
 const SUBJECT = "00000000-0000-4000-8000-000000000001";
 
+let access: string | undefined;
+
 const repository: StudyRepository = {
   usage: async () => ({
     outcome: "ok",
+    ...(access ? { access } : {}),
     plan: "max",
     features: ["ask", "whiteboard", "notes", "quiz", "flashcards"],
     allowance: {
@@ -40,6 +43,12 @@ const repository: StudyRepository = {
 async function available(
   options: { assistant: boolean; lessonTools: boolean; storage: boolean },
 ): Promise<unknown> {
+  return (await summary(options))["available"];
+}
+
+async function summary(
+  options: { assistant: boolean; lessonTools: boolean; storage: boolean },
+): Promise<Record<string, unknown>> {
   const app = new Hono<AuthorizationEnv>();
   app.use("*", async (c, next) => {
     c.set("requestId", crypto.randomUUID());
@@ -76,7 +85,7 @@ async function available(
   );
   const res = await app.request("/v1/me/study-plan");
   expect(res.status).toBe(200);
-  return (await res.json() as { available: unknown }).available;
+  return await res.json() as Record<string, unknown>;
 }
 
 describe("what the plan summary says is available", () => {
@@ -102,6 +111,35 @@ describe("what the plan summary says is available", () => {
     expect(
       await available({ assistant: true, lessonTools: true, storage: true }),
     ).toEqual(["ask", "whiteboard", "notes", "quiz", "flashcards"]);
+  });
+});
+
+describe("whether the server has the AI tools at all (aiEnabled)", () => {
+  const all = { assistant: true, lessonTools: true, storage: true };
+
+  test("a provider: true; none: false", async () => {
+    access = undefined;
+    expect((await summary(all))["aiEnabled"]).toBe(true);
+    expect((await summary({ ...all, assistant: false }))["aiEnabled"]).toBe(
+      false,
+    );
+  });
+
+  test("a student with no class: nothing available, but the tools exist", async () => {
+    // The app shows such a student the helper's tab with "join a class
+    // first"; the AI routes still refuse them (requireAiAccess).
+    access = "no_class";
+    try {
+      const body = await summary(all);
+      expect(body["available"]).toEqual([]);
+      expect(body["aiAccess"]).toBe("no_class");
+      expect(body["aiEnabled"]).toBe(true);
+      const off = await summary({ ...all, assistant: false });
+      expect(off["available"]).toEqual([]);
+      expect(off["aiEnabled"]).toBe(false);
+    } finally {
+      access = undefined;
+    }
   });
 });
 

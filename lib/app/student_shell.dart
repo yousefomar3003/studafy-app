@@ -34,6 +34,7 @@ import 'account_hub_page.dart';
 import 'assessment_navigation.dart';
 import 'material_picker.dart';
 import 'school_messaging_switch.dart';
+import 'student_helper_needs_class.dart';
 import 'student_lessons_page.dart';
 import 'student_no_class_yet.dart';
 import 'student_today_page.dart';
@@ -113,6 +114,19 @@ class _StudentShellState extends State<StudentShell>
       widget.studyAssistant != null &&
       (widget.study == null || (_plan?.assistantOn ?? false));
 
+  /// The helper tab without the helper: the AI tools are on for this
+  /// server, but this student is in no class, so the tab says to join one
+  /// (the server refuses the tools until then). With AI off for everyone
+  /// the tab stays hidden, as before.
+  bool get _helperNeedsClass =>
+      !_helperOn &&
+      widget.studyAssistant != null &&
+      widget.study != null &&
+      (_plan?.helperNeedsClass ?? false);
+
+  /// Whether the bar has a helper tab, live or saying to join a class.
+  bool get _helperTab => _helperOn || _helperNeedsClass;
+
   /// Any AI study tool, and so the plans that sell them.
   bool get _aiOn => widget.study != null && (_plan?.anyToolOn ?? false);
 
@@ -122,7 +136,7 @@ class _StudentShellState extends State<StudentShell>
   /// Opens what a notification is about, in this student's app.
   bool _openNotification(NotificationItem item) {
     final key = item.templateKey;
-    final messagesIndex = 3 + (_helperOn ? 1 : 0);
+    final messagesIndex = 3 + (_helperTab ? 1 : 0);
     final (int, AcademicFeed?)? target = switch (key.split('.').first) {
       'academic' when key.contains('grade') => (2, AcademicFeed.grades),
       'academic' when key.contains('assessment') => (
@@ -302,8 +316,9 @@ class _StudentShellState extends State<StudentShell>
     // Where the school has messaging off, the tab is its announcements.
     final messages = messagingOn;
     final assistant = _helperOn ? widget.studyAssistant : null;
+    final helperTab = _helperTab;
     // Today, Lessons, Work, then the two optional tabs in that order.
-    final messagesIndex = 3 + (assistant == null ? 0 : 1);
+    final messagesIndex = 3 + (helperTab ? 1 : 0);
     final pages = <Widget>[
       StudentTodayPage(
         academic: repository,
@@ -453,6 +468,10 @@ class _StudentShellState extends State<StudentShell>
           },
           plan: widget.study == null ? null : () => _helperPlan(context),
           onUpgrade: widget.study == null ? null : () => _openPlans(context),
+        )
+      else if (helperTab)
+        StudentHelperNeedsClass(
+          onJoin: widget.classes == null ? null : _joinClass,
         ),
       if (messaging)
         ConversationsPage(
@@ -522,7 +541,7 @@ class _StudentShellState extends State<StudentShell>
                     Icons.assignment_outlined,
                     Icons.assignment_rounded,
                   ),
-                  if (assistant != null)
+                  if (helperTab)
                     StudafyNavItem(
                       AppL10n.of(context).studyAssistantTab,
                       Icons.auto_awesome_outlined,

@@ -116,12 +116,15 @@ Claude does not need the `.p8` itself. Only Firebase needs it.
 - For iPhone, adds `GoogleService-Info.plist` to the Runner target in Xcode
   (it is not in the project yet), or uses the `FIREBASE_*` build settings
   instead.
-- Builds the app with `PUSH_ENABLED=true`. Without it the app never starts
-  Firebase.
+- Builds the app with Firebase's config. The `FIREBASE_*` build settings
+  turn push on by themselves; the native files also need `PUSH_ENABLED=true`
+  (DL-070). Without either the app never starts Firebase.
 - Sets the worker's Fly secrets (after your "go"):
   - `FCM_PROJECT_ID` = your project ID;
-  - `FCM_SERVICE_ACCOUNT_JSON` = the service-account file, on one line;
-  - `NOTIFICATION_CHANNELS_ENABLED=true`.
+  - `FCM_SERVICE_ACCOUNT_JSON` = the service-account file, on one line.
+
+  In production `NOTIFICATION_CHANNELS_ENABLED = "true"` is already in
+  `fly.worker.toml` (DL-070); on the test copy it is set with the secrets.
 
   The worker refuses to start if only one of the two `FCM_*` values is set.
   The server side needs nothing new for iPhone: the same key sends to both.

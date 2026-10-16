@@ -66,6 +66,15 @@ export const V1StudyPlanSummary = z.strictObject({
    * 2026-10-15.
    */
   aiAccess: V1AiAccess.optional(),
+  /**
+   * Whether this server has the AI study tools at all: an AI provider is
+   * configured. It does not say this account may use them (`aiAccess` and
+   * `available` do). True with `aiAccess` "no_class" lets the app show a
+   * student the helper's tab with "join a class first" instead of hiding
+   * it; false means the tools are off for everyone. Absent from servers
+   * older than 2026-10-17.
+   */
+  aiEnabled: z.boolean().optional(),
 });
 export type V1StudyPlanSummary = z.infer<typeof V1StudyPlanSummary>;
 

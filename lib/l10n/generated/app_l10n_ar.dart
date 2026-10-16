@@ -1383,6 +1383,14 @@ class AppL10nAr extends AppL10n {
   String get studyAssistantTab => 'المساعد';
 
   @override
+  String get studyHelperNeedsClassTitle =>
+      'انضم إلى صف لاستخدام المساعد الدراسي';
+
+  @override
+  String get studyHelperNeedsClassBody =>
+      'يعمل المساعد الدراسي مع صفوفك ودروسها. انضم إلى صف معلمك، ثم اسأله ما تشاء هنا.';
+
+  @override
   String get joinClassAlreadyStaff =>
       'أنت معلم في هذه المدرسة، لذا لا يمكنك الانضمام إلى أحد صفوفها كطالب. اطلب من طالب فتح الرابط من حسابه.';
 

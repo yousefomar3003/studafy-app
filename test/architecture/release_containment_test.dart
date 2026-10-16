@@ -249,6 +249,9 @@ void main() {
       );
       expect(policy.blocksApplicationStartup, isFalse);
       expect(policy.requiresRemoteBackend, isTrue);
+      // DL-070: production offers uploads; the server's FILE-050/051
+      // switches and the malware scan guard them.
+      expect(policy.allowsRemoteFileUploads, isTrue);
     });
 
     test('a production app refuses incomplete or mismatched defines', () {

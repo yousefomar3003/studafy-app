@@ -790,6 +790,14 @@
   "@studyAssistantTab": {
     "description": "Short navigation label for the study helper tab."
   },
+  "studyHelperNeedsClassTitle": "Join a class to use the study helper",
+  "@studyHelperNeedsClassTitle": {
+    "description": "Helper tab for a student who is not in any class yet, while the AI study tools are on: its title."
+  },
+  "studyHelperNeedsClassBody": "The study helper works with your classes and their lessons. Join your teacher's class, then ask it anything here.",
+  "@studyHelperNeedsClassBody": {
+    "description": "Helper tab for a student who is not in any class yet: what to do."
+  },
   "joinClassAlreadyStaff": "You already teach at this school, so you cannot join one of its classes as a student. Ask a student to open the link on their own account.",
   "@joinClassAlreadyStaff": {
     "description": "Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link."

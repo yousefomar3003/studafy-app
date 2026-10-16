@@ -83,7 +83,8 @@ only.
 production build whose compiled defines fail the contract; such a build
 shows the readiness block instead of starting. Production initializes the
 remote backend like development and staging. Remote file uploads stay off in
-production (`allowsRemoteFileUploads`) in this change.
+production (`allowsRemoteFileUploads`) in this change. (Superseded on
+2026-10-17 by DL-070: the owner turned production uploads on.)
 
 **Production defines and the build script.** The committed
 `config/dart-defines.production.example.json` holds the public production
