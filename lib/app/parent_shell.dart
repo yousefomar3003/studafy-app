@@ -99,11 +99,17 @@ class _ParentShellState extends State<ParentShell> {
     if (widget.insights != null) _Tab.familyPlus,
     // Announcements arrive through messaging; a build without it has
     // neither tab rather than two that always fail.
-    if (MessagingScope.isAvailable(context)) ...[
-      _Tab.announcements,
-      _Tab.messages,
-    ],
+    if (MessagingScope.isAvailable(context)) _Tab.announcements,
+    if (_messagingOn) _Tab.messages,
   ];
+
+  /// Messages, only where a child's school has messaging switched on: the
+  /// server refuses every new conversation and message elsewhere (DL-049),
+  /// so a tab there would be a door that never opens. Each verified link
+  /// says whether its school has it on.
+  bool get _messagingOn =>
+      MessagingScope.isAvailable(context) &&
+      _verified.any((child) => child.messagingEnabled);
 
   void _go(_Tab tab) {
     final at = _tabs.indexOf(tab);
@@ -161,7 +167,7 @@ class _ParentShellState extends State<ParentShell> {
     final tab = switch (key.split('.').first) {
       'academic' => _Tab.learning,
       'communications' when key.contains('announcement') => _Tab.announcements,
-      'communications' => _Tab.messages,
+      'communications' when _messagingOn => _Tab.messages,
       'billing' when widget.insights != null => _Tab.familyPlus,
       _ => _Tab.today,
     };
@@ -221,6 +227,7 @@ class _ParentShellState extends State<ParentShell> {
     final tabs = _tabs;
     if (index >= tabs.length) index = 0;
     final messaging = MessagingScope.isAvailable(context);
+    final messagingOn = _messagingOn;
     final verified = _verified;
     final selected = ActiveContextController.instance.selectedStudent;
     final pages = <Widget>[
@@ -252,7 +259,7 @@ class _ParentShellState extends State<ParentShell> {
               label: l10n.parentQuickAnnouncements,
               onTap: () => _go(_Tab.announcements),
             ),
-          if (messaging)
+          if (messagingOn)
             FamilyQuickAction(
               icon: Icons.send_rounded,
               label: l10n.parentQuickMessages,
@@ -349,7 +356,7 @@ class _ParentShellState extends State<ParentShell> {
         ),
       // Re-read when its tab comes into view: it is built ahead, so it is
       // alive while hidden. Conversations only - announcements have their own tab.
-      if (messaging)
+      if (messagingOn)
         ConversationsPage(
           visible: tabs[index] == _Tab.messages,
           asRole: MessagingRole.guardian,
@@ -363,7 +370,7 @@ class _ParentShellState extends State<ParentShell> {
         child: LazyIndexedStack(
           index: index,
           // The inbox acknowledges delivery while out of sight.
-          builtAhead: {tabs.indexOf(_Tab.messages)},
+          builtAhead: {if (messagingOn) tabs.indexOf(_Tab.messages)},
           children: pages,
         ),
       ),

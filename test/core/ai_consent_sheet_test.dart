@@ -45,6 +45,59 @@ void main() {
     }
   });
 
+  testWidgets('a server with no AI tools shows no switch, nor its group', (
+    tester,
+  ) async {
+    for (final locale in const [Locale('en'), Locale('ar')]) {
+      final repository = _FakeConsent(AiAccess.ok)..toolsEnabled = false;
+      // A fresh switch each time: it reads the state once, when built.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(
+        localizedApp(
+          locale: locale,
+          home: Scaffold(
+            body: ListView(
+              children: [
+                AiConsentSwitch(
+                  repository: repository,
+                  wrap: (row) => Column(
+                    children: [const Text('AI study tools group'), row],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(switchFor(null), findsNothing, reason: locale.languageCode);
+      expect(find.text('AI study tools group'), findsNothing);
+
+      repository.toolsEnabled = true;
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(
+        localizedApp(
+          locale: locale,
+          home: Scaffold(
+            body: ListView(
+              children: [
+                AiConsentSwitch(
+                  repository: repository,
+                  wrap: (row) => Column(
+                    children: [const Text('AI study tools group'), row],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(switchFor(null), findsOneWidget, reason: locale.languageCode);
+      expect(find.text('AI study tools group'), findsOneWidget);
+    }
+  });
+
   testWidgets('turning it on shows the notice; agreeing records it', (
     tester,
   ) async {
@@ -116,6 +169,7 @@ class _FakeConsent implements AiConsentRepository {
   _FakeConsent(this.access);
 
   AiAccess access;
+  bool toolsEnabled = true;
   final List<(String, String?)> given = [];
   final List<String?> withdrawn = [];
 
@@ -123,6 +177,7 @@ class _FakeConsent implements AiConsentRepository {
     access: access,
     version: aiConsentVersion,
     givenAt: access == AiAccess.ok ? DateTime(2026, 10, 15) : null,
+    toolsEnabled: toolsEnabled,
   );
 
   @override

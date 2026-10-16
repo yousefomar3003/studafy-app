@@ -360,7 +360,8 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
           eyebrow: l10n.familyPlusCurrentPlan,
           planName: held == null
               ? l10n.familyPlusNoPlan
-              : 'Family+ · ${l10n.familyPlusPlanName(held.seats)}',
+              : '${studafyPlanName('Family+')} · '
+                    '${l10n.familyPlusPlanName(held.seats)}',
           detail: held == null
               ? l10n.familyPlusIntro
               : [

@@ -3227,6 +3227,7 @@ class V1AiConsentStateDto {
     required this.access,
     required this.version,
     required this.consent,
+    this.toolsEnabled,
   });
 
   factory V1AiConsentStateDto.fromJson(Map<String, dynamic> json) =>
@@ -3236,16 +3237,19 @@ class V1AiConsentStateDto {
         consent: json['consent'] == null
             ? null
             : V1AiConsentDto.fromJson(json['consent'] as Map<String, dynamic>),
+        toolsEnabled: json['toolsEnabled'] as bool?,
       );
 
   final String access;
   final String? version;
   final V1AiConsentDto? consent;
+  final bool? toolsEnabled;
 
   Map<String, Object?> toJson() => {
     'access': access,
     'version': version,
     'consent': consent?.toJson(),
+    'toolsEnabled': ?toolsEnabled,
   };
 }
 
@@ -9749,6 +9753,7 @@ class V1MyGuardianLinkDto {
     required this.relationship,
     required this.status,
     required this.expiresAt,
+    this.messagingEnabled,
   });
 
   factory V1MyGuardianLinkDto.fromJson(Map<String, dynamic> json) =>
@@ -9761,6 +9766,7 @@ class V1MyGuardianLinkDto {
         relationship: json['relationship'] as String?,
         status: json['status'] as String,
         expiresAt: json['expiresAt'] as String?,
+        messagingEnabled: json['messagingEnabled'] as bool?,
       );
 
   final String id;
@@ -9771,6 +9777,7 @@ class V1MyGuardianLinkDto {
   final String? relationship;
   final String status;
   final String? expiresAt;
+  final bool? messagingEnabled;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -9781,6 +9788,7 @@ class V1MyGuardianLinkDto {
     'relationship': relationship,
     'status': status,
     'expiresAt': expiresAt,
+    'messagingEnabled': ?messagingEnabled,
   };
 }
 

@@ -614,7 +614,7 @@ function routeTable() {
   combined.route(
     "/",
     createAiConsentRoutes(
-      { repository: fakeAiAccess() },
+      { repository: fakeAiAccess(), toolsEnabled: true },
       authorization,
       idempotency,
     ),

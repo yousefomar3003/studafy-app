@@ -17,6 +17,7 @@ class ApiAiConsentRepository implements AiConsentRepository {
         ? null
         : DateTime.parse(dto.consent!.givenAt).toLocal(),
     givenByGuardian: dto.consent?.givenAs == 'guardian',
+    toolsEnabled: dto.toolsEnabled ?? true,
   );
 
   @override

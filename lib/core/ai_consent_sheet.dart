@@ -175,11 +175,16 @@ class AiConsentSwitch extends StatefulWidget {
     required this.repository,
     this.childId,
     this.childName,
+    this.wrap,
   });
 
   final AiConsentRepository repository;
   final String? childId;
   final String? childName;
+
+  /// Puts the row in its surroundings - a settings group with its title -
+  /// so that they are not shown either when the switch is not.
+  final Widget Function(Widget row)? wrap;
 
   @override
   State<AiConsentSwitch> createState() => _AiConsentSwitchState();
@@ -252,7 +257,11 @@ class _AiConsentSwitchState extends State<AiConsentSwitch> {
   @override
   Widget build(BuildContext context) {
     final state = _state;
-    if (state == null || !state.access.isStudentInClass) {
+    // Nothing on a server without the AI tools, or for an account that is
+    // not a student in a class.
+    if (state == null ||
+        !state.toolsEnabled ||
+        !state.access.isStudentInClass) {
       return const SizedBox.shrink();
     }
     final l10n = AppL10n.of(context);
@@ -262,7 +271,7 @@ class _AiConsentSwitchState extends State<AiConsentSwitch> {
     final parentDecides =
         widget.childId == null &&
         state.access == AiAccess.guardianConsentRequired;
-    return SettingsRow(
+    final row = SettingsRow(
       icon: Icons.auto_awesome_rounded,
       title: childName == null
           ? l10n.aiConsentTitle
@@ -279,5 +288,6 @@ class _AiConsentSwitchState extends State<AiConsentSwitch> {
         onChanged: _busy || (parentDecides && !state.on) ? null : _toggle,
       ),
     );
+    return widget.wrap?.call(row) ?? row;
   }
 }

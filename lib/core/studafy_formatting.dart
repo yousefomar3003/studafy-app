@@ -106,6 +106,40 @@ String studafyDateTime(BuildContext context, DateTime when) =>
 String studafyTimeZone(String zone) =>
     '\u2066${zone.replaceAll('/', '/\u2060')}\u2069';
 
+/// The plans' names. They are Latin in every language (the Arabic copy
+/// keeps "Family+", "Studafy Plus" and "Studafy Max" as they are).
+const studafyPlanNames = [
+  'Studafy Free',
+  'Studafy Plus',
+  'Studafy Max',
+  'Family+',
+];
+
+/// A plan name ready to sit inside a sentence or beside other text.
+///
+/// Inside right-to-left text a Latin name is laid out by the bidirectional
+/// algorithm, and a neutral character at its edge takes the sentence's
+/// direction: "Family+" in an Arabic line showed as "+Family". A
+/// left-to-right isolate (U+2066 \u2026 U+2069) keeps the name one left-to-right
+/// run whatever surrounds it. The Arabic strings carry the isolates
+/// themselves; this is for names put together in code.
+String studafyPlanName(String name) => '\u2066$name\u2069';
+
+/// [text] with every plan name in it isolated left to right, as
+/// [studafyPlanName] does. For text whose words are fixed elsewhere and must
+/// not change - the terms and privacy text, whose SHA-256 is what a consent
+/// records - so the isolates are added only as it is shown.
+String studafyIsolatePlanNames(String text) {
+  var result = text;
+  for (final name in studafyPlanNames) {
+    result = result.replaceAll(
+      RegExp('(?<!\u2066)${RegExp.escape(name)}'),
+      studafyPlanName(name),
+    );
+  }
+  return result;
+}
+
 /// A plain number — a grade, a count, a percentage.
 String studafyNumber(BuildContext context, num value) => studafyWesternDigits(
   NumberFormat.decimalPattern(_localeOf(context)).format(value),

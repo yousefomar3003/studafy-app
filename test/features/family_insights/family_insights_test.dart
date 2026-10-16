@@ -136,7 +136,8 @@ void main() {
       directionOf(tester, find.byType(FamilyInsightsPage)),
       TextDirection.rtl,
     );
-    expect(find.text('Family+'), findsWidgets);
+    // Latin, kept left to right inside the Arabic line.
+    expect(find.text('\u2066Family+\u2069'), findsWidgets);
   });
 }
 

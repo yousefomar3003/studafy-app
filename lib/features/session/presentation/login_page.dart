@@ -8,6 +8,7 @@ import '../../../core/device_settings.dart';
 import '../../../core/failures.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_domain.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
@@ -795,10 +796,14 @@ void showPolicy(BuildContext c, PolicyDocument document) =>
                 const SizedBox(height: 14),
                 Flexible(
                   child: SingleChildScrollView(
+                    // The plan names isolated as the text is shown: the
+                    // words themselves are what a consent records.
                     child: Text(
-                      document == PolicyDocument.privacy
-                          ? l10n.policyPrivacyBody
-                          : l10n.policyTermsBody,
+                      studafyIsolatePlanNames(
+                        document == PolicyDocument.privacy
+                            ? l10n.policyPrivacyBody
+                            : l10n.policyTermsBody,
+                      ),
                     ),
                   ),
                 ),

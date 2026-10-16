@@ -13,6 +13,7 @@ import 'package:studafy/features/study/presentation/my_notebooks_page.dart';
 import 'package:studafy/features/study/presentation/notebook_view.dart';
 import 'package:studafy/features/study/presentation/study_plans_page.dart';
 import 'package:studafy/features/study/presentation/study_set_pages.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 import '../../support/localized_app.dart';
 
@@ -127,6 +128,40 @@ void main() {
       await tester.pumpAndSettle();
       expect(opened, ['plans']);
       expect(study.uploads.commands, isEmpty);
+    });
+
+    testWidgets('with the AI off, only the notebook itself is offered', (
+      tester,
+    ) async {
+      for (final locale in const [Locale('en'), Locale('ar')]) {
+        tall(tester);
+        final l10n = lookupAppL10n(locale);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(
+          localizedApp(
+            locale: locale,
+            home: Scaffold(
+              body: NotebookView(
+                study: _Study(tier: StudyPlanTier.plus, available: const {}),
+                classroomId: 'c1',
+                schoolId: 'school-1',
+                uploads: _Uploads(),
+                onOpenPlans: () {},
+                pick: (_, _) async => null,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.notebookAddNote), findsOne);
+        expect(find.text(l10n.notebookSnapTheWhiteboard), findsNothing);
+        expect(find.text(l10n.notebookFromPhotos), findsNothing);
+        expect(find.text(l10n.pickActionSummary), findsNothing);
+        expect(
+          find.text(l10n.notebookWhiteboardNotesComeWithStudafy),
+          findsNothing,
+        );
+      }
     });
 
     testWidgets('on Plus, a photo is uploaded, waited for, and becomes notes', (
@@ -773,9 +808,13 @@ class _Study implements StudyRepository {
     this.tier = StudyPlanTier.free,
     List<NotebookEntry>? entries,
     this.notReadyTimes = 0,
+    this.available,
   }) : entries = entries ?? [];
 
   final StudyPlanTier tier;
+
+  /// What the server offers of the AI tools; null offers everything.
+  final Set<String>? available;
   final List<NotebookEntry> entries;
   int notReadyTimes;
   final uploads = _Uploads();
@@ -795,6 +834,7 @@ class _Study implements StudyRepository {
           ? DateTime(2026, 10, 12)
           : DateTime(2026, 11, 1),
     ),
+    available: available,
   );
 
   @override

@@ -127,7 +127,8 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
   /// there is nothing to sell, so it only says what the student has.
   Widget? _planCard(AppL10n l10n) {
     final plan = _plan;
-    if (plan == null) return null;
+    // The plans are the AI study tools: nothing to sell where there are none.
+    if (plan == null || !plan.anyToolOn) return null;
     final next = plan.tier.next;
     final copy = studyPlanCopy[plan.tier]!;
     return PlanSummaryCard(
@@ -152,6 +153,7 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final upgradable = _plan?.tier.next != null;
+    final aiOn = _plan?.anyToolOn ?? false;
     return Scaffold(
       body: Column(
         children: [
@@ -167,15 +169,17 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 4),
               children: [
-                StudafyPillButton(
-                  icon: Icons.workspace_premium_rounded,
-                  label: upgradable
-                      ? l10n.upgradeButton
-                      : l10n.studentLessonsPlans,
-                  prominent: upgradable,
-                  onPressed: _openPlans,
-                ),
-                const SizedBox(width: 8),
+                if (aiOn) ...[
+                  StudafyPillButton(
+                    icon: Icons.workspace_premium_rounded,
+                    label: upgradable
+                        ? l10n.upgradeButton
+                        : l10n.studentLessonsPlans,
+                    prominent: upgradable,
+                    onPressed: _openPlans,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 StudafyPillButton(
                   icon: Icons.edit_note_rounded,
                   label: l10n.notebookMyNotebooks,
@@ -536,6 +540,10 @@ class _StudentClassPageState extends State<StudentClassPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // What the server offers this student of the AI study tools. Nothing
+    // is shown before the plan says, nor anything it says is off.
+    final studySetsOn = _plan?.studySetsOn ?? false;
+    final notebooksOn = _plan?.notebooksOn ?? false;
     return DefaultTabController(
       length: 2,
       initialIndex: widget.initialTab.clamp(0, 1),
@@ -641,27 +649,29 @@ class _StudentClassPageState extends State<StudentClassPage> {
               repository: widget.academic,
               classroomId: widget.classroom.id.value,
               uploads: widget.uploads,
-              header: (context, {required bool hasLessons}) => StudyToolsCard(
-                plan: _plan,
-                hasLessons: hasLessons,
-                onOpenPlans: _openPlans,
-                // From here nothing is chosen yet: the student chooses.
-                onMake: widget.pick == null
-                    ? null
-                    : (kind) => openStudySetFromSelection(
-                        context,
-                        study: widget.study,
-                        pick: widget.pick!,
-                        kind: kind,
-                        request: MaterialPickRequest(
-                          action: kind == StudySetKind.quiz
-                              ? MaterialAction.quiz
-                              : MaterialAction.flashcards,
-                        ),
-                        plan: _plan,
-                        onOpenPlans: _openPlans,
-                      ),
-              ),
+              header: !studySetsOn
+                  ? null
+                  : (context, {required bool hasLessons}) => StudyToolsCard(
+                      plan: _plan,
+                      hasLessons: hasLessons,
+                      onOpenPlans: _openPlans,
+                      // From here nothing is chosen yet: the student chooses.
+                      onMake: widget.pick == null
+                          ? null
+                          : (kind) => openStudySetFromSelection(
+                              context,
+                              study: widget.study,
+                              pick: widget.pick!,
+                              kind: kind,
+                              request: MaterialPickRequest(
+                                action: kind == StudySetKind.quiz
+                                    ? MaterialAction.quiz
+                                    : MaterialAction.flashcards,
+                              ),
+                              plan: _plan,
+                              onOpenPlans: _openPlans,
+                            ),
+                    ),
               actionsFor: (context, lesson) => Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -674,25 +684,27 @@ class _StudentClassPageState extends State<StudentClassPage> {
                         label: Text(AppL10n.of(context).helperAskAboutLesson),
                       ),
                     ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: LessonNotebookButton(
-                        host: _host,
-                        resourceId: lesson.id,
-                        lessonTitle: lesson.title,
+                  if (notebooksOn)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: LessonNotebookButton(
+                          host: _host,
+                          resourceId: lesson.id,
+                          lessonTitle: lesson.title,
+                        ),
                       ),
                     ),
-                  ),
-                  StudySetButtons(
-                    study: widget.study,
-                    resourceId: lesson.id,
-                    lessonTitle: lesson.title,
-                    plan: _plan,
-                    onOpenPlans: _openPlans,
-                    pick: widget.pick,
-                  ),
+                  if (studySetsOn)
+                    StudySetButtons(
+                      study: widget.study,
+                      resourceId: lesson.id,
+                      lessonTitle: lesson.title,
+                      plan: _plan,
+                      onOpenPlans: _openPlans,
+                      pick: widget.pick,
+                    ),
                 ],
               ),
             ),
@@ -704,7 +716,7 @@ class _StudentClassPageState extends State<StudentClassPage> {
               source: pickPlatformAttachment,
               onOpenPlans: _openPlans,
               pickLesson: _pickLesson,
-              header: StudyNotebookShelf(host: _host),
+              header: notebooksOn ? StudyNotebookShelf(host: _host) : null,
               pick: widget.pick,
             ),
           ],

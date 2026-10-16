@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
+import '../core/ai_consent.dart';
 import '../core/feedback.dart';
 import '../core/lazy_indexed_stack.dart';
 import '../core/navigation.dart';
@@ -24,6 +27,7 @@ import '../features/notifications/presentation/notifications_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
+import 'school_messaging_switch.dart';
 import 'teacher_create_actions.dart';
 import 'teacher_today_page.dart';
 
@@ -34,8 +38,28 @@ class TeacherShell extends StatefulWidget {
   State<TeacherShell> createState() => _TeacherShellState();
 }
 
-class _TeacherShellState extends State<TeacherShell> {
+class _TeacherShellState extends State<TeacherShell>
+    with SchoolMessagingSwitch {
   int index = 0;
+
+  /// The server runs the AI study tools. Off until it says so: the lessons'
+  /// "reading for the AI helper" is about them and is shown only then.
+  bool _aiToolsOn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final consent = AiConsentGate.instance.repository;
+    if (consent != null) {
+      unawaited(
+        consent.state().then((state) {
+          if (mounted && state.toolsEnabled) {
+            setState(() => _aiToolsOn = true);
+          }
+        }, onError: (Object _) {}),
+      );
+    }
+  }
 
   /// Supplies the class filter its options, so every feed a teacher reads
   /// can be narrowed to one of their classes.
@@ -67,6 +91,7 @@ class _TeacherShellState extends State<TeacherShell> {
           classroomId: classroom.id.value,
           title: classroom.name,
           teacherTools: true,
+          aiReading: _aiToolsOn,
           initialFeed: feed,
           // Marks are kept in the Gradebook tab.
           availableFeeds: const [
@@ -348,6 +373,9 @@ class _TeacherShellState extends State<TeacherShell> {
     }
 
     final canAnnounce = MessagingScope.isAvailable(c);
+    readMessagingSwitch();
+    // Where the school has messaging off, the Inbox is its announcements.
+    final messages = messagingOn;
     final pages = [
       Builder(
         builder: (tabContext) => TeacherTodayPage(
@@ -412,6 +440,7 @@ class _TeacherShellState extends State<TeacherShell> {
         title: l10n.navTeaching,
         repository: widget.dependencies.academic,
         teacherTools: true,
+        aiReading: _aiToolsOn,
         initialFeed: AcademicFeed.content,
         availableFeeds: const [
           AcademicFeed.content,
@@ -443,6 +472,7 @@ class _TeacherShellState extends State<TeacherShell> {
         builder: (tabContext) => ConversationsPage(
           visible: index == 4,
           asRole: MessagingRole.staff,
+          showMessages: messages,
           onNewAnnouncement: canAnnounce
               ? () => _create.newAnnouncement(tabContext)
               : null,
@@ -504,11 +534,18 @@ class _TeacherShellState extends State<TeacherShell> {
               Icons.grading_outlined,
               Icons.grading_rounded,
             ),
-            StudafyNavItem(
-              l10n.navInbox,
-              Icons.send_outlined,
-              Icons.send_rounded,
-            ),
+            if (messages)
+              StudafyNavItem(
+                l10n.navInbox,
+                Icons.send_outlined,
+                Icons.send_rounded,
+              )
+            else
+              StudafyNavItem(
+                l10n.navAnnouncements,
+                Icons.campaign_outlined,
+                Icons.campaign_rounded,
+              ),
           ],
         ),
       ),

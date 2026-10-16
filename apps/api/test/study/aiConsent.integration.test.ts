@@ -235,7 +235,7 @@ suite("AI access and consent over real SQL (ADR-0043)", () => {
     app.route(
       "/",
       createAiConsentRoutes(
-        { repository: aiAccess },
+        { repository: aiAccess, toolsEnabled: true },
         authorization,
         idempotency,
       ),
@@ -284,6 +284,7 @@ suite("AI access and consent over real SQL (ADR-0043)", () => {
       access: "consent_required",
       version: VERSION,
       consent: null,
+      toolsEnabled: true,
     });
     expect(await ask(STUDENT)).toEqual({
       status: 403,

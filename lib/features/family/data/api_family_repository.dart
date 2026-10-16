@@ -59,6 +59,7 @@ class ApiFamilyRepository
           expiresAt: link.expiresAt == null
               ? null
               : DateTime.parse(link.expiresAt!),
+          messagingEnabled: link.messagingEnabled ?? true,
         ),
     ];
     for (final child in children) {

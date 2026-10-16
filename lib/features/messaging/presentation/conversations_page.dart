@@ -28,7 +28,13 @@ class ConversationsPage extends StatefulWidget {
     this.asRole,
     this.onNewAnnouncement,
     this.showAnnouncements = true,
+    this.showMessages = true,
   });
+
+  /// False where the school has messaging switched off (DL-049): the page is
+  /// then the school's announcements alone, named so, with no way to start
+  /// a conversation the server would refuse.
+  final bool showMessages;
 
   /// False where announcements have a page of their own (the parent's
   /// app), so this one is about conversations only.
@@ -71,7 +77,7 @@ class _ConversationsPageState extends State<ConversationsPage>
 
   /// False while this tab is off screen: nothing is loading, so a spinner
   /// would be a lie and would never stop.
-  late bool _loading = widget.visible;
+  late bool _loading = widget.visible && widget.showMessages;
 
   /// Once a list has been shown, a reload keeps it on screen and swaps in
   /// the new one when it arrives, instead of blanking to a spinner.
@@ -105,7 +111,7 @@ class _ConversationsPageState extends State<ConversationsPage>
     super.initState();
     ActiveContextController.instance.addListener(_contextChanged);
     WidgetsBinding.instance.addObserver(this);
-    if (widget.visible) unawaited(_load());
+    if (widget.visible && widget.showMessages) unawaited(_load());
     // After the first frame: the scope is an inherited widget.
     WidgetsBinding.instance.addPostFrameCallback((_) => _acknowledge());
     _acknowledger = Timer.periodic(
@@ -134,6 +140,7 @@ class _ConversationsPageState extends State<ConversationsPage>
     // One at a time: the timer, a resume and a finished load can all ask at
     // once, and overlapping requests only race each other.
     if (_acknowledging || !mounted || !_foreground) return;
+    if (!widget.showMessages) return;
     if (messagingIdentity() == null) return;
     _acknowledging = true;
     try {
@@ -150,12 +157,22 @@ class _ConversationsPageState extends State<ConversationsPage>
     super.didUpdateWidget(oldWidget);
     // Re-read on the transition into view, not on every rebuild while
     // visible, which would reload on each keystroke elsewhere in the shell.
+    if (widget.showMessages != oldWidget.showMessages) {
+      // The school's switch was read after the page was first built.
+      _part = widget.showMessages
+          ? _InboxPart.messages
+          : _InboxPart.announcements;
+      if (widget.showMessages && widget.visible) {
+        unawaited(_load());
+        return;
+      }
+    }
     if (widget.visible && !oldWidget.visible) unawaited(_load());
   }
 
   Future<void> _load() async {
     final identity = messagingIdentity();
-    if (identity == null) {
+    if (identity == null || !widget.showMessages) {
       setState(() => _loading = false);
       return;
     }
@@ -226,7 +243,9 @@ class _ConversationsPageState extends State<ConversationsPage>
     if (created != null && mounted) await _open(created, myUserId);
   }
 
-  _InboxPart _part = _InboxPart.messages;
+  late _InboxPart _part = widget.showMessages
+      ? _InboxPart.messages
+      : _InboxPart.announcements;
   Future<List<Announcement>>? _announcements;
 
   Future<List<Announcement>> _loadAnnouncements() async {
@@ -269,50 +288,54 @@ class _ConversationsPageState extends State<ConversationsPage>
         // The page is named as its tab is: Messages for a student, the
         // Inbox for staff, whose tab also holds announcements they post.
         title: Text(
-          widget.asRole == MessagingRole.student
+          !widget.showMessages
+              ? l10n.navAnnouncements
+              : widget.asRole == MessagingRole.student
               ? l10n.navMessages
               : l10n.navInbox,
         ),
         actions: [
-          // Labelled, and only here: announcements have their own control
-          // inside their own tab, so the two never sit together.
-          // On a narrow phone, or with large text, the labelled button
-          // would squeeze the title to nothing: an icon with its tooltip
-          // read out instead (launch plan 7.1).
-          if (canStart && _compactHeader(context))
-            IconButton(
-              tooltip: l10n.msgNew,
-              icon: const Icon(Icons.edit_square),
-              onPressed: () => _startNew(schoolId, identity.userId),
-            )
-          else if (canStart)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 4),
-              child: StudafyPillButton(
-                icon: Icons.edit_square,
-                label: l10n.msgNew,
-                prominent: true,
+          if (widget.showMessages) ...[
+            // Labelled, and only here: announcements have their own control
+            // inside their own tab, so the two never sit together.
+            // On a narrow phone, or with large text, the labelled button
+            // would squeeze the title to nothing: an icon with its tooltip
+            // read out instead (launch plan 7.1).
+            if (canStart && _compactHeader(context))
+              IconButton(
+                tooltip: l10n.msgNew,
+                icon: const Icon(Icons.edit_square),
                 onPressed: () => _startNew(schoolId, identity.userId),
-              ),
-            ),
-          if (identity != null && schoolId != null)
-            PopupMenuButton<VoidCallback>(
-              tooltip: l10n.msgOptions,
-              icon: const Icon(Icons.more_horiz_rounded),
-              onSelected: (action) => action(),
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: () => _openBlocked(schoolId, identity.userId),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.person_off_outlined, size: 20),
-                      const SizedBox(width: 12),
-                      Text(l10n.msgMenuBlocked),
-                    ],
-                  ),
+              )
+            else if (canStart)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 4),
+                child: StudafyPillButton(
+                  icon: Icons.edit_square,
+                  label: l10n.msgNew,
+                  prominent: true,
+                  onPressed: () => _startNew(schoolId, identity.userId),
                 ),
-              ],
-            ),
+              ),
+            if (identity != null && schoolId != null)
+              PopupMenuButton<VoidCallback>(
+                tooltip: l10n.msgOptions,
+                icon: const Icon(Icons.more_horiz_rounded),
+                onSelected: (action) => action(),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: () => _openBlocked(schoolId, identity.userId),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person_off_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.msgMenuBlocked),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          ],
           const SizedBox(width: 4),
         ],
       ),
@@ -320,6 +343,8 @@ class _ConversationsPageState extends State<ConversationsPage>
       // switched. The page loads as soon as they are; see _contextChanged.
       body: identity == null
           ? const Center(child: CircularProgressIndicator())
+          : !widget.showMessages
+          ? _announcementList()
           : !widget.showAnnouncements
           ? _messages(identity.userId, schoolId)
           : Column(

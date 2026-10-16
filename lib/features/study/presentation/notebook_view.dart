@@ -183,6 +183,8 @@ class _NotebookViewState extends State<NotebookView> {
     final l10n = AppL10n.of(context);
     final canCopy = lesson.text.trim().isNotEmpty;
     final canMakeNotes = _plan?.canSnapWhiteboard ?? false;
+    // Study notes are written by the AI: not offered where it is off.
+    final notesOn = _plan?.notebooksOn ?? false;
     final choice = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -203,16 +205,17 @@ class _NotebookViewState extends State<NotebookView> {
               enabled: canCopy,
               onTap: () => Navigator.pop(sheetContext, 'copy'),
             ),
-            ListTile(
-              leading: Icon(
-                canMakeNotes
-                    ? Icons.auto_awesome_rounded
-                    : Icons.lock_outline_rounded,
+            if (notesOn)
+              ListTile(
+                leading: Icon(
+                  canMakeNotes
+                      ? Icons.auto_awesome_rounded
+                      : Icons.lock_outline_rounded,
+                ),
+                title: Text(l10n.notebookLessonNotes),
+                subtitle: Text(l10n.notebookLessonNotesDetail),
+                onTap: () => Navigator.pop(sheetContext, 'notes'),
               ),
-              title: Text(l10n.notebookLessonNotes),
-              subtitle: Text(l10n.notebookLessonNotesDetail),
-              onTap: () => Navigator.pop(sheetContext, 'notes'),
-            ),
           ],
         ),
       ),
@@ -469,7 +472,13 @@ class _NotebookViewState extends State<NotebookView> {
 
   Widget _actions() {
     final locked = !(_plan?.canSnapWhiteboard ?? false);
-    final canUpload = widget.uploads != null && widget.schoolId != null;
+    // The AI's buttons only where the server offers the AI: notes from
+    // chosen material, and from a photo of the whiteboard. Not before the
+    // plan has said.
+    final notesOn = _plan?.notebooksOn ?? false;
+    final whiteboardOn = _plan?.whiteboardOn ?? false;
+    final canUpload =
+        whiteboardOn && widget.uploads != null && widget.schoolId != null;
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 4),
       child: Wrap(
@@ -487,7 +496,7 @@ class _NotebookViewState extends State<NotebookView> {
               icon: const Icon(Icons.menu_book_rounded),
               label: Text(AppL10n.of(context).notebookFromLesson),
             ),
-          if (widget.pick != null)
+          if (notesOn && widget.pick != null)
             FilledButton.tonalIcon(
               onPressed: _working != null ? null : () => _summarise(),
               icon: Icon(
@@ -517,7 +526,7 @@ class _NotebookViewState extends State<NotebookView> {
               icon: const Icon(Icons.photo_library_outlined),
               label: Text(AppL10n.of(context).notebookFromPhotos),
             ),
-          if (locked)
+          if (locked && canUpload)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(

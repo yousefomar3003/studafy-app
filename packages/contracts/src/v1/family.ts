@@ -57,6 +57,14 @@ export const V1MyGuardianLink = z.strictObject({
   relationship: z.string().nullable(),
   status: z.enum(["pending", "verified", "declined", "revoked"]),
   expiresAt: z.string().datetime({ offset: true }).nullable(),
+  /**
+   * Whether the child's school has messaging switched on (DL-049) - the
+   * switch the server enforces on every new conversation and message. A
+   * guardian holds no membership, so this is how the app learns it for
+   * them and hides messaging where it is off. Absent from servers older
+   * than 2026-10-16.
+   */
+  messagingEnabled: z.boolean().optional(),
 });
 export type V1MyGuardianLink = z.infer<typeof V1MyGuardianLink>;
 

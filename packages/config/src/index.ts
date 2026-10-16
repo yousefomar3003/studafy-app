@@ -123,6 +123,15 @@ export const apiEnvSchema = z.object({
    * minors' DPIA (docs/adr/ADR-0029-study-plans-and-ai-lesson-tools.md).
    */
   AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
+  /**
+   * Messaging, server-wide (DL-049, DL-061). Off unless set: messaging stays
+   * launch-blocked until SAFE-043's moderation gate is met (named report
+   * reviewers, B9). Off, every school reads as having messaging off - its
+   * content controls and a guardian's links say so, so the app hides it -
+   * and starting a conversation or sending a message is refused whatever
+   * the school's own switch says.
+   */
+  MESSAGING_ENABLED: disabledSwitchFlag,
   // How much of a chat the helper remembers, in tokens. The model's context
   // window is the ceiling (Qwen3.5-9B on Together: 262,144); each plan's
   // budget sits inside it, because every remembered token is paid for on

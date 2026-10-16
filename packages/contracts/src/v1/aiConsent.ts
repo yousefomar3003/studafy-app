@@ -36,6 +36,15 @@ export const V1AiConsentState = z.strictObject({
   /** The notice a consent must be for now; null when none is published. */
   version: z.string().min(1).max(128).nullable(),
   consent: V1AiConsent.nullable(),
+  /**
+   * Whether this server runs the AI study tools at all, for anyone: false
+   * without an AI provider. The same for every account, so the app can hide
+   * AI-only controls (this consent's own switch, a teacher's "reading for
+   * the AI helper") for accounts that never use the tools themselves.
+   * Absent from servers older than 2026-10-16; the app then goes by
+   * `access` alone.
+   */
+  toolsEnabled: z.boolean().optional(),
 });
 export type V1AiConsentState = z.infer<typeof V1AiConsentState>;
 
