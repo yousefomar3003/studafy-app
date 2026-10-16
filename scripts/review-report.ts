@@ -18,9 +18,13 @@
  * than the API would let you do:
  * - `show` calls private.report_review_open, which requires you to be a
  *   platform operator holding an *active* moderation grant (requested with
- *   MFA, approved by a second operator, started by you) whose scope covers
+ *   MFA, approved by a second operator or, in single-reviewer mode, by you,
+ *   started by you) whose scope covers
  *   this report. Every attempt is written to audit_events, refused ones too.
- *   Without a grant it prints the school id to request one for.
+ *   Without a grant it prints the school id to request one for, and how:
+ *   in single-reviewer mode (DL-063: the setting is on and you are the only
+ *   platform operator) you approve your own grant, requested with
+ *   requiresSecondApprover false; otherwise a second operator approves it.
  * - `resolve` sends the existing triageReport (when the report is still
  *   queued) and resolveReport commands through private.api042_command with
  *   an idempotency reservation, exactly as the API does. They check the
@@ -196,19 +200,47 @@ async function command(
   return result.response ?? {};
 }
 
-function explainNoGrant(result: OpenResult): void {
-  console.error(
-    [
-      "You hold no active moderation grant covering this report (the attempt is audited).",
-      `School: ${result.schoolId} (alert hash #${result.schoolHash})`,
-      "Request one with MFA, have a second operator approve it, then start it:",
-      "  POST /internal/moderation/access  {schoolId, reason, ticketRef,",
-      '    resourceScope: {"reportIds": ["<reportId>"]}, durationMinutes: 60}',
-      "  POST /internal/moderation/access/<grantId>/approve   (the other operator)",
-      "  POST /internal/moderation/access/<grantId>/start     (you)",
-      "See docs/security/safe043-operator-runbook.md, Reviewing a report.",
-    ].join("\n"),
+/**
+ * What to do without a grant. In single-reviewer mode (DL-063) the only
+ * platform operator approves their own grant, which must be requested with
+ * requiresSecondApprover false; otherwise a different operator approves it.
+ */
+export function noGrantHelp(
+  result: Pick<OpenResult, "schoolId" | "schoolHash">,
+  singleReviewer: boolean,
+): string {
+  const scope =
+    '    resourceScope: {"reportIds": ["<reportId>"]}, durationMinutes: 60';
+  return [
+    "You hold no active moderation grant covering this report (the attempt is audited).",
+    `School: ${result.schoolId} (alert hash #${result.schoolHash})`,
+    ...(singleReviewer
+      ? [
+        "Single-reviewer mode is on (DL-063): you are the only platform operator.",
+        "Request a grant with MFA, approve it yourself with MFA, then start it:",
+        "  POST /internal/moderation/access  {schoolId, reason, ticketRef,",
+        `${scope},`,
+        "    requiresSecondApprover: false}",
+        "  POST /internal/moderation/access/<grantId>/approve   (you)",
+        "  POST /internal/moderation/access/<grantId>/start     (you)",
+      ]
+      : [
+        "Request one with MFA, have a second operator approve it, then start it:",
+        "  POST /internal/moderation/access  {schoolId, reason, ticketRef,",
+        `${scope}}`,
+        "  POST /internal/moderation/access/<grantId>/approve   (the other operator)",
+        "  POST /internal/moderation/access/<grantId>/start     (you)",
+      ]),
+    "See docs/security/safe043-operator-runbook.md, Reviewing a report.",
+  ].join("\n");
+}
+
+/** Whether single-reviewer mode applies now (202610160041). */
+async function singleReviewerMode(sql: Sql): Promise<boolean> {
+  const [row] = await sql.unsafe(
+    `select private.safety_single_reviewer_mode() as single`,
   );
+  return row?.["single"] === true;
 }
 
 function configuration(): {
@@ -245,7 +277,7 @@ if (import.meta.main) {
   try {
     const opened = await open(sql, operator, args.reportId);
     if (opened.outcome === "no_grant") {
-      explainNoGrant(opened);
+      console.error(noGrantHelp(opened, await singleReviewerMode(sql)));
       exitCode = 2;
     } else if (opened.outcome !== "ok" || !opened.report) {
       console.error(

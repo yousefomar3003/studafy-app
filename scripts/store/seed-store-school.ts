@@ -18,13 +18,14 @@
  *     --workdir <throwaway stack dir> --api http://127.0.0.1:8095 \
  *     [--messaging on]
  *
- * Messaging stays off, as at launch (DL-049, DL-061): a new school starts
- * with its switch off and the API runs with MESSAGING_ENABLED off, so no
- * conversation is seeded. For pictures of messaging once it launches, start
- * the API and run this with `--messaging on`: the school's switch is then
- * turned on (a second direct database write) and the teacher-parent
- * conversation seeded. AI is off when the API has no AI key, as
- * scripts/store/local-api.ts starts it.
+ * Without `--messaging on` no conversation is seeded, and
+ * scripts/store/local-api.ts runs the API with MESSAGING_ENABLED off, so the
+ * app shows no messaging. Messaging launches (DL-063), so for screenshots 6
+ * and 15 start the API and run this with `--messaging on`: the school's own
+ * switch is then turned on (a second direct database write; a new school
+ * starts with it on since 202610160040, off between 202610160021 and that)
+ * and the teacher-parent conversation seeded. AI is off when the API has no
+ * AI key, as scripts/store/local-api.ts starts it.
  *
  * Names are fictional and every email is at synthetic.studafy.test. Run it
  * on a freshly reset throwaway stack: it is not idempotent.
@@ -450,7 +451,8 @@ async function seedSchool(locale: Locale, c: SchoolContent): Promise<Json> {
   }
   if (arg("--messaging") === "on") {
     // The second direct database write: the school's own messaging switch,
-    // off when a teaching space is made (DL-061). Only a school
+    // on when a teaching space is made (DL-063) but off on a stack between
+    // 202610160021 and 202610160040, so set either way. Only a school
     // administrator - of whom this release has none - may change it through
     // the API.
     await sql`

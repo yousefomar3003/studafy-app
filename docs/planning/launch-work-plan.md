@@ -272,7 +272,8 @@ iOS.
 
 ## Stage 4: Production environment
 
-- [ ] **4.1 Decide the production database** · *You* · decision
+- [x] **4.1 Decide the production database** · *You* · decision
+  - *Progress 2026-10-16:* decided by the owner (DL-064, in the decision log rather than an ADR): production is the existing Frankfurt project `cyrngoqnhqflzovlybbr` ("studafy light"), free plan until scale requires Pro. At cutover, stop `studafy-api-test` and `studafy-worker-test` (two workers on one queue conflict) and review and remove the owner's test accounts. The free plan has no Supabase daily backups or point-in-time recovery (the restore-checked R2 backups, 4.6, cover it), a 500 MB limit, and pauses after a week idle. The old Seoul project `zqbbsnqutrvlqcmtdlcx` is unused and being deleted by the owner.
   - Either a new Supabase project for production (recommended: test data
     never mixes with real children's data), or turn
     `cyrngoqnhqflzovlybbr` into production after a wipe.
@@ -281,6 +282,7 @@ iOS.
   - **Done when:** decided, and recorded in an ADR.
 - [ ] **4.2 Domains and Cloudflare** (PR-09) · *You* own DNS, *Claude*
   configures · 1 day
+  - *Progress 2026-10-16:* domains decided by the owner (DL-067): `studafy.com` with DNS on Cloudflare (the marketing site at `www.studafy.com` on Vercel is not touched); API `api.studafy.com`; app links `app.studafy.com`, replacing the never-registered `app.studafy.io` (code change in another PR); legal pages `legal.studafy.com` (another PR); email hello@studafy.com (Zoho MX). The Cloudflare proxy, certificates and `ORIGIN_REQUIRE_CLOUDFLARE` are still to do.
   - `api.studafy.com` (API) and `app.studafy.io` (sign-in callback, legal
     pages), or one domain for both (decide).
   - Proxy through Cloudflare, `fly certs add`, WAF and rate rules, then
@@ -380,7 +382,8 @@ iOS.
     truthfully.
   - **If not ready by launch:** launch without Plus/Max, or without their AI
     parts.
-- [ ] **6.4 Named owners** · *You*
+- [x] **6.4 Named owners** · *You*
+  - *Progress 2026-10-16:* named by the owner (DL-066): security, privacy, safeguarding contact, report reviewer and incident on-call are all Yousef (owner), hello@studafy.com. With one reviewer, safety report grants run in single-reviewer mode (DL-063; `docs/security/safe043-operator-runbook.md`); name a second reviewer when possible.
   - Security, privacy, safeguarding contact; who reviews reports
     (moderation, PR-28); on-call for incidents.
 

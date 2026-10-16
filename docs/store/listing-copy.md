@@ -28,11 +28,12 @@ record; change any of them by editing this list and the app together.
    AI is on from launch). Paste every `*.ai` block after "For students", so
    Studafy Plus and Max are on sale. The screenshots still show no AI screen;
    add one later if wanted.
-2. **Messaging at launch: left out until its gate is met.** DL-049 keeps
-   messaging blocked until SAFE-043's moderation gate (named report
-   reviewers, B9; report alerts are now built, PR #71). Delete the four
-   `[messages]` lines from the descriptions until then; put them back in the
-   same release that turns messaging on.
+2. **Messaging at launch: included** (DL-063, the owner's decision of
+   2026-10-16: messaging launches, with the owner as the one report reviewer;
+   this replaces the earlier "left out until its gate is met"). Keep the
+   `[messages]` lines in the descriptions (messages in the opening line,
+   "message students and parents", "Message your teachers", "message
+   teachers") and paste them as written.
 3. **Uploads: kept.** The listing goes out only with a build after the
    release-block change (D1), where uploads work.
 4. **The name in Arabic: ستودافاي**, as the app spells it
@@ -41,10 +42,16 @@ record; change any of them by editing this list and the app together.
    characters; the two words describe the app, which both stores allow).
 6. **Family+ in Arabic: "Family+" in Latin letters**, like Studafy Plus and
    Max. The two app strings that said "العائلة+" now say "Family+".
-7. **Screenshots: none that show AI or messages.** Google Play (8): 1, 5, 4,
-   11, 9, 10, 12, 14. App Store (10): the same, then 13 and 2. `student-1-today`
-   shows the Helper tab, `student-2-notebook`'s screen links to AI notes, and
-   6 and 15 are messages, so they stay out until AI or messaging is on.
+7. **Screenshots: none that show AI or messages yet.** Google Play (8): 1,
+   5, 4, 11, 9, 10, 12, 14. App Store (10): the same, then 13 and 2.
+   `student-1-today` shows the Helper tab and `student-2-notebook`'s screen
+   links to AI notes, so they stay out until retaken with AI on. Messaging
+   launches (DL-063), so 6 and 15 (messages) can be added once they are
+   taken: start the API and seed with `--messaging on` (see
+   [Taking them again](#taking-them-again)). The current pictures were
+   taken with messaging off, so their tab bars show Announcements where the
+   app at launch shows Messages; retake 1, 9, 10, 12 and 14 the same way
+   before submitting.
 8. **Meetings: left out** until a teacher can create one in the app (B8).
 
 ## Rules this copy follows
@@ -507,17 +514,18 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 
 ### What was taken
 
-The real app (a debug build), signed in to a synthetic school, as it is at
-launch: **AI off and messaging off.** Since PR #86 the app shows nothing
-the server has switched off, so these pictures show what a real user sees:
+The real app (a debug build), signed in to a synthetic school, with **AI
+off and messaging off**, as launch was planned when they were taken. Both
+are now on at launch (DL-062, DL-063; decisions 1, 2 and 7 above). Since
+PR #86 the app shows nothing the server has switched off, so these pictures
+show what a user sees with both off:
 
 - **No AI:** no Helper tab, no plans, no study tools, no AI buttons in the
   notebook. The API ran with no AI key, so nothing was sent to a provider.
-- **No messaging:** messaging is off, as it is at launch (DL-049, DL-061):
-  the API ran with `MESSAGING_ENABLED` off and a new school starts with its
-  own switch off. The student's and the teacher's last tab is the school's
-  **Announcements**, and the parent has no Messages tab and no "Message a
-  teacher".
+- **No messaging:** the API ran with `MESSAGING_ENABLED` off (DL-061) and
+  the school's own switch off. The student's and the teacher's last tab is
+  the school's **Announcements**, and the parent has no Messages tab and no
+  "Message a teacher".
 
 Two sets, the same walk on each:
 
@@ -572,10 +580,11 @@ the App Store takes up to 10 per language.
 - **Google Play:** 1, 5, 4, 11, 9, 10, 12, 14, from `android/`.
 - **App Store:** the same from `ios/`, then 13 and 2.
 
-`ios/` also has 3, 7 and 8, which are not in the launch set. When messaging
-launches, take 6 and 15 (start the API and seed with `--messaging on`),
-and retake the pictures whose tab bars change: 1, 9, 10, 12 and 14. When AI
-launches, retake the student pictures.
+`ios/` also has 3, 7 and 8, which are not in the launch set. Messaging
+launches (DL-063): take 6 and 15 (start the API and seed with
+`--messaging on`), and retake the pictures whose tab bars change: 1, 9, 10,
+12 and 14. AI launches too (DL-062): retake the student pictures if they
+should show it.
 
 ### Taking them again
 
@@ -587,8 +596,8 @@ From the repo root:
    `bunx supabase start --workdir <dir>` (or `db reset` on an existing one).
 2. Start the API:
    `bun --no-env-file scripts/store/local-api.ts --workdir <dir> --port 8095`.
-   It has no AI key, so the AI tools are off, and messaging is off as in
-   production; add `--messaging on` for pictures of messaging.
+   It has no AI key, so the AI tools are off, and messaging is off unless
+   you add `--messaging on`, which matches production (DL-063).
 3. Seed:
    `bun --no-env-file scripts/store/seed-store-school.ts --workdir <dir>`
    (with `--messaging on` to match the API).
@@ -633,7 +642,7 @@ administrator may change through the API, and this release has none.
 | Attendance: present, absent, late, excused | `attendance_page.dart`; `POST /v1/attendance/record` |
 | Wellbeing notes | `create_wellbeing_page.dart` (Data safety decision 6) |
 | Announcements | `create_announcement_page.dart`, `announcements_page.dart` |
-| [messages] Messages, report and block | `lib/features/messaging/`; `safety_sheets.dart`, `blocked_people_page.dart`; DL-049 (no student-to-student messages) |
+| [messages] Messages, report and block | `lib/features/messaging/`; `safety_sheets.dart`, `blocked_people_page.dart`; DL-049 (no student-to-student messages); on at launch (DL-063) |
 | Lessons by date, own notebook per class (free) | `lib/app/student_lessons_page.dart`; `notebook_view.dart`; `policyTermsBody` |
 | Hand-ins as text, photos or documents | `submit_work_page.dart`; `attachment_policy.dart` |
 | Students see published marks, feedback, attendance | `lib/app/student_shell.dart` (Work tab feeds) |

@@ -104,13 +104,13 @@ select is(
   'the container is named from the profile when the client sends nothing');
 
 -- The workspace has its content controls row, so its messaging switch
--- exists, but it starts off (DL-061): messaging is launch-blocked (DL-049),
--- and turning the server-wide switch on must not open every new school.
+-- exists, and it starts on (DL-063: messaging launches, superseding DL-061).
+-- The server-wide MESSAGING_ENABLED still decides whether anyone messages.
 select is(
   (select cc.messaging_enabled from public.school_content_controls cc
     join public.memberships m on m.school_id = cc.school_id
    where m.user_id = :'newcomer'),
-  false, 'a new workspace starts with messaging off');
+  true, 'a new workspace starts with messaging on');
 select is(
   (select cc.content_filter_level from public.school_content_controls cc
     join public.memberships m on m.school_id = cc.school_id

@@ -50,14 +50,14 @@ Decisions, accounts, money and signatures.
 | # | Task | Why it matters |
 |---|---|---|
 | B1 | ~~Decide AI at launch~~ **Decided 2026-10-16 (DL-062): AI on from launch**, before the DPA and DPIA. Still recommended: accept Together AI's DPA and have the DPIA draft reviewed (6.1, 6.2) | Accepted risk recorded in DL-062 |
-| B2 | **Decide the production database:** a new Supabase project (recommended) on **Pro** (daily backups, point-in-time recovery), at least 4 dedicated CPUs (4.1) | Real children's data never mixes with test data |
-| B3 | **Decide domains:** `api.studafy.com`, and where the legal pages and sign-in callback live; you own the DNS (4.2) | The store listings and release builds need final URLs |
+| B2 | ~~Decide the production database~~ **Decided 2026-10-16 (DL-064): the existing Frankfurt project `cyrngoqnhqflzovlybbr`, free plan until scale needs Pro.** At cutover: stop `studafy-api-test` and `studafy-worker-test`, and remove your test accounts (4.1) | Test and production share the database; the R2 backups stand in for Supabase's |
+| B3 | ~~Decide domains~~ **Decided 2026-10-16 (DL-067):** `api.studafy.com`, app links `app.studafy.com`, legal pages `legal.studafy.com`, email hello@studafy.com; DNS on Cloudflare (4.2) | The store listings and release builds need final URLs |
 | B4 | ~~Merge PRs #52, #53, #54, #55~~ **Done 2026-10-16** (with #56–#82) | Unblocked A1 |
 | B5 | Hands-on check on the phone as teacher, student and parent, in English and Arabic: a lesson with Word and PDF files, a homework hand-in with a photo, opening a student's file, an online exam end to end (2.9) | The last proof before testers |
 | B6 | Tap Terms and Privacy on the Study plans screen (4.3); check one real crash from a test build in Sentry shows the user as "anonymous" (#52) | Closes 4.3 and the crash-privacy fix |
 | B7 | Set the Axiom dataset retention to 30 days | The privacy policy says 30 days |
-| B8 | Decide whether to launch with meeting invitations (Google Workspace and Meet) | Attendee emails go to Google if on |
-| B9 | Name the owners: security, privacy, safeguarding contact, report reviewer, incident on-call (6.4) | Store reviewers and schools ask |
+| B8 | ~~Decide whether to launch with meeting invitations~~ **Decided 2026-10-16 (DL-065): no meeting creation at launch**; `MEETINGS_PROCESSOR_ENABLED` stays off; teachers can paste a Meet link into an announcement | No attendee emails go to Google |
+| B9 | ~~Name the owners~~ **Decided 2026-10-16 (DL-066): all five roles are Yousef (owner), hello@studafy.com.** Messaging launches with you as the one report reviewer, in single-reviewer mode (DL-063); name a second reviewer when you can (6.4) | Store reviewers and schools ask |
 | B10 | Lawyers: retention for safeguarding notes, school-wide announcements, other notifications and roster rows with no account | Open questions from the retention PR |
 | B11 | Apple: wait for the Developer account, then register `com.studafy.light` with Sign in with Apple and Push Notifications (5.1–5.2) | Unblocks all of iOS |
 | B12 | Store listings: Play Console (Families policy, content rating, Data safety from `docs/store/google-play-data-safety.md`, privacy and deletion links); App Store Connect (Education category, honest age rating, not Kids; privacy labels from `docs/store/app-store-privacy-labels.md`) (3.6, 5.5) | Required to publish |
@@ -75,7 +75,7 @@ contents, in chat. Claude wires it in and tests it.
 | C4 | Upload the internal-testing build Claude makes to Play Console; install it with one tester (3.7) | Build the release bundle (after A3 and C1) |
 | C5 | **Resend:** a verified sending domain, API key and sender address | Set them on the worker; email notifications and the inactive-account warning by email |
 | C6 | **Play billing:** products `studafy_plus_monthly`, `studafy_max_monthly`, `studafy_family_plus_monthly`, `studafy_family_plus_8_monthly`; license testers; Pub/Sub topic; service account (3.9) | Wire it and test buy, renew, cancel, refund and restore |
-| C7 | **Production Supabase project** (after B2), and Google, Microsoft and Apple sign-in set up in it | Apply every migration, set the runtime roles, point the production apps at it |
+| C7 | **Production Supabase project** (B2: the existing Frankfurt project, DL-064), and Google, Microsoft and Apple sign-in set up in it | Apply every migration, set the runtime roles, point the production apps at it |
 | C8 | **DNS** for the domains (after B3) | Cloudflare proxy, certificates, refuse direct `*.fly.dev`, legal pages on the domain, URLs in release builds (4.2, 4.3) |
 | C9 | **Real Turnstile keys** for the production domain | Set them on the production API |
 | C10 | **Backup storage** for production (S3 or similar), and a second offline copy of the backup key (4.6) | Point the daily backup at production; a timed restore drill |
@@ -99,7 +99,8 @@ contents, in chat. Claude wires it in and tests it.
 
 1. **This week:** B4–B7 and A1–A4. You do C1–C3; Claude does A3 and C4.
    Android internal testing starts on the test copy.
-2. **Decisions:** B1, B2, B3, B8 and B9. Production is built from them.
+2. **Decisions:** B1, B2, B3, B8 and B9, all decided 2026-10-16 (DL-062
+   to DL-067). Production is built from them.
 3. **Production:** C5–C12. Then point the release builds at production.
 4. **iOS, when Apple approves:** B11, then C13–C16.
 5. **Store listings and launch:** B12, then D1–D3.

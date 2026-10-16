@@ -124,9 +124,10 @@ export const apiEnvSchema = z.object({
    */
   AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
   /**
-   * Messaging, server-wide (DL-049, DL-061). Off unless set: messaging stays
-   * launch-blocked until SAFE-043's moderation gate is met (named report
-   * reviewers, B9). Off, every school reads as having messaging off - its
+   * Messaging, server-wide (DL-061, DL-063). Off unless set; production
+   * turns it on (DL-063: messaging launches, with one report reviewer) and
+   * keeps it as the way to turn messaging off for everyone fast. Off, every
+   * school reads as having messaging off - its
    * content controls and a guardian's links say so, so the app hides it -
    * and starting a conversation or sending a message is refused whatever
    * the school's own switch says.

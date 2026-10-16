@@ -1,14 +1,14 @@
 # SAFE-043 moderation operator runbook
 
 Covers the reporting queue, escalation/unmasking, legal holds, moderator JIT
-sessions, and content-controls troubleshooting. Written for a **local or
-disposable** environment. No production environment exists yet (DL-009,
-DL-024); when one does, safeguarding procedures need a named, separated
-on-call owner and an approval path before they are used against real accounts
-or real minors' data.
+sessions, and content-controls troubleshooting. Messaging launches with one
+report reviewer (DL-063), so these procedures are used against real accounts
+and real minors' data from launch.
 
-Owner: repository owner (`@yousefomar3003`), single-owner project. Production
-use requires re-recording with named, separated owners.
+Owner: Yousef (owner), hello@studafy.com: security, privacy, safeguarding
+contact, report reviewer and incident on-call (DL-066). There is one
+reviewer until a second is named, so grants run in **single-reviewer mode**
+(below). Add a second reviewer as soon as one can be named (DL-063).
 
 ## Vocabulary
 
@@ -17,22 +17,26 @@ use requires re-recording with named, separated owners.
 | Platform operator | `public.platform_operators` row. Never granted through any API — a deliberate, out-of-band, service-role-only SQL operation |
 | Safe moderator | A school admin, a platform operator, or the holder of an **active** moderation-session grant whose sessions are all `active` or grant-shared for that school (`private.safe043_can_access_reports`) |
 | AAL2 (moderation) | The session must have actually presented a second factor *this request* for `request`/`approve` — not merely be MFA-enrolled. Checked unconditionally inside `api042_command`, not by role policy |
-| Two-person moderation access | A `moderation_access_grants` row can only be approved by a platform operator who is not its own requester (`private.is_second_approver`) |
+| Two-person moderation access | A `moderation_access_grants` row can only be approved by a platform operator who is not its own requester (`private.safe043_is_second_approver`) |
+| Single-reviewer mode | While `private.safety_review_settings.single_reviewer` is on **and** exactly one platform operator exists, that operator may approve their own grant if it was requested with `requiresSecondApprover: false` (DL-063, migration `202610160041`). A second operator ends the mode by itself |
 | Legal hold | A report- or user-scoped `legal_holds` row applied by a platform operator. A user hold pauses an active account deletion of the subject until released |
 
 ## Reviewing a report (DPIA D7)
 
-> **Needs named reviewers (B9).** This procedure assumes at least two
-> named platform operators: one reviews, a different one approves the
-> grant. Until they are named and recorded here (and in the decision log),
-> the repository owner is the only reviewer and the two-person approval
-> cannot be met without a second operator. Do not invent a second identity
-> to satisfy it.
+> **One named reviewer: single-reviewer mode (DL-063).** The owner is the
+> only reviewer, so he requests, approves and starts his own grant (step 3);
+> every grant, report read and resolution is audited exactly as with two.
+> The accepted risk: no second person checks a grant or a decision, so
+> reports are reviewed by the owner within the response times below. Name
+> a second reviewer as soon as possible: adding them as a platform operator
+> ends single-reviewer mode by itself, and from then on a different
+> operator approves each grant. Do not invent a second identity, or add a
+> second operator row for yourself.
 >
-> | Role | Name | Telegram | Since |
+> | Role | Name | Contact | Since |
 > |---|---|---|---|
-> | Reviewer 1 | *to be named (B9)* | | |
-> | Reviewer 2 | *to be named (B9)* | | |
+> | Reviewer 1 | Yousef (owner) | hello@studafy.com; the alert Telegram chat | 2026-10-16 (DL-063, DL-066) |
+> | Reviewer 2 | *to be named* (single-reviewer mode until then) | | |
 
 This release has **no school administrator**, so nobody inside a school
 can open the moderation queue. A filed report reaches people only through
@@ -82,11 +86,12 @@ takes it, so two reviewers do not both start. If a report names an
 imminent risk to someone, go straight to **Incident response order**
 below; the clock for that is now, not the table.
 
-### 3. Get a grant (two people, MFA)
+### 3. Get a grant (MFA; one reviewer or two)
 
 The reviewer needs an *active* moderation grant for the report's school,
 best scoped to the report itself. Run `show` first: without a grant it
-records the refused attempt and prints the school id to request one for.
+records the refused attempt and prints the school id to request one for,
+and which of the two paths below applies.
 
 ```sh
 REVIEW_DATABASE_URL='postgresql://postgres.<ref>:<pw>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres' \
@@ -95,10 +100,19 @@ bun --no-env-file scripts/review-report.ts show <reportId>
 ```
 
 Then, through the API with your own MFA session (the **Moderator JIT
-sessions** steps above): request with `schoolId` from the output,
+sessions** steps below): request with `schoolId` from the output,
 `resourceScope: {"reportIds": ["<reportId>"]}`, the alert's report id as
-`ticketRef`, a reason, and `durationMinutes` 60; the **other** reviewer
-approves; you start it.
+`ticketRef`, a reason, and `durationMinutes` 60. Then:
+
+- **Single-reviewer mode** (now: one reviewer): add
+  `requiresSecondApprover: false` to the request, approve it yourself
+  (`POST .../approve`, MFA again), and start it. A grant requested without
+  that field still waits for a second approver, which does not exist.
+- **Two reviewers** (once a second is named): leave `requiresSecondApprover`
+  out; the **other** reviewer approves; you start it.
+
+The grant's `approvedBy` equals its `requestedBy` in single-reviewer mode,
+so the audit shows which grants had only one person.
 
 ### 4. Read and decide
 
@@ -207,12 +221,15 @@ rather than a standing role.
 1. The requester calls `POST /internal/moderation/access` as a platform
    operator or the school's admin with `aal2` true **this request**, a reason
    (8–2000 chars), and a ticket reference; `requiresSecondApprover` defaults
-   to true and should stay true unless the release gate explicitly approved
-   otherwise.
+   to true. Set it to false only in single-reviewer mode (DL-063, see
+   **Single-reviewer mode** below).
 2. A **different** platform operator — verified out of band — reviews the
    reason/ticket and calls `POST /internal/moderation/access/{id}/approve`
    with `aal2` true this request. The original requester can never approve
-   their own grant; there is no override.
+   a grant that requires a second approver; the only exception is
+   single-reviewer mode, for a grant requested with
+   `requiresSecondApprover: false`, where the one operator approves it
+   (with `aal2` true this request).
 3. Only the original requester calls `.../start` (once approved).
 4. Any platform operator or the affected school's admin calls `.../revoke`
    at any point. Double-revoke returns 409.
@@ -229,6 +246,48 @@ select id, school_id, requested_by, approved_by, status, resource_scope,
 from public.moderation_access_grants where school_id = :school_id
 order by created_at desc;
 ```
+
+## Single-reviewer mode
+
+DL-063: messaging launches with one report reviewer, the owner. Migration
+`202610160041_safety_single_reviewer.sql` adds the setting
+`private.safety_review_settings.single_reviewer`, **on** from that
+migration. The mode applies only while the setting is on **and**
+`public.platform_operators` has exactly one row. Then that operator may
+approve their own moderation grant, if it was requested with
+`requiresSecondApprover: false` (`private.safe043_is_second_approver`, which
+both the API's authorization and `approveModerationAccess` use; the table's
+check constraint allows a requester-approver only on such a grant).
+
+Nothing else is relaxed: requesting and approving still need a fresh MFA
+step, only the requester starts the grant, it expires (15-480 minutes) and
+can be revoked, and every request, approval, start, report read
+(`report_review_opened`/`_refused`), triage and resolution is in
+`audit_events` as before. The Telegram alert for each report is
+unchanged.
+
+Check it, as postgres (SQL editor or a session connection):
+
+```sql
+select single_reviewer, note, updated_at from private.safety_review_settings;
+select count(*) from public.platform_operators;   -- the mode needs exactly 1
+```
+
+Turn it off (for example when a second reviewer is about to be added), or
+on again; every change writes a `safety_single_reviewer_changed` audit
+event:
+
+```sql
+update private.safety_review_settings
+set single_reviewer = false, note = '<why, and who>';
+```
+
+When a second reviewer exists: add them as a platform operator (an
+out-of-band, service-role SQL insert into `public.platform_operators`, as
+for the first), fill in **Reviewer 2** in the table above and in the
+decision log, and request grants without `requiresSecondApprover` from
+then on. With two operators the mode no longer applies, even if the
+setting is still on; turning the setting off as well makes that explicit.
 
 ## Block and reporting troubleshooting
 

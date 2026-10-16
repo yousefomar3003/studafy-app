@@ -82,8 +82,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.LOG_SAMPLE_ROUTINE_RATE).toBe(0.01);
     // DL-062: the AI study tools are on from launch.
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(true);
-    // DL-049, DL-061: no messaging until the moderation gate is met.
-    expect(env.MESSAGING_ENABLED).toBe(false);
+    // DL-063: messaging launches, with one report reviewer.
+    expect(env.MESSAGING_ENABLED).toBe(true);
     // Security audit 2026-10-08: never X-Forwarded-For in production.
     expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
     // Launch plan 2.2: AI calls need longer than the 10 s default.
@@ -209,7 +209,7 @@ describe("Fly configs pass production validation", () => {
     expect(api.ENVIRONMENT).toBe("development");
     // *.fly.dev has no Cloudflare in front: Fly's own header only.
     expect(api.CLIENT_IP_SOURCE).toBe("fly");
-    // Messaging is tried on the test copy, with synthetic schools (DL-061).
+    // Messaging is on in the test copy too, as in production (DL-063).
     expect(api.MESSAGING_ENABLED).toBe("true");
     expect(() =>
       enforceApiFailClosed(parseEnv(apiEnvSchema, { ...api, ...secrets }))
@@ -301,7 +301,8 @@ describe("production Fly apps (launch plan A6, C11)", () => {
       "https://api.studafy.com",
     );
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe("true");
-    expect(env.MESSAGING_ENABLED).toBe("false");
+    // DL-063: messaging launches; the switch stays to turn it off fast.
+    expect(env.MESSAGING_ENABLED).toBe("true");
   });
 
   test("the worker: production mode, executors on, retention purge off", async () => {
@@ -323,6 +324,8 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(env.RETENTION_SCHEDULE_ENABLED).toBe("false");
     const parsed = parseEnv(workerEnvSchema, { ...env, ...secrets });
     expect(parsed.RETENTION_SCHEDULE_ENABLED).toBe(false);
+    // DL-065: no Google Meet creation at launch; the switch stays unset.
+    expect(env.MEETINGS_PROCESSOR_ENABLED).toBeUndefined();
   });
 
   test("the worker scans through the private production scanner", async () => {
