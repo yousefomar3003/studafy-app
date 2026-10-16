@@ -24,10 +24,10 @@ a field is over its limit or the count table is out of date
 The owner asked Claude to choose. Each choice follows a decision already on
 record; change any of them by editing this list and the app together.
 
-1. **AI at launch: left out.** DL-056 keeps AI off for real students until
-   the AI DPA and the DPIA are signed (B1, C17). Paste **none** of the `*.ai`
-   blocks, so Studafy Plus and Max are not mentioned either. When AI is
-   switched on, add the blocks after "For students".
+1. **AI at launch: included** (DL-062, the owner's decision of 2026-10-16:
+   AI is on from launch). Paste every `*.ai` block after "For students", so
+   Studafy Plus and Max are on sale. The screenshots still show no AI screen;
+   add one later if wanted.
 2. **Messaging at launch: left out until its gate is met.** DL-049 keeps
    messaging blocked until SAFE-043's moderation gate (named report
    reviewers, B9; report alerts are now built, PR #71). Delete the four
