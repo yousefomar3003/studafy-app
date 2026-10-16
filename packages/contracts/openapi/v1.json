@@ -25898,6 +25898,9 @@
                 "type": "null"
               }
             ]
+          },
+          "toolsEnabled": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -34603,6 +34606,9 @@
                 "type": "null"
               }
             ]
+          },
+          "messagingEnabled": {
+            "type": "boolean"
           }
         },
         "required": [

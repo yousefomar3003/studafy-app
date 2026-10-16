@@ -27,6 +27,7 @@ class AcademicOverviewPage extends StatefulWidget {
     this.classroomId,
     this.studentId,
     this.teacherTools = false,
+    this.aiReading = false,
     this.initialFeed = AcademicFeed.assignments,
     this.actions = const [],
     this.appBarActions = const [],
@@ -73,6 +74,10 @@ class AcademicOverviewPage extends StatefulWidget {
   /// one. Null leaves the page as a single flat list across every class.
   final Future<List<ClassChoice>> Function()? loadClassChoices;
   final bool teacherTools;
+
+  /// The lesson's "reading for the AI helper" sheet, beside each lesson
+  /// with files or links. Only on a server that runs the AI study tools.
+  final bool aiReading;
 
   /// Opens one assignment row. A student taps one to hand work in; the other
   /// feeds never call it, since every handler expects an assignment.
@@ -722,9 +727,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // How far the lesson's files are read for the AI helper.
-          if (item.attachments.isNotEmpty ||
-              item.links.isNotEmpty ||
-              item.resourceType == 'file')
+          if (widget.aiReading &&
+              (item.attachments.isNotEmpty ||
+                  item.links.isNotEmpty ||
+                  item.resourceType == 'file'))
             IconButton(
               tooltip: l10n.readingTitle,
               onPressed: () => showLessonReadingSheet(

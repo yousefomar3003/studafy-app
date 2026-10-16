@@ -336,13 +336,13 @@ class _AccountHubPageState extends State<AccountHubPage> {
               children: accountRows,
             ),
           // The AI study tools, on and off (ADR-0043). Shown only to a
-          // student in a class; the switch hides itself for anyone else.
+          // student in a class on a server that runs them; the switch hides
+          // itself, and its group with it, for anyone else.
           if (student && AiConsentGate.instance.repository != null)
-            SettingsGroup(
-              title: l10n.aiConsentTitle,
-              children: [
-                AiConsentSwitch(repository: AiConsentGate.instance.repository!),
-              ],
+            AiConsentSwitch(
+              repository: AiConsentGate.instance.repository!,
+              wrap: (row) =>
+                  SettingsGroup(title: l10n.aiConsentTitle, children: [row]),
             ),
           SettingsGroup(
             title: l10n.accountSectionPreferences,

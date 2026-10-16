@@ -1,3 +1,5 @@
+// ignore_for_file: text_direction_code_point_in_literal, text_direction_code_point_in_comment
+
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
 
@@ -237,7 +239,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get introBodyThree =>
-      'تابع التقدّم والحضور - ومع Family+ اتجاه كل صف وما يجب التركيز عليه هذا الأسبوع. بلا إعلانات، ولا نبيع بياناتك أبدًا.';
+      'تابع التقدّم والحضور - ومع ⁦Family+⁩ اتجاه كل صف وما يجب التركيز عليه هذا الأسبوع. بلا إعلانات، ولا نبيع بياناتك أبدًا.';
 
   @override
   String get roleWhatIsStudafy => 'ما هو ستودافاي؟';
@@ -1388,14 +1390,14 @@ class AppL10nAr extends AppL10n {
   String get academicAllClasses => 'كل الصفوف';
 
   @override
-  String get insightsTitle => 'Family+';
+  String get insightsTitle => '⁦Family+⁩';
 
   @override
   String get insightsUnavailableTitle => 'التحليلات غير متاحة';
 
   @override
   String get insightsUnavailableBody =>
-      'تحتاج إلى اشتراك Family+ لعرض التحليلات التفصيلية، ويجب أن يكون ارتباطك بابنك مُعتمدًا.';
+      'تحتاج إلى اشتراك ⁦Family+⁩ لعرض التحليلات التفصيلية، ويجب أن يكون ارتباطك بابنك مُعتمدًا.';
 
   @override
   String get insightsNothingYetTitle => 'لا يوجد ما نعرضه بعد';
@@ -1912,7 +1914,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get studySetQuizzesAndFlashcardsComeWith =>
-      'الاختبارات والبطاقات متاحة مع Studafy Max.';
+      'الاختبارات والبطاقات متاحة مع ⁦Studafy Max⁩.';
 
   @override
   String get studySetThisMonthSAiAllowance =>
@@ -1989,7 +1991,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String studyPlansSubscribeToName(Object name) {
-    return 'اشترك في $name';
+    return 'اشترك في ⁦$name⁩';
   }
 
   @override
@@ -2028,7 +2030,7 @@ class AppL10nAr extends AppL10n {
   String get studyPlansPrivacyPolicy => 'سياسة الخصوصية';
 
   @override
-  String get notebookThisNeedsStudafyPlus => 'هذه الميزة تتطلب Studafy Plus.';
+  String get notebookThisNeedsStudafyPlus => 'هذه الميزة تتطلب ⁦Studafy Plus⁩.';
 
   @override
   String get notebookNoWritingCouldBeRead =>
@@ -2086,7 +2088,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notebookWhiteboardNotesComeWithStudafy =>
-      'ملاحظات السبورة متاحة مع Studafy Plus.';
+      'ملاحظات السبورة متاحة مع ⁦Studafy Plus⁩.';
 
   @override
   String get notebookTheNotebookCouldNotBe =>
@@ -2803,8 +2805,8 @@ class AppL10nAr extends AppL10n {
   @override
   String famApprovalsDetail(String name, String plan) {
     String _temp0 = intl.Intl.selectLogic(plan, {
-      'studafy_plus': 'Studafy Plus',
-      'studafy_max': 'Studafy Max',
+      'studafy_plus': '⁦Studafy Plus⁩',
+      'studafy_max': '⁦Studafy Max⁩',
       'other': 'إحدى خطط ستودافاي',
     });
     return 'طلب $name الاشتراك في $_temp0.';
@@ -3318,7 +3320,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String familyPlusHeadline(String name) {
-    return 'Family+ لـ $name';
+    return '⁦Family+⁩ لـ $name';
   }
 
   @override
@@ -3380,7 +3382,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String familyPlusNotCovered(int seats, String name) {
-    return 'يشمل Family+ لديك أول $seats أطفال ربطتهم، و$name ليس منهم. انتقل إلى خطة حتى 8 أطفال لتشمل $name.';
+    return 'يشمل ⁦Family+⁩ لديك أول $seats أطفال ربطتهم، و$name ليس منهم. انتقل إلى خطة حتى 8 أطفال لتشمل $name.';
   }
 
   @override
@@ -3414,7 +3416,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get familyPlusNotInThisBuild =>
-      'لا يمكن شراء Family+ في هذا الإصدار من التطبيق.';
+      'لا يمكن شراء ⁦Family+⁩ في هذا الإصدار من التطبيق.';
 
   @override
   String get familyPlusOpeningStore => 'جارٍ فتح المتجر...';
@@ -3442,7 +3444,7 @@ class AppL10nAr extends AppL10n {
   String get familyPlusPrivacy => 'سياسة الخصوصية';
 
   @override
-  String get studySetMaxBadge => 'باقة Studafy Max';
+  String get studySetMaxBadge => 'باقة ⁦Studafy Max⁩';
 
   @override
   String get studySetSwitchedOff =>
@@ -3799,7 +3801,7 @@ class AppL10nAr extends AppL10n {
   String get studyToolsNoLessons => 'تظهر تحت كل درس بمجرد أن يضيفه معلمك.';
 
   @override
-  String get studyToolsLocked => 'متاحة مع Studafy Max.';
+  String get studyToolsLocked => 'متاحة مع ⁦Studafy Max⁩.';
 
   @override
   String get linksAdd => 'إضافة رابط';
@@ -3842,7 +3844,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notebookLessonNotesDetail =>
-      'عناوين ومصطلحات رئيسية وملخص - Studafy Plus';
+      'عناوين ومصطلحات رئيسية وملخص - ⁦Studafy Plus⁩';
 
   @override
   String get notebookLessonCopied => 'أُضيف إلى دفترك.';
@@ -3915,7 +3917,7 @@ class AppL10nAr extends AppL10n {
   String get helperTakePhoto => 'التقاط صورة';
 
   @override
-  String get helperPhotoPlus => 'الصور متاحة مع Studafy Plus.';
+  String get helperPhotoPlus => 'الصور متاحة مع ⁦Studafy Plus⁩.';
 
   @override
   String get helperPhotoChecking => 'جارٍ فحص الصورة…';
@@ -3959,7 +3961,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String upgradeFeatureTitle(String plan) {
-    return 'هذه الميزة متاحة مع $plan';
+    return 'هذه الميزة متاحة مع ⁦$plan⁩';
   }
 
   @override
@@ -3967,7 +3969,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String upgradeWhatUnlocks(String plan) {
-    return 'ما تتيحه $plan';
+    return 'ما تتيحه ⁦$plan⁩';
   }
 
   @override
@@ -3977,19 +3979,19 @@ class AppL10nAr extends AppL10n {
   String get upgradeNotNow => 'ليس الآن';
 
   @override
-  String get upgradeTopPlan => 'أنت على Studafy Max، أكبر خطة.';
+  String get upgradeTopPlan => 'أنت على ⁦Studafy Max⁩، أكبر خطة.';
 
   @override
   String get studyPlansIncludedInYourPlan => 'مضمّنة في خطتك';
 
   @override
   String studyPlansUpgradeToName(String name) {
-    return 'الترقية إلى $name';
+    return 'الترقية إلى ⁦$name⁩';
   }
 
   @override
   String studyPlansUpgradeReplaces(String current) {
-    return 'يُستبدل اشتراكك في $current فورًا، ويحتسب المتجر ما دفعته مسبقًا.';
+    return 'يُستبدل اشتراكك في ⁦$current⁩ فورًا، ويحتسب المتجر ما دفعته مسبقًا.';
   }
 
   @override
@@ -3999,7 +4001,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String studyPlansCancelledUntil(String plan, String date) {
-    return 'أُلغي. تبقى لديك $plan حتى $date ولن تُحاسَب مرة أخرى.';
+    return 'أُلغي. تبقى لديك ⁦$plan⁩ حتى $date ولن تُحاسَب مرة أخرى.';
   }
 
   @override
@@ -4008,7 +4010,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String studyPlansPaymentIssue(String store, String plan) {
-    return 'تعذّر على $store تحصيل الدفعة. حدّث طريقة الدفع للاحتفاظ بـ $plan.';
+    return 'تعذّر على $store تحصيل الدفعة. حدّث طريقة الدفع للاحتفاظ بـ ⁦$plan⁩.';
   }
 
   @override
@@ -4069,7 +4071,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String cancelPauseBody(String plan, String date) {
-    return 'خذ استراحة من أسبوع إلى 3 أشهر. تبقى لديك $plan حتى $date. بعدها يتوقف مؤقتًا: لا ميزات $plan ولا رسوم حتى يُستأنف تلقائيًا. يمكنك الاستئناف مبكرًا.';
+    return 'خذ استراحة من أسبوع إلى 3 أشهر. تبقى لديك ⁦$plan⁩ حتى $date. بعدها يتوقف مؤقتًا: لا ميزات ⁦$plan⁩ ولا رسوم حتى يُستأنف تلقائيًا. يمكنك الاستئناف مبكرًا.';
   }
 
   @override
@@ -4077,7 +4079,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String cancelCancelBody(String plan, String date) {
-    return 'تبقى لديك $plan حتى $date ولن تُحاسَب مرة أخرى. بعد ذلك تنتقل إلى Studafy Free، وتبقى دفاترك ودروسك.';
+    return 'تبقى لديك ⁦$plan⁩ حتى $date ولن تُحاسَب مرة أخرى. بعد ذلك تنتقل إلى ⁦Studafy Free⁩، وتبقى دفاترك ودروسك.';
   }
 
   @override
@@ -4940,12 +4942,12 @@ class AppL10nAr extends AppL10n {
 
   @override
   String planUpgradeTo(Object plan) {
-    return 'الترقية إلى $plan';
+    return 'الترقية إلى ⁦$plan⁩';
   }
 
   @override
   String planAdds(Object plan) {
-    return 'يضيف $plan:';
+    return 'يضيف ⁦$plan⁩:';
   }
 
   @override
@@ -5145,7 +5147,7 @@ class AppL10nAr extends AppL10n {
   String get parentLinkSearching => 'جارٍ التحقق…';
 
   @override
-  String get familyPlusNoPlan => 'لا توجد خطة Family+ بعد';
+  String get familyPlusNoPlan => 'لا توجد خطة ⁦Family+⁩ بعد';
 
   @override
   String familyPlusCoveredCount(int count) {
@@ -5158,7 +5160,7 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String get familyPlusWhatYouGet => 'ما تضيفه Family+';
+  String get familyPlusWhatYouGet => 'ما تضيفه ⁦Family+⁩';
 
   @override
   String get familyPlusPlansTitle => 'اختر خطة';
@@ -6041,7 +6043,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get nbShelfLocked =>
-      'دفاتر المذاكرة المصنوعة من دروسك متاحة مع Studafy Plus.';
+      'دفاتر المذاكرة المصنوعة من دروسك متاحة مع ⁦Studafy Plus⁩.';
 
   @override
   String get nbShelfFailed => 'تعذّر تحميل دفاترك. حاول مرة أخرى';
@@ -6127,7 +6129,7 @@ class AppL10nAr extends AppL10n {
       'وصلت إلى حد استخدام الذكاء الاصطناعي. يُعاد ضبطه مع خطتك، وملاحظاتك محفوظة.';
 
   @override
-  String get nbFailPlan => 'دفاتر المذاكرة متاحة مع Studafy Plus.';
+  String get nbFailPlan => 'دفاتر المذاكرة متاحة مع ⁦Studafy Plus⁩.';
 
   @override
   String get nbFailGeneric => 'حدث خطأ أثناء كتابته. لم يُخصم شيء.';
@@ -6316,7 +6318,7 @@ class AppL10nAr extends AppL10n {
       'اختبر نفسك في هذا الدفتر - كله، أو الأقسام التي تختارها.';
 
   @override
-  String get nbPracticeLocked => 'الاختبارات والبطاقات متاحة مع Studafy Max';
+  String get nbPracticeLocked => 'الاختبارات والبطاقات متاحة مع ⁦Studafy Max⁩';
 
   @override
   String get nbQuizWhole => 'اختبار في الدفتر كله';
@@ -6627,7 +6629,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String usagePlan(String plan) {
-    return 'خطة $plan';
+    return 'خطة ⁦$plan⁩';
   }
 
   @override

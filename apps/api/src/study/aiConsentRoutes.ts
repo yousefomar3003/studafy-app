@@ -23,6 +23,11 @@ import {
 
 export interface AiConsentRoutesDependencies {
   repository: AiAccessRepository;
+  /**
+   * The server has an AI provider, so the study tools exist for anyone.
+   * Reported with every state so the app hides AI-only controls when not.
+   */
+  toolsEnabled: boolean;
 }
 
 const REFUSALS: OutcomeTable = {
@@ -67,6 +72,7 @@ export function createAiConsentRoutes(
           givenAs: consent["givenAs"],
         }
         : null,
+      toolsEnabled: deps.toolsEnabled,
     });
     if (!parsed.success) return problem(c, "INTERNAL_ERROR", 500);
     return committed

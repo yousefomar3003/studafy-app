@@ -28,6 +28,7 @@ import { PostgresStudyRepository } from "../study/repository";
 import { createStudyRoutes } from "../study/routes";
 import { PostgresAiAccessRepository } from "../study/aiAccess";
 import { createAiConsentRoutes } from "../study/aiConsentRoutes";
+import { createMessagingSwitch } from "../communications/messagingSwitch";
 import { PostgresMaterialRepository } from "../study/material";
 import { createLessonReadingRoutes } from "../study/readingRoutes";
 import {
@@ -696,12 +697,19 @@ export function buildRoutes(platform: Platform) {
   // The AI consent (ADR-0043), appended last in the catalogue.
   const aiConsent = aiAccess && idempotencyDependencies
     ? createAiConsentRoutes(
-      { repository: aiAccess },
+      // The same provider check as the AI routes: without one, the app is
+      // told the tools are off and hides what belongs to them.
+      { repository: aiAccess, toolsEnabled: aiAssistant !== null },
       authorization,
       idempotencyDependencies,
     )
     : undefined;
+  // DL-061: with messaging off server-wide, in front of every module.
+  const messagingSwitch = env.MESSAGING_ENABLED
+    ? undefined
+    : createMessagingSwitch();
   const modules = [
+    messagingSwitch,
     academic,
     schoolAdmin,
     invitations,

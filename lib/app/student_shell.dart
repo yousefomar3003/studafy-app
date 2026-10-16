@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
@@ -8,7 +10,6 @@ import '../core/lazy_indexed_stack.dart';
 import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
-import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -32,7 +33,9 @@ import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 import 'assessment_navigation.dart';
 import 'material_picker.dart';
+import 'school_messaging_switch.dart';
 import 'student_lessons_page.dart';
+import 'student_no_class_yet.dart';
 import 'student_today_page.dart';
 
 class StudentShell extends StatefulWidget {
@@ -79,8 +82,39 @@ class StudentShell extends StatefulWidget {
   State<StudentShell> createState() => _StudentShellState();
 }
 
-class _StudentShellState extends State<StudentShell> {
+class _StudentShellState extends State<StudentShell>
+    with SchoolMessagingSwitch {
   int index = 0;
+
+  /// What the server says this student can use of the AI study tools.
+  /// Null until it has said: nothing about them is shown before then.
+  StudyPlan? _plan;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadPlan());
+  }
+
+  Future<void> _loadPlan() async {
+    final study = widget.study;
+    if (study == null) return;
+    try {
+      final plan = await study.plan();
+      if (mounted) setState(() => _plan = plan);
+    } on Object {
+      // Unread, the tools stay hidden rather than offered and failing.
+    }
+  }
+
+  /// The helper tab: a provider behind it, and the server offering it to
+  /// this student. The preview shell, with no plans, shows it as built.
+  bool get _helperOn =>
+      widget.studyAssistant != null &&
+      (widget.study == null || (_plan?.assistantOn ?? false));
+
+  /// Any AI study tool, and so the plans that sell them.
+  bool get _aiOn => widget.study != null && (_plan?.anyToolOn ?? false);
 
   /// The tab Work opens on; a notification about marks opens Grades.
   AcademicFeed _workFeed = AcademicFeed.assignments;
@@ -88,7 +122,7 @@ class _StudentShellState extends State<StudentShell> {
   /// Opens what a notification is about, in this student's app.
   bool _openNotification(NotificationItem item) {
     final key = item.templateKey;
-    final messagesIndex = 3 + (widget.studyAssistant == null ? 0 : 1);
+    final messagesIndex = 3 + (_helperOn ? 1 : 0);
     final (int, AcademicFeed?)? target = switch (key.split('.').first) {
       'academic' when key.contains('grade') => (2, AcademicFeed.grades),
       'academic' when key.contains('assessment') => (
@@ -191,10 +225,11 @@ class _StudentShellState extends State<StudentShell> {
     );
   }
 
-  /// The Subscription row on the student's profile.
+  /// The Subscription row on the student's profile. The plans are the AI
+  /// study tools, so it is there only when they are.
   SubscriptionEntry? get _subscription {
     final study = widget.study;
-    if (study == null) return null;
+    if (study == null || !_aiOn) return null;
     return SubscriptionEntry(
       open: _openPlans,
       currentPlan: () async => studyPlanCopy[(await study.plan()).tier]!.name,
@@ -237,6 +272,9 @@ class _StudentShellState extends State<StudentShell> {
       consentAccepted: false,
       locale: Localizations.localeOf(context).languageCode,
     );
+    // In a class now: the AI tools may be offered, and the class's school
+    // says whether messaging is on.
+    await _loadPlan();
     if (mounted) setState(() {});
   }
 
@@ -260,7 +298,10 @@ class _StudentShellState extends State<StudentShell> {
     final repository = widget.academic;
     final studentId = ActiveContextController.instance.selectedStudent?.id;
     final messaging = MessagingScope.isAvailable(context);
-    final assistant = widget.studyAssistant;
+    readMessagingSwitch();
+    // Where the school has messaging off, the tab is its announcements.
+    final messages = messagingOn;
+    final assistant = _helperOn ? widget.studyAssistant : null;
     // Today, Lessons, Work, then the two optional tabs in that order.
     final messagesIndex = 3 + (assistant == null ? 0 : 1);
     final pages = <Widget>[
@@ -417,6 +458,7 @@ class _StudentShellState extends State<StudentShell> {
         ConversationsPage(
           visible: index == messagesIndex,
           asRole: MessagingRole.student,
+          showMessages: messages,
         ),
     ];
     final helper = pages.indexWhere((page) => page is StudyAssistantPage);
@@ -426,7 +468,7 @@ class _StudentShellState extends State<StudentShell> {
     if (_hasNoClassYet && classes != null) {
       return Scaffold(
         body: SafeArea(
-          child: _NoClassYet(
+          child: StudentNoClassYet(
             onJoin: _joinClass,
             actions: [AccountButton(subscription: _subscription)],
           ),
@@ -486,94 +528,22 @@ class _StudentShellState extends State<StudentShell> {
                       Icons.auto_awesome_outlined,
                       Icons.auto_awesome_rounded,
                     ),
-                  if (messaging)
+                  if (messaging && messages)
                     StudafyNavItem(
                       AppL10n.of(context).navMessages,
                       Icons.send_outlined,
                       Icons.send_rounded,
+                    )
+                  else if (messaging)
+                    StudafyNavItem(
+                      AppL10n.of(context).navAnnouncements,
+                      Icons.campaign_outlined,
+                      Icons.campaign_rounded,
                     ),
                 ],
                 accent: studafyNavy,
               ),
             ),
-    );
-  }
-}
-
-/// The student home before they are in any class.
-///
-/// Deliberately the whole screen rather than a banner over empty feeds: a
-/// grades tab and an assignments tab that are both empty for the same reason
-/// tell a new student nothing, and every one of them would have to explain
-/// the same single next step.
-class _NoClassYet extends StatelessWidget {
-  const _NoClassYet({required this.onJoin, required this.actions});
-
-  final Future<void> Function() onJoin;
-  final List<Widget> actions;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 8, 4),
-          child: Row(
-            children: [const StudafyLogo(size: 26), const Spacer(), ...actions],
-          ),
-        ),
-        Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: FeatureCard(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      const IconBadge(icon: Icons.group_add_rounded, size: 72),
-                      const SizedBox(height: 20),
-                      Text(
-                        l10n.onboardingStudentTitle,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: studafyInk,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -.4,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        l10n.onboardingStudentBody,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: studafyMuted,
-                          height: 1.45,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: onJoin,
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52),
-                          ),
-                          icon: const Icon(Icons.group_add_rounded),
-                          label: Text(l10n.joinClassAction),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

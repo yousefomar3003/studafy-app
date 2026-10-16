@@ -82,6 +82,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.LOG_SAMPLE_ROUTINE_RATE).toBe(0.01);
     // ADR-0034: on only at launch, after the DPA and DPIA.
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
+    // DL-049, DL-061: no messaging until the moderation gate is met.
+    expect(env.MESSAGING_ENABLED).toBe(false);
     // Security audit 2026-10-08: never X-Forwarded-For in production.
     expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
     // Launch plan 2.2: AI calls need longer than the 10 s default.
@@ -208,6 +210,8 @@ describe("Fly configs pass production validation", () => {
     expect(api.ENVIRONMENT).toBe("development");
     // *.fly.dev has no Cloudflare in front: Fly's own header only.
     expect(api.CLIENT_IP_SOURCE).toBe("fly");
+    // Messaging is tried on the test copy, with synthetic schools (DL-061).
+    expect(api.MESSAGING_ENABLED).toBe("true");
     expect(() =>
       enforceApiFailClosed(parseEnv(apiEnvSchema, { ...api, ...secrets }))
     ).not.toThrow();
@@ -298,6 +302,7 @@ describe("production Fly apps (launch plan A6, C11)", () => {
       "https://api.studafy.com",
     );
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe("false");
+    expect(env.MESSAGING_ENABLED).toBe("false");
   });
 
   test("the worker: production mode, executors on, retention purge off", async () => {

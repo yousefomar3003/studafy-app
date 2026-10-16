@@ -16,3 +16,9 @@ nullable-getter: false
 # An Arabic key missing from app_ar.arb falls back to English silently, so
 # CI compares the two files directly instead of trusting this warning.
 untranslated-messages-file: lib/l10n/untranslated.json
+# The Arabic copy keeps Latin plan names ("Family+") inside left-to-right
+# isolates (U+2066 ... U+2069) so a right-to-left line does not reorder them.
+# Codegen writes the isolates as characters, which the analyzer flags as a
+# hidden change of direction; here they are meant, so only these generated
+# files carry the ignore.
+header: "// ignore_for_file: text_direction_code_point_in_literal, text_direction_code_point_in_comment"

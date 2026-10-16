@@ -54,9 +54,16 @@ class AiConsentState {
     this.version,
     this.givenAt,
     this.givenByGuardian = false,
+    this.toolsEnabled = true,
   });
 
   final AiAccess access;
+
+  /// The server runs the AI study tools at all. False without an AI
+  /// provider: then nothing about them is shown, to anyone - this switch,
+  /// the plans, the helper, a teacher's "reading for the AI helper". True
+  /// when an older server does not say.
+  final bool toolsEnabled;
 
   /// The notice a consent must be for now.
   final String? version;

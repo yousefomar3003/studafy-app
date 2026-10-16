@@ -21,6 +21,7 @@ class GuardianChild {
     required this.schoolName,
     required this.status,
     this.expiresAt,
+    this.messagingEnabled = true,
   });
 
   final String linkId;
@@ -30,6 +31,11 @@ class GuardianChild {
   final String schoolName;
   final GuardianLinkStatus status;
   final DateTime? expiresAt;
+
+  /// Whether the child's school has messaging switched on, as the server
+  /// enforces it (DL-049). The app offers no messaging for a school that
+  /// has it off. True when an older server does not say.
+  final bool messagingEnabled;
 
   bool get isVerified =>
       status == GuardianLinkStatus.verified &&

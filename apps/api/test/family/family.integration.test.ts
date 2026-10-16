@@ -297,6 +297,32 @@ suite("API-042 S3 family over the real /v1 stack", () => {
     expect(((await theirs.json()) as { items: unknown[] }).items).toEqual([]);
   });
 
+  test("each link says whether the child's school has messaging on", async () => {
+    const read = async () => {
+      const res = await app.request("/v1/me/guardian-links", {
+        headers: { "x-test-subject": GUARDIAN },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json() as {
+        items: { messagingEnabled?: boolean }[];
+      };
+      return body.items[0]?.messagingEnabled;
+    };
+    // No controls row: the server's own fail-closed default.
+    await sql`
+      delete from public.school_content_controls
+      where school_id = ${SCHOOL}::uuid`;
+    expect(await read()).toBe(false);
+    await sql`
+      insert into public.school_content_controls (school_id, messaging_enabled)
+      values (${SCHOOL}::uuid, true)`;
+    expect(await read()).toBe(true);
+    await sql`
+      update public.school_content_controls set messaging_enabled = false
+      where school_id = ${SCHOOL}::uuid`;
+    expect(await read()).toBe(false);
+  });
+
   test("the student can remove previously granted access", async () => {
     const res = await post(
       `/v1/guardian-links/${guardianLinkId}/student-decision`,

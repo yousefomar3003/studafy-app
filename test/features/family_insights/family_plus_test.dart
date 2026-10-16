@@ -176,7 +176,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Family+ لـ سارة'), findsOne);
+    // The plan's Latin name is kept left to right inside the Arabic line.
+    expect(find.text('\u2066Family+\u2069 لـ سارة'), findsOne);
     expect(find.text('استعادة المشتريات'), findsOne);
   });
 }

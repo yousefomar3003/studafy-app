@@ -103,14 +103,14 @@ select is(
   'Rana Haddad',
   'the container is named from the profile when the client sends nothing');
 
--- private.school_messaging_enabled coalesces a missing row to false, so a
--- workspace without one has messaging silently off and, with no school
--- administrator in this product, no way to turn it on.
+-- The workspace has its content controls row, so its messaging switch
+-- exists, but it starts off (DL-061): messaging is launch-blocked (DL-049),
+-- and turning the server-wide switch on must not open every new school.
 select is(
   (select cc.messaging_enabled from public.school_content_controls cc
     join public.memberships m on m.school_id = cc.school_id
    where m.user_id = :'newcomer'),
-  true, 'the workspace can hold a conversation from the first moment');
+  false, 'a new workspace starts with messaging off');
 select is(
   (select cc.content_filter_level from public.school_content_controls cc
     join public.memberships m on m.school_id = cc.school_id

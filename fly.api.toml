@@ -45,6 +45,9 @@ primary_region = "fra"
   # ADR-0034: set to "true" at launch, once the provider DPA and the minors'
   # DPIA are signed. Until then the lesson AI answers AI_FEATURE_DISABLED.
   AI_LESSON_TOOLS_ENABLED = "false"
+  # DL-049, DL-061: messaging stays off until SAFE-043's moderation gate is
+  # met (named report reviewers, B9). Off, no school can message.
+  MESSAGING_ENABLED = "false"
 
 [http_service]
   internal_port = 8080

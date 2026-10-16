@@ -90,8 +90,16 @@ class StudyPlan {
 
   bool _on(String feature) => available?.contains(feature) ?? true;
 
+  /// Any AI study tool is here for this account. When none is - a server
+  /// with no AI provider, or an account the tools are not for - nothing
+  /// about them is shown: not the helper, not the plans that sell them.
+  bool get anyToolOn => available == null || available!.isNotEmpty;
+
   /// The question box has an AI provider behind it.
   bool get assistantOn => _on('ask');
+
+  /// Notes from a photo of the whiteboard can be made on this server.
+  bool get whiteboardOn => _on('whiteboard');
 
   /// Quizzes and flashcards are switched on for this server.
   bool get studySetsOn => _on('quiz') && _on('flashcards');

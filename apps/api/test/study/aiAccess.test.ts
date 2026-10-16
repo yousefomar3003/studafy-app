@@ -77,7 +77,10 @@ const assistant = {
   },
 } as unknown as StudyAssistant;
 
-function app(aiAccess: AiAccessRepository): Hono<AuthorizationEnv> {
+function app(
+  aiAccess: AiAccessRepository,
+  toolsEnabled = true,
+): Hono<AuthorizationEnv> {
   const app = new Hono<AuthorizationEnv>();
   app.use("*", async (c, next) => {
     c.set("requestId", crypto.randomUUID());
@@ -190,7 +193,11 @@ function app(aiAccess: AiAccessRepository): Hono<AuthorizationEnv> {
   );
   app.route(
     "/",
-    createAiConsentRoutes({ repository: aiAccess }, authorization, idempotency),
+    createAiConsentRoutes(
+      { repository: aiAccess, toolsEnabled },
+      authorization,
+      idempotency,
+    ),
   );
   return app;
 }
@@ -355,6 +362,7 @@ describe("the consent routes", () => {
         givenAt: "2026-10-15T10:00:00.000Z",
         givenAs: "self",
       },
+      toolsEnabled: true,
     });
     const withdrawn = await post(target, "/v1/me/study-tools-consent", {
       given: false,
@@ -362,6 +370,16 @@ describe("the consent routes", () => {
     expect(withdrawn.status).toBe(200);
     expect(calls.map(([op]) => op)).toEqual(["give", "withdraw"]);
     expect(calls[0]![1]).toEqual({ version: "2026-10-15", locale: "ar" });
+  });
+
+  test("says whether the server runs the AI tools at all", async () => {
+    for (const toolsEnabled of [true, false]) {
+      const res = await app(fakeAiAccess("not_student"), toolsEnabled)
+        .request("/v1/me/study-tools-consent");
+      expect(res.status).toBe(200);
+      const body = await res.json() as { toolsEnabled: boolean };
+      expect(body.toolsEnabled).toBe(toolsEnabled);
+    }
   });
 
   test("agreeing without saying which notice is refused", async () => {

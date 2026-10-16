@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 import '../../support/localized_app.dart';
 
@@ -53,6 +54,36 @@ class _MaterialsFake implements AcademicRepository {
 }
 
 void main() {
+  // "Reading for the AI helper" is about the AI study tools: shown only on a
+  // server that runs them (2026-10-16).
+  for (final aiReading in [false, true]) {
+    testWidgets('the AI reading sheet is offered only with the AI tools on '
+        '($aiReading)', (tester) async {
+      for (final locale in const [Locale('en'), Locale('ar')]) {
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(
+          localizedApp(
+            locale: locale,
+            home: AcademicOverviewPage(
+              repository: _LessonFake(),
+              classroomId: 'class-1',
+              teacherTools: true,
+              aiReading: aiReading,
+              initialFeed: AcademicFeed.content,
+              availableFeeds: const [AcademicFeed.content],
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byTooltip(lookupAppL10n(locale).readingTitle),
+          aiReading ? findsOneWidget : findsNothing,
+          reason: locale.languageCode,
+        );
+      }
+    });
+  }
+
   testWidgets(
     'a teacher takes a file off set work, keeping it for the school',
     (tester) async {
@@ -95,4 +126,36 @@ void main() {
       expect(find.text('Material updated.'), findsOneWidget);
     },
   );
+}
+
+/// A lesson with a file, in a class's Teaching list.
+class _LessonFake implements AcademicRepository {
+  @override
+  Future<List<AcademicRecord>> load(
+    AcademicFeed feed, {
+    String? classroomId,
+    String? studentId,
+  }) async => [
+    const AcademicRecord(
+      id: 'lesson-1',
+      title: 'Fractions',
+      detail: 'Read the notes',
+      state: 'published',
+      version: 1,
+      classroomId: 'class-1',
+      attachments: [
+        StoredAttachment(
+          id: 'file-1',
+          displayName: 'notes.pdf',
+          sizeBytes: 10,
+          scanState: 'clean',
+          mediaType: 'application/pdf',
+        ),
+      ],
+    ),
+  ];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} is not faked');
 }
