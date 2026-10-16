@@ -9,12 +9,22 @@
  *
  * Everything product-shaped goes through the real /v1 API over HTTP, as the
  * app sends it. The only other calls are Supabase Auth's admin API (to
- * create the accounts with a password, since the app itself only offers
- * Google, Microsoft and Apple) and the `record_policy_consent` RPC the app
- * calls when someone ticks the terms box.
+ * create the accounts with a password, as Studafy provisions reviewer
+ * accounts, after registering each address with
+ * `allow_provisioned_email_account`) and the `record_policy_consent` RPC the
+ * app calls when someone ticks the terms box.
  *
  *   bun --no-env-file scripts/store/seed-store-school.ts \
- *     --workdir <throwaway stack dir> --api http://127.0.0.1:8095
+ *     --workdir <throwaway stack dir> --api http://127.0.0.1:8095 \
+ *     [--messaging on]
+ *
+ * Messaging stays off, as at launch (DL-049, DL-061): a new school starts
+ * with its switch off and the API runs with MESSAGING_ENABLED off, so no
+ * conversation is seeded. For pictures of messaging once it launches, start
+ * the API and run this with `--messaging on`: the school's switch is then
+ * turned on (a second direct database write) and the teacher-parent
+ * conversation seeded. AI is off when the API has no AI key, as
+ * scripts/store/local-api.ts starts it.
  *
  * Names are fictional and every email is at synthetic.studafy.test. Run it
  * on a freshly reset throwaway stack: it is not idempotent.
@@ -43,6 +53,25 @@ let sql: postgres.Sql;
 // --- Auth (Supabase) ----------------------------------------------------------
 
 async function createUser(email: string, name: string): Promise<string> {
+  // Email sign-up is refused unless the service role registered the address
+  // minutes before (migration 202610150050).
+  const allowed = await fetch(
+    `${supabaseUrl}/rest/v1/rpc/allow_provisioned_email_account`,
+    {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ requested_email: email }),
+    },
+  );
+  if (!allowed.ok) {
+    throw new Error(
+      `allow ${email}: ${allowed.status} ${await allowed.text()}`,
+    );
+  }
   const res = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
     method: "POST",
     headers: {
@@ -419,16 +448,26 @@ async function seedSchool(locale: Locale, c: SchoolContent): Promise<Json> {
       important: item.important,
     });
   }
-  const conversation = await parent.post("/v1/conversations", {
-    schoolId,
-    participantIds: [teacher.id],
-  });
-  for (const [from, body] of c.conversation) {
-    const who = from === "teacher" ? teacher : parent;
-    await who.post(`/v1/conversations/${conversation["id"]}/messages`, {
-      clientMessageId: crypto.randomUUID(),
-      body,
+  if (arg("--messaging") === "on") {
+    // The second direct database write: the school's own messaging switch,
+    // off when a teaching space is made (DL-061). Only a school
+    // administrator - of whom this release has none - may change it through
+    // the API.
+    await sql`
+      update public.school_content_controls set messaging_enabled = true
+      where school_id = ${schoolId}::uuid
+    `;
+    const conversation = await parent.post("/v1/conversations", {
+      schoolId,
+      participantIds: [teacher.id],
     });
+    for (const [from, body] of c.conversation) {
+      const who = from === "teacher" ? teacher : parent;
+      await who.post(`/v1/conversations/${conversation["id"]}/messages`, {
+        clientMessageId: crypto.randomUUID(),
+        body,
+      });
+    }
   }
   await student.post(`/v1/classrooms/${maths}/notebook`, {
     title: c.note.title,

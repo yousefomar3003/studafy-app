@@ -507,20 +507,46 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 
 ### What was taken
 
-The real app (a debug build), signed in to a synthetic school, on an
-**iPhone 18 Pro Max simulator** (iOS 27). That is the 6.9" App Store size,
-1320 × 2868. The status bar is set to 9:41 with full bars.
+The real app (a debug build), signed in to a synthetic school, as it is at
+launch: **AI off and messaging off.** Since PR #86 the app shows nothing
+the server has switched off, so these pictures show what a real user sees:
+
+- **No AI:** no Helper tab, no plans, no study tools, no AI buttons in the
+  notebook. The API ran with no AI key, so nothing was sent to a provider.
+- **No messaging:** messaging is off, as it is at launch (DL-049, DL-061):
+  the API ran with `MESSAGING_ENABLED` off and a new school starts with its
+  own switch off. The student's and the teacher's last tab is the school's
+  **Announcements**, and the parent has no Messages tab and no "Message a
+  teacher".
+
+Two sets, the same walk on each:
+
+- **App Store:** an **iPhone 18 Pro Max simulator** (iOS 27), 1320 × 2868,
+  the 6.9" size. The status bar is overridden to 9:41 with full bars.
+  `ios/en/<name>-en.png` and `ios/ar/<name>-ar.png`.
+- **Google Play:** an **Android 16 emulator** (Google APIs, arm64) set to a
+  **1080 × 2160** phone screen at 420 dpi. That is exactly 2:1, the longest
+  Play allows (the iPhone's 2868 / 1320 is 2.17, and the stock 1080 × 2400
+  Pixel profiles are 2.22). The status bar is in Android's demo mode: 9:41,
+  full battery and Wi-Fi, no notifications, no mobile icon. Navigation is
+  by gesture, so only the thin handle shows. `android/en/<name>-en.png` and
+  `android/ar/<name>-ar.png`, the Play launch set only.
+
+Both:
 
 - **Data:** the school is seeded through the real `/v1` API. Its local API
   runs on a throwaway Supabase stack, never the working database or the
   hosted one.
-- **AI:** off. There is no AI key and nothing was sent to a provider.
 - **Names:** every name is fictional, and every email is at
   `synthetic.studafy.test`.
-
-Each picture exists in English (`ios/en/<name>-en.png`) and Arabic
-(`ios/ar/<name>-ar.png`). The Arabic school has its own Arabic content, so
-every Arabic picture is right to left throughout.
+- **Arabic:** the Arabic school has its own Arabic content, so every Arabic
+  picture is right to left throughout. "Family+" in the parent's tab bar
+  reads correctly (it showed as "+Family" before PR #86), and the due-date
+  time zone reads "(Asia/Amman)". The status bar stays in the device's
+  language.
+- **Format:** 24-bit RGB PNG with no alpha channel, as both stores ask.
+  `scripts/store/compress-screenshots.ts` removed the simulator's alpha
+  channel losslessly.
 
 | # | Name | Shows |
 |---|---|---|
@@ -529,7 +555,7 @@ every Arabic picture is right to left throughout.
 | 3 | `teacher-3-lessons` | Teaching: published lessons |
 | 4 | `teacher-4-grade-sheet` | A paper test's grade sheet: published marks, weight, corrections |
 | 5 | `teacher-5-online-exam` | An online exam's submissions to mark; absences never count as zero |
-| 6 | `teacher-6-messages` | A conversation with a parent |
+| 6 | `teacher-6-messages` | A conversation with a parent (not taken: messaging is off) |
 | 7 | `student-1-today` | Student home: quick actions and classes |
 | 8 | `student-2-notebook` | The student's own notebook for a class |
 | 9 | `student-3-homework` | Homework to do, with due dates |
@@ -538,45 +564,18 @@ every Arabic picture is right to left throughout.
 | 12 | `parent-1-today` | Parent home: the linked child |
 | 13 | `parent-2-progress` | The child's average of published marks and attendance |
 | 14 | `parent-3-announcements` | Class announcements, one marked important |
-| 15 | `parent-4-messages` | The same conversation, from the parent's side |
+| 15 | `parent-4-messages` | The same conversation, from the parent's side (not taken: messaging is off) |
 
 **Launch set** (decision 7). Google Play shows up to 8 phone screenshots;
-the App Store takes up to 10 per language. Play: 1, 5, 4, 11, 9, 10, 12, 14.
-App Store: the same, then 13 and 2. Add 6 and 15 when messaging is on.
+the App Store takes up to 10 per language.
 
-**What the owner should know before using them:**
+- **Google Play:** 1, 5, 4, 11, 9, 10, 12, 14, from `android/`.
+- **App Store:** the same from `ios/`, then 13 and 2.
 
-- **AI and plan upsells are visible** in some pictures, because the app shows
-  them even with AI switched off:
-  - the student tab bar has a **Helper** tab (pictures 7, 9, 10);
-  - the notebook (8) shows locked Studafy Plus buttons ("Snap the
-    whiteboard", "Summarise selected materials").
-
-  If AI and Plus are off at launch (B1), Apple may ask about features that
-  cannot be used. Either hide the tab and the locked buttons in a
-  no-AI build and retake the pictures, or leave out 7–10 and use 11.
-- **Arabic layout:** in the Arabic homework list (9) the time zone after a
-  due date shows as "(Asia/ Amman)", with the brackets split by the
-  right-to-left layout. It is a small app bug; fix it before taking the
-  final pictures.
-- **Google Play cannot take these as they are.** Play allows a long side of
-  at most twice the short side, and 2868 / 1320 is 2.17. They also show an
-  iPhone status bar. Play needs its own pictures (see below), or these
-  cropped to 1320 × 2640, which cuts off the status bar and the tab bar.
-- **Format:** 24-bit PNG with no alpha channel, as both stores ask. The
-  simulator's alpha channel was removed by
-  `scripts/store/compress-screenshots.ts`; the pictures are otherwise
-  unchanged (lossless).
-
-### Android
-
-Not taken. The machine was shared with other agents running two more
-simulators and Xcode builds, with load averages between 250 and 880, so an
-Android emulator and a Gradle build on top were not cheap. To take them
-later, add an Android branch to `scripts/store/capture-ios.sh`. The test
-itself, `integration_test/store_screenshots_test.dart`, is
-platform-neutral. Use `adb exec-out screencap -p` in place of
-`simctl io screenshot`, with the emulator's demo mode for a clean status bar.
+`ios/` also has 3, 7 and 8, which are not in the launch set. When messaging
+launches, take 6 and 15 (start the API and seed with `--messaging on`),
+and retake the pictures whose tab bars change: 1, 9, 10, 12 and 14. When AI
+launches, retake the student pictures.
 
 ### Taking them again
 
@@ -588,17 +587,36 @@ From the repo root:
    `bunx supabase start --workdir <dir>` (or `db reset` on an existing one).
 2. Start the API:
    `bun --no-env-file scripts/store/local-api.ts --workdir <dir> --port 8095`.
+   It has no AI key, so the AI tools are off, and messaging is off as in
+   production; add `--messaging on` for pictures of messaging.
 3. Seed:
-   `bun --no-env-file scripts/store/seed-store-school.ts --workdir <dir>`.
-4. Boot an iPhone Pro Max simulator, then run
+   `bun --no-env-file scripts/store/seed-store-school.ts --workdir <dir>`
+   (with `--messaging on` to match the API).
+4. **App Store:** boot an iPhone Pro Max simulator, then run
    `scripts/store/capture-ios.sh <dir> <simulator udid> en`, and the same
-   with `ar`. Re-seed between runs, because the student starts the exam.
-5. Remove the alpha channel (App Store Connect refuses it):
+   with `ar`.
+5. **Google Play:** boot one phone emulator whose AVD `config.ini` has
+   `hw.lcd.width=1080` and `hw.lcd.height=2160`. Give it a minute after
+   booting, then run
+   `scripts/store/capture-android.sh <dir> emulator-5554 en` (and `ar`).
+   - It needs JAVA_HOME; Android Studio's `jbr` works.
+   - It keeps every screen it walks: keep only the eight of the launch set.
+6. **Between runs:** reset and re-seed between devices, because the student
+   starts the exam. Each language's school is separate, so `en` then `ar`
+   on one seed is fine. `STORE_ONLY=teacher` or `STORE_ONLY=parent` repeats
+   a walk that changes nothing.
+7. **Look at every picture.** On a loaded machine, a screen can be caught
+   showing "could not be loaded", or with a "System UI isn't responding"
+   dialog and no demo clock. Run that walk again.
+8. **Remove the alpha channel** (App Store Connect refuses it):
    `bun add --no-save sharp@0.34 && bun scripts/store/compress-screenshots.ts`.
+   Add `docs/store/screenshots/android` to do the Play set.
 
-The seed makes one direct database write: it moves the enrolment start
-dates back to the start of term, so past attendance can be recorded. The
-seed script explains why.
+The seed makes one direct database write, explained in the script: it
+moves the enrolment start dates back to the start of term, so past
+attendance can be recorded. With `--messaging on` it makes a second: it
+turns the school's own messaging switch on, which only a school
+administrator may change through the API, and this release has none.
 
 ---
 

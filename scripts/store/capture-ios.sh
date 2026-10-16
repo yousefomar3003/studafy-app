@@ -68,7 +68,17 @@ flutter drive \
     case "$line" in
       *"STORE_SHOT "*)
         name="${line##*STORE_SHOT }"
-        xcrun simctl io "$device" screenshot --type=png "$out/$name.png" >/dev/null 2>&1
+        # Into the scratch directory first, then moved: the simulator may not
+        # replace an existing file in the repo ("You don't have permission to
+        # save"). stdin from /dev/null, or simctl reads the test's output;
+        # and a busy simulator can refuse once, so it is asked up to three
+        # times rather than ending the whole run.
+        for _ in 1 2 3; do
+          xcrun simctl io "$device" screenshot --type=png \
+            "$handshake/$name.png" </dev/null >/dev/null && break
+          sleep 1
+        done
+        mv -f "$handshake/$name.png" "$out/$name.png"
         echo "  -> $out/$name.png"
         touch "$handshake/$name.done"
         ;;
