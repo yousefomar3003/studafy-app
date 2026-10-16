@@ -1,8 +1,8 @@
 # Handoff: Studafy
 
 Updated: 2026-10-15, evening. `main` is still at `4f18c85` (PR #51): nothing
-was merged or deployed today. **Open: PRs #52–#76, the grades-list PR,
-and one branch not yet pushed (section 1).** The test worker still runs
+was merged or deployed today. **Open: PRs #52–#77, and one branch not yet
+pushed (section 1).** The test worker still runs
 #55's branch.
 
 ## Start here (2026-10-15, evening)
@@ -24,7 +24,7 @@ merged.
    1. #54 (this handoff, DL-058) first: #61 adds DL-059 and #72 DL-060 to
       the same table.
    2. #55 → #63 → #74 (file refusals).
-   3. #53 → #65 → the grades-list PR (capacity; see table).
+   3. #53 → #65 → #77 (capacity).
    4. #61 → #62 (Android internal-testing build; #61 changes the SEC-001
       guards and needs your explicit approval; #62 declares
       `ITSAppUsesNonExemptEncryption = false` — confirm that is true for
@@ -103,7 +103,7 @@ merged.
 | #75 | — | "Sign in with email" for Studafy-provisioned accounts; new email sign-ups refused; review school script |
 | #76 | DPIA D1–D4 | AI only for students in a class; separate AI consent (parent for managed children); names replaced before the model (ADR-0043) |
 | not pushed | capacity | Notebook writing on the worker queue (`feat/notebooks-on-worker`) |
-| in progress | capacity | Capacity fix 6: the grades list a page at a time (`feat/capacity-grades-paging`, on #65; commit `3af9bf5` local, proof and benchmarks were still running at writing — check `gh pr list` for it) |
+| #77 | capacity | Capacity fix 6: the grades list a page at a time, about 2.5× cheaper per call, zero differences; throughput change within noise (`docs/capacity/2026-10-16.md`) |
 
 ### 3. The test-copy deploy batch (Claude, after the merges and your "go")
 1. Back up: `gh workflow run backup.yml`, and wait for the restore check.
@@ -150,8 +150,9 @@ script on this Mac.**
     set).
   - `GoogleService-Info.plist` must be added to the Runner target when the
     Firebase file arrives (C3).
-  - Capacity: finish or check fix 6 (grades) if its PR is missing; then
-    `study_lesson` (about 5% of database time).
+  - Capacity: `study_lesson` (about 5%): its cost is the access check
+    `can_view_resource_publication`, which needs restating as a set query
+    with its own proof.
 - Then part A of the launch plan as decisions arrive (C-steps), and Axiom
   monitors by environment once production exists.
 
