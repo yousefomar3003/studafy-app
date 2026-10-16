@@ -11,13 +11,20 @@ import '../domain/push_registrar.dart';
 /// iPhone. The server keeps the token against the signed-in account and
 /// drops it when Firebase says it is dead.
 ///
-/// Off unless the build says `PUSH_ENABLED=true`. Firebase's app config then
-/// comes from one of two places (docs/deployment/push-notifications.md):
+/// On when the build carries Firebase's config, off without it
+/// ([pushEnabledFor]). The config comes from one of two places
+/// (docs/deployment/push-notifications.md):
 ///
 /// * the `FIREBASE_*` dart-defines below, which need no change to the
-///   native projects; or
+///   native projects and turn push on by themselves; or
 /// * the native files (android/app/google-services.json, and
-///   ios/Runner/GoogleService-Info.plist added to the Runner target).
+///   ios/Runner/GoogleService-Info.plist added to the Runner target), which
+///   the app cannot see from Dart, so they also need `PUSH_ENABLED=true`.
+///
+/// `PUSH_ENABLED=false` keeps push off whatever is configured. A build
+/// without any of it starts normally and only skips push; in-app
+/// notifications are unaffected. Any Firebase failure is swallowed the same
+/// way, so a wrong config can never stop the app.
 ///
 /// Both are the app's public Firebase identifiers, not secrets. The server's
 /// service-account key never comes near the app: it lives only in the
@@ -27,7 +34,10 @@ class FirebasePushRegistrar implements PushRegistrar {
 
   final V1ApiClient _client;
 
-  static const enabled = bool.fromEnvironment('PUSH_ENABLED');
+  static final enabled = pushEnabledFor(
+    pushEnabled: const String.fromEnvironment('PUSH_ENABLED'),
+    hasFirebaseDefines: firebaseOptionsFromDefines() != null,
+  );
 
   String? _token;
   StreamSubscription<String>? _refresh;
@@ -124,3 +134,16 @@ FirebaseOptions? firebaseOptionsFromDefines() {
     iosBundleId: Platform.isIOS && iosBundleId.isNotEmpty ? iosBundleId : null,
   );
 }
+
+/// Whether push runs: `PUSH_ENABLED=true` always (native config files),
+/// `PUSH_ENABLED=false` never, and unset only when the `FIREBASE_*`
+/// defines are complete for this platform, so adding them to the release
+/// defines is the whole switch.
+bool pushEnabledFor({
+  required String pushEnabled,
+  required bool hasFirebaseDefines,
+}) => switch (pushEnabled) {
+  'true' => true,
+  'false' => false,
+  _ => hasFirebaseDefines,
+};

@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(15);
+select plan(21);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
@@ -24,7 +24,19 @@ from unnest(array[:'teacher_user', :'guardian_user', :'student_user']::uuid[]) r
 
 select ok(not has_function_privilege('studafy_api_runtime', 'private.channel_claim(text,integer)', 'execute'),
   'the API cannot read recipient addresses');
-select ok(private.channel_fanout(1000) >= 2, 'the fan-out creates channel deliveries');
+-- DL-070: the worker fans out only to channels it has a sender for.
+select ok(has_function_privilege('studafy_worker_runtime', 'private.channel_fanout(integer,text[])', 'execute'),
+  'the worker may fan out per channel');
+select ok(not has_function_privilege('studafy_api_runtime', 'private.channel_fanout(integer,text[])', 'execute'),
+  'the API may not fan out');
+select is(private.channel_fanout(1000, array[]::text[]), 0, 'with no channel configured nothing is fanned out');
+select throws_ok($$select private.channel_fanout(10, array['sms'])$$, '22023', 'Unknown channel',
+  'an unknown channel is refused');
+select ok(private.channel_fanout(1000, array['email']) >= 1, 'email only: the opted-in email delivery is created');
+select is((select count(*) from public.notification_deliveries d join public.notification_outbox o on o.id = d.outbox_id
+  where o.source_event_id = 'dl053-evt' and d.channel = 'push'), 0::bigint,
+  'email only: no push delivery is created');
+select ok(private.channel_fanout(1000) >= 1, 'the fan-out creates the remaining channel deliveries');
 
 select is((select count(*) from public.notification_deliveries d join public.notification_outbox o on o.id = d.outbox_id
   where o.source_event_id = 'dl053-evt' and d.channel = 'push' and d.recipient_id = :'guardian_user'), 1::bigint,

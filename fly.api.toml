@@ -53,6 +53,12 @@ primary_region = "fra"
   # The switch stays so messaging can be turned off for everyone fast:
   # "false" and redeploy, and no school can start a conversation or send.
   MESSAGING_ENABLED = "true"
+  # DL-070: store billing is on, and runs once a store's keys are complete
+  # (billingActive in packages/config): the APPLE_* set for the App Store,
+  # the GOOGLE_* set for Play, imported as secrets. Until then no billing
+  # route is mounted and the app's plan pages say payments are not set up.
+  PAY071_BILLING_ENABLED = "true"
+  PAY071_ENVIRONMENT = "production"
 
 [http_service]
   internal_port = 8080

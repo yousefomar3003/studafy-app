@@ -40,6 +40,7 @@ import { createInterface } from "node:readline/promises";
 import { resolve } from "node:path";
 import {
   apiEnvSchema,
+  billingStoresConfigured,
   enforceApiFailClosed,
   enforceWorkerFailClosed,
   parseEnv,
@@ -124,9 +125,12 @@ export const REQUIRED_SECRETS: Record<AppKey, readonly string[]> = {
   ],
 };
 
-/** Store billing (PAY-071): used once PAY071_BILLING_ENABLED is switched on. */
+/**
+ * Store billing (PAY-071). PAY071_BILLING_ENABLED and PAY071_ENVIRONMENT
+ * are configuration in fly.api.toml and fly.worker.toml (DL-070), so not
+ * secrets; billing runs once the APPLE_* or the GOOGLE_* set is complete.
+ */
 const BILLING = [
-  "PAY071_ENVIRONMENT",
   "APPLE_BUNDLE_ID",
   "APPLE_ENVIRONMENT",
   "APPLE_APP_APPLE_ID",
@@ -140,7 +144,11 @@ const BILLING = [
   "GOOGLE_PUBSUB_AUDIENCE",
 ] as const;
 
-/** Imported when present; each waits for its own switch in the Fly config. */
+/**
+ * Imported when present. Their switches are on in the Fly configs (DL-070),
+ * so each feature starts once its names are here: email with the Resend
+ * pair, push with the Firebase pair, billing with a complete store set.
+ */
 export const OPTIONAL_SECRETS: Record<AppKey, readonly string[]> = {
   scanner: [],
   worker: [
@@ -326,7 +334,7 @@ export function planSecrets(secrets: Secrets, flyEnvs: FlyEnvs): SecretPlan {
     flyEnvs.worker["NOTIFICATION_CHANNELS_ENABLED"] !== "true"
   ) {
     warnings.push(
-      "Email/push secrets will be stored but stay unused until NOTIFICATION_CHANNELS_ENABLED is switched on in fly.worker.toml (a reviewed PR)",
+      'Email/push secrets will be stored but stay unused: NOTIFICATION_CHANNELS_ENABLED is not "true" in fly.worker.toml (it is on since DL-070)',
     );
   }
   if (
@@ -334,8 +342,20 @@ export function planSecrets(secrets: Secrets, flyEnvs: FlyEnvs): SecretPlan {
     flyEnvs.api["PAY071_BILLING_ENABLED"] !== "true"
   ) {
     warnings.push(
-      "Billing secrets will be stored but stay unused until PAY071_BILLING_ENABLED is switched on in fly.api.toml and fly.worker.toml (a reviewed PR)",
+      'Billing secrets will be stored but stay unused: PAY071_BILLING_ENABLED is not "true" in fly.api.toml (it is on since DL-070)',
     );
+  }
+  if (BILLING.some((name) => perApp.api.has(name))) {
+    const named = Object.fromEntries(perApp.api);
+    const stores = billingStoresConfigured({
+      ...named,
+      PAY071_BILLING_ENABLED: true,
+    });
+    if (!stores.apple && !stores.google) {
+      warnings.push(
+        "Billing stays off: neither store's set is complete (App Store: APPLE_BUNDLE_ID, APPLE_ENVIRONMENT, APPLE_ISSUER_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, APPLE_ROOT_CERTIFICATES_BASE64; Play: GOOGLE_PACKAGE_NAME, GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL, GOOGLE_PUBSUB_AUDIENCE)",
+      );
+    }
   }
 
   const known = new Set<string>();

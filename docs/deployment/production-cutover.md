@@ -12,6 +12,9 @@ the owner's inputs, and how to roll back. It ties together:
   --confirm-schools <ids>`.
 - `docs/deployment/fly-io.md`, "Production deploy checklist": what each Fly
   config already sets, and the per-app secrets.
+- `docs/deployment/production-features.md`: every feature, whether it is on
+  in production, waiting on a key, or off by decision, what turns it on, and
+  how to check it after this cutover.
 
 Why a cutover and not a fresh start: production uses the existing Frankfurt
 Supabase project `cyrngoqnhqflzovlybbr` (DL-064), the one the test copy uses
@@ -47,16 +50,26 @@ never a value.
 | **AI key** | Together AI. Required: AI is on from launch (DL-062) | `AI_API_KEY` | API, worker |
 | **Resend** (optional) | A verified sending domain on studafy.com | `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS` | worker |
 | **Firebase** (optional) | The push project (`docs/deployment/push-notifications.md`) | `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON` | worker |
-| **Billing** (optional) | App Store Connect and Play Console (C6, C15) | `PAY071_ENVIRONMENT`, `APPLE_*`, `GOOGLE_*` | API, worker |
+| **Billing** (optional) | App Store Connect and Play Console (C6, C15) | the full `APPLE_*` set and/or the full `GOOGLE_*` set (`PAY071_ENVIRONMENT` is in the Fly configs, not here) | API, worker |
 | Admin database login | The `postgres` session connection (direct, or pooler on :5432), only for the cleanup script | `ADMIN_DATABASE_URL` | not imported into any app |
 
-Resend and Firebase keys are stored but do nothing until
-`NOTIFICATION_CHANNELS_ENABLED = "true"` is set in `fly.worker.toml`; billing
-keys likewise until `PAY071_BILLING_ENABLED = "true"` in `fly.api.toml` and
-`fly.worker.toml`. Each switch is its own reviewed PR (and its
-`scripts/fly-config.test.ts` line) with the owner's "go"; the cutover script
-says so when it sees the keys. Names it does not import (such as
-`ADMIN_DATABASE_URL`) are listed by name, never by value.
+The optional features are already switched on in the Fly configs
+(DL-070): `NOTIFICATION_CHANNELS_ENABLED`, `PAY071_BILLING_ENABLED`,
+`PAY071_ENVIRONMENT = "production"` and `PAY071_RECONCILIATION_ENABLED`, all
+pinned by `scripts/fly-config.test.ts`. So each starts as soon as its keys
+are in this file and the app is deployed: email with the Resend pair, push
+with the Firebase pair, billing with one store's complete set. Without them
+the apps start normally and the feature stays off: nothing is fanned out to
+a channel without a sender, and no billing route is mounted (the app says
+payments are not set up). The dry run warns when a store's set is
+incomplete. A name in both a Fly config's `[env]` and this file is refused.
+Names it does not import (such as `ADMIN_DATABASE_URL`) are listed by name,
+never by value.
+
+Turnstile is the exception: `TURNSTILE_ENABLED = "true"` stays a hard
+requirement, and the API refuses to start without `TURNSTILE_SITE_KEY`,
+`TURNSTILE_SECRET` and the `api.studafy.com` hostname (the production build
+contract also requires `TURNSTILE_ENABLED=true`).
 
 The per-app lists are pinned in `scripts/production/cutover.ts`
 (`REQUIRED_SECRETS`, `OPTIONAL_SECRETS`) and by its test against the config
@@ -180,7 +193,8 @@ npx wrangler deploy`) only once step 10 answers, or it reports an outage at
 once. Then send a test alert from the deployed worker
 (`docs/deployment/queue-alerts.md`).
 
-**12. Checks.** Sign in with a real account and with a reviewer account;
+**12. Checks.** Go through `docs/deployment/production-features.md`,
+"After the deploy". Sign in with a real account and with a reviewer account;
 `['studafy-production'] | take 20` in Axiom shows `api` and `worker` lines;
 a Sentry "Send Test Notification" reaches Telegram and email. The release
 app's `STUDAFY_API_URL` is `https://api.studafy.com`, which must equal

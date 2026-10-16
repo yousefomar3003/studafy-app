@@ -252,8 +252,44 @@ describe("per-app secret lists", () => {
     expect(plan.problems).toEqual([]);
     expect(plan.perApp.worker.has("RESEND_API_KEY")).toBe(true);
     expect(plan.perApp.api.has("RESEND_API_KEY")).toBe(false);
-    expect(plan.warnings.join("\n")).toContain("NOTIFICATION_CHANNELS_ENABLED");
+    // DL-070: email and push are switched on in fly.worker.toml, so the
+    // Resend pair is used as soon as it is imported.
+    expect(plan.warnings.join("\n")).not.toContain(
+      "NOTIFICATION_CHANNELS_ENABLED",
+    );
     expect(plan.warnings.join("\n")).toContain("ADMIN_DATABASE_URL");
+  });
+
+  test("billing: on in the Fly configs, and running once a store's set is complete", async () => {
+    const flyEnvs = await envs();
+    // DL-070: configuration, not secrets.
+    expect(flyEnvs.api["PAY071_BILLING_ENABLED"]).toBe("true");
+    expect(flyEnvs.api["PAY071_ENVIRONMENT"]).toBe("production");
+    expect(OPTIONAL_SECRETS.api).not.toContain("PAY071_ENVIRONMENT");
+    const partial = planSecrets(
+      parseSecrets(fileText({
+        ...VALUES,
+        GOOGLE_PACKAGE_NAME: "com.studafy.light",
+      })),
+      flyEnvs,
+    );
+    expect(partial.problems).toEqual([]);
+    expect(partial.warnings.join("\n")).toContain("Billing stays off");
+    const play = planSecrets(
+      parseSecrets(fileText({
+        ...VALUES,
+        GOOGLE_PACKAGE_NAME: "com.studafy.light",
+        GOOGLE_SERVICE_ACCOUNT_JSON: '{"type":"service_account"}',
+        GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL:
+          "pubsub@synthetic.iam.gserviceaccount.com",
+        GOOGLE_PUBSUB_AUDIENCE: "https://api.studafy.com/webhooks/google",
+      })),
+      flyEnvs,
+    );
+    expect(play.problems).toEqual([]);
+    expect(play.warnings.join("\n")).not.toContain("Billing");
+    expect(play.perApp.api.has("GOOGLE_PACKAGE_NAME")).toBe(true);
+    expect(play.perApp.worker.has("GOOGLE_PACKAGE_NAME")).toBe(true);
   });
 });
 

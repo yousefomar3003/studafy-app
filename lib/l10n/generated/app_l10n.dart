@@ -2384,6 +2384,18 @@ abstract class AppL10n {
   /// **'Helper'**
   String get studyAssistantTab;
 
+  /// Helper tab for a student who is not in any class yet, while the AI study tools are on: its title.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a class to use the study helper'**
+  String get studyHelperNeedsClassTitle;
+
+  /// Helper tab for a student who is not in any class yet: what to do.
+  ///
+  /// In en, this message translates to:
+  /// **'The study helper works with your classes and their lessons. Join your teacher\'s class, then ask it anything here.'**
+  String get studyHelperNeedsClassBody;
+
   /// Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link.
   ///
   /// In en, this message translates to:

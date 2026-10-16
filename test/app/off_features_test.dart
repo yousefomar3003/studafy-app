@@ -32,7 +32,9 @@ import '../support/localized_app.dart';
 /// the app and its store pictures show the same thing:
 ///
 /// - no Helper tab, plans or other AI study tools when the server says the
-///   AI is not available to this account (`/v1/me/study-plan` `available`);
+///   AI is not available to this account (`/v1/me/study-plan` `available`),
+///   except that with AI on server-wide (`aiEnabled`) a student in no class
+///   keeps the Helper tab, which says to join a class (2026-10-17);
 /// - no Messages, Inbox or "Message a teacher" where the school has
 ///   messaging switched off (its content controls; a guardian's links).
 ///
@@ -84,6 +86,8 @@ void main() {
       required Locale locale,
       required Set<String> available,
       required bool messaging,
+      bool? aiEnabled,
+      String? aiAccess,
     }) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -99,7 +103,7 @@ void main() {
               repository: const PreviewClassroomRepository(),
               telemetry: const NoopTelemetry(),
             ),
-            study: _Study(available),
+            study: _Study(available, aiEnabled: aiEnabled, aiAccess: aiAccess),
             studyAssistant: StudyAssistantInteractor(
               repository: _Helper(),
               telemetry: const NoopTelemetry(),
@@ -135,12 +139,67 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
+      testWidgets('AI on, no class yet: the Helper tab stays and says to '
+          'join a class (${locale.languageCode})', (tester) async {
+        // The owner's five tabs (2026-10-17): with AI on server-wide a
+        // student always has the Helper tab. The server still refuses the
+        // tools to a student in no class; the tab explains instead.
+        await pump(
+          tester,
+          locale: locale,
+          available: {},
+          aiEnabled: true,
+          aiAccess: 'no_class',
+          messaging: true,
+        );
+        expect(find.byType(StudafyNavDestination), findsNWidgets(5));
+        expect(navLabel(l10n.studyAssistantTab), findsOneWidget);
+        expect(navLabel(l10n.navMessages), findsOneWidget);
+
+        await tester.tap(find.byType(StudafyNavDestination).at(3));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.studyHelperNeedsClassTitle), findsOneWidget);
+        expect(find.text(l10n.studyHelperNeedsClassBody), findsOneWidget);
+        expect(find.text(l10n.joinClassAction), findsOneWidget);
+        // Not the chat: the bar stays, so the student can go elsewhere.
+        expect(find.byType(StudafyNavigationBar), findsOneWidget);
+        // No plans are sold for tools this student cannot use yet.
+        await tester.tap(find.byType(StudafyNavDestination).at(1));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.studentLessonsPlans), findsNothing);
+
+        // Messages is still the last tab.
+        await tester.tap(find.byType(StudafyNavDestination).at(4));
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.studyHelperNeedsClassTitle), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('AI off server-wide: no Helper tab even with no class '
+          '(${locale.languageCode})', (tester) async {
+        await pump(
+          tester,
+          locale: locale,
+          available: {},
+          aiEnabled: false,
+          aiAccess: 'no_class',
+          messaging: true,
+        );
+        expect(find.byType(StudafyNavDestination), findsNWidgets(4));
+        expect(navLabel(l10n.studyAssistantTab), findsNothing);
+        expect(navLabel(l10n.navMessages), findsOneWidget);
+        expect(find.text(l10n.studyHelperNeedsClassTitle), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+
       testWidgets('AI and messaging on: Helper, plans and Messages '
           '(${locale.languageCode})', (tester) async {
         await pump(
           tester,
           locale: locale,
           available: {'ask', 'whiteboard', 'notes', 'quiz', 'flashcards'},
+          aiEnabled: true,
+          aiAccess: 'ok',
           messaging: true,
         );
         expect(find.byType(StudafyNavDestination), findsNWidgets(5));
@@ -301,15 +360,19 @@ void main() {
 }
 
 class _Study extends PreviewStudyRepository {
-  _Study(this.available);
+  _Study(this.available, {this.aiEnabled, this.aiAccess});
 
   final Set<String> available;
+  final bool? aiEnabled;
+  final String? aiAccess;
 
   @override
   Future<StudyPlan> plan() async => StudyPlan(
     tier: StudyPlanTier.free,
     allowance: StudyPlan.free.allowance,
     available: available,
+    aiEnabled: aiEnabled,
+    aiAccess: aiAccess,
   );
 }
 

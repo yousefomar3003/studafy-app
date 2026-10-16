@@ -38,15 +38,15 @@ void main() {
       }
     });
 
-    test('uploads are on everywhere except production', () {
-      // FILE-050/051 shipped the scanning and delivery pipeline, so the
-      // client adapter is wired. Production stays off until an external
-      // malware provider is contracted - the worker fails closed without
-      // one, and the app should not offer a control that cannot work.
+    test('uploads are on in every environment, production included', () {
+      // FILE-050/051 shipped the scanning and delivery pipeline, and the
+      // production worker scans with the private studafy-scanner
+      // (fly.scanner.toml). The owner turned production uploads on on
+      // 2026-10-17 (DL-070); the server-side switches stay the kill switch.
       for (final environment in StudafyEnvironment.values) {
         expect(
           RuntimePolicy(environment).allowsRemoteFileUploads,
-          environment != StudafyEnvironment.production,
+          isTrue,
           reason: 'environment: ${environment.name}',
         );
       }

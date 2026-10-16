@@ -106,11 +106,11 @@ after import; values never go in chat.
 
 **Secrets per app (names only):**
 
-| App | Required before its deploy | Only with a later decision |
+| App | Required before its deploy | Optional: the feature starts when these are set (switches already on, DL-070) |
 |---|---|---|
 | `studafy-scanner` | `SCANNER_API_KEY` (`openssl rand -hex 32`, at least 32 characters) | — |
-| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `AI_API_KEY` | `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON` with `NOTIFICATION_CHANNELS_ENABLED` (C3, C5); billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15); `GOOGLE_CALENDAR_*` with `MEETINGS_PROCESSOR_ENABLED` (B8, off at launch: DL-065) |
-| `studafy-api` | `DATABASE_URL` (as `studafy_api_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` (four different `openssl rand -hex 32` keys), `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `SENTRY_DSN`, `AI_API_KEY` | billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15) |
+| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `AI_API_KEY` | email: `RESEND_API_KEY` + `EMAIL_FROM_ADDRESS` (C5); push: `FCM_PROJECT_ID` + `FCM_SERVICE_ACCOUNT_JSON` (C3); billing: the full `APPLE_*` set and/or the full `GOOGLE_*` set (C6, C15). Not set: `GOOGLE_CALENDAR_*`, since `MEETINGS_PROCESSOR_ENABLED` stays off (B8, DL-065) |
+| `studafy-api` | `DATABASE_URL` (as `studafy_api_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` (four different `openssl rand -hex 32` keys), `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `SENTRY_DSN`, `AI_API_KEY` | billing: the full `APPLE_*` set and/or the full `GOOGLE_*` set (C6, C15); `PAY071_BILLING_ENABLED` and `PAY071_ENVIRONMENT` are in `fly.api.toml` |
 
 `AI_API_KEY` is required in both: the AI study tools are on from launch
 (DL-062, which replaced the earlier "not before the DPA and DPIA" rule), and

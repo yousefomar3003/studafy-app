@@ -52,9 +52,18 @@ primary_region = "fra"
   # worker refuses to start, because an unseen report is the failure this
   # prevents (docs/security/safe043-operator-runbook.md).
   REPORT_ALERTS_ENABLED = "true"
-  # Switched on at launch once their own credentials are set (see the doc):
-  # PAY071_BILLING_ENABLED (store keys), NOTIFICATION_CHANNELS_ENABLED
-  # (Firebase / email).
+  # DL-070: email and push are on, and each channel runs once its keys are
+  # set as secrets: RESEND_API_KEY + EMAIL_FROM_ADDRESS for email,
+  # FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_JSON for push. A channel without
+  # keys is neither fanned out nor sent (no backlog to send late); in-app
+  # notifications never depend on it.
+  NOTIFICATION_CHANNELS_ENABLED = "true"
+  # DL-070: store billing, as in fly.api.toml: runs once the App Store
+  # (APPLE_*) or Play (GOOGLE_*) keys are complete. Reconciliation is the
+  # backstop for lost store events and Play's 3-day acknowledgement window.
+  PAY071_BILLING_ENABLED = "true"
+  PAY071_ENVIRONMENT = "production"
+  PAY071_RECONCILIATION_ENABLED = "true"
   # MEETINGS_PROCESSOR_ENABLED stays off (DL-065): no Google Meet creation
   # through Google Workspace at launch. A teacher can paste a Meet link into
   # an announcement instead.

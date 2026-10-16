@@ -15,9 +15,10 @@ and idempotency completion.
 **Nothing in FILE-050 marks a file clean, publishes it, deduplicates it, or
 makes it downloadable.** FILE-051 adds those capabilities. They are described
 in [FILE-051: scanning, publication and delivery](#file-051-scanning-publication-and-delivery).
-`allowsRemoteFileUploads` remains `false` in
-`lib/core/runtime_environment.dart`, and every `FILE050_*` and `FILE051_*`
-switch defaults to `false`.
+Every `FILE050_*` and `FILE051_*` switch defaults to `false`; production sets
+them on (`fly.api.toml`, `fly.worker.toml`), and since 2026-10-17 (DL-070)
+`allowsRemoteFileUploads` in `lib/core/runtime_environment.dart` is `true` in
+production too.
 
 This slice exists because of SEC-001, where a caller-selected file path was
 signed by a service role. The controlling rule below is therefore not a
@@ -248,9 +249,9 @@ requesting an intent, but the **server-computed digest is authoritative**.
 One idempotency key is preserved per intent/completion attempt across auth
 refresh, response loss, and explicit retry.
 
-No production UI invokes this adapter. `allowsRemoteFileUploads` is `false`,
-remote file controls stay disabled with FILE-050/051 messaging, and there is
-no SQLite queue or local-success fallback.
+The app's attach controls use this adapter in every remote build, production
+included since DL-070 (`allowsRemoteFileUploads` is `true`). There is no
+SQLite queue or local-success fallback.
 
 `scripts/check-file-boundaries.ts` enforces the boundary in CI: no direct
 Supabase Storage call, no `quarantine/v1/` path construction, and no

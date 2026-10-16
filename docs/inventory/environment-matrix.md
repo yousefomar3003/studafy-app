@@ -34,7 +34,7 @@ The table below is the original 2026-09-10 evidence, kept as history.
 |---|---|
 | `synthetic` (default) | Local seeded SQLite preview, yellow synthetic banner, no Supabase |
 | `development` / `staging` | Require `SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY` or startup is blocked |
-| `production` | Startup blocked entirely (SEC-001 `ProductionReadinessBlockedPage`) |
+| `production` | Starts only when the compiled defines pass the production contract (`lib/core/production_contract.dart`, ADR-0044); otherwise the readiness block. Every production feature and its switch: `docs/deployment/production-features.md` |
 
 Permitted dart-defines are exactly `APP_ENV`, `SUPABASE_URL`,
 `SUPABASE_PUBLISHABLE_KEY` (see `docs/security/sec-001-containment.md`).
@@ -43,10 +43,11 @@ the synthetic public URL/publishable key and mode 0600; it contains no server
 secret. The ignored root `.env` contains only disposable local API/worker
 Postgres and Redis connection settings.
 
-`allowsRemoteFileUploads` is `false` in every runtime environment. FILE-050
-built the upload pipeline and FILE-051 built scanning and delivery, but
-neither switched uploads on. Flipping it is a separate reviewed change with
-its own decision-log entry.
+`allowsRemoteFileUploads` is `true` in every runtime environment, production
+included since 2026-10-17 (the owner's approval, DL-070). FILE-050 built the
+upload pipeline and FILE-051 scanning and delivery; the production worker
+scans through the private `studafy-scanner` (`fly.scanner.toml`). Whether
+uploads work is decided on the server by the switches below.
 
 ### Server-only settings (FILE-050)
 

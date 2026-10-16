@@ -70,6 +70,8 @@ class StudyPlan {
     required this.tier,
     required this.allowance,
     this.available,
+    this.aiEnabled,
+    this.aiAccess,
   });
 
   static final free = StudyPlan(
@@ -89,6 +91,20 @@ class StudyPlan {
   final Set<String>? available;
 
   bool _on(String feature) => available?.contains(feature) ?? true;
+
+  /// Whether the server has the AI study tools at all (an AI provider).
+  /// Null from a server that does not say.
+  final bool? aiEnabled;
+
+  /// Whether this account may use them, as the server's `aiAccess` says:
+  /// 'ok', 'consent_required', 'no_class', 'not_student'. Null when not said.
+  final String? aiAccess;
+
+  /// A student the tools are here for once they are in a class: the helper
+  /// tab stays, saying to join a class, rather than disappearing. Only when
+  /// the server says the tools are on; with AI off for everyone it stays
+  /// hidden (no dead tab).
+  bool get helperNeedsClass => aiEnabled == true && aiAccess == 'no_class';
 
   /// Any AI study tool is here for this account. When none is - a server
   /// with no AI provider, or an account the tools are not for - nothing

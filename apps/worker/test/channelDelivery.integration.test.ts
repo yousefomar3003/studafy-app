@@ -113,6 +113,29 @@ suite("DL-053 channel delivery", () => {
     await sql.end({ timeout: 5 });
   });
 
+  async function channelRows(): Promise<{ channel: string }[]> {
+    return [
+      ...(await sql<{ channel: string }[]>`
+        select channel from public.notification_deliveries
+        where school_id = ${SCHOOL}::uuid and channel <> 'in_app'
+        order by channel
+      `),
+    ];
+  }
+
+  test("with no sender configured, nothing is fanned out or claimed", async () => {
+    // DL-070: production runs with NOTIFICATION_CHANNELS_ENABLED on before
+    // the Resend and Firebase keys exist. No rows may pile up to be sent
+    // late once a key arrives.
+    const runtime = startChannelDelivery(sql, {}, logger, 3_600_000);
+    try {
+      expect(await runtime.runOnce()).toBe(0);
+    } finally {
+      await runtime.close();
+    }
+    expect(await channelRows()).toEqual([]);
+  });
+
   test("sends content-free email and push, and revokes a dead token", async () => {
     const emails: EmailMessage[] = [];
     const pushes: PushMessage[] = [];
@@ -165,5 +188,37 @@ suite("DL-053 channel delivery", () => {
       where token = ${DEAD_TOKEN}
     `;
     expect(dead[0]?.revoked).toBe(true);
+  });
+
+  test("with only push configured, email is not fanned out", async () => {
+    // EMAIL_USER opted in to academic email but has no phone: with only a
+    // push sender, the new notification gets no email delivery at all.
+    await sql`select private.notify_recipient(${SCHOOL}::uuid, ${EMAIL_USER}::uuid, 'academic.grade_published', '{}'::jsonb, 'dl070-push-only', 'dl070:push-only')`;
+    const pushes: PushMessage[] = [];
+    const runtime = startChannelDelivery(
+      sql,
+      {
+        push: {
+          send: async (m) => {
+            pushes.push(m);
+            return { providerMessageId: "push-2" };
+          },
+        },
+      },
+      logger,
+      3_600_000,
+    );
+    try {
+      await runtime.runOnce();
+    } finally {
+      await runtime.close();
+    }
+    const rows = await sql<{ count: number }[]>`
+      select count(*)::int as count from public.notification_deliveries d
+      join public.notification_outbox o on o.id = d.outbox_id
+      where o.source_event_id = 'dl070-push-only' and d.channel = 'email'
+    `;
+    expect(rows[0]?.count).toBe(0);
+    expect(pushes).toEqual([]);
   });
 });

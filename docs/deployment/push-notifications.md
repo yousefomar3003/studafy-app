@@ -41,7 +41,6 @@ renewed"); the app shows the details after sign-in.
 
      ```sh
      flutter build apk \
-       --dart-define=PUSH_ENABLED=true \
        --dart-define=FIREBASE_PROJECT_ID=<project id> \
        --dart-define=FIREBASE_MESSAGING_SENDER_ID=<sender id> \
        --dart-define=FIREBASE_ANDROID_API_KEY=<android api key> \
@@ -57,11 +56,21 @@ renewed"); the app shows the details after sign-in.
      Xcode. Both are git-ignored and belong in CI secrets.
 
    These values identify the app to Firebase; they are not secrets.
-   Without `PUSH_ENABLED=true` the app never initialises Firebase.
+   Since DL-070 the complete `FIREBASE_*` defines turn push on by
+   themselves (`pushEnabledFor` in `firebase_push_registrar.dart`); for a
+   production store build add them to `config/dart-defines.production.json`
+   (they are on the production contract's allowlist). The native files
+   need `PUSH_ENABLED=true` as well, because Dart cannot see them.
+   `PUSH_ENABLED=false` keeps push off whatever is configured. A build with
+   none of it starts normally and never initialises Firebase.
 5. **Server (worker):** Firebase → Project settings → Service accounts →
-   *Generate new private key*. Set `FCM_PROJECT_ID`,
-   `FCM_SERVICE_ACCOUNT_JSON` (one line) and
-   `NOTIFICATION_CHANNELS_ENABLED=true`, in the host's secret store.
+   *Generate new private key*. Set `FCM_PROJECT_ID` and
+   `FCM_SERVICE_ACCOUNT_JSON` (one line) in the host's secret store.
+   Production's `fly.worker.toml` already has
+   `NOTIFICATION_CHANNELS_ENABLED = "true"` (DL-070): push starts on the
+   worker's next deploy after the secrets are imported. Until then the
+   worker fans out and sends nothing for push (and nothing for email
+   without the Resend pair), so no backlog is sent late.
 
 ## Testing
 

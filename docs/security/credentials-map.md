@@ -90,7 +90,7 @@ deploy checklist".
 | `STUDAFY_API_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `APP_ENV` | Public. RLS and the API are the controls |
 | `SENTRY_DSN` (project `flutter`) | Public by design; personal data is off |
 | `STUDAFY_PRIVACY_URL`, `STUDAFY_TERMS_URL` | `https://legal.studafy.com/privacy` and `/terms` (the legal site, `docs/deployment/legal-site.md`) |
-| `PUSH_ENABLED` and `FIREBASE_*` | Firebase's app config; not a secret |
+| `PUSH_ENABLED` and `FIREBASE_*` | Firebase's app config; not a secret. The complete `FIREBASE_*` set turns push on by itself (DL-070) |
 
 ## Local development
 

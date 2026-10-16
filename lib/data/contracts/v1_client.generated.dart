@@ -12740,6 +12740,7 @@ class V1StudyPlanSummaryDto {
     this.chatMemoryChars,
     required this.allowance,
     this.aiAccess,
+    this.aiEnabled,
   });
 
   factory V1StudyPlanSummaryDto.fromJson(Map<String, dynamic> json) =>
@@ -12754,6 +12755,7 @@ class V1StudyPlanSummaryDto {
           json['allowance'] as Map<String, dynamic>,
         ),
         aiAccess: json['aiAccess'] as String?,
+        aiEnabled: json['aiEnabled'] as bool?,
       );
 
   final String plan;
@@ -12762,6 +12764,7 @@ class V1StudyPlanSummaryDto {
   final int? chatMemoryChars;
   final V1AiAllowanceDto allowance;
   final String? aiAccess;
+  final bool? aiEnabled;
 
   Map<String, Object?> toJson() => {
     'plan': plan,
@@ -12770,6 +12773,7 @@ class V1StudyPlanSummaryDto {
     'chatMemoryChars': ?chatMemoryChars,
     'allowance': allowance.toJson(),
     'aiAccess': ?aiAccess,
+    'aiEnabled': ?aiEnabled,
   };
 }
 

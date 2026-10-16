@@ -213,7 +213,7 @@ go into the host's secret store (for the hosted development API, the ignored
 
 | Variable | Value from |
 | --- | --- |
-| `PAY071_BILLING_ENABLED` | `true` once the rest is set |
+| `PAY071_BILLING_ENABLED` | `true`; billing still runs only once one store's set below is complete (`billingActive`). Production sets it in `fly.api.toml` and `fly.worker.toml` (DL-070) |
 | `PAY071_ENVIRONMENT` | `development` for sandbox, `production` live |
 | `APPLE_BUNDLE_ID` | Xcode → Runner → Signing |
 | `APPLE_ENVIRONMENT` | `Sandbox` / `Production` |

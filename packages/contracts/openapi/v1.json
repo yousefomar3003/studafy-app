@@ -38575,6 +38575,9 @@
           },
           "aiAccess": {
             "$ref": "#/components/schemas/V1AiAccess"
+          },
+          "aiEnabled": {
+            "type": "boolean"
           }
         },
         "required": [

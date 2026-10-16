@@ -23,7 +23,7 @@ under "Release-block rationale and removal record".
 |---|---:|---|---|---|---|
 | Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | **Closed by removal (AI-072, ADR-0026, 2026-09-18):** the grading function and every AI surface are deleted from the repository and, on 2026-09-18, from the synthetic project (both slugs 404; `docs/evidence/phase-7/README.md`) |
 | Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | **Replaced at the REL-002 cutover (2026-10-17, ADR-0044):** production uses the server repositories like development, and starts only when its compiled defines pass the production contract; otherwise it shows the readiness block. Local SQLite is used only by synthetic builds |
-| Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Upload containment applied and tested; safe replacement pending |
+| Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Direct uploads stay removed. **Replaced by the FILE-050/051 pipeline**, on in production since 2026-10-17 (owner's approval, DL-070): upload intents with per-purpose type and size policy, quarantine, ClamAV scan through the private `studafy-scanner` before anyone can open a file, single-use delivery grants |
 | Example identities and debug signing could reach a store build | High | Since the REL-002 cutover (ADR-0044): Android and iOS release builds run only for `APP_ENV=production` under the production defines contract or for `development` (the test copy); Android production is signed with the owner's upload key only, never the debug key | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | **Blocks replaced 2026-10-17 (ADR-0044, DL-069)**; identity `com.studafy.light` (DL-058); refusals proved in CI by `.github/scripts/check-android-release-guard.sh` and `check-ios-release-guard.sh`. No production upload until `api.studafy.com` is live |
 | Privileged workflows lack consistent validation, idempotency, transactions, and observability | High | Unsafe grading workflow disabled; other workflows remain prohibited from production release | Backend/security owner | Phase 3 service controls and negative tests pass | Broader remediation pending |
 | Historical secrets cannot be inspected without repository history | High | Treat history inspection as an explicit gate; do not claim completion | Security owner | Original Git history is restored or the limitation is formally accepted with credential rotation | Formally bounded 2026-09-10: `docs/governance/git-history-boundary.md` |
@@ -41,14 +41,15 @@ re-evidencing these rows with named, separated owners.
 | Capability | Server/data control | Client/build control | Removal conditions |
 |---|---|---|---|
 | AI paper grading and Study Coach | **Removed by AI-072 (ADR-0026).** Both Edge Functions deleted; `ai_grading_drafts`, `question_suggestions` and `practice_sessions` have no grant or policy and refuse every write; the AI store products cannot be activated | AI screens, the `study_coach` slice and the teacher grading controls deleted; `allowsAiGrading => false` retained as a tripwire | Not a kill switch any more: a future AI capability needs a signed DPA, an extended DPIA, a new ADR and the full enable-path engineering in `docs/planning/instructions.md` §20 Part 7C |
-| New private-file uploads | Storage insert policy dropped; the `coach_attachment` purpose is retired by AI-072 | Study Coach and its attachment control deleted by AI-072; direct upload code removed | Ownership metadata, quotas, signature checks, quarantine, scanning, sanitization rules, clean publication, and tenant-negative tests |
+| New private-file uploads | Storage insert policy dropped (direct uploads stay impossible); the `coach_attachment` purpose is retired by AI-072. Uploads go only through FILE-050/051, whose server switches are the kill switch: `FILE050_NEW_INTENTS_ENABLED=false` on the API stops new uploads, `FILE051_DELIVERY_ENABLED=false` stops downloads, `FILE051_SCAN_ENABLED=false` on the worker leaves every new file quarantined | Study Coach and its attachment control deleted by AI-072; direct upload code removed. `allowsRemoteFileUploads` is true in every environment since DL-070 (2026-10-17) | Met: ownership metadata, quotas, signature checks, quarantine, ClamAV scanning (`studafy-scanner`), metadata stripping, clean publication and tenant-negative tests (FILE-050/051, `docs/evidence/phase-5/`) |
 | Production application | Production initializes the remote backend only (no SQLite) | Starts only when the compiled defines pass the production contract (`RuntimePolicy.blocksApplicationStartup`); otherwise the production-readiness screen | Removed as a block at the REL-002 cutover (ADR-0044); the contract check stays |
 | Android/iOS release | Not applicable | Since the REL-002 cutover (ADR-0044): a release task or Xcode `Release` build runs only when every `APP_ENV` is `production` and the dart-defines pass `tools/check_release_defines.dart`, or every `APP_ENV` is `development`; Android also needs an upload key outside the repository, and production refuses the debug-key opt-in. Proved in CI by `.github/scripts/check-android-release-guard.sh` and `.github/scripts/check-ios-release-guard.sh` | Removed as a block 2026-10-17 (DL-069); the contract and signing checks stay. No production upload until `api.studafy.com` is live |
 | Legacy meeting Edge Functions (`create-google-meet`, `cancel-google-meet`) | Both return stable `MEETINGS_DISABLED` 503s without reading the body, resolving recipients, using service credentials, or contacting a provider | Not applicable | API-042's `POST /v1/classrooms/{classroomId}/meetings` and `POST /v1/meetings/{meetingId}/cancel` pass authorization, transaction, idempotency and retry tests (`supabase/tests/api042_meetings.sql`, `apps/api/test/meetings`) and replace these functions in traffic |
 | Legacy `request-account-deletion` Edge Function | Returns a stable `ACCOUNT_DELETION_PROTOTYPE_DISABLED` 503; its manual JWT-`iat` decode (the broken recent-auth check DL-032 documents) never runs | Not applicable | Already fully superseded by AUTH-030/031's `POST /v1/account/deletion-request`, which uses the real single-use hashed recent-auth grant instead |
 
 There is intentionally no environment variable that re-enables grading or
-uploads. A synthetic demonstration requiring either capability must use a
+direct (unscanned) uploads; the FILE-050/051 server switches only turn the
+scanned pipeline on or off. A synthetic demonstration requiring either capability must use a
 separate isolated project and a reviewed replacement implementation; the
 contained path must not be restored.
 
@@ -155,8 +156,19 @@ and the unconditional refusal of production at app start. Still guarded:
   production refuses `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE`;
 - the filled `config/dart-defines.production.json` is git-ignored, and
   `build-store.sh` refuses it if tracked;
-- remote file uploads stay off in production (`allowsRemoteFileUploads`);
-  AI grading stays removed;
+- AI grading stays removed (`allowsAiGrading` is a hard-false tripwire);
+- uploads are guarded on the server, not by the app: since 2026-10-17
+  (the owner's approval, DL-070) `allowsRemoteFileUploads` is true in
+  production too, and every upload goes through FILE-050 upload intents
+  (per-purpose type allowlist and size cap, server-chosen quarantine key,
+  quotas) and FILE-051 (structural analysis plus the ClamAV scan through the
+  private `studafy-scanner`, metadata stripping, publication, single-use
+  delivery grants). Nothing is delivered before its scan passes, production
+  refuses to scan without the scanner's URL and key, and the API's
+  `FILE050_NEW_INTENTS_ENABLED` / `FILE051_PUBLISH_ENABLED` /
+  `FILE051_DELIVERY_ENABLED` and the worker's `FILE051_SCAN_ENABLED` /
+  `FILE050_CLEANUP_ENABLED` are the kill switches (pinned on by
+  `scripts/fly-config.test.ts`);
 - **no production build may be uploaded to any store track until
   `https://api.studafy.com` is live** and the DL-064 cutover steps are done.
 

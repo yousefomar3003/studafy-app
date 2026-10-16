@@ -102,6 +102,8 @@ class ApiStudyRepository implements StudyRepository {
         resetsAt: DateTime.parse(dto.allowance.resetsAt).toLocal(),
       ),
       available: dto.available?.toSet(),
+      aiEnabled: dto.aiEnabled,
+      aiAccess: dto.aiAccess,
     );
   });
 

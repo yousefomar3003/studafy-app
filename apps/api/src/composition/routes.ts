@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { billingActive } from "@studafy/config";
 import { type AuthorizationEnv } from "../authorization/middleware";
 import {
   createAcademicAppendedRoutes,
@@ -596,7 +597,10 @@ export function buildRoutes(platform: Platform) {
   const billingRepository = sql
     ? new PostgresBillingRepository(sql)
     : undefined;
-  const billing = sql && env.PAY071_BILLING_ENABLED && env.PAY071_ENVIRONMENT &&
+  // On only once a store's credentials are complete (billingActive), so a
+  // production switch that is on before the keys exist mounts nothing and
+  // the app says payments are not set up.
+  const billing = sql && billingActive(env) && env.PAY071_ENVIRONMENT &&
       authDependencies && billingRepository
     ? createBillingRoutes(
       {
@@ -611,7 +615,7 @@ export function buildRoutes(platform: Platform) {
     )
     : undefined;
 
-  const billingWebhooks = sql && env.PAY071_BILLING_ENABLED &&
+  const billingWebhooks = sql && billingActive(env) &&
       env.PAY071_ENVIRONMENT && billingRepository
     ? createBillingWebhookRoutes({
       repository: billingRepository,

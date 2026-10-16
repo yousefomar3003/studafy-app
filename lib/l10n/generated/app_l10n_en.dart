@@ -1359,6 +1359,14 @@ class AppL10nEn extends AppL10n {
   String get studyAssistantTab => 'Helper';
 
   @override
+  String get studyHelperNeedsClassTitle =>
+      'Join a class to use the study helper';
+
+  @override
+  String get studyHelperNeedsClassBody =>
+      'The study helper works with your classes and their lessons. Join your teacher\'s class, then ask it anything here.';
+
+  @override
   String get joinClassAlreadyStaff =>
       'You already teach at this school, so you cannot join one of its classes as a student. Ask a student to open the link on their own account.';
 
