@@ -7,40 +7,41 @@
  * least-privilege `studafy_api_runtime` role over a real connection.
  *
  * Usage:
- *   bunx supabase start
- *   bun run test:auth:lifecycle
+ *   bunx supabase start --workdir <throwaway stack dir>
+ *   SUPABASE_WORKDIR=<throwaway stack dir> bun run test:auth:lifecycle
+ *
+ * In CI, SUPABASE_WORKDIR may be left out: the job's one stack is used.
  *
  * It lives inside apps/api rather than the repository root because it imports
  * workspace packages. Bun links those per workspace, not into the root
  * node_modules, so a root-level script cannot resolve them on a clean install.
  *
- * Local only. It refuses to run against anything but a loopback Supabase URL,
+ * Local only. It refuses to run against anything but a loopback stack,
  * because it creates users and deletes data.
  */
 import { createDatabase } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import { authIssuer, authJwksUrl } from "@studafy/config";
+import { localStackOrExit } from "@studafy/test-support";
 import { createApp } from "../src/bootstrap/app";
 import { AuthContextRepository } from "../src/auth/context";
 import { JwksKeySource } from "../src/auth/jwks";
 import { createAuthRoutes } from "../src/auth/routes";
 import { PostgresIdempotencyRepository } from "../src/platform/idempotency";
 
-const SUPABASE_URL = process.env["SUPABASE_URL"] ??
-  "http://127.0.0.1:54321";
-const ADMIN_URL = process.env["DATABASE_URL"] ??
-  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-const SERVICE_KEY = process.env["SUPABASE_SECRET_KEY"] ?? "";
-const PUBLISHABLE_KEY = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "";
+// Every value comes from one stack's `supabase status`, so the Auth server
+// and the database always belong together. Outside CI the stack must be
+// named (SUPABASE_WORKDIR=<stack dir>): the default one is the developer's
+// working stack, and SUPABASE_URL / DATABASE_URL may come from their .env.
+const stack = localStackOrExit("AUTH-030 lifecycle verification");
+const SUPABASE_URL = stack.apiUrl;
+const ADMIN_URL = stack.dbUrl;
+const SERVICE_KEY = stack.values.get("SECRET_KEY") ?? "";
+const PUBLISHABLE_KEY = stack.values.get("PUBLISHABLE_KEY") ?? "";
 
-if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:|\/)/.test(SUPABASE_URL)) {
-  throw new Error(
-    `Refusing to run against a non-local Supabase URL: ${SUPABASE_URL}`,
-  );
-}
 if (!SERVICE_KEY || !PUBLISHABLE_KEY) {
   throw new Error(
-    "Set SUPABASE_SECRET_KEY and SUPABASE_PUBLISHABLE_KEY from `bunx supabase status`.",
+    "The stack reported no SECRET_KEY or PUBLISHABLE_KEY (`supabase status`).",
   );
 }
 

@@ -616,16 +616,10 @@ jobs:
           bun run test:outbox:e2e
 
       # End-to-end against the live local GoTrue: real ES256 tokens, real JWKS,
-      # and the least-privilege database role.
+      # and the least-privilege database role. The script reads the job's one
+      # stack from `supabase status` itself (outside CI it must be named).
       - name: Verify the AUTH-030 lifecycle end to end
-        run: |
-          # `status -o env` also prints a non-assignment "Stopped services"
-          # line, so only KEY="value" lines are exported.
-          eval "$(bunx supabase status -o env | grep -E '^[A-Z_]+="' | sed 's/^/export /')"
-          SUPABASE_URL=http://127.0.0.1:54321 \
-          SUPABASE_SECRET_KEY="$SECRET_KEY" \
-          SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY" \
-          bun run test:auth:lifecycle
+        run: bun run test:auth:lifecycle
 
       - name: Stop disposable Supabase stack
         if: always()

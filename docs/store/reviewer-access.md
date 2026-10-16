@@ -207,14 +207,16 @@ review that starts with the old password fails.
 ## Local runs
 
 On a local stack (this machine only; the script refuses anything else
-without `--target hosted`):
+without `--target hosted`). The stack must be named with `--workdir` (or
+`SUPABASE_WORKDIR`); outside CI the script never assumes the default one,
+which is the working stack (`--workdir .` names this checkout's own):
 
 ```sh
-bunx supabase start
+bunx supabase start --workdir <stack dir>
 # start the API on this machine, against the same stack, e.g. on :8080
 bun --no-env-file scripts/provision-reviewer-school.ts \
   --credentials-out ~/studafy-reviewer-local.json \
-  --api-url http://127.0.0.1:8080 [--workdir <supabase workdir>]
+  --api-url http://127.0.0.1:8080 --workdir <stack dir>
 ```
 
 ## Tests

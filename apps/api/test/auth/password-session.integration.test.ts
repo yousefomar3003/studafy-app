@@ -22,7 +22,11 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono, type MiddlewareHandler } from "hono";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
-import { integrationSuite, removeFixtures } from "@studafy/test-support";
+import {
+  integrationSuite,
+  removeFixtures,
+  stackApiUrl,
+} from "@studafy/test-support";
 import { AuthContextRepository } from "../../src/auth/context";
 import { JwksKeySource } from "../../src/auth/jwks";
 import type { AuthDependencies } from "../../src/auth/middleware";
@@ -37,15 +41,12 @@ const databaseUrl = process.env["DATABASE_URL"];
 
 /**
  * The Auth server must belong to the same stack as DATABASE_URL. The default
- * (54321) is only that stack's when the database is the default one (54322),
- * as in CI. Pointed at any other database, the suite needs
- * AUTH_INTEGRATION_SUPABASE_URL, or it would reach a different stack's Auth
- * (on 2026-10-15 it reached the owner's working one).
+ * (54321) is only assumed in CI, and only when the database is the default
+ * one (54322). Anywhere else the suite needs AUTH_INTEGRATION_SUPABASE_URL
+ * and skips without it: outside CI the default stack is the developer's
+ * working one (on 2026-10-15 the suite reached it).
  */
-const AUTH_URL = process.env["AUTH_INTEGRATION_SUPABASE_URL"] ??
-  (databaseUrl && new URL(databaseUrl).port === "54322"
-    ? "http://127.0.0.1:54321"
-    : "");
+const AUTH_URL = stackApiUrl("AUTH_INTEGRATION_SUPABASE_URL") ?? "";
 const suite = AUTH_URL ? integrationSuite(describe) : describe.skip;
 /** The Supabase CLI's well-known local service key: not a secret. */
 const SERVICE_KEY = process.env["AUTH_INTEGRATION_SERVICE_ROLE_KEY"] ??

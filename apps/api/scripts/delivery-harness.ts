@@ -15,6 +15,7 @@ import {
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
 import { createJsonLogger } from "@studafy/observability";
+import { localStackOrExit } from "@studafy/test-support";
 import { AuthContextRepository } from "../src/auth/context";
 import type { Actor } from "../src/auth/middleware";
 import {
@@ -64,26 +65,21 @@ export interface Check {
   pass: boolean;
 }
 
+/**
+ * The stack to verify against. Outside CI it must be named
+ * (SUPABASE_WORKDIR=<stack dir>), or the script exits before touching any.
+ */
 export async function localSupabase(): Promise<{
   apiUrl: string;
   serviceKey: string;
   dbUrl: string;
 }> {
-  const status = Bun.spawnSync([
-    `${import.meta.dir}/../../../node_modules/.bin/supabase`,
-    "status",
-    "--output",
-    "json",
-  ], { cwd: `${import.meta.dir}/../../..`, stdout: "pipe", stderr: "pipe" });
-  if (status.exitCode !== 0) throw new Error("local Supabase is unavailable");
-  const local = JSON.parse(status.stdout.toString()) as Record<string, string>;
-  const apiUrl = local.API_URL ?? "";
-  const dbUrl = local.DB_URL ?? "";
-  const serviceKey = local.SERVICE_ROLE_KEY ?? "";
+  const local = localStackOrExit("FILE-051 delivery verification");
+  const { apiUrl, dbUrl, serviceRoleKey: serviceKey } = local;
+  console.error(`Supabase: ${apiUrl}`);
   if (
     !apiUrl.startsWith("http://127.0.0.1:") ||
-    !dbUrl.startsWith("postgresql://postgres:postgres@127.0.0.1:") ||
-    !serviceKey
+    !dbUrl.startsWith("postgresql://postgres:postgres@127.0.0.1:")
   ) {
     throw new Error(
       "refusing to run FILE-051 verification outside local Supabase",
