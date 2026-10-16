@@ -13,6 +13,10 @@ import {
   workerEnvSchema,
 } from "../src";
 
+/** A stand-in for the Supabase root CA (DATABASE_CA_CERT); not a real one. */
+const SYNTHETIC_CA =
+  "-----BEGIN CERTIFICATE-----\nc3ludGhldGljLWNh\n-----END CERTIFICATE-----";
+
 describe("parseEnv", () => {
   test("accepts a valid API environment with defaults", () => {
     const env = parseEnv(apiEnvSchema, {
@@ -115,6 +119,7 @@ describe("production fail-closed", () => {
     const env = parseEnv(apiEnvSchema, {
       ENVIRONMENT: "production",
       DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+      DATABASE_CA_CERT: SYNTHETIC_CA,
       REDIS_URL: "rediss://:pw@example.com:6380",
       SUPABASE_URL: "https://project.supabase.co",
       API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
@@ -157,10 +162,88 @@ describe("production fail-closed", () => {
   });
 });
 
+describe("production verifies the database certificate (go-live audit)", () => {
+  const api = {
+    ENVIRONMENT: "production",
+    DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+    REDIS_URL: "rediss://:pw@redis.example.com:6380",
+    SUPABASE_URL: "https://project.supabase.co",
+    API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+    RATE_LIMIT_HMAC_SIGNING_KEY: "a-development-test-key-with-32-bytes",
+  } as const;
+  const worker = {
+    ENVIRONMENT: "production",
+    DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+    REDIS_URL: "rediss://:pw@redis.example.com:6380",
+  } as const;
+
+  test("the API and the worker refuse to start without DATABASE_CA_CERT", () => {
+    expect(() => enforceApiFailClosed(parseEnv(apiEnvSchema, api))).toThrow(
+      /DATABASE_CA_CERT/,
+    );
+    expect(() => enforceWorkerFailClosed(parseEnv(workerEnvSchema, worker)))
+      .toThrow(/DATABASE_CA_CERT/);
+  });
+
+  test("a value that is not a PEM certificate is refused", () => {
+    expect(() =>
+      enforceApiFailClosed(
+        parseEnv(apiEnvSchema, { ...api, DATABASE_CA_CERT: "not-a-cert" }),
+      )
+    ).toThrow(/DATABASE_CA_CERT/);
+  });
+
+  test("a URL that sets sslmode itself is refused, since the CA would be ignored", () => {
+    for (
+      const query of ["?sslmode=require", "?sslmode=verify-full", "?ssl=true"]
+    ) {
+      expect(() =>
+        enforceApiFailClosed(parseEnv(apiEnvSchema, {
+          ...api,
+          DATABASE_URL: `${api.DATABASE_URL}${query}`,
+          DATABASE_CA_CERT: SYNTHETIC_CA,
+        }))
+      ).toThrow(/sslmode/);
+      expect(() =>
+        enforceWorkerFailClosed(parseEnv(workerEnvSchema, {
+          ...worker,
+          DATABASE_URL: `${worker.DATABASE_URL}${query}`,
+          DATABASE_CA_CERT: SYNTHETIC_CA,
+        }))
+      ).toThrow(/sslmode/);
+    }
+  });
+
+  test("with the CA both start", () => {
+    expect(() =>
+      enforceApiFailClosed(
+        parseEnv(apiEnvSchema, { ...api, DATABASE_CA_CERT: SYNTHETIC_CA }),
+      )
+    ).not.toThrow();
+    expect(() =>
+      enforceWorkerFailClosed(
+        parseEnv(workerEnvSchema, {
+          ...worker,
+          DATABASE_CA_CERT: SYNTHETIC_CA,
+        }),
+      )
+    ).not.toThrow();
+  });
+
+  test("development does not need it", () => {
+    expect(() =>
+      enforceWorkerFailClosed(
+        parseEnv(workerEnvSchema, { ...worker, ENVIRONMENT: "development" }),
+      )
+    ).not.toThrow();
+  });
+});
+
 describe("redis production posture (OPS-060)", () => {
   const productionEnv = {
     ENVIRONMENT: "production",
     DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+    DATABASE_CA_CERT: SYNTHETIC_CA,
     SUPABASE_URL: "https://project.supabase.co",
     API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",
     RATE_LIMIT_HMAC_SIGNING_KEY: "a-development-test-key-with-32-bytes",
@@ -224,6 +307,7 @@ describe("rate limiting configuration (OPS-060)", () => {
     const env2 = parseEnv(apiEnvSchema, {
       ENVIRONMENT: "production",
       DATABASE_URL: "postgresql://u:p@example.com:5432/db",
+      DATABASE_CA_CERT: SYNTHETIC_CA,
       REDIS_URL: "rediss://:pw@redis.example.com:6379",
       SUPABASE_URL: "https://project.supabase.co",
       API_CURSOR_SIGNING_KEY: "a-development-test-key-with-32-bytes",

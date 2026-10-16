@@ -1,0 +1,11 @@
+{
+  "APP_ENV": "production",
+  "STUDAFY_API_URL": "https://api.studafy.com",
+  "SUPABASE_URL": "https://cyrngoqnhqflzovlybbr.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "REPLACE_WITH_sb_publishable_KEY_FROM_SUPABASE_DASHBOARD",
+  "STUDAFY_PRIVACY_URL": "https://legal.studafy.com/privacy",
+  "STUDAFY_TERMS_URL": "https://legal.studafy.com/terms",
+  "TURNSTILE_ENABLED": true,
+  "APPLE_SIGN_IN_ENABLED": true,
+  "SENTRY_DSN": "REPLACE_WITH_THE_APP_SENTRY_DSN_OR_EMPTY"
+}

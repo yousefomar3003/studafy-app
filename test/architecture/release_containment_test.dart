@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/production_contract.dart';
 import 'package:studafy/core/runtime_environment.dart';
 
 String source(String path) => File(path).readAsStringSync();
@@ -74,115 +76,209 @@ void main() {
     expect(migration, contains('revoke execute on functions from anon'));
   });
 
-  group(
-    'native release guards (SEC-001, narrowed for Android by ADR-0042)',
-    () {
-      final android = source('android/app/build.gradle.kts');
-      final ios = source('ios/Runner.xcodeproj/project.pbxproj');
+  group('native release checks (REL-002 cutover, ADR-0044)', () {
+    final android = source('android/app/build.gradle.kts');
+    final ios = source('ios/Runner.xcodeproj/project.pbxproj');
+    final iosPhase = source('scripts/release/ios-release-check.sh');
 
-      test('Android release is allowed for the development test copy only', () {
-        // .github/scripts/check-android-release-guard.sh runs these cases in
-        // CI; this pins the source so the allowlist cannot quietly widen.
-        expect(
-          android,
-          contains('SEC-001: Android release builds are blocked'),
-        );
-        expect(android, contains('val sec001ReleaseAppEnv = "development"'));
-        expect(
-          RegExp(r'sec001ReleaseAppEnv = ').allMatches(android),
-          hasLength(1),
-          reason: 'exactly one allowed APP_ENV',
-        );
-        // Every APP_ENV given must match, and none given is refused.
-        expect(
-          android,
-          contains(
-            'appEnvs.isEmpty() || appEnvs.any { it != sec001ReleaseAppEnv }',
-          ),
-        );
-        expect(android, contains('project.findProperty("dart-defines")'));
-        // The guard still runs for any release task in the graph.
-        expect(
-          android,
-          contains(
-            'allTasks.none { it.name.contains("release", ignoreCase = true) }',
-          ),
-        );
-        for (final widened in ['"production"', '"staging"', '"synthetic"']) {
-          expect(android, isNot(contains(widened)));
-        }
-        expect(android, contains('com.studafy.light'));
-      });
-
-      test(
-        'Android release signing never falls back to the debug key silently',
-        () {
-          expect(android, contains('STUDAFY_ANDROID_KEY_PROPERTIES'));
-          expect(android, contains('Release signing: no upload key'));
-          expect(
-            android,
-            contains('is inside the repository; keep it outside'),
-          );
-          // The debug key is reachable only through the explicit local opt-in.
-          expect(
-            android,
-            contains(
-              'allowDebugSignedRelease -> signingConfigs.getByName("debug")',
-            ),
-          );
-          expect(
-            RegExp(r'signingConfigs\.getByName\("debug"\)').allMatches(android),
-            hasLength(1),
-          );
-          expect(
-            android,
-            contains(
-              'System.getenv("STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE") == "true"',
-            ),
-          );
-        },
+    test('Android release: production under the contract, or development', () {
+      // .github/scripts/check-android-release-guard.sh runs these cases in
+      // CI; this pins the source so the allowlist cannot quietly widen.
+      expect(
+        android,
+        contains('val releaseAppEnvs = setOf("production", "development")'),
       );
+      expect(RegExp(r'releaseAppEnvs = ').allMatches(android), hasLength(1));
+      // Every APP_ENV given must be the same allowed value; none is refused.
+      expect(
+        android,
+        contains(
+          'appEnvs.isEmpty() || appEnvs.distinct().size != 1 || '
+          'appEnvs[0] !in releaseAppEnvs',
+        ),
+      );
+      expect(android, contains('project.findProperty("dart-defines")'));
+      // Production runs the shared Dart contract on the exact defines.
+      expect(android, contains('checkProductionDefines(repositoryRoot)'));
+      expect(android, contains('"tools/check_release_defines.dart"'));
+      expect(android, contains('"--platform", "android"'));
+      // The check still runs for any release task in the graph.
+      expect(
+        android,
+        contains(
+          'allTasks.none { it.name.contains("release", ignoreCase = true) }',
+        ),
+      );
+      for (final widened in ['"staging"', '"synthetic"']) {
+        expect(android, isNot(contains(widened)));
+      }
+      expect(android, isNot(contains('SEC-001: Android release')));
+      expect(android, contains('com.studafy.light'));
+    });
 
-      test('signing material stays out of the repository', () {
-        // check-sensitive-files.sh refuses these if they are ever tracked.
-        final ignore = source('.gitignore');
-        for (final pattern in ['**/key.properties', '*.jks', '*.keystore']) {
-          expect(ignore, contains(pattern));
-        }
-      });
-
-      test('the app the Android release carries is the development copy', () {
-        // The Gradle guard admits only APP_ENV=development, which starts.
-        // Production, refused by Gradle, would also refuse to start.
+    test(
+      'Android release signing never falls back to the debug key silently',
+      () {
+        expect(android, contains('STUDAFY_ANDROID_KEY_PROPERTIES'));
+        expect(android, contains('Release signing: no upload key'));
+        expect(android, contains('is inside the repository; keep it outside'));
+        // The debug key is reachable only through the explicit local opt-in,
+        // and a production build refuses that opt-in.
         expect(
-          RuntimePolicy.parse('development').blocksApplicationStartup,
-          isFalse,
-        );
-        expect(
-          RuntimePolicy.parse('production').blocksApplicationStartup,
-          isTrue,
-        );
-      });
-
-      test('iOS release stays blocked whatever the environment', () {
-        expect(ios, contains('SEC-001 Release Block'));
-        expect(
-          ios,
-          contains('SEC-001: iOS archives and release builds are blocked'),
-        );
-        // The Xcode phase checks only the configuration; no APP_ENV or other
-        // escape exists for iOS.
-        expect(
-          ios,
+          android,
           contains(
-            r'shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ]; then',
+            'allowDebugSignedRelease -> signingConfigs.getByName("debug")',
           ),
         );
-        expect(ios, isNot(contains('APP_ENV')));
-        expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.studafy.light'));
-      });
-    },
-  );
+        expect(
+          RegExp(r'signingConfigs\.getByName\("debug"\)').allMatches(android),
+          hasLength(1),
+        );
+        expect(
+          android,
+          contains(
+            'System.getenv("STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE") == "true"',
+          ),
+        );
+        expect(
+          android,
+          contains('STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE is for the development'),
+        );
+      },
+    );
+
+    test('signing material stays out of the repository', () {
+      // check-sensitive-files.sh refuses these if they are ever tracked.
+      final ignore = source('.gitignore');
+      for (final pattern in ['**/key.properties', '*.jks', '*.keystore']) {
+        expect(ignore, contains(pattern));
+      }
+    });
+
+    test('iOS release runs the defines check instead of the SEC-001 block', () {
+      // .github/scripts/check-ios-release-guard.sh runs the phase script.
+      expect(ios, isNot(contains('SEC-001')));
+      expect(ios, contains('name = "Release Defines Check";'));
+      expect(
+        ios,
+        contains(
+          r'shellScript = "/bin/sh \"$SRCROOT/../scripts/release/'
+          r'ios-release-check.sh\"\n";',
+        ),
+      );
+      // It is the target's first build phase, so it runs before anything
+      // compiles.
+      expect(
+        ios,
+        contains(
+          'buildPhases = (\n'
+          '\t\t\t\t5EC001A12EC001A100000001 /* Release Defines Check */,',
+        ),
+      );
+      expect(iosPhase, contains(r'if [ "${CONFIGURATION:-}" != "Release" ]'));
+      expect(iosPhase, contains('tools/check_release_defines.dart'));
+      expect(
+        iosPhase,
+        contains(r'--platform ios --encoded "${DART_DEFINES:-}"'),
+      );
+      expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.studafy.light'));
+      // Signing stays with the owner's local Xcode settings.
+      expect(ios, isNot(contains('DEVELOPMENT_TEAM')));
+    });
+  });
+
+  group('production defines (REL-002)', () {
+    Map<String, Object?> example() =>
+        jsonDecode(source('config/dart-defines.production.example.json'))
+            as Map<String, Object?>;
+
+    Map<String, List<String>> asBuild(Map<String, Object?> defines) => {
+      for (final entry in defines.entries) entry.key: ['${entry.value}'],
+      'FLUTTER_BUILD_NUMBER': ['2'],
+    };
+
+    Map<String, Object?> filled() => {
+      ...example(),
+      'SUPABASE_PUBLISHABLE_KEY': 'sb_publishable_xxxxxxxxxxxxxxxx',
+      'SENTRY_DSN': '',
+    };
+
+    Map<String, String> filledStrings() => {
+      for (final entry in filled().entries) entry.key: '${entry.value}',
+    };
+
+    test('the example carries the production values; only the key and the '
+        'DSN are placeholders', () {
+      final defines = example();
+      expect(defines['APP_ENV'], 'production');
+      expect(defines['STUDAFY_API_URL'], ProductionContract.apiUrl);
+      expect(defines['SUPABASE_URL'], ProductionContract.supabaseUrl);
+      expect(defines['TURNSTILE_ENABLED'], isTrue);
+      expect(
+        ProductionContract.problems(asBuild(defines), platform: 'ios'),
+        unorderedEquals([
+          contains('SUPABASE_PUBLISHABLE_KEY must be'),
+          contains('SENTRY_DSN must be'),
+        ]),
+      );
+      final text = source('config/dart-defines.production.example.json');
+      expect(text, isNot(contains('sb_secret_')));
+      expect(text, isNot(contains('SERVICE_ROLE')));
+    });
+
+    test('the filled example passes for both stores', () {
+      for (final platform in ['android', 'ios']) {
+        expect(
+          ProductionContract.problems(asBuild(filled()), platform: platform),
+          isEmpty,
+          reason: platform,
+        );
+      }
+    });
+
+    test('the real production defines file is ignored', () {
+      final ignore = source('.gitignore');
+      expect(ignore, contains('\nconfig/dart-defines.production.json\n'));
+      expect(ignore, contains('\n!config/dart-defines.*.example.json\n'));
+    });
+
+    test('a production app starts with the production defines', () {
+      final policy = RuntimePolicy(
+        StudafyEnvironment.production,
+        releaseDefines: filledStrings(),
+      );
+      expect(policy.blocksApplicationStartup, isFalse);
+      expect(policy.requiresRemoteBackend, isTrue);
+    });
+
+    test('a production app refuses incomplete or mismatched defines', () {
+      final good = filledStrings();
+      for (final bad in <Map<String, String>>[
+        {},
+        {...good, 'STUDAFY_API_URL': 'https://studafy-api-test.fly.dev'},
+        {...good, 'SUPABASE_URL': 'https://zqbbsnqutrvlqcmtdlcx.supabase.co'},
+        {...good, 'SUPABASE_PUBLISHABLE_KEY': ''},
+        {...good, 'TURNSTILE_ENABLED': 'false'},
+        {...good, 'STUDAFY_TERMS_URL': 'https://example.com/terms'},
+        {...good, 'APP_ENV': 'development'},
+      ]) {
+        expect(
+          RuntimePolicy(
+            StudafyEnvironment.production,
+            releaseDefines: bad,
+          ).blocksApplicationStartup,
+          isTrue,
+          reason: '$bad',
+        );
+      }
+      // A test run is not compiled with production's defines.
+      expect(
+        const RuntimePolicy(StudafyEnvironment.production)
+            .blocksApplicationStartup,
+        isTrue,
+      );
+    });
+  });
 
   test('environment files are ignored and examples contain no real values', () {
     final ignore = source('.gitignore');

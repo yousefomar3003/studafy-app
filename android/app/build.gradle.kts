@@ -14,15 +14,21 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
-// SEC-001 containment, narrowed for Android internal testing (ADR-0042,
-// launch plan 3.5). A release build is allowed only for the test copy: every
-// APP_ENV the Flutter tool passes in its dart-defines must be "development".
-// Production, staging, synthetic, a missing APP_ENV (the app reads that as
-// synthetic) and a Gradle release task run without Flutter's dart-defines are
-// all refused. iOS release stays blocked in the Xcode project, and a
-// production app still refuses to start (lib/core/runtime_environment.dart).
-// Remove only in the REL-002 cutover (launch plan 7.3).
-val sec001ReleaseAppEnv = "development"
+// Release builds (REL-002 cutover, ADR-0044; formerly the SEC-001 block,
+// narrowed by ADR-0042). A release task runs only when every APP_ENV the
+// Flutter tool passes in its dart-defines is the same allowed value:
+// - "production", the store build, and then only when the dart-defines match
+//   the production contract (lib/core/production_contract.dart, run through
+//   tools/check_release_defines.dart): the production API, Supabase project
+//   and legal pages, a publishable key, Turnstile on, no unknown defines, a
+//   build number above 1. It must be signed with the upload key; the
+//   debug-key opt-in below is refused for it;
+// - "development", the test copy for internal testing (ADR-0042).
+// Staging, synthetic, a missing APP_ENV (the app reads that as synthetic), a
+// mix of values, and a Gradle release task run without Flutter's
+// dart-defines are all refused. The app also refuses to start in production
+// without the contract (lib/core/runtime_environment.dart).
+val releaseAppEnvs = setOf("production", "development")
 
 // Flutter passes --dart-define and --dart-define-from-file values to Gradle
 // as -Pdart-defines: base64("KEY=VALUE") entries joined by commas.
@@ -39,6 +45,41 @@ fun dartDefineValues(name: String): List<String> {
     }
 }
 
+// Runs the production defines contract on exactly the dart-defines Flutter
+// passed to this build. The contract lives in Dart, shared with the Xcode
+// check and the app, so it runs on the Flutter SDK's Dart. Anything but a
+// clean pass, including Dart failing to start, stops the build.
+fun checkProductionDefines(repositoryRoot: File) {
+    val localProperties = Properties()
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use {
+        localProperties.load(it)
+    }
+    val flutterSdk = localProperties.getProperty("flutter.sdk")
+        ?: throw GradleException("REL-002: flutter.sdk is not set in local.properties.")
+    val windows = System.getProperty("os.name").lowercase().contains("windows")
+    val dart = File(flutterSdk, if (windows) "bin/dart.bat" else "bin/dart").path
+    val output: String
+    val exitCode: Int
+    try {
+        val process = ProcessBuilder(
+            dart,
+            "tools/check_release_defines.dart",
+            "--platform", "android",
+            "--encoded", project.findProperty("dart-defines")?.toString() ?: "",
+        ).directory(repositoryRoot).redirectErrorStream(true).start()
+        output = process.inputStream.bufferedReader().readText()
+        exitCode = process.waitFor()
+    } catch (error: java.io.IOException) {
+        throw GradleException("REL-002: the production defines check could not run: ${error.message}")
+    }
+    if (exitCode != 0) {
+        throw GradleException(
+            "REL-002: production defines check failed.\n" +
+                output.trim().replace("error: ", "")
+        )
+    }
+}
+
 // Release signing (launch plan 3.3). The upload keystore and its passwords
 // never live in the repository. They are read from a key.properties file named
 // by STUDAFY_ANDROID_KEY_PROPERTIES (preferred, kept outside the repository)
@@ -51,7 +92,8 @@ fun dartDefineValues(name: String): List<String> {
 // the debug key: Play refuses debug-signed bundles, so a silent fallback
 // would only produce an artifact that looks shippable and is not.
 // STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE=true signs with the debug key instead,
-// for a local check that the release build works; never upload that bundle.
+// for a local check that a development release build works; never upload
+// that bundle. A production build refuses it.
 class UploadKey(
     val storeFile: File,
     val storePassword: String,
@@ -109,13 +151,21 @@ gradle.taskGraph.whenReady {
         return@whenReady
     }
     val appEnvs = dartDefineValues("APP_ENV")
-    if (appEnvs.isEmpty() || appEnvs.any { it != sec001ReleaseAppEnv }) {
+    if (appEnvs.isEmpty() || appEnvs.distinct().size != 1 || appEnvs[0] !in releaseAppEnvs) {
         val given = if (appEnvs.isEmpty()) "none" else appEnvs.joinToString(", ")
         throw GradleException(
-            "SEC-001: Android release builds are blocked except internal-testing builds " +
-                "of the test copy (APP_ENV=$sec001ReleaseAppEnv); APP_ENV given: $given. " +
-                "Production stays blocked until REL-002."
+            "REL-002: Android release builds must be APP_ENV=production (store) or " +
+                "APP_ENV=development (internal testing of the test copy); APP_ENV given: $given."
         )
+    }
+    if (appEnvs[0] == "production") {
+        if (allowDebugSignedRelease) {
+            throw GradleException(
+                "Release signing: STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE is for the development " +
+                    "test copy only; a production build is signed with the upload key."
+            )
+        }
+        checkProductionDefines(repositoryRoot)
     }
     uploadKeyProblem?.let { problem ->
         throw GradleException("Release signing: $problem.")
@@ -125,7 +175,7 @@ gradle.taskGraph.whenReady {
             throw GradleException(
                 "Release signing: no upload key. Set STUDAFY_ANDROID_KEY_PROPERTIES to a " +
                     "key.properties file outside the repository (storeFile, storePassword, " +
-                    "keyAlias, keyPassword). For a local check only, " +
+                    "keyAlias, keyPassword). For a local check of a development build only, " +
                     "STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE=true signs with the debug key; " +
                     "Play refuses that bundle."
             )
@@ -155,7 +205,10 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
+        // Store builds take the version code from --build-number
+        // (scripts/release/build-store.sh; in CI .github/scripts/build-number.sh);
+        // a production build with the pubspec.yaml baseline (1) is refused by
+        // the defines check above. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.

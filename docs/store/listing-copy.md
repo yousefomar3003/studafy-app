@@ -7,7 +7,7 @@ Connect (B12).
 The copy has to agree with:
 - the Google Play Data safety answers (`google-play-data-safety.md`);
 - the App Store privacy labels (`app-store-privacy-labels.md`);
-- the privacy policy (`docs/legal/privacy-policy.md`, version 1.4).
+- the privacy policy (`docs/legal/privacy-policy.md`, version 1.5).
 
 When one of them changes, re-read this file.
 
@@ -157,7 +157,7 @@ STUDY HELP
 • Ask the study helper about your lessons and your own notes
 • Studafy Plus: turn a lesson or a photo of the whiteboard into study notes, and keep study notebooks with highlights and bookmarks
 • Studafy Max: quizzes and flashcards made from your lessons
-The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Names, email addresses and marks are never sent to it. Studafy Plus and Max are optional monthly subscriptions, and a student can ask a parent to approve the purchase.
+The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions, and a student can ask a parent to approve the purchase.
 ```
 
 ### What's new (first internal-testing release)
@@ -246,7 +246,7 @@ The first test release of Studafy. Please try signing in, joining a class with a
 • اسأل مساعد الدراسة عن دروسك وملاحظاتك
 • Studafy Plus: حوّل الدرس أو صورة السبورة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
 • Studafy Max: اختبارات وبطاقات مراجعة من دروسك
-يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه الأسماء ولا عناوين البريد الإلكتروني ولا الدرجات. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان، ويستطيع الطالب أن يطلب موافقة ولي أمره على الشراء.
+يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان، ويستطيع الطالب أن يطلب موافقة ولي أمره على الشراء.
 ```
 
 ### What's new (first internal-testing release)
@@ -342,7 +342,7 @@ STUDY HELP
 • Ask the study helper about your lessons and your own notes
 • Studafy Plus: turn a lesson or a photo of the whiteboard into study notes, and keep study notebooks with highlights and bookmarks
 • Studafy Max: quizzes and flashcards made from your lessons
-The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Names, email addresses and marks are never sent to it. Studafy Plus and Max are optional monthly subscriptions, billed and renewed like Family+, and a student can ask a parent to approve the purchase.
+The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions, billed and renewed like Family+, and a student can ask a parent to approve the purchase.
 ```
 
 ### Keywords
@@ -451,7 +451,7 @@ This follows the app's first welcome slide, "يومك الدراسي كله في
 • اسأل مساعد الدراسة عن دروسك وملاحظاتك
 • Studafy Plus: حوّل الدرس أو صورة السبورة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
 • Studafy Max: اختبارات وبطاقات مراجعة من دروسك
-يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه الأسماء ولا عناوين البريد الإلكتروني ولا الدرجات. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يُدفعان ويتجددان مثل Family+، ويستطيع الطالب أن يطلب موافقة ولي أمره على الشراء.
+يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يُدفعان ويتجددان مثل Family+، ويستطيع الطالب أن يطلب موافقة ولي أمره على الشراء.
 ```
 
 ### Keywords
@@ -485,25 +485,25 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 | `play.en.title` | 27 | 30 | characters | yes |
 | `play.en.short` | 79 | 80 | characters | yes |
 | `play.en.full` | 2637 | 4000 | characters | yes |
-| `play.en.full + play.en.ai` | 3166 | 4000 | characters | yes |
+| `play.en.full + play.en.ai` | 3218 | 4000 | characters | yes |
 | `play.en.whatsnew` | 257 | 500 | characters | yes |
 | `play.ar.title` | 26 | 30 | characters | yes |
 | `play.ar.short` | 77 | 80 | characters | yes |
 | `play.ar.full` | 2302 | 4000 | characters | yes |
-| `play.ar.full + play.ar.ai` | 2782 | 4000 | characters | yes |
+| `play.ar.full + play.ar.ai` | 2820 | 4000 | characters | yes |
 | `play.ar.whatsnew` | 227 | 500 | characters | yes |
 | `ios.en.name` | 27 | 30 | characters | yes |
 | `ios.en.subtitle` | 22 | 30 | characters | yes |
 | `ios.en.promo` | 138 | 170 | characters | yes |
 | `ios.en.description` | 2787 | 4000 | characters | yes |
-| `ios.en.description + ios.en.ai` | 3349 | 4000 | characters | yes |
+| `ios.en.description + ios.en.ai` | 3401 | 4000 | characters | yes |
 | `ios.en.keywords` | 94 | 100 | UTF-8 bytes | yes |
 | `ios.en.whatsnew` | 257 | 4000 | characters | yes |
 | `ios.ar.name` | 26 | 30 | characters | yes |
 | `ios.ar.subtitle` | 25 | 30 | characters | yes |
 | `ios.ar.promo` | 138 | 170 | characters | yes |
 | `ios.ar.description` | 2433 | 4000 | characters | yes |
-| `ios.ar.description + ios.ar.ai` | 2942 | 4000 | characters | yes |
+| `ios.ar.description + ios.ar.ai` | 2980 | 4000 | characters | yes |
 | `ios.ar.keywords` | 100 | 100 | UTF-8 bytes | yes |
 | `ios.ar.whatsnew` | 227 | 4000 | characters | yes |
 <!-- counts:end -->

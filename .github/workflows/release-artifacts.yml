@@ -2,9 +2,11 @@ name: Release artifacts (no deployment)
 
 # INFRA-081. Builds, signs and attests release artifacts from a version tag.
 # It deploys nothing: there is no approved region or production environment
-# yet (ADR-0005 is Deferred), so no job holds deployment credentials. Mobile
-# store builds stay blocked by the SEC-001 guards until REL-002; this
-# workflow proves those guards are still in place rather than removing them.
+# yet (ADR-0005 is Deferred), so no job holds deployment credentials. Since
+# the REL-002 cutover (ADR-0044) a store build is possible, but only with the
+# production defines contract and the owner's signing, which CI never holds;
+# this workflow proves the release checks are in place, and builds no store
+# artifact.
 
 on:
   push:
@@ -74,7 +76,7 @@ jobs:
           push-to-registry: true
 
   mobile:
-    name: Mobile build identity and SEC-001 guard check
+    name: Mobile build identity and release checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -83,14 +85,13 @@ jobs:
         with:
           persist-credentials: false
 
-      # The guards are removed only by the reviewed REL-002 change. Until
-      # then a production artifact must be impossible to produce; ADR-0042
-      # allows only an Android internal-testing build of the test copy.
-      - name: Verify SEC-001 release guards are intact
+      # REL-002 (ADR-0044): a release build is production under the
+      # production defines contract, or the development test copy (ADR-0042).
+      - name: Verify the release checks are wired in
         run: |
-          grep -q 'SEC-001: Android release builds are blocked' android/app/build.gradle.kts
-          grep -q 'val sec001ReleaseAppEnv = "development"' android/app/build.gradle.kts
-          grep -q 'SEC-001 Release Block' ios/Runner.xcodeproj/project.pbxproj
+          grep -q 'val releaseAppEnvs = setOf("production", "development")' android/app/build.gradle.kts
+          grep -q 'checkProductionDefines(repositoryRoot)' android/app/build.gradle.kts
+          grep -q 'scripts/release/ios-release-check.sh' ios/Runner.xcodeproj/project.pbxproj
 
       - name: Set up Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -121,5 +122,8 @@ jobs:
           --dart-define=APP_ENV=synthetic
           --build-number=${{ steps.number.outputs.build }}
 
-      - name: Confirm a production release build is still refused
+      - name: Confirm the Android release check refuses and admits as designed
         run: .github/scripts/check-android-release-guard.sh
+
+      - name: Confirm the iOS release check refuses and admits as designed
+        run: .github/scripts/check-ios-release-guard.sh

@@ -7,6 +7,13 @@ decision log.
 **This repository is public.** Keep your answers and any annotated copies
 outside it; send them to hello@studafy.com.
 
+**Update 2026-10-17 (DL-068):** the owner published privacy policy 1.5
+and terms of use 1.3 without waiting for these answers. Where an item below
+is marked **policy**, 1.5 already carries draft wording (AI photos, the
+processors, helper photos, inactive accounts, the export, safety reports),
+with a TODO(legal) comment beside it. Please review that wording; changes
+ship with a new consent version.
+
 Each item says what the app does now, with the file or decision behind it,
 and the question. Items marked **policy** need a change to privacy policy
 1.4 (`docs/legal/privacy-policy.md`, live in English and Arabic); please

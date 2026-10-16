@@ -39,12 +39,12 @@ afterwards (`docs/deployment/fly-io.md`).
 | Secret | What | Notes |
 |---|---|---|
 | `DATABASE_URL` | Pooler connection as `studafy_api_runtime` | Production refuses `postgres` (ADR-0041). The runtime role passwords are still to be set by the owner |
-| `DATABASE_CA_CERT` | Supabase root CA | Verifies the database certificate |
+| `DATABASE_CA_CERT` | Supabase root CA | Verifies the database certificate. Required in production: the API and worker refuse to start without it, or with a `DATABASE_URL` that sets `sslmode` (go-live audit, 2026-10-16) |
 | `REDIS_URL` | Redis | Production requires `rediss://` with a password; the test copy is still plaintext (owner to move) |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Storage and admin calls | Server only, never in the app |
 | `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` | One random key per purpose | `openssl rand -hex 32`, all different |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` | Cloudflare Turnstile (parent looks up a student) | |
-| `AI_API_KEY` (+ `AI_BASE_URL`, `AI_MODEL`) | Together AI | The study helper runs whenever this is set, whatever `AI_LESSON_TOOLS_ENABLED` says. Needs the provider DPA and the DPIA before real students (ADR-0037) |
+| `AI_API_KEY` (+ `AI_BASE_URL`, `AI_MODEL`, configuration in the Fly config) | Together AI | The study helper runs whenever this is set, whatever `AI_LESSON_TOOLS_ENABLED` says. Required in production: the AI study tools are on from launch (DL-062, ahead of the provider DPA and the DPIA, an accepted risk recorded there) |
 | `SENTRY_DSN` | Sentry project `studafy-backend`, EU | Once PR #38 is merged, releases are tagged per deploy (`SENTRY_RELEASE` optional; Fly's deployment tag otherwise) |
 
 ### Worker (`fly.worker.toml` / `fly.test.worker.toml`)
@@ -54,7 +54,7 @@ afterwards (`docs/deployment/fly-io.md`).
 | `DATABASE_URL`, `DATABASE_CA_CERT`, `REDIS_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SENTRY_DSN` | As the API, with `studafy_worker_runtime` | |
 | `MALWARE_SCANNER_API_KEY` (+ `MALWARE_SCANNER_URL`) | File scanning by the self-hosted ClamAV scanner (below) | The key is the scanner's `SCANNER_API_KEY`. The URL is reachable only over Fly's private network: test `http://studafy-scanner-test.internal:8080/scan` (a secret there); production `http://studafy-scanner.internal:8080/scan`, set in `fly.worker.toml`, not a secret. A production worker refuses to start without both |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (+ `QUEUE_ALERTS_ENABLED=true`) | Background-work alerts (launch plan 4.7, PR #38) | The alert relay's bot can be reused. Off on the test copy until set; `fly.worker.toml` turns them on, so the production worker needs both |
-| `AI_API_KEY` | Reading scanned teacher files (with `AI_MATERIAL_INDEX_ENABLED`) | Same provider and conditions as the API |
+| `AI_API_KEY` | Reading scanned teacher files (with `AI_MATERIAL_INDEX_ENABLED`) and writing study notebooks | Same provider as the API; required in production (DL-062) |
 
 ### Malware scanner (`fly.scanner.test.toml` / `fly.scanner.toml`)
 
@@ -104,6 +104,20 @@ deploy checklist".
 
 Tests that write fixtures run on a **throwaway** stack, never the local
 database or the hosted one (`handoff.md`).
+
+## Launch day
+
+The production apps' secrets are imported by `scripts/production/cutover.ts`
+from one file the owner keeps in `~/studafy-secrets/` (mode 600), in the
+format `fly secrets import` reads. Each app receives only its own names
+(pinned by `scripts/production/cutover.test.ts`). `DATABASE_URL` is written
+twice, as `API__DATABASE_URL` and `WORKER__DATABASE_URL`, because each app
+logs in as its own runtime role; the scanner's `SCANNER_API_KEY` is also
+imported into the worker as `MALWARE_SCANNER_API_KEY`. The same file can hold
+`ADMIN_DATABASE_URL` (a `postgres` session connection) for
+`scripts/production/clean-test-data.ts`; the cutover does not import it into
+any app. Neither script prints a value. Order and inputs:
+`docs/deployment/production-cutover.md`.
 
 **BullMQ needs no credential of its own**: `REDIS_URL` is its whole
 configuration.

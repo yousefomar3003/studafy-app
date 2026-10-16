@@ -683,6 +683,35 @@ function refusePlaintextDatabase(value: string | undefined): void {
   }
 }
 
+/**
+ * Encryption alone does not prove the server is Supabase's: without the
+ * root CA a connection accepts any certificate. Production therefore needs
+ * DATABASE_CA_CERT (go-live audit, 2026-10-16), and a connection string that
+ * sets sslmode or ssl itself is refused, because the client then follows the
+ * URL and never uses the CA (packages/database, databaseTls).
+ */
+function refuseUnverifiedDatabase(
+  url: string | undefined,
+  caCert: string | undefined,
+): void {
+  if (!url) return;
+  if (!caCert || !caCert.includes("BEGIN CERTIFICATE")) {
+    throw new ConfigError(
+      "Production requires DATABASE_CA_CERT (the Supabase root CA, PEM) so the database certificate is verified.",
+    );
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.searchParams.has("sslmode") || parsed.searchParams.has("ssl")) {
+      throw new ConfigError(
+        "Production DATABASE_URL must not set sslmode or ssl: DATABASE_CA_CERT verifies the certificate.",
+      );
+    }
+  } catch (error) {
+    if (error instanceof ConfigError) throw error;
+  }
+}
+
 /** Supabase's own roles: owners, or able to bypass row-level security. */
 const PRIVILEGED_DATABASE_ROLES = new Set([
   "postgres",
@@ -754,6 +783,7 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   refuseStorageSplit(env);
   refusePlaintextDatabase(env.DATABASE_URL);
   refusePrivilegedDatabaseRole(env.DATABASE_URL);
+  refuseUnverifiedDatabase(env.DATABASE_URL, env.DATABASE_CA_CERT);
   if (env.CLIENT_IP_SOURCE === "forwarded") {
     // X-Forwarded-For is whatever the caller wrote: every IP limit would be
     // one header away from bypass.
@@ -814,6 +844,7 @@ export function enforceWorkerFailClosed(env: WorkerEnv): void {
   refuseStorageSplit(env);
   refusePlaintextDatabase(env.DATABASE_URL);
   refusePrivilegedDatabaseRole(env.DATABASE_URL);
+  refuseUnverifiedDatabase(env.DATABASE_URL, env.DATABASE_CA_CERT);
   const posture = redisUrlPostureProblems(env.REDIS_URL);
   if (posture.length > 0) {
     throw new ConfigError(

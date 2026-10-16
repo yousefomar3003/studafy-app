@@ -16,13 +16,13 @@ When one changes, change all of them.
 **Decided 2026-10-13** (DL-056):
 - **Category:** not the Kids category. Education, with an honest age rating (item 1).
 - **Arabic permission prompts:** added in `ios/Runner/ar.lproj/InfoPlist.strings` (item 4).
-- **AI:** off for real students until the DPA and DPIA are signed (item 2).
+- **AI:** off for real students until the DPA and DPIA are signed (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent; the DPA and DPIA are still not signed.
 - **Sentry IP storage** (item 3) needs the Sentry dashboard. The CI token cannot change project settings.
 
 1. **Age rating and the Kids category.** Students are children.
    - "Made for Kids" (the Kids category) adds rules: no third-party analytics or ads, and parental gates on links out and purchases.
    - Studafy is used in school, by teachers and parents as well, so the usual choice is **not** the Kids category, with an honest age rating. Decide this together with the Google Play target audience (decision 3 in the Play doc).
-2. **AI provider DPA.** Same as decision 2 in the Play doc. Without a DPA, Together AI is not a service provider and the answers change.
+2. **AI provider DPA.** Same as decision 2 in the Play doc. Without a DPA, Together AI is not a service provider and the answers change. AI is on from launch (DL-062) and the DPA is not accepted yet; privacy policy 1.5 §8 says so. Accept it before submitting these answers.
 3. **The Sentry setting "Prevent Storing of IP Addresses"** (`docs/deployment/fly-io.md`). These answers say crash data is not linked to the user, which needs that setting on. Also needed: the native crash handler must attach no installation ID. Item 4.7 checks this.
 4. **Arabic permission prompts.** `ios/Runner` has no `ar.lproj/InfoPlist.strings`, so Arabic users see the camera, microphone and photo prompts in English. Add Arabic strings before release. They need a localized variant group in Xcode, which is best done in Xcode itself.
 
