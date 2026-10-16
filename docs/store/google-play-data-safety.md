@@ -23,7 +23,7 @@ The form must stay consistent with:
 
 **Decided 2026-10-13** (DL-056):
 - **Ages:** declare the real student ages, under-13s included (school age 5 to 17), plus adults. Families policy applies (item 3).
-- **AI:** off for real students until the Together AI DPA and the DPIA are signed. Leave `AI_API_KEY` unset in production until then (item 2).
+- **AI:** off for real students until the Together AI DPA and the DPIA are signed. Leave `AI_API_KEY` unset in production until then (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent (ADR-0043). The DPA and the DPIA are still not signed (item 2).
 - **Production database size:** deferred until the pilot's numbers are known.
 
 The items below remain open unless marked.
@@ -31,13 +31,14 @@ The items below remain open unless marked.
 These answers can't be settled from the code alone. Each one says what this
 draft assumes until you decide.
 
-1. **Malware scanner vendor.**
-   - **Why it matters:** uploaded files are sent to it (`packages/infrastructure/src/fileScanner.ts`), and a production worker won't start without it (`packages/config/src/index.ts`, the `FILE051_SCAN_ENABLED` checks).
-   - **Assumed:** a service provider bound by a contract, so files count as "collected", not "shared". Without a processing contract, the files would count as "shared".
+1. **Malware scanner vendor.** *Resolved: there is no vendor.* Files are scanned by ClamAV on our own Fly machines in Frankfurt, on the private network (`fly.scanner.toml`, `infra/scanner/`; privacy policy 1.5 §7.2). No file goes to a third party for scanning, so nothing about scanning is "shared".
+   - **Why it mattered:** uploaded files are sent to the scanner (`packages/infrastructure/src/fileScanner.ts`), and a production worker won't start without it (`packages/config/src/index.ts`, the `FILE051_SCAN_ENABLED` checks).
 2. **AI provider data processing agreement (DPA) and DPIA** (ADR-0037).
    - **What is sent to Together AI:** questions, chat history, class grade, language, lesson text, student photos, and page images of teacher files (`packages/infrastructure/src/studyAssistant.ts`, `packages/domain/src/study/grounding.ts`, `apps/worker/src/processors/materialIndex.ts`).
+   - **What is not sent:** names Studafy knows are replaced with `[student]`, `[classmate]`, `[teacher]` or `[parent]` in all text (ADR-0043, `packages/domain/src/study/nameRedaction.ts`); emails, links and long numbers are removed. **Photos and scanned pages are sent as they are.**
+   - **Who can use it:** students in a class who gave the separate AI consent (a parent's, for a managed child), and no one else (ADR-0043, `private.ai_access`).
    - **Assumed:** a service provider under a DPA, and AI chat content not "processed ephemerally", because Together's retention is not confirmed in writing.
-   - **If the basic helper should not run at launch:** leave `AI_API_KEY` unset in production. `AI_LESSON_TOOLS_ENABLED="false"` alone does not stop it (`apps/api/src/study/routes.ts`).
+   - **State on 2026-10-17:** AI is on from launch (DL-062) and **the DPA is not accepted yet**. Privacy policy 1.5 §6 and §8 say publicly that the agreement is not yet in place. Accept Together AI's DPA before submitting this form, or the "service provider" assumption (and "Shared: No") does not hold for AI data.
 3. **Target audience and Families policy.**
    - Students are children, so Families policy applies (`docs/planning/instructions.md` §24.2). Choose the age bands for the Target audience page. There is no age gate in the app (`docs/governance/decision-log.md` DL-037).
    - **Assumed:** you will declare the real student ages, including under 13.
@@ -48,7 +49,7 @@ draft assumes until you decide.
 6. **Wellbeing notes.**
    - Teachers record strengths, notes and concerns about a student (`lib/features/academic/presentation/create_wellbeing_page.dart`).
    - **Assumed:** declared as "Other user-generated content". If schools will record medical or health matters there, declare "Health info" as well.
-7. **Retention periods** for files, AI outputs and audit records are not set yet (`apps/worker/src/processors/retentionSweep.ts`; ADR-0008). The form doesn't ask for periods, but the privacy policy has to state them.
+7. **Retention periods** for files, AI outputs and audit records are not set yet (`apps/worker/src/processors/retentionSweep.ts`; ADR-0008). The form doesn't ask for periods, but the privacy policy has to state them. *Since DL-057 and DL-060 the policy (1.5, §10) states them, helper photos 30 days included; the purges run once `RETENTION_SCHEDULE_ENABLED` is on.*
 8. **Account deletion gaps.** These are being fixed in item 3.6b, before this form is submitted. Today the deletion run leaves behind:
    - the child's name on class rosters;
    - notebooks, AI outputs and usage records;
@@ -90,7 +91,7 @@ draft assumes until you decide.
 Terms used in the tables:
 - **Collected** means sent off the device to Studafy or to a service provider acting for Studafy.
 - **Shared** means transferred to a third party for its own purposes. Following Google's definitions, nothing below is shared. The exempt cases are:
-  - transfers to **service providers** that process data for Studafy under contract: Supabase, Fly.io, Sentry, Axiom, Together AI, Resend, Firebase Cloud Messaging, Google Workspace (Meet), the malware scanner, and Redis;
+  - transfers to **service providers** that process data for Studafy under contract: Supabase, Fly.io, Sentry, Axiom, Cloudflare (encrypted backups in R2, EU; Turnstile; the network in front of the API), Together AI (DPA not yet accepted: item 2), Resend, Firebase Cloud Messaging and Redis. Telegram receives alerts that carry no user data (a report's id, kind and priority, a hashed school id; counts). The malware scanner is our own (item 1). Google Workspace (Meet) is not used: Studafy creates no meetings (DL-065);
   - transfers the **user starts themselves**: store purchases go to Google Play and Apple as independent controllers.
 - **Ephemeral** means processed only in memory and kept no longer than the request.
 
@@ -103,7 +104,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 | Data type | Collected | Shared | Ephemeral | Required or optional | Purposes | What and where |
 |---|---|---|---|---|---|---|
 | **Name** | Yes | No | No | Required | App functionality, Account management | The display name chosen at first sign-in (`lib/features/account/presentation/profile_setup_page.dart`). A student's name on class rosters (`students.display_name`). A child account's name, entered by the parent (`lib/features/accounts/presentation/create_child_account_page.dart`). Apple sign-in asks for the full name, but the app never forwards it (`api_session_repository.dart:171-193`). |
-| **Email address** | Yes | No | No | Required, except managed child accounts, which have none | Account management, App functionality | The sign-in email, held by Supabase Auth. Notification emails go out via Resend when email delivery is switched on (`packages/infrastructure/src/notifications/channelSenders.ts:53-98`). Meeting invitations go to attendees' emails through Google Calendar when meetings are on (`packages/infrastructure/src/meetings/conferenceProvider.ts`). |
+| **Email address** | Yes | No | No | Required, except managed child accounts, which have none | Account management, App functionality | The sign-in email, held by Supabase Auth. Notification emails go out via Resend when email delivery is switched on (`packages/infrastructure/src/notifications/channelSenders.ts:53-98`). Meeting invitations through Google Calendar are off: Studafy creates no meetings at launch (DL-065; `MEETINGS_PROCESSOR_ENABLED` unset in `fly.worker.toml`), so no attendee email goes to Google (`packages/infrastructure/src/meetings/conferenceProvider.ts`). |
 | **User IDs** | Yes | No | No | Required | App functionality, Account management, Fraud prevention, security and compliance | The account UUID and the Studafy ID (`profiles.public_id`). The account UUID is attached to request logs in Axiom (`apps/api/src/platform/middleware.ts:313-358`). It is also passed to the store as the obfuscated account ID or `appAccountToken` (`lib/data/billing/store_subscription_repository.dart`). |
 | **Address** | No | | | | | |
 | **Phone number** | No | | | | | There is no phone field in the app's tables or forms. |
@@ -130,7 +131,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 
 | Data type | Collected | Shared | Ephemeral | Required or optional | Purposes | What and where |
 |---|---|---|---|---|---|---|
-| **Photos** | Yes | No | No | Optional | App functionality | Attachments from the camera or gallery, re-encoded at 2400 px and quality 85 (`lib/core/platform_attachment_source.dart:19-31`). Whiteboard photos for notebooks, and photos sent with an AI question (`lib/core/file_upload_repository.dart`). These go to Supabase Storage, the malware scanner and, for AI photos, Together AI. AI photos are deleted from storage 30 days after upload once `RETENTION_SCHEDULE_ENABLED` is on (DL-060); that does not change these answers. **Profile photos stay on the device and are not collected** (`lib/core/profile_photo.dart:10-16`). |
+| **Photos** | Yes | No | No | Optional | App functionality | Attachments from the camera or gallery, re-encoded at 2400 px and quality 85 (`lib/core/platform_attachment_source.dart:19-31`). Whiteboard photos for notebooks, and photos sent with an AI question (`lib/core/file_upload_repository.dart`). These go to Supabase Storage, our own malware scanner and, for AI photos, Together AI, which receives them as they are (names in text are replaced; a photo cannot be, ADR-0043). AI photos are deleted from storage 30 days after upload once `RETENTION_SCHEDULE_ENABLED` is on (DL-060); that does not change these answers. **Profile photos stay on the device and are not collected** (`lib/core/profile_photo.dart:10-16`). |
 | **Videos** | No | | | | | Only JPEG and PNG images are accepted (`lib/core/attachment_policy.dart:32-95`). |
 
 ### Audio files
@@ -150,7 +151,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 
 | Data type | Collected |
 |---|---|
-| Calendar events | No. Meetings are created in the app; the device calendar is never read. |
+| Calendar events | No. The app creates no meetings (DL-065), and the device calendar is never read. |
 | Contacts | No. The "contacts" list in the app is the school directory from the API, not the phone's contacts. |
 
 ### App activity
@@ -164,8 +165,8 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 | **Other actions** | No | | | | | |
 
 **Other user-generated content:**
-- **Students:** assignment and exam answers; notebook notes, highlights, bookmarks and sections. AI helper questions and the chat history sent with them, which go to Together AI with emails, links and long numbers redacted (`packages/domain/src/study/studyContent.ts:44`). The server stores no AI chat; the history is kept on the device (`lib/features/study_assistant/`).
-- **Teachers:** lessons, announcements, meeting titles and times, and wellbeing notes (decision 6).
+- **Students:** assignment and exam answers; notebook notes, highlights, bookmarks and sections. AI helper questions and the chat history sent with them, which go to Together AI with emails, links and long numbers redacted (`packages/domain/src/study/studyContent.ts:44`) and the names Studafy knows replaced (ADR-0043). Only students in a class with a current AI consent can send them. The server stores no AI chat; the history is kept on the device (`lib/features/study_assistant/`).
+- **Teachers:** lessons, announcements (which may hold a meeting link), and wellbeing notes (decision 6).
 - **Everyone:** abuse reports and appeals.
 
 ### Web browsing
