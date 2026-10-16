@@ -26,6 +26,11 @@ sampled person teaches, is enrolled in or has a child in, built by
 `api041_grade_json` one at a time and by `api041_grade_rows` a class at a time
 and one at a time, as that person (fix 6) |
 
+| Script                          | What it proves                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `study-lesson-differential.sql` | `private.study_lesson` (the lesson the AI study tools and notebooks read) for every sampled person and every lesson published to a class they are related to, a share of their schools' lessons, lessons of other schools, and signed-out and unknown callers: the same answer before and after a migration (2026-10-17)                                                                                           |
+| `plant-study-lesson.sql`        | Access cases the seed lacks, on top of `plant-lessons.sql`: version files being scanned, rejected, deleted and clean; one-audience, withdrawn, tied, draft and class-less publications; parent and guardian memberships (and none, or one in another school); school admins who teach or are parents elsewhere; lapsed enrolments, links, memberships, classes, terms, profiles, students and schools (2026-10-17) |
+
 Each proof runs in **one transaction**: record, apply the migration, record
 again, compare, roll back. `now()` is fixed inside a transaction, so fields that
 depend on the time (whether work is still open) compare fairly.
@@ -64,6 +69,13 @@ psql "$DB" -X -v plant=scripts/scale/proof/plant-grades.sql \
 psql "$DB" -X -v plant=scripts/scale/proof/plant-grades.sql \
   -v migration=supabase/migrations/202610150040_capacity_grades_rows_per_page.sql \
   -v sample=100 -f scripts/scale/proof/grade-rows-differential.sql
+
+# study_lesson (2026-10-17), with access cases planted (on the pgTAP
+# fixtures add -v seed_lessons=1 -v lesson_every=1 -v access_every=1
+# -v resource_every=1, and restore the original first with -v pre1=):
+psql "$DB" -X -v plant=scripts/scale/proof/plant-study-lesson.sql \
+  -v migration=supabase/migrations/202610160010_capacity_study_lesson_access.sql \
+  -v sample=500 -f scripts/scale/proof/study-lesson-differential.sql
 
 # The access rules themselves, with edge cases planted:
 psql "$DB" -X -v sample=100 -f scripts/scale/proof/access-differential.sql
