@@ -2,7 +2,8 @@
 # Deploy from the repository root:
 #   fly deploy --config fly.api.toml
 # Secrets (DATABASE_URL, REDIS_URL, keys, SENTRY_DSN ...) are set with
-# `fly secrets set`, never here.
+# `fly secrets import`, never here; the list is in docs/deployment/fly-io.md,
+# "Production deploy checklist".
 
 app = "studafy-api"
 # Frankfurt, next to the Supabase database (eu-central-1).
@@ -15,10 +16,13 @@ primary_region = "fra"
   ENVIRONMENT = "production"
   API_PORT = "8080"
   # Client addresses: CF-Connecting-IP only from Cloudflare's ranges, else
-  # Fly-Client-IP (security audit 2026-10-08). Once api.studafy.com is
-  # proxied by Cloudflare, also set ORIGIN_REQUIRE_CLOUDFLARE = "true" so
-  # studafy-api.fly.dev cannot be used to step around Cloudflare.
+  # Fly-Client-IP (security audit 2026-10-08).
   CLIENT_IP_SOURCE = "cloudflare"
+  # Refuses every request but /healthz that did not come through Cloudflare.
+  # Off until api.studafy.com is proxied by Cloudflare (launch plan C8, 4.2);
+  # then "true", so studafy-api.fly.dev cannot be used to step around
+  # Cloudflare. On before that, the API would refuse all traffic.
+  ORIGIN_REQUIRE_CLOUDFLARE = "false"
   # AI answers from class material, quizzes (6-9 s) and notebooks (8-14 s)
   # need more than the 10 s default, as on the test copy (launch plan 2.2).
   API_REQUEST_TIMEOUT_MS = "20000"
