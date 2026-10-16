@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -282,6 +283,7 @@ class AttachmentFieldState extends State<AttachmentField> {
           fileId: stored.id,
         ),
       );
+      if (!ready) unawaited(_watchScan(localId, stored.id));
     } on FileServiceUnavailable {
       if (!mounted) return;
       // Not the file and not the connection: this school's server does not
@@ -307,6 +309,64 @@ class AttachmentFieldState extends State<AttachmentField> {
         ),
       );
     }
+  }
+
+  /// Asks how the scan went until it decides, so a refused file says so
+  /// and why, instead of "Checking" until the form fails on submit. Gives
+  /// up quietly after about two minutes: the file is still attachable, and
+  /// the server decides again on submit.
+  Future<void> _watchScan(String localId, String fileId) async {
+    final source = widget.uploads;
+    if (source is! FileScanStatusSource) return;
+    const waits = [1, 2, 2, 3, 3, 5, 5, 5, 8, 8, 10, 10, 15, 15, 15];
+    for (final seconds in waits) {
+      await Future<void>.delayed(Duration(seconds: seconds));
+      if (!mounted) return;
+      final current = _items.where((item) => item.localId == localId);
+      if (current.isEmpty ||
+          current.first.fileId != fileId ||
+          current.first.stage != AttachmentStage.quarantined) {
+        return;
+      }
+      final FileScanStatus status;
+      try {
+        status = await (source as FileScanStatusSource).scanStatus(fileId);
+      } on Object {
+        continue;
+      }
+      if (!mounted) return;
+      if (status.isClean) {
+        _replace(
+          localId,
+          (item) => item.copyWith(stage: AttachmentStage.ready),
+        );
+        return;
+      }
+      if (status.isRefused) {
+        // The same bytes would be refused again, so no "try again".
+        _picked.remove(localId);
+        final reason = _scanRefusalText(status.failureCode);
+        _replace(
+          localId,
+          (item) =>
+              item.copyWith(stage: AttachmentStage.failed, message: reason),
+        );
+        return;
+      }
+    }
+  }
+
+  String _scanRefusalText(String? failureCode) {
+    final l10n = AppL10n.of(context);
+    return switch (failureCode) {
+      'malware_detected' => l10n.attachmentRefusedUnsafe,
+      'encrypted_document' ||
+      'embedded_file' ||
+      'active_content' ||
+      'external_reference' => l10n.attachmentRefusedNotAllowed,
+      'malformed_file' || 'polyglot_file' => l10n.attachmentRefusedDamaged,
+      _ => l10n.attachmentRefusedOther,
+    };
   }
 
   void _replace(String localId, Attachment Function(Attachment) update) {

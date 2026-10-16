@@ -55,6 +55,23 @@ class _Uploads implements FileUploadRepository {
       throw StateError('not used here');
 }
 
+/// Uploads that can also say how the scan went, as the real API does.
+class _ScanningUploads extends _Uploads implements FileScanStatusSource {
+  _ScanningUploads(this.statuses) : super(scanState: 'quarantined');
+
+  /// What each successive status check answers; the last one repeats.
+  final List<FileScanStatus> statuses;
+  int checks = 0;
+
+  @override
+  Future<FileScanStatus> scanStatus(String fileId) async {
+    final status =
+        statuses[checks < statuses.length ? checks : statuses.length - 1];
+    checks += 1;
+    return status;
+  }
+}
+
 PickedAttachment _picked({
   String name = 'homework.pdf',
   String mediaType = 'application/pdf',
@@ -327,6 +344,67 @@ void main() {
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNotNull,
     );
+  });
+
+  testWidgets('a file the scan refuses says why, and offers no retry', (
+    tester,
+  ) async {
+    // 2026-10-15: a teacher's PDF was refused as malformed while the lesson
+    // screen still said "Checking", and the lesson then failed to save.
+    final uploads = _ScanningUploads(const [
+      FileScanStatus(scanState: 'quarantined'),
+      FileScanStatus(scanState: 'deleted', failureCode: 'malformed_file'),
+    ]);
+    var latest = const <Attachment>[];
+    await tester.pumpWidget(
+      field(uploads, picked: _picked(), onChanged: (v) => latest = v),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+    expect(find.text('Checking'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+
+    expect(latest.single.stage, AttachmentStage.failed);
+    expect(find.textContaining('looks damaged or unusual'), findsOneWidget);
+    expect(find.text('Checking'), findsNothing);
+    expect(uploads.commands, hasLength(1));
+  });
+
+  testWidgets('a file the scan clears turns ready on its own', (tester) async {
+    final uploads = _ScanningUploads(const [
+      FileScanStatus(scanState: 'clean'),
+    ]);
+    var latest = const <Attachment>[];
+    await tester.pumpWidget(
+      field(uploads, picked: _picked(), onChanged: (v) => latest = v),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(latest.single.stage, AttachmentStage.ready);
+    expect(find.text('Ready'), findsOneWidget);
+  });
+
+  testWidgets('malware gets its own message', (tester) async {
+    final uploads = _ScanningUploads(const [
+      FileScanStatus(scanState: 'deleted', failureCode: 'malware_detected'),
+    ]);
+    await tester.pumpWidget(field(uploads, picked: _picked()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(find.textContaining('may be harmful'), findsOneWidget);
   });
 }
 

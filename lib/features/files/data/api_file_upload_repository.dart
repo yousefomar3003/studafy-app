@@ -11,7 +11,8 @@ import 'signed_upload_transport.dart';
 /// Fetches a delivery link's bytes with the caller's session attached.
 typedef DeliveryFetcher = Future<Uint8List> Function(Uri url);
 
-class ApiFileUploadRepository implements FileUploadRepository {
+class ApiFileUploadRepository
+    implements FileUploadRepository, FileScanStatusSource {
   ApiFileUploadRepository(this._api, this._uploads, {this.fetch});
 
   final V1ApiClient _api;
@@ -70,6 +71,15 @@ class ApiFileUploadRepository implements FileUploadRepository {
       displayName: completed.file.displayName,
       sizeBytes: completed.file.sizeBytes,
       scanState: completed.file.scanState,
+    );
+  }
+
+  @override
+  Future<FileScanStatus> scanStatus(String fileId) async {
+    final file = await _api.getFileStatus(fileId: fileId);
+    return FileScanStatus(
+      scanState: file.scanState,
+      failureCode: file.failureCode,
     );
   }
 
