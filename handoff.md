@@ -1,8 +1,7 @@
 # Handoff: Studafy
 
-Updated: 2026-10-16. `main` is at `c6c309f`. **Everything from PRs #52–#82
-is merged and on the test copy.** No PR is open apart from the three in
-progress below.
+Updated: 2026-10-16, evening. **Everything from PRs #52–#88 is merged and
+on the test copy.** No PR is open.
 
 ## Start here (2026-10-16)
 
@@ -59,16 +58,28 @@ progress below.
 9. The rest of parts B and C of the launch plan (keystore C1, Firebase C3,
    Resend C5, production decisions B1–B3…).
 
-### In progress at writing (check `gh pr list`)
-- `study_lesson` capacity (`feat/capacity-study-lesson`): the access check
-  as a set query, with the zero-difference proof.
-- Western digits in the Material date and time pickers
-  (`fix/arabic-picker-digits`).
-- Android screenshots for Play, 2:1 or less (`docs/play-screenshots`).
+### Later on 2026-10-16
+- **#84:** Arabic date and time pickers show 0–9, and typed dates such as
+  16/10/2026 are accepted (they were refused before). App only.
+- **#87:** `study_lesson` decides access once per call: about 20× cheaper per
+  call, zero differences; migration `202610160010` applied.
+- **#86:** the app hides AI and messaging when the server says they are off
+  (no Helper tab or AI buttons without AI; Announcements instead of Messages
+  without messaging). Plan names in Arabic are isolated, so "Family+" no
+  longer shows as "+Family". **Messaging is now enforced on the server
+  (DL-061):** `MESSAGING_ENABLED` is `"false"` in `fly.api.toml`
+  (production) and `"true"` in `fly.test.api.toml`; off, sending answers
+  403 `MESSAGING_DISABLED`. New teaching spaces start with messaging off.
+  Migrations `202610160020` and `202610160021` applied; test API redeployed.
+  Turning messaging on in production waits for SAFE-043's gate (B9).
+- **#85:** Google Play screenshots (Android, 1080×2160, exactly 2:1) and the
+  iPhone set retaken losslessly (the old ones were lossy palette PNGs);
+  none shows AI or messaging.
+- **#88:** `generate:db-types` no longer falls back to the local stack
+  outside CI (it read the owner's local schema once, read only); set
+  `DB_TYPES_DB_URL`, or `DB_TYPES_LOCAL=1` on purpose.
 
 ### Next for Claude
-- Review and merge those three PRs; `study_lesson` needs a backup and its
-  migration on the test copy.
 - Tick 2.8 once a lesson saved on the phone with a refused file names it.
 - Look into `outbox_dispatch_record_lost` (outbox 25, 12:00 UTC on
   2026-10-16, before the worker deploy): a dispatch the worker lost track of.
@@ -82,8 +93,9 @@ progress below.
 ### Rules (unchanged, plus today's)
 - Test only on throwaway stacks. Never the local working database (54322,
   container `supabase_db_studafy`) or its Auth (54321). The repo `.env`
-  points `DATABASE_URL` at it and Bun loads it; set `DATABASE_URL`, and for
-  the password-session suite `AUTH_INTEGRATION_SUPABASE_URL`, explicitly.
+  points `DATABASE_URL` at it and Bun loads it; set `DATABASE_URL`, for the
+  password-session suite `AUTH_INTEGRATION_SUPABASE_URL`, and for the
+  db-types check `DB_TYPES_DB_URL`, explicitly.
 - `scripts/rehearse-recovery.ts` now follows `DATABASE_URL` (#66), but
   check any script that picks Docker containers by name before running it.
 - New migrations must sort after everything on `main`
