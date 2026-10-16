@@ -5,6 +5,13 @@ Status as of **2026-10-17**, `main` at `5021720`. Launch plan D2, work plan
 [production readiness assessment](2026-10-11-production-readiness.md), and
 every issue in its register (PR-01 to PR-30), with evidence.
 
+**Updated 2026-10-17 (DL-070, branch `prod/all-features-on`):** the
+release cutover (#99, DL-069) and privacy policy 1.5 (#100) have merged;
+production uploads, email/push and billing switches are on (DL-070), each
+key-gated feature starting once its key exists. Rows I-6, I-9, I-12, I-19,
+PR-01, PR-06 and code note 3 are updated; every feature's production state
+is in `docs/deployment/production-features.md`.
+
 How this was checked:
 - Each claim was checked against the repository on `main`, not only the
   planning docs: Fly configs, `packages/config`, the Gradle and Xcode
@@ -95,17 +102,20 @@ Everything in (a), plus the following.
 
 **Store payments, push and email.**
 - **Play billing in sandbox** (C6, 3.9). Plus and Max are on sale in the
-  store copy (DL-062, `docs/store/listing-copy.md`), but
-  `PAY071_BILLING_ENABLED` is `"false"` on the test copy and unset in
-  production.
-- **Push and email** (C3, C5):
+  store copy (DL-062, `docs/store/listing-copy.md`).
+  `PAY071_BILLING_ENABLED` is `"false"` on the test copy. In production it
+  is `"true"` with `PAY071_ENVIRONMENT = "production"` (DL-070), and billing
+  starts once one store's keys are imported; only the keys and products are
+  left.
+- **Push and email** (C3, C5). `NOTIFICATION_CHANNELS_ENABLED` is on in
+  production (DL-070); each channel starts when its keys are set:
   - Firebase files and the service-account key;
   - a verified Resend domain and key.
 
 **Release.**
-- **REL-002 cutover** (D1, 7.3), *in progress*. It must also let a
-  production build offer uploads: `allowsRemoteFileUploads` is still false
-  for production in `lib/core/runtime_environment.dart`.
+- **REL-002 cutover** (D1, 7.3): **done** 2026-10-17 (#99, DL-069,
+  ADR-0044). Production builds offer uploads since DL-070
+  (`allowsRemoteFileUploads` is true in production).
 
 **Backups and monitoring.**
 - **Backups pointed at production**, a timed restore drill, and an offline
@@ -173,31 +183,31 @@ English and Arabic (2.9).
 | I-3 | API and worker log in as runtime roles; Redis `rediss://`; database TLS with CA verified | **Partly** | **Test copy, done 2026-10-14** (work plan 2.3, 2.4; owner-run, from the handoff): both apps connect as `studafy_api_runtime` and `studafy_worker_runtime`, Redis Cloud is on TLS in Frankfurt, and the startup log has no `database_privileged_role` or `redis_plaintext_remote`. The CA was verified on the test copy on 2026-10-08 (`DATABASE_CA_CERT`, handoff). **Code:** `packages/config/src/index.ts` (`enforceApiFailClosed`, `enforceWorkerFailClosed`) refuses a plaintext DB, the `postgres` login and a non-`rediss://` or passwordless Redis in production. It does **not** require `DATABASE_CA_CERT`: `docs/deployment/fly-io.md` lists it only as "recommended". **Left:** the production apps (4.5); a paid production Redis (owner); set `DATABASE_CA_CERT` on both production apps |
 | I-4 | Domains live behind Cloudflare; `ORIGIN_REQUIRE_CLOUDFLARE=true`; WAF and rate rules for auth and uploads | **Partly** | Decided 2026-10-16 (DL-067, #94). On 2026-10-17, `legal.studafy.com` and `app.studafy.com` resolve to Cloudflare ((Cloudflare proxy address), (Cloudflare proxy address)): `/privacy`, `/terms` and `/delete-account` answer 200, and so does `/.well-known/assetlinks.json`. **`api.studafy.com` has no DNS record** (`curl` fails). `fly.api.toml` has `ORIGIN_REQUIRE_CLOUDFLARE = "false"`, its comment says why, and `CLIENT_IP_SOURCE = "cloudflare"`. There are no WAF or rate rules in the repo. Left: C8 and 4.2 |
 | I-5 | Real Turnstile keys; HSTS on (production mode) | **Waiting on owner** (C9) | `fly.api.toml` has `TURNSTILE_ENABLED="true"` and `TURNSTILE_HOSTNAMES="api.studafy.com"`. The config refuses Turnstile without a site key, a secret and a valid hostname. HSTS (`max-age=31536000; includeSubDomains`) is sent whenever `ENVIRONMENT=production` (`apps/api/src/platform/middleware.ts`), so it comes with the production app. The test copy still uses test keys (`TURNSTILE_HOSTNAMES="example.com"`, `fly.test.api.toml`). Left: the owner creates the production Turnstile widget and keys; then the API is deployed (4.5) |
-| I-6 | Malware scanner integrated; EICAR test refused in production | **Partly** | Self-hosted ClamAV, so no vendor DPA is needed (#50, #51, 2026-10-14). The test worker uses it. On the test copy, EICAR is refused by the structural check, and ClamAV's own EICAR detection passes its startup self-test (#50 body). Production: `fly.scanner.toml` (#56), and `fly.worker.toml` has `MALWARE_SCANNER_URL="http://studafy-scanner.internal:8080/scan"`. **Left:** deploy `studafy-scanner` and the production worker, then the EICAR and clean-PDF check there (4.4). The production app hides uploads until REL-002 (see the code notes) |
+| I-6 | Malware scanner integrated; EICAR test refused in production | **Partly** | Self-hosted ClamAV, so no vendor DPA is needed (#50, #51, 2026-10-14). The test worker uses it. On the test copy, EICAR is refused by the structural check, and ClamAV's own EICAR detection passes its startup self-test (#50 body). Production: `fly.scanner.toml` (#56), and `fly.worker.toml` has `MALWARE_SCANNER_URL="http://studafy-scanner.internal:8080/scan"`. **Left:** deploy `studafy-scanner` and the production worker, then the EICAR and clean-PDF check there (4.4). Since DL-070 (2026-10-17) the production app offers uploads: `allowsRemoteFileUploads` is true in production, and the API's `FILE050_NEW_INTENTS_ENABLED`, `FILE051_PUBLISH_ENABLED`, `FILE051_DELIVERY_ENABLED` and the worker's `FILE051_SCAN_ENABLED`, `FILE050_CLEANUP_ENABLED` are pinned on by `scripts/fly-config.test.ts` |
 | I-7 | Account deletion and data export complete end to end in production | **Partly** | `ACCOUNT_DELETION_EXECUTOR_ENABLED="true"` and `DATA_EXPORT_EXECUTOR_ENABLED="true"` in `fly.worker.toml` and the test worker. Local end to end 14/14 on 2026-10-11 (work plan 2.1 log). Since then: export v2 (#72), deletion of what accounts left behind (#35), and recent sign-in required (PR-30, `7b7b0db`). **Left:** one synthetic deletion and one export on the production apps after cutover |
 | I-8 | DPA and DPIA signed, and AI enabled; or Plus/Max not sold | **Waiting on owner** (C17) | Not met as written. DL-062 (2026-10-16) turns AI on from launch **ahead of** the DPA and DPIA, as an accepted risk: `AI_LESSON_TOOLS_ENABLED="true"` in `fly.api.toml` and `fly.worker.toml`, and Plus and Max are in the store copy. The DPIA is a draft only (`docs/legal/dpia-draft.md`, #57); the questions for counsel are in `docs/legal/questions-for-counsel-2026-10.md`. Safeguards in code: AI only for students in a class, a separate AI consent, names replaced (ADR-0043, #76). `docs/legal/privacy-policy.md` still carries the `TODO(legal)` "OUTSTANDING" comment at line 464; privacy 1.5 is *in progress*. Left: accept Together AI's DPA, and have the DPIA reviewed and signed |
-| I-9 | Store products created; purchase, renewal, refund and restore tested on both stores | **Waiting on owner** (C6, C15) | Code: store billing (PAY-071), Play voided purchases and pinned Pub/Sub names (#70). `PAY071_BILLING_ENABLED="false"` on the test copy; it is unset (off) in production, with a comment. No products, testers or server keys exist yet; guides `docs/guides/owner/05-play-billing.md` and `08-app-store-products.md` (#59) |
+| I-9 | Store products created; purchase, renewal, refund and restore tested on both stores | **Waiting on owner** (C6, C15) | Code: store billing (PAY-071), Play voided purchases and pinned Pub/Sub names (#70). `PAY071_BILLING_ENABLED="false"` on the test copy. Production: `PAY071_BILLING_ENABLED="true"`, `PAY071_ENVIRONMENT="production"`, `PAY071_RECONCILIATION_ENABLED="true"` (DL-070); billing runs only once one store's keys are complete (`billingActive`), and until then no billing route is mounted. No products, testers or server keys exist yet; guides `docs/guides/owner/05-play-billing.md` and `08-app-store-products.md` (#59) |
 | I-10 | Sign in with Apple works; identity final; release signing with upload key; INTERNET permission | **Partly** | **Identity: done 2026-10-14** (DL-058): `com.studafy.light` is `applicationId` (`android/app/build.gradle.kts:153`) and the bundle id (pbxproj). **INTERNET: done 2026-10-11** (`16ba19d`): it is in `android/app/src/main/AndroidManifest.xml`, and `aapt dump permissions` listed it on a release bundle before #61 merged (work plan 3.5). **Signing: wired** (#61): `signingConfigs.upload` comes from `STUDAFY_ANDROID_KEY_PROPERTIES`, with no debug fallback, and needs the owner's key (C1). **Apple: waiting** (B11, C13): `[auth.external.apple] enabled = false` in `supabase/config.toml` |
-| I-11 | Privacy manifest, store privacy forms, hosted policy and terms, subscription links | **Partly** | **Manifest done** 2026-10-12: `ios/Runner/PrivacyInfo.xcprivacy` is in the Runner target (#36). **Forms drafted, not submitted:** `docs/store/google-play-data-safety.md` (#34) and `docs/store/app-store-privacy-labels.md` (#36); submitting them is B12. **Hosted policy and terms live** on `legal.studafy.com` (#94; 200 on 2026-10-17). **Links:** the study plans and Family+ screens read `STUDAFY_TERMS_URL` and `STUDAFY_PRIVACY_URL`. The development and synthetic define examples point at `legal.studafy.com`, but no production defines file exists yet (`config/` has only the two examples), and the owner's tap-through (B6, 4.3) has not been reported |
-| I-12 | Push and email delivered on real devices | **Waiting on owner** (C3, C5, C14) | There is no `google-services.json` or `GoogleService-Info.plist` in the repo; the Gradle plugin applies only when the file exists. `NOTIFICATION_CHANNELS_ENABLED` is unset in `fly.worker.toml`. Test scripts exist: `scripts/send-test-notification.ts` and `scripts/send-test-email.ts` (#70) |
+| I-11 | Privacy manifest, store privacy forms, hosted policy and terms, subscription links | **Partly** | **Manifest done** 2026-10-12: `ios/Runner/PrivacyInfo.xcprivacy` is in the Runner target (#36). **Forms drafted, not submitted:** `docs/store/google-play-data-safety.md` (#34) and `docs/store/app-store-privacy-labels.md` (#36); submitting them is B12. **Hosted policy and terms live** on `legal.studafy.com` (#94; 200 on 2026-10-17). **Links:** the study plans and Family+ screens read `STUDAFY_TERMS_URL` and `STUDAFY_PRIVACY_URL`. The development and synthetic define examples point at `legal.studafy.com`, and so does `config/dart-defines.production.example.json` (#99); the filled production defines file is the owner's (git-ignored), and the owner's tap-through (B6, 4.3) has not been reported |
+| I-12 | Push and email delivered on real devices | **Waiting on owner** (C3, C5, C14) | There is no `google-services.json` or `GoogleService-Info.plist` in the repo; the Gradle plugin applies only when the file exists. `NOTIFICATION_CHANNELS_ENABLED = "true"` in `fly.worker.toml` since DL-070; a channel without keys is neither fanned out nor sent (migration `202610170020`). The app turns push on when the `FIREBASE_*` defines are complete. Test scripts exist: `scripts/send-test-notification.ts` and `scripts/send-test-email.ts` (#70) |
 | I-13 | Backups daily with files, off-site copy, PITR, restore drill timed | **Partly** | **Daily with files, restore-checked:** the latest run 38953718872 succeeded. **Off-site: done 2026-10-16:** Cloudflare R2 `studafy-backups`, EU, 30-day lifecycle (#69); run 38896690730 verified it by sha256 read-back. **PITR:** none on the free plan, accepted in DL-064. **Timed drill:** not done. `docs/deployment/backups.md` records only the 2026-09-29 local drill, with no time. **Offline key copy:** not reported. Left: point the backup at production after cutover, a timed drill into a new project, and a USB key copy (4.6, C10) |
 | I-14 | Sentry, Axiom and uptime alerts on production; backlog and AI-spend alerts; on-call contact named | **Partly** | **On-call named** 2026-10-16 (DL-066: Yousef, hello@studafy.com). **Backlog alerts:** built (#38), on in `fly.worker.toml` (`QUEUE_ALERTS_ENABLED`), and tested to Telegram from the test worker on 2026-10-13. Safety-report alerts are on (#71). Sentry is scrubbed and tags releases (#38, #52). **Left:** the uptime URL is still `https://studafy-api-test.fly.dev/readyz` (`ops/alert-relay/wrangler.toml:13`); there is no AI-spend alert at the provider (nothing in the repo); Axiom 30-day retention (B7) and the Sentry retention check (owner, `docs/operations/observability-review-2026-10.md`); no dashboards or SLOs |
 | I-15 | Capacity re-measured; database sized; pool limits checked | **Partly** | **Re-measured:** #39 (2026-10-12), plus fix rounds #53, #65, #77, #78 and #87, through `docs/capacity/2026-10-17.md`. **Sized:** the free plan (DL-064), against `docs/operations/capacity.md`'s recommendation of at least 4 dedicated vCPUs. The owner accepts that and moves to Pro when needed. **Pool:** `DATABASE_POOL_MAX="10"` in `fly.api.toml` and `fly.worker.toml`. A check of (API machines × 10) + 10 against the free plan's pooler limit is not recorded. Left: record that check before cutover |
 | I-16 | Unused secrets removed; credentials rotated; stray Fly app destroyed | **Partly** | **Done 2026-10-14** (work plan 2.5, owner): `studafy-api`'s 43 secrets are removed, `studafy` is destroyed, there are per-app deploy tokens, and AWS is dropped. The `postgres` password was reset (2.3). The exposed Fly token was revoked on 2026-10-16 (handoff). **Left:** rotate the service-role key and signing keys before real users (4.9, C12) |
 | I-17 | A person has gone through teacher, student and parent flows on iPhone and Android, in English and Arabic | **Waiting on owner** (B5, 2.9) | A profile build from `main` is on the owner's iPhone 14 Pro (handoff, 2026-10-16). No results have been reported. Android needs the internal-testing build (3.7). Automated device tests pass in CI on both platforms, but they do not replace this |
 | I-18 | Moderation owner and process named | **Done** 2026-10-16 | DL-063 and DL-066: the owner is the one report reviewer, in single-reviewer mode (migration `202610160041`). The process is in `docs/security/safe043-operator-runbook.md`. In-app review under Account → Safety reports (#97). Telegram alert per report (#71). Owner set-up still to confirm under PR-28 |
-| I-19 | SEC-001 guards removed in one reviewed REL-002 change | **Partly** | **Narrowed 2026-10-16** (#61, ADR-0042): an Android release only with `APP_ENV=development`. Still in place: the iOS Xcode "SEC-001 Release Block"; `blocksApplicationStartup` for production; `allowsRemoteFileUploads` false in production (`lib/core/runtime_environment.dart`). D1 / REL-002 is *in progress* |
+| I-19 | SEC-001 guards removed in one reviewed REL-002 change | **Done** 2026-10-17 | REL-002 cutover (#99, DL-069, ADR-0044): the iOS "SEC-001 Release Block" became the "Release Defines Check", Android builds production under the defines contract, and a production app starts when its defines pass the contract. `allowsRemoteFileUploads` is true in production since DL-070. Refusals proved by `.github/scripts/check-android-release-guard.sh` and `check-ios-release-guard.sh` (both run green on 2026-10-17 for DL-070). Earlier: narrowed 2026-10-16 (#61, ADR-0042) |
 
 ## Issue register (PR-01 to PR-30)
 
 | Issue | Status | Evidence / what is left |
 |---|---|---|
-| PR-01 Release builds blocked | **Partly** | See I-19. Android internal testing is unblocked (#61); iOS and production are still blocked. REL-002 (D1) is *in progress* |
+| PR-01 Release builds blocked | **Done** 2026-10-17 | See I-19 (#99, DL-069). No production upload until `api.studafy.com` is live (DL-069) |
 | PR-02 No INTERNET permission | **Done** 2026-10-11 | `16ba19d`, pinned by a test. Release-bundle `aapt` check run before #61 merged (work plan 3.5) |
 | PR-03 Debug-key signing | **Waiting on owner** (C1) | The code side is done (#61): release signing uses the upload key or fails. Needs the owner's keystore and Play App Signing |
 | PR-04 App identity | **Done** 2026-10-14 | DL-058: `com.studafy.light` on both platforms, link scheme `io.studafy.app`. App links moved to `app.studafy.com` (#94, DL-067) |
 | PR-05 Sign in with Apple off | **Waiting on owner** (B11, C13) | `enabled = false` in `supabase/config.toml`. Waits for the Apple Developer Program |
-| PR-06 No malware scanner | **Partly** | See I-6. Self-hosted ClamAV is on the test copy; production scanner not deployed |
+| PR-06 No malware scanner | **Partly** | See I-6. Self-hosted ClamAV is on the test copy; production scanner configured (`fly.scanner.toml`) but not deployed. The production app offers uploads (DL-070) |
 | PR-07 AI legally blocked | **Waiting on owner** (C17) | See I-8. Overridden by DL-062 (accepted risk). The DPA and DPIA are still open, and the privacy policy's `TODO(legal)` remains (1.5 *in progress*) |
 | PR-08 Production data path | **Partly** | See I-2 and I-3. Done on the test copy 2026-10-14; production apps, a paid Redis and cutover hygiene are left |
 | PR-09 Domains and Cloudflare | **Partly** | See I-4. Legal and app subdomains live behind Cloudflare; `api.studafy.com` has no DNS; origin lock off; no WAF rules |
@@ -234,12 +244,9 @@ Found while verifying. None blocks internal testing.
    table) says to set `AI_API_KEY` "never before the DPA and DPIA (C17)".
    DL-062 and `fly.api.toml` turn AI on from launch, ahead of both. The
    checklist should follow DL-062.
-3. **Uploads in the production app.** `lib/core/runtime_environment.dart`
-   keeps `allowsRemoteFileUploads` false in production, because "none [no
-   malware provider] is contracted". The self-hosted scanner (#50,
-   `fly.scanner.toml`) now meets the worker's production rule, so the
-   comment is stale. REL-002 must flip it, or a production build offers no
-   uploads.
+3. **Uploads in the production app.** Resolved 2026-10-17 (DL-070):
+   `allowsRemoteFileUploads` is true in production and its comment names
+   the self-hosted scanner.
 4. **Database CA.** The readiness check wants "database TLS with CA
    verified", but production config validation enforces TLS only, not
    `DATABASE_CA_CERT`. Set it on both production apps; the deploy
