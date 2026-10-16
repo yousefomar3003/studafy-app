@@ -96,6 +96,9 @@ const _coreAllowlist = <String>[
   'core/material_selection.dart',
   'core/material_unavailable_dialog.dart',
   'core/ai_usage.dart',
+  // The AI consent (ADR-0043): its notice, version and the one prompt the
+  // study and helper slices show before a first AI use.
+  'core/ai_consent.dart',
   'core/coursework_models.dart',
   'core/coursework_attachments.dart',
   'core/voice_note.dart',
