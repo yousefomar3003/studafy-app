@@ -1,15 +1,31 @@
 # Capacity: how many users Studafy can serve
 
-> **Re-measured on 2026-10-12** (launch plan 4.8), with online exams, study
-> notebooks and AI tools, and through the real API as well as the database
-> alone: **[docs/capacity/2026-10-12.md](../capacity/2026-10-12.md)**.
-> Headline: about **130 requests/s comfortable (about 1,300 people at once)
-> on a 10-vCPU database, through the API**. The first bottleneck is database
-> CPU. Launch with at least 4 dedicated database vCPUs and
-> `DATABASE_POOL_MAX=10` per process. The figures below are the 2026-09-29
-> database-only measurement. The same screens now cost about 40% more there
-> (300 rather than ~500 requests/s), and the per-vCPU table is superseded by
-> the new report. They are kept for the history of the fixes.
+> **Current figures: the capacity reports in [docs/capacity/](../capacity/).**
+>
+> - **[2026-10-12](../capacity/2026-10-12.md)** re-measured with online
+>   exams, study notebooks and AI tools, through the real API as well as the
+>   database alone, and ranked the fixes. The first bottleneck is database
+>   CPU. Launch with at least 4 dedicated database vCPUs and
+>   `DATABASE_POOL_MAX=10` per process.
+> - **[2026-10-14](../capacity/2026-10-14.md)**, fixes 1–3 (access rules once
+>   per call, grades from the caller's own records, homework a page at a
+>   time): about twice the capacity. Through the API, the database filled at
+>   about 1,000–1,500 people at once on 10 vCPUs instead of about 500.
+> - **[2026-10-15](../capacity/2026-10-15.md)**, fixes 4–5 (lessons and
+>   conversations a page at a time): those two lists about four times
+>   cheaper, from about 23% of database time to 9%. Through the API at 1,000
+>   people, p95 went from 1.2 s to about 0.5 s, and peak throughput rose to
+>   about 320–350 requests/s.
+> - Every fix was proven to give the same answers as the code it replaced
+>   (`scripts/scale/proof/`).
+>
+> Next, in order: notebook writing on the worker queue, the grades list a
+> page at a time, then sizing the production database and measuring a
+> staging project of that size.
+>
+> The figures below are the 2026-09-29 database-only measurement, kept for
+> the history of the fixes. The per-vCPU table is superseded by the reports
+> above.
 
 Measured on 2026-09-29 with the scale harness in `scripts/scale`, which
 anyone can rerun (below). Numbers are for the database side, which is where
@@ -135,6 +151,9 @@ exceeds the limit or any request errors. Use it as a regression guard before
 releases.
 
 ## What to do next, in order
+
+(As of 2026-09-29. Item 2 was done on 2026-10-14, fixes 2 and 3; the
+current list is in the banner at the top.)
 
 1. **Before launch:** run the harness against a staging Supabase project of
    the size you will buy, to replace the estimates above with measurements.
