@@ -10,6 +10,12 @@ the `PR-xx` codes point at its issue register.
 does alone, what only you can do, and what you start and Claude finishes.
 The numbered items below are the detail behind it.
 
+**Go-live status (2026-10-17):** every section-I box and every `PR-xx` issue,
+checked against the code, is in
+[`go-live-checklist.md`](../evidence/launch-readiness/go-live-checklist.md),
+with what still blocks Play internal testing, Play production and the App
+Store.
+
 ## How to use this file
 
 - Work top to bottom: each stage assumes the one before it.
@@ -226,12 +232,14 @@ iOS.
     INTERNET.
 - [ ] **3.3 Release signing** (PR-03) · *You* create the key with Claude's
   steps, *Claude* wires it · 1 h
+  - *Progress 2026-10-17:* Claude's side is done. `android/app/build.gradle.kts` signs release builds with the key named by `STUDAFY_ANDROID_KEY_PROPERTIES` and fails if there is none; it never falls back to the debug key (#61). The steps are in `docs/guides/owner/01-android-upload-key.md` (#59). Waiting for your keystore (C1).
   - Create an upload keystore, keep it and its password outside the repo
     (and backed up), and turn on Play App Signing.
   - **Done when:** the release bundle is signed with the upload key, not the
     debug key.
 - [ ] **3.4 Google sign-in for the release build** · *You* in Google Cloud,
   *Claude* checks · 30 min
+  - *Progress 2026-10-17:* steps in `docs/guides/owner/02-google-signin-sha1.md`. The same Play App Signing SHA-256 also goes into `ops/legal-site/src/app-links.ts`, which still has `PENDING_PLAY_APP_SIGNING_SHA256`, for verified App Links.
   - Add the release (Play App Signing) SHA-1 to the Android OAuth client.
   - **Done when:** sign-in works in the internal-testing build.
 - [x] **3.5 Lift the Android release block for internal testing only** (PR-01) — done 2026-10-16: PR #61 merged (ADR-0042, DL-059); before merging, `flutter build appbundle --release` with `APP_ENV=development` and a throwaway upload key built a 72.7 MB bundle signed with that key (not the debug key), `aapt dump permissions` listed INTERNET (3.2), and `flutter build ios --release` was still refused; CI checks the refusal cases (`.github/scripts/check-android-release-guard.sh`)
@@ -242,6 +250,7 @@ iOS.
   - **Done when:** `flutter build appbundle --release` succeeds, and iOS
     stays blocked.
 - [ ] **3.6 Play Console listing** · *You* · 1–2 h
+  - *Progress 2026-10-16:* the listing copy in English and Arabic (#64, decisions #80, with AI and Plus/Max per DL-062 #90) and the Google Play and iPhone screenshots (#85) are ready. Reviewer accounts are described in `docs/store/reviewer-access.md` (#75). The privacy policy, terms and deletion page are live on `https://legal.studafy.com` (#94). Still yours: creating the app and filling in the console (B12).
   - *Progress 2026-10-12:* Claude's draft of the Data safety answers is in `docs/store/google-play-data-safety.md` (PR #34), with your decisions listed at the top. Android backup was turned off. Account deletion now removes what it left behind, including a parent's managed child accounts (3.6b, PR #35, not yet on hosted).
   - Create the app.
   - Target audience and content: Studafy serves children, so Google's
@@ -259,6 +268,7 @@ iOS.
   - Firebase project, Android app with the chosen ID, the service-account
     key for the worker (as a file path, not in chat), and
     `google-services.json`.
+  - *Progress 2026-10-17:* there is no `google-services.json` yet. Gradle applies the Google services plugin only when the file exists, and `NOTIFICATION_CHANNELS_ENABLED` is unset in `fly.worker.toml`. Steps are in `docs/guides/owner/03-firebase.md`.
   - **Done when:** `scripts/send-test-notification.ts` prints `sent` and the
     phone shows it.
 - [ ] **3.9 Google Play billing in sandbox** (PR-11) · *You* create the
@@ -267,6 +277,7 @@ iOS.
     `studafy_family_plus_monthly`, `studafy_family_plus_8_monthly`.
   - Add license testers, the Pub/Sub topic for notifications and a service
     account for the server.
+  - *Progress 2026-10-16:* Play voided purchases are handled and the Pub/Sub names are pinned (#70); steps in `docs/guides/owner/05-play-billing.md`. `PAY071_BILLING_ENABLED` is still `"false"` on the test copy. Plus and Max are on sale in the store copy (DL-062), so this blocks selling them in production.
   - **Done when:** buy, renew, cancel, refund and restore all update the
     entitlement correctly on the test copy.
 
@@ -283,6 +294,7 @@ iOS.
 - [ ] **4.2 Domains and Cloudflare** (PR-09) · *You* own DNS, *Claude*
   configures · 1 day
   - *Progress 2026-10-16:* domains decided by the owner (DL-067): `studafy.com` with DNS on Cloudflare (the marketing site at `www.studafy.com` on Vercel is not touched); API `api.studafy.com`; app links `app.studafy.com`, replacing the never-registered `app.studafy.io` (code change in another PR); legal pages `legal.studafy.com` (another PR); email hello@studafy.com (Zoho MX). The Cloudflare proxy, certificates and `ORIGIN_REQUIRE_CLOUDFLARE` are still to do.
+  - *Progress 2026-10-17:* checked with `dig` and `curl`. `legal.studafy.com` and `app.studafy.com` resolve to Cloudflare and answer (#94). **`api.studafy.com` has no DNS record yet.** `fly.api.toml` keeps `ORIGIN_REQUIRE_CLOUDFLARE = "false"` until the proxy is on, and the repo has no WAF or rate rules.
   - `api.studafy.com` (API) and `app.studafy.io` (sign-in callback, legal
     pages), or one domain for both (decide).
   - Proxy through Cloudflare, `fly certs add`, WAF and rate rules, then
@@ -291,11 +303,13 @@ iOS.
     `*.fly.dev` request is refused.
 - [ ] **4.3 Host the privacy policy and terms** (PR-18) · *Claude* · 0.5 day
   - *Progress 2026-10-12:* prepared in PR #37. Policy 1.3 and terms 1.2, English and Arabic, plus the account-deletion page, on a static Cloudflare Worker at `/privacy`, `/terms`, `/delete-account` and `/ar/...`. Deployed 2026-10-13: https://studafy-legal.studafy.workers.dev/privacy and `/terms` answer, with all six pages checked. **Done when** still needs the app built with `STUDAFY_PRIVACY_URL` and `STUDAFY_TERMS_URL` pointing there, and the links opened from the subscription screens.
+  - *Progress 2026-10-17:* the pages moved to `https://legal.studafy.com` (#94; `/privacy`, `/terms` and `/delete-account` answer 200). `config/dart-defines.development.example.json` and the synthetic example point both URLs there. No production defines file exists yet. **Done when** still needs your tap-through on the Study plans screen (B6).
   - On the domain. Set `STUDAFY_TERMS_URL` and `STUDAFY_PRIVACY_URL` in the
     release build settings.
   - **Done when:** both links open from the subscription screens.
 - [ ] **4.4 Malware scanner** (PR-06) · *You* choose the vendor and sign its
   terms, *Claude* integrates · 2–4 days
+  - *Progress 2026-10-17:* no vendor is needed. Self-hosted ClamAV (`studafy-scanner-test`, private network only) has served the test worker since 2026-10-14 (#50, #51). On the test copy, EICAR is refused, and ClamAV's own EICAR self-test passes at startup. Production is ready to deploy: `fly.scanner.toml` (#56), and `fly.worker.toml` points `MALWARE_SCANNER_URL` at `studafy-scanner.internal`. Left: deploy it with the production worker and run the EICAR and clean-PDF check there. The app still hides uploads in production (`allowsRemoteFileUploads`, `lib/core/runtime_environment.dart`) until REL-002 (7.3).
   - **Done when:** an EICAR test file is refused and a clean PDF passes in
     the production worker.
 - [ ] **4.5 Production apps on Fly** · *Claude* · 1 day
@@ -306,8 +320,14 @@ iOS.
     - log shipper image pinned.
   - **Done when:** both start in production mode (the config check refuses
     any gap).
+  - *Progress 2026-10-17:* the configs are ready but nothing is deployed:
+    - `fly.api.toml`, `fly.worker.toml` and `fly.scanner.toml` are pinned by `scripts/fly-config.test.ts` (#56);
+    - AI is on (DL-062, #90), messaging is on (DL-063, #95) and meetings are off (DL-065);
+    - the production cutover scripts are in progress on another branch.
+    - Before deploying: `api.studafy.com` DNS (4.2); real Turnstile keys (C9); a paid production Redis; `DATABASE_CA_CERT` on both apps (production validation does not require it); stop the test apps at cutover (DL-064).
 - [ ] **4.6 Backups for production** (PR-17) · *You* (plan or AWS),
   - *Progress 2026-10-16:* off-site storage is set up and used by the daily backup: Cloudflare R2 bucket `studafy-backups` (EU jurisdiction, 30-day lifecycle rule), secrets in the `backups` environment (#69). Run 38896690730 uploaded and verified the encrypted backup by sha256 read-back; no backup artifact is kept any more. Still to do: point it at the production database, a second offline copy of the key, a timed restore drill.
+  - *Progress 2026-10-17:* the free plan has no point-in-time recovery; DL-064 accepts that. `docs/deployment/backups.md` records only the 2026-09-29 local drill, with no time, so the Done when is not met.
   *Claude* · 0.5 day
   - The daily backup pointed at production; an off-site S3 copy or
     point-in-time recovery; a second offline copy of the backup key (USB).
@@ -315,6 +335,7 @@ iOS.
   - **Done when:** the drill's time is recorded in `docs/deployment/backups.md`.
 - [ ] **4.7 Monitoring and alerts** (PR-25) · *Claude* · 1 day
   - *Progress 2026-10-12:* the worker's backlog alerts to Telegram are built (PR #38, `docs/deployment/queue-alerts.md`). They cover depth, age, failures and stuck workers, with no spam. Sentry releases are now tagged per deploy, and log lines carry the environment. Review: `docs/operations/observability-review-2026-10.md`. On the test copy since 2026-10-13: the worker's Telegram secrets are set, and a test alert from the deployed worker reached Telegram. Uptime and Sentry/Axiom alerts already go through the relay. **Done when** for production waits on the production apps.
+  - *Progress 2026-10-17:* still missing: the uptime check watches the test copy (`ops/alert-relay/wrangler.toml`, `UPTIME_URL`); there is no AI spend alert at Together; Axiom retention is not yet 30 days (B7). On-call is named (DL-066), and safety-report alerts are on (#71).
   - Uptime alert on the production URL; alerts on worker backlog
     (`file_scan_backlog`, `outbox_backlog`); AI spend limit at the
     provider.
@@ -330,6 +351,7 @@ iOS.
   *You* · 1 h
   - Database password, service-role key and signing keys. `.env.hosted`
     keeps only what testing needs.
+  - *Progress 2026-10-17:* the `postgres` password was reset on 2026-10-14 (2.3), and the exposed Fly token was revoked on 2026-10-16. The service-role key and the API's signing keys have not been rotated. Production shares the database (DL-064), so rotate them at cutover (C12).
   - **Done when:** the old values no longer work.
 
 ## Stage 5: iOS (when the Apple account is approved)
@@ -371,6 +393,7 @@ iOS.
 ## Stage 6: Legal and AI
 
 - [ ] **6.1 Data processing agreement with the AI provider** (PR-07) · *You*
+  - *Progress 2026-10-16:* not signed. DL-062 turns AI on from launch ahead of it, as an accepted risk; it is still recommended (C17).
   - Together AI, or another provider with an EU or acceptable transfer
     basis.
 - [ ] **6.2 DPIA covering children's data and AI** (PR-07) · *You*, Claude
@@ -380,6 +403,7 @@ iOS.
   *Claude* · 1 day
   - **Done when:** the privacy policy's "OUTSTANDING" box can be removed
     truthfully.
+  - *Progress 2026-10-17:* overtaken by DL-062. AI is on in `fly.api.toml` and `fly.worker.toml` without the DPA or DPIA, with ADR-0043's consent and name redaction. The Done when is not met: `docs/legal/privacy-policy.md` still carries the `TODO(legal)` "OUTSTANDING" comment, and privacy policy 1.5 is in progress on another branch.
   - **If not ready by launch:** launch without Plus/Max, or without their AI
     parts.
 - [x] **6.4 Named owners** · *You*
@@ -401,9 +425,14 @@ iOS.
 - [ ] **7.3 Release cutover (REL-002)** (PR-01) · *Claude*, approved by *You*
   - Remove the SEC-001 guards in one reviewed change, only after every item
     above.
+  - *Progress 2026-10-17:* in progress on another branch (launch plan D1). Still in place on `main`:
+    - the iOS Xcode "SEC-001 Release Block";
+    - `blocksApplicationStartup` for production;
+    - `allowsRemoteFileUploads` false for production. Its comment, "no malware provider contracted", is stale since #50.
 - [ ] **7.4 Go-live checklist** · *Claude* and *You*
   - Every box in section I of the readiness assessment ticked, with
     evidence.
+  - *Progress 2026-10-17:* `docs/evidence/launch-readiness/go-live-checklist.md` has one row per section-I box and per `PR-xx` issue, checked against the code. Section I: 2 of 19 done, 12 partly, 5 waiting on you.
 
 ## Later (after launch)
 
@@ -433,3 +462,4 @@ iOS.
 | 2026-10-15 | 4.8, 5.5, 7.1, 7.2 | Ticked with the evidence on each item; owner parts moved to launch plan B2 and B12 |
 | 2026-10-16 | merge and deploy | PRs #52–#77 merged through #79, then #78, #80, #82; backup (restore check passed), 19 migrations on hosted, test API, worker and log shipper deployed. Log shipper's revoked token replaced (read-only org token). Backups now go to R2 (EU), verified |
 | 2026-10-16 | 3.5 | Ticked (#61) |
+| 2026-10-17 | 7.4 | Go-live checklist written (`docs/evidence/launch-readiness/go-live-checklist.md`). Every item was re-checked against `main` at `5021720`. No item newly ticked: 2.8 and 2.9 wait for the phone test; 4.3 for the tap-through; 4.2, 4.4–4.7 and 4.9 for production. Progress notes added to 3.3, 3.4, 3.6, 3.8, 3.9, 4.2–4.7, 4.9, 6.1, 6.3, 7.3 and 7.4 |
