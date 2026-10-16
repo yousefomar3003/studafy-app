@@ -34,9 +34,11 @@
  *
  * Usage:
  *   # Local stack (default): Supabase from `supabase status`, API on loopback.
+ *   # The stack is named with --workdir (or SUPABASE_WORKDIR); outside CI it
+ *   # is never assumed (`--workdir .` means this checkout's own stack).
  *   bun --no-env-file scripts/provision-reviewer-school.ts \
  *     --credentials-out ~/studafy-reviewer-credentials.json \
- *     --api-url http://127.0.0.1:8080 [--workdir <supabase workdir>]
+ *     --api-url http://127.0.0.1:8080 --workdir <supabase workdir>
  *
  *   # Hosted test copy - only with the owner's go-ahead:
  *   bun --no-env-file scripts/provision-reviewer-school.ts --target hosted \
@@ -50,6 +52,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { parseEnv } from "node:util";
+import { stackWorkdir } from "../packages/test-support/src/localStack";
 
 export const REVIEW_SCHOOL_NAME = "Cedar Grove Review School";
 export const REVIEW_DOMAIN = "review.studafy.com";
@@ -286,6 +289,11 @@ function connect(options: Options): Connection {
       options.allowProduction,
     );
   }
+  // Outside CI the stack is named (--workdir or SUPABASE_WORKDIR): the
+  // default one is the developer's working stack.
+  const workdir = stackWorkdir("Provisioning the review school locally", {
+    workdir: options.workdir,
+  });
   const status = spawnSync(
     "bunx",
     [
@@ -293,7 +301,7 @@ function connect(options: Options): Connection {
       "status",
       "-o",
       "env",
-      ...(options.workdir ? ["--workdir", options.workdir] : []),
+      ...(workdir ? ["--workdir", workdir] : []),
     ],
     { encoding: "utf8" },
   );

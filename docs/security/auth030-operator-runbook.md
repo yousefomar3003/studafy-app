@@ -143,14 +143,21 @@ restoring direct client grants. Both would undo DB-021.
 ## Verifying the controls still hold
 
 ```
-bunx supabase start
-bun run test:auth:lifecycle          # 26 end-to-end checks
-bunx supabase test db --local supabase/tests/auth030_grants.sql
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+bunx supabase start --workdir <throwaway stack dir>
+SUPABASE_WORKDIR=<throwaway stack dir> \
+  bun run test:auth:lifecycle        # 26 end-to-end checks
+bunx supabase test db \
+  --db-url postgresql://postgres:postgres@127.0.0.1:<its db port>/postgres \
+  supabase/tests/auth030_grants.sql
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:<its db port>/postgres \
+AUTH_INTEGRATION_SUPABASE_URL=http://127.0.0.1:<its api port> \
   bun test apps/api/test/auth
 flutter test test/auth030_deep_link_hijack_test.dart
 ```
 
 The lifecycle script provisions a throwaway password for
-`studafy_api_runtime`, uses it, and clears it again. It refuses to run against
-anything but a loopback Supabase URL.
+`studafy_api_runtime`, uses it, and clears it again. It reads every value from
+the named stack's `supabase status` and refuses to run against anything but a
+loopback stack. Outside CI it refuses to run (exit 2) unless the stack is
+named: the default one is the developer's working stack. In CI the job's one
+stack is used.

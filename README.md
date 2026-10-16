@@ -87,6 +87,19 @@ flutter analyze && flutter test
 - **Integration tests need a database. Use a throwaway one.** Bun loads `.env`,
   so set `DATABASE_URL` to a throwaway Supabase stack explicitly. Never point
   tests at the local working database or the hosted one.
+- **Scripts never assume the default stack outside CI.** The Supabase CLI's
+  default stack (API 54321, database 54322) is the one `supabase status`
+  reports, and on a developer's machine that is the working stack, not the
+  throwaway one beside it. So when `CI` is unset, every script or suite that
+  needs Auth or Storage takes its stack explicitly - `SUPABASE_WORKDIR=<stack
+  dir>` (or `--workdir`) for `test:uploads:storage`, `test:delivery:*`,
+  `test:auth:lifecycle`, `tools/ci/run-backend-device-tests.sh`, the reviewer
+  provisioning and `write-synthetic-mobile-config.ts --local`;
+  `AUTH_INTEGRATION_SUPABASE_URL` for the password-session suite;
+  `DB_TYPES_DB_URL` for `generate:db-types` - and refuses (non-zero exit) or
+  skips without it. CI has one stack on the default ports and needs none of
+  this.
+  The rule lives in `packages/test-support/src/localStack.ts`.
 - **pgTAP suites** (`supabase/tests/`) commit fixtures. Run them in CI order on
   a freshly reset throwaway stack.
 - **Device tests:** `tools/ci/run-device-tests.sh <device id>` runs the smoke
@@ -120,8 +133,9 @@ tools/ci/run-backend-device-tests.sh <device id>
 - The script starts the API (port 8090) and the worker with settings it sets
   itself. It never reads `.env`. It uses no AI key, seeds the school, runs
   both tests and stops the API and worker.
-- Without `SUPABASE_WORKDIR`, it uses this checkout's stack (`supabase/`, port
-  54322). Use that only if it is a stack you can reset.
+- Outside CI, `SUPABASE_WORKDIR` is required; the script refuses without it.
+  (`SUPABASE_WORKDIR=.` names this checkout's own stack, port 54322. Use that
+  only if it is a stack you can reset.)
 - Use a Redis that no other local API or worker is using.
 - The seed refuses any URL that is not `127.0.0.1` or `localhost`. It also
   refuses a database that holds any other school. Re-running it on the same

@@ -59,3 +59,16 @@ export {
   type ZipPart,
 } from "./officeFixtures";
 export { buildPdf, type PdfPage } from "./pdfFixtures";
+export {
+  DEFAULT_STACK,
+  inCi,
+  type LocalStack,
+  localStackOrExit,
+  parseStatusEnv,
+  readLocalStack,
+  stackApiUrl,
+  stackFromStatus,
+  StackTargetError,
+  stackWorkdir,
+  type StatusRunner,
+} from "./localStack";

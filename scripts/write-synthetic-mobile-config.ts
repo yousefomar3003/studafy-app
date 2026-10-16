@@ -5,7 +5,7 @@
  * Two modes:
  *
  *   Local stack (what you want for simulator testing):
- *     bun scripts/write-synthetic-mobile-config.ts --local
+ *     bun scripts/write-synthetic-mobile-config.ts --local --workdir=<stack dir>
  *
  *   Remote project:
  *     supabase projects api-keys --project-ref <ref> --output json |
@@ -16,8 +16,8 @@
  * one has nothing to derive authority from and refuses to start.
  */
 import { chmodSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { localStackOrExit } from "../packages/test-support/src/localStack";
 
 type ProjectKey = { name?: string; type?: string; api_key?: string };
 
@@ -29,28 +29,23 @@ const apiArgument = process.argv.find((argument) =>
   argument.startsWith("--api-url=")
 );
 
-/** Reads the running local stack's values rather than hard-coding them. */
+/**
+ * Reads the running local stack's values rather than hard-coding them. The
+ * stack is named with --workdir=<dir> or SUPABASE_WORKDIR: outside CI the
+ * default one is never assumed (`--workdir=.` means this checkout's own).
+ */
 function readLocalStack(): { supabaseUrl: string; publishable: string } {
-  const status = spawnSync("bunx", ["supabase", "status", "-o", "env"], {
-    encoding: "utf8",
+  const workdirArgument = process.argv.find((argument) =>
+    argument.startsWith("--workdir=")
+  );
+  const stack = localStackOrExit("Writing the local mobile configuration", {
+    workdir: workdirArgument?.substring("--workdir=".length),
   });
-  if (status.status !== 0) {
-    throw new Error(
-      "Could not read the local stack. Run `bunx supabase start` first.",
-    );
+  const publishable = stack.values.get("PUBLISHABLE_KEY");
+  if (!publishable) {
+    throw new Error("The local stack reported no publishable key");
   }
-  // `status -o env` also prints a non-assignment "Stopped services" line.
-  const values = new Map<string, string>();
-  for (const line of status.stdout.split("\n")) {
-    const match = /^([A-Z_]+)="(.*)"$/.exec(line.trim());
-    if (match?.[1] && match[2] !== undefined) values.set(match[1], match[2]);
-  }
-  const supabaseUrl = values.get("API_URL");
-  const publishable = values.get("PUBLISHABLE_KEY");
-  if (!supabaseUrl || !publishable) {
-    throw new Error("The local stack reported no API URL or publishable key");
-  }
-  return { supabaseUrl, publishable };
+  return { supabaseUrl: stack.apiUrl, publishable };
 }
 
 function readRemoteProject(): { supabaseUrl: string; publishable: string } {

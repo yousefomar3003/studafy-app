@@ -13,7 +13,8 @@
 # synthetic school (scripts/seed-device-tests.ts), runs both tests, and
 # stops the API and worker again.
 #
-#   SUPABASE_WORKDIR  the stack's --workdir, if not this checkout's supabase/
+#   SUPABASE_WORKDIR  the stack's --workdir; required outside CI (in CI the
+#                     job's one stack, this checkout's supabase/, is used)
 #   E2E_API_PORT      the API's port (default 8090)
 #   REDIS_URL         default redis://127.0.0.1:6379
 #   E2E_PASSWORD      the synthetic accounts' password (default: random)
@@ -21,14 +22,20 @@
 # Logs and screenshots land in device-logs/backend/.
 set -uo pipefail
 device="${1:?device id}"
-out="device-logs/backend"
-mkdir -p "$out"
-rm -rf /tmp/studafy-smoke-screenshots
 
 workdir=()
 if [ -n "${SUPABASE_WORKDIR:-}" ]; then
   workdir=(--workdir "$SUPABASE_WORKDIR")
+elif [ -z "${CI:-}" ] || [ "${CI:-}" = "false" ] || [ "${CI:-}" = "0" ]; then
+  # The rule of packages/test-support/src/localStack.ts: outside CI the
+  # default stack (54321/54322) is the developer's working one, never assumed.
+  echo "::error::Outside CI, set SUPABASE_WORKDIR=<throwaway stack dir>; the default stack is the developer's working one." >&2
+  exit 2
 fi
+out="device-logs/backend"
+mkdir -p "$out"
+rm -rf /tmp/studafy-smoke-screenshots
+
 # `status -o env` also prints a "Stopped services" line; only KEY="value"
 # lines are read. Nothing here is echoed.
 eval "$(bunx supabase status ${workdir[@]+"${workdir[@]}"} -o env 2>/dev/null |
