@@ -27,7 +27,7 @@ and no authentication.
     "apps": [],
     "details": [
       {
-        "appID": "TEAMID.io.studafy.app",
+        "appID": "TEAMID.com.studafy.light",
         "paths": ["/auth/callback", "/auth/callback/*"]
       }
     ]
@@ -36,8 +36,8 @@ and no authentication.
 ```
 
 Replace `TEAMID` with the Team ID from the Apple Developer account. `appID` is
-`<Team ID>.<bundle identifier>`; the bundle identifier is `io.studafy.app`
-(ADR-0015, DL-029).
+`<Team ID>.<bundle identifier>`; the bundle identifier is `com.studafy.light`
+(ADR-0015, DL-058).
 
 ## Android
 
@@ -50,7 +50,7 @@ Serve at `https://app.studafy.io/.well-known/assetlinks.json`, as
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "io.studafy.app",
+      "package_name": "com.studafy.light",
       "sha256_cert_fingerprints": [
         "REPLACE_WITH_PLAY_APP_SIGNING_SHA256"
       ]
@@ -69,8 +69,8 @@ fingerprint as a second entry; the array accepts several.
 
 ## Verifying after publication
 
-- Android: `adb shell pm verify-app-links --re-verify io.studafy.app`, then
-  `adb shell pm get-app-links io.studafy.app` — the domain must report
+- Android: `adb shell pm verify-app-links --re-verify com.studafy.light`, then
+  `adb shell pm get-app-links com.studafy.light` — the domain must report
   `verified`.
 - iOS: install a TestFlight build and open
   `https://app.studafy.io/auth/callback?code=test` from Notes or Messages. It
