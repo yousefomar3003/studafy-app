@@ -110,34 +110,16 @@ from public.support_access_grants where school_id = :school_id
 order by created_at desc;
 ```
 
-## Reviewer-tenant refresh
+## Reviewer school (app store review accounts)
 
-`scripts/seed-reviewer-tenant.ts` provisions one deterministic school with
-one account per role, entirely through the real commands — see the script's
-own docstring and `docs/evidence/phase-4/api042-verification.md` for what it
-proves by succeeding.
-
-```
-bunx supabase start
-bun scripts/seed-reviewer-tenant.ts --local            # idempotent: leaves an existing tenant alone
-bun scripts/seed-reviewer-tenant.ts --local --reset     # wipe and reprovision fresh
-```
-
-- Refuses outright if `ENVIRONMENT=production`. Do not attempt to run this
-  against a production project by unsetting or overriding that check.
-- Credentials are fixed and printed at the end (`reviewer.<role>@synthetic.
-  studafy.test`, one shared password) — not a secret, since the tenant only
-  ever exists in a non-production environment. The `reviewer.seed-operator@…`
-  identity is provisioning-only; never hand it to a reviewer.
-- If the script fails partway through, prefer `--reset` over manual cleanup:
-  it removes the tenant's rows in dependency order (guardian links →
-  students → enrollments → classroom staff → classrooms → terms →
-  invitations → idempotency/outbox rows → membership/audit events →
-  memberships → the school itself) inside one transaction.
-- Today's mode is `--local` only. A remote/staging non-production project
-  needs the same wiring pointed at `DATABASE_URL`/`SUPABASE_URL`/
-  `SUPABASE_SERVICE_ROLE_KEY`/`SUPABASE_PUBLISHABLE_KEY` by hand; this is not
-  implemented as a script flag yet.
+Replaced on 2026-10-15. The old `scripts/seed-reviewer-tenant.ts` created a
+school administrator, which this release does not have, and printed one
+fixed password; it is gone. The app store reviewers' school is now
+provisioned by `scripts/provision-reviewer-school.ts` - a teacher's own
+workspace with a teacher, a student and a parent, no administrator, random
+passwords written to a file and never printed. How to run it, what to paste
+into the store consoles and how to rotate the passwords are in
+`docs/store/reviewer-access.md`.
 
 ## Rolling back the API-042 surface
 

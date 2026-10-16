@@ -97,6 +97,42 @@ class ReauthRequiredFailure implements Exception {
   final ReauthPurpose purpose;
 }
 
+/// Why an email-and-password sign-in did not produce a session.
+///
+/// Only accounts Studafy sets up itself have a password - the app store
+/// reviewers' accounts, for one. Nobody can create such an account from the
+/// app, so there is deliberately no "no such account" case: a wrong address
+/// and a wrong password read the same, which also keeps the screen from
+/// telling anyone which addresses exist.
+enum PasswordSignInError {
+  /// The address and password do not match an account.
+  invalidCredentials,
+
+  /// The sign-in service is refusing attempts from here for a while.
+  tooManyAttempts,
+
+  /// The device could not reach the sign-in service.
+  network,
+
+  /// Password sign-in is switched off, or failed for another reason.
+  unavailable,
+}
+
+/// Raised by [SessionRepository.signInWithPassword].
+class PasswordSignInException implements Exception {
+  const PasswordSignInException(this.error);
+  final PasswordSignInError error;
+
+  @override
+  String toString() => 'PasswordSignInException(${error.name})';
+}
+
+/// Asks the person signed in with a password for it again, so a sensitive
+/// action rests on a sign-in from moments ago (launch plan 2.10). [email] is
+/// the account's own address, shown so the person knows which password is
+/// wanted. Completes with null when they cancel.
+typedef PasswordReauthPrompt = Future<String?> Function(String email);
+
 /// Port for everything the session flow needs from the outside world.
 ///
 /// Synthetic builds use the demo implementation; remote builds use the
@@ -133,6 +169,22 @@ abstract interface class SessionRepository {
   /// instead of a browser redirect (Apple guideline 4.8), and the session is
   /// established before this future completes.
   Future<void> signInWithProvider(LoginProvider provider);
+
+  /// Signs in with an email address and password.
+  ///
+  /// For accounts Studafy provisions itself (the store reviewers'); the app
+  /// offers no way to create one, and the server refuses email sign-up. The
+  /// session arrives via [sessionChanges] like any other. Throws
+  /// [PasswordSignInException] when no session was established.
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  });
+
+  /// Where a password account is asked for its password again when the
+  /// server wants a recent sign-in. Null removes it; such a request then
+  /// fails, asking the person to sign out and in again.
+  void usePasswordReauthPrompt(PasswordReauthPrompt? prompt);
 
   /// Whether [provider] can be offered on this platform.
   ///

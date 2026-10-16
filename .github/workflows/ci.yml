@@ -398,6 +398,11 @@ jobs:
           bunx supabase test db --local
           supabase/tests/profile_setup.sql
 
+      - name: Verify email sign-up stays refused (reviewer access)
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/reviewer_access.sql
+
       - name: Verify deleting a class keeps students' notebooks
         run: >-
           bunx supabase test db --local

@@ -108,6 +108,13 @@ step is granting the seed-operator identity a `platform_operators` row —
 the same sanctioned out-of-band operation named above, done by an
 operational script running with the service role, not product code.
 
+> **Update 2026-10-15.** `scripts/seed-reviewer-tenant.ts` and
+> `apps/api/src/bootstrap/seedApp.ts` were removed: they made a school
+> administrator, which this release does not ship. The store reviewers' school
+> is now `scripts/provision-reviewer-school.ts`, still driven only through the
+> real `/v1` commands, as a teacher, a student and a parent
+> (`docs/store/reviewer-access.md`).
+
 Legacy Edge Functions are replaced only after their equivalent Hono commands
 pass authorization, transaction, idempotency and retry tests, per the SEC-001
 containment pattern: a feature-flag hard return (`disabledFeatureResponse`),
