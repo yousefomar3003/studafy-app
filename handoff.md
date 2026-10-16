@@ -58,6 +58,31 @@ on the test copy.** No PR is open.
 9. The rest of parts B and C of the launch plan (keystore C1, Firebase C3,
    Resend C5, production decisions B1–B3…).
 
+### Evening 2026-10-16 (after the owner's answers)
+- **Exposed Fly token revoked**; old public backup artifacts deleted (11,
+  none left); backups now exist only in the R2 bucket.
+- **Phone:** a profile build from `main` is installed on the iPhone 14 Pro
+  for the owner's hands-on test (2.9; tick 2.8 and 2.9 from the results).
+- **#90, DL-062: AI is on from launch** (the owner's decision), ahead of the
+  AI DPA and the DPIA; `fly.api.toml` and `fly.worker.toml` turn it on;
+  the store copy includes the AI blocks and Plus/Max. Recommended still:
+  accept Together AI's DPA and have the DPIA reviewed (C17).
+- **#91:** the outbox "record lost" warning was a harmless race, now logged
+  at info unless a lease is really lost; a daily Telegram alert reports
+  school-less accounts whose deletion warning email can't be delivered
+  (runbook `docs/security/inactive-account-warnings-runbook.md`). Migration
+  `202610160030` applied, worker deployed.
+- **Backup failures** on 2026-10-16 were Amazon ECR Public's pull limit for
+  the restore image on GitHub's runners; a re-run passed. Old "Backup
+  failed" issues are closed.
+- **Owner's answers pending** (asked 2026-10-16): delete the Seoul Supabase
+  project ("studafy", ap-northeast-2 — not the deleted Tokyo one)?;
+  production on the free plan as a new project (recommended) or the
+  Frankfurt test project?; domains (does the owner own studafy.com and
+  studafy.io; DNS where?); meetings at launch (recommended: without); named
+  people for B9 (two report reviewers needed before messaging); Axiom
+  retention (owner, in Axiom settings).
+
 ### Later on 2026-10-16
 - **#84:** Arabic date and time pickers show 0–9, and typed dates such as
   16/10/2026 are accepted (they were refused before). App only.
