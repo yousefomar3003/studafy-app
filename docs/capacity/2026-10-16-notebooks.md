@@ -4,7 +4,7 @@ Fix 4 of the [12 October list](2026-10-12.md#fixes-ranked-by-impact), item 2
 of the 14 October one (`docs/capacity/2026-10-14.md`, on
 `feat/capacity-lists-paging` until it merges): study notebooks are written
 by the worker, off a queue, not inside the API process. ADR-0038 has the design (amendment of 2026-10-16);
-the migration is `202610150030_notebook_generation_queue.sql`.
+the migration is `202610160000_notebook_generation_queue.sql`.
 
 ## The short answer
 

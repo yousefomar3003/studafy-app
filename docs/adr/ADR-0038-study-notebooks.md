@@ -105,7 +105,7 @@ this as "That did not work".
 
 Capacity fix 4 (`docs/capacity/2026-10-12.md`,
 `docs/capacity/2026-10-16-notebooks.md`). Migration
-`202610150030_notebook_generation_queue.sql`.
+`202610160000_notebook_generation_queue.sql`.
 
 - **What the app sees is unchanged.** `POST …/study-notebooks` and
   `…/regenerate` answer at once with status `creating`, with the same

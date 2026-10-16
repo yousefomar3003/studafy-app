@@ -2,7 +2,7 @@
 -- 2026-10-16).
 --
 -- Study notebooks are written by the worker's notebook queue
--- (202610150030), not in the API. Every AI call the API makes replaces the
+-- (202610160000), not in the API. Every AI call the API makes replaces the
 -- names the student can see before anything is sent - their own, their
 -- classmates' and teachers' in their active classes, their parents' - with
 -- "[student]", "[classmate]", "[teacher]" or "[parent]", reading them through

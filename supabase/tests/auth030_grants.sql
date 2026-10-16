@@ -135,7 +135,7 @@ select is(
     -- entitlement, with the store environment read from the server's own
     -- single-row table rather than the request (202609240002).
     'parent_insights_has_access'
-    -- 'study_notebooks_resume' (202610110003) was retired by 202610150030:
+    -- 'study_notebooks_resume' (202610110003) was retired by 202610160000:
     -- notebooks are written by the worker's queue, not the API.
   ],
   'API runtime role executes exactly the reviewed auth, idempotency, academic, file, and billing surface'

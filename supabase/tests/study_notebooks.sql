@@ -187,7 +187,7 @@ select is((pg_temp.nb(:'student_user', 'get', jsonb_build_object('id', :'nb_id')
   'Leaves make food.', 'as is the last good AI part');
 
 -- ---------------------------------------------------------------------------
--- Written on the worker's queue (2026-10-16, 202610150030)
+-- Written on the worker's queue (2026-10-16, 202610160000)
 -- ---------------------------------------------------------------------------
 -- The student has agreed to the AI notice (ADR-0043); without it the
 -- ledger refuses the worker's hold, as it refuses the API's.
