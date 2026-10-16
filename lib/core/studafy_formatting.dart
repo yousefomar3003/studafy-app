@@ -10,9 +10,10 @@ import 'package:intl/intl.dart';
 /// push copy the server sends, which is ASCII; and Gulf school software
 /// overwhelmingly uses Western digits.
 ///
-/// That is a product judgement, not a technical one. It lives in this one
-/// file and is recorded as revisitable in the decision log: switching to
-/// Eastern Arabic-Indic numerals means deleting [_toWesternDigits] and its
+/// That is a product judgement, not a technical one. It lives in this file
+/// and in `studafy_material_localizations.dart` (the built-in date and time
+/// pickers), and is recorded as revisitable in the decision log: switching to
+/// Eastern Arabic-Indic numerals means deleting [studafyWesternDigits] and its
 /// call sites, and nothing else.
 String _localeOf(BuildContext context) =>
     Localizations.localeOf(context).languageCode;
@@ -22,8 +23,12 @@ String _localeOf(BuildContext context) =>
 ///
 /// `intl` picks the numbering system from the locale's own data, and for `ar`
 /// that is Arabic-Indic — so this is an explicit override, not a no-op.
-/// `mob070_formatting_test.dart` fails if it stops being applied.
-String _toWesternDigits(String value) {
+/// `test/core/formatting_test.dart` fails if it stops being applied.
+///
+/// Screens never call this themselves: they use the `studafy*` formatters
+/// below, and the Material pickers get it through
+/// `StudafyArabicMaterialLocalizations`.
+String studafyWesternDigits(String value) {
   const arabicIndic = 0x0660;
   const extendedArabicIndic = 0x06F0;
   return String.fromCharCodes([
@@ -39,15 +44,15 @@ String _toWesternDigits(String value) {
 
 /// A date as "17 September 2026", with Arabic month names under `ar`.
 String studafyDate(BuildContext context, DateTime when) =>
-    _toWesternDigits(DateFormat.yMMMMd(_localeOf(context)).format(when));
+    studafyWesternDigits(DateFormat.yMMMMd(_localeOf(context)).format(when));
 
 /// A short date as "17 Sep 2026".
 String studafyShortDate(BuildContext context, DateTime when) =>
-    _toWesternDigits(DateFormat.yMMMd(_localeOf(context)).format(when));
+    studafyWesternDigits(DateFormat.yMMMd(_localeOf(context)).format(when));
 
 /// A clock time in the reader's convention.
 String studafyTime(BuildContext context, DateTime when) =>
-    _toWesternDigits(DateFormat.jm(_localeOf(context)).format(when));
+    studafyWesternDigits(DateFormat.jm(_localeOf(context)).format(when));
 
 /// The Material date and time formats ("Mon, Oct 5", "Monday, October 5,
 /// 2026", "Oct 5", "11:59 PM"), with 0-9 digits under `ar`.
@@ -57,25 +62,31 @@ String studafyTime(BuildContext context, DateTime when) =>
 /// deadline read "٥ أكتوبر 11:59 م", two digit systems in one line. The
 /// rtl_source_test keeps screens from calling those directly.
 String studafyMediumDate(BuildContext context, DateTime when) =>
-    _toWesternDigits(MaterialLocalizations.of(context).formatMediumDate(when));
+    studafyWesternDigits(
+      MaterialLocalizations.of(context).formatMediumDate(when),
+    );
 
 /// See [studafyMediumDate].
 String studafyFullDate(BuildContext context, DateTime when) =>
-    _toWesternDigits(MaterialLocalizations.of(context).formatFullDate(when));
+    studafyWesternDigits(
+      MaterialLocalizations.of(context).formatFullDate(when),
+    );
 
 /// See [studafyMediumDate].
 String studafyShortMonthDay(BuildContext context, DateTime when) =>
-    _toWesternDigits(
+    studafyWesternDigits(
       MaterialLocalizations.of(context).formatShortMonthDay(when),
     );
 
 /// See [studafyMediumDate].
 String studafyTimeOfDay(BuildContext context, TimeOfDay time) =>
-    _toWesternDigits(MaterialLocalizations.of(context).formatTimeOfDay(time));
+    studafyWesternDigits(
+      MaterialLocalizations.of(context).formatTimeOfDay(time),
+    );
 
 /// A numeric month and day ("10/5" in English), for chart axis labels.
 String studafyNumericMonthDay(BuildContext context, DateTime when) =>
-    _toWesternDigits(DateFormat.Md(_localeOf(context)).format(when));
+    studafyWesternDigits(DateFormat.Md(_localeOf(context)).format(when));
 
 /// A moment as "17 Sep 2026 · 2:30 PM": when work was handed in, when a
 /// meeting starts.
@@ -96,7 +107,7 @@ String studafyTimeZone(String zone) =>
     '\u2066${zone.replaceAll('/', '/\u2060')}\u2069';
 
 /// A plain number — a grade, a count, a percentage.
-String studafyNumber(BuildContext context, num value) => _toWesternDigits(
+String studafyNumber(BuildContext context, num value) => studafyWesternDigits(
   NumberFormat.decimalPattern(_localeOf(context)).format(value),
 );
 
@@ -109,7 +120,7 @@ List<String> studafyWeekdayNames(BuildContext context) {
   // 2024-01-01 was a Monday; seven days from it covers the week in order.
   return [
     for (var day = 0; day < 7; day++)
-      _toWesternDigits(
+      studafyWesternDigits(
         format.format(DateTime(2024, 1, 1).add(Duration(days: day))),
       ),
   ];

@@ -108,7 +108,10 @@ void main() {
       final path = file.path.replaceAll(r'\', '/');
       if (!path.endsWith('.dart') ||
           path.contains('/generated/') ||
-          path.endsWith('core/studafy_formatting.dart')) {
+          path.endsWith('core/studafy_formatting.dart') ||
+          // The Material localizations override: it calls Flutter's
+          // formatters in order to rewrite their digits.
+          path.endsWith('core/studafy_material_localizations.dart')) {
         continue;
       }
       for (final match in direct.allMatches(file.readAsStringSync())) {
@@ -122,6 +125,51 @@ void main() {
       reason:
           'use the studafy* formatters in core/studafy_formatting.dart:\n'
           '${offences.join('\n')}',
+    );
+  });
+
+  test('the built-in pickers get the Western-digit Arabic localizations', () {
+    // showDatePicker, showDateRangePicker, showTimePicker and friends format
+    // with MaterialLocalizations, not the studafy* formatters. The override
+    // only applies if it is registered ahead of Flutter's Material delegate,
+    // since the first delegate that supports a locale wins. The test
+    // scaffold must match, or the picker tests prove nothing about the app.
+    for (final path in ['lib/main.dart', 'test/support/localized_app.dart']) {
+      final source = File(path).readAsStringSync();
+      final ours = source.indexOf(
+        'StudafyArabicMaterialLocalizations.delegate',
+      );
+      final flutters = source.indexOf('GlobalMaterialLocalizations.delegate');
+      expect(ours, isNot(-1), reason: '$path does not register it');
+      expect(
+        ours,
+        lessThan(flutters),
+        reason: '$path registers it after Flutter\'s, so it is never used',
+      );
+    }
+  });
+
+  test('no screen uses a Cupertino date or time picker', () {
+    // Cupertino pickers format with CupertinoLocalizations, which the
+    // Western-digit override does not cover, so they would show ٠-٩ in
+    // Arabic. Adding one means overriding those localizations too
+    // (core/studafy_material_localizations.dart shows how).
+    final picker = RegExp(r'\bCupertino(DatePicker|TimerPicker)\b');
+    final offences = <String>[
+      for (final file in Directory(
+        'lib',
+      ).listSync(recursive: true).whereType<File>())
+        if (file.path.endsWith('.dart') &&
+            picker.hasMatch(file.readAsStringSync()))
+          file.path,
+    ];
+
+    expect(
+      offences,
+      isEmpty,
+      reason:
+          'Cupertino pickers need Western-digit CupertinoLocalizations '
+          'first:\n${offences.join('\n')}',
     );
   });
 
