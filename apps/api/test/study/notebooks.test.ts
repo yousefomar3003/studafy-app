@@ -15,6 +15,7 @@ import {
   type NotebookRepository,
 } from "../../src/study/notebookRoutes";
 import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
+import { fakeAiAccess } from "../support/aiAccess";
 
 const SUBJECT = "00000000-0000-4000-8000-000000000001";
 const CLASS = "00000000-0000-4000-8000-0000000000c1";
@@ -73,6 +74,7 @@ function app(options: {
     "/",
     createNotebookRoutes(
       {
+        aiAccess: fakeAiAccess(),
         notebooks: options.notebooks,
         study: {
           usage: async (_c, operation) =>

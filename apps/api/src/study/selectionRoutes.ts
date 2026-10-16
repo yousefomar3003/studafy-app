@@ -44,6 +44,11 @@ import {
   selectionProblem,
 } from "./selection";
 import { STUDY_SET_MATERIAL_CHARS } from "./routes";
+import {
+  type AiAccessRepository,
+  nameRedactedAssistant,
+  requireAiAccess,
+} from "./aiAccess";
 
 /**
  * Quizzes, flashcards and study notes from exactly the material a student
@@ -91,6 +96,8 @@ export interface SelectionRoutesDependencies {
   prices: ModelPrices;
   assistant: StudyAssistant | null;
   lessonToolsEnabled: boolean;
+  /** Who may use AI, and the names kept out of it (ADR-0043). */
+  aiAccess: AiAccessRepository;
 }
 
 /** The title of something made from [scope]: its lesson, or its lessons. */
@@ -176,6 +183,7 @@ export function createSelectionRoutes(
     "/v1/study-sets",
     validateRouteInput(setRoute),
     requirePermission(authorization, "material_set.generate"),
+    requireAiAccess(deps.aiAccess),
     idempotency(idempotencyDependencies, setRoute.operationId, "required"),
     async (c) => {
       const assistant = deps.assistant;
@@ -235,11 +243,17 @@ export function createSelectionRoutes(
       }
       let generated;
       try {
+        // Names out of the material before it is sent (ADR-0043).
+        const redacted = await nameRedactedAssistant(
+          deps.aiAccess,
+          context,
+          assistant,
+        );
         generated = await meter.run(
           context,
           input.kind,
           holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
-          () => assistant.studySet(input.kind, scopeTitle(scope), text),
+          () => redacted.studySet(input.kind, scopeTitle(scope), text),
           `set:${input.kind}:${fingerprint.slice(0, 64)}`,
         );
       } catch (error) {
@@ -275,6 +289,7 @@ export function createSelectionRoutes(
       "notebook.write",
       (c) => validatedParams<Record<string, string>>(c).classroomId ?? null,
     ),
+    requireAiAccess(deps.aiAccess),
     idempotency(idempotencyDependencies, summaryRoute.operationId, "required"),
     async (c) => {
       const assistant = deps.assistant;
@@ -322,11 +337,16 @@ export function createSelectionRoutes(
         }
         let notes;
         try {
+          const redacted = await nameRedactedAssistant(
+            deps.aiAccess,
+            context,
+            assistant,
+          );
           notes = await meter.run(
             context,
             "notes",
             holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
-            () => assistant.lessonNotes(scopeTitle(scope), text),
+            () => redacted.lessonNotes(scopeTitle(scope), text),
             `summary:${fingerprint.slice(0, 64)}`,
           );
         } catch (error) {

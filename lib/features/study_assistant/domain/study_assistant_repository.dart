@@ -152,6 +152,11 @@ abstract final class StudyAssistantFailure {
 
   /// Photos are Studafy Plus.
   static const planRequired = 'PLAN_REQUIRED';
+
+  /// The AI study tools are off for this account: the student declined the
+  /// AI notice, a parent has not agreed for a child account, or the account
+  /// is not a student in a class (ADR-0043).
+  static const consentRequired = 'AI_CONSENT_REQUIRED';
 }
 
 /// What this student may give the helper, beyond a question.

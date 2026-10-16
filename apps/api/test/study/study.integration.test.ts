@@ -28,6 +28,8 @@ import { costMicroUsd, holdFor, OUTPUT_TOKENS } from "../../src/study/metering";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
 import { sha256Hex } from "@studafy/infrastructure";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
+import { PostgresAiAccessRepository } from "../../src/study/aiAccess";
+import { consentToAi } from "../support/aiAccess";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = integrationSuite(describe);
@@ -36,6 +38,7 @@ const P = "f0b10000-0000-4000-8000-0000000000";
 const SCHOOL = `${P}01`;
 const TERM = `${P}02`;
 const CLASSROOM = `${P}03`;
+const OTHER_CLASSROOM = `${P}04`;
 const TEACHER = `${P}11`;
 const STUDENT = `${P}12`;
 const CLASSMATE = `${P}13`;
@@ -162,6 +165,15 @@ async function seed(): Promise<void> {
     insert into public.enrollments (classroom_id, student_id, school_id, status, active) values
       (${CLASSROOM}::uuid, ${STUDENT_ROW}::uuid, ${SCHOOL}::uuid, 'active', true),
       (${CLASSROOM}::uuid, ${CLASSMATE_ROW}::uuid, ${SCHOOL}::uuid, 'active', true)`;
+  // The outsider is in another class of the school: a student who may use
+  // the AI tools (ADR-0043), just not this class's lessons.
+  await sql`insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id, status, version)
+    values (${OTHER_CLASSROOM}::uuid, ${SCHOOL}::uuid, ${TERM}::uuid, 'Chemistry', '8', 'B', ${TEACHER}::uuid, 'active', 1)`;
+  await sql`
+    insert into public.enrollments (classroom_id, student_id, school_id, status, active) values
+      (${OTHER_CLASSROOM}::uuid, ${OUTSIDER_ROW}::uuid, ${SCHOOL}::uuid, 'active', true)`;
+  // Every student has agreed to the AI notice (ADR-0043).
+  await consentToAi(sql, [STUDENT, CLASSMATE, OUTSIDER]);
 
   // A published text lesson.
   await sql`insert into public.resources (id, school_id, title, resource_type, state, current_version, created_by)
@@ -282,6 +294,7 @@ suite("Studafy Plus / Max over real SQL", () => {
       createStudyAssistantRoutes(
         {
           assistant,
+          aiAccess: new PostgresAiAccessRepository(sql),
           repository,
           prices: PRICES,
           chatMemory: {
@@ -297,6 +310,7 @@ suite("Studafy Plus / Max over real SQL", () => {
       "/",
       createStudyRoutes(
         {
+          aiAccess: new PostgresAiAccessRepository(sql),
           repository,
           prices: PRICES,
           assistant,
@@ -609,6 +623,24 @@ suite("Studafy Plus / Max over real SQL", () => {
     expect(
       outcomes.filter((o) => o["outcome"] === "allowance_exhausted"),
     ).toHaveLength(2);
+  });
+
+  test("a teacher cannot use the AI study tools (ADR-0043)", async () => {
+    const before = calls.length;
+    const res = await request("/v1/study-assistant/ask", TEACHER, {
+      method: "POST",
+      body: { question: "What is photosynthesis?" },
+    });
+    expect(res.status).toBe(403);
+    expect((await res.json() as { code: string }).code).toBe(
+      "AI_STUDENTS_ONLY",
+    );
+    expect(calls.length).toBe(before);
+    const plan = await request("/v1/me/study-plan", TEACHER);
+    expect(await plan.json()).toMatchObject({
+      aiAccess: "not_student",
+      available: [],
+    });
   });
 
   test("a retried request is answered again, never charged twice", async () => {

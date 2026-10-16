@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/ai_consent.dart';
+import '../core/ai_consent_sheet.dart';
 import '../core/ai_usage.dart';
 import '../core/feedback.dart';
 import '../core/language_picker.dart';
@@ -332,6 +334,15 @@ class _AccountHubPageState extends State<AccountHubPage> {
             SettingsGroup(
               title: l10n.accountSectionAccount,
               children: accountRows,
+            ),
+          // The AI study tools, on and off (ADR-0043). Shown only to a
+          // student in a class; the switch hides itself for anyone else.
+          if (student && AiConsentGate.instance.repository != null)
+            SettingsGroup(
+              title: l10n.aiConsentTitle,
+              children: [
+                AiConsentSwitch(repository: AiConsentGate.instance.repository!),
+              ],
             ),
           SettingsGroup(
             title: l10n.accountSectionPreferences,

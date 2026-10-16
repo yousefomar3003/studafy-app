@@ -144,6 +144,7 @@ export {
   type StudyReference,
   type StudySetResult,
   type StudyTurn,
+  withNameRedaction,
 } from "./studyAssistant";
 export {
   CHUNK_TARGET_CHARS,

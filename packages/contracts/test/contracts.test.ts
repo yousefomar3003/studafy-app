@@ -76,8 +76,11 @@ describe("problem details contract", () => {
   test("error codes are stable machine strings", () => {
     expect(Object.values(ErrorCode).sort()).toEqual([
       "AI_ALLOWANCE_USED",
+      "AI_CONSENT_REQUIRED",
       "AI_FEATURE_DISABLED",
+      "AI_GUARDIAN_CONSENT_REQUIRED",
       "AI_REQUEST_IN_PROGRESS",
+      "AI_STUDENTS_ONLY",
       "ATTACHMENT_REFUSED",
       "ATTENDANCE_LOCKED",
       "BENEFICIARY_LINK_INVALID",

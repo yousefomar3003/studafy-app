@@ -1699,6 +1699,8 @@ export type Database = {
       consent_records: {
         Row: {
           accepted_at: string;
+          given_as: string | null;
+          given_by: string | null;
           id: number;
           locale: string;
           policy_id: string | null;
@@ -1707,9 +1709,12 @@ export type Database = {
           updated_at: string;
           user_id: string;
           withdrawn_at: string | null;
+          withdrawn_by: string | null;
         };
         Insert: {
           accepted_at?: string;
+          given_as?: string | null;
+          given_by?: string | null;
           id?: never;
           locale: string;
           policy_id?: string | null;
@@ -1718,9 +1723,12 @@ export type Database = {
           updated_at?: string;
           user_id: string;
           withdrawn_at?: string | null;
+          withdrawn_by?: string | null;
         };
         Update: {
           accepted_at?: string;
+          given_as?: string | null;
+          given_by?: string | null;
           id?: never;
           locale?: string;
           policy_id?: string | null;
@@ -1729,8 +1737,16 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
           withdrawn_at?: string | null;
+          withdrawn_by?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "consent_records_given_by_fkey";
+            columns: ["given_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "consent_records_policy_id_fkey";
             columns: ["policy_id"];
@@ -1741,6 +1757,13 @@ export type Database = {
           {
             foreignKeyName: "consent_records_user_id_fkey";
             columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "consent_records_withdrawn_by_fkey";
+            columns: ["withdrawn_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];

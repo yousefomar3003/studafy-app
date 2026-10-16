@@ -31,6 +31,8 @@ import {
   startNotebookRecovery,
 } from "../../src/study/studyNotebookRoutes";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
+import { PostgresAiAccessRepository } from "../../src/study/aiAccess";
+import { consentToAi } from "../support/aiAccess";
 
 const databaseUrl = process.env["DATABASE_URL"];
 const suite = integrationSuite(describe);
@@ -156,6 +158,8 @@ async function seed(): Promise<void> {
   await sql`
     insert into public.enrollments (classroom_id, student_id, school_id, status, active) values
       (${CLASSROOM}::uuid, ${STUDENT_ROW}::uuid, ${SCHOOL}::uuid, 'active', true)`;
+  // The student has agreed to the AI notice (ADR-0043).
+  await consentToAi(sql, [STUDENT, OUTSIDER]);
   await sql`insert into public.resources (id, school_id, title, resource_type, state, current_version, created_by)
     values (${LESSON}::uuid, ${SCHOOL}::uuid, 'Photosynthesis', 'lesson_note', 'published', 1, ${TEACHER}::uuid)`;
   await sql`insert into public.resource_versions (id, school_id, resource_id, version, body, created_by)
@@ -264,6 +268,7 @@ suite("Study notebooks over real SQL", () => {
       "/",
       createStudyNotebookRoutes(
         {
+          aiAccess: new PostgresAiAccessRepository(sql),
           notebooks: new PostgresStudyNotebookRepository(sql),
           material: new PostgresMaterialRepository(sql),
           repository: new PostgresStudyRepository(sql),
@@ -509,6 +514,7 @@ suite("Study notebooks over real SQL", () => {
   });
   test("a notebook an instance stopped writing is written again (launch plan 2.7)", async () => {
     const deps = {
+      aiAccess: new PostgresAiAccessRepository(sql),
       notebooks: new PostgresStudyNotebookRepository(sql),
       material: new PostgresMaterialRepository(sql),
       repository: new PostgresStudyRepository(sql),

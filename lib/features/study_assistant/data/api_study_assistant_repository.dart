@@ -1,3 +1,4 @@
+import '../../../core/ai_consent.dart';
 import '../../../core/failures.dart';
 import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
@@ -53,6 +54,8 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     return history.sublist(start);
   }
 
+  /// A question, with the AI notice shown first when the server wants the
+  /// student's consent (ADR-0043): once they agree, it is asked again.
   @override
   Future<StudyAnswer> ask(
     String question, {
@@ -62,6 +65,35 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     String? requestId,
     String? language,
     bool skipUnavailable = false,
+  }) async {
+    try {
+      return await AiConsentGate.instance.run(
+        () => _ask(
+          question,
+          history: history,
+          references: references,
+          photoFileIds: photoFileIds,
+          requestId: requestId,
+          language: language,
+          skipUnavailable: skipUnavailable,
+        ),
+      );
+    } on AiConsentRequiredException {
+      throw const Failure(
+        StudyAssistantFailure.consentRequired,
+        'The AI study tools are off for this account.',
+      );
+    }
+  }
+
+  Future<StudyAnswer> _ask(
+    String question, {
+    required List<ChatTurn> history,
+    required List<ChatReference> references,
+    required List<String> photoFileIds,
+    required String? requestId,
+    required String? language,
+    required bool skipUnavailable,
   }) async {
     final recent = history.isEmpty
         ? const <ChatTurn>[]
@@ -133,6 +165,19 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
   }
 
   static Failure? _failure(V1ApiException error) {
+    // ADR-0043: the AI notice is shown and the question asked again.
+    if (error.code == 'AI_CONSENT_REQUIRED' ||
+        error.code == 'AI_GUARDIAN_CONSENT_REQUIRED') {
+      throw AiConsentRequiredException(
+        guardian: error.code == 'AI_GUARDIAN_CONSENT_REQUIRED',
+      );
+    }
+    if (error.code == 'AI_STUDENTS_ONLY') {
+      return const Failure(
+        StudyAssistantFailure.consentRequired,
+        'The AI study tools are for students in a class.',
+      );
+    }
     if (error.code == StudyAssistantFailure.photoNotReady) {
       return const Failure(
         StudyAssistantFailure.photoNotReady,

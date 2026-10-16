@@ -98,6 +98,7 @@ select is(
     'api055_study_notebooks',
     -- ADR-0039: results kept per exact selection, access re-checked per read.
     'api056_material_outputs',
+    'api057_ai_consent',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

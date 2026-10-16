@@ -26,6 +26,8 @@ import { createOnboardingRoutes } from "../onboarding/routes";
 import { createStudyAssistantRoutes } from "../study-assistant/routes";
 import { PostgresStudyRepository } from "../study/repository";
 import { createStudyRoutes } from "../study/routes";
+import { PostgresAiAccessRepository } from "../study/aiAccess";
+import { createAiConsentRoutes } from "../study/aiConsentRoutes";
 import { PostgresMaterialRepository } from "../study/material";
 import { createLessonReadingRoutes } from "../study/readingRoutes";
 import {
@@ -263,6 +265,9 @@ export function buildRoutes(platform: Platform) {
     })
     : null;
   const studyRepository = sql ? new PostgresStudyRepository(sql) : null;
+  // Who may use the AI study tools, their consent, and the names kept out
+  // of what is sent (ADR-0043). Every AI route below is gated by it.
+  const aiAccess = sql ? new PostgresAiAccessRepository(sql) : null;
   // Lessons' files and links, read for the AI (ADR-0037).
   const materialRepository = sql
     ? new PostgresMaterialRepository(sql)
@@ -296,10 +301,11 @@ export function buildRoutes(platform: Platform) {
   // The question box needs the provider and the cost ledger. Without either
   // the route is absent and the app shows no AI tab, which is the honest state
   // rather than a tab that always errors.
-  const studyAssistant = aiAssistant && studyRepository
+  const studyAssistant = aiAssistant && studyRepository && aiAccess
     ? createStudyAssistantRoutes(
       {
         assistant: aiAssistant,
+        aiAccess,
         repository: studyRepository,
         prices: aiPrices,
         chatMemory,
@@ -449,9 +455,10 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
-  const notebooks = studyRepository && idempotencyDependencies
+  const notebooks = studyRepository && aiAccess && idempotencyDependencies
     ? createNotebookRoutes(
       {
+        aiAccess,
         notebooks: new PostgresNotebookRepository(sql!),
         study: studyRepository,
         prices: aiPrices,
@@ -529,9 +536,10 @@ export function buildRoutes(platform: Platform) {
   // Studafy Plus / Max and the Notebook. Present whenever there is a database:
   // the notebook and the plan summary need no AI; the AI routes answer
   // AI_FEATURE_DISABLED until a provider and the lesson-tools switch are set.
-  const study = studyRepository && idempotencyDependencies
+  const study = studyRepository && aiAccess && idempotencyDependencies
     ? createStudyRoutes(
       {
+        aiAccess,
         repository: studyRepository,
         prices: aiPrices,
         assistant: aiAssistant,
@@ -648,8 +656,10 @@ export function buildRoutes(platform: Platform) {
     )
     : undefined;
   // A student's study notebooks (2026-10-07), appended after ADR-0037.
-  const studyNotebookDeps = sql && materialRepository && studyRepository
+  const studyNotebookDeps = sql && materialRepository && studyRepository &&
+      aiAccess
     ? {
+      aiAccess,
       notebooks: new PostgresStudyNotebookRepository(sql),
       material: materialRepository,
       repository: studyRepository,
@@ -672,9 +682,10 @@ export function buildRoutes(platform: Platform) {
   }
   // Exactly the chosen material (2026-10-07), appended after notebooks.
   const selectionTools = sql && materialRepository && studyRepository &&
-      idempotencyDependencies
+      aiAccess && idempotencyDependencies
     ? createSelectionRoutes(
       {
+        aiAccess,
         material: materialRepository,
         outputs: new PostgresMaterialOutputRepository(sql),
         repository: studyRepository,
@@ -682,6 +693,14 @@ export function buildRoutes(platform: Platform) {
         assistant: aiAssistant,
         lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
       },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
+  // The AI consent (ADR-0043), appended last in the catalogue.
+  const aiConsent = aiAccess && idempotencyDependencies
+    ? createAiConsentRoutes(
+      { repository: aiAccess },
       authorization,
       idempotencyDependencies,
     )
@@ -722,6 +741,7 @@ export function buildRoutes(platform: Platform) {
     lessonReading,
     studyNotebooks,
     selectionTools,
+    aiConsent,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

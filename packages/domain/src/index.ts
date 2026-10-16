@@ -136,6 +136,14 @@ export {
   type StudyUsage,
 } from "./study/studyContent";
 export {
+  type KnownName,
+  NAME_MIN_LETTERS,
+  NAME_PLACEHOLDERS,
+  type NameKind,
+  NameRedactor,
+  nameRedactor,
+} from "./study/nameRedaction";
+export {
   CHARS_PER_TOKEN,
   type ChatMemoryBudgets,
   chatMemoryTokens,

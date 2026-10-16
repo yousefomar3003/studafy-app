@@ -7028,4 +7028,63 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get reauthPasswordCancel => 'Cancel';
+
+  @override
+  String get aiConsentTitle => 'AI study tools';
+
+  @override
+  String get aiConsentNoticeBody =>
+      'The study helper, lesson notes, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.';
+
+  @override
+  String get aiConsentAgree => 'I agree';
+
+  @override
+  String get aiConsentNotNow => 'Not now';
+
+  @override
+  String aiConsentForChild(String name) {
+    return 'You are agreeing for $name, whose account you manage.';
+  }
+
+  @override
+  String get aiConsentGuardianNeeded =>
+      'A parent turns on the AI study tools for this account, from their own account.';
+
+  @override
+  String get aiConsentStudentsOnly =>
+      'The AI study tools are for students in a class.';
+
+  @override
+  String get aiConsentSwitchOn => 'On. You can turn them off at any time.';
+
+  @override
+  String get aiConsentSwitchOff =>
+      'Off. Turn on to use the study helper, notes, notebooks, quizzes and flashcards.';
+
+  @override
+  String aiConsentChildSwitch(String name) {
+    return 'AI study tools for $name';
+  }
+
+  @override
+  String get aiConsentWithdrawTitle => 'Turn off the AI study tools?';
+
+  @override
+  String get aiConsentWithdrawBody =>
+      'The study helper, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.';
+
+  @override
+  String get aiConsentWithdrawAction => 'Turn off';
+
+  @override
+  String get aiConsentSaveFailed =>
+      'That was not saved. Check your connection and try again.';
+
+  @override
+  String get aiConsentReadNotice => 'Read what is sent';
+
+  @override
+  String get aiConsentNeeded =>
+      'The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.';
 }

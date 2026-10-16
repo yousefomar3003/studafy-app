@@ -39,6 +39,11 @@ import {
   materialText,
 } from "./material";
 import {
+  type AiAccessRepository,
+  nameRedactedAssistant,
+  requireAiAccess,
+} from "./aiAccess";
+import {
   CHARS_PER_TOKEN,
   type ChatMemoryBudgets,
   chatMemoryTokens,
@@ -59,6 +64,8 @@ export interface StudyRoutesDependencies {
   notebooks?: NotebookRepository;
   /** Lessons' files and links, read for the AI (ADR-0037). */
   material?: MaterialRepository;
+  /** Who may use AI, and the names kept out of it (ADR-0043). */
+  aiAccess: AiAccessRepository;
 }
 
 /** Material for a quiz, flashcards or notes: shared, so read generously. */
@@ -109,7 +116,10 @@ export function createStudyRoutes(
 
   // The same conditions the AI routes below check before calling the
   // provider, so the app is never told a feature is here when it is not.
-  function available(): string[] {
+  // Nothing for an account that may not use AI at all (ADR-0043); a student
+  // who has still to consent sees the tools, and the notice on first use.
+  function available(access: unknown): string[] {
+    if (access === "not_student" || access === "no_class") return [];
     if (!deps.assistant) return [];
     if (!deps.lessonToolsEnabled) return ["ask"];
     return deps.storage
@@ -138,7 +148,10 @@ export function createStudyRoutes(
       const response = {
         plan: summary["plan"],
         features: summary["features"],
-        available: available(),
+        available: available(summary["access"]),
+        ...(typeof summary["access"] === "string"
+          ? { aiAccess: summary["access"] }
+          : {}),
         ...(deps.chatMemory
           ? {
             chatMemoryChars:
@@ -252,6 +265,7 @@ export function createStudyRoutes(
       "notebook.write",
       (c) => validatedParams<Record<string, string>>(c).classroomId ?? null,
     ),
+    requireAiAccess(deps.aiAccess),
     idempotency(
       idempotencyDependencies,
       whiteboardRoute.operationId,
@@ -405,6 +419,7 @@ export function createStudyRoutes(
       "study_set.generate",
       (c) => validatedParams<Record<string, string>>(c).resourceId ?? null,
     ),
+    requireAiAccess(deps.aiAccess),
     idempotency(idempotencyDependencies, studyRoute.operationId, "required"),
     async (c) => {
       const assistant = deps.assistant;
@@ -456,11 +471,17 @@ export function createStudyRoutes(
 
       let generated;
       try {
+        // Names out of the lesson before it is sent (ADR-0043, DPIA D1).
+        const redacted = await nameRedactedAssistant(
+          deps.aiAccess,
+          context,
+          assistant,
+        );
         generated = await meter.run(
           context,
           kind,
           holdFor(deps.prices, text.length, OUTPUT_TOKENS.long),
-          () => assistant.studySet(kind, String(lesson["title"] ?? ""), text),
+          () => redacted.studySet(kind, String(lesson["title"] ?? ""), text),
         );
       } catch (error) {
         return providerFailure(c, kind, error);
