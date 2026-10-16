@@ -7,6 +7,7 @@ import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'coursework_messages.dart';
 
 /// Setting work for a class, graded or not.
 ///
@@ -63,7 +64,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
   /// Rebuilt when the class changes. Material is uploaded for one class and
   /// the server refuses to bind it to another, so switching class starts the
   /// attachments over rather than letting a doomed create be attempted.
-  Key _attachmentsKey = UniqueKey();
+  GlobalKey<AttachmentsEditorState> _attachmentsKey = GlobalKey();
 
   bool get _uploading => _attachments.uploading;
 
@@ -154,11 +155,15 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
       );
       if (!mounted) return;
       Navigator.of(context).pop(created);
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) return;
+      final refusal = attachmentRefusalIn(error);
+      if (refusal != null) {
+        _attachmentsKey.currentState?.markNotAccepted(refusal.rows);
+      }
       setState(() {
         _saving = false;
-        _error = failed;
+        _error = refusal != null ? l10n.courseworkAttachmentRefused : failed;
       });
     }
   }
@@ -192,7 +197,7 @@ class _CreateAssignmentPageState extends State<CreateAssignmentPage> {
                       if (value == _classroomId) return;
                       _classroomId = value;
                       _attachments = const AttachmentsEditorValue();
-                      _attachmentsKey = UniqueKey();
+                      _attachmentsKey = GlobalKey();
                     }),
             ),
             const SizedBox(height: 12),

@@ -88,6 +88,10 @@ class EditableQuestion {
   final List<ContentLink> existingLinks;
   AttachmentsEditorValue attachments = const AttachmentsEditorValue();
 
+  /// The question's attachments editor, so a file or link the server
+  /// refused can be marked on it.
+  final attachmentsEditor = GlobalKey<AttachmentsEditorState>();
+
   /// Keeps the question's editor state when the list is reordered.
   final key = UniqueKey();
 
@@ -381,6 +385,7 @@ class _QuestionEditorCardState extends State<QuestionEditorCard> {
             title: Text(l10n.attachmentsTitle),
             children: [
               AttachmentsEditor(
+                key: q.attachmentsEditor,
                 purpose: FilePurpose.assignmentMaterial,
                 schoolId: widget.classroomId == null ? null : widget.schoolId,
                 classroomId: widget.classroomId,

@@ -409,6 +409,7 @@ jobs:
           supabase/tests/coursework_files.sql
           supabase/tests/guardian_announcements.sql
           supabase/tests/online_assessments.sql
+          supabase/tests/attachment_refusals.sql
           supabase/tests/grounded_material.sql
           supabase/tests/study_notebooks.sql
           supabase/tests/material_selection.sql

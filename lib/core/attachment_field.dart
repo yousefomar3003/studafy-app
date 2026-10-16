@@ -369,6 +369,21 @@ class AttachmentFieldState extends State<AttachmentField> {
     };
   }
 
+  /// Marks the file the server would not attach as failed, with [message]
+  /// saying why, so the form cannot be saved with it again until it is
+  /// removed. No "try again": the server already has these bytes, and would
+  /// refuse them the same way. Returns whether the file was on this list.
+  bool markNotAccepted(String fileId, String message) {
+    final index = _items.indexWhere((item) => item.fileId == fileId);
+    if (index < 0) return false;
+    _picked.remove(_items[index].localId);
+    _replace(
+      _items[index].localId,
+      (item) => item.copyWith(stage: AttachmentStage.failed, message: message),
+    );
+    return true;
+  }
+
   void _replace(String localId, Attachment Function(Attachment) update) {
     final index = _items.indexWhere((item) => item.localId == localId);
     if (index < 0) return;

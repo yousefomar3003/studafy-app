@@ -29,12 +29,22 @@ export const COMMON_OUTCOMES: OutcomeTable = {
   attendance_locked: ["ATTENDANCE_LOCKED", 409],
   graded_locked: ["SUBMISSION_LOCKED", 409],
   file_not_clean: ["FILE_NOT_CLEAN", 409],
+  // A file or link refused for attaching; the rows name each one.
+  attachment_refused: ["ATTACHMENT_REFUSED", 422],
 };
 
 /**
- * The rows a bulk command refused, as problem `errors`: the row's id as the
- * path and a fixed reason code. Ids the caller sent and codes from a fixed
- * SQL vocabulary only - never account data - so the list is safe to return.
+ * A request path as the SQL names a refused attachment: body field names
+ * and list indexes only (`attachmentFileIds.2`, `questions.1.links.0`).
+ */
+const REQUEST_PATH = /^[A-Za-z]{1,40}(\.([0-9]{1,3}|[A-Za-z]{1,40})){0,4}$/;
+
+/**
+ * The rows a command refused, as problem `errors`: the row's id (a bulk
+ * command) or the request path of a refused attachment as the path, and a
+ * fixed reason code. Ids and paths the caller sent and codes from a fixed
+ * SQL vocabulary only - never account data - so the list is safe to return
+ * and to log.
  */
 export function rowErrors(rows: unknown): { path: string; code: string }[] {
   if (!Array.isArray(rows)) return [];
@@ -42,8 +52,19 @@ export function rowErrors(rows: unknown): { path: string; code: string }[] {
   for (const row of rows) {
     if (typeof row !== "object" || row === null) continue;
     const record = row as Record<string, unknown>;
-    const id = record["gradeResultId"] ?? record["studentId"];
     const reason = record["reason"];
+    const path = record["path"];
+    if (typeof path === "string") {
+      if (
+        typeof reason === "string" && REQUEST_PATH.test(path) &&
+        /^[a-z_]{1,64}$/.test(reason)
+      ) {
+        errors.push({ path, code: reason });
+        if (errors.length === 16) break;
+      }
+      continue;
+    }
+    const id = record["gradeResultId"] ?? record["studentId"];
     if (typeof id !== "string" || typeof reason !== "string") continue;
     if (!/^[0-9a-f-]{36}$/i.test(id) || !/^[a-z_]{1,64}$/.test(reason)) {
       continue;

@@ -905,6 +905,12 @@ enum CourseworkProblem {
   submissionLocked,
   windowClosed,
   notAllowed,
+
+  /// A file or link to attach was refused - the scan refused the file, it
+  /// is gone or already attached, or the link is not allowed. [rows] maps
+  /// each one's request path (`attachmentFileIds.2`, `links.0`,
+  /// `questions.1.attachmentFileIds.0`) to a reason code. Nothing was saved.
+  attachmentRefused,
   other,
 }
 

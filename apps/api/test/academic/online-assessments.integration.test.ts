@@ -1075,4 +1075,101 @@ suite("online assessments over /v1", () => {
     });
     expect(await stateFor(TEACHER)).toBe("none");
   });
+
+  /** An upload of the teacher's for the class, as the scan left it. */
+  async function upload(
+    id: string,
+    purpose: string,
+    scanState: "clean" | "rejected",
+  ): Promise<string> {
+    const session = crypto.randomUUID();
+    await sql`
+      insert into public.file_objects (id, school_id, bucket, object_key,
+        uploader_id, size_bytes, declared_media_type, sha256, scan_state,
+        scanned_at, owner_id, purpose, display_name)
+      values (${id}::uuid, ${SCHOOL}::uuid, 'legacy', ${"oa/" + id},
+        ${TEACHER}::uuid, 10, 'application/pdf', ${"b".repeat(64)},
+        ${scanState}::public.file_scan_state, now(), ${TEACHER}::uuid,
+        ${purpose}::public.file_purpose, 'Slides.pdf')`;
+    await sql`
+      insert into public.upload_sessions (id, school_id, uploader_id, purpose,
+        expected_size_bytes, allowed_media_types, nonce_hash, expires_at,
+        classroom_id)
+      values (${session}::uuid, ${SCHOOL}::uuid, ${TEACHER}::uuid,
+        ${purpose}::public.file_purpose, 10, array['application/pdf'],
+        ${id.replaceAll("-", "").padEnd(64, "c")}, now() + interval '1 hour',
+        ${CLASS}::uuid)`;
+    await sql`
+      insert into public.file_bindings (school_id, file_object_id, upload_session_id)
+      values (${SCHOOL}::uuid, ${id}::uuid, ${session}::uuid)`;
+    return id;
+  }
+
+  test("a lesson with a file the scan refused names that file, and saves once it is removed", async () => {
+    const clean = await upload(
+      "5f470000-0000-4000-8000-0000000002f1",
+      "lesson_resource",
+      "clean",
+    );
+    const refused = await upload(
+      "5f470000-0000-4000-8000-0000000002f2",
+      "lesson_resource",
+      "rejected",
+    );
+    const lesson = {
+      schoolId: SCHOOL,
+      classroomId: CLASS,
+      title: "Refused slides",
+      resourceType: "lesson_note",
+      body: "Notes.",
+      audience: "both",
+    };
+    const response = await call("/v1/resources", TEACHER, {
+      ...lesson,
+      attachmentFileIds: [clean, refused],
+    });
+    expect(response.status).toBe(422);
+    expect(response.headers.get("content-type")).toContain(
+      "application/problem+json",
+    );
+    const problem = await json(response);
+    expect(problem["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(problem["errors"]).toEqual([
+      { path: "attachmentFileIds.1", code: "file_refused" },
+    ]);
+
+    // The same request again is refused the same way: nothing was kept.
+    const again = await call("/v1/resources", TEACHER, {
+      ...lesson,
+      attachmentFileIds: [clean, refused],
+    });
+    expect(again.status).toBe(422);
+
+    const saved = await call("/v1/resources", TEACHER, {
+      ...lesson,
+      attachmentFileIds: [clean],
+    });
+    expect(saved.status).toBe(201);
+    expect(((await json(saved))["attachments"] as unknown[]).length).toBe(1);
+  });
+
+  test("a refused link on homework names the link", async () => {
+    const response = await call("/v1/assignments", TEACHER, {
+      classroomId: CLASS,
+      title: "Reading with a bad link",
+      instructions: null,
+      dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+      closesAt: null,
+      links: [
+        { title: "Fine", url: "https://school.example.org/read" },
+        { title: "Creds", url: "https://user:pw@evil.example.org/" },
+      ],
+    });
+    expect(response.status).toBe(422);
+    const problem = await json(response);
+    expect(problem["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(problem["errors"]).toEqual([
+      { path: "links.1", code: "link_not_allowed" },
+    ]);
+  });
 });

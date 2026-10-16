@@ -1167,6 +1167,14 @@
   "attachmentRefusedUnsafe": "This file was blocked because it may be harmful. Remove it.",
   "attachmentRefusedNotAllowed": "This file has a password, scripts or other files inside it, which aren't allowed. Remove it.",
   "attachmentRefusedOther": "This file can't be used. Remove it and try another.",
+  "attachmentNotAcceptedScan": "This file did not pass the safety check. Remove it, then save again.",
+  "@attachmentNotAcceptedScan": {
+    "description": "Under a file the server refused on save because its security scan refused it."
+  },
+  "attachmentNotAcceptedGone": "This file is no longer available. Remove it and attach it again.",
+  "attachmentNotAcceptedInUse": "This file is already attached. Remove it, then save again.",
+  "attachmentNotAcceptedHere": "This file can't be added here. Remove it, then save again.",
+  "linkNotAccepted": "This link can't be added. Remove it, then save again.",
   "attachmentReady": "Ready",
   "attachmentFailed": "Failed",
   "attachmentThisFileIsStillBeing": "This file is still being checked. Try again shortly.",
@@ -2320,6 +2328,10 @@
   "courseworkAttendanceLocked": "This register is locked by your school's attendance policy.",
   "courseworkEntriesInvalid": "Some rows need fixing. Nothing was saved.",
   "courseworkFailed": "That didn't work. Check your connection and try again.",
+  "courseworkAttachmentRefused": "A file or link was not accepted, so nothing was saved. Remove the ones marked, then save again.",
+  "@courseworkAttachmentRefused": {
+    "description": "Form error when the server refused a file or link being attached; the refused ones are marked in the form."
+  },
   "paperGradesTitle": "Grade sheet: {title}",
   "@paperGradesTitle": {
     "placeholders": {
@@ -2864,7 +2876,7 @@
   "attachmentsKeep": "Keep",
   "attachmentsRemovedOnSave": "Removed when you save",
   "attachmentsUploading": "Wait for the files to finish uploading.",
-  "attachmentsFailed": "Retry or remove the files that failed to upload.",
+  "attachmentsFailed": "Retry or remove the files and links marked as failed or not accepted.",
   "attachmentsTooManyLinks": "You can add up to {count} links.",
   "@attachmentsTooManyLinks": {"placeholders": {"count": {"type": "int"}}},
   "attachmentsImagePreview": "Tap to view",
@@ -2931,6 +2943,8 @@
   "builderSaved": "Saved.",
   "builderPublished": "Published to the class.",
   "builderSaveFailed": "Could not save. Check the questions and try again.",
+  "builderQuestionAttachmentRefused": "Question {number}: a file or link was not accepted. Remove it, then save again.",
+  "@builderQuestionAttachmentRefused": {"placeholders": {"number": {"type": "int"}}},
   "builderLocked": "A student has already submitted, so the questions can no longer change. Settings still can.",
   "builderNeedTitle": "Give it a title.",
   "builderNeedClass": "Choose a class.",

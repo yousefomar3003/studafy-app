@@ -3001,6 +3001,36 @@ abstract class AppL10n {
   /// **'This file can\'t be used. Remove it and try another.'**
   String get attachmentRefusedOther;
 
+  /// Under a file the server refused on save because its security scan refused it.
+  ///
+  /// In en, this message translates to:
+  /// **'This file did not pass the safety check. Remove it, then save again.'**
+  String get attachmentNotAcceptedScan;
+
+  /// No description provided for @attachmentNotAcceptedGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is no longer available. Remove it and attach it again.'**
+  String get attachmentNotAcceptedGone;
+
+  /// No description provided for @attachmentNotAcceptedInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is already attached. Remove it, then save again.'**
+  String get attachmentNotAcceptedInUse;
+
+  /// No description provided for @attachmentNotAcceptedHere.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be added here. Remove it, then save again.'**
+  String get attachmentNotAcceptedHere;
+
+  /// No description provided for @linkNotAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'This link can\'t be added. Remove it, then save again.'**
+  String get linkNotAccepted;
+
   /// No description provided for @attachmentReady.
   ///
   /// In en, this message translates to:
@@ -7128,6 +7158,12 @@ abstract class AppL10n {
   /// **'That didn\'t work. Check your connection and try again.'**
   String get courseworkFailed;
 
+  /// Form error when the server refused a file or link being attached; the refused ones are marked in the form.
+  ///
+  /// In en, this message translates to:
+  /// **'A file or link was not accepted, so nothing was saved. Remove the ones marked, then save again.'**
+  String get courseworkAttachmentRefused;
+
   /// No description provided for @paperGradesTitle.
   ///
   /// In en, this message translates to:
@@ -8967,7 +9003,7 @@ abstract class AppL10n {
   /// No description provided for @attachmentsFailed.
   ///
   /// In en, this message translates to:
-  /// **'Retry or remove the files that failed to upload.'**
+  /// **'Retry or remove the files and links marked as failed or not accepted.'**
   String get attachmentsFailed;
 
   /// No description provided for @attachmentsTooManyLinks.
@@ -9341,6 +9377,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Could not save. Check the questions and try again.'**
   String get builderSaveFailed;
+
+  /// No description provided for @builderQuestionAttachmentRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: a file or link was not accepted. Remove it, then save again.'**
+  String builderQuestionAttachmentRefused(int number);
 
   /// No description provided for @builderLocked.
   ///

@@ -1762,6 +1762,26 @@ class AppL10nEn extends AppL10n {
       'This file can\'t be used. Remove it and try another.';
 
   @override
+  String get attachmentNotAcceptedScan =>
+      'This file did not pass the safety check. Remove it, then save again.';
+
+  @override
+  String get attachmentNotAcceptedGone =>
+      'This file is no longer available. Remove it and attach it again.';
+
+  @override
+  String get attachmentNotAcceptedInUse =>
+      'This file is already attached. Remove it, then save again.';
+
+  @override
+  String get attachmentNotAcceptedHere =>
+      'This file can\'t be added here. Remove it, then save again.';
+
+  @override
+  String get linkNotAccepted =>
+      'This link can\'t be added. Remove it, then save again.';
+
+  @override
   String get attachmentReady => 'Ready';
 
   @override
@@ -4164,6 +4184,10 @@ class AppL10nEn extends AppL10n {
       'That didn\'t work. Check your connection and try again.';
 
   @override
+  String get courseworkAttachmentRefused =>
+      'A file or link was not accepted, so nothing was saved. Remove the ones marked, then save again.';
+
+  @override
   String paperGradesTitle(String title) {
     return 'Grade sheet: $title';
   }
@@ -5224,7 +5248,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get attachmentsFailed =>
-      'Retry or remove the files that failed to upload.';
+      'Retry or remove the files and links marked as failed or not accepted.';
 
   @override
   String attachmentsTooManyLinks(int count) {
@@ -5423,6 +5447,11 @@ class AppL10nEn extends AppL10n {
   @override
   String get builderSaveFailed =>
       'Could not save. Check the questions and try again.';
+
+  @override
+  String builderQuestionAttachmentRefused(int number) {
+    return 'Question $number: a file or link was not accepted. Remove it, then save again.';
+  }
 
   @override
   String get builderLocked =>

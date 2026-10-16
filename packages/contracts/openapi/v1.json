@@ -25058,7 +25058,8 @@
               "GRADE_ENTRIES_INVALID",
               "REASON_REQUIRED",
               "ATTENDANCE_LOCKED",
-              "SUBMISSION_LOCKED"
+              "SUBMISSION_LOCKED",
+              "ATTACHMENT_REFUSED"
             ]
           },
           "detail": {
