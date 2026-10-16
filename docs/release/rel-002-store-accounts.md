@@ -69,6 +69,15 @@ after the Phase 10 gate, per `docs/planning/instructions.md` §21.5:
 Removing a guard requires a reviewed forward change referencing REL-002 and a
 decision-log entry, per `docs/security/sec-001-containment.md`.
 
+> **Cutover done 2026-10-17 (ADR-0044, DL-069).** The identity rows were
+> applied earlier (`com.studafy.light`, DL-058; Android label `Studafy`). The Gradle
+> task-graph guard was not deleted but turned into the production defines
+> check (production under the contract, or the development test copy); the
+> Xcode SEC-001 phase was replaced in place by `Release Defines Check`. By
+> the owner's decision `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE` stays, for
+> development builds only; production refuses it. Store builds:
+> `scripts/release/build-store.sh android|ios --build-number N`.
+
 ## 2. Gather before starting
 
 Both registrations need the same underlying facts. Collect once.

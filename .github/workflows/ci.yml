@@ -75,6 +75,11 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
+      # REL-002 (ADR-0044): the Xcode "Release Defines Check" phase, run with
+      # the environment Xcode gives it. No Xcode or signing needed.
+      - name: Verify the iOS release check
+        run: .github/scripts/check-ios-release-guard.sh
+
   # The Android build has its own job (2026-10-11). Inside the Flutter job it
   # ran past that job's 30 minutes, and once the runner itself disappeared
   # with no log: the project lets Gradle take an 8 GB heap plus 4 GB of
@@ -126,8 +131,9 @@ jobs:
           flutter build apk --debug --target-platform android-arm64
           --dart-define=APP_ENV=synthetic
 
-      # SEC-001, narrowed by ADR-0042: a release build is allowed only for
-      # the development test copy, signed with an upload key CI never holds.
+      # REL-002 (ADR-0044): a release build is allowed for production only
+      # under the production defines contract, and for the development test
+      # copy (ADR-0042); both are signed with an upload key CI never holds.
       # Each case is refused at Gradle's task graph, before compilation.
       - name: Verify the Android release guard
         run: .github/scripts/check-android-release-guard.sh

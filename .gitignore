@@ -81,7 +81,10 @@ supabase/.temp/
 **/*secrets*.json
 
 # Local dart-define files may contain publishable project configuration.
+# The production one (scripts/release/build-store.sh) is never committed;
+# config/dart-defines.production.example.json is its template.
 config/dart-defines.*.json
+config/dart-defines.production.json
 !config/dart-defines.*.example.json
 
 # Symbolication related
