@@ -1388,14 +1388,14 @@ class AppL10nAr extends AppL10n {
   String get academicAllClasses => 'كل الصفوف';
 
   @override
-  String get insightsTitle => 'العائلة+';
+  String get insightsTitle => 'Family+';
 
   @override
   String get insightsUnavailableTitle => 'التحليلات غير متاحة';
 
   @override
   String get insightsUnavailableBody =>
-      'تحتاج إلى اشتراك العائلة+ لعرض التحليلات التفصيلية، ويجب أن يكون ارتباطك بابنك مُعتمدًا.';
+      'تحتاج إلى اشتراك Family+ لعرض التحليلات التفصيلية، ويجب أن يكون ارتباطك بابنك مُعتمدًا.';
 
   @override
   String get insightsNothingYetTitle => 'لا يوجد ما نعرضه بعد';

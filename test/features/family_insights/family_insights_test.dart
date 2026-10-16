@@ -136,7 +136,7 @@ void main() {
       directionOf(tester, find.byType(FamilyInsightsPage)),
       TextDirection.rtl,
     );
-    expect(find.text('العائلة+'), findsWidgets);
+    expect(find.text('Family+'), findsWidgets);
   });
 }
 

@@ -19,41 +19,33 @@ a field is over its limit or the count table is out of date
 
 ---
 
-## Needs Yousef's decision
+## Decisions (2026-10-16)
 
-1. **AI at launch (B1).** Every AI feature is in its own **optional block**
-   (`*.ai`), and nothing else mentions AI. If AI is off at launch, leave the
-   blocks out. Studafy Plus and Max are then not on sale either, because
-   everything they add is AI, so the blocks also hold the only mention of them.
-   If AI is on, paste the block after the "For students" section. The counts
-   below show that each description still fits with the block included.
-2. **Messaging at launch.** The copy says teachers, students and parents can
-   message each other. DL-049 keeps messaging launch-blocked until the
-   moderation gate in SAFE-043 is met: named report reviewers (B9), a safety
-   review and a response drill. If messaging is off at launch, delete the
-   four message lines (marked `[messages]` in the evidence table).
-3. **Uploads at launch.** Hand-ins with photos or documents, and lesson files,
-   need remote uploads. The production build blocks them today
-   (`allowsRemoteFileUploads` in `lib/core/runtime_environment.dart`) until
-   the release-block change (D1). Ship the listing only with a build where
-   they work.
-4. **The name in Arabic.** The app spells the name **ستودافاي** in Arabic, so
-   the Arabic listing does too. The alternative is to keep **Studafy** in
-   Latin letters in the Arabic title (`Studafy: الدروس والواجبات`), as some
-   Arabic listings do. Choose one; the app should match it.
-5. **The title.** The proposed title is "Studafy: Classes & Homework". It
-   carries two search words, and Google Play allows that because they
-   describe the app. The plain alternative is "Studafy".
-6. **Family+ in Arabic.** The app uses both "Family+" and "العائلة+". The
-   copy uses **Family+**, as the store's subscription list will. Pick one for
-   the app as well.
-7. **Screenshots and AI.** Some student screens show the Helper tab and
-   locked Studafy Plus buttons, because the app shows them even when AI is
-   off. If AI is off at launch, hide them in the build or pick other
-   pictures; see [Screenshots](#screenshots).
-8. **Meetings are left out.** Parents and students can see and join a
-   Google Meet meeting, but no screen in this release lets a teacher create
-   one (B8). Add a line only once that changes.
+The owner asked Claude to choose. Each choice follows a decision already on
+record; change any of them by editing this list and the app together.
+
+1. **AI at launch: left out.** DL-056 keeps AI off for real students until
+   the AI DPA and the DPIA are signed (B1, C17). Paste **none** of the `*.ai`
+   blocks, so Studafy Plus and Max are not mentioned either. When AI is
+   switched on, add the blocks after "For students".
+2. **Messaging at launch: left out until its gate is met.** DL-049 keeps
+   messaging blocked until SAFE-043's moderation gate (named report
+   reviewers, B9; report alerts are now built, PR #71). Delete the four
+   `[messages]` lines from the descriptions until then; put them back in the
+   same release that turns messaging on.
+3. **Uploads: kept.** The listing goes out only with a build after the
+   release-block change (D1), where uploads work.
+4. **The name in Arabic: ستودافاي**, as the app spells it
+   (`docs/l10n/arabic-glossary.md`).
+5. **The title: "Studafy: Classes & Homework"** on both stores (27
+   characters; the two words describe the app, which both stores allow).
+6. **Family+ in Arabic: "Family+" in Latin letters**, like Studafy Plus and
+   Max. The two app strings that said "العائلة+" now say "Family+".
+7. **Screenshots: none that show AI or messages.** Google Play (8): 1, 5, 4,
+   11, 9, 10, 12, 14. App Store (10): the same, then 13 and 2. `student-1-today`
+   shows the Helper tab, `student-2-notebook`'s screen links to AI notes, and
+   6 and 15 are messages, so they stay out until AI or messaging is on.
+8. **Meetings: left out** until a teacher can create one in the app (B8).
 
 ## Rules this copy follows
 
@@ -548,9 +540,9 @@ every Arabic picture is right to left throughout.
 | 14 | `parent-3-announcements` | Class announcements, one marked important |
 | 15 | `parent-4-messages` | The same conversation, from the parent's side |
 
-**Suggested set.** Google Play shows up to 8 phone screenshots; the App
-Store takes up to 10 per language. In order: 1, 5, 4, 11, 9, 10, 12, 14,
-then 6 and 2 for the App Store.
+**Launch set** (decision 7). Google Play shows up to 8 phone screenshots;
+the App Store takes up to 10 per language. Play: 1, 5, 4, 11, 9, 10, 12, 14.
+App Store: the same, then 13 and 2. Add 6 and 15 when messaging is on.
 
 **What the owner should know before using them:**
 
