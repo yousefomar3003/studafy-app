@@ -5,7 +5,17 @@ const checkOnly = Bun.argv.includes("--check");
 
 // DB_TYPES_DB_URL points at another database with every migration applied -
 // a throwaway stack - so generating never needs the developer's own local
-// database. Unset, the local stack is used as before.
+// database. Unset, the local stack is used only in CI, where it is the one
+// throwaway stack; on a developer's machine `--local` is their working
+// database (it was read by mistake on 2026-10-15), so it must be named:
+// DB_TYPES_LOCAL=1 to mean it.
+if (!Bun.env.DB_TYPES_DB_URL && !Bun.env.CI && Bun.env.DB_TYPES_LOCAL !== "1") {
+  console.error(
+    "Set DB_TYPES_DB_URL to a throwaway database with every migration " +
+      "applied, or DB_TYPES_LOCAL=1 to use this machine's local stack.",
+  );
+  globalThis.process.exit(2);
+}
 const source = Bun.env.DB_TYPES_DB_URL
   ? ["--db-url", Bun.env.DB_TYPES_DB_URL]
   : ["--local"];
