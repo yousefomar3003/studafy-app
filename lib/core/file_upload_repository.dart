@@ -83,6 +83,13 @@ class StoredAttachment {
   final String? mediaType;
 
   bool get isReady => scanState == 'clean';
+
+  /// The scan refused it after it was attached (or gave up on it, or an
+  /// operator contained it), so it will never open: the server keeps it on
+  /// the list as `rejected`, `error` or - once its bytes are gone -
+  /// `deleted`, so readers are told rather than left waiting for it.
+  bool get isRemoved =>
+      const {'rejected', 'error', 'deleted'}.contains(scanState);
 }
 
 /// A file's bytes, fetched for the person who asked and nobody else.

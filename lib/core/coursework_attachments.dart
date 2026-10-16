@@ -40,13 +40,17 @@ class AttachmentsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (attachments.isEmpty && links.isEmpty) return const SizedBox.shrink();
+    // A photo the scan removed is listed with the documents, where there
+    // is room to say so under its name.
+    bool shownAsImage(StoredAttachment a) =>
+        (a.mediaType ?? '').startsWith('image/') && !a.isRemoved;
     final images = [
       for (final a in attachments)
-        if ((a.mediaType ?? '').startsWith('image/')) a,
+        if (shownAsImage(a)) a,
     ];
     final documents = [
       for (final a in attachments)
-        if (!(a.mediaType ?? '').startsWith('image/')) a,
+        if (!shownAsImage(a)) a,
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,8 +205,30 @@ class _ImageThumbState extends State<_ImageThumb> {
     final l10n = AppL10n.of(context);
     final bytes = _bytes;
     final ready = widget.attachment.isReady;
+    final removed = widget.attachment.isRemoved;
     final Widget content;
-    if (bytes != null) {
+    if (removed) {
+      // Never fetched: the scan removed it, and there is nothing to show.
+      content = Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.gpp_bad_outlined, color: studafyMuted),
+            if (widget.size >= 120) ...[
+              const SizedBox(height: 6),
+              Text(
+                l10n.attachmentRemovedBySafetyCheck,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: studafyMuted, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      );
+    } else if (bytes != null) {
       content = Image.memory(
         bytes,
         fit: BoxFit.cover,
@@ -231,7 +257,9 @@ class _ImageThumbState extends State<_ImageThumb> {
       button: ready,
       label:
           '${widget.attachment.displayName}. '
-          '${!ready
+          '${removed
+              ? l10n.attachmentRemovedBySafetyCheck
+              : !ready
               ? l10n.attachmentsChecking
               : _failed
               ? l10n.attachmentsNotAvailable
@@ -425,6 +453,35 @@ String attachmentNotAcceptedText(AppL10n l10n, String reason) =>
       _ => l10n.attachmentNotAcceptedHere,
     };
 
+/// Marks, in [field], the files a refusal's [rows] name: each request path
+/// `<prefix>attachmentFileIds.<i>` points at `sent[i]`, the ids as they
+/// were sent. Each marked file shows why, and is no longer sent. Rows for
+/// anything else are left alone. Returns how many were marked.
+int markRefusedFiles(
+  AppL10n l10n,
+  AttachmentFieldState? field,
+  List<String> sent,
+  Map<String, String> rows, {
+  String prefix = '',
+}) {
+  if (field == null) return 0;
+  var marked = 0;
+  for (final MapEntry(key: path, value: reason) in rows.entries) {
+    if (!path.startsWith('${prefix}attachmentFileIds.')) continue;
+    final index = int.tryParse(
+      path.substring('${prefix}attachmentFileIds.'.length),
+    );
+    if (index == null || index < 0 || index >= sent.length) continue;
+    if (field.markNotAccepted(
+      sent[index],
+      attachmentNotAcceptedText(l10n, reason),
+    )) {
+      marked++;
+    }
+  }
+  return marked;
+}
+
 class AttachmentsEditorState extends State<AttachmentsEditor> {
   final Set<String> _detached = {};
   final Set<String> _removedLinks = {};
@@ -442,13 +499,7 @@ class AttachmentsEditorState extends State<AttachmentsEditor> {
 
   /// The new files, in the order they are sent - the order the server
   /// names them by.
-  List<String> get _attachFileIds => [
-    for (final item in _uploads)
-      if (item.fileId != null &&
-          (item.stage == AttachmentStage.ready ||
-              item.stage == AttachmentStage.quarantined))
-        item.fileId!,
-  ];
+  List<String> get _attachFileIds => sendableFileIds(_uploads);
 
   void _emit() => widget.onChanged?.call(
     AttachmentsEditorValue(
@@ -482,15 +533,10 @@ class AttachmentsEditorState extends State<AttachmentsEditor> {
       final parts = path.substring(prefix.length).split('.');
       final index = parts.length == 2 ? int.tryParse(parts[1]) : null;
       if (index == null || index < 0) continue;
-      if (parts[0] == 'attachmentFileIds' && index < sent.length) {
-        final field = _field.currentState;
-        if (field != null &&
-            field.markNotAccepted(
-              sent[index],
-              attachmentNotAcceptedText(l10n, reason),
-            )) {
-          marked++;
-        }
+      if (parts[0] == 'attachmentFileIds') {
+        marked += markRefusedFiles(l10n, _field.currentState, sent, {
+          'attachmentFileIds.$index': reason,
+        });
       } else if (parts[0] == 'links' && index < _newLinks.length) {
         _refusedLinks[_newLinks[index]] = l10n.linkNotAccepted;
         marked++;
@@ -532,10 +578,15 @@ class AttachmentsEditorState extends State<AttachmentsEditor> {
       children: [
         for (final file in widget.existingAttachments)
           _ExistingRow(
-            icon: (file.mediaType ?? '').startsWith('image/')
+            icon: file.isRemoved
+                ? Icons.gpp_bad_outlined
+                : (file.mediaType ?? '').startsWith('image/')
                 ? Icons.image_outlined
                 : Icons.description_outlined,
             label: file.displayName,
+            // The scan removed it after it was attached: it says so, and
+            // can be taken off like any other.
+            sublabel: file.isRemoved ? l10n.attachmentRemovedShort : null,
             removed: _detached.contains(file.id),
             enabled: widget.enabled,
             onToggle: () {

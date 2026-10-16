@@ -1172,6 +1172,14 @@
     "description": "Under a file the server refused on save because its security scan refused it."
   },
   "attachmentNotAcceptedGone": "This file is no longer available. Remove it and attach it again.",
+  "attachmentRemovedBySafetyCheck": "This file was removed by the safety check.",
+  "@attachmentRemovedBySafetyCheck": {
+    "description": "Shown in place of an attached file that the security scan refused after it was attached; it cannot be opened."
+  },
+  "attachmentRemovedShort": "Removed by the safety check",
+  "@attachmentRemovedShort": {
+    "description": "Short label under an attached file name, or on a photo, that the security scan removed."
+  },
   "attachmentNotAcceptedInUse": "This file is already attached. Remove it, then save again.",
   "attachmentNotAcceptedHere": "This file can't be added here. Remove it, then save again.",
   "linkNotAccepted": "This link can't be added. Remove it, then save again.",
@@ -1583,6 +1591,10 @@
   "msgErrorUnauthorized": "Please sign in again.",
   "msgErrorValidation": "Write a message first.",
   "msgErrorUnknown": "Something went wrong. Please try again.",
+  "msgErrorAttachmentRefused": "A file was not accepted, so nothing was sent. Remove the file marked, then try again.",
+  "@msgErrorAttachmentRefused": {
+    "description": "Error when the server refused a file attached to a message or announcement; the refused file is marked."
+  },
   "famTitle": "My family",
   "famChildren": "My children",
   "famEmptyTitle": "No children linked yet",

@@ -410,6 +410,7 @@ jobs:
           supabase/tests/guardian_announcements.sql
           supabase/tests/online_assessments.sql
           supabase/tests/attachment_refusals.sql
+          supabase/tests/bind_refusals.sql
           supabase/tests/grounded_material.sql
           supabase/tests/study_notebooks.sql
           supabase/tests/material_selection.sql

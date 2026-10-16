@@ -1770,6 +1770,13 @@ class AppL10nEn extends AppL10n {
       'This file is no longer available. Remove it and attach it again.';
 
   @override
+  String get attachmentRemovedBySafetyCheck =>
+      'This file was removed by the safety check.';
+
+  @override
+  String get attachmentRemovedShort => 'Removed by the safety check';
+
+  @override
   String get attachmentNotAcceptedInUse =>
       'This file is already attached. Remove it, then save again.';
 
@@ -2671,6 +2678,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get msgErrorUnknown => 'Something went wrong. Please try again.';
+
+  @override
+  String get msgErrorAttachmentRefused =>
+      'A file was not accepted, so nothing was sent. Remove the file marked, then try again.';
 
   @override
   String get famTitle => 'My family';

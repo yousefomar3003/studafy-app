@@ -315,6 +315,8 @@ class _ConversationPageState extends State<ConversationPage> {
     }
     final interactor = MessagingScope.of(context);
     final clientId = _pendingClientId ??= interactor.newClientMessageId();
+    // In the order sent: a refusal names a file by its place in this list.
+    final sent = sendableFileIds(_attachments);
     setState(() {
       _sending = true;
       _sendError = null;
@@ -323,9 +325,10 @@ class _ConversationPageState extends State<ConversationPage> {
       _conversation.id,
       text,
       clientMessageId: clientId,
-      attachmentFileIds: [for (final item in _attachments) ?item.fileId],
+      attachmentFileIds: sent,
     );
     if (!mounted) return;
+    AttachmentRefusedFailure? refusal;
     setState(() {
       _sending = false;
       result.fold(
@@ -339,11 +342,28 @@ class _ConversationPageState extends State<ConversationPage> {
           _attachments = const [];
           _attachmentsKey = GlobalKey();
         },
-        onFailure: (failure) => _sendError = failure.code == Failure.networkCode
-            ? AppL10n.of(context).msgSendFailed
-            : messagingFailureText(context, failure),
+        onFailure: (failure) {
+          if (failure is AttachmentRefusedFailure) {
+            refusal = failure;
+            // Nothing was sent, and the next send is a different message.
+            _pendingClientId = null;
+          }
+          _sendError = failure.code == Failure.networkCode
+              ? AppL10n.of(context).msgSendFailed
+              : messagingFailureText(context, failure);
+        },
       );
     });
+    // A refused file is marked where it was attached, and is left out of
+    // the next send.
+    if (refusal case final refused?) {
+      markRefusedFiles(
+        AppL10n.of(context),
+        _attachmentsKey.currentState,
+        sent,
+        refused.rows,
+      );
+    }
   }
 
   /// Whether the composer last showed the microphone (an empty draft)
