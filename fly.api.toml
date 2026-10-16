@@ -48,9 +48,11 @@ primary_region = "fra"
   AI_LESSON_TOOLS_ENABLED = "true"
   AI_BASE_URL = "https://api.together.xyz"
   AI_MODEL = "Qwen/Qwen3.5-9B"
-  # DL-049, DL-061: messaging stays off until SAFE-043's moderation gate is
-  # met (named report reviewers, B9). Off, no school can message.
-  MESSAGING_ENABLED = "false"
+  # DL-063: messaging launches (superseding DL-061's launch block), with the
+  # owner as the one report reviewer (docs/security/safe043-operator-runbook.md).
+  # The switch stays so messaging can be turned off for everyone fast:
+  # "false" and redeploy, and no school can start a conversation or send.
+  MESSAGING_ENABLED = "true"
 
 [http_service]
   internal_port = 8080

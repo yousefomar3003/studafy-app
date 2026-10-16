@@ -1070,7 +1070,7 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: true,
     tenantRequired: false,
     description:
-      "Approve a pending moderation-access request as a different platform operator, with MFA.",
+      "Approve a pending moderation-access request as a different platform operator, with MFA; in single-reviewer mode (DL-063) the only operator approves their own request made without a second approver.",
   },
   "moderation.access.start": {
     resource: "moderation_access_grant",

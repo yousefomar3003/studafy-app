@@ -587,6 +587,9 @@ jobs:
       - name: Verify safety report alerts and the audited reviewer read
         run: bunx supabase test db --local supabase/tests/report_alerts.sql
 
+      - name: Verify safety reports with one reviewer (DL-063)
+        run: bunx supabase test db --local supabase/tests/safety_single_reviewer.sql
+
       # On call: the drill drives the real SQL dispatcher through the whole
       # safeguarding lifecycle and exits non-zero on any step failing.
       - name: Run SAFE-043 moderation drill

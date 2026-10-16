@@ -33,7 +33,7 @@ primary_region = "fra"
   AI_MODEL = "Qwen/Qwen3.5-9B"
   # Synthetic lesson material only on the test copy (ADR-0034).
   AI_LESSON_TOOLS_ENABLED = "true"
-  # Messaging on for the test copy only (DL-061): synthetic schools.
+  # Messaging on, as in production (DL-063).
   MESSAGING_ENABLED = "true"
   PAY071_BILLING_ENABLED = "false"
 

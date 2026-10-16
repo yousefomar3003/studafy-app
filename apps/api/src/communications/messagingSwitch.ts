@@ -3,11 +3,11 @@ import type { AuthorizationEnv } from "../authorization/middleware";
 import { problem } from "../platform/errors";
 
 /**
- * Messaging, off for the whole server (DL-049, DL-061).
+ * Messaging, off for the whole server (DL-061).
  *
- * Messaging stays launch-blocked until SAFE-043's moderation gate is met
- * (named report reviewers, B9). With MESSAGING_ENABLED off, this sits in
- * front of every module:
+ * Production runs with MESSAGING_ENABLED on (DL-063: messaging launches);
+ * this is the way to turn it off for everyone fast. With MESSAGING_ENABLED
+ * off, this sits in front of every module:
  *
  * - starting a conversation and sending a message are refused with
  *   403 MESSAGING_DISABLED, whatever the school's own switch says, so no
