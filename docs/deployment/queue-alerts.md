@@ -66,6 +66,24 @@ Every sample logs `queue_monitor_tick`. This line is never sampled away.
    It prints `alerts:test sent to chat ...` and Telegram shows
    `TEST Studafy development: queue alerts reach this chat (...)` (the test copy runs as `development`).
 
+## Safety report alerts (DPIA D7)
+
+A separate switch on the same bot and chat: `REPORT_ALERTS_ENABLED`
+(`REPORT_ALERT_POLL_INTERVAL_MS`, default 30000). Each new safety report
+sends one `SAFETY REPORT` message with the report id, kind, priority and a
+hash of the school id, nothing else. It does not need
+`QUEUE_ALERTS_ENABLED`; it does need `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_CHAT_ID` and `DATABASE_URL`. Production has it on in
+`fly.worker.toml`, so the production worker refuses to start without the
+bot. On the test copy:
+
+```sh
+fly secrets set --config fly.test.worker.toml REPORT_ALERTS_ENABLED=true
+```
+
+What reviewers do with the message, and the response times, are in
+`docs/security/safe043-operator-runbook.md` (Reviewing a report).
+
 ## What it cannot see
 
 A worker that is down sends nothing. Axiom's **Worker silent** monitor

@@ -45,6 +45,7 @@ import { startDataExportExecutor } from "./processors/dataExport";
 import { startMeetingProcessor } from "./processors/meetings";
 import { startChannelDelivery } from "./processors/channelDelivery";
 import { startHousekeeping } from "./processors/housekeeping";
+import { startReportAlerts } from "./processors/reportAlerts";
 import { queuePrefix } from "./platform/queueInventory";
 import { redisAlertState, startQueueMonitor } from "./monitoring/queueMonitor";
 import { type MonitoredQueue, monitorSources } from "./monitoring/sources";
@@ -359,6 +360,21 @@ const retentionSchedule = env.RETENTION_SCHEDULE_ENABLED && env.DATABASE_URL
   ? startRetentionSchedule(database(), logger)
   : undefined;
 
+// DPIA D7: a filed safety report alerts the reviewers' Telegram chat (id,
+// kind, priority and a school hash only). Off unless REPORT_ALERTS_ENABLED.
+const reportAlerts = env.REPORT_ALERTS_ENABLED && env.DATABASE_URL
+  ? startReportAlerts({
+    sql: database(),
+    sender: new TelegramAlertSender({
+      botToken: env.TELEGRAM_BOT_TOKEN!,
+      chatId: env.TELEGRAM_CHAT_ID!,
+    }),
+    logger,
+    environment: env.ENVIRONMENT,
+    intervalMs: env.REPORT_ALERT_POLL_INTERVAL_MS,
+  })
+  : undefined;
+
 // Launch plan 4.7: alerts on queue depth, waiting age, failures and stuck
 // workers, to Telegram. Off unless QUEUE_ALERTS_ENABLED and the bot are set.
 const alertRedis = env.QUEUE_ALERTS_ENABLED
@@ -422,6 +438,7 @@ installGracefulShutdown({
     await channels?.close();
     await housekeeping?.close();
     await retentionSchedule?.close();
+    await reportAlerts?.close();
     await queueMonitor?.close();
     if (alertRedis) await closeRedis(alertRedis);
     if (sharedSql) await closeDatabase(sharedSql);

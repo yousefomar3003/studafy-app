@@ -102,6 +102,15 @@ describe("Fly configs pass production validation", () => {
     // ADR-0034: lesson material reaches the AI provider only after launch
     // approval.
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
+    // DPIA D7: a filed safety report always reaches a reviewer.
+    expect(env.REPORT_ALERTS_ENABLED).toBe(true);
+  });
+
+  test("the production worker refuses report alerts without Telegram", async () => {
+    const fly = await flyEnv("fly.worker.toml");
+    const { TELEGRAM_BOT_TOKEN: _, ...withoutBot } = secrets;
+    expect(() => parseEnv(workerEnvSchema, { ...fly, ...withoutBot }))
+      .toThrow(/REPORT_ALERTS_ENABLED/);
   });
 
   test("production refuses client addresses from X-Forwarded-For", async () => {
