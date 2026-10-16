@@ -2,11 +2,11 @@
  * Makes the store screenshots uploadable and smaller: simulator pictures
  * carry an alpha channel, which App Store Connect refuses, and Google Play
  * asks for 24-bit PNG. This removes the alpha channel and recompresses
- * losslessly (about a third of the size). It uses sharp, which is not a
- * dependency of the repo:
+ * losslessly as 24-bit RGB (a fifth smaller or so). It uses sharp, which is
+ * not a dependency of the repo:
  *
  *   bun add --no-save sharp@0.34
- *   bun scripts/store/compress-screenshots.ts [docs/store/screenshots/ios]
+ *   bun scripts/store/compress-screenshots.ts [docs/store/screenshots/ios|android]
  */
 import { readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -31,7 +31,10 @@ for (const dir of readdirSync(root)) {
     before += statSync(file).size;
     const out = await sharp(file)
       .removeAlpha()
-      .png({ compressionLevel: 9, effort: 10, adaptiveFiltering: true })
+      // 24-bit RGB, lossless. No `effort`, `quality` or `colours`: sharp
+      // takes any of them as a request for an 8-bit palette, which is lossy
+      // and not the 24-bit PNG Play asks for.
+      .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false })
       .toBuffer();
     writeFileSync(file, out);
     after += out.length;

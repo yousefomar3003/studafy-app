@@ -70,6 +70,8 @@ if (import.meta.main) {
     FILE051_DELIVERY_PUBLIC_BASE_URL: `http://127.0.0.1:${port}`,
     API_REQUEST_TIMEOUT_MS: "20000",
     PAY071_BILLING_ENABLED: "false",
+    // Off, as in production (DL-061); `--messaging on` for pictures of it.
+    MESSAGING_ENABLED: arg("--messaging") === "on" ? "true" : "false",
   };
   const child = Bun.spawn(
     [process.execPath, "--no-env-file", "apps/api/src/index.ts"],

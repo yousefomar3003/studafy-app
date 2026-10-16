@@ -10,6 +10,7 @@ import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/data/backend.dart';
 import 'package:studafy/features/session/presentation/role_page.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 import 'package:studafy/main.dart';
 
 /// Store screenshots (launch plan A4): the real app, signed in as each role
@@ -107,6 +108,9 @@ final _words = {
   },
 }[_locale]!;
 
+/// The app's own labels, in the language being shot.
+final _l10n = lookupAppL10n(const Locale(_locale));
+
 /// Content a person typed is wrapped (direction isolates) by
 /// `UserContentText`, so it is matched inside rich text, not exactly.
 Finder _find(String key) =>
@@ -126,10 +130,14 @@ Future<void> _teacher(_Shots shots) async {
   await shots.tap(_find('exam'));
   await shots.take('teacher-5-online-exam');
   await shots.back();
-  await shots.tab(4);
-  await shots.tap(_find('parent'));
-  await shots.take('teacher-6-messages');
-  await shots.back();
+  // Only where the school has messaging on: otherwise the last tab is the
+  // school's announcements, and there is no conversation to show.
+  if (shots.hasTab(_l10n.navInbox)) {
+    await shots.tab(4);
+    await shots.tap(_find('parent'));
+    await shots.take('teacher-6-messages');
+    await shots.back();
+  }
 }
 
 Future<void> _student(_Shots shots) async {
@@ -158,12 +166,15 @@ Future<void> _parent(_Shots shots) async {
   await shots.tap(_find('student'));
   await shots.take('parent-2-progress');
   await shots.back();
-  await shots.tab(shots.tabCount - 2);
+  await shots.tabLabelled(_l10n.navAnnouncements);
   await shots.take('parent-3-announcements');
-  await shots.tab(shots.tabCount - 1);
-  await shots.tap(_find('teacher'));
-  await shots.take('parent-4-messages');
-  await shots.back();
+  // Only where the school has messaging on.
+  if (shots.hasTab(_l10n.navMessages)) {
+    await shots.tabLabelled(_l10n.navMessages);
+    await shots.tap(_find('teacher'));
+    await shots.take('parent-4-messages');
+    await shots.back();
+  }
 }
 
 class _Shots {
@@ -175,6 +186,20 @@ class _Shots {
 
   Future<void> tab(int index) async {
     await tester.tap(find.byType(StudafyNavDestination).at(index));
+    await settle();
+  }
+
+  Finder _navLabel(String label) => find.descendant(
+    of: find.byType(StudafyNavigationBar),
+    matching: find.text(label),
+  );
+
+  /// Whether the tab bar has a tab with [label]: a tab for something the
+  /// server has switched off is not there.
+  bool hasTab(String label) => _navLabel(label).evaluate().isNotEmpty;
+
+  Future<void> tabLabelled(String label) async {
+    await tester.tap(_navLabel(label).first);
     await settle();
   }
 
