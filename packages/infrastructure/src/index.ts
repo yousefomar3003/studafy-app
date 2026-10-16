@@ -181,6 +181,52 @@ export {
   type UsageRecord,
 } from "./material/reader";
 export {
+  AiMeter,
+  type AiUsageLedger,
+  type Allowance,
+  allowanceOf,
+  costMicroUsd,
+  type Hold,
+  holdFor,
+  type MeteredResult,
+  type ModelPrices,
+  OUTPUT_TOKENS,
+  PHOTO_INPUT_TOKENS,
+  type StudyCallContext,
+  type StudyFeature,
+} from "./study/metering";
+export {
+  type GatheredMaterial,
+  gatherScope,
+  type MaterialRef,
+  MAX_SELECTED_LESSONS,
+  type ResolvedLesson,
+  type ResolvedScope,
+  resolveSelection,
+  type SelectionResult,
+  type SkippedSource,
+  type StudyMaterialSource,
+  type UnreadableEntry,
+  unreadableReason,
+} from "./study/selection";
+export {
+  knownNamesOf,
+  KnownNamesUnavailable,
+  redactingNames,
+} from "./study/knownNames";
+export {
+  AI_ACCESS_FAILURES,
+  type KnownNameSource,
+  NOTEBOOK_OUTPUT_TOKENS,
+  notebookRefs,
+  notebookRequestKey,
+  type NotebookStart,
+  type NotebookWriterDeps,
+  type NotebookWriteResult,
+  STUDY_SET_MATERIAL_CHARS,
+  writeNotebook,
+} from "./study/notebookWriter";
+export {
   type CreatedChild,
   MANAGED_ACCOUNT_DOMAIN,
   ManagedAccountError,

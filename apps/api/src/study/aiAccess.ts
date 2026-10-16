@@ -1,8 +1,9 @@
 import type { Context, MiddlewareHandler } from "hono";
-import { type KnownName, type NameKind, nameRedactor } from "@studafy/domain";
+import type { KnownName } from "@studafy/domain";
 import {
+  knownNamesOf,
+  redactingNames,
   type StudyAssistant,
-  withNameRedaction,
 } from "@studafy/infrastructure";
 import type { Sql } from "@studafy/database";
 import type { AuthorizationEnv } from "../authorization/middleware";
@@ -115,25 +116,13 @@ export function requireAiAccess(
   };
 }
 
-const KINDS = new Set<NameKind>(["self", "parent", "teacher", "classmate"]);
-
-/** The names the student can see, as the database lists them. */
+/** The names the student can see, as the database lists them. Throws when
+ * they cannot be read: better no call than one that might carry a name. */
 export async function knownNames(
   repository: AiAccessRepository,
   context: RequestDbContext,
 ): Promise<KnownName[]> {
-  const result = await repository.call(context, "names", {});
-  if (result["outcome"] !== "ok") {
-    // Better no call than one that might carry a name.
-    throw new Error("ai_names_unavailable");
-  }
-  const names = Array.isArray(result["names"]) ? result["names"] : [];
-  return names.flatMap((entry) => {
-    const row = entry as Record<string, unknown>;
-    const kind = String(row["kind"]) as NameKind;
-    const name = typeof row["name"] === "string" ? row["name"] : "";
-    return KINDS.has(kind) && name ? [{ name, kind }] : [];
-  });
+  return knownNamesOf(await repository.call(context, "names", {}));
 }
 
 /**
@@ -148,6 +137,5 @@ export async function nameRedactedAssistant<
   context: RequestDbContext,
   assistant: A,
 ): Promise<A> {
-  const redactor = nameRedactor(await knownNames(repository, context));
-  return withNameRedaction(assistant, (text) => redactor.redact(text));
+  return redactingNames(assistant, await knownNames(repository, context));
 }

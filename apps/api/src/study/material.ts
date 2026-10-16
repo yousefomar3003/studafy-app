@@ -2,9 +2,13 @@ import type { Sql } from "@studafy/database";
 import {
   type MaterialPassage,
   namedLocations,
-  type UnreadableSource,
   wantsWholeMaterial,
 } from "@studafy/domain";
+import {
+  type GatheredMaterial,
+  type UnreadableEntry,
+  unreadableReason,
+} from "@studafy/infrastructure";
 import {
   type RequestDbContext,
   withRequestContext,
@@ -42,6 +46,13 @@ export class PostgresMaterialRepository implements MaterialRepository {
   }
 }
 
+// Shared with the worker's notebook writer (2026-10-16).
+export {
+  type GatheredMaterial,
+  type UnreadableEntry,
+  unreadableReason,
+} from "@studafy/infrastructure";
+
 interface SourceRow {
   id: string;
   kind: "file" | "link";
@@ -56,50 +67,6 @@ interface LessonRow {
   body: string;
   grade: string | null;
   sources: SourceRow[];
-}
-
-/** Why a source could not be used, in words the model passes on. */
-export function unreadableReason(state: string, reason: string | null): string {
-  if (state === "processing") return "still being read - try again shortly";
-  switch (reason) {
-    case "needs_model":
-    case "reading_budget_used":
-      return "its scanned pages were not read";
-    case "no_text":
-      return "it has no readable text";
-    case "unsupported_type":
-      return "this kind of file cannot be read";
-    case "link_needs_sign_in":
-      return "the link needs a sign-in";
-    case "link_video":
-      return "it is a video";
-    case "link_not_found":
-      return "the link no longer exists";
-    case "link_blocked_address":
-    case "link_unreachable":
-    case "link_unsupported_type":
-    case "link_too_large":
-      return "the link could not be opened";
-    default:
-      return "it could not be read";
-  }
-}
-
-/** A source that could not be used: words for the model, a code for the app. */
-export interface UnreadableEntry extends UnreadableSource {
-  code: string;
-}
-
-export interface GatheredMaterial {
-  passages: MaterialPassage[];
-  unreadable: UnreadableEntry[];
-  /** The class's grade, when exactly one class is involved. */
-  grade: string | null;
-  /** Lessons the student could see, of those asked for. */
-  lessonCount: number;
-  /** A chosen file or link is still being read. */
-  pending: boolean;
-  chars: number;
 }
 
 /**

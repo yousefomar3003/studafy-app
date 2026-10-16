@@ -54,7 +54,9 @@ primary_region = "fra"
   REPORT_ALERTS_ENABLED = "true"
   # Switched on at launch once their own credentials are set (see the doc):
   # PAY071_BILLING_ENABLED (store keys), NOTIFICATION_CHANNELS_ENABLED
-  # (Firebase / email), MEETINGS_PROCESSOR_ENABLED.
+  # (Firebase / email), MEETINGS_PROCESSOR_ENABLED. Study notebooks are
+  # written here (2026-10-16): when fly.api.toml turns AI_LESSON_TOOLS_ENABLED
+  # on, set it here too, with AI_BASE_URL and the AI_API_KEY secret.
 
 # The worker serves no HTTP. It runs continuously: one machine, never
 # stopped for being idle, since queued work arrives without traffic.

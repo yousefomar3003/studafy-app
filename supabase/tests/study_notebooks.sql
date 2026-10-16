@@ -6,7 +6,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(43);
+select plan(75);
 
 \set other_student_user 'a0550000-0000-4000-8000-0000000000a1'
 \set pdf_file 'a0550000-0000-4000-8000-0000000000f1'
@@ -187,30 +187,151 @@ select is((pg_temp.nb(:'student_user', 'get', jsonb_build_object('id', :'nb_id')
   'Leaves make food.', 'as is the last good AI part');
 
 -- ---------------------------------------------------------------------------
--- Resumed after an instance stopped writing (2026-10-11, launch plan 2.7)
+-- Written on the worker's queue (2026-10-16, 202610160000)
 -- ---------------------------------------------------------------------------
+-- The student has agreed to the AI notice (ADR-0043); without it the
+-- ledger refuses the worker's hold, as it refuses the API's.
+insert into public.consent_records (user_id, purpose, policy_version, locale,
+  policy_id, given_by, given_as)
+select :'student_user', 'ai_features', p.policy_version, 'en', p.id,
+  :'student_user', 'self'
+from public.consent_policies p
+where p.purpose = 'ai_features' and p.locale = 'en'
+order by p.effective_at desc, p.policy_version desc limit 1
+on conflict (user_id, purpose, policy_version) do update set withdrawn_at = null;
 select is(pg_temp.nb(:'student_user', 'regenerate', jsonb_build_object('id', :'nb_id'))->'summary'->>'status',
   'creating', 'a new generation starts');
-select is(jsonb_array_length(private.study_notebooks_resume(5)), 0,
-  'a write still in progress is left alone');
-update public.study_notebooks set generation_started_at = now() - interval '5 minutes'
-  where id = :'nb_id';
-select is((select r->>'notebookId' || ' ' || (r->>'outcome') || ' ' || (r->>'ownerId') || ' ' ||
-    (r->>'resume') || ' ' || (r->>'lessonTitle' is not null)::text
-  from jsonb_array_elements(private.study_notebooks_resume(5)) r),
-  :'nb_id' || ' ok ' || :'student_user' || ' 1 true',
-  'a stopped write is claimed once, with its payload built as its owner');
-select is(jsonb_array_length(private.study_notebooks_resume(5)), 0,
-  'and not again while another instance holds it');
-update public.study_notebooks set generation_lease_until = now() - interval '1 second'
-  where id = :'nb_id';
-select is((private.study_notebooks_resume(5)->0->>'resume'), '2', 'a lapsed lease lets it be resumed a second time');
-update public.study_notebooks set generation_lease_until = now() - interval '1 second'
-  where id = :'nb_id';
-select is(jsonb_array_length(private.study_notebooks_resume(5)), 0,
-  'but not a third: the ten-minute rule then shows it failed, with its retry');
-select is(pg_temp.nb(:'student_user', 'fail', jsonb_build_object('id', :'nb_id', 'generation', 3,
-  'reason', 'provider_unavailable'))->>'outcome', 'ok', 'it can still be recorded as failed');
+select is((select count(*) from private.study_notebook_jobs where notebook_id = :'nb_id'
+    and generation = 3 and state = 'pending'), 1::bigint,
+  'and is queued for the worker in the same transaction');
+insert into nbt select 'claim', private.notebook_jobs_claim('pgtap-worker', 5);
+select (value->0->>'jobId')::uuid as job_id from nbt where name = 'claim' \gset
+select is((select jsonb_array_length(value) from nbt where name = 'claim'), 1,
+  'the worker claims the current generation only');
+select is((select count(*) from private.study_notebook_jobs where notebook_id = :'nb_id'), 1::bigint,
+  'replaced generations leave the queue');
+select is((select (value->0->'start'->>'notebookId') || ' ' || (value->0->>'ownerId') || ' ' ||
+    (value->0->>'attempt') || ' ' || (value->0->'start'->>'generation') || ' ' ||
+    (value->0->'start'->>'lessonTitle') from nbt where name = 'claim'),
+  :'nb_id' || ' ' || :'student_user' || ' 1 3 Photosynthesis',
+  'with what to write, built as the notebook''s owner');
+select is(jsonb_array_length(private.notebook_jobs_claim('another-worker', 5)), 0,
+  'no other worker takes it while the lease holds');
+select is(private.notebook_job_material('pgtap-worker', :'job_id', 1, 'lessons',
+  jsonb_build_object('resourceIds', jsonb_build_array(gen_random_uuid())))->>'outcome', 'invalid',
+  'the worker reads only the notebook''s own lesson');
+select is(private.notebook_job_material('another-worker', :'job_id', 1, 'lessons',
+  jsonb_build_object('resourceIds', jsonb_build_array(:'lesson_id')))->>'outcome', 'lease_lost',
+  'and only while it holds the job');
+select is(jsonb_array_length(private.notebook_job_material('pgtap-worker', :'job_id', 1, 'lessons',
+  jsonb_build_object('resourceIds', jsonb_build_array(:'lesson_id')))->'lessons'), 1,
+  'as the owner, who sees the lesson');
+select is(private.notebook_job_usage('pgtap-worker', :'job_id', 1, 'reserve',
+  '{"feature": "notes", "estimateMicroUsd": 100, "estimateTokens": 1000, "requestKey": "forged"}'::jsonb)->>'outcome',
+  'ok', 'the owner''s allowance is held for it');
+select is((select request_key from private.ai_usage where user_id = :'student_user' and status = 'reserved'),
+  'notebook:' || :'nb_id' || ':3', 'under the generation''s own key, whatever the worker sends');
+select is(private.notebook_job_finish('pgtap-worker', :'job_id', 1,
+  '{"outcome": "retry", "reason": "provider_unavailable"}'::jsonb)->>'state', 'pending',
+  'a failure that cost nothing is tried again');
+select ok((select next_attempt_at >= now() + interval '20 seconds' from private.study_notebook_jobs
+  where id = :'job_id'), 'after a backoff');
+update private.study_notebook_jobs set next_attempt_at = now() where id = :'job_id';
+select is(private.notebook_jobs_claim('pgtap-worker', 5)->0->>'attempt', '2', 'then claimed again');
+select is(private.notebook_job_usage('pgtap-worker', :'job_id', 2, 'reserve',
+  '{"feature": "notes", "estimateMicroUsd": 100, "estimateTokens": 1000}'::jsonb)->>'outcome', 'ok',
+  'the first attempt''s hold does not refuse the second');
+select is((select count(*) from private.ai_usage where user_id = :'student_user' and status = 'reserved'),
+  1::bigint, 'it was released, never charged');
+select is(private.notebook_job_finish('pgtap-worker', :'job_id', 1,
+  '{"outcome": "failed", "reason": "provider_unavailable"}'::jsonb)->>'outcome', 'lease_lost',
+  'an attempt that is over cannot report');
+select is(private.notebook_job_finish('pgtap-worker', :'job_id', 2, jsonb_build_object('outcome', 'ready',
+  'model', 'test-model', 'content', jsonb_build_object('overview', 'Leaves make food, again.',
+    'objectives', '[]'::jsonb, 'keyTerms', '[]'::jsonb, 'sections', '[]'::jsonb,
+    'examples', '[]'::jsonb, 'facts', '[]'::jsonb, 'mistakes', '[]'::jsonb,
+    'summary', '[]'::jsonb)))->>'notebook', 'ok', 'the written notebook is saved as its owner');
+select is((select status || ' ' || content_version from public.study_notebooks where id = :'nb_id'), 'ready 2',
+  'and is ready');
+select is((select count(*) from private.study_notebook_jobs where notebook_id = :'nb_id'), 0::bigint,
+  'and its job is done');
+
+-- The owner's names and AI access, on the worker's side (ADR-0043,
+-- 202610160001): names to keep out of the model call, read only for the job
+-- held; a hold refused to an owner who may no longer use AI.
+insert into nbt select 'access', pg_temp.nb(:'student_user', 'create', jsonb_build_object(
+  'classroomId', :'classroom_id', 'resourceId', :'lesson_id', 'sourceIds', jsonb_build_array(:'pdf_file')));
+select (value->>'notebookId')::uuid as access_id from nbt where name = 'access' \gset
+insert into nbt select 'access_claim', private.notebook_jobs_claim('pgtap-worker', 5);
+select (value->0->>'jobId')::uuid as access_job from nbt where name = 'access_claim' \gset
+select is((select value->0->'start'->>'notebookId' from nbt where name = 'access_claim'), :'access_id',
+  'a second notebook is claimed');
+select ok(private.notebook_job_names('pgtap-worker', :'access_job', 1)->'names'
+    @> '[{"name": "Seed Student", "kind": "self"}, {"name": "Seed Teacher", "kind": "teacher"}]'::jsonb,
+  'the worker reads the owner''s names: their own and their teacher''s');
+select is(private.notebook_job_names('pgtap-worker', :'access_job', 1)->>'outcome', 'ok',
+  'for the job it holds');
+select is(private.notebook_job_names('another-worker', :'access_job', 1)->>'outcome', 'lease_lost',
+  'and for no job it does not hold');
+select is(private.notebook_job_names('pgtap-worker', :'access_job', 2)->>'outcome', 'lease_lost',
+  'nor an attempt that is not its own');
+update public.consent_records set withdrawn_at = now()
+  where user_id = :'student_user' and purpose = 'ai_features';
+select is(private.notebook_job_usage('pgtap-worker', :'access_job', 1, 'reserve',
+  '{"feature": "notes", "estimateMicroUsd": 100, "estimateTokens": 1000}'::jsonb)->>'outcome',
+  'consent_required', 'an owner who withdrew their AI consent is refused the hold');
+select is((select count(*) from private.ai_usage
+    where request_key = 'notebook:' || :'access_id' || ':1'), 0::bigint,
+  'and nothing is held for it');
+select is(private.notebook_job_finish('pgtap-worker', :'access_job', 1,
+  '{"outcome": "failed", "reason": "consent_required"}'::jsonb)->>'state', 'done',
+  'the refusal fails the notebook, without a retry');
+select is((select status || ' ' || failure from public.study_notebooks where id = :'access_id'),
+  'failed consent_required', 'which shows the student why');
+select is((select count(*) from private.study_notebook_jobs where notebook_id = :'access_id'), 0::bigint,
+  'and leaves the queue');
+update public.consent_records set withdrawn_at = null
+  where user_id = :'student_user' and purpose = 'ai_features';
+update public.study_notebooks set deleted_at = now() where id = :'access_id';
+
+-- A notebook still waiting when it is too late to be of use.
+insert into nbt select 'late', pg_temp.nb(:'student_user', 'create', jsonb_build_object(
+  'classroomId', :'classroom_id', 'resourceId', :'lesson_id', 'sourceIds', jsonb_build_array(:'pdf_file')));
+select (value->>'notebookId')::uuid as late_id from nbt where name = 'late' \gset
+update public.study_notebooks set generation_started_at = now() - interval '10 minutes'
+  where id = :'late_id';
+select is(jsonb_array_length(private.notebook_jobs_claim('pgtap-worker', 5)), 0,
+  'a notebook that waited too long is not written');
+select is((select state || ' ' || last_error from private.study_notebook_jobs where notebook_id = :'late_id'),
+  'dead timed_out', 'its job is a dead letter');
+select is((select status || ' ' || failure from public.study_notebooks where id = :'late_id'),
+  'failed timed_out', 'and the notebook shows failed, with its retry');
+select ok((private.notebook_jobs_backlog()->>'deadLetters')::int >= 1, 'counted for the queue alerts');
+update public.study_notebooks set deleted_at = now() where id = :'late_id';
+
+select ok(has_function_privilege('studafy_worker_runtime', 'private.notebook_jobs_claim(text, integer)', 'execute')
+  and has_function_privilege('studafy_worker_runtime', 'private.notebook_job_material(text, uuid, integer, text, jsonb)', 'execute')
+  and has_function_privilege('studafy_worker_runtime', 'private.notebook_job_usage(text, uuid, integer, text, jsonb)', 'execute')
+  and has_function_privilege('studafy_worker_runtime', 'private.notebook_job_finish(text, uuid, integer, jsonb)', 'execute')
+  and has_function_privilege('studafy_worker_runtime', 'private.notebook_jobs_backlog()', 'execute'),
+  'the worker runs the notebook queue');
+select ok(not has_function_privilege('studafy_api_runtime', 'private.notebook_jobs_claim(text, integer)', 'execute')
+  and not has_function_privilege('studafy_api_runtime', 'private.notebook_job_usage(text, uuid, integer, text, jsonb)', 'execute')
+  and not has_function_privilege('studafy_api_runtime', 'private.notebook_job_finish(text, uuid, integer, jsonb)', 'execute')
+  and not has_function_privilege('authenticated', 'private.notebook_job_material(text, uuid, integer, text, jsonb)', 'execute')
+  and not has_function_privilege('studafy_worker_runtime', 'private.notebook_job_held(text, uuid, integer)', 'execute')
+  and not has_function_privilege('studafy_worker_runtime', 'private.api055_study_notebooks(text, jsonb)', 'execute'),
+  'nothing else can, and the worker reaches notebooks only through it');
+select ok(has_function_privilege('studafy_worker_runtime', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('studafy_api_runtime', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('authenticated', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('anon', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('service_role', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('studafy_worker_runtime', 'private.ai_known_names(uuid)', 'execute')
+  and not has_function_privilege('studafy_worker_runtime', 'private.api057_ai_consent(text, jsonb)', 'execute'),
+  'only the worker reads an owner''s names, and only through its job');
+select hasnt_function('private', 'study_notebooks_resume', 'the API-side resume is retired');
+select hasnt_column('public', 'study_notebooks', 'generation_lease_until', 'with its lease column');
 
 -- ---------------------------------------------------------------------------
 -- Practice from it
@@ -219,7 +340,7 @@ select is(pg_temp.nb(:'student_user', 'set', jsonb_build_object('id', :'nb_id', 
   'sectionKeys', '[]'::jsonb))->>'outcome', 'plan_required', 'quizzes from a notebook are on Max');
 update private.study_plan_grants set plan = 'max' where user_id = :'student_user';
 select is(pg_temp.nb(:'student_user', 'saveSet', jsonb_build_object('id', :'nb_id', 'kind', 'quiz',
-  'sectionKeys', '["b","a","a"]'::jsonb, 'contentVersion', 1, 'model', 'test-model',
+  'sectionKeys', '["b","a","a"]'::jsonb, 'contentVersion', 2, 'model', 'test-model',
   'items', '[{"q":1}]'::jsonb))->'set'->'sectionKeys', '["a", "b"]'::jsonb, 'a quiz is kept against its sections');
 select isnt(pg_temp.nb(:'student_user', 'set', jsonb_build_object('id', :'nb_id', 'kind', 'quiz',
   'sectionKeys', '["a","b"]'::jsonb))->'existing', 'null'::jsonb, 'and opening it again needs no new one');

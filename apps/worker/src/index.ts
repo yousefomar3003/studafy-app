@@ -37,6 +37,10 @@ import {
   startMaterialIndex,
 } from "./processors/materialIndex";
 import {
+  postgresNotebookQueue,
+  startNotebookGeneration,
+} from "./processors/notebookGeneration";
+import {
   startFileRetentionSweep,
   startRetentionSchedule,
 } from "./processors/retentionSweep";
@@ -127,6 +131,12 @@ const activeQueues = env.OPS061_NOTIFICATIONS_ENABLED
   ? ["smoke", "notifications"]
   : ["smoke"];
 if (env.PAY071_BILLING_ENABLED) activeQueues.push("billing-events");
+if (
+  env.DATABASE_URL && env.AI_API_KEY && env.AI_BASE_URL &&
+  env.AI_LESSON_TOOLS_ENABLED
+) {
+  activeQueues.push("study-notebooks");
+}
 
 logStartup(logger, {
   environment: env.ENVIRONMENT,
@@ -192,10 +202,11 @@ const retention = fileWorkerSql && storage && env.FILE051_RETENTION_ENABLED
   ? startFileRetentionSweep(fileWorkerSql, storage, logger)
   : undefined;
 
-// ADR-0037: lesson files and links read for the study helper. The model
-// reads scanned pages and pictures only behind the same switch as every
+// ADR-0037: lesson files and links read for the study helper, and
+// (2026-10-16) study notebooks written. The model reads scanned pages and
+// pictures, and writes notebooks, only behind the same switch as every
 // other path that sends lesson material to the provider (ADR-0029).
-const materialReader = env.AI_API_KEY && env.AI_BASE_URL &&
+const studyModel = env.AI_API_KEY && env.AI_BASE_URL &&
     env.AI_LESSON_TOOLS_ENABLED
   ? createStudyAssistant({
     apiKey: env.AI_API_KEY,
@@ -209,7 +220,7 @@ const materialIndex = fileWorkerSql && storage && env.AI_MATERIAL_INDEX_ENABLED
   ? startMaterialIndex({
     queue: postgresMaterialQueue(fileWorkerSql),
     storage,
-    assistant: materialReader,
+    assistant: studyModel,
     limits: {
       ocrPagesPerFile: 60,
       textPagesPerFile: 500,
@@ -222,6 +233,26 @@ const materialIndex = fileWorkerSql && storage && env.AI_MATERIAL_INDEX_ENABLED
     },
     logger,
   }, env.AI_MATERIAL_POLL_INTERVAL_MS)
+  : undefined;
+
+// ADR-0038, 2026-10-16: study notebooks are written here, off the notebook
+// queue the API fills, not in the API process. On with a database and the
+// model above - the provider and AI_LESSON_TOOLS_ENABLED, the same things
+// the API needs before it accepts a notebook.
+const notebookSql: Sql | undefined = env.DATABASE_URL && studyModel
+  ? database()
+  : undefined;
+const notebooks = notebookSql && studyModel
+  ? startNotebookGeneration({
+    queue: postgresNotebookQueue(notebookSql),
+    assistant: studyModel,
+    prices: {
+      inputUsdPerMTok: env.AI_PRICE_INPUT_USD_PER_MTOK,
+      outputUsdPerMTok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
+    },
+    logger,
+    concurrency: env.AI_NOTEBOOK_CONCURRENCY,
+  }, env.AI_NOTEBOOK_POLL_INTERVAL_MS)
   : undefined;
 
 // OPS-061: the transactional outbox drain. The dispatcher polls the
@@ -408,6 +439,7 @@ const queueMonitor = alertRedis
       queues: monitoredQueues,
       outboxSql,
       fileScanSql: env.FILE051_SCAN_ENABLED ? fileWorkerSql : undefined,
+      notebookSql,
     }),
     thresholds: {
       maxDepth: env.QUEUE_ALERT_MAX_DEPTH,
@@ -440,6 +472,7 @@ installGracefulShutdown({
     await scan?.close();
     await retention?.close();
     await materialIndex?.close();
+    await notebooks?.close();
     await cleanup?.close();
     await accountDeletion?.close();
     await dataExport?.close();

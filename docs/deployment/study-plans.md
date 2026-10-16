@@ -75,5 +75,7 @@ Grants are for support and testing. They never touch the store ledger.
 ## The AI switch
 
 Whiteboard notes, quizzes and flashcards also need `AI_LESSON_TOOLS_ENABLED=true`
-on the API. It is off by default. Turn it on for real students only once the
+on the API. It is off by default. Study notebooks are written by the worker
+(2026-10-16), so they need the same switch and provider on the worker too
+(`docs/deployment/fly-io.md`). Turn it on for real students only once the
 provider DPA and the minors' DPIA are in place (ADR-0026, ADR-0029).

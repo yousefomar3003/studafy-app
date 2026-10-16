@@ -12,10 +12,13 @@ Telegram message when one goes past a limit. Code:
 | `smoke`, `notifications`, `billing-events` | BullMQ queues the worker runs | waiting jobs | oldest waiting job | new failed jobs in the window | a job active longer than the stall limit, or BullMQ reporting a stalled job (its worker died holding it) |
 | notification outbox | Postgres (`private.api061_outbox_backlog`) | pending + retry rows | oldest pending row | new dead letters in the window | — |
 | file scan | Postgres (`private.api051_scan_backlog`) | quarantined files | oldest quarantined file | new scan or delete dead letters in the window | — |
+| study notebooks | Postgres (`private.notebook_jobs_backlog`, 2026-10-16) | notebooks waiting to be written | oldest waiting notebook | new dead letters (three failed attempts, or nine minutes waiting) in the window | — |
 
 Only queues that are switched on are watched: `notifications` with
 `OPS061_NOTIFICATIONS_ENABLED`, `billing-events` with
-`PAY071_BILLING_ENABLED`, and file scan with `FILE051_SCAN_ENABLED`.
+`PAY071_BILLING_ENABLED`, file scan with `FILE051_SCAN_ENABLED`, and study
+notebooks when the worker writes them (a database, the AI provider and
+`AI_LESSON_TOOLS_ENABLED`).
 
 ## Thresholds (worker environment)
 

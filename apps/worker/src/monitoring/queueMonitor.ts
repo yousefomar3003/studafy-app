@@ -5,10 +5,11 @@ import type { AlertSender } from "@studafy/infrastructure";
  * Launch plan 4.7: alerts on background work, sent to Telegram.
  *
  * Every interval the monitor samples each source - the BullMQ queues and the
- * Postgres-polled backlogs (notification outbox, file scan) - and compares
- * the sample with thresholds from config:
+ * Postgres-polled backlogs (notification outbox, file scan, study
+ * notebooks) - and compares the sample with thresholds from config:
  *
- *   depth     waiting jobs, pending outbox rows or quarantined files;
+ *   depth     waiting jobs, pending outbox rows, quarantined files or
+ *             notebooks waiting to be written;
  *   age       the oldest of those, in seconds;
  *   failed    new failed jobs or dead letters within the window;
  *   stalled   a job active for longer than the stall limit, or BullMQ

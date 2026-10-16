@@ -274,6 +274,34 @@ void main() {
       expect(find.text('Writing your notebook…'), findsOne);
     });
 
+    // The worker's AI ledger refused an owner who may no longer use AI.
+    const accessReasons = {
+      'consent_required':
+          'The AI study tools are off for this account. A student turns '
+          'them on in their account; a parent does it for a child account.',
+      'guardian_consent_required':
+          'A parent turns on the AI study tools for this account, from '
+          'their own account.',
+      'no_class': 'The AI study tools are for students in a class.',
+    };
+    for (final entry in accessReasons.entries) {
+      testWidgets('a notebook refused for AI access says why: ${entry.key}', (
+        tester,
+      ) async {
+        tall(tester);
+        final study = _Notebooks()..seedFailed(entry.key);
+        await tester.pumpWidget(page(study));
+        await tester.pumpAndSettle();
+        expect(find.text(entry.value), findsOne);
+        expect(
+          find.text(
+            'Something went wrong while writing it. Nothing was charged.',
+          ),
+          findsNothing,
+        );
+      });
+    }
+
     testWidgets('reads right to left in Arabic', (tester) async {
       tall(tester);
       final study = _Notebooks()..seedReady();

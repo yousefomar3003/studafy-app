@@ -54,9 +54,16 @@ Three layers enforce it:
    or updating a study notebook. It answers `403 AI_STUDENTS_ONLY`,
    `403 AI_CONSENT_REQUIRED` or `403 AI_GUARDIAN_CONSENT_REQUIRED`.
 2. **The AI ledger.** `private.api047_ai_usage('reserve')` refuses to hold a
-   token unless access is `ok`. Every model call holds tokens first, the
-   background notebook writer and its recovery included, so no route can
-   reach the provider without this check.
+   token unless access is `ok`. Every model call holds tokens first, so no
+   route can reach the provider without this check. That includes study
+   notebooks, which the worker writes off the notebook queue (2026-10-16,
+   ADR-0038) through `private.notebook_job_usage`, as the notebook's owner.
+   A notebook queued while the owner could use AI, whose owner then lost
+   access (consent withdrawn, left their last class), is refused there
+   before any model call. The notebook fails with the refusal as its
+   reason (`consent_required`, `guardian_consent_required`, `no_class` or
+   `not_student`), is not tried again, and the app shows the same message
+   as for the route's refusal.
 3. **The SQL authorization catalogue.** `private.authz_notebook` now allows
    `study_set.generate` (lesson study sets and lesson notes) only to a
    student in a class. The catalogue descriptions of `study_assistant.ask`,
@@ -145,6 +152,22 @@ text and title of study sets, lesson notes and notebooks.
 
 If the names cannot be read, the request fails rather than going out
 unredacted.
+
+**Study notebooks are redacted in the worker.** Since 2026-10-16 the API
+only queues a notebook; the worker writes it (ADR-0038). The shared writer
+(`writeNotebook`, `packages/infrastructure/src/study/notebookWriter.ts`)
+requires a source of names and applies the same redaction as the API
+routes (`knownNamesOf` and `redactingNames`,
+`packages/infrastructure/src/study/knownNames.ts`, over `nameRedactor` and
+`withNameRedaction`) before the model call. The worker reads the names with
+`private.notebook_job_names` (migration 202610160001). It returns
+`private.ai_known_names` for the owner of the job the worker holds now,
+and only for that job: like the queue's other calls it names the claim
+(worker, job, attempt), and a worker that lost its lease gets
+`lease_lost`. Only `studafy_worker_runtime` may execute it. The worker
+cannot call `private.api057_ai_consent` or `private.ai_known_names`
+directly. If the names cannot be read, the notebook fails
+(`names_unavailable`) before any tokens are held and nothing is sent.
 
 **Photos cannot be redacted.** A photo attached to a question, a whiteboard
 photo, and scanned pages of a teacher's file (read once in the background,

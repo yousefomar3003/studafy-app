@@ -93,9 +93,68 @@ this as "That did not work".
 
 ## Consequences
 
-- Background generation runs inside the API process. A machine stopped
+- ~~Background generation runs inside the API process. A machine stopped
   mid-generation leaves the notebook to time out after ten minutes, and
   the student retries. A durable queue in the worker is the follow-up if
-  this shows up in practice.
+  this shows up in practice.~~ Superseded: an API-side resume came first
+  (2026-10-11, `202610110003`), then the worker's queue (amendment below).
 - Old class-notebook entries remain. They are now rendered as headings,
   lists and bold text.
+
+## Amendment, 2026-10-16: written on the worker's queue
+
+Capacity fix 4 (`docs/capacity/2026-10-12.md`,
+`docs/capacity/2026-10-16-notebooks.md`). Migration
+`202610160000_notebook_generation_queue.sql`.
+
+- **What the app sees is unchanged.** `POST …/study-notebooks` and
+  `…/regenerate` answer at once with status `creating`, with the same
+  refusals; the app polls until `ready` or `failed`, and a notebook still
+  `creating` after ten minutes reads as `timed_out`.
+- **The API only queues.** A trigger on `public.study_notebooks` records a
+  job in `private.study_notebook_jobs` in the same transaction that creates
+  a notebook or starts a new generation, one per (notebook, generation). The
+  API process does no AI work for a notebook and holds nothing in memory for
+  it; the API-side resume (`study_notebooks_resume`, its trigger and lease
+  columns) is dropped.
+- **The worker writes it**, with the writer the API used to run, now shared
+  in `@studafy/infrastructure` (`writeNotebook`, with the selection and
+  metering it needs): the same material, model call and output limit. It
+  runs whenever the worker has a database, the provider and
+  `AI_LESSON_TOOLS_ENABLED` - the three things the API checks before it
+  accepts a notebook - `AI_NOTEBOOK_CONCURRENCY` (16) at a time.
+- **Least privilege.** The worker claims a job with a three-minute lease
+  (`SKIP LOCKED`), and every call for it names the claim (worker, job,
+  attempt). It acts as the notebook's owner only through
+  `notebook_job_material` (that notebook's lesson, through api054),
+  `notebook_job_usage` (that generation's ledger key, through api047) and
+  `notebook_job_finish` (saving through api055, or failing that notebook),
+  and reads the owner's names through `notebook_job_names` (migration
+  `202610160001`). The lesson is read as the owner sees it on every attempt.
+- **AI access and names (ADR-0043) apply in the worker.** The API still
+  refuses to create or update a notebook for anyone without AI access
+  (`requireAiAccess`) before anything is queued. The worker replaces the
+  names the owner can see (their own, classmates' and teachers' in active
+  classes, linked and managing parents) with `[student]`, `[classmate]`,
+  `[teacher]` and `[parent]` before the model call. It uses the API's own
+  redaction code, shared in `@studafy/infrastructure`. If the names cannot
+  be read, the notebook fails (`names_unavailable`) and nothing is sent.
+  If the owner lost access while the notebook waited, the ledger refuses
+  the hold (`consent_required`, `guardian_consent_required`, `no_class`,
+  `not_student`). The notebook then fails with that reason, without a
+  model call or a retry, and the app shows the consent or access message.
+- **Charged once per generation.** Every attempt uses the ledger key
+  `notebook:<id>:<generation>`; a hold left by an attempt that stopped is
+  released when the next attempt starts. A failed call releases its hold;
+  one that may have been billed (sent, then timed out, or an unusable
+  reply) is settled and not tried again, as before.
+- **Retries and dead letters.** Failures that cost nothing - the provider
+  busy, the database briefly away, a worker stopped - are tried again, up
+  to three attempts, after 20 s and 80 s. After that, or once the notebook
+  has waited nine minutes, the job is a dead letter: the notebook shows
+  failed with its retry, and the "study notebooks" source of the queue
+  alerts counts it. Dead letters are kept 30 days.
+- **Trade-off.** Notebooks asked for in a burst now queue behind
+  `AI_NOTEBOOK_CONCURRENCY` instead of all calling the provider at once
+  from the API, so the last of a burst is ready later; the API's own cost
+  per notebook falls to the request itself.

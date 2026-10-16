@@ -3,6 +3,11 @@
  * charged once, kept with the student's own notes through every update, and
  * practised from without paying twice for the same quiz.
  *
+ * Since 2026-10-16 the API only queues a notebook; the worker writes it.
+ * [settle] plays the worker's part through the same SQL queue functions and
+ * the shared writer (apps/worker/test/notebookGeneration.integration.test.ts
+ * covers its retries, leases and dead letters).
+ *
  * The provider is a stand-in; the routes, permissions, idempotency, plan
  * lookup and AI ledger are the real thing.
  */
@@ -14,8 +19,10 @@ import { createDatabase, type Sql } from "@studafy/database";
 import type { NotebookContent } from "@studafy/domain";
 import { createJsonLogger } from "@studafy/observability";
 import {
+  type NotebookStart,
   type StudyAssistant,
   StudyAssistantError,
+  writeNotebook,
 } from "@studafy/infrastructure";
 import { AuthContextRepository } from "../../src/auth/context";
 import type { Actor } from "../../src/auth/middleware";
@@ -28,7 +35,6 @@ import { PostgresMaterialRepository } from "../../src/study/material";
 import {
   createStudyNotebookRoutes,
   PostgresStudyNotebookRepository,
-  startNotebookRecovery,
 } from "../../src/study/studyNotebookRoutes";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
 import { PostgresAiAccessRepository } from "../../src/study/aiAccess";
@@ -54,7 +60,6 @@ const PRICES = { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 };
 let sql: Sql;
 let app: Hono<AuthorizationEnv>;
 const calls: string[] = [];
-let pending: Promise<void>[] = [];
 let failNext = false;
 
 const CONTENT: NotebookContent = {
@@ -79,8 +84,9 @@ const assistant = {
   notebook: async (_title: string, passages: { text: string }[]) => {
     calls.push("notebook");
     if (failNext) {
+      // Refused before any work: nothing to retry, nothing charged.
       failNext = false;
-      throw new StudyAssistantError("unavailable", 503);
+      throw new StudyAssistantError("refused");
     }
     expect(passages.map((p) => p.text).join(" ")).toContain("chloroplasts");
     return {
@@ -193,11 +199,68 @@ async function request(
   });
 }
 
-/** Waits for the notebooks being written in the background. */
-async function settle(): Promise<void> {
-  const work = pending;
-  pending = [];
-  await Promise.all(work);
+interface QueuedJob {
+  jobId: string;
+  attempt: number;
+  ownerId: string;
+  schoolId: string;
+  start: NotebookStart;
+}
+
+/** The worker's part: writes every queued notebook, as the worker does. */
+async function settle(): Promise<number> {
+  const worker = "api-integration-test";
+  let written = 0;
+  for (;;) {
+    const [row] = await sql<{ jobs: QueuedJob[] }[]>`
+      select private.notebook_jobs_claim(${worker}, 5) as jobs`;
+    if (row!.jobs.length === 0) return written;
+    for (const job of row!.jobs) {
+      const result = await writeNotebook(
+        {
+          material: {
+            call: async (_c, operation, input) =>
+              (await sql<{ result: Record<string, unknown> }[]>`
+                select private.notebook_job_material(${worker},
+                  ${job.jobId}::uuid, ${job.attempt}, ${operation},
+                  ${sql.json(input as never)}) as result`)[0]!.result,
+          },
+          usage: {
+            usage: async (_c, operation, input) =>
+              (await sql<{ result: Record<string, unknown> }[]>`
+                select private.notebook_job_usage(${worker},
+                  ${job.jobId}::uuid, ${job.attempt}, ${operation},
+                  ${sql.json(input as never)}) as result`)[0]!.result,
+          },
+          names: {
+            names: async () =>
+              (await sql<{ result: Record<string, unknown> }[]>`
+                select private.notebook_job_names(${worker},
+                  ${job.jobId}::uuid, ${job.attempt}) as result`)[0]!.result,
+          },
+          prices: PRICES,
+          assistant,
+        },
+        {
+          subject: job.ownerId,
+          schoolId: job.schoolId,
+          requestId: crypto.randomUUID(),
+          aal2: false,
+        },
+        job.start,
+      );
+      await sql`select private.notebook_job_finish(${worker},
+        ${job.jobId}::uuid, ${job.attempt}, ${sql.json(result as never)})`;
+      written++;
+    }
+  }
+}
+
+async function queued(notebookId: string): Promise<number[]> {
+  const rows = await sql<{ generation: number }[]>`
+    select generation from private.study_notebook_jobs
+    where notebook_id = ${notebookId}::uuid order by generation`;
+  return rows.map((r) => r.generation);
 }
 
 async function tokens(userId: string): Promise<number> {
@@ -275,7 +338,6 @@ suite("Study notebooks over real SQL", () => {
           prices: PRICES,
           assistant,
           lessonToolsEnabled: true,
-          background: (work) => pending.push(work),
         },
         authorization,
         idempotency,
@@ -316,7 +378,13 @@ suite("Study notebooks over real SQL", () => {
     const summary = await res.json() as { id: string; status: string };
     expect(summary.status).toBe("creating");
     notebookId = summary.id;
-    await settle();
+    // The API only queued it: no AI work in this process.
+    expect(calls).toHaveLength(0);
+    expect(await queued(notebookId)).toEqual([1]);
+    expect((await (await open(notebookId)).json() as Notebook).summary.status)
+      .toBe("creating");
+    expect(await settle()).toBe(1);
+    expect(await queued(notebookId)).toEqual([]);
 
     const notebook = await (await open(notebookId)).json() as Notebook;
     expect(notebook.summary.status).toBe("ready");
@@ -329,7 +397,7 @@ suite("Study notebooks over real SQL", () => {
     const again = await create(STUDENT, key);
     const againBody = await again.json() as { id: string };
     expect(againBody.id).toBe(notebookId);
-    await settle();
+    expect(await settle()).toBe(0);
     expect(calls.filter((c) => c === "notebook")).toHaveLength(1);
     expect(await tokens(STUDENT)).toBe(1_600);
   });
@@ -512,50 +580,69 @@ suite("Study notebooks over real SQL", () => {
     expect(res.status).toBe(200);
     expect((await open(notebookId)).status).toBe(404);
   });
-  test("a notebook an instance stopped writing is written again (launch plan 2.7)", async () => {
-    const deps = {
-      aiAccess: new PostgresAiAccessRepository(sql),
-      notebooks: new PostgresStudyNotebookRepository(sql),
-      material: new PostgresMaterialRepository(sql),
-      repository: new PostgresStudyRepository(sql),
-      prices: PRICES,
-      assistant,
-      lessonToolsEnabled: true,
-    };
-    const context = {
-      subject: STUDENT,
-      schoolId: SCHOOL,
-      requestId: crypto.randomUUID(),
-      aal2: false,
-    };
-    // Started the way the route starts one, then never written: the
-    // instance that took the request stopped.
-    const started = await deps.notebooks.call(context, "create", {
-      classroomId: CLASSROOM,
-      resourceId: LESSON,
-      sourceIds: [],
-      wholeLesson: true,
-      includeText: true,
-    });
-    expect(started["outcome"]).toBe("ok");
-    const id = String(started["notebookId"]);
-    const recovery = startNotebookRecovery(deps)!;
+  test("a notebook waits on the queue until the worker writes it", async () => {
+    const res = await create(STUDENT);
+    expect(res.status).toBe(201);
+    const id = ((await res.json()) as { id: string }).id;
+    const before = calls.length;
+    // However long the API runs, it writes nothing itself.
+    await Bun.sleep(200);
+    expect(calls.length).toBe(before);
+    expect(await queued(id)).toEqual([1]);
+    const used = await tokens(STUDENT);
+
+    // An update asked for while it waits replaces the queued generation.
+    await sql`update public.study_notebooks set status = 'failed'
+      where id = ${id}::uuid`;
+    const update = await request(
+      `/v1/study-notebooks/${id}/regenerate`,
+      STUDENT,
+      {
+        method: "POST",
+        body: {},
+      },
+    );
+    expect(update.status).toBe(200);
+    expect(await queued(id)).toEqual([1, 2]);
+    expect(await settle()).toBe(1);
+    expect(calls.length).toBe(before + 1);
+    const notebook = await (await open(id)).json() as Notebook;
+    expect(notebook.summary.status).toBe("ready");
+    expect(await queued(id)).toEqual([]);
+    expect(await tokens(STUDENT)).toBe(used + 1_600);
+  });
+
+  test("without AI access nothing is queued; access lost while queued fails it (ADR-0043)", async () => {
+    const res = await create(STUDENT);
+    expect(res.status).toBe(201);
+    const id = ((await res.json()) as { id: string }).id;
+    const before = calls.length;
+    await sql`update public.consent_records set withdrawn_at = now()
+      where user_id = ${STUDENT}::uuid and purpose = 'ai_features'`;
     try {
-      // Within the time a write takes, it is left alone.
-      expect(await recovery.runOnce()).toBe(0);
-      await sql`update public.study_notebooks
-        set generation_started_at = now() - interval '5 minutes'
-        where id = ${id}::uuid`;
-      const before = await tokens(STUDENT);
-      expect(await recovery.runOnce()).toBe(1);
+      // The routes refuse before anything is recorded or queued.
+      const refused = await create(STUDENT);
+      expect(refused.status).toBe(403);
+      expect(((await refused.json()) as { code: string }).code).toBe(
+        "AI_CONSENT_REQUIRED",
+      );
+      const again = await request(
+        `/v1/study-notebooks/${id}/regenerate`,
+        STUDENT,
+        { method: "POST", body: {} },
+      );
+      expect(again.status).toBe(403);
+      expect(await queued(id)).toEqual([1]);
+      // The one queued before: the worker's ledger hold is refused, and the
+      // notebook fails with the reason, without a model call.
+      expect(await settle()).toBe(1);
+      expect(calls.length).toBe(before);
       const notebook = await (await open(id)).json() as Notebook;
-      expect(notebook.summary.status).toBe("ready");
-      // Charged once, for the write that finished.
-      expect(await tokens(STUDENT)).toBeGreaterThan(before);
-      // Finished: nothing left to resume.
-      expect(await recovery.runOnce()).toBe(0);
+      expect(notebook.summary.status).toBe("failed");
+      expect(notebook.summary.failure).toBe("consent_required");
+      expect(await queued(id)).toEqual([]);
     } finally {
-      recovery.close();
+      await consentToAi(sql, [STUDENT]);
     }
   });
 });
