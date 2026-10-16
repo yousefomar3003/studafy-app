@@ -72,8 +72,10 @@ suite("DL-057 retention schedule", () => {
           'files/worker-retention-photo', ${IDLE}::uuid, ${IDLE}::uuid, 10,
           'image/jpeg', ${"9".repeat(64)}, 'clean', now(),
           'assistant_attachment', 'Photo.jpg', now() - interval '31 days')
-      // No school and email turned off for `account`: the warning is a
-      // required notice and is emailed all the same.
+      `;
+      // No school membership and email turned off for `account`: the
+      // warning is a required notice and is emailed all the same.
+      await tx`
         insert into public.notification_preferences (user_id, channel, category, enabled)
         values (${IDLE}::uuid, 'email', 'account', false)
       `;
@@ -105,6 +107,7 @@ suite("DL-057 retention schedule", () => {
       const [emailed] = await tx<{ emailed: boolean; id: string | null }[]>`
         select emailed_at is not null as emailed, email_provider_message_id as id
         from private.inactive_account_warnings where user_id = ${IDLE}::uuid
+      `;
       expect(emailed).toEqual({ emailed: true, id: "stub-1" });
       checked = true;
       throw new Rollback();
