@@ -58,6 +58,39 @@ on the test copy.** No PR is open.
 9. The rest of parts B and C of the launch plan (keystore C1, Firebase C3,
    Resend C5, production decisions B1–B3…).
 
+### Night 2026-10-16: the owner's launch decisions are in place
+- **Decisions (DL-063 to DL-067, #95):** messaging launches normally, with
+  the owner as the one safety-report reviewer (single-reviewer mode,
+  everything audited); production is the Frankfurt project
+  `cyrngoqnhqflzovlybbr` on the free plan (at cutover, stop the test apps
+  and clean out test accounts); no meeting creation at launch; the owner
+  holds every named role (hello@studafy.com); domains on studafy.com.
+- **Domains (#94), live:** legal pages at https://legal.studafy.com (privacy,
+  terms, delete-account, /ar/...); app links at `app.studafy.com` (was the
+  unregistered `app.studafy.io`), serving the association files with
+  `PENDING_*` Team ID and SHA-256 placeholders
+  (`ops/legal-site/src/app-links.ts`; fill them when Apple approves and
+  after Play App Signing, then `bun run legal:deploy`). www.studafy.com
+  (Vercel) untouched. The local device defines point at legal.studafy.com.
+- **Safety reports in the app (#97):** Account → Safety reports, shown only
+  to platform operators (`platformOperator` on `/v1/me`): open reports, a
+  reason and an authenticator code to get a 60-minute grant, the report,
+  an outcome. Migration `202610160050`.
+- **Scripts can no longer reach the local working stack by default (#96):**
+  outside CI they need `SUPABASE_WORKDIR` or an explicit URL.
+- Migrations `202610160040`, `0041`, `0050` applied; test API and worker
+  deployed; a new phone build with the review screen is on the iPhone.
+- **Owner, to finish:**
+  1. Supabase SQL editor (Frankfurt): add yourself to
+     `public.platform_operators` and remove any other row (single-reviewer
+     mode needs exactly one operator).
+  2. In the app, Account → Security: turn on two-factor sign-in.
+  3. Delete the unused Seoul project `zqbbsnqutrvlqcmtdlcx` in the
+     dashboard (the CLI could not confirm the delete).
+  4. Axiom: dataset `studafy-production` retention 30 days.
+  5. The phone test (2.9); tick 2.8 and 2.9 from the results.
+  6. Keys and accounts when ready (C1, C3, C5, C6, Apple).
+
 ### Evening 2026-10-16 (after the owner's answers)
 - **Exposed Fly token revoked**; old public backup artifacts deleted (11,
   none left); backups now exist only in the R2 bucket.
@@ -75,13 +108,8 @@ on the test copy.** No PR is open.
 - **Backup failures** on 2026-10-16 were Amazon ECR Public's pull limit for
   the restore image on GitHub's runners; a re-run passed. Old "Backup
   failed" issues are closed.
-- **Owner's answers pending** (asked 2026-10-16): delete the Seoul Supabase
-  project ("studafy", ap-northeast-2 — not the deleted Tokyo one)?;
-  production on the free plan as a new project (recommended) or the
-  Frankfurt test project?; domains (does the owner own studafy.com and
-  studafy.io; DNS where?); meetings at launch (recommended: without); named
-  people for B9 (two report reviewers needed before messaging); Axiom
-  retention (owner, in Axiom settings).
+- The owner's answers to those questions came later the same night (see
+  "Night 2026-10-16" above).
 
 ### Later on 2026-10-16
 - **#84:** Arabic date and time pickers show 0–9, and typed dates such as
