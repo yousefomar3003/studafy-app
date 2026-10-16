@@ -52,10 +52,47 @@ The worker asserts this at boot. **Production refuses to start** on a
 violating allocation (`QueuePostureError`, fail closed); development logs
 `queue_redis_posture_warning`. The dev container pins the flags in
 `docker-compose.dev.yml`; production topology (dedicated allocation, TLS,
-ACL) is the Phase 8 / INFRA-080 gate. Note for Phase 8 IaC: the posture
-probe runs `CONFIG GET`, so the worker's Redis ACL must permit it (or the
-check is moved behind a platform-level verification once IaC pins the
-config).
+ACL) is the Phase 8 / INFRA-080 gate.
+
+**Where the probe reads from** (`packages/infrastructure/src/queuePosture.ts`):
+
+1. `CONFIG GET maxmemory-policy`, `appendonly`, `save`, one key per call.
+   Self-hosted Redis answers this.
+2. If CONFIG is refused (an error, `NOPERM`, an unknown command) or does not
+   report the keys, `INFO memory` (`maxmemory_policy`) and `INFO
+   persistence`. Persistence then counts as proven by `aof_enabled:1`, or by
+   `rdb_saves` above 0 with `rdb_last_bgsave_status:ok` (snapshots the
+   provider has actually taken; managed Redis refuses `BGSAVE` from
+   clients). A snapshot-only database is therefore not proven until its
+   first snapshot after a restart, so **use AOF**.
+3. If neither answers, or INFO has no `maxmemory_policy`, the posture is
+   unknown and production refuses to start (`Queue Redis posture
+   unreadable: ...`).
+
+The boot log line `queue_redis_posture` says which one answered: `source`
+is `config` or `info`, and with `info`, `config_refused` holds Redis's
+reason. Check it after every Redis change, on the test copy too (it runs as
+`development`, so it logs instead of refusing).
+
+**Managed Redis settings that pass:**
+
+| Provider | Setting | Value |
+|---|---|---|
+| Redis Cloud | Database → **Configuration** → **Durability** → **Data persistence** | **Append-only file (AOF) every 1 sec** (AOF every write also passes; snapshots pass only once one has run) |
+| Redis Cloud | Database → **Configuration** → **Durability** → **Data eviction policy** | **noeviction** (shown as "no eviction"; the default is volatile-lru, which fails) |
+| Upstash | Database → **Details** | Eviction **off** (it is off by default) |
+
+Redis Cloud's free Essentials plan has no data persistence at all, so a
+production worker cannot run on it; a paid Essentials plan offers AOF every
+second. Redis Cloud allows `CONFIG GET` only for a short list of settings
+that does not include these three, so its worker always uses the INFO path.
+Its `INFO` comes from Redis Cloud's proxy, which returns a different set of
+fields from open-source Redis, and with replication on, persistence runs on
+the replica: if the primary's `INFO` reports `aof_enabled:0` although AOF is
+on in the console, production refuses to start, and the fix is a support
+question to Redis Cloud, not a weaker check. Confirm on the test copy
+first: its boot line should show `source: info`, `maxmemory_policy:
+noeviction` and `appendonly: 1`.
 
 Outage drill (extends the OPS-060 drill):
 

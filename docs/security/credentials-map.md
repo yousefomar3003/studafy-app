@@ -22,7 +22,8 @@ afterwards (`docs/deployment/fly-io.md`).
 | Fly secrets (`studafy-scanner-test`; production `studafy-scanner`) | The scanner's bearer key | Never |
 | Fly secrets (`studafy-log-shipper`) | Axiom ingest and Fly read tokens | Never |
 | Cloudflare Worker secrets (`studafy-alert-relay`) | Alert relay webhook secret, Telegram, Resend | Never |
-| GitHub Actions environment `backups` (usable from `main` only) | Backup database login, storage key | Never |
+| GitHub Actions environment `backups` (usable from `main` only) | Backup database login, storage key, off-site bucket key | Never |
+| Cloudflare R2 bucket `studafy-backups` (EU jurisdiction) | The encrypted daily backups, 30 days (lifecycle rule) | Never |
 | `~/studafy-backup.key` + the owner's Apple Passwords | The **private** key that decrypts backups | Never; an offline USB copy is still to do |
 | `.env.hosted` (repo root, ignored, owner-only) | Hosted test credentials for `bun run dev:hosted` on the Mac | No |
 | `.env` (repo root, ignored) | Local API and worker: local database, Redis, local keys | No |
@@ -77,6 +78,8 @@ deploy checklist".
 | `RELAY_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `RESEND_API_KEY`, `ALERT_EMAIL_TO` | Cloudflare Worker secrets, `studafy-alert-relay` | Sentry and Axiom webhooks and the uptime check, to Telegram and email (`ops/alert-relay`) |
 | Webhook URLs (`ALERT_WEBHOOK_SENTRY_URL`, `ALERT_WEBHOOK_AXIOM_URL`) | `.env.hosted` | They contain `RELAY_SECRET` |
 | `BACKUP_DATABASE_URL` (secret), `BACKUP_AGE_RECIPIENTS` (variable), `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (with `BACKUP_INCLUDE_STORAGE`) | GitHub environment `backups` | Daily encrypted backup with files (`docs/deployment/backups.md`) |
+| `BACKUP_OFFSITE_ENDPOINT`, `BACKUP_OFFSITE_BUCKET`, `BACKUP_OFFSITE_ACCESS_KEY_ID`, `BACKUP_OFFSITE_SECRET_ACCESS_KEY`, `BACKUP_OFFSITE_REGION` (all secrets) | GitHub environment `backups` | The off-site bucket the encrypted backup goes to: an R2 **Account API token** with Object Read & Write on `studafy-backups` only. **To obtain** (owner): until all five are set, backups fall back to a 7-day public-repository artifact. Rotate yearly |
+| `BACKUP_S3_BUCKET`, `BACKUP_AWS_ROLE_ARN`, `BACKUP_AWS_REGION` (variables, optional) | GitHub environment `backups` | An extra AWS copy through OIDC, no stored keys. The region is required and must be `eu-*` |
 | Cloudflare login (`npx wrangler login`) | The owner's machine | Deploys the alert relay, and the legal site once PR #37 is merged and approved (`docs/deployment/legal-site.md`) |
 | Sentry auth token | `sentry.properties` | Debug-symbol upload for release builds (not yet wired into CI) |
 

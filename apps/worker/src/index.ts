@@ -100,10 +100,18 @@ try {
     postureRedis,
     env.ENVIRONMENT,
   );
+  // `source` says which commands answered: CONFIG GET, or INFO on managed
+  // Redis that refuses CONFIG (config_refused carries Redis's reason).
   logger.info("queue_redis_posture", {
+    source: posture.source,
     maxmemory_policy: posture.maxmemoryPolicy,
     appendonly: posture.appendonly,
     save_policy: posture.save,
+    ...(posture.rdbSaves !== undefined ? { rdb_saves: posture.rdbSaves } : {}),
+    ...(posture.rdbLastBgsaveStatus
+      ? { rdb_last_bgsave_status: posture.rdbLastBgsaveStatus }
+      : {}),
+    ...(posture.configRefused ? { config_refused: posture.configRefused } : {}),
   });
 } catch (error) {
   if (env.ENVIRONMENT === "production") throw error;

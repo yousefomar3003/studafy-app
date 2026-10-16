@@ -182,7 +182,7 @@ Update the privacy policy's Supabase row (§7.2) to Frankfurt.
 | Axiom | Free | **EU region** if offered. A dataset named `studafy-production`, and an API token that can only ingest into it |
 | Telegram | Free | A bot from @BotFather, and the group or chat that receives alerts |
 | Cloudflare | Free | Workers, for the alert relay |
-| Redis | Free tier to start | Production refuses a Redis URL without TLS (`rediss://`) and a password. Check that your Redis Cloud database has TLS on, or use Upstash in `eu-central-1`, which has TLS on its free tier |
+| Redis | Free tier to start; **paid for production** | Production refuses a Redis URL without TLS (`rediss://`) and a password. Check that your Redis Cloud database has TLS on, or use Upstash in `eu-central-1`, which has TLS on its free tier. The production worker also refuses a Redis that may evict queue keys or does not persist them: on Redis Cloud set **Data persistence: Append-only file (AOF) every 1 sec** and **Data eviction policy: noeviction** (not available on the free plan, which has no persistence). See `docs/security/ops061-operator-runbook.md` §3 |
 
 Sign each provider's data processing agreement (privacy policy, Appendix A).
 
