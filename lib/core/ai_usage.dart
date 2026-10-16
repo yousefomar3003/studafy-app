@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/generated/app_l10n.dart';
 import 'studafy_design.dart';
+import 'studafy_formatting.dart';
 
 /// AI usage as a person sees it (2026-10-07): a bar and a plain label, never
 /// a count. Tokens are still what the server meters and limits; they stay
@@ -38,7 +39,7 @@ String aiUsageLine(
   final l10n = AppL10n.of(context);
   return l10n.usageLine(
     aiUsageLabel(l10n, level),
-    MaterialLocalizations.of(context).formatMediumDate(resetsAt),
+    studafyMediumDate(context, resetsAt),
   );
 }
 
@@ -91,8 +92,7 @@ class AiUsageCard extends StatelessWidget {
       AiUsageLevel.low => const Color(0xFFB7791F),
       AiUsageLevel.reached => studafyDanger,
     };
-    final resets = MaterialLocalizations.of(context)
-        .formatMediumDate(usage.resetsAt);
+    final resets = studafyMediumDate(context, usage.resetsAt);
     return Padding(
       padding: EdgeInsets.all(compact ? 0 : 16),
       child: Column(

@@ -1,11 +1,5 @@
 export { backoffOptions, type BackoffPolicy, maxDelayMs } from "./backoff";
 export {
-  type CloudWatchLogsSender,
-  type CloudWatchSink,
-  type CloudWatchSinkOptions,
-  createCloudWatchSink,
-} from "./cloudwatchLogs";
-export {
   createSentryReporter,
   type ErrorReporter,
   logLineReport,
@@ -17,8 +11,11 @@ export {
 } from "./sentry";
 export {
   assertQueueRedisPosture,
+  isPersisted,
+  type PostureClient,
   QueuePostureError,
   queuePostureProblems,
+  type QueuePostureSource,
   type QueueRedisPosture,
   readQueueRedisPosture,
 } from "./queuePosture";
@@ -147,6 +144,7 @@ export {
   type StudyReference,
   type StudySetResult,
   type StudyTurn,
+  withNameRedaction,
 } from "./studyAssistant";
 export {
   CHUNK_TARGET_CHARS,

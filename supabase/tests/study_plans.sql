@@ -58,6 +58,17 @@ select ok(not (private.ai_plan_limits('plus')->'features') ? 'quiz'
   and (private.ai_plan_limits('max')->'features') ?& array['whiteboard','quiz','flashcards'],
   'quizzes are Max only, and Max includes everything in Plus');
 
+-- The student has agreed to the AI notice (ADR-0043); without it the
+-- ledger refuses before holding a token (ai_access_consent.sql).
+insert into public.consent_records (user_id, purpose, policy_version, locale,
+  policy_id, given_by, given_as)
+select :'student_user', 'ai_features', p.policy_version, 'en', p.id,
+  :'student_user', 'self'
+from public.consent_policies p
+where p.purpose = 'ai_features' and p.locale = 'en'
+order by p.effective_at desc, p.policy_version desc limit 1
+on conflict (user_id, purpose, policy_version) do update set withdrawn_at = null;
+
 -- 4. The ledger refuses before any provider is called.
 select set_config('request.jwt.claim.sub', :'student_user', true);
 select is(private.api047_ai_usage('reserve', jsonb_build_object(

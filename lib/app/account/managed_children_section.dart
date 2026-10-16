@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/ai_consent.dart';
+import '../../core/ai_consent_sheet.dart';
 import '../../core/studafy_design.dart';
 import '../../core/user_content_text.dart';
 import '../../l10n/generated/app_l10n.dart';
@@ -42,6 +44,7 @@ class _ManagedChildrenSectionState extends State<ManagedChildrenSection> {
     if (children.isEmpty) return const SizedBox.shrink();
     final l10n = AppL10n.of(context);
     final theme = Theme.of(context);
+    final aiConsent = AiConsentGate.instance.repository;
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: Column(
@@ -58,18 +61,32 @@ class _ManagedChildrenSectionState extends State<ManagedChildrenSection> {
           const SizedBox(height: 8),
           for (final child in children)
             Card(
-              child: ListTile(
-                leading: const Icon(
-                  Icons.child_care_rounded,
-                  color: studafyCyan,
-                ),
-                title: UserContentText(child.displayName),
-                trailing: TextButton(
-                  onPressed: switcher.switching
-                      ? null
-                      : () => switchAccount(context, switcher, child),
-                  child: Text(l10n.famManagedOpen),
-                ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(
+                      Icons.child_care_rounded,
+                      color: studafyCyan,
+                    ),
+                    title: UserContentText(child.displayName),
+                    trailing: TextButton(
+                      onPressed: switcher.switching
+                          ? null
+                          : () => switchAccount(context, switcher, child),
+                      child: Text(l10n.famManagedOpen),
+                    ),
+                  ),
+                  // The parent agrees to the AI study tools for a child
+                  // account, from their own account (ADR-0043). Shown once
+                  // the child is in a class.
+                  if (aiConsent != null)
+                    AiConsentSwitch(
+                      key: ValueKey('ai-consent-${child.userId}'),
+                      repository: aiConsent,
+                      childId: child.userId,
+                      childName: child.displayName,
+                    ),
+                ],
               ),
             ),
         ],

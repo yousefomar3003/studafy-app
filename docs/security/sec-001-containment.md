@@ -15,7 +15,7 @@ release and does not authorize real student, family, teacher, or school data.
 | Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | **Closed by removal (AI-072, ADR-0026, 2026-09-18):** the grading function and every AI surface are deleted from the repository and, on 2026-09-18, from the synthetic project (both slugs 404; `docs/evidence/phase-7/README.md`) |
 | Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | Contained in app; release verification pending |
 | Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Upload containment applied and tested; safe replacement pending |
-| Example identities and debug signing could reach a store build | High | Android release and iOS Release/archive builds fail with `SEC-001` | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Release guards verified; REL-002 replacement pending |
+| Example identities and debug signing could reach a store build | High | iOS Release/archive builds fail with `SEC-001`. Android release builds fail with `SEC-001` unless every `APP_ENV` is `development` (the test copy, ADR-0042), and then fail unless signed with the owner's upload key kept outside the repository | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Release guards verified; Android narrowed for internal testing by ADR-0042 (proposed 2026-10-15); REL-002 replacement pending |
 | Privileged workflows lack consistent validation, idempotency, transactions, and observability | High | Unsafe grading workflow disabled; other workflows remain prohibited from production release | Backend/security owner | Phase 3 service controls and negative tests pass | Broader remediation pending |
 | Historical secrets cannot be inspected without repository history | High | Treat history inspection as an explicit gate; do not claim completion | Security owner | Original Git history is restored or the limitation is formally accepted with credential rotation | Formally bounded 2026-09-10: `docs/governance/git-history-boundary.md` |
 
@@ -34,7 +34,7 @@ re-evidencing these rows with named, separated owners.
 | AI paper grading and Study Coach | **Removed by AI-072 (ADR-0026).** Both Edge Functions deleted; `ai_grading_drafts`, `question_suggestions` and `practice_sessions` have no grant or policy and refuse every write; the AI store products cannot be activated | AI screens, the `study_coach` slice and the teacher grading controls deleted; `allowsAiGrading => false` retained as a tripwire | Not a kill switch any more: a future AI capability needs a signed DPA, an extended DPIA, a new ADR and the full enable-path engineering in `docs/planning/instructions.md` §20 Part 7C |
 | New private-file uploads | Storage insert policy dropped; the `coach_attachment` purpose is retired by AI-072 | Study Coach and its attachment control deleted by AI-072; direct upload code removed | Ownership metadata, quotas, signature checks, quarantine, scanning, sanitization rules, clean publication, and tenant-negative tests |
 | Production application | No production backend/SQLite initialization and no feature routes | Production-readiness screen only | Core screens use server-backed repositories; offline synchronization, tenant isolation, and upgrade tests pass |
-| Android/iOS release | Not applicable | Native Release/archive tasks exit with a `SEC-001` error | `REL-002` final identity, non-debug signing, privacy declarations, CI policy, and store-console evidence |
+| Android/iOS release | Not applicable | iOS Release/archive builds exit with a `SEC-001` error. Android release tasks exit with a `SEC-001` error unless every `APP_ENV` dart-define is `development`, and with a signing error unless an upload key outside the repository is configured (ADR-0042); proved in CI by `.github/scripts/check-android-release-guard.sh` | `REL-002` final identity, non-debug signing, privacy declarations, CI policy, and store-console evidence |
 | Legacy meeting Edge Functions (`create-google-meet`, `cancel-google-meet`) | Both return stable `MEETINGS_DISABLED` 503s without reading the body, resolving recipients, using service credentials, or contacting a provider | Not applicable | API-042's `POST /v1/classrooms/{classroomId}/meetings` and `POST /v1/meetings/{meetingId}/cancel` pass authorization, transaction, idempotency and retry tests (`supabase/tests/api042_meetings.sql`, `apps/api/test/meetings`) and replace these functions in traffic |
 | Legacy `request-account-deletion` Edge Function | Returns a stable `ACCOUNT_DELETION_PROTOTYPE_DISABLED` 503; its manual JWT-`iat` decode (the broken recent-auth check DL-032 documents) never runs | Not applicable | Already fully superseded by AUTH-030/031's `POST /v1/account/deletion-request`, which uses the real single-use hashed recent-auth grant instead |
 
@@ -142,6 +142,39 @@ The repository implementation was checked locally on 2026-09-09:
 Deno and the pinned Supabase CLI were subsequently made available. The CLI's
 `test db --linked` wrapper still required Docker, so the transactional pgTAP
 file was executed through the authenticated Management API instead.
+
+### Android internal testing (ADR-0042) — 2026-10-15
+
+Local, on the owner's Mac, Flutter 3.47.1. A throwaway upload key in a
+scratch folder outside the repository stood in for the owner's key; it was
+never uploaded or committed.
+
+- `.github/scripts/check-android-release-guard.sh`: production, staging, no
+  `APP_ENV`, and development overridden by production were refused with the
+  `SEC-001` message; a keystore inside the repository was refused; a
+  development build passed SEC-001 and stopped at "Release signing: no
+  upload key". About 1.5 minutes, no compilation.
+- `STUDAFY_ANDROID_KEY_PROPERTIES=<scratch>/key.properties flutter build
+  appbundle --release --dart-define-from-file=config/dart-defines.device.json`
+  (`APP_ENV=development`, the Fly test API): built
+  `app-release.aab`, 72.7 MB (72,736,801 bytes; arm64-v8a, armeabi-v7a,
+  x86_64) in 10 minutes. `keytool -printcert -jarfile` showed the
+  throwaway upload certificate, not the debug key.
+- Launch plan 3.2: the bundle's base module, converted with
+  `aapt2 convert --output-format binary`, and read with
+  `aapt dump permissions`, lists `android.permission.INTERNET` (with
+  RECORD_AUDIO, POST_NOTIFICATIONS, WAKE_LOCK, ACCESS_NETWORK_STATE,
+  BILLING and C2DM RECEIVE). `aapt dump badging`: package
+  `com.studafy.light`, label `Studafy`, versionCode 1 / 1.0.0, minSdk 24,
+  targetSdk 36, not debuggable.
+- `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE=true` with no key: built, printed the
+  "signed with the DEBUG key … Do not upload it" warning, signer
+  `CN=Android Debug`.
+- iOS: `flutter build ios --release --no-codesign
+  --dart-define=APP_ENV=development` failed with "SEC-001: iOS archives and
+  release builds are blocked"; the Xcode phase is unchanged.
+- `flutter analyze`: no issues; `flutter test`: 800 passed;
+  `dart format --set-exit-if-changed lib test`: no changes.
 
 ### Synthetic deployment evidence — 2026-09-09
 

@@ -12,7 +12,10 @@
  * nor the BullMQ job body is ever trusted for state or identity; a sandbox
  * event can never move a production ledger row because every normalized
  * body is scoped by the event's own `environment` and the verifier's
- * bundle/package + Apple environment trust checks.
+ * bundle/package + Apple environment trust checks. The one exception is a
+ * Google voided purchase, which no store API can confirm per token: it is
+ * matched to the ledger by its purchase token and can only end access
+ * (`voidedPurchaseBody`).
  *
  * Outcomes:
  * - `completed` — the ledger write + entitlement derivation committed, the
@@ -80,6 +83,10 @@ interface FinishBody {
   renewalStatus?: RenewalStatus | null;
   acknowledged?: boolean;
   noop?: boolean;
+  /** Google voided the purchase (refund, chargeback or revocation): the
+   * ledger looks the transaction up by `transactionId` (the purchase token)
+   * and ends the access that purchase granted. */
+  voided?: boolean;
 }
 
 export function createBillingEventProcessor(
@@ -119,7 +126,7 @@ export function createBillingEventProcessor(
 
     let body: FinishBody | null;
     try {
-      body = await reverify(payload, verifiers);
+      body = await reverify(payload, verifiers, logger);
     } catch (error) {
       const code = normalizedErrorCode(error);
       if (isFinalAttempt(job)) {
@@ -183,6 +190,7 @@ export function createBillingEventProcessor(
 export async function reverify(
   payload: BillingEventPayload,
   verifiers: BillingVerifierDependencies,
+  logger?: Logger,
 ): Promise<FinishBody | null> {
   const environment = payload.environment || verifiers.environment;
   if (payload.platform === "app_store") {
@@ -198,6 +206,7 @@ export async function reverify(
       payload.rawPayload,
       verifiers.google,
       environment,
+      logger,
     );
     return body ?? { platform: "play_store", environment, noop: true };
   }
@@ -335,6 +344,7 @@ async function reverifyGoogle(
   rawPayload: string | null,
   google: BillingVerifierDependencies["google"],
   environment: string,
+  logger?: Logger,
 ): Promise<FinishBody | null> {
   if (!google) {
     throw new GoogleVerificationErrorShim("google verifier not configured");
@@ -355,6 +365,9 @@ async function reverifyGoogle(
   if (record.testNotification || record.oneTimeProductNotification) {
     // Console test message or one-time product event: nothing to derive.
     return null;
+  }
+  if (record.voidedPurchaseNotification !== undefined) {
+    return voidedPurchaseBody(record, google.packageName, environment, logger);
   }
   const sub = record.subscriptionNotification;
   if (typeof sub !== "object" || sub === null) {
@@ -413,6 +426,81 @@ async function reverifyGoogle(
       verified.autoRenewEnabled,
     ),
     acknowledged,
+  };
+}
+
+/** RTDN `voidedPurchaseNotification.productType`. */
+const PLAY_PRODUCT_TYPE_SUBSCRIPTION = 1;
+/** RTDN `voidedPurchaseNotification.refundType`. */
+const PLAY_REFUND_TYPE_FULL_REFUND = 1;
+
+/**
+ * A Play voided purchase (refund, chargeback or revocation). Studafy sells
+ * subscriptions only, so any other product type is a logged skip.
+ *
+ * The notification carries only the purchase token, so the ledger looks the
+ * purchase up by that token rather than re-reading
+ * `purchases.subscriptionsv2`: the subscription state cannot say a purchase
+ * was voided (a refund without revocation still reads as active), and the
+ * token may be past the window in which Google still answers for it. The
+ * message itself is authenticated (Pub/Sub OIDC push from our own
+ * subscription to the topic only Google Play publishes to), its package
+ * name must be ours, and a void can only end access, never grant it.
+ */
+function voidedPurchaseBody(
+  record: Record<string, unknown>,
+  packageName: string,
+  environment: string,
+  logger: Logger | undefined,
+): FinishBody | null {
+  const voided = record.voidedPurchaseNotification;
+  if (typeof voided !== "object" || voided === null) {
+    throw new GoogleVerificationErrorShim(
+      "voided purchase notification is not an object",
+    );
+  }
+  if (
+    typeof record.packageName !== "string" ||
+    !isGooglePackageNameTrusted(record.packageName, packageName)
+  ) {
+    throw new GoogleVerificationErrorShim("package name mismatch");
+  }
+  const fields = voided as Record<string, unknown>;
+  const productType = typeof fields.productType === "number"
+    ? fields.productType
+    : null;
+  const refundType = typeof fields.refundType === "number"
+    ? fields.refundType
+    : null;
+  if (productType !== PLAY_PRODUCT_TYPE_SUBSCRIPTION) {
+    // A one-time product (or a type Google adds later): nothing Studafy
+    // sells, so nothing to revoke. Completed as a no-op, not an error.
+    logger?.info("billing_voided_purchase_skipped", {
+      platform: "play_store",
+      product_type: productType,
+      refund_type: refundType,
+    });
+    return null;
+  }
+  const purchaseToken = fields.purchaseToken;
+  if (typeof purchaseToken !== "string" || !purchaseToken) {
+    throw new GoogleVerificationErrorShim(
+      "voided purchase notification missing purchaseToken",
+    );
+  }
+  logger?.info("billing_voided_purchase", {
+    platform: "play_store",
+    product_type: productType,
+    refund_type: refundType,
+  });
+  return {
+    platform: "play_store",
+    environment,
+    voided: true,
+    transactionId: purchaseToken,
+    // Same ledger vocabulary as an App Store REFUND / REVOKE: both end the
+    // entitlement (`revoked`); the transaction keeps which one it was.
+    state: refundType === PLAY_REFUND_TYPE_FULL_REFUND ? "refunded" : "revoked",
   };
 }
 

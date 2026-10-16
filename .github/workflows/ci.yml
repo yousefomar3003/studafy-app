@@ -119,13 +119,18 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # SEC-001 intentionally permits only a synthetic debug artifact. One
-      # architecture is enough to prove the app builds; arm64 is what phones
-      # run.
+      # One architecture is enough to prove the app builds; arm64 is what
+      # phones run.
       - name: Verify synthetic debug build
         run: >-
           flutter build apk --debug --target-platform android-arm64
           --dart-define=APP_ENV=synthetic
+
+      # SEC-001, narrowed by ADR-0042: a release build is allowed only for
+      # the development test copy, signed with an upload key CI never holds.
+      # Each case is refused at Gradle's task graph, before compilation.
+      - name: Verify the Android release guard
+        run: .github/scripts/check-android-release-guard.sh
 
   edge-functions:
     name: Edge Function quality
@@ -378,15 +383,33 @@ jobs:
           bunx supabase test db --local
           supabase/tests/subscription_lifecycle.sql
 
+      - name: Verify Google Play voided purchases
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/voided_purchases.sql
+
       - name: Verify managed child accounts
         run: >-
           bunx supabase test db --local
           supabase/tests/managed_accounts.sql
 
+      # ADR-0043: the AI study tools are for students in a class, with an AI
+      # consent a managed child's parent gives; the ledger refuses everyone
+      # else before a token is held. Transactional.
+      - name: Verify AI access and consent
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/ai_access_consent.sql
+
       - name: Verify first-sign-in profile setup
         run: >-
           bunx supabase test db --local
           supabase/tests/profile_setup.sql
+
+      - name: Verify email sign-up stays refused (reviewer access)
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/reviewer_access.sql
 
       - name: Verify deleting a class keeps students' notebooks
         run: >-
@@ -409,6 +432,8 @@ jobs:
           supabase/tests/coursework_files.sql
           supabase/tests/guardian_announcements.sql
           supabase/tests/online_assessments.sql
+          supabase/tests/attachment_refusals.sql
+          supabase/tests/bind_refusals.sql
           supabase/tests/grounded_material.sql
           supabase/tests/study_notebooks.sql
           supabase/tests/material_selection.sql
@@ -484,6 +509,11 @@ jobs:
       - name: Verify the retention schedule
         run: bunx supabase test db --local supabase/tests/retention_schedule.sql
 
+      - name: Verify the inactive-account warning email
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/inactive_account_warning_email.sql
+
       - name: Verify DB-020 query plans and provisional local latency bounds
         run: bun run test:plans:tenancy
 
@@ -551,6 +581,11 @@ jobs:
 
       - name: Verify SAFE-043 reporting, moderation, holds, and blocks surface
         run: bunx supabase test db --local supabase/tests/safe043_surface_seed.sql
+
+      # DPIA D7: every filed report queues one content-free alert, and the
+      # operator review read needs a live grant and is audited. Transactional.
+      - name: Verify safety report alerts and the audited reviewer read
+        run: bunx supabase test db --local supabase/tests/report_alerts.sql
 
       # On call: the drill drives the real SQL dispatcher through the whole
       # safeguarding lifecycle and exits non-zero on any step failing.

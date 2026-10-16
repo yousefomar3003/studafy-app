@@ -5,9 +5,16 @@ import {
   type LogLevel,
   LogLevel as LogLevelSchema,
 } from "@studafy/contracts";
+import { pubSubAudienceMatchesPushPath } from "./storeWebhooks";
 
 export { Environment };
 export type { EnvironmentType, LogLevel };
+export {
+  APP_STORE_NOTIFICATIONS_PATH,
+  PLAY_BILLING_PUBSUB_TOPIC_ID,
+  PLAY_BILLING_PUSH_PATH,
+  pubSubAudienceMatchesPushPath,
+} from "./storeWebhooks";
 
 const url = z.string().min(1).refine((value) => {
   try {
@@ -86,11 +93,6 @@ export const apiEnvSchema = z.object({
   // Error reports go to Sentry only when a DSN is set. Personal data is
   // stripped before sending (packages/infrastructure/src/sentry.ts).
   SENTRY_DSN: url.optional(),
-  // CloudWatch shipping is opt-in: both must be set or the API logs only to
-  // stdout. Credentials are never configuration — the AWS SDK resolves them
-  // from the task/instance role.
-  AWS_REGION: z.string().min(1).optional(),
-  AWS_LOG_GROUP: z.string().min(1).optional(),
   // The study assistant. Off unless the key is present, so a build without
   // one simply has no AI surface rather than a broken tab.
   //
@@ -408,6 +410,14 @@ export const workerEnvSchema = z.object({
   // Work waiting but nothing completed for this long: a stuck consumer.
   QUEUE_ALERT_STALL_SECONDS: z.coerce.number().int().min(60).default(600),
   QUEUE_ALERT_COOLDOWN_SECONDS: z.coerce.number().int().min(60).default(1800),
+  // DPIA D7: a new safety report alerts the reviewers' Telegram chat with its
+  // id, kind, priority and a school hash only (docs/security/
+  // safe043-operator-runbook.md). Off by default; on, it needs the bot and
+  // the database.
+  REPORT_ALERTS_ENABLED: disabledSwitchFlag,
+  REPORT_ALERT_POLL_INTERVAL_MS: z.coerce.number().int().min(5_000).max(
+    600_000,
+  ).default(30_000),
 }).superRefine((value, context) => {
   if (
     value.QUEUE_ALERTS_ENABLED &&
@@ -419,6 +429,23 @@ export const workerEnvSchema = z.object({
       message:
         "queue alerts need TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID (QUEUE_ALERTS_ENABLED)",
     });
+  }
+  if (value.REPORT_ALERTS_ENABLED) {
+    if (!value.TELEGRAM_BOT_TOKEN || !value.TELEGRAM_CHAT_ID) {
+      context.addIssue({
+        code: "custom",
+        path: ["TELEGRAM_BOT_TOKEN"],
+        message:
+          "report alerts need TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID (REPORT_ALERTS_ENABLED)",
+      });
+    }
+    if (!value.DATABASE_URL) {
+      context.addIssue({
+        code: "custom",
+        path: ["DATABASE_URL"],
+        message: "required when report alerts are enabled",
+      });
+    }
   }
   const dependentKeys = [
     "DATABASE_URL",
@@ -822,8 +849,6 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     database_pool_max: env.DATABASE_POOL_MAX,
     redis_url: env.REDIS_URL ? redactUrl(env.REDIS_URL) : null,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
-    aws_region: env.AWS_REGION ?? null,
-    cloudwatch_configured: Boolean(env.AWS_REGION && env.AWS_LOG_GROUP),
     ai: {
       // Never the key itself, and never the model's own output.
       enabled: Boolean(env.AI_API_KEY && env.AI_BASE_URL),
@@ -897,6 +922,9 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
         env.GOOGLE_PACKAGE_NAME && env.GOOGLE_SERVICE_ACCOUNT_JSON &&
           env.GOOGLE_PUBSUB_AUDIENCE,
       ),
+      googlePushAudienceMatchesRoute: pubSubAudienceMatchesPushPath(
+        env.GOOGLE_PUBSUB_AUDIENCE,
+      ),
     },
   };
 }
@@ -963,6 +991,13 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       windowSeconds: env.QUEUE_ALERT_WINDOW_SECONDS,
       stallSeconds: env.QUEUE_ALERT_STALL_SECONDS,
       cooldownSeconds: env.QUEUE_ALERT_COOLDOWN_SECONDS,
+    },
+    reportAlerts: {
+      enabled: env.REPORT_ALERTS_ENABLED,
+      telegramConfigured: Boolean(
+        env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID,
+      ),
+      pollIntervalMs: env.REPORT_ALERT_POLL_INTERVAL_MS,
     },
     accountRights: {
       deletionExecutorEnabled: env.ACCOUNT_DELETION_EXECUTOR_ENABLED,

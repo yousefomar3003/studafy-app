@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/navigation.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
@@ -81,8 +82,7 @@ class _MyNotebooksPageState extends State<MyNotebooksPage> {
                           contentPadding: EdgeInsets.zero,
                           title: UserContentText(entry.title),
                           subtitle: Text(
-                            MaterialLocalizations.of(context)
-                                .formatMediumDate(entry.createdAt),
+                            studafyMediumDate(context, entry.createdAt),
                           ),
                           onTap: () => Navigator.of(context).pushOnce(
                             MaterialPageRoute<void>(
@@ -113,7 +113,7 @@ class _NoteView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          MaterialLocalizations.of(context).formatFullDate(entry.createdAt),
+          studafyFullDate(context, entry.createdAt),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),

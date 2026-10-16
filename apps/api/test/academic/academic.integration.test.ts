@@ -1208,6 +1208,7 @@ suite("API-041 academic slices over the real /v1 stack", () => {
     owner: string,
     purpose: string,
     school = SCHOOL_A,
+    scanState = "clean",
   ): Promise<string> {
     const membership = await scalar(
       sql`select id as result from public.memberships
@@ -1224,7 +1225,8 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         ${"quarantine/v1/" + id + "/" + id.replace(/-/g, "") + "aaaaaa"},
         ${owner}::uuid, ${owner}::uuid, ${membership}::uuid,
         ${purpose}::public.file_purpose, 'diagram.pdf', 2048,
-        ${"a".repeat(64)}, 'application/pdf', 'clean', 'file-attach-v1',
+        ${"a".repeat(64)}, 'application/pdf',
+        ${scanState}::public.file_scan_state, 'file-attach-v1',
         now(), 'file051-test')`;
     return id;
   }
@@ -1339,7 +1341,48 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         attachmentFileIds: [WRONG_PURPOSE_FILE],
       },
     });
-    expect(submit.status).toBe(400);
+    // Named since 202610150020, like every other refused attachment.
+    expect(submit.status).toBe(422);
+    const problem = await submit.json() as Record<string, unknown>;
+    expect(problem["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(problem["errors"]).toEqual([
+      { path: "attachmentFileIds.0", code: "file_wrong_purpose" },
+    ]);
+  });
+
+  test("a file the scan refused is refused by name, and nothing is handed in", async () => {
+    const REFUSED_FILE = "5f410000-0000-4000-8000-0000000000f5";
+    await seedFile(
+      REFUSED_FILE,
+      STUDENT_USER,
+      "assignment_submission",
+      SCHOOL_A,
+      "rejected",
+    );
+    const attempts = async () =>
+      await scalar(
+        sql`select count(*)::int as result from public.submission_attempts sa
+            join public.submissions s on s.id = sa.submission_id
+            where s.assignment_id = ${assignmentId}::uuid`,
+      );
+    const before = await attempts();
+    const submit = await request(`/v1/assignments/${assignmentId}/submit`, {
+      method: "POST",
+      subject: STUDENT_USER,
+      key: "api041-it-attach-6",
+      body: {
+        answerText: "With the refused scan.",
+        // The kept file comes first: the refusal names the request's place.
+        attachmentFileIds: [OWN_FILE, REFUSED_FILE],
+      },
+    });
+    expect(submit.status).toBe(422);
+    const problem = await submit.json() as Record<string, unknown>;
+    expect(problem["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(problem["errors"]).toEqual([
+      { path: "attachmentFileIds.1", code: "file_refused" },
+    ]);
+    expect(await attempts()).toBe(before);
   });
 
   test("a duplicated id in one request is refused", async () => {
@@ -1353,7 +1396,11 @@ suite("API-041 academic slices over the real /v1 stack", () => {
         attachmentFileIds: [SECOND_FILE, SECOND_FILE],
       },
     });
-    expect(submit.status).toBe(400);
+    expect(submit.status).toBe(422);
+    const problem = await submit.json() as Record<string, unknown>;
+    expect(problem["errors"]).toEqual([
+      { path: "attachmentFileIds.1", code: "duplicate" },
+    ]);
   });
 
   // -------------------------------------------------------------------------

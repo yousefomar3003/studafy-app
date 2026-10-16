@@ -10,6 +10,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/material_selection.dart';
 import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
@@ -168,6 +169,7 @@ class _NotebookViewState extends State<NotebookView> {
     StudyRefusal.materialProcessing => AppL10n.of(
       context,
     ).studySetMaterialProcessing,
+    StudyRefusal.aiConsent => AppL10n.of(context).aiConsentNeeded,
     _ => AppL10n.of(context).studySetThatDidNotWorkPlease,
   };
 
@@ -462,7 +464,7 @@ class _NotebookViewState extends State<NotebookView> {
     if (day == today.subtract(const Duration(days: 1))) {
       return AppL10n.of(context).notebookYesterday;
     }
-    return MaterialLocalizations.of(context).formatFullDate(day);
+    return studafyFullDate(context, day);
   }
 
   Widget _actions() {
@@ -622,7 +624,8 @@ class _NotebookViewState extends State<NotebookView> {
                       ),
                     ),
                     Text(
-                      MaterialLocalizations.of(context).formatTimeOfDay(
+                      studafyTimeOfDay(
+                        context,
                         TimeOfDay.fromDateTime(entry.createdAt),
                       ),
                       style: Theme.of(context).textTheme.bodySmall,

@@ -40,13 +40,17 @@ class AttachmentsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (attachments.isEmpty && links.isEmpty) return const SizedBox.shrink();
+    // A photo the scan removed is listed with the documents, where there
+    // is room to say so under its name.
+    bool shownAsImage(StoredAttachment a) =>
+        (a.mediaType ?? '').startsWith('image/') && !a.isRemoved;
     final images = [
       for (final a in attachments)
-        if ((a.mediaType ?? '').startsWith('image/')) a,
+        if (shownAsImage(a)) a,
     ];
     final documents = [
       for (final a in attachments)
-        if (!(a.mediaType ?? '').startsWith('image/')) a,
+        if (!shownAsImage(a)) a,
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,8 +205,30 @@ class _ImageThumbState extends State<_ImageThumb> {
     final l10n = AppL10n.of(context);
     final bytes = _bytes;
     final ready = widget.attachment.isReady;
+    final removed = widget.attachment.isRemoved;
     final Widget content;
-    if (bytes != null) {
+    if (removed) {
+      // Never fetched: the scan removed it, and there is nothing to show.
+      content = Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.gpp_bad_outlined, color: studafyMuted),
+            if (widget.size >= 120) ...[
+              const SizedBox(height: 6),
+              Text(
+                l10n.attachmentRemovedBySafetyCheck,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: studafyMuted, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      );
+    } else if (bytes != null) {
       content = Image.memory(
         bytes,
         fit: BoxFit.cover,
@@ -231,7 +257,9 @@ class _ImageThumbState extends State<_ImageThumb> {
       button: ready,
       label:
           '${widget.attachment.displayName}. '
-          '${!ready
+          '${removed
+              ? l10n.attachmentRemovedBySafetyCheck
+              : !ready
               ? l10n.attachmentsChecking
               : _failed
               ? l10n.attachmentsNotAvailable
@@ -412,37 +440,114 @@ class AttachmentsEditor extends StatefulWidget {
   final String? filesBlockedReason;
 
   @override
-  State<AttachmentsEditor> createState() => _AttachmentsEditorState();
+  State<AttachmentsEditor> createState() => AttachmentsEditorState();
 }
 
-class _AttachmentsEditorState extends State<AttachmentsEditor> {
+/// Why the server would not attach a file, from its fixed reason code
+/// (`file_refused`, `file_not_found`, ...), and what to do about it.
+String attachmentNotAcceptedText(AppL10n l10n, String reason) =>
+    switch (reason) {
+      'file_refused' => l10n.attachmentNotAcceptedScan,
+      'file_not_found' => l10n.attachmentNotAcceptedGone,
+      'file_already_attached' || 'duplicate' => l10n.attachmentNotAcceptedInUse,
+      _ => l10n.attachmentNotAcceptedHere,
+    };
+
+/// Marks, in [field], the files a refusal's [rows] name: each request path
+/// `<prefix>attachmentFileIds.<i>` points at `sent[i]`, the ids as they
+/// were sent. Each marked file shows why, and is no longer sent. Rows for
+/// anything else are left alone. Returns how many were marked.
+int markRefusedFiles(
+  AppL10n l10n,
+  AttachmentFieldState? field,
+  List<String> sent,
+  Map<String, String> rows, {
+  String prefix = '',
+}) {
+  if (field == null) return 0;
+  var marked = 0;
+  for (final MapEntry(key: path, value: reason) in rows.entries) {
+    if (!path.startsWith('${prefix}attachmentFileIds.')) continue;
+    final index = int.tryParse(
+      path.substring('${prefix}attachmentFileIds.'.length),
+    );
+    if (index == null || index < 0 || index >= sent.length) continue;
+    if (field.markNotAccepted(
+      sent[index],
+      attachmentNotAcceptedText(l10n, reason),
+    )) {
+      marked++;
+    }
+  }
+  return marked;
+}
+
+class AttachmentsEditorState extends State<AttachmentsEditor> {
   final Set<String> _detached = {};
   final Set<String> _removedLinks = {};
   final List<LinkDraft> _newLinks = [];
   List<Attachment> _uploads = const [];
   bool _showBlocked = false;
+  final _field = GlobalKey<AttachmentFieldState>();
+
+  /// New links the server would not add, and why. By identity: two links
+  /// can be the same text, and only the one sent at that place is refused.
+  final Map<LinkDraft, String> _refusedLinks = Map.identity();
 
   int get _liveLinks =>
       widget.existingLinks.length - _removedLinks.length + _newLinks.length;
 
+  /// The new files, in the order they are sent - the order the server
+  /// names them by.
+  List<String> get _attachFileIds => sendableFileIds(_uploads);
+
   void _emit() => widget.onChanged?.call(
     AttachmentsEditorValue(
       changes: AttachmentChanges(
-        attachFileIds: [
-          for (final item in _uploads)
-            if (item.fileId != null &&
-                (item.stage == AttachmentStage.ready ||
-                    item.stage == AttachmentStage.quarantined))
-              item.fileId!,
-        ],
+        attachFileIds: _attachFileIds,
         detachFileIds: [..._detached],
         addLinks: [..._newLinks],
         removeLinkIds: [..._removedLinks],
       ),
       uploading: _uploads.any((a) => a.stage == AttachmentStage.uploading),
-      failed: _uploads.any((a) => a.stage == AttachmentStage.failed),
+      // A link the server refused holds the form like a failed upload,
+      // until it is removed.
+      failed:
+          _uploads.any((a) => a.stage == AttachmentStage.failed) ||
+          _refusedLinks.isNotEmpty,
     ),
   );
+
+  /// Marks what the server would not attach, from a refusal's rows: each
+  /// request path (`attachmentFileIds.2`, `links.0`, under [prefix] when
+  /// this editor is one part of a larger request) to its reason code, as
+  /// sent with the changes this editor last reported. A marked file or
+  /// link shows why, and holds the form until it is removed. Returns how
+  /// many were marked; rows for anything else are left alone.
+  int markNotAccepted(Map<String, String> rows, {String prefix = ''}) {
+    final l10n = AppL10n.of(context);
+    final sent = _attachFileIds;
+    var marked = 0;
+    for (final MapEntry(key: path, value: reason) in rows.entries) {
+      if (!path.startsWith(prefix)) continue;
+      final parts = path.substring(prefix.length).split('.');
+      final index = parts.length == 2 ? int.tryParse(parts[1]) : null;
+      if (index == null || index < 0) continue;
+      if (parts[0] == 'attachmentFileIds') {
+        marked += markRefusedFiles(l10n, _field.currentState, sent, {
+          'attachmentFileIds.$index': reason,
+        });
+      } else if (parts[0] == 'links' && index < _newLinks.length) {
+        _refusedLinks[_newLinks[index]] = l10n.linkNotAccepted;
+        marked++;
+      }
+    }
+    if (marked > 0) {
+      setState(() {});
+      _emit();
+    }
+    return marked;
+  }
 
   Future<void> _addLink() async {
     final l10n = AppL10n.of(context);
@@ -473,10 +578,15 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
       children: [
         for (final file in widget.existingAttachments)
           _ExistingRow(
-            icon: (file.mediaType ?? '').startsWith('image/')
+            icon: file.isRemoved
+                ? Icons.gpp_bad_outlined
+                : (file.mediaType ?? '').startsWith('image/')
                 ? Icons.image_outlined
                 : Icons.description_outlined,
             label: file.displayName,
+            // The scan removed it after it was attached: it says so, and
+            // can be taken off like any other.
+            sublabel: file.isRemoved ? l10n.attachmentRemovedShort : null,
             removed: _detached.contains(file.id),
             enabled: widget.enabled,
             onToggle: () {
@@ -488,6 +598,7 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
           ),
         if (uploads != null && schoolId != null && widget.source != null)
           AttachmentField(
+            key: _field,
             purpose: widget.purpose,
             schoolId: schoolId,
             classroomId: widget.classroomId,
@@ -546,19 +657,31 @@ class _AttachmentsEditorState extends State<AttachmentsEditor> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.link_rounded),
+            leading: Icon(
+              _refusedLinks.containsKey(link)
+                  ? Icons.error_outline_rounded
+                  : Icons.link_rounded,
+              color: _refusedLinks.containsKey(link)
+                  ? Theme.of(context).colorScheme.error
+                  : null,
+            ),
             title: Text(link.title),
             subtitle: Text(
-              Uri.tryParse(link.url)?.host ?? link.url,
-              maxLines: 1,
+              _refusedLinks[link] ?? Uri.tryParse(link.url)?.host ?? link.url,
+              maxLines: _refusedLinks.containsKey(link) ? 3 : 1,
               overflow: TextOverflow.ellipsis,
+              style: _refusedLinks.containsKey(link)
+                  ? TextStyle(color: Theme.of(context).colorScheme.error)
+                  : null,
             ),
             trailing: IconButton(
               tooltip: l10n.attachmentsRemove,
               icon: const Icon(Icons.close_rounded),
               onPressed: widget.enabled
                   ? () {
-                      setState(() => _newLinks.removeAt(index));
+                      setState(() {
+                        _refusedLinks.remove(_newLinks.removeAt(index));
+                      });
                       _emit();
                     }
                   : null,

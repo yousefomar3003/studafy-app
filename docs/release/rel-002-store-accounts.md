@@ -23,15 +23,20 @@ times are long.
 
 | Field | Value |
 |---|---|
-| iOS bundle identifier | `io.studafy.app` |
-| Android application ID | `io.studafy.app` |
-| Android namespace | `io.studafy.app` |
+| iOS bundle identifier | `com.studafy.light` |
+| Android application ID | `com.studafy.light` |
+| Android namespace | `com.studafy.light` |
 | Display name | `Studafy` |
 | Supported platforms | iOS and Android only (ADR-0003) |
 
 **This identifier is permanent.** After the first publish to either store it
 cannot be changed; a new identifier means a new app listing with no reviews,
 ranking, or installed base.
+
+> **Superseded by DL-058 (2026-10-14).** The identifier is `com.studafy.light`,
+> already claimed in the Google Play organization account. The sign-in and
+> class-join link scheme stays `io.studafy.app`. The rest of this section
+> records the earlier DL-029 choice.
 
 `io.studafy.app` was chosen because it is already the OAuth redirect scheme in
 every functional location, so adopting it costs no redirect changes:
@@ -53,8 +58,8 @@ after the Phase 10 gate, per `docs/planning/instructions.md` §21.5:
 |---|---|---|
 | `android/app/build.gradle.kts:18` | `namespace = "com.example.studafy"` | → `io.studafy.app` |
 | `android/app/build.gradle.kts:29` | `applicationId = "com.example.studafy"` | → `io.studafy.app` |
-| `android/app/build.gradle.kts:46` | debug `signingConfig` | → release config |
-| `android/app/build.gradle.kts:9-15` | SEC-001 `GradleException` | delete |
+| `android/app/build.gradle.kts` `signingConfigs` | upload key from `STUDAFY_ANDROID_KEY_PROPERTIES` (ADR-0042, 2026-10-15) | keep; drop the `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE` opt-in |
+| `android/app/build.gradle.kts` task-graph guard | SEC-001 `GradleException`, narrowed by ADR-0042 to `APP_ENV=development` | delete |
 | `ios/Runner.xcodeproj/project.pbxproj:402,583,605` | `com.example.studafy` | → `io.studafy.app` |
 | `ios/Runner.xcodeproj/project.pbxproj:418,435,450` | `com.example.studafy.RunnerTests` | → `io.studafy.app.RunnerTests` |
 | `ios/Runner.xcodeproj/project.pbxproj:155,239-252` | SEC-001 Release Block phase | delete |
@@ -115,7 +120,7 @@ Expect **1–4 weeks** end to end, dominated by verification.
 
 | Step | Detail |
 |---|---|
-| Register the App ID | `io.studafy.app` in Certificates, Identifiers & Profiles |
+| Register the App ID | `com.studafy.light` in Certificates, Identifiers & Profiles |
 | Enable Sign in with Apple | Guideline 4.8 makes it **mandatory** — the app already offers Google and Microsoft sign-in (`lib/features/session/domain/session_repository.dart:8`) |
 | Create the Sign in with Apple key | Service ID, Key ID, Team ID, `.p8` — needed for Supabase Auth (`docs/planning/instructions.md` §22.5) |
 | Reserve the app name | In App Store Connect; names are first-come and cannot be held indefinitely |
@@ -148,8 +153,8 @@ see `docs/planning/instructions.md` §21.1.
 ### 4.3 Package name
 
 The package name is fixed at **first upload**, not at listing creation, and
-`com.example.*` is **refused outright** by Play. Ensure `io.studafy.app` is what
-ships.
+`com.example.*` is **refused outright** by Play. Ensure `com.studafy.light` is what
+ships (DL-058).
 
 ### 4.4 Closed testing
 
@@ -173,8 +178,11 @@ Each account produces artifacts that must never enter Git. Full register in
 | Play service account JSON | Google Cloud | CI secret; grant **Release manager** only |
 | Android upload keystore | Generated at cutover | Password manager **and** an offline backup |
 
-`.gitignore` already excludes `config/dart-defines.*.json`. Add
-`android/key.properties` and `*.jks` before the cutover.
+`.gitignore` already excludes `config/dart-defines.*.json`,
+`**/key.properties`, `*.jks` and `*.keystore`, and
+`.github/scripts/check-sensitive-files.sh` fails CI if one is ever tracked.
+The release build reads the upload key through a `key.properties` file
+outside the repository (ADR-0042); the keystore itself must be outside it too.
 
 ## 6. Sequencing
 
@@ -195,7 +203,7 @@ verification wait from the critical path so it does not become the final delay.
 This record closes when all of the following hold:
 
 - [ ] Apple Developer Program Organization account approved; Team ID recorded
-- [ ] `io.studafy.app` App ID registered with Sign in with Apple enabled
+- [ ] `com.studafy.light` App ID registered with Sign in with Apple enabled
 - [ ] App Store Connect record created and the app name reserved
 - [ ] Google Play Console Organization account approved and verified
 - [ ] Play App Signing enrolment confirmed

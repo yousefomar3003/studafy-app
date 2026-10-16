@@ -262,7 +262,7 @@ void main() {
           id: 'approval-1',
           studentId: 'student-1',
           studentName: 'Layla',
-          featureKey: 'student_notebook',
+          featureKey: 'studafy_max',
           status: 'requested',
           expiresAt: DateTime(2030),
         ),
@@ -278,6 +278,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Waiting for your approval'), findsOneWidget);
+    // The request names the plan the child asked for.
+    expect(find.text('Layla asked to subscribe to Studafy Max.'), findsOne);
     await tester.tap(find.text('Approve'));
     await tester.pumpAndSettle();
     expect(reauthCalls, 1);
@@ -293,7 +295,7 @@ void main() {
           id: 'approval-1',
           studentId: 'student-1',
           studentName: 'Layla',
-          featureKey: 'student_notebook',
+          featureKey: 'studafy_plus',
           status: 'requested',
           expiresAt: DateTime(2030),
         ),

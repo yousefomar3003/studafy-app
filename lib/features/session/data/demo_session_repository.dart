@@ -48,6 +48,15 @@ class DemoSessionRepository implements SessionRepository {
       _noRemoteBackend();
 
   @override
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async => _noRemoteBackend();
+
+  @override
+  void usePasswordReauthPrompt(PasswordReauthPrompt? prompt) {}
+
+  @override
   Future<UserProfile?> currentProfile() async => null;
 
   @override

@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Dates, times and numbers in the reader's language (MOB-070, ADR-0028).
@@ -49,10 +49,51 @@ String studafyShortDate(BuildContext context, DateTime when) =>
 String studafyTime(BuildContext context, DateTime when) =>
     _toWesternDigits(DateFormat.jm(_localeOf(context)).format(when));
 
+/// The Material date and time formats ("Mon, Oct 5", "Monday, October 5,
+/// 2026", "Oct 5", "11:59 PM"), with 0-9 digits under `ar`.
+///
+/// Screens call these instead of `MaterialLocalizations.formatMediumDate`
+/// and friends, which give Arabic-Indic day numbers under `ar` - so a
+/// deadline read "٥ أكتوبر 11:59 م", two digit systems in one line. The
+/// rtl_source_test keeps screens from calling those directly.
+String studafyMediumDate(BuildContext context, DateTime when) =>
+    _toWesternDigits(MaterialLocalizations.of(context).formatMediumDate(when));
+
+/// See [studafyMediumDate].
+String studafyFullDate(BuildContext context, DateTime when) =>
+    _toWesternDigits(MaterialLocalizations.of(context).formatFullDate(when));
+
+/// See [studafyMediumDate].
+String studafyShortMonthDay(BuildContext context, DateTime when) =>
+    _toWesternDigits(
+      MaterialLocalizations.of(context).formatShortMonthDay(when),
+    );
+
+/// See [studafyMediumDate].
+String studafyTimeOfDay(BuildContext context, TimeOfDay time) =>
+    _toWesternDigits(MaterialLocalizations.of(context).formatTimeOfDay(time));
+
+/// A numeric month and day ("10/5" in English), for chart axis labels.
+String studafyNumericMonthDay(BuildContext context, DateTime when) =>
+    _toWesternDigits(DateFormat.Md(_localeOf(context)).format(when));
+
 /// A moment as "17 Sep 2026 · 2:30 PM": when work was handed in, when a
 /// meeting starts.
 String studafyDateTime(BuildContext context, DateTime when) =>
     '${studafyShortDate(context, when)} · ${studafyTime(context, when)}';
+
+/// An IANA time zone id ("Asia/Amman") ready to sit inside a sentence.
+///
+/// The id is Latin with a slash, so inside Arabic copy such as
+/// "موعد التسليم … (Asia/Amman)" it was laid out as part of the right-to-left
+/// sentence: the line could break after the slash and the brackets paired
+/// with the wrong ends, showing "(Asia/ Amman)". A left-to-right isolate
+/// (U+2066 … U+2069) keeps the id one left-to-right run that the
+/// surrounding text treats as a single neutral character, so the brackets
+/// in the translation stay around it in either language, and a word joiner
+/// (U+2060) after each slash keeps the id on one line.
+String studafyTimeZone(String zone) =>
+    '\u2066${zone.replaceAll('/', '/\u2060')}\u2069';
 
 /// A plain number — a grade, a count, a percentage.
 String studafyNumber(BuildContext context, num value) => _toWesternDigits(

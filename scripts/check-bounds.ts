@@ -28,7 +28,6 @@ const ALLOWED: Record<string, string[]> = {
     "@studafy/observability",
   ],
   "@studafy/infrastructure": [
-    "@aws-sdk/client-cloudwatch-logs",
     // OPS-090 error reports; personal data is stripped in sentry.ts.
     "@sentry/bun",
     "@supabase/supabase-js",

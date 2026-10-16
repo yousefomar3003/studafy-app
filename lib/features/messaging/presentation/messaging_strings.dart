@@ -76,6 +76,7 @@ String messagingText(
     'error.UNAUTHORIZED' => l.msgErrorUnauthorized,
     'error.VALIDATION' => l.msgErrorValidation,
     'error.UNKNOWN' => l.msgErrorUnknown,
+    'error.ATTACHMENT_REFUSED' => l.msgErrorAttachmentRefused,
     _ => key,
   };
 }

@@ -14,6 +14,7 @@ import type { StudyRepository } from "../../src/study/repository";
 import { createStudyRoutes } from "../../src/study/routes";
 import { costMicroUsd, holdFor } from "../../src/study/metering";
 import { createStudyAssistantRoutes } from "../../src/study-assistant/routes";
+import { fakeAiAccess } from "../support/aiAccess";
 
 const SUBJECT = "00000000-0000-4000-8000-000000000001";
 
@@ -62,6 +63,7 @@ async function available(
     "/",
     createStudyRoutes(
       {
+        aiAccess: fakeAiAccess(),
         repository,
         prices: { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 },
         assistant: options.assistant ? {} as StudyAssistant : null,
@@ -153,6 +155,7 @@ describe("chat memory by plan", () => {
       "/",
       createStudyAssistantRoutes(
         {
+          aiAccess: fakeAiAccess(),
           assistant: {
             ask: async (_question, history = []) => {
               heard.push(history);

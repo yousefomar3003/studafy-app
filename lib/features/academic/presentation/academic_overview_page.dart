@@ -8,6 +8,7 @@ import '../../../core/file_upload_repository.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -257,15 +258,17 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
 
   String _deadlineText(AppL10n l10n, SubmissionDeadline deadline) {
     final at = DateTime.tryParse(deadline.deadlineLocal);
-    final localizations = MaterialLocalizations.of(context);
     final when = at == null
         ? deadline.deadlineLocal
-        : '${localizations.formatMediumDate(at)} '
-              '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at))}';
+        : '${studafyMediumDate(context, at)} '
+              '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(at))}';
     return switch (deadline.state) {
       SubmissionWindow.closed => l10n.deadlineClosed,
       SubmissionWindow.gradedLocked => l10n.deadlineGraded,
-      SubmissionWindow.open => l10n.deadlineDue(when, deadline.timeZone),
+      SubmissionWindow.open => l10n.deadlineDue(
+        when,
+        studafyTimeZone(deadline.timeZone),
+      ),
     };
   }
 
@@ -642,9 +645,8 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
   /// The lesson an attendance mark is for, as its day and start time.
   static String? _lessonWhen(BuildContext context, DateTime? startsAt) {
     if (startsAt == null) return null;
-    final dates = MaterialLocalizations.of(context);
-    return '${dates.formatFullDate(startsAt)} · '
-        '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(startsAt))}';
+    return '${studafyFullDate(context, startsAt)} · '
+        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(startsAt))}';
   }
 
   Widget _recordCard(
@@ -853,8 +855,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              MaterialLocalizations.of(context)
-                                  .formatMediumDate(item.date!),
+                              studafyMediumDate(context, item.date!),
                               style: labelStyle,
                             ),
                           ),

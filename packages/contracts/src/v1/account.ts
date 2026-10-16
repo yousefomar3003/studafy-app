@@ -63,10 +63,13 @@ export type V1ExportStatusResponse = z.infer<typeof V1ExportStatusResponse>;
 
 /**
  * GET /v1/account/export-download (DL-051): the caller's latest ready,
- * unexpired data export. Sections hold only the caller's own data.
+ * unexpired data export. Sections hold only the caller's own data. v2
+ * (DL-060) adds exam answers, hand-ins, file lists, voice notes, messages
+ * received, mark and attendance history, AI usage and `sections.about`; a
+ * v1 document built before it is still served until it expires (7 days).
  */
 export const V1DataExportDocument = z.strictObject({
-  format: z.literal("studafy-export/v1"),
+  format: z.enum(["studafy-export/v1", "studafy-export/v2"]),
   generatedAt: z.string().datetime({ offset: true }),
   sections: z.record(z.string(), z.unknown()),
 });

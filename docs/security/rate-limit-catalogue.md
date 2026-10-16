@@ -30,15 +30,15 @@ The former `aiCoach` and `aiGrading` flows were retired by AI-072
 
 Subject scoping:
 
-- `ip` subjects are keyed by a normalized network prefix — the address for
-  IPv4 (and IPv4-mapped IPv6), a /64 aggregate for IPv6. The address comes
+- `ip` subjects are keyed by an HMAC digest of a normalized network prefix
+  — the address for IPv4 (and IPv4-mapped IPv6), a /64 aggregate for IPv6. The address comes
   from `CLIENT_IP_SOURCE` (`apps/api/src/platform/clientIp.ts`): production
   trusts `cf-connecting-ip` only when Fly saw the connection come from a
   Cloudflare range, and otherwise keys on `Fly-Client-IP`, which a client
   cannot write. `forwarded` (X-Forwarded-For) is for local work and refused
   in production.
-- `account` and `tenant` subjects are keyed by HMAC digests; **raw
-  identifiers are never written to Redis keys**.
+- `account` and `tenant` subjects are keyed by HMAC digests too; **raw
+  identifiers, addresses included, are never written to Redis keys**.
 - `Retry-After` is always present on 429 and bounded to one hour.
 
 Classification rules (`flowFor`), in evaluation order: `/internal/*` →

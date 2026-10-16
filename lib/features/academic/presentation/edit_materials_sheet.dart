@@ -55,6 +55,7 @@ class _EditMaterialsSheet extends StatefulWidget {
 
 class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
   AttachmentsEditorValue _value = const AttachmentsEditorValue();
+  final _editor = GlobalKey<AttachmentsEditorState>();
   bool _saving = false;
   String? _error;
 
@@ -91,6 +92,9 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
       if (mounted) Navigator.of(context).pop(true);
     } on CourseworkRefusal catch (refusal) {
       if (!mounted) return;
+      if (refusal.problem == CourseworkProblem.attachmentRefused) {
+        _editor.currentState?.markNotAccepted(refusal.rows);
+      }
       setState(() {
         _saving = false;
         _error = courseworkMessage(l10n, refusal);
@@ -124,6 +128,7 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
               if (widget.work.attachments.isEmpty && widget.work.links.isEmpty)
                 Text(l10n.materialsEditNone),
               AttachmentsEditor(
+                key: _editor,
                 purpose: FilePurpose.assignmentMaterial,
                 schoolId: classroomId == null ? null : widget.schoolId,
                 classroomId: classroomId,

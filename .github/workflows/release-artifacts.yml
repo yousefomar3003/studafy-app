@@ -84,10 +84,12 @@ jobs:
           persist-credentials: false
 
       # The guards are removed only by the reviewed REL-002 change. Until
-      # then a release artifact must be impossible to produce.
+      # then a production artifact must be impossible to produce; ADR-0042
+      # allows only an Android internal-testing build of the test copy.
       - name: Verify SEC-001 release guards are intact
         run: |
           grep -q 'SEC-001: Android release builds are blocked' android/app/build.gradle.kts
+          grep -q 'val sec001ReleaseAppEnv = "development"' android/app/build.gradle.kts
           grep -q 'SEC-001 Release Block' ios/Runner.xcodeproj/project.pbxproj
 
       - name: Set up Java
@@ -110,17 +112,14 @@ jobs:
         id: number
         run: echo "build=$(.github/scripts/build-number.sh)" >> "$GITHUB_OUTPUT"
 
-      # The synthetic debug build is the only mobile artifact SEC-001 allows.
-      # It carries the CI build number so the numbering is exercised now.
+      # The synthetic debug build is the only mobile artifact this workflow
+      # makes: CI holds no upload key. It carries the CI build number so the
+      # numbering is exercised now.
       - name: Build synthetic debug APK with the CI build number
         run: >-
           flutter build apk --debug
           --dart-define=APP_ENV=synthetic
           --build-number=${{ steps.number.outputs.build }}
 
-      - name: Confirm the release build is still refused
-        run: |
-          if flutter build apk --release --dart-define=APP_ENV=production; then
-            echo "SEC-001 guard missing: a release APK was produced" >&2
-            exit 1
-          fi
+      - name: Confirm a production release build is still refused
+        run: .github/scripts/check-android-release-guard.sh

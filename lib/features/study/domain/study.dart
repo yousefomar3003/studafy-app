@@ -207,6 +207,11 @@ enum StudyRefusal {
   /// Switched off on this server.
   unavailable,
 
+  /// The AI study tools are off for this account: no AI consent (the
+  /// student declined the notice, or a parent has not agreed for a child
+  /// account), or the account is not a student in a class (ADR-0043).
+  aiConsent,
+
   /// Anything else - a network failure, a server fault.
   failed,
 }

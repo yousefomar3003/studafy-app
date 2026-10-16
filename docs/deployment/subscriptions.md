@@ -39,6 +39,13 @@ Google Play Billing. What each plan unlocks is in
    from the store's API before changing anything. A sweep re-verifies
    pending, unacknowledged and recently lapsed subscriptions, so a lost
    webhook cannot strand a paying subscriber.
+   Google *voided purchases* (refunds, chargebacks, revocations) are the
+   exception: no store API reports a void per token, so the worker finds the
+   transaction by its purchase token and ends the access it granted
+   (`refunded` for a full refund, otherwise `revoked`). A void for a
+   one-time product is logged and skipped, since Studafy sells none. A
+   refund or revocation is final: when Google also sends
+   `SUBSCRIPTION_REVOKED` for the same refund, nothing is revoked twice.
 5. **Access** is only ever `private.study_plan(user)` on the server: an
    `active` or `grace_period` entitlement whose end is in the future. The
    app displays the plan it is given and decides nothing itself.
@@ -186,7 +193,9 @@ parent.
       `https://<api-host>/webhooks/google`, with **authentication enabled**.
       Use a service account whose email becomes
       `GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL`, and set the audience to exactly
-      that URL (`GOOGLE_PUBSUB_AUDIENCE`).
+      that URL (`GOOGLE_PUBSUB_AUDIENCE`). The API's startup log reports
+      `googlePushAudienceMatchesRoute: false` if that URL is not the push
+      endpoint; every Play notification is then refused with 403.
 - [ ] A Cloud service account for the Play Developer API. Invite its email in
       Play Console → **Users and permissions** with *View financial data* and
       *Manage orders and subscriptions*, then create a JSON key
@@ -264,6 +273,8 @@ off by default).
 | No duplicate subscription: already subscribed, parent-paid, other store, Android upgrade replaces Plus, missing original purchase | `test/data/store_subscription_test.dart` |
 | Grace period keeps access, auto-renew-off recorded, events name their own transaction, pause state, v2 acknowledgement | `apps/worker/test/billing.test.ts`, `packages/domain/test/billing.test.ts` |
 | Ledger: webhook events claim/finish/dead-letter, old-token expiry cannot end the new plan, unseen tokens, Apple plan change, renewal / payment-problem notices to the payer only, lost-renewal sweep | `supabase/tests/subscription_lifecycle.sql` |
+| Google voided purchases: found by token, access ended once whichever of the void and `SUBSCRIPTION_REVOKED` comes first, audit history, unknown token retried, one-time products skipped | `supabase/tests/voided_purchases.sql`, `apps/worker/test/billing.test.ts` |
+| The topic `play-billing` and the paths `/webhooks/google` and `/webhooks/apple` in this guide match the code (`packages/config/src/storeWebhooks.ts`) | `packages/config/test/storeWebhooks.test.ts` |
 | Contract accepts Plus/Max purchases and approvals | `packages/contracts/test/contracts.test.ts` |
 
 ### Sandbox checklist (needs your store accounts)

@@ -75,3 +75,9 @@ f00e10cf0f7439bed4d0e35ad6254f919fa95f5c:supabase/tests/safe043_surface.sql:gene
 c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-api-key:23
 c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-api-key:33
 c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-api-key:38
+
+# Reviewer access (PR #75), 0bd39c3. False positives: the Supabase CLI's public
+# local demo service key (iss "supabase-demo") in a local-only test, and the
+# password alphabet of the reviewer-school script.
+0bd39c33cf1d8ea0bdbf3d30918a05e672dcbab7:apps/api/test/auth/password-session.integration.test.ts:jwt:43
+0bd39c33cf1d8ea0bdbf3d30918a05e672dcbab7:scripts/provision-reviewer-school.ts:generic-api-key:311

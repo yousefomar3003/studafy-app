@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/parent_subscription_repository.dart';
 
@@ -366,8 +367,7 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
                   l10n.familyPlusCoveredCount(_status.coveredStudentIds.length),
                   if (ends != null)
                     l10n.familyPlusEnds(
-                      MaterialLocalizations.of(context)
-                          .formatMediumDate(ends.toLocal()),
+                      studafyMediumDate(context, ends.toLocal()),
                     ),
                 ].join(' · '),
         ),

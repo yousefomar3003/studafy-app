@@ -166,9 +166,12 @@ function attemptsFor(
 ): Attempt[] {
   const flowPolicy = RATE_LIMIT_FLOWS[flow];
   if (flowPolicy.subject === "ip") {
-    const prefix = clientIpPrefix(resolveClientIp(deps, c)) ?? "unresolved";
+    const prefix = clientIpPrefix(resolveClientIp(deps, c));
+    const subject = prefix
+      ? hmacSubject(deps.secret, "ip", prefix)
+      : "unresolved";
     return [{
-      key: `rl:${flow}:ip:${prefix}`,
+      key: `rl:${flow}:ip:${subject}`,
       policy: flowPolicy.policy,
       cost,
     }];

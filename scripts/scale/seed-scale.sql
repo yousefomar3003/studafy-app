@@ -266,6 +266,17 @@ select pg_temp.sid('su', s, n), case when n % 10 < 3 then 'max' else 'plus' end,
   now() + interval '30 days'
 from generate_series(1, :schools) s, generate_series(1, :students) n
 where n % 10 < 5;
+-- Every student has agreed to the AI notice (ADR-0043): without it the AI
+-- ledger refuses them before holding a token, and the benchmark would
+-- measure refusals.
+insert into public.consent_records (user_id, purpose, policy_version, locale,
+  policy_id, given_by, given_as)
+select pg_temp.sid('su', s, n), 'ai_features', p.policy_version, 'en', p.id,
+  pg_temp.sid('su', s, n), 'self'
+from generate_series(1, :schools) s, generate_series(1, :students) n,
+  (select id, policy_version from public.consent_policies
+   where purpose = 'ai_features' and locale = 'en'
+   order by effective_at desc, policy_version desc limit 1) p;
 
 set session_replication_role = origin;
 \echo 'analyze'

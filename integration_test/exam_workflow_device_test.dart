@@ -222,6 +222,8 @@ void main() {
   ) async {
     expect(_apiUrl, isNotEmpty, reason: 'E2E_API_URL is not set');
     expect(_password, isNotEmpty, reason: 'E2E_PASSWORD is not set');
+    // Android screenshots need the surface turned into an image first.
+    if (Platform.isAndroid) await binding.convertFlutterSurfaceToImage();
     // Typing goes through the test text input, not the system keyboard: the
     // real keyboard reflows the page under the test's taps. Every screen,
     // request and tap is still the device's own.

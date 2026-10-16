@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/runtime_environment.dart';
 
 String source(String path) => File(path).readAsStringSync();
 
@@ -73,20 +74,115 @@ void main() {
     expect(migration, contains('revoke execute on functions from anon'));
   });
 
-  test('native release guards cover known prototype release risks', () {
-    final android = source('android/app/build.gradle.kts');
-    expect(android, contains('SEC-001: Android release builds are blocked'));
-    expect(android, contains('com.studafy.light'));
-    expect(android, contains('signingConfigs.getByName("debug")'));
+  group(
+    'native release guards (SEC-001, narrowed for Android by ADR-0042)',
+    () {
+      final android = source('android/app/build.gradle.kts');
+      final ios = source('ios/Runner.xcodeproj/project.pbxproj');
 
-    final ios = source('ios/Runner.xcodeproj/project.pbxproj');
-    expect(ios, contains('SEC-001 Release Block'));
-    expect(
-      ios,
-      contains('SEC-001: iOS archives and release builds are blocked'),
-    );
-    expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.studafy.light'));
-  });
+      test('Android release is allowed for the development test copy only', () {
+        // .github/scripts/check-android-release-guard.sh runs these cases in
+        // CI; this pins the source so the allowlist cannot quietly widen.
+        expect(
+          android,
+          contains('SEC-001: Android release builds are blocked'),
+        );
+        expect(android, contains('val sec001ReleaseAppEnv = "development"'));
+        expect(
+          RegExp(r'sec001ReleaseAppEnv = ').allMatches(android),
+          hasLength(1),
+          reason: 'exactly one allowed APP_ENV',
+        );
+        // Every APP_ENV given must match, and none given is refused.
+        expect(
+          android,
+          contains(
+            'appEnvs.isEmpty() || appEnvs.any { it != sec001ReleaseAppEnv }',
+          ),
+        );
+        expect(android, contains('project.findProperty("dart-defines")'));
+        // The guard still runs for any release task in the graph.
+        expect(
+          android,
+          contains(
+            'allTasks.none { it.name.contains("release", ignoreCase = true) }',
+          ),
+        );
+        for (final widened in ['"production"', '"staging"', '"synthetic"']) {
+          expect(android, isNot(contains(widened)));
+        }
+        expect(android, contains('com.studafy.light'));
+      });
+
+      test(
+        'Android release signing never falls back to the debug key silently',
+        () {
+          expect(android, contains('STUDAFY_ANDROID_KEY_PROPERTIES'));
+          expect(android, contains('Release signing: no upload key'));
+          expect(
+            android,
+            contains('is inside the repository; keep it outside'),
+          );
+          // The debug key is reachable only through the explicit local opt-in.
+          expect(
+            android,
+            contains(
+              'allowDebugSignedRelease -> signingConfigs.getByName("debug")',
+            ),
+          );
+          expect(
+            RegExp(r'signingConfigs\.getByName\("debug"\)').allMatches(android),
+            hasLength(1),
+          );
+          expect(
+            android,
+            contains(
+              'System.getenv("STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE") == "true"',
+            ),
+          );
+        },
+      );
+
+      test('signing material stays out of the repository', () {
+        // check-sensitive-files.sh refuses these if they are ever tracked.
+        final ignore = source('.gitignore');
+        for (final pattern in ['**/key.properties', '*.jks', '*.keystore']) {
+          expect(ignore, contains(pattern));
+        }
+      });
+
+      test('the app the Android release carries is the development copy', () {
+        // The Gradle guard admits only APP_ENV=development, which starts.
+        // Production, refused by Gradle, would also refuse to start.
+        expect(
+          RuntimePolicy.parse('development').blocksApplicationStartup,
+          isFalse,
+        );
+        expect(
+          RuntimePolicy.parse('production').blocksApplicationStartup,
+          isTrue,
+        );
+      });
+
+      test('iOS release stays blocked whatever the environment', () {
+        expect(ios, contains('SEC-001 Release Block'));
+        expect(
+          ios,
+          contains('SEC-001: iOS archives and release builds are blocked'),
+        );
+        // The Xcode phase checks only the configuration; no APP_ENV or other
+        // escape exists for iOS.
+        expect(
+          ios,
+          contains(
+            r'shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ]; then',
+          ),
+        );
+        expect(ios, isNot(contains('APP_ENV')));
+        expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.studafy.light'));
+      });
+    },
+  );
 
   test('environment files are ignored and examples contain no real values', () {
     final ignore = source('.gitignore');

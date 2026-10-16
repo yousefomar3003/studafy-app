@@ -1,7 +1,8 @@
 # Studafy worker on Fly.io (ADR-0035, docs/deployment/fly-io.md).
 # Deploy from the repository root:
 #   fly deploy --config fly.worker.toml
-# Secrets are set with `fly secrets set --config fly.worker.toml`.
+# Secrets are set with `fly secrets import --config fly.worker.toml`; the
+# list is in docs/deployment/fly-io.md, "Production deploy checklist".
 
 app = "studafy-worker"
 primary_region = "fra"
@@ -23,6 +24,11 @@ primary_region = "fra"
   # Uploads are scanned before anyone can open them; abandoned ones cleaned.
   FILE051_SCAN_ENABLED = "true"
   FILE050_CLEANUP_ENABLED = "true"
+  # Production refuses to scan without an external scanner. This is the
+  # private studafy-scanner app (fly.scanner.toml), reachable only over Fly's
+  # private network, so plain HTTP never leaves the organisation. Its key,
+  # MALWARE_SCANNER_API_KEY, is a secret (the scanner's SCANNER_API_KEY).
+  MALWARE_SCANNER_URL = "http://studafy-scanner.internal:8080/scan"
   # Removes the bytes of files whose retention has ended. No file purpose
   # sets a retention period yet, so today this removes only the personal
   # files (profile image, notebook photo, AI-helper photo) of deleted
@@ -33,6 +39,19 @@ primary_region = "fra"
   # export to complete, not just be requested. They need only the database.
   ACCOUNT_DELETION_EXECUTOR_ENABLED = "true"
   DATA_EXPORT_EXECUTOR_ENABLED = "true"
+  # DL-057 retention purge: OFF until the store release carrying consent
+  # version 2026-10-14 is live (launch plan D3). Turning it on is that
+  # reviewed one-word change here, with the owner's "go".
+  RETENTION_SCHEDULE_ENABLED = "false"
+  # Launch plan 4.7: backlog alerts to Telegram. Needs the secrets
+  # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID, or the worker refuses to start.
+  QUEUE_ALERTS_ENABLED = "true"
+  # DPIA D7: every new safety report alerts the reviewers' Telegram chat
+  # (id, kind, priority, school hash; never content). Needs the
+  # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID secrets: without them the
+  # worker refuses to start, because an unseen report is the failure this
+  # prevents (docs/security/safe043-operator-runbook.md).
+  REPORT_ALERTS_ENABLED = "true"
   # Switched on at launch once their own credentials are set (see the doc):
   # PAY071_BILLING_ENABLED (store keys), NOTIFICATION_CHANNELS_ENABLED
   # (Firebase / email), MEETINGS_PROCESSOR_ENABLED.

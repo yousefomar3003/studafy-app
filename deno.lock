@@ -2,7 +2,6 @@
   "version": "5",
   "specifiers": {
     "npm:@apple/app-store-server-library@3.1.0": "3.1.0",
-    "npm:@aws-sdk/client-cloudwatch-logs@^3.1137.0": "3.1139.0",
     "npm:@supabase/supabase-js@2.116.0": "2.116.0",
     "npm:@types/bun@1.4.2": "1.4.2",
     "npm:bullmq@6.3.4": "6.3.4_ioredis@6.0.0",
@@ -1153,7 +1152,6 @@
         "packageJson": {
           "dependencies": [
             "npm:@apple/app-store-server-library@3.1.0",
-            "npm:@aws-sdk/client-cloudwatch-logs@^3.1137.0",
             "npm:@napi-rs/canvas@1.0.10",
             "npm:@sentry/bun@11.2.0",
             "npm:@supabase/supabase-js@2.116.0",

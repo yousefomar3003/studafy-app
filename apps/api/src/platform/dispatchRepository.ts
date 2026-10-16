@@ -15,9 +15,13 @@ export interface CatalogueCommandResult {
     | "reason_required"
     | "attendance_locked"
     | "graded_locked"
-    | "file_not_clean";
+    | "file_not_clean"
+    | "attachment_refused";
   response?: unknown;
-  /** Per-row refusals of a bulk command, when the outcome names rows. */
+  /**
+   * Per-row refusals of a bulk command, or the refused files and links of
+   * an attaching one, when the outcome names rows.
+   */
   rows?: unknown;
 }
 

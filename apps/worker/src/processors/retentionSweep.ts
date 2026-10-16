@@ -1,6 +1,7 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
-import type { PrivateFileStorage } from "@studafy/infrastructure";
+import type { EmailSender, PrivateFileStorage } from "@studafy/infrastructure";
+import { sendInactiveWarningEmails } from "./inactiveWarningEmail";
 
 interface RetentionJob {
   jobId: number;
@@ -22,7 +23,7 @@ export interface FileRetentionRuntime {
  * verified every same-school member is past its horizon, unheld and
  * unreferenced; the rows move to `deleted` only after storage confirms the
  * physical deletion. A file's horizon is set by whatever ends its purpose:
- * account deletion, or the retention schedule below (DL-057).
+ * account deletion, or the retention schedule below (DL-057, DL-060).
  */
 export function startFileRetentionSweep(
   sql: Sql,
@@ -120,18 +121,29 @@ const RETENTION_STEPS = [
       sql<{ counts: Record<string, number> }[]>`
     select private.retention_inactive_accounts(100) as counts`,
   },
+  // Study helper photos, 30 days after upload (DL-060). The model has read
+  // them and the chat keeps its own copy on the device.
+  {
+    name: "helper_photos",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.retention_expire_helper_photos(5000) as counts`,
+  },
 ] as const;
 
 /**
  * DL-057 retention schedule (privacy policy §10). Each step is one bounded
  * transaction in the database; a step that fails is logged and the others
  * still run. Files the purges leave unreferenced become due for the FILE-051
- * sweep above, which deletes their bytes. Logs carry counts only.
+ * sweep above, which deletes their bytes. After the purges, the
+ * inactive-account warnings are emailed (`email`, the worker's Resend
+ * sender; without one, the waiting count is logged). Logs carry counts only.
  */
 export function startRetentionSchedule(
   sql: Sql,
   logger: Logger,
   intervalMs = 60 * 60_000,
+  options: { email?: EmailSender } = {},
 ): RetentionScheduleRuntime {
   let closed = false;
   let running: Promise<unknown> | null = null;
@@ -150,6 +162,18 @@ export function startRetentionSchedule(
       } catch (error) {
         logger.error("retention_step_failed", {
           step: step.name,
+          error_name: error instanceof Error ? error.name : "unknown",
+        });
+      }
+    }
+    if (!closed) {
+      try {
+        report.inactive_warning_emails = {
+          ...await sendInactiveWarningEmails(sql, options.email, logger),
+        };
+      } catch (error) {
+        logger.error("retention_step_failed", {
+          step: "inactive_warning_emails",
           error_name: error instanceof Error ? error.name : "unknown",
         });
       }

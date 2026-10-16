@@ -130,7 +130,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 
 | Data type | Collected | Shared | Ephemeral | Required or optional | Purposes | What and where |
 |---|---|---|---|---|---|---|
-| **Photos** | Yes | No | No | Optional | App functionality | Attachments from the camera or gallery, re-encoded at 2400 px and quality 85 (`lib/core/platform_attachment_source.dart:19-31`). Whiteboard photos for notebooks, and photos sent with an AI question (`lib/core/file_upload_repository.dart`). These go to Supabase Storage, the malware scanner and, for AI photos, Together AI. **Profile photos stay on the device and are not collected** (`lib/core/profile_photo.dart:10-16`). |
+| **Photos** | Yes | No | No | Optional | App functionality | Attachments from the camera or gallery, re-encoded at 2400 px and quality 85 (`lib/core/platform_attachment_source.dart:19-31`). Whiteboard photos for notebooks, and photos sent with an AI question (`lib/core/file_upload_repository.dart`). These go to Supabase Storage, the malware scanner and, for AI photos, Together AI. AI photos are deleted from storage 30 days after upload once `RETENTION_SCHEDULE_ENABLED` is on (DL-060); that does not change these answers. **Profile photos stay on the device and are not collected** (`lib/core/profile_photo.dart:10-16`). |
 | **Videos** | No | | | | | Only JPEG and PNG images are accepted (`lib/core/attachment_policy.dart:32-95`). |
 
 ### Audio files

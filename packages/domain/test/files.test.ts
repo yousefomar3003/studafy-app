@@ -17,6 +17,7 @@ import {
   transformBytes,
   verifyDeliveryToken,
 } from "../src";
+import { decodeAscii85, decodeAsciiHex } from "../src/files/pdf";
 
 // ---------------------------------------------------------------------------
 // Fixture builders. Everything is synthesized: no binary files in the repo,
@@ -381,6 +382,132 @@ describe("pdf", () => {
     });
   });
 
+  // A slide or design export puts small compressed streams right before
+  // images. The image's own dictionary decides its filter, not a nearby
+  // object's (2026-10-15: a teacher's valid PDF was rejected as malformed).
+  test("accepts an image stream right after a small compressed one", async () => {
+    const jpeg = concat([
+      new Uint8Array([0xff, 0xd8, 0xff, 0xe0]),
+      new Uint8Array(200).map((_, i) => (i * 37) % 256),
+      new Uint8Array([0xff, 0xd9]),
+    ]);
+    const image = concat([
+      asciiBytes(
+        `9 0 obj\n<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
+      ),
+      jpeg,
+      asciiBytes("\nendstream\nendobj\n"),
+    ]);
+    const pdf = buildPdf(new TextDecoder("latin1").decode(image), [FLATE_TEXT]);
+    expect(await analyzeBytes(pdf, "application/pdf")).toEqual({
+      verdict: "clean",
+    });
+  });
+
+  test("still inflates a stream whose own dictionary says FlateDecode", async () => {
+    const notZlib = asciiBytes("these bytes are not a zlib stream at all");
+    expect(
+      await analyzeBytes(buildPdf("", [notZlib]), "application/pdf"),
+    ).toEqual({
+      verdict: "malformed",
+      errorCode: "malformed_file",
+      detail: "flate_not_zlib",
+    });
+  });
+
+  test("an unreadable dictionary falls back to the strict rule", async () => {
+    // A literal string with "<<" in the stream's own dictionary could
+    // mislead a backward scan, so the nearby window decides, as before, and
+    // the compressed JavaScript is still found.
+    const js = new Uint8Array(
+      deflateSync(new TextEncoder().encode("<< /S /JavaScript /JS (x) >>")),
+    );
+    const pdf = concat([
+      asciiBytes("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"),
+      asciiBytes(
+        `2 0 obj\n<< /Filter /FlateDecode /Note (<<) /Length ${js.length} >>\nstream\n`,
+      ),
+      js,
+      asciiBytes(
+        "\nendstream\nendobj\ntrailer\n<< /Size 3 >>\nstartxref\n0\n%%EOF\n",
+      ),
+    ]);
+    expect(await analyzeBytes(pdf, "application/pdf")).toEqual({
+      verdict: "policy_rejected",
+      errorCode: "active_content",
+    });
+  });
+
+  // ReportLab (and others) write streams as [ /ASCII85Decode /FlateDecode ]:
+  // compressed, then text-encoded. Every such PDF was rejected (2026-10-15).
+  function ascii85(bytes: Uint8Array): Uint8Array {
+    let out = "";
+    for (let i = 0; i < bytes.length; i += 4) {
+      const chunk = [0, 1, 2, 3].map((k) => bytes[i + k] ?? 0);
+      const n = Math.min(4, bytes.length - i);
+      let value = ((chunk[0]! << 24) >>> 0) + (chunk[1]! << 16) +
+        (chunk[2]! << 8) + chunk[3]!;
+      if (value === 0 && n === 4) {
+        out += "z";
+        continue;
+      }
+      const digits: string[] = [];
+      for (let k = 0; k < 5; k += 1) {
+        digits.unshift(String.fromCharCode((value % 85) + 33));
+        value = Math.floor(value / 85);
+      }
+      out += digits.slice(0, n + 1).join("");
+    }
+    return asciiBytes(out + "~>");
+  }
+
+  function encodedPdf(payload: string): Uint8Array {
+    const data = ascii85(
+      new Uint8Array(deflateSync(new TextEncoder().encode(payload))),
+    );
+    return concat([
+      asciiBytes("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"),
+      asciiBytes(
+        `2 0 obj\n<< /Filter [ /ASCII85Decode /FlateDecode ] /Length ${data.length} >>\nstream\n`,
+      ),
+      data,
+      asciiBytes(
+        "\nendstream\nendobj\ntrailer\n<< /Size 3 >>\nstartxref\n0\n%%EOF\n",
+      ),
+    ]);
+  }
+
+  test("decodes ASCII85 and ASCIIHex as the PDF standard defines them", () => {
+    expect(new TextDecoder().decode(decodeAscii85(asciiBytes("9jqo^~>"))!))
+      .toBe("Man ");
+    expect(new TextDecoder().decode(decodeAscii85(asciiBytes("z9jqo~>"))!))
+      .toBe("\0\0\0\0Man");
+    expect(new TextDecoder().decode(decodeAsciiHex(asciiBytes("4D 616e>"))!))
+      .toBe("Man");
+    expect(decodeAscii85(asciiBytes("not ascii85 {"))).toBeNull();
+    expect(decodeAsciiHex(asciiBytes("4G>"))).toBeNull();
+  });
+
+  test("accepts a ReportLab-style text-encoded compressed stream", async () => {
+    expect(
+      await analyzeBytes(
+        encodedPdf("BT /F1 12 Tf (TAM SAM SOM) Tj ET"),
+        "application/pdf",
+      ),
+    )
+      .toEqual({ verdict: "clean" });
+  });
+
+  test("still finds JavaScript behind text encoding and compression", async () => {
+    expect(
+      await analyzeBytes(
+        encodedPdf("<< /S /JavaScript /JS (x) >>"),
+        "application/pdf",
+      ),
+    )
+      .toEqual({ verdict: "policy_rejected", errorCode: "active_content" });
+  });
+
   test("rejects a decompression bomb by inflated size", async () => {
     // 101 MiB of zeros inflates from a few hundred KiB; the policy cap is
     // 100 MiB, so this stream must be rejected by size, not stored.
@@ -407,6 +534,7 @@ describe("pdf", () => {
     expect(eofVerdict).toEqual({
       verdict: "malformed",
       errorCode: "malformed_file",
+      detail: "no_trailer",
     });
   });
 });

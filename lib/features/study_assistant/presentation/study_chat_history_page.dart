@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study_assistant_repository.dart';
 import 'study_assistant_page.dart';
@@ -57,7 +58,6 @@ class _StudyChatHistoryPageState extends State<StudyChatHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final dates = MaterialLocalizations.of(context);
     return Scaffold(
       backgroundColor: studafyCanvas,
       appBar: AppBar(title: Text(l10n.studyAssistantHistory)),
@@ -129,7 +129,7 @@ class _StudyChatHistoryPageState extends State<StudyChatHistoryPage> {
                         child: ChatHistoryRow(
                           title: chat.title,
                           detail:
-                              '${dates.formatMediumDate(chat.updatedAt)} · '
+                              '${studafyMediumDate(context, chat.updatedAt)} · '
                               '${l10n.studyAssistantMessageCount(chat.turns.length)}',
                           onTap: () => Navigator.pop(context, chat),
                           trailing: IconButton(

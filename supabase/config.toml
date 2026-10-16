@@ -37,6 +37,14 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 
+# Despite its name, the CLI maps this to GOTRUE_EXTERNAL_EMAIL_ENABLED: it
+# switches the whole email provider, password sign-in included, which the
+# "Sign in with email" path for Studafy-provisioned accounts (the store
+# reviewers') needs. So it stays true, and email *sign-up* is refused by the
+# database instead (migration 202610150050): Supabase Auth can only create an
+# email account the service role registered minutes before. Turning
+# [auth] enable_signup off would also stop every new Google, Microsoft and
+# Apple account. Hosted settings: docs/store/reviewer-access.md.
 [auth.email]
 enable_signup = true
 enable_confirmations = true

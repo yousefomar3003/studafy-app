@@ -14,14 +14,55 @@ out="device-logs"
 mkdir -p "$out"
 rm -rf /tmp/studafy-smoke-screenshots
 
+# A hung app launch or driver connection once held the iOS job until its
+# 60-minute limit (run 38610730627). Each test now has its own limit, long
+# enough for the first test's build, and a test that hangs is tried once
+# more. macOS has no timeout(1), so a watchdog stops the test's process
+# group.
+limit="${DEVICE_TEST_TIMEOUT_SECONDS:-1200}"
+set -m
+
+drive() {
+  local test="$1" log="$2"
+  (
+    flutter drive \
+      --driver test_driver/iphone_smoke.dart \
+      --target "integration_test/$test.dart" \
+      -d "$device" \
+      --dart-define=APP_ENV=synthetic 2>&1 | tee "$log"
+    exit "${PIPESTATUS[0]}"
+  ) &
+  local pid=$!
+  (
+    sleep "$limit"
+    echo "::warning::$test passed its ${limit}s limit on $device; stopping it"
+    touch "$log.timedout"
+    kill -TERM -- "-$pid" 2>/dev/null
+    sleep 15
+    kill -KILL -- "-$pid" 2>/dev/null
+  ) &
+  local watchdog=$!
+  wait "$pid"
+  local status=$?
+  kill -- "-$watchdog" 2>/dev/null
+  wait "$watchdog" 2>/dev/null
+  return "$status"
+}
+
 failed=0
 for test in iphone_smoke_test family_challenge_smoke_test study_plans_smoke_test; do
   echo "::group::$test"
-  if ! flutter drive \
-    --driver test_driver/iphone_smoke.dart \
-    --target "integration_test/$test.dart" \
-    -d "$device" \
-    --dart-define=APP_ENV=synthetic 2>&1 | tee "$out/$test.log"; then
+  rm -f "$out/$test.log.timedout"
+  passed=0
+  if drive "$test" "$out/$test.log"; then
+    passed=1
+  elif [ -e "$out/$test.log.timedout" ]; then
+    echo "::warning::$test hung; trying it once more"
+    rm -f "$out/$test.log.timedout"
+    mv "$out/$test.log" "$out/$test.hung.log"
+    drive "$test" "$out/$test.log" && passed=1
+  fi
+  if [ "$passed" -ne 1 ]; then
     echo "::error::$test failed on $device"
     failed=1
   fi

@@ -1163,6 +1163,26 @@
   },
   "attachmentUploading": "Uploading",
   "attachmentChecking": "Checking",
+  "attachmentRefusedDamaged": "This file can't be used: it looks damaged or unusual. Remove it, or save it again as a PDF and attach that.",
+  "attachmentRefusedUnsafe": "This file was blocked because it may be harmful. Remove it.",
+  "attachmentRefusedNotAllowed": "This file has a password, scripts or other files inside it, which aren't allowed. Remove it.",
+  "attachmentRefusedOther": "This file can't be used. Remove it and try another.",
+  "attachmentNotAcceptedScan": "This file did not pass the safety check. Remove it, then save again.",
+  "@attachmentNotAcceptedScan": {
+    "description": "Under a file the server refused on save because its security scan refused it."
+  },
+  "attachmentNotAcceptedGone": "This file is no longer available. Remove it and attach it again.",
+  "attachmentRemovedBySafetyCheck": "This file was removed by the safety check.",
+  "@attachmentRemovedBySafetyCheck": {
+    "description": "Shown in place of an attached file that the security scan refused after it was attached; it cannot be opened."
+  },
+  "attachmentRemovedShort": "Removed by the safety check",
+  "@attachmentRemovedShort": {
+    "description": "Short label under an attached file name, or on a photo, that the security scan removed."
+  },
+  "attachmentNotAcceptedInUse": "This file is already attached. Remove it, then save again.",
+  "attachmentNotAcceptedHere": "This file can't be added here. Remove it, then save again.",
+  "linkNotAccepted": "This link can't be added. Remove it, then save again.",
   "attachmentReady": "Ready",
   "attachmentFailed": "Failed",
   "attachmentThisFileIsStillBeing": "This file is still being checked. Try again shortly.",
@@ -1571,6 +1591,10 @@
   "msgErrorUnauthorized": "Please sign in again.",
   "msgErrorValidation": "Write a message first.",
   "msgErrorUnknown": "Something went wrong. Please try again.",
+  "msgErrorAttachmentRefused": "A file was not accepted, so nothing was sent. Remove the file marked, then try again.",
+  "@msgErrorAttachmentRefused": {
+    "description": "Error when the server refused a file attached to a message or announcement; the refused file is marked."
+  },
   "famTitle": "My family",
   "famChildren": "My children",
   "famEmptyTitle": "No children linked yet",
@@ -1647,10 +1671,14 @@
   },
   "famProgressSource": "Calculated from grades the school has published and attendance it has recorded. Ask the school if something looks wrong.",
   "famApprovalsTitle": "Waiting for your approval",
-  "famApprovalsDetail": "{name} asked to subscribe to Student Notebook.",
+  "famApprovalsDetail": "{name} asked to subscribe to {plan, select, studafy_plus{Studafy Plus} studafy_max{Studafy Max} other{a Studafy plan}}.",
   "@famApprovalsDetail": {
+    "description": "A child asked a parent to approve a student plan. {plan} is the plan's feature key from the server (studafy_plus or studafy_max); any other key falls back to a generic plan name. Keep \"Studafy Plus\" and \"Studafy Max\" as product names.",
     "placeholders": {
       "name": {
+        "type": "String"
+      },
+      "plan": {
         "type": "String"
       }
     }
@@ -2316,6 +2344,10 @@
   "courseworkAttendanceLocked": "This register is locked by your school's attendance policy.",
   "courseworkEntriesInvalid": "Some rows need fixing. Nothing was saved.",
   "courseworkFailed": "That didn't work. Check your connection and try again.",
+  "courseworkAttachmentRefused": "A file or link was not accepted, so nothing was saved. Remove the ones marked, then save again.",
+  "@courseworkAttachmentRefused": {
+    "description": "Form error when the server refused a file or link being attached; the refused ones are marked in the form."
+  },
   "paperGradesTitle": "Grade sheet: {title}",
   "@paperGradesTitle": {
     "placeholders": {
@@ -2860,7 +2892,7 @@
   "attachmentsKeep": "Keep",
   "attachmentsRemovedOnSave": "Removed when you save",
   "attachmentsUploading": "Wait for the files to finish uploading.",
-  "attachmentsFailed": "Retry or remove the files that failed to upload.",
+  "attachmentsFailed": "Retry or remove the files and links marked as failed or not accepted.",
   "attachmentsTooManyLinks": "You can add up to {count} links.",
   "@attachmentsTooManyLinks": {"placeholders": {"count": {"type": "int"}}},
   "attachmentsImagePreview": "Tap to view",
@@ -2927,6 +2959,8 @@
   "builderSaved": "Saved.",
   "builderPublished": "Published to the class.",
   "builderSaveFailed": "Could not save. Check the questions and try again.",
+  "builderQuestionAttachmentRefused": "Question {number}: a file or link was not accepted. Remove it, then save again.",
+  "@builderQuestionAttachmentRefused": {"placeholders": {"number": {"type": "int"}}},
   "builderLocked": "A student has already submitted, so the questions can no longer change. Settings still can.",
   "builderNeedTitle": "Give it a title.",
   "builderNeedClass": "Choose a class.",
@@ -3406,5 +3440,43 @@
   "markAbsenceRemove": "Remove absence",
   "markAbsenceSaveNotes": "Save notes",
   "markAbsenceMark": "Mark absent",
-  "takeChildAttempts": "Attempts"
+  "takeChildAttempts": "Attempts",
+  "loginWithEmail": "Sign in with email",
+  "@loginWithEmail": {"description": "Secondary sign-in for accounts Studafy provisions itself, such as app store reviewers'. There is no sign-up or password reset on this path."},
+  "loginEmailNote": "For accounts set up by Studafy.",
+  "loginEmailLabel": "Email",
+  "loginPasswordLabel": "Password",
+  "loginShowPassword": "Show password",
+  "loginHidePassword": "Hide password",
+  "loginEmailSubmit": "Sign in",
+  "loginEmailMissing": "Enter your email address.",
+  "loginEmailInvalid": "Enter a valid email address.",
+  "loginPasswordMissing": "Enter your password.",
+  "loginEmailWrong": "That email and password don't match an account set up by Studafy.",
+  "loginEmailTooMany": "Too many attempts. Wait a few minutes, then try again.",
+  "loginEmailOffline": "Couldn't reach Studafy. Check your connection and try again.",
+  "loginEmailUnavailable": "Email sign-in isn't available right now. Please try again later.",
+  "reauthPasswordTitle": "Confirm it's you",
+  "reauthPasswordBody": "Enter the password for {email}.",
+  "@reauthPasswordBody": {"placeholders": {"email": {"type": "String"}}},
+  "reauthPasswordConfirm": "Confirm",
+  "reauthPasswordCancel": "Cancel",
+  "aiConsentTitle": "AI study tools",
+  "aiConsentNoticeBody": "The study helper, lesson notes, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson's text, your own notes or a photo you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates', your teachers' and your parents' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.",
+  "aiConsentAgree": "I agree",
+  "aiConsentNotNow": "Not now",
+  "aiConsentForChild": "You are agreeing for {name}, whose account you manage.",
+  "@aiConsentForChild": {"placeholders": {"name": {"type": "String"}}},
+  "aiConsentGuardianNeeded": "A parent turns on the AI study tools for this account, from their own account.",
+  "aiConsentStudentsOnly": "The AI study tools are for students in a class.",
+  "aiConsentSwitchOn": "On. You can turn them off at any time.",
+  "aiConsentSwitchOff": "Off. Turn on to use the study helper, notes, notebooks, quizzes and flashcards.",
+  "aiConsentChildSwitch": "AI study tools for {name}",
+  "@aiConsentChildSwitch": {"placeholders": {"name": {"type": "String"}}},
+  "aiConsentWithdrawTitle": "Turn off the AI study tools?",
+  "aiConsentWithdrawBody": "The study helper, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.",
+  "aiConsentWithdrawAction": "Turn off",
+  "aiConsentSaveFailed": "That was not saved. Check your connection and try again.",
+  "aiConsentReadNotice": "Read what is sent",
+  "aiConsentNeeded": "The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account."
 }

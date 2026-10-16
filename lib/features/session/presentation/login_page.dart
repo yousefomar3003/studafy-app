@@ -12,6 +12,7 @@ import '../../../l10n/generated/app_l10n.dart';
 import '../application/session_interactor.dart';
 import '../domain/session_repository.dart';
 import 'auth_frame.dart';
+import 'email_sign_in_sheet.dart';
 import 'provider_marks.dart';
 import 'role_page.dart';
 
@@ -471,6 +472,33 @@ class _LoginPageState extends State<LoginPage> {
     login(provider);
   }
 
+  /// The secondary email path. Held to the same rules as a provider: the
+  /// terms first, one sign-in at a time, and a demo session in a synthetic
+  /// build, which has no server to check a password against.
+  Future<void> _tapEmail() async {
+    if (signingIn || completingRemoteLogin) return;
+    if (!accepted) {
+      setState(() => _nudged = true);
+      return;
+    }
+    if (widget.session.isDemoSession) {
+      widget.session.startDemoSession(selectedRole);
+      _openRole();
+      return;
+    }
+    setState(() => error = null);
+    final signedIn = await showEmailSignInSheet(context, widget.session);
+    // Adding an account: the listener skips a session it cannot tell apart
+    // from the one being added to, so a different account is finished here.
+    if (signedIn &&
+        mounted &&
+        _addingTo != null &&
+        widget.session.hasCurrentSession &&
+        !_stillTheAccountBeingAddedTo) {
+      unawaited(_completeRemoteLogin());
+    }
+  }
+
   @override
   Widget build(BuildContext c) {
     final l10n = AppL10n.of(c);
@@ -620,6 +648,26 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
+          // Secondary, but in plain sight in every build: it is how the app
+          // store reviewers sign in, and a login they alone could find would
+          // be rejected (docs/store/reviewer-access.md). Last, so the
+          // providers and the terms keep their place above it.
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: TextButton.icon(
+              key: const Key('loginWithEmail'),
+              onPressed: _tapEmail,
+              style: TextButton.styleFrom(
+                foregroundColor: studafyDeep,
+                minimumSize: const Size.fromHeight(48),
+              ),
+              icon: const Icon(Icons.mail_outline_rounded),
+              label: Text(
+                l10n.loginWithEmail,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
         ],
       ),
     );

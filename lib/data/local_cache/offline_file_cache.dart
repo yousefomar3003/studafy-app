@@ -104,7 +104,8 @@ class OfflineFileCache {
 /// Opens attachments from the server when it answers, and from the device
 /// when it cannot be reached. A refusal is never covered up: a file the
 /// person may no longer open is not served from the device either.
-class CachingFileRepository implements FileUploadRepository {
+class CachingFileRepository
+    implements FileUploadRepository, FileScanStatusSource {
   CachingFileRepository(this._inner, this._cache);
 
   final FileUploadRepository _inner;
@@ -136,6 +137,15 @@ class CachingFileRepository implements FileUploadRepository {
   @override
   Future<QuarantinedFile> upload(FileUploadCommand command) =>
       _inner.upload(command);
+
+  @override
+  Future<FileScanStatus> scanStatus(String fileId) {
+    final inner = _inner;
+    if (inner is FileScanStatusSource) {
+      return (inner as FileScanStatusSource).scanStatus(fileId);
+    }
+    throw UnsupportedError('This repository cannot report scan status.');
+  }
 
   @override
   Future<String> publishToClass({

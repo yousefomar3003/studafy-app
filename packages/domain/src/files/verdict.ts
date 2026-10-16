@@ -40,6 +40,8 @@ export type ScanErrorCode =
 export interface AnalyzeResult {
   verdict: ScanVerdict;
   errorCode?: ScanErrorCode;
+  /** Which structural rule refused the file; for logs, never shown. */
+  detail?: string;
 }
 
 export type SafeMediaType =
@@ -118,7 +120,10 @@ export async function analyzeBytes(
     }
     case "application/pdf": {
       const parsed = await parsePdf(bytes);
-      if (!parsed.ok) return mapPdfFailure(parsed.reason);
+      if (!parsed.ok) {
+        const refused = mapPdfFailure(parsed.reason);
+        return parsed.detail ? { ...refused, detail: parsed.detail } : refused;
+      }
       return { verdict: "clean" };
     }
     // Word and PowerPoint (ADR-0037): a bounded ZIP walk that refuses

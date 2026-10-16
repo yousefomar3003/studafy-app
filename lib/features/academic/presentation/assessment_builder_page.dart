@@ -7,9 +7,11 @@ import '../../../core/navigation.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import 'coursework_messages.dart';
 import 'question_editor.dart';
 import 'take_assessment_page.dart';
 
@@ -57,6 +59,7 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
       );
   final List<EditableQuestion> _questions = [];
   AttachmentsEditorValue _material = const AttachmentsEditorValue();
+  final _materialEditor = GlobalKey<AttachmentsEditorState>();
 
   /// Somebody has submitted: the questions are fixed.
   bool _locked = false;
@@ -176,11 +179,33 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
       if (!mounted) return;
       Navigator.of(context)
           .pop(publish ? l10n.builderPublished : l10n.builderSaved);
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) return;
+      final refusal = attachmentRefusalIn(error);
+      if (refusal == null) {
+        setState(() {
+          _saving = false;
+          _error = l10n.builderSaveFailed;
+        });
+        return;
+      }
+      // The quiz's own material, then each question's, by where the server
+      // says the refused file or link was. The questions were sent in this
+      // order, so the server's index is the list's.
+      _materialEditor.currentState?.markNotAccepted(refusal.rows);
+      final lines = [l10n.courseworkAttachmentRefused];
+      for (final (index, q) in _questions.indexed) {
+        final prefix = 'questions.$index.';
+        if (!refusal.rows.keys.any((path) => path.startsWith(prefix))) continue;
+        q.attachmentsEditor.currentState?.markNotAccepted(
+          refusal.rows,
+          prefix: prefix,
+        );
+        lines.add(l10n.builderQuestionAttachmentRefused(index + 1));
+      }
       setState(() {
         _saving = false;
-        _error = l10n.builderSaveFailed;
+        _error = lines.join('\n');
       });
     }
   }
@@ -224,9 +249,8 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
 
   String _when(BuildContext context, DateTime? value) {
     if (value == null) return AppL10n.of(context).builderNotSet;
-    final dates = MaterialLocalizations.of(context);
-    return '${dates.formatShortDate(value)} '
-        '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
+    return '${studafyShortDate(context, value)} '
+        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(value))}';
   }
 
   void _setSettings({
@@ -327,6 +351,7 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                     title: Text(l10n.builderMaterial),
                     children: [
                       AttachmentsEditor(
+                        key: _materialEditor,
                         purpose: FilePurpose.assignmentMaterial,
                         schoolId: _classroomId == null ? null : widget.schoolId,
                         filesBlockedReason: _classroomId == null

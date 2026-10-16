@@ -46,6 +46,19 @@ abstract class FakeSessionRepositoryBase implements SessionRepository {
   bool supportsProvider(LoginProvider provider) => true;
 
   @override
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async => unimplemented();
+
+  /// The prompt the code under test registered, if any.
+  PasswordReauthPrompt? passwordReauthPrompt;
+
+  @override
+  void usePasswordReauthPrompt(PasswordReauthPrompt? prompt) =>
+      passwordReauthPrompt = prompt;
+
+  @override
   Future<TermInfo?> activeTermForSchool(SchoolId school) async => null;
 
   @override

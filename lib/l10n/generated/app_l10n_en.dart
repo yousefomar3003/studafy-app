@@ -1746,6 +1746,49 @@ class AppL10nEn extends AppL10n {
   String get attachmentChecking => 'Checking';
 
   @override
+  String get attachmentRefusedDamaged =>
+      'This file can\'t be used: it looks damaged or unusual. Remove it, or save it again as a PDF and attach that.';
+
+  @override
+  String get attachmentRefusedUnsafe =>
+      'This file was blocked because it may be harmful. Remove it.';
+
+  @override
+  String get attachmentRefusedNotAllowed =>
+      'This file has a password, scripts or other files inside it, which aren\'t allowed. Remove it.';
+
+  @override
+  String get attachmentRefusedOther =>
+      'This file can\'t be used. Remove it and try another.';
+
+  @override
+  String get attachmentNotAcceptedScan =>
+      'This file did not pass the safety check. Remove it, then save again.';
+
+  @override
+  String get attachmentNotAcceptedGone =>
+      'This file is no longer available. Remove it and attach it again.';
+
+  @override
+  String get attachmentRemovedBySafetyCheck =>
+      'This file was removed by the safety check.';
+
+  @override
+  String get attachmentRemovedShort => 'Removed by the safety check';
+
+  @override
+  String get attachmentNotAcceptedInUse =>
+      'This file is already attached. Remove it, then save again.';
+
+  @override
+  String get attachmentNotAcceptedHere =>
+      'This file can\'t be added here. Remove it, then save again.';
+
+  @override
+  String get linkNotAccepted =>
+      'This link can\'t be added. Remove it, then save again.';
+
+  @override
   String get attachmentReady => 'Ready';
 
   @override
@@ -2637,6 +2680,10 @@ class AppL10nEn extends AppL10n {
   String get msgErrorUnknown => 'Something went wrong. Please try again.';
 
   @override
+  String get msgErrorAttachmentRefused =>
+      'A file was not accepted, so nothing was sent. Remove the file marked, then try again.';
+
+  @override
   String get famTitle => 'My family';
 
   @override
@@ -2732,8 +2779,13 @@ class AppL10nEn extends AppL10n {
   String get famApprovalsTitle => 'Waiting for your approval';
 
   @override
-  String famApprovalsDetail(String name) {
-    return '$name asked to subscribe to Student Notebook.';
+  String famApprovalsDetail(String name, String plan) {
+    String _temp0 = intl.Intl.selectLogic(plan, {
+      'studafy_plus': 'Studafy Plus',
+      'studafy_max': 'Studafy Max',
+      'other': 'a Studafy plan',
+    });
+    return '$name asked to subscribe to $_temp0.';
   }
 
   @override
@@ -4148,6 +4200,10 @@ class AppL10nEn extends AppL10n {
       'That didn\'t work. Check your connection and try again.';
 
   @override
+  String get courseworkAttachmentRefused =>
+      'A file or link was not accepted, so nothing was saved. Remove the ones marked, then save again.';
+
+  @override
   String paperGradesTitle(String title) {
     return 'Grade sheet: $title';
   }
@@ -5208,7 +5264,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get attachmentsFailed =>
-      'Retry or remove the files that failed to upload.';
+      'Retry or remove the files and links marked as failed or not accepted.';
 
   @override
   String attachmentsTooManyLinks(int count) {
@@ -5407,6 +5463,11 @@ class AppL10nEn extends AppL10n {
   @override
   String get builderSaveFailed =>
       'Could not save. Check the questions and try again.';
+
+  @override
+  String builderQuestionAttachmentRefused(int number) {
+    return 'Question $number: a file or link was not accepted. Remove it, then save again.';
+  }
 
   @override
   String get builderLocked =>
@@ -6907,4 +6968,123 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get takeChildAttempts => 'Attempts';
+
+  @override
+  String get loginWithEmail => 'Sign in with email';
+
+  @override
+  String get loginEmailNote => 'For accounts set up by Studafy.';
+
+  @override
+  String get loginEmailLabel => 'Email';
+
+  @override
+  String get loginPasswordLabel => 'Password';
+
+  @override
+  String get loginShowPassword => 'Show password';
+
+  @override
+  String get loginHidePassword => 'Hide password';
+
+  @override
+  String get loginEmailSubmit => 'Sign in';
+
+  @override
+  String get loginEmailMissing => 'Enter your email address.';
+
+  @override
+  String get loginEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get loginPasswordMissing => 'Enter your password.';
+
+  @override
+  String get loginEmailWrong =>
+      'That email and password don\'t match an account set up by Studafy.';
+
+  @override
+  String get loginEmailTooMany =>
+      'Too many attempts. Wait a few minutes, then try again.';
+
+  @override
+  String get loginEmailOffline =>
+      'Couldn\'t reach Studafy. Check your connection and try again.';
+
+  @override
+  String get loginEmailUnavailable =>
+      'Email sign-in isn\'t available right now. Please try again later.';
+
+  @override
+  String get reauthPasswordTitle => 'Confirm it\'s you';
+
+  @override
+  String reauthPasswordBody(String email) {
+    return 'Enter the password for $email.';
+  }
+
+  @override
+  String get reauthPasswordConfirm => 'Confirm';
+
+  @override
+  String get reauthPasswordCancel => 'Cancel';
+
+  @override
+  String get aiConsentTitle => 'AI study tools';
+
+  @override
+  String get aiConsentNoticeBody =>
+      'The study helper, lesson notes, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.';
+
+  @override
+  String get aiConsentAgree => 'I agree';
+
+  @override
+  String get aiConsentNotNow => 'Not now';
+
+  @override
+  String aiConsentForChild(String name) {
+    return 'You are agreeing for $name, whose account you manage.';
+  }
+
+  @override
+  String get aiConsentGuardianNeeded =>
+      'A parent turns on the AI study tools for this account, from their own account.';
+
+  @override
+  String get aiConsentStudentsOnly =>
+      'The AI study tools are for students in a class.';
+
+  @override
+  String get aiConsentSwitchOn => 'On. You can turn them off at any time.';
+
+  @override
+  String get aiConsentSwitchOff =>
+      'Off. Turn on to use the study helper, notes, notebooks, quizzes and flashcards.';
+
+  @override
+  String aiConsentChildSwitch(String name) {
+    return 'AI study tools for $name';
+  }
+
+  @override
+  String get aiConsentWithdrawTitle => 'Turn off the AI study tools?';
+
+  @override
+  String get aiConsentWithdrawBody =>
+      'The study helper, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.';
+
+  @override
+  String get aiConsentWithdrawAction => 'Turn off';
+
+  @override
+  String get aiConsentSaveFailed =>
+      'That was not saved. Check your connection and try again.';
+
+  @override
+  String get aiConsentReadNotice => 'Read what is sent';
+
+  @override
+  String get aiConsentNeeded =>
+      'The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.';
 }

@@ -4,8 +4,8 @@
 # so the app gets no public IP. studafy-worker-test reaches it at
 #   http://studafy-scanner-test.internal:8080/scan
 # with MALWARE_SCANNER_URL and MALWARE_SCANNER_API_KEY; the same key is
-# SCANNER_API_KEY here. Production gets its own scanner app later, with the
-# same configuration.
+# SCANNER_API_KEY here. Production has its own scanner app, with the same
+# configuration and its own key: fly.scanner.toml (studafy-scanner).
 #   fly deploy -c fly.scanner.test.toml --ha=false
 app = "studafy-scanner-test"
 primary_region = "fra"

@@ -280,6 +280,7 @@ String notebookRefusalText(AppL10n l10n, StudyRefusal refusal) =>
       StudyRefusal.materialProcessing => l10n.nbSheetWaitReading,
       StudyRefusal.lessonHasNoText => l10n.nbFailNoMaterial,
       StudyRefusal.unavailable => l10n.studySetSwitchedOff,
+      StudyRefusal.aiConsent => l10n.aiConsentNeeded,
       _ => l10n.studySetThatDidNotWorkPlease,
     };
 

@@ -17,6 +17,7 @@ import '../../../core/navigation.dart';
 import '../../../core/result.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/study_assistant_interactor.dart';
@@ -393,9 +394,9 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
 
   String _explain(Failure failure) => switch (failure.code) {
     StudyAssistantFailure.allowanceUsed => switch (_plan?.allowance) {
-      final allowance? => AppL10n.of(context).helperTokensUsedUntil(
-        MaterialLocalizations.of(context).formatMediumDate(allowance.resetsAt),
-      ),
+      final allowance? => AppL10n.of(
+        context,
+      ).helperTokensUsedUntil(studafyMediumDate(context, allowance.resetsAt)),
       null => AppL10n.of(context).helperTokensUsed,
     },
     StudyAssistantFailure.inProgress => AppL10n.of(
@@ -408,6 +409,9 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     StudyAssistantFailure.photoNotReady => AppL10n.of(
       context,
     ).helperPhotoFailed,
+    StudyAssistantFailure.consentRequired => AppL10n.of(
+      context,
+    ).aiConsentNeeded,
     _ => failure.message,
   };
 
@@ -817,7 +821,6 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   Widget _conversation(AppL10n l10n) {
     final turns = _turns;
     if (turns.isEmpty && !_asking) {
-      final dates = MaterialLocalizations.of(context);
       final recent = _recent.take(3).toList();
       return ListView(
         padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 16),
@@ -916,7 +919,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                     ChatHistoryRow(
                       title: chat.title,
                       detail:
-                          '${dates.formatMediumDate(chat.updatedAt)} · '
+                          '${studafyMediumDate(context, chat.updatedAt)} · '
                           '${l10n.studyAssistantMessageCount(chat.turns.length)}',
                       onTap: () => setState(() {
                         _chat = chat;
@@ -987,8 +990,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                       _error ??
                       switch (plan?.allowance) {
                         final allowance? => l10n.helperTokensUsedUntil(
-                          MaterialLocalizations.of(context)
-                              .formatMediumDate(allowance.resetsAt),
+                          studafyMediumDate(context, allowance.resetsAt),
                         ),
                         null => l10n.helperTokensUsed,
                       },

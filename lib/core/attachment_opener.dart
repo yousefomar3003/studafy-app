@@ -74,7 +74,8 @@ String sharedFileName(String displayName, String? mediaType) {
 ///
 /// Renders nothing when there are none, so a caller can place it without a
 /// condition of its own. A file still being scanned is listed but cannot be
-/// opened, and says so.
+/// opened, and says so; one the scan removed after it was attached says
+/// that instead, under its name.
 class StoredAttachmentList extends StatefulWidget {
   const StoredAttachmentList({
     super.key,
@@ -104,9 +105,14 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
   String? _opening;
 
   Future<void> _open(StoredAttachment item) async {
+    final messenger = ScaffoldMessenger.of(context);
+    // Said wherever it is shown: there is nothing to fetch.
+    if (item.isRemoved) {
+      messenger.showMessage(AppL10n.of(context).attachmentRemovedBySafetyCheck);
+      return;
+    }
     final uploads = widget.uploads ?? UploadsScope.maybeOf(context);
     if (uploads == null || _opening != null) return;
-    final messenger = ScaffoldMessenger.of(context);
     if (!item.isReady) {
       messenger.showMessage(AppL10n.of(context).attachmentThisFileIsStillBeing);
       return;
@@ -157,7 +163,9 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
                     )
                   else
                     Icon(
-                      !item.isReady
+                      item.isRemoved
+                          ? Icons.gpp_bad_outlined
+                          : !item.isReady
                           ? Icons.hourglass_empty_rounded
                           : (item.mediaType ?? '').startsWith('image/')
                           ? Icons.image_outlined
@@ -167,18 +175,35 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
                     ),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: Text(
-                      item.displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: widget.dense ? 12 : 14,
-                        color: color,
-                        decoration: item.isReady
-                            ? TextDecoration.underline
-                            : null,
-                        decorationColor: color,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: widget.dense ? 12 : 14,
+                            color: color,
+                            decoration: item.isReady
+                                ? TextDecoration.underline
+                                : item.isRemoved
+                                ? TextDecoration.lineThrough
+                                : null,
+                            decorationColor: color,
+                          ),
+                        ),
+                        if (item.isRemoved)
+                          Text(
+                            AppL10n.of(context).attachmentRemovedShort,
+                            style: TextStyle(
+                              fontSize: widget.dense ? 11 : 12,
+                              color:
+                                  color ?? Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],

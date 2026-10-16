@@ -281,6 +281,16 @@ select is((select count(*) from jsonb_array_elements(pg_temp.m(:'student_user', 
 -- ---------------------------------------------------------------------------
 delete from private.ai_usage where user_id = :'student_user';
 delete from private.study_plan_grants where user_id = :'student_user';
+-- The student has agreed to the AI notice (ADR-0043); without it the
+-- ledger refuses before holding a token (ai_access_consent.sql).
+insert into public.consent_records (user_id, purpose, policy_version, locale,
+  policy_id, given_by, given_as)
+select :'student_user', 'ai_features', p.policy_version, 'en', p.id,
+  :'student_user', 'self'
+from public.consent_policies p
+where p.purpose = 'ai_features' and p.locale = 'en'
+order by p.effective_at desc, p.policy_version desc limit 1
+on conflict (user_id, purpose, policy_version) do update set withdrawn_at = null;
 select is(pg_temp.usage(:'student_user', 'summary', '{}')->'allowance'->>'total', '40000',
   'Free has 40,000 tokens');
 select is(pg_temp.usage(:'student_user', 'summary', '{}')->'allowance'->>'period', 'week',

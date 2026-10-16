@@ -1,5 +1,7 @@
 {
   "APP_ENV": "synthetic",
   "SUPABASE_URL": "",
-  "SUPABASE_PUBLISHABLE_KEY": ""
+  "SUPABASE_PUBLISHABLE_KEY": "",
+  "STUDAFY_PRIVACY_URL": "https://studafy-legal.studafy.workers.dev/privacy",
+  "STUDAFY_TERMS_URL": "https://studafy-legal.studafy.workers.dev/terms"
 }

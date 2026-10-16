@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
 import '../../../core/content_links.dart';
+import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/messaging_interactor.dart';
 import '../domain/messaging.dart';
+import 'messaging_strings.dart';
 
 /// One class a teacher may announce to.
 ///
@@ -56,6 +58,7 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
   bool _posting = false;
   List<Attachment> _attachments = const [];
   List<Uri> _links = const [];
+  final _attachmentsKey = GlobalKey<AttachmentFieldState>();
 
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
@@ -105,6 +108,8 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
     });
     final posted = l10n.announcementPosted;
     final failed = l10n.announcementFailed;
+    // In the order sent: a refusal names a file by its place in this list.
+    final sent = sendableFileIds(_attachments);
     final result = await widget.messaging.postAnnouncement(
       AnnouncementDraft(
         schoolId: widget.schoolId,
@@ -113,18 +118,34 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
         body: textWithLinks(_body.text, _links),
         audience: _audience,
         important: _important,
-        attachmentFileIds: [for (final item in _attachments) ?item.fileId],
+        attachmentFileIds: sent,
       ),
     );
     if (!mounted) return;
     result.fold(
       onSuccess: (_) => Navigator.of(context).pop(posted),
-      onFailure: (failure) => setState(() {
-        _posting = false;
-        // The surface's own reason where it has one, since "you may not post
-        // school-wide" is worth reading; the generic line otherwise.
-        _error = failure.message.isEmpty ? failed : failure.message;
-      }),
+      onFailure: (failure) {
+        // A refused file is marked where it was attached; nothing was
+        // posted.
+        if (failure is AttachmentRefusedFailure) {
+          markRefusedFiles(
+            l10n,
+            _attachmentsKey.currentState,
+            sent,
+            failure.rows,
+          );
+        }
+        setState(() {
+          _posting = false;
+          // The surface's own reason where it has one, since "you may not
+          // post school-wide" is worth reading; the generic line otherwise.
+          _error = failure is AttachmentRefusedFailure
+              ? messagingFailureText(context, failure)
+              : failure.message.isEmpty
+              ? failed
+              : failure.message;
+        });
+      },
     );
   }
 
@@ -205,6 +226,7 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
             ),
             if (UploadsScope.maybeOf(context) case final uploads?)
               AttachmentField(
+                key: _attachmentsKey,
                 purpose: FilePurpose.announcementAttachment,
                 schoolId: widget.schoolId,
                 classroomId: _classroomId,

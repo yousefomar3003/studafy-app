@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 enum FilePurpose {
   profileImage('profile_image'),
@@ -83,6 +83,13 @@ class StoredAttachment {
   final String? mediaType;
 
   bool get isReady => scanState == 'clean';
+
+  /// The scan refused it after it was attached (or gave up on it, or an
+  /// operator contained it), so it will never open: the server keeps it on
+  /// the list as `rejected`, `error` or - once its bytes are gone -
+  /// `deleted`, so readers are told rather than left waiting for it.
+  bool get isRemoved =>
+      const {'rejected', 'error', 'deleted'}.contains(scanState);
 }
 
 /// A file's bytes, fetched for the person who asked and nobody else.
@@ -109,6 +116,35 @@ class FileServiceUnavailable implements Exception {
 
   @override
   String toString() => 'FileServiceUnavailable';
+}
+
+/// Where a file stands in the scan.
+///
+/// A file is attachable while it is still being checked, so a screen that
+/// shows it keeps asking until the scan decides; when the scan refuses it the
+/// person is told why, instead of the file "checking" for ever and the form
+/// failing on submit (2026-10-15).
+@immutable
+class FileScanStatus {
+  const FileScanStatus({required this.scanState, this.failureCode});
+
+  final String scanState;
+
+  /// Why the scan refused the file (`malformed_file`, `malware_detected`,
+  /// `encrypted_document`, ...), when it did.
+  final String? failureCode;
+
+  bool get isClean => scanState == 'clean';
+
+  /// The scan has decided against the file; it will never become clean.
+  bool get isRefused =>
+      const {'rejected', 'deleted', 'error'}.contains(scanState);
+}
+
+/// Implemented by repositories that can say how a file's scan went. Kept
+/// apart from [FileUploadRepository] so previews and test fakes need not.
+abstract interface class FileScanStatusSource {
+  Future<FileScanStatus> scanStatus(String fileId);
 }
 
 abstract interface class FileUploadRepository {

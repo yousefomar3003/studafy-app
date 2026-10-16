@@ -119,7 +119,7 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
       context: context,
       helpText: widget.timeZone == null
           ? title
-          : l10n.deadlineSchoolTime(widget.timeZone!),
+          : l10n.deadlineSchoolTime(studafyTimeZone(widget.timeZone!)),
       initialTime: const TimeOfDay(hour: 23, minute: 59),
     );
     if (time == null || !mounted) return null;
@@ -220,9 +220,8 @@ class _SubmissionsPageState extends State<SubmissionsPage> {
   String _when(String local) {
     final at = DateTime.tryParse(local);
     if (at == null) return local;
-    final localizations = MaterialLocalizations.of(context);
-    return '${localizations.formatMediumDate(at)} '
-        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(at))}';
+    return '${studafyMediumDate(context, at)} '
+        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(at))}';
   }
 
   @override

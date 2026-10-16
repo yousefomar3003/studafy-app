@@ -45,6 +45,7 @@ import { startDataExportExecutor } from "./processors/dataExport";
 import { startMeetingProcessor } from "./processors/meetings";
 import { startChannelDelivery } from "./processors/channelDelivery";
 import { startHousekeeping } from "./processors/housekeeping";
+import { startReportAlerts } from "./processors/reportAlerts";
 import { queuePrefix } from "./platform/queueInventory";
 import { redisAlertState, startQueueMonitor } from "./monitoring/queueMonitor";
 import { type MonitoredQueue, monitorSources } from "./monitoring/sources";
@@ -100,10 +101,18 @@ try {
     postureRedis,
     env.ENVIRONMENT,
   );
+  // `source` says which commands answered: CONFIG GET, or INFO on managed
+  // Redis that refuses CONFIG (config_refused carries Redis's reason).
   logger.info("queue_redis_posture", {
+    source: posture.source,
     maxmemory_policy: posture.maxmemoryPolicy,
     appendonly: posture.appendonly,
     save_policy: posture.save,
+    ...(posture.rdbSaves !== undefined ? { rdb_saves: posture.rdbSaves } : {}),
+    ...(posture.rdbLastBgsaveStatus
+      ? { rdb_last_bgsave_status: posture.rdbLastBgsaveStatus }
+      : {}),
+    ...(posture.configRefused ? { config_refused: posture.configRefused } : {}),
   });
 } catch (error) {
   if (env.ENVIRONMENT === "production") throw error;
@@ -348,7 +357,31 @@ const housekeeping = env.DB_HOUSEKEEPING_ENABLED && env.DATABASE_URL
 
 // DL-057: the retention periods privacy policy §10 promises.
 const retentionSchedule = env.RETENTION_SCHEDULE_ENABLED && env.DATABASE_URL
-  ? startRetentionSchedule(database(), logger)
+  ? startRetentionSchedule(database(), logger, undefined, {
+    // The inactive-account warning is a required notice: emailed whatever
+    // the person's preferences, through the same sender as other email.
+    email: env.RESEND_API_KEY && env.EMAIL_FROM_ADDRESS
+      ? new ResendEmailSender({
+        apiKey: env.RESEND_API_KEY,
+        from: env.EMAIL_FROM_ADDRESS,
+      })
+      : undefined,
+  })
+  : undefined;
+
+// DPIA D7: a filed safety report alerts the reviewers' Telegram chat (id,
+// kind, priority and a school hash only). Off unless REPORT_ALERTS_ENABLED.
+const reportAlerts = env.REPORT_ALERTS_ENABLED && env.DATABASE_URL
+  ? startReportAlerts({
+    sql: database(),
+    sender: new TelegramAlertSender({
+      botToken: env.TELEGRAM_BOT_TOKEN!,
+      chatId: env.TELEGRAM_CHAT_ID!,
+    }),
+    logger,
+    environment: env.ENVIRONMENT,
+    intervalMs: env.REPORT_ALERT_POLL_INTERVAL_MS,
+  })
   : undefined;
 
 // Launch plan 4.7: alerts on queue depth, waiting age, failures and stuck
@@ -414,6 +447,7 @@ installGracefulShutdown({
     await channels?.close();
     await housekeeping?.close();
     await retentionSchedule?.close();
+    await reportAlerts?.close();
     await queueMonitor?.close();
     if (alertRedis) await closeRedis(alertRedis);
     if (sharedSql) await closeDatabase(sharedSql);

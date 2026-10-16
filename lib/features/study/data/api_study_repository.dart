@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../core/ai_consent.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
 import '../../../core/material_selection.dart';
@@ -27,16 +28,33 @@ class ApiStudyRepository implements StudyRepository {
       'PHOTO_UNREADABLE' => StudyRefusal.photoUnreadable,
       'LESSON_HAS_NO_TEXT' => StudyRefusal.lessonHasNoText,
       'AI_FEATURE_DISABLED' => StudyRefusal.unavailable,
+      'AI_STUDENTS_ONLY' => StudyRefusal.aiConsent,
       _ => StudyRefusal.failed,
     };
   }
 
+  /// Every call, with the AI notice shown first when the server wants the
+  /// student's consent (ADR-0043): once they agree, the call is made again.
   static Future<T> _guard<T>(Future<T> Function() run) async {
+    try {
+      return await AiConsentGate.instance.run(() => _guardOnce(run));
+    } on AiConsentRequiredException {
+      throw const StudyException(StudyRefusal.aiConsent);
+    }
+  }
+
+  static Future<T> _guardOnce<T>(Future<T> Function() run) async {
     try {
       return await run();
     } on StudyException {
       rethrow;
     } on V1ApiException catch (error) {
+      if (error.code == 'AI_CONSENT_REQUIRED' ||
+          error.code == 'AI_GUARDIAN_CONSENT_REQUIRED') {
+        throw AiConsentRequiredException(
+          guardian: error.code == 'AI_GUARDIAN_CONSENT_REQUIRED',
+        );
+      }
       // Chosen files that cannot be read now, named so the student can try
       // again or go on without them.
       if (error.code == 'MATERIAL_UNAVAILABLE') {

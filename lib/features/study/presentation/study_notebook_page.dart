@@ -9,6 +9,7 @@ import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
@@ -1223,11 +1224,7 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
                   UserContentText(notebook.className),
                   Text(l10n.nbCoverFrom(summary.lessonTitle)),
                   if (notebook.generatedAt case final at?)
-                    Text(
-                      l10n.nbCoverWritten(
-                        MaterialLocalizations.of(context).formatMediumDate(at),
-                      ),
-                    ),
+                    Text(l10n.nbCoverWritten(studafyMediumDate(context, at))),
                 ],
               ),
             ),
@@ -1468,6 +1465,7 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
     StudyRefusal.allowanceUsed => l10n.nbFailTokens,
     StudyRefusal.materialProcessing => l10n.nbSheetWaitReading,
     StudyRefusal.unavailable => l10n.studySetSwitchedOff,
+    StudyRefusal.aiConsent => l10n.aiConsentNeeded,
     _ => l10n.studySetThatDidNotWorkPlease,
   };
 

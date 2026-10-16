@@ -6,13 +6,17 @@
  * operator-facing catalogue (docs/security/rate-limit-catalogue.md), so a
  * drift test can prove the two never diverge.
  *
- * Subject scoping: "ip" limits are keyed by a normalized client network
- * prefix (never the raw address - a /64 aggregate for IPv6, the address for
- * IPv4), "account" and "tenant" by HMAC digests. Raw identifiers are never
- * written into Redis keys, so the key namespace itself is not an
+ * Subject scoping: "ip" limits are keyed by an HMAC digest of a normalized
+ * client network prefix (a /64 aggregate for IPv6, the address for IPv4),
+ * "account" and "tenant" by HMAC digests of their ids. Raw identifiers are
+ * never written into Redis keys, so the key namespace itself is not an
  * enumeration side channel.
  */
 import { createHmac } from "node:crypto";
+import {
+  APP_STORE_NOTIFICATIONS_PATH,
+  PLAY_BILLING_PUSH_PATH,
+} from "@studafy/config";
 import type {
   RateLimitPolicy,
   SlidingWindowPolicy,
@@ -264,7 +268,9 @@ export function flowFor(
   method: "get" | "post",
   path: string,
 ): FlowClassification {
-  if (path === "/webhooks/apple" || path === "/webhooks/google") {
+  if (
+    path === APP_STORE_NOTIFICATIONS_PATH || path === PLAY_BILLING_PUSH_PATH
+  ) {
     return { flow: "storeWebhook", weight: 1 };
   }
   if (path === "/v1/billing/school-settings/self-purchase") {
@@ -398,7 +404,15 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   // One child's insights, not a page of them: the trailing literal would
   // otherwise read as a collection.
   "/v1/family/insights",
+  // The account's AI consent (ADR-0043).
+  "/v1/me/study-tools-consent",
 ]);
+
+/** Single reads whose path ends in a literal after a parameter. */
+const SINGLE_READ_PATTERNS: readonly RegExp[] = [
+  // One managed child's AI consent (ADR-0043).
+  /^\/v1\/me\/managed-children\/[^/]+\/study-tools-consent$/,
+];
 
 /** Matches both the canonical {param} segment and a real uuid value. */
 const PARAMETER_SEGMENT =
@@ -409,5 +423,6 @@ function isCollectionRead(path: string): boolean {
   // single-resource read; everything else is a cursor-paged collection.
   const last = path.slice(path.lastIndexOf("/") + 1);
   if (PARAMETER_SEGMENT.test(last)) return false;
+  if (SINGLE_READ_PATTERNS.some((pattern) => pattern.test(path))) return false;
   return !SINGLE_READ_PATHS.has(path);
 }

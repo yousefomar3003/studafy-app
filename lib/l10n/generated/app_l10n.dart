@@ -2977,6 +2977,72 @@ abstract class AppL10n {
   /// **'Checking'**
   String get attachmentChecking;
 
+  /// No description provided for @attachmentRefusedDamaged.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be used: it looks damaged or unusual. Remove it, or save it again as a PDF and attach that.'**
+  String get attachmentRefusedDamaged;
+
+  /// No description provided for @attachmentRefusedUnsafe.
+  ///
+  /// In en, this message translates to:
+  /// **'This file was blocked because it may be harmful. Remove it.'**
+  String get attachmentRefusedUnsafe;
+
+  /// No description provided for @attachmentRefusedNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This file has a password, scripts or other files inside it, which aren\'t allowed. Remove it.'**
+  String get attachmentRefusedNotAllowed;
+
+  /// No description provided for @attachmentRefusedOther.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be used. Remove it and try another.'**
+  String get attachmentRefusedOther;
+
+  /// Under a file the server refused on save because its security scan refused it.
+  ///
+  /// In en, this message translates to:
+  /// **'This file did not pass the safety check. Remove it, then save again.'**
+  String get attachmentNotAcceptedScan;
+
+  /// No description provided for @attachmentNotAcceptedGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is no longer available. Remove it and attach it again.'**
+  String get attachmentNotAcceptedGone;
+
+  /// Shown in place of an attached file that the security scan refused after it was attached; it cannot be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'This file was removed by the safety check.'**
+  String get attachmentRemovedBySafetyCheck;
+
+  /// Short label under an attached file name, or on a photo, that the security scan removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed by the safety check'**
+  String get attachmentRemovedShort;
+
+  /// No description provided for @attachmentNotAcceptedInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is already attached. Remove it, then save again.'**
+  String get attachmentNotAcceptedInUse;
+
+  /// No description provided for @attachmentNotAcceptedHere.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be added here. Remove it, then save again.'**
+  String get attachmentNotAcceptedHere;
+
+  /// No description provided for @linkNotAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'This link can\'t be added. Remove it, then save again.'**
+  String get linkNotAccepted;
+
   /// No description provided for @attachmentReady.
   ///
   /// In en, this message translates to:
@@ -4561,6 +4627,12 @@ abstract class AppL10n {
   /// **'Something went wrong. Please try again.'**
   String get msgErrorUnknown;
 
+  /// Error when the server refused a file attached to a message or announcement; the refused file is marked.
+  ///
+  /// In en, this message translates to:
+  /// **'A file was not accepted, so nothing was sent. Remove the file marked, then try again.'**
+  String get msgErrorAttachmentRefused;
+
   /// No description provided for @famTitle.
   ///
   /// In en, this message translates to:
@@ -4716,11 +4788,11 @@ abstract class AppL10n {
   /// **'Waiting for your approval'**
   String get famApprovalsTitle;
 
-  /// No description provided for @famApprovalsDetail.
+  /// A child asked a parent to approve a student plan. {plan} is the plan's feature key from the server (studafy_plus or studafy_max); any other key falls back to a generic plan name. Keep "Studafy Plus" and "Studafy Max" as product names.
   ///
   /// In en, this message translates to:
-  /// **'{name} asked to subscribe to Student Notebook.'**
-  String famApprovalsDetail(String name);
+  /// **'{name} asked to subscribe to {plan, select, studafy_plus{Studafy Plus} studafy_max{Studafy Max} other{a Studafy plan}}.'**
+  String famApprovalsDetail(String name, String plan);
 
   /// No description provided for @famApprovalsApprove.
   ///
@@ -7104,6 +7176,12 @@ abstract class AppL10n {
   /// **'That didn\'t work. Check your connection and try again.'**
   String get courseworkFailed;
 
+  /// Form error when the server refused a file or link being attached; the refused ones are marked in the form.
+  ///
+  /// In en, this message translates to:
+  /// **'A file or link was not accepted, so nothing was saved. Remove the ones marked, then save again.'**
+  String get courseworkAttachmentRefused;
+
   /// No description provided for @paperGradesTitle.
   ///
   /// In en, this message translates to:
@@ -8943,7 +9021,7 @@ abstract class AppL10n {
   /// No description provided for @attachmentsFailed.
   ///
   /// In en, this message translates to:
-  /// **'Retry or remove the files that failed to upload.'**
+  /// **'Retry or remove the files and links marked as failed or not accepted.'**
   String get attachmentsFailed;
 
   /// No description provided for @attachmentsTooManyLinks.
@@ -9317,6 +9395,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Could not save. Check the questions and try again.'**
   String get builderSaveFailed;
+
+  /// No description provided for @builderQuestionAttachmentRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}: a file or link was not accepted. Remove it, then save again.'**
+  String builderQuestionAttachmentRefused(int number);
 
   /// No description provided for @builderLocked.
   ///
@@ -11819,6 +11903,210 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Attempts'**
   String get takeChildAttempts;
+
+  /// Secondary sign-in for accounts Studafy provisions itself, such as app store reviewers'. There is no sign-up or password reset on this path.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email'**
+  String get loginWithEmail;
+
+  /// No description provided for @loginEmailNote.
+  ///
+  /// In en, this message translates to:
+  /// **'For accounts set up by Studafy.'**
+  String get loginEmailNote;
+
+  /// No description provided for @loginEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get loginEmailLabel;
+
+  /// No description provided for @loginPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get loginPasswordLabel;
+
+  /// No description provided for @loginShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get loginShowPassword;
+
+  /// No description provided for @loginHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get loginHidePassword;
+
+  /// No description provided for @loginEmailSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get loginEmailSubmit;
+
+  /// No description provided for @loginEmailMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email address.'**
+  String get loginEmailMissing;
+
+  /// No description provided for @loginEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get loginEmailInvalid;
+
+  /// No description provided for @loginPasswordMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password.'**
+  String get loginPasswordMissing;
+
+  /// No description provided for @loginEmailWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That email and password don\'t match an account set up by Studafy.'**
+  String get loginEmailWrong;
+
+  /// No description provided for @loginEmailTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a few minutes, then try again.'**
+  String get loginEmailTooMany;
+
+  /// No description provided for @loginEmailOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach Studafy. Check your connection and try again.'**
+  String get loginEmailOffline;
+
+  /// No description provided for @loginEmailUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Email sign-in isn\'t available right now. Please try again later.'**
+  String get loginEmailUnavailable;
+
+  /// No description provided for @reauthPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm it\'s you'**
+  String get reauthPasswordTitle;
+
+  /// No description provided for @reauthPasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the password for {email}.'**
+  String reauthPasswordBody(String email);
+
+  /// No description provided for @reauthPasswordConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get reauthPasswordConfirm;
+
+  /// No description provided for @reauthPasswordCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get reauthPasswordCancel;
+
+  /// No description provided for @aiConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI study tools'**
+  String get aiConsentTitle;
+
+  /// No description provided for @aiConsentNoticeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The study helper, lesson notes, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.'**
+  String get aiConsentNoticeBody;
+
+  /// No description provided for @aiConsentAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree'**
+  String get aiConsentAgree;
+
+  /// No description provided for @aiConsentNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get aiConsentNotNow;
+
+  /// No description provided for @aiConsentForChild.
+  ///
+  /// In en, this message translates to:
+  /// **'You are agreeing for {name}, whose account you manage.'**
+  String aiConsentForChild(String name);
+
+  /// No description provided for @aiConsentGuardianNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'A parent turns on the AI study tools for this account, from their own account.'**
+  String get aiConsentGuardianNeeded;
+
+  /// No description provided for @aiConsentStudentsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI study tools are for students in a class.'**
+  String get aiConsentStudentsOnly;
+
+  /// No description provided for @aiConsentSwitchOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On. You can turn them off at any time.'**
+  String get aiConsentSwitchOn;
+
+  /// No description provided for @aiConsentSwitchOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Turn on to use the study helper, notes, notebooks, quizzes and flashcards.'**
+  String get aiConsentSwitchOff;
+
+  /// No description provided for @aiConsentChildSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'AI study tools for {name}'**
+  String aiConsentChildSwitch(String name);
+
+  /// No description provided for @aiConsentWithdrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off the AI study tools?'**
+  String get aiConsentWithdrawTitle;
+
+  /// No description provided for @aiConsentWithdrawBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The study helper, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.'**
+  String get aiConsentWithdrawBody;
+
+  /// No description provided for @aiConsentWithdrawAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get aiConsentWithdrawAction;
+
+  /// No description provided for @aiConsentSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That was not saved. Check your connection and try again.'**
+  String get aiConsentSaveFailed;
+
+  /// No description provided for @aiConsentReadNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Read what is sent'**
+  String get aiConsentReadNotice;
+
+  /// No description provided for @aiConsentNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.'**
+  String get aiConsentNeeded;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

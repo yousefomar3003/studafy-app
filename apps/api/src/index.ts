@@ -13,7 +13,6 @@ import { buildRoutes } from "./composition/routes";
 const platform = buildPlatform();
 const {
   env,
-  cloudwatch,
   errorReporter,
   logger,
   sql,
@@ -90,12 +89,6 @@ installGracefulShutdown({
     server.stop(false);
     if (sql) await closeDatabase(sql);
     if (redis) await closeRedis(redis);
-    // Last, so shutdown logging from the steps above is included in the final
-    // batch rather than lost with the process.
-    if (cloudwatch) {
-      cloudwatch.close();
-      await cloudwatch.flush();
-    }
     await errorReporter?.flush();
   },
 });

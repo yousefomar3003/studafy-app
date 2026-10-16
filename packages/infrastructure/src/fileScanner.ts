@@ -36,6 +36,8 @@ export interface FileScanInput {
 export interface FileScanResult {
   verdict: ScanVerdict;
   errorCode?: ScanErrorCode;
+  /** Which structural rule refused the file; for logs, never shown. */
+  detail?: string;
   scanPolicyVersion: string;
   durationMs: number;
   transformPolicyVersion: string | null;
@@ -59,6 +61,7 @@ export class LocalDeterministicScanner implements FileScanner {
       return {
         verdict: analysis.verdict,
         errorCode: analysis.errorCode,
+        ...(analysis.detail ? { detail: analysis.detail } : {}),
         scanPolicyVersion: SCAN_POLICY_VERSION,
         durationMs,
         transformPolicyVersion: null,

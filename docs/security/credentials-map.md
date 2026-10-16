@@ -19,9 +19,11 @@ afterwards (`docs/deployment/fly-io.md`).
 | Place | Holds | Committed? |
 |---|---|---|
 | Fly secrets (`studafy-api-test`, `studafy-worker-test`; production `studafy-api`, `studafy-worker`) | API and worker runtime secrets | Never |
+| Fly secrets (`studafy-scanner-test`; production `studafy-scanner`) | The scanner's bearer key | Never |
 | Fly secrets (`studafy-log-shipper`) | Axiom ingest and Fly read tokens | Never |
 | Cloudflare Worker secrets (`studafy-alert-relay`) | Alert relay webhook secret, Telegram, Resend | Never |
-| GitHub Actions environment `backups` (usable from `main` only) | Backup database login, storage key | Never |
+| GitHub Actions environment `backups` (usable from `main` only) | Backup database login, storage key, off-site bucket key | Never |
+| Cloudflare R2 bucket `studafy-backups` (EU jurisdiction) | The encrypted daily backups, 30 days (lifecycle rule) | Never |
 | `~/studafy-backup.key` + the owner's Apple Passwords | The **private** key that decrypts backups | Never; an offline USB copy is still to do |
 | `.env.hosted` (repo root, ignored, owner-only) | Hosted test credentials for `bun run dev:hosted` on the Mac | No |
 | `.env` (repo root, ignored) | Local API and worker: local database, Redis, local keys | No |
@@ -50,21 +52,23 @@ afterwards (`docs/deployment/fly-io.md`).
 | Secret | What | Notes |
 |---|---|---|
 | `DATABASE_URL`, `DATABASE_CA_CERT`, `REDIS_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SENTRY_DSN` | As the API, with `studafy_worker_runtime` | |
-| `MALWARE_SCANNER_URL`, `MALWARE_SCANNER_API_KEY` | File scanning by the self-hosted ClamAV scanner (below) | Test: `http://studafy-scanner-test.internal:8080/scan`, reachable only over Fly's private network; the key is the scanner's `SCANNER_API_KEY`. A production worker refuses to start without them, and production needs its own scanner app, `studafy-scanner` |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (+ `QUEUE_ALERTS_ENABLED=true`) | Background-work alerts (launch plan 4.7, PR #38) | The alert relay's bot can be reused. Off until set; test with `bun run alerts:test` |
+| `MALWARE_SCANNER_API_KEY` (+ `MALWARE_SCANNER_URL`) | File scanning by the self-hosted ClamAV scanner (below) | The key is the scanner's `SCANNER_API_KEY`. The URL is reachable only over Fly's private network: test `http://studafy-scanner-test.internal:8080/scan` (a secret there); production `http://studafy-scanner.internal:8080/scan`, set in `fly.worker.toml`, not a secret. A production worker refuses to start without both |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (+ `QUEUE_ALERTS_ENABLED=true`) | Background-work alerts (launch plan 4.7, PR #38) | The alert relay's bot can be reused. Off on the test copy until set; `fly.worker.toml` turns them on, so the production worker needs both |
 | `AI_API_KEY` | Reading scanned teacher files (with `AI_MATERIAL_INDEX_ENABLED`) | Same provider and conditions as the API |
 
-### Malware scanner (`fly.scanner.test.toml`)
+### Malware scanner (`fly.scanner.test.toml` / `fly.scanner.toml`)
 
-Self-hosted ClamAV (`infra/scanner/`, PR #50): `studafy-scanner-test` runs on
-Fly's private network only and has no IP addresses.
+Self-hosted ClamAV (`infra/scanner/`, PR #50): `studafy-scanner-test` and,
+in production, `studafy-scanner` run on Fly's private network only and have
+no IP addresses. Each has its own key.
 
 | Secret | What | Notes |
 |---|---|---|
 | `SCANNER_API_KEY` | The bearer key `POST /scan` requires | `openssl rand -hex 32`, at least 32 characters or the scanner refuses to start. The same value is the worker's `MALWARE_SCANNER_API_KEY`; rotate both together (`fly secrets import --stage` on each, deploy the scanner, then `fly secrets deploy` the worker) |
 
-Production gets its own app, `studafy-scanner`, with the same configuration
-and its own key, before launch.
+Production's app, `studafy-scanner` (`fly.scanner.toml`), is configured but
+not yet created; the order is in `docs/deployment/fly-io.md`, "Production
+deploy checklist".
 
 ### Logs, alerts, backups, legal site
 
@@ -74,6 +78,8 @@ and its own key, before launch.
 | `RELAY_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `RESEND_API_KEY`, `ALERT_EMAIL_TO` | Cloudflare Worker secrets, `studafy-alert-relay` | Sentry and Axiom webhooks and the uptime check, to Telegram and email (`ops/alert-relay`) |
 | Webhook URLs (`ALERT_WEBHOOK_SENTRY_URL`, `ALERT_WEBHOOK_AXIOM_URL`) | `.env.hosted` | They contain `RELAY_SECRET` |
 | `BACKUP_DATABASE_URL` (secret), `BACKUP_AGE_RECIPIENTS` (variable), `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (with `BACKUP_INCLUDE_STORAGE`) | GitHub environment `backups` | Daily encrypted backup with files (`docs/deployment/backups.md`) |
+| `BACKUP_OFFSITE_ENDPOINT`, `BACKUP_OFFSITE_BUCKET`, `BACKUP_OFFSITE_ACCESS_KEY_ID`, `BACKUP_OFFSITE_SECRET_ACCESS_KEY`, `BACKUP_OFFSITE_REGION` (all secrets) | GitHub environment `backups` | The off-site bucket the encrypted backup goes to: an R2 **Account API token** with Object Read & Write on `studafy-backups` only. **To obtain** (owner): until all five are set, backups fall back to a 7-day public-repository artifact. Rotate yearly |
+| `BACKUP_S3_BUCKET`, `BACKUP_AWS_ROLE_ARN`, `BACKUP_AWS_REGION` (variables, optional) | GitHub environment `backups` | An extra AWS copy through OIDC, no stored keys. The region is required and must be `eu-*` |
 | Cloudflare login (`npx wrangler login`) | The owner's machine | Deploys the alert relay, and the legal site once PR #37 is merged and approved (`docs/deployment/legal-site.md`) |
 | Sentry auth token | `sentry.properties` | Debug-symbol upload for release builds (not yet wired into CI) |
 
@@ -108,7 +114,7 @@ configuration.
 |---|---|
 | Runtime role passwords (`studafy_api_runtime`, `studafy_worker_runtime`) | Owner (SQL in `docs/deployment/fly-io.md`); production refuses `postgres` |
 | A `rediss://` Redis | Owner; production refuses plaintext Redis |
-| Production malware scanner: the `studafy-scanner` app (same configuration as `studafy-scanner-test`) and its own key | Before launch; a production worker refuses to start without one |
+| Production malware scanner: create `studafy-scanner` from `fly.scanner.toml` and give it its own key | Before the production worker (launch plan C11); a production worker refuses to start without one |
 | Apple: Sign in with Apple, APNs key, App Store Connect API key (`.p8`, downloads once), store billing (`APPLE_*`) | The Apple Developer account (stage 5) |
 | Google Play: upload keystore, Play service account (`GOOGLE_SERVICE_ACCOUNT_JSON`), Pub/Sub (`GOOGLE_PUBSUB_*`) | The app ID decision (Y5), then the Android track |
 | FCM server credentials (`FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON`) | Firebase project for push (`docs/deployment/push-notifications.md`) |

@@ -563,6 +563,7 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     id: string,
     owner: string,
     purpose: string,
+    scanState = "clean",
   ): Promise<string> {
     const membership = await scalar(
       sql`select id as result from public.memberships
@@ -579,7 +580,8 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
         ${"quarantine/v1/" + id + "/" + id.replace(/-/g, "") + "bbbbbb"},
         ${owner}::uuid, ${owner}::uuid, ${membership}::uuid,
         ${purpose}::public.file_purpose, 'note.pdf', 1024,
-        ${"b".repeat(64)}, 'application/pdf', 'clean', 'file-attach-v1',
+        ${"b".repeat(64)}, 'application/pdf',
+        ${scanState}::public.file_scan_state, 'file-attach-v1',
         now(), 'file051-test')`;
     return id;
   }
@@ -647,12 +649,40 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
     expect(await allowedFor(CHAT_FILE, GUARDIAN)).toBe("true");
   });
 
+  /**
+   * What a send or a post leaves behind besides its answer: messages,
+   * announcements, notifications, audit, the conversation's read and
+   * delivered marks, and completed idempotency records.
+   */
+  const sideEffects = async () =>
+    await scalar(
+      sql`select jsonb_build_object(
+            'messages', (select count(*) from public.messages
+              where conversation_id = ${conversationId}::uuid),
+            'announcements', (select count(*) from public.announcements
+              where school_id = ${SCHOOL}::uuid),
+            'notifications', (select count(*) from public.notification_outbox
+              where school_id = ${SCHOOL}::uuid),
+            'audit', (select count(*) from public.audit_events
+              where school_id = ${SCHOOL}::uuid),
+            'conversation', (select to_jsonb(c) from public.conversations c
+              where c.id = ${conversationId}::uuid),
+            'participants', (select jsonb_agg(to_jsonb(cp) order by cp.user_id)
+              from public.conversation_participants cp
+              where cp.conversation_id = ${conversationId}::uuid),
+            'completed', (select count(*) from public.idempotency_records r
+              where r.status = 'completed'
+                and r.actor_id in (${TEACHER}::uuid, ${ADMIN}::uuid))
+          ) as result`,
+    );
+
   test("a message attachment cannot be somebody else's upload", async () => {
     // Owned by the student, not the teacher who tries to send it. A guardian
     // cannot be used here: file_objects.owner_membership_id is required by
     // file050_file_metadata_check and a guardian holds no memberships row, so
     // a guardian cannot own an upload at all today. See the note below.
     await seedFile(FOREIGN_FILE, STUDENT_USER, "message_attachment");
+    const before = await sideEffects();
     const res = await request(`/v1/conversations/${conversationId}/messages`, {
       method: "POST",
       subject: TEACHER,
@@ -664,6 +694,78 @@ suite("API-042 S4 communications over the real /v1 stack", () => {
       },
     });
     expect(res.status).toBe(403);
+    const problem = await res.json() as Record<string, unknown>;
+    expect(problem["code"]).toBe("FORBIDDEN");
+    expect(problem["errors"]).toBeUndefined();
+    // Nothing was kept (202610150021): no message, no notification, no
+    // change to the conversation, and no completed request to replay.
+    expect(await sideEffects()).toEqual(before);
+  });
+
+  test("an announcement with somebody else's upload is refused and not posted", async () => {
+    const FOREIGN_ANNOUNCE = "5f450000-0000-4000-8000-0000000000f6";
+    await seedFile(FOREIGN_ANNOUNCE, TEACHER, "announcement_attachment");
+    const before = await sideEffects();
+    const res = await request(`/v1/announcements`, {
+      method: "POST",
+      subject: ADMIN,
+      key: attachKey(5),
+      body: {
+        schoolId: SCHOOL,
+        title: "Not my file",
+        body: "Details attached.",
+        attachmentFileIds: [FOREIGN_ANNOUNCE],
+      },
+    });
+    expect(res.status).toBe(403);
+    expect((await res.json() as Record<string, unknown>)["errors"])
+      .toBeUndefined();
+    expect(await sideEffects()).toEqual(before);
+  });
+
+  test("a message with a file the scan refused is refused by name, and not sent", async () => {
+    const REFUSED = "5f450000-0000-4000-8000-0000000000f5";
+    await seedFile(REFUSED, TEACHER, "message_attachment", "rejected");
+    const messages = async () =>
+      await scalar(
+        sql`select count(*)::int as result from public.messages
+            where conversation_id = ${conversationId}::uuid`,
+      );
+    const before = await messages();
+    const res = await request(`/v1/conversations/${conversationId}/messages`, {
+      method: "POST",
+      subject: TEACHER,
+      key: attachKey(4),
+      body: {
+        clientMessageId: "5f450000-0000-4000-8000-0000000000db",
+        body: "Refused scan attached.",
+        attachmentFileIds: [REFUSED],
+      },
+    });
+    expect(res.status).toBe(422);
+    const problem = await res.json() as Record<string, unknown>;
+    expect(problem["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(problem["errors"]).toEqual([
+      { path: "attachmentFileIds.0", code: "file_refused" },
+    ]);
+    // Nothing was sent without it.
+    expect(await messages()).toBe(before);
+  });
+
+  test("a file refused after it was sent stays on the message, as refused", async () => {
+    await sql`update public.file_objects set scan_state = 'rejected',
+      scan_error_code = 'malformed_file' where id = ${CHAT_FILE}::uuid`;
+    const res = await request(
+      `/v1/conversations/${conversationId}/messages?pageSize=30`,
+      { subject: GUARDIAN },
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json() as {
+      items: { attachments: { id: string; scanState: string }[] }[];
+    };
+    const attachment = body.items.flatMap((m) => m.attachments)
+      .find((a) => a.id === CHAT_FILE);
+    expect(attachment?.scanState).toBe("rejected");
   });
 
   test("an announcement carries its attachment to the school", async () => {

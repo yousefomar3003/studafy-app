@@ -11,6 +11,7 @@ import {
 import { createRedactingLogger } from "../../src/platform/logging";
 import { validateRouteInput } from "../../src/platform/validation";
 import { problem } from "../../src/platform/errors";
+import { outcomeProblem, rowErrors } from "../../src/platform/outcomes";
 
 function harness() {
   const collector = new LogCollector();
@@ -80,5 +81,50 @@ describe("a refused request says why in the access log", () => {
     app.get("/v1/ok", (c) => c.json({ ok: true }));
     await app.request("/v1/ok");
     expect(accessLine(collector)["problem_code"]).toBeUndefined();
+  });
+});
+
+describe("a refused attachment says which one in the answer and the log", () => {
+  test("the SQL rows become problem errors and invalid_fields", async () => {
+    const { app, collector } = harness();
+    app.post(
+      "/v1/resources",
+      (c) =>
+        outcomeProblem(c, "attachment_refused", {}, undefined, [
+          { path: "attachmentFileIds.1", reason: "file_refused" },
+          { path: "questions.0.links.2", reason: "link_not_allowed" },
+        ]),
+    );
+    const response = await app.request("/v1/resources", { method: "POST" });
+    expect(response.status).toBe(422);
+    const body = await response.json() as Record<string, unknown>;
+    expect(body["code"]).toBe("ATTACHMENT_REFUSED");
+    expect(body["errors"]).toEqual([
+      { path: "attachmentFileIds.1", code: "file_refused" },
+      { path: "questions.0.links.2", code: "link_not_allowed" },
+    ]);
+    const line = accessLine(collector);
+    expect(line["problem_code"]).toBe("ATTACHMENT_REFUSED");
+    expect(line["invalid_fields"]).toEqual([
+      "attachmentFileIds.1:file_refused",
+      "questions.0.links.2:link_not_allowed",
+    ]);
+  });
+
+  test("a row that is not a request path or a fixed reason is dropped", () => {
+    expect(rowErrors([
+      { path: "attachmentFileIds.0", reason: "file_not_found" },
+      { path: "https://evil.example.org/", reason: "link_not_allowed" },
+      { path: "links.0", reason: "Some Free Text" },
+      { path: "a.b.c.d.e.f.g", reason: "too_many" },
+      { path: 3, reason: "duplicate" },
+    ])).toEqual([{ path: "attachmentFileIds.0", code: "file_not_found" }]);
+  });
+
+  test("grade rows are still named by id", () => {
+    const id = "5f470000-0000-4000-8000-0000000000e1";
+    expect(rowErrors([{ studentId: id, reason: "not_enrolled" }])).toEqual([
+      { path: `students/${id}`, code: "not_enrolled" },
+    ]);
   });
 });

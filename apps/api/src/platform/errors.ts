@@ -215,6 +215,21 @@ const DEFINITIONS: Record<
     title: "Not available",
     detail: "This feature is not available yet.",
   },
+  AI_STUDENTS_ONLY: {
+    title: "For students in a class",
+    detail:
+      "The AI study tools are for students who are in a class. Parent and teacher accounts cannot use them.",
+  },
+  AI_CONSENT_REQUIRED: {
+    title: "AI consent required",
+    detail:
+      "Read and agree to the AI study tools notice before using them. They can be turned off at any time.",
+  },
+  AI_GUARDIAN_CONSENT_REQUIRED: {
+    title: "A parent's consent is required",
+    detail:
+      "The parent who manages this account turns the AI study tools on for it, from their own account.",
+  },
   PHOTO_NOT_READY: {
     title: "Photo still being checked",
     detail: "The photo is still being checked. Try again in a moment.",
@@ -263,6 +278,11 @@ const DEFINITIONS: Record<
   SUBMISSION_LOCKED: {
     title: "Work already marked",
     detail: "This work has a published mark and cannot be replaced.",
+  },
+  ATTACHMENT_REFUSED: {
+    title: "An attachment was refused",
+    detail:
+      "Nothing was saved. The errors list which files or links to remove and why.",
   },
 };
 
