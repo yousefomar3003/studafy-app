@@ -22,13 +22,20 @@
 >   share of database time through the API from about 13% to 8% (with the
 >   per-row builder it no longer calls, about 21% to 10%). End-to-end
 >   throughput moved within the noise of a shared machine.
+> - **[2026-10-16, notebooks](../capacity/2026-10-16-notebooks.md)**: study
+>   notebooks written by the worker, off a queue, not inside the API.
+> - **[2026-10-17](../capacity/2026-10-17.md)**, `study_lesson` (the lesson
+>   the AI study tools and notebooks read) deciding access once per call:
+>   about 15–25 times cheaper per call in the database (3.2–3.5 ms to
+>   0.12–0.21 ms), 3–5 times under load, and from about 4% of database time
+>   through the API to under 1%. End-to-end throughput could not resolve it
+>   on a heavily loaded shared machine.
 > - Every fix was proven to give the same answers as the code it replaced
 >   (`scripts/scale/proof/`).
 >
-> Next, in order: notebook writing on the worker queue, `study_lesson` (the
-> lesson read behind the AI tools) deciding access once, the homework list,
-> then sizing the production database and measuring a staging project of
-> that size.
+> Next, in order: the homework list, then sizing the production database
+> and measuring a staging project of that size (on a quiet machine or a
+> dedicated runner).
 >
 > The figures below are the 2026-09-29 database-only measurement, kept for
 > the history of the fixes. The per-vCPU table is superseded by the reports
