@@ -71,6 +71,11 @@ so a config that breaks one fails there, not on deploy. Nothing here has been
 run. Each numbered step is one approval: Claude shows the exact commands, the
 owner says "go", Claude runs them and shows the result.
 
+On launch day the steps below run through `scripts/production/cutover.ts`
+(dry run by default), in the order and with the owner's inputs set out in
+**`docs/deployment/production-cutover.md`**, which also covers stopping the
+test copy and removing the test schools from the shared database (DL-064).
+
 **What each config already sets (no action):**
 
 | Rule | Where |
@@ -104,8 +109,16 @@ after import; values never go in chat.
 | App | Required before its deploy | Only with a later decision |
 |---|---|---|
 | `studafy-scanner` | `SCANNER_API_KEY` (`openssl rand -hex 32`, at least 32 characters) | — |
-| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT` (recommended), `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | `AI_API_KEY` (C17); `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON` with `NOTIFICATION_CHANNELS_ENABLED` (C3, C5); billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15); `GOOGLE_CALENDAR_*` with `MEETINGS_PROCESSOR_ENABLED` (B8) |
-| `studafy-api` | `DATABASE_URL` (as `studafy_api_runtime.<ref>`), `DATABASE_CA_CERT` (recommended), `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` (four different `openssl rand -hex 32` keys), `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `SENTRY_DSN` | `AI_API_KEY`, `AI_BASE_URL` (C17: the study helper runs whenever `AI_API_KEY` is set, so never before the DPA and DPIA); billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15) |
+| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `AI_API_KEY` | `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON` with `NOTIFICATION_CHANNELS_ENABLED` (C3, C5); billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15); `GOOGLE_CALENDAR_*` with `MEETINGS_PROCESSOR_ENABLED` (B8, off at launch: DL-065) |
+| `studafy-api` | `DATABASE_URL` (as `studafy_api_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` (four different `openssl rand -hex 32` keys), `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `SENTRY_DSN`, `AI_API_KEY` | billing `PAY071_*`, `APPLE_*`, `GOOGLE_*` (C6, C15) |
+
+`AI_API_KEY` is required in both: the AI study tools are on from launch
+(DL-062, which replaced the earlier "not before the DPA and DPIA" rule), and
+`AI_BASE_URL` and `AI_MODEL` are configuration in the Fly configs, never
+secrets. `DATABASE_CA_CERT` (the Supabase root CA, PEM) is required too: a
+production API or worker refuses to start without it, or with a
+`DATABASE_URL` that sets `sslmode` itself (go-live audit, 2026-10-16).
+`scripts/production/cutover.test.ts` pins these lists.
 
 Never set `MALWARE_SCANNER_URL` as a secret: it is in `fly.worker.toml`.
 
@@ -203,7 +216,7 @@ Keep the file outside the repository and delete it afterwards.
 
 ```
 DATABASE_URL=...            # Frankfurt project, pooler, as studafy_api_runtime (below)
-DATABASE_CA_CERT=...        # optional: Supabase root CA PEM, verifies the server
+DATABASE_CA_CERT=...        # required: Supabase root CA PEM, verifies the server
 REDIS_URL=rediss://...
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -213,8 +226,7 @@ CLASS_JOIN_CODE_KEY=...
 FILE051_DELIVERY_SIGNING_KEY=...
 TURNSTILE_SITE_KEY=...
 TURNSTILE_SECRET=...
-AI_API_KEY=...
-AI_BASE_URL=https://api.together.xyz
+AI_API_KEY=...              # DL-062: AI on from launch (AI_BASE_URL is in fly.api.toml)
 SENTRY_DSN=...              # studafy-backend
 ```
 
@@ -234,13 +246,15 @@ alter role studafy_worker_runtime login password '<generated>';
 
 On the pooler their user names are `studafy_api_runtime.<project ref>` and
 `studafy_worker_runtime.<project ref>`. Every non-local connection is
-encrypted; set `DATABASE_CA_CERT` (Dashboard → Database → SSL) to verify the
-certificate too, and turn on "Enforce SSL" there.
+encrypted, and production also verifies the certificate: `DATABASE_CA_CERT`
+(Dashboard → Database → SSL) is required, and the URL must not carry
+`sslmode`. Turn on "Enforce SSL" there.
 
-**Worker**, the same way, with `DATABASE_URL` (as `studafy_worker_runtime`), `REDIS_URL`, `SUPABASE_URL`,
+**Worker**, the same way, with `DATABASE_URL` (as `studafy_worker_runtime`),
+`DATABASE_CA_CERT`, `REDIS_URL`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY`, `SENTRY_DSN`,
-`TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (`MALWARE_SCANNER_URL` is in
-`fly.worker.toml`):
+`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `AI_API_KEY`
+(`MALWARE_SCANNER_URL` is in `fly.worker.toml`):
 
 ```sh
 fly secrets import --config fly.worker.toml < ~/studafy-worker.secrets
@@ -252,10 +266,9 @@ scanner is self-hosted ClamAV (see "Malware scanner" above); production's is
 `studafy-scanner`, deployed first (see the checklist above).
 
 **Study notebooks are written by the worker** (2026-10-16), not the API.
-When the lesson AI is switched on at launch, switch it on in both places:
-the worker needs `AI_API_KEY` (secret), and `AI_BASE_URL` and
-`AI_LESSON_TOOLS_ENABLED=true` in `fly.worker.toml`, exactly as the API
-has them. With the API on and the worker off, notebooks are accepted and
+The lesson AI is on from launch (DL-062) in both places: `fly.worker.toml`
+and `fly.api.toml` set `AI_BASE_URL` and `AI_LESSON_TOOLS_ENABLED=true`, and
+both apps need the `AI_API_KEY` secret. With the API on and the worker off, notebooks are accepted and
 then wait, unwritten, until they read as failed (with a retry) after ten
 minutes; the worker logs `study-notebooks` in its startup `queues` list when
 it writes them. `AI_NOTEBOOK_CONCURRENCY` (16) is how many are written at

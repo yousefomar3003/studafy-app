@@ -48,6 +48,10 @@ async function flyEnv(file: string): Promise<Record<string, string>> {
 const secrets = {
   DATABASE_URL:
     "postgresql://studafy_api_runtime.synthetic:synthetic@aws-0-eu-central-1.pooler.supabase.com:5432/postgres",
+  // The Supabase root CA; production refuses to start without it, so the
+  // database certificate is verified, not only encrypted (go-live audit).
+  DATABASE_CA_CERT:
+    "-----BEGIN CERTIFICATE-----\nc3ludGhldGljLWNh\n-----END CERTIFICATE-----",
   REDIS_URL: "rediss://default:synthetic@redis.synthetic.example:6380",
   SUPABASE_URL: "https://synthetic.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-role-key-000000000000",
@@ -142,6 +146,20 @@ describe("Fly configs pass production validation", () => {
         }),
       )
     ).toThrow(/TLS/);
+  });
+
+  test("production refuses a database whose certificate is not verified", async () => {
+    const api = await flyEnv("fly.api.toml");
+    const worker = await flyEnv("fly.worker.toml");
+    const { DATABASE_CA_CERT: _ca, ...withoutCa } = secrets;
+    expect(() =>
+      enforceApiFailClosed(parseEnv(apiEnvSchema, { ...api, ...withoutCa }))
+    ).toThrow(/DATABASE_CA_CERT/);
+    expect(() =>
+      enforceWorkerFailClosed(
+        parseEnv(workerEnvSchema, { ...worker, ...withoutCa }),
+      )
+    ).toThrow(/DATABASE_CA_CERT/);
   });
 
   test("production refuses a privileged database login", async () => {
