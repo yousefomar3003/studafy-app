@@ -119,13 +119,18 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # SEC-001 intentionally permits only a synthetic debug artifact. One
-      # architecture is enough to prove the app builds; arm64 is what phones
-      # run.
+      # One architecture is enough to prove the app builds; arm64 is what
+      # phones run.
       - name: Verify synthetic debug build
         run: >-
           flutter build apk --debug --target-platform android-arm64
           --dart-define=APP_ENV=synthetic
+
+      # SEC-001, narrowed by ADR-0042: a release build is allowed only for
+      # the development test copy, signed with an upload key CI never holds.
+      # Each case is refused at Gradle's task graph, before compilation.
+      - name: Verify the Android release guard
+        run: .github/scripts/check-android-release-guard.sh
 
   edge-functions:
     name: Edge Function quality
