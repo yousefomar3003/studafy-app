@@ -140,6 +140,26 @@ cross join lateral jsonb_array_elements(b.out) pg
 cross join lateral jsonb_array_elements(case when jsonb_typeof(pg->'items') = 'array' then pg->'items' else '[]' end) i
 where c.op = 'listResources';
 
+-- What the grade rows compared actually contained.
+select count(*) as grade_rows,
+  count(*) filter (where i->>'state' <> 'published') as not_published,
+  count(*) filter (where jsonb_array_length(i->'attachments') > 0) as with_files,
+  count(*) filter (where jsonb_array_length(i->'attachments') > 1) as with_several_files,
+  count(*) filter (where jsonb_array_length(i->'links') > 0) as with_links,
+  count(*) filter (where jsonb_array_length(i->'sharedAttachments') > 0) as with_shared_files,
+  count(*) filter (where jsonb_array_length(i->'sharedLinks') > 0) as with_shared_links,
+  count(*) filter (where i->>'state' <> 'published' and jsonb_array_length(i->'attachments')
+    + jsonb_array_length(i->'links') + jsonb_array_length(i->'sharedAttachments')
+    + jsonb_array_length(i->'sharedLinks') > 0) as not_published_with_files_shown,
+  count(*) filter (where i->>'mark' in ('absent', 'not_graded')) as marked_absent_or_not_graded,
+  count(*) filter (where i->>'mark' is null) as without_mark,
+  count(*) filter (where i->>'weight' is not null) as weighted,
+  count(*) filter (where c.school is null) as on_guardian_path
+from cases c join before_out b using (n)
+cross join lateral jsonb_array_elements(b.out) pg
+cross join lateral jsonb_array_elements(case when jsonb_typeof(pg->'items') = 'array' then pg->'items' else '[]' end) i
+where c.op = 'listGradeResults';
+
 select c.op, c.school is null as tenantless, count(*) as cases,
   count(*) filter (where b.out is distinct from a.out) as differences
 from cases c join before_out b using (n) join after_out a using (n)
