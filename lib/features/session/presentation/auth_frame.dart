@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/studafy_design.dart';
 
-/// The frame of every screen before the app proper: the ocean backdrop, an
+/// The frame of every screen before the app proper: the navy backdrop, an
 /// optional white logo above, and the content on one white card.
 class AuthFrame extends StatelessWidget {
   const AuthFrame({super.key, required this.child, this.header, this.footer});
@@ -21,48 +21,42 @@ class AuthFrame extends StatelessWidget {
     // Light clock and battery icons over the dark backdrop.
     value: SystemUiOverlayStyle.light,
     child: Scaffold(
-      backgroundColor: studafyAbyss,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: studafyOceanGradient),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 460),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (header != null) ...[
-                      Center(child: header),
-                      const SizedBox(height: 24),
-                    ],
-                    Container(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        22,
-                        28,
-                        22,
-                        24,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F9FB),
-                        borderRadius: BorderRadius.circular(36),
-                        boxShadow: [
-                          BoxShadow(
-                            color: studafyAbyss.withValues(alpha: .35),
-                            blurRadius: 40,
-                            offset: const Offset(0, 18),
-                          ),
-                        ],
-                      ),
-                      child: child,
-                    ),
-                    if (footer != null) ...[
-                      const SizedBox(height: 16),
-                      footer!,
-                    ],
+      backgroundColor: studafyBackdrop,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (header != null) ...[
+                    Center(child: header),
+                    const SizedBox(height: 24),
                   ],
-                ),
+                  Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      22,
+                      28,
+                      22,
+                      24,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F9FB),
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: [
+                        BoxShadow(
+                          color: studafyAbyss.withValues(alpha: .35),
+                          blurRadius: 40,
+                          offset: const Offset(0, 18),
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  ),
+                  if (footer != null) ...[const SizedBox(height: 16), footer!],
+                ],
               ),
             ),
           ),
@@ -72,7 +66,7 @@ class AuthFrame extends StatelessWidget {
   );
 }
 
-/// The one strong action on an ocean screen: a deep-to-teal pill.
+/// The one strong action on a navy screen: a navy-to-indigo pill.
 ///
 /// Still a [FilledButton], so it keeps the platform's focus, semantics and
 /// disabled behaviour; the gradient is painted underneath it.
@@ -140,7 +134,7 @@ class AuthPrimaryButton extends StatelessWidget {
   }
 }
 
-/// The soft, slightly raised surface of choices on an ocean screen: role
+/// The soft, slightly raised surface of choices on a navy screen: role
 /// tiles and sign-in buttons.
 BoxDecoration softSurface({bool selected = false}) => BoxDecoration(
   gradient: LinearGradient(

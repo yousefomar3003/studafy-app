@@ -38,21 +38,18 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext c) => const AnnotatedRegion<SystemUiOverlayStyle>(
     value: SystemUiOverlayStyle.light,
     child: Scaffold(
-      backgroundColor: studafyAbyss,
-      body: DecoratedBox(
-        decoration: BoxDecoration(gradient: studafyOceanGradient),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              StudafyLogo(size: 64, onDark: true),
-              SizedBox(height: 18),
-              Text(
-                'School life, connected.',
-                style: TextStyle(color: studafyFrost, fontSize: 16),
-              ),
-            ],
-          ),
+      backgroundColor: studafyBackdrop,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StudafyLogo(size: 64, onDark: true),
+            SizedBox(height: 18),
+            Text(
+              'School life, connected.',
+              style: TextStyle(color: studafyFrost, fontSize: 16),
+            ),
+          ],
         ),
       ),
     ),

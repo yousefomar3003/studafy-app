@@ -109,11 +109,8 @@ class _RolePageState extends State<RolePage> {
       // The splash's mark stays up while the device settings are read and a
       // signed-in session is resumed, so launch reads as one screen.
       return const Scaffold(
-        backgroundColor: studafyAbyss,
-        body: DecoratedBox(
-          decoration: BoxDecoration(gradient: studafyOceanGradient),
-          child: Center(child: StudafyLogo(size: 64, onDark: true)),
-        ),
+        backgroundColor: studafyBackdrop,
+        body: Center(child: StudafyLogo(size: 64, onDark: true)),
       );
     }
     if (showIntro) return IntroSlides(onDone: _finishIntro);

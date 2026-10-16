@@ -1000,7 +1000,7 @@ class _FlipCard extends StatelessWidget {
                   gradient: backSide
                       ? null
                       : const LinearGradient(
-                          colors: [studafyNavy, studafyTeal],
+                          colors: [studafyNavy, studafyIndigo],
                           begin: AlignmentDirectional.topStart,
                           end: AlignmentDirectional.bottomEnd,
                         ),
