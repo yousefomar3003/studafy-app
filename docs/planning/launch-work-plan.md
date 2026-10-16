@@ -196,6 +196,7 @@ the privacy policy URL (Claude can host a page first). Claude drafts the
   when it recurs
   - The server now logs which field was refused (`problem_code`,
     `invalid_fields`).
+  - *Progress 2026-10-16:* the fix (#63) and the same for hand-ins and messages (#74) are merged and on the test copy. Tick when a lesson saved on the phone with a refused file names that file.
   - *Progress 2026-10-15:* recurred on the test copy: four `POST /v1/resources` refusals (400 `INVALID_REQUEST`, no `invalid_fields`) from one teacher, 12:58–13:11 UTC, while the scanner was wrongly refusing their PDFs (fixed by PR #55); the same teacher published at 13:33 after the fix. Cause (from the code; hosted data not inspected): a lesson that includes a file the scanner already refused is refused by `coursework_attach_files` with a bare `invalid`, and the app showed "could not be added". Fix in PR #63: `ATTACHMENT_REFUSED` (422) names each refused file or link, the log records it, and the editor marks the file. Tick after #63 is merged and on the test copy.
   - **Done when:** the cause is found and fixed, or a week of use shows no
     recurrence.
@@ -233,7 +234,7 @@ iOS.
   *Claude* checks · 30 min
   - Add the release (Play App Signing) SHA-1 to the Android OAuth client.
   - **Done when:** sign-in works in the internal-testing build.
-- [ ] **3.5 Lift the Android release block for internal testing only** (PR-01)
+- [x] **3.5 Lift the Android release block for internal testing only** (PR-01) — done 2026-10-16: PR #61 merged (ADR-0042, DL-059); before merging, `flutter build appbundle --release` with `APP_ENV=development` and a throwaway upload key built a 72.7 MB bundle signed with that key (not the debug key), `aapt dump permissions` listed INTERNET (3.2), and `flutter build ios --release` was still refused; CI checks the refusal cases (`.github/scripts/check-android-release-guard.sh`)
   · *Claude*, approved by *You* · 0.5 day
   - A reviewed change that allows an Android release bundle while
     production mode stays off. Internal testers use the test copy
@@ -304,6 +305,7 @@ iOS.
   - **Done when:** both start in production mode (the config check refuses
     any gap).
 - [ ] **4.6 Backups for production** (PR-17) · *You* (plan or AWS),
+  - *Progress 2026-10-16:* off-site storage is set up and used by the daily backup: Cloudflare R2 bucket `studafy-backups` (EU jurisdiction, 30-day lifecycle rule), secrets in the `backups` environment (#69). Run 38896690730 uploaded and verified the encrypted backup by sha256 read-back; no backup artifact is kept any more. Still to do: point it at the production database, a second offline copy of the key, a timed restore drill.
   *Claude* · 0.5 day
   - The daily backup pointed at production; an off-site S3 copy or
     point-in-time recovery; a second offline copy of the backup key (USB).
@@ -371,6 +373,7 @@ iOS.
     basis.
 - [ ] **6.2 DPIA covering children's data and AI** (PR-07) · *You*, Claude
   can draft
+  - *Progress 2026-10-16:* Claude's draft is `docs/legal/dpia-draft.md` (#57). The code side of its policy disagreements D1–D4, D6, D7, D12 and D13 is fixed (#58, #71, #72, #76). The open questions for the lawyers are in `docs/legal/questions-for-counsel-2026-10.md`.
 - [ ] **6.3 ADR superseding ADR-0026, then turn AI on in production** ·
   *Claude* · 1 day
   - **Done when:** the privacy policy's "OUTSTANDING" box can be removed
@@ -425,3 +428,5 @@ iOS.
 | 2026-10-11 | 1.3 | PR #20 retitled and described for its 50+ commits; all 7 CI jobs green; merged by owner's instruction as `c3c1278`; `main` CI green |
 | 2026-10-15 | 2.8 | Recurred 12:58–13:11 UTC (4 × `POST /v1/resources` 400, no fields) while PDFs were wrongly refused; cause traced in code to a refused attachment; fix in PR #63 |
 | 2026-10-15 | 4.8, 5.5, 7.1, 7.2 | Ticked with the evidence on each item; owner parts moved to launch plan B2 and B12 |
+| 2026-10-16 | merge and deploy | PRs #52–#77 merged through #79, then #78, #80, #82; backup (restore check passed), 19 migrations on hosted, test API, worker and log shipper deployed. Log shipper's revoked token replaced (read-only org token). Backups now go to R2 (EU), verified |
+| 2026-10-16 | 3.5 | Ticked (#61) |

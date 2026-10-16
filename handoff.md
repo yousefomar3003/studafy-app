@@ -1,11 +1,106 @@
 # Handoff: Studafy
 
-Updated: 2026-10-15, evening. `main` is still at `4f18c85` (PR #51): nothing
-was merged or deployed today. **Open: PRs #52–#77, and one branch not yet
-pushed (section 1).** The test worker still runs
-#55's branch.
+Updated: 2026-10-16. `main` is at `c6c309f`. **Everything from PRs #52–#82
+is merged and on the test copy.** No PR is open apart from the three in
+progress below.
 
-## Start here (2026-10-15, evening)
+## Start here (2026-10-16)
+
+### What happened today
+- **Merged:** #52–#77 through the merge batch #79 (CI all green; conflicts
+  resolved there), then #78 (notebooks on the worker), #80 (store decisions,
+  questions for counsel) and #82 (test fix). The stacked PRs #62, #63, #65,
+  #74 and #77 show "closed": their commits reached `main` through #79.
+- **Test copy deployed from `main`:** backup with restore check, then 19
+  migrations (`202610140001` … `202610160001`; #47's and #48's had never been
+  applied), then `studafy-api-test` (`/readyz` ready), `studafy-worker-test`
+  (`REPORT_ALERTS_ENABLED=true` set as a Fly secret) and the log shipper.
+- **Log shipper repaired.** Its `ACCESS_TOKEN` was the org token revoked on
+  2026-10-14, so it could not reconnect after a restart (NATS "Authorization
+  Violation"). It now uses a read-only org token,
+  `studafy-log-shipper-readonly-2`; Vector started 11:19 UTC.
+- **Backups go to Cloudflare R2.** Bucket `studafy-backups`, EU
+  jurisdiction, lifecycle rule `delete-after-30-days` on `studafy/`; the
+  five `BACKUP_OFFSITE_*` secrets are in the `backups` environment. Run
+  38896690730 uploaded the encrypted backup and verified it by sha256
+  read-back; no backup artifact is kept any more (only a small manifest).
+  The R2 key is in `~/studafy-secrets/r2-backups.env`.
+- **Reviewer school on the test copy:** "Cedar Grove Review School"
+  (`c760d0d5-…`), three accounts at `review.studafy.com`; passwords only in
+  `~/studafy-secrets/reviewer-credentials.json`. Signing in with them through
+  the API worked, so the Supabase email settings are right.
+- **Redis Cloud check answered:** it refuses `CONFIG GET` for these
+  settings; the worker read `INFO` instead (`noeviction`, AOF on) and passed.
+  A production Redis Cloud database set up the same way will pass.
+
+### Owner: to do
+1. **Revoke the exposed Fly token** (it was pasted in chat):
+   `fly tokens revoke QnxexwKQqRD5KuwGnlkAqPnOXJCA4RBP0N162bahkA`
+   (the old `studafy-log-shipper-readonly`; keep `-2`).
+2. **Build the phone app from `main`.** The test copy now asks for policy
+   version `2026-10-14` and for AI consent; older builds cannot answer the
+   AI consent prompt. New: "Sign in with email" (reviewers), refusal
+   messages that name the file, Western digits in Arabic dates.
+3. **Old public backup artifacts:** encrypted backups from before
+   2026-10-16 are still downloadable from the public repo until they expire
+   (up to 30 days). Delete them, or let them expire (R2 holds only today's
+   backups so far).
+4. **Name two safety-report reviewers** (B9) in
+   `docs/security/safe043-operator-runbook.md`.
+5. **Production Redis:** a paid Redis Cloud plan, data persistence AOF every
+   1 s, eviction policy `noeviction`.
+6. **Seoul Supabase project:** "studafy" in ap-northeast-2 (created
+   2026-06-17) is still active. Keep or delete?
+7. **Lawyers:** send them `docs/legal/questions-for-counsel-2026-10.md`
+   and the DPIA draft; keep their answers out of the repo (it is public).
+8. **Store listings (B12):** paste from `docs/store/listing-copy.md` as
+   decided there, and the reviewer accounts as
+   `docs/store/reviewer-access.md` says.
+9. The rest of parts B and C of the launch plan (keystore C1, Firebase C3,
+   Resend C5, production decisions B1–B3…).
+
+### In progress at writing (check `gh pr list`)
+- `study_lesson` capacity (`feat/capacity-study-lesson`): the access check
+  as a set query, with the zero-difference proof.
+- Western digits in the Material date and time pickers
+  (`fix/arabic-picker-digits`).
+- Android screenshots for Play, 2:1 or less (`docs/play-screenshots`).
+
+### Next for Claude
+- Review and merge those three PRs; `study_lesson` needs a backup and its
+  migration on the test copy.
+- Tick 2.8 once a lesson saved on the phone with a refused file names it.
+- Look into `outbox_dispatch_record_lost` (outbox 25, 12:00 UTC on
+  2026-10-16, before the worker deploy): a dispatch the worker lost track of.
+- Follow-ups still open: accounts with neither school nor email are never
+  warned or deleted; retention periods for the items in the questions for
+  counsel; two-person operator grants need a second operator;
+  `GoogleService-Info.plist` must be added to the Runner target when it
+  arrives (C3).
+- Then part A/C of the launch plan as your decisions and accounts arrive.
+
+### Rules (unchanged, plus today's)
+- Test only on throwaway stacks. Never the local working database (54322,
+  container `supabase_db_studafy`) or its Auth (54321). The repo `.env`
+  points `DATABASE_URL` at it and Bun loads it; set `DATABASE_URL`, and for
+  the password-session suite `AUTH_INTEGRATION_SUPABASE_URL`, explicitly.
+- `scripts/rehearse-recovery.ts` now follows `DATABASE_URL` (#66), but
+  check any script that picks Docker containers by name before running it.
+- New migrations must sort after everything on `main`
+  (`bun run check:migrations`); rename before merging if `main` moved on.
+- Hosted: back up before any migration (`gh workflow run backup.yml`), dry
+  run, then apply; deploy the API, then the worker.
+- Hosted migrations: `.env.hosted`'s `DATABASE_URL` is the transaction
+  pooler (6543); `supabase db push` needs the session port (5432). Read it
+  with a parser that never prints it; never `source .env.hosted`.
+- Secrets never go in chat. Owner-created keys go in `~/studafy-secrets/`
+  and only the path is shared. Claude's tools are not allowed to write
+  secret stores (GitHub, Fly); the owner runs those commands.
+- Keep `ios/Runner.xcodeproj/project.pbxproj` (personal team) and
+  `ios/Runner/RunnerPersonalTeam.entitlements` uncommitted.
+- Ask before any `fly` command that changes something.
+
+## Earlier (2026-10-15, evening): the PRs that became the merge batch (all done 2026-10-16; kept for the record)
 
 Claude worked through every part-A item of the
 [launch plan](docs/planning/launch-plan-2026-10-15.md) that needed nothing

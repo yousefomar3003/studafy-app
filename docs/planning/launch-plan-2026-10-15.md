@@ -32,16 +32,16 @@ merge is yours to approve.
 
 | # | Task | Ends with | Status |
 |---|---|---|---|
-| A1 | After you merge #52–#55: back up, apply #53's migrations to the test database, redeploy the test worker from `main` and the log shipper | Your "go" for each Fly step | Waiting on the merges |
-| A2 | Tick the finished launch-plan items (capacity 4.8, privacy labels draft 5.5, tests 7.1, docs 7.2) | — | Can start now |
-| A3 | Allow an Android release build for internal testing only, production mode still off (3.5) | A PR for your approval | Can start now |
-| A4 | Store listing copy in English and Arabic (short and full description, "what's new"), and screenshots from the simulator for each role | Your review | Can start now |
-| A5 | A draft DPIA (children's data and AI) for you and the lawyers (6.2) | Your review | Can start now |
-| A6 | Production configs ready to deploy: `fly.scanner.toml` (a copy of the test scanner), and checks of `fly.api.toml` and `fly.worker.toml` against the production config rules (runtime roles, TLS Redis, executors on, `RETENTION_SCHEDULE_ENABLED` off) | A PR | Can start now |
-| A7 | Step-by-step guides for your parts: upload keystore (3.3), Play Console (3.6), Firebase (3.8, 5.4), Resend, sign-in providers on a new Supabase project, Apple (5.1–5.6) | A doc | Can start now |
-| A8 | Capacity, next round: the lessons and conversations lists a page at a time (about 26% of database time now), with the zero-difference proof | A PR | Can start now |
-| A9 | Watch for the lesson-save rejection (2.8) in the logs, and fix it if it recurs | — | Ongoing |
-| A10 | Optional: commit the synthetic school seed and run the exam and coursework device tests in CI | A PR | Can start now |
+| A1 | After you merge #52–#55: back up, apply #53's migrations to the test database, redeploy the test worker from `main` and the log shipper | Your "go" for each Fly step | **Done 2026-10-16**: #52–#78 merged; backup, 19 migrations, test API, worker and log shipper deployed |
+| A2 | Tick the finished launch-plan items (capacity 4.8, privacy labels draft 5.5, tests 7.1, docs 7.2) | — | **Done 2026-10-15** (4.8, 5.5, 7.1, 7.2 ticked) |
+| A3 | Allow an Android release build for internal testing only, production mode still off (3.5) | A PR for your approval | **Done**: #61 merged (ADR-0042); waits for your upload key (C1) |
+| A4 | Store listing copy in English and Arabic (short and full description, "what's new"), and screenshots from the simulator for each role | Your review | **Done**: copy and iPhone set (#64), decisions (#80); Android set in progress |
+| A5 | A draft DPIA (children's data and AI) for you and the lawyers (6.2) | Your review | **Done**: draft in `docs/legal/dpia-draft.md` (#57); questions for counsel in `docs/legal/questions-for-counsel-2026-10.md` |
+| A6 | Production configs ready to deploy: `fly.scanner.toml` (a copy of the test scanner), and checks of `fly.api.toml` and `fly.worker.toml` against the production config rules (runtime roles, TLS Redis, executors on, `RETENTION_SCHEDULE_ENABLED` off) | A PR | **Done**: #56 |
+| A7 | Step-by-step guides for your parts: upload keystore (3.3), Play Console (3.6), Firebase (3.8, 5.4), Resend, sign-in providers on a new Supabase project, Apple (5.1–5.6) | A doc | **Done**: `docs/guides/owner/` (#59) |
+| A8 | Capacity, next round: the lessons and conversations lists a page at a time (about 26% of database time now), with the zero-difference proof | A PR | **Done**: fixes 4–6 (#65, #77) and notebooks on the worker (#78); `study_lesson` in progress |
+| A9 | Watch for the lesson-save rejection (2.8) in the logs, and fix it if it recurs | — | **Fixed**: recurred 2026-10-15; #63 and #74 deployed 2026-10-16 |
+| A10 | Optional: commit the synthetic school seed and run the exam and coursework device tests in CI | A PR | **Done**: #60 |
 
 ## B. Only you can do these
 
@@ -52,7 +52,7 @@ Decisions, accounts, money and signatures.
 | B1 | **Decide AI at launch:** launch without Plus/Max, or Plus/Max without their AI parts, or sign the AI agreement (DPA) and DPIA first (6.1–6.3) | AI must stay off for real students until both are signed |
 | B2 | **Decide the production database:** a new Supabase project (recommended) on **Pro** (daily backups, point-in-time recovery), at least 4 dedicated CPUs (4.1) | Real children's data never mixes with test data |
 | B3 | **Decide domains:** `api.studafy.com`, and where the legal pages and sign-in callback live; you own the DNS (4.2) | The store listings and release builds need final URLs |
-| B4 | Merge PRs #52, #53, #54, #55 | Unblocks A1 |
+| B4 | ~~Merge PRs #52, #53, #54, #55~~ **Done 2026-10-16** (with #56–#82) | Unblocked A1 |
 | B5 | Hands-on check on the phone as teacher, student and parent, in English and Arabic: a lesson with Word and PDF files, a homework hand-in with a photo, opening a student's file, an online exam end to end (2.9) | The last proof before testers |
 | B6 | Tap Terms and Privacy on the Study plans screen (4.3); check one real crash from a test build in Sentry shows the user as "anonymous" (#52) | Closes 4.3 and the crash-privacy fix |
 | B7 | Set the Axiom dataset retention to 30 days | The privacy policy says 30 days |
