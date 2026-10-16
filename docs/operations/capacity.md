@@ -16,12 +16,19 @@
 >   cheaper, from about 23% of database time to 9%. Through the API at 1,000
 >   people, p95 went from 1.2 s to about 0.5 s, and peak throughput rose to
 >   about 320–350 requests/s.
+> - **[2026-10-16](../capacity/2026-10-16.md)**, fix 6 (grades a page at a
+>   time): the grades list about two and a half times cheaper per call
+>   (students 11–12 ms to 4–5 ms, teachers 15–16 ms to 6–7 ms), and its
+>   share of database time through the API from about 13% to 8% (with the
+>   per-row builder it no longer calls, about 21% to 10%). End-to-end
+>   throughput moved within the noise of a shared machine.
 > - Every fix was proven to give the same answers as the code it replaced
 >   (`scripts/scale/proof/`).
 >
-> Next, in order: notebook writing on the worker queue, the grades list a
-> page at a time, then sizing the production database and measuring a
-> staging project of that size.
+> Next, in order: notebook writing on the worker queue, `study_lesson` (the
+> lesson read behind the AI tools) deciding access once, the homework list,
+> then sizing the production database and measuring a staging project of
+> that size.
 >
 > The figures below are the 2026-09-29 database-only measurement, kept for
 > the history of the fixes. The per-vCPU table is superseded by the reports
