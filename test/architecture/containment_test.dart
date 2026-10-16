@@ -53,6 +53,10 @@ void main() {
     });
 
     test('only production blocks application startup', () {
+      // Production starts only with defines matching the production contract
+      // (REL-002, ADR-0044); a test run is not compiled with them, so here
+      // production is blocked. release_containment_test.dart covers the
+      // contract itself.
       for (final environment in StudafyEnvironment.values) {
         expect(
           RuntimePolicy(environment).blocksApplicationStartup,
@@ -61,7 +65,7 @@ void main() {
       }
     });
 
-    test('synthetic mode cannot initialize a remote backend', () {
+    test('only synthetic mode runs without a remote backend', () {
       expect(
         const RuntimePolicy(StudafyEnvironment.synthetic).requiresRemoteBackend,
         isFalse,
@@ -78,12 +82,13 @@ void main() {
       expect(
         const RuntimePolicy(StudafyEnvironment.production)
             .requiresRemoteBackend,
-        isFalse,
+        isTrue,
       );
     });
   });
 
-  testWidgets('production renders only the readiness block', (tester) async {
+  testWidgets('production without the production defines renders only the '
+      'readiness block', (tester) async {
     await tester.pumpWidget(
       const StudafyApp(
         runtimePolicy: RuntimePolicy(StudafyEnvironment.production),

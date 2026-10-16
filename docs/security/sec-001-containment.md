@@ -8,14 +8,23 @@ the evidence log below.
 This record covers only immediate containment. It does not approve a production
 release and does not authorize real student, family, teacher, or school data.
 
+**Release cutover, 2026-10-17 (REL-002, ADR-0044, DL-069).** The native
+release blocks are replaced by the production defines contract
+(`lib/core/production_contract.dart`): Android and iOS release builds run
+for `APP_ENV=production` when the contract passes, and for `development`
+(the test copy). The owner decided this before the production backend
+exists; **no production build may be uploaded to either store until
+`https://api.studafy.com` is live** (DL-069). What remains guarded is listed
+under "Release-block rationale and removal record".
+
 ## Risk register and accountable roles
 
 | Risk | Severity | Containment | Accountable role | Exit condition | Status |
 |---|---:|---|---|---|---|
 | Caller-selected private file could be signed and sent to the grading provider | Critical | Grading endpoint always returns `AI_GRADING_DISABLED`; former service-role signing code removed | Security owner | Server-owned immutable `file_object_id`, tenant/relationship authorization, clean scan state, and negative tests | **Closed by removal (AI-072, ADR-0026, 2026-09-18):** the grading function and every AI surface are deleted from the repository and, on 2026-09-18, from the synthetic project (both slugs 404; `docs/evidence/phase-7/README.md`) |
-| Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | Contained in app; release verification pending |
+| Core production screens write to local-only SQLite state | Critical | Production runtime does not initialize the backend/database or expose application routes | Product owner | Server repositories and synchronization acceptance scenarios pass | **Replaced at the REL-002 cutover (2026-10-17, ADR-0044):** production uses the server repositories like development, and starts only when its compiled defines pass the production contract; otherwise it shows the readiness block. Local SQLite is used only by synthetic builds |
 | Direct uploads lack metadata ownership, quarantine, malware scanning, and publication gates | High | Forward migration removes authenticated storage insert policy; mobile upload paths removed | Backend/data owner | Phase 5 file pipeline and RLS tests pass | Upload containment applied and tested; safe replacement pending |
-| Example identities and debug signing could reach a store build | High | iOS Release/archive builds fail with `SEC-001`. Android release builds fail with `SEC-001` unless every `APP_ENV` is `development` (the test copy, ADR-0042), and then fail unless signed with the owner's upload key kept outside the repository | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | Release guards verified; Android narrowed for internal testing by ADR-0042 (proposed 2026-10-15); REL-002 replacement pending |
+| Example identities and debug signing could reach a store build | High | Since the REL-002 cutover (ADR-0044): Android and iOS release builds run only for `APP_ENV=production` under the production defines contract or for `development` (the test copy); Android production is signed with the owner's upload key only, never the debug key | Mobile release owner | Final identities, signing, privacy manifests, and store checks pass under `REL-002` | **Blocks replaced 2026-10-17 (ADR-0044, DL-069)**; identity `com.studafy.light` (DL-058); refusals proved in CI by `.github/scripts/check-android-release-guard.sh` and `check-ios-release-guard.sh`. No production upload until `api.studafy.com` is live |
 | Privileged workflows lack consistent validation, idempotency, transactions, and observability | High | Unsafe grading workflow disabled; other workflows remain prohibited from production release | Backend/security owner | Phase 3 service controls and negative tests pass | Broader remediation pending |
 | Historical secrets cannot be inspected without repository history | High | Treat history inspection as an explicit gate; do not claim completion | Security owner | Original Git history is restored or the limitation is formally accepted with credential rotation | Formally bounded 2026-09-10: `docs/governance/git-history-boundary.md` |
 
@@ -33,8 +42,8 @@ re-evidencing these rows with named, separated owners.
 |---|---|---|---|
 | AI paper grading and Study Coach | **Removed by AI-072 (ADR-0026).** Both Edge Functions deleted; `ai_grading_drafts`, `question_suggestions` and `practice_sessions` have no grant or policy and refuse every write; the AI store products cannot be activated | AI screens, the `study_coach` slice and the teacher grading controls deleted; `allowsAiGrading => false` retained as a tripwire | Not a kill switch any more: a future AI capability needs a signed DPA, an extended DPIA, a new ADR and the full enable-path engineering in `docs/planning/instructions.md` §20 Part 7C |
 | New private-file uploads | Storage insert policy dropped; the `coach_attachment` purpose is retired by AI-072 | Study Coach and its attachment control deleted by AI-072; direct upload code removed | Ownership metadata, quotas, signature checks, quarantine, scanning, sanitization rules, clean publication, and tenant-negative tests |
-| Production application | No production backend/SQLite initialization and no feature routes | Production-readiness screen only | Core screens use server-backed repositories; offline synchronization, tenant isolation, and upgrade tests pass |
-| Android/iOS release | Not applicable | iOS Release/archive builds exit with a `SEC-001` error. Android release tasks exit with a `SEC-001` error unless every `APP_ENV` dart-define is `development`, and with a signing error unless an upload key outside the repository is configured (ADR-0042); proved in CI by `.github/scripts/check-android-release-guard.sh` | `REL-002` final identity, non-debug signing, privacy declarations, CI policy, and store-console evidence |
+| Production application | Production initializes the remote backend only (no SQLite) | Starts only when the compiled defines pass the production contract (`RuntimePolicy.blocksApplicationStartup`); otherwise the production-readiness screen | Removed as a block at the REL-002 cutover (ADR-0044); the contract check stays |
+| Android/iOS release | Not applicable | Since the REL-002 cutover (ADR-0044): a release task or Xcode `Release` build runs only when every `APP_ENV` is `production` and the dart-defines pass `tools/check_release_defines.dart`, or every `APP_ENV` is `development`; Android also needs an upload key outside the repository, and production refuses the debug-key opt-in. Proved in CI by `.github/scripts/check-android-release-guard.sh` and `.github/scripts/check-ios-release-guard.sh` | Removed as a block 2026-10-17 (DL-069); the contract and signing checks stay. No production upload until `api.studafy.com` is live |
 | Legacy meeting Edge Functions (`create-google-meet`, `cancel-google-meet`) | Both return stable `MEETINGS_DISABLED` 503s without reading the body, resolving recipients, using service credentials, or contacting a provider | Not applicable | API-042's `POST /v1/classrooms/{classroomId}/meetings` and `POST /v1/meetings/{meetingId}/cancel` pass authorization, transaction, idempotency and retry tests (`supabase/tests/api042_meetings.sql`, `apps/api/test/meetings`) and replace these functions in traffic |
 | Legacy `request-account-deletion` Edge Function | Returns a stable `ACCOUNT_DELETION_PROTOTYPE_DISABLED` 503; its manual JWT-`iat` decode (the broken recent-auth check DL-032 documents) never runs | Not applicable | Already fully superseded by AUTH-030/031's `POST /v1/account/deletion-request`, which uses the real single-use hashed recent-auth grant instead |
 
@@ -56,6 +65,11 @@ Only these non-secret values may be supplied through `--dart-define`:
 - `APP_ENV`
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
+
+(and the other public values a production build may carry, which since the
+REL-002 cutover are an enforced allowlist: `ProductionContract.allowedNames`
+in `lib/core/production_contract.dart`; a production build with any other
+define, or a value that looks like a server secret, is refused).
 
 `SUPABASE_SERVICE_ROLE_KEY`, provider/API secret keys, signing credentials,
 webhook secrets, database passwords, and encryption keys are server secrets.
@@ -124,6 +138,28 @@ Removing a guard requires a reviewed forward change referencing `REL-002` and
 the relevant security evidence. Never disable a guard merely to create a store
 artifact or demo with real data.
 
+**Removal record (2026-10-17, ADR-0044, DL-069).** The owner removed the
+native release blocks in the REL-002 cutover, before the production backend
+exists. Removed: the Xcode `SEC-001 Release Block` phase (replaced by the
+`Release Defines Check` phase), the Gradle refusal of `APP_ENV=production`,
+and the unconditional refusal of production at app start. Still guarded:
+
+- a production build must pass the production defines contract — production
+  API, Supabase project and legal host, a publishable (never secret) key,
+  Turnstile on, Sign in with Apple on iOS, allowlisted defines only, none
+  repeated, a build number above 1 — at Gradle, at Xcode, in
+  `scripts/release/build-store.sh`, and again when the app starts;
+- staging, synthetic, a missing `APP_ENV` and mixed values are refused on
+  both platforms;
+- Android release signing needs the upload key outside the repository, and
+  production refuses `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE`;
+- the filled `config/dart-defines.production.json` is git-ignored, and
+  `build-store.sh` refuses it if tracked;
+- remote file uploads stay off in production (`allowsRemoteFileUploads`);
+  AI grading stays removed;
+- **no production build may be uploaded to any store track until
+  `https://api.studafy.com` is live** and the DL-064 cutover steps are done.
+
 ## Local verification record
 
 The repository implementation was checked locally on 2026-09-09:
@@ -175,6 +211,50 @@ never uploaded or committed.
   release builds are blocked"; the Xcode phase is unchanged.
 - `flutter analyze`: no issues; `flutter test`: 800 passed;
   `dart format --set-exit-if-changed lib test`: no changes.
+
+### Release cutover (REL-002, ADR-0044) — 2026-10-17
+
+Local, on the owner's Mac, Flutter 3.47.1. A throwaway upload key in a
+scratch folder outside the repository stood in for the owner's key; it was
+never uploaded or committed. The publishable key in the production defines
+was a made-up `sb_publishable_` placeholder of the right shape.
+
+- `.github/scripts/check-android-release-guard.sh`: 12 cases. Staging, no
+  `APP_ENV` and development overridden by production were refused
+  (`REL-002: Android release builds must be …`). Production with no other
+  defines, the unfilled example, production pointed at the test API, an
+  unknown `DEMO_MODE` define, and production without a build number failed
+  the contract. Production with `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE=true`
+  and a keystore inside the repository were refused. A production build
+  matching the contract, and a development build, both stopped only at
+  "Release signing: no upload key". No compilation.
+- `.github/scripts/check-ios-release-guard.sh`: 16 cases, run against the
+  Xcode phase script with Xcode's environment. Debug and Profile were not
+  checked. Release with no `APP_ENV`, staging, synthetic, or a development
+  plus production mix was refused. Production failed the contract with
+  missing values, the test API, a repeated define, Sign in with Apple off,
+  build number 1, an unknown define, a secret-looking value, or broken
+  `DART_DEFINES`. Production matching the contract passed, and so did
+  development. No iOS archive was made (no signing available).
+- `STUDAFY_ANDROID_KEY_PROPERTIES=<scratch>/key.properties
+  scripts/release/build-store.sh android --build-number 2 --defines
+  <scratch>/dart-defines.production.json`, with the example's two
+  placeholders filled: `build-store.sh` printed "Release defines: production
+  contract passed (android)". Gradle's release check then passed: the
+  contract was re-run on Gradle's own dart-defines, and the throwaway upload
+  key was accepted. The build then compiled the release. It failed in
+  `compileReleaseJavaWithJavac` because a `flutter test` run started at the
+  same time regenerated `GeneratedPluginRegistrant.java` with the
+  `integration_test` dev plugin partway through; that is not related to
+  this change. Only one Android release build was allowed, so it was not
+  repeated. The unchanged path compiled and signed a bundle on 2026-10-15
+  (ADR-0042 above).
+- `flutter analyze`: no issues. `flutter test`: 979 passed.
+  `dart format --set-exit-if-changed lib test tools`: no changes.
+  `dart run tools/check_dart_bounds.dart`: passed. `shellcheck` on the four
+  changed or new scripts: clean. `actionlint` on both workflows: the only
+  finding is an existing SC2046 at the same step on `main`.
+- `plutil -lint ios/Runner.xcodeproj/project.pbxproj`: OK.
 
 ### Synthetic deployment evidence — 2026-09-09
 

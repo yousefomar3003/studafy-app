@@ -1,7 +1,7 @@
 # ADR-0042: Android release builds for internal testing of the test copy
 
-- Status: Proposed — needs the owner's approval, because it changes the
-  SEC-001 release guards
+- Status: Accepted 2026-10-16 (PR #61 merged). Superseded in part by
+  ADR-0044 (release cutover, 2026-10-17): production is no longer blocked
 - Date: 2026-10-15
 - Decision owner: repository owner
 - Decision log: DL-059
@@ -117,3 +117,13 @@ app, and Gradle refuses to build it.
 
 Recorded in `docs/security/sec-001-containment.md` under "Android internal
 testing (ADR-0042)".
+
+## Addendum (2026-10-17): release cutover
+
+ADR-0044 (DL-069) replaced the SEC-001 blocks. The Gradle check now admits
+`APP_ENV=production` too, but only with dart-defines that pass the
+production defines contract, and refuses the debug-key opt-in for it; iOS
+`Release` builds run the same check instead of failing. Everything this ADR
+says about the development build and upload-key signing is unchanged, and
+`STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE` remains a local check for development
+builds only.

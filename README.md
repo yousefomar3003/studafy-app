@@ -7,10 +7,12 @@ families. Students hand in work, sit exams, keep notebooks and use AI study
 tools. Parents follow their children, and can subscribe to Family+.
 
 **Status (2026-10-12): not launched.** A test copy runs on Fly.io and Supabase
-in Frankfurt. Release builds are blocked on purpose (SEC-001) until the
-launch plan lifts them; the one exception is an Android release of the test
-copy (`APP_ENV=development`) for Play internal testing, signed with the
-owner's upload key (ADR-0042).
+in Frankfurt. Since the release cutover (2026-10-17, ADR-0044) store builds
+can be made in production mode with `scripts/release/build-store.sh
+android|ios`, only with values that pass the production defines contract;
+none may be uploaded until `https://api.studafy.com` is live (DL-069).
+Android releases of the test copy (`APP_ENV=development`) remain available
+for Play internal testing (ADR-0042).
 
 **Start here:** [`handoff.md`](handoff.md) for where work stands, then
 [`docs/planning/launch-work-plan.md`](docs/planning/launch-work-plan.md) for

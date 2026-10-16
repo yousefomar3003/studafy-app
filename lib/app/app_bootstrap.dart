@@ -10,7 +10,8 @@ abstract final class AppBootstrap {
     if (policy.requiresRemoteBackend) {
       if (!BackendConfig.fromEnvironment.isConfigured) {
         throw StateError(
-          'Development and staging require an explicitly configured remote backend.',
+          'Development, staging and production require an explicitly '
+          'configured remote backend.',
         );
       }
       await StudafyBackend.initialize();

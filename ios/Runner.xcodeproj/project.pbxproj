@@ -160,7 +160,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
-				5EC001A12EC001A100000001 /* SEC-001 Release Block */,
+				5EC001A12EC001A100000001 /* Release Defines Check */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
@@ -247,7 +247,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5EC001A12EC001A100000001 /* SEC-001 Release Block */ = {
+		5EC001A12EC001A100000001 /* Release Defines Check */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -255,12 +255,12 @@
 			);
 			inputPaths = (
 			);
-			name = "SEC-001 Release Block";
+			name = "Release Defines Check";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ]; then\n  echo \"error: SEC-001: iOS archives and release builds are blocked until production-readiness gates pass.\"\n  exit 1\nfi";
+			shellScript = "/bin/sh \"$SRCROOT/../scripts/release/ios-release-check.sh\"\n";
 		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;

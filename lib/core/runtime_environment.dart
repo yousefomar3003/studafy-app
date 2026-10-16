@@ -1,9 +1,18 @@
+import 'production_contract.dart';
+
 enum StudafyEnvironment { synthetic, development, staging, production }
 
 class RuntimePolicy {
-  const RuntimePolicy(this.environment);
+  const RuntimePolicy(
+    this.environment, {
+    this.releaseDefines = compiledReleaseDefines,
+  });
 
   final StudafyEnvironment environment;
+
+  /// The defines a production build is checked against at start-up; the
+  /// compiled ones unless a test supplies others.
+  final Map<String, String> releaseDefines;
 
   factory RuntimePolicy.parse(String value) {
     return switch (value.trim().toLowerCase()) {
@@ -22,9 +31,7 @@ class RuntimePolicy {
   );
 
   bool get isSynthetic => environment == StudafyEnvironment.synthetic;
-  bool get requiresRemoteBackend =>
-      environment == StudafyEnvironment.development ||
-      environment == StudafyEnvironment.staging;
+  bool get requiresRemoteBackend => !isSynthetic;
 
   // SEC-001 containment is deliberately not controlled by an environment
   // variable. Re-enabling either capability requires a reviewed code change.
@@ -47,10 +54,20 @@ class RuntimePolicy {
   bool get allowsRemoteFileUploads =>
       environment != StudafyEnvironment.production;
 
-  // Production remains blocked while core repositories are local-only and the
-  // native identity/signing work has not passed its later release gate.
-  bool get blocksApplicationStartup =>
-      environment == StudafyEnvironment.production;
+  /// What stops this production build from starting: every way its
+  /// compiled defines miss the production contract. Empty outside
+  /// production.
+  List<String> get productionStartupProblems =>
+      environment == StudafyEnvironment.production
+      ? ProductionContract.problemsIn(releaseDefines)
+      : const [];
+
+  /// REL-002 (ADR-0044): production starts only with defines that match the
+  /// production contract - the production API, Supabase project and legal
+  /// pages, a publishable key, Turnstile on. The store build scripts refuse
+  /// such a build before it compiles; this is the last line if one is made
+  /// another way. Before the cutover production never started.
+  bool get blocksApplicationStartup => productionStartupProblems.isNotEmpty;
 }
 
 abstract final class StudafyRuntime {
