@@ -42,9 +42,12 @@ primary_region = "fra"
   FILE051_PUBLISH_ENABLED = "true"
   FILE051_DELIVERY_ENABLED = "true"
   FILE051_DELIVERY_PUBLIC_BASE_URL = "https://api.studafy.com"
-  # ADR-0034: set to "true" at launch, once the provider DPA and the minors'
-  # DPIA are signed. Until then the lesson AI answers AI_FEATURE_DISABLED.
-  AI_LESSON_TOOLS_ENABLED = "false"
+  # DL-062: the AI study tools are on from launch (the owner's decision of
+  # 2026-10-16, ahead of the provider DPA and the DPIA). Each student still
+  # consents first (ADR-0043). The key is the AI_API_KEY secret.
+  AI_LESSON_TOOLS_ENABLED = "true"
+  AI_BASE_URL = "https://api.together.xyz"
+  AI_MODEL = "Qwen/Qwen3.5-9B"
   # DL-049, DL-061: messaging stays off until SAFE-043's moderation gate is
   # met (named report reviewers, B9). Off, no school can message.
   MESSAGING_ENABLED = "false"

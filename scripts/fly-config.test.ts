@@ -80,8 +80,8 @@ describe("Fly configs pass production validation", () => {
     expect(() => enforceApiFailClosed(env)).not.toThrow();
     expect(env.LOG_SAMPLE_SUCCESS_RATE).toBe(0.1);
     expect(env.LOG_SAMPLE_ROUTINE_RATE).toBe(0.01);
-    // ADR-0034: on only at launch, after the DPA and DPIA.
-    expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
+    // DL-062: the AI study tools are on from launch.
+    expect(env.AI_LESSON_TOOLS_ENABLED).toBe(true);
     // DL-049, DL-061: no messaging until the moderation gate is met.
     expect(env.MESSAGING_ENABLED).toBe(false);
     // Security audit 2026-10-08: never X-Forwarded-For in production.
@@ -101,9 +101,8 @@ describe("Fly configs pass production validation", () => {
     // Launch plan 2.1: account deletion and data export must complete.
     expect(env.ACCOUNT_DELETION_EXECUTOR_ENABLED).toBe(true);
     expect(env.DATA_EXPORT_EXECUTOR_ENABLED).toBe(true);
-    // ADR-0034: lesson material reaches the AI provider only after launch
-    // approval.
-    expect(env.AI_LESSON_TOOLS_ENABLED).toBe(false);
+    // DL-062: AI on from launch; notebooks are written by the worker.
+    expect(env.AI_LESSON_TOOLS_ENABLED).toBe(true);
     // DPIA D7: a filed safety report always reaches a reviewer.
     expect(env.REPORT_ALERTS_ENABLED).toBe(true);
   });
@@ -301,7 +300,7 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(env.FILE051_DELIVERY_PUBLIC_BASE_URL).toBe(
       "https://api.studafy.com",
     );
-    expect(env.AI_LESSON_TOOLS_ENABLED).toBe("false");
+    expect(env.AI_LESSON_TOOLS_ENABLED).toBe("true");
     expect(env.MESSAGING_ENABLED).toBe("false");
   });
 

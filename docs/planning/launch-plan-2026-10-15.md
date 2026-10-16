@@ -49,7 +49,7 @@ Decisions, accounts, money and signatures.
 
 | # | Task | Why it matters |
 |---|---|---|
-| B1 | **Decide AI at launch:** launch without Plus/Max, or Plus/Max without their AI parts, or sign the AI agreement (DPA) and DPIA first (6.1–6.3) | AI must stay off for real students until both are signed |
+| B1 | ~~Decide AI at launch~~ **Decided 2026-10-16 (DL-062): AI on from launch**, before the DPA and DPIA. Still recommended: accept Together AI's DPA and have the DPIA draft reviewed (6.1, 6.2) | Accepted risk recorded in DL-062 |
 | B2 | **Decide the production database:** a new Supabase project (recommended) on **Pro** (daily backups, point-in-time recovery), at least 4 dedicated CPUs (4.1) | Real children's data never mixes with test data |
 | B3 | **Decide domains:** `api.studafy.com`, and where the legal pages and sign-in callback live; you own the DNS (4.2) | The store listings and release builds need final URLs |
 | B4 | ~~Merge PRs #52, #53, #54, #55~~ **Done 2026-10-16** (with #56–#82) | Unblocked A1 |
@@ -85,7 +85,7 @@ contents, in chat. Claude wires it in and tests it.
 | C14 | **APNs key** (`.p8`) uploaded to Firebase with its Key ID and Team ID (5.4) | iOS push, tested with the app open and closed |
 | C15 | **App Store products** in App Store Connect (5.6) | Wire and test them in sandbox |
 | C16 | Upload the TestFlight build Claude makes; install it with one tester (5.7) | Build the signed iOS release |
-| C17 | If AI is on at launch: sign the DPA and DPIA (B1) | Record the decision in an ADR and turn AI on in production (6.3) |
+| C17 | Accept Together AI's DPA; have the DPIA reviewed (DL-062 turned AI on ahead of them) | AI is already on in the production config (DL-062) |
 
 ## D. Launch day (both)
 

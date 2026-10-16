@@ -54,9 +54,14 @@ primary_region = "fra"
   REPORT_ALERTS_ENABLED = "true"
   # Switched on at launch once their own credentials are set (see the doc):
   # PAY071_BILLING_ENABLED (store keys), NOTIFICATION_CHANNELS_ENABLED
-  # (Firebase / email), MEETINGS_PROCESSOR_ENABLED. Study notebooks are
-  # written here (2026-10-16): when fly.api.toml turns AI_LESSON_TOOLS_ENABLED
-  # on, set it here too, with AI_BASE_URL and the AI_API_KEY secret.
+  # (Firebase / email), MEETINGS_PROCESSOR_ENABLED.
+  # DL-062: AI on from launch, as in fly.api.toml. Study notebooks are written
+  # here and lesson files are read for the AI here; the key is the AI_API_KEY
+  # secret.
+  AI_MATERIAL_INDEX_ENABLED = "true"
+  AI_LESSON_TOOLS_ENABLED = "true"
+  AI_BASE_URL = "https://api.together.xyz"
+  AI_MODEL = "Qwen/Qwen3.5-9B"
 
 # The worker serves no HTTP. It runs continuously: one machine, never
 # stopped for being idle, since queued work arrives without traffic.

@@ -104,3 +104,11 @@ features.
   ledger are what keep a paid student's AI cost below the price. Changing a
   price or a cap needs both a migration and a check against the store prices
   above.
+
+## Addendum (2026-10-16, DL-062)
+
+The condition above - AI on in production only once the provider DPA and the
+DPIA are signed - no longer holds: the owner turned the AI study tools on from
+launch (DL-062). The per-student AI consent, students-only access and name
+redaction of ADR-0043 still apply. Signing the DPA and completing the DPIA
+remain open (launch plan C17).
