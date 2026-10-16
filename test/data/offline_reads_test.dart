@@ -147,6 +147,11 @@ void main() {
       '/v1/wellbeing',
       '/v1/reports?cursor=x',
       '/v1/control-panel/content-controls/s1',
+      // A safety report under review, and the operator's queue (DL-063).
+      '/internal/safety-review/reports',
+      '/internal/safety-review/reports?pageSize=100',
+      '/internal/safety-review/reports/r1',
+      '/internal/moderation/access?schoolId=s1',
     ]) {
       expect(V1HttpTransport.keeps('GET', path), isFalse, reason: path);
     }

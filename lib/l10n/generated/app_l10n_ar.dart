@@ -7078,4 +7078,346 @@ class AppL10nAr extends AppL10n {
   @override
   String get aiConsentNeeded =>
       'أدوات الدراسة بالذكاء الاصطناعي متوقفة لهذا الحساب. يفعّلها الطالب من حسابه، ويفعّلها ولي الأمر لحساب الطفل.';
+
+  @override
+  String get safetyReviewSection => 'المنصة';
+
+  @override
+  String get safetyReviewTitle => 'بلاغات السلامة';
+
+  @override
+  String get safetyReviewEntrySubtitle =>
+      'مراجعة البلاغات المقدَّمة في ستودافاي. لا يرى هذا إلا مشغّلو المنصة.';
+
+  @override
+  String get safetyReviewLoadFailed => 'تعذّر تحميل البلاغات.';
+
+  @override
+  String get safetyReviewUnavailable =>
+      'تعذّر الوصول إلى ستودافاي. تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get safetyReviewTryAgain => 'حاول مرة أخرى';
+
+  @override
+  String get safetyReviewEmptyTitle => 'لا توجد بلاغات مفتوحة';
+
+  @override
+  String get safetyReviewEmptyBody =>
+      'تصل البلاغات الجديدة أيضًا إلى محادثة تنبيهات السلامة.';
+
+  @override
+  String get safetyReviewNotOperator => 'هذا الحساب ليس من مشغّلي المنصة.';
+
+  @override
+  String get safetyReviewListFooter =>
+      'لا يظهر هنا إلا ما يظهر في التنبيه. لا يُفتح محتوى البلاغ إلا بوصول تطلبه، وكل خطوة تُسجَّل.';
+
+  @override
+  String get safetyReviewSecondApproverBanner =>
+      'يجب الآن أن يوافق مراجع ثانٍ على كل طلب وصول. اطلب منه ذلك، أو اتبع دليل تشغيل المشغّلين.';
+
+  @override
+  String get safetyReviewKindMessage => 'بلاغ عن رسالة';
+
+  @override
+  String get safetyReviewKindConversation => 'بلاغ عن محادثة';
+
+  @override
+  String get safetyReviewKindUser => 'بلاغ عن شخص';
+
+  @override
+  String get safetyReviewPriorityCritical => 'حرج';
+
+  @override
+  String get safetyReviewPriorityHigh => 'مرتفع';
+
+  @override
+  String get safetyReviewPriorityMedium => 'متوسط';
+
+  @override
+  String get safetyReviewPriorityLow => 'منخفض';
+
+  @override
+  String safetyReviewReportId(String id) {
+    return 'البلاغ $id';
+  }
+
+  @override
+  String get safetyReviewFiledJustNow => 'قُدِّم الآن';
+
+  @override
+  String safetyReviewFiledMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قُدِّم قبل $count دقيقة',
+      many: 'قُدِّم قبل $count دقيقة',
+      few: 'قُدِّم قبل $count دقائق',
+      two: 'قُدِّم قبل دقيقتين',
+      one: 'قُدِّم قبل دقيقة',
+      zero: 'قُدِّم الآن',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String safetyReviewFiledHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قُدِّم قبل $count ساعة',
+      many: 'قُدِّم قبل $count ساعة',
+      few: 'قُدِّم قبل $count ساعات',
+      two: 'قُدِّم قبل ساعتين',
+      one: 'قُدِّم قبل ساعة',
+      zero: 'قُدِّم الآن',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String safetyReviewFiledDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قُدِّم قبل $count يوم',
+      many: 'قُدِّم قبل $count يومًا',
+      few: 'قُدِّم قبل $count أيام',
+      two: 'قُدِّم قبل يومين',
+      one: 'قُدِّم قبل يوم',
+      zero: 'قُدِّم اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get safetyReviewAccessOpen => 'الوصول مفتوح';
+
+  @override
+  String get safetyReviewStatusSubmitted => 'جديد';
+
+  @override
+  String get safetyReviewStatusQueued => 'في الانتظار';
+
+  @override
+  String get safetyReviewStatusUnderReview => 'قيد المراجعة';
+
+  @override
+  String get safetyReviewStatusOnHold => 'معلّق';
+
+  @override
+  String get safetyReviewStatusEscalated => 'مُصعَّد';
+
+  @override
+  String get safetyReviewStatusResolved => 'تم البتّ فيه';
+
+  @override
+  String get safetyReviewStatusWithdrawn => 'مسحوب';
+
+  @override
+  String get safetyReviewReasonTitle => 'لماذا تفتح هذا البلاغ؟';
+
+  @override
+  String get safetyReviewReasonBody =>
+      'فتح البلاغ يمنحك وصولًا إليه لمدة 60 دقيقة. يُسجَّل سببك مع الوصول، وتُسجَّل كذلك كل قراءة وكل قرار.';
+
+  @override
+  String get safetyReviewReasonLabel => 'السبب';
+
+  @override
+  String get safetyReviewReasonHint => 'مثال: وصل تنبيه في محادثة السلامة';
+
+  @override
+  String get safetyReviewTextTooShort => 'اكتب 8 أحرف على الأقل.';
+
+  @override
+  String get safetyReviewContinue => 'متابعة';
+
+  @override
+  String get safetyReviewCodeTitle => 'أكّد أنه أنت';
+
+  @override
+  String get safetyReviewCodeBody =>
+      'أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة.';
+
+  @override
+  String get safetyReviewCodeLabel => 'رمز المصادقة';
+
+  @override
+  String get safetyReviewCodeDigits => 'أدخل الأرقام الستة.';
+
+  @override
+  String get safetyReviewOpenReport => 'فتح البلاغ';
+
+  @override
+  String get safetyReviewWrongCode =>
+      'لم يتطابق هذا الرمز. تأكّد من صحة الوقت في هاتفك، ثم جرّب أحدث رمز.';
+
+  @override
+  String get safetyReviewNotEnrolledTitle => 'فعّل التحقق بخطوتين أولًا';
+
+  @override
+  String get safetyReviewNotEnrolledBody =>
+      'مراجعة البلاغات تحتاج إلى رمز من تطبيق مصادقة. فعّله من الحساب، ثم الأمان، وارجع بعد ذلك.';
+
+  @override
+  String get safetyReviewOpenSecurity => 'فتح أمان الحساب';
+
+  @override
+  String get safetyReviewWorking => 'جارٍ فتح البلاغ';
+
+  @override
+  String get safetyReviewGrantEndedTitle => 'انتهى وصولك';
+
+  @override
+  String get safetyReviewGrantEndedBody =>
+      'يدوم الوصول إلى البلاغ 60 دقيقة، أو حتى يُلغى. اطلب الوصول من جديد لمواصلة المراجعة.';
+
+  @override
+  String get safetyReviewAskAgain => 'اطلب الوصول من جديد';
+
+  @override
+  String get safetyReviewSecondApproverTitle => 'يجب أن يوافق مراجع ثانٍ';
+
+  @override
+  String get safetyReviewSecondApproverBody =>
+      'يوجد الآن أكثر من مراجع، لذا يجب أن يوافق مراجع آخر على وصولك. اطلب منه الموافقة، أو اتبع دليل تشغيل المشغّلين.';
+
+  @override
+  String get safetyReviewChangedTitle => 'تغيّر هذا البلاغ';
+
+  @override
+  String get safetyReviewChangedBody =>
+      'حدّثه شخص آخر، أو صُعِّد. أعد التحميل لترى حالته.';
+
+  @override
+  String get safetyReviewReload => 'إعادة التحميل';
+
+  @override
+  String get safetyReviewDetailsHeading => 'ما كتبه المُبلِّغ';
+
+  @override
+  String get safetyReviewSnapshotHeading => 'ما تم الإبلاغ عنه';
+
+  @override
+  String get safetyReviewSnapshotMessage => 'الرسالة';
+
+  @override
+  String get safetyReviewSnapshotSubject => 'موضوع المحادثة';
+
+  @override
+  String get safetyReviewSnapshotSentAt => 'وقت الإرسال';
+
+  @override
+  String get safetyReviewSnapshotSender => 'حساب المرسل';
+
+  @override
+  String get safetyReviewSnapshotConversation => 'المحادثة';
+
+  @override
+  String get safetyReviewSnapshotState => 'حالة المحادثة';
+
+  @override
+  String get safetyReviewNothingCaptured => 'لم يُحفظ شيء مع هذا البلاغ.';
+
+  @override
+  String get safetyReviewEvidenceHeading => 'الأدلة';
+
+  @override
+  String get safetyReviewEvidenceMessage => 'رسالة';
+
+  @override
+  String get safetyReviewEvidenceAttachment => 'ملف';
+
+  @override
+  String get safetyReviewEvidenceNote => 'ملاحظة';
+
+  @override
+  String get safetyReviewNoEvidence => 'لا توجد أدلة مرفقة.';
+
+  @override
+  String get safetyReviewHistoryHeading => 'السجل';
+
+  @override
+  String get safetyReviewEventSubmitted => 'قُدِّم';
+
+  @override
+  String get safetyReviewEventQueued => 'أُدرج في القائمة';
+
+  @override
+  String get safetyReviewEventTriage => 'فُتح للمراجعة';
+
+  @override
+  String get safetyReviewEventResolve => 'تم البتّ فيه';
+
+  @override
+  String get safetyReviewEventAppeal => 'تم الاعتراض عليه';
+
+  @override
+  String get safetyReviewEventEscalate => 'صُعِّد';
+
+  @override
+  String get safetyReviewReporterMasked =>
+      'تبقى هوية المُبلِّغ مخفية ما لم يُصعَّد البلاغ.';
+
+  @override
+  String get safetyReviewDecisionHeading => 'قرارك';
+
+  @override
+  String get safetyReviewOutcomeUpheld => 'مقبول';
+
+  @override
+  String get safetyReviewOutcomeUpheldDetail => 'خُولفت القواعد واتُّخذ إجراء.';
+
+  @override
+  String get safetyReviewOutcomePartial => 'مقبول جزئيًا';
+
+  @override
+  String get safetyReviewOutcomePartialDetail => 'قُبل جزء من البلاغ.';
+
+  @override
+  String get safetyReviewOutcomeNotUpheld => 'غير مقبول';
+
+  @override
+  String get safetyReviewOutcomeNotUpheldDetail => 'لم تُخالَف القواعد.';
+
+  @override
+  String get safetyReviewOutcomeNoAction => 'دون إجراء';
+
+  @override
+  String get safetyReviewOutcomeNoActionDetail => 'لا يوجد ما يستدعي إجراءً.';
+
+  @override
+  String get safetyReviewNoteLabel => 'ملاحظة';
+
+  @override
+  String get safetyReviewNoteHint =>
+      'ما قررته ولماذا. لا تنسخ المحتوى المُبلَّغ عنه.';
+
+  @override
+  String get safetyReviewRecord => 'تسجيل القرار';
+
+  @override
+  String get safetyReviewConfirmTitle => 'تسجيل هذا القرار؟';
+
+  @override
+  String safetyReviewConfirmBody(String outcome) {
+    return 'يُغلق البلاغ بقرار \"$outcome\" ويُبلَّغ المُبلِّغ بأنه تم البتّ فيه. لا يمكن التراجع عن ذلك هنا.';
+  }
+
+  @override
+  String get safetyReviewCancel => 'إلغاء';
+
+  @override
+  String get safetyReviewRecorded => 'سُجّل القرار.';
+
+  @override
+  String get safetyReviewNotDecidable =>
+      'لا يمكن البتّ في هذا البلاغ هنا: إنه مُصعَّد أو مغلق. اتبع دليل تشغيل المشغّلين.';
+
+  @override
+  String safetyReviewResolvedAs(String outcome) {
+    return 'تم البتّ فيه: $outcome';
+  }
 }

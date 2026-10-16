@@ -12108,6 +12108,576 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.'**
   String get aiConsentNeeded;
+
+  /// Heading of the account-screen group that only platform operators see.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get safetyReviewSection;
+
+  /// Title of the platform operator's safety-report review area, and of its row on the account screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety reports'**
+  String get safetyReviewTitle;
+
+  /// No description provided for @safetyReviewEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review reports filed on Studafy. Only platform operators see this.'**
+  String get safetyReviewEntrySubtitle;
+
+  /// No description provided for @safetyReviewLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the reports.'**
+  String get safetyReviewLoadFailed;
+
+  /// No description provided for @safetyReviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach Studafy. Check your connection and try again.'**
+  String get safetyReviewUnavailable;
+
+  /// No description provided for @safetyReviewTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get safetyReviewTryAgain;
+
+  /// No description provided for @safetyReviewEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No open reports'**
+  String get safetyReviewEmptyTitle;
+
+  /// No description provided for @safetyReviewEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'New reports also arrive in the safety alert chat.'**
+  String get safetyReviewEmptyBody;
+
+  /// No description provided for @safetyReviewNotOperator.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is not a platform operator.'**
+  String get safetyReviewNotOperator;
+
+  /// No description provided for @safetyReviewListFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Only what the alert shows is listed here. A report\'s content opens only with access you ask for, and every step is recorded.'**
+  String get safetyReviewListFooter;
+
+  /// No description provided for @safetyReviewSecondApproverBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'A second reviewer now has to approve each access request. Ask them, or follow the operator runbook.'**
+  String get safetyReviewSecondApproverBanner;
+
+  /// No description provided for @safetyReviewKindMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message report'**
+  String get safetyReviewKindMessage;
+
+  /// No description provided for @safetyReviewKindConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation report'**
+  String get safetyReviewKindConversation;
+
+  /// No description provided for @safetyReviewKindUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Report about a person'**
+  String get safetyReviewKindUser;
+
+  /// No description provided for @safetyReviewPriorityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get safetyReviewPriorityCritical;
+
+  /// No description provided for @safetyReviewPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get safetyReviewPriorityHigh;
+
+  /// No description provided for @safetyReviewPriorityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get safetyReviewPriorityMedium;
+
+  /// No description provided for @safetyReviewPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get safetyReviewPriorityLow;
+
+  /// The first block of a report's id, as the Telegram alert shows it.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {id}'**
+  String safetyReviewReportId(String id);
+
+  /// No description provided for @safetyReviewFiledJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Filed just now'**
+  String get safetyReviewFiledJustNow;
+
+  /// No description provided for @safetyReviewFiledMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Filed 1 minute ago} other{Filed {count} minutes ago}}'**
+  String safetyReviewFiledMinutes(int count);
+
+  /// No description provided for @safetyReviewFiledHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Filed 1 hour ago} other{Filed {count} hours ago}}'**
+  String safetyReviewFiledHours(int count);
+
+  /// No description provided for @safetyReviewFiledDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Filed 1 day ago} other{Filed {count} days ago}}'**
+  String safetyReviewFiledDays(int count);
+
+  /// Shown on a report the operator already holds an active grant for.
+  ///
+  /// In en, this message translates to:
+  /// **'Access open'**
+  String get safetyReviewAccessOpen;
+
+  /// No description provided for @safetyReviewStatusSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get safetyReviewStatusSubmitted;
+
+  /// No description provided for @safetyReviewStatusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get safetyReviewStatusQueued;
+
+  /// No description provided for @safetyReviewStatusUnderReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Under review'**
+  String get safetyReviewStatusUnderReview;
+
+  /// No description provided for @safetyReviewStatusOnHold.
+  ///
+  /// In en, this message translates to:
+  /// **'On hold'**
+  String get safetyReviewStatusOnHold;
+
+  /// No description provided for @safetyReviewStatusEscalated.
+  ///
+  /// In en, this message translates to:
+  /// **'Escalated'**
+  String get safetyReviewStatusEscalated;
+
+  /// No description provided for @safetyReviewStatusResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get safetyReviewStatusResolved;
+
+  /// No description provided for @safetyReviewStatusWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawn'**
+  String get safetyReviewStatusWithdrawn;
+
+  /// No description provided for @safetyReviewReasonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you opening this report?'**
+  String get safetyReviewReasonTitle;
+
+  /// No description provided for @safetyReviewReasonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening a report gives you access to it for 60 minutes. Your reason is recorded with the access, and every read and decision is recorded too.'**
+  String get safetyReviewReasonBody;
+
+  /// No description provided for @safetyReviewReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get safetyReviewReasonLabel;
+
+  /// No description provided for @safetyReviewReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: alert received in the safety chat'**
+  String get safetyReviewReasonHint;
+
+  /// No description provided for @safetyReviewTextTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Write at least 8 characters.'**
+  String get safetyReviewTextTooShort;
+
+  /// No description provided for @safetyReviewContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get safetyReviewContinue;
+
+  /// No description provided for @safetyReviewCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm it is you'**
+  String get safetyReviewCodeTitle;
+
+  /// No description provided for @safetyReviewCodeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code from your authenticator app.'**
+  String get safetyReviewCodeBody;
+
+  /// No description provided for @safetyReviewCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticator code'**
+  String get safetyReviewCodeLabel;
+
+  /// No description provided for @safetyReviewCodeDigits.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6 digits.'**
+  String get safetyReviewCodeDigits;
+
+  /// No description provided for @safetyReviewOpenReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Open report'**
+  String get safetyReviewOpenReport;
+
+  /// No description provided for @safetyReviewWrongCode.
+  ///
+  /// In en, this message translates to:
+  /// **'That code did not match. Check that your phone\'s clock is right, then try the newest code.'**
+  String get safetyReviewWrongCode;
+
+  /// No description provided for @safetyReviewNotEnrolledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up two-factor sign-in first'**
+  String get safetyReviewNotEnrolledTitle;
+
+  /// No description provided for @safetyReviewNotEnrolledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewing reports needs a code from an authenticator app. Set one up in Account, Security, then come back.'**
+  String get safetyReviewNotEnrolledBody;
+
+  /// No description provided for @safetyReviewOpenSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Open account security'**
+  String get safetyReviewOpenSecurity;
+
+  /// No description provided for @safetyReviewWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the report'**
+  String get safetyReviewWorking;
+
+  /// No description provided for @safetyReviewGrantEndedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your access has ended'**
+  String get safetyReviewGrantEndedTitle;
+
+  /// No description provided for @safetyReviewGrantEndedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to a report lasts 60 minutes, or until it is revoked. Ask again to keep reviewing.'**
+  String get safetyReviewGrantEndedBody;
+
+  /// No description provided for @safetyReviewAskAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for access again'**
+  String get safetyReviewAskAgain;
+
+  /// No description provided for @safetyReviewSecondApproverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A second reviewer has to approve'**
+  String get safetyReviewSecondApproverTitle;
+
+  /// No description provided for @safetyReviewSecondApproverBody.
+  ///
+  /// In en, this message translates to:
+  /// **'There is now more than one reviewer, so another reviewer must approve your access. Ask them to approve it, or follow the operator runbook.'**
+  String get safetyReviewSecondApproverBody;
+
+  /// No description provided for @safetyReviewChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This report changed'**
+  String get safetyReviewChangedTitle;
+
+  /// No description provided for @safetyReviewChangedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else updated it, or it was escalated. Reload to see where it stands.'**
+  String get safetyReviewChangedBody;
+
+  /// No description provided for @safetyReviewReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get safetyReviewReload;
+
+  /// No description provided for @safetyReviewDetailsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'What the reporter wrote'**
+  String get safetyReviewDetailsHeading;
+
+  /// No description provided for @safetyReviewSnapshotHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'What was reported'**
+  String get safetyReviewSnapshotHeading;
+
+  /// No description provided for @safetyReviewSnapshotMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get safetyReviewSnapshotMessage;
+
+  /// No description provided for @safetyReviewSnapshotSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation subject'**
+  String get safetyReviewSnapshotSubject;
+
+  /// No description provided for @safetyReviewSnapshotSentAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get safetyReviewSnapshotSentAt;
+
+  /// No description provided for @safetyReviewSnapshotSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender account'**
+  String get safetyReviewSnapshotSender;
+
+  /// No description provided for @safetyReviewSnapshotConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get safetyReviewSnapshotConversation;
+
+  /// No description provided for @safetyReviewSnapshotState.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation state'**
+  String get safetyReviewSnapshotState;
+
+  /// No description provided for @safetyReviewNothingCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was captured with this report.'**
+  String get safetyReviewNothingCaptured;
+
+  /// No description provided for @safetyReviewEvidenceHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence'**
+  String get safetyReviewEvidenceHeading;
+
+  /// No description provided for @safetyReviewEvidenceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get safetyReviewEvidenceMessage;
+
+  /// No description provided for @safetyReviewEvidenceAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get safetyReviewEvidenceAttachment;
+
+  /// No description provided for @safetyReviewEvidenceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get safetyReviewEvidenceNote;
+
+  /// No description provided for @safetyReviewNoEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'No evidence attached.'**
+  String get safetyReviewNoEvidence;
+
+  /// No description provided for @safetyReviewHistoryHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get safetyReviewHistoryHeading;
+
+  /// No description provided for @safetyReviewEventSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Filed'**
+  String get safetyReviewEventSubmitted;
+
+  /// No description provided for @safetyReviewEventQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get safetyReviewEventQueued;
+
+  /// No description provided for @safetyReviewEventTriage.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened for review'**
+  String get safetyReviewEventTriage;
+
+  /// No description provided for @safetyReviewEventResolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Decided'**
+  String get safetyReviewEventResolve;
+
+  /// No description provided for @safetyReviewEventAppeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Appealed'**
+  String get safetyReviewEventAppeal;
+
+  /// No description provided for @safetyReviewEventEscalate.
+  ///
+  /// In en, this message translates to:
+  /// **'Escalated'**
+  String get safetyReviewEventEscalate;
+
+  /// No description provided for @safetyReviewReporterMasked.
+  ///
+  /// In en, this message translates to:
+  /// **'The reporter\'s identity stays hidden unless the report is escalated.'**
+  String get safetyReviewReporterMasked;
+
+  /// No description provided for @safetyReviewDecisionHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Your decision'**
+  String get safetyReviewDecisionHeading;
+
+  /// No description provided for @safetyReviewOutcomeUpheld.
+  ///
+  /// In en, this message translates to:
+  /// **'Upheld'**
+  String get safetyReviewOutcomeUpheld;
+
+  /// No description provided for @safetyReviewOutcomeUpheldDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The rules were broken and action was taken.'**
+  String get safetyReviewOutcomeUpheldDetail;
+
+  /// No description provided for @safetyReviewOutcomePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partly upheld'**
+  String get safetyReviewOutcomePartial;
+
+  /// No description provided for @safetyReviewOutcomePartialDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of the report was upheld.'**
+  String get safetyReviewOutcomePartialDetail;
+
+  /// No description provided for @safetyReviewOutcomeNotUpheld.
+  ///
+  /// In en, this message translates to:
+  /// **'Not upheld'**
+  String get safetyReviewOutcomeNotUpheld;
+
+  /// No description provided for @safetyReviewOutcomeNotUpheldDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The rules were not broken.'**
+  String get safetyReviewOutcomeNotUpheldDetail;
+
+  /// No description provided for @safetyReviewOutcomeNoAction.
+  ///
+  /// In en, this message translates to:
+  /// **'No action'**
+  String get safetyReviewOutcomeNoAction;
+
+  /// No description provided for @safetyReviewOutcomeNoActionDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here to act on.'**
+  String get safetyReviewOutcomeNoActionDetail;
+
+  /// No description provided for @safetyReviewNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get safetyReviewNoteLabel;
+
+  /// No description provided for @safetyReviewNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What you decided and why. Do not copy the reported content.'**
+  String get safetyReviewNoteHint;
+
+  /// No description provided for @safetyReviewRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record decision'**
+  String get safetyReviewRecord;
+
+  /// No description provided for @safetyReviewConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record this decision?'**
+  String get safetyReviewConfirmTitle;
+
+  /// No description provided for @safetyReviewConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The report closes as \"{outcome}\" and the reporter is told it was resolved. It cannot be undone here.'**
+  String safetyReviewConfirmBody(String outcome);
+
+  /// No description provided for @safetyReviewCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get safetyReviewCancel;
+
+  /// No description provided for @safetyReviewRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision recorded.'**
+  String get safetyReviewRecorded;
+
+  /// No description provided for @safetyReviewNotDecidable.
+  ///
+  /// In en, this message translates to:
+  /// **'This report cannot be decided here: it is escalated or closed. Follow the operator runbook.'**
+  String get safetyReviewNotDecidable;
+
+  /// No description provided for @safetyReviewResolvedAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved: {outcome}'**
+  String safetyReviewResolvedAs(String outcome);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

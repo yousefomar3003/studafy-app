@@ -1016,21 +1016,26 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Read one moderation report with its events and evidence as an active moderator of its school.",
   },
+  // Triage and resolve are not tenantRequired: the reviewer is a platform
+  // operator with no membership in the report's school (DL-063; the app's
+  // safety-review area). The decision (authz_safety) and the SQL command
+  // both still require safe043_can_access_report - an active grant covering
+  // the report - so a member of the school gains nothing from this.
   "moderation.triage": {
     resource: "report",
     scope: "resource",
     concealDeniedResource: true,
-    tenantRequired: true,
+    tenantRequired: false,
     description:
-      "Assign or re-prioritize an open report as an active moderator of its school.",
+      "Assign or re-prioritize an open report as an active moderator of its school, or a platform operator holding an active grant covering it.",
   },
   "moderation.resolve": {
     resource: "report",
     scope: "resource",
     concealDeniedResource: true,
-    tenantRequired: true,
+    tenantRequired: false,
     description:
-      "Resolve an open report with a disposition and note as an active moderator of its school.",
+      "Resolve an open report with a disposition and note as an active moderator of its school, or a platform operator holding an active grant covering it.",
   },
   "moderation.escalate": {
     resource: "report",
@@ -1092,6 +1097,28 @@ export const PERMISSION_CATALOGUE = {
     "school",
     "List moderation-access grants for a school as a platform operator or that school's administrator.",
   ),
+  // The platform operator's review path in the app (DL-063). Self-scoped:
+  // there is no school to decide against for the queue, and the report is
+  // re-checked by the SQL, which refuses anyone who is not a platform
+  // operator. The queue is metadata only (what the report alert carries,
+  // plus the school id a grant needs), so it is not MFA-gated; opening a
+  // report is, by its moderation.* name, and needs an active grant.
+  "safety_review.queue.read": {
+    resource: "report",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "List open safety reports across schools as metadata only (id, school, kind, priority, status, age) as a platform operator.",
+  },
+  "moderation.review.open": {
+    resource: "report",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Open one safety report for review as a platform operator holding an active grant covering it, with MFA. Every attempt is audited.",
+  },
   "upload.intent.create": guardianResource(
     "school",
     "Create a purpose-bound upload reservation in an active school.",

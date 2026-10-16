@@ -3478,5 +3478,152 @@
   "aiConsentWithdrawAction": "Turn off",
   "aiConsentSaveFailed": "That was not saved. Check your connection and try again.",
   "aiConsentReadNotice": "Read what is sent",
-  "aiConsentNeeded": "The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account."
+  "aiConsentNeeded": "The AI study tools are off for this account. A student turns them on in their account; a parent does it for a child account.",
+  "safetyReviewSection": "Platform",
+  "@safetyReviewSection": {
+    "description": "Heading of the account-screen group that only platform operators see."
+  },
+  "safetyReviewTitle": "Safety reports",
+  "@safetyReviewTitle": {
+    "description": "Title of the platform operator's safety-report review area, and of its row on the account screen."
+  },
+  "safetyReviewEntrySubtitle": "Review reports filed on Studafy. Only platform operators see this.",
+  "safetyReviewLoadFailed": "Could not load the reports.",
+  "safetyReviewUnavailable": "Could not reach Studafy. Check your connection and try again.",
+  "safetyReviewTryAgain": "Try again",
+  "safetyReviewEmptyTitle": "No open reports",
+  "safetyReviewEmptyBody": "New reports also arrive in the safety alert chat.",
+  "safetyReviewNotOperator": "This account is not a platform operator.",
+  "safetyReviewListFooter": "Only what the alert shows is listed here. A report's content opens only with access you ask for, and every step is recorded.",
+  "safetyReviewSecondApproverBanner": "A second reviewer now has to approve each access request. Ask them, or follow the operator runbook.",
+  "safetyReviewKindMessage": "Message report",
+  "safetyReviewKindConversation": "Conversation report",
+  "safetyReviewKindUser": "Report about a person",
+  "safetyReviewPriorityCritical": "Critical",
+  "safetyReviewPriorityHigh": "High",
+  "safetyReviewPriorityMedium": "Medium",
+  "safetyReviewPriorityLow": "Low",
+  "safetyReviewReportId": "Report {id}",
+  "@safetyReviewReportId": {
+    "description": "The first block of a report's id, as the Telegram alert shows it.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyReviewFiledJustNow": "Filed just now",
+  "safetyReviewFiledMinutes": "{count, plural, =1{Filed 1 minute ago} other{Filed {count} minutes ago}}",
+  "@safetyReviewFiledMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "safetyReviewFiledHours": "{count, plural, =1{Filed 1 hour ago} other{Filed {count} hours ago}}",
+  "@safetyReviewFiledHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "safetyReviewFiledDays": "{count, plural, =1{Filed 1 day ago} other{Filed {count} days ago}}",
+  "@safetyReviewFiledDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "safetyReviewAccessOpen": "Access open",
+  "@safetyReviewAccessOpen": {
+    "description": "Shown on a report the operator already holds an active grant for."
+  },
+  "safetyReviewStatusSubmitted": "New",
+  "safetyReviewStatusQueued": "Waiting",
+  "safetyReviewStatusUnderReview": "Under review",
+  "safetyReviewStatusOnHold": "On hold",
+  "safetyReviewStatusEscalated": "Escalated",
+  "safetyReviewStatusResolved": "Resolved",
+  "safetyReviewStatusWithdrawn": "Withdrawn",
+  "safetyReviewReasonTitle": "Why are you opening this report?",
+  "safetyReviewReasonBody": "Opening a report gives you access to it for 60 minutes. Your reason is recorded with the access, and every read and decision is recorded too.",
+  "safetyReviewReasonLabel": "Reason",
+  "safetyReviewReasonHint": "For example: alert received in the safety chat",
+  "safetyReviewTextTooShort": "Write at least 8 characters.",
+  "safetyReviewContinue": "Continue",
+  "safetyReviewCodeTitle": "Confirm it is you",
+  "safetyReviewCodeBody": "Enter the 6-digit code from your authenticator app.",
+  "safetyReviewCodeLabel": "Authenticator code",
+  "safetyReviewCodeDigits": "Enter the 6 digits.",
+  "safetyReviewOpenReport": "Open report",
+  "safetyReviewWrongCode": "That code did not match. Check that your phone's clock is right, then try the newest code.",
+  "safetyReviewNotEnrolledTitle": "Set up two-factor sign-in first",
+  "safetyReviewNotEnrolledBody": "Reviewing reports needs a code from an authenticator app. Set one up in Account, Security, then come back.",
+  "safetyReviewOpenSecurity": "Open account security",
+  "safetyReviewWorking": "Opening the report",
+  "safetyReviewGrantEndedTitle": "Your access has ended",
+  "safetyReviewGrantEndedBody": "Access to a report lasts 60 minutes, or until it is revoked. Ask again to keep reviewing.",
+  "safetyReviewAskAgain": "Ask for access again",
+  "safetyReviewSecondApproverTitle": "A second reviewer has to approve",
+  "safetyReviewSecondApproverBody": "There is now more than one reviewer, so another reviewer must approve your access. Ask them to approve it, or follow the operator runbook.",
+  "safetyReviewChangedTitle": "This report changed",
+  "safetyReviewChangedBody": "Someone else updated it, or it was escalated. Reload to see where it stands.",
+  "safetyReviewReload": "Reload",
+  "safetyReviewDetailsHeading": "What the reporter wrote",
+  "safetyReviewSnapshotHeading": "What was reported",
+  "safetyReviewSnapshotMessage": "Message",
+  "safetyReviewSnapshotSubject": "Conversation subject",
+  "safetyReviewSnapshotSentAt": "Sent",
+  "safetyReviewSnapshotSender": "Sender account",
+  "safetyReviewSnapshotConversation": "Conversation",
+  "safetyReviewSnapshotState": "Conversation state",
+  "safetyReviewNothingCaptured": "Nothing was captured with this report.",
+  "safetyReviewEvidenceHeading": "Evidence",
+  "safetyReviewEvidenceMessage": "Message",
+  "safetyReviewEvidenceAttachment": "File",
+  "safetyReviewEvidenceNote": "Note",
+  "safetyReviewNoEvidence": "No evidence attached.",
+  "safetyReviewHistoryHeading": "History",
+  "safetyReviewEventSubmitted": "Filed",
+  "safetyReviewEventQueued": "Queued",
+  "safetyReviewEventTriage": "Opened for review",
+  "safetyReviewEventResolve": "Decided",
+  "safetyReviewEventAppeal": "Appealed",
+  "safetyReviewEventEscalate": "Escalated",
+  "safetyReviewReporterMasked": "The reporter's identity stays hidden unless the report is escalated.",
+  "safetyReviewDecisionHeading": "Your decision",
+  "safetyReviewOutcomeUpheld": "Upheld",
+  "safetyReviewOutcomeUpheldDetail": "The rules were broken and action was taken.",
+  "safetyReviewOutcomePartial": "Partly upheld",
+  "safetyReviewOutcomePartialDetail": "Part of the report was upheld.",
+  "safetyReviewOutcomeNotUpheld": "Not upheld",
+  "safetyReviewOutcomeNotUpheldDetail": "The rules were not broken.",
+  "safetyReviewOutcomeNoAction": "No action",
+  "safetyReviewOutcomeNoActionDetail": "Nothing here to act on.",
+  "safetyReviewNoteLabel": "Note",
+  "safetyReviewNoteHint": "What you decided and why. Do not copy the reported content.",
+  "safetyReviewRecord": "Record decision",
+  "safetyReviewConfirmTitle": "Record this decision?",
+  "safetyReviewConfirmBody": "The report closes as \"{outcome}\" and the reporter is told it was resolved. It cannot be undone here.",
+  "@safetyReviewConfirmBody": {
+    "placeholders": {
+      "outcome": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyReviewCancel": "Cancel",
+  "safetyReviewRecorded": "Decision recorded.",
+  "safetyReviewNotDecidable": "This report cannot be decided here: it is escalated or closed. Follow the operator runbook.",
+  "safetyReviewResolvedAs": "Resolved: {outcome}",
+  "@safetyReviewResolvedAs": {
+    "placeholders": {
+      "outcome": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1784,6 +1784,28 @@ class V1ApiClient {
     ),
   );
 
+  Future<V1SafetyReviewReportPageDto> listSafetyReviewReports({
+    String? cursor,
+    int? pageSize,
+  }) async => V1SafetyReviewReportPageDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/safety-review/reports', {}, {
+        'cursor': cursor,
+        'pageSize': pageSize,
+      }),
+    ),
+  );
+
+  Future<V1ModerationReportDto> openSafetyReviewReport({
+    required String reportId,
+  }) async => V1ModerationReportDto.fromJson(
+    await _transport.get(
+      _v1Path('/internal/safety-review/reports/{reportId}', {
+        'reportId': reportId,
+      }, {}),
+    ),
+  );
+
   Future<V1CreateUploadIntentResponseDto> createUploadIntent(
     V1CreateUploadIntentRequestDto request, {
     String? idempotencyKey,
@@ -9022,6 +9044,7 @@ class V1MeResponseDto {
     required this.displayName,
     required this.memberships,
     required this.activeTermId,
+    this.platformOperator,
   });
 
   factory V1MeResponseDto.fromJson(Map<String, dynamic> json) =>
@@ -9033,18 +9056,21 @@ class V1MeResponseDto {
             V1MembershipDto.fromJson(item as Map<String, dynamic>),
         ],
         activeTermId: json['activeTermId'] as String?,
+        platformOperator: json['platformOperator'] as bool?,
       );
 
   final String id;
   final String displayName;
   final List<V1MembershipDto> memberships;
   final String? activeTermId;
+  final bool? platformOperator;
 
   Map<String, Object?> toJson() => {
     'id': id,
     'displayName': displayName,
     'memberships': [for (final item in memberships) item.toJson()],
     'activeTermId': activeTermId,
+    'platformOperator': ?platformOperator,
   };
 }
 
@@ -11737,6 +11763,92 @@ class V1RevokeSupportAccessRequestDto {
   Map<String, Object?> toJson() => {
     'expectedVersion': expectedVersion,
     'reason': ?reason,
+  };
+}
+
+class V1SafetyReviewQueueQueryDto {
+  const V1SafetyReviewQueueQueryDto({this.cursor, required this.pageSize});
+
+  factory V1SafetyReviewQueueQueryDto.fromJson(Map<String, dynamic> json) =>
+      V1SafetyReviewQueueQueryDto(
+        cursor: json['cursor'] as String?,
+        pageSize: json['pageSize'] as int,
+      );
+
+  final String? cursor;
+  final int pageSize;
+
+  Map<String, Object?> toJson() => {'cursor': ?cursor, 'pageSize': pageSize};
+}
+
+class V1SafetyReviewReportPageDto {
+  const V1SafetyReviewReportPageDto({
+    required this.items,
+    required this.nextCursor,
+    required this.singleReviewer,
+  });
+
+  factory V1SafetyReviewReportPageDto.fromJson(Map<String, dynamic> json) =>
+      V1SafetyReviewReportPageDto(
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1SafetyReviewReportSummaryDto.fromJson(
+              item as Map<String, dynamic>,
+            ),
+        ],
+        nextCursor: json['nextCursor'] as String?,
+        singleReviewer: json['singleReviewer'] as bool,
+      );
+
+  final List<V1SafetyReviewReportSummaryDto> items;
+  final String? nextCursor;
+  final bool singleReviewer;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final item in items) item.toJson()],
+    'nextCursor': nextCursor,
+    'singleReviewer': singleReviewer,
+  };
+}
+
+class V1SafetyReviewReportSummaryDto {
+  const V1SafetyReviewReportSummaryDto({
+    required this.id,
+    required this.schoolId,
+    required this.kind,
+    required this.priority,
+    required this.status,
+    required this.createdAt,
+    required this.grantActive,
+  });
+
+  factory V1SafetyReviewReportSummaryDto.fromJson(Map<String, dynamic> json) =>
+      V1SafetyReviewReportSummaryDto(
+        id: json['id'] as String,
+        schoolId: json['schoolId'] as String,
+        kind: json['kind'] as String,
+        priority: json['priority'] as String,
+        status: json['status'] as String,
+        createdAt: json['createdAt'] as String,
+        grantActive: json['grantActive'] as bool,
+      );
+
+  final String id;
+  final String schoolId;
+  final String kind;
+  final String priority;
+  final String status;
+  final String createdAt;
+  final bool grantActive;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'schoolId': schoolId,
+    'kind': kind,
+    'priority': priority,
+    'status': status,
+    'createdAt': createdAt,
+    'grantActive': grantActive,
   };
 }
 

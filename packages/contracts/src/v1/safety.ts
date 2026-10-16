@@ -349,6 +349,49 @@ export const V1SchoolScopeQuery = z.strictObject({
 });
 export type V1SchoolScopeQuery = z.infer<typeof V1SchoolScopeQuery>;
 
+/**
+ * The platform operator's safety-review queue: every open report on the
+ * platform, as metadata only (no details, evidence, names or account ids).
+ * The facts the report alert carries, plus the school id a moderation grant
+ * is requested for and whether the caller already holds an active grant
+ * covering the report. Platform operators only; the SQL refuses anyone else.
+ */
+export const V1SafetyReviewReportSummary = z.strictObject({
+  id: Id,
+  schoolId: Id,
+  kind: V1ReportKind,
+  priority: V1ReportPriority,
+  status: V1ReportStatus,
+  createdAt: IsoTime,
+  /** The caller holds an active grant whose scope covers this report. */
+  grantActive: z.boolean(),
+});
+export type V1SafetyReviewReportSummary = z.infer<
+  typeof V1SafetyReviewReportSummary
+>;
+
+export const V1SafetyReviewReportPage = z.strictObject({
+  items: z.array(V1SafetyReviewReportSummary),
+  nextCursor: z.string().nullable(),
+  /**
+   * Single-reviewer mode applies (DL-063): the caller may approve their own
+   * grant when it was requested with requiresSecondApprover false. False
+   * means a second platform operator has to approve every grant.
+   */
+  singleReviewer: z.boolean(),
+});
+export type V1SafetyReviewReportPage = z.infer<
+  typeof V1SafetyReviewReportPage
+>;
+
+export const V1SafetyReviewQueueQuery = z.strictObject({
+  cursor: z.string().min(16).max(2048).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).default(50),
+});
+export type V1SafetyReviewQueueQuery = z.infer<
+  typeof V1SafetyReviewQueueQuery
+>;
+
 /** Moderation queue/overview require an explicit school scope. */
 export const V1SchoolIdQuery = z.strictObject({
   schoolId: Id,

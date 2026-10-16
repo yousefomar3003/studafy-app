@@ -48,7 +48,8 @@ export function reportAlertText(
     `School: #${row.school_hash}`,
     `Filed: ${iso(row.reported_at)}`,
     ...(row.attempts > 1 ? [`(delivery attempt ${row.attempts})`] : []),
-    "Review with scripts/review-report.ts under a moderation grant (safe043 runbook).",
+    // The app is the normal path (DL-063); the script is the fallback.
+    "Review in the app: Account, Safety reports (safe043 runbook).",
   ].join("\n");
 }
 

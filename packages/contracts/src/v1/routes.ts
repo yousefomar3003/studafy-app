@@ -1300,6 +1300,30 @@ export const V1_ROUTE_CATALOGUE = [
     query: Safety.V1ModerationAccessQuery,
     querySchema: "V1ModerationAccessQuery",
   },
+  // The platform operator's review path in the app (DL-063): open reports
+  // across schools as metadata, then one report opened under an active
+  // grant, audited like scripts/review-report.ts. Triage and resolution use
+  // the moderation commands above.
+  {
+    method: "get",
+    path: "/internal/safety-review/reports",
+    operationId: "listSafetyReviewReports",
+    summary: "listSafetyReviewReports",
+    permission: "safety_review.queue.read",
+    idempotency: "none",
+    response: Safety.V1SafetyReviewReportPage,
+    responseSchema: "V1SafetyReviewReportPage",
+    query: Safety.V1SafetyReviewQueueQuery,
+    querySchema: "V1SafetyReviewQueueQuery",
+  },
+  catalogueGet(
+    "openSafetyReviewReport",
+    "/internal/safety-review/reports/{reportId}",
+    "moderation.review.open",
+    Safety.V1ModerationReport,
+    "V1ModerationReport",
+    reportParams(),
+  ),
   cataloguePost(
     "createUploadIntent",
     "/v1/uploads",
