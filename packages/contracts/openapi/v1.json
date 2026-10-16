@@ -29761,7 +29761,10 @@
         "properties": {
           "format": {
             "type": "string",
-            "const": "studafy-export/v1"
+            "enum": [
+              "studafy-export/v1",
+              "studafy-export/v2"
+            ]
           },
           "generatedAt": {
             "type": "string",

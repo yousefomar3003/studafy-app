@@ -1,13 +1,13 @@
 -- The retention schedule (DL-057, 202610140001): timed purges past the
--- append-only guards, class closure, inactive accounts. Transactional
--- fixtures: leaves local data intact.
+-- append-only guards, class closure, inactive accounts, and helper photos
+-- (DL-060, 202610150070). Transactional fixtures: leaves local data intact.
 begin;
 \set auth031_fixture_only true
 \ir rls_access_seed.sql
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(49);
+select plan(54);
 
 \set gone_user 'f0000000-0000-4000-8000-000000000001'
 \set idle_student 'f0000000-0000-4000-8000-000000000002'
@@ -318,15 +318,47 @@ select ok(not exists (select 1 from private.inactive_account_warnings where user
   'and clears the warning');
 
 -- ---------------------------------------------------------------------------
+-- Helper photos (DL-060): due for deletion 30 days after upload.
+-- ---------------------------------------------------------------------------
+insert into public.file_objects (id, school_id, bucket, object_key, uploader_id, size_bytes,
+  declared_media_type, sha256, scan_state, scanned_at, owner_id, purpose, display_name, created_at)
+select p.id::uuid, :'school_id', 'legacy', 'files/retention-' || p.id, p.owner::uuid, 10, 'image/jpeg',
+  repeat(p.h, 64), 'clean', now(), p.owner::uuid, p.purpose::public.file_purpose, 'Photo.jpg', now() - p.age
+from (values
+  ('f0000000-0000-4000-8000-0000000000a1', :'student_user', 'assistant_attachment', interval '31 days', '5'),
+  ('f0000000-0000-4000-8000-0000000000a2', :'student_user', 'assistant_attachment', interval '29 days', '6'),
+  ('f0000000-0000-4000-8000-0000000000a3', :'guardian_user', 'assistant_attachment', interval '31 days', '7'),
+  ('f0000000-0000-4000-8000-0000000000a4', :'student_user', 'notebook_photo', interval '31 days', '8')
+) p(id, owner, purpose, age, h);
+insert into public.legal_holds (school_id, subject_user_id, reason, ticket_ref, granted_by)
+values (:'school_id', :'guardian_user', 'Fixture hold for a dispute', 'RET-HOLD-1', :'teacher_user');
+
+select is(private.retention_expire_helper_photos(5000)->>'helper_photos', '1',
+  'one helper photo is past its 30 days');
+select ok((select retention_until <= now() from public.file_objects
+    where id = 'f0000000-0000-4000-8000-0000000000a1'),
+  'a helper photo uploaded 31 days ago is now due for the file sweep to delete');
+select ok((select bool_and(retention_until is null) from public.file_objects
+    where id in ('f0000000-0000-4000-8000-0000000000a2', 'f0000000-0000-4000-8000-0000000000a4')),
+  'a newer helper photo, and a notebook photo, are left alone');
+select ok((select retention_until is null from public.file_objects
+    where id = 'f0000000-0000-4000-8000-0000000000a3'),
+  'a person under a legal hold keeps theirs');
+select is(private.retention_expire_helper_photos(5000)->>'helper_photos', '0',
+  'a photo already due is not counted again');
+
+-- ---------------------------------------------------------------------------
 -- Only the worker may run the purges.
 -- ---------------------------------------------------------------------------
 select ok(has_function_privilege('studafy_worker_runtime', 'private.retention_purge_records(integer)', 'execute')
   and has_function_privilege('studafy_worker_runtime', 'private.retention_purge_classes(integer)', 'execute')
-  and has_function_privilege('studafy_worker_runtime', 'private.retention_inactive_accounts(integer)', 'execute'),
+  and has_function_privilege('studafy_worker_runtime', 'private.retention_inactive_accounts(integer)', 'execute')
+  and has_function_privilege('studafy_worker_runtime', 'private.retention_expire_helper_photos(integer)', 'execute'),
   'the worker runs the purges');
 select ok(not has_function_privilege('studafy_api_runtime', 'private.retention_purge_records(integer)', 'execute')
   and not has_function_privilege('authenticated', 'private.retention_purge_classes(integer)', 'execute')
   and not has_function_privilege('service_role', 'private.retention_inactive_accounts(integer)', 'execute')
+  and not has_function_privilege('studafy_api_runtime', 'private.retention_expire_helper_photos(integer)', 'execute')
   and not has_function_privilege('studafy_worker_runtime', 'private.retention_purge_class(uuid)', 'execute'),
   'nobody else does');
 

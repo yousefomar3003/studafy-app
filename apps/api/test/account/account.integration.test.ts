@@ -271,7 +271,7 @@ suite("API-042 S7 account rights over the real /v1 stack", () => {
       format: string;
       sections: { profile: { id: string } };
     };
-    expect(doc.format).toBe("studafy-export/v1");
+    expect(doc.format).toBe("studafy-export/v2");
     expect(doc.sections.profile.id).toBe(USER_A);
 
     const status = await request("/v1/account/export-status", {

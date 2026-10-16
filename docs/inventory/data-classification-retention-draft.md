@@ -25,6 +25,7 @@ asks for deletion.
 | `messages`, `conversations` (incl. voice notes) | P1 communications | Personal communications; moderation/legal-hold duties | Deleted once the participants share no class and the last message is 12 months old (school instruction applies) | A conversation a safety report points at, or with a participant under legal hold, is kept |
 | `announcements` | P1 communications | Class communications | Class announcements: deleted 12 months after class closure | School-wide announcements have no timed purge yet |
 | `file_objects` (bytes via FILE-051) | P1 | Uploaded work, photos, voice notes | While attached to something; due for deletion as soon as the class records (or the account's personal files) that held it are gone | The FILE-051 sweep still checks holds, dedupe groups and live references |
+| Study helper photos (`file_objects`, purpose `assistant_attachment`) | P1 | A student's photo, already sent to the AI provider with their question | 30 days after upload (DL-060), or sooner with the account; a person under a legal hold keeps theirs | TODO(legal): counsel to confirm 30 days. The chat on the device keeps its own thumbnail. Not yet a row in privacy policy §10 |
 | `notebook_entries`, `study_notebooks`, AI outputs | P1 | Student's own notes | Until the student deletes them or their account; kept when their class is purged | The class row stays as their anchor |
 | `resources` (lessons) | P2 | Teaching material | Kept in the school's library; only the closed class's publications are removed | |
 | `profiles`, `memberships` | P1 | Adult/child identity, roles | While the account exists; inactive accounts are deleted after 2 years without activity (warning 30 days before) | Deletion uses 14-day grace + audit. Activity = sign-in or token refresh |
@@ -33,6 +34,10 @@ asks for deletion.
 | `audit_events`, `membership_events`, `auth_security_events` | P2 security audit | Accountability records; avoid copying P0 content into audit | 2 years (consent and deletion events: life of the account + 6 years) | Append-only for every role; only the owner's timed purge may delete, never update |
 | `store_transactions`, `store_transaction_history`, `entitlements`, `store_events`, `billing_purchase_approvals`, `subscription_entitlements` | P2 financial metadata | Purchase data; purchaser may differ from beneficiary | 6 years after the end of the tax year (calendar year) they relate to | PAY-071 owns the ledger model |
 | `notifications`, `meeting_deliveries` | P2 metadata | Operational pointers, no bodies | Deleted with the account; class meetings with the class | Other notifications have no timed purge yet |
+| `private.ai_usage` | P2 metadata | Per-request AI usage (feature, plan, tokens, model) | Deleted with the account | No timed purge yet (DL-060) |
+| `reports`, `report_evidence`, `report_events` | P1 safety | Safety reports and what they point at | No timed purge yet; a reported conversation is kept for its report | Counsel to set a period with the safeguarding items (B10) |
+| `invitations` | P1 | Invitee email address | Email replaced when the account is deleted | No timed purge yet for invitations nobody accepted (DL-060) |
+| `data_export_requests`, `data_export_payloads` | P1 | The export itself | Payload: 7 days after it is ready. Request row: until the account is deleted | The request row has no timed purge yet |
 | `ai_grading_drafts`, `question_suggestions`, `practice_sessions` | P1/P2 derived | Retired by AI-072 (ADR-0026) | **Deleted** (DL-057) | No provider ever received them; see `docs/evidence/phase-7/README.md` |
 | Supabase Auth sign-in IP addresses | P1 | Network identifiers | Up to 7 days in Supabase's security logs; with an active session until it ends | Held by Supabase, not our tables |
 | Technical logs (Axiom) | P2 | May embed request IDs, errors, account hashes | 30 days | The Axiom dataset's retention must be set to 30 days (owner action) |
@@ -41,17 +46,22 @@ asks for deletion.
 
 ## Retention principles
 
-1. Every table above has a period (DL-057). They are proposed defaults; a
-   change after counsel's review is a new decision-log entry and, where the
-   policy text changes, a new policy version.
-2. Deletion of an account is workflow-based (grace period, audit, export) —
+1. Every table above has a period (DL-057, DL-060) except those marked "no
+   timed purge yet", which DL-060 lists for counsel. They are proposed
+   defaults; a change after counsel's review is a new decision-log entry and,
+   where the policy text changes, a new policy version.
+2. The data export (privacy policy §11, DL-060, `studafy-export/v2`) holds
+   the account holder's own data from the tables above, as the app shows it
+   to them; files are listed, not included. DL-060 says what is left out and
+   why.
+3. Deletion of an account is workflow-based (grace period, audit, export) —
    including inactive accounts, which go through the same request.
-3. Append-only relations stay append-only: no role may update them, and only
+4. Append-only relations stay append-only: no role may update them, and only
    the table owner's timed purge (`studafy.retention_purge`, set by the
    `private.retention_*` functions) may delete from them.
-4. Evidence attached to guardian verification may need shorter retention than
+5. Evidence attached to guardian verification may need shorter retention than
    the link itself.
-5. Physical file deletion follows reference counts and legal holds, not
+6. Physical file deletion follows reference counts and legal holds, not
    immediate deletes.
 
 ## Open legal questions (recorded, blocking — DL-011/DL-014)

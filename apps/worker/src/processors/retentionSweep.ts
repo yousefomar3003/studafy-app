@@ -22,7 +22,7 @@ export interface FileRetentionRuntime {
  * verified every same-school member is past its horizon, unheld and
  * unreferenced; the rows move to `deleted` only after storage confirms the
  * physical deletion. A file's horizon is set by whatever ends its purpose:
- * account deletion, or the retention schedule below (DL-057).
+ * account deletion, or the retention schedule below (DL-057, DL-060).
  */
 export function startFileRetentionSweep(
   sql: Sql,
@@ -119,6 +119,14 @@ const RETENTION_STEPS = [
     query: (sql: Sql) =>
       sql<{ counts: Record<string, number> }[]>`
     select private.retention_inactive_accounts(100) as counts`,
+  },
+  // Study helper photos, 30 days after upload (DL-060). The model has read
+  // them and the chat keeps its own copy on the device.
+  {
+    name: "helper_photos",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.retention_expire_helper_photos(5000) as counts`,
   },
 ] as const;
 
