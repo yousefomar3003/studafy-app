@@ -1,9 +1,86 @@
 # Handoff: Studafy
 
-Updated: 2026-10-16, evening. **Everything from PRs #52–#88 is merged and
-on the test copy.** No PR is open.
+Updated: 2026-10-17. **Everything through #105 is merged and on the test
+copy.** No PR is open.
 
-## Start here (2026-10-16)
+## Start here (2026-10-17)
+
+### What happened on 2026-10-17
+- **#99, release cutover (REL-002, ADR-0044, DL-069):** the last SEC-001
+  release blocks are gone. Store builds in production mode must pass one
+  defines contract (`lib/core/production_contract.dart`), checked by
+  Gradle, by the Xcode phase `Release Defines Check` and by
+  `scripts/release/build-store.sh android|ios --build-number N`. The real
+  `config/dart-defines.production.json` is git-ignored; start from
+  `config/dart-defines.production.example.json`. **Upload no production
+  build to any store track until `https://api.studafy.com` is live.**
+- **#100, privacy policy 1.5 and terms 1.3 (DL-068), published without
+  legal review** (the owner's decision; counsel reviews later). Live at
+  https://legal.studafy.com (EN/AR). Consent version `2026-10-17`
+  (migration `202610170010`); `2026-10-14` stays published.
+- **#101, production cutover scripts:** `scripts/production/cutover.ts`
+  (dry run by default; `--execute` asks before each step) and the runbook
+  `docs/deployment/production-cutover.md`. Nothing has been run against
+  production yet.
+- **#102:** the merge batch that landed #99–#101.
+- **#103, new brand:** the white S on navy `#161551` is the app icon (iOS
+  and Android, adaptive and round); white wordmark on the launch and
+  sign-in screens; navy wordmark inside the app. Masters in
+  `assets/brand/source/`; regenerate everything with
+  `scripts/brand/generate-icons.py`.
+- **#104, go-live checklist:**
+  `docs/evidence/launch-readiness/go-live-checklist.md`, with blocker lists
+  for Play internal testing, Play production and the App Store.
+- **#105, every feature on in production (DL-070):**
+  - Uploads are on in production builds (they used to fail at every use,
+    downloads too). Scanning, quarantine and quotas are unchanged.
+  - Email and push (`NOTIFICATION_CHANNELS_ENABLED`) and store billing
+    (`PAY071_BILLING_ENABLED`, `PAY071_ENVIRONMENT=production`) are
+    switched on and start on their own once their keys exist. Until then
+    nothing is queued or sold (migration `202610170020`,
+    `private.channel_fanout`; `billingActive()`).
+  - Students always have 5 tabs: the Helper tab shows whenever AI is on,
+    with a "Join a class" screen for students without one.
+  - What each feature needs: `docs/deployment/production-features.md`.
+- **Deployed:** backup, migrations `202610170010` and `202610170020`, test
+  API (`/readyz` ready) and worker, the legal site. A new profile build from
+  `main` (new icon, 5 student tabs, uploads) is on the iPhone.
+- **The Seoul Supabase project is deleted** (`zqbbsnqutrvlqcmtdlcx`; the CLI
+  needs `bunx supabase@2.121.0 projects delete <ref> --yes`). Only the
+  Frankfurt project `cyrngoqnhqflzovlybbr` is left.
+- Stray background processes and throwaway Supabase stacks from earlier
+  sessions were stopped.
+
+### Owner: to do
+1. **Become the safety-report operator.** In the Supabase SQL editor
+   (Frankfurt), add your Studafy account to `public.platform_operators` and
+   remove any other row; single-reviewer mode needs exactly one. Then, in
+   the app, Account → Security: turn on two-factor sign-in.
+2. **Axiom:** app.axiom.co → Datasets → `studafy-production` → Edit dataset
+   → Data retention: 30 days (on the free plan it is already 30).
+3. **The phone test (2.9)** on the new build; tick 2.8 and 2.9 from the
+   results.
+4. **Keys and accounts for production:** paid Redis Cloud (AOF every 1 s,
+   `noeviction`), Resend (C5), Firebase (C3), Turnstile, the Android
+   keystore (C1), Play billing, Apple. Put them in `~/studafy-secrets/`,
+   then run `bun scripts/production/cutover.ts` (dry run first).
+5. **Store screenshots:** retake with the new brand when you say so (the
+   current ones show the old look and no messaging).
+6. **Lawyers:** send `docs/legal/questions-for-counsel-2026-10.md` and the
+   DPIA draft; keep their answers out of the repo (it is public).
+
+### Next for Claude
+- Add the owner to `public.platform_operators` once they give their sign-in
+  email (or give them the SQL).
+- Retake the store screenshots when asked.
+- Run the production cutover once the keys are in `~/studafy-secrets/`.
+- Fill `PENDING_*` in `ops/legal-site/src/app-links.ts` when Apple's Team
+  ID and the Play App Signing SHA-256 exist, then `bun run legal:deploy`.
+
+The rules are unchanged: see "Rules" at the end of the 2026-10-16 section
+below. The to-do lists in that section are superseded by the one above.
+
+## Earlier (2026-10-16): merge batch, decisions, R2 backups
 
 ### What happened today
 - **Merged:** #52–#77 through the merge batch #79 (CI all green; conflicts
