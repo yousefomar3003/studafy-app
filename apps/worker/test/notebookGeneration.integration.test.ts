@@ -17,8 +17,10 @@ import {
 // Study notebooks written off the notebook queue (2026-10-16), through the
 // real SQL: a notebook the API creates is queued by trigger, claimed with a
 // lease, written as its owner and charged once - through busy providers,
-// stopped workers, replaced generations and lost access. The provider is a
-// stand-in; nothing real is called. Who may call what is
+// stopped workers, replaced generations and lost access - with the names
+// the owner can see kept out of what is sent, and the AI ledger refusing an
+// owner who may no longer use AI (ADR-0043). The provider is a stand-in;
+// nothing real is called. Who may call what is
 // supabase/tests/study_notebooks.sql.
 
 const databaseUrl = process.env["DATABASE_URL"];
@@ -30,10 +32,24 @@ const TERM = `${P}02`;
 const CLASSROOM = `${P}03`;
 const TEACHER = `${P}11`;
 const STUDENT = `${P}12`;
+const CLASSMATE = `${P}13`;
+const PARENT = `${P}14`;
 const STUDENT_ROW = `${P}21`;
+const CLASSMATE_ROW = `${P}22`;
 const LESSON = `${P}31`;
 const LESSON_V1 = `${P}32`;
 const OTHER_LESSON = `${P}33`;
+const NAMED_LESSON = `${P}34`;
+const NAMED_LESSON_V1 = `${P}35`;
+
+// The people the student can see, by name (ADR-0043): their own, a
+// classmate's, their teacher's and their parent's.
+const NAMES = {
+  student: "Layla Haddad",
+  classmate: "Sami Nasser",
+  teacher: "Omar Khalil",
+  parent: "Huda Saleh",
+};
 
 const PRICES = { inputUsdPerMTok: 0.17, outputUsdPerMTok: 0.25 };
 const USAGE = { inputTokens: 900, outputTokens: 700, model: "stub" };
@@ -59,9 +75,16 @@ const CONTENT: NotebookContent = {
 type Behaviour = "ok" | "busy" | "empty";
 let behaviours: Behaviour[] = [];
 let calls = 0;
+/** Everything the stand-in provider was sent, as JSON. */
+const sent: string[] = [];
 const assistant = {
-  notebook: async (_title: string, passages: { text: string }[]) => {
+  notebook: async (
+    title: string,
+    passages: { text: string }[],
+    extras: unknown,
+  ) => {
     calls++;
+    sent.push(JSON.stringify({ title, passages, extras }));
     expect(passages.map((p) => p.text).join(" ")).toContain("chloroplasts");
     const next = behaviours.shift() ?? "ok";
     if (next === "busy") throw new StudyAssistantError("unavailable", 503);
@@ -83,7 +106,7 @@ let sql: Sql;
 async function cleanup(): Promise<void> {
   await removeFixtures(sql, {
     schoolIds: [SCHOOL],
-    userIds: [TEACHER, STUDENT],
+    userIds: [TEACHER, STUDENT, CLASSMATE, PARENT],
   });
 }
 
@@ -100,17 +123,23 @@ async function user(id: string, name: string): Promise<void> {
       now(), '00000000-0000-0000-0000-000000000000', '', '', '', '', '', '',
       '{}'::jsonb, ${JSON.stringify({ full_name: name })}::jsonb
     ) on conflict (id) do nothing`;
+  // The name Studafy shows for them, which is what is kept out of AI calls.
+  await sql`update public.profiles set display_name = ${name}
+    where id = ${id}::uuid`;
 }
 
 async function seed(): Promise<void> {
-  await user(TEACHER, "Queue Teacher");
-  await user(STUDENT, "Queue Student");
+  await user(TEACHER, NAMES.teacher);
+  await user(STUDENT, NAMES.student);
+  await user(CLASSMATE, NAMES.classmate);
+  await user(PARENT, NAMES.parent);
   await sql`insert into public.schools (id, name, timezone, status)
     values (${SCHOOL}::uuid, 'Queue School', 'Asia/Riyadh', 'active')`;
   await sql`
     insert into public.memberships (school_id, user_id, role, active, status, version) values
       (${SCHOOL}::uuid, ${TEACHER}::uuid, 'teacher', true, 'active', 1),
-      (${SCHOOL}::uuid, ${STUDENT}::uuid, 'student', true, 'active', 1)`;
+      (${SCHOOL}::uuid, ${STUDENT}::uuid, 'student', true, 'active', 1),
+      (${SCHOOL}::uuid, ${CLASSMATE}::uuid, 'student', true, 'active', 1)`;
   await sql`insert into public.terms (id, school_id, name, starts_on, ends_on, active, status)
     values (${TERM}::uuid, ${SCHOOL}::uuid, 'Queue Term', current_date - 10, current_date + 90, true, 'active')`;
   await sql`insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id, status, version)
@@ -121,21 +150,48 @@ async function seed(): Promise<void> {
     from public.memberships m where m.school_id = ${SCHOOL}::uuid and m.user_id = ${TEACHER}::uuid`;
   await sql`
     insert into public.students (id, school_id, user_id, studafy_id, display_name, provisional, created_by)
-    values (${STUDENT_ROW}::uuid, ${SCHOOL}::uuid, ${STUDENT}::uuid, 'STU-NQ-1', 'Queue Student', false, ${TEACHER}::uuid)`;
+    values (${STUDENT_ROW}::uuid, ${SCHOOL}::uuid, ${STUDENT}::uuid, 'STU-NQ-1', ${NAMES.student}, false, ${TEACHER}::uuid),
+      (${CLASSMATE_ROW}::uuid, ${SCHOOL}::uuid, ${CLASSMATE}::uuid, 'STU-NQ-2', ${NAMES.classmate}, false, ${TEACHER}::uuid)`;
   await sql`
     insert into public.enrollments (classroom_id, student_id, school_id, status, active)
-    values (${CLASSROOM}::uuid, ${STUDENT_ROW}::uuid, ${SCHOOL}::uuid, 'active', true)`;
+    values (${CLASSROOM}::uuid, ${STUDENT_ROW}::uuid, ${SCHOOL}::uuid, 'active', true),
+      (${CLASSROOM}::uuid, ${CLASSMATE_ROW}::uuid, ${SCHOOL}::uuid, 'active', true)`;
+  await sql`
+    insert into public.guardian_links (school_id, student_id, guardian_id, status, relationship)
+    values (${SCHOOL}::uuid, ${STUDENT_ROW}::uuid, ${PARENT}::uuid, 'pending', 'parent')`;
   await sql`insert into public.resources (id, school_id, title, resource_type, state, current_version, created_by)
     values (${LESSON}::uuid, ${SCHOOL}::uuid, 'Photosynthesis', 'lesson_note', 'published', 1, ${TEACHER}::uuid),
-      (${OTHER_LESSON}::uuid, ${SCHOOL}::uuid, 'Other', 'lesson_note', 'published', 1, ${TEACHER}::uuid)`;
+      (${OTHER_LESSON}::uuid, ${SCHOOL}::uuid, 'Other', 'lesson_note', 'published', 1, ${TEACHER}::uuid),
+      (${NAMED_LESSON}::uuid, ${SCHOOL}::uuid, ${`Revision for ${NAMES.student}`}, 'lesson_note', 'published', 1, ${TEACHER}::uuid)`;
   await sql`insert into public.resource_versions (id, school_id, resource_id, version, body, created_by)
     values (${LESSON_V1}::uuid, ${SCHOOL}::uuid, ${LESSON}::uuid, 1,
       'Photosynthesis turns light into chemical energy in the chloroplasts. Chlorophyll absorbs the light.',
+      ${TEACHER}::uuid),
+      (${NAMED_LESSON_V1}::uuid, ${SCHOOL}::uuid, ${NAMED_LESSON}::uuid, 1,
+      ${`${NAMES.teacher} asked ${NAMES.student} and ${NAMES.classmate} to explain how the chloroplasts capture light. ${NAMES.parent} helped ${NAMES.student} revise at home.`},
       ${TEACHER}::uuid)`;
   await sql`insert into public.resource_publications (school_id, resource_version_id, classroom_id, audience, state, published_at, created_by)
-    values (${SCHOOL}::uuid, ${LESSON_V1}::uuid, ${CLASSROOM}::uuid, 'both', 'published', now(), ${TEACHER}::uuid)`;
+    values (${SCHOOL}::uuid, ${LESSON_V1}::uuid, ${CLASSROOM}::uuid, 'both', 'published', now(), ${TEACHER}::uuid),
+      (${SCHOOL}::uuid, ${NAMED_LESSON_V1}::uuid, ${CLASSROOM}::uuid, 'both', 'published', now(), ${TEACHER}::uuid)`;
   await sql`insert into private.study_plan_grants (user_id, plan, reason, ends_at)
     values (${STUDENT}::uuid, 'plus', 'integration test', now() + interval '1 day')`;
+  // The student has agreed to the AI notice (ADR-0043).
+  await consent(true);
+}
+
+/** The student's AI consent: given, or withdrawn. */
+async function consent(given: boolean): Promise<void> {
+  await sql`
+    insert into public.consent_records (
+      user_id, purpose, policy_version, locale, policy_id, given_by, given_as)
+    select ${STUDENT}::uuid, 'ai_features', p.policy_version, 'en', p.id,
+      ${STUDENT}::uuid, 'self'
+    from public.consent_policies p
+    where p.purpose = 'ai_features' and p.locale = 'en'
+    order by p.effective_at desc, p.policy_version desc
+    limit 1
+    on conflict (user_id, purpose, policy_version)
+      do update set withdrawn_at = ${given ? null : new Date()}`;
 }
 
 /** What the API does: the notebook call, as the student. */
@@ -153,10 +209,10 @@ async function asStudent(
   }) as Record<string, unknown>;
 }
 
-async function createNotebook(): Promise<string> {
+async function createNotebook(resourceId = LESSON): Promise<string> {
   const started = await asStudent("create", {
     classroomId: CLASSROOM,
-    resourceId: LESSON,
+    resourceId,
     sourceIds: [],
   });
   expect(started["outcome"]).toBe("ok");
@@ -418,6 +474,80 @@ suite("study notebooks written off the queue", () => {
       await sql`update public.enrollments set status = 'active', active = true
         where student_id = ${STUDENT_ROW}::uuid`;
     }
+  });
+
+  test("the names the student can see are replaced before the model call", async () => {
+    const id = await createNotebook(NAMED_LESSON);
+    sent.length = 0;
+    expect(await processor().runOnce()).toBe(1);
+    expect(await notebook(id)).toMatchObject({ status: "ready" });
+    expect(sent).toHaveLength(1);
+    const request = sent[0]!;
+    // Not one word of any of their names, in the material or the title.
+    for (const name of Object.values(NAMES)) {
+      for (const word of name.split(" ")) expect(request).not.toContain(word);
+    }
+    for (
+      const placeholder of ["[student]", "[classmate]", "[teacher]", "[parent]"]
+    ) {
+      expect(request).toContain(placeholder);
+    }
+    expect(request).toContain("Revision for [student]");
+    expect(request).toContain("chloroplasts capture light");
+  });
+
+  test("names that cannot be read fail the notebook without a model call", async () => {
+    const id = await createNotebook(NAMED_LESSON);
+    const before = { calls, charged: await charged() };
+    const real = postgresNotebookQueue(sql);
+    const blind = createNotebookGenerationProcessor({
+      queue: { ...real, names: async () => ({ outcome: "forbidden" }) },
+      assistant,
+      prices: PRICES,
+      logger,
+      concurrency: 1,
+      workerId: "notebook-it-blind",
+    });
+    expect(await blind.runOnce()).toBe(1);
+    expect(calls).toBe(before.calls);
+    expect(await charged()).toBe(before.charged);
+    expect(await notebook(id)).toMatchObject({
+      status: "failed",
+      failure: "names_unavailable",
+    });
+    expect(await jobs(id)).toEqual([]);
+  });
+
+  test("a student who lost AI access: refused by the ledger, failed with the reason, no model call", async () => {
+    const id = await createNotebook();
+    const before = { calls, charged: await charged() };
+    // Created while they could use AI; withdrawn before the worker came.
+    await consent(false);
+    try {
+      expect(await processor().runOnce()).toBe(1);
+      expect(calls).toBe(before.calls);
+      expect(await charged()).toBe(before.charged);
+      expect(await notebook(id)).toMatchObject({
+        status: "failed",
+        failure: "consent_required",
+      });
+      // Not tried again: the job is done, and nothing was held.
+      expect(await jobs(id)).toEqual([]);
+      const [held] = await sql<{ n: number }[]>`
+        select count(*)::int as n from private.ai_usage
+        where user_id = ${STUDENT}::uuid and request_key = ${`notebook:${id}:1`}`;
+      expect(held!.n).toBe(0);
+      expect(events.at(-1)).toMatchObject({
+        event: "study_notebook_job",
+        fields: { outcome: "failed", reason: "consent_required" },
+      });
+    } finally {
+      await consent(true);
+    }
+    // Consent given again, the student's retry is written.
+    expect((await asStudent("regenerate", { id }))["outcome"]).toBe("ok");
+    expect(await processor().runOnce()).toBe(1);
+    expect(await notebook(id)).toMatchObject({ status: "ready" });
   });
 
   test("a notebook that waited too long is a dead letter, timed out", async () => {

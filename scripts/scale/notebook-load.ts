@@ -157,6 +157,17 @@ async function seed(): Promise<void> {
         values (${
         student(n)
       }::uuid, 'plus', 'notebook load', now() + interval '1 day')`;
+      // The AI consent (ADR-0043): without it the API refuses the request
+      // and the ledger the worker's hold.
+      await tx`insert into public.consent_records (user_id, purpose,
+          policy_version, locale, policy_id, given_by, given_as)
+        select ${student(n)}::uuid, 'ai_features', p.policy_version, 'en',
+          p.id, ${student(n)}::uuid, 'self'
+        from public.consent_policies p
+        where p.purpose = 'ai_features' and p.locale = 'en'
+        order by p.effective_at desc, p.policy_version desc limit 1
+        on conflict (user_id, purpose, policy_version)
+          do update set withdrawn_at = null`;
     }
     // A read PDF on the lesson: its passages are what the notebook reads.
     const digest = new Bun.CryptoHasher("sha256").update(FILE).digest("hex");

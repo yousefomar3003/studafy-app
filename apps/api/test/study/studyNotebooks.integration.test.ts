@@ -232,6 +232,12 @@ async function settle(): Promise<number> {
                   ${job.jobId}::uuid, ${job.attempt}, ${operation},
                   ${sql.json(input as never)}) as result`)[0]!.result,
           },
+          names: {
+            names: async () =>
+              (await sql<{ result: Record<string, unknown> }[]>`
+                select private.notebook_job_names(${worker},
+                  ${job.jobId}::uuid, ${job.attempt}) as result`)[0]!.result,
+          },
           prices: PRICES,
           assistant,
         },
@@ -604,5 +610,39 @@ suite("Study notebooks over real SQL", () => {
     expect(notebook.summary.status).toBe("ready");
     expect(await queued(id)).toEqual([]);
     expect(await tokens(STUDENT)).toBe(used + 1_600);
+  });
+
+  test("without AI access nothing is queued; access lost while queued fails it (ADR-0043)", async () => {
+    const res = await create(STUDENT);
+    expect(res.status).toBe(201);
+    const id = ((await res.json()) as { id: string }).id;
+    const before = calls.length;
+    await sql`update public.consent_records set withdrawn_at = now()
+      where user_id = ${STUDENT}::uuid and purpose = 'ai_features'`;
+    try {
+      // The routes refuse before anything is recorded or queued.
+      const refused = await create(STUDENT);
+      expect(refused.status).toBe(403);
+      expect(((await refused.json()) as { code: string }).code).toBe(
+        "AI_CONSENT_REQUIRED",
+      );
+      const again = await request(
+        `/v1/study-notebooks/${id}/regenerate`,
+        STUDENT,
+        { method: "POST", body: {} },
+      );
+      expect(again.status).toBe(403);
+      expect(await queued(id)).toEqual([1]);
+      // The one queued before: the worker's ledger hold is refused, and the
+      // notebook fails with the reason, without a model call.
+      expect(await settle()).toBe(1);
+      expect(calls.length).toBe(before);
+      const notebook = await (await open(id)).json() as Notebook;
+      expect(notebook.summary.status).toBe("failed");
+      expect(notebook.summary.failure).toBe("consent_required");
+      expect(await queued(id)).toEqual([]);
+    } finally {
+      await consentToAi(sql, [STUDENT]);
+    }
   });
 });

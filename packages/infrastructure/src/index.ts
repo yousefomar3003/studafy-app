@@ -210,6 +210,13 @@ export {
   unreadableReason,
 } from "./study/selection";
 export {
+  knownNamesOf,
+  KnownNamesUnavailable,
+  redactingNames,
+} from "./study/knownNames";
+export {
+  AI_ACCESS_FAILURES,
+  type KnownNameSource,
   NOTEBOOK_OUTPUT_TOKENS,
   notebookRefs,
   notebookRequestKey,

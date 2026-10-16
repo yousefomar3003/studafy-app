@@ -57,6 +57,8 @@ Per notebook, median of 11 interleaved runs (database blocks: 6 runs):
 | A busy provider | The notebook failed; the student retried | Tried again after 20 s and 80 s (three attempts), charging nothing for the busy ones |
 | Gave up | Read as `timed_out` after ten minutes | A dead letter after three attempts or nine minutes; the notebook shows failed with its retry; counted by the queue alerts ("study notebooks") |
 | Charging | Once per generation (key `notebook:<id>:<generation>`); a resumed write had its own key | Once per generation: every attempt shares the key |
+| Names out of the request (ADR-0043) | The API writer wrapped the model client with the owner's known names | The worker does the same before the model call, with the same shared code; it reads the names through `private.notebook_job_names` (`202610160001`), and with no names it sends nothing (`names_unavailable`) |
+| Owner lost AI access while it waited | The ledger refused the API writer's hold | The ledger refuses the worker's hold: the notebook fails with the reason (`consent_required` ...), no model call, no retry |
 
 The app sees no change: the same routes, answers ("creating" at once, the
 same refusals), polling and statuses.

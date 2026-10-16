@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { NotebookContent } from "@studafy/domain";
 import {
+  AI_ACCESS_FAILURES,
   notebookRequestKey,
   type NotebookWriterDeps,
   StudyAssistantError,
@@ -42,11 +43,18 @@ const LESSON = {
 };
 
 function deps(
-  notebook: () => Promise<unknown>,
-  options: { lessons?: unknown[]; reserve?: string } = {},
+  notebook: (...args: never[]) => Promise<unknown>,
+  options: {
+    lessons?: unknown[];
+    reserve?: string;
+    names?: () => Promise<Record<string, unknown>>;
+  } = {},
 ) {
   const ledger: { operation: string; input: Record<string, unknown> }[] = [];
   const d: NotebookWriterDeps = {
+    names: {
+      names: options.names ?? (async () => ({ outcome: "ok", names: [] })),
+    },
     material: {
       call: async (_c, operation) =>
         operation === "lessons"
@@ -177,6 +185,94 @@ describe("writeNotebook", () => {
       outcome: "failed",
       reason: "no_readable_material",
     });
+  });
+
+  test("the owner's names are replaced in everything sent (ADR-0043)", async () => {
+    const sent: unknown[] = [];
+    const { d } = deps(async (...args: never[]) => {
+      sent.push(args);
+      return { content: CONTENT };
+    }, {
+      lessons: [{
+        ...LESSON,
+        title: "Layla Haddad's notes",
+        body: "Mr Omar Khalil asked Layla Haddad and Sami Nasser to explain " +
+          "photosynthesis; her father Karim Haddad helped her revise.",
+      }],
+      names: async () => ({
+        outcome: "ok",
+        names: [
+          { name: "Layla Haddad", kind: "self" },
+          { name: "Sami Nasser", kind: "classmate" },
+          { name: "Omar Khalil", kind: "teacher" },
+          { name: "Karim Haddad", kind: "parent" },
+        ],
+      }),
+    });
+    expect(
+      await writeNotebook(d, CONTEXT, {
+        ...START,
+        lessonTitle: "Layla Haddad's notes",
+      }),
+    ).toMatchObject({ outcome: "ready" });
+    const text = JSON.stringify(sent);
+    for (
+      const name of ["Layla", "Haddad", "Sami", "Nasser", "Omar", "Khalil"]
+    ) {
+      expect(text).not.toContain(name);
+    }
+    expect(text).not.toContain("Karim");
+    for (
+      const placeholder of ["[student]", "[classmate]", "[teacher]", "[parent]"]
+    ) {
+      expect(text).toContain(placeholder);
+    }
+    expect(text).toContain("photosynthesis");
+  });
+
+  test("names that cannot be read fail it: no hold, no model call", async () => {
+    for (
+      const names of [
+        async () => ({ outcome: "forbidden" }),
+        async () => ({ outcome: "ok" }),
+        () => Promise.reject(new Error("connection reset")),
+      ]
+    ) {
+      let called = 0;
+      const { d, ledger } = deps(async () => {
+        called++;
+        return { content: CONTENT };
+      }, { names });
+      expect(await writeNotebook(d, CONTEXT, START)).toEqual({
+        outcome: "failed",
+        reason: "names_unavailable",
+      });
+      expect(called).toBe(0);
+      expect(ledger).toEqual([]);
+    }
+  });
+
+  test("an owner who may no longer use AI fails it, with no model call", async () => {
+    expect(AI_ACCESS_FAILURES).toEqual([
+      "not_student",
+      "no_class",
+      "consent_required",
+      "guardian_consent_required",
+    ]);
+    for (const refusal of AI_ACCESS_FAILURES) {
+      let called = 0;
+      const { d, ledger } = deps(async () => {
+        called++;
+        return { content: CONTENT };
+      }, { reserve: refusal });
+      // Failed, not retried: the reason the student is shown.
+      expect(await writeNotebook(d, CONTEXT, START)).toEqual({
+        outcome: "failed",
+        reason: refusal,
+      });
+      expect(called).toBe(0);
+      expect(ledger.map((l) => l.operation)).toEqual(["reserve"]);
+    }
   });
 
   test("without a provider it fails as unavailable", async () => {

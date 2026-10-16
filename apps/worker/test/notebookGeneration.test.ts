@@ -13,9 +13,10 @@ import {
 } from "../src/processors/notebookGeneration";
 
 // The notebook processor against a stand-in queue: what it reports, that it
-// stops acting on a job another worker took, and that it never writes more
-// notebooks at once than it is allowed. The real SQL is
-// notebookGeneration.integration.test.ts.
+// stops acting on a job another worker took, that it never writes more
+// notebooks at once than it is allowed, that the owner's names are kept out
+// of the model call and that a ledger refusal fails the notebook without
+// one (ADR-0043). The real SQL is notebookGeneration.integration.test.ts.
 
 const LESSON = {
   resourceId: "lesson-1",
@@ -39,8 +40,13 @@ function job(n: number): NotebookJob {
 
 function fakeQueue(
   waiting: NotebookJob[],
-  options: { leaseLost?: boolean } = {},
+  options: {
+    leaseLost?: boolean;
+    names?: Record<string, unknown>;
+    reserve?: Record<string, unknown>;
+  } = {},
 ) {
+  const usage: string[] = [];
   const finished: { jobId: string; result: NotebookWriteResult }[] = [];
   const claims: number[] = [];
   const queue: NotebookQueue = {
@@ -52,7 +58,16 @@ function fakeQueue(
       options.leaseLost
         ? { outcome: "lease_lost" }
         : { outcome: "ok", lessons: [LESSON] },
-    usage: async () => ({ outcome: "ok", usageId: "u" }),
+    usage: async (_worker, _claim, operation) => {
+      usage.push(operation);
+      return operation === "reserve" && options.reserve
+        ? options.reserve
+        : { outcome: "ok", usageId: "u" };
+    },
+    names: async () =>
+      options.leaseLost
+        ? { outcome: "lease_lost" }
+        : options.names ?? { outcome: "ok", names: [] },
     finish: async (_worker, claim, result) => {
       finished.push({ jobId: claim.jobId, result });
       return options.leaseLost
@@ -61,7 +76,7 @@ function fakeQueue(
     },
     backlog: async () => ({ pending: waiting.length, deadLetters: 0 }),
   };
-  return { queue, finished, claims };
+  return { queue, finished, claims, usage };
 }
 
 const events: string[] = [];
@@ -110,6 +125,112 @@ describe("notebook processor", () => {
     await processor.runOnce();
     expect(called).toBe(0);
     expect(events).toContain("study_notebook_lease_lost");
+  });
+
+  test("the owner's names are replaced in the notebook request", async () => {
+    const { queue, finished } = fakeQueue([job(3)], {
+      names: {
+        outcome: "ok",
+        names: [
+          { name: "Layla Haddad", kind: "self" },
+          { name: "Sami Nasser", kind: "classmate" },
+          { name: "Omar Khalil", kind: "teacher" },
+          { name: "Huda Saleh", kind: "parent" },
+        ],
+      },
+    });
+    queue.material = async () => ({
+      outcome: "ok",
+      lessons: [{
+        ...LESSON,
+        title: "Layla Haddad revises",
+        body: "Omar Khalil asked Layla Haddad and Sami Nasser how " +
+          "chloroplasts capture light. Huda Saleh helped at home.",
+      }],
+    });
+    const sent: string[] = [];
+    const processor = createNotebookGenerationProcessor({
+      queue,
+      assistant: {
+        notebook: async (title, passages, extras) => {
+          sent.push(JSON.stringify({ title, passages, extras }));
+          return { content: { overview: "x" } as unknown as NotebookContent };
+        },
+      },
+      prices: { inputUsdPerMTok: 1, outputUsdPerMTok: 1 },
+      logger,
+      concurrency: 1,
+    });
+    await processor.runOnce();
+    expect(finished).toMatchObject([{ result: { outcome: "ready" } }]);
+    expect(sent).toHaveLength(1);
+    for (
+      const word of ["Layla", "Haddad", "Sami", "Nasser", "Omar", "Khalil"]
+    ) {
+      expect(sent[0]).not.toContain(word);
+    }
+    expect(sent[0]).not.toContain("Huda");
+    expect(sent[0]).toContain("[student] revises");
+    expect(sent[0]).toContain(
+      "[teacher] asked [student] and [classmate] how chloroplasts",
+    );
+    expect(sent[0]).toContain("[parent] helped");
+  });
+
+  test("names that cannot be read: no model call, the notebook fails", async () => {
+    const { queue, finished, usage } = fakeQueue([job(4)], {
+      names: { outcome: "invalid" },
+    });
+    let called = 0;
+    const processor = createNotebookGenerationProcessor({
+      queue,
+      assistant: {
+        notebook: async () => {
+          called++;
+          return { content: {} as NotebookContent };
+        },
+      },
+      prices: { inputUsdPerMTok: 1, outputUsdPerMTok: 1 },
+      logger,
+      concurrency: 1,
+    });
+    await processor.runOnce();
+    expect(called).toBe(0);
+    expect(usage).toEqual([]);
+    expect(finished).toEqual([{
+      jobId: "job-4",
+      result: { outcome: "failed", reason: "names_unavailable" },
+    }]);
+  });
+
+  test("a refused ledger reserve fails the notebook with no provider call", async () => {
+    for (const refusal of ["consent_required", "no_class"]) {
+      const { queue, finished, usage } = fakeQueue([job(5)], {
+        reserve: { outcome: refusal },
+      });
+      let called = 0;
+      const processor = createNotebookGenerationProcessor({
+        queue,
+        assistant: {
+          notebook: async () => {
+            called++;
+            return { content: {} as NotebookContent };
+          },
+        },
+        prices: { inputUsdPerMTok: 1, outputUsdPerMTok: 1 },
+        logger,
+        concurrency: 1,
+      });
+      await processor.runOnce();
+      expect(called).toBe(0);
+      // Held nothing, so nothing to settle or release.
+      expect(usage).toEqual(["reserve"]);
+      // Failed - not "retry" - with the reason the app shows.
+      expect(finished).toEqual([{
+        jobId: "job-5",
+        result: { outcome: "failed", reason: refusal },
+      }]);
+    }
   });
 
   test("never writes more at once than its concurrency", async () => {

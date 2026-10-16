@@ -18,10 +18,15 @@ import {
  * it. The database decides the rest: saved, failed with the reason the
  * student sees, tried again with backoff, or a dead letter.
  *
+ * The AI rules of ADR-0043 hold here as in the API: the names the owner can
+ * see are replaced before the model call (and with no list of names there is
+ * no call), and the AI ledger refuses an owner who may no longer use AI -
+ * the notebook then fails with that reason, without a model call.
+ *
  * Every call for a job names the claim - this worker, the job and the
- * attempt - and acts as the notebook's owner only for that notebook's lesson
- * and that generation's AI charge. A worker that lost its lease can no
- * longer act on the job: its calls answer `lease_lost`.
+ * attempt - and acts as the notebook's owner only for that notebook's lesson,
+ * that generation's AI charge and the owner's names. A worker that lost its
+ * lease can no longer act on the job: its calls answer `lease_lost`.
  */
 
 export interface NotebookClaim {
@@ -48,6 +53,11 @@ export interface NotebookQueue {
     claim: NotebookClaim,
     operation: string,
     input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
+  /** The names the owner can see, to keep out of the model call. */
+  names(
+    workerId: string,
+    claim: NotebookClaim,
   ): Promise<Record<string, unknown>>;
   finish(
     workerId: string,
@@ -76,6 +86,13 @@ export function postgresNotebookQueue(sql: Sql): NotebookQueue {
       const rows = await sql<{ result: Record<string, unknown> }[]>`
         select private.notebook_job_usage(${workerId}, ${claim.jobId}::uuid,
           ${claim.attempt}, ${operation}, ${sql.json(input as never)}) as result
+      `;
+      return rows[0]?.result ?? { outcome: "invalid" };
+    },
+    async names(workerId, claim) {
+      const rows = await sql<{ result: Record<string, unknown> }[]>`
+        select private.notebook_job_names(${workerId}, ${claim.jobId}::uuid,
+          ${claim.attempt}) as result
       `;
       return rows[0]?.result ?? { outcome: "invalid" };
     },
@@ -143,6 +160,11 @@ export function createNotebookGenerationProcessor(
         usage: {
           usage: async (_context, operation, input) =>
             held(await deps.queue.usage(workerId, claim, operation, input)),
+        },
+        // The owner's names, replaced before the model call (ADR-0043);
+        // unreadable, and the notebook fails without a call.
+        names: {
+          names: async () => held(await deps.queue.names(workerId, claim)),
         },
         prices: deps.prices,
         assistant: deps.assistant,

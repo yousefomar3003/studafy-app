@@ -1457,6 +1457,11 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
     'material_processing' => l10n.nbSheetWaitReading,
     'allowance_exhausted' || 'monthly_cap' => l10n.nbFailTokens,
     'plan_required' => l10n.nbFailPlan,
+    // The AI ledger refused the worker for an owner who may no longer use
+    // AI (ADR-0043): the same reasons as AiAccess.
+    'consent_required' => l10n.aiConsentNeeded,
+    'guardian_consent_required' => l10n.aiConsentGuardianNeeded,
+    'no_class' || 'not_student' => l10n.aiConsentStudentsOnly,
     _ => l10n.nbFailGeneric,
   };
 

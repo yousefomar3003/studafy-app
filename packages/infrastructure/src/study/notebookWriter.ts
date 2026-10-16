@@ -1,5 +1,6 @@
 import type { NotebookContent } from "@studafy/domain";
 import { type StudyAssistant, StudyAssistantError } from "../studyAssistant";
+import { knownNamesOf, redactingNames } from "./knownNames";
 import {
   AiMeter,
   type AiUsageLedger,
@@ -21,6 +22,13 @@ import {
  * process: the API records the notebook and its job in one transaction and
  * answers "creating"; the worker claims the job, writes it here as the
  * notebook's owner, and reports what happened. The app polls as before.
+ *
+ * The owner's rules for AI apply here as on every API route (ADR-0043):
+ * the names the owner can see are replaced in everything sent to the model,
+ * read from the database for this notebook before the call - and if they
+ * cannot be read, nothing is sent. The AI ledger refuses an owner who may
+ * no longer use AI (no class, no current consent); the notebook then fails
+ * with that reason, which the app shows, and is not tried again.
  */
 
 /** The longest a notebook's AI reply may be. */
@@ -57,9 +65,26 @@ export type NotebookWriteResult =
   | { outcome: "failed"; reason: string }
   | { outcome: "retry"; reason: string };
 
+/** The names the notebook's owner can see, as the database lists them
+ * (`{ outcome: "ok", names: [{ name, kind }] }`). */
+export interface KnownNameSource {
+  names(context: StudyCallContext): Promise<Record<string, unknown>>;
+}
+
+/** The ledger's refusals for an owner who may not use AI (ADR-0043). The
+ * notebook fails with the refusal as its reason; the app shows it. */
+export const AI_ACCESS_FAILURES: readonly string[] = [
+  "not_student",
+  "no_class",
+  "consent_required",
+  "guardian_consent_required",
+];
+
 export interface NotebookWriterDeps {
   material: StudyMaterialSource;
   usage: AiUsageLedger;
+  /** Required: no notebook is written without the owner's names kept out. */
+  names: KnownNameSource;
   prices: ModelPrices;
   /** Null without an AI provider. */
   assistant: Pick<StudyAssistant, "notebook"> | null;
@@ -136,12 +161,23 @@ export async function writeNotebook(
     if (readable.reduce((n, p) => n + p.text.length, 0) < 40) {
       return { outcome: "failed", reason: "no_readable_material" };
     }
+    // Names out of everything sent (ADR-0043, DPIA D1), read for this
+    // owner now. Unreadable: fail without sending and without a hold.
+    let redacted: Pick<StudyAssistant, "notebook">;
+    try {
+      redacted = redactingNames(
+        assistant,
+        knownNamesOf(await deps.names.names(context)),
+      );
+    } catch {
+      return { outcome: "failed", reason: "names_unavailable" };
+    }
     const metered = await new AiMeter(deps.usage, deps.prices).run(
       context,
       "notes",
       holdFor(deps.prices, gathered.chars, NOTEBOOK_OUTPUT_TOKENS),
       () =>
-        assistant.notebook(String(started.lessonTitle ?? ""), readable, {
+        redacted.notebook(String(started.lessonTitle ?? ""), readable, {
           unreadable: gathered.unreadable,
           learner: gathered.grade ? { grade: gathered.grade } : {},
         }),
@@ -149,6 +185,9 @@ export async function writeNotebook(
     );
     if (!metered.ok) {
       // An earlier attempt's hold is still live: try once it has lapsed.
+      // Any other refusal - the allowance, the plan, or an owner who may no
+      // longer use AI (AI_ACCESS_FAILURES) - held nothing and would be
+      // refused again: the notebook fails with it, nothing sent.
       return metered.outcome === "in_progress"
         ? { outcome: "retry", reason: "usage_in_progress" }
         : { outcome: "failed", reason: metered.outcome };

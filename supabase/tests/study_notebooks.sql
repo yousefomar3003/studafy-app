@@ -6,7 +6,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(64);
+select plan(75);
 
 \set other_student_user 'a0550000-0000-4000-8000-0000000000a1'
 \set pdf_file 'a0550000-0000-4000-8000-0000000000f1'
@@ -189,6 +189,16 @@ select is((pg_temp.nb(:'student_user', 'get', jsonb_build_object('id', :'nb_id')
 -- ---------------------------------------------------------------------------
 -- Written on the worker's queue (2026-10-16, 202610150030)
 -- ---------------------------------------------------------------------------
+-- The student has agreed to the AI notice (ADR-0043); without it the
+-- ledger refuses the worker's hold, as it refuses the API's.
+insert into public.consent_records (user_id, purpose, policy_version, locale,
+  policy_id, given_by, given_as)
+select :'student_user', 'ai_features', p.policy_version, 'en', p.id,
+  :'student_user', 'self'
+from public.consent_policies p
+where p.purpose = 'ai_features' and p.locale = 'en'
+order by p.effective_at desc, p.policy_version desc limit 1
+on conflict (user_id, purpose, policy_version) do update set withdrawn_at = null;
 select is(pg_temp.nb(:'student_user', 'regenerate', jsonb_build_object('id', :'nb_id'))->'summary'->>'status',
   'creating', 'a new generation starts');
 select is((select count(*) from private.study_notebook_jobs where notebook_id = :'nb_id'
@@ -246,6 +256,44 @@ select is((select status || ' ' || content_version from public.study_notebooks w
 select is((select count(*) from private.study_notebook_jobs where notebook_id = :'nb_id'), 0::bigint,
   'and its job is done');
 
+-- The owner's names and AI access, on the worker's side (ADR-0043,
+-- 202610160001): names to keep out of the model call, read only for the job
+-- held; a hold refused to an owner who may no longer use AI.
+insert into nbt select 'access', pg_temp.nb(:'student_user', 'create', jsonb_build_object(
+  'classroomId', :'classroom_id', 'resourceId', :'lesson_id', 'sourceIds', jsonb_build_array(:'pdf_file')));
+select (value->>'notebookId')::uuid as access_id from nbt where name = 'access' \gset
+insert into nbt select 'access_claim', private.notebook_jobs_claim('pgtap-worker', 5);
+select (value->0->>'jobId')::uuid as access_job from nbt where name = 'access_claim' \gset
+select is((select value->0->'start'->>'notebookId' from nbt where name = 'access_claim'), :'access_id',
+  'a second notebook is claimed');
+select ok(private.notebook_job_names('pgtap-worker', :'access_job', 1)->'names'
+    @> '[{"name": "Seed Student", "kind": "self"}, {"name": "Seed Teacher", "kind": "teacher"}]'::jsonb,
+  'the worker reads the owner''s names: their own and their teacher''s');
+select is(private.notebook_job_names('pgtap-worker', :'access_job', 1)->>'outcome', 'ok',
+  'for the job it holds');
+select is(private.notebook_job_names('another-worker', :'access_job', 1)->>'outcome', 'lease_lost',
+  'and for no job it does not hold');
+select is(private.notebook_job_names('pgtap-worker', :'access_job', 2)->>'outcome', 'lease_lost',
+  'nor an attempt that is not its own');
+update public.consent_records set withdrawn_at = now()
+  where user_id = :'student_user' and purpose = 'ai_features';
+select is(private.notebook_job_usage('pgtap-worker', :'access_job', 1, 'reserve',
+  '{"feature": "notes", "estimateMicroUsd": 100, "estimateTokens": 1000}'::jsonb)->>'outcome',
+  'consent_required', 'an owner who withdrew their AI consent is refused the hold');
+select is((select count(*) from private.ai_usage
+    where request_key = 'notebook:' || :'access_id' || ':1'), 0::bigint,
+  'and nothing is held for it');
+select is(private.notebook_job_finish('pgtap-worker', :'access_job', 1,
+  '{"outcome": "failed", "reason": "consent_required"}'::jsonb)->>'state', 'done',
+  'the refusal fails the notebook, without a retry');
+select is((select status || ' ' || failure from public.study_notebooks where id = :'access_id'),
+  'failed consent_required', 'which shows the student why');
+select is((select count(*) from private.study_notebook_jobs where notebook_id = :'access_id'), 0::bigint,
+  'and leaves the queue');
+update public.consent_records set withdrawn_at = null
+  where user_id = :'student_user' and purpose = 'ai_features';
+update public.study_notebooks set deleted_at = now() where id = :'access_id';
+
 -- A notebook still waiting when it is too late to be of use.
 insert into nbt select 'late', pg_temp.nb(:'student_user', 'create', jsonb_build_object(
   'classroomId', :'classroom_id', 'resourceId', :'lesson_id', 'sourceIds', jsonb_build_array(:'pdf_file')));
@@ -274,6 +322,14 @@ select ok(not has_function_privilege('studafy_api_runtime', 'private.notebook_jo
   and not has_function_privilege('studafy_worker_runtime', 'private.notebook_job_held(text, uuid, integer)', 'execute')
   and not has_function_privilege('studafy_worker_runtime', 'private.api055_study_notebooks(text, jsonb)', 'execute'),
   'nothing else can, and the worker reaches notebooks only through it');
+select ok(has_function_privilege('studafy_worker_runtime', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('studafy_api_runtime', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('authenticated', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('anon', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('service_role', 'private.notebook_job_names(text, uuid, integer)', 'execute')
+  and not has_function_privilege('studafy_worker_runtime', 'private.ai_known_names(uuid)', 'execute')
+  and not has_function_privilege('studafy_worker_runtime', 'private.api057_ai_consent(text, jsonb)', 'execute'),
+  'only the worker reads an owner''s names, and only through its job');
 select hasnt_function('private', 'study_notebooks_resume', 'the API-side resume is retired');
 select hasnt_column('public', 'study_notebooks', 'generation_lease_until', 'with its lease column');
 
