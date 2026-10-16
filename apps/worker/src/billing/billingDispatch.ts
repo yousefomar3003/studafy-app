@@ -9,6 +9,10 @@
  * never rides in a Redis-resident job body.
  */
 import type { Sql } from "@studafy/database";
+import {
+  type DispatchRecordOutcome,
+  dispatchRecordOutcome,
+} from "../outbox/outboxDispatch";
 
 export interface ClaimedBillingEvent {
   eventId: number;
@@ -46,7 +50,7 @@ export interface BillingDispatchPort {
     workerId: string,
     eventId: number,
     jobId: string,
-  ): Promise<boolean>;
+  ): Promise<DispatchRecordOutcome>;
   releaseDispatch(
     workerId: string,
     eventId: number,
@@ -89,12 +93,12 @@ export function postgresBillingDispatch(sql: Sql): BillingDispatchPort {
       return rows[0]?.jobs ?? [];
     },
     async recordDispatched(workerId, eventId, jobId) {
-      const rows = await sql<{ recorded: boolean }[]>`
-        select private.billing_record_event_dispatched(
+      const rows = await sql<{ outcome: string }[]>`
+        select private.billing_record_event_dispatched_v2(
           ${workerId},${eventId},${jobId}
-        ) as recorded
+        ) as outcome
       `;
-      return rows[0]?.recorded === true;
+      return dispatchRecordOutcome(rows[0]?.outcome);
     },
     async releaseDispatch(workerId, eventId, errorCode) {
       const rows = await sql<{ released: boolean }[]>`

@@ -2,6 +2,34 @@ import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
 import type { EmailSender, PrivateFileStorage } from "@studafy/infrastructure";
 import { sendInactiveWarningEmails } from "./inactiveWarningEmail";
+import {
+  type CountAlert,
+  type CountAlertOptions,
+  createCountAlert,
+} from "../monitoring/countAlert";
+
+/**
+ * Warnings to someone with no school whose email failed for good
+ * (`private.inactive_warning_email_undeliverable`): the account is kept
+ * rather than deleted without a warning, and the operator is told.
+ */
+export const UNDELIVERABLE = "inactive_warnings_undeliverable";
+
+/** The daily alert for {@link UNDELIVERABLE}. Counts only. */
+export function undeliverableWarningsAlert(
+  options: Omit<CountAlertOptions, "key" | "summary" | "resolved">,
+): CountAlert {
+  return createCountAlert({
+    ...options,
+    key: UNDELIVERABLE,
+    summary: (count) =>
+      `${count} inactive-account ${
+        count === 1 ? "warning" : "warnings"
+      } could not be emailed to people with no school. Those accounts are kept, not deleted, until someone acts: see docs/security/inactive-account-warnings-runbook.md`,
+    resolved:
+      "no inactive-account warning is waiting on an undeliverable email",
+  });
+}
 
 interface RetentionJob {
   jobId: number;
@@ -114,12 +142,16 @@ const RETENTION_STEPS = [
       sql<{ counts: Record<string, number> }[]>`
     select private.retention_purge_classes(5) as counts`,
   },
-  // Warn at 23 months without activity; request deletion at 24.
+  // Warn at 23 months without activity; request deletion at 24. Also
+  // counts the warnings to people with no school whose email failed for
+  // good: those accounts are kept, and the operator is alerted (below).
   {
     name: "inactive_accounts",
     query: (sql: Sql) =>
       sql<{ counts: Record<string, number> }[]>`
-    select private.retention_inactive_accounts(100) as counts`,
+    select private.retention_inactive_accounts(100)
+      || jsonb_build_object('inactive_warnings_undeliverable',
+        private.inactive_warning_email_undeliverable()) as counts`,
   },
   // Study helper photos, 30 days after upload (DL-060). The model has read
   // them and the chat keeps its own copy on the device.
@@ -138,12 +170,17 @@ const RETENTION_STEPS = [
  * sweep above, which deletes their bytes. After the purges, the
  * inactive-account warnings are emailed (`email`, the worker's Resend
  * sender; without one, the waiting count is logged). Logs carry counts only.
+ *
+ * `undeliverableAlert` (the queue alerts' Telegram chat, when they are on)
+ * is told the `inactive_warnings_undeliverable` count after each pass, and
+ * alerts once a day while it is above zero
+ * (docs/security/inactive-account-warnings-runbook.md).
  */
 export function startRetentionSchedule(
   sql: Sql,
   logger: Logger,
   intervalMs = 60 * 60_000,
-  options: { email?: EmailSender } = {},
+  options: { email?: EmailSender; undeliverableAlert?: CountAlert } = {},
 ): RetentionScheduleRuntime {
   let closed = false;
   let running: Promise<unknown> | null = null;
@@ -174,6 +211,19 @@ export function startRetentionSchedule(
       } catch (error) {
         logger.error("retention_step_failed", {
           step: "inactive_warning_emails",
+          error_name: error instanceof Error ? error.name : "unknown",
+        });
+      }
+    }
+    // Only a count the step actually returned: a failed step neither
+    // raises nor resolves the alert.
+    const undeliverable = report.inactive_accounts?.[UNDELIVERABLE];
+    if (!closed && options.undeliverableAlert && undeliverable !== undefined) {
+      try {
+        await options.undeliverableAlert(Number(undeliverable));
+      } catch (error) {
+        logger.error("retention_alert_failed", {
+          key: UNDELIVERABLE,
           error_name: error instanceof Error ? error.name : "unknown",
         });
       }

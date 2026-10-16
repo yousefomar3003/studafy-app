@@ -87,9 +87,18 @@ export function createBillingDispatcher(
         row.eventId,
         enqueuedId,
       );
-      if (!recorded) {
-        // The lease was lost mid-dispatch: the idempotent expansion makes a
-        // possible duplicate enqueue harmless; the next claim reconciles.
+      if (recorded === "already_finished") {
+        // The usual, harmless race: the job ran as soon as it was added and
+        // the processor finished the event (or handed it back for a retry)
+        // before its id could be recorded.
+        logger.info("billing_dispatch_already_finished", {
+          event_id: row.eventId,
+        });
+      } else if (recorded === "lease_lost") {
+        // Another dispatcher holds the event (this one's lease went stale),
+        // or it is gone. The deterministic job id and the idempotent finish
+        // make a duplicate enqueue harmless; that dispatcher's claim
+        // reconciles the event against the live job.
         logger.warn("billing_dispatch_record_lost", {
           event_id: row.eventId,
         });

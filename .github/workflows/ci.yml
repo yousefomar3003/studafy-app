@@ -599,6 +599,12 @@ jobs:
       - name: Verify OPS-061 outbox drain state machine
         run: bunx supabase test db --local supabase/tests/ops061_outbox_seed.sql
 
+      # Why a dispatcher could not record its job id: finished first (the
+      # usual race, logged at info) or another lease (a warning).
+      # Transactional.
+      - name: Verify the outbox and billing record-dispatch answers
+        run: bunx supabase test db --local supabase/tests/outbox_record_dispatched.sql
+
       - name: Verify OPS-061 outbox query plans
         run: bun run test:plans:outbox
 

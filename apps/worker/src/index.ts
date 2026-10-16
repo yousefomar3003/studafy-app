@@ -43,6 +43,7 @@ import {
 import {
   startFileRetentionSweep,
   startRetentionSchedule,
+  undeliverableWarningsAlert,
 } from "./processors/retentionSweep";
 import { startAccountDeletionExecutor } from "./processors/accountDeletion";
 import { startDataExportExecutor } from "./processors/dataExport";
@@ -386,6 +387,22 @@ const housekeeping = env.DB_HOUSEKEEPING_ENABLED && env.DATABASE_URL
   ? startHousekeeping(database(), logger)
   : undefined;
 
+// Launch plan 4.7: alerts on queue depth, waiting age, failures and stuck
+// workers, to Telegram (the queue monitor below). Off unless
+// QUEUE_ALERTS_ENABLED and the bot are set.
+const alertRedis = env.QUEUE_ALERTS_ENABLED
+  ? createRedis(env.REDIS_URL)
+  : undefined;
+const alertState = alertRedis
+  ? redisAlertState(alertRedis, queuePrefix(env.ENVIRONMENT))
+  : undefined;
+const alertSender = alertRedis
+  ? new TelegramAlertSender({
+    botToken: env.TELEGRAM_BOT_TOKEN!,
+    chatId: env.TELEGRAM_CHAT_ID!,
+  })
+  : undefined;
+
 // DL-057: the retention periods privacy policy §10 promises.
 const retentionSchedule = env.RETENTION_SCHEDULE_ENABLED && env.DATABASE_URL
   ? startRetentionSchedule(database(), logger, undefined, {
@@ -395,6 +412,16 @@ const retentionSchedule = env.RETENTION_SCHEDULE_ENABLED && env.DATABASE_URL
       ? new ResendEmailSender({
         apiKey: env.RESEND_API_KEY,
         from: env.EMAIL_FROM_ADDRESS,
+      })
+      : undefined,
+    // A warning that cannot be emailed to someone with no school keeps the
+    // account; the queue alerts' chat hears about it once a day.
+    undeliverableAlert: alertState && alertSender
+      ? undeliverableWarningsAlert({
+        state: alertState,
+        sender: alertSender,
+        logger,
+        environment: env.ENVIRONMENT,
       })
       : undefined,
   })
@@ -415,11 +442,6 @@ const reportAlerts = env.REPORT_ALERTS_ENABLED && env.DATABASE_URL
   })
   : undefined;
 
-// Launch plan 4.7: alerts on queue depth, waiting age, failures and stuck
-// workers, to Telegram. Off unless QUEUE_ALERTS_ENABLED and the bot are set.
-const alertRedis = env.QUEUE_ALERTS_ENABLED
-  ? createRedis(env.REDIS_URL)
-  : undefined;
 const monitoredQueues: MonitoredQueue[] = [
   { name: "smoke", queue: runtime.queue, worker: runtime.worker },
   ...(notifications
@@ -433,7 +455,7 @@ const monitoredQueues: MonitoredQueue[] = [
     ? [{ name: "billing-events", queue: billing.queue, worker: billing.worker }]
     : []),
 ];
-const queueMonitor = alertRedis
+const queueMonitor = alertState && alertSender
   ? startQueueMonitor({
     sample: monitorSources({
       queues: monitoredQueues,
@@ -449,11 +471,8 @@ const queueMonitor = alertRedis
       stallSeconds: env.QUEUE_ALERT_STALL_SECONDS,
     },
     cooldownSeconds: env.QUEUE_ALERT_COOLDOWN_SECONDS,
-    state: redisAlertState(alertRedis, queuePrefix(env.ENVIRONMENT)),
-    sender: new TelegramAlertSender({
-      botToken: env.TELEGRAM_BOT_TOKEN!,
-      chatId: env.TELEGRAM_CHAT_ID!,
-    }),
+    state: alertState,
+    sender: alertSender,
     logger,
     environment: env.ENVIRONMENT,
     intervalMs: env.QUEUE_ALERT_INTERVAL_MS,
