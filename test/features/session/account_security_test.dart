@@ -39,8 +39,14 @@ void main() {
     expect(find.text('TWO-FACTOR SIGN-IN'), findsOne);
     // There is no school administrator in this release; two-factor is
     // optional for everyone but the staff who review reports.
-    expect(find.textContaining('Optional'), findsOne);
+    expect(
+      find.text(
+        'Optional: adds a code from an authenticator app when you sign in.',
+      ),
+      findsOne,
+    );
     expect(find.textContaining('administrator'), findsNothing);
+    expect(find.textContaining('review'), findsNothing);
     expect(find.text('Sign out everywhere'), findsOne);
     expect(find.text('Delete account'), findsWidgets);
     expect(
@@ -62,6 +68,19 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     expect(opened, 1);
+  });
+
+  testWidgets('a report reviewer is told two-factor is needed', (tester) async {
+    tall(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        home: AccountSecurityPage(session: _session(), reviewsReports: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Needed to review safety reports'), findsOne);
+    expect(find.textContaining('Optional'), findsNothing);
   });
 
   testWidgets('without a deletion flow the section is not shown', (

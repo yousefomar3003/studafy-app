@@ -251,8 +251,14 @@ abstract class AppL10n {
   /// No description provided for @securityTwoFactorOffDetail.
   ///
   /// In en, this message translates to:
-  /// **'Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.'**
+  /// **'Optional: adds a code from an authenticator app when you sign in.'**
   String get securityTwoFactorOffDetail;
+
+  /// No description provided for @securityTwoFactorOffDetailReviewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed to review safety reports: adds a code from an authenticator app when you sign in.'**
+  String get securityTwoFactorOffDetailReviewer;
 
   /// No description provided for @securitySetUp.
   ///

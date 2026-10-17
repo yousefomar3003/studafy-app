@@ -93,7 +93,11 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get securityTwoFactorOffDetail =>
-      'اختياري: يضيف رمزًا من تطبيق المصادقة عند تسجيل الدخول. ولا يلزم تفعيله إلا لفريق ستودافاي الذي يراجع البلاغات.';
+      'اختياري: يضيف رمزًا من تطبيق المصادقة عند تسجيل الدخول.';
+
+  @override
+  String get securityTwoFactorOffDetailReviewer =>
+      'مطلوب لمراجعة البلاغات: يضيف رمزًا من تطبيق المصادقة عند تسجيل الدخول.';
 
   @override
   String get securitySetUp => 'إعداد';
