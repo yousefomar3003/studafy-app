@@ -90,8 +90,7 @@ class AppL10nEn extends AppL10n {
   String get securityTwoFactorOff => 'Not set up';
 
   @override
-  String get securityTwoFactorOnDetail =>
-      'You use an authenticator app when signing in.';
+  String get securityTwoFactorOnDetail => 'Your authenticator app is set up.';
 
   @override
   String get securityTwoFactorOffDetail =>
@@ -99,7 +98,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get securityTwoFactorOffDetailReviewer =>
-      'Needed to review safety reports: adds a code from an authenticator app when you sign in.';
+      'Needed to review safety reports: you enter a code from an authenticator app before opening one.';
 
   @override
   String get securitySetUp => 'Set up';
@@ -132,7 +131,27 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get securityTotpBody =>
-      'Add this key to your authenticator app, then enter the six-digit code it shows.';
+      'Add Studafy to an authenticator app on this phone (Google Authenticator, Microsoft Authenticator, or Passwords on iPhone).';
+
+  @override
+  String get securityTotpOpenApp => 'Open in authenticator app';
+
+  @override
+  String get securityTotpKeyLabel => 'Or add this key by hand';
+
+  @override
+  String get securityTotpCopyKey => 'Copy key';
+
+  @override
+  String get securityTotpKeyCopied => 'Key copied';
+
+  @override
+  String get securityTotpNoApp =>
+      'No authenticator app opened it. Install one (such as Google Authenticator or Microsoft Authenticator), or copy the key and add it in the app by hand.';
+
+  @override
+  String get securityTotpCodePrompt =>
+      'Then enter the six-digit code the app shows for Studafy:';
 
   @override
   String get securityVerify => 'Verify';

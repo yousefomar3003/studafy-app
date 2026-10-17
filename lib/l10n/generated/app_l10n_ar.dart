@@ -88,8 +88,7 @@ class AppL10nAr extends AppL10n {
   String get securityTwoFactorOff => 'غير مُعَد';
 
   @override
-  String get securityTwoFactorOnDetail =>
-      'تستخدم تطبيق المصادقة عند تسجيل الدخول.';
+  String get securityTwoFactorOnDetail => 'تطبيق المصادقة لديك مُعدّ.';
 
   @override
   String get securityTwoFactorOffDetail =>
@@ -97,7 +96,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get securityTwoFactorOffDetailReviewer =>
-      'مطلوب لمراجعة البلاغات: يضيف رمزًا من تطبيق المصادقة عند تسجيل الدخول.';
+      'مطلوب لمراجعة البلاغات: تُدخل رمزًا من تطبيق المصادقة قبل فتح أي بلاغ.';
 
   @override
   String get securitySetUp => 'إعداد';
@@ -130,7 +129,27 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get securityTotpBody =>
-      'أضف هذا المفتاح إلى تطبيق المصادقة، ثم أدخل الرمز المكوَّن من ستة أرقام الذي يعرضه.';
+      'أضف ستودافاي إلى تطبيق مصادقة على هذا الهاتف (Google Authenticator أو Microsoft Authenticator أو تطبيق كلمات السر على iPhone).';
+
+  @override
+  String get securityTotpOpenApp => 'افتح في تطبيق المصادقة';
+
+  @override
+  String get securityTotpKeyLabel => 'أو أضف هذا المفتاح يدويًا';
+
+  @override
+  String get securityTotpCopyKey => 'نسخ المفتاح';
+
+  @override
+  String get securityTotpKeyCopied => 'تم نسخ المفتاح';
+
+  @override
+  String get securityTotpNoApp =>
+      'لم يفتحه أي تطبيق مصادقة. ثبّت تطبيقًا (مثل Google Authenticator أو Microsoft Authenticator)، أو انسخ المفتاح وأضفه في التطبيق يدويًا.';
+
+  @override
+  String get securityTotpCodePrompt =>
+      'ثم أدخل الرمز المكوّن من ستة أرقام الذي يعرضه التطبيق لستودافاي:';
 
   @override
   String get securityVerify => 'تأكيد';

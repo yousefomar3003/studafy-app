@@ -245,7 +245,7 @@ abstract class AppL10n {
   /// No description provided for @securityTwoFactorOnDetail.
   ///
   /// In en, this message translates to:
-  /// **'You use an authenticator app when signing in.'**
+  /// **'Your authenticator app is set up.'**
   String get securityTwoFactorOnDetail;
 
   /// No description provided for @securityTwoFactorOffDetail.
@@ -257,7 +257,7 @@ abstract class AppL10n {
   /// No description provided for @securityTwoFactorOffDetailReviewer.
   ///
   /// In en, this message translates to:
-  /// **'Needed to review safety reports: adds a code from an authenticator app when you sign in.'**
+  /// **'Needed to review safety reports: you enter a code from an authenticator app before opening one.'**
   String get securityTwoFactorOffDetailReviewer;
 
   /// No description provided for @securitySetUp.
@@ -317,8 +317,44 @@ abstract class AppL10n {
   /// No description provided for @securityTotpBody.
   ///
   /// In en, this message translates to:
-  /// **'Add this key to your authenticator app, then enter the six-digit code it shows.'**
+  /// **'Add Studafy to an authenticator app on this phone (Google Authenticator, Microsoft Authenticator, or Passwords on iPhone).'**
   String get securityTotpBody;
+
+  /// No description provided for @securityTotpOpenApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in authenticator app'**
+  String get securityTotpOpenApp;
+
+  /// No description provided for @securityTotpKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Or add this key by hand'**
+  String get securityTotpKeyLabel;
+
+  /// No description provided for @securityTotpCopyKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy key'**
+  String get securityTotpCopyKey;
+
+  /// No description provided for @securityTotpKeyCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Key copied'**
+  String get securityTotpKeyCopied;
+
+  /// No description provided for @securityTotpNoApp.
+  ///
+  /// In en, this message translates to:
+  /// **'No authenticator app opened it. Install one (such as Google Authenticator or Microsoft Authenticator), or copy the key and add it in the app by hand.'**
+  String get securityTotpNoApp;
+
+  /// No description provided for @securityTotpCodePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Then enter the six-digit code the app shows for Studafy:'**
+  String get securityTotpCodePrompt;
 
   /// No description provided for @securityVerify.
   ///

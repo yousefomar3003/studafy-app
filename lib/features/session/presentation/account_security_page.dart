@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/feedback.dart';
 import '../../../core/studafy_components.dart';
@@ -10,10 +12,8 @@ import '../domain/session_repository.dart';
 /// Account security: second factor, active devices, and sign out everywhere
 /// (AUTH-030).
 ///
-/// Reachable by every role. School administrators are *required* to hold a
-/// second factor — the API refuses their privileged actions at aal1 — but the
-/// screen is not admin-only, because a teacher or guardian who wants one
-/// should not have to ask for it.
+/// Reachable by every role. Two-factor is optional for everyone except a
+/// platform operator, who needs it to open a safety report (DL-063).
 class AccountSecurityPage extends StatefulWidget {
   const AccountSecurityPage({
     super.key,
@@ -72,27 +72,25 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
   }
 
   Future<void> _enrolTotp() async {
+    final TotpEnrolment enrolment;
     try {
-      final uri = await widget.session.beginTotpEnrolment();
-      if (!mounted) return;
-      final code = await showDialog<String>(
-        context: context,
-        builder: (context) => _TotpEnrolmentDialog(provisioningUri: uri),
-      );
-      if (code == null || !mounted) return;
-      final verified = await widget.session.verifyTotp(code);
-      if (!mounted) return;
-      if (!verified) {
-        ScaffoldMessenger.of(context)
-            .showMessage(AppL10n.of(context).securityCodeMismatch);
-        return;
-      }
-      await _load();
+      enrolment = await widget.session.beginTotpEnrolment();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showMessage(AppL10n.of(context).securitySetupFailed);
+      return;
     }
+    if (!mounted) return;
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _TotpEnrolmentDialog(
+        enrolment: enrolment,
+        verify: (code) => widget.session.verifyTotp(enrolment.factorId, code),
+      ),
+    );
+    if (verified == true && mounted) await _load();
   }
 
   Future<void> _revokeDevice(AuthDevice device) async {
@@ -320,8 +318,11 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
 }
 
 class _TotpEnrolmentDialog extends StatefulWidget {
-  const _TotpEnrolmentDialog({required this.provisioningUri});
-  final String provisioningUri;
+  const _TotpEnrolmentDialog({required this.enrolment, required this.verify});
+  final TotpEnrolment enrolment;
+
+  /// True when the code verified the factor, false when it was wrong.
+  final Future<bool> Function(String code) verify;
 
   @override
   State<_TotpEnrolmentDialog> createState() => _TotpEnrolmentDialogState();
@@ -329,6 +330,8 @@ class _TotpEnrolmentDialog extends StatefulWidget {
 
 class _TotpEnrolmentDialogState extends State<_TotpEnrolmentDialog> {
   final controller = TextEditingController();
+  bool verifying = false;
+  String? error;
 
   @override
   void dispose() {
@@ -336,41 +339,138 @@ class _TotpEnrolmentDialogState extends State<_TotpEnrolmentDialog> {
     super.dispose();
   }
 
+  /// The key in groups of four, which is how authenticator apps show it and
+  /// easier to check by eye.
+  String get _groupedSecret => widget.enrolment.secret
+      .replaceAllMapped(RegExp('.{1,4}'), (m) => '${m[0]} ')
+      .trim();
+
+  Future<void> _openInApp() async {
+    final l10n = AppL10n.of(context);
+    var opened = false;
+    try {
+      opened = await launchUrl(
+        Uri.parse(widget.enrolment.uri),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened && mounted) setState(() => error = l10n.securityTotpNoApp);
+  }
+
+  Future<void> _copyKey() async {
+    final l10n = AppL10n.of(context);
+    await Clipboard.setData(ClipboardData(text: widget.enrolment.secret));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showMessage(l10n.securityTotpKeyCopied);
+    }
+  }
+
+  Future<void> _verify() async {
+    final l10n = AppL10n.of(context);
+    setState(() {
+      verifying = true;
+      error = null;
+    });
+    try {
+      final verified = await widget.verify(controller.text.trim());
+      if (!mounted) return;
+      if (verified) {
+        Navigator.pop(context, true);
+        return;
+      }
+      setState(() {
+        verifying = false;
+        error = l10n.securityCodeMismatch;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        verifying = false;
+        error = l10n.securitySetupFailed;
+      });
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(AppL10n.of(context).securityTotpTitle),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(AppL10n.of(context).securityTotpBody),
-        const SizedBox(height: 12),
-        SelectableText(
-          widget.provisioningUri,
-          style: const TextStyle(fontSize: 12, color: studafyMuted),
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return AlertDialog(
+      title: Text(l10n.securityTotpTitle),
+      scrollable: true,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.securityTotpBody),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _openInApp,
+            icon: const Icon(Icons.open_in_new_rounded),
+            label: Text(l10n.securityTotpOpenApp),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.securityTotpKeyLabel,
+            style: const TextStyle(fontSize: 12, color: studafyMuted),
+          ),
+          const SizedBox(height: 4),
+          // The key reads left to right in every language.
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: SelectableText(
+              _groupedSecret,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 15,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: _copyKey,
+              icon: const Icon(Icons.copy_rounded, size: 18),
+              label: Text(l10n.securityTotpCopyKey),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(l10n.securityTotpCodePrompt),
+          const SizedBox(height: 4),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            autocorrect: false,
+            enableSuggestions: false,
+            autofillHints: const [AutofillHints.oneTimeCode],
+            maxLength: 6,
+            decoration: InputDecoration(
+              hintText: '123456',
+              counterText: '',
+              errorText: error,
+              errorMaxLines: 3,
+            ),
+            onChanged: (_) => setState(() => error = null),
+            onSubmitted: (_) {
+              if (controller.text.trim().length == 6 && !verifying) _verify();
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: verifying ? null : () => Navigator.pop(context, false),
+          child: Text(l10n.securityCancel),
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          autocorrect: false,
-          enableSuggestions: false,
-          decoration: const InputDecoration(hintText: '123456'),
-          onChanged: (_) => setState(() {}),
+        FilledButton(
+          onPressed: verifying || controller.text.trim().length < 6
+              ? null
+              : _verify,
+          child: Text(l10n.securityVerify),
         ),
       ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: Text(AppL10n.of(context).securityCancel),
-      ),
-      FilledButton(
-        onPressed: controller.text.trim().length < 6
-            ? null
-            : () => Navigator.pop(context, controller.text.trim()),
-        child: Text(AppL10n.of(context).securityVerify),
-      ),
-    ],
-  );
+    );
+  }
 }
