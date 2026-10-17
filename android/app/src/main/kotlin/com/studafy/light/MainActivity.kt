@@ -1,8 +1,13 @@
 package com.studafy.light
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.IOException
 
@@ -12,7 +17,53 @@ class MainActivity : FlutterActivity() {
         pinCrashReportInstallationId(filesDir)
         super.onCreate(savedInstanceState)
     }
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ATTACHMENT_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "open") {
+                    result.success(
+                        openAttachment(call.argument<String>("path"), call.argument<String>("type"))
+                    )
+                } else {
+                    result.notImplemented()
+                }
+            }
+    }
+
+    /**
+     * Opens a downloaded attachment in whichever app views its type (a PDF
+     * reader, Docs, Slides), as iOS previews it from the share sheet.
+     * Only files under cache/attachments, which lib/core/attachment_opener.dart
+     * writes and xml/attachment_paths.xml exposes. False when nothing on the
+     * phone can open it, and the app offers the share sheet instead.
+     */
+    private fun openAttachment(path: String?, type: String?): Boolean {
+        if (path == null) return false
+        val root = File(cacheDir, "attachments").canonicalFile
+        val file = File(path).canonicalFile
+        if (!file.isFile || !file.path.startsWith(root.path + File.separator)) return false
+        val uri = try {
+            FileProvider.getUriForFile(this, "$packageName.attachments", file)
+        } catch (e: IllegalArgumentException) {
+            return false
+        }
+        val view = Intent(Intent.ACTION_VIEW)
+            .setDataAndType(uri, type?.takeIf { it.isNotBlank() } ?: "application/octet-stream")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        // Not a chooser: Android's own "Open with" appears when several apps
+        // can, and this throws when none can.
+        return try {
+            startActivity(view)
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
+    }
 }
+
+private const val ATTACHMENT_CHANNEL = "com.studafy.light/attachments"
 
 /** The same value on every install, so it identifies no one. */
 private const val SHARED_INSTALLATION_ID = "00000000-0000-0000-0000-000000000000"

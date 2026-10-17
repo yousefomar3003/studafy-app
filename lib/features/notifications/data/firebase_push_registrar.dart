@@ -59,7 +59,9 @@ class FirebasePushRegistrar implements PushRegistrar {
       if (messaging == null) return;
       final settings = await messaging.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.denied) return;
-      // Shown while the app is open too, like any other app's.
+      // Shown while the app is open too, like any other app's. iOS only:
+      // Android shows no banner for a push that arrives while Studafy is
+      // open; it is in the in-app notifications list.
       await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
         badge: true,
