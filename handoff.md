@@ -1,9 +1,54 @@
 # Handoff: Studafy
 
-Updated: 2026-10-17. **Everything through #105 is merged and on the test
-copy.** No PR is open.
+Updated: 2026-10-17, evening. **Everything through #111 is merged.** No PR
+is open.
 
 ## Start here (2026-10-17)
+
+### Evening 2026-10-17: Android review
+- **Done by the owner:** the iPhone test passed (2.8 and 2.9 ticked).
+  Axiom retention is 30 days. The owner's account is the only row in
+  `public.platform_operators` (Frankfurt), and single-reviewer mode is on.
+  Two-factor in the app (Account → Security) is still needed before
+  opening a report.
+- **Android, with no device:** a code parity audit, then the full flows on
+  the Android 16 emulator against the test copy (student, teacher and
+  parent, English and Arabic). Merged through batch #111:
+  - **#107:** class join links (`io.studafy.app://join`) open the app;
+    attachments open in a viewer app (FileProvider, `cache/attachments`);
+    the push status-bar icon; `<queries>` for links, Custom Tabs and the
+    camera; `supportsRtl`; the themed (monochrome) icon.
+  - **#108:** system back on a tab goes to Today, and from Helper to the
+    previous tab (`lib/core/tab_back_scope.dart`). "Discard changes?"
+    guards the hand-in, the create/edit pages and the composer
+    (`lib/core/unsaved_changes.dart`). A stale or fake
+    `login-callback` link no longer drops a valid session
+    (`SessionLifecycleEvent.signInLinkFailed`).
+  - **#109:** Markdown in Helper answers (`flutter_markdown_plus`, links go
+    through the confirm dialog); plurals ("1 student"); Arabic points;
+    two-factor copy without "school administrators"; whole-row toggles;
+    the splash wordmark precached; sheet sizes and safe areas; the consent
+    line.
+  - **#110:** voice notes play again after finishing. The released-player
+    `resume()` was a silent no-op on Android, and iOS had the same gap. A
+    playback failure is now shown and reported. Photos are named
+    "Photo <date time>", and a photo message is announced as "Photo".
+  - **#111 adds:** the splash tagline in Arabic, and a message when the
+    photo picker fails.
+- **Test data the emulator review left on the test copy** (reviewer
+  accounts, marked "please ignore"): a hand-in, an "Android test"
+  conversation, and one safety report in the queue.
+- **Not checked without a device or keys:** a minified (R8) release build,
+  real push, the full Google/Microsoft sign-in round trip, and recording on
+  the emulator (it crashed; recording itself was verified earlier).
+- **Owner decisions pending:**
+  1. The R8 release build check:
+     `STUDAFY_ALLOW_DEBUG_SIGNED_RELEASE=true flutter build apk --release
+     --dart-define-from-file=config/dart-defines.device.json` (run it
+     yourself, or allow Claude to).
+  2. A banner for a push arriving while the app is open on Android (iOS has
+     one). It needs `flutter_local_notifications`; add it once Firebase is
+     set up.
 
 ### What happened on 2026-10-17
 - **#99, release cutover (REL-002, ADR-0044, DL-069):** the last SEC-001
@@ -52,26 +97,18 @@ copy.** No PR is open.
   sessions were stopped.
 
 ### Owner: to do
-1. **Become the safety-report operator.** In the Supabase SQL editor
-   (Frankfurt), add your Studafy account to `public.platform_operators` and
-   remove any other row; single-reviewer mode needs exactly one. Then, in
-   the app, Account → Security: turn on two-factor sign-in.
-2. **Axiom:** app.axiom.co → Datasets → `studafy-production` → Edit dataset
-   → Data retention: 30 days (on the free plan it is already 30).
-3. **The phone test (2.9)** on the new build; tick 2.8 and 2.9 from the
-   results.
-4. **Keys and accounts for production:** paid Redis Cloud (AOF every 1 s,
+1. In the app, Account → Security: turn on two-factor sign-in (you are
+   now the platform operator).
+2. **Keys and accounts for production:** paid Redis Cloud (AOF every 1 s,
    `noeviction`), Resend (C5), Firebase (C3), Turnstile, the Android
    keystore (C1), Play billing, Apple. Put them in `~/studafy-secrets/`,
    then run `bun scripts/production/cutover.ts` (dry run first).
-5. **Store screenshots:** retake with the new brand when you say so (the
+3. **Store screenshots:** retake with the new brand when you say so (the
    current ones show the old look and no messaging).
-6. **Lawyers:** send `docs/legal/questions-for-counsel-2026-10.md` and the
+4. **Lawyers:** send `docs/legal/questions-for-counsel-2026-10.md` and the
    DPIA draft; keep their answers out of the repo (it is public).
 
 ### Next for Claude
-- Add the owner to `public.platform_operators` once they give their sign-in
-  email (or give them the SQL).
 - Retake the store screenshots when asked.
 - Run the production cutover once the keys are in `~/studafy-secrets/`.
 - Fill `PENDING_*` in `ops/legal-site/src/app-links.ts` when Apple's Team

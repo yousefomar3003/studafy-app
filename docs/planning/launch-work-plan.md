@@ -198,15 +198,17 @@ the privacy policy URL (Claude can host a page first). Claude drafts the
   1 day
   - It runs inside the API today and is lost if the machine stops.
   - **Done when:** a notebook still finishes after the API restarts mid-way.
-- [ ] **2.8 Find the remaining lesson-save rejection** (PR-20) · *Claude* ·
+- [x] **2.8 Find the remaining lesson-save rejection** (PR-20) · *Claude* ·
   when it recurs
   - The server now logs which field was refused (`problem_code`,
     `invalid_fields`).
+  - *Done 2026-10-17:* the owner's phone test on the build from `main` reported no failure; the cause was fixed by #63 and #74.
   - *Progress 2026-10-16:* the fix (#63) and the same for hand-ins and messages (#74) are merged and on the test copy. Tick when a lesson saved on the phone with a refused file names that file.
   - *Progress 2026-10-15:* recurred on the test copy: four `POST /v1/resources` refusals (400 `INVALID_REQUEST`, no `invalid_fields`) from one teacher, 12:58–13:11 UTC, while the scanner was wrongly refusing their PDFs (fixed by PR #55); the same teacher published at 13:33 after the fix. Cause (from the code; hosted data not inspected): a lesson that includes a file the scanner already refused is refused by `coursework_attach_files` with a bare `invalid`, and the app showed "could not be added". Fix in PR #63: `ATTACHMENT_REFUSED` (422) names each refused file or link, the log records it, and the editor marks the file. Tick after #63 is merged and on the test copy.
   - **Done when:** the cause is found and fixed, or a week of use shows no
     recurrence.
-- [ ] **2.9 Hands-on check on your phone** · *You* · 30 min
+- [x] **2.9 Hands-on check on your phone** · *You* · 30 min
+  - *Done 2026-10-17:* the owner tested every flow on the iPhone, with nothing failing. The owner has no Android phone, so Claude ran the same flows on the Android 16 emulator against the test copy. Four problems turned up there, all fixed in #107–#110 (batch #111): system back left the app, back lost unsaved work, voice note replay, and stale sign-in links. A real Android device is still checked through Play internal testing (3.7).
   - As teacher, student and parent, in English and Arabic:
     - lesson with a Word file and a PDF;
     - hand-in with a photo;
@@ -463,3 +465,4 @@ iOS.
 | 2026-10-16 | merge and deploy | PRs #52–#77 merged through #79, then #78, #80, #82; backup (restore check passed), 19 migrations on hosted, test API, worker and log shipper deployed. Log shipper's revoked token replaced (read-only org token). Backups now go to R2 (EU), verified |
 | 2026-10-16 | 3.5 | Ticked (#61) |
 | 2026-10-17 | 7.4 | Go-live checklist written (`docs/evidence/launch-readiness/go-live-checklist.md`). Every item was re-checked against `main` at `5021720`. No item newly ticked: 2.8 and 2.9 wait for the phone test; 4.3 for the tap-through; 4.2, 4.4–4.7 and 4.9 for production. Progress notes added to 3.3, 3.4, 3.6, 3.8, 3.9, 4.2–4.7, 4.9, 6.1, 6.3, 7.3 and 7.4 |
+| 2026-10-17 | 2.8, 2.9 | Owner's iPhone test passed. Android review on the emulator (no device): parity audit #107, fixes #108–#110, merged through #111 |
