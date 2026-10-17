@@ -10,6 +10,7 @@ import '../core/navigation.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
+import '../core/tab_back_scope.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
 import '../features/academic/presentation/class_roster_page.dart';
@@ -365,8 +366,15 @@ class _TeacherShellState extends State<TeacherShell>
     return false;
   }
 
+  /// Back from any other tab goes to Today; from Today it leaves the app.
   @override
-  Widget build(BuildContext c) {
+  Widget build(BuildContext c) => TabBackScope(
+    atFirstTab: index == 0,
+    onBack: () => setState(() => index = 0),
+    child: _page(c),
+  );
+
+  Widget _page(BuildContext c) {
     final l10n = AppL10n.of(c);
     void open(Widget page) {
       Navigator.of(c).pushOnce(MaterialPageRoute<void>(builder: (_) => page));

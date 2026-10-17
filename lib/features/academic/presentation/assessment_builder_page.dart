@@ -8,6 +8,7 @@ import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -67,7 +68,26 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
   bool _saving = false;
   String? _error;
 
+  /// A question, a setting, the class or the kind was changed by hand.
+  bool _changed = false;
+
   bool get _editing => widget.existing != null;
+
+  /// Anything not yet saved: leaving asks first.
+  bool get _unsaved =>
+      !_saving &&
+      !_loading &&
+      (_changed ||
+          _title.text != (widget.existing?.title ?? '') ||
+          !_material.changes.isEmpty ||
+          _material.uploading ||
+          _material.failed);
+
+  /// A change made by hand, which leaving would lose.
+  void _edit(VoidCallback change) => setState(() {
+    change();
+    _changed = true;
+  });
 
   @override
   void initState() {
@@ -259,7 +279,7 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
     int? maxAttempts,
     AttemptPolicy? policy,
     AnswerRelease? release,
-  }) => setState(() {
+  }) => _edit(() {
     _settings = AssessmentSettings(
       opensAt: opensAt ?? _settings.opensAt,
       closesAt: closesAt ?? _settings.closesAt,
@@ -271,7 +291,14 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: _title,
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final theme = Theme.of(context);
     final uploads = widget.uploads ?? UploadsScope.maybeOf(context);
@@ -304,7 +331,7 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                     // first, and not changed once it exists.
                     onChanged: _saving || _editing
                         ? null
-                        : (value) => setState(() => _classroomId = value),
+                        : (value) => _edit(() => _classroomId = value),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -340,7 +367,7 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                       selected: {_category},
                       onSelectionChanged: _saving
                           ? null
-                          : (value) => setState(() => _category = value.single),
+                          : (value) => _edit(() => _category = value.single),
                     ),
                   ],
                   SectionHeader(l10n.builderSettings),
@@ -392,10 +419,10 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                         classroomId: _classroomId,
                         uploads: uploads,
                         source: source,
-                        onChanged: () => setState(() => _error = null),
+                        onChanged: () => _edit(() => _error = null),
                         onMoveUp: index == 0
                             ? null
-                            : () => setState(() {
+                            : () => _edit(() {
                                 _questions.insert(
                                   index - 1,
                                   _questions.removeAt(index),
@@ -403,16 +430,16 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                               }),
                         onMoveDown: index == _questions.length - 1
                             ? null
-                            : () => setState(() {
+                            : () => _edit(() {
                                 _questions.insert(
                                   index + 1,
                                   _questions.removeAt(index),
                                 );
                               }),
-                        onDuplicate: () => setState(
+                        onDuplicate: () => _edit(
                           () => _questions.insert(index + 1, q.duplicate()),
                         ),
-                        onDelete: () => setState(() {
+                        onDelete: () => _edit(() {
                           _questions.removeAt(index).dispose();
                         }),
                       ),
@@ -421,9 +448,8 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                     OutlinedButton.icon(
                       onPressed: _saving
                           ? null
-                          : () => setState(
-                              () => _questions.add(EditableQuestion()),
-                            ),
+                          : () =>
+                                _edit(() => _questions.add(EditableQuestion())),
                       icon: const Icon(Icons.add_rounded),
                       label: Text(l10n.builderAddQuestion),
                     ),

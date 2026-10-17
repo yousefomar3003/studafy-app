@@ -4,6 +4,7 @@ import '../../../core/attachment_field.dart';
 import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
@@ -22,6 +23,9 @@ Future<bool?> showEditMaterialsSheet(
 }) => showModalBottomSheet<bool>(
   context: context,
   isScrollControlled: true,
+  // Dragging the sheet away would skip the question about unsaved changes;
+  // back and a tap outside still close it, and ask first when there are.
+  enableDrag: false,
   builder: (_) => _EditMaterialsSheet(
     repository: repository,
     work: work,
@@ -60,6 +64,10 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
   String? _error;
 
   bool get _hasChanges => !_value.changes.isEmpty;
+
+  /// Files or links changed and not saved: leaving asks first.
+  bool get _unsaved =>
+      !_saving && (_hasChanges || _value.uploading || _value.failed);
 
   Future<void> _save() async {
     final l10n = AppL10n.of(context);
@@ -109,7 +117,10 @@ class _EditMaterialsSheetState extends State<_EditMaterialsSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      UnsavedChangesScope(unsaved: _unsaved, child: _sheet(context));
+
+  Widget _sheet(BuildContext context) {
     final l10n = AppL10n.of(context);
     final theme = Theme.of(context);
     final classroomId = widget.work.classroomId;

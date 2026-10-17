@@ -42,6 +42,11 @@ class MessagingInteractor {
   Future<Result<void>> acknowledgeDelivery() =>
       runCatching(messaging.acknowledgeDelivery);
 
+  /// A voice note would not play. Only [code] is recorded - a platform
+  /// error code or the kind of failure, never a message, path or note id.
+  void voiceNotePlaybackFailed(String code) =>
+      telemetry.event('voice_note_playback_failed', {'code': code});
+
   /// A fresh id per compose; pass the same id again to retry that message.
   String newClientMessageId() => generateUuidV4(random: _random);
 

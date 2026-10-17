@@ -39,7 +39,8 @@ class PreviewOnlineAssessments implements OnlineAssessmentRepository {
       AcademicRecord(
         id: id,
         title: draft.title,
-        detail: '${draft.maximumScore} points',
+        detail: '',
+        outOf: draft.maximumScore,
         state: 'draft',
         version: 1,
         classroomId: draft.classroomId,

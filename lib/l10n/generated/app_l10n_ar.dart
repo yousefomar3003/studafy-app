@@ -93,7 +93,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get securityTwoFactorOffDetail =>
-      'على مديري المدارس تفعيل هذه الميزة قبل إدارة المدرسة.';
+      'اختياري: يضيف رمزًا من تطبيق المصادقة عند تسجيل الدخول. ولا يلزم تفعيله إلا لفريق ستودافاي الذي يراجع البلاغات.';
 
   @override
   String get securitySetUp => 'إعداد';
@@ -1779,6 +1779,17 @@ class AppL10nAr extends AppL10n {
   String get attachmentPhoto => 'صورة';
 
   @override
+  String attachmentPhotoName(String time) {
+    return 'صورة $time';
+  }
+
+  @override
+  String get splashTagline => 'الحياة المدرسية، متّصلة.';
+
+  @override
+  String get attachmentPickFailed => 'تعذّر فتح هذه الصورة. جرّب صورة أخرى.';
+
+  @override
   String attachmentUpToMaximumcountAttachments(Object maximumCount) {
     return 'حتى $maximumCount مرفقات.';
   }
@@ -3010,8 +3021,18 @@ class AppL10nAr extends AppL10n {
   String get todayClasses => 'صفوفي';
 
   @override
-  String todayStudents(String count) {
-    return '$count طلاب';
+  String todayStudents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طالب',
+      many: '$count طالبًا',
+      few: '$count طلاب',
+      two: 'طالبان',
+      one: 'طالب واحد',
+      zero: 'لا طلاب',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -6745,6 +6766,18 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get markUnsavedDiscard => 'تجاهل التغييرات';
+
+  @override
+  String get unsavedDiscardTitle => 'تجاهل التغييرات؟';
+
+  @override
+  String get unsavedDiscardBody => 'لم يُحفظ ما كتبته أو أضفته هنا، وسيضيع.';
+
+  @override
+  String get unsavedKeepEditing => 'متابعة التعديل';
+
+  @override
+  String get unsavedDiscard => 'تجاهل';
 
   @override
   String get markStillToMark => 'قيد التصحيح';

@@ -18,6 +18,8 @@ Future<bool?> showGradeCorrectionSheet(
 }) => showModalBottomSheet<bool>(
   context: context,
   isScrollControlled: true,
+  // Typing grows the sheet; it stops below the status bar.
+  useSafeArea: true,
   builder: (_) => _GradeCorrectionSheet(
     repository: repository,
     assessmentId: assessmentId,

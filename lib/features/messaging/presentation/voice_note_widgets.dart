@@ -24,6 +24,7 @@ class VoiceNoteBubble extends StatefulWidget {
     required this.player,
     required this.mine,
     this.localBytes,
+    this.onPlaybackFailed,
   });
 
   final StoredAttachment attachment;
@@ -35,6 +36,10 @@ class VoiceNoteBubble extends StatefulWidget {
 
   /// On my own (navy) bubble: light controls.
   final bool mine;
+
+  /// Told when the note could not be fetched or played, so the failure is
+  /// logged rather than lost. The bubble itself says it could not play.
+  final void Function(Object error, StackTrace stack)? onPlaybackFailed;
 
   @override
   State<VoiceNoteBubble> createState() => _VoiceNoteBubbleState();
@@ -57,13 +62,26 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
 
   VoicePlayer _listen() {
     final player = widget.player();
-    _subscription ??= player.playback.listen((state) {
-      if (!mounted) return;
-      setState(
-        () => _playback = state?.key == widget.attachment.id ? state : null,
-      );
-    });
+    _subscription ??= player.playback.listen(
+      (state) {
+        if (!mounted) return;
+        setState(
+          () => _playback = state?.key == widget.attachment.id ? state : null,
+        );
+      },
+      // Failures after the note started: one note plays at a time, so it is
+      // this one only if this bubble is the one playing.
+      onError: (Object error, StackTrace stack) {
+        if (_playback == null) return;
+        _failedWith(error, stack);
+      },
+    );
     return player;
+  }
+
+  void _failedWith(Object error, StackTrace stack) {
+    widget.onPlaybackFailed?.call(error, stack);
+    if (mounted) setState(() => _failed = true);
   }
 
   Future<void> _toggle() async {
@@ -96,8 +114,8 @@ class _VoiceNoteBubbleState extends State<VoiceNoteBubble> {
           _switchedOff = true;
         });
       }
-    } on Object {
-      if (mounted) setState(() => _failed = true);
+    } on Object catch (error, stack) {
+      _failedWith(error, stack);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

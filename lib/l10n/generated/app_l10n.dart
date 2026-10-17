@@ -251,7 +251,7 @@ abstract class AppL10n {
   /// No description provided for @securityTwoFactorOffDetail.
   ///
   /// In en, this message translates to:
-  /// **'School administrators must turn this on before they can manage a school.'**
+  /// **'Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.'**
   String get securityTwoFactorOffDetail;
 
   /// No description provided for @securitySetUp.
@@ -2972,6 +2972,24 @@ abstract class AppL10n {
   /// **'Photo'**
   String get attachmentPhoto;
 
+  /// The file name given to a photo from the camera or gallery, without its extension. {time} is when it was picked, e.g. 2026-10-17 14.32.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo {time}'**
+  String attachmentPhotoName(String time);
+
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'School life, connected.'**
+  String get splashTagline;
+
+  /// No description provided for @attachmentPickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That photo couldn\'t be opened. Try another one.'**
+  String get attachmentPickFailed;
+
   /// No description provided for @attachmentUpToMaximumcountAttachments.
   ///
   /// In en, this message translates to:
@@ -5164,8 +5182,8 @@ abstract class AppL10n {
   /// No description provided for @todayStudents.
   ///
   /// In en, this message translates to:
-  /// **'{count} students'**
-  String todayStudents(String count);
+  /// **'{count, plural, =1{1 student} other{{count} students}}'**
+  String todayStudents(int count);
 
   /// No description provided for @todayEmpty.
   ///
@@ -6124,7 +6142,7 @@ abstract class AppL10n {
   /// No description provided for @msgVoiceUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'This voice message could not be played.'**
+  /// **'Couldn\'t play this voice note.'**
   String get msgVoiceUnavailable;
 
   /// No description provided for @msgVoiceNoPermission.
@@ -11550,6 +11568,30 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Discard changes'**
   String get markUnsavedDiscard;
+
+  /// No description provided for @unsavedDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get unsavedDiscardTitle;
+
+  /// No description provided for @unsavedDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'What you have typed or added here has not been saved and will be lost.'**
+  String get unsavedDiscardBody;
+
+  /// No description provided for @unsavedKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get unsavedKeepEditing;
+
+  /// No description provided for @unsavedDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get unsavedDiscard;
 
   /// No description provided for @markStillToMark.
   ///

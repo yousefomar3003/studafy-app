@@ -14,6 +14,7 @@ import 'package:studafy/features/session/presentation/role_page.dart';
 import '../../support/accessibility.dart';
 import '../../support/localized_app.dart';
 import '../../support/session_repository_fake.dart';
+import '../../support/system_back.dart';
 
 /// The screens before sign-in: the welcome slides, the role choice and the
 /// sign-in buttons.
@@ -95,6 +96,58 @@ void main() {
       await tester.tap(find.text('What is Studafy?'));
       await tester.pumpAndSettle();
       expect(find.text('Your whole school day in one place'), findsOne);
+    });
+
+    testWidgets('back goes to the slide before, and leaves from the first', (
+      tester,
+    ) async {
+      tall(tester);
+      final exits = AppExits(tester);
+      await tester.pumpWidget(
+        localizedApp(
+          home: RolePage(
+            session: _session(),
+            settings: InMemoryDeviceSettings(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('Every mark counts, on paper or online'), findsOne);
+
+      await systemBack(tester);
+      expect(find.text('Your whole school day in one place'), findsOne);
+      expect(exits.count, 0);
+
+      // A first launch has nothing behind the first slide.
+      await systemBack(tester);
+      expect(exits.count, 1);
+    });
+
+    testWidgets('replayed, back from the first slide returns to the roles', (
+      tester,
+    ) async {
+      tall(tester);
+      final exits = AppExits(tester);
+      await tester.pumpWidget(
+        localizedApp(
+          home: RolePage(
+            session: _session(),
+            settings: InMemoryDeviceSettings({
+              DeviceSettingKeys.introSeen: '1',
+            }),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('What is Studafy?'));
+      await tester.pumpAndSettle();
+
+      await systemBack(tester);
+
+      expect(find.text('How will you use Studafy?'), findsOne);
+      expect(exits.count, 0);
     });
 
     testWidgets('read in Arabic, right to left', (tester) async {

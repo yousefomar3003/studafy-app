@@ -1,7 +1,14 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../l10n/generated/app_l10n.dart';
+import 'attachment_policy.dart';
 import 'failures.dart';
 import 'feedback.dart';
 import 'file_upload_repository.dart';
@@ -13,10 +20,13 @@ import 'uploads_scope.dart';
 /// A photo opens in the app. Anything else goes to the system share sheet,
 /// which on iOS previews a PDF and offers to keep it in Files - the app has
 /// no document viewer of its own, and a half-working one is worse than the
-/// platform's.
+/// platform's. Android's share sheet only sends a file on, so there it opens
+/// in an app that views its type (a PDF reader, Docs, Slides) first, and
+/// falls back to the share sheet when the phone has none.
 ///
 /// Nothing is written to a place the app keeps: the bytes are fetched on a
-/// single-use grant and handed straight on.
+/// single-use grant and handed straight on (on Android through the cache
+/// folder, which the system may clear and the next opened file replaces).
 typedef AttachmentPresenter = Future<void> Function(
   BuildContext context,
   DownloadedFile file,
@@ -41,12 +51,47 @@ Future<void> presentDownloadedFile(
     return;
   }
   final name = sharedFileName(file.displayName, file.mediaType);
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (await openWithAndroidViewer(file, name)) return;
+  }
   await SharePlus.instance.share(
     ShareParams(
       files: [XFile.fromData(file.bytes, name: name, mimeType: file.mediaType)],
       fileNameOverrides: [name],
     ),
   );
+}
+
+/// MainActivity.kt's handler for [openWithAndroidViewer].
+const attachmentViewerChannel = MethodChannel('com.studafy.light/attachments');
+
+/// Writes [file] to `attachments/` in the cache folder, the only folder
+/// MainActivity hands to another app, and asks Android to open it there.
+/// False when no app on the phone can, or anything else stops it, so the
+/// caller can fall back to the share sheet. Earlier files are removed first.
+@visibleForTesting
+Future<bool> openWithAndroidViewer(
+  DownloadedFile file,
+  String name, {
+  Future<Directory> Function() cacheDirectory = getTemporaryDirectory,
+  MethodChannel channel = attachmentViewerChannel,
+}) async {
+  try {
+    final folder = Directory(
+      p.join((await cacheDirectory()).path, 'attachments'),
+    );
+    if (folder.existsSync()) await folder.delete(recursive: true);
+    await folder.create(recursive: true);
+    final saved = File(p.join(folder.path, sanitiseAttachmentName(name)));
+    await saved.writeAsBytes(file.bytes, flush: true);
+    return await channel.invokeMethod<bool>('open', {
+          'path': saved.path,
+          'type': file.mediaType,
+        }) ??
+        false;
+  } on Object {
+    return false;
+  }
 }
 
 /// The name a shared file is saved under: the name it was uploaded with,

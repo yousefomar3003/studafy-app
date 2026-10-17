@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/coursework_attachments.dart';
@@ -45,19 +45,21 @@ void main() {
     WidgetTester tester, {
     List<ChatMessage> history = const [],
     _Mic? mic,
+    _Speaker? player,
+    Telemetry telemetry = const NoopTelemetry(),
     AttachmentSource? attachmentSource,
   }) async {
     final chat = _Chat(history);
     final uploads = _Uploads();
     final microphone = mic ?? _Mic();
-    final speaker = _Speaker();
+    final speaker = player ?? _Speaker();
     await tester.pumpWidget(
       localizedApp(
         scopes: (child) => MessagingScope(
           interactor: MessagingInteractor(
             messaging: chat,
             safety: chat,
-            telemetry: const NoopTelemetry(),
+            telemetry: telemetry,
           ),
           child: child,
         ),
@@ -275,6 +277,51 @@ void main() {
     expect(framed, findsNothing);
   });
 
+  testWidgets('a photo on its own is announced as a photo', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await open(
+      tester,
+      history: [
+        ChatMessage(
+          id: 'm1',
+          conversationId: 'conversation-1',
+          senderId: _me,
+          body: '',
+          createdAt: DateTime(2026, 9, 28, 10, 30),
+          attachments: const [
+            StoredAttachment(
+              id: 'photo-1',
+              displayName: 'Photo 2026-09-28 10.29.jpg',
+              sizeBytes: 8,
+              scanState: 'clean',
+              mediaType: 'image/jpeg',
+            ),
+          ],
+        ),
+        ChatMessage(
+          id: 'm2',
+          conversationId: 'conversation-1',
+          senderId: _teacher,
+          body: '',
+          createdAt: DateTime(2026, 9, 28, 10, 20),
+          attachments: const [
+            StoredAttachment(
+              id: 'voice-1',
+              displayName: 'Voice message',
+              sizeBytes: 3,
+              scanState: 'clean',
+              mediaType: 'audio/mp4',
+            ),
+          ],
+        ),
+      ],
+    );
+    expect(find.bySemanticsLabel(RegExp(r'^You: Photo\b')), findsOne);
+    expect(find.bySemanticsLabel(RegExp(r'^You: Voice message')), findsNothing);
+    expect(find.bySemanticsLabel(RegExp(r'^Rana: Voice message')), findsOne);
+    semantics.dispose();
+  });
+
   testWidgets('a voice note that failed to send is sent again as it is', (
     tester,
   ) async {
@@ -429,6 +476,66 @@ void main() {
     expect(find.byTooltip('Pause'), findsOne);
   });
 
+  final teacherNote = ChatMessage(
+    id: 'm1',
+    conversationId: _conversation.id,
+    senderId: _teacher,
+    body: '',
+    createdAt: DateTime(2026, 9, 28, 9),
+    attachments: const [
+      StoredAttachment(
+        id: 'voice-1',
+        displayName: 'Voice message',
+        sizeBytes: 3,
+        scanState: 'clean',
+        mediaType: 'audio/mp4',
+      ),
+    ],
+  );
+
+  testWidgets('a note that will not play says so, and the failure is logged', (
+    tester,
+  ) async {
+    final telemetry = _Telemetry();
+    await open(
+      tester,
+      history: [teacherNote],
+      telemetry: telemetry,
+      player: _Speaker(
+        failure: PlatformException(code: 'AndroidAudioError', message: 'x'),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Play voice message'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't play this voice note."), findsOne);
+    expect(find.byTooltip('Play voice message'), findsOne);
+    expect(telemetry.events.single.$1, 'voice_note_playback_failed');
+    expect(telemetry.events.single.$2, {'code': 'platform:AndroidAudioError'});
+  });
+
+  testWidgets('a note that fails once playing says so too', (tester) async {
+    final telemetry = _Telemetry();
+    final speaker = _Speaker();
+    await open(
+      tester,
+      history: [teacherNote],
+      telemetry: telemetry,
+      player: speaker,
+    );
+    await tester.tap(find.byTooltip('Play voice message'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Pause'), findsOne);
+
+    speaker.stall();
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't play this voice note."), findsOne);
+    expect(find.byTooltip('Play voice message'), findsOne);
+    expect(telemetry.events.single.$2, {'code': 'stalled'});
+  });
+
   test('durations read like a clock', () {
     expect(formatVoiceDuration(const Duration(seconds: 7)), '0:07');
     expect(formatVoiceDuration(const Duration(seconds: 102)), '1:42');
@@ -458,14 +565,35 @@ class _Mic implements VoiceRecorder {
 }
 
 class _Speaker implements VoicePlayer {
+  _Speaker({this.failure});
+
+  /// Thrown by [play], as a player that cannot start the note would.
+  final Object? failure;
   final played = <String>[];
   final _states = StreamController<VoicePlayback?>.broadcast();
+  String? _key;
+
+  /// The note being played stops getting anywhere, as the player reports.
+  void stall() {
+    _states
+      ..add(
+        VoicePlayback(
+          key: _key!,
+          playing: false,
+          position: Duration.zero,
+          duration: const Duration(seconds: 4),
+        ),
+      )
+      ..addError(const VoicePlaybackStalled());
+  }
 
   @override
   Stream<VoicePlayback?> get playback => _states.stream;
   @override
   Future<void> play(String key, Uint8List bytes) async {
     played.add(key);
+    _key = key;
+    if (failure case final failure?) throw failure;
     _states.add(
       VoicePlayback(
         key: key,
@@ -480,6 +608,14 @@ class _Speaker implements VoicePlayer {
   Future<void> pause() async {}
   @override
   Future<void> dispose() => _states.close();
+}
+
+class _Telemetry implements Telemetry {
+  final events = <(String, Map<String, Object?>)>[];
+
+  @override
+  void event(String name, [Map<String, Object?> fields = const {}]) =>
+      events.add((name, fields));
 }
 
 class _Uploads implements FileUploadRepository {

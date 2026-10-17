@@ -204,6 +204,8 @@ class _AccountHubPageState extends State<AccountHubPage> {
     final saved = await showModalBottomSheet<OwnProfile>(
       context: context,
       isScrollControlled: true,
+      // Typing grows the sheet; it stops below the status bar.
+      useSafeArea: true,
       showDragHandle: true,
       builder: (sheet) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),

@@ -116,6 +116,42 @@ void main() {
     expect(tester.widget<Switch>(switchFor(null)).value, isTrue);
   });
 
+  testWidgets('a tap anywhere on the row flips it, not only the switch', (
+    tester,
+  ) async {
+    final repository = _FakeConsent(AiAccess.consentRequired);
+    await pumpSwitch(tester, repository);
+
+    await tester.tap(find.text('AI study tools'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ai-consent-notice')), findsOneWidget);
+
+    // The row and its switch read as one toggle to a screen reader.
+    await tester.tap(find.byKey(const ValueKey('ai-consent-not-now')));
+    await tester.pumpAndSettle();
+    final handle = tester.ensureSemantics();
+    expect(
+      tester.getSemantics(switchFor(null)),
+      isSemantics(
+        label:
+            'AI study tools\n'
+            'Off. Turn on to use the study helper, notes, notebooks, quizzes '
+            'and flashcards.',
+        hasToggledState: true,
+        isToggled: false,
+        hasTapAction: true,
+      ),
+    );
+    handle.dispose();
+  });
+
+  testWidgets('a row that cannot be turned on ignores a tap', (tester) async {
+    await pumpSwitch(tester, _FakeConsent(AiAccess.guardianConsentRequired));
+    await tester.tap(find.byKey(const ValueKey('ai-consent-switch-self')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ai-consent-notice')), findsNothing);
+  });
+
   testWidgets('"Not now" records nothing', (tester) async {
     final repository = _FakeConsent(AiAccess.consentRequired);
     await pumpSwitch(tester, repository);

@@ -65,6 +65,15 @@ const studafyWordmarkOnDarkAsset = 'assets/brand/studafy_wordmark_white.png';
 /// before the image has decoded and the header never jumps.
 const studafyWordmarkAspect = 3.2173;
 
+/// Loads and decodes both wordmarks into the image cache, so the first screen
+/// that shows one draws it at once rather than popping it in after its
+/// tagline. Called from the app root with a context that has a MediaQuery,
+/// which picks the same 2.0x/3.0x variant [StudafyLogo] will ask for.
+Future<void> precacheStudafyWordmarks(BuildContext context) => Future.wait([
+  precacheImage(const AssetImage(studafyWordmarkOnDarkAsset), context),
+  precacheImage(const AssetImage(studafyWordmarkAsset), context),
+]);
+
 /// Brand lockup shared by the session flow and every shell.
 ///
 /// The real wordmark artwork everywhere: navy on light surfaces, and white

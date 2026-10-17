@@ -1,13 +1,14 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/file_upload_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/create_lesson_page.dart';
 import 'package:studafy/features/academic/presentation/submit_work_page.dart';
+import 'package:studafy/l10n/generated/app_l10n.dart';
 
 import '../support/localized_app.dart';
 
@@ -180,6 +181,35 @@ void main() {
     expect(find.textContaining('Only PDF and photos'), findsOneWidget);
   });
 
+  testWidgets('a picker that cannot hand the file over says so', (
+    tester,
+  ) async {
+    final uploads = _Uploads();
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: AttachmentField(
+            purpose: FilePurpose.assignmentSubmission,
+            schoolId: 'school-1',
+            uploads: uploads,
+            source: (_, _) async =>
+                throw PlatformException(code: 'no_valid_image_uri'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+
+    expect(uploads.commands, isEmpty);
+    expect(
+      find.text("That photo couldn't be opened. Try another one."),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('refuses a file over the purpose cap', (tester) async {
     final uploads = _Uploads();
     await tester.pumpWidget(
@@ -205,6 +235,66 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(uploads.commands.single.displayName, 'passwd.pdf');
+  });
+
+  group('a camera or gallery photo', () {
+    final takenAt = DateTime(2026, 10, 17, 14, 32, 5);
+    PickedAttachment photo() => PickedAttachment(
+      // What the picker calls it - Android's, here.
+      displayName: 'scaled_ac4a0881-3601-463b.jpg',
+      mediaType: 'image/jpeg',
+      bytes: Uint8List(2048),
+      photoTakenAt: takenAt,
+    );
+
+    test('is named by when it was picked', () {
+      expect(photoAttachmentName(takenAt), 'Photo 2026-10-17 14.32.jpg');
+      expect(
+        photoAttachmentName(DateTime(2026, 1, 2, 3, 4), extension: 'png'),
+        'Photo 2026-01-02 03.04.png',
+      );
+    });
+
+    for (final (locale, expected) in [
+      (const Locale('en'), 'Photo 2026-10-17 14.32.jpg'),
+      (const Locale('ar'), 'صورة 2026-10-17 14.32.jpg'),
+    ]) {
+      testWidgets(
+        'is sent and shown as "$expected" in ${locale.languageCode}',
+        (tester) async {
+          final uploads = _Uploads();
+          await tester.pumpWidget(
+            localizedApp(
+              locale: locale,
+              home: Scaffold(
+                body: AttachmentField(
+                  purpose: FilePurpose.assignmentSubmission,
+                  schoolId: 'school-1',
+                  uploads: uploads,
+                  source: (_, _) async => photo(),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final state = tester.state<AttachmentFieldState>(
+            find.byType(AttachmentField),
+          );
+          await state.add(AttachmentKind.photo);
+          await tester.pumpAndSettle();
+
+          expect(uploads.commands.single.displayName, expected);
+          expect(find.text(expected), findsOne);
+          expect(find.textContaining('scaled_'), findsNothing);
+        },
+      );
+    }
+
+    test('a file chosen by name keeps it', () {
+      final file = _picked(name: 'Unit 2 worksheet.pdf');
+      expect(file.localized(lookupAppL10n(const Locale('ar'))), same(file));
+    });
   });
 
   testWidgets('a failed upload is shown and carries no file id', (
@@ -236,6 +326,40 @@ void main() {
 
     expect(find.text('Attach file'), findsNothing);
     expect(find.textContaining('Up to 1'), findsOneWidget);
+  });
+
+  testWidgets('the photo, camera or document sheet is as tall as its row', (
+    tester,
+  ) async {
+    final key = GlobalKey<AttachmentFieldState>();
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: AttachmentField(
+            key: key,
+            purpose: FilePurpose.assignmentSubmission,
+            schoolId: 'school-1',
+            uploads: _Uploads(),
+            source: (_, _) async => null,
+            showAddButtons: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    unawaited(key.currentState!.chooseAndAdd());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Camera'), findsOneWidget);
+    // Was half the screen, mostly empty, below the three choices.
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(
+      tester.getSize(find.byType(BottomSheet)).height,
+      lessThan(screen.height / 3),
+    );
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('a teacher files a note with its attachment', (tester) async {

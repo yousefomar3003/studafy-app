@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What MainActivity may hand to a viewer app: only the cache folder
+     lib/core/attachment_opener.dart writes a downloaded attachment to. -->
+<paths>
+    <cache-path name="attachments" path="attachments/" />
+</paths>

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/studafy_design.dart';
+import '../../../l10n/generated/app_l10n.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -35,7 +36,7 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   @override
-  Widget build(BuildContext c) => const AnnotatedRegion<SystemUiOverlayStyle>(
+  Widget build(BuildContext c) => AnnotatedRegion<SystemUiOverlayStyle>(
     value: SystemUiOverlayStyle.light,
     child: Scaffold(
       backgroundColor: studafyBackdrop,
@@ -43,11 +44,11 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            StudafyLogo(size: 64, onDark: true),
-            SizedBox(height: 18),
+            const StudafyLogo(size: 64, onDark: true),
+            const SizedBox(height: 18),
             Text(
-              'School life, connected.',
-              style: TextStyle(color: studafyFrost, fontSize: 16),
+              AppL10n.of(c).splashTagline,
+              style: const TextStyle(color: studafyFrost, fontSize: 16),
             ),
           ],
         ),

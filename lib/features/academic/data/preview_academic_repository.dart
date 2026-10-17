@@ -113,7 +113,8 @@ class PreviewAcademicRepository implements AcademicRepository {
       AcademicRecord(
         id: _id('assessment'),
         title: draft.title,
-        detail: '${draft.maximumScore} points',
+        detail: '',
+        outOf: draft.maximumScore,
         state: 'draft',
         version: 1,
       ),

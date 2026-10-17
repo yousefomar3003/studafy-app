@@ -95,7 +95,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get securityTwoFactorOffDetail =>
-      'School administrators must turn this on before they can manage a school.';
+      'Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.';
 
   @override
   String get securitySetUp => 'Set up';
@@ -1745,6 +1745,18 @@ class AppL10nEn extends AppL10n {
   String get attachmentPhoto => 'Photo';
 
   @override
+  String attachmentPhotoName(String time) {
+    return 'Photo $time';
+  }
+
+  @override
+  String get splashTagline => 'School life, connected.';
+
+  @override
+  String get attachmentPickFailed =>
+      'That photo couldn\'t be opened. Try another one.';
+
+  @override
   String attachmentUpToMaximumcountAttachments(Object maximumCount) {
     return 'Up to $maximumCount attachments.';
   }
@@ -2993,8 +3005,14 @@ class AppL10nEn extends AppL10n {
   String get todayClasses => 'My classes';
 
   @override
-  String todayStudents(String count) {
-    return '$count students';
+  String todayStudents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count students',
+      one: '1 student',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3577,7 +3595,7 @@ class AppL10nEn extends AppL10n {
   String get msgVoiceChecking => 'Checking voice message…';
 
   @override
-  String get msgVoiceUnavailable => 'This voice message could not be played.';
+  String get msgVoiceUnavailable => 'Couldn\'t play this voice note.';
 
   @override
   String get msgVoiceNoPermission =>
@@ -6752,6 +6770,19 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get markUnsavedDiscard => 'Discard changes';
+
+  @override
+  String get unsavedDiscardTitle => 'Discard changes?';
+
+  @override
+  String get unsavedDiscardBody =>
+      'What you have typed or added here has not been saved and will be lost.';
+
+  @override
+  String get unsavedKeepEditing => 'Keep editing';
+
+  @override
+  String get unsavedDiscard => 'Discard';
 
   @override
   String get markStillToMark => 'Still being marked';

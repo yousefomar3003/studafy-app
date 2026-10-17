@@ -107,7 +107,9 @@ class ApiAcademicRepository implements AcademicRepository {
             AcademicRecord(
               id: x.id,
               title: x.title,
-              detail: '${x.maximumScore} points',
+              // The screen words the points in the reader's language.
+              detail: '',
+              outOf: x.maximumScore.toDouble(),
               state: x.state,
               version: x.version,
               classroomId: x.classroomId,

@@ -16,6 +16,7 @@
         android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
@@ -66,7 +67,40 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="io.studafy.app" android:host="login-callback"/>
             </intent-filter>
+            <!-- JOIN-052: a teacher's class join link,
+                 io.studafy.app://join?t=... (lib/core/class_join_link.dart).
+                 iOS opens every link on the scheme; Android only the hosts
+                 listed, so without this a tapped link never reaches
+                 ClassJoinLinkGuard. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="io.studafy.app" android:host="join"/>
+            </intent-filter>
         </activity>
+        <!-- Opening a downloaded attachment (lib/core/attachment_opener.dart):
+             the file is handed to a viewer app through this provider, from
+             the cache folder only (xml/attachment_paths.xml). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.attachments"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/attachment_paths" />
+        </provider>
+        <!-- Push notifications shown by Firebase while the app is in the
+             background: Android draws only the small icon's alpha, so the
+             full-colour launcher icon would be a white square. The white S,
+             tinted with the brand navy. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/brand_navy" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -82,6 +116,21 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Android 11+ package visibility. url_launcher opens web links
+             (lessons, meetings, legal pages, store subscriptions) and OAuth
+             sign-in in Custom Tabs; image_picker grants the camera app
+             access to the photo it takes. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService"/>
+        </intent>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE"/>
         </intent>
     </queries>
 </manifest>

@@ -5,6 +5,7 @@ import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -71,6 +72,15 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   GlobalKey<AttachmentsEditorState> _editor = GlobalKey();
 
   bool get _uploading => _attachments.uploading;
+
+  /// Typed or added, and not yet saved: leaving asks first.
+  bool get _unsaved =>
+      !_saving &&
+      (_title.text.trim().isNotEmpty ||
+          _notes.text.trim().isNotEmpty ||
+          !_attachments.changes.isEmpty ||
+          _attachments.uploading ||
+          _attachments.failed);
 
   @override
   void initState() {
@@ -145,7 +155,14 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: Listenable.merge([_title, _notes]),
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final uploads = widget.uploads ?? UploadsScope.maybeOf(context);
     return Scaffold(

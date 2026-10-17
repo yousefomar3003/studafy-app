@@ -50,7 +50,7 @@
   "securityTwoFactorOn": "Turned on",
   "securityTwoFactorOff": "Not set up",
   "securityTwoFactorOnDetail": "You use an authenticator app when signing in.",
-  "securityTwoFactorOffDetail": "School administrators must turn this on before they can manage a school.",
+  "securityTwoFactorOffDetail": "Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.",
   "securitySetUp": "Set up",
   "securityDevicesHeading": "WHERE YOU ARE SIGNED IN",
   "securityNoOtherDevices": "No other devices",
@@ -1161,6 +1161,17 @@
   },
   "attachmentAttachFile": "Attach file",
   "attachmentPhoto": "Photo",
+  "attachmentPhotoName": "Photo {time}",
+  "@attachmentPhotoName": {
+    "description": "The file name given to a photo from the camera or gallery, without its extension. {time} is when it was picked, e.g. 2026-10-17 14.32.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "splashTagline": "School life, connected.",
+  "attachmentPickFailed": "That photo couldn't be opened. Try another one.",
   "attachmentUpToMaximumcountAttachments": "Up to {maximumCount} attachments.",
   "@attachmentUpToMaximumcountAttachments": {
     "placeholders": {
@@ -1760,11 +1771,11 @@
     }
   },
   "todayClasses": "My classes",
-  "todayStudents": "{count} students",
+  "todayStudents": "{count, plural, =1{1 student} other{{count} students}}",
   "@todayStudents": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -2034,7 +2045,7 @@
   "@msgVoiceChecking": {
     "description": "Shown while the uploaded voice note is being scanned."
   },
-  "msgVoiceUnavailable": "This voice message could not be played.",
+  "msgVoiceUnavailable": "Couldn't play this voice note.",
   "msgVoiceNoPermission": "Allow microphone access in Settings to record voice notes.",
   "msgVoiceTooShort": "That was too short to send.",
   "msgVoiceFailed": "The voice note could not be sent. Please try again.",
@@ -3379,6 +3390,10 @@
   "markUnsavedBody": "Marks and comments you have not saved will be lost.",
   "markUnsavedKeep": "Keep marking",
   "markUnsavedDiscard": "Discard changes",
+  "unsavedDiscardTitle": "Discard changes?",
+  "unsavedDiscardBody": "What you have typed or added here has not been saved and will be lost.",
+  "unsavedKeepEditing": "Keep editing",
+  "unsavedDiscard": "Discard",
   "markStillToMark": "Still being marked",
   "markPublishedNotice": "Published: the student and their parents see this grade. A change is saved as a correction, with a reason.",
   "markDraftNotice": "Not published yet: only the class's teachers can see these marks.",
