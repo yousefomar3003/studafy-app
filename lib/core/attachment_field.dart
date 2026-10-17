@@ -17,11 +17,57 @@ class PickedAttachment {
     required this.displayName,
     required this.mediaType,
     required this.bytes,
+    this.photoTakenAt,
   });
 
   final String displayName;
   final String mediaType;
   final Uint8List bytes;
+
+  /// Set for a photo from the camera or the gallery, named by when it was
+  /// picked: the picker's own file name ("scaled_21.jpg" on Android,
+  /// "image_picker_….jpg" on iOS) means nothing to the sender or the
+  /// teacher. Null for a file chosen by name.
+  final DateTime? photoTakenAt;
+
+  /// The same attachment, a photo named in [l10n]'s language
+  /// ("Photo 2026-10-17 14.32.jpg"). Anything else keeps its own name.
+  PickedAttachment localized(AppL10n l10n) {
+    final at = photoTakenAt;
+    if (at == null) return this;
+    return PickedAttachment(
+      displayName: photoAttachmentName(
+        at,
+        extension: _extensionOf(displayName),
+        label: l10n.attachmentPhotoName,
+      ),
+      mediaType: mediaType,
+      bytes: bytes,
+      photoTakenAt: at,
+    );
+  }
+
+  static String _extensionOf(String name) {
+    final dot = name.lastIndexOf('.');
+    return dot < 0 ? 'jpg' : name.substring(dot + 1);
+  }
+}
+
+/// "Photo 2026-10-17 14.32.jpg": a camera or gallery photo, named by the
+/// local time it was picked. [label] puts the stamp in a localized phrase;
+/// the digits stay Latin, as they do in any file name.
+String photoAttachmentName(
+  DateTime at, {
+  String extension = 'jpg',
+  String Function(String stamp)? label,
+}) {
+  String two(int value) => value.toString().padLeft(2, '0');
+  final local = at.toLocal();
+  final stamp =
+      '${local.year}-${two(local.month)}-${two(local.day)} '
+      '${two(local.hour)}.${two(local.minute)}';
+  final name = label == null ? 'Photo $stamp' : label(stamp);
+  return sanitiseAttachmentName('$name.$extension', fallback: 'Photo.jpg');
 }
 
 enum AttachmentKind {
@@ -222,8 +268,9 @@ class AttachmentFieldState extends State<AttachmentField> {
   Future<void> add(AttachmentKind kind) => _add(kind);
 
   Future<void> _add(AttachmentKind kind) async {
-    final picked = await widget.source(kind, _policy);
-    if (picked == null || !mounted) return;
+    final source = await widget.source(kind, _policy);
+    if (source == null || !mounted) return;
+    final picked = source.localized(AppL10n.of(context));
 
     final refusal = _policy.refuse(
       mediaType: picked.mediaType,

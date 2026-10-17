@@ -1161,6 +1161,15 @@
   },
   "attachmentAttachFile": "Attach file",
   "attachmentPhoto": "Photo",
+  "attachmentPhotoName": "Photo {time}",
+  "@attachmentPhotoName": {
+    "description": "The file name given to a photo from the camera or gallery, without its extension. {time} is when it was picked, e.g. 2026-10-17 14.32.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "attachmentUpToMaximumcountAttachments": "Up to {maximumCount} attachments.",
   "@attachmentUpToMaximumcountAttachments": {
     "placeholders": {
@@ -2034,7 +2043,7 @@
   "@msgVoiceChecking": {
     "description": "Shown while the uploaded voice note is being scanned."
   },
-  "msgVoiceUnavailable": "This voice message could not be played.",
+  "msgVoiceUnavailable": "Couldn't play this voice note.",
   "msgVoiceNoPermission": "Allow microphone access in Settings to record voice notes.",
   "msgVoiceTooShort": "That was too short to send.",
   "msgVoiceFailed": "The voice note could not be sent. Please try again.",

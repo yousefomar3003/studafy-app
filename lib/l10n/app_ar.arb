@@ -479,6 +479,7 @@
   "attachmentThatFileIsLargerThan": "حجم الملف أكبر من {maximumSizeBytes} ميغابايت.",
   "attachmentAttachFile": "إرفاق ملف",
   "attachmentPhoto": "صورة",
+  "attachmentPhotoName": "صورة {time}",
   "attachmentUpToMaximumcountAttachments": "حتى {maximumCount} مرفقات.",
   "attachmentUploading": "جارٍ الرفع",
   "attachmentChecking": "قيد الفحص",

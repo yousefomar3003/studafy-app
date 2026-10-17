@@ -8,6 +8,7 @@ import '../../../core/attachment_field.dart';
 import '../../../core/attachment_opener.dart';
 import '../../../core/content_links.dart';
 import '../../../core/coursework_attachments.dart';
+import '../../../core/crash_reports.dart';
 import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/file_upload_repository.dart';
@@ -121,6 +122,19 @@ class _ConversationPageState extends State<ConversationPage> {
 
   VoicePlayer _voicePlayer() =>
       _player ??= (widget.voicePlayer ?? PlatformVoicePlayer.new)();
+
+  /// The bubble says it could not play; this makes sure someone finds out
+  /// why: a telemetry code, and a crash report when the player itself failed
+  /// (a server or connection error fetching the note is not a crash).
+  void _voicePlaybackFailed(Object error, StackTrace stack) {
+    if (mounted) {
+      MessagingScope.of(context)
+          .voiceNotePlaybackFailed(voicePlaybackFailureCode(error));
+    }
+    if (error is! FailureConvertible) {
+      unawaited(CrashReports.reportHandled(error, stack));
+    }
+  }
 
   Conversation get _conversation => widget.conversation;
 
@@ -505,6 +519,22 @@ class _ConversationPageState extends State<ConversationPage> {
     }
   }
 
+  /// What a message with no text is, for a screen reader: "Voice message",
+  /// "Photo", or the file's name. Each photo and file still announces
+  /// itself as well; this is what the message as a whole says.
+  static String _describeAttachments(
+    AppL10n l10n,
+    List<StoredAttachment> attachments,
+  ) => {
+    for (final note in attachments)
+      if (isVoiceNote(note.mediaType))
+        l10n.msgVoiceMessage
+      else if ((note.mediaType ?? '').startsWith('image/'))
+        l10n.attachmentPhoto
+      else
+        note.displayName,
+  }.join(', ');
+
   String _nameOf(String userId) {
     if (userId == widget.myUserId) return AppL10n.of(context).msgYou;
     return _conversation.participantName(userId) ??
@@ -721,7 +751,7 @@ class _ConversationPageState extends State<ConversationPage> {
             child: Semantics(
               label:
                   '${_nameOf(message.senderId)}: '
-                  '${message.body.isEmpty ? AppL10n.of(context).msgVoiceMessage : message.body}',
+                  '${message.body.isEmpty ? _describeAttachments(AppL10n.of(context), message.attachments) : message.body}',
               hint: AppL10n.of(context).msgMessageReport,
               onLongPress: () => _reportMessage(message),
               child: Container(
@@ -788,6 +818,7 @@ class _ConversationPageState extends State<ConversationPage> {
                           attachment: note,
                           uploads: _uploads,
                           player: _voicePlayer,
+                          onPlaybackFailed: _voicePlaybackFailed,
                           mine: mine,
                           localBytes: mine ? _myRecordings[note.id] : null,
                         ),
