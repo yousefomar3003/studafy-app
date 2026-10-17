@@ -17,6 +17,7 @@ import 'package:studafy/features/session/presentation/role_page.dart';
 
 import '../support/localized_app.dart';
 import '../support/session_repository_fake.dart';
+import '../support/system_back.dart';
 
 /// Onboarding is the screen every real account sees first, so what matters is
 /// that each role is told the one thing it has to do next - and that a parent,
@@ -76,6 +77,34 @@ void main() {
     // A guardian is linked to a student, never enrolled in a school, so
     // waiting for a membership that will never arrive would strand them.
     expect(find.text('Parent home'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(repository.close);
+    await tester.runAsync(session.dispose);
+  });
+
+  testWidgets('back goes to choosing a role rather than closing the app', (
+    tester,
+  ) async {
+    final repository = _OnboardingSessionRepository();
+    final session = interactor(repository);
+    final exits = AppExits(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        routes: {rolesRoute: (_) => const Text('Role picker')},
+        home: OnboardingPage(
+          role: UserRole.teacher,
+          session: session,
+          classes: null,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await systemBack(tester);
+
+    expect(find.text('Role picker'), findsOneWidget);
+    expect(exits.count, 0);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.runAsync(repository.close);

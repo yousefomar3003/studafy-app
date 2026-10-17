@@ -32,10 +32,15 @@ class ClassJoinLinkGuard extends WidgetsBindingObserver {
     RouteInformation routeInformation,
   ) async {
     final uri = routeInformation.uri;
-    if (!isClassJoinLink(uri)) {
-      return super.didPushRouteInformation(routeInformation);
+    if (isClassJoinLink(uri)) {
+      pendingToken.value = uri.queryParameters[classJoinTokenParameter];
+      return true;
     }
-    pendingToken.value = uri.queryParameters[classJoinTokenParameter];
-    return true;
+    // A join link with no token opens nothing, but is still claimed: pushed
+    // as a route it would land on "/" and replace whatever was open.
+    if (uri.scheme == classJoinLinkScheme && uri.host == classJoinLinkHost) {
+      return true;
+    }
+    return super.didPushRouteInformation(routeInformation);
   }
 }

@@ -31,6 +31,12 @@ enum SessionLifecycleEvent {
   signedIn,
   tokenRefreshed,
   refreshFailed,
+
+  /// A sign-in link's code could not be exchanged: no code verifier on this
+  /// device, or a code that is invalid or has expired. Any app or web page
+  /// can open such a link, so it says nothing about the session already
+  /// held, which must survive it.
+  signInLinkFailed,
   signedOut,
   userUpdated,
 }

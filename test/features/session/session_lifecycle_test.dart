@@ -17,8 +17,11 @@ class _Repository extends FakeSessionRepositoryBase {
   final StreamController<bool> sessions = StreamController<bool>.broadcast();
   UserProfile? profile;
 
+  /// Whether the auth client holds a session.
+  bool signedIn = false;
+
   @override
-  bool get hasCurrentSession => false;
+  bool get hasCurrentSession => signedIn;
 
   @override
   Stream<bool> get sessionChanges => sessions.stream;
@@ -138,6 +141,61 @@ void main() {
       await subscription.cancel();
 
       expect(seen, contains(SessionStatus.reauthRequired));
+    });
+  });
+
+  group('a sign-in link that fails its code exchange', () {
+    // Any app or web page can open one: the review's was
+    // io.studafy.app://login-callback?code=fakecode123.
+    test('leaves a signed-in person signed in, as they were', () async {
+      interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+      repository
+        ..profile = _teacher()
+        ..signedIn = true;
+      await interactor.completeRemoteLogin(
+        role: StudafyRole.teacher,
+        consentAccepted: true,
+        locale: 'en',
+      );
+      final seen = <SessionStatus>[];
+      final subscription = interactor.statusChanges.listen(seen.add);
+
+      repository.emitLifecycle(SessionLifecycleEvent.signInLinkFailed);
+      await Future<void>.delayed(Duration.zero);
+      await subscription.cancel();
+
+      expect(interactor.status, SessionStatus.authenticated);
+      expect(seen, isEmpty);
+      expect(context.profile?.id, 'user-1');
+      expect(context.membership?.id, 'membership-1');
+    });
+
+    test('with no session, is a sign-in that did not finish', () async {
+      interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+
+      repository.emitLifecycle(SessionLifecycleEvent.signInLinkFailed);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(interactor.status, SessionStatus.reauthRequired);
+    });
+
+    test('does not hide a real refresh failure after it', () async {
+      interactor = build(const RuntimePolicy(StudafyEnvironment.development));
+      repository
+        ..profile = _teacher()
+        ..signedIn = true;
+      await interactor.completeRemoteLogin(
+        role: StudafyRole.teacher,
+        consentAccepted: true,
+        locale: 'en',
+      );
+
+      repository.emitLifecycle(SessionLifecycleEvent.signInLinkFailed);
+      repository.emitLifecycle(SessionLifecycleEvent.refreshFailed);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(interactor.status, SessionStatus.reauthRequired);
+      expect(context.profile, isNull);
     });
   });
 

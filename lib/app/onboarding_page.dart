@@ -138,8 +138,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
     await _enterAfterMembership(AppL10n.of(context).onboardingNotReadyYet);
   }
 
+  /// Back to choosing a role: what "Choose a different role" does, and so
+  /// what system back does too. This page replaced the whole stack, so
+  /// without this back closed the app.
+  void _changeRole() =>
+      Navigator.pushNamedAndRemoveUntil(context, rolesRoute, (_) => false);
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PopScope<Object?>(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop && !_resolving) _changeRole();
+    },
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final (title, body, action) = switch (widget.role) {
       UserRole.student => (
@@ -198,13 +212,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           const SizedBox(height: 12),
           TextButton(
-            onPressed: _resolving
-                ? null
-                : () => Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    rolesRoute,
-                    (_) => false,
-                  ),
+            onPressed: _resolving ? null : _changeRole,
             child: Text(l10n.onboardingChangeRole),
           ),
         ],

@@ -11,6 +11,7 @@ import 'package:studafy/core/studafy_domain.dart';
 import '../support/accessibility.dart';
 import '../support/app_scopes.dart';
 import '../support/localized_app.dart';
+import '../support/system_back.dart';
 
 /// Every teacher tab, on the synthetic build's preview data: on a small
 /// phone, with large and the largest text, in Arabic and on a tablet,
@@ -87,4 +88,37 @@ void main() {
       semantics.dispose();
     });
   }
+
+  testWidgets('the Android back button goes to Today, then leaves', (
+    tester,
+  ) async {
+    const policy = RuntimePolicy(StudafyEnvironment.synthetic);
+    StudafyRuntime.initialize(policy);
+    final deps = AppDependencies.forPolicy(policy);
+    final exits = AppExits(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        locale: const Locale('en'),
+        theme: studafyTheme(),
+        scopes: (child) => appScopes(deps, child),
+        home: TeacherShell(dependencies: deps),
+      ),
+    );
+    await tester.pumpAndSettle();
+    int selected() => tester
+        .widget<StudafyNavigationBar>(find.byType(StudafyNavigationBar))
+        .selectedIndex;
+
+    // The Teaching tab, where the review found back closing the app.
+    await tester.tap(find.byType(StudafyNavDestination).at(2));
+    await tester.pumpAndSettle();
+    expect(selected(), 2);
+
+    await systemBack(tester);
+    expect(selected(), 0);
+    expect(exits.count, 0);
+
+    await systemBack(tester);
+    expect(exits.count, 1);
+  });
 }

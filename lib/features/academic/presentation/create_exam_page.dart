@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/attachment_field.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
@@ -63,6 +64,10 @@ class _CreateExamPageState extends State<CreateExamPage> {
 
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
+
+  /// Typed or added, and not yet saved: leaving asks first.
+  bool get _unsaved =>
+      !_saving && (_title.text.trim().isNotEmpty || _attachments.isNotEmpty);
 
   @override
   void initState() {
@@ -158,7 +163,14 @@ class _CreateExamPageState extends State<CreateExamPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: _title,
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final scheduledAt = _scheduledAt;
     return Scaffold(

@@ -6747,6 +6747,18 @@ class AppL10nAr extends AppL10n {
   String get markUnsavedDiscard => 'تجاهل التغييرات';
 
   @override
+  String get unsavedDiscardTitle => 'تجاهل التغييرات؟';
+
+  @override
+  String get unsavedDiscardBody => 'لم يُحفظ ما كتبته أو أضفته هنا، وسيضيع.';
+
+  @override
+  String get unsavedKeepEditing => 'متابعة التعديل';
+
+  @override
+  String get unsavedDiscard => 'تجاهل';
+
+  @override
   String get markStillToMark => 'قيد التصحيح';
 
   @override

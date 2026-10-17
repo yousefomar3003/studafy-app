@@ -4,6 +4,7 @@ import '../../../core/attachment_field.dart';
 import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
@@ -23,6 +24,9 @@ Future<bool?> showEditLessonSheet(
 }) => showModalBottomSheet<bool>(
   context: context,
   isScrollControlled: true,
+  // Dragging the sheet away would skip the question about unsaved changes;
+  // back and a tap outside still close it, and ask first when there are.
+  enableDrag: false,
   builder: (_) => _EditLessonSheet(
     repository: repository,
     lesson: lesson,
@@ -67,6 +71,16 @@ class _EditLessonSheetState extends State<_EditLessonSheet> {
   bool get _uploading =>
       _replacement.any((a) => a.stage == AttachmentStage.uploading) ||
       _attachments.uploading;
+
+  /// Anything changed and not saved: leaving asks first.
+  bool get _unsaved =>
+      !_saving &&
+      (_title.text != widget.lesson.title ||
+          (!_hasFile && _body.text != widget.lesson.detail) ||
+          _replacement.isNotEmpty ||
+          !_attachments.changes.isEmpty ||
+          _attachments.uploading ||
+          _attachments.failed);
 
   @override
   void dispose() {
@@ -115,7 +129,14 @@ class _EditLessonSheetState extends State<_EditLessonSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: Listenable.merge([_title, _body]),
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final uploads = widget.uploads;
     final schoolId = widget.schoolId;
