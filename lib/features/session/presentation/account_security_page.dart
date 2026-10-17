@@ -19,9 +19,14 @@ class AccountSecurityPage extends StatefulWidget {
     super.key,
     required this.session,
     this.onDeleteAccount,
+    this.reviewsReports = false,
   });
 
   final SessionInteractor session;
+
+  /// True for a platform operator (GET /v1/me), who needs two-factor to
+  /// open a safety report; everyone else is told only that it is optional.
+  final bool reviewsReports;
 
   /// Opens the account deletion flow, which the app layer composes (it
   /// belongs to the account feature). Null hides the section.
@@ -220,6 +225,8 @@ class _AccountSecurityPageState extends State<AccountSecurityPage> {
                           : l10n.securityTwoFactorOff,
                       subtitle: mfaEnrolled
                           ? l10n.securityTwoFactorOnDetail
+                          : widget.reviewsReports
+                          ? l10n.securityTwoFactorOffDetailReviewer
                           : l10n.securityTwoFactorOffDetail,
                       trailing: mfaEnrolled
                           ? const Icon(
