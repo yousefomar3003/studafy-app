@@ -110,6 +110,21 @@ def circle_mask(size: int) -> Image.Image:
     return big.resize((size, size), Image.LANCZOS)
 
 
+def notification_icon(s_only: Image.Image, scale: float) -> Image.Image:
+    """Android status bar icon for push: the white S alone, 24 dp, 20 dp
+    tall. Android draws only its alpha, so the full-colour launcher icon
+    would show as a plain white square."""
+    canvas = round(24 * scale)
+    s_h = round(20 * scale)
+    s_w = round(s_h * s_only.width / s_only.height)
+    out = Image.new("RGBA", (canvas, canvas), (255, 255, 255, 0))
+    out.alpha_composite(
+        resize(s_only, (s_w, s_h)),
+        ((canvas - s_w) // 2, (canvas - s_h) // 2),
+    )
+    return out
+
+
 def main() -> None:
     icon = Image.open(SOURCE / "icon_s_1024.png").convert("RGB")
     assert icon.size == (1024, 1024), "icon_s_1024.png must be 1024x1024"
@@ -185,6 +200,8 @@ def main() -> None:
             ((canvas - s_w) // 2, (canvas - s_h) // 2),
         )
         save(splash, draw / "splash_icon.png")
+        # Push notifications (AndroidManifest.xml, default_notification_icon).
+        save(notification_icon(s_only, f), draw / "ic_notification.png")
 
     # macOS: the S on a navy rounded square inside the standard 1024 grid
     # (824 px body, 100 px margin), with transparent corners.
