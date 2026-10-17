@@ -1,10 +1,8 @@
 # Handoff: Studafy
 
-Updated: 2026-10-17, evening. **Everything through #110 is in batch
-#111**, which merges with a merge commit once CI passes; a new iPhone
-profile build is installed after it. If #111 is still open, check its CI
-(`gh pr checks 111`) and merge it with `gh pr merge 111 --merge`. App only,
-no migrations and no deploy needed.
+Updated: 2026-10-17, evening. **Everything through #112 is merged** (the
+Android fixes through batch #111). The iPhone has a profile build from
+`main` at `4557060`. No PR is open.
 
 ## Start here (2026-10-17)
 
@@ -16,8 +14,7 @@ no migrations and no deploy needed.
   opening a report.
 - **Android, with no device:** a code parity audit, then the full flows on
   the Android 16 emulator against the test copy (student, teacher and
-  parent, English and Arabic). Fixed in these PRs, landing through batch
-  #111:
+  parent, English and Arabic). Merged through batch #111:
   - **#107:** class join links (`io.studafy.app://join`) open the app;
     attachments open in a viewer app (FileProvider, `cache/attachments`);
     the push status-bar icon; `<queries>` for links, Custom Tabs and the
