@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/file_upload_repository.dart';
@@ -179,6 +179,35 @@ void main() {
 
     expect(uploads.commands, isEmpty);
     expect(find.textContaining('Only PDF and photos'), findsOneWidget);
+  });
+
+  testWidgets('a picker that cannot hand the file over says so', (
+    tester,
+  ) async {
+    final uploads = _Uploads();
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: AttachmentField(
+            purpose: FilePurpose.assignmentSubmission,
+            schoolId: 'school-1',
+            uploads: uploads,
+            source: (_, _) async =>
+                throw PlatformException(code: 'no_valid_image_uri'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Attach file'));
+    await tester.pumpAndSettle();
+
+    expect(uploads.commands, isEmpty);
+    expect(
+      find.text("That photo couldn't be opened. Try another one."),
+      findsOneWidget,
+    );
   });
 
   testWidgets('refuses a file over the purpose cap', (tester) async {

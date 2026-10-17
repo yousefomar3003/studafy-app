@@ -2978,6 +2978,18 @@ abstract class AppL10n {
   /// **'Photo {time}'**
   String attachmentPhotoName(String time);
 
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'School life, connected.'**
+  String get splashTagline;
+
+  /// No description provided for @attachmentPickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That photo couldn\'t be opened. Try another one.'**
+  String get attachmentPickFailed;
+
   /// No description provided for @attachmentUpToMaximumcountAttachments.
   ///
   /// In en, this message translates to:

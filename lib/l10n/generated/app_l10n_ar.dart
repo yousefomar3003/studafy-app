@@ -1784,6 +1784,12 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
+  String get splashTagline => 'الحياة المدرسية، متّصلة.';
+
+  @override
+  String get attachmentPickFailed => 'تعذّر فتح هذه الصورة. جرّب صورة أخرى.';
+
+  @override
   String attachmentUpToMaximumcountAttachments(Object maximumCount) {
     return 'حتى $maximumCount مرفقات.';
   }

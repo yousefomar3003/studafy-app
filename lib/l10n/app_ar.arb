@@ -480,6 +480,8 @@
   "attachmentAttachFile": "إرفاق ملف",
   "attachmentPhoto": "صورة",
   "attachmentPhotoName": "صورة {time}",
+  "splashTagline": "الحياة المدرسية، متّصلة.",
+  "attachmentPickFailed": "تعذّر فتح هذه الصورة. جرّب صورة أخرى.",
   "attachmentUpToMaximumcountAttachments": "حتى {maximumCount} مرفقات.",
   "attachmentUploading": "جارٍ الرفع",
   "attachmentChecking": "قيد الفحص",

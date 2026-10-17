@@ -1170,6 +1170,8 @@
       }
     }
   },
+  "splashTagline": "School life, connected.",
+  "attachmentPickFailed": "That photo couldn't be opened. Try another one.",
   "attachmentUpToMaximumcountAttachments": "Up to {maximumCount} attachments.",
   "@attachmentUpToMaximumcountAttachments": {
     "placeholders": {

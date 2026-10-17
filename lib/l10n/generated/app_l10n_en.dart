@@ -1750,6 +1750,13 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get splashTagline => 'School life, connected.';
+
+  @override
+  String get attachmentPickFailed =>
+      'That photo couldn\'t be opened. Try another one.';
+
+  @override
   String attachmentUpToMaximumcountAttachments(Object maximumCount) {
     return 'Up to $maximumCount attachments.';
   }

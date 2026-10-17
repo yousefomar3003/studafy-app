@@ -268,7 +268,15 @@ class AttachmentFieldState extends State<AttachmentField> {
   Future<void> add(AttachmentKind kind) => _add(kind);
 
   Future<void> _add(AttachmentKind kind) async {
-    final source = await widget.source(kind, _policy);
+    final PickedAttachment? source;
+    try {
+      source = await widget.source(kind, _policy);
+    } on Object {
+      // The picker could not hand the file over (image_picker's
+      // "no_valid_image_uri", a photo still in the cloud, ...).
+      if (mounted) _say(AppL10n.of(context).attachmentPickFailed);
+      return;
+    }
     if (source == null || !mounted) return;
     final picked = source.localized(AppL10n.of(context));
 
