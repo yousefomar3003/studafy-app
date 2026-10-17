@@ -371,13 +371,13 @@ class SessionInteractor {
 
   Future<List<AuthDevice>> devices() => repository.devices();
 
-  Future<String> beginTotpEnrolment() {
+  Future<TotpEnrolment> beginTotpEnrolment() {
     telemetry.event('session_mfa_enrolment_started');
     return repository.beginTotpEnrolment();
   }
 
-  Future<bool> verifyTotp(String code) async {
-    final verified = await repository.verifyTotp(code);
+  Future<bool> verifyTotp(String factorId, String code) async {
+    final verified = await repository.verifyTotp(factorId, code);
     telemetry.event('session_mfa_verified', {'verified': verified});
     return verified;
   }

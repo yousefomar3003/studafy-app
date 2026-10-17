@@ -232,11 +232,13 @@ abstract interface class SessionRepository {
   /// Whether this account has a verified second factor enrolled.
   Future<bool> mfaEnrolled();
 
-  /// Begins TOTP enrolment, returning the provisioning URI to display.
-  Future<String> beginTotpEnrolment();
+  /// Begins TOTP enrolment: a new, unverified factor and what the person
+  /// adds to their authenticator app.
+  Future<TotpEnrolment> beginTotpEnrolment();
 
-  /// Completes TOTP enrolment or a challenge with a user-supplied code.
-  Future<bool> verifyTotp(String code);
+  /// Completes the enrolment of [factorId] with a code from the app. False
+  /// when the code is wrong, so the person can try again.
+  Future<bool> verifyTotp(String factorId, String code);
 
   /// What deletion would do to this account.
   Future<DeletionImpact> deletionImpact();
@@ -246,4 +248,22 @@ abstract interface class SessionRepository {
 
   /// Cancels a scheduled deletion. Deliberately needs no recent-auth grant.
   Future<bool> cancelAccountDeletion();
+}
+
+/// A TOTP enrolment that has been started but not verified yet.
+class TotpEnrolment {
+  const TotpEnrolment({
+    required this.factorId,
+    required this.uri,
+    required this.secret,
+  });
+
+  /// The unverified factor the first code verifies.
+  final String factorId;
+
+  /// The otpauth:// link an authenticator app opens.
+  final String uri;
+
+  /// The same key, for typing or pasting into the app by hand.
+  final String secret;
 }

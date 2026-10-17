@@ -91,10 +91,11 @@ class DemoSessionRepository implements SessionRepository {
   Future<bool> mfaEnrolled() async => false;
 
   @override
-  Future<String> beginTotpEnrolment() async => _noRemoteBackend();
+  Future<TotpEnrolment> beginTotpEnrolment() async => _noRemoteBackend();
 
   @override
-  Future<bool> verifyTotp(String code) async => _noRemoteBackend();
+  Future<bool> verifyTotp(String factorId, String code) async =>
+      _noRemoteBackend();
 
   @override
   Future<DeletionImpact> deletionImpact() async => _noRemoteBackend();

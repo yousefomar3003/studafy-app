@@ -83,6 +83,41 @@ void main() {
     expect(find.textContaining('Optional'), findsNothing);
   });
 
+  testWidgets('two-factor set-up verifies the new factor, after a wrong code', (
+    tester,
+  ) async {
+    tall(tester);
+    final repository = _Repository();
+    await tester.pumpWidget(
+      localizedApp(home: AccountSecurityPage(session: _session(repository))),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Set up'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open in authenticator app'), findsOne);
+    expect(find.text('JBSW Y3DP EHPK 3PXP'), findsOne);
+    expect(find.text('Copy key'), findsOne);
+
+    // A wrong code keeps the dialog and the same factor, and says so.
+    await tester.enterText(find.byType(TextField), '000000');
+    await tester.pump();
+    await tester.tap(find.text('Verify'));
+    await tester.pumpAndSettle();
+    expect(find.text('That code did not match.'), findsOne);
+    expect(find.text('Set up two-factor sign-in'), findsOne);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.pump();
+    await tester.tap(find.text('Verify'));
+    await tester.pumpAndSettle();
+
+    expect(repository.codes, ['000000', '123456']);
+    expect(repository.verifiedFactors, ['factor-new']);
+    expect(find.text('Set up two-factor sign-in'), findsNothing);
+    expect(find.text('Turned on'), findsOne);
+  });
+
   testWidgets('without a deletion flow the section is not shown', (
     tester,
   ) async {
@@ -95,14 +130,37 @@ void main() {
   });
 }
 
-SessionInteractor _session() => SessionInteractor(
-  repository: _Repository(),
+SessionInteractor _session([_Repository? repository]) => SessionInteractor(
+  repository: repository ?? _Repository(),
   context: ActiveContextController.instance,
   telemetry: const NoopTelemetry(),
   runtimePolicy: const RuntimePolicy(StudafyEnvironment.synthetic),
 );
 
 class _Repository extends FakeSessionRepositoryBase {
+  bool enrolled = false;
+  final codes = <String>[];
+  final verifiedFactors = <String>[];
+
+  @override
+  Future<bool> mfaEnrolled() async => enrolled;
+
+  @override
+  Future<TotpEnrolment> beginTotpEnrolment() async => const TotpEnrolment(
+    factorId: 'factor-new',
+    uri: 'otpauth://totp/Studafy:me?secret=JBSWY3DPEHPK3PXP&issuer=Studafy',
+    secret: 'JBSWY3DPEHPK3PXP',
+  );
+
+  @override
+  Future<bool> verifyTotp(String factorId, String code) async {
+    codes.add(code);
+    if (code != '123456') return false;
+    verifiedFactors.add(factorId);
+    enrolled = true;
+    return true;
+  }
+
   @override
   bool get hasCurrentSession => false;
 

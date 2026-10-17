@@ -516,27 +516,43 @@ class ApiSessionRepository implements SessionRepository {
   }
 
   @override
-  Future<String> beginTotpEnrolment() async {
-    final response = await _auth.auth.mfa.enroll(factorType: FactorType.totp);
-    final uri = response.totp?.uri;
-    if (uri == null) {
+  Future<TotpEnrolment> beginTotpEnrolment() async {
+    final mfa = _auth.auth.mfa;
+    // A set-up left unfinished stays behind as an unverified factor. Only the
+    // new one is verified, so the old ones go first.
+    final existing = await mfa.listFactors();
+    for (final factor in existing.all) {
+      if (factor.factorType == FactorType.totp &&
+          factor.status == FactorStatus.unverified) {
+        await mfa.unenroll(factor.id);
+      }
+    }
+    final response = await mfa.enroll(
+      factorType: FactorType.totp,
+      issuer: 'Studafy',
+    );
+    final totp = response.totp;
+    if (totp == null) {
       throw StateError('Enrolment did not return a provisioning URI.');
     }
-    return uri;
+    return TotpEnrolment(
+      factorId: response.id,
+      uri: totp.uri,
+      secret: totp.secret,
+    );
   }
 
   @override
-  Future<bool> verifyTotp(String code) async {
-    final factors = await _auth.auth.mfa.listFactors();
-    final factor = factors.totp.firstOrNull;
-    if (factor == null) return false;
-    final challenge = await _auth.auth.mfa.challenge(factorId: factor.id);
-    await _auth.auth.mfa.verify(
-      factorId: factor.id,
-      challengeId: challenge.id,
-      code: code,
-    );
-    return true;
+  Future<bool> verifyTotp(String factorId, String code) async {
+    // The factor being enrolled is still unverified, so it is never in
+    // listFactors().totp (verified factors only); it is verified by its id.
+    try {
+      await _auth.auth.mfa.challengeAndVerify(factorId: factorId, code: code);
+      return true;
+    } on AuthException catch (error) {
+      if (error.code == ErrorCode.mfaVerificationFailed.code) return false;
+      rethrow;
+    }
   }
 
   @override

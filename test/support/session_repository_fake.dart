@@ -98,10 +98,11 @@ abstract class FakeSessionRepositoryBase implements SessionRepository {
   Future<bool> mfaEnrolled() async => false;
 
   @override
-  Future<String> beginTotpEnrolment() async => unimplemented();
+  Future<TotpEnrolment> beginTotpEnrolment() async => unimplemented();
 
   @override
-  Future<bool> verifyTotp(String code) async => unimplemented();
+  Future<bool> verifyTotp(String factorId, String code) async =>
+      unimplemented();
 
   @override
   Future<DeletionImpact> deletionImpact() async => unimplemented();
