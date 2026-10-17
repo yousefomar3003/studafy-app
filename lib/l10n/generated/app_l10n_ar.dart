@@ -1779,6 +1779,11 @@ class AppL10nAr extends AppL10n {
   String get attachmentPhoto => 'صورة';
 
   @override
+  String attachmentPhotoName(String time) {
+    return 'صورة $time';
+  }
+
+  @override
   String attachmentUpToMaximumcountAttachments(Object maximumCount) {
     return 'حتى $maximumCount مرفقات.';
   }

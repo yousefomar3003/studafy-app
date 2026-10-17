@@ -31,10 +31,23 @@ Future<PickedAttachment?> pickPlatformAttachment(
       );
       if (picked == null) return null;
       final bytes = await picked.readAsBytes();
+      final mediaType = _mediaTypeFor(picked.name, fallback: 'image/jpeg');
+      // The picker's file name is its own ("scaled_21.jpg",
+      // "image_picker_….jpg"); the photo is named by when it was picked, and
+      // the screen puts that in the person's language.
+      final now = DateTime.now();
       return PickedAttachment(
-        displayName: sanitiseAttachmentName(picked.name),
-        mediaType: _mediaTypeFor(picked.name, fallback: 'image/jpeg'),
+        displayName: photoAttachmentName(
+          now,
+          extension: switch (mediaType) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            _ => 'jpg',
+          },
+        ),
+        mediaType: mediaType,
         bytes: bytes,
+        photoTakenAt: now,
       );
 
     case AttachmentKind.document:

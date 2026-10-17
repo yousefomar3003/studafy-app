@@ -338,11 +338,12 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     }
     final source = widget.attachmentSource;
     if (source == null) return;
-    final photo = await source(
+    final chosen = await source(
       choice == 'camera' ? AttachmentKind.camera : AttachmentKind.photo,
       AttachmentPolicy.assistantAttachment,
     );
-    if (photo == null || !mounted) return;
+    if (chosen == null || !mounted) return;
+    final photo = chosen.localized(l10n);
     if (AttachmentPolicy.assistantAttachment.refuse(
           mediaType: photo.mediaType,
           sizeBytes: photo.bytes.length,

@@ -2972,6 +2972,12 @@ abstract class AppL10n {
   /// **'Photo'**
   String get attachmentPhoto;
 
+  /// The file name given to a photo from the camera or gallery, without its extension. {time} is when it was picked, e.g. 2026-10-17 14.32.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo {time}'**
+  String attachmentPhotoName(String time);
+
   /// No description provided for @attachmentUpToMaximumcountAttachments.
   ///
   /// In en, this message translates to:
@@ -6124,7 +6130,7 @@ abstract class AppL10n {
   /// No description provided for @msgVoiceUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'This voice message could not be played.'**
+  /// **'Couldn\'t play this voice note.'**
   String get msgVoiceUnavailable;
 
   /// No description provided for @msgVoiceNoPermission.

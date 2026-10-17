@@ -1745,6 +1745,11 @@ class AppL10nEn extends AppL10n {
   String get attachmentPhoto => 'Photo';
 
   @override
+  String attachmentPhotoName(String time) {
+    return 'Photo $time';
+  }
+
+  @override
   String attachmentUpToMaximumcountAttachments(Object maximumCount) {
     return 'Up to $maximumCount attachments.';
   }
@@ -3577,7 +3582,7 @@ class AppL10nEn extends AppL10n {
   String get msgVoiceChecking => 'Checking voice message…';
 
   @override
-  String get msgVoiceUnavailable => 'This voice message could not be played.';
+  String get msgVoiceUnavailable => 'Couldn\'t play this voice note.';
 
   @override
   String get msgVoiceNoPermission =>

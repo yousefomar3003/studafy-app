@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// Voice notes in messages (2026-09-28).
 ///
@@ -72,6 +75,24 @@ class VoicePlayback {
   final Duration position;
   final Duration duration;
 }
+
+/// A note the player said it was playing, but which never got going.
+class VoicePlaybackStalled implements Exception {
+  const VoicePlaybackStalled();
+
+  @override
+  String toString() => 'VoicePlaybackStalled: the note did not start playing';
+}
+
+/// A short, machine-readable name for why a note would not play, safe for
+/// telemetry: the platform's error code or the kind of error, never its
+/// message (which can hold a file path).
+String voicePlaybackFailureCode(Object error) => switch (error) {
+  VoicePlaybackStalled() => 'stalled',
+  TimeoutException() => 'timeout',
+  PlatformException(:final code) => 'platform:$code',
+  _ => error.runtimeType.toString(),
+};
 
 /// "0:07", "1:42" - how long a voice note is, or how far into it.
 String formatVoiceDuration(Duration value) {

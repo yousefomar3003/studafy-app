@@ -43,6 +43,14 @@ abstract final class CrashReports {
     );
   }
 
+  /// Reports an error the app caught and recovered from - the person was
+  /// told, nothing crashed - so it is still seen. Scrubbed like any other
+  /// report; does nothing without a DSN.
+  static Future<void> reportHandled(Object error, StackTrace stack) async {
+    if (!enabled) return;
+    await Sentry.captureException(error, stackTrace: stack);
+  }
+
   /// Sets the constant user. Scope sync copies it to the native SDKs, whose
   /// crash and ANR reports then use it instead of the installation id.
   static Future<void> anonymise(Scope scope) =>

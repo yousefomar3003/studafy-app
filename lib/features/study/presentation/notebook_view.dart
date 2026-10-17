@@ -378,8 +378,9 @@ class _NotebookViewState extends State<NotebookView> {
     if (uploads == null || schoolId == null || source == null) return;
 
     final policy = AttachmentPolicy.of(FilePurpose.notebookPhoto);
-    final picked = await source(kind, policy);
-    if (picked == null || !mounted) return;
+    final chosen = await source(kind, policy);
+    if (chosen == null || !mounted) return;
+    final picked = chosen.localized(AppL10n.of(context));
     if (policy.refuse(
           mediaType: picked.mediaType,
           sizeBytes: picked.bytes.length,
