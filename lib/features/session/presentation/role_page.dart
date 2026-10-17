@@ -35,6 +35,10 @@ class _RolePageState extends State<RolePage> {
   /// flashes up before the slides on a first launch.
   bool? _showIntro;
 
+  /// Whether the slides were opened from the role screen, rather than
+  /// shown on a first launch with nothing behind them.
+  bool _introReopened = false;
+
   @override
   void initState() {
     super.initState();
@@ -113,13 +117,22 @@ class _RolePageState extends State<RolePage> {
         body: Center(child: StudafyLogo(size: 64, onDark: true)),
       );
     }
-    if (showIntro) return IntroSlides(onDone: _finishIntro);
+    if (showIntro) {
+      return IntroSlides(
+        onDone: _finishIntro,
+        // Opened again from "What is Studafy?": back returns to the roles.
+        onBackFromFirst: _introReopened ? _finishIntro : null,
+      );
+    }
     final l10n = AppL10n.of(c);
     return AuthFrame(
       header: const StudafyLogo(size: 38, onDark: true),
       footer: Center(
         child: TextButton.icon(
-          onPressed: () => setState(() => _showIntro = true),
+          onPressed: () => setState(() {
+            _showIntro = true;
+            _introReopened = true;
+          }),
           style: TextButton.styleFrom(foregroundColor: studafyFrost),
           icon: const Icon(Icons.play_circle_outline_rounded),
           label: Text(l10n.roleWhatIsStudafy),

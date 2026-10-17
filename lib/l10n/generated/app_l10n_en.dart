@@ -6754,6 +6754,19 @@ class AppL10nEn extends AppL10n {
   String get markUnsavedDiscard => 'Discard changes';
 
   @override
+  String get unsavedDiscardTitle => 'Discard changes?';
+
+  @override
+  String get unsavedDiscardBody =>
+      'What you have typed or added here has not been saved and will be lost.';
+
+  @override
+  String get unsavedKeepEditing => 'Keep editing';
+
+  @override
+  String get unsavedDiscard => 'Discard';
+
+  @override
   String get markStillToMark => 'Still being marked';
 
   @override

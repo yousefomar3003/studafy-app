@@ -4,6 +4,7 @@ import 'package:studafy/features/academic/presentation/submit_work_page.dart';
 
 import '../../support/academic_repository_fake.dart';
 import '../../support/localized_app.dart';
+import '../../support/system_back.dart';
 
 Widget _page(SubmitFake fake, {bool canSubmit = true, Locale? locale}) =>
     localizedApp(
@@ -96,5 +97,73 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('تسليم'), findsOneWidget);
+  });
+
+  group('leaving with work not handed in', () {
+    // Opened over another page, as the Work tab opens it.
+    Future<void> open(WidgetTester tester, SubmitFake fake) async {
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SubmitWorkPage(
+                    repository: fake,
+                    assignmentId: 'a1',
+                    assignmentTitle: 'Read chapter 3',
+                  ),
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('an untouched page closes without asking', (tester) async {
+      await open(tester, SubmitFake());
+
+      await systemBack(tester);
+
+      expect(find.text('Read chapter 3'), findsNothing);
+      expect(find.text('Discard changes?'), findsNothing);
+    });
+
+    testWidgets('a typed answer is not thrown away without asking', (
+      tester,
+    ) async {
+      await open(tester, SubmitFake());
+      await tester.enterText(find.byType(TextField), 'My answer');
+      await tester.pump();
+
+      await systemBack(tester);
+      expect(find.text('Discard changes?'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      await tester.pumpAndSettle();
+      expect(find.text('My answer'), findsOneWidget);
+
+      await systemBack(tester);
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+      expect(find.text('Read chapter 3'), findsNothing);
+    });
+
+    testWidgets('handing in closes the page without asking', (tester) async {
+      final fake = SubmitFake();
+      await open(tester, fake);
+      await tester.enterText(find.byType(TextField), 'My answer');
+      await tester.pump();
+
+      await tester.tap(find.text('Hand in'));
+      await tester.pumpAndSettle();
+
+      expect(fake.submitted, hasLength(1));
+      expect(find.text('Discard changes?'), findsNothing);
+      expect(find.text('open'), findsOneWidget);
+    });
   });
 }

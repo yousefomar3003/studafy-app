@@ -5,6 +5,7 @@ import '../../../core/content_links.dart';
 import '../../../core/coursework_attachments.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/platform_attachment_source.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/messaging_interactor.dart';
@@ -63,6 +64,14 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
   String? _error;
+
+  /// Typed or added, and not yet posted: leaving asks first.
+  bool get _unsaved =>
+      !_posting &&
+      (_title.text.trim().isNotEmpty ||
+          _body.text.trim().isNotEmpty ||
+          _attachments.isNotEmpty ||
+          _links.isNotEmpty);
 
   @override
   void initState() {
@@ -150,7 +159,14 @@ class _CreateAnnouncementPageState extends State<CreateAnnouncementPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: Listenable.merge([_title, _body]),
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.announcementNewTitle)),

@@ -16,6 +16,7 @@ import 'package:studafy/features/messaging/presentation/messaging_scope.dart';
 
 import '../support/accessibility.dart';
 import '../support/localized_app.dart';
+import '../support/system_back.dart';
 
 /// Every parent tab, with two children at two schools, on a small phone, a
 /// large phone with large text, in Arabic and on a tablet: nothing may
@@ -102,6 +103,65 @@ void main() {
       semantics.dispose();
     });
   }
+
+  testWidgets('the Android back button goes to Today, then leaves', (
+    tester,
+  ) async {
+    StudafyRuntime.initialize(
+      const RuntimePolicy(StudafyEnvironment.synthetic),
+    );
+    ActiveContextController.instance.hydrate(
+      authenticatedProfile: const UserProfile(
+        id: 'parent-1',
+        displayName: 'Nadia Hassan',
+        email: 'nadia@example.test',
+        memberships: [],
+        accountKind: AccountKind.adult,
+      ),
+      signedInAs: StudafyRole.parent,
+    );
+    final family = _TwoChildren();
+    final exits = AppExits(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        locale: const Locale('en'),
+        theme: studafyTheme(),
+        scopes: (child) => MessagingScope(
+          interactor: MessagingInteractor(
+            messaging: _Inbox(),
+            safety: _NoSafety(),
+            telemetry: const NoopTelemetry(),
+          ),
+          child: FamilyScope(
+            interactor: FamilyInteractor(
+              family: family,
+              approvals: family,
+              confirmRecentAuth: () async {},
+              telemetry: const NoopTelemetry(),
+            ),
+            child: child,
+          ),
+        ),
+        home: ParentShell(academic: PreviewAcademicRepository()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    int selected() => tester
+        .widget<StudafyNavigationBar>(find.byType(StudafyNavigationBar))
+        .selectedIndex;
+
+    // Learning, where the review found back closing the app.
+    await tester.tap(find.byType(StudafyNavDestination).at(1));
+    await tester.pumpAndSettle();
+    expect(selected(), 1);
+
+    await systemBack(tester);
+    expect(selected(), 0);
+    expect(exits.count, 0);
+
+    await systemBack(tester);
+    expect(exits.count, 1);
+  });
 }
 
 class _TwoChildren implements FamilyRepository, PurchaseApprovalRepository {

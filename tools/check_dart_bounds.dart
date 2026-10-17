@@ -57,6 +57,9 @@ const _coreAllowlist = <String>[
   // Opening a page once per tap: every screen pushes through it, so a
   // second tap on a slow connection never stacks the same page twice.
   'core/navigation.dart',
+  // Leaving a page asks "Discard changes?" when it would lose typed work:
+  // the hand-in, the teacher's create and edit pages, the message composer.
+  'core/unsaved_changes.dart',
   'core/runtime_environment.dart',
   // MOB-070 localization (ADR-0028). The generated localizations are the one
   // source of interface copy, so every zone may read them; the port below is

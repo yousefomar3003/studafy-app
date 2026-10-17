@@ -11,10 +11,15 @@ import '../../../l10n/generated/app_l10n.dart';
 /// Shown once per device; "What is Studafy?" on the role screen brings it
 /// back.
 class IntroSlides extends StatefulWidget {
-  const IntroSlides({super.key, required this.onDone});
+  const IntroSlides({super.key, required this.onDone, this.onBackFromFirst});
 
   /// Called by "Skip" and by "Get started" on the last slide.
   final VoidCallback onDone;
+
+  /// What system back does on the first slide. Null leaves it to the route,
+  /// which on a first launch closes the app. Back on a later slide always
+  /// goes to the slide before.
+  final VoidCallback? onBackFromFirst;
 
   @override
   State<IntroSlides> createState() => _IntroSlidesState();
@@ -68,16 +73,31 @@ class _IntroSlidesState extends State<IntroSlides> {
       widget.onDone();
       return;
     }
-    _pages.nextPage(
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? const Duration(milliseconds: 1)
-          : const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-    );
+    _pages.nextPage(duration: _slideDuration, curve: Curves.easeOutCubic);
+  }
+
+  Duration get _slideDuration => MediaQuery.disableAnimationsOf(context)
+      ? const Duration(milliseconds: 1)
+      : const Duration(milliseconds: 320);
+
+  void _back() {
+    if (_index > 0) {
+      _pages.previousPage(duration: _slideDuration, curve: Curves.easeOutCubic);
+      return;
+    }
+    widget.onBackFromFirst?.call();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PopScope<Object?>(
+    canPop: _index == 0 && widget.onBackFromFirst == null,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _back();
+    },
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final slides = _slides(l10n);
     final last = _index == slides.length - 1;

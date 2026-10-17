@@ -12,6 +12,7 @@ import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
+import '../core/tab_back_scope.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
 import '../features/academic/presentation/submit_work_page.dart';
@@ -307,8 +308,21 @@ class _StudentShellState extends State<StudentShell>
     );
   }
 
+  /// System back does what the helper's back arrow does, takes any other
+  /// tab back to Today, and leaves the app only from Today.
+  void _back() => setState(() {
+    index = index == _helperIndex ? _beforeHelper : 0;
+    _navCompact.value = false;
+  });
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => TabBackScope(
+    atFirstTab: index == 0,
+    onBack: _back,
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final repository = widget.academic;
     final studentId = ActiveContextController.instance.selectedStudent?.id;
     final messaging = MessagingScope.isAvailable(context);

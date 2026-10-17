@@ -11551,6 +11551,30 @@ abstract class AppL10n {
   /// **'Discard changes'**
   String get markUnsavedDiscard;
 
+  /// No description provided for @unsavedDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get unsavedDiscardTitle;
+
+  /// No description provided for @unsavedDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'What you have typed or added here has not been saved and will be lost.'**
+  String get unsavedDiscardBody;
+
+  /// No description provided for @unsavedKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get unsavedKeepEditing;
+
+  /// No description provided for @unsavedDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get unsavedDiscard;
+
   /// No description provided for @markStillToMark.
   ///
   /// In en, this message translates to:

@@ -95,6 +95,21 @@ void main() {
       expect(guard.consume(), isNull);
     });
 
+    testWidgets('a join link with no token is claimed, and opens nothing', (
+      tester,
+    ) async {
+      final guard = ClassJoinLinkGuard();
+      WidgetsBinding.instance.addObserver(guard);
+      addTearDown(() => WidgetsBinding.instance.removeObserver(guard));
+
+      await tester.pumpWidget(app());
+      await _pushRouteInformation(tester, 'io.studafy.app://join');
+
+      expect(tester.takeException(), isNull);
+      expect(guard.pendingToken.value, isNull);
+      expect(find.text('splash'), findsOneWidget);
+    });
+
     testWidgets('an ordinary destination is left to the navigator', (
       tester,
     ) async {

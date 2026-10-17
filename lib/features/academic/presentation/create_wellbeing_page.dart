@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
@@ -52,6 +53,11 @@ class _CreateWellbeingPageState extends State<CreateWellbeingPage> {
   _Severity _severity = _Severity.low;
   bool _saving = false;
   String? _error;
+
+  /// Typed and not yet saved: leaving asks first.
+  bool get _unsaved =>
+      !_saving &&
+      [_title, _context, _followUp].any((c) => c.text.trim().isNotEmpty);
 
   @override
   void initState() {
@@ -146,7 +152,14 @@ class _CreateWellbeingPageState extends State<CreateWellbeingPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: Listenable.merge([_title, _context, _followUp]),
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.wellbeingNewTitle)),

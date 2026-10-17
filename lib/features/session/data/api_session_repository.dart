@@ -59,13 +59,14 @@ class ApiSessionRepository implements SessionRepository {
   Stream<SessionLifecycleEvent> get lifecycleEvents {
     // A failed refresh surfaces as a stream *error*, not as an event, so it
     // has to be caught and translated. Letting it propagate would leave the
-    // app showing a stale signed-in shell backed by a dead session.
+    // app showing a stale signed-in shell backed by a dead session. A sign-in
+    // link that could not be exchanged arrives the same way, and is told
+    // apart so that it cannot end a session it has nothing to do with.
     final controller = StreamController<SessionLifecycleEvent>.broadcast();
     late final StreamSubscription<AuthState> subscription;
     subscription = _auth.auth.onAuthStateChange.listen(
       (state) => controller.add(_lifecycleFor(state.event)),
-      onError: (Object _) =>
-          controller.add(SessionLifecycleEvent.refreshFailed),
+      onError: (Object error) => controller.add(lifecycleForError(error)),
     );
     // One controller per listener set: when the last listener goes, the
     // auth subscription and the controller both close.
@@ -107,6 +108,33 @@ class ApiSessionRepository implements SessionRepository {
     if (response.session == null) {
       throw StateError('The sign-in did not produce a session.');
     }
+  }
+
+  /// What an error on the auth stream means.
+  ///
+  /// The auth client reports two unrelated failures as stream errors: a
+  /// refresh that could not complete, and a sign-in link whose code could not
+  /// be exchanged (no code verifier on this device, or a code that is invalid
+  /// or expired). A refresh that the server refused outright is a
+  /// `signedOut` event instead, so what still arrives here as a refresh
+  /// failure is a network or unexpected error, or a stored session that is
+  /// missing or expired. Everything else the client throws as an
+  /// [AuthException] comes from a link exchange.
+  static SessionLifecycleEvent lifecycleForError(Object error) =>
+      isSignInLinkFailure(error)
+      ? SessionLifecycleEvent.signInLinkFailed
+      : SessionLifecycleEvent.refreshFailed;
+
+  static bool isSignInLinkFailure(Object error) {
+    if (error is! AuthException) return false;
+    if (error is AuthRetryableFetchException ||
+        error is AuthSessionMissingException ||
+        error is AuthUnknownException) {
+      return false;
+    }
+    final code = error.code;
+    return code != ErrorCode.sessionExpired.code &&
+        code != ErrorCode.sessionMissing.code;
   }
 
   static SessionLifecycleEvent _lifecycleFor(AuthChangeEvent event) =>

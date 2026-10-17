@@ -43,6 +43,37 @@ void main() {
       );
     });
 
+    test('claims a bare login-callback with no code at all', () {
+      for (final link in [
+        'io.studafy.app://login-callback',
+        'io.studafy.app://login-callback/',
+        'io.studafy.app://login-callback?state=x',
+        '/login-callback',
+      ]) {
+        expect(OAuthCallbackGuard.isCallback(Uri.parse(link)), isTrue);
+      }
+    });
+
+    test('claims any other host on the app scheme', () {
+      expect(
+        OAuthCallbackGuard.isCallback(Uri.parse('io.studafy.app://anything')),
+        isTrue,
+      );
+      expect(
+        OAuthCallbackGuard.isCallback(Uri.parse('io.studafy.app://')),
+        isTrue,
+      );
+    });
+
+    test('leaves class join links to their own guard', () {
+      expect(
+        OAuthCallbackGuard.isCallback(
+          Uri.parse('io.studafy.app://join?t=${'a' * 40}'),
+        ),
+        isFalse,
+      );
+    });
+
     test('leaves ordinary destinations to the navigator', () {
       expect(OAuthCallbackGuard.isCallback(Uri.parse('/teacher')), isFalse);
       expect(OAuthCallbackGuard.isCallback(Uri.parse('/roles')), isFalse);
@@ -71,6 +102,28 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('splash'), findsOneWidget);
+    });
+
+    testWidgets('a stray link keeps what was open, open', (tester) async {
+      // Without the guard a callback with no code landed on "/" and
+      // replaced the screen the person was on.
+      final guard = OAuthCallbackGuard();
+      WidgetsBinding.instance.addObserver(guard);
+      addTearDown(() => WidgetsBinding.instance.removeObserver(guard));
+      await tester.pumpWidget(app());
+      tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/roles');
+      await tester.pumpAndSettle();
+
+      for (final link in [
+        'io.studafy.app://login-callback',
+        'io.studafy.app://login-callback?code=fakecode123',
+        'io.studafy.app://somewhere-else',
+      ]) {
+        await _pushRouteInformation(tester, link);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: link);
+        expect(find.text('roles'), findsOneWidget, reason: link);
+      }
     });
 
     testWidgets('without the guard the same push still throws', (tester) async {

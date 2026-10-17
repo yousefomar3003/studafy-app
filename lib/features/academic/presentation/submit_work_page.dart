@@ -8,6 +8,7 @@ import '../../../core/platform_attachment_source.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../core/unsaved_changes.dart';
 import '../../../core/uploads_scope.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
@@ -123,6 +124,12 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
   bool get _uploading =>
       _attachments.any((a) => a.stage == AttachmentStage.uploading);
 
+  /// A typed answer or a file added, not yet handed in: leaving asks first.
+  bool get _unsaved =>
+      _open &&
+      !_sending &&
+      (_answer.text.trim().isNotEmpty || _attachments.isNotEmpty);
+
   /// Only files the server actually has, in the order sent. A failed
   /// upload, or a file the scan or the server refused, is simply absent
   /// rather than blocking the hand-in.
@@ -205,7 +212,14 @@ class _SubmitWorkPageState extends State<SubmitWorkPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    // Follows typing without rebuilding the page.
+    listenable: _answer,
+    builder: (_, page) => UnsavedChangesScope(unsaved: _unsaved, child: page!),
+    child: _page(context),
+  );
+
+  Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final window = widget.canSubmit
         ? widget.deadline?.state ?? SubmissionWindow.open

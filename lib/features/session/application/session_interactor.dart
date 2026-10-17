@@ -109,6 +109,17 @@ class SessionInteractor {
         // sign in again; there is nothing to degrade to.
         _setStatus(SessionStatus.reauthRequired);
         context.signOut();
+      case SessionLifecycleEvent.signInLinkFailed:
+        // Any app or web page can open a sign-in link, and a stale or made-up
+        // one fails its code exchange. That says nothing about the session
+        // already held, so a signed-in person stays signed in.
+        if (repository.hasCurrentSession) {
+          telemetry.event('session_link_ignored');
+          return;
+        }
+        // With no session, a failed link is a sign-in that did not finish.
+        _setStatus(SessionStatus.reauthRequired);
+        context.signOut();
       case SessionLifecycleEvent.signedOut:
         _setStatus(SessionStatus.signedOut);
         context.signOut();
