@@ -405,8 +405,10 @@ class _AccountHubPageState extends State<AccountHubPage> {
                           if (session == null) return;
                           await Navigator.of(pageContext).pushOnce(
                             MaterialPageRoute<void>(
-                              builder: (_) =>
-                                  AccountSecurityPage(session: session),
+                              builder: (_) => AccountSecurityPage(
+                                session: session,
+                                reviewsReports: true,
+                              ),
                             ),
                           );
                         },
@@ -428,6 +430,7 @@ class _AccountHubPageState extends State<AccountHubPage> {
                     MaterialPageRoute<void>(
                       builder: (_) => AccountSecurityPage(
                         session: session,
+                        reviewsReports: profile?.platformOperator == true,
                         // Deleting the account is kept with the other
                         // sign-in and security controls, not on the
                         // profile itself.

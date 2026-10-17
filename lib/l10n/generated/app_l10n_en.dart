@@ -95,7 +95,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get securityTwoFactorOffDetail =>
-      'Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.';
+      'Optional: adds a code from an authenticator app when you sign in.';
+
+  @override
+  String get securityTwoFactorOffDetailReviewer =>
+      'Needed to review safety reports: adds a code from an authenticator app when you sign in.';
 
   @override
   String get securitySetUp => 'Set up';
