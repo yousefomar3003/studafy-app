@@ -238,6 +238,40 @@ void main() {
     expect(find.textContaining('Up to 1'), findsOneWidget);
   });
 
+  testWidgets('the photo, camera or document sheet is as tall as its row', (
+    tester,
+  ) async {
+    final key = GlobalKey<AttachmentFieldState>();
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: AttachmentField(
+            key: key,
+            purpose: FilePurpose.assignmentSubmission,
+            schoolId: 'school-1',
+            uploads: _Uploads(),
+            source: (_, _) async => null,
+            showAddButtons: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    unawaited(key.currentState!.chooseAndAdd());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Camera'), findsOneWidget);
+    // Was half the screen, mostly empty, below the three choices.
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(
+      tester.getSize(find.byType(BottomSheet)).height,
+      lessThan(screen.height / 3),
+    );
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('a teacher files a note with its attachment', (tester) async {
     // Tall enough that the whole lesson form is built.
     tester.view.physicalSize = const Size(1200, 2600);

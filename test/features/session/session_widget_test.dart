@@ -218,6 +218,65 @@ void main() {
     });
   });
 
+  for (final (locale, sentence, terms, privacy) in [
+    (
+      const Locale('en'),
+      'I agree to the Terms of Use and Privacy Policy.',
+      'Terms of Use',
+      'Privacy Policy',
+    ),
+    (
+      const Locale('ar'),
+      'أوافق على شروط الاستخدام وسياسة الخصوصية.',
+      'شروط الاستخدام',
+      'سياسة الخصوصية',
+    ),
+  ]) {
+    testWidgets('the consent reads as one sentence with its links, in '
+        '${locale.languageCode}', (tester) async {
+      StudafyRuntime.initialize(
+        const RuntimePolicy(StudafyEnvironment.synthetic),
+      );
+      final repository = _WidgetSessionRepository();
+      final session = _interactor(
+        repository,
+        const RuntimePolicy(StudafyEnvironment.synthetic),
+      );
+      await tester.pumpWidget(
+        localizedApp(
+          locale: locale,
+          home: LoginPage(role: UserRole.student, session: session),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // One flowing paragraph, not a box per phrase.
+      expect(find.text(sentence), findsOne);
+
+      // A link opens its policy and leaves the box as it was.
+      await tester.tapOnText(find.textRange.ofSubstring(terms));
+      await tester.pumpAndSettle();
+      expect(find.text(terms), findsOne);
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+      Navigator.of(tester.element(find.text(terms))).pop();
+      await tester.pumpAndSettle();
+
+      await tester.tapOnText(find.textRange.ofSubstring(privacy));
+      await tester.pumpAndSettle();
+      expect(find.text(privacy), findsOne);
+      Navigator.of(tester.element(find.text(privacy))).pop();
+      await tester.pumpAndSettle();
+
+      // Anywhere else on the sentence ticks the box.
+      await tester.tapOnText(
+        find.textRange.ofSubstring(sentence.substring(0, 4)),
+      );
+      await tester.pump();
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
+      await repository.close();
+    });
+  }
+
   testWidgets(
     'auth stream errors are handled without exposing provider details',
     (tester) async {

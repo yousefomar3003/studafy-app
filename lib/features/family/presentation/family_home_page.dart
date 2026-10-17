@@ -145,6 +145,8 @@ class FamilyHomePageState extends State<FamilyHomePage> {
     final linked = await showModalBottomSheet<GuardianChild>(
       context: context,
       isScrollControlled: true,
+      // Typing grows the sheet; it stops below the status bar.
+      useSafeArea: true,
       showDragHandle: true,
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(

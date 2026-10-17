@@ -522,6 +522,45 @@ class SettingsRow extends StatelessWidget {
   }
 }
 
+/// A settings row with a switch, where a tap anywhere on the row flips it,
+/// as [SwitchListTile] does. The row and its switch are one node to a
+/// screen reader: the title and subtitle, and whether it is on.
+class SettingsSwitchRow extends StatelessWidget {
+  const SettingsSwitchRow({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.switchKey,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool value;
+
+  /// Null leaves the row and its switch disabled.
+  final ValueChanged<bool>? onChanged;
+  final Key? switchKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final onChanged = this.onChanged;
+    return MergeSemantics(
+      child: SettingsRow(
+        icon: icon,
+        title: title,
+        subtitle: subtitle,
+        showChevron: false,
+        onTap: onChanged == null ? null : () => onChanged(!value),
+        trailing: Switch(key: switchKey, value: value, onChanged: onChanged),
+      ),
+    );
+  }
+}
+
 /// A calm, centred empty or error state with an optional action.
 class StudafyEmptyState extends StatelessWidget {
   const StudafyEmptyState({

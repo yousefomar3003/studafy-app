@@ -249,6 +249,10 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
 
   /// A mark in words. Absent and not graded are said as such - never shown
   /// as a zero - and a mark not entered yet says so.
+  /// 10, not 10.0: a whole number of points is said as one.
+  num _wholeOrNot(double value) =>
+      value == value.roundToDouble() ? value.toInt() : value;
+
   String _markText(AppL10n l10n, AcademicRecord record) {
     String number(double value) =>
         value == value.roundToDouble() ? value.toInt().toString() : '$value';
@@ -815,6 +819,11 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
                         ),
                       ),
                     )
+                  else if (feed == AcademicFeed.assessments &&
+                      item.outOf != null)
+                    // What the work is out of, worded here so it reads in
+                    // the reader's language rather than the data layer's.
+                    Text(l10n.takePoints(_wholeOrNot(item.outOf!)))
                   else if (item.detail.trim().isNotEmpty)
                     LinkedText(item.detail),
                   if (grades && paper)

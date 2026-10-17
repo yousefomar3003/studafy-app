@@ -27,6 +27,8 @@ Future<bool?> showEditLessonSheet(
   // Dragging the sheet away would skip the question about unsaved changes;
   // back and a tap outside still close it, and ask first when there are.
   enableDrag: false,
+  // Typing grows the sheet; it stops below the status bar.
+  useSafeArea: true,
   builder: (_) => _EditLessonSheet(
     repository: repository,
     lesson: lesson,

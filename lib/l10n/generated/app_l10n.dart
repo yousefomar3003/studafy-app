@@ -251,7 +251,7 @@ abstract class AppL10n {
   /// No description provided for @securityTwoFactorOffDetail.
   ///
   /// In en, this message translates to:
-  /// **'School administrators must turn this on before they can manage a school.'**
+  /// **'Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.'**
   String get securityTwoFactorOffDetail;
 
   /// No description provided for @securitySetUp.
@@ -5164,8 +5164,8 @@ abstract class AppL10n {
   /// No description provided for @todayStudents.
   ///
   /// In en, this message translates to:
-  /// **'{count} students'**
-  String todayStudents(String count);
+  /// **'{count, plural, =1{1 student} other{{count} students}}'**
+  String todayStudents(int count);
 
   /// No description provided for @todayEmpty.
   ///

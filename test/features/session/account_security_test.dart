@@ -37,6 +37,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('TWO-FACTOR SIGN-IN'), findsOne);
+    // There is no school administrator in this release; two-factor is
+    // optional for everyone but the staff who review reports.
+    expect(find.textContaining('Optional'), findsOne);
+    expect(find.textContaining('administrator'), findsNothing);
     expect(find.text('Sign out everywhere'), findsOne);
     expect(find.text('Delete account'), findsWidgets);
     expect(

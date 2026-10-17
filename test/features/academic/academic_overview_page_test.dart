@@ -691,4 +691,35 @@ void main() {
 
     expect(find.text('Fri, Oct 2'), findsOne);
   });
+
+  for (final (locale, words) in [
+    (const Locale('en'), '10 points'),
+    (const Locale('ar'), '10 درجات'),
+  ]) {
+    testWidgets('an assessment says its points in ${locale.languageCode}', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        localizedApp(
+          locale: locale,
+          home: AcademicOverviewPage(
+            initialFeed: AcademicFeed.assessments,
+            repository: _FakeAcademicRepository(const [
+              AcademicRecord(
+                id: 'a1',
+                title: 'Quiz',
+                detail: '',
+                outOf: 10,
+                state: 'published',
+                version: 1,
+              ),
+            ]),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(words), findsOne);
+    });
+  }
 }

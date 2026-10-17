@@ -418,7 +418,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                l10n.todayStudents('${classroom.studentCount}'),
+                                l10n.todayStudents(classroom.studentCount),
                                 style: const TextStyle(
                                   color: studafyMuted,
                                   fontSize: 12.5,

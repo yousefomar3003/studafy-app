@@ -6,6 +6,7 @@ import 'app/account_scope.dart';
 import 'app/ai_consent_binding.dart';
 import 'app/app_bootstrap.dart';
 import 'app/app_dependencies.dart';
+import 'app/brand_precache.dart';
 import 'app/class_join_link_guard.dart';
 import 'app/class_join_link_listener.dart';
 import 'app/oauth_callback_guard.dart';
@@ -86,7 +87,7 @@ Future<void> _start() async {
       if (navigatorContext == null) return null;
       return showPasswordReauthDialog(navigatorContext, email);
     });
-    runApp(
+    runAppAfterBrand(
       StudafyApp(runtimePolicy: runtimePolicy, dependencies: dependencies),
     );
   } on StateError catch (error) {
@@ -179,7 +180,7 @@ class StudafyApp extends StatelessWidget {
         navigatorKey: _navigatorKey,
         routes: routes,
         builder: (context, child) {
-          Widget content = child ?? const SizedBox.shrink();
+          Widget content = BrandPrecache(child: child);
           if (runtimePolicy.isSynthetic) {
             content = Column(
               children: [

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart' show closeInAppWebView;
 
@@ -120,9 +121,19 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  /// The two links in "I agree to the Terms of Use and Privacy Policy",
+  /// as spans of one sentence so it wraps like a sentence in either
+  /// language.
+  late final _termsTap = TapGestureRecognizer()
+    ..onTap = () => showPolicy(context, PolicyDocument.terms);
+  late final _privacyTap = TapGestureRecognizer()
+    ..onTap = () => showPolicy(context, PolicyDocument.privacy);
+
   @override
   void dispose() {
     sessionSubscription?.cancel();
+    _termsTap.dispose();
+    _privacyTap.dispose();
     super.dispose();
   }
 
@@ -589,6 +600,10 @@ class _LoginPageState extends State<LoginPage> {
           const SizedBox(height: 6),
           InkWell(
             borderRadius: BorderRadius.circular(12),
+            // The checkbox carries the whole sentence and the tap for a
+            // screen reader, and each policy is a link of its own; the row's
+            // tap is only a bigger target for a finger.
+            excludeFromSemantics: true,
             onTap: () => setState(() {
               accepted = !accepted;
               if (accepted) _nudged = false;
@@ -615,23 +630,31 @@ class _LoginPageState extends State<LoginPage> {
                   }),
                 ),
                 Expanded(
-                  child: Wrap(
-                    // The links are taller than their words; keep the line's
-                    // text level with them.
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(l10n.loginConsentPrefix),
-                      LinkText(
-                        l10n.loginTermsOfUse,
-                        onTap: () => showPolicy(c, PolicyDocument.terms),
+                  // One flowing sentence: a box per phrase wrapped with wide
+                  // gaps, and split the Arabic "و" from the word it joins.
+                  // A tap on a link opens it; anywhere else on the row ticks
+                  // the box.
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: l10n.loginConsentPrefix),
+                          TextSpan(
+                            text: l10n.loginTermsOfUse,
+                            style: _consentLinkStyle,
+                            recognizer: _termsTap,
+                          ),
+                          TextSpan(text: l10n.loginConsentAnd),
+                          TextSpan(
+                            text: l10n.loginPrivacyPolicy,
+                            style: _consentLinkStyle,
+                            recognizer: _privacyTap,
+                          ),
+                          TextSpan(text: l10n.loginConsentSuffix),
+                        ],
                       ),
-                      Text(l10n.loginConsentAnd),
-                      LinkText(
-                        l10n.loginPrivacyPolicy,
-                        onTap: () => showPolicy(c, PolicyDocument.privacy),
-                      ),
-                      Text(l10n.loginConsentSuffix),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -728,33 +751,14 @@ class SocialButton extends StatelessWidget {
   );
 }
 
-class LinkText extends StatelessWidget {
-  const LinkText(this.text, {super.key, required this.onTap});
-  final String text;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext c) => Semantics(
-    link: true,
-    child: GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      // 48 tall: the minimum touch target, though the words stay their
-      // size (launch plan 7.1).
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: studafyDeep,
-            fontWeight: FontWeight.w700,
-            decoration: TextDecoration.underline,
-            decorationColor: studafyDeep,
-          ),
-        ),
-      ),
-    ),
-  );
-}
+/// A policy link inside the consent sentence. Its span is read out as a
+/// link (a span with a tap recognizer is one to a screen reader).
+const _consentLinkStyle = TextStyle(
+  color: studafyDeep,
+  fontWeight: FontWeight.w700,
+  decoration: TextDecoration.underline,
+  decorationColor: studafyDeep,
+);
 
 /// Which policy document the sheet shows.
 ///

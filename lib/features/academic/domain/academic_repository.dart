@@ -118,6 +118,9 @@ class AcademicRecord {
   /// Grades only: how the student did. Null while unmarked - never a zero.
   final GradeMark? mark;
   final double? score;
+
+  /// Grades and assessments: what the work is marked out of. The screen
+  /// words it ("10 points"), so it reads in the reader's language.
   final double? outOf;
 
   /// Assignments seen by a student or a guardian: until when the work can be

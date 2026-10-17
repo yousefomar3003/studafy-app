@@ -22,6 +22,7 @@ import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/study_assistant_interactor.dart';
 import '../domain/study_assistant_repository.dart';
+import 'helper_answer_text.dart';
 import 'study_chat_history_page.dart';
 
 /// The student's plan, as the helper shows it. Built by the host, since
@@ -1357,10 +1358,15 @@ class _Bubble extends StatelessWidget {
                     ],
                   ),
                 ),
-              UserContentText(
-                turn.text,
-                style: TextStyle(color: mine ? Colors.white : studafyInk),
-              ),
+              // The student's words as typed; the helper's with its
+              // Markdown rendered.
+              if (mine)
+                UserContentText(
+                  turn.text,
+                  style: const TextStyle(color: Colors.white),
+                )
+              else
+                HelperAnswerText(turn.text),
               // What the material could not tell it, then where each fact
               // came from: [1] Leaf.pdf, p. 3.
               if (turn.unreadable.isNotEmpty) ...[

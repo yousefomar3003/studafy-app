@@ -285,6 +285,25 @@ void main() {
     expect(find.text('Thank you'), findsOneWidget);
   });
 
+  testWidgets('with the keyboard up the report sheet stays below the status '
+      'bar', (tester) async {
+    final dpr = tester.view.devicePixelRatio;
+    tester.view.padding = FakeViewPadding(top: 24 * dpr);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(_Fake(), page));
+    await tester.pumpAndSettle();
+    await _openMenu(tester);
+    await tester.tap(find.text('Report conversation'));
+    await tester.pumpAndSettle();
+    tester.view.viewInsets = FakeViewPadding(bottom: 320 * dpr);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.byType(BottomSheet)).dy,
+      greaterThanOrEqualTo(24),
+    );
+  });
+
   testWidgets('the report sheet is fully translated in Arabic', (tester) async {
     await tester.pumpWidget(_app(_Fake(), page, locale: const Locale('ar')));
     await tester.pumpAndSettle();

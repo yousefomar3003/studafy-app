@@ -171,6 +171,46 @@ class _AddLinkDialogState extends State<_AddLinkDialog> {
   }
 }
 
+/// Shows where [link] goes and opens it outside the app only once the reader
+/// says so. Every tappable link in the app goes through here.
+Future<void> confirmAndOpenLink(
+  BuildContext context,
+  Uri link, {
+  Future<bool> Function(Uri url)? openLink,
+}) async {
+  final l10n = AppL10n.of(context);
+  final go = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.linksOpenTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(link.host, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(link.toString(), style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(l10n.linksCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(l10n.linksOpen),
+        ),
+      ],
+    ),
+  );
+  if (go != true) return;
+  final open =
+      openLink ??
+      (Uri url) => launchUrl(url, mode: LaunchMode.externalApplication);
+  await open(link);
+}
+
 /// A teacher's text, with its https links tappable. A tap shows the site
 /// and asks first.
 class LinkedText extends StatefulWidget {
@@ -211,42 +251,8 @@ class _LinkedTextState extends State<LinkedText> {
     super.dispose();
   }
 
-  Future<void> _confirmAndOpen(Uri link) async {
-    final l10n = AppL10n.of(context);
-    final go = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.linksOpenTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              link.host,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(link.toString(), style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.linksCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.linksOpen),
-          ),
-        ],
-      ),
-    );
-    if (go != true) return;
-    final open =
-        widget.openLink ??
-        (Uri url) => launchUrl(url, mode: LaunchMode.externalApplication);
-    await open(link);
-  }
+  Future<void> _confirmAndOpen(Uri link) =>
+      confirmAndOpenLink(context, link, openLink: widget.openLink);
 
   @override
   Widget build(BuildContext context) {
