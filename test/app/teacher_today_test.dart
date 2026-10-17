@@ -18,14 +18,18 @@ import 'package:studafy/l10n/generated/app_l10n.dart';
 /// The teacher home in real builds must show the signed-in teacher's own
 /// classes, never the demo greeting, lessons or student names.
 class _Classes implements ClassroomRepository {
+  _Classes({this.studentCount = 24});
+
+  final int studentCount;
+
   @override
-  Future<List<ClassroomSummary>> listClasses() async => const [
+  Future<List<ClassroomSummary>> listClasses() async => [
     ClassroomSummary(
-      id: ClassroomId('class-1'),
+      id: const ClassroomId('class-1'),
       name: 'Physics 11A',
       grade: '11',
       section: 'A',
-      studentCount: 24,
+      studentCount: studentCount,
     ),
   ];
   @override
@@ -66,17 +70,14 @@ class _Notifications implements NotificationsRepository {
 void main() {
   tearDown(() => ActiveContextController.instance.profile = null);
 
-  testWidgets('shows the real teacher and classes, never the demo content', (
-    tester,
-  ) async {
-    ActiveContextController.instance.profile = const UserProfile(
-      id: 'teacher-1',
-      displayName: 'Khaled Mansour',
-      email: 'k@example.test',
-      memberships: [],
-    );
+  Future<void> pumpToday(
+    WidgetTester tester, {
+    _Classes? classes,
+    Locale? locale,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const [
           AppL10n.delegate,
@@ -93,7 +94,7 @@ void main() {
         ),
         home: TeacherTodayPage(
           classes: ClassListInteractor(
-            repository: _Classes(),
+            repository: classes ?? _Classes(),
             telemetry: const NoopTelemetry(),
           ),
           academic: _TodayAcademic(),
@@ -104,6 +105,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('shows the real teacher and classes, never the demo content', (
+    tester,
+  ) async {
+    ActiveContextController.instance.profile = const UserProfile(
+      id: 'teacher-1',
+      displayName: 'Khaled Mansour',
+      email: 'k@example.test',
+      memberships: [],
+    );
+    await pumpToday(tester);
     expect(find.text('Hello, Khaled'), findsOneWidget);
     expect(find.text('Physics 11A'), findsOneWidget);
     // Once in the class card, once in the day's totals.
@@ -117,6 +130,26 @@ void main() {
       expect(find.textContaining(sample), findsNothing);
     }
   });
+
+  for (final (locale, count, words) in [
+    (const Locale('en'), 1, '1 student'),
+    (const Locale('ar'), 1, 'طالب واحد'),
+    (const Locale('ar'), 2, 'طالبان'),
+    (const Locale('ar'), 5, '5 طلاب'),
+    (const Locale('ar'), 24, '24 طالبًا'),
+  ]) {
+    testWidgets('a class of $count says so in ${locale.languageCode}', (
+      tester,
+    ) async {
+      await pumpToday(
+        tester,
+        classes: _Classes(studentCount: count),
+        locale: locale,
+      );
+      // Once in the class card, once in the day's totals.
+      expect(find.text(words), findsNWidgets(2));
+    });
+  }
 
   group('sections needing content', () {
     final now = DateTime.now();

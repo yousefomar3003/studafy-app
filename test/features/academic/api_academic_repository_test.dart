@@ -83,6 +83,17 @@ void main() {
     expect(records.single.version, 2);
   });
 
+  test('an assessment carries its points as a number, not English', () async {
+    final repository = ApiAcademicRepository(
+      V1ApiClient(_RecordingTransport()),
+      context: ActiveContextController.instance,
+    );
+    final assessment = (await repository.load(AcademicFeed.assessments)).single;
+    // The screen words "10 points" in the reader's language.
+    expect(assessment.outOf, 10);
+    expect(assessment.detail, isEmpty);
+  });
+
   test('createAssignment sends the authoritative body once per key', () async {
     final transport = _RecordingTransport();
     final repository = ApiAcademicRepository(

@@ -373,7 +373,11 @@ String? _check({
         import.startsWith('package:intl/') ||
         import.startsWith('package:url_launcher/') ||
         import.startsWith('package:image_picker/') ||
-        import.startsWith('package:file_picker/')) {
+        import.startsWith('package:file_picker/') ||
+        // Renders the study helper's Markdown answers: pure Dart, no
+        // network of its own (images are not fetched, links go through
+        // confirmAndOpenLink).
+        import.startsWith('package:flutter_markdown_plus/')) {
       return zone == 'presentation'
           ? null
           : '$filePath: $zone imports UI/platform package "$import" '

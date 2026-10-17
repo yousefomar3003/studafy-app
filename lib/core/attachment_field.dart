@@ -158,6 +158,8 @@ class AttachmentFieldState extends State<AttachmentField> {
     final l10n = AppL10n.of(context);
     final kind = await showModalBottomSheet<AttachmentKind>(
       context: context,
+      // As tall as its one row of choices, not half the screen.
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
@@ -187,6 +189,7 @@ class AttachmentFieldState extends State<AttachmentField> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           CircleAvatar(
                             radius: 28,

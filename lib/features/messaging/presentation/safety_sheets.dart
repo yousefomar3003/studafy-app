@@ -24,6 +24,9 @@ Future<bool> showReportSheet(
   final sent = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
+    // With the keyboard up the sheet grows to the top of the screen; its
+    // handle stays below the status bar rather than under it.
+    useSafeArea: true,
     showDragHandle: true,
     builder: (sheetContext) => Padding(
       padding: EdgeInsets.only(

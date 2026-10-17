@@ -50,7 +50,7 @@
   "securityTwoFactorOn": "Turned on",
   "securityTwoFactorOff": "Not set up",
   "securityTwoFactorOnDetail": "You use an authenticator app when signing in.",
-  "securityTwoFactorOffDetail": "School administrators must turn this on before they can manage a school.",
+  "securityTwoFactorOffDetail": "Optional: adds a code from an authenticator app when you sign in. Only Studafy staff who review reports must turn it on.",
   "securitySetUp": "Set up",
   "securityDevicesHeading": "WHERE YOU ARE SIGNED IN",
   "securityNoOtherDevices": "No other devices",
@@ -1760,11 +1760,11 @@
     }
   },
   "todayClasses": "My classes",
-  "todayStudents": "{count} students",
+  "todayStudents": "{count, plural, =1{1 student} other{{count} students}}",
   "@todayStudents": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int"
       }
     }
   },

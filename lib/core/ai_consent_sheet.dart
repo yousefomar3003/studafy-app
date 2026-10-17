@@ -271,7 +271,8 @@ class _AiConsentSwitchState extends State<AiConsentSwitch> {
     final parentDecides =
         widget.childId == null &&
         state.access == AiAccess.guardianConsentRequired;
-    final row = SettingsRow(
+    // The whole row flips the switch, not just the switch itself.
+    final row = SettingsSwitchRow(
       icon: Icons.auto_awesome_rounded,
       title: childName == null
           ? l10n.aiConsentTitle
@@ -281,12 +282,9 @@ class _AiConsentSwitchState extends State<AiConsentSwitch> {
           : state.on
           ? l10n.aiConsentSwitchOn
           : l10n.aiConsentSwitchOff,
-      showChevron: false,
-      trailing: Switch(
-        key: ValueKey('ai-consent-switch-${widget.childId ?? 'self'}'),
-        value: state.on,
-        onChanged: _busy || (parentDecides && !state.on) ? null : _toggle,
-      ),
+      switchKey: ValueKey('ai-consent-switch-${widget.childId ?? 'self'}'),
+      value: state.on,
+      onChanged: _busy || (parentDecides && !state.on) ? null : _toggle,
     );
     return widget.wrap?.call(row) ?? row;
   }

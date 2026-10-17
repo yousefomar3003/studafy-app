@@ -113,7 +113,8 @@ class _Grades implements AcademicRepository {
           AcademicRecord(
             id: 'test-1',
             title: 'Unit test',
-            detail: '20 points',
+            detail: '',
+            outOf: 20,
             state: 'published',
             version: 1,
             classroomId: 'c1',
@@ -121,7 +122,8 @@ class _Grades implements AcademicRepository {
           AcademicRecord(
             id: 'mark-1',
             title: 'Lab report (mark)',
-            detail: '25 points',
+            detail: '',
+            outOf: 25,
             state: 'published',
             version: 2,
             classroomId: 'c1',

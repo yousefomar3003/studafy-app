@@ -23,6 +23,8 @@ Future<bool?> showEditLessonSheet(
 }) => showModalBottomSheet<bool>(
   context: context,
   isScrollControlled: true,
+  // Typing grows the sheet; it stops below the status bar.
+  useSafeArea: true,
   builder: (_) => _EditLessonSheet(
     repository: repository,
     lesson: lesson,
