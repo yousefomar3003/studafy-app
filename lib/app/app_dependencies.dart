@@ -54,6 +54,7 @@ import '../features/notifications/application/notifications_interactor.dart';
 import '../features/notifications/data/api_notifications_repository.dart';
 import '../features/notifications/data/firebase_push_registrar.dart';
 import '../features/notifications/data/preview_notifications_repository.dart';
+import '../features/notifications/domain/notification_taps.dart';
 import '../features/notifications/domain/notifications_repository.dart';
 import '../features/notifications/domain/push_registrar.dart';
 import '../features/onboarding/application/teacher_workspace_interactor.dart';
@@ -258,9 +259,14 @@ class AppDependencies {
     final studyChats = remote == null
         ? null
         : FileStudyChatStore(currentUserId: () => context.profile?.id);
+    final notificationTaps = remote == null ? null : NotificationTaps();
     final PushRegistrar pushRegistrar = remote == null
         ? const NoPushRegistrar()
-        : FirebasePushRegistrar(remote.api);
+        : FirebasePushRegistrar(
+            remote.api,
+            telemetry: telemetry,
+            taps: notificationTaps,
+          );
     final session = SessionInteractor(
       repository: sessionRepository,
       context: context,
@@ -383,6 +389,8 @@ class AppDependencies {
       notifications: NotificationsInteractor(
         repository: notificationsRepository,
         telemetry: telemetry,
+        // The registrar publishes taps; the signed-in shell opens them.
+        taps: notificationTaps,
       ),
       cacheBinder: cacheBinder,
       locale: localeController,

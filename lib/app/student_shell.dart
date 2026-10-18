@@ -22,6 +22,7 @@ import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
 import '../features/notifications/domain/notification.dart';
+import '../features/notifications/presentation/notification_tap_opener.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study/domain/study.dart';
 import '../features/study/presentation/study_plan_copy.dart';
@@ -315,11 +316,15 @@ class _StudentShellState extends State<StudentShell>
     _navCompact.value = false;
   });
 
+  /// A tapped push opens what it is about, as a tap in the list does.
   @override
-  Widget build(BuildContext context) => TabBackScope(
-    atFirstTab: index == 0,
-    onBack: _back,
-    child: _page(context),
+  Widget build(BuildContext context) => NotificationTapOpener(
+    onOpen: _openNotification,
+    child: TabBackScope(
+      atFirstTab: index == 0,
+      onBack: _back,
+      child: _page(context),
+    ),
   );
 
   Widget _page(BuildContext context) {

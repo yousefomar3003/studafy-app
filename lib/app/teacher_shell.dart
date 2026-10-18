@@ -24,6 +24,7 @@ import '../features/classes/presentation/classes_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
+import '../features/notifications/presentation/notification_tap_opener.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
@@ -368,10 +369,12 @@ class _TeacherShellState extends State<TeacherShell>
 
   /// Back from any other tab goes to Today; from Today it leaves the app.
   @override
-  Widget build(BuildContext c) => TabBackScope(
-    atFirstTab: index == 0,
-    onBack: () => setState(() => index = 0),
-    child: _page(c),
+  Widget build(BuildContext c) => NotificationTapOpener(
+    child: TabBackScope(
+      atFirstTab: index == 0,
+      onBack: () => setState(() => index = 0),
+      child: _page(c),
+    ),
   );
 
   Widget _page(BuildContext c) {
@@ -514,9 +517,7 @@ class _TeacherShellState extends State<TeacherShell>
         builder: (context, compact, _) => StudafyNavigationBar(
           selectedIndex: index,
           compact: compact,
-          onInteract: () {
-            _navCompact.value = false;
-          },
+          onInteract: () => _navCompact.value = false,
           onSelected: (value) => setState(() {
             index = value;
             _navCompact.value = false;

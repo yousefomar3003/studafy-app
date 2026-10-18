@@ -77,6 +77,48 @@ void main() {
     }
   });
 
+  test('push goes to the Studafy channel, not "Miscellaneous"', () {
+    const channel = 'studafy_notifications';
+    // Firebase's default for a push that names no channel...
+    expect(
+      manifest,
+      matches(
+        RegExp(
+          r'<meta-data\s+android:name="com\.google\.firebase\.messaging\.'
+          r'default_notification_channel_id"\s+android:value="'
+          '$channel'
+          r'"\s*/>',
+        ),
+      ),
+    );
+    // ...is the channel the app creates at start-up...
+    final activity = File(
+      'android/app/src/main/kotlin/com/studafy/light/MainActivity.kt',
+    ).readAsStringSync();
+    expect(activity, contains('NOTIFICATION_CHANNEL_ID = "$channel"'));
+    expect(activity, contains('createNotificationChannel()'));
+    expect(activity, contains('NotificationManager.IMPORTANCE_DEFAULT'));
+    expect(activity, contains('R.string.notification_channel_name'));
+    // ...named in both languages...
+    final names = {
+      'values': 'Studafy notifications',
+      'values-ar': 'إشعارات ستودافاي',
+    };
+    for (final MapEntry(key: folder, value: name) in names.entries) {
+      expect(
+        File('android/app/src/main/res/$folder/strings.xml').readAsStringSync(),
+        contains('<string name="notification_channel_name">$name</string>'),
+        reason: folder,
+      );
+    }
+    // ...and the one the worker names on every message.
+    expect(
+      File('packages/infrastructure/src/notifications/channelSenders.ts')
+          .readAsStringSync(),
+      contains('ANDROID_NOTIFICATION_CHANNEL_ID = "$channel"'),
+    );
+  });
+
   test('no plain HTTP in a release build', () {
     expect(manifest, isNot(contains('usesCleartextTraffic="true"')));
     expect(manifest, isNot(contains('networkSecurityConfig')));

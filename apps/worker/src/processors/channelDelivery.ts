@@ -13,6 +13,8 @@ interface ChannelJob {
   locale: string;
   email?: string | null;
   tokens?: string[] | null;
+  /** Push only: the id of the in-app notification, which a tap opens. */
+  notificationId?: string | null;
 }
 
 export interface ChannelDeliveryRuntime {
@@ -101,6 +103,7 @@ export function startChannelDelivery(
       );
     }
     const text = channelCopy(job.templateKey, job.locale);
+    const data = pushData(job);
     let delivered: string | null = null;
     let lastError: ChannelSendError | null = null;
     let anyRetryable = false;
@@ -110,7 +113,7 @@ export function startChannelDelivery(
           token,
           title: text.title,
           body: text.body,
-          data: { templateKey: job.templateKey },
+          data,
         });
         delivered ??= sent.providerMessageId ?? "sent";
       } catch (error) {
@@ -176,4 +179,19 @@ export function startChannelDelivery(
       await running;
     },
   };
+}
+
+/**
+ * A push's data payload: the template key, and the id of the in-app
+ * notification it was sent for, so a tap opens that notification. Both are
+ * opaque; the app reads what the notification is about through the API
+ * after sign-in. Nothing else (no conversation, school or person) goes in a
+ * push. A job claimed before the id existed sends the template key alone.
+ */
+export function pushData(
+  job: Pick<ChannelJob, "templateKey" | "notificationId">,
+): Record<string, string> {
+  return job.notificationId
+    ? { templateKey: job.templateKey, notificationId: job.notificationId }
+    : { templateKey: job.templateKey };
 }

@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(21);
+select plan(23);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
@@ -61,6 +61,16 @@ select ok((select j::text like '%seed.teacher@%' from claimed where channel = 'e
   'an email job carries the address');
 select ok((select not (j::text like '%conversationId%') from claimed where channel = 'push'),
   'a job carries no notification payload');
+-- A tapped push opens its notification: the job names the recipient's
+-- in-app delivery, the id the app's notifications list uses.
+select is((select e->>'notificationId' from claimed, jsonb_array_elements(j) e
+    where channel = 'push' and e->'tokens' ? repeat('g', 40)),
+  (select d.id::text from public.notification_deliveries d join public.notification_outbox o on o.id = d.outbox_id
+    where o.source_event_id = 'dl053-evt' and d.channel = 'in_app' and d.recipient_id = :'guardian_user'),
+  'a push job names the in-app notification a tap opens');
+select ok((select bool_and(e->'notificationId' = 'null'::jsonb) from claimed, jsonb_array_elements(j) e
+    where channel = 'email'),
+  'an email job names no notification');
 select is(jsonb_array_length(private.channel_claim('push', 100)), 0, 'a leased delivery is not claimed twice');
 
 select is(private.channel_finish(

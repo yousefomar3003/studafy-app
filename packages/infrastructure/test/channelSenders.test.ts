@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  ANDROID_NOTIFICATION_CHANNEL_ID,
   ChannelSendError,
   FcmPushSender,
   ResendEmailSender,
@@ -48,6 +49,46 @@ describe("DL-053 channel senders", () => {
     const error = await sender.send({ to: "a@b.c", subject: "s", text: "t" })
       .catch((e) => e);
     expect(error.terminal).toBe(false);
+  });
+
+  test("a push goes to Studafy's Android channel and carries only the data it was given", async () => {
+    const calls: { url: string; init: RequestInit }[] = [];
+    const sender = new FcmPushSender({
+      projectId: "studafy-test",
+      serviceAccountJson: "{}",
+      accessToken: async () => "oauth-token-not-real",
+      fetchImpl: (async (url: string, init: RequestInit) => {
+        calls.push({ url, init });
+        return new Response(
+          JSON.stringify({ name: "projects/studafy-test/messages/1" }),
+          { status: 200 },
+        );
+      }) as never,
+    });
+    const sent = await sender.send({
+      token: "device-token-".padEnd(40, "x"),
+      title: "New message",
+      body: "You have a new message in Studafy.",
+      data: { templateKey: "communications.message", notificationId: "42" },
+    });
+    expect(sent.providerMessageId).toBe("projects/studafy-test/messages/1");
+    expect(calls[0]?.url).toBe(
+      "https://fcm.googleapis.com/v1/projects/studafy-test/messages:send",
+    );
+    expect(calls[0]?.init.redirect).toBe("error");
+    const body = JSON.parse(String(calls[0]?.init.body));
+    expect(body.message.android).toEqual({
+      notification: { channel_id: ANDROID_NOTIFICATION_CHANNEL_ID },
+    });
+    expect(ANDROID_NOTIFICATION_CHANNEL_ID).toBe("studafy_notifications");
+    expect(body.message.notification).toEqual({
+      title: "New message",
+      body: "You have a new message in Studafy.",
+    });
+    expect(body.message.data).toEqual({
+      templateKey: "communications.message",
+      notificationId: "42",
+    });
   });
 
   test("an FCM project id cannot smuggle a different host or path", () => {
