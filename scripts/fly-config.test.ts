@@ -280,6 +280,8 @@ describe("Fly configs pass production validation", () => {
     ).not.toThrow();
     const worker = await flyEnv("fly.test.worker.toml");
     expect(worker.ENVIRONMENT).toBe("development");
+    // Push and email are tried on the test copy before production (DL-070).
+    expect(worker.NOTIFICATION_CHANNELS_ENABLED).toBe("true");
     expect(() =>
       enforceWorkerFailClosed(
         parseEnv(workerEnvSchema, { ...worker, ...secrets }),
