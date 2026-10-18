@@ -1406,7 +1406,6 @@
   "notificationPrefsFamily": "Family",
   "notificationPrefsBilling": "Billing",
   "notificationPrefsAdd": "Add",
-  "notificationPrefsPushPreferencesAreSavedBut": "Push preferences are saved, but push delivery is not available on this device yet.",
   "notificationPrefsNoPreferencesSavedAddOne": "No preferences saved. Add one to choose a channel and category.",
   "classroomAdminStaff": "Staff",
   "classroomAdminCreateAndEnrolStudent": "Create and enrol student",

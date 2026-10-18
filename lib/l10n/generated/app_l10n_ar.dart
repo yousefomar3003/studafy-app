@@ -2311,10 +2311,6 @@ class AppL10nAr extends AppL10n {
   String get notificationPrefsAdd => 'إضافة';
 
   @override
-  String get notificationPrefsPushPreferencesAreSavedBut =>
-      'يتم حفظ تفضيلات الإشعارات الفورية، لكن استقبالها غير متاح على هذا الجهاز بعد.';
-
-  @override
   String get notificationPrefsNoPreferencesSavedAddOne =>
       'لا توجد تفضيلات محفوظة. أضف تفضيلًا لاختيار القناة والفئة.';
 

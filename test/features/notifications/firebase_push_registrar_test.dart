@@ -262,6 +262,7 @@ class _Messaging extends Fake implements FirebaseMessaging {
   final Object? tokenError;
   final AuthorizationStatus status;
   final RemoteMessage? initial;
+
   /// Lives as long as the fake, like Firebase's own stream.
   // ignore: close_sinks
   final refresh = StreamController<String>.broadcast();
