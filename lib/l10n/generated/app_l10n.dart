@@ -3914,12 +3914,6 @@ abstract class AppL10n {
   /// **'Add'**
   String get notificationPrefsAdd;
 
-  /// No description provided for @notificationPrefsPushPreferencesAreSavedBut.
-  ///
-  /// In en, this message translates to:
-  /// **'Push preferences are saved, but push delivery is not available on this device yet.'**
-  String get notificationPrefsPushPreferencesAreSavedBut;
-
   /// No description provided for @notificationPrefsNoPreferencesSavedAddOne.
   ///
   /// In en, this message translates to:

@@ -6,8 +6,15 @@ import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/academic/data/preview_academic_repository.dart';
+import 'package:studafy/features/academic/domain/academic_repository.dart';
+import 'package:studafy/features/academic/presentation/academic_overview_page.dart';
 import 'package:studafy/features/classes/application/class_list_interactor.dart';
 import 'package:studafy/features/classes/data/preview_classroom_repository.dart';
+import 'package:studafy/features/notifications/application/notifications_interactor.dart';
+import 'package:studafy/features/notifications/domain/notification.dart';
+import 'package:studafy/features/notifications/domain/notification_taps.dart';
+import 'package:studafy/features/notifications/domain/notifications_repository.dart';
+import 'package:studafy/features/notifications/presentation/notifications_scope.dart';
 import 'package:studafy/features/study/data/preview_study_repository.dart';
 import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
 import 'package:studafy/features/study_assistant/domain/study_assistant_repository.dart';
@@ -206,4 +213,89 @@ void main() {
       expect(exits.count, 0);
     });
   });
+
+  testWidgets('a tapped push about an assessment opens Work at Assessments, '
+      'as the in-app list does', (tester) async {
+    final notifications = _Notifications([
+      NotificationItem(
+        id: '101',
+        templateKey: 'academic.assessment_published',
+        title: 'notification.academic.assessment_published.title',
+        detail: 'notification.academic.assessment_published.detail',
+        createdAt: DateTime(2026, 10, 18),
+      ),
+    ]);
+    final taps = NotificationTaps();
+    await tester.pumpWidget(
+      localizedApp(
+        locale: const Locale('en'),
+        theme: studafyTheme(),
+        scopes: (child) => NotificationsScope(
+          interactor: NotificationsInteractor(
+            repository: notifications,
+            telemetry: const NoopTelemetry(),
+            taps: taps,
+          ),
+          child: child,
+        ),
+        home: StudentShell(
+          academic: PreviewAcademicRepository(),
+          study: PreviewStudyRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<StudafyNavigationBar>(find.byType(StudafyNavigationBar))
+          .selectedIndex,
+      0,
+    );
+
+    taps.tapped('101');
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<StudafyNavigationBar>(find.byType(StudafyNavigationBar))
+          .selectedIndex,
+      2,
+    );
+    expect(
+      tester
+          .widget<AcademicOverviewPage>(find.byType(AcademicOverviewPage))
+          .initialFeed,
+      AcademicFeed.assessments,
+    );
+    expect(notifications.markedRead, ['101']);
+  });
+}
+
+class _Notifications implements NotificationsRepository {
+  _Notifications(this.items);
+
+  final List<NotificationItem> items;
+  final markedRead = <String>[];
+
+  @override
+  Future<NotificationPage> list({String? cursor, int pageSize = 20}) async =>
+      NotificationPage(items: items, nextCursor: null, isFromCache: false);
+
+  @override
+  Future<void> markRead({required List<String> ids, required bool all}) async =>
+      markedRead.addAll(ids);
+
+  @override
+  Future<int> unreadCount() async => 0;
+
+  @override
+  Future<void> syncPending() async {}
+
+  @override
+  Future<List<NotificationPreference>> preferences() async => const [];
+
+  @override
+  Future<NotificationPreference> updatePreference(
+    NotificationPreference preference,
+  ) async => preference;
 }

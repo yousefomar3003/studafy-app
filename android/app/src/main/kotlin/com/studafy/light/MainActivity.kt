@@ -1,7 +1,10 @@
 package com.studafy.light
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -16,6 +19,26 @@ class MainActivity : FlutterActivity() {
         // Before the Flutter engine starts Dart, which is what starts Sentry.
         pinCrashReportInstallationId(filesDir)
         super.onCreate(savedInstanceState)
+        createNotificationChannel()
+    }
+
+    /**
+     * The channel push notifications are posted to, named as Firebase's
+     * default in the manifest and on every message the worker sends
+     * (ANDROID_NOTIFICATION_CHANNEL_ID). Without it Firebase posts to its
+     * own "Miscellaneous" channel. Created on every start: that is a no-op
+     * for an existing channel apart from renaming it, so the name follows
+     * the language Android gives the app (res/values-ar). Importance and
+     * sound stay the user's to change once it exists.
+     */
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        )
+        getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -64,6 +87,8 @@ class MainActivity : FlutterActivity() {
 }
 
 private const val ATTACHMENT_CHANNEL = "com.studafy.light/attachments"
+
+private const val NOTIFICATION_CHANNEL_ID = "studafy_notifications"
 
 /** The same value on every install, so it identifies no one. */
 private const val SHARED_INSTALLATION_ID = "00000000-0000-0000-0000-000000000000"

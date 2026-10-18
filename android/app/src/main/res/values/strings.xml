@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The channel push notifications are posted to (MainActivity.kt), as
+         Android shows it in the app's notification settings. -->
+    <string name="notification_channel_name">Studafy notifications</string>
+</resources>

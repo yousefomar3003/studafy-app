@@ -2289,10 +2289,6 @@ class AppL10nEn extends AppL10n {
   String get notificationPrefsAdd => 'Add';
 
   @override
-  String get notificationPrefsPushPreferencesAreSavedBut =>
-      'Push preferences are saved, but push delivery is not available on this device yet.';
-
-  @override
   String get notificationPrefsNoPreferencesSavedAddOne =>
       'No preferences saved. Add one to choose a channel and category.';
 

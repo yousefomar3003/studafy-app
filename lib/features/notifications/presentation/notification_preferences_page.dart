@@ -214,19 +214,6 @@ class _NotificationPreferencesPageState
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFAED),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    AppL10n.of(context)
-                        .notificationPrefsPushPreferencesAreSavedBut,
-                    style: const TextStyle(color: Color(0xFF8A7650)),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 if (_items.isEmpty)
                   Text(
                     AppL10n.of(context)

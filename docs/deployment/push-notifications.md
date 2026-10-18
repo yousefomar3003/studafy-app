@@ -18,6 +18,28 @@ renewed"); the app shows the details after sign-in.
   in-app notification out to the recipient's phones. Push is on by default
   and can be turned off per category. Tokens Firebase reports dead are
   revoked.
+- **Payload:** the visible text is fixed per category. The data carries
+  only `templateKey` and `notificationId`, the id of the in-app
+  notification (the recipient's in-app delivery; migration
+  `202610180010` adds it to `private.channel_claim`). Never a
+  conversation, school or person.
+- **Tap:** `getInitialMessage` (cold start) and `onMessageOpenedApp`
+  (background) hand the id to `NotificationTaps`. The signed-in shell
+  (`NotificationTapOpener`) looks it up in that account's feed, marks it
+  read and opens it through the same routing as a tap in the in-app list
+  (a message opens the Messages tab, an assessment opens Work at
+  Assessments). With no id, or one this account cannot find, it opens the
+  notifications list; a teacher always gets the list. During an account
+  switch the outgoing shell leaves the tap for the incoming one, and an
+  open dialog is never covered.
+- **Android channel:** `MainActivity` creates `studafy_notifications`
+  ("Studafy notifications" / "إشعارات ستودافاي") at start-up; the manifest
+  names it Firebase's default and the worker sets
+  `android.notification.channel_id` on every message.
+- **Telemetry:** `push_registered`, `push_permission_denied` and
+  `push_registration_failed` with a coarse `code` (`token_unavailable`,
+  `apns_missing`, `permission_denied`, `server_refused`, `network`,
+  `unknown`). Never the token.
 - **Keys:** the app holds only Firebase's public app identifiers. The
   service-account private key that sends messages is the worker's
   `FCM_SERVICE_ACCOUNT_JSON`, and nothing else has it.

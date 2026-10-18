@@ -32,7 +32,10 @@ export interface PushMessage {
   token: string;
   title: string;
   body: string;
-  /** Opaque routing hints for the app (a template key); never content. */
+  /**
+   * Opaque routing hints for the app (a template key, the in-app
+   * notification's id); never content.
+   */
   data: Record<string, string>;
 }
 
@@ -99,10 +102,20 @@ export class ResendEmailSender implements EmailSender {
   }
 }
 
+/**
+ * The Android notification channel every push is posted to. The app creates
+ * it at start-up (MainActivity.kt) and names it as Firebase's default in the
+ * manifest; naming it on the message too keeps a push off Android's
+ * "Miscellaneous" fallback channel.
+ */
+export const ANDROID_NOTIFICATION_CHANNEL_ID = "studafy_notifications";
+
 export interface FcmConfig {
   projectId: string;
   serviceAccountJson: string;
   fetchImpl?: typeof fetch;
+  /** Tests only: stands in for the service account's OAuth token. */
+  accessToken?: () => Promise<string | null | undefined>;
 }
 
 /** Firebase Cloud Messaging HTTP v1; it also delivers to iOS through APNs. */
@@ -110,6 +123,7 @@ export class FcmPushSender implements PushSender {
   readonly #auth: GoogleAuth;
   readonly #endpoint: string;
   readonly #fetch: typeof fetch;
+  readonly #accessToken: () => Promise<string | null | undefined>;
 
   constructor(config: FcmConfig) {
     if (!/^[a-z][a-z0-9-]{4,29}$/.test(config.projectId)) {
@@ -128,12 +142,14 @@ export class FcmPushSender implements PushSender {
     this.#endpoint =
       `https://fcm.googleapis.com/v1/projects/${config.projectId}/messages:send`;
     this.#fetch = config.fetchImpl ?? fetch;
+    this.#accessToken = config.accessToken ??
+      (() => this.#auth.getAccessToken());
   }
 
   async send(message: PushMessage) {
     let token: string | null | undefined;
     try {
-      token = await this.#auth.getAccessToken();
+      token = await this.#accessToken();
     } catch {
       throw new ChannelSendError("PROVIDER_AUTH_FAILED", false);
     }
@@ -152,6 +168,9 @@ export class FcmPushSender implements PushSender {
             token: message.token,
             notification: { title: message.title, body: message.body },
             data: message.data,
+            android: {
+              notification: { channel_id: ANDROID_NOTIFICATION_CHANNEL_ID },
+            },
           },
         }),
       });

@@ -635,7 +635,6 @@
   "notificationPrefsFamily": "العائلة",
   "notificationPrefsBilling": "الفوترة",
   "notificationPrefsAdd": "إضافة",
-  "notificationPrefsPushPreferencesAreSavedBut": "يتم حفظ تفضيلات الإشعارات الفورية، لكن استقبالها غير متاح على هذا الجهاز بعد.",
   "notificationPrefsNoPreferencesSavedAddOne": "لا توجد تفضيلات محفوظة. أضف تفضيلًا لاختيار القناة والفئة.",
   "classroomAdminStaff": "المعلمون",
   "classroomAdminCreateAndEnrolStudent": "إنشاء طالب وتسجيله",
