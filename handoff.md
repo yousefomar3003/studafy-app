@@ -1,10 +1,67 @@
 # Handoff: Studafy
 
-Updated: 2026-10-17, evening. **Everything through #112 is merged** (the
-Android fixes through batch #111). The iPhone has a profile build from
-`main` at `4557060`. No PR is open.
+Updated: 2026-10-18. **Everything through #117 is merged and on the test
+copy.** No PR is open.
 
-## Start here (2026-10-17)
+## Start here (2026-10-18)
+
+### Two-factor, Firebase and push
+- **Two-factor set-up was broken and is fixed (#115).** Verifying always
+  said "That code did not match": `listFactors().totp` lists verified
+  factors only, so the new factor was never found. It now verifies by
+  factor id. The dialog also gained "Open in authenticator app" (otpauth
+  link), "Copy key", and a retry for a wrong code.
+- **#114:** regular users see only "Optional: …". The platform operator
+  sees that two-factor is needed to review reports. **Note:** the app never
+  asks for the code at sign-in, only before opening a safety report, so for
+  regular users two-factor currently does nothing. **Owner to decide:**
+  hide it from them (recommended), or add a sign-in step-up.
+- **Operator:** the owner's account (studafyapp@gmail.com) is the only row
+  in `public.platform_operators` on Frankfurt, and single-reviewer mode is
+  on. The owner still has to finish two-factor set-up on the new build.
+- **Firebase project `studafy-lite`**, with Android and iOS apps
+  (`com.studafy.light`). The files are in `~/studafy-secrets/`:
+  - `google-services.json`;
+  - `GoogleService-Info.plist`;
+  - `firebase-service-account.json` (secret, mode 600).
+  The `FIREBASE_*` values are in the git-ignored
+  `config/dart-defines.device.json`. For production, add the same values to
+  `config/dart-defines.production.json` when it is created. FCM API (V1)
+  is enabled.
+- **Test worker:** `FCM_PROJECT_ID` and `FCM_SERVICE_ACCOUNT_JSON` are set
+  (the owner ran `fly secrets set --stage`). `NOTIFICATION_CHANNELS_ENABLED`
+  is on in `fly.test.worker.toml` (#116). The start-up log shows
+  `channel_delivery_configured push:true email:false`.
+- **Push verified end to end on the Android emulator:** a teacher's message
+  reached the student as "New message" about 4 s later.
+- **#117:**
+  - A tap opens the notification's screen. The FCM data carries only
+    `{templateKey, notificationId}`; migration `202610180010` makes
+    `private.channel_claim` add `notificationId` to push jobs.
+  - Android channel `studafy_notifications`.
+  - Telemetry: `push_registered` / `push_permission_denied` /
+    `push_registration_failed`.
+  - The outdated "push not available" banner is gone.
+  - The migration is applied, the test worker is deployed and the iPhone
+    has the new build.
+  - Not yet seen on a device: a tap opening its exact notification.
+- **iPhone push** still needs the APNs key (paid Apple Developer account):
+  upload the `.p8` with its Key ID and Team ID in Firebase → Cloud
+  Messaging. Steps: `docs/deployment/push-notifications.md`.
+- **Production** takes the same FCM secrets at cutover; they are already
+  in `~/studafy-secrets/`.
+
+### Owner: to do (current)
+1. In the app: Account → Sign-in and security → Set up → "Open in
+   authenticator app", then enter the code.
+2. Decide on two-factor for regular users: hide it, or add a sign-in
+   step-up.
+3. The Android R8 release build check (run it yourself, or allow Claude),
+   and an Android banner for a push that arrives while the app is open.
+4. Apple Developer account, then the APNs key. Remaining keys: Resend,
+   Turnstile, Android keystore, Play billing, paid Redis.
+
+## Earlier (2026-10-17): Android review, all features on, brand
 
 ### Evening 2026-10-17: Android review
 - **Done by the owner:** the iPhone test passed (2.8 and 2.9 ticked).
