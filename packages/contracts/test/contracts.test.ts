@@ -17,6 +17,7 @@ import {
   V1EntitlementsResponse,
   V1Membership,
   V1MeResponse,
+  V1MyGuardianLinksResponse,
   V1ReauthVerifyResponse,
   V1ReplaceScheduleRequest,
   V1RequestPurchaseApprovalRequest,
@@ -510,6 +511,59 @@ describe("billing: the student plans are accepted", () => {
           purchasedByMe: true,
         }],
       }).success,
+    ).toBe(true);
+  });
+
+  test("a Family+ plan given without a purchase has no store", () => {
+    expect(
+      V1EntitlementsResponse.safeParse({
+        entitlements: [{
+          featureKey: "family_plus_large",
+          status: "active",
+          startsAt: "2026-10-19T00:00:00Z",
+          endsAt: "2027-10-19T00:00:00Z",
+          beneficiaryStudentId: null,
+          renewalStatus: null,
+          purchasedByMe: false,
+          granted: true,
+          coveredStudentIds: ["bbbbbbbb-0000-4000-8000-000000000002"],
+        }],
+      }).success,
+    ).toBe(true);
+    const link = {
+      id: "bbbbbbbb-0000-4000-8000-000000000003",
+      schoolId: "bbbbbbbb-0000-4000-8000-000000000001",
+      schoolName: "School",
+      studentId: "bbbbbbbb-0000-4000-8000-000000000002",
+      studentName: "Child",
+      relationship: "parent",
+      status: "verified",
+      expiresAt: null,
+      familyPlus: true,
+    };
+    expect(
+      V1MyGuardianLinksResponse.safeParse({
+        items: [link],
+        nextCursor: null,
+        familyPlan: {
+          featureKey: "family_plus_large",
+          endsAt: "2027-10-19T00:00:00Z",
+          granted: true,
+          coveredStudentIds: [link.studentId],
+        },
+      }).success,
+    ).toBe(true);
+    // A parent without a plan, and a server older than Family+ grants.
+    expect(
+      V1MyGuardianLinksResponse.safeParse({
+        items: [link],
+        nextCursor: null,
+        familyPlan: null,
+      }).success,
+    ).toBe(true);
+    expect(
+      V1MyGuardianLinksResponse.safeParse({ items: [], nextCursor: null })
+        .success,
     ).toBe(true);
   });
 });

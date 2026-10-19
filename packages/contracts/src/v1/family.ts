@@ -65,13 +65,40 @@ export const V1MyGuardianLink = z.strictObject({
    * than 2026-10-16.
    */
   messagingEnabled: z.boolean().optional(),
+  /**
+   * Whether Family+ insights are open for this child: the same check
+   * getFamilyInsights makes (the parent's family plan covers the child, or
+   * a per-child subscription bought before family plans). This read is
+   * served whether or not store billing is, so the app learns a plan given
+   * without a purchase too. Absent from servers older than 2026-10-19.
+   */
+  familyPlus: z.boolean().optional(),
 });
 export type V1MyGuardianLink = z.infer<typeof V1MyGuardianLink>;
+
+/**
+ * The parent's own Family+ plan now: the largest live one, bought or given.
+ * `granted` is true for a plan Studafy gave without a purchase (a comp
+ * grant): there is no store subscription to manage, cancel or restore.
+ */
+export const V1FamilyPlusPlan = z.strictObject({
+  featureKey: z.enum(["family_plus", "family_plus_large"]),
+  endsAt: z.string().datetime({ offset: true }).nullable(),
+  granted: z.boolean(),
+  /** The linked children the plan covers now, decided by the server. */
+  coveredStudentIds: z.array(Id).max(8),
+});
+export type V1FamilyPlusPlan = z.infer<typeof V1FamilyPlusPlan>;
 
 export const V1MyGuardianLinksResponse = z.strictObject({
   items: z.array(V1MyGuardianLink).max(200),
   /** Always null: a guardian's links fit in one response. */
   nextCursor: z.string().nullable(),
+  /**
+   * The caller's Family+ plan, null without one. Absent from servers older
+   * than 2026-10-19.
+   */
+  familyPlan: V1FamilyPlusPlan.nullable().optional(),
 });
 export type V1MyGuardianLinksResponse = z.infer<
   typeof V1MyGuardianLinksResponse

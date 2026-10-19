@@ -366,6 +366,7 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
               ? l10n.familyPlusIntro
               : [
                   l10n.familyPlusCoveredCount(_status.coveredStudentIds.length),
+                  if (_status.granted) l10n.familyPlusGranted,
                   if (ends != null)
                     l10n.familyPlusEnds(
                       studafyMediumDate(context, ends.toLocal()),
@@ -463,10 +464,13 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
                       ),
                 child: Text(l10n.familyPlusRestore),
               ),
-              TextButton(
-                onPressed: () => _open(_manageUrl),
-                child: Text(l10n.familyPlusManage),
-              ),
+              // A plan Studafy gave has no store subscription to manage or
+              // cancel, so the store's subscription page is not offered.
+              if (!_status.granted)
+                TextButton(
+                  onPressed: () => _open(_manageUrl),
+                  child: Text(l10n.familyPlusManage),
+                ),
             ],
           ),
         ],

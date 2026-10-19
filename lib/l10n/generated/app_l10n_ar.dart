@@ -5208,6 +5208,9 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
+  String get familyPlusGranted => 'مقدّمة من Studafy دون أي رسوم';
+
+  @override
   String get familyPlusWhatYouGet => 'ما تضيفه ⁦Family+⁩';
 
   @override

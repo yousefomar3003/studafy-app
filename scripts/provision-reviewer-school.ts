@@ -18,6 +18,13 @@
  * public.allow_provisioned_email_account, since email sign-up is otherwise
  * refused) and setting their passwords.
  *
+ * Then, with the database connection, one more step no API can take: each
+ * account is given its paid plans for a year without a purchase (comp
+ * grants, docs/deployment/study-plans.md), so a reviewer reaches every paid
+ * screen. The teacher and the student get Studafy Max; the parent gets
+ * Studafy Max and Family+ for up to 8 children. A re-run adds nothing while a
+ * grant has more than 30 days left, and renews one nearer its end.
+ *
  * Safe to run again: it finds what exists and adds only what is missing.
  * Passwords live in the credentials file named on the command line, never on
  * screen. A re-run reuses the file's passwords (and puts them back if they
@@ -29,7 +36,9 @@
  *   - any reviewer account that belongs to a school other than the review
  *     school;
  *   - any target but this machine, unless `--target hosted` is given, which
- *     reads .env.hosted (values are never printed);
+ *     reads .env.hosted - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and, for
+ *     the grants, DATABASE_URL as the database owner (values are never
+ *     printed);
  *   - a production project, unless --allow-production is also given.
  *
  * Usage:
@@ -52,6 +61,11 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { parseEnv } from "node:util";
+import postgres from "postgres";
+import {
+  databaseTls,
+  usesTransactionPooler,
+} from "../packages/database/src/index.ts";
 import { stackWorkdir } from "../packages/test-support/src/localStack";
 
 export const REVIEW_SCHOOL_NAME = "Cedar Grove Review School";
@@ -70,6 +84,22 @@ export interface ReviewerAccount {
   gender: "male" | "female";
   kind: "adult" | "student";
 }
+
+/** Why each reviewer account holds its plans; the grants' `reason`. */
+export const GRANT_REASON = "App store reviewer account";
+
+/**
+ * The paid plans each reviewer account is given without a purchase: every
+ * account Studafy Max, and the parent Family+ for up to 8 children too.
+ */
+export const REVIEWER_GRANTS: Record<
+  ReviewerRole,
+  { studyPlan: "max"; familyPlus: "family_plus_large" | null }
+> = {
+  teacher: { studyPlan: "max", familyPlus: null },
+  student: { studyPlan: "max", familyPlus: null },
+  parent: { studyPlan: "max", familyPlus: "family_plus_large" },
+};
 
 export const ACCOUNTS: Record<ReviewerRole, ReviewerAccount> = {
   teacher: {
@@ -178,6 +208,8 @@ export interface Connection {
   supabaseUrl: string;
   serviceRoleKey: string;
   apiUrl: string;
+  /** For the plan grants only, which no API writes. */
+  databaseUrl: string;
 }
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
@@ -205,9 +237,8 @@ export function hostedConnection(
   allowProduction: boolean,
 ): Connection {
   const env = parseEnv(envText) as Record<string, string | undefined>;
-  const missing = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter(
-    (key) => !env[key],
-  );
+  const missing = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DATABASE_URL"]
+    .filter((key) => !env[key]);
   if (missing.length > 0) {
     throw new Error(`The env file has no ${missing.join(" or ")}.`);
   }
@@ -237,12 +268,27 @@ export function hostedConnection(
     throw new Error("The hosted API URL must be an https URL elsewhere.");
   }
   if (!supabaseHost) throw new Error("SUPABASE_URL has no host.");
+  const databaseUrl = env["DATABASE_URL"]!;
+  if (!isPostgresUrl(databaseUrl) || isLoopback(databaseUrl)) {
+    throw new Error(
+      "DATABASE_URL in the env file is not a postgres URL elsewhere.",
+    );
+  }
   return {
     target: "hosted",
     supabaseUrl,
     serviceRoleKey: env["SUPABASE_SERVICE_ROLE_KEY"]!,
     apiUrl,
+    databaseUrl,
   };
+}
+
+function isPostgresUrl(url: string): boolean {
+  try {
+    return ["postgres:", "postgresql:"].includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
 }
 
 /** The local connection from `supabase status -o env` output. */
@@ -257,13 +303,14 @@ export function localConnection(
   }
   const supabaseUrl = values.get("API_URL");
   const serviceRoleKey = values.get("SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) {
+  const databaseUrl = values.get("DB_URL");
+  if (!supabaseUrl || !serviceRoleKey || !databaseUrl) {
     throw new Error(
-      "The local stack did not report API_URL and SERVICE_ROLE_KEY.",
+      "The local stack did not report API_URL, SERVICE_ROLE_KEY and DB_URL.",
     );
   }
   const apiUrl = withoutTrailingSlash(apiUrlFlag ?? "http://127.0.0.1:8080");
-  for (const url of [supabaseUrl, apiUrl]) {
+  for (const url of [supabaseUrl, apiUrl, databaseUrl]) {
     if (!isLoopback(url)) {
       throw new Error(
         `Refusing ${new URL(url).host}: the local target only talks to ` +
@@ -276,6 +323,7 @@ export function localConnection(
     supabaseUrl: withoutTrailingSlash(supabaseUrl),
     serviceRoleKey,
     apiUrl,
+    databaseUrl,
   };
 }
 
@@ -841,6 +889,78 @@ async function ensureAccounts(
   return ids;
 }
 
+/**
+ * Gives each reviewer account its plans for a year (REVIEWER_GRANTS). Comp
+ * grants are written only with direct database access - no API writes them
+ * - exactly as docs/deployment/study-plans.md describes for an operator.
+ * Idempotent: nothing is added while the account holds the same grant for
+ * this reason with more than 30 days left; nearer its end a new year starts.
+ */
+export async function ensureGrants(
+  sql: postgres.Sql,
+  ids: Record<ReviewerRole, string>,
+): Promise<void> {
+  for (const role of ROLES) {
+    const id = ids[role];
+    const { studyPlan, familyPlus } = REVIEWER_GRANTS[role];
+    const plan = await sql`
+      insert into private.study_plan_grants (user_id, plan, reason, ends_at)
+      select ${id}::uuid, ${studyPlan}, ${GRANT_REASON}, now() + interval '1 year'
+      where not exists (
+        select 1 from private.study_plan_grants g
+        where g.user_id = ${id}::uuid and g.plan = ${studyPlan}
+          and g.reason = ${GRANT_REASON}
+          and g.starts_at <= now() and g.ends_at > now() + interval '30 days'
+      )
+    `;
+    log(
+      `  ${role}: Studafy ${studyPlan === "max" ? "Max" : "Plus"} ` +
+        (plan.count > 0 ? "given for a year." : "already held."),
+    );
+    if (!familyPlus) continue;
+    const family = await sql`
+      insert into private.family_plus_grants (user_id, tier, reason, ends_at)
+      select ${id}::uuid, ${familyPlus}, ${GRANT_REASON}, now() + interval '1 year'
+      where not exists (
+        select 1 from private.family_plus_grants g
+        where g.user_id = ${id}::uuid and g.tier = ${familyPlus}
+          and g.reason = ${GRANT_REASON}
+          and g.starts_at <= now() and g.ends_at > now() + interval '30 days'
+      )
+    `;
+    log(
+      `  ${role}: Family+ (up to 8 children) ` +
+        (family.count > 0 ? "given for a year." : "already held."),
+    );
+  }
+}
+
+async function grantPlans(
+  connection: Connection,
+  ids: Record<ReviewerRole, string>,
+): Promise<void> {
+  const ssl = databaseTls(connection.databaseUrl, process.env.DATABASE_CA_CERT);
+  const sql = postgres(connection.databaseUrl, {
+    ...(ssl === undefined ? {} : { ssl }),
+    max: 1,
+    connect_timeout: 20,
+    prepare: !usesTransactionPooler(connection.databaseUrl),
+    onnotice: () => {},
+  });
+  try {
+    await sql.begin((tx) => ensureGrants(tx as unknown as postgres.Sql, ids));
+  } catch (error) {
+    // The driver's message names the table or the refusal, never the URL.
+    const reason = error instanceof Error ? error.message : "unknown error";
+    throw new Error(
+      `Giving the reviewer plans failed (${reason}). DATABASE_URL must be ` +
+        "the database owner, and migration 202610190010 applied.",
+    );
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
+
 async function provision(api: Api): Promise<{ schoolId: string }> {
   // Profiles: the kind of account and first-sign-in setup, so each door
   // opens straight onto its home screen.
@@ -1254,7 +1374,7 @@ export async function main(argv: readonly string[]): Promise<void> {
 
   const auth = new Auth(connection);
   log("Accounts:");
-  await ensureAccounts(auth, passwords);
+  const ids = await ensureAccounts(auth, passwords);
 
   const tokens = {} as Record<ReviewerRole, string>;
   for (const role of ROLES) {
@@ -1265,6 +1385,8 @@ export async function main(argv: readonly string[]): Promise<void> {
   if (options.rotate) log("Other sessions of the three accounts ended.");
   log("Content:");
   const { schoolId } = await provision(new Api(connection.apiUrl, tokens));
+  log("Plans:");
+  await grantPlans(connection, ids);
   log(
     `Done. Review school ${schoolId}. Sign-in details are in ` +
       `${options.credentialsOut}; paste them into Play Console and App Store ` +

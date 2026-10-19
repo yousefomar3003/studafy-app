@@ -5220,6 +5220,9 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
+  String get familyPlusGranted => 'Given by Studafy, nothing to pay';
+
+  @override
   String get familyPlusWhatYouGet => 'What Family+ adds';
 
   @override

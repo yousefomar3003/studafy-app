@@ -11,6 +11,7 @@ import {
   DEFAULT_HOSTED_API_URL,
   EXAM,
   generatePassword,
+  GRANT_REASON,
   hostedConnection,
   isLoopback,
   localConnection,
@@ -19,6 +20,7 @@ import {
   passwordsFor,
   REVIEW_DOMAIN,
   REVIEW_SCHOOL_NAME,
+  REVIEWER_GRANTS,
   ROLES,
   writeCredentials,
 } from "./provision-reviewer-school";
@@ -125,6 +127,30 @@ describe("the hosted connection", () => {
     expect(() => hostedConnection(env, "https://127.0.0.1:8080", false))
       .toThrow();
   });
+
+  test("the plan grants need the database, elsewhere", () => {
+    expect(hostedConnection(env, undefined, false).databaseUrl).toContain(
+      "db.example",
+    );
+    const failures: string[] = [];
+    for (
+      const text of [
+        env.replace(/\nDATABASE_URL=.*/, ""),
+        env.replace("@db.example", "@127.0.0.1:54322"),
+        env.replace("postgres://", "https://"),
+      ]
+    ) {
+      try {
+        hostedConnection(text, undefined, false);
+        failures.push("accepted");
+      } catch (error) {
+        failures.push((error as Error).message);
+      }
+    }
+    expect(failures).not.toContain("accepted");
+    for (const message of failures) expect(message).not.toContain(SECRET);
+    expect(failures[0]).toContain("DATABASE_URL");
+  });
 });
 
 describe("the local connection", () => {
@@ -138,6 +164,21 @@ describe("the local connection", () => {
     const connection = localConnection(status, "http://127.0.0.1:55980/");
     expect(connection.target).toBe("local");
     expect(connection.apiUrl).toBe("http://127.0.0.1:55980");
+    expect(connection.databaseUrl).toBe(
+      "postgresql://postgres:postgres@127.0.0.1:55922/postgres",
+    );
+    expect(() =>
+      localConnection(
+        status.replace("@127.0.0.1:55922", "@db.example:5432"),
+        undefined,
+      )
+    ).toThrow("only talks to this machine");
+    expect(() =>
+      localConnection(
+        status.replace(/\nDB_URL=.*/, ""),
+        undefined,
+      )
+    ).toThrow("DB_URL");
     expect(() => localConnection(status, "https://studafy-api-test.fly.dev"))
       .toThrow("only talks to this machine");
     expect(() =>
@@ -280,6 +321,16 @@ describe("whose school it touches", () => {
       expect(ACCOUNTS[role].email).toBe(`${role}@${REVIEW_DOMAIN}`);
     }
     expect(REVIEW_DOMAIN).toBe("review.studafy.com");
+  });
+
+  test("every account gets Studafy Max, and the parent Family+ for 8", () => {
+    for (const role of ROLES) {
+      expect(REVIEWER_GRANTS[role].studyPlan).toBe("max");
+    }
+    expect(REVIEWER_GRANTS.parent.familyPlus).toBe("family_plus_large");
+    expect(REVIEWER_GRANTS.teacher.familyPlus).toBeNull();
+    expect(REVIEWER_GRANTS.student.familyPlus).toBeNull();
+    expect(GRANT_REASON).toBe("App store reviewer account");
   });
 
   test("the content covers every part a reviewer opens", () => {

@@ -12,6 +12,7 @@ import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import '../../core/secure_storage.dart';
 import '../../features/family_insights/domain/parent_subscription_repository.dart';
 import '../../features/study/domain/study.dart';
+import '../contracts/v1_client.generated.dart';
 import '../contracts/v1_http_transport.dart';
 import 'store_offer_details.dart';
 import 'v1_billing_api.dart';
@@ -24,12 +25,15 @@ class StoreSubscriptionRepository
     SecureStore? pendingStore,
     Future<QueryPurchaseDetailsResponse> Function(String account)?
     playPurchases,
+    Future<V1MyGuardianLinksResponseDto> Function()? guardianLinks,
   }) : _injectedStore = store,
        // ignore: prefer_initializing_formals
        _billingApi = billingApi,
        _pending = pendingStore ?? InMemorySecureStore(),
        // ignore: prefer_initializing_formals
-       _playPurchases = playPurchases;
+       _playPurchases = playPurchases,
+       // ignore: prefer_initializing_formals
+       _guardianLinks = guardianLinks;
 
   final InAppPurchase? _injectedStore;
 
@@ -43,6 +47,13 @@ class StoreSubscriptionRepository
   /// their own; the default asks Google Play.
   final Future<QueryPurchaseDetailsResponse> Function(String account)?
   _playPurchases;
+
+  /// The parent's own guardian links, which also carry the server's Family+
+  /// answer: which children are unlocked and the parent's family plan,
+  /// bought or given. Unlike `/v1/billing/*` this read is served whether or
+  /// not store billing is, so a plan given without a purchase shows on a
+  /// server with billing off. Null in builds without a backend.
+  final Future<V1MyGuardianLinksResponseDto> Function()? _guardianLinks;
 
   /// Remembers which linked child a started purchase is for, keyed by store
   /// product id. It must survive an app kill between the store sheet and
@@ -418,6 +429,49 @@ class StoreSubscriptionRepository
     return product;
   }
 
+  /// The server's Family+ answer from the parent's guardian links, or null
+  /// when it cannot say: no backend, a server older than 2026-10-19 (its
+  /// links carry no `familyPlus`), or the read failed. The billing read is
+  /// then asked instead.
+  Future<({FamilyPlusStatus status, Set<String> unlocked})?>
+  _familyAccess() async {
+    final read = _guardianLinks;
+    if (read == null) return null;
+    final V1MyGuardianLinksResponseDto response;
+    try {
+      response = await read();
+    } catch (error) {
+      if (error is V1ApiException && error.isUnauthenticated) rethrow;
+      return null;
+    }
+    if (response.items.isNotEmpty &&
+        response.items.every((link) => link.familyPlus == null)) {
+      return null;
+    }
+    final unlocked = {
+      for (final link in response.items)
+        if (link.familyPlus == true) link.studentId,
+    };
+    final held = response.familyPlan;
+    final plan = held == null
+        ? null
+        : FamilyPlusPlan.fromFeatureKey(held.featureKey);
+    if (held == null || plan == null) {
+      return (status: FamilyPlusStatus.none, unlocked: unlocked);
+    }
+    final endsAt = held.endsAt == null ? null : DateTime.parse(held.endsAt!);
+    return (
+      status: FamilyPlusStatus(
+        plan: plan,
+        coveredStudentIds: held.coveredStudentIds,
+        endsAt: endsAt,
+        paidByMe: !held.granted,
+        granted: held.granted,
+      ),
+      unlocked: unlocked,
+    );
+  }
+
   /// The parent's live Family+ plan rows, largest plan first.
   static List<(FamilyPlusPlan, V1EntitlementRow)> _livePlans(
     List<V1EntitlementRow> rows,
@@ -439,6 +493,23 @@ class StoreSubscriptionRepository
   Future<SubscriptionEntitlement> entitlement({
     String? beneficiaryStudentId,
   }) async {
+    // The same check the insights read makes, so the tab never opens for a
+    // child the server would refuse, nor stays shut for one it would serve.
+    final access = await _familyAccess();
+    if (access != null) {
+      final active =
+          beneficiaryStudentId != null &&
+          access.unlocked.contains(beneficiaryStudentId);
+      return SubscriptionEntitlement(
+        active: active,
+        source: !active
+            ? 'none'
+            : access.status.granted
+            ? 'granted'
+            : 'active',
+        expiresAt: active ? access.status.endsAt : null,
+      );
+    }
     if (!_isRemote) {
       return const SubscriptionEntitlement(active: false, source: 'preview');
     }
@@ -484,15 +555,23 @@ class StoreSubscriptionRepository
 
   @override
   Future<FamilyPlusStatus> familyPlan() async {
+    final access = await _familyAccess();
+    if (access != null) return access.status;
     if (!_isRemote) return FamilyPlusStatus.none;
     final live = _livePlans(await _billingApi!.entitlements(), DateTime.now());
     if (live.isEmpty) return FamilyPlusStatus.none;
-    final (plan, row) = live.first;
+    // At the same size a bought plan is shown before a given one, so the
+    // parent can still manage the subscription they pay for.
+    final (plan, row) = live.firstWhere(
+      (entry) => entry.$1 == live.first.$1 && !entry.$2.granted,
+      orElse: () => live.first,
+    );
     return FamilyPlusStatus(
       plan: plan,
       coveredStudentIds: row.coveredStudentIds,
       endsAt: row.endsAt,
       paidByMe: row.purchasedByMe,
+      granted: row.granted,
     );
   }
 
@@ -537,13 +616,13 @@ class StoreSubscriptionRepository
     }
     // Never a second family plan beside the first: the current one is
     // upgraded in place, and the same or a smaller plan is not sold again.
-    final current = _livePlans(
-      await _billingApi!.entitlements(),
-      DateTime.now(),
-    ).firstOrNull;
-    if (current != null && current.$1.seats >= plan.seats) {
+    // A plan Studafy gave has no store subscription to upgrade, so a larger
+    // plan bought over it is a new subscription, not a replacement.
+    final live = _livePlans(await _billingApi!.entitlements(), DateTime.now());
+    if (live.isNotEmpty && live.first.$1.seats >= plan.seats) {
       throw const PurchaseBlockedException(PurchaseBlock.alreadySubscribed);
     }
+    final current = live.where((entry) => !entry.$2.granted).firstOrNull;
     if (current != null &&
         current.$2.platform != null &&
         SubscriptionStore.parse(current.$2.platform) != purchaseStore) {

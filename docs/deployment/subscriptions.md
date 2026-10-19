@@ -276,6 +276,15 @@ off by default).
 | Google voided purchases: found by token, access ended once whichever of the void and `SUBSCRIPTION_REVOKED` comes first, audit history, unknown token retried, one-time products skipped | `supabase/tests/voided_purchases.sql`, `apps/worker/test/billing.test.ts` |
 | The topic `play-billing` and the paths `/webhooks/google` and `/webhooks/apple` in this guide match the code (`packages/config/src/storeWebhooks.ts`) | `packages/config/test/storeWebhooks.test.ts` |
 | Contract accepts Plus/Max purchases and approvals | `packages/contracts/test/contracts.test.ts` |
+| Family+ given without a purchase: seats, coverage, the insights gate, the billing read and the guardian links honour a live grant, the larger of grant and store plan wins, an ended grant gives nothing | `supabase/tests/family_plus_grants.sql`, `test/data/store_subscription_test.dart`, `test/features/family_insights/family_plus_test.dart` |
+
+### Without a purchase
+
+A student's plan or a parent's Family+ can be given without the store, for
+support credit, testing or the store reviewers' accounts: comp grants in
+`private.study_plan_grants` and `private.family_plus_grants`, written only
+with direct database access. A granted Family+ works with billing off. See
+[study-plans.md](study-plans.md#testing-a-plan-without-a-purchase).
 
 ### Sandbox checklist (needs your store accounts)
 

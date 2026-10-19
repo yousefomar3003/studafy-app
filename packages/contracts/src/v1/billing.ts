@@ -211,6 +211,12 @@ export const V1Entitlement = z.strictObject({
    * the server on every read, so a link added or removed shows at once.
    */
   coveredStudentIds: z.array(Id).max(8).optional(),
+  /**
+   * True for a plan Studafy gave without a purchase (a comp grant, written
+   * by an operator). It has no `platform` or `storeProductId`: there is no
+   * store subscription to manage or cancel.
+   */
+  granted: z.boolean().optional(),
 });
 export type V1Entitlement = z.infer<typeof V1Entitlement>;
 
