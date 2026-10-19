@@ -179,7 +179,9 @@ without the owner's explicit approval.
    `bunx supabase db push --db-url "<test copy DATABASE_URL>" --dry-run`, then
    without `--dry-run`. The script needs `202610150050_reviewer_access.sql`
    and, for the parent's Family+, `202610190010_family_plus_grants.sql`.
-   Check the dashboard settings above at the same time.
+   Deploy the API from the same change before that one: an older API refuses
+   the new fields it adds to `GET /v1/me/guardian-links`. Check the dashboard
+   settings above at the same time.
 3. **Ship an app build** with the "Sign in with email" button (this branch).
    The API needs no redeploy: no server code changed.
 4. **Provision the school** from the repository root, with the credentials
