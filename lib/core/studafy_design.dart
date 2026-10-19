@@ -495,20 +495,16 @@ class StudafyNavDestination extends StatelessWidget {
                   ? const SizedBox(width: double.infinity)
                   : Padding(
                       padding: const EdgeInsets.only(top: 3),
-                      // A label that is too wide for its tab shrinks to fit
-                      // rather than ending in "...".
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          item.label,
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: selected ? accent : studafyMuted,
-                            fontWeight: selected
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                          ),
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: selected ? accent : studafyMuted,
+                          fontWeight: selected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
                         ),
                       ),
                     ),
