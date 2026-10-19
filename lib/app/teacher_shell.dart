@@ -551,7 +551,7 @@ class _TeacherShellState extends State<TeacherShell>
               )
             else
               StudafyNavItem(
-                l10n.navAnnouncements,
+                l10n.navAnnouncementsTab,
                 Icons.campaign_outlined,
                 Icons.campaign_rounded,
               ),

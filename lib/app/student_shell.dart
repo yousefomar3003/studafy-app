@@ -574,7 +574,7 @@ class _StudentShellState extends State<StudentShell>
                     )
                   else if (messaging)
                     StudafyNavItem(
-                      AppL10n.of(context).navAnnouncements,
+                      AppL10n.of(context).navAnnouncementsTab,
                       Icons.campaign_outlined,
                       Icons.campaign_rounded,
                     ),

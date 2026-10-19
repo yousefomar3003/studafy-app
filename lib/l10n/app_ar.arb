@@ -1449,6 +1449,7 @@
   "accountCancelAction": "إلغاء",
   "accountPublicIdDetail": "قد يطلب دعم Studafy هذا الرقم. لا يمكن استخدامه لرؤية حسابك أو للارتباط بطفل.",
   "navAnnouncements": "الإعلانات",
+  "navAnnouncementsTab": "الإعلانات",
   "announcementsSubtitle": "أخبار مدارس أطفالك",
   "announcementsAllChildren": "كل الأطفال",
   "announcementsNoChildren": "اربط طفلًا لرؤية إعلانات مدرسته.",

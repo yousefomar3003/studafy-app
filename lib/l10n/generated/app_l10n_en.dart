@@ -5148,6 +5148,9 @@ class AppL10nEn extends AppL10n {
   String get navAnnouncements => 'Announcements';
 
   @override
+  String get navAnnouncementsTab => 'News';
+
+  @override
   String get announcementsSubtitle => 'News from your children\'s schools';
 
   @override

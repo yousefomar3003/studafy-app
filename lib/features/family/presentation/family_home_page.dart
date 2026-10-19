@@ -341,6 +341,13 @@ class _QuickActionTile extends StatelessWidget {
 
   final FamilyQuickAction action;
 
+  static const _labelStyle = TextStyle(
+    color: studafyInk,
+    fontWeight: FontWeight.w700,
+    fontSize: 13.5,
+    height: 1.2,
+  );
+
   @override
   Widget build(BuildContext context) {
     final state = context.findAncestorStateOfType<FamilyHomePageState>();
@@ -353,17 +360,20 @@ class _QuickActionTile extends StatelessWidget {
           IconBadge(icon: action.icon, size: 38),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              action.label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: studafyInk,
-                fontWeight: FontWeight.w700,
-                fontSize: 13.5,
-                height: 1.2,
-              ),
-            ),
+            // A single long word ("Announcements") shrinks to fit on one
+            // line instead of breaking in the middle; several words wrap.
+            child: action.label.trim().contains(' ')
+                ? Text(
+                    action.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: _labelStyle,
+                  )
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(action.label, maxLines: 1, style: _labelStyle),
+                  ),
           ),
         ],
       ),

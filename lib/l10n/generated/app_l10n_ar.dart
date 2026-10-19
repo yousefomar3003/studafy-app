@@ -5136,6 +5136,9 @@ class AppL10nAr extends AppL10n {
   String get navAnnouncements => 'الإعلانات';
 
   @override
+  String get navAnnouncementsTab => 'الإعلانات';
+
+  @override
   String get announcementsSubtitle => 'أخبار مدارس أطفالك';
 
   @override
