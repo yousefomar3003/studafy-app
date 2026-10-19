@@ -72,6 +72,58 @@ values ('<user uuid>', 'max', 'local testing', now() + interval '1 day');
 
 Grants are for support and testing. They never touch the store ledger.
 
+### Family+ without a purchase
+
+A parent's Family+ has comp grants of its own (2026-10-19, migration
+`202610190010_family_plus_grants.sql`), in `private.family_plus_grants`:
+
+| Column | Value |
+| ------ | ----- |
+| `user_id` | the parent's profile id |
+| `tier` | `family_plus` (up to 4 children) or `family_plus_large` (up to 8) |
+| `reason` | why, 3 to 200 characters |
+| `starts_at` | defaults to now |
+| `ends_at` | when it ends; after `starts_at` |
+
+Like study-plan grants, only an operator with direct database access writes
+them; no API does, and no runtime role can read the table. A live grant
+counts exactly as a live store plan of that tier:
+
+- `private.family_plus_seats(parent)` takes the larger of the grant and any
+  store plan, so `family_plus_covered`, the `parent_insights_has_access` gate
+  and `getFamilyInsights` all honour it.
+- The app learns it from `GET /v1/me/guardian-links`: each link says whether
+  Family+ is open for that child (`familyPlus`), and `familyPlan` names the
+  parent's plan with `granted: true`. This read is served whether or not
+  store billing is, so a grant works on the test copy, which runs with
+  `PAY071_BILLING_ENABLED=false`.
+- Where billing is on, `GET /v1/billing/entitlements` also lists the grant as
+  a family plan row with `granted: true` and no platform or product.
+- The app shows "Given by Studafy, nothing to pay" on the plan and offers no
+  store subscription to manage or cancel.
+
+Give a parent Family+ for up to 8 children for a year, by email:
+
+```sql
+insert into private.family_plus_grants (user_id, tier, reason, ends_at)
+select p.id, 'family_plus_large', 'App store reviewer account',
+  now() + interval '1 year'
+from auth.users u join public.profiles p on p.id = u.id
+where u.email = 'parent@review.studafy.com';
+```
+
+End one early with `update private.family_plus_grants set ends_at = now()
+where ...`; the next read covers nobody. Rows are kept, so a grant's history
+stays visible.
+
+### The store reviewers' accounts
+
+`scripts/provision-reviewer-school.ts` gives the three reviewer accounts their
+plans for a year, with the reason `App store reviewer account`: Studafy Max to
+the teacher, the student and the parent, and Family+ for up to 8 children to
+the parent. A re-run adds nothing while a grant has more than 30 days left.
+See [reviewer-access.md](../store/reviewer-access.md).
+
 ## The AI switch
 
 Whiteboard notes, quizzes and flashcards also need `AI_LESSON_TOOLS_ENABLED=true`

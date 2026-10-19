@@ -7135,6 +7135,7 @@ class V1EntitlementDto {
     this.storeProductId,
     this.purchasedByMe,
     this.coveredStudentIds,
+    this.granted,
   });
 
   factory V1EntitlementDto.fromJson(Map<String, dynamic> json) =>
@@ -7151,6 +7152,7 @@ class V1EntitlementDto {
         coveredStudentIds: json['coveredStudentIds'] == null
             ? null
             : (json['coveredStudentIds'] as List<dynamic>).cast<String>(),
+        granted: json['granted'] as bool?,
       );
 
   final String featureKey;
@@ -7163,6 +7165,7 @@ class V1EntitlementDto {
   final String? storeProductId;
   final bool? purchasedByMe;
   final List<String>? coveredStudentIds;
+  final bool? granted;
 
   Map<String, Object?> toJson() => {
     'featureKey': featureKey,
@@ -7175,6 +7178,7 @@ class V1EntitlementDto {
     'storeProductId': ?storeProductId,
     'purchasedByMe': ?purchasedByMe,
     'coveredStudentIds': ?coveredStudentIds,
+    'granted': ?granted,
   };
 }
 
@@ -7377,6 +7381,36 @@ class V1FamilyInsightsResponseDto {
       'recentMarks': [for (final item in recentMarks!) item.toJson()],
     if (missingWork != null)
       'missingWork': [for (final item in missingWork!) item.toJson()],
+  };
+}
+
+class V1FamilyPlusPlanDto {
+  const V1FamilyPlusPlanDto({
+    required this.featureKey,
+    required this.endsAt,
+    required this.granted,
+    required this.coveredStudentIds,
+  });
+
+  factory V1FamilyPlusPlanDto.fromJson(Map<String, dynamic> json) =>
+      V1FamilyPlusPlanDto(
+        featureKey: json['featureKey'] as String,
+        endsAt: json['endsAt'] as String?,
+        granted: json['granted'] as bool,
+        coveredStudentIds: (json['coveredStudentIds'] as List<dynamic>)
+            .cast<String>(),
+      );
+
+  final String featureKey;
+  final String? endsAt;
+  final bool granted;
+  final List<String> coveredStudentIds;
+
+  Map<String, Object?> toJson() => {
+    'featureKey': featureKey,
+    'endsAt': endsAt,
+    'granted': granted,
+    'coveredStudentIds': coveredStudentIds,
   };
 }
 
@@ -9780,6 +9814,7 @@ class V1MyGuardianLinkDto {
     required this.status,
     required this.expiresAt,
     this.messagingEnabled,
+    this.familyPlus,
   });
 
   factory V1MyGuardianLinkDto.fromJson(Map<String, dynamic> json) =>
@@ -9793,6 +9828,7 @@ class V1MyGuardianLinkDto {
         status: json['status'] as String,
         expiresAt: json['expiresAt'] as String?,
         messagingEnabled: json['messagingEnabled'] as bool?,
+        familyPlus: json['familyPlus'] as bool?,
       );
 
   final String id;
@@ -9804,6 +9840,7 @@ class V1MyGuardianLinkDto {
   final String status;
   final String? expiresAt;
   final bool? messagingEnabled;
+  final bool? familyPlus;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -9815,6 +9852,7 @@ class V1MyGuardianLinkDto {
     'status': status,
     'expiresAt': expiresAt,
     'messagingEnabled': ?messagingEnabled,
+    'familyPlus': ?familyPlus,
   };
 }
 
@@ -9822,6 +9860,7 @@ class V1MyGuardianLinksResponseDto {
   const V1MyGuardianLinksResponseDto({
     required this.items,
     required this.nextCursor,
+    this.familyPlan,
   });
 
   factory V1MyGuardianLinksResponseDto.fromJson(Map<String, dynamic> json) =>
@@ -9831,14 +9870,21 @@ class V1MyGuardianLinksResponseDto {
             V1MyGuardianLinkDto.fromJson(item as Map<String, dynamic>),
         ],
         nextCursor: json['nextCursor'] as String?,
+        familyPlan: json['familyPlan'] == null
+            ? null
+            : V1FamilyPlusPlanDto.fromJson(
+                json['familyPlan'] as Map<String, dynamic>,
+              ),
       );
 
   final List<V1MyGuardianLinkDto> items;
   final String? nextCursor;
+  final V1FamilyPlusPlanDto? familyPlan;
 
   Map<String, Object?> toJson() => {
     'items': [for (final item in items) item.toJson()],
     'nextCursor': nextCursor,
+    if (familyPlan != null) 'familyPlan': familyPlan!.toJson(),
   };
 }
 

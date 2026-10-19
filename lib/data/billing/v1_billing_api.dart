@@ -165,6 +165,7 @@ class V1EntitlementRow {
     this.storeProductId,
     this.purchasedByMe = true,
     this.coveredStudentIds = const [],
+    this.granted = false,
   });
 
   final String featureKey;
@@ -189,6 +190,9 @@ class V1EntitlementRow {
   /// Family+ plans: the linked children the plan covers now.
   final List<String> coveredStudentIds;
 
+  /// Given by Studafy without a purchase: no store, product or renewal.
+  final bool granted;
+
   bool get grantsAccess => status == 'active' || status == 'grace_period';
 
   factory V1EntitlementRow.fromJson(Map<String, dynamic> json) =>
@@ -208,6 +212,7 @@ class V1EntitlementRow {
           for (final id in json['coveredStudentIds'] as List<dynamic>? ?? [])
             id as String,
         ],
+        granted: json['granted'] as bool? ?? false,
       );
 }
 

@@ -24,11 +24,55 @@ never sees real data. See [Keeping reviewers away from real data](#keeping-revie
 |---|---|---|---|
 | Teacher | `teacher@review.studafy.com` | Nadia Haddad | Two classes, lessons, homework with one hand-in, an open online exam, a published grade, announcements, messages. |
 | Student | `student@review.studafy.com` | Omar Saleh | Both classes, lessons, homework (one handed in, one due), the online exam to take, a grade of 17/20 with feedback, announcements. |
-| Parent | `parent@review.studafy.com` | Huda Saleh | Linked to Omar: his homework, grades and announcements. |
+| Parent | `parent@review.studafy.com` | Huda Saleh | Linked to Omar: his homework, grades and announcements, and Family+ insights about him. |
 
 The school is called **Cedar Grove Review School**. Its classes are *Grade 8
 Science* and *Grade 8 Mathematics*. Every person and school in it is
 invented.
+
+### Paid plans, without a purchase
+
+A reviewer must reach every paid screen without buying anything, so the
+script gives each account its plans for a year (comp grants,
+[study-plans.md](../deployment/study-plans.md#testing-a-plan-without-a-purchase)),
+with the reason `App store reviewer account`:
+
+| Account | Plans |
+|---|---|
+| Teacher | Studafy Max |
+| Student | Studafy Max |
+| Parent | Studafy Max, and Family+ for up to 8 children |
+
+The app shows these as held, with "Given by Studafy, nothing to pay" on the
+parent's Family+ and no store subscription to manage or cancel. A re-run adds
+nothing while a grant has more than 30 days left, and renews one nearer its
+end, so re-run the script before a review that falls within a month of the
+year's end.
+
+Grants are written straight to the database (no API writes them), so the
+script needs the database owner's connection: `DB_URL` from the local stack,
+or `DATABASE_URL` in the env file. To give the parent Family+ by hand
+instead, after migration `202610190010_family_plus_grants.sql`:
+
+```sql
+insert into private.family_plus_grants (user_id, tier, reason, ends_at)
+select p.id, 'family_plus_large', 'App store reviewer account',
+  now() + interval '1 year'
+from auth.users u join public.profiles p on p.id = u.id
+where u.email = 'parent@review.studafy.com';
+```
+
+and a Studafy Max for any of the three:
+
+```sql
+insert into private.study_plan_grants (user_id, plan, reason, ends_at)
+select p.id, 'max', 'App store reviewer account', now() + interval '1 year'
+from auth.users u join public.profiles p on p.id = u.id
+where u.email in ('teacher@review.studafy.com', 'student@review.studafy.com',
+  'parent@review.studafy.com');
+```
+
+### Passwords
 
 The passwords are random: four groups of six letters and digits, such as
 `Abc2de-Fgh3jk-...`. They are written to the credentials file you name when
@@ -59,7 +103,9 @@ issue, a chat or this repository.
    > the Terms of Use and Privacy Policy, then tap "Sign in with email" at
    > the bottom of the sign-in screen. Enter the email and password above. These accounts belong to
    > a demo school with invented people and data; no real student's data is
-   > shown. The sign-in does not need a verification code.
+   > shown. The sign-in does not need a verification code. The paid plans
+   > (Studafy Max, and Family+ on the parent account) are already active on
+   > these accounts, so nothing needs to be bought.
 
 4. Leave *Allow Android to use the credentials you provide for performance
    and app compatibility testing* ticked.
@@ -79,6 +125,8 @@ issue, a chat or this repository.
    > Student: student@review.studafy.com / <student password>
    > Parent: parent@review.studafy.com / <parent password>
    > All three belong to a demo school with invented people and data.
+   > The paid plans (Studafy Max, and Family+ on the parent account) are
+   > already active on these accounts, so nothing needs to be bought.
    > Account deletion is under Account → Delete account. If the sign-in was
    > more than 10 minutes ago, it asks for the account's password again,
    > then schedules deletion with a 14-day grace period.
@@ -129,8 +177,9 @@ without the owner's explicit approval.
 1. **Back up:** `gh workflow run backup.yml`, then wait for it to pass.
 2. **Apply the migration** the usual way, dry run first:
    `bunx supabase db push --db-url "<test copy DATABASE_URL>" --dry-run`, then
-   without `--dry-run`. Only `202610150050_reviewer_access.sql` should be
-   pending. Check the dashboard settings above at the same time.
+   without `--dry-run`. The script needs `202610150050_reviewer_access.sql`
+   and, for the parent's Family+, `202610190010_family_plus_grants.sql`.
+   Check the dashboard settings above at the same time.
 3. **Ship an app build** with the "Sign in with email" button (this branch).
    The API needs no redeploy: no server code changed.
 4. **Provision the school** from the repository root, with the credentials
@@ -141,8 +190,9 @@ without the owner's explicit approval.
      --credentials-out ~/studafy-reviewer-credentials.json
    ```
 
-   It reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from `.env.hosted`
-   without printing them, and talks to `https://studafy-api-test.fly.dev`
+   It reads `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL`
+   (the database owner, for the plan grants) from `.env.hosted` without
+   printing them, and talks to `https://studafy-api-test.fly.dev`
    (override with `--api-url`, or `REVIEWER_API_URL` in the env file). It
    refuses a project whose `ENVIRONMENT` is `production` unless
    `--allow-production` is also given.
@@ -232,4 +282,7 @@ bun --no-env-file scripts/provision-reviewer-school.ts \
   sign-in again granted.
 - `supabase/tests/reviewer_access.sql`: the sign-up rule and its grants.
 - `scripts/provision-reviewer-school.test.ts`: targets, env parsing (no
-  values in errors), passwords, the credentials file, and school checks.
+  values in errors), passwords, the credentials file, school checks, and the
+  plans each account is given.
+- `supabase/tests/family_plus_grants.sql`: a Family+ grant gives its seats
+  wherever the plan is read, and an ended one gives nothing.

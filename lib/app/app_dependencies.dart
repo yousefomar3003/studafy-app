@@ -276,6 +276,10 @@ class AppDependencies {
     final subscriptions = StoreSubscriptionRepository(
       billingApi: billingApi,
       pendingStore: remote?.secureStore,
+      // Family+ is read from the parent's own links, which are served
+      // whether or not store billing is, so a plan given without a purchase
+      // shows everywhere.
+      guardianLinks: remote?.api.listMyGuardianLinks,
     );
     return AppDependencies(
       family: FamilyInteractor(

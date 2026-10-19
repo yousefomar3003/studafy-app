@@ -83,6 +83,7 @@ class FamilyPlusStatus {
     this.coveredStudentIds = const [],
     this.endsAt,
     this.paidByMe = true,
+    this.granted = false,
   });
 
   static const none = FamilyPlusStatus();
@@ -94,6 +95,10 @@ class FamilyPlusStatus {
   final List<String> coveredStudentIds;
   final DateTime? endsAt;
   final bool paidByMe;
+
+  /// Given by Studafy without a purchase. There is no store subscription
+  /// behind it, so nothing to manage or cancel in the store.
+  final bool granted;
 
   bool covers(String studentId) => coveredStudentIds.contains(studentId);
 }

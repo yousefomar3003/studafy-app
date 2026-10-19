@@ -7,6 +7,8 @@ import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:studafy/data/billing/store_subscription_repository.dart';
 import 'package:studafy/data/billing/v1_billing_api.dart';
+import 'package:studafy/data/contracts/v1_client.generated.dart';
+import 'package:studafy/data/contracts/v1_http_transport.dart';
 import 'package:studafy/features/family_insights/domain/parent_subscription_repository.dart';
 import 'package:studafy/features/study/domain/study.dart';
 
@@ -68,6 +70,17 @@ class Billing extends Fake implements V1BillingApi {
             ),
         ]
       : [];
+}
+
+/// A server with billing off: `/v1/billing/*` is not mounted.
+class _BillingOff extends Fake implements V1BillingApi {
+  @override
+  Future<List<V1EntitlementRow>> entitlements() async =>
+      throw const V1ApiException(
+        status: 404,
+        code: 'NOT_FOUND',
+        message: 'Not found',
+      );
 }
 
 PricingPhaseWrapper phase(int micros, String price, RecurrenceMode mode) =>
@@ -311,6 +324,132 @@ void main() {
       expect(store.bought, isNull);
     },
   );
+
+  group('Family+ given without a purchase', () {
+    V1MyGuardianLinkDto link(String child, {bool? familyPlus}) =>
+        V1MyGuardianLinkDto(
+          id: 'link-$child',
+          schoolId: 'school',
+          schoolName: 'School',
+          studentId: child,
+          studentName: 'Child $child',
+          relationship: 'parent',
+          status: 'verified',
+          expiresAt: null,
+          familyPlus: familyPlus,
+        );
+
+    test('the guardian links unlock it even with billing off', () async {
+      final ends = DateTime.utc(2027, 10, 19);
+      final links = StoreSubscriptionRepository(
+        store: store,
+        billingApi: _BillingOff(),
+        guardianLinks: () async => V1MyGuardianLinksResponseDto(
+          items: [link('c1', familyPlus: true), link('c2', familyPlus: false)],
+          nextCursor: null,
+          familyPlan: V1FamilyPlusPlanDto(
+            featureKey: 'family_plus_large',
+            endsAt: ends.toIso8601String(),
+            granted: true,
+            coveredStudentIds: const ['c1'],
+          ),
+        ),
+      );
+      final covered = await links.entitlement(beneficiaryStudentId: 'c1');
+      expect(covered.active, isTrue);
+      expect(covered.source, 'granted');
+      expect(
+        (await links.entitlement(beneficiaryStudentId: 'c2')).active,
+        isFalse,
+        reason: 'only the children the server unlocks',
+      );
+      final plan = await links.familyPlan();
+      expect(plan.plan, FamilyPlusPlan.upTo8);
+      expect(plan.granted, isTrue);
+      expect(plan.paidByMe, isFalse);
+      expect(plan.endsAt, ends);
+      expect(plan.covers('c1'), isTrue);
+    });
+
+    test('no plan on the links is no plan, whatever billing says', () async {
+      billing.rows = [
+        V1EntitlementRow(
+          featureKey: 'family_plus',
+          status: 'active',
+          startsAt: DateTime.now().subtract(const Duration(days: 1)),
+          endsAt: DateTime.now().add(const Duration(days: 20)),
+          platform: 'play_store',
+          coveredStudentIds: const ['c1'],
+        ),
+      ];
+      final links = StoreSubscriptionRepository(
+        store: store,
+        billingApi: billing,
+        guardianLinks: () async => V1MyGuardianLinksResponseDto(
+          items: [link('c1', familyPlus: false)],
+          nextCursor: null,
+        ),
+      );
+      expect(
+        (await links.entitlement(beneficiaryStudentId: 'c1')).active,
+        isFalse,
+      );
+      expect((await links.familyPlan()).plan, isNull);
+    });
+
+    test('a server that does not say falls back to billing', () async {
+      billing.rows = [
+        V1EntitlementRow(
+          featureKey: 'family_plus',
+          status: 'active',
+          startsAt: DateTime.now().subtract(const Duration(days: 1)),
+          endsAt: DateTime.now().add(const Duration(days: 20)),
+          platform: 'play_store',
+          coveredStudentIds: const ['c1'],
+        ),
+      ];
+      final links = StoreSubscriptionRepository(
+        store: store,
+        billingApi: billing,
+        guardianLinks: () async =>
+            V1MyGuardianLinksResponseDto(items: [link('c1')], nextCursor: null),
+      );
+      expect(
+        (await links.entitlement(beneficiaryStudentId: 'c1')).active,
+        isTrue,
+      );
+      expect((await links.familyPlan()).plan, FamilyPlusPlan.upTo4);
+    });
+
+    test('a granted billing row has nothing to manage, and a larger plan '
+        'bought over it is a new subscription', () async {
+      billing.rows = [
+        V1EntitlementRow(
+          featureKey: 'family_plus',
+          status: 'active',
+          startsAt: DateTime.now().subtract(const Duration(days: 1)),
+          endsAt: DateTime.now().add(const Duration(days: 300)),
+          purchasedByMe: false,
+          coveredStudentIds: const ['c1'],
+          granted: true,
+        ),
+      ];
+      final plan = await repository.familyPlan();
+      expect(plan.plan, FamilyPlusPlan.upTo4);
+      expect(plan.granted, isTrue);
+      expect(
+        (await repository.entitlement(beneficiaryStudentId: 'c1')).active,
+        isTrue,
+      );
+      await expectLater(
+        repository.purchaseFamilyPlan(FamilyPlusPlan.upTo4),
+        throwsA(isA<PurchaseBlockedException>()),
+      );
+      await repository.purchaseFamilyPlan(FamilyPlusPlan.upTo8);
+      final bought = store.bought! as GooglePlayPurchaseParam;
+      expect(bought.changeSubscriptionParam, isNull);
+    });
+  });
 
   test('only a current, own Studafy Plus entitlement unlocks', () async {
     V1EntitlementRow row({

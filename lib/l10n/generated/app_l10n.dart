@@ -8929,6 +8929,12 @@ abstract class AppL10n {
   /// **'Active until {date}'**
   String familyPlusEnds(String date);
 
+  /// Shown on the parent's current Family+ plan when Studafy gave it without a store purchase (a complimentary plan). There is no store subscription to manage or cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Given by Studafy, nothing to pay'**
+  String get familyPlusGranted;
+
   /// No description provided for @familyPlusWhatYouGet.
   ///
   /// In en, this message translates to:

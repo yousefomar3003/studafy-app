@@ -2888,6 +2888,10 @@
       }
     }
   },
+  "familyPlusGranted": "Given by Studafy, nothing to pay",
+  "@familyPlusGranted": {
+    "description": "Shown on the parent's current Family+ plan when Studafy gave it without a store purchase (a complimentary plan). There is no store subscription to manage or cancel."
+  },
   "familyPlusWhatYouGet": "What Family+ adds",
   "familyPlusPlansTitle": "Choose a plan",
   "familyPlusManagePlan": "Plan",

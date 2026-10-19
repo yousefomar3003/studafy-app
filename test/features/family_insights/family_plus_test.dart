@@ -101,6 +101,60 @@ void main() {
     expect(find.text('Subscribe for up to 4 children'), findsNothing);
   });
 
+  testWidgets('a plan Studafy gave offers no store subscription to manage', (
+    tester,
+  ) async {
+    tall(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: FamilyPlusOffer(
+            subscriptions: _Store(
+              plan: const FamilyPlusStatus(
+                plan: FamilyPlusPlan.upTo8,
+                coveredStudentIds: ['child-1'],
+                paidByMe: false,
+                granted: true,
+              ),
+            ),
+            studentId: 'child-1',
+            childName: 'Sara',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Given by Studafy, nothing to pay'), findsOne);
+    expect(find.text('Manage or cancel'), findsNothing);
+    // Nothing is sold over the largest plan.
+    expect(find.byType(FilledButton), findsNothing);
+  });
+
+  testWidgets('a bought plan can be managed in the store', (tester) async {
+    tall(tester);
+    await tester.pumpWidget(
+      localizedApp(
+        home: Scaffold(
+          body: FamilyPlusOffer(
+            subscriptions: _Store(
+              plan: const FamilyPlusStatus(
+                plan: FamilyPlusPlan.upTo8,
+                coveredStudentIds: ['child-1'],
+              ),
+            ),
+            studentId: 'child-1',
+            childName: 'Sara',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Given by Studafy'), findsNothing);
+    expect(find.text('Manage or cancel'), findsOne);
+  });
+
   testWidgets('purchases can be restored', (tester) async {
     tall(tester);
     final store = _Store();
