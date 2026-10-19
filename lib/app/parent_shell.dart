@@ -425,7 +425,7 @@ class _ParentShellState extends State<ParentShell> {
                   Icons.insights_rounded,
                 ),
                 _Tab.announcements => StudafyNavItem(
-                  l10n.navAnnouncements,
+                  l10n.navAnnouncementsTab,
                   Icons.campaign_outlined,
                   Icons.campaign_rounded,
                 ),

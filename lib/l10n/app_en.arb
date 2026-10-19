@@ -2843,6 +2843,8 @@
   "accountCancelAction": "Cancel",
   "accountPublicIdDetail": "Studafy support may ask for this number. It can't be used to see your account or to link to a child.",
   "navAnnouncements": "Announcements",
+  "navAnnouncementsTab": "News",
+  "@navAnnouncementsTab": {"description": "Bottom tab label for the announcements page; short, to fit a five-tab bar. The page itself is titled navAnnouncements."},
   "announcementsSubtitle": "News from your children's schools",
   "announcementsAllChildren": "All children",
   "announcementsNoChildren": "Link a child to see their school's announcements.",

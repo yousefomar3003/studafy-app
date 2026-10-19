@@ -8803,6 +8803,12 @@ abstract class AppL10n {
   /// **'Announcements'**
   String get navAnnouncements;
 
+  /// Bottom tab label for the announcements page; short, to fit a five-tab bar. The page itself is titled navAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get navAnnouncementsTab;
+
   /// No description provided for @announcementsSubtitle.
   ///
   /// In en, this message translates to:

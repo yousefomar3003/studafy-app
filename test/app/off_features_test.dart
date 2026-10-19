@@ -124,7 +124,7 @@ void main() {
         expect(find.byType(StudafyNavDestination), findsNWidgets(4));
         expect(navLabel(l10n.studyAssistantTab), findsNothing);
         expect(navLabel(l10n.navMessages), findsNothing);
-        expect(navLabel(l10n.navAnnouncements), findsOneWidget);
+        expect(navLabel(l10n.navAnnouncementsTab), findsOneWidget);
 
         await tester.tap(find.byType(StudafyNavDestination).at(1));
         await tester.pumpAndSettle();
@@ -273,7 +273,7 @@ void main() {
               messaging ? findsOneWidget : findsNothing,
             );
             expect(
-              navLabel(l10n.navAnnouncements),
+              navLabel(l10n.navAnnouncementsTab),
               messaging ? findsNothing : findsOneWidget,
             );
             await tester.tap(find.byType(StudafyNavDestination).at(4));
@@ -343,7 +343,7 @@ void main() {
             find.byType(StudafyNavDestination),
             findsNWidgets(messaging ? 4 : 3),
           );
-          expect(navLabel(l10n.navAnnouncements), findsOneWidget);
+          expect(navLabel(l10n.navAnnouncementsTab), findsOneWidget);
           expect(
             navLabel(l10n.navMessages),
             messaging ? findsOneWidget : findsNothing,
