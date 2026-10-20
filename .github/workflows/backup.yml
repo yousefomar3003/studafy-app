@@ -41,7 +41,10 @@ jobs:
       # Same image as the hosted database's major version: the restore check
       # needs Supabase's roles and schemas, which plain Postgres lacks.
       restore:
-        image: public.ecr.aws/supabase/postgres:17.6.1.166
+        # Pulled from Docker Hub: Amazon ECR Public's anonymous pull limit
+        # ("toomanyrequests: Data limit exceeded") failed the nightly run
+        # repeatedly on GitHub's shared runners. Same image and tag.
+        image: supabase/postgres:17.6.1.166
         env:
           POSTGRES_PASSWORD: restore-check-only
         ports:
