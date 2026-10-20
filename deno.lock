@@ -7,7 +7,7 @@
     "npm:bullmq@6.3.4": "6.3.4_ioredis@6.0.0",
     "npm:google-auth-library@^11.1.0": "11.1.0",
     "npm:googleapis@181": "181.0.0",
-    "npm:hono@4.13.7": "4.13.7",
+    "npm:hono@4.13.11": "4.13.11",
     "npm:ioredis@6.0.0": "6.0.0",
     "npm:postgres@3.4.9": "3.4.9",
     "npm:supabase@2.117.0": "2.117.0",
@@ -766,8 +766,8 @@
         "function-bind"
       ]
     },
-    "hono@4.13.7": {
-      "integrity": "sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ=="
+    "hono@4.13.11": {
+      "integrity": "sha512-/SMX/RQNJn7oNmFwH6DtwDqcrzZU2otm1FD6OJe2cWF6cfy/F8hq0XVBv7xW3FTJshRQwuBnXHDq2kNsdZnshg=="
     },
     "https-proxy-agent@7.0.6": {
       "integrity": "sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==",
@@ -1114,7 +1114,7 @@
       "apps/api": {
         "packageJson": {
           "dependencies": [
-            "npm:hono@4.13.7",
+            "npm:hono@4.13.11",
             "npm:zod@4.6.1"
           ]
         }
