@@ -10,6 +10,7 @@
  */
 import { google } from "googleapis";
 import { GoogleAuth, OAuth2Client } from "google-auth-library";
+import { STORE_API_TIMEOUT_MS, withDeadline } from "./deadline";
 
 export class GoogleVerificationError extends Error {
   constructor(message: string) {
@@ -58,6 +59,8 @@ export interface GoogleVerifierConfig {
   pubsubAudience: string;
   /** The service account whose OIDC token Pub/Sub push must present. */
   pubsubServiceAccountEmail: string;
+  /** Time limit per call, token fetch included (STORE_API_TIMEOUT_MS). */
+  timeoutMs?: number;
 }
 
 export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
@@ -65,6 +68,7 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
   readonly #oauth2 = new OAuth2Client();
   readonly #pubsubAudience: string;
   readonly #pubsubServiceAccountEmail: string;
+  readonly #timeoutMs: number;
 
   constructor(config: GoogleVerifierConfig) {
     let credentials: Record<string, unknown>;
@@ -81,6 +85,17 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
     });
     this.#pubsubAudience = config.pubsubAudience;
     this.#pubsubServiceAccountEmail = config.pubsubServiceAccountEmail;
+    this.#timeoutMs = config.timeoutMs ?? STORE_API_TIMEOUT_MS;
+  }
+
+  /** The Play Developer API client; each request is time-limited too. */
+  async #publisher() {
+    const client = await this.#auth.getClient();
+    return google.androidpublisher({
+      version: "v3",
+      auth: client as never,
+      timeout: this.#timeoutMs,
+    });
   }
 
   async verifySubscription(
@@ -88,15 +103,16 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
     purchaseToken: string,
   ): Promise<VerifiedGooglePurchase> {
     try {
-      const client = await this.#auth.getClient();
-      const androidpublisher = google.androidpublisher({
-        version: "v3",
-        auth: client as never,
-      });
-      const response = await androidpublisher.purchases.subscriptionsv2.get({
-        packageName,
-        token: purchaseToken,
-      });
+      const response = await withDeadline(
+        this.#publisher().then((androidpublisher) =>
+          androidpublisher.purchases.subscriptionsv2.get({
+            packageName,
+            token: purchaseToken,
+          })
+        ),
+        this.#timeoutMs,
+        "google subscription lookup",
+      );
       const data = response.data;
       const lineItem = data.lineItems?.[0];
       if (!data.subscriptionState || !lineItem?.productId) {
@@ -132,15 +148,16 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
     purchaseToken: string,
   ): Promise<void> {
     try {
-      const client = await this.#auth.getClient();
-      const androidpublisher = google.androidpublisher({
-        version: "v3",
-        auth: client as never,
-      });
-      await androidpublisher.purchases.subscriptions.acknowledge({
-        packageName,
-        token: purchaseToken,
-      });
+      await withDeadline(
+        this.#publisher().then((androidpublisher) =>
+          androidpublisher.purchases.subscriptions.acknowledge({
+            packageName,
+            token: purchaseToken,
+          })
+        ),
+        this.#timeoutMs,
+        "google acknowledge",
+      );
     } catch (error) {
       throw new GoogleVerificationError(
         error instanceof Error ? error.message : "acknowledge failed",
@@ -154,10 +171,14 @@ export class RealGooglePurchaseVerifier implements GooglePurchaseVerifier {
     if (!authorizationHeader?.startsWith("Bearer ")) return false;
     const idToken = authorizationHeader.slice("Bearer ".length);
     try {
-      const ticket = await this.#oauth2.verifyIdToken({
-        idToken,
-        audience: this.#pubsubAudience,
-      });
+      const ticket = await withDeadline(
+        this.#oauth2.verifyIdToken({
+          idToken,
+          audience: this.#pubsubAudience,
+        }),
+        this.#timeoutMs,
+        "google pubsub token check",
+      );
       const payload = ticket.getPayload();
       return payload?.email === this.#pubsubServiceAccountEmail &&
         payload?.email_verified === true;

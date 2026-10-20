@@ -1,5 +1,6 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
+import { errorFields } from "../platform/jobGuards";
 
 export interface AccountDeletionRuntime {
   close(): Promise<void>;
@@ -44,7 +45,7 @@ export function startAccountDeletionExecutor(
         // The transaction rolled back; the claim retries after its lease.
         logger.error("account_deletion_failed", {
           request_id: id,
-          error_name: error instanceof Error ? error.name : "unknown",
+          ...errorFields(error),
         });
       }
     }
@@ -55,7 +56,7 @@ export function startAccountDeletionExecutor(
     if (running) return;
     running = runOnce().catch((error) => {
       logger.error("account_deletion_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

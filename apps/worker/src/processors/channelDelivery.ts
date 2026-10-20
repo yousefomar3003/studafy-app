@@ -6,6 +6,7 @@ import {
   type PushSender,
 } from "@studafy/infrastructure";
 import { channelCopy } from "./notificationCopy";
+import { errorFields } from "../platform/jobGuards";
 
 interface ChannelJob {
   deliveryId: number;
@@ -163,7 +164,7 @@ export function startChannelDelivery(
     if (running) return;
     running = runOnce().catch((error) => {
       logger.error("channel_delivery_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

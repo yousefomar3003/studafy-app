@@ -1,6 +1,7 @@
 import type { Sql } from "@studafy/database";
 import { type AlertSender, AlertSendError } from "@studafy/infrastructure";
 import type { Logger } from "@studafy/observability";
+import { errorFields } from "../platform/jobGuards";
 
 /**
  * DPIA D7: tells the reviewers' Telegram chat that a safety report was
@@ -123,7 +124,7 @@ export function startReportAlerts(options: {
     if (running || closed) return;
     running = runOnce().catch((error) => {
       logger.error("report_alert_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

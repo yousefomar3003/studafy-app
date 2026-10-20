@@ -4,6 +4,7 @@ import {
   type ConferenceProvider,
   ConferenceProviderError,
 } from "@studafy/infrastructure";
+import { errorFields } from "../platform/jobGuards";
 
 interface MeetingJob {
   meetingId: string;
@@ -104,7 +105,7 @@ export function startMeetingProcessor(
   const tick = () => {
     void runOnce().catch((error) => {
       logger.error("meeting_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
     });
   };

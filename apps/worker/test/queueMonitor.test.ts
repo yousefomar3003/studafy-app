@@ -276,6 +276,91 @@ describe("shared alert state", () => {
   });
 });
 
+describe("a source that never answers (worker stall, 2026-10-20)", () => {
+  test("the sample times out and the tick fails loudly instead of waiting", async () => {
+    const collector = new LogCollector();
+    const monitor = startQueueMonitor({
+      // A database pool with every connection stuck: never settles.
+      sample: () => new Promise(() => undefined),
+      thresholds,
+      cooldownSeconds: 1800,
+      state: memoryAlertState(),
+      sender: new FakeSender(),
+      logger: createJsonLogger("worker", "test", "debug", collector.sink),
+      environment: "test",
+      intervalMs: 3_600_000,
+      sampleTimeoutMs: 20,
+    });
+    await expect(monitor.runOnce()).rejects.toMatchObject({
+      name: "SampleTimeoutError",
+      code: "SAMPLE_TIMEOUT",
+    });
+    await monitor.close();
+  });
+
+  test("ticks that find a run still in flight say so", async () => {
+    const collector = new LogCollector();
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => release = resolve);
+    const sender = new FakeSender();
+    sender.send = async (text: string) => {
+      await held;
+      sender.sent.push(text);
+    };
+    const monitor = startQueueMonitor({
+      sample: () =>
+        Promise.resolve({
+          queues: [],
+          backlogs: [{
+            name: "file scan",
+            pending: 900,
+            oldestSeconds: 0,
+            deadLetters: 0,
+          }],
+        }),
+      thresholds,
+      cooldownSeconds: 1800,
+      state: memoryAlertState(),
+      sender,
+      logger: createJsonLogger("worker", "test", "debug", collector.sink),
+      environment: "test",
+      intervalMs: 10,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    release();
+    await monitor.close();
+    expect(collector.events()).toContain("queue_monitor_stalled");
+    expect(sender.sent).toHaveLength(1);
+  });
+
+  test("a failed tick logs the error code", async () => {
+    const collector = new LogCollector();
+    const monitor = startQueueMonitor({
+      sample: () =>
+        Promise.reject(
+          Object.assign(new Error("db"), {
+            name: "PostgresError",
+            code: "57014",
+          }),
+        ),
+      thresholds,
+      cooldownSeconds: 1800,
+      state: memoryAlertState(),
+      sender: new FakeSender(),
+      logger: createJsonLogger("worker", "test", "debug", collector.sink),
+      environment: "test",
+      intervalMs: 10,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await monitor.close();
+    expect(collector.parsed()[0]).toMatchObject({
+      event: "queue_monitor_failed",
+      error_name: "PostgresError",
+      error_code: "57014",
+    });
+  });
+});
+
 describe("the test alert", () => {
   test("says it is a test and that nothing is wrong", () => {
     expect(testAlertText("production", new Date("2026-10-12T09:00:00Z"))).toBe(

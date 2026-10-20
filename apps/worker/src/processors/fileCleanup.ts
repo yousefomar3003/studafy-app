@@ -1,6 +1,7 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
 import type { PrivateFileStorage } from "@studafy/infrastructure";
+import { errorFields } from "../platform/jobGuards";
 
 interface CleanupJob {
   jobId: number;
@@ -56,7 +57,7 @@ export function startFileCleanup(
     if (running) return;
     running = runOnce().catch((error) => {
       logger.error("file_cleanup_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

@@ -1,5 +1,6 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
+import { errorFields } from "../platform/jobGuards";
 
 export interface DataExportRuntime {
   close(): Promise<void>;
@@ -39,7 +40,7 @@ export function startDataExportExecutor(
       } catch (error) {
         logger.error("data_export_failed", {
           request_id: id,
-          error_name: error instanceof Error ? error.name : "unknown",
+          ...errorFields(error),
         });
       }
     }
@@ -56,7 +57,7 @@ export function startDataExportExecutor(
     if (running) return;
     running = runOnce().catch((error) => {
       logger.error("data_export_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

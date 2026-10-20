@@ -1,5 +1,6 @@
 import type { Logger } from "@studafy/observability";
 import type { AlertSender } from "@studafy/infrastructure";
+import { errorFields } from "../platform/jobGuards";
 
 /**
  * Launch plan 4.7: alerts on background work, sent to Telegram.
@@ -270,7 +271,21 @@ export interface QueueMonitorOptions {
   logger: Logger;
   environment: string;
   intervalMs: number;
+  /**
+   * How long one sample may take before the tick fails with
+   * `queue_monitor_failed` (error_code SAMPLE_TIMEOUT) instead of waiting
+   * on a stuck source. Default: the interval, at most 30 s.
+   */
+  sampleTimeoutMs?: number;
   now?: () => number;
+}
+
+export class SampleTimeoutError extends Error {
+  readonly code = "SAMPLE_TIMEOUT";
+  constructor(ms: number) {
+    super(`queue monitor sample took longer than ${ms} ms`);
+    this.name = "SampleTimeoutError";
+  }
 }
 
 export interface QueueMonitorRuntime {
@@ -286,7 +301,31 @@ export function startQueueMonitor(
   const fallback = memoryAlertState(now);
   const history: MonitorSnapshot[] = [];
   let running: Promise<Finding[]> | null = null;
+  let runningSince = 0;
   let closed = false;
+  const sampleTimeoutMs = options.sampleTimeoutMs ??
+    Math.min(options.intervalMs, 30_000);
+
+  // Worker stall, 2026-10-20: a source that never answers (a database pool
+  // with every connection stuck) must fail the tick, not hold it - the tick
+  // line is the heartbeat Axiom counts, and a held tick also skips every
+  // later one in silence.
+  const sampleWithin = async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        options.sample(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new SampleTimeoutError(sampleTimeoutMs)),
+            sampleTimeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  };
 
   const withState = async <T>(
     use: (state: AlertState) => Promise<T>,
@@ -295,7 +334,7 @@ export function startQueueMonitor(
       return await use(options.state);
     } catch (error) {
       options.logger.warn("queue_alert_state_unavailable", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return use(fallback);
     }
@@ -315,7 +354,7 @@ export function startQueueMonitor(
   };
 
   const runOnce = async (): Promise<Finding[]> => {
-    const snapshot = { at: now(), ...(await options.sample()) };
+    const snapshot = { at: now(), ...(await sampleWithin()) };
     history.push(snapshot);
     const keep = snapshot.at - options.thresholds.windowSeconds * 1000;
     while (history.length > 1 && (history[0]?.at ?? keep) < keep) {
@@ -363,10 +402,19 @@ export function startQueueMonitor(
   };
 
   const tick = () => {
-    if (running || closed) return;
+    if (closed) return;
+    if (running) {
+      // Still sending alerts from an earlier tick (each send has its own
+      // time limit): say so rather than skip quietly.
+      options.logger.error("queue_monitor_stalled", {
+        in_flight_seconds: Math.round((now() - runningSince) / 1000),
+      });
+      return;
+    }
+    runningSince = now();
     running = runOnce().catch((error) => {
       options.logger.error("queue_monitor_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return [];
     }).finally(() => running = null);
