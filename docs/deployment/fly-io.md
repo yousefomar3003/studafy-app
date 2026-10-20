@@ -281,8 +281,75 @@ once.
 fly scale count 4 --config fly.api.toml   # up to 4; idle ones stay stopped
 ```
 
-`DATABASE_POOL_MAX` (10) × API machines, plus the worker's 10, must stay
-under the Supabase plan's connection limit.
+(Not before the connection budget below allows it.)
+
+With the session pooler, API machines × `DATABASE_POOL_MAX` must fit the
+API role's Pool Size: see "Database connection budget" below before scaling
+past one machine.
+
+### Database connection budget (session pooler, 2026-10-20)
+
+The API and worker connect through Supabase's **session pooler**
+(`DATABASE_POOLER_MODE = "session"` in all four `fly*.toml` files). The
+`DATABASE_URL` secrets still name the transaction pooler (port 6543), and
+cannot be read back to rewrite; the client moves a `*.pooler.supabase.com`
+URL to port 5432 on the same host with the same login, and logs it at
+start-up (`database_connection: {pooler_mode, port, ...}`, and
+`database_url` with the effective port; never the credentials). Production
+refuses to start on 6543 without session mode; session mode refuses a 6543
+URL on any other host rather than leave it on a transaction pooler. A URL
+not on 6543 (direct `db.<ref>.supabase.co`, the local stack) is used as is.
+
+Why: postgres.js pipelines statements when every pooled connection is busy,
+and through the transaction pooler a pipelined statement can be stranded
+half-sent. The server session waits in `active`/`ClientRead` inside an open
+transaction for ever, and the client connection is lost; after
+`DATABASE_POOL_MAX` such losses every query hangs. That was the test
+worker's 80-minute stall. On a throwaway Supavisor stack, 40 concurrent
+statements on a 2-connection pool left 10 to 36 of the 40 hung in
+transaction mode (12 rounds), each round stranding the pool's server
+sessions in `active`/`ClientRead`; in session mode none of 1,241 statements
+and 100 transactions hung, in four runs (`scripts/check-pooler-modes.ts`).
+
+**How the session pooler counts.** Supavisor keeps one pool per user +
+database + mode, each up to the project's **Pool Size** (Dashboard → Database settings → Connection
+pooling; 15 by default on the small computes: check the value there). The API (`studafy_api_runtime`) and the worker
+(`studafy_worker_runtime`) are separate pools. In session mode every client
+connection holds one server connection for as long as it is open, so a
+role's clients may not exceed Pool Size: the next one is refused with
+`EMAXCONNSESSION` (on the local Supavisor 2.9.12, 24 clients against a pool
+of 20: 20 ran, 4 were refused at once; Supabase documents that hosted
+session mode may queue a client for up to a minute first). postgres.js opens
+connections only as load needs them, up to `DATABASE_POOL_MAX`, and closes
+them after 30 seconds idle.
+
+So, per role: **machines × `DATABASE_POOL_MAX` ≤ Pool Size**. Every role's
+pool also takes real Postgres connections, which share the compute's
+`max_connections` (60 on Nano/Micro) with Supabase's own services (Auth,
+Storage, PostgREST, Realtime) and any transaction-mode pool still open.
+
+| | API (`studafy_api_runtime`) | Worker (`studafy_worker_runtime`) |
+|---|---|---|
+| Test copy now | 1 machine × 10 = 10 | 1 × 5 = 5 |
+| Production at cutover | 1 machine × 10 = 10 | 1 × 10 = 10 |
+| Production at `fly scale count 4` | 4 × 10 = **40**: over 15 | 1 × 10 = 10 |
+
+The test copy and production log in as the same two roles on the same
+project (DL-064), so they share these pools. The cutover stops the test
+apps before production's worker and API start (step 5), so the two never
+add up; do not start the test copy again while production runs, except in
+the rollback, which stops production first.
+
+Before the API runs more than one machine, do one of:
+
+- raise Pool Size (one setting for every pool) so that API machines × 10
+  fit, keeping the sum of all pools well under `max_connections`; on Nano
+  (60) that means about 20 (2 API machines); or
+- lower the API's `DATABASE_POOL_MAX` in `fly.api.toml` (for example 5 × 4
+  machines = 20) with Pool Size 20.
+
+A Fly rolling deploy replaces each machine in place, and the old process
+closes its pool on shutdown, so a deploy does not double a role's count.
 
 **Domain.** `fly certs add api.studafy.com --config fly.api.toml`, then point
 the DNS record at Fly as it instructs. If the record is proxied through

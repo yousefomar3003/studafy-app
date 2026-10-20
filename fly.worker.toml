@@ -18,6 +18,13 @@ primary_region = "fra"
   LOG_SAMPLE_SUCCESS_RATE = "0.1"
   LOG_SAMPLE_ROUTINE_RATE = "0.01"
   DATABASE_POOL_MAX = "10"
+  # Supabase's session pooler: the 6543 (transaction pooler) DATABASE_URL
+  # secret is moved to port 5432 on the same host, same login. Through the
+  # transaction pooler, pipelined statements were stranded and the worker
+  # stalled (2026-10-20); production refuses 6543 without this. In session
+  # mode every pooled connection holds one of the role's Pool Size slots
+  # (docs/deployment/fly-io.md, "Database connection budget").
+  DATABASE_POOLER_MODE = "session"
   # In-app notifications: without this every notification stays queued and
   # no inbox shows one (the 2026-10-02 incident on hosted).
   OPS061_NOTIFICATIONS_ENABLED = "true"

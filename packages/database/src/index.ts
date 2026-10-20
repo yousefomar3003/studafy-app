@@ -1,7 +1,12 @@
-import postgres, { type Sql } from "postgres";
+import postgres, { type Options, type Sql } from "postgres";
+import {
+  type DatabasePoolerMode,
+  resolveDatabaseConnection,
+} from "@studafy/config";
 
 export type { Sql };
 export type { Database } from "./database.types.generated.ts";
+export type { DatabasePoolerMode };
 
 export interface DatabaseOptions {
   /** Maximum pooled connections. */
@@ -16,6 +21,13 @@ export interface DatabaseOptions {
    * it a remote connection is still encrypted, but not authenticated.
    */
   caCert?: string;
+  /**
+   * DATABASE_POOLER_MODE. `session` moves a Supabase transaction-pooler URL
+   * (`*.pooler.supabase.com:6543`) to the session pooler on port 5432 of
+   * the same host, same credentials (packages/config, databasePooler.ts).
+   * Default `transaction`: the URL as written.
+   */
+  poolerMode?: DatabasePoolerMode;
 }
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -51,7 +63,9 @@ export function databaseTls(
  * Whether [url] goes through Supabase's transaction pooler (port 6543).
  * There a connection is shared between transactions, so a statement
  * prepared on one may be gone on the next: named prepared statements must
- * be off. Session mode (5432) and direct connections keep them.
+ * be off. Session mode (5432) and direct connections keep them. Pass the
+ * effective URL (`databaseClientConfig`), not DATABASE_URL as written: in
+ * session mode a 6543 URL is moved to 5432.
  */
 export function usesTransactionPooler(url: string): boolean {
   try {
@@ -62,42 +76,79 @@ export function usesTransactionPooler(url: string): boolean {
 }
 
 /**
- * Client settings for the transaction pooler.
+ * Client settings for the transaction pooler, for anything still on 6543
+ * (DATABASE_POOLER_MODE=transaction).
  *
  * - `prepare: false`: see `usesTransactionPooler`.
  *
- * Not `max_pipeline: 0` (#127, reverted): postgres.js then never reserves a
- * connection for `sql.begin`, and every transaction fails with
- * UNSAFE_TRANSACTION. The test copy lost every write that runs in a
- * transaction (class join links among them) for about an hour. Pipelining
- * through the transaction pooler can still strand a statement (the worker
- * stall of 2026-10-20); the pollers' guards now report that as
- * `poll_stalled` instead of going silent.
+ * Not `max_pipeline: 0` (#127, reverted in #128): postgres.js then never
+ * reserves a connection for `sql.begin`, and every transaction fails with
+ * UNSAFE_TRANSACTION. Pipelining through the transaction pooler can still
+ * strand a statement (the worker stall of 2026-10-20), which is why the
+ * deployed apps run in session mode, where postgres.js keeps its defaults.
+ * The worker's pollers still report a stuck run as `poll_stalled`.
  */
 const TRANSACTION_POOLER_OPTIONS = {
   prepare: false,
 } as const;
 
+/** What `createDatabase` hands postgres.js: the effective URL and options. */
+export interface DatabaseClientConfig {
+  /** Carries credentials: never log it. */
+  url: string;
+  options: Options<Record<string, never>>;
+  /** Log-safe: the mode, the effective port, whether it was rewritten. */
+  target: {
+    poolerMode: DatabasePoolerMode;
+    port: number;
+    rewritten: boolean;
+    transactionPooler: boolean;
+  };
+}
+
 /**
- * Creates a Postgres client for read-only connectivity smoke. No domain data
- * access exists yet; Phase 2+ adds query modules behind repositories.
+ * The connection `createDatabase` makes for [url], without opening it.
+ * Throws for `session` with a 6543 URL that is not a Supabase pooler host;
+ * config validation refuses that combination first.
  */
-export function createDatabase(
+export function databaseClientConfig(
   url: string,
   options: DatabaseOptions = {},
-): Sql {
+): DatabaseClientConfig {
+  const target = resolveDatabaseConnection(
+    url,
+    options.poolerMode ?? "transaction",
+  );
   // postgres.js takes both timeouts in seconds. They were previously
   // multiplied by 1000, which made the idle timeout roughly eight hours and
   // the connect timeout roughly 83 minutes: pooled connections were never
   // recycled and an unreachable host hung instead of failing fast.
-  const ssl = databaseTls(url, options.caCert);
-  return postgres(url, {
-    ...(ssl === undefined ? {} : { ssl }),
-    max: options.max ?? 5,
-    idle_timeout: options.idleTimeout ?? 30,
-    connect_timeout: options.connectTimeout ?? 5,
-    ...(usesTransactionPooler(url) ? TRANSACTION_POOLER_OPTIONS : {}),
-  });
+  const ssl = databaseTls(target.url, options.caCert);
+  return {
+    url: target.url,
+    options: {
+      ...(ssl === undefined ? {} : { ssl }),
+      max: options.max ?? 5,
+      idle_timeout: options.idleTimeout ?? 30,
+      connect_timeout: options.connectTimeout ?? 5,
+      ...(usesTransactionPooler(target.url) ? TRANSACTION_POOLER_OPTIONS : {}),
+    },
+    target: {
+      poolerMode: target.mode,
+      port: target.port,
+      rewritten: target.rewritten,
+      transactionPooler: usesTransactionPooler(target.url),
+    },
+  };
+}
+
+/** Creates the Postgres client for [url] (`databaseClientConfig`). */
+export function createDatabase(
+  url: string,
+  options: DatabaseOptions = {},
+): Sql {
+  const config = databaseClientConfig(url, options);
+  return postgres(config.url, config.options);
 }
 
 /** Read-only health probe. Throws when the database is unreachable. */

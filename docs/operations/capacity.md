@@ -85,8 +85,11 @@ Other limits to keep in mind as you grow:
 
 - **Connections.** Each API process holds `DATABASE_POOL_MAX` connections
   (default 20; it was a fixed 5, which alone capped one instance near 275
-  requests per second). Keep (API instances x pool) + worker pool under the
-  plan's connection limit, and connect through Supabase's session pooler.
+  requests per second). The deployed apps connect through Supabase's
+  session pooler (`DATABASE_POOLER_MODE=session`), where each role's
+  clients are capped at the project's Pool Size: keep API instances x pool
+  within it, and every pool within the plan's connection limit
+  (`docs/deployment/fly-io.md`, "Database connection budget").
 - **API instances.** Each Bun process handles a few hundred requests per
   second. Run at least two for availability, and add more before the
   database is the limit.

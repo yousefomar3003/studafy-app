@@ -164,7 +164,18 @@ them (all in one transaction, `supabase/cutover/clean-test-data.sql`):
    `redis_plaintext_remote` or a configuration refusal.
 8. `deploy-api`: `fly deploy --config fly.api.toml`, then waits for
    `https://studafy-api.fly.dev/readyz` to return 200. Optionally
-   `fly scale count 4 --config fly.api.toml` (`fly-io.md`, "Scaling").
+   `fly scale count 4 --config fly.api.toml` (`fly-io.md`, "Scaling"), but
+   only once the session pooler's Pool Size fits it: 4 machines × 10 is 40
+   `studafy_api_runtime` connections (`fly-io.md`, "Database connection
+   budget").
+
+Both apps run through Supabase's session pooler (`DATABASE_POOLER_MODE =
+"session"` in their Fly configs): the `API__DATABASE_URL` and
+`WORKER__DATABASE_URL` pooler URLs may be on 6543 or 5432, and are moved to
+5432. The preflight runs the production start-up checks, which refuse a
+6543 URL on any host but `*.pooler.supabase.com`. Before the day, check the
+project's Pool Size (Dashboard → Database settings → Connection pooling):
+at least 10 for each role at one machine per app.
 
 **9. Prove the scanner** (launch plan 4.4): an EICAR test file is refused and
 a clean PDF passes, uploaded through production.
