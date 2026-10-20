@@ -62,26 +62,20 @@ export function usesTransactionPooler(url: string): boolean {
 }
 
 /**
- * Client settings for the transaction pooler (worker stall, 2026-10-20).
+ * Client settings for the transaction pooler.
  *
  * - `prepare: false`: see `usesTransactionPooler`.
- * - `max_pipeline: 0`: one statement in flight per connection. When every
- *   pooled connection is busy, postgres.js otherwise writes the next
- *   statements onto a busy connection without waiting (pipelining). The
- *   pooler hands its server connection back as soon as the first statement
- *   finishes, while the next one has already reached that server, half
- *   sent: a parameterised statement goes as Parse/Describe/Flush and waits
- *   for the reply before sending Bind/Execute/Sync. The reply never comes
- *   back, so the query never settles, the server session stays `active` on
- *   ClientRead, and the client connection is lost for good. The worker lost
- *   its five connections that way and every poller stopped (the test copy
- *   was silent for 80 minutes), and the same request against the test
- *   pooler hung 34 of 40 statements. With nothing pipelined, each pooler
- *   transaction is one whole statement.
+ *
+ * Not `max_pipeline: 0` (#127, reverted): postgres.js then never reserves a
+ * connection for `sql.begin`, and every transaction fails with
+ * UNSAFE_TRANSACTION. The test copy lost every write that runs in a
+ * transaction (class join links among them) for about an hour. Pipelining
+ * through the transaction pooler can still strand a statement (the worker
+ * stall of 2026-10-20); the pollers' guards now report that as
+ * `poll_stalled` instead of going silent.
  */
 const TRANSACTION_POOLER_OPTIONS = {
   prepare: false,
-  max_pipeline: 0,
 } as const;
 
 /**
