@@ -15,7 +15,7 @@
     "@studafy/domain": "workspace:*",
     "@studafy/infrastructure": "workspace:*",
     "@studafy/observability": "workspace:*",
-    "hono": "4.13.7",
+    "hono": "4.13.11",
     "zod": "4.6.1"
   },
   "devDependencies": {
