@@ -142,14 +142,18 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
 
   if (deps.challengePage) app.route("/", deps.challengePage);
 
+  // PAY-071 store webhooks mount before the authenticated routes: those
+  // carry a "*" authentication middleware, so mounted after it a store's
+  // notification (signed by Apple, or a Pub/Sub OIDC token from Google, never
+  // a user's session) was refused with 401 before reaching its own check.
+  if (deps.webhooks) {
+    app.route("/", deps.webhooks);
+  }
+
   // AUTH-030 routes mount ahead of the catch-all so migrated paths are
   // served and everything else still fails closed below.
   if (deps.auth) {
     app.route("/", deps.auth as unknown as Hono<AppEnv>);
-  }
-
-  if (deps.webhooks) {
-    app.route("/", deps.webhooks);
   }
 
   // The remaining versioned surface is intentionally empty until slices

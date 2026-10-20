@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { Hono } from "hono";
 import { type AppDependencies, createApp } from "../src/bootstrap/app";
 import { ErrorCode } from "@studafy/contracts";
 import type { LogLevel } from "@studafy/contracts";
@@ -189,5 +190,35 @@ describe("error handling and request correlation", () => {
     expect(body.requestId).toBe(
       errorResponse.headers.get("X-Request-ID") ?? "",
     );
+  });
+});
+
+describe("store webhooks", () => {
+  test("a store notification is not refused by user authentication", async () => {
+    const { deps } = buildDependencies();
+    // Stands in for the AUTH-030 router: a "*" middleware that refuses any
+    // request without a user session.
+    const auth = new Hono();
+    auth.use("*", async (c) => c.json({ code: "UNAUTHENTICATED" }, 401));
+    const webhooks = new Hono();
+    webhooks.post("/webhooks/google", (c) => c.json({ received: true }, 200));
+    webhooks.post("/webhooks/apple", (c) => c.json({ received: true }, 200));
+    const app = createApp({
+      ...deps,
+      auth: auth as unknown as AppDependencies["auth"],
+      webhooks: webhooks as unknown as AppDependencies["webhooks"],
+    });
+
+    for (const path of ["/webhooks/google", "/webhooks/apple"]) {
+      const response = await app.request(path, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      expect(response.status).toBe(200);
+    }
+    // Everything else still goes through authentication.
+    const me = await app.request("/v1/me");
+    expect(me.status).toBe(401);
   });
 });
