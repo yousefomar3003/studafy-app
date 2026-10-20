@@ -32,7 +32,16 @@ primary_region = "fra"
   # RESEND_API_KEY + EMAIL_FROM_ADDRESS for email); without them nothing is
   # fanned out.
   NOTIFICATION_CHANNELS_ENABLED = "true"
-  PAY071_BILLING_ENABLED = "false"
+  # Google Play billing in test (work plan 3.9): license testers buy on the
+  # internal-testing build. The store's public settings are here; the Play
+  # API key (GOOGLE_SERVICE_ACCOUNT_JSON) is a secret. Pub/Sub pushes to
+  # /webhooks/google, signed by the push account below for this audience.
+  PAY071_BILLING_ENABLED = "true"
+  PAY071_ENVIRONMENT = "development"
+  GOOGLE_PACKAGE_NAME = "com.studafy.light"
+  GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL = "studafy-pubsub-push@studafy-lite.iam.gserviceaccount.com"
+  GOOGLE_PUBSUB_AUDIENCE = "https://studafy-api-test.fly.dev/webhooks/google"
+  PAY071_RECONCILIATION_ENABLED = "true"
   # ADR-0037: lesson files and links read for the study helper. The model
   # key (AI_API_KEY) is a secret; the origin and model are not.
   AI_MATERIAL_INDEX_ENABLED = "true"

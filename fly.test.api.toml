@@ -35,7 +35,15 @@ primary_region = "fra"
   AI_LESSON_TOOLS_ENABLED = "true"
   # Messaging on, as in production (DL-063).
   MESSAGING_ENABLED = "true"
-  PAY071_BILLING_ENABLED = "false"
+  # Google Play billing in test (work plan 3.9): license testers buy on the
+  # internal-testing build. The store's public settings are here; the Play
+  # API key (GOOGLE_SERVICE_ACCOUNT_JSON) is a secret. Pub/Sub pushes to
+  # /webhooks/google, signed by the push account below for this audience.
+  PAY071_BILLING_ENABLED = "true"
+  PAY071_ENVIRONMENT = "development"
+  GOOGLE_PACKAGE_NAME = "com.studafy.light"
+  GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL = "studafy-pubsub-push@studafy-lite.iam.gserviceaccount.com"
+  GOOGLE_PUBSUB_AUDIENCE = "https://studafy-api-test.fly.dev/webhooks/google"
 
 [http_service]
   internal_port = 8080
