@@ -6,6 +6,12 @@ import {
   LogLevel as LogLevelSchema,
 } from "@studafy/contracts";
 import { pubSubAudienceMatchesPushPath } from "./storeWebhooks";
+import {
+  DATABASE_POOLER_MODES,
+  databasePoolerProblem,
+  describeDatabaseConnection,
+  resolveDatabaseConnection,
+} from "./databasePooler";
 
 export { Environment };
 export type { EnvironmentType, LogLevel };
@@ -15,6 +21,18 @@ export {
   PLAY_BILLING_PUSH_PATH,
   pubSubAudienceMatchesPushPath,
 } from "./storeWebhooks";
+export {
+  DATABASE_POOLER_MODES,
+  type DatabaseConnectionTarget,
+  type DatabasePoolerMode,
+  DatabasePoolerModeError,
+  databasePoolerProblem,
+  describeDatabaseConnection,
+  isSupabasePoolerHost,
+  resolveDatabaseConnection,
+  SESSION_POOLER_PORT,
+  TRANSACTION_POOLER_PORT,
+} from "./databasePooler";
 
 const url = z.string().min(1).refine((value) => {
   try {
@@ -62,6 +80,38 @@ const enabledSwitchFlag = z.enum(["true", "false"]).default("true")
 const databaseTlsFields = {
   DATABASE_CA_CERT: z.string().min(1).optional(),
 };
+
+/**
+ * Supabase pooler mode (./databasePooler.ts). `session` moves a Supabase
+ * transaction-pooler URL (6543) to the session pooler (5432) on the same
+ * host, with the same credentials: the deployed apps set it, because
+ * pipelined statements can be stranded in transaction mode (the worker
+ * stall of 2026-10-20). `transaction` connects to DATABASE_URL as written.
+ */
+const databasePoolerFields = {
+  DATABASE_POOLER_MODE: z.enum(DATABASE_POOLER_MODES).default("transaction"),
+};
+
+function checkDatabasePooler(
+  value: {
+    DATABASE_URL?: string | undefined;
+    DATABASE_POOLER_MODE: (typeof DATABASE_POOLER_MODES)[number];
+  },
+  context: z.RefinementCtx,
+): void {
+  if (!value.DATABASE_URL) return;
+  const problem = databasePoolerProblem(
+    value.DATABASE_URL,
+    value.DATABASE_POOLER_MODE,
+  );
+  if (problem) {
+    context.addIssue({
+      code: "custom",
+      path: ["DATABASE_POOLER_MODE"],
+      message: problem,
+    });
+  }
+}
 
 export const apiEnvSchema = z.object({
   ENVIRONMENT: Environment,
@@ -266,7 +316,9 @@ export const apiEnvSchema = z.object({
   // and edge limits cannot be bypassed through *.fly.dev.
   ORIGIN_REQUIRE_CLOUDFLARE: disabledSwitchFlag,
   ...databaseTlsFields,
+  ...databasePoolerFields,
 }).superRefine((value, context) => {
+  checkDatabasePooler(value, context);
   if (!value.PAY071_BILLING_ENABLED) return;
   if (!value.PAY071_ENVIRONMENT) {
     context.addIssue({
@@ -284,6 +336,7 @@ export type ApiEnv = z.infer<typeof apiEnvSchema>;
 
 export const workerEnvSchema = z.object({
   ...databaseTlsFields,
+  ...databasePoolerFields,
   ENVIRONMENT: Environment,
   REDIS_URL: url,
   LOG_LEVEL: LogLevelSchema.default("info"),
@@ -440,6 +493,7 @@ export const workerEnvSchema = z.object({
     600_000,
   ).default(30_000),
 }).superRefine((value, context) => {
+  checkDatabasePooler(value, context);
   if (
     value.QUEUE_ALERTS_ENABLED &&
     (!value.TELEGRAM_BOT_TOKEN || !value.TELEGRAM_CHAT_ID)
@@ -765,6 +819,33 @@ function refuseUnverifiedDatabase(
   }
 }
 
+/**
+ * Production never runs through the transaction pooler: postgres.js
+ * pipelines statements when its pool is busy, and there a pipelined
+ * statement can be stranded half-sent, holding a server session in an open
+ * transaction forever (the worker stall of 2026-10-20). A Supabase pooler
+ * URL on 6543 is fine with DATABASE_POOLER_MODE=session, which moves it to
+ * the session pooler (5432).
+ */
+function refuseTransactionPooler(
+  url: string | undefined,
+  mode: (typeof DATABASE_POOLER_MODES)[number],
+): void {
+  if (!url) return;
+  let transactionPooler: boolean;
+  try {
+    transactionPooler = resolveDatabaseConnection(url, mode).transactionPooler;
+  } catch {
+    // databasePoolerProblem: already refused by the schema.
+    return;
+  }
+  if (transactionPooler) {
+    throw new ConfigError(
+      "Production DATABASE_URL must not run through the transaction pooler (port 6543): set DATABASE_POOLER_MODE=session.",
+    );
+  }
+}
+
 /** Supabase's own roles: owners, or able to bypass row-level security. */
 const PRIVILEGED_DATABASE_ROLES = new Set([
   "postgres",
@@ -837,6 +918,7 @@ export function enforceApiFailClosed(env: ApiEnv): void {
   refusePlaintextDatabase(env.DATABASE_URL);
   refusePrivilegedDatabaseRole(env.DATABASE_URL);
   refuseUnverifiedDatabase(env.DATABASE_URL, env.DATABASE_CA_CERT);
+  refuseTransactionPooler(env.DATABASE_URL, env.DATABASE_POOLER_MODE);
   if (env.CLIENT_IP_SOURCE === "forwarded") {
     // X-Forwarded-For is whatever the caller wrote: every IP limit would be
     // one header away from bypass.
@@ -898,6 +980,7 @@ export function enforceWorkerFailClosed(env: WorkerEnv): void {
   refusePlaintextDatabase(env.DATABASE_URL);
   refusePrivilegedDatabaseRole(env.DATABASE_URL);
   refuseUnverifiedDatabase(env.DATABASE_URL, env.DATABASE_CA_CERT);
+  refuseTransactionPooler(env.DATABASE_URL, env.DATABASE_POOLER_MODE);
   const posture = redisUrlPostureProblems(env.REDIS_URL);
   if (posture.length > 0) {
     throw new ConfigError(
@@ -930,6 +1013,25 @@ export function redactUrl(value: string): string {
   }
 }
 
+/**
+ * The redacted URL the client actually connects to: after
+ * DATABASE_POOLER_MODE, so the startup log shows the effective port.
+ */
+function describeDatabaseUrl(env: {
+  DATABASE_URL?: string | undefined;
+  DATABASE_POOLER_MODE: (typeof DATABASE_POOLER_MODES)[number];
+}): string | null {
+  if (!env.DATABASE_URL) return null;
+  try {
+    return redactUrl(
+      resolveDatabaseConnection(env.DATABASE_URL, env.DATABASE_POOLER_MODE)
+        .url,
+    );
+  } catch {
+    return redactUrl(env.DATABASE_URL);
+  }
+}
+
 /** Produces a log-safe snapshot of the API environment (values are public config only). */
 export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
   return {
@@ -948,7 +1050,11 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     database_ca_configured: Boolean(env.DATABASE_CA_CERT),
     max_body_bytes: env.API_MAX_BODY_BYTES,
     request_timeout_ms: env.API_REQUEST_TIMEOUT_MS,
-    database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
+    database_url: describeDatabaseUrl(env),
+    database_connection: describeDatabaseConnection(
+      env.DATABASE_URL,
+      env.DATABASE_POOLER_MODE,
+    ),
     database_pool_max: env.DATABASE_POOL_MAX,
     redis_url: env.REDIS_URL ? redactUrl(env.REDIS_URL) : null,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
@@ -1039,7 +1145,11 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
     },
     sentry_configured: Boolean(env.SENTRY_DSN),
     redis_url: redactUrl(env.REDIS_URL),
-    database_url: env.DATABASE_URL ? redactUrl(env.DATABASE_URL) : null,
+    database_url: describeDatabaseUrl(env),
+    database_connection: describeDatabaseConnection(
+      env.DATABASE_URL,
+      env.DATABASE_POOLER_MODE,
+    ),
     database_pool_max: env.DATABASE_POOL_MAX,
     supabase_url: env.SUPABASE_URL ? redactUrl(env.SUPABASE_URL) : null,
     file050_cleanup_enabled: env.FILE050_CLEANUP_ENABLED,

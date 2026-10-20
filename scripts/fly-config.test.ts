@@ -6,6 +6,7 @@ import {
   enforceApiFailClosed,
   enforceWorkerFailClosed,
   parseEnv,
+  resolveDatabaseConnection,
   workerEnvSchema,
 } from "../packages/config/src/index.ts";
 
@@ -295,6 +296,52 @@ describe("Fly configs pass production validation", () => {
         parseEnv(workerEnvSchema, { ...worker, ...secrets }),
       )
     ).not.toThrow();
+  });
+
+  test("the API and worker use Supabase's session pooler (worker stall 2026-10-20)", async () => {
+    // The hosted DATABASE_URL secrets point at the transaction pooler
+    // (6543) and cannot be read back; DATABASE_POOLER_MODE moves them to the
+    // session pooler (5432) on the same host with the same login.
+    const transactionPoolerUrl = secrets.DATABASE_URL.replace(
+      ":5432/",
+      ":6543/",
+    );
+    for (
+      const [file, schema, enforce] of [
+        ["fly.api.toml", apiEnvSchema, enforceApiFailClosed],
+        ["fly.test.api.toml", apiEnvSchema, enforceApiFailClosed],
+        ["fly.worker.toml", workerEnvSchema, enforceWorkerFailClosed],
+        ["fly.test.worker.toml", workerEnvSchema, enforceWorkerFailClosed],
+      ] as const
+    ) {
+      const fly = await flyEnv(file);
+      expect(fly.DATABASE_POOLER_MODE).toBe("session");
+      const env = parseEnv(schema as typeof workerEnvSchema, {
+        ...fly,
+        ...secrets,
+        DATABASE_URL: transactionPoolerUrl,
+      });
+      expect(() => (enforce as typeof enforceWorkerFailClosed)(env)).not
+        .toThrow();
+      const target = resolveDatabaseConnection(
+        env.DATABASE_URL!,
+        env.DATABASE_POOLER_MODE,
+      );
+      expect(target.port).toBe(5432);
+      expect(target.rewritten).toBe(true);
+    }
+  });
+
+  test("production refuses the transaction pooler without session mode", async () => {
+    const fly = await flyEnv("fly.worker.toml");
+    const { DATABASE_POOLER_MODE: _mode, ...withoutMode } = fly;
+    expect(() =>
+      enforceWorkerFailClosed(parseEnv(workerEnvSchema, {
+        ...withoutMode,
+        ...secrets,
+        DATABASE_URL: secrets.DATABASE_URL.replace(":5432/", ":6543/"),
+      }))
+    ).toThrow(/transaction pooler/);
   });
 
   test("no secret is written into a Fly config", async () => {

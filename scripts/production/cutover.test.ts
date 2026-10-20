@@ -333,6 +333,53 @@ describe("refusals", () => {
     expect(io.lines.join("\n")).toContain("--execute needs --secrets");
   });
 
+  test("transaction-pooler URLs (6543) pass, because the Fly configs move them to the session pooler", async () => {
+    const pooled = {
+      ...VALUES,
+      API__DATABASE_URL: VALUES.API__DATABASE_URL!.replace(":5432/", ":6543/"),
+      WORKER__DATABASE_URL: VALUES.WORKER__DATABASE_URL!.replace(
+        ":5432/",
+        ":6543/",
+      ),
+    };
+    const fly = await envs();
+    expect(fly.api["DATABASE_POOLER_MODE"]).toBe("session");
+    expect(fly.worker["DATABASE_POOLER_MODE"]).toBe("session");
+    expect(planSecrets(parseSecrets(fileText(pooled)), fly).problems).toEqual(
+      [],
+    );
+
+    // Without the mode, production refuses the transaction pooler (the
+    // worker stall of 2026-10-20).
+    const { DATABASE_POOLER_MODE: _api, ...apiEnv } = fly.api;
+    const { DATABASE_POOLER_MODE: _worker, ...workerEnv } = fly.worker;
+    const problems = planSecrets(parseSecrets(fileText(pooled)), {
+      ...fly,
+      api: apiEnv,
+      worker: workerEnv,
+    }).problems.join("\n");
+    expect(problems).toContain(
+      "studafy-api would refuse to start: Production DATABASE_URL must not run through the transaction pooler",
+    );
+    expect(problems).toContain("studafy-worker would refuse to start");
+    expectNoValue(problems);
+  });
+
+  test("a 6543 URL that is not the Supabase pooler is refused in session mode", async () => {
+    const problems = planSecrets(
+      parseSecrets(fileText({
+        ...VALUES,
+        WORKER__DATABASE_URL:
+          "postgresql://studafy_worker_runtime.synthref:workerPw-2b8d4e6f@db.synthref.supabase.co:6543/postgres",
+      })),
+      await envs(),
+    ).problems.join("\n");
+    expect(problems).toContain(
+      "studafy-worker would refuse to start: Environment configuration rejected: DATABASE_POOLER_MODE: session mode",
+    );
+    expectNoValue(problems);
+  });
+
   test("one shared DATABASE_URL, a wrong role, equal signing keys, a different scanner key", async () => {
     const plan = planSecrets(
       parseSecrets(fileText({

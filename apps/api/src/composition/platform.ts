@@ -79,6 +79,9 @@ export function buildPlatform() {
   const sql = env.DATABASE_URL
     ? createDatabase(env.DATABASE_URL, {
       max: env.DATABASE_POOL_MAX,
+      // Session mode moves a 6543 pooler URL to 5432 (packages/config,
+      // databasePooler.ts); the startup log's database_connection shows it.
+      poolerMode: env.DATABASE_POOLER_MODE,
       ...(env.DATABASE_CA_CERT ? { caCert: env.DATABASE_CA_CERT } : {}),
     })
     : undefined;

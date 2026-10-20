@@ -32,9 +32,16 @@ primary_region = "fra"
   LOG_SAMPLE_SUCCESS_RATE = "0.1"
   LOG_SAMPLE_ROUTINE_RATE = "0.01"
   LOG_SLOW_REQUEST_MS = "2000"
-  # Per machine. Machines x this, plus the worker's pool, must stay under the
-  # Supabase plan's connection limit.
+  # Per machine. Machines x this must fit the session pooler's Pool Size for
+  # studafy_api_runtime, and every pool the plan's connection limit.
   DATABASE_POOL_MAX = "10"
+  # Supabase's session pooler: the 6543 (transaction pooler) DATABASE_URL
+  # secret is moved to port 5432 on the same host, same login. Through the
+  # transaction pooler, pipelined statements were stranded and the worker
+  # stalled (2026-10-20); production refuses 6543 without this. In session
+  # mode every pooled connection holds one of the role's Pool Size slots
+  # (docs/deployment/fly-io.md, "Database connection budget").
+  DATABASE_POOLER_MODE = "session"
   # Behaviour switches the production app needs (secrets are separate).
   TURNSTILE_ENABLED = "true"
   TURNSTILE_HOSTNAMES = "api.studafy.com"

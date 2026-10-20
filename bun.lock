@@ -65,6 +65,7 @@
       "name": "@studafy/database",
       "version": "0.1.0",
       "dependencies": {
+        "@studafy/config": "workspace:*",
         "postgres": "3.4.9",
       },
     },

@@ -3,6 +3,7 @@ import {
   checkDatabase,
   closeDatabase,
   createDatabase,
+  databaseClientConfig,
   usesTransactionPooler,
 } from "../src";
 
@@ -52,5 +53,81 @@ describe("Supabase pooler modes", () => {
       await closeDatabase(pooled);
       await closeDatabase(session);
     }
+  });
+
+  test("session mode moves a Supabase 6543 URL to 5432 and keeps postgres.js defaults", async () => {
+    // Synthetic credentials. Creating a client opens no connection.
+    const url =
+      "postgresql://studafy_worker_runtime.synthetic:pw@aws-1-eu-central-1.pooler.supabase.com:6543/postgres";
+    const config = databaseClientConfig(url, { poolerMode: "session" });
+    expect(new URL(config.url).port).toBe("5432");
+    expect(new URL(config.url).hostname).toBe(
+      "aws-1-eu-central-1.pooler.supabase.com",
+    );
+    expect(usesTransactionPooler(config.url)).toBe(false);
+    expect(config.target).toEqual({
+      poolerMode: "session",
+      port: 5432,
+      rewritten: true,
+      transactionPooler: false,
+    });
+    expect(config.options.prepare).toBeUndefined();
+    // Still encrypted: the host is not this machine.
+    expect(config.options.ssl).toBe("require");
+
+    const sql = createDatabase(url, { poolerMode: "session" });
+    const parsed = sql.options as unknown as {
+      prepare: boolean;
+      max_pipeline: number;
+      port: number[];
+      host: string[];
+    };
+    try {
+      expect(parsed.port).toEqual([5432]);
+      expect(parsed.host).toEqual(["aws-1-eu-central-1.pooler.supabase.com"]);
+      expect(parsed.prepare).toBe(true);
+      expect(parsed.max_pipeline).toBe(100);
+    } finally {
+      await closeDatabase(sql);
+    }
+  });
+
+  test("transaction mode (the default) keeps 6543 and prepare: false", async () => {
+    const url =
+      "postgresql://role.synthetic:pw@aws-1-eu-central-1.pooler.supabase.com:6543/postgres";
+    for (
+      const config of [
+        databaseClientConfig(url),
+        databaseClientConfig(url, { poolerMode: "transaction" }),
+      ]
+    ) {
+      expect(config.url).toBe(url);
+      expect(config.options.prepare).toBe(false);
+      expect(config.target.port).toBe(6543);
+      expect(config.target.transactionPooler).toBe(true);
+    }
+  });
+
+  test("session mode leaves direct and local URLs untouched", () => {
+    for (
+      const url of [
+        "postgresql://postgres:pw@db.ref.supabase.co:5432/postgres",
+        "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+      ]
+    ) {
+      const config = databaseClientConfig(url, { poolerMode: "session" });
+      expect(config.url).toBe(url);
+      expect(config.target.rewritten).toBe(false);
+      expect(config.options.prepare).toBeUndefined();
+    }
+  });
+
+  test("session mode refuses a 6543 URL it cannot move", () => {
+    expect(() =>
+      databaseClientConfig(
+        "postgresql://postgres:pw@db.ref.supabase.co:6543/postgres",
+        { poolerMode: "session" },
+      )
+    ).toThrow(/session mode/);
   });
 });

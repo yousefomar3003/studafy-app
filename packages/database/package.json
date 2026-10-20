@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@studafy/config": "workspace:*",
     "postgres": "3.4.9"
   }
 }
