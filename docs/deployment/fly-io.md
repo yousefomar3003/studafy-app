@@ -454,13 +454,29 @@ this count is exact:
 ```
 
 **Worker silent.** Below 1 in 10 minutes. The worker logs a backlog
-heartbeat every minute, so silence means it is down:
+heartbeat every minute, so silence means it is down or stuck. Count
+**without** time bins: binned, a silent worker produces no rows at all and
+the monitor has nothing to compare, so it never fires. That is what
+happened during the 80-minute stall on 2026-10-20. Ungrouped, it answers
+one row with 0. Also turn on the monitor's "alert on no data" option if
+your Axiom plan shows it.
 
 ```kusto
 ['studafy-production']
 | extend m = parse_json(message)
 | where m.service == "worker" and m.event == "outbox_backlog"
-| summarize count() by bin_auto(_time)
+| summarize count()
+```
+
+The worker also logs `poll_stalled` and `queue_monitor_stalled` (error
+level) when a database poll stays in flight too long. A monitor above 0 in
+15 minutes catches a stuck worker that is still alive:
+
+```kusto
+['studafy-production']
+| extend m = parse_json(message)
+| where m.service == "worker" and (m.event == "poll_stalled" or m.event == "queue_monitor_stalled")
+| summarize count()
 ```
 
 **API down** is the relay's uptime check (section 5). Errors that are not
