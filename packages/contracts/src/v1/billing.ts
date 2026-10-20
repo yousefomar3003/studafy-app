@@ -83,11 +83,11 @@ export type V1BillingCatalogueResponse = z.infer<
  * check this opaque blob".
  */
 /**
- * Guardian purchase approval (audit follow-up, DL-048). A student
- * self-purchase is verified only when a guardian holding a verified,
- * unexpired link has approved it from their own session after a
- * recent-auth challenge. The server consumes the approval when it records
- * the subscription's first ledger row; the client never asserts it.
+ * Guardian purchase approval (DL-048), retired by DL-071: a student buys
+ * Studafy Plus or Max with no approval in Studafy, and a child's store
+ * account is governed by the store's own family tools. Kept only so an
+ * older app gets a clean answer: the list is always empty, and a request or
+ * a decision is refused with `PURCHASE_APPROVAL_RETIRED`.
  */
 export const V1PurchaseApprovalFeatureKey = z.enum([
   "student_notebook",
@@ -225,7 +225,10 @@ export const V1EntitlementsResponse = z.strictObject({
 });
 export type V1EntitlementsResponse = z.infer<typeof V1EntitlementsResponse>;
 
-/** ADR-0009's per-school student self-purchase switch. Default off. */
+/**
+ * ADR-0009's per-school student self-purchase switch. On by default since
+ * DL-071; a school with no setting counts as on.
+ */
 export const V1SetSelfPurchaseRequest = z.strictObject({
   schoolId: Id,
   enabled: z.boolean(),

@@ -120,6 +120,7 @@ describe("problem details contract", () => {
       "PHOTO_UNREADABLE",
       "PLAN_REQUIRED",
       "PRODUCT_NOT_FOUND",
+      "PURCHASE_APPROVAL_RETIRED",
       "RATE_LIMITED",
       "REASON_REQUIRED",
       "REAUTH_REQUIRED",
@@ -478,7 +479,9 @@ describe("sending a message", () => {
 });
 
 describe("billing: the student plans are accepted", () => {
-  test("Plus and Max purchases and approvals validate", () => {
+  // An approval request still parses so an older app is refused with
+  // PURCHASE_APPROVAL_RETIRED (DL-071), not a validation error.
+  test("Plus and Max purchases and old approval requests validate", () => {
     for (const key of ["studafy_plus", "studafy_max"]) {
       expect(
         V1SubmitPurchaseRequest.safeParse({

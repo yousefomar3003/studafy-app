@@ -611,7 +611,6 @@ export function buildRoutes(platform: Platform) {
       },
       authorization,
       idempotencyDependencies,
-      authDependencies,
     )
     : undefined;
 

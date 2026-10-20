@@ -28,8 +28,22 @@ require in-app digital content to be sold in-app.
   features. Changing any of these is a migration.
 - **Spending:** `private.api047_ai_usage` reserves the worst-case cost before
   every AI call, then settles it to the real cost or releases it.
-- **Student purchases:** a student's own purchase needs a verified guardian's
-  approval, exactly as before.
+- **Student purchases (DL-071, 2026-10-20):** a student buys Plus or Max
+  themselves, in their own app, with no approval step in Studafy. The store
+  account on the phone pays; for a child, that account should be a parent's
+  or parent-controlled, and Google Family Link or Apple Ask to Buy is where a
+  parent approves. The server grants the plan from the verified purchase
+  alone (`private.billing_resolve_beneficiary`,
+  `private.billing_apply_verification`, migration
+  `202610210010_student_direct_purchase.sql`).
+- **The school switch:** `public.school_billing_settings.self_purchase_enabled`
+  is on by default, and a school with no row counts as on. It is kept for a
+  future opt-out; nothing needs an administrator to sell.
+- **Family+** is unchanged: only a verified guardian of at least one child
+  can buy it.
+- **Restore purchases** is on the profile: Account → Subscription, a small
+  link at the bottom (students and parents alike). The Plans and Family+
+  screens no longer show it.
 
 ## Listing
 

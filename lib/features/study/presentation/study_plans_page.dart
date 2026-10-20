@@ -17,16 +17,21 @@ import 'study_plan_copy.dart';
 /// the store cannot be reached the US list price is shown, labelled as such:
 /// the store is always what confirms the price (App Review 3.1.2).
 ///
-/// Payment happens only in the App Store or Google Play sheet, with the
-/// payment methods of the student's store account. There is no card form
-/// and no wallet button here, and on the web and desktop, where there is
-/// no store, plans are described but bought in the mobile app.
+/// The student subscribes here, themselves (DL-071): Subscribe opens the
+/// App Store or Google Play sheet straight away, with no approval step in
+/// Studafy. Payment is taken from the store account on the phone; for a
+/// child, the store's own family controls (Family Link, Ask to Buy) apply.
+/// There is no card form and no wallet button here, and on the web and
+/// desktop, where there is no store, plans are described but bought in the
+/// mobile app. Restore purchases is on the profile, under Subscription.
 class StudyPlansPage extends StatefulWidget {
   const StudyPlansPage({
     super.key,
     required this.study,
     this.subscriptions,
     this.openLink,
+    this.termsUrl = const String.fromEnvironment('STUDAFY_TERMS_URL'),
+    this.privacyUrl = const String.fromEnvironment('STUDAFY_PRIVACY_URL'),
   });
 
   final StudyRepository study;
@@ -36,6 +41,12 @@ class StudyPlansPage extends StatefulWidget {
 
   /// Opens a web page outside the app. Tests supply their own.
   final Future<bool> Function(Uri url)? openLink;
+
+  /// The Terms of Use and Privacy Policy pages. Subscribe stays disabled
+  /// until both are real HTTPS links (App Review 3.1.2). The build supplies
+  /// them; tests may pass their own.
+  final String termsUrl;
+  final String privacyUrl;
 
   @override
   State<StudyPlansPage> createState() => _StudyPlansPageState();
@@ -53,8 +64,8 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
   bool _busy = false;
   String? _message;
 
-  static const _terms = String.fromEnvironment('STUDAFY_TERMS_URL');
-  static const _privacy = String.fromEnvironment('STUDAFY_PRIVACY_URL');
+  String get _terms => widget.termsUrl;
+  String get _privacy => widget.privacyUrl;
 
   /// The Android application id, for Google Play's link straight to this
   /// app's subscription. Matches android/app/build.gradle.kts.
@@ -331,22 +342,6 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         );
       } else if (!offer.selfPurchaseEnabled) {
         action = Text(l10n.studyPlansBuyingIsNotEnabledFor);
-      } else if (offer.approval != 'approved') {
-        primary = _busy || offer.approval == 'requested'
-            ? null
-            : () => _perform(
-                () => subscriptions.requestApproval(tier),
-                l10n.studyPlansWeAskedYourParentTo,
-              );
-        action = OutlinedButton.icon(
-          onPressed: primary,
-          icon: const Icon(Icons.family_restroom_rounded),
-          label: Text(
-            offer.approval == 'requested'
-                ? l10n.studyPlansWaitingForAParent
-                : l10n.studyPlansAskAParentToApprove,
-          ),
-        );
       } else {
         primary = _busy || !offer.canPurchase || !links
             ? null
@@ -494,6 +489,17 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                     ),
                   if (subscription != null) _subscriptionCard(subscription),
                   for (final tier in StudyPlanTier.values) _planCard(tier),
+                  // Who takes the payment, under the paid plans.
+                  if (store != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        store == SubscriptionStore.appStore
+                            ? l10n.studyPlansPaymentByAppStore
+                            : l10n.studyPlansPaymentByGooglePlay,
+                        style: small,
+                      ),
+                    ),
                   if (_busy) const LinearProgressIndicator(),
                   if (_message != null)
                     Padding(
@@ -504,16 +510,6 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(l10n.studyPlansBuyInMobileApp),
-                    ),
-                  if (subscriptions != null && store != null)
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => _perform(
-                              subscriptions.restorePurchases,
-                              l10n.studyPlansRestoringPurchases,
-                            ),
-                      child: Text(l10n.studyPlansRestorePurchases),
                     ),
                   const SizedBox(height: 8),
                   if (store != null)

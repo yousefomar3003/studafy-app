@@ -32,7 +32,7 @@ class _Account implements AccountRepository {
   Future<bool> cancelAccountDeletion() async => false;
 }
 
-class _Family implements FamilyRepository, PurchaseApprovalRepository {
+class _Family implements FamilyRepository {
   @override
   Future<List<GuardianChild>> children() async => const [];
   @override
@@ -46,10 +46,6 @@ class _Family implements FamilyRepository, PurchaseApprovalRepository {
   @override
   Future<ChildProgress> progress(String studentId) =>
       throw UnimplementedError();
-  @override
-  Future<List<PurchaseApprovalRequest>> pending() async => const [];
-  @override
-  Future<void> decide(String approvalId, {required bool approve}) async {}
 }
 
 class _Session extends FakeSessionRepositoryBase {
@@ -104,8 +100,6 @@ Future<void> _pumpParentShell(WidgetTester tester, _Session repository) async {
           child: FamilyScope(
             interactor: FamilyInteractor(
               family: family,
-              approvals: family,
-              confirmRecentAuth: () async {},
               telemetry: const NoopTelemetry(),
             ),
             child: child!,

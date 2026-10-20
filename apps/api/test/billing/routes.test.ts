@@ -11,13 +11,9 @@ import { createAuthorizationDependencies } from "../../src/authorization/middlew
 import { requestContext } from "../../src/platform/middleware";
 import { FakeIdempotencyRepository } from "../platform/fake-idempotency";
 import { createJsonLogger } from "@studafy/observability";
-import { sha256Hex } from "../../src/auth/middleware";
 
 const subject = "aaaaaaaa-0000-4000-8000-000000000001";
 const approvalId = "cccccccc-0000-4000-8000-000000000003";
-const reauthGrant = "reauth-grant-for-billing-approval-tests-0001";
-const FIRST_DECISION = "billing-approval-decision-0001";
-const SECOND_DECISION = "billing-approval-decision-0002";
 function harness() {
   const idem = new FakeIdempotencyRepository();
   const seen: NormalizedTransaction[] = [];
@@ -25,8 +21,6 @@ function harness() {
   let accountId: string | null = subject;
   let currentState = "SUBSCRIPTION_STATE_ACTIVE";
   let verifierCalls = 0;
-  const decisions: { approvalId: string; approve: boolean }[] = [];
-  const consumedGrants: string[] = [];
   const logger = createJsonLogger("api", "test", "error", () => undefined);
   async function write(
     body: NormalizedTransaction,
@@ -63,18 +57,6 @@ function harness() {
     },
     submitVerification: async (_c, b, r) => write(b, r),
     restore: async (_c, b, r) => write(b, r, true),
-    requestPurchaseApproval: async (_c, featureKey, r) => {
-      const response = { id: approvalId, featureKey, status: "requested" };
-      await idem.complete(subject, r.id, r.generation, 201, response);
-      return { outcome: "ok", response };
-    },
-    listPurchaseApprovals: async () => [],
-    decidePurchaseApproval: async (_c, id, approve, r) => {
-      decisions.push({ approvalId: id, approve });
-      const response = { id, status: approve ? "approved" : "declined" };
-      await idem.complete(subject, r.id, r.generation, 200, response);
-      return { outcome: "ok", response };
-    },
     listEntitlements: async () => [],
     recordEvent: async () => ({ outcome: "duplicate" }),
   };
@@ -124,23 +106,6 @@ function harness() {
       },
       createAuthorizationDependencies(logger),
       { repository: idem, logger },
-      {
-        logger,
-        repository: {
-          recordEvent: async () => undefined,
-          consumeReauthGrant: async (
-            _subject: string,
-            grant: { purpose: string; grantHash: string },
-          ) => {
-            if (
-              grant.purpose !== "billing_purchase_approval" ||
-              grant.grantHash !== await sha256Hex(reauthGrant)
-            ) return false;
-            consumedGrants.push(grant.grantHash);
-            return true;
-          },
-        },
-      } as never,
     ),
   );
   return {
@@ -148,8 +113,6 @@ function harness() {
     seen,
     idem,
     verifierCalls: () => verifierCalls,
-    decisions,
-    consumedGrants,
     setTest: (v: boolean) => {
       testPurchase = v;
     },
@@ -242,72 +205,45 @@ describe("billing trust boundary", () => {
   });
 });
 
-describe("guardian purchase approval", () => {
-  test("a student request returns 201 and replays on retry", async () => {
+// DL-071: students buy their own plans; the approval routes stay only so an
+// older app (Play build 100) gets a stable answer instead of a crash.
+describe("retired guardian purchase approval", () => {
+  async function code(res: Response) {
+    return ((await res.json()) as { code: string }).code;
+  }
+  test("the list is always empty", async () => {
     const h = harness();
-    const first = await send(h, "/v1/billing/purchase-approvals", {
-      featureKey: "student_notebook",
-    });
-    const second = await send(h, "/v1/billing/purchase-approvals", {
-      featureKey: "student_notebook",
-    });
-    expect(first.status).toBe(201);
-    expect(second.status).toBe(201);
-    expect(second.headers.get("Idempotency-Replayed")).toBe("true");
+    const res = await h.app.request("/v1/billing/purchase-approvals");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ approvals: [] });
   });
-  test("approval cannot be requested for a retired AI product", async () => {
+  test("a request from an older app is refused with a stable code", async () => {
     const h = harness();
-    const res = await send(h, "/v1/billing/purchase-approvals", {
-      featureKey: "student_ai",
-    });
-    expect(res.status).toBe(400);
+    for (const featureKey of ["studafy_plus", "studafy_max"]) {
+      const res = await send(h, "/v1/billing/purchase-approvals", {
+        featureKey,
+      });
+      expect(res.status).toBe(422);
+      expect(await code(res)).toBe("PURCHASE_APPROVAL_RETIRED");
+    }
+    expect(h.idem.entries.size).toBe(0);
   });
-  test("a decision without a recent-auth grant never reaches the database", async () => {
+  test("a decision is refused without a recent-auth challenge", async () => {
     const h = harness();
     const res = await send(
       h,
       `/v1/billing/purchase-approvals/${approvalId}/decision`,
       { approve: true },
     );
-    expect(res.status).toBe(401);
-    expect(((await res.json()) as { code: string }).code).toBe(
-      "REAUTH_REQUIRED",
-    );
-    expect(h.decisions).toHaveLength(0);
+    expect(res.status).toBe(422);
+    expect(await code(res)).toBe("PURCHASE_APPROVAL_RETIRED");
+    expect(h.idem.entries.size).toBe(0);
   });
-  test("a decision with a grant for another purpose is refused", async () => {
+  test("a malformed request is still a validation error", async () => {
     const h = harness();
-    const res = await h.app.request(
-      `/v1/billing/purchase-approvals/${approvalId}/decision`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "idempotency-key": SECOND_DECISION,
-          "x-studafy-reauth": "a-grant-minted-for-something-else",
-        },
-        body: JSON.stringify({ approve: true }),
-      },
-    );
-    expect(res.status).toBe(401);
-    expect(h.decisions).toHaveLength(0);
-  });
-  test("a guardian decision with a fresh grant is applied once", async () => {
-    const h = harness();
-    const res = await h.app.request(
-      `/v1/billing/purchase-approvals/${approvalId}/decision`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "idempotency-key": FIRST_DECISION,
-          "x-studafy-reauth": reauthGrant,
-        },
-        body: JSON.stringify({ approve: true }),
-      },
-    );
-    expect(res.status).toBe(200);
-    expect(h.decisions).toEqual([{ approvalId, approve: true }]);
-    expect(h.consumedGrants).toHaveLength(1);
+    const res = await send(h, "/v1/billing/purchase-approvals", {
+      featureKey: "student_ai",
+    });
+    expect(res.status).toBe(400);
   });
 });

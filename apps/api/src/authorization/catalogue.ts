@@ -1191,15 +1191,16 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Enable or disable student self-purchase for a school as its administrator.",
   },
-  // Guardian purchase approval (DL-048). Self-scoped for the same reason as
-  // the rest of billing: private.billing_*_purchase_approval re-derive the
-  // student and the verified guardian link from auth.uid() themselves.
+  // Guardian purchase approval (DL-048), retired by DL-071. The routes stay
+  // for older apps: the list is empty and a request or decision is refused
+  // with PURCHASE_APPROVAL_RETIRED, without reaching the database.
   "billing.purchase_approval.request": {
     resource: "billing_purchase_approval",
     scope: "self",
     concealDeniedResource: false,
     tenantRequired: false,
-    description: "Ask linked guardians to approve a student self-purchase.",
+    description:
+      "Retired: asking a guardian to approve a purchase is refused (DL-071).",
   },
   "billing.purchase_approval.read": {
     resource: "billing_purchase_approval",
@@ -1207,15 +1208,14 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: false,
     tenantRequired: false,
     description:
-      "List purchase approvals the caller requested or may decide as a verified guardian.",
+      "Retired: always an empty list of purchase approvals (DL-071).",
   },
   "billing.purchase_approval.decide": {
     resource: "billing_purchase_approval",
     scope: "self",
     concealDeniedResource: true,
     tenantRequired: false,
-    description:
-      "Approve or decline a linked child's purchase request after recent authentication.",
+    description: "Retired: deciding a purchase approval is refused (DL-071).",
   },
   // Managed child accounts (2026-09-28). Self-scoped: the SQL behind each
   // re-derives the caller from auth.uid() and refuses a managed account

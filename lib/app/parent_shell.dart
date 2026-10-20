@@ -241,6 +241,14 @@ class _ParentShellState extends State<ParentShell> {
     ),
   );
 
+  /// The Subscription part of the parent's profile: only Restore purchases,
+  /// for Family+, where Family+ is offered. The plans are on their own tab.
+  SubscriptionEntry? get _subscription {
+    final familyPlus = widget.familyPlus;
+    if (familyPlus == null || widget.insights == null) return null;
+    return SubscriptionEntry(restorePurchases: familyPlus.restorePurchases);
+  }
+
   Widget _page(BuildContext context) {
     final l10n = AppL10n.of(context);
     final tabs = _tabs;
@@ -259,7 +267,7 @@ class _ParentShellState extends State<ParentShell> {
             label: studafyNumber(context, _unread),
             onPressed: _openNotifications,
           ),
-          const AccountButton(),
+          AccountButton(subscription: _subscription),
         ],
         quickActions: [
           FamilyQuickAction(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/family/application/family_interactor.dart';
@@ -11,15 +10,14 @@ import 'package:studafy/features/family/presentation/family_scope.dart';
 import 'package:studafy/l10n/generated/app_l10n.dart';
 
 /// MOB-070 parent slice: a guardian's home runs on typed /v1 data, only a
-/// verified link opens a child, linking requires student consent, and
-/// purchase approval proves a recent sign-in before deciding.
-class _Fake implements FamilyRepository, PurchaseApprovalRepository {
+/// verified link opens a child, and linking requires student consent.
+/// There are no purchase approvals to decide: a student buys their own plan
+/// (DL-071).
+class _Fake implements FamilyRepository {
   _Fake(this.children_);
 
   final List<GuardianChild> children_;
   final List<String> requested = [];
-  final List<(String, bool)> decisions = [];
-  List<PurchaseApprovalRequest> approvals = const [];
 
   @override
   Future<List<GuardianChild>> children() async => List.of(children_);
@@ -63,13 +61,6 @@ class _Fake implements FamilyRepository, PurchaseApprovalRepository {
     absent: 1,
     excused: 3,
   );
-
-  @override
-  Future<List<PurchaseApprovalRequest>> pending() async => approvals;
-
-  @override
-  Future<void> decide(String approvalId, {required bool approve}) async =>
-      decisions.add((approvalId, approve));
 }
 
 const _verified = GuardianChild(
@@ -91,7 +82,6 @@ const _pending = GuardianChild(
 
 Widget _app(
   _Fake fake, {
-  Future<void> Function()? reauth,
   void Function(GuardianChild)? onOpen,
   Future<void> Function()? onCreateChildAccount,
   Locale locale = const Locale('en'),
@@ -107,8 +97,6 @@ Widget _app(
   builder: (context, child) => FamilyScope(
     interactor: FamilyInteractor(
       family: fake,
-      approvals: fake,
-      confirmRecentAuth: reauth ?? () async {},
       telemetry: const NoopTelemetry(),
     ),
     child: child!,
@@ -255,63 +243,14 @@ void main() {
     expect(fake.requested, ['student-42']);
   });
 
-  testWidgets('approving proves a recent sign-in first', (tester) async {
-    final fake = _Fake([_verified])
-      ..approvals = [
-        PurchaseApprovalRequest(
-          id: 'approval-1',
-          studentId: 'student-1',
-          studentName: 'Layla',
-          featureKey: 'studafy_max',
-          status: 'requested',
-          expiresAt: DateTime(2030),
-        ),
-      ];
-    var reauthCalls = 0;
-    await tester.pumpWidget(
-      _app(
-        fake,
-        reauth: () async {
-          reauthCalls++;
-        },
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Waiting for your approval'), findsOneWidget);
-    // The request names the plan the child asked for.
-    expect(find.text('Layla asked to subscribe to Studafy Max.'), findsOne);
-    await tester.tap(find.text('Approve'));
-    await tester.pumpAndSettle();
-    expect(reauthCalls, 1);
-    expect(fake.decisions, [('approval-1', true)]);
-  });
-
-  testWidgets('a stale sign-in blocks the decision and says what to do', (
+  testWidgets('the home asks the parent to approve no purchases', (
     tester,
   ) async {
-    final fake = _Fake([_verified])
-      ..approvals = [
-        PurchaseApprovalRequest(
-          id: 'approval-1',
-          studentId: 'student-1',
-          studentName: 'Layla',
-          featureKey: 'studafy_plus',
-          status: 'requested',
-          expiresAt: DateTime(2030),
-        ),
-      ];
-    await tester.pumpWidget(
-      _app(
-        fake,
-        reauth: () async =>
-            throw const Failure('REAUTH_REQUIRED', 'REAUTH_REQUIRED'),
-      ),
-    );
+    await tester.pumpWidget(_app(_Fake([_verified])));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Decline'));
-    await tester.pumpAndSettle();
-    expect(fake.decisions, isEmpty);
-    expect(find.textContaining('sign in again'), findsOneWidget);
+    expect(find.text('Layla'), findsWidgets);
+    expect(find.text('Approve'), findsNothing);
+    expect(find.text('Decline'), findsNothing);
   });
 
   testWidgets('the home screen is translated in Arabic', (tester) async {

@@ -246,8 +246,13 @@ class _StudentShellState extends State<StudentShell>
   SubscriptionEntry? get _subscription {
     final study = widget.study;
     if (study == null || !_aiOn) return null;
+    final plans = widget.studyPlans;
     return SubscriptionEntry(
       open: _openPlans,
+      // Only where a store sells the plans (not the web or desktop).
+      restorePurchases: plans == null || plans.purchaseStore == null
+          ? null
+          : plans.restorePurchases,
       currentPlan: () async => studyPlanCopy[(await study.plan()).tier]!.name,
       // What the server metered, shown as a bar and a label only.
       usage: () async {

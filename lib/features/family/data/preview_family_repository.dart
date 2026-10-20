@@ -3,10 +3,7 @@ import '../domain/family.dart';
 /// Synthetic-only family data: one verified child, so the demo exercises
 /// the same screens a real guardian sees.
 class PreviewFamilyRepository
-    implements
-        FamilyRepository,
-        PurchaseApprovalRepository,
-        StudentFamilyRepository {
+    implements FamilyRepository, StudentFamilyRepository {
   final List<GuardianChild> _children = [
     const GuardianChild(
       linkId: 'demo-link-1',
@@ -56,11 +53,6 @@ class PreviewFamilyRepository
     excused: 1,
   );
 
-  @override
-  Future<List<PurchaseApprovalRequest>> pending() async => const [];
-
-  @override
-  Future<void> decide(String approvalId, {required bool approve}) async {}
   final List<StudentGuardianRequest> _requests = [
     const StudentGuardianRequest(
       id: 'preview-parent-request',

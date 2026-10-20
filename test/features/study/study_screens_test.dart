@@ -494,9 +494,15 @@ void main() {
   });
 
   group('the plans screen', () {
-    Widget plans(_Study study, _Store store) => localizedApp(
-      home: StudyPlansPage(study: study, subscriptions: store),
-    );
+    Widget plans(_Study study, _Store store, {bool legalLinks = false}) =>
+        localizedApp(
+          home: StudyPlansPage(
+            study: study,
+            subscriptions: store,
+            termsUrl: legalLinks ? 'https://legal.example.com/terms' : '',
+            privacyUrl: legalLinks ? 'https://legal.example.com/privacy' : '',
+          ),
+        );
 
     testWidgets('names every plan and what it unlocks', (tester) async {
       tall(tester);
@@ -543,21 +549,44 @@ void main() {
       expect(find.text('Your plan'), findsOne);
     });
 
-    testWidgets('a student asks a parent first, then subscribes', (
+    testWidgets('a student subscribes straight away, with no parent step', (
       tester,
     ) async {
       tall(tester);
       final store = _Store();
-      await tester.pumpWidget(plans(_Study(), store));
+      await tester.pumpWidget(plans(_Study(), store, legalLinks: true));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Ask a parent to approve').first);
-      await tester.pumpAndSettle();
-      expect(store.approvalsRequested, [StudyPlanTier.plus]);
-
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpWidget(plans(_Study(), _Store()..approved = true));
-      await tester.pumpAndSettle();
+      expect(find.text('Subscribe to Studafy Plus'), findsOne);
       expect(find.text('Subscribe to Studafy Max'), findsOne);
+      // Nothing tells the student to ask a parent (DL-071).
+      expect(find.textContaining('parent'), findsNothing);
+      expect(find.textContaining('approv'), findsNothing);
+      // One line under the plans says who takes the payment.
+      expect(
+        find.text(
+          'Payment is taken by Google Play from the Google account on this '
+          'phone.',
+        ),
+        findsOne,
+      );
+      await tester.tap(find.text('Subscribe to Studafy Plus'));
+      await tester.pumpAndSettle();
+      expect(store.purchases, [StudyPlanTier.plus]);
+    });
+
+    testWidgets('on an iPhone the App Store takes the payment', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(
+        plans(_Study(), _Store()..store = SubscriptionStore.appStore),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Payment is taken by the App Store from the Apple Account on this '
+          'phone.',
+        ),
+        findsOne,
+      );
     });
 
     testWidgets('tapping anywhere on a plan does what its button does', (
@@ -565,11 +594,20 @@ void main() {
     ) async {
       tall(tester);
       final store = _Store();
-      await tester.pumpWidget(plans(_Study(), store));
+      await tester.pumpWidget(plans(_Study(), store, legalLinks: true));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Quizzes made from your lessons'));
       await tester.pumpAndSettle();
-      expect(store.approvalsRequested, [StudyPlanTier.max]);
+      expect(store.purchases, [StudyPlanTier.max]);
+    });
+
+    testWidgets('restoring purchases is on the profile, not here', (
+      tester,
+    ) async {
+      tall(tester);
+      await tester.pumpWidget(plans(_Study(), _Store(), legalLinks: true));
+      await tester.pumpAndSettle();
+      expect(find.text('Restore purchases'), findsNothing);
     });
 
     testWidgets('with payments not set up, a plan says so when tapped', (
@@ -626,7 +664,7 @@ void main() {
     ) async {
       tall(tester);
       await tester.pumpWidget(
-        plansWith(_Study(tier: StudyPlanTier.max), _Store()..approved = true),
+        plansWith(_Study(tier: StudyPlanTier.max), _Store()),
       );
       await tester.pumpAndSettle();
       expect(find.text('Included in your plan'), findsOne);
@@ -639,12 +677,7 @@ void main() {
     ) async {
       tall(tester);
       await tester.pumpWidget(
-        plansWith(
-          _Study(tier: StudyPlanTier.plus),
-          _Store()
-            ..approved = true
-            ..current = plus(),
-        ),
+        plansWith(_Study(tier: StudyPlanTier.plus), _Store()..current = plus()),
       );
       await tester.pumpAndSettle();
       expect(find.text('Upgrade to Studafy Max'), findsOne);
@@ -772,19 +805,12 @@ void main() {
       tester,
     ) async {
       tall(tester);
-      await tester.pumpWidget(
-        plansWith(
-          _Study(),
-          _Store()
-            ..approved = true
-            ..store = null,
-        ),
-      );
+      await tester.pumpWidget(plansWith(_Study(), _Store()..store = null));
       await tester.pumpAndSettle();
       expect(find.textContaining('bought in the Studafy app'), findsOne);
       expect(find.text('Subscribe to Studafy Plus'), findsNothing);
-      expect(find.text('Ask a parent to approve'), findsNothing);
       expect(find.text('Restore purchases'), findsNothing);
+      expect(find.textContaining('Payment is taken by'), findsNothing);
       // No card, no wallet: nothing here takes a payment.
       expect(find.textContaining('Apple Pay'), findsNothing);
       expect(find.textContaining('Google Pay'), findsNothing);
@@ -995,9 +1021,7 @@ class _Lessons implements AcademicRepository {
 }
 
 class _Store implements StudyPlanSubscriptionRepository {
-  bool approved = false;
   Object? offerError;
-  final approvalsRequested = <StudyPlanTier>[];
   final purchases = <StudyPlanTier>[];
   SubscriptionStore? store = SubscriptionStore.playStore;
   StudyPlanSubscription? current;
@@ -1017,13 +1041,8 @@ class _Store implements StudyPlanSubscriptionRepository {
       monthly: true,
       storeAvailable: true,
       selfPurchaseEnabled: true,
-      approval: approved ? 'approved' : 'none',
     );
   }
-
-  @override
-  Future<void> requestApproval(StudyPlanTier tier) async =>
-      approvalsRequested.add(tier);
 
   @override
   Future<void> purchase(StudyPlanTier tier) async => purchases.add(tier);

@@ -138,3 +138,16 @@ to add to the store privacy answers (`docs/store/google-play-data-safety.md`,
 7.2 Store reviewers sign in with three accounts in a fictional review school
 (`docs/store/reviewer-access.md`). They see no real data. Confirm nothing
 more is needed.
+
+## 8. Purchases by students (DL-071, terms 1.4 §9, policy 1.6 §3.9)
+
+8.1 Since 21 October 2026 a student subscribes to Studafy Plus or Max
+themselves, in the app, and Studafy has no approval step of its own. Payment
+comes from the Google Play or App Store account on the phone; the terms say
+that for a child this account and its payment method should belong to, or be
+controlled by, a parent or guardian, who is responsible for purchases made
+with it, and that Google Family Link and Apple's Ask to Buy let a parent
+approve each purchase. This was published without your review. Is relying on
+the stores' family controls enough under Irish and EU consumer law (contracts
+with minors) and the stores' rules for apps used by children, and is the
+wording on the parent's responsibility right?

@@ -66,7 +66,6 @@ class FamilyHomePage extends StatefulWidget {
 
 class FamilyHomePageState extends State<FamilyHomePage> {
   List<GuardianChild> _children = const [];
-  List<PurchaseApprovalRequest> _approvals = const [];
   bool _loading = true;
   Failure? _failure;
 
@@ -82,16 +81,11 @@ class FamilyHomePageState extends State<FamilyHomePage> {
 
   Future<void> _load() async {
     if (!_loaded) setState(() => _loading = true);
-    final interactor = FamilyScope.of(context);
-    // Both at once: neither waits on the other.
-    final approvalsRead = interactor.pendingApprovals();
-    final children = await interactor.children();
-    final approvals = await approvalsRead;
+    final children = await FamilyScope.of(context).children();
     if (!mounted) return;
     setState(() {
       _loading = false;
       _loaded = true;
-      _approvals = approvals;
       children.fold(
         onSuccess: (list) {
           _children = list;
@@ -161,18 +155,6 @@ class FamilyHomePageState extends State<FamilyHomePage> {
     await _load();
   }
 
-  Future<void> _decide(PurchaseApprovalRequest request, bool approve) async {
-    final result = await FamilyScope.of(context)
-        .decide(request.id, approve: approve);
-    if (!mounted) return;
-    final message = result.fold(
-      onSuccess: (_) => AppL10n.of(context).famApprovalsDone,
-      onFailure: (failure) => familyFailureText(context, failure),
-    );
-    ScaffoldMessenger.of(context).showMessage(message);
-    await _load();
-  }
-
   void _open(GuardianChild child) {
     widget.onOpenChild?.call(child);
     Navigator.of(context).pushOnce(
@@ -220,15 +202,6 @@ class FamilyHomePageState extends State<FamilyHomePage> {
                     subtitle: l10n.parentTodaySubtitle,
                     icon: Icons.favorite_rounded,
                   ),
-                  if (_approvals.isNotEmpty) ...[
-                    SectionHeader(l10n.famApprovalsTitle),
-                    for (final request in _approvals)
-                      _ApprovalCard(
-                        request: request,
-                        onApprove: () => _decide(request, true),
-                        onDecline: () => _decide(request, false),
-                      ),
-                  ],
                   SectionHeader(
                     l10n.parentChildrenSection,
                     // Compact and labelled: linking is one action among
@@ -432,51 +405,6 @@ class _ChildRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ApprovalCard extends StatelessWidget {
-  const _ApprovalCard({
-    required this.request,
-    required this.onApprove,
-    required this.onDecline,
-  });
-
-  final PurchaseApprovalRequest request;
-  final VoidCallback onApprove;
-  final VoidCallback onDecline;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: FeatureCard(
-      tint: studafyTeal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            AppL10n.of(context)
-                .famApprovalsDetail(request.studentName, request.featureKey),
-            style: const TextStyle(color: studafyInk),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: onDecline,
-                child: Text(AppL10n.of(context).famApprovalsDecline),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: onApprove,
-                child: Text(AppL10n.of(context).famApprovalsApprove),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 class _LinkChildSheet extends StatefulWidget {

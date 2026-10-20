@@ -155,15 +155,13 @@ void main() {
     expect(find.text('Manage or cancel'), findsOne);
   });
 
-  testWidgets('purchases can be restored', (tester) async {
+  testWidgets('restoring purchases is on the profile, not here', (
+    tester,
+  ) async {
     tall(tester);
-    final store = _Store();
-    await tester.pumpWidget(gate(store));
+    await tester.pumpWidget(gate(_Store()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Restore purchases'));
-    await tester.pumpAndSettle();
-    expect(store.restored, 1);
-    expect(find.text('Checking your purchases...'), findsOne);
+    expect(find.text('Restore purchases'), findsNothing);
   });
 
   testWidgets('a verified purchase shows the insights without a reload', (
@@ -232,7 +230,8 @@ void main() {
     await tester.pumpAndSettle();
     // The plan's Latin name is kept left to right inside the Arabic line.
     expect(find.text('\u2066Family+\u2069 لـ سارة'), findsOne);
-    expect(find.text('استعادة المشتريات'), findsOne);
+    // Restore purchases moved to the profile (Subscription).
+    expect(find.text('استعادة المشتريات'), findsNothing);
   });
 }
 

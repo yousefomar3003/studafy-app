@@ -333,6 +333,14 @@ jobs:
           bunx supabase test db --local
           supabase/tests/study_plans.sql
 
+      # DL-071: a student buys Plus or Max with no guardian approval, Family+
+      # still needs a verified guardian link, schools are on unless they opt
+      # out, and the retired approval functions do nothing. Transactional.
+      - name: Verify students buy their own study plans
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/student_direct_purchase.sql
+
       # Store webhook events are claimed and finished, each event lands on
       # the transaction it names (an Android upgrade's old token cannot
       # expire the new plan), lost renewals are re-verified, and only

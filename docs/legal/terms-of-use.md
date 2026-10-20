@@ -1,7 +1,7 @@
 # Studafy Terms of Use
 
-**Last updated:** 17 October 2026\
-**Version:** 1.3
+**Last updated:** 21 October 2026\
+**Version:** 1.4
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -22,6 +22,20 @@ legal review (DL-068), with privacy policy 1.5, as consent version
 (DL-063, DL-066), that the AI study tools are on for students in a class
 after a separate consent (DL-062, ADR-0043), and that Studafy creates no
 meetings (DL-065). Counsel is to review it later.
+
+Version 1.4 (21 October 2026), consent version 2026-10-21 (migration
+202610210020), with privacy policy 1.6: students subscribe to Studafy Plus
+or Max themselves, in the app, with no approval step in Studafy (DL-071).
+Payment comes from the store account on the phone; for a child, a parent
+controls it with the store's own family tools. §2 and §9 changed. Published
+by the owner's decision without legal review, like 1.3.
+
+TODO(legal): DL-071. Review §9 (and the line removed from §2): purchases by
+students who may be minors, paid from a store account that should belong to
+or be controlled by a parent; whether relying on Google Family Link and
+Apple Ask to Buy, with no approval step in Studafy, is enough under Irish
+and EU consumer law and the stores' rules for apps used by children; and
+the wording on the parent's responsibility for purchases.
 
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
@@ -57,7 +71,7 @@ marks and attendance are managed by that class's own teachers.
   they are the child's parent or legal guardian, accepts these terms and the
   Privacy Policy on the child's behalf, and is responsible for how the
   account is used.
-- A student may need a parent's approval to buy a subscription.
+- A student can subscribe to a study plan in the app (§9).
 - A profile photo you add stays on your device; it is never uploaded.
 - Give accurate information. Do not create an account for someone else
   except as a parent under this section, and do not impersonate anyone.
@@ -167,14 +181,25 @@ The Privacy Policy says exactly what is sent to it.
 
 ## 9. Subscriptions
 
-- **Studafy Plus** and **Studafy Max** are for students. **Family+** is for
-  parents: one subscription for up to 4 linked children, or a larger one for
-  up to 8. Moving to the larger plan upgrades the same subscription. The app
-  shows what each one includes, and the store shows the price where you
-  live.
+- **Studafy Plus** and **Studafy Max** are for students, and a student can
+  subscribe to either in the app. **Family+** is for parents: one
+  subscription for up to 4 linked children, or a larger one for up to 8.
+  Moving to the larger plan upgrades the same subscription. The app shows
+  what each one includes, and the store shows the price where you live.
+- **Who pays.** Payment is made through **Google Play** or the **App Store**,
+  with the payment method on the store account signed in on the phone.
+  Studafy does not ask a parent to approve a purchase in the app.
+- **Children.** For a child, that store account and its payment method
+  should belong to, or be controlled by, a parent or guardian, who is
+  responsible for purchases made with it. Google Family Link and Apple's Ask
+  to Buy let a parent approve each purchase before it is made.
 - Subscriptions are sold and billed by **Apple** or **Google** under their
-  terms, renew every month until cancelled, and are cancelled or refunded
-  through your App Store or Google Play account. We never see your card.
+  terms and renew every month until cancelled in the store. Refunds follow
+  the store's rules and are requested from Apple or Google. We never see
+  card details.
+
+<!-- TODO(legal): DL-071 (21 October 2026). This section was rewritten when
+the in-app parent approval was removed; see the note at the top. -->
 - Lessons, the notebook, set work, marks and attendance are free.
 - If a subscription ends, the features it unlocked stop. Your notes stay
   yours.

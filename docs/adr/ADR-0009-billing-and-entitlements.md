@@ -161,3 +161,31 @@ A student-initiated purchase now requires **guardian approval**:
 The per-school switch still defaults to off, and the verifiable-consent
 condition above is unchanged; counsel may still require a stronger consent
 mechanism for particular markets.
+
+## Addendum 2026-10-20 (DL-071): students buy their own plans
+
+The owner decided that students buy Studafy Plus and Max themselves, in their
+own app, paid by the store account on the phone, and that the in-app guardian
+approval of the 2026-09-19 addendum is removed entirely. For a child, the
+parent's control is the store's own: Google Family Link purchase approval and
+Apple Ask to Buy. Studafy adds no step of its own.
+
+- A student's own purchase of `studafy_plus` or `studafy_max` is verified and
+  granted with no approval row (`private.billing_resolve_beneficiary`,
+  `private.billing_apply_verification`, migration 202610210010). A retired
+  student product still cannot be newly bought by a student.
+- The per-school switch now defaults to **on**, a school with no settings row
+  counts as on, and existing rows were set to on. It is kept for a future
+  opt-out. There is no school administrator in this release, so nothing may
+  depend on one.
+- `billing_purchase_approvals` and `store_transactions.purchase_approval_id`
+  are kept as read-only history; nothing writes them. The approval routes
+  stay for older apps: `GET /v1/billing/purchase-approvals` answers an empty
+  list, and a request or a decision is refused with
+  `PURCHASE_APPROVAL_RETIRED` (422), without reaching the database.
+- Family+ is unchanged: only a verified guardian of at least one child may
+  buy it.
+- Terms of use 1.4 §9 and privacy policy 1.6 §3.9 say who pays and the
+  parent's responsibility for a child's store account, published as consent
+  version 2026-10-21 without legal review; counsel is asked to review
+  (questions-for-counsel §8).

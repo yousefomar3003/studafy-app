@@ -48,9 +48,6 @@ enum ReauthPurpose {
   allDeviceSignOut,
   deviceRevoke,
 
-  /// A guardian approving or declining a child's purchase request.
-  billingPurchaseApproval,
-
   /// Requesting a copy of one's own data (right of access).
   accountDataExport,
 }

@@ -109,8 +109,9 @@ and worker run `main`. No PR is open.
    on their grant rows during testing, then restore them. With a grant, a
    purchase changes nothing visible. Then follow the sandbox checklist in
    `docs/deployment/subscriptions.md`:
-   - the student requests Max, the parent approves, the student buys
-     ("Test card, always approves");
+   - the student buys Max themselves, with no parent step (DL-071, needs
+     build 101 or later; build 100 still shows "Ask a parent to approve",
+     which is now refused) ("Test card, always approves");
    - renewal every 5 minutes, cancel, pause, refund, restore, Plus → Max;
    - the parent buys Family+.
    If the server's purchase check fails with a permission error, Google can

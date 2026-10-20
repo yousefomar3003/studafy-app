@@ -63,18 +63,6 @@ export interface BillingRepository {
     body: NormalizedTransaction,
     reservation: BillingReservation,
   ): Promise<BillingResult>;
-  requestPurchaseApproval(
-    context: RequestDbContext,
-    featureKey: string,
-    reservation: BillingReservation,
-  ): Promise<BillingResult>;
-  listPurchaseApprovals(context: RequestDbContext): Promise<unknown[]>;
-  decidePurchaseApproval(
-    context: RequestDbContext,
-    approvalId: string,
-    approve: boolean,
-    reservation: BillingReservation,
-  ): Promise<BillingResult>;
   listEntitlements(context: RequestDbContext, environment: string): Promise<
     {
       featureKey: string;
@@ -168,52 +156,6 @@ export class PostgresBillingRepository implements BillingRepository {
           restored: true,
           ...(result.response as object ?? {}),
         };
-        await this.complete(tx, reservation, result.response);
-      }
-      return result;
-    });
-  }
-
-  async requestPurchaseApproval(
-    context: RequestDbContext,
-    featureKey: string,
-    reservation: BillingReservation,
-  ): Promise<BillingResult> {
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx<{ result: BillingResult }[]>`
-        select private.billing_request_purchase_approval(${featureKey}) as result
-      `;
-      const result = rows[0]?.result ?? { outcome: "invalid" };
-      if (result.outcome === "ok") {
-        await this.complete(tx, reservation, result.response, 201);
-      }
-      return result;
-    });
-  }
-
-  async listPurchaseApprovals(context: RequestDbContext) {
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx<{ result: unknown[] }[]>`
-        select private.billing_list_purchase_approvals() as result
-      `;
-      return rows[0]?.result ?? [];
-    });
-  }
-
-  async decidePurchaseApproval(
-    context: RequestDbContext,
-    approvalId: string,
-    approve: boolean,
-    reservation: BillingReservation,
-  ): Promise<BillingResult> {
-    return await withRequestContext(this.sql, context, async (tx) => {
-      const rows = await tx<{ result: BillingResult }[]>`
-        select private.billing_decide_purchase_approval(
-          ${approvalId}::uuid, ${approve}
-        ) as result
-      `;
-      const result = rows[0]?.result ?? { outcome: "invalid" };
-      if (result.outcome === "ok") {
         await this.complete(tx, reservation, result.response);
       }
       return result;
