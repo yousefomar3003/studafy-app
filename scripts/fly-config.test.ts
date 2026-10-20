@@ -278,8 +278,16 @@ describe("Fly configs pass production validation", () => {
     expect(() =>
       enforceApiFailClosed(parseEnv(apiEnvSchema, { ...api, ...secrets }))
     ).not.toThrow();
+    // Play billing in test: sandbox purchases by license testers (3.9).
+    expect(api.PAY071_BILLING_ENABLED).toBe("true");
+    expect(api.PAY071_ENVIRONMENT).toBe("development");
+    expect(api.GOOGLE_PUBSUB_AUDIENCE).toBe(
+      "https://studafy-api-test.fly.dev/webhooks/google",
+    );
     const worker = await flyEnv("fly.test.worker.toml");
     expect(worker.ENVIRONMENT).toBe("development");
+    expect(worker.PAY071_ENVIRONMENT).toBe("development");
+    expect(worker.PAY071_RECONCILIATION_ENABLED).toBe("true");
     // Push and email are tried on the test copy before production (DL-070).
     expect(worker.NOTIFICATION_CHANNELS_ENABLED).toBe("true");
     expect(() =>
