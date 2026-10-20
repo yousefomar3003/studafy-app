@@ -898,10 +898,10 @@ describe("PAY-071 billing reconciliation", () => {
     const held = new Promise<void>((resolve) => releaseScan = resolve);
     let scans = 0;
     const scan = dispatch.reconciliationScan.bind(dispatch);
-    dispatch.reconciliationScan = async (limit: number) => {
+    dispatch.reconciliationScan = async () => {
       scans++;
       await held; // a slow store or database
-      return scan(limit);
+      return scan();
     };
     const { collector, logger } = testLogger();
     const sweep = startBillingReconciliation(
