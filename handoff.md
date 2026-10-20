@@ -1,9 +1,154 @@
 # Handoff: Studafy
 
-Updated: 2026-10-18. **Everything through #117 is merged and on the test
-copy.** No PR is open.
+Updated: 2026-10-20. **Everything through #125 is merged.** The test API
+and worker run `main`. No PR is open.
 
-## Start here (2026-10-18)
+## Start here (2026-10-20)
+
+### Where things stand
+- **A real Android phone exists now:** the owner's Samsung Galaxy S23
+  Ultra (Android 16, adb serial `R5CXC07T6XY`). It has the **Play
+  internal-testing** build installed (build 100). Use a cable install
+  (`adb install -r`) only for quick checks: it replaces the Play install,
+  which is signed differently.
+- **Google Play internal testing is live.** App "Studafy Light"
+  (`com.studafy.light`), organisation account "Studafy Limited", so there is
+  no 12-testers/14-days rule. Release `100 (1.0.0)` was built from `main` at
+  `7cfaa59` against the **test copy** (`config/dart-defines.device.json`).
+  The tester list is `Studafy internal`. The other app in the console,
+  "Studafy" (`com.studafy.studafy_mobile`), is not ours to use.
+- **Upload key (C1) done:**
+  - `~/studafy-secrets/studafy-upload.jks` (alias `upload`, CN=Studafy,
+    O=Studafy, C=JO).
+  - Password: `~/studafy-secrets/studafy-upload-password.txt`, and in the
+    owner's Passwords app as "Studafy Android upload key". The match was
+    checked.
+  - Gradle properties: `~/studafy-secrets/studafy-upload.properties`.
+  - Backup: iCloud Drive → `Studafy-Backup/studafy-upload.jks` (identical,
+    opens with the password).
+  - SHA-1 `F7:27:F6:97:88:F7:19:C2:D9:40:51:F8:9D:21:88:9A:F4:91:DB:2B`.
+  - A first password was pasted in chat and was **never used**; the key was
+    made with a new one.
+- **Building the next Play upload.** Raise the build number every time; CI
+  release builds use 1000+run:
+  ```sh
+  STUDAFY_ANDROID_KEY_PROPERTIES=~/studafy-secrets/studafy-upload.properties \
+    flutter build appbundle --release --build-number 101 \
+    --dart-define-from-file=config/dart-defines.device.json
+  ```
+  This is a minified (R8) release, and it installed and ran from Play, so
+  the "R8 release check" from 2026-10-17 is covered for this build.
+- **Play billing (work plan 3.9, guide `docs/guides/owner/05-play-billing.md`):**
+  - Payments profile: done.
+  - Subscriptions: four, each with an active `monthly` base plan:
+    `studafy_plus_monthly` (3.99 USD; its name reads "Studafy plus", which
+    can be renamed), `studafy_max_monthly` (5.99),
+    `studafy_family_plus_monthly` (2.99), `studafy_family_plus_8_monthly`
+    (4.99). No free-trial offers.
+  - License testing: the owner's Gmail, `RESPOND_NORMALLY`.
+  - **Google Cloud project `studafy-lite`** (the Firebase one; console
+    account `authuser=2`):
+    - Play Android Developer API and Pub/Sub API enabled.
+    - Push account `studafy-pubsub-push@studafy-lite.iam.gserviceaccount.com`.
+    - Topic `play-billing`, with `google-play-developer-notifications@system`
+      as publisher.
+    - Push subscription `play-billing-to-test-api` → `https://studafy-api-test.fly.dev/webhooks/google`:
+      authenticated, audience the same URL, no unwrapping, exponential
+      backoff, never expires.
+  - Play API account `studafy-play-billing@studafy-lite.iam.gserviceaccount.com`:
+    - invited in Play Console (Manage account → Users and permissions,
+      Active) with view app info, view financial data, and manage orders
+      and subscriptions on Studafy Light;
+    - key at `~/studafy-secrets/play-billing-service-account.json`.
+  - Real-time notifications: on, with topic
+    `projects/studafy-lite/topics/play-billing`. The owner sent a test
+    notification.
+  - **Test copy (#123):**
+    - `PAY071_BILLING_ENABLED=true`, `PAY071_ENVIRONMENT=development`, the
+      `GOOGLE_*` public values in `fly.test.*.toml`, and reconciliation on
+      the worker;
+    - `GOOGLE_SERVICE_ACCOUNT_JSON` set by the owner on both apps;
+    - the start-up log shows `billingActive:true, googleConfigured:true`.
+- **#125, a real bug that would have hit production:** the AUTH-030 router's
+  `*` authentication middleware was mounted before the store webhooks. So
+  every Play and Apple notification was refused `401` before reaching its
+  own check. The webhooks now mount first, and a regression test is in
+  `apps/api/test/app.test.ts`. Deployed. An unsigned probe now gets `403`
+  from the webhook check.
+- **Free plans for the review accounts (test copy):**
+  - Max (`private.study_plan_grants`, 1 year) for the teacher, student and
+    parent.
+  - Family+ for 8 children (`private.family_plus_grants`, new in #120, 1
+    year) for the parent.
+  - `scripts/provision-reviewer-school.ts` now grants these itself, so the
+    production reviewer accounts get them at cutover.
+- **Other merges:**
+  - #120: Family+ comp grants, shown in the app as "Given by Studafy,
+    nothing to pay".
+  - #121: the announcements tab is labelled "News"; one-word quick actions
+    shrink instead of breaking.
+  - #123: also hono 4.13.11 (GHSA-5r4p-p66f-jhc7).
+  - #124: the backup restore-check image comes from Docker Hub, because ECR
+    Public's pull limit failed the nightly backups. `deno.lock` follows
+    hono. Every old "Backup failed" issue is closed.
+- **Housekeeping:**
+  - 38 merged agent worktrees under `.claude/worktrees` (65 GB) were
+    removed. They made `flutter build ios` hang stripping file attributes.
+  - Three with unfinished work were moved to `~/studafy-worktrees/`: the
+    messaging screenshots, the new-brand screenshots, and an old
+    notebooks-v2 branch.
+  - Remove agent worktrees after their PRs merge.
+
+### Next for Claude
+1. **Check that Play's test notification arrived.** In `fly logs -a
+   studafy-api-test`, look for `POST /webhooks/google` with status 200, and
+   a `play_store` row recorded. A `403` means the audience or the push
+   account does not match the subscription settings.
+2. **Purchase testing on the Samsung (Play install).** Ask the owner first
+   whether to pause the review accounts' free plans: set `ends_at = now()`
+   on their grant rows during testing, then restore them. With a grant, a
+   purchase changes nothing visible. Then follow the sandbox checklist in
+   `docs/deployment/subscriptions.md`:
+   - the student requests Max, the parent approves, the student buys
+     ("Test card, always approves");
+   - renewal every 5 minutes, cancel, pause, refund, restore, Plus → Max;
+   - the parent buys Family+.
+   If the server's purchase check fails with a permission error, Google can
+   take up to 24 h to activate a new Play API account.
+3. **Google sign-in on the Play build** (guide `02-google-signin-sha1.md`):
+   add the Play App Signing SHA-1 and SHA-256 (Play Console → App integrity)
+   and the upload key's.
+4. **Offer a "minimum supported app version"** check (server says the
+   oldest allowed version; older apps show an "Update Studafy" screen).
+   Recommended before launch; the owner has not answered yet.
+5. When the owner says so, retake the store screenshots with the new brand
+   and the "News" tab.
+
+### Owner: open decisions
+- Pause the review accounts' free plans during purchase testing? (Claude
+  recommends yes.)
+- Two-factor for regular users: hide it (recommended; the code is only ever
+  asked for before opening a safety report), or add a sign-in step-up.
+- A banner for a push that arrives while the app is open on Android.
+- The "minimum supported version" check (above).
+- Still to provide: the Apple Developer account and then the APNs key,
+  Resend, Turnstile, and the paid Redis plan.
+
+### Rules learned this session
+- Never paste a generated password or key into chat. Generate it straight
+  into a file (`… > file && pbcopy < file`).
+- Copying a command from the chat replaces the clipboard. To compare a
+  password, paste the command first, copy the password, then press Enter.
+- On a Mac, paste is ⌘V, not Ctrl+V.
+- Merge only after the PR's checks have **started and passed**. Wait for
+  check runs to exist on the head commit. A merge right after a push slipped
+  through once (#123).
+- Bumping an npm package that the edge functions also import needs
+  `deno.lock` updated too (Edge Function quality runs `deno check --frozen`).
+- Never run a bare `git stash`; use a temporary commit. It happened once in
+  the scratch worktree and was restored at once.
+
+## Earlier (2026-10-18): two-factor fix, Firebase and push
 
 ### Two-factor, Firebase and push
 - **Two-factor set-up was broken and is fixed (#115).** Verifying always
