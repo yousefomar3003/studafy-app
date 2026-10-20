@@ -7,6 +7,7 @@ import {
   type CountAlertOptions,
   createCountAlert,
 } from "../monitoring/countAlert";
+import { errorFields } from "../platform/jobGuards";
 
 /**
  * Warnings to someone with no school whose email failed for good
@@ -103,7 +104,7 @@ export function startFileRetentionSweep(
     if (running) return;
     running = runOnce().catch((error) => {
       logger.error("retention_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);
@@ -199,7 +200,7 @@ export function startRetentionSchedule(
       } catch (error) {
         logger.error("retention_step_failed", {
           step: step.name,
-          error_name: error instanceof Error ? error.name : "unknown",
+          ...errorFields(error),
         });
       }
     }
@@ -211,7 +212,7 @@ export function startRetentionSchedule(
       } catch (error) {
         logger.error("retention_step_failed", {
           step: "inactive_warning_emails",
-          error_name: error instanceof Error ? error.name : "unknown",
+          ...errorFields(error),
         });
       }
     }
@@ -224,7 +225,7 @@ export function startRetentionSchedule(
       } catch (error) {
         logger.error("retention_alert_failed", {
           key: UNDELIVERABLE,
-          error_name: error instanceof Error ? error.name : "unknown",
+          ...errorFields(error),
         });
       }
     }

@@ -31,6 +31,25 @@ export function normalizedErrorCode(error: unknown): string {
   return "PROCESSING_FAILED";
 }
 
+/**
+ * Log fields for a failed poll or job: the error's class and, when it has
+ * one, its code - a Postgres SQLSTATE (`42883`, `57014`), or a client code
+ * from postgres.js or the runtime (`CONNECTION_CLOSED`, `ECONNRESET`). Only
+ * a code that looks like one is kept, and never the message: a database
+ * error's message and detail can quote the values of a row.
+ */
+export function errorFields(
+  error: unknown,
+): { error_name: string; error_code?: string } {
+  const name = error instanceof Error ? error.name : "unknown";
+  const code = typeof error === "object" && error !== null
+    ? (error as { code?: unknown }).code
+    : undefined;
+  return typeof code === "string" && /^[A-Z0-9_]{2,40}$/.test(code)
+    ? { error_name: name, error_code: code }
+    : { error_name: name };
+}
+
 /** Deterministic BullMQ job id for one outbox row. */
 export function outboxJobId(outboxId: number): string {
   return `outbox-${outboxId}`;

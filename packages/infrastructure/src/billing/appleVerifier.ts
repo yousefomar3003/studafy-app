@@ -18,6 +18,7 @@ import {
   RevocationReason,
   SignedDataVerifier,
 } from "@apple/app-store-server-library";
+import { STORE_API_TIMEOUT_MS, withDeadline } from "./deadline";
 
 export class AppleVerificationError extends Error {
   constructor(message: string) {
@@ -77,14 +78,19 @@ export interface AppleVerifierConfig {
     keyId: string;
     issuerId: string;
   };
+  /** Time limit per call (STORE_API_TIMEOUT_MS). Signed data is checked
+   * online (certificate revocation), so decoding can wait on Apple too. */
+  timeoutMs?: number;
 }
 
 export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
   readonly #verifier: SignedDataVerifier;
   readonly #client: AppStoreServerAPIClient;
   readonly #environment: "Sandbox" | "Production";
+  readonly #timeoutMs: number;
 
   constructor(config: AppleVerifierConfig) {
+    this.#timeoutMs = config.timeoutMs ?? STORE_API_TIMEOUT_MS;
     const libraryEnvironment = config.environment === "Production"
       ? AppleLibraryEnvironment.PRODUCTION
       : AppleLibraryEnvironment.SANDBOX;
@@ -109,8 +115,10 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
     signedTransaction: string,
   ): Promise<VerifiedAppleTransaction> {
     try {
-      const decoded = await this.#verifier.verifyAndDecodeTransaction(
-        signedTransaction,
+      const decoded = await withDeadline(
+        this.#verifier.verifyAndDecodeTransaction(signedTransaction),
+        this.#timeoutMs,
+        "apple transaction check",
       );
       return toVerifiedTransaction(decoded);
     } catch (error) {
@@ -126,8 +134,10 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
     signedPayload: string,
   ): Promise<VerifiedAppleNotification> {
     try {
-      const decoded = await this.#verifier.verifyAndDecodeNotification(
-        signedPayload,
+      const decoded = await withDeadline(
+        this.#verifier.verifyAndDecodeNotification(signedPayload),
+        this.#timeoutMs,
+        "apple notification check",
       );
       const signedTransactionInfo = decoded.data?.signedTransactionInfo;
       const transaction = signedTransactionInfo
@@ -155,8 +165,10 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
     originalTransactionId: string,
   ): Promise<VerifiedAppleTransaction | null> {
     try {
-      const statuses = await this.#client.getAllSubscriptionStatuses(
-        originalTransactionId,
+      const statuses = await withDeadline(
+        this.#client.getAllSubscriptionStatuses(originalTransactionId),
+        this.#timeoutMs,
+        "apple status lookup",
       );
       const lastTransactions = statuses.data?.flatMap((group) =>
         group.lastTransactions ?? []
@@ -196,8 +208,10 @@ export class RealAppleTransactionVerifier implements AppleTransactionVerifier {
   > {
     if (!signedRenewalInfo) return {};
     try {
-      const info = await this.#verifier.verifyAndDecodeRenewalInfo(
-        signedRenewalInfo,
+      const info = await withDeadline(
+        this.#verifier.verifyAndDecodeRenewalInfo(signedRenewalInfo),
+        this.#timeoutMs,
+        "apple renewal info check",
       );
       return {
         autoRenewing: info.autoRenewStatus === undefined

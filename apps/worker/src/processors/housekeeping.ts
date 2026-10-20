@@ -1,5 +1,6 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
+import { errorFields } from "../platform/jobGuards";
 
 export interface HousekeepingRuntime {
   close(): Promise<void>;
@@ -46,7 +47,7 @@ export function startHousekeeping(
     if (running || closed) return;
     running = runOnce().catch((error) => {
       logger.error("housekeeping_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

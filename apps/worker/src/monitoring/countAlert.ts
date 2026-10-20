@@ -1,6 +1,7 @@
 import type { AlertSender } from "@studafy/infrastructure";
 import type { Logger } from "@studafy/observability";
 import { type AlertState, memoryAlertState } from "./queueMonitor";
+import { errorFields } from "../platform/jobGuards";
 
 /**
  * One count that should be zero, reported to the same Telegram chat as the
@@ -42,7 +43,7 @@ export function createCountAlert(options: CountAlertOptions): CountAlert {
       return await use(options.state);
     } catch (error) {
       options.logger.warn("queue_alert_state_unavailable", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return use(fallback);
     }

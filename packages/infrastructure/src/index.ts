@@ -112,6 +112,7 @@ export {
   RealGooglePurchaseVerifier,
   type VerifiedGooglePurchase,
 } from "./billing/googleVerifier";
+export { STORE_API_TIMEOUT_MS, withDeadline } from "./billing/deadline";
 export {
   calendarEventIdFor,
   type ConferenceProvider,

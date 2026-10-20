@@ -889,6 +889,41 @@ describe("PAY-071 billing reconciliation", () => {
 
     expect(dispatch.reconcileOutcomes).toHaveLength(0);
   });
+
+  test("the start-up sweep and the interval never run side by side", async () => {
+    const dispatch = new FakeDispatch();
+    const google = new FakeGoogleVerifier();
+    google.purchase = verifiedGoogle();
+    let releaseScan!: () => void;
+    const held = new Promise<void>((resolve) => releaseScan = resolve);
+    let scans = 0;
+    const scan = dispatch.reconciliationScan.bind(dispatch);
+    dispatch.reconciliationScan = async () => {
+      scans++;
+      await held; // a slow store or database
+      return scan();
+    };
+    const { collector, logger } = testLogger();
+    const sweep = startBillingReconciliation(
+      dispatch,
+      { environment: "production", apple: null, google: googleEnv(google) },
+      logger,
+      5,
+    );
+    dispatch.scan = [candidate()];
+
+    const atStart = sweep.runGuarded();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(scans).toBe(1);
+    releaseScan();
+    await atStart;
+    await sweep.close();
+
+    expect(dispatch.reconcileOutcomes.length).toBeGreaterThanOrEqual(1);
+    expect(collector.events()).not.toContain(
+      "billing_reconciliation_poll_failed",
+    );
+  });
 });
 
 describe("subscription lifecycle (202609290004)", () => {

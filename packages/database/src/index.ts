@@ -62,6 +62,29 @@ export function usesTransactionPooler(url: string): boolean {
 }
 
 /**
+ * Client settings for the transaction pooler (worker stall, 2026-10-20).
+ *
+ * - `prepare: false`: see `usesTransactionPooler`.
+ * - `max_pipeline: 0`: one statement in flight per connection. When every
+ *   pooled connection is busy, postgres.js otherwise writes the next
+ *   statements onto a busy connection without waiting (pipelining). The
+ *   pooler hands its server connection back as soon as the first statement
+ *   finishes, while the next one has already reached that server, half
+ *   sent: a parameterised statement goes as Parse/Describe/Flush and waits
+ *   for the reply before sending Bind/Execute/Sync. The reply never comes
+ *   back, so the query never settles, the server session stays `active` on
+ *   ClientRead, and the client connection is lost for good. The worker lost
+ *   its five connections that way and every poller stopped (the test copy
+ *   was silent for 80 minutes), and the same request against the test
+ *   pooler hung 34 of 40 statements. With nothing pipelined, each pooler
+ *   transaction is one whole statement.
+ */
+const TRANSACTION_POOLER_OPTIONS = {
+  prepare: false,
+  max_pipeline: 0,
+} as const;
+
+/**
  * Creates a Postgres client for read-only connectivity smoke. No domain data
  * access exists yet; Phase 2+ adds query modules behind repositories.
  */
@@ -79,7 +102,7 @@ export function createDatabase(
     max: options.max ?? 5,
     idle_timeout: options.idleTimeout ?? 30,
     connect_timeout: options.connectTimeout ?? 5,
-    ...(usesTransactionPooler(url) ? { prepare: false } : {}),
+    ...(usesTransactionPooler(url) ? TRANSACTION_POOLER_OPTIONS : {}),
   });
 }
 

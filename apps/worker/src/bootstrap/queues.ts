@@ -50,8 +50,11 @@ export interface BillingRuntime {
   worker: Worker;
   /** Runs one dispatcher poll: claim → enqueue → record. */
   runDispatchOnce: () => Promise<number>;
-  /** Runs one reconciliation sweep poll (when enabled). */
-  runReconciliationOnce: () => Promise<number>;
+  /**
+   * Runs one reconciliation sweep now (when enabled), unless one is in
+   * flight. Never rejects; a failure is logged.
+   */
+  runReconciliationOnce: () => Promise<void>;
   close: () => Promise<void>;
 }
 
@@ -227,8 +230,7 @@ export function buildBillingRuntime(
     worker,
     runDispatchOnce: () => dispatcher.runOnce(),
     runReconciliationOnce: async () => {
-      if (!reconciliation) return 0;
-      return reconciliation.runOnce();
+      await reconciliation?.runGuarded();
     },
     close: async () => {
       await closeWorker(worker);

@@ -10,6 +10,7 @@ import {
   sha256Hex,
   type StudyAssistant,
 } from "@studafy/infrastructure";
+import { errorFields } from "../platform/jobGuards";
 
 /**
  * ADR-0037: lesson files and links read into passages in the background,
@@ -227,7 +228,7 @@ export function startMaterialIndex(
       return handled;
     })().catch((error) => {
       deps.logger.error("material_index_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);

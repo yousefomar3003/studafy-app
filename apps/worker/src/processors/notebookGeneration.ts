@@ -8,6 +8,7 @@ import {
   type StudyCallContext,
   writeNotebook,
 } from "@studafy/infrastructure";
+import { errorFields } from "../platform/jobGuards";
 
 /**
  * Study notebooks, written off the notebook queue (2026-10-16, ADR-0038).
@@ -234,7 +235,7 @@ export function startNotebookGeneration(
             // The database was unreachable when reporting: the lease lapses
             // and the job is tried again.
             deps.logger.error("study_notebook_job_failed", {
-              error_name: error instanceof Error ? error.name : "unknown",
+              ...errorFields(error),
             });
           }).finally(() => inFlight.delete(work));
           inFlight.add(work);
@@ -253,7 +254,7 @@ export function startNotebookGeneration(
       }
     } catch (error) {
       deps.logger.error("study_notebook_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
     } finally {
       claiming = false;

@@ -24,6 +24,7 @@ import {
   resolveAppleSubscriptionState,
 } from "@studafy/domain";
 import { normalizedErrorCode } from "../platform/jobGuards";
+import { startGuardedPoll } from "../platform/poller";
 import {
   type BillingDispatchPort,
   type ReconciliationCandidate,
@@ -32,7 +33,13 @@ import { type BillingVerifierDependencies } from "./processor";
 
 export interface BillingReconciliationRuntime {
   close(): Promise<void>;
+  /** One sweep, unguarded; returns the candidates looked at. */
   runOnce(): Promise<number>;
+  /**
+   * One sweep now unless one is in flight (then waits for that one), as
+   * the interval runs it. Never rejects.
+   */
+  runGuarded(): Promise<void>;
 }
 
 export function startBillingReconciliation(
@@ -44,7 +51,6 @@ export function startBillingReconciliation(
   onFinalIgnore: (candidate: ReconciliationCandidate) => boolean = () => false,
 ): BillingReconciliationRuntime {
   let closed = false;
-  let running: Promise<number> | null = null;
 
   const runOnce = async (): Promise<number> => {
     if (closed) return 0;
@@ -183,22 +189,19 @@ export function startBillingReconciliation(
     return "ignored";
   }
 
-  const timer = setInterval(() => {
-    if (running) return;
-    running = runOnce().catch((error) => {
-      logger.error("billing_reconciliation_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
-      });
-      return 0;
-    }).finally(() => (running = null));
-  }, intervalMs);
+  const poll = startGuardedPoll({
+    name: "billing_reconciliation",
+    intervalMs,
+    run: runOnce,
+    logger,
+  });
 
   return {
     runOnce,
+    runGuarded: poll.run,
     async close() {
       closed = true;
-      clearInterval(timer);
-      await running;
+      await poll.close();
     },
   };
 }

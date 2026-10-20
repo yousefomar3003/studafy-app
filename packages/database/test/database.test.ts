@@ -29,4 +29,27 @@ describe("Supabase pooler modes", () => {
       .toBe(false);
     expect(usesTransactionPooler("not a url")).toBe(false);
   });
+
+  test("the transaction pooler gets one statement per connection at a time", async () => {
+    // Creating a client opens no connection; only its options are read.
+    const pooled = createDatabase(
+      "postgresql://u:p@127.0.0.1:6543/postgres",
+    );
+    const session = createDatabase(
+      "postgresql://u:p@127.0.0.1:5432/postgres",
+    );
+    // postgres.js parses max_pipeline but leaves it out of its types.
+    const parsed = (sql: typeof pooled) =>
+      sql.options as unknown as { prepare: boolean; max_pipeline: number };
+    try {
+      expect(parsed(pooled).prepare).toBe(false);
+      expect(parsed(pooled).max_pipeline).toBe(0);
+      // Session mode and direct connections keep postgres.js's defaults.
+      expect(parsed(session).prepare).toBe(true);
+      expect(parsed(session).max_pipeline).toBe(100);
+    } finally {
+      await closeDatabase(pooled);
+      await closeDatabase(session);
+    }
+  });
 });

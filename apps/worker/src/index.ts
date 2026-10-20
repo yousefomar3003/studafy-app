@@ -56,6 +56,7 @@ import { startChannelDelivery } from "./processors/channelDelivery";
 import { startHousekeeping } from "./processors/housekeeping";
 import { startReportAlerts } from "./processors/reportAlerts";
 import { queuePrefix } from "./platform/queueInventory";
+import { startGuardedPoll } from "./platform/poller";
 import { redisAlertState, startQueueMonitor } from "./monitoring/queueMonitor";
 import { type MonitoredQueue, monitorSources } from "./monitoring/sources";
 
@@ -280,20 +281,18 @@ if (notifications) {
   logger.info("worker_ready", { queue: "notifications" });
 }
 
-const outboxTimer = notifications
-  ? setInterval(() => {
-    notifications.runDispatchOnce().catch((error) => {
-      logger.error("outbox_dispatch_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
-      });
-    });
-  }, env.OPS061_OUTBOX_POLL_INTERVAL_MS)
-  : undefined;
 // First dispatch runs immediately: a restart must not wait a poll interval
-// to pick up where a previous dispatcher left off.
-if (notifications) {
-  notifications.runDispatchOnce().catch(() => undefined);
-}
+// to pick up where a previous dispatcher left off. A poll never overlaps
+// the previous one (startGuardedPoll).
+const outboxPoll = notifications
+  ? startGuardedPoll({
+    name: "outbox_dispatch",
+    intervalMs: env.OPS061_OUTBOX_POLL_INTERVAL_MS,
+    run: () => notifications.runDispatchOnce(),
+    logger,
+    runAtStart: true,
+  })
+  : undefined;
 
 // PAY-071: the store-event drain. The dispatcher polls due `store_events`
 // rows and enqueues deterministic `billing-events` jobs; the processor
@@ -317,20 +316,19 @@ if (billing) {
   logger.info("worker_ready", { queue: "billing-events" });
 }
 
-const billingDispatchTimer = billing
-  ? setInterval(() => {
-    billing.runDispatchOnce().catch((error) => {
-      logger.error("billing_dispatch_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
-      });
-    });
-  }, env.PAY071_OUTBOX_POLL_INTERVAL_MS)
+const billingDispatchPoll = billing
+  ? startGuardedPoll({
+    name: "billing_dispatch",
+    intervalMs: env.PAY071_OUTBOX_POLL_INTERVAL_MS,
+    run: () => billing.runDispatchOnce(),
+    logger,
+    runAtStart: true,
+  })
   : undefined;
-if (billing) {
-  billing.runDispatchOnce().catch(() => undefined);
-}
+// The first sweep runs now, through the sweep's own guard, so the interval
+// cannot start a second one beside it while store calls are slow.
 if (billing && env.PAY071_RECONCILIATION_ENABLED) {
-  billing.runReconciliationOnce().catch(() => undefined);
+  void billing.runReconciliationOnce();
 }
 
 // DL-051 account rights: execute deletions whose grace period ended and
@@ -497,8 +495,8 @@ installGracefulShutdown({
   onClose: async () => {
     logShutdownStep(logger, "drain_workers", { queue: "smoke" });
     // Stop the producer before draining consumers: no new claims enqueue.
-    if (outboxTimer) clearInterval(outboxTimer);
-    if (billingDispatchTimer) clearInterval(billingDispatchTimer);
+    await outboxPoll?.close();
+    await billingDispatchPoll?.close();
     await notifications?.close();
     await billing?.close();
     await scan?.close();

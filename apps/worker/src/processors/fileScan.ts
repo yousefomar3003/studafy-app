@@ -2,6 +2,7 @@ import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
 import type { FileScanner, PrivateFileStorage } from "@studafy/infrastructure";
 import { sha256Hex } from "@studafy/infrastructure";
+import { errorFields } from "../platform/jobGuards";
 
 export interface ScanJob {
   jobId: number;
@@ -284,7 +285,7 @@ export function startFileScan(
     if (running) return;
     running = runOnce().catch((error) => {
       logger.error("file_scan_poll_failed", {
-        error_name: error instanceof Error ? error.name : "unknown",
+        ...errorFields(error),
       });
       return 0;
     }).finally(() => running = null);
