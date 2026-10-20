@@ -331,8 +331,7 @@ class StudyPlanOffer {
     this.monthly = false,
     this.oneMonthTrial = false,
     this.storeAvailable = false,
-    this.selfPurchaseEnabled = false,
-    this.approval = 'none',
+    this.selfPurchaseEnabled = true,
   });
 
   final StudyPlanTier tier;
@@ -343,19 +342,17 @@ class StudyPlanOffer {
   final bool monthly;
   final bool oneMonthTrial;
   final bool storeAvailable;
-  final bool selfPurchaseEnabled;
 
-  /// 'none', 'requested' or 'approved': a guardian approves a student's
-  /// purchase before the store sheet can open.
-  final String approval;
+  /// The server's per-school switch. On unless a school opts out (DL-071):
+  /// a student buys their own plan, with no approval step in Studafy.
+  final bool selfPurchaseEnabled;
 
   bool get canPurchase =>
       !active &&
       storeAvailable &&
       monthly &&
       price.isNotEmpty &&
-      selfPurchaseEnabled &&
-      approval == 'approved';
+      selfPurchaseEnabled;
 }
 
 /// Where a subscription is billed.
@@ -479,7 +476,6 @@ abstract interface class StudyPlanSubscriptionRepository {
   Future<StudyPlanSubscription?> subscription();
 
   Future<StudyPlanOffer> offer(StudyPlanTier tier);
-  Future<void> requestApproval(StudyPlanTier tier);
   Future<void> purchase(StudyPlanTier tier);
   Future<void> restorePurchases();
   void addEntitlementListener(VoidCallback listener);

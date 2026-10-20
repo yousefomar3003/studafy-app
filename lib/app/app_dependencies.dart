@@ -184,8 +184,8 @@ class AppDependencies {
   /// Conversations with report and block controls (MOB-070, SAFE-043).
   final MessagingInteractor messaging;
 
-  /// Guardian home: linked children, link requests, progress and purchase
-  /// approvals (MOB-070 parent slice, DL-048/DL-050).
+  /// Guardian home: linked children, link requests and progress (MOB-070
+  /// parent slice, DL-050). Purchase approvals were retired by DL-071.
   final FamilyInteractor family;
 
   /// The interface language (MOB-070, ADR-0028). Held here, like
@@ -253,9 +253,7 @@ class AppDependencies {
         ? null
         : ApiMessagingRepository(remote.api);
     final previewFamily = policy.isSynthetic ? PreviewFamilyRepository() : null;
-    final apiFamily = remote == null
-        ? null
-        : ApiFamilyRepository(remote.api, billing: billingApi);
+    final apiFamily = remote == null ? null : ApiFamilyRepository(remote.api);
     final studyChats = remote == null
         ? null
         : FileStudyChatStore(currentUserId: () => context.profile?.id);
@@ -284,10 +282,6 @@ class AppDependencies {
     return AppDependencies(
       family: FamilyInteractor(
         family: previewFamily ?? apiFamily!,
-        approvals: previewFamily ?? apiFamily!,
-        confirmRecentAuth: () => sessionRepository.confirmRecentAuth(
-          ReauthPurpose.billingPurchaseApproval,
-        ),
         telemetry: telemetry,
       ),
       messaging: MessagingInteractor(

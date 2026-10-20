@@ -25706,6 +25706,7 @@
               "PHOTO_UNREADABLE",
               "LESSON_HAS_NO_TEXT",
               "STUDENT_PURCHASE_DISABLED",
+              "PURCHASE_APPROVAL_RETIRED",
               "ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT",
               "PRODUCT_NOT_FOUND",
               "MANAGED_CHILD_LIMIT",

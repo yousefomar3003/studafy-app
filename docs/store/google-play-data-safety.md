@@ -116,7 +116,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 | Data type | Collected | Shared | Ephemeral | Required or optional | Purposes | What and where |
 |---|---|---|---|---|---|---|
 | **User payment info** | No | | | | | Payment details are handled entirely by Google Play. The app never sees them. |
-| **Purchase history** | Yes | No | No | Optional (only when someone subscribes) | App functionality, Account management | The store receipt or token, product and environment are sent to `POST /v1/billing/purchases` for checking with Google or Apple (`lib/data/billing/store_subscription_repository.dart`; `packages/infrastructure/src/billing/googleVerifier.ts`). Entitlements and purchase-approval requests from a child to a parent are also stored. |
+| **Purchase history** | Yes | No | No | Optional (only when someone subscribes) | App functionality, Account management | The store receipt or token, product and environment are sent to `POST /v1/billing/purchases` for checking with Google or Apple (`lib/data/billing/store_subscription_repository.dart`; `packages/infrastructure/src/billing/googleVerifier.ts`). Entitlements are also stored. A student buys their own plan with no approval step in Studafy (DL-071); purchase-approval requests made before 21 October 2026 are kept as billing records. |
 | **Credit score, other financial info** | No | | | | | |
 
 ### Messages
@@ -212,7 +212,7 @@ comes from, to check the answers against each role.
 |---|---|
 | **Student** | Name, email (unless a managed child account), gender (optional), Studafy ID. Class membership. Hand-ins (files, photos, text), exam answers, notebooks, AI questions and photos, messages (if the school allows), voice notes, push token. Grades and attendance are entered about them by teachers. |
 | **Managed child account** (created by a parent) | Name and language only, entered by the parent; no email (ADR-0031). Otherwise the same as a student. |
-| **Parent or guardian** | Name, email, gender (optional). Guardian links and relationship. Family+ purchases and approvals of a child's purchase requests. Messages with teachers. Turnstile check when looking up a student. |
+| **Parent or guardian** | Name, email, gender (optional). Guardian links and relationship. Family+ purchases. Messages with teachers. Turnstile check when looking up a student. |
 | **Teacher** | Name, email, gender (optional). Workspace and class details. Lessons and materials (files). Grades, attendance, absences, wellbeing notes about students. Announcements, meetings, messages. |
 
 Data on the device only, not collected:

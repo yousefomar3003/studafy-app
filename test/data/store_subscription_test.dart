@@ -17,10 +17,8 @@ const maxSku = 'studafy_max_monthly';
 
 class Billing extends Fake implements V1BillingApi {
   String account = 'student-a';
-  bool approved = true;
   bool enabled = true;
   List<V1EntitlementRow> rows = [];
-  Set<String> approvedKeys = {'studafy_plus'};
   @override
   Future<V1BillingCatalogue> catalogue() async => V1BillingCatalogue(
     purchaseAccountToken: account,
@@ -55,21 +53,6 @@ class Billing extends Fake implements V1BillingApi {
   );
   @override
   Future<List<V1EntitlementRow>> entitlements() async => rows;
-  @override
-  Future<List<V1PurchaseApproval>> purchaseApprovals() async => approved
-      ? [
-          for (final key in approvedKeys)
-            V1PurchaseApproval(
-              id: 'approval-$key',
-              studentId: 'student',
-              studentName: 'Student',
-              featureKey: key,
-              status: 'approved',
-              requestedAt: DateTime.now(),
-              expiresAt: DateTime.now().add(const Duration(hours: 1)),
-            ),
-        ]
-      : [];
 }
 
 /// A server with billing off: `/v1/billing/*` is not mounted.
@@ -221,15 +204,23 @@ void main() {
       );
     },
   );
-  test('rechecks consent and account before charging', () async {
+  test('a student subscribes with no approval step (DL-071)', () async {
+    final offer = await repository.offer(StudyPlanTier.max);
+    expect(offer.selfPurchaseEnabled, isTrue);
+    expect(offer.canPurchase, isTrue);
+    await repository.purchase(StudyPlanTier.max);
+    expect(store.bought!.productDetails.id, maxSku);
+    expect(store.bought!.applicationUserName, 'student-a');
+  });
+  test('rechecks the school switch and account before charging', () async {
     await repository.offer(StudyPlanTier.plus);
-    billing.approved = false;
+    billing.enabled = false;
     await expectLater(
       repository.purchase(StudyPlanTier.plus),
       throwsStateError,
     );
     expect(store.bought, isNull);
-    billing.approved = true;
+    billing.enabled = true;
     billing.account = 'different-account';
     await expectLater(
       repository.purchase(StudyPlanTier.plus),
@@ -482,9 +473,7 @@ void main() {
 
   group('never a second subscription or a second charge', () {
     test('Plus upgrades to Max by replacing Plus on Google Play', () async {
-      billing
-        ..approvedKeys = {'studafy_max'}
-        ..rows = [held('studafy_plus')];
+      billing.rows = [held('studafy_plus')];
       store.owned = ownedOnThisPhone(sku);
       expect((await repository.offer(StudyPlanTier.max)).canPurchase, isTrue);
       await repository.purchase(StudyPlanTier.max);
@@ -496,9 +485,7 @@ void main() {
     });
 
     test('an upgrade needs the Google account that bought Plus', () async {
-      billing
-        ..approvedKeys = {'studafy_max'}
-        ..rows = [held('studafy_plus')];
+      billing.rows = [held('studafy_plus')];
       await repository.offer(StudyPlanTier.max);
       await expectLater(
         repository.purchase(StudyPlanTier.max),
@@ -534,9 +521,7 @@ void main() {
       ),
     ]) {
       test(name, () async {
-        billing
-          ..approvedKeys = {'studafy_plus', 'studafy_max'}
-          ..rows = rows;
+        billing.rows = rows;
         await repository.offer(tier);
         await expectLater(
           repository.purchase(tier),

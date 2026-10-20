@@ -451,26 +451,17 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
             padding: const EdgeInsets.only(top: 12),
             child: Text(_message!),
           ),
-        if (subscriptions != null) ...[
+        // A plan Studafy gave has no store subscription to manage or
+        // cancel, so the store's subscription page is not offered. Restore
+        // purchases is on the profile, under Subscription.
+        if (subscriptions != null && !_status.granted) ...[
           const SizedBox(height: 8),
           Wrap(
             children: [
               TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => _perform(
-                        subscriptions.restorePurchases,
-                        l10n.familyPlusRestoring,
-                      ),
-                child: Text(l10n.familyPlusRestore),
+                onPressed: () => _open(_manageUrl),
+                child: Text(l10n.familyPlusManage),
               ),
-              // A plan Studafy gave has no store subscription to manage or
-              // cancel, so the store's subscription page is not offered.
-              if (!_status.granted)
-                TextButton(
-                  onPressed: () => _open(_manageUrl),
-                  child: Text(l10n.familyPlusManage),
-                ),
             ],
           ),
         ],

@@ -363,4 +363,136 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('TC-4827159360'), findsOne);
   });
+
+  group('Restore purchases is on the profile, under Subscription', () {
+    void tall(WidgetTester tester) {
+      tester.view.physicalSize = const Size(1200, 3200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
+
+    testWidgets('a student restores from the profile and is told so', (
+      tester,
+    ) async {
+      tall(tester);
+      var restored = 0;
+      await tester.pumpWidget(
+        _app(
+          AccountHubPage(
+            subscription: SubscriptionEntry(
+              open: (_) async {},
+              restorePurchases: () async => restored++,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Study plan'), findsOne);
+      final restore = find.text('Restore purchases');
+      expect(restore, findsOne);
+      // Low emphasis: a small text button, below the plan row.
+      expect(
+        find.ancestor(of: restore, matching: find.byType(TextButton)),
+        findsOne,
+      );
+      expect(
+        tester.getTopLeft(restore).dy,
+        greaterThan(tester.getTopLeft(find.text('Study plan')).dy),
+      );
+      await tester.tap(restore);
+      await tester.pumpAndSettle();
+      expect(restored, 1);
+      expect(find.text('Restoring purchases…'), findsOne);
+    });
+
+    testWidgets('a parent gets only the restore link, for Family+', (
+      tester,
+    ) async {
+      tall(tester);
+      var restored = 0;
+      await tester.pumpWidget(
+        _app(
+          AccountHubPage(
+            subscription: SubscriptionEntry(
+              restorePurchases: () async => restored++,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('SUBSCRIPTION'), findsOne);
+      expect(find.text('Study plan'), findsNothing);
+      await tester.tap(find.text('Restore purchases'));
+      await tester.pumpAndSettle();
+      expect(restored, 1);
+    });
+
+    testWidgets('a failed restore says so', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(
+        _app(
+          AccountHubPage(
+            subscription: SubscriptionEntry(
+              restorePurchases: () async => throw StateError('offline'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Restore purchases'));
+      await tester.pumpAndSettle();
+      expect(find.text('That did not work. Please try again.'), findsOne);
+    });
+
+    testWidgets('no store, no restore link', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(
+        _app(
+          AccountHubPage(subscription: SubscriptionEntry(open: (_) async {})),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Study plan'), findsOne);
+      expect(find.text('Restore purchases'), findsNothing);
+    });
+
+    for (final locale in const [Locale('en'), Locale('ar')]) {
+      testWidgets('the restore link is accessible: ${locale.languageCode}', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          _app(
+            AccountHubPage(
+              subscription: SubscriptionEntry(
+                open: (_) async {},
+                restorePurchases: () async {},
+              ),
+            ),
+            locale: locale,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byType(TextButton).last,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        await expectAccessible(tester);
+        expect(
+          find.bySemanticsLabel(
+            locale.languageCode == 'en'
+                ? 'Restore purchases'
+                : 'استعادة المشتريات',
+          ),
+          findsOne,
+        );
+        semantics.dispose();
+      });
+    }
+  });
 }

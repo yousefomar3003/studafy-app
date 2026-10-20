@@ -75,49 +75,6 @@ class V1BillingCatalogue {
   );
 }
 
-/// A student self-purchase approval (DL-048). Students see their own
-/// requests; guardians see those of children they are verified for.
-class V1PurchaseApproval {
-  const V1PurchaseApproval({
-    required this.id,
-    required this.studentId,
-    required this.studentName,
-    required this.featureKey,
-    required this.status,
-    required this.requestedAt,
-    required this.expiresAt,
-    this.decidedAt,
-  });
-
-  final String id;
-  final String studentId;
-  final String studentName;
-  final String featureKey;
-
-  /// requested, approved, declined, consumed or expired.
-  final String status;
-  final DateTime requestedAt;
-  final DateTime? decidedAt;
-  final DateTime expiresAt;
-
-  bool get isPending => status == 'requested';
-  bool get isApproved => status == 'approved';
-
-  factory V1PurchaseApproval.fromJson(Map<String, dynamic> json) =>
-      V1PurchaseApproval(
-        id: json['id'] as String,
-        studentId: json['studentId'] as String,
-        studentName: json['studentName'] as String,
-        featureKey: json['featureKey'] as String,
-        status: json['status'] as String,
-        requestedAt: DateTime.parse(json['requestedAt'] as String),
-        decidedAt: json['decidedAt'] == null
-            ? null
-            : DateTime.parse(json['decidedAt'] as String),
-        expiresAt: DateTime.parse(json['expiresAt'] as String),
-      );
-}
-
 class V1SubmitPurchaseOutcome {
   const V1SubmitPurchaseOutcome({
     required this.featureKey,
@@ -278,42 +235,6 @@ class V1BillingApi {
     );
     return V1RestoreOutcome.fromJson(response);
   }
-
-  /// Student: ask linked guardians to approve a self-purchase.
-  Future<V1PurchaseApproval> requestPurchaseApproval({
-    required String featureKey,
-    required String idempotencyKey,
-  }) async => V1PurchaseApproval.fromJson(
-    await _transport.post(
-      '/v1/billing/purchase-approvals',
-      {'featureKey': featureKey},
-      idempotencyKey: idempotencyKey,
-      requiresIdempotency: true,
-    ),
-  );
-
-  Future<List<V1PurchaseApproval>> purchaseApprovals() async {
-    final response = await _transport.get('/v1/billing/purchase-approvals');
-    return (response['approvals'] as List<dynamic>)
-        .map((row) => V1PurchaseApproval.fromJson(row as Map<String, dynamic>))
-        .toList();
-  }
-
-  /// Guardian: approve or decline. The caller must first complete
-  /// `SessionRepository.confirmRecentAuth(ReauthPurpose.billingPurchaseApproval)`
-  /// so the shared transport attaches that one-time grant to this request.
-  Future<V1PurchaseApproval> decidePurchaseApproval({
-    required String approvalId,
-    required bool approve,
-    required String idempotencyKey,
-  }) async => V1PurchaseApproval.fromJson(
-    await _transport.post(
-      '/v1/billing/purchase-approvals/$approvalId/decision',
-      {'approve': approve},
-      idempotencyKey: idempotencyKey,
-      requiresIdempotency: true,
-    ),
-  );
 
   Future<List<V1EntitlementRow>> entitlements() async {
     final response = await _transport.get('/v1/billing/entitlements');

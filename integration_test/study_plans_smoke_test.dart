@@ -18,7 +18,6 @@ class _Store extends Fake implements StudyPlanSubscriptionRepository {
     monthly: true,
     storeAvailable: true,
     selfPurchaseEnabled: true,
-    approval: 'requested',
   );
   // No store on a simulator test: the page shows the plans, never a
   // purchase sheet.

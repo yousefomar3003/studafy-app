@@ -33,8 +33,6 @@ void main() {
         home: FamilyScope(
           interactor: FamilyInteractor(
             family: _Family(children),
-            approvals: _Family(children),
-            confirmRecentAuth: () async {},
             telemetry: const NoopTelemetry(),
           ),
           child: Scaffold(
@@ -166,7 +164,7 @@ void main() {
   });
 }
 
-class _Family implements FamilyRepository, PurchaseApprovalRepository {
+class _Family implements FamilyRepository {
   _Family(this.items);
   final List<GuardianChild> items;
 

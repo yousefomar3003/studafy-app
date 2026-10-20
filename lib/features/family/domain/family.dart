@@ -82,28 +82,6 @@ class ChildProgress {
   }
 }
 
-/// A child's request that a guardian approve a subscription (DL-048).
-@immutable
-class PurchaseApprovalRequest {
-  const PurchaseApprovalRequest({
-    required this.id,
-    required this.studentId,
-    required this.studentName,
-    required this.featureKey,
-    required this.status,
-    required this.expiresAt,
-  });
-
-  final String id;
-  final String studentId;
-  final String studentName;
-  final String featureKey;
-  final String status;
-  final DateTime expiresAt;
-
-  bool get isPending => status == 'requested';
-}
-
 abstract interface class FamilyRepository {
   Future<List<GuardianChild>> children();
 
@@ -113,14 +91,6 @@ abstract interface class FamilyRepository {
   Future<GuardianChild> requestLink(String studentId, {String? relationship});
 
   Future<ChildProgress> progress(String studentId);
-}
-
-/// Guardian purchase approvals. Deciding requires a fresh recent-auth
-/// grant, which the application layer obtains first.
-abstract interface class PurchaseApprovalRepository {
-  Future<List<PurchaseApprovalRequest>> pending();
-
-  Future<void> decide(String approvalId, {required bool approve});
 }
 
 class StudentIdentity {

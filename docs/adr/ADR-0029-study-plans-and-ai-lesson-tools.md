@@ -37,8 +37,9 @@ core of school work behind a subscription. The product decision is:
 
 - active `entitlements` for the `studafy_max` and `studafy_plus` products, in
   the `notebook_runtime` environment, the same PAY-071 machinery as before,
-  with store verification, refunds and guardian approval for a student's own
-  purchase;
+  with store verification and refunds (a student's own purchase needed a
+  guardian's approval until DL-071, 2026-10-20, removed it: the student now
+  buys the plan themselves);
 - comp grants in `private.study_plan_grants`, for support and testing.
 
 `private.ai_plan_limits(plan)` holds everything a plan permits:

@@ -80,7 +80,6 @@ class StoreSubscriptionRepository
   /// the one whose offer was shown.
   final Map<StudyPlanTier, ProductDetails> _planSelection = {};
   final Map<StudyPlanTier, String> _planSelectionAccount = {};
-  String? _approvalRequestKey;
 
   bool get _isRemote => _billingApi != null;
 
@@ -196,21 +195,7 @@ class StoreSubscriptionRepository
     if (active.isNotEmpty) {
       return StudyPlanOffer(tier: tier, active: true);
     }
-    final approvals = await _billingApi.purchaseApprovals();
-    final current = approvals.where(
-      (row) =>
-          row.featureKey == featureKey &&
-          row.expiresAt.isAfter(now) &&
-          (row.isApproved || row.isPending),
-    );
-    final approval = current.any((row) => row.isApproved)
-        ? 'approved'
-        : current.isNotEmpty
-        ? 'requested'
-        : 'none';
-    final enabled =
-        catalogue.selfPurchase.isNotEmpty &&
-        catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled);
+    final enabled = _selfPurchaseAllowed(catalogue);
     _planSelection.remove(tier);
     _planSelectionAccount.remove(tier);
     StoreOfferTerms terms = StoreOfferTerms.none;
@@ -282,24 +267,16 @@ class StoreSubscriptionRepository
       oneMonthTrial: eligibleTrial,
       storeAvailable: _planSelection[tier] != null,
       selfPurchaseEnabled: enabled,
-      approval: approval,
     );
   }
 
-  @override
-  Future<void> requestApproval(StudyPlanTier tier) async {
-    final featureKey = tier.featureKey;
-    if (!_isRemote || featureKey == null) {
-      throw StateError('Billing is unavailable in preview');
-    }
-    _approvalRequestKey ??=
-        'plan-approval-${tier.name}-${DateTime.now().microsecondsSinceEpoch}';
-    await _billingApi!.requestPurchaseApproval(
-      featureKey: featureKey,
-      idempotencyKey: _approvalRequestKey!,
-    );
-    _approvalRequestKey = null;
-  }
+  /// The server's per-school switch, on unless a school opted out. A
+  /// student buys their own plan: there is no approval step in Studafy
+  /// (DL-071). The store account on the phone pays, and for a child the
+  /// store's own family controls (Family Link, Ask to Buy) apply.
+  static bool _selfPurchaseAllowed(V1BillingCatalogue catalogue) =>
+      catalogue.selfPurchase.isNotEmpty &&
+      catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled);
 
   @override
   Future<void> purchase(StudyPlanTier tier) async {
@@ -312,26 +289,18 @@ class StoreSubscriptionRepository
         account == null) {
       throw StateError('Reload the subscription offer');
     }
-    // Recheck account, consent and availability immediately before the store
-    // sheet, without silently substituting a different price or offer.
+    // Recheck account and availability immediately before the store sheet,
+    // without silently substituting a different price or offer.
     final catalogue = await _billingApi!.catalogue();
-    final approvals = await _billingApi.purchaseApprovals();
     if (catalogue.purchaseAccountToken != account ||
-        (catalogue.selfPurchase.isEmpty ||
-            !catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled)) ||
+        !_selfPurchaseAllowed(catalogue) ||
         !catalogue.products.any(
           (row) =>
               row.featureKey == featureKey &&
               row.platform == _platformName &&
               row.storeProductId == selected.id,
-        ) ||
-        !approvals.any(
-          (row) =>
-              row.featureKey == featureKey &&
-              row.isApproved &&
-              row.expiresAt.isAfter(DateTime.now()),
         )) {
-      throw StateError('Purchase approval is no longer available');
+      throw StateError('This plan is no longer available to buy');
     }
     final terms = resolveStoreOfferTerms(selected);
     if (terms.periodLength != '1 month' ||

@@ -1,7 +1,5 @@
-import { type Context, Hono, type MiddlewareHandler } from "hono";
+import { type Context, Hono } from "hono";
 import {
-  V1DecidePurchaseApprovalRequest,
-  V1RequestPurchaseApprovalRequest,
   V1RestorePurchaseRequest,
   v1Route,
   V1SetSelfPurchaseRequest,
@@ -27,16 +25,10 @@ import type {
   AuthorizationEnv,
 } from "../authorization/middleware";
 import { requirePermission } from "../authorization/middleware";
-import type { AuthDependencies } from "../auth/middleware";
-import { requireRecentAuth } from "../auth/middleware";
 import type { IdempotencyDependencies } from "../platform/idempotency";
 import { committedJson, idempotency } from "../platform/idempotency";
 import { problem } from "../platform/errors";
-import {
-  validatedBody,
-  validatedParams,
-  validateRouteInput,
-} from "../platform/validation";
+import { validatedBody, validateRouteInput } from "../platform/validation";
 import type { BillingRepository, NormalizedTransaction } from "./repository";
 import { membershipDbContext } from "../platform/dbContext";
 import { outcomeProblem, type OutcomeTable } from "../platform/outcomes";
@@ -59,7 +51,6 @@ export function createBillingRoutes(
   deps: BillingRoutesDependencies,
   authorization: AuthorizationDependencies,
   idempotencyDependencies: IdempotencyDependencies,
-  authDependencies: AuthDependencies,
 ): Hono<AuthorizationEnv> {
   const routes = new Hono<AuthorizationEnv>();
   const requestApproval = v1Route("requestPurchaseApproval");
@@ -71,79 +62,32 @@ export function createBillingRoutes(
   const entitlements = v1Route("listEntitlements");
   const setSelfPurchase = v1Route("setSelfPurchase");
 
-  // DL-048: a student self-purchase needs a guardian's approval, decided in
-  // the guardian's own session behind a fresh recent-auth challenge. This
-  // replaces the arithmetic challenge a child could answer unaided.
+  // DL-071 retired DL-048's in-app guardian approval: a student buys their
+  // own plan, and a child's store account is governed by the store's family
+  // tools (Family Link, Ask to Buy). The routes stay so an app from before
+  // (Play build 100) gets a clean answer: the list is always empty, and a
+  // request or a decision is refused with PURCHASE_APPROVAL_RETIRED. None
+  // of them reaches the database or writes anything, so no idempotency
+  // reservation or recent-auth challenge is taken first.
   routes.post(
     "/v1/billing/purchase-approvals",
     validateRouteInput(requestApproval),
     requirePermission(authorization, "billing.purchase_approval.request"),
-    idempotency(
-      idempotencyDependencies,
-      requestApproval.operationId,
-      "required",
-    ),
-    async (c) => {
-      const reservation = c.get("idempotencyReservation");
-      if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const body = V1RequestPurchaseApprovalRequest.parse(
-        validatedBody(c),
-      );
-      const result = await deps.repository.requestPurchaseApproval(
-        membershipDbContext(c),
-        body.featureKey,
-        reservation,
-      );
-      const failure = mapBillingOutcome(c, result.outcome);
-      if (failure) return failure;
-      return committedJson(c, result.response, 201);
-    },
+    (c) => problem(c, "PURCHASE_APPROVAL_RETIRED", 422),
   );
 
   routes.get(
     "/v1/billing/purchase-approvals",
     validateRouteInput(listApprovals),
     requirePermission(authorization, "billing.purchase_approval.read"),
-    async (c) => {
-      const approvals = await deps.repository.listPurchaseApprovals(
-        membershipDbContext(c),
-      );
-      return c.json({ approvals });
-    },
+    (c) => c.json({ approvals: [] }),
   );
 
   routes.post(
     "/v1/billing/purchase-approvals/:approvalId/decision",
     validateRouteInput(decideApproval),
     requirePermission(authorization, "billing.purchase_approval.decide"),
-    idempotency(
-      idempotencyDependencies,
-      decideApproval.operationId,
-      "required",
-    ),
-    requireRecentAuth(
-      authDependencies,
-      "billing_purchase_approval",
-    ) as unknown as MiddlewareHandler<AuthorizationEnv>,
-    async (c) => {
-      const reservation = c.get("idempotencyReservation");
-      if (!reservation) return problem(c, "FORBIDDEN", 403);
-      const { approvalId } = validatedParams<{ approvalId: string }>(
-        c as never,
-      );
-      const body = V1DecidePurchaseApprovalRequest.parse(
-        validatedBody(c),
-      );
-      const result = await deps.repository.decidePurchaseApproval(
-        membershipDbContext(c),
-        approvalId,
-        body.approve,
-        reservation,
-      );
-      const failure = mapBillingOutcome(c, result.outcome);
-      if (failure) return failure;
-      return committedJson(c, result.response, 200);
-    },
+    (c) => problem(c, "PURCHASE_APPROVAL_RETIRED", 422),
   );
 
   routes.get(

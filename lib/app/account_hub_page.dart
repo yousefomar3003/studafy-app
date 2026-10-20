@@ -29,19 +29,33 @@ import 'account/role_switcher.dart';
 import 'account_scope.dart';
 import 'session_scope.dart';
 
-/// The Subscription row on a profile: where the plans are, and the plan the
-/// person has now. Supplied by a shell that sells plans; absent otherwise.
+/// The Subscription part of a profile: where the plans are, the plan the
+/// person has now, and Restore purchases. Supplied by a shell that sells
+/// plans; absent otherwise.
 @immutable
 class SubscriptionEntry {
-  const SubscriptionEntry({required this.open, this.currentPlan, this.usage});
+  const SubscriptionEntry({
+    this.open,
+    this.currentPlan,
+    this.usage,
+    this.restorePurchases,
+  });
 
-  final Future<void> Function(BuildContext context) open;
+  /// Opens the plans. Null where the profile has no plans row (a parent,
+  /// whose Family+ lives on its own tab).
+  final Future<void> Function(BuildContext context)? open;
 
   /// The current plan's name, shown under the row.
   final Future<String?> Function()? currentPlan;
 
   /// The plan's AI usage, as the server has it, for the AI usage section.
   final Future<AiUsageSnapshot?> Function()? usage;
+
+  /// Asks the store again for this account's subscriptions: the student's
+  /// plan, or a parent's Family+. Shown as a small link at the bottom of the
+  /// Subscription group - kept out of the way, but always there, because
+  /// the App Store requires a way to restore auto-renewing subscriptions.
+  final Future<void> Function()? restorePurchases;
 }
 
 /// Opens the shared account screen. Every role shell shows it, because
@@ -379,10 +393,19 @@ class _AccountHubPageState extends State<AccountHubPage> {
               title: l10n.usageSectionTitle,
               children: [_AiUsageSection(entry: subscription!)],
             ),
-          if (subscription != null)
+          if (subscription != null &&
+              (subscription.open != null ||
+                  subscription.restorePurchases != null))
             SettingsGroup(
               title: l10n.accountSectionSubscription,
-              children: [_SubscriptionRow(entry: subscription)],
+              children: [
+                if (subscription.open != null)
+                  _SubscriptionRow(entry: subscription),
+                if (subscription.restorePurchases != null)
+                  _RestorePurchasesLink(
+                    restore: subscription.restorePurchases!,
+                  ),
+              ],
             ),
           // The platform operator's safety-report review (DL-063): only for
           // an account the server marks as an operator (GET /v1/me), never
@@ -604,12 +627,15 @@ class _AiUsageSectionState extends State<_AiUsageSection> {
             : const LinearProgressIndicator(),
       );
     }
+    final open = widget.entry.open;
     return AiUsageCard(
       usage: usage,
-      onPlans: () async {
-        await widget.entry.open(context);
-        await _load();
-      },
+      onPlans: open == null
+          ? null
+          : () async {
+              await open(context);
+              await _load();
+            },
     );
   }
 }
@@ -653,9 +679,61 @@ class _SubscriptionRowState extends State<_SubscriptionRow> {
           ? l10n.accountStudyPlanDetail
           : '$_plan · ${l10n.accountStudyPlanDetail}',
       onTap: () async {
-        await widget.entry.open(context);
+        await widget.entry.open!(context);
         await _load();
       },
+    );
+  }
+}
+
+/// Restore purchases, as small low-emphasis text at the bottom of the
+/// Subscription group. It runs the store restore and says what happened.
+class _RestorePurchasesLink extends StatefulWidget {
+  const _RestorePurchasesLink({required this.restore});
+
+  final Future<void> Function() restore;
+
+  @override
+  State<_RestorePurchasesLink> createState() => _RestorePurchasesLinkState();
+}
+
+class _RestorePurchasesLinkState extends State<_RestorePurchasesLink> {
+  bool _busy = false;
+
+  Future<void> _run() async {
+    if (_busy) return;
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    String message;
+    try {
+      await widget.restore();
+      message = l10n.accountRestoringPurchases;
+    } on Object {
+      message = l10n.studySetThatDidNotWorkPlease;
+    }
+    if (mounted) setState(() => _busy = false);
+    messenger.showMessage(message);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Align(
+      alignment: AlignmentDirectional.centerEnd,
+      // A real button, read out as "Restore purchases", with the usual
+      // 48-point touch target: small to look at, not small to reach.
+      child: TextButton(
+        onPressed: _busy ? null : _run,
+        style: TextButton.styleFrom(
+          foregroundColor: studafyMuted,
+          textStyle: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        child: Text(l10n.accountRestorePurchases),
+      ),
     );
   }
 }

@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
-**Last updated:** 17 October 2026\
-**Version:** 1.5
+**Last updated:** 21 October 2026\
+**Version:** 1.6
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -36,9 +36,31 @@ inactive-account warning (PR #73). It is consent version 2026-10-17
 (migration 202610170010). Counsel is to review it later; the questions are
 in docs/legal/questions-for-counsel-2026-10.md.
 
+Version 1.6 (21 October 2026), consent version 2026-10-21 (migration
+202610210020), with terms of use 1.4: students subscribe to Studafy Plus or
+Max themselves, with no approval step in Studafy, and the app no longer
+records a parent's approval of a purchase (DL-071). §2, §3.9 and the list
+of changes; nothing else. Published by the owner's decision without legal
+review, like 1.5.
+
+TODO(legal): DL-071. Review §3.9 and the summary: a child's purchases are
+paid from a store account a parent should own or control, approved (if at
+all) with Google Family Link or Apple Ask to Buy, which Studafy does not
+see; approval requests recorded before 21 October 2026 are kept as billing
+records. Confirm the wording and that nothing else in the policy needs to
+change for purchases by children.
+
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 1.6
+
+- Students subscribe to Studafy Plus or Studafy Max themselves, in the app.
+  Payment comes from the store account on the phone; Studafy no longer asks
+  a parent to approve a purchase, and no longer records such approvals. For
+  a child, a parent controls purchases with the store's own tools (§2,
+  §3.9).
 
 ### What changed in version 1.5
 
@@ -145,8 +167,10 @@ The long version follows, and it governs. This summary is for orientation.
 - We do **not** sell personal data, use it for advertising, or build
   advertising profiles. We show no advertising, and the app contains no
   advertising or analytics software.
-- Subscriptions are billed by **Apple** and **Google**, not by us. We never
-  see your card.
+- Subscriptions are billed by **Apple** and **Google**, not by us, from the
+  store account on the phone. A student can subscribe in the app; for a
+  child, a parent controls purchases with Google Family Link or Apple's Ask
+  to Buy. We never see card details.
 - **Optional AI study tools send content to an AI provider outside the
   app**, Together AI: the question a student types and the recent turns of
   the same chat, and — where a student uses them — a photo they attach, a
@@ -393,9 +417,20 @@ occurred, and an opaque transaction identifier. So that a purchase is
 credited to the right account, the app gives the store an identifier for
 your account that means nothing outside Studafy.
 
-For a student subscription, where a parent's approval is required, we record
-that a request was made and how it was decided. Where a parent buys a
-subscription for a child, we record who paid and which child it is for.
+A student can subscribe to Studafy Plus or Studafy Max in the app. Payment
+is made through Google Play or the App Store with the payment method on that
+store account; Studafy does not ask a parent to approve the purchase and
+records no approval. For a child, that account and its payment method should
+belong to, or be controlled by, a parent or guardian, who is responsible for
+purchases made with it. Google Family Link and Apple's Ask to Buy let a
+parent approve purchases; that approval happens in the store, and Studafy
+does not see it. Subscriptions renew until cancelled in the store, and
+refunds follow the store's rules.
+
+Before 21 October 2026 the app asked a parent to approve a student's
+purchase. Those requests and decisions are kept as billing records (§10).
+Where a parent buys a subscription for a child, we record who paid and which
+child it is for.
 
 ### 3.10 AI usage
 
@@ -956,5 +991,6 @@ WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
    in-app text must be reviewed by a native legal translator.
 
 Version 1.5 was published on 17 October 2026 without that review, by the
-owner's decision (DL-068). Items 1 to 8 still stand.
+owner's decision (DL-068). Items 1 to 8 still stand. Version 1.6 (21 October
+2026, DL-071) was published the same way.
 -->

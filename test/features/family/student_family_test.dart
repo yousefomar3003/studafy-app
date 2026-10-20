@@ -35,8 +35,6 @@ Widget _app(_Repository repository, String locale) => localizedApp(
   home: FamilyScope(
     interactor: FamilyInteractor(
       family: repository,
-      approvals: repository,
-      confirmRecentAuth: () async {},
       telemetry: const NoopTelemetry(),
     ),
     child: const StudentFamilyPage(),

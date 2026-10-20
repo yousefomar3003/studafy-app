@@ -327,8 +327,6 @@ void main() {
                 child: FamilyScope(
                   interactor: FamilyInteractor(
                     family: family,
-                    approvals: family,
-                    confirmRecentAuth: () async {},
                     telemetry: const NoopTelemetry(),
                   ),
                   child: child,
@@ -389,7 +387,7 @@ class _Helper implements StudyAssistantRepository {
   }) async => const StudyAnswer(answer: 'Answer');
 }
 
-class _OneChild implements FamilyRepository, PurchaseApprovalRepository {
+class _OneChild implements FamilyRepository {
   _OneChild({required this.messagingEnabled});
 
   final bool messagingEnabled;
@@ -417,10 +415,6 @@ class _OneChild implements FamilyRepository, PurchaseApprovalRepository {
   @override
   Future<ChildProgress> progress(String studentId) =>
       throw UnimplementedError();
-  @override
-  Future<List<PurchaseApprovalRequest>> pending() async => const [];
-  @override
-  Future<void> decide(String approvalId, {required bool approve}) async {}
 }
 
 class _Inbox implements MessagingRepository {

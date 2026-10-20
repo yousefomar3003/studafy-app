@@ -117,8 +117,9 @@ select is(
     'auth_unlink_identity',
     'authz_authorize',
     'billing_catalogue',
-    -- DL-048 guardian purchase approval: request, list and decide. Each
-    -- re-derives the student and the verified guardian link from auth.uid().
+    -- DL-048 guardian purchase approval, retired by DL-071: request, list
+    -- and decide now only answer as retired, for an API from the previous
+    -- release still running during a deploy. They read and write nothing.
     'billing_decide_purchase_approval',
     'billing_list_entitlements',
     'billing_list_purchase_approvals',

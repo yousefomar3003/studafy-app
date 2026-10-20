@@ -167,10 +167,11 @@ const DEFINITIONS: Record<
     title: "Guardian link invalid",
     detail: "No verified, unexpired guardian link exists for this student.",
   },
+  // Since DL-071 only a retired student product (Student Notebook, Student
+  // AI) can reach this; Studafy Plus and Max need no approval.
   PARENTAL_GATE_REQUIRED: {
-    title: "Guardian approval required",
-    detail:
-      "A linked guardian must approve this purchase before it can continue.",
+    title: "Not sold to students",
+    detail: "This product can no longer be bought from a student account.",
   },
   MESSAGING_DISABLED: {
     title: "Messaging is off",
@@ -244,12 +245,16 @@ const DEFINITIONS: Record<
   },
   GUARDIAN_LINK_REQUIRED: {
     title: "Guardian link required",
-    detail:
-      "A verified guardian must be linked before a student can request a purchase.",
+    detail: "A verified guardian link is required for this.",
   },
   STUDENT_PURCHASE_DISABLED: {
     title: "Student purchases disabled",
-    detail: "This school has not enabled student self-purchase.",
+    detail: "This school has turned off student purchases.",
+  },
+  PURCHASE_APPROVAL_RETIRED: {
+    title: "No approval needed",
+    detail:
+      "Purchases no longer need a parent's approval in Studafy. Update the app to subscribe.",
   },
   ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT: {
     title: "Owned by another account",

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import '../../../core/failures.dart';
-import '../../../data/billing/v1_billing_api.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/family.dart';
@@ -24,19 +23,11 @@ Future<T> _guard<T>(Future<T> Function() action) async {
   }
 }
 
-/// Authoritative `/v1` family reads and link requests for a guardian, plus
-/// the guardian side of purchase approvals.
-class ApiFamilyRepository
-    implements
-        FamilyRepository,
-        PurchaseApprovalRepository,
-        StudentFamilyRepository {
-  ApiFamilyRepository(this._client, {V1BillingApi? billing})
-    // ignore: prefer_initializing_formals
-    : _billing = billing;
+/// Authoritative `/v1` family reads and link requests for a guardian.
+class ApiFamilyRepository implements FamilyRepository, StudentFamilyRepository {
+  ApiFamilyRepository(this._client);
 
   final V1ApiClient _client;
-  final V1BillingApi? _billing;
 
   /// Upper bound on pages read to summarise one child. A school year of
   /// grades and attendance fits well inside this.
@@ -185,37 +176,6 @@ class ApiFamilyRepository
     return (present, late, absent, excused);
   }
 
-  @override
-  Future<List<PurchaseApprovalRequest>> pending() => _guard(() async {
-    final billing = _billing;
-    if (billing == null) return const [];
-    final list = await billing.purchaseApprovals();
-    return [
-      for (final item in list)
-        PurchaseApprovalRequest(
-          id: item.id,
-          studentId: item.studentId,
-          studentName: item.studentName,
-          featureKey: item.featureKey,
-          status: item.status,
-          expiresAt: item.expiresAt,
-        ),
-    ];
-  });
-
-  @override
-  Future<void> decide(String approvalId, {required bool approve}) =>
-      _guard(() async {
-        final billing = _billing;
-        if (billing == null) {
-          throw const Failure.unsupported('Billing is not available.');
-        }
-        await billing.decidePurchaseApproval(
-          approvalId: approvalId,
-          approve: approve,
-          idempotencyKey: 'approval:$approvalId:$approve',
-        );
-      });
   @override
   Future<StudentFamily> studentFamily() => _guard(() async {
     final value = await _client.getStudentFamily();

@@ -272,16 +272,12 @@ function routeTable() {
         setSelfPurchase: async () => false,
         submitVerification: async () => ({ outcome: "invalid" }),
         restore: async () => ({ outcome: "invalid" }),
-        requestPurchaseApproval: async () => ({ outcome: "invalid" }),
-        listPurchaseApprovals: async () => [],
-        decidePurchaseApproval: async () => ({ outcome: "invalid" }),
         listEntitlements: async () => [],
         recordEvent: async () => ({ outcome: "duplicate" as const }),
       },
     },
     authorization,
     idempotency,
-    authDependencies as never,
   );
   const combined = new Hono<AuthorizationEnv>();
   combined.route("/", academic);

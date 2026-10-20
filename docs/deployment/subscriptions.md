@@ -16,14 +16,20 @@ Google Play Billing. What each plan unlocks is in
    limit was reached and what the next plan adds. Its **Upgrade** button
    opens the Plans screen. On Max there is nothing higher, so the prompt
    only explains.
-2. **Plans screen.** It shows the store's own monthly price in the student's
-   currency, the renewal terms and the Subscribe button. A student's own
-   purchase first needs a linked parent's approval (DL-048). Payment happens
-   only in the App Store or Google Play sheet, with whatever the student's
-   store account offers: cards, Apple Pay or Google Pay where the store
-   supports them. The app has no card form and no wallet button, and it never
-   sees card details. On the web and desktop the plans are described, and
-   buying is sent to the mobile app.
+2. **Plans screen.** It shows Free, Plus and Max, the store's own monthly
+   price in the student's currency, the renewal terms and the Subscribe
+   button. The student subscribes themselves: Subscribe opens the App Store
+   or Google Play sheet straight away, with no approval step in Studafy
+   (DL-071, which replaced DL-048's parent approval). One line under the
+   plans says the payment is taken by Google Play or the App Store from the
+   store account on this phone. Payment happens only in the store's sheet,
+   with whatever that store account offers: cards, Apple Pay or Google Pay
+   where the store supports them. For a child, the store's family tools
+   (Family Link purchase approval, Ask to Buy) are the parent's control. The
+   app has no card form and no wallet button, and it never sees card
+   details. On the web and desktop the plans are described, and buying is
+   sent to the mobile app. **Restore purchases** is on the profile (Account →
+   Subscription, a small link at the bottom), for students and parents.
 3. **Verification.** The store hands the app a signed transaction. The API
    verifies it with Apple (JWS chain to Apple's root CA, bundle id,
    environment, `appAccountToken`) or Google (Play Developer API, package,
@@ -258,9 +264,9 @@ where feature_key in ('studafy_plus', 'studafy_max', 'family_plus', 'family_plus
   and environment = 'production';
 ```
 
-And turn on self-purchase for a school if students should be able to ask
-their parents (`POST /v1/billing/school-settings/self-purchase`, admin only;
-off by default).
+Students can buy as soon as the products are listed: student purchases are
+on for every school by default (DL-071, migration
+`202610210010_student_direct_purchase.sql`).
 
 ## Testing
 
@@ -275,7 +281,10 @@ off by default).
 | Ledger: webhook events claim/finish/dead-letter, old-token expiry cannot end the new plan, unseen tokens, Apple plan change, renewal / payment-problem notices to the payer only, lost-renewal sweep | `supabase/tests/subscription_lifecycle.sql` |
 | Google voided purchases: found by token, access ended once whichever of the void and `SUBSCRIPTION_REVOKED` comes first, audit history, unknown token retried, one-time products skipped | `supabase/tests/voided_purchases.sql`, `apps/worker/test/billing.test.ts` |
 | The topic `play-billing` and the paths `/webhooks/google` and `/webhooks/apple` in this guide match the code (`packages/config/src/storeWebhooks.ts`) | `packages/config/test/storeWebhooks.test.ts` |
-| Contract accepts Plus/Max purchases and approvals | `packages/contracts/test/contracts.test.ts` |
+| Contract accepts Plus/Max purchases, and an older app's approval request still parses | `packages/contracts/test/contracts.test.ts` |
+| A student with no guardian buys Plus and Max and gets the plan; Family+ still needs a verified guardian link; a school with no settings row allows purchases; the retired approval functions do nothing | `supabase/tests/student_direct_purchase.sql`, `supabase/tests/pay071_billing.sql` |
+| The retired approval routes: the list is empty, a request or a decision is refused with `PURCHASE_APPROVAL_RETIRED` | `apps/api/test/billing/routes.test.ts` |
+| Subscribe goes straight to the store; the payment line; Restore purchases on the profile | `test/features/study/study_screens_test.dart`, `test/data/store_subscription_test.dart`, `test/app/account_hub_test.dart` |
 | Family+ given without a purchase: seats, coverage, the insights gate, the billing read and the guardian links honour a live grant, the larger of grant and store plan wins, an ended grant gives nothing | `supabase/tests/family_plus_grants.sql`, `test/data/store_subscription_test.dart`, `test/features/family_insights/family_plus_test.dart` |
 
 ### Without a purchase
@@ -293,8 +302,12 @@ API with `PAY071_ENVIRONMENT=development`:
 
 - [ ] Free student: ask 10 questions → the 11th shows the prompt → Upgrade →
       Plans shows the store's price.
-- [ ] Parent approves → Subscribe → store sheet → the plan becomes active; a
-      *Subscription active* notification arrives; the store emails a receipt.
+- [ ] Subscribe → store sheet → the plan becomes active, with no parent
+      step in Studafy; a *Subscription active* notification arrives; the
+      store emails a receipt.
+- [ ] With Google Family Link purchase approval on for the child's Google
+      account (or Ask to Buy on iPhone), the store asks the parent; Studafy
+      shows nothing extra.
 - [ ] Renewal: sandbox renews every few minutes (Apple: 1 month = 5 minutes;
       Google test cards: 5 minutes). Renews-on date advances; *renewed*
       notification.
@@ -309,7 +322,7 @@ API with `PAY071_ENVIRONMENT=development`:
       Console order → Refund): access is removed and *ended* is sent.
 - [ ] Plus → Max on each store: one subscription remains, prorated.
 - [ ] Reinstall / new phone, same Studafy account: the plan is there with no
-      purchase; Restore purchases works on iOS.
+      purchase; Restore purchases (Account → Subscription) works on iOS.
 - [ ] Try buying Plus while on Max: not offered.
 
 ### Not testable without your accounts

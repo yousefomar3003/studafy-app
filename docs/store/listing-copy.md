@@ -157,7 +157,7 @@ STUDY HELP
 • Ask the study helper about your lessons and your own notes
 • Studafy Plus: turn a lesson or a photo of the whiteboard into study notes, and keep study notebooks with highlights and bookmarks
 • Studafy Max: quizzes and flashcards made from your lessons
-The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions, and a student can ask a parent to approve the purchase.
+The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, paid from the Google Play account on the phone. A parent can approve a child's purchases with Google Family Link.
 ```
 
 ### What's new (first internal-testing release)
@@ -246,7 +246,7 @@ The first test release of Studafy. Please try signing in, joining a class with a
 • اسأل مساعد الدراسة عن دروسك وملاحظاتك
 • Studafy Plus: حوّل الدرس أو صورة السبورة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
 • Studafy Max: اختبارات وبطاقات مراجعة من دروسك
-يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان، ويستطيع الطالب أن يطلب موافقة ولي أمره على الشراء.
+يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان من حساب Google Play على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر Google Family Link.
 ```
 
 ### What's new (first internal-testing release)
@@ -342,7 +342,7 @@ STUDY HELP
 • Ask the study helper about your lessons and your own notes
 • Studafy Plus: turn a lesson or a photo of the whiteboard into study notes, and keep study notebooks with highlights and bookmarks
 • Studafy Max: quizzes and flashcards made from your lessons
-The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions, billed and renewed like Family+, and a student can ask a parent to approve the purchase.
+The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, billed and renewed like Family+ and paid from the Apple Account on the phone. A parent can approve a child's purchases with Ask to Buy.
 ```
 
 ### Keywords
@@ -451,7 +451,7 @@ This follows the app's first welcome slide, "يومك الدراسي كله في
 • اسأل مساعد الدراسة عن دروسك وملاحظاتك
 • Studafy Plus: حوّل الدرس أو صورة السبورة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
 • Studafy Max: اختبارات وبطاقات مراجعة من دروسك
-يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يُدفعان ويتجددان مثل Family+، ويستطيع الطالب أن يطلب موافقة ولي أمره على الشراء.
+يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان ويتجددان مثل Family+ من حساب Apple على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر ميزة «اطلب للشراء» (Ask to Buy).
 ```
 
 ### Keywords
@@ -671,4 +671,4 @@ administrator may change through the API, and this release has none.
 | Sign-in providers | `lib/features/session/presentation/login_page.dart`; Apple only on iOS with `APPLE_SIGN_IN_ENABLED` |
 | English and Arabic, right to left, change any time | `lib/core/language_picker.dart`, `locale_controller.dart` |
 | Free: lessons, homework, marks, attendance | `policyTermsBody` ("Lessons, notebooks, work, marks and attendance are free") |
-| AI block: helper, Plus (whiteboard and lesson notes, study notebooks), Max (quizzes, flashcards), parent approval, what is never sent | `lib/features/study/presentation/study_plan_copy.dart`, `study_plans_page.dart`; `study_notebook_shelf.dart`; policy §2 and §6 |
+| AI block: helper, Plus (whiteboard and lesson notes, study notebooks), Max (quizzes, flashcards), bought by the student and paid from the store account (DL-071), what is never sent | `lib/features/study/presentation/study_plan_copy.dart`, `study_plans_page.dart`; `study_notebook_shelf.dart`; policy §2 and §6 |

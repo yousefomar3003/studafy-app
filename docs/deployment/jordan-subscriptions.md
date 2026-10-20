@@ -43,9 +43,10 @@ These are payment-flow safeguards, not a guarantee of store approval.
 - Finish Apple developer enrollment and each store's agreements, banking and
   tax setup.
 - Publish real privacy/terms pages and supply their HTTPS build defines.
-- Exercise purchase, pending/guardian approval, cancellation, restore, renewal,
-  refund and revocation using the stores' test environments and the deployed
-  backend. Preserve server-side guardian-purchase policy for student accounts.
+- Exercise purchase, cancellation, restore, renewal, refund and revocation
+  using the stores' test environments and the deployed backend. Students buy
+  their own plans with no approval step in Studafy (DL-071); a child's
+  purchases are controlled by Family Link or Ask to Buy.
 - Review the remaining app submission requirements; payments are only one part
   of review. No successful real store purchase is claimed by this change.
 

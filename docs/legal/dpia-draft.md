@@ -116,7 +116,7 @@ How data is collected:
 | Safety | Reports, blocks, moderation, legal holds | Reports with evidence, block pairs | ADR-0021; DL-042 |
 | Files | Upload, scan, metadata strip, delivery | Documents, photos, voice notes | DL-043; DL-044; `infra/scanner/` |
 | AI study tools | Study helper chat, photo questions, whiteboard-to-notes, lesson notes and study notebooks, quizzes and flashcards; background reading of lesson files | Questions, recent chat turns, photos, lesson passages, class grade level, language | `privacy-policy.md` §6; ADR-0029; ADR-0037; ADR-0038; ADR-0039 |
-| Plans and billing | Plus and Max for students, Family+ for parents, through the stores; a student's purchase needs a guardian's approval | Entitlements, store transactions, approvals | DL-048; ADR-0032; ADR-0034 |
+| Plans and billing | Plus and Max for students, Family+ for parents, through the stores. A student buys their own plan with no approval step in Studafy; a child's store account should be a parent's or parent-controlled, and Family Link or Ask to Buy is where a parent approves (DL-071, which ends DL-048's in-app approval) | Entitlements, store transactions; approval requests made before 21 October 2026, kept read-only | DL-048; DL-071; ADR-0032; ADR-0034 |
 | Notifications | In-app, push (FCM) and email (Resend) with fixed, content-free wording | Push token, email address | DL-053; `privacy-policy.md` §3.6 |
 | Operations | Request logs (Axiom), error reports (Sentry), alerts (Telegram via a Cloudflare Worker), backups (GitHub Actions) | Account UUID, hashed IP, stack traces, encrypted database copies | ADR-0035; `docs/operations/observability-review-2026-10.md`; `docs/deployment/backups.md` |
 
@@ -186,7 +186,7 @@ The summary below groups it for this assessment.
 | **AI inputs** | Question text, last chat turns, photos, lesson passages, class grade level, language | Students (and see R12) | P0/P1 | Sent to Together AI; chats stored only on the device (`lib/features/study_assistant/data/file_study_chat_store.dart`) |
 | **AI outputs** | Answers (device only), notes, quizzes, flashcards, study notebooks (server) | Students | P1 | Shared study sets are made from a teacher's lesson alone (`privacy-policy.md` §6) |
 | AI usage ledger | User, feature, plan, model, tokens, cost, time; never prompts or answers | Students | P2 | ADR-0037 §3 ("Metering") |
-| Billing | Store transactions, entitlements, guardian purchase approvals | Students, parents | P2 | No card data (`privacy-policy.md` §3.9) |
+| Billing | Store transactions, entitlements, guardian purchase approvals made before DL-071 (read-only history) | Students, parents | P2 | No card data (`privacy-policy.md` §3.9) |
 | Consent | `consent_records` (purpose `terms_and_privacy`, version, locale) | All | P1 | Only one consent purpose exists (`lib/features/session/data/api_session_repository.dart:271`) |
 | Security and audit | `audit_events`, `membership_events`, `auth_security_events` with keyed IP hashes | All | P2 | `apps/api/src/platform/middleware.ts` |
 | Technical logs | Route, status, duration, `user_id`, `ip_hash`, user-agent family | All | P2 | Redacted by key (`apps/api/src/platform/logging.ts`); about 10% of successes kept (ADR-0035) |
@@ -427,7 +427,7 @@ The ICO Age Appropriate Design Code applies to UK users; the DPC's
 | 10. Geolocation | Met | None collected |
 | 11. Parental controls | Partly | A parent sees published marks and attendance, not private messages, and a child approves a link (`privacy-policy.md` §3.5). The child is not told when a parent views their record. Consider an age-appropriate signal |
 | 12. Profiling | Met for ads; AI see section 11 | Family+ compares a child only with themselves; AI is study help, not decisions |
-| 13. Nudge techniques | Met | Low-allowance warning under 20% leads to the store upgrade flow (ADR-0037 §4). A student's purchase needs a guardian's approval (DL-048) |
+| 13. Nudge techniques | Partly | Low-allowance warning under 20% leads to the store upgrade flow (ADR-0037 §4). Since DL-071 a student buys in the store sheet with no approval step in Studafy; for a child, the parent's control is the store's (Family Link purchase approval, Ask to Buy), which depends on how the family set up the store account. TODO(legal): confirm this is enough for standard 13 |
 | 14. Connected toys and devices | Not applicable | |
 | 15. Online tools (rights) | Partly | Deletion and export in the app (section 9) |
 
