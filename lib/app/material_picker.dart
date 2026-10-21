@@ -6,6 +6,7 @@ import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
+import '../core/studafy_domain.dart';
 import '../core/studafy_formatting.dart';
 import '../core/user_content_text.dart';
 import '../features/academic/domain/academic_repository.dart';
@@ -94,6 +95,9 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
   bool _failed = false;
   final _lessons = <String, List<AcademicRecord>>{};
   final _notes = <String, List<NotebookEntry>>{};
+
+  /// The student's personal notebook, which belongs to no class (ADR-0045).
+  List<NotebookEntry> _personal = const [];
   final _sources = <String, List<MaterialSource>>{};
   final _loadingSources = <String>{};
   final _picks = <String, _Pick>{};
@@ -132,9 +136,21 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
   Future<void> _load() async {
     setState(() => _failed = false);
     try {
+      if (_request.allowNotes && widget.study != null) {
+        try {
+          _personal = await widget.study!.personalNotebook();
+        } on Object {
+          _personal = const [];
+        }
+      }
+      // A student in no class has no classes to list - an empty list, not
+      // a failure: their own notes are still here (ADR-0045).
       final all = (await widget.classes.loadClasses()).fold(
         onSuccess: (list) => list,
-        onFailure: (failure) => throw failure,
+        onFailure: (failure) =>
+            ActiveContextController.instance.membership == null
+            ? const <ClassroomSummary>[]
+            : throw failure,
       );
       final classes = [
         for (final c in all)
@@ -383,7 +399,11 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
         ),
       );
     }
-    final notes = <NoteSelection>[];
+    final notes = <NoteSelection>[
+      for (final note in _personal)
+        if (_pickedNotes.contains(note.id))
+          NoteSelection(id: note.id, title: note.title, classLabel: ''),
+    ];
     for (final entry in _notes.entries) {
       for (final note in entry.value) {
         if (!_pickedNotes.contains(note.id)) continue;
@@ -525,7 +545,7 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
               )
             : const CircularProgressIndicator(),
       );
-    } else if (classes.isEmpty) {
+    } else if (classes.isEmpty && _personal.isEmpty) {
       body = Center(
         child: StudafyEmptyState(
           icon: Icons.class_outlined,
@@ -588,6 +608,7 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
                 style: const TextStyle(color: studafyMuted, fontSize: 13),
               ),
             ),
+          ..._personalSection(l10n),
           for (final classroom in shown) ..._classSection(l10n, classroom),
         ],
       );
@@ -597,6 +618,33 @@ class _MaterialPickerPageState extends State<MaterialPickerPage> {
       body: body,
       bottomNavigationBar: _bottomBar(l10n, selection),
     );
+  }
+
+  /// The student's own notes that belong to no class, above the classes.
+  List<Widget> _personalSection(AppL10n l10n) {
+    final notes = [
+      for (final note in _personal)
+        if (_matches(note.title)) note,
+    ];
+    if (notes.isEmpty) return const [];
+    return [
+      SectionHeader(
+        l10n.nbPersonal,
+        padding: const EdgeInsetsDirectional.fromSTEB(4, 18, 0, 6),
+      ),
+      for (final note in notes)
+        CheckboxListTile(
+          value: _pickedNotes.contains(note.id),
+          controlAffinity: ListTileControlAffinity.leading,
+          secondary: const Icon(Icons.sticky_note_2_outlined),
+          title: UserContentText(note.title),
+          onChanged: (on) => setState(
+            () => on == true
+                ? _pickedNotes.add(note.id)
+                : _pickedNotes.remove(note.id),
+          ),
+        ),
+    ];
   }
 
   List<Widget> _classSection(AppL10n l10n, ClassroomSummary classroom) {
