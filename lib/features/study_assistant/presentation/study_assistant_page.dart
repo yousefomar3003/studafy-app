@@ -385,7 +385,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
       return;
     }
     if (_photosInline &&
-        InlinePhoto(mediaType: photo.mediaType, bytes: photo.bytes).problem !=
+        InlinePhoto.fromBytes(photo.bytes, named: photo.mediaType).problem !=
             null) {
       setState(() => _error = l10n.nbPhotoRejected);
       return;
@@ -568,7 +568,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     final photoIds = <String>[];
     final inline = <InlinePhoto>[];
     if (photo != null && _photosInline) {
-      inline.add(InlinePhoto(mediaType: photo.mediaType, bytes: photo.bytes));
+      inline.add(InlinePhoto.fromBytes(photo.bytes, named: photo.mediaType));
     } else if (photo != null) {
       final id = await _uploadPhoto(photo);
       if (!mounted) return;

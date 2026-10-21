@@ -252,15 +252,32 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
       SectionHeader(l10n.todayStudySection),
       LayoutBuilder(
         builder: (context, constraints) {
-          // Two to a row on a phone, four on a wide screen.
+          // Two to a row on a phone, four on a wide screen; the tiles in a
+          // row are as tall as its tallest, so a longer line never leaves
+          // one card standing taller than its neighbour.
           final columns = constraints.maxWidth >= 720 ? 4 : 2;
           const gap = 10.0;
-          final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
+          return Column(
             children: [
-              for (final tile in tiles) SizedBox(width: width, child: tile),
+              for (var start = 0; start < tiles.length; start += columns)
+                Padding(
+                  padding: EdgeInsets.only(top: start == 0 ? 0 : gap),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var i = start; i < start + columns; i++) ...[
+                          if (i > start) const SizedBox(width: gap),
+                          Expanded(
+                            child: i < tiles.length
+                                ? tiles[i]
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
             ],
           );
         },

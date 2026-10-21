@@ -12,6 +12,12 @@ import 'package:flutter/foundation.dart';
 class InlinePhoto {
   const InlinePhoto({required this.mediaType, required this.bytes});
 
+  /// A photo whose type is read from its bytes. A phone's picker often names
+  /// a PNG screenshot without its extension, so the name's type can be
+  /// wrong; [named] is used only when the bytes are not a known image.
+  factory InlinePhoto.fromBytes(Uint8List bytes, {required String named}) =>
+      InlinePhoto(mediaType: sniffImageType(bytes) ?? named, bytes: bytes);
+
   final String mediaType;
   final Uint8List bytes;
 
@@ -40,4 +46,22 @@ enum InlinePhotoProblem {
 
   /// Larger than [InlinePhoto.maximumBytes].
   size,
+}
+
+/// JPEG, PNG or WebP, as the bytes say, or null for anything else.
+String? sniffImageType(Uint8List bytes) {
+  bool starts(List<int> prefix) =>
+      bytes.length >= prefix.length &&
+      [for (var i = 0; i < prefix.length; i++) bytes[i] == prefix[i]]
+          .every((same) => same);
+  if (starts(const [0xff, 0xd8, 0xff])) return 'image/jpeg';
+  if (starts(const [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
+    return 'image/png';
+  }
+  if (bytes.length >= 12 &&
+      String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF' &&
+      String.fromCharCodes(bytes.sublist(8, 12)) == 'WEBP') {
+    return 'image/webp';
+  }
+  return null;
 }

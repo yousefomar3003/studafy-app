@@ -157,7 +157,8 @@ export type V1UpdateNotebookEntryRequest = z.infer<
 /**
  * A photo or screenshot sent with the request itself, for a student with no
  * school to upload into (2026-10-21). Checked, re-encoded, sent to the model
- * once, and never stored. 4 MB at most once decoded.
+ * once, and never stored. 4 MB at most once decoded. The server reads the
+ * type from the bytes; `mediaType` is the app's best guess.
  */
 export const V1InlineImage = z.strictObject({
   mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]),
