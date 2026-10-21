@@ -214,12 +214,16 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      await expectAccessible(tester);
+      // Contrast is checked in English, with the same colours: on CI's
+      // Linux test font "الدفتر" renders too thin to sample (the existing
+      // Arabic layout test covers the bar's other labels).
+      final contrast = locale.languageCode == 'en';
+      await expectAccessible(tester, contrast: contrast);
       for (var tab = 1; tab < 3; tab++) {
         await tester.tap(find.byType(StudafyNavDestination).at(tab));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: 'tab $tab');
-        await expectAccessible(tester);
+        await expectAccessible(tester, contrast: contrast);
         if (tab == 2) {
           // The AI Tutor has the whole screen; back to the bar.
           await tester.tap(find.byType(BackButton));
