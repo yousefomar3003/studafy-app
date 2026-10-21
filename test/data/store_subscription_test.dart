@@ -18,6 +18,9 @@ const maxSku = 'studafy_max_monthly';
 class Billing extends Fake implements V1BillingApi {
   String account = 'student-a';
   bool enabled = true;
+
+  /// A student in no class has no school, so no row (ADR-0045).
+  bool inSchool = true;
   List<V1EntitlementRow> rows = [];
   @override
   Future<V1BillingCatalogue> catalogue() async => V1BillingCatalogue(
@@ -45,10 +48,11 @@ class Billing extends Fake implements V1BillingApi {
       ),
     ],
     selfPurchase: [
-      V1BillingSelfPurchaseStatus(
-        schoolId: 'school',
-        selfPurchaseEnabled: enabled,
-      ),
+      if (inSchool)
+        V1BillingSelfPurchaseStatus(
+          schoolId: 'school',
+          selfPurchaseEnabled: enabled,
+        ),
     ],
   );
   @override
@@ -211,6 +215,14 @@ void main() {
     await repository.purchase(StudyPlanTier.max);
     expect(store.bought!.productDetails.id, maxSku);
     expect(store.bought!.applicationUserName, 'student-a');
+  });
+  test('a student in no class can subscribe too (ADR-0045)', () async {
+    billing.inSchool = false;
+    final offer = await repository.offer(StudyPlanTier.plus);
+    expect(offer.selfPurchaseEnabled, isTrue);
+    expect(offer.canPurchase, isTrue);
+    await repository.purchase(StudyPlanTier.plus);
+    expect(store.bought!.productDetails.id, sku);
   });
   test('rechecks the school switch and account before charging', () async {
     await repository.offer(StudyPlanTier.plus);

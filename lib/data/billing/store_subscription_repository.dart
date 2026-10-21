@@ -274,8 +274,10 @@ class StoreSubscriptionRepository
   /// student buys their own plan: there is no approval step in Studafy
   /// (DL-071). The store account on the phone pays, and for a child the
   /// store's own family controls (Family Link, Ask to Buy) apply.
+  ///
+  /// A student in no class has no school to list (ADR-0045), and nothing
+  /// to opt them out: they may buy. The server decides who is a student.
   static bool _selfPurchaseAllowed(V1BillingCatalogue catalogue) =>
-      catalogue.selfPurchase.isNotEmpty &&
       catalogue.selfPurchase.every((row) => row.selfPurchaseEnabled);
 
   @override
