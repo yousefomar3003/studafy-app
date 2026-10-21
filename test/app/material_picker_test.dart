@@ -8,6 +8,7 @@ import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/classes/application/class_list_interactor.dart';
 import 'package:studafy/features/classes/domain/classroom.dart';
 import 'package:studafy/features/classes/domain/classroom_repository.dart';
+import 'package:studafy/features/study/domain/study.dart';
 
 import '../support/localized_app.dart';
 
@@ -212,6 +213,51 @@ void main() {
     expect(tile.value, isFalse);
   });
 
+  testWidgets('in no class, the personal notebook is offered, not an error', (
+    tester,
+  ) async {
+    // ADR-0045: a student who skipped joining a class asks the AI Tutor to
+    // answer from their own notes; the class list is refused for them.
+    tall(tester);
+    MaterialSelection? picked;
+    await tester.pumpWidget(
+      localizedApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: FilledButton(
+                onPressed: () async => picked = await pickMaterials(
+                  context,
+                  const MaterialPickRequest(
+                    action: MaterialAction.helper,
+                    allowNotes: true,
+                  ),
+                  classes: ClassListInteractor(
+                    repository: _NoClasses(),
+                    telemetry: const NoopTelemetry(),
+                  ),
+                  academic: academic,
+                  study: _PersonalNotes(),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your lessons could not be loaded.'), findsNothing);
+    expect(find.text('My notebook'), findsOne);
+    await tester.tap(find.text('Photosynthesis'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use selection in the AI Tutor'));
+    await tester.pumpAndSettle();
+    expect(picked!.notes.single.id, 'n1');
+  });
+
   testWidgets('reads right to left in Arabic', (tester) async {
     tall(tester);
     await tester.pumpWidget(
@@ -307,4 +353,32 @@ class _Academic implements AcademicRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+/// The class list as a student in no class gets it: refused.
+class _NoClasses implements ClassroomRepository {
+  @override
+  Future<List<ClassroomSummary>> listClasses() async =>
+      throw StateError('no membership');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// One note in the personal notebook.
+class _PersonalNotes implements StudyRepository {
+  @override
+  Future<List<NotebookEntry>> personalNotebook() async => [
+    NotebookEntry(
+      id: 'n1',
+      classroomId: null,
+      title: 'Photosynthesis',
+      body: 'Light, water and carbon dioxide.',
+      fromWhiteboard: false,
+      createdAt: DateTime(2026, 10, 21),
+    ),
+  ];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

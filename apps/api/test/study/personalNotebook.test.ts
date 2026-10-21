@@ -307,7 +307,20 @@ describe("a photo or screenshot into notes", () => {
     expect(String(seen.commands[0]!.body["body"])).toContain("## Inputs");
   });
 
-  test("refuses bytes that are not the declared image type", async () => {
+  test("reads the type from the bytes, not the label", async () => {
+    // Android's picker often names a PNG screenshot without its extension,
+    // so the app labels it a JPEG; the image is still read (2026-10-21).
+    const seen = calls();
+    const response = await post(
+      app({ calls: seen, plan: "plus" }),
+      "/v1/me/notebook/photo-notes",
+      { image: { mediaType: "image/jpeg", data: screenshot() } },
+    );
+    expect(response.status).toBe(201);
+    expect(seen.photos).toBe(1);
+  });
+
+  test("refuses bytes that are not an image", async () => {
     const seen = calls();
     const response = await post(
       app({ calls: seen, plan: "plus" }),

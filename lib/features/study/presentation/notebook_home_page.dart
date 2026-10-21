@@ -712,7 +712,7 @@ Future<NotebookEntry?> notesFromPhoto(
   }
   final picked = await pickPhoto(kind, AttachmentPolicy.assistantAttachment);
   if (picked == null || !context.mounted) return null;
-  final photo = InlinePhoto(mediaType: picked.mediaType, bytes: picked.bytes);
+  final photo = InlinePhoto.fromBytes(picked.bytes, named: picked.mediaType);
   if (photo.problem != null) {
     messenger.showMessage(l10n.nbPhotoRejected);
     return null;

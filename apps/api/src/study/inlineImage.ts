@@ -38,9 +38,13 @@ function sniff(bytes: Uint8Array): string | null {
  *
  * It never reaches storage, so the upload pipeline's scan does not apply;
  * this does the part of it that matters for an image read once: the bytes
- * must really be a JPEG, PNG or WebP of the declared type, small enough, with
- * a size header within the pixel caps, and they are decoded and drawn again
- * as a new JPEG. Only that re-drawn copy is ever sent on, so nothing else
+ * must really be a JPEG, PNG or WebP, small enough, with a size header
+ * within the pixel caps, and they are decoded and drawn again as a new JPEG.
+ *
+ * The type is read from the bytes, not taken from the request: a phone's
+ * photo picker often names a PNG screenshot without its extension, so the
+ * app's declared type can be wrong for a perfectly good image (found on a
+ * device, 2026-10-21). What is drawn is decided by the bytes either way. Only that re-drawn copy is ever sent on, so nothing else
  * the file carried (metadata, a trailing payload) leaves the server.
  */
 export async function readInlineImage(
@@ -55,8 +59,7 @@ export async function readInlineImage(
   if (bytes.length > INLINE_IMAGE_MAX_BYTES) {
     return { ok: false, code: "PAYLOAD_TOO_LARGE", status: 413 };
   }
-  const actual = sniff(bytes);
-  if (actual === null || actual !== image.mediaType) {
+  if (sniff(bytes) === null) {
     return { ok: false, code: "UNSUPPORTED_MEDIA_TYPE", status: 415 };
   }
   if (!imageWithinPixelCap(bytes)) {
