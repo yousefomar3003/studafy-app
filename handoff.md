@@ -1,9 +1,103 @@
 # Handoff: Studafy
 
-Updated: 2026-10-20. **Everything through #125 is merged.** The test API
-and worker run `main`. No PR is open.
+Updated: 2026-10-21. **Everything through #131 is merged and on the test
+copy** (API, worker, migrations, legal site). No PR is open.
 
-## Start here (2026-10-20)
+## Start here (2026-10-21)
+
+### What happened on the evening of 2026-10-20
+- **Play's test notification arrived** (store event `completed`). The path
+  Play → Pub/Sub → `/webhooks/google` → worker works.
+- **The worker stalled for 80 minutes (root cause found and fixed).**
+  - Cause: postgres.js pipelines statements, and Supavisor's
+    **transaction** pooler (port 6543) can strand a pipelined statement
+    (session `active`/`ClientRead` forever). Each one cost a connection;
+    after all 5 were gone, every poller hung without crashing.
+  - #127 added guarded pollers (`poll_stalled`), a queue-monitor timeout
+    (`queue_monitor_stalled`), `errorFields()` with SQLSTATE codes in
+    failure logs, and 20 s deadlines on Google and Apple calls.
+  - **#127 also set `max_pipeline: 0`, which broke every `sql.begin`
+    (`UNSAFE_TRANSACTION`)**. On the test copy, every transactional write
+    (class join links among them) answered 500 for about an hour, and the
+    Axiom "API server error" monitor fired. **#128 reverted that setting**,
+    after a reproduction on a throwaway Postgres.
+  - **#130 is the real fix:** `DATABASE_POOLER_MODE=session` (all four Fly
+    configs) moves a `*.pooler.supabase.com:6543` URL to the **session
+    pooler on 5432**, with the same user and password, so no secret
+    changes. Production refuses an effective 6543. The startup logs show
+    `database_connection.port: 5432`.
+    - Proven on a throwaway Supabase with Supavisor: transaction mode hung
+      10–36 of 40; session mode completed 1,000 of 1,000 and 100
+      concurrent transactions.
+    - The worker then ran 45 minutes with a heartbeat every minute.
+  - **Rule:** test any change to how the database is reached (pooler,
+    client options) on a throwaway database before deploying.
+- **Monitoring (#129).** The Axiom "Worker silent" query used
+  `by bin_auto(_time)`, so a silent worker produced no rows and the
+  monitor could never fire. The documented query now counts without bins,
+  and a new "Worker stalled" monitor is documented
+  (`docs/deployment/fly-io.md` §6). **The owner must change both in Axiom.**
+- **#131, DL-071: students buy Plus and Max themselves** with the
+  parent's card, through the store account on their phone.
+  - The in-app "ask a parent to approve" flow is retired:
+    - `GET /v1/billing/purchase-approvals` returns an empty list;
+    - the request and decision routes answer `422 PURCHASE_APPROVAL_RETIRED`.
+  - School self-purchase is on by default; a missing row counts as on.
+    There is no school admin.
+  - The Plans screen shows a payment line ("Payment is taken by Google
+    Play / the App Store…"). The parent's approvals card is gone.
+  - **Restore purchases** moved to a small muted link at the bottom of
+    Account → Subscription.
+  - **Terms 1.4 / Privacy 1.6** (EN/AR), consent version **`2026-10-21`**
+    (migration `202610210020`), are live at legal.studafy.com. Users are
+    asked to accept at their next sign-in.
+  - Applied to the test copy: backup, migrations `202610210010` and
+    `202610210020`, API, worker, `legal:deploy`. The iPhone has the new
+    build.
+- **Test-copy data changes for purchase testing:**
+  - The review student's and parent's free plans are **paused**
+    (`ends_at = now()` on their `study_plan_grants` /
+    `family_plus_grants`). **Restore them after testing:** new rows with
+    one year, or `ends_at = now() + interval '1 year'`. The teacher keeps
+    Max.
+  - `school_billing_settings` is on for "Cedar Grove Review School" and
+    "Abood Ayyash" (now the default anyway).
+- **Play build 101** (student direct purchase) is at
+  `~/Desktop/studafy-play/studafy-101-internal.aab`, **not yet uploaded**.
+  Build 100 can no longer buy: it waits for an approval that can't exist.
+
+### Next for Claude
+1. When the owner has uploaded build 101 and updated the phone, test as
+   the student: Plans → Subscribe to Max → "Test card, always approves" →
+   Max active. Then:
+   - check `store_transactions` / `entitlements` and the worker processing
+     the RTDN;
+   - renewal (5 min), cancel, refund, restore (Account → Subscription),
+     Plus → Max;
+   - the parent buys Family+.
+   A permission error from the Play API can mean Google is still
+   activating the account (up to 24 h).
+2. After testing, **restore the review accounts' free plans** (above).
+3. Google sign-in on the Play build (guide `02-google-signin-sha1.md`).
+4. Offer the "minimum supported app version" check.
+5. Store screenshots when the owner asks.
+
+### Owner: to do
+1. Upload `studafy-101-internal.aab` (Internal testing → Create new
+   release), then update the app on the Android phones from Play.
+2. Supabase → Project settings → Database → Connection pooling: tell
+   Claude the **Pool Size**. It must be ≥ 10 (test API pool 10, worker 5,
+   per role). Before production runs more than one API machine, raise it
+   or lower `DATABASE_POOL_MAX` (`docs/deployment/fly-io.md`, "Database
+   connection budget").
+3. Axiom: change the "Worker silent" query to `| summarize count()`
+   (no bins), and add "Worker stalled" (above 0 in 15 min), as in
+   `docs/deployment/fly-io.md` §6.
+4. Still open from before: hiding two-factor for regular users, the
+   Android push banner while the app is open, the minimum-version check,
+   the Apple account and APNs key, Resend, Turnstile, and paid Redis.
+
+## Earlier (2026-10-20): Play internal testing, billing setup, webhook fix
 
 ### Where things stand
 - **A real Android phone exists now:** the owner's Samsung Galaxy S23
