@@ -407,13 +407,20 @@ jobs:
           bunx supabase test db --local
           supabase/tests/managed_accounts.sql
 
-      # ADR-0043: the AI study tools are for students in a class, with an AI
-      # consent a managed child's parent gives; the ledger refuses everyone
-      # else before a token is held. Transactional.
+      # ADR-0043, ADR-0045: the AI study tools are for student accounts, in a
+      # class or not, with an AI consent a managed child's parent gives; the
+      # ledger refuses everyone else before a token is held. Transactional.
       - name: Verify AI access and consent
         run: >-
           bunx supabase test db --local
           supabase/tests/ai_access_consent.sql
+
+      # ADR-0045: a personal notebook in no class, seen only by its owner;
+      # editing one's own notes; practice from them on Max. Transactional.
+      - name: Verify students without a class
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/independent_students.sql
 
       - name: Verify first-sign-in profile setup
         run: >-

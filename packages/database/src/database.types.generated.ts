@@ -3828,43 +3828,43 @@ export type Database = {
       notebook_entries: {
         Row: {
           body: string;
-          classroom_id: string;
+          classroom_id: string | null;
           created_at: string;
           deleted_at: string | null;
           id: string;
           owner_id: string;
           photo_file_id: string | null;
-          school_id: string;
+          school_id: string | null;
           source: string;
-          student_id: string;
+          student_id: string | null;
           title: string;
           updated_at: string;
         };
         Insert: {
           body: string;
-          classroom_id: string;
+          classroom_id?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           id?: string;
           owner_id: string;
           photo_file_id?: string | null;
-          school_id: string;
+          school_id?: string | null;
           source: string;
-          student_id: string;
+          student_id?: string | null;
           title: string;
           updated_at?: string;
         };
         Update: {
           body?: string;
-          classroom_id?: string;
+          classroom_id?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           id?: string;
           owner_id?: string;
           photo_file_id?: string | null;
-          school_id?: string;
+          school_id?: string | null;
           source?: string;
-          student_id?: string;
+          student_id?: string | null;
           title?: string;
           updated_at?: string;
         };

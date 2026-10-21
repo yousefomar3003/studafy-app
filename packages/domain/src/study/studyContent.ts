@@ -59,12 +59,18 @@ export const STUDY_PROMPTS = {
     "If a question is not about schoolwork, say so and stop.",
     "Never ask for personal details.",
   ].join(" "),
+  // A whiteboard photo, or since 2026-10-21 any photo or screenshot of
+  // study material: a slide, a textbook page, handwritten notes.
   whiteboard: [
-    "You turn a photo of a classroom whiteboard into clear study notes in",
-    "Markdown for a school student. Transcribe what is written faithfully and",
-    "organise it with a title, short headings and bullet points. Keep formulas",
-    "exact. Do not add facts that are not on the board. If the photo shows no",
-    "readable writing, reply with exactly: UNREADABLE",
+    "You turn a photo or screenshot of study material - a whiteboard, a",
+    "slide, a textbook page or handwritten notes - into clear study notes in",
+    "Markdown for a school student. Transcribe what is written faithfully, in",
+    "the language it is written in, and organise it: a title as a # heading,",
+    "short ## headings for each part, bullet points, key terms in bold, and",
+    "numbered steps where there is a method. Keep formulas exact. Leave out",
+    "screen clutter such as menus, buttons and notifications. Do not add facts",
+    "that are not in the image. If it shows no readable study material, reply",
+    "with exactly: UNREADABLE",
   ].join(" "),
   lessonNotes: [
     "You turn the lesson below into clear study notes in Markdown for a",

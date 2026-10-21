@@ -217,9 +217,9 @@ const DEFINITIONS: Record<
     detail: "This feature is not available yet.",
   },
   AI_STUDENTS_ONLY: {
-    title: "For students in a class",
+    title: "For students",
     detail:
-      "The AI study tools are for students who are in a class. Parent and teacher accounts cannot use them.",
+      "The AI study tools are for student accounts. Parent and teacher accounts cannot use them.",
   },
   AI_CONSENT_REQUIRED: {
     title: "AI consent required",

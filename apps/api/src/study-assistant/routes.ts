@@ -8,6 +8,7 @@ import type {
 } from "@studafy/infrastructure";
 import { prepareImage, sha256Hex } from "@studafy/infrastructure";
 import type { NotebookRepository } from "../study/notebookRoutes";
+import { readInlineImage } from "../study/inlineImage";
 import {
   type ChatMemoryBudgets,
   chatMemoryTokens,
@@ -103,6 +104,7 @@ export function createStudyAssistantRoutes(
         references?: MaterialRef[];
         skipUnavailable?: boolean;
         attachmentFileIds?: string[];
+        images?: { mediaType: string; data: string }[];
         language?: "ar" | "en";
         requestId?: string;
       }>(c);
@@ -116,22 +118,32 @@ export function createStudyAssistantRoutes(
         | "max";
       const references = body.references ?? [];
       const photoIds = body.attachmentFileIds ?? [];
+      const inline = body.images ?? [];
 
       // Class material and photos reach the provider: only behind the
       // lesson-tools switch (ADR-0029), and photos only on Studafy Plus.
-      if (references.length > 0 || photoIds.length > 0) {
+      if (references.length > 0 || photoIds.length > 0 || inline.length > 0) {
         if (!deps.lessonToolsEnabled || !deps.notebooks || !deps.material) {
           return problem(c, "AI_FEATURE_DISABLED", 409);
         }
       }
-      if (photoIds.length > 0) {
+      if (photoIds.length > 0 || inline.length > 0) {
         if (planName !== "plus" && planName !== "max") {
           return problem(c, "PLAN_REQUIRED", 403);
         }
-        if (!deps.storage) return problem(c, "AI_FEATURE_DISABLED", 409);
+      }
+      if (photoIds.length > 0 && !deps.storage) {
+        return problem(c, "AI_FEATURE_DISABLED", 409);
       }
 
       const images: StudyImage[] = [];
+      // Photos sent with the question by a student with no school to upload
+      // into (ADR-0045): checked and drawn again, never stored.
+      for (const image of inline) {
+        const read = await readInlineImage(image);
+        if (!read.ok) return problem(c, read.code, read.status);
+        images.push({ bytes: read.bytes, mediaType: read.mediaType });
+      }
       for (const fileId of photoIds) {
         const found = await deps.notebooks!.call(
           context,

@@ -12,7 +12,7 @@ import 'package:flutter/foundation.dart';
 /// switched on for real students, and who consents for a 13-17 year old who
 /// signs in themselves (today: the student; only managed child accounts get
 /// a parent's consent). See ADR-0043.
-const aiConsentVersion = '2026-10-15';
+const aiConsentVersion = '2026-10-22';
 
 /// Whether an account may use the AI study tools, as the server decides it.
 enum AiAccess {

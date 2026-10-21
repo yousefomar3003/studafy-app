@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { V1AiAllowance } from "./studyPlans";
+import { V1AiAllowance, V1InlineImage } from "./studyPlans";
 import { V1MaterialRef, V1MaterialScope } from "./materialSelection";
 
 /// One question a student typed, and nothing else.
@@ -40,7 +40,16 @@ export const V1StudyAssistantAskRequest = z.strictObject({
   /// Photos the student sent: their own uploads of purpose
   /// `assistant_attachment`, once scanned. Studafy Plus.
   attachmentFileIds: z.array(z.string().uuid()).max(3).optional(),
-});
+  /// Photos sent with the question itself, by a student with no school to
+  /// upload into (2026-10-21, ADR-0045): checked, re-encoded, sent once and
+  /// never stored. Studafy Plus, like `attachmentFileIds`; at most three
+  /// photos in all.
+  images: z.array(V1InlineImage).max(3).optional(),
+}).refine(
+  (value) =>
+    (value.attachmentFileIds?.length ?? 0) + (value.images?.length ?? 0) <= 3,
+  { message: "at most three photos", path: ["images"] },
+);
 export type V1StudyAssistantAskRequest = z.infer<
   typeof V1StudyAssistantAskRequest
 >;
