@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../core/device_settings.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
+import '../core/studafy_domain.dart';
 import '../l10n/generated/app_l10n.dart';
 
-/// The student home before they are in any class.
+/// The join-a-class step a new student sees once, right after signing up.
 ///
-/// Deliberately the whole screen rather than a banner over empty feeds: a
-/// grades tab and an assignments tab that are both empty for the same reason
-/// tell a new student nothing, and every one of them would have to explain
-/// the same single next step.
+/// Joining is optional (ADR-0045): "Skip for now" opens the app, where the
+/// AI Tutor and the Notebook work without a class, and a class can be
+/// joined later from Today. The step is not shown again on this device.
 class StudentNoClassYet extends StatelessWidget {
   const StudentNoClassYet({
     super.key,
     required this.onJoin,
     required this.actions,
+    this.onSkip,
   });
 
   final Future<void> Function() onJoin;
   final List<Widget> actions;
+
+  /// Goes on without a class. Null hides the choice.
+  final VoidCallback? onSkip;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +79,29 @@ class StudentNoClassYet extends StatelessWidget {
                           label: Text(l10n.joinClassAction),
                         ),
                       ),
+                      if (onSkip != null) ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton(
+                            onPressed: onSkip,
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                            ),
+                            child: Text(l10n.onboardingStudentSkip),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.onboardingStudentOptional,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: studafyMuted,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -83,5 +111,52 @@ class StudentNoClassYet extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// Whether the join-a-class step after sign-up has been passed - a class
+/// joined, or "Skip for now" - on this device, for the account signed in
+/// (ADR-0045). Joining is optional, so the step is shown once, not at every
+/// launch. With no [settings] it is remembered for this run only.
+class StudentClassStep {
+  StudentClassStep(this.settings);
+
+  final DeviceSettingsStore? settings;
+  bool done = false;
+
+  /// Whether this device has been asked yet; until then nothing is shown,
+  /// so a student who skipped does not see the step flash at every launch.
+  bool known = false;
+
+  String? get _key => switch (ActiveContextController.instance.profile?.id) {
+    final id? => DeviceSettingKeys.studentClassStepDone(id),
+    null => null,
+  };
+
+  Future<void> read() async {
+    final store = settings;
+    final key = _key;
+    try {
+      if (store != null && key != null && await store.read(key) != null) {
+        done = true;
+      }
+    } on Object {
+      // Unread, the step shows; skipping it again costs one tap.
+    } finally {
+      known = true;
+    }
+  }
+
+  Future<void> pass() async {
+    done = true;
+    known = true;
+    final store = settings;
+    final key = _key;
+    if (store == null || key == null) return;
+    try {
+      await store.write(key, '1');
+    } on Object {
+      // Remembered for this run; at worst the step is offered once more.
+    }
   }
 }

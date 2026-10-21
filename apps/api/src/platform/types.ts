@@ -41,14 +41,14 @@ export const ROUTE_LIMIT_OVERRIDES: Readonly<
   Record<string, Readonly<Pick<PlatformLimits, "maxBodyBytes" | "maxJsonKeys">>>
 > = {
   // Up to three photos sent with the question (ADR-0045), each at most
-  // about 1.5 MB decoded, 2 MB as base64, on top of the chat.
+  // 4 MB decoded, 5.4 MB as base64, on top of the chat.
   "/v1/study-assistant/ask": {
-    maxBodyBytes: 6_656 * 1024,
+    maxBodyBytes: 17 * 1024 * 1024,
     maxJsonKeys: 1_024,
   },
   // One photo or screenshot, turned into notes (ADR-0045).
   "/v1/me/notebook/photo-notes": {
-    maxBodyBytes: 2_112 * 1024,
+    maxBodyBytes: 6 * 1024 * 1024,
     maxJsonKeys: 16,
   },
 };

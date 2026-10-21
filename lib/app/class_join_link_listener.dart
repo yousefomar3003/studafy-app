@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/navigation.dart';
+import '../core/studafy_domain.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/presentation/join_class_page.dart';
 import '../features/session/application/session_interactor.dart';
@@ -72,12 +73,24 @@ class _ClassJoinLinkListenerState extends State<ClassJoinLinkListener> {
     final token = widget.guard.consume();
     if (token == null) return;
     _opening = true;
+    // The app's language now, for the profile read after the join.
+    final locale =
+        Localizations.maybeLocaleOf(navigator.context)?.languageCode ?? 'en';
     try {
-      await navigator.pushOnce(
-        MaterialPageRoute<void>(
+      final joined = await navigator.pushOnce<Object?>(
+        MaterialPageRoute<Object?>(
           builder: (_) =>
               JoinClassPage(classes: widget.classes, initialToken: token),
         ),
+      );
+      if (joined == null) return;
+      // The server made the membership; reading the profile again is how
+      // the open student app learns of it and shows the class (ADR-0045).
+      // Only a student account can join, so it is the student role.
+      await widget.session.completeRemoteLogin(
+        role: StudafyRole.student,
+        consentAccepted: false,
+        locale: locale,
       );
     } finally {
       _opening = false;

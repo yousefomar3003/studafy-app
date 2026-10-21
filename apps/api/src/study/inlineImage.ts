@@ -1,9 +1,9 @@
 import { imageWithinPixelCap } from "@studafy/domain";
 import { prepareImage } from "@studafy/infrastructure";
 
-/** About 1.5 MB: a phone screenshot or photo the app has already shrunk to
- * 1,600 px. Anything larger was not prepared by the app. */
-export const INLINE_IMAGE_MAX_BYTES = 1_500_000;
+/** 4 MB: a full-size phone screenshot (often a PNG) or a photo the picker
+ * has already shrunk to 2,400 px. It is redrawn at 1,600 px before use. */
+export const INLINE_IMAGE_MAX_BYTES = 4_000_000;
 
 export type InlineImageResult =
   | { ok: true; bytes: Uint8Array; mediaType: "image/jpeg" }

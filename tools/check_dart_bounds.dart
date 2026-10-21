@@ -109,6 +109,10 @@ const _coreAllowlist = <String>[
   'core/coursework_attachments.dart',
   'core/voice_note.dart',
   'core/platform_voice_notes.dart',
+  // ADR-0045: a photo sent with a request by a student with no school, and
+  // the Markdown that notes and the AI Tutor's answers are written in.
+  'core/inline_photo.dart',
+  'core/study_markdown.dart',
 ];
 
 /// Data-layer-only imports: presentation and application may never touch

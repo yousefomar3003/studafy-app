@@ -1,3 +1,4 @@
+import '../../../core/inline_photo.dart';
 import '../../../core/result.dart';
 import '../../../core/telemetry.dart';
 import '../domain/study_assistant_repository.dart';
@@ -18,6 +19,7 @@ class StudyAssistantInteractor {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,
@@ -28,6 +30,7 @@ class StudyAssistantInteractor {
         history: history,
         references: references,
         photoFileIds: photoFileIds,
+        inlinePhotos: inlinePhotos,
         requestId: requestId,
         language: language,
         skipUnavailable: skipUnavailable,

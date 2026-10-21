@@ -157,11 +157,11 @@ export type V1UpdateNotebookEntryRequest = z.infer<
 /**
  * A photo or screenshot sent with the request itself, for a student with no
  * school to upload into (2026-10-21). Checked, re-encoded, sent to the model
- * once, and never stored. About 1.5 MB at most once decoded.
+ * once, and never stored. 4 MB at most once decoded.
  */
 export const V1InlineImage = z.strictObject({
   mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-  data: z.string().min(16).max(2_000_000).regex(/^[A-Za-z0-9+/]+={0,2}$/),
+  data: z.string().min(16).max(5_400_000).regex(/^[A-Za-z0-9+/]+={0,2}$/),
 });
 export type V1InlineImage = z.infer<typeof V1InlineImage>;
 

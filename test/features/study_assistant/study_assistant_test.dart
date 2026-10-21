@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/file_upload_repository.dart';
+import 'package:studafy/core/inline_photo.dart';
 import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
@@ -31,6 +32,7 @@ void main() {
     Future<void> Function(BuildContext, String)? onPlanLimit,
     HelperPlan? plan,
     Future<void> Function()? onUpgrade,
+    Future<void> Function(BuildContext)? onPhotoToNotes,
   }) => localizedApp(
     locale: locale,
     home: StudyAssistantPage(
@@ -46,6 +48,7 @@ void main() {
       onPlanLimit: onPlanLimit,
       plan: plan == null ? null : () async => plan,
       onUpgrade: onUpgrade,
+      onPhotoToNotes: onPhotoToNotes,
       schoolId: uploads == null ? null : 'school-1',
       attachmentSource: (_, _) async => PickedAttachment(
         displayName: 'homework.jpg',
@@ -130,9 +133,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Add material or a photo'));
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Class material'));
+    await tester.tap(find.text('My notes and lessons'));
     await tester.pumpAndSettle();
     // What the chat answers from is shown above it.
     expect(find.text('Answering from'), findsOne);
@@ -157,7 +160,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add material or a photo'));
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
     await tester.pumpAndSettle();
     expect(find.text('Photos come with Studafy Plus.'), findsOne);
   });
@@ -176,9 +179,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Add material or a photo'));
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Photo from library'));
+    await tester.tap(find.text('Photo or screenshot'));
     await tester.pumpAndSettle();
     expect(find.text('homework.jpg'), findsOne);
 
@@ -189,6 +192,47 @@ void main() {
       ['photo-1'],
     ]);
     expect(find.text('Answer 1'), findsOne);
+  });
+
+  testWidgets('with no school, a photo goes with the question, not uploaded', (
+    tester,
+  ) async {
+    // ADR-0045: a student in no class has no school to upload into; the
+    // photo is sent with the question and the server does not keep it.
+    final repository = _Recording();
+    await tester.pumpWidget(
+      page(repository, abilities: const HelperAbilities(photos: true)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo or screenshot'));
+    await tester.pumpAndSettle();
+    expect(find.text('homework.jpg'), findsOne);
+
+    await ask(tester, 'Explain this question');
+
+    expect(repository.photosSent, [<String>[]]);
+    expect(repository.inlineSent.single.single.mediaType, 'image/jpeg');
+    expect(find.text('Answer 1'), findsOne);
+  });
+
+  testWidgets('a screenshot can become notes, from the start or from "+"', (
+    tester,
+  ) async {
+    var made = 0;
+    await tester.pumpWidget(
+      page(_Recording(), onPhotoToNotes: (_) async => made++),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Turn a screenshot into notes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved to your Notebook'));
+    await tester.pumpAndSettle();
+    expect(made, 2);
   });
 
   testWidgets('says questions leave the app before any are typed', (
@@ -309,7 +353,7 @@ void main() {
     resetsAt: DateTime(2026, 10, 12),
   );
 
-  testWidgets('the plan, its tokens left and what upgrading adds', (
+  testWidgets('the plan and its tokens left, in one line, with Upgrade', (
     tester,
   ) async {
     var upgrades = 0;
@@ -327,12 +371,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Studafy Free'), findsOne);
-    // A quarter used: plenty left, as a label - no counts.
-    expect(find.text('Plenty available · resets Mon, Oct 12'), findsOne);
+    // One line, not a card: the plan, and a quarter used shown as plenty
+    // left - a label, no counts. What upgrading adds is on the plans.
+    expect(
+      find.text('Studafy Free · Plenty available · resets Mon, Oct 12'),
+      findsOne,
+    );
     expect(find.textContaining('40,000'), findsNothing);
-    expect(find.text('Studafy Plus adds:'), findsOne);
-    expect(find.text('3,000,000 AI tokens a month'), findsOne);
     await tester.tap(find.text('Upgrade'));
     await tester.pumpAndSettle();
     expect(upgrades, 1);
@@ -348,7 +393,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('How does AI usage work?'));
+    await tester.tap(find.byTooltip('How does AI usage work?'));
     await tester.pumpAndSettle();
     expect(find.textContaining('shares one allowance'), findsOne);
     expect(find.text('uses a little'), findsOne);
@@ -371,14 +416,17 @@ void main() {
     await ask(tester, 'What is a cell?');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Choose'));
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My notes and lessons'));
     await tester.pumpAndSettle();
     expect(find.text('From here: Lesson: Cells · all attachments'), findsOne);
 
     await tester.tap(find.byTooltip('Remove').first);
     await tester.pumpAndSettle();
     expect(find.text('From here: no class material'), findsOne);
-    expect(find.text('Not using class material'), findsOne);
+    // With nothing chosen, the bar above the chat is gone.
+    expect(find.text('Answering from'), findsNothing);
   });
 
   testWidgets('on the top plan nothing is sold', (tester) async {
@@ -393,7 +441,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Studafy Max'), findsOne);
+    expect(find.textContaining('Studafy Max'), findsOne);
     expect(find.text('Upgrade'), findsNothing);
   });
 
@@ -451,9 +499,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add material or a photo'));
+    await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Class material'));
+    await tester.tap(find.text('My notes and lessons'));
     await tester.pumpAndSettle();
     await ask(tester, 'How do leaves breathe?');
 
@@ -477,9 +525,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Add material or a photo'));
+      await tester.tap(find.byTooltip('Add notes, a lesson or a photo'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Photo from library'));
+      await tester.tap(find.text('Photo or screenshot'));
       await tester.pumpAndSettle();
       await ask(tester, 'Check my working');
 
@@ -601,7 +649,7 @@ void main() {
       directionOf(tester, find.byType(StudyAssistantPage)),
       TextDirection.rtl,
     );
-    expect(find.text('مساعد الدراسة'), findsOneWidget);
+    expect(find.text('المعلّم الذكي'), findsOneWidget);
   });
 
   test('a photo kept with the chat comes back with it', () {
@@ -725,6 +773,7 @@ class _Recording implements StudyAssistantRepository {
   final List<List<ChatTurn>> histories = [];
   final List<List<ChatReference>> referencesSent = [];
   final List<List<String>> photosSent = [];
+  final List<List<InlinePhoto>> inlineSent = [];
   final List<String?> requestIds = [];
   final List<String?> languages = [];
 
@@ -734,6 +783,7 @@ class _Recording implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,
@@ -748,6 +798,7 @@ class _Recording implements StudyAssistantRepository {
     histories.add(history);
     referencesSent.add(references);
     photosSent.add(photoFileIds);
+    inlineSent.add(inlinePhotos);
     return StudyAnswer(
       answer: 'Answer ${questions.length}',
       citations: references.isEmpty
@@ -777,6 +828,7 @@ class _Refusing implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,
@@ -796,6 +848,7 @@ class _Held implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,

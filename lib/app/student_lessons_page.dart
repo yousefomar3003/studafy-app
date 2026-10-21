@@ -13,7 +13,7 @@ import '../features/academic/presentation/lessons_by_date_view.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/study/domain/study.dart';
-import '../features/study/presentation/my_notebooks_page.dart';
+import '../features/study/presentation/notebook_home_page.dart';
 import '../features/study/presentation/notebook_view.dart';
 import '../features/study/presentation/study_notebook_shelf.dart';
 import '../features/study/presentation/study_plan_copy.dart';
@@ -183,9 +183,17 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
                 StudafyPillButton(
                   icon: Icons.edit_note_rounded,
                   label: l10n.notebookMyNotebooks,
+                  // The Notebook: the student's own notes and every
+                  // class's, page by page (ADR-0045).
                   onPressed: () => Navigator.of(context).pushOnce(
                     MaterialPageRoute<void>(
-                      builder: (_) => MyNotebooksPage(study: widget.study),
+                      builder: (context) => NotebookHomePage(
+                        study: widget.study,
+                        pickPhoto: pickPlatformAttachment,
+                        onOpenPlans: _openPlans,
+                        onBack: () => Navigator.of(context).pop(),
+                        inClass: true,
+                      ),
                     ),
                   ),
                 ),

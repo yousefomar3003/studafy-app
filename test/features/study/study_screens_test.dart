@@ -9,7 +9,7 @@ import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/presentation/lessons_by_date_view.dart';
 import 'package:studafy/features/study/domain/study.dart';
 import 'package:studafy/features/study/domain/study_notebook.dart';
-import 'package:studafy/features/study/presentation/my_notebooks_page.dart';
+import 'package:studafy/features/study/presentation/notebook_home_page.dart';
 import 'package:studafy/features/study/presentation/notebook_view.dart';
 import 'package:studafy/features/study/presentation/study_plans_page.dart';
 import 'package:studafy/features/study/presentation/study_set_pages.dart';
@@ -248,7 +248,7 @@ void main() {
       // Why it is locked and what the plan adds, before any store.
       expect(find.text('This comes with Studafy Max'), findsOne);
       expect(find.text('What Studafy Max unlocks'), findsOne);
-      expect(find.text('Quizzes made from your lessons'), findsOne);
+      expect(find.text('Quizzes from your notes and lessons'), findsOne);
       expect(opened, isEmpty);
       await tester.tap(find.text('Upgrade'));
       await tester.pumpAndSettle();
@@ -444,13 +444,19 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        localizedApp(home: MyNotebooksPage(study: _Study())),
+        localizedApp(home: NotebookHomePage(study: _Study())),
       );
       await tester.pumpAndSettle();
 
+      // The personal notebook first, then one for each class.
+      expect(find.text('My notebook'), findsWidgets);
       expect(find.text('Biology'), findsOne);
       expect(find.text('Old chemistry class'), findsOne);
+      await tester.tap(find.text('Old chemistry class'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('no longer exists'), findsOne);
+      // Nothing can be added to a class that is gone.
+      expect(find.text('New note'), findsNothing);
     });
   });
 
@@ -511,23 +517,15 @@ void main() {
       for (final name in ['Studafy Free', 'Studafy Plus', 'Studafy Max']) {
         expect(find.text(name), findsOne);
       }
-      expect(
-        find.text('Snap the whiteboard - get real notebook notes'),
-        findsOne,
-      );
-      expect(find.text('Quizzes made from your lessons'), findsOne);
+      expect(find.text('Turn a photo or screenshot into tidy notes'), findsOne);
+      expect(find.text('Quizzes from your notes and lessons'), findsOne);
       // The store's own price, in the student's currency.
       expect(find.text(r'$5.99 / month'), findsOne);
       // Usage as a bar and a label - Free a week at a time - never a count
       // of tokens, and never "unlimited".
       expect(find.text('Plenty available'), findsOne);
       expect(find.text('Resets every Monday · next on Mon, Oct 12'), findsOne);
-      expect(
-        find.text(
-          'Light AI use - a few questions about your lessons each week',
-        ),
-        findsOne,
-      );
+      expect(find.text('Light AI use - a few questions each week'), findsOne);
       expect(find.textContaining('token'), findsNothing);
       expect(find.textContaining('40,000'), findsNothing);
       expect(find.textContaining('nlimited'), findsNothing);
@@ -596,7 +594,7 @@ void main() {
       final store = _Store();
       await tester.pumpWidget(plans(_Study(), store, legalLinks: true));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Quizzes made from your lessons'));
+      await tester.tap(find.text('Quizzes from your notes and lessons'));
       await tester.pumpAndSettle();
       expect(store.purchases, [StudyPlanTier.max]);
     });
@@ -949,6 +947,9 @@ class _Study implements StudyRepository {
   }
 
   final lessonNotesRequested = <String>[];
+
+  @override
+  Future<List<NotebookEntry>> personalNotebook() async => const [];
 
   @override
   Future<List<NotebookGroup>> myNotebooks() async => [

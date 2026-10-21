@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
-import '../core/ai_usage.dart';
+import '../core/device_settings.dart';
 import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
 import '../core/lazy_indexed_stack.dart';
-import '../core/material_selection.dart';
 import '../core/navigation.dart';
 import '../core/platform_attachment_source.dart';
 import '../core/studafy_design.dart';
@@ -25,20 +24,18 @@ import '../features/notifications/domain/notification.dart';
 import '../features/notifications/presentation/notification_tap_opener.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/study/domain/study.dart';
-import '../features/study/presentation/study_plan_copy.dart';
-import '../features/study/presentation/study_plans_page.dart';
-import '../features/study/presentation/upgrade_prompt.dart';
 import '../features/study_assistant/application/study_assistant_interactor.dart';
 import '../features/study_assistant/domain/study_assistant_repository.dart';
 import '../features/study_assistant/presentation/study_assistant_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
+import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
-import 'material_picker.dart';
 import 'school_messaging_switch.dart';
 import 'student_helper_needs_class.dart';
 import 'student_lessons_page.dart';
 import 'student_no_class_yet.dart';
+import 'student_study_actions.dart';
 import 'student_today_page.dart';
 
 class StudentShell extends StatefulWidget {
@@ -52,7 +49,25 @@ class StudentShell extends StatefulWidget {
     this.studyAssistant,
     this.studyChats,
     this.fileUploads,
+    this.settings,
   });
+
+  /// The shell as the app builds it, from the composition root.
+  factory StudentShell.withDependencies(AppDependencies deps) => StudentShell(
+    academic: deps.academic,
+    classes: deps.classes,
+    studyPlans: deps.studyPlans,
+    study: deps.study,
+    session: deps.session,
+    studyAssistant: deps.studyAssistant,
+    studyChats: deps.studyChats,
+    fileUploads: deps.fileUploads,
+    settings: deps.deviceSettings,
+  );
+
+  /// Where this device remembers that the join-a-class step was passed.
+  /// Null keeps it for this run only.
+  final DeviceSettingsStore? settings;
 
   /// Buying Studafy Plus / Max. Null without billing.
   final StudyPlanSubscriptionRepository? studyPlans;
@@ -97,6 +112,38 @@ class _StudentShellState extends State<StudentShell>
   void initState() {
     super.initState();
     unawaited(_loadPlan());
+    unawaited(_readClassStep());
+    // A class joined anywhere in the app brings its tabs in with it.
+    _member = ActiveContextController.instance.membership?.id;
+    ActiveContextController.instance.addListener(_contextChanged);
+    // A plan bought or restored unlocks what the tabs offer at once.
+    widget.studyPlans?.addEntitlementListener(_entitlementChanged);
+  }
+
+  String? _member;
+
+  void _contextChanged() {
+    final member = ActiveContextController.instance.membership?.id;
+    if (member == _member || !mounted) return;
+    _member = member;
+    setState(() => index = 0);
+    unawaited(_loadPlan());
+  }
+
+  void _entitlementChanged() => unawaited(_loadPlan());
+
+  /// The join-a-class step after sign-up, passed or not on this device.
+  late final _classStep = StudentClassStep(widget.settings);
+
+  Future<void> _readClassStep() async {
+    await _classStep.read();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _skipClassStep() async {
+    setState(() => index = 0);
+    await _classStep.pass();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadPlan() async {
@@ -116,10 +163,9 @@ class _StudentShellState extends State<StudentShell>
       widget.studyAssistant != null &&
       (widget.study == null || (_plan?.assistantOn ?? false));
 
-  /// The helper tab without the helper: the AI tools are on for this
-  /// server, but this student is in no class, so the tab says to join one
-  /// (the server refuses the tools until then). With AI off for everyone
-  /// the tab stays hidden, as before.
+  /// The AI Tutor tab without the Tutor: the AI tools are on for this
+  /// server, but it does not yet know this account as a student (ADR-0045),
+  /// so the tab says what to do. With AI off for everyone it stays hidden.
   bool get _helperNeedsClass =>
       !_helperOn &&
       widget.studyAssistant != null &&
@@ -137,6 +183,8 @@ class _StudentShellState extends State<StudentShell>
 
   /// Opens what a notification is about, in this student's app.
   bool _openNotification(NotificationItem item) {
+    // In no class there is no work, no lessons and no inbox to open.
+    if (_independent) return false;
     final key = item.templateKey;
     final messagesIndex = 3 + (_helperTab ? 1 : 0);
     final (int, AcademicFeed?)? target = switch (key.split('.').first) {
@@ -189,9 +237,21 @@ class _StudentShellState extends State<StudentShell>
 
   @override
   void dispose() {
+    ActiveContextController.instance.removeListener(_contextChanged);
+    widget.studyPlans?.removeEntitlementListener(_entitlementChanged);
     _navCompact.dispose();
     _openHelperWith.dispose();
     super.dispose();
+  }
+
+  /// Opens the AI Tutor tab, remembering where the student came from.
+  void _openTutor() {
+    final helper = _helperIndex;
+    if (helper == null) return;
+    setState(() {
+      if (index != helper) _beforeHelper = index;
+      index = helper;
+    });
   }
 
   bool _onScroll(UserScrollNotification notification) {
@@ -205,69 +265,20 @@ class _StudentShellState extends State<StudentShell>
     return false;
   }
 
-  /// Opens the Plans screen, from wherever a plan is mentioned.
-  Future<void> _openPlans(BuildContext context) async {
-    final study = widget.study;
-    if (study == null) return;
-    await Navigator.of(context).pushOnce(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            StudyPlansPage(study: study, subscriptions: widget.studyPlans),
-      ),
-    );
-  }
-
-  /// The plan as the helper shows it: its name, its AI tokens, and what the
-  /// next plan adds - nothing to upgrade to on Studafy Max.
-  Future<HelperPlan?> _helperPlan(BuildContext context) async {
-    final study = widget.study;
-    if (study == null) return null;
-    final l10n = AppL10n.of(context);
-    final plan = await study.plan();
-    final next = plan.tier.next;
-    return HelperPlan(
-      name: studyPlanCopy[plan.tier]!.name,
-      allowance: HelperAllowance(
-        weekly: plan.allowance.weekly,
-        total: plan.allowance.total,
-        used: plan.allowance.used,
-        remaining: plan.allowance.remaining,
-        resetsAt: plan.allowance.resetsAt,
-      ),
-      upgradeTo: next == null ? null : studyPlanCopy[next]!.name,
-      upgradeBenefits: next == null
-          ? const []
-          : [for (final line in studyPlanCopy[next]!.adds) line(l10n)],
-    );
-  }
+  /// What the study tools open. Null in the preview shell, with no study
+  /// service behind it.
+  StudentStudyActions? get _actions => switch (widget.study) {
+    final study? => StudentStudyActions(
+      study: study,
+      studyPlans: widget.studyPlans,
+    ),
+    null => null,
+  };
 
   /// The Subscription row on the student's profile. The plans are the AI
   /// study tools, so it is there only when they are.
-  SubscriptionEntry? get _subscription {
-    final study = widget.study;
-    if (study == null || !_aiOn) return null;
-    final plans = widget.studyPlans;
-    return SubscriptionEntry(
-      open: _openPlans,
-      // Only where a store sells the plans (not the web or desktop).
-      restorePurchases: plans == null || plans.purchaseStore == null
-          ? null
-          : plans.restorePurchases,
-      currentPlan: () async => studyPlanCopy[(await study.plan()).tier]!.name,
-      // What the server metered, shown as a bar and a label only.
-      usage: () async {
-        final plan = await study.plan();
-        return AiUsageSnapshot(
-          planName: studyPlanCopy[plan.tier]!.name,
-          used: plan.allowance.used,
-          total: plan.allowance.total,
-          resetsAt: plan.allowance.resetsAt,
-          weekly: plan.allowance.weekly,
-          canUpgrade: plan.tier.next != null,
-        );
-      },
-    );
-  }
+  SubscriptionEntry? get _subscription =>
+      _aiOn ? _actions?.subscription() : null;
 
   /// Signed in, but not in any class yet.
   ///
@@ -280,6 +291,10 @@ class _StudentShellState extends State<StudentShell>
   bool get _hasNoClassYet =>
       ActiveContextController.instance.membership == null;
 
+  /// A student in no class (ADR-0045): Today, the Notebook and the AI Tutor.
+  /// The preview shell, with no class service, keeps its usual tabs.
+  bool get _independent => _hasNoClassYet && widget.classes != null;
+
   Future<void> _joinClass() async {
     final classes = widget.classes;
     if (classes == null) return;
@@ -287,6 +302,7 @@ class _StudentShellState extends State<StudentShell>
       MaterialPageRoute<void>(builder: (_) => JoinClassPage(classes: classes)),
     );
     if (joined == null || !mounted) return;
+    unawaited(_skipClassStep());
     // The server made the membership; this is how the client learns of it.
     await widget.session?.completeRemoteLogin(
       role: StudafyRole.student,
@@ -335,27 +351,66 @@ class _StudentShellState extends State<StudentShell>
   Widget _page(BuildContext context) {
     final repository = widget.academic;
     final studentId = ActiveContextController.instance.selectedStudent?.id;
-    final messaging = MessagingScope.isAvailable(context);
+    final classes = widget.classes;
+    // Signed up, not in a class, and the join step not yet passed on this
+    // device: the step, once, with "Skip for now" (ADR-0045).
+    if (_hasNoClassYet && classes != null && !_classStep.known) {
+      // A moment, while this device says whether the step was passed.
+      return const Scaffold(backgroundColor: studafyCanvas);
+    }
+    if (_hasNoClassYet && classes != null && !_classStep.done) {
+      return Scaffold(
+        body: SafeArea(
+          child: StudentNoClassYet(
+            onJoin: _joinClass,
+            onSkip: _skipClassStep,
+            actions: [AccountButton(subscription: _subscription)],
+          ),
+        ),
+      );
+    }
+    final independent = _independent;
+    final messaging = !independent && MessagingScope.isAvailable(context);
     readMessagingSwitch();
     // Where the school has messaging off, the tab is its announcements.
     final messages = messagingOn;
     final assistant = _helperOn ? widget.studyAssistant : null;
     final helperTab = _helperTab;
-    // Today, Lessons, Work, then the two optional tabs in that order.
+    final study = widget.study;
+    final actions = _actions;
+    final today = StudentTodayPage(
+      academic: repository,
+      onWork: () => setState(() => index = 2),
+      onNotebook: () => setState(() => index = 1),
+      classes: widget.classes,
+      onJoinClass: widget.classes == null ? null : _joinClass,
+      subscription: _subscription,
+      onOpenNotification: _openNotification,
+      independent: independent,
+      study: study,
+      onOpenTutor: assistant == null ? null : _openTutor,
+      onOpenNotebook: actions == null
+          ? null
+          : independent
+          ? () => setState(() => index = 1)
+          : () => actions.openNotebook(context, inClass: true),
+      onPractise: actions == null
+          ? null
+          : (kind) =>
+                actions.openPractice(context, kind, inClass: !independent),
+    );
+    // Today, Lessons, Work, then the two optional tabs in that order; in no
+    // class, Today, the Notebook and the AI Tutor.
     final messagesIndex = 3 + (helperTab ? 1 : 0);
     final pages = <Widget>[
-      StudentTodayPage(
-        academic: repository,
-        onWork: () => setState(() => index = 2),
-        onNotebook: () => setState(() => index = 1),
-        classes: widget.classes,
-        onJoinClass: widget.classes == null ? null : _joinClass,
-        subscription: _subscription,
-        onOpenNotification: _openNotification,
-      ),
+      today,
+      if (independent && actions != null)
+        actions.notebookTab()
+      else if (independent)
+        const SizedBox.shrink()
       // Lessons are free (2026-09-27): every class, its lessons by date and
       // the student's own notebook for it.
-      if (widget.study != null && widget.classes != null)
+      else if (widget.study != null && widget.classes != null)
         StudentLessonsPage(
           classes: widget.classes!,
           academic: repository,
@@ -373,52 +428,54 @@ class _StudentShellState extends State<StudentShell>
           availableFeeds: const [AcademicFeed.content],
           loadClassChoices: widget.classes == null ? null : _classChoices,
         ),
-      AcademicOverviewPage(
-        // Re-keyed when a notification picks the tab Work opens on.
-        key: ValueKey(_workFeed),
-        repository: repository,
-        studentId: studentId,
-        // A tab of its own, so a large title like the others, and no
-        // profile button: that lives on Today.
-        title: AppL10n.of(context).navWork,
-        subtitle: AppL10n.of(context).workSubtitle,
-        initialFeed: _workFeed,
-        availableFeeds: const [
-          AcademicFeed.assignments,
-          AcademicFeed.assessments,
-          AcademicFeed.grades,
-          AcademicFeed.attendance,
-          AcademicFeed.wellbeing,
-        ],
-        loadClassChoices: widget.classes == null ? null : _classChoices,
-        onOpenAssessment: (id, title, _) =>
-            openAssessmentForLearner(context, repository, id, title),
-        // Only published work can be handed in; a draft is not the
-        // student's to see as open.
-        onOpenRecord: (record) async {
-          final messenger = ScaffoldMessenger.of(context);
-          final done = await Navigator.of(context).pushOnce<String>(
-            MaterialPageRoute<String>(
-              builder: (_) => SubmitWorkPage(
-                repository: repository,
-                assignmentId: record.id,
-                assignmentTitle: record.title,
-                canSubmit: record.state == 'published',
-                deadline: record.deadline,
-                instructions: record.detail,
-                material: record.attachments,
-                links: record.links,
-                uploads: widget.fileUploads,
-                schoolId: ActiveContextController.instance.membership?.schoolId,
-                studentId: studentId,
+      if (!independent)
+        AcademicOverviewPage(
+          // Re-keyed when a notification picks the tab Work opens on.
+          key: ValueKey(_workFeed),
+          repository: repository,
+          studentId: studentId,
+          // A tab of its own, so a large title like the others, and no
+          // profile button: that lives on Today.
+          title: AppL10n.of(context).navWork,
+          subtitle: AppL10n.of(context).workSubtitle,
+          initialFeed: _workFeed,
+          availableFeeds: const [
+            AcademicFeed.assignments,
+            AcademicFeed.assessments,
+            AcademicFeed.grades,
+            AcademicFeed.attendance,
+            AcademicFeed.wellbeing,
+          ],
+          loadClassChoices: widget.classes == null ? null : _classChoices,
+          onOpenAssessment: (id, title, _) =>
+              openAssessmentForLearner(context, repository, id, title),
+          // Only published work can be handed in; a draft is not the
+          // student's to see as open.
+          onOpenRecord: (record) async {
+            final messenger = ScaffoldMessenger.of(context);
+            final done = await Navigator.of(context).pushOnce<String>(
+              MaterialPageRoute<String>(
+                builder: (_) => SubmitWorkPage(
+                  repository: repository,
+                  assignmentId: record.id,
+                  assignmentTitle: record.title,
+                  canSubmit: record.state == 'published',
+                  deadline: record.deadline,
+                  instructions: record.detail,
+                  material: record.attachments,
+                  links: record.links,
+                  uploads: widget.fileUploads,
+                  schoolId:
+                      ActiveContextController.instance.membership?.schoolId,
+                  studentId: studentId,
+                ),
               ),
-            ),
-          );
-          if (done != null) {
-            messenger.showMessage(done);
-          }
-        },
-      ),
+            );
+            if (done != null) {
+              messenger.showMessage(done);
+            }
+          },
+        ),
       if (assistant != null)
         StudyAssistantPage(
           // Full screen, like a chat: the bar is away while it is open.
@@ -430,68 +487,21 @@ class _StudentShellState extends State<StudentShell>
             final study? => () async => (await study.plan()).assistantOn,
             null => null,
           },
-          abilities: switch (widget.study) {
-            final study? => () async {
-              final plan = await study.plan();
-              return HelperAbilities(
-                ask: plan.assistantOn,
-                classMaterial: plan.classMaterialOn,
-                photos: plan.helperPhotosOn,
-              );
-            },
-            null => null,
-          },
-          pickReferences: switch ((widget.classes, widget.study)) {
-            (final classes?, final study?) => (context, current) async {
-              final picked = await pickMaterials(
-                context,
-                MaterialPickRequest(
-                  action: MaterialAction.helper,
-                  initial: selectionOfReferences(current),
-                  allowNotes: true,
-                ),
-                classes: classes,
-                academic: repository,
-                study: study,
-              );
-              return picked == null ? null : referencesOfSelection(picked);
-            },
+          abilities: actions?.abilities,
+          pickReferences: switch ((widget.classes, actions)) {
+            (final classes?, final actions?) => (
+              context,
+              current,
+            ) => actions.pickReferences(context, current, classes, repository),
             _ => null,
           },
           uploads: widget.fileUploads,
           schoolId: ActiveContextController.instance.membership?.schoolId,
           attachmentSource: pickPlatformAttachment,
-          onPlanLimit: switch (widget.study) {
-            final study? => (context, code) async {
-              StudyPlan? plan;
-              try {
-                plan = await study.plan();
-              } on Object {
-                plan = null;
-              }
-              if (!context.mounted) return;
-              await showUpgradePrompt(
-                context,
-                reason: code == StudyAssistantFailure.allowanceUsed
-                    ? UpgradeReason.tokensUsed
-                    : UpgradeReason.feature,
-                plan: plan,
-                // Photos to the helper are Studafy Plus.
-                needs: StudyPlanTier.plus,
-                onUpgrade: () => Navigator.of(context).pushOnce(
-                  MaterialPageRoute<void>(
-                    builder: (_) => StudyPlansPage(
-                      study: study,
-                      subscriptions: widget.studyPlans,
-                    ),
-                  ),
-                ),
-              );
-            },
-            null => null,
-          },
-          plan: widget.study == null ? null : () => _helperPlan(context),
-          onUpgrade: widget.study == null ? null : () => _openPlans(context),
+          onPhotoToNotes: actions?.photoToNotes,
+          onPlanLimit: actions?.planLimit,
+          plan: actions == null ? null : () => actions.helperPlan(context),
+          onUpgrade: actions == null ? null : () => actions.openPlans(context),
         )
       else if (helperTab)
         StudentHelperNeedsClass(
@@ -507,17 +517,47 @@ class _StudentShellState extends State<StudentShell>
     final helper = pages.indexWhere((page) => page is StudyAssistantPage);
     final helperIndex = helper < 0 ? null : helper;
     _helperIndex = helperIndex;
-    final classes = widget.classes;
-    if (_hasNoClassYet && classes != null) {
-      return Scaffold(
-        body: SafeArea(
-          child: StudentNoClassYet(
-            onJoin: _joinClass,
-            actions: [AccountButton(subscription: _subscription)],
-          ),
+    final l10n = AppL10n.of(context);
+    final items = <StudafyNavItem>[
+      StudafyNavItem(l10n.navToday, Icons.home_outlined, Icons.home_rounded),
+      if (independent)
+        StudafyNavItem(
+          l10n.todayToolNotebook,
+          Icons.menu_book_outlined,
+          Icons.menu_book_rounded,
+        )
+      else ...[
+        StudafyNavItem(
+          l10n.feedContent,
+          Icons.auto_stories_outlined,
+          Icons.auto_stories_rounded,
         ),
-      );
-    }
+        StudafyNavItem(
+          l10n.navWork,
+          Icons.assignment_outlined,
+          Icons.assignment_rounded,
+        ),
+      ],
+      if (helperTab)
+        StudafyNavItem(
+          l10n.studyAssistantTab,
+          Icons.auto_awesome_outlined,
+          Icons.auto_awesome_rounded,
+        ),
+      if (messaging && messages)
+        StudafyNavItem(
+          l10n.navMessages,
+          Icons.send_outlined,
+          Icons.send_rounded,
+        )
+      else if (messaging)
+        StudafyNavItem(
+          l10n.navAnnouncementsTab,
+          Icons.campaign_outlined,
+          Icons.campaign_rounded,
+        ),
+    ];
+    final selected = index < pages.length ? index : 0;
     return Scaffold(
       backgroundColor: studafyCanvas,
       // Joining another class is on Today, beside the class list, rather
@@ -525,21 +565,21 @@ class _StudentShellState extends State<StudentShell>
       body: NotificationListener<UserScrollNotification>(
         onNotification: _onScroll,
         child: LazyIndexedStack(
-          index: index,
+          index: selected,
           // The inbox acknowledges delivery while out of sight.
           builtAhead: {if (messaging) messagesIndex},
           children: pages,
         ),
       ),
-      // The helper is a chat and has the whole screen; its back arrow
+      // The AI Tutor is a chat and has the whole screen; its back arrow
       // returns to the tab it was opened from.
-      bottomNavigationBar: index == helperIndex
+      bottomNavigationBar: selected == helperIndex
           ? null
           : ValueListenableBuilder<bool>(
               // Only the bar follows scrolling; the tabs are not rebuilt.
               valueListenable: _navCompact,
               builder: (context, compact, _) => StudafyNavigationBar(
-                selectedIndex: index,
+                selectedIndex: selected,
                 compact: compact,
                 onInteract: () {
                   _navCompact.value = false;
@@ -549,41 +589,7 @@ class _StudentShellState extends State<StudentShell>
                   index = value;
                   _navCompact.value = false;
                 }),
-                items: [
-                  StudafyNavItem(
-                    AppL10n.of(context).navToday,
-                    Icons.home_outlined,
-                    Icons.home_rounded,
-                  ),
-                  StudafyNavItem(
-                    AppL10n.of(context).feedContent,
-                    Icons.auto_stories_outlined,
-                    Icons.auto_stories_rounded,
-                  ),
-                  StudafyNavItem(
-                    AppL10n.of(context).navWork,
-                    Icons.assignment_outlined,
-                    Icons.assignment_rounded,
-                  ),
-                  if (helperTab)
-                    StudafyNavItem(
-                      AppL10n.of(context).studyAssistantTab,
-                      Icons.auto_awesome_outlined,
-                      Icons.auto_awesome_rounded,
-                    ),
-                  if (messaging && messages)
-                    StudafyNavItem(
-                      AppL10n.of(context).navMessages,
-                      Icons.send_outlined,
-                      Icons.send_rounded,
-                    )
-                  else if (messaging)
-                    StudafyNavItem(
-                      AppL10n.of(context).navAnnouncementsTab,
-                      Icons.campaign_outlined,
-                      Icons.campaign_rounded,
-                    ),
-                ],
+                items: items,
                 accent: studafyNavy,
               ),
             ),

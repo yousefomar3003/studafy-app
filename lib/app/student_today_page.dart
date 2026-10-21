@@ -16,11 +16,20 @@ import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/notifications/domain/notification.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
+import '../features/study/domain/study.dart';
+import '../features/study/presentation/note_page.dart';
+import '../features/study/presentation/notebook_paper.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 
 /// The student's home: the brand, their notifications and profile, then
-/// what matters today in labelled groups - shortcuts, classes, and work.
+/// what matters today in labelled groups - the study tools, shortcuts,
+/// classes, and work.
+///
+/// For a student in no class ([independent], ADR-0045) it is a study home:
+/// the AI Tutor, the Notebook, flashcards and quizzes, their latest notes,
+/// and one quiet card saying a teacher's class can be joined - never a
+/// wall of empty feeds.
 class StudentTodayPage extends StatefulWidget {
   const StudentTodayPage({
     super.key,
@@ -31,7 +40,23 @@ class StudentTodayPage extends StatefulWidget {
     this.onJoinClass,
     this.subscription,
     this.onOpenNotification,
+    this.independent = false,
+    this.study,
+    this.onOpenTutor,
+    this.onOpenNotebook,
+    this.onPractise,
   });
+
+  /// In no class: no work, lessons or meetings to show.
+  final bool independent;
+
+  /// The student's notes and plan. Null in shells without them.
+  final StudyRepository? study;
+
+  /// The study tools; each null hides its tile.
+  final VoidCallback? onOpenTutor;
+  final VoidCallback? onOpenNotebook;
+  final void Function(StudySetKind kind)? onPractise;
 
   /// Opens what a tapped notification is about; true when it was handled.
   final bool Function(NotificationItem item)? onOpenNotification;
@@ -57,7 +82,10 @@ class StudentTodayPage extends StatefulWidget {
 class _StudentTodayPageState extends State<StudentTodayPage> {
   // Read once and kept: a future made in build is made again on every
   // rebuild, which re-requested the work and flashed the page on each tap.
-  late Future<List<AcademicRecord>> _work = _loadWork();
+  late Future<List<AcademicRecord>> _work = widget.independent
+      ? Future.value(const <AcademicRecord>[])
+      : _loadWork();
+  late Future<List<NotebookEntry>> _notes = _loadNotes();
   final _classesKey = GlobalKey<_StudentClassesState>();
   int _unread = 0;
 
@@ -69,6 +97,24 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
 
   Future<List<AcademicRecord>> _loadWork() =>
       widget.academic.load(AcademicFeed.assignments);
+
+  /// The latest personal notes, for a student in no class.
+  Future<List<NotebookEntry>> _loadNotes() async {
+    final study = widget.study;
+    if (!widget.independent || study == null) return const [];
+    return study.personalNotebook();
+  }
+
+  @override
+  void didUpdateWidget(StudentTodayPage old) {
+    super.didUpdateWidget(old);
+    if (old.independent != widget.independent) {
+      _work = widget.independent
+          ? Future.value(const <AcademicRecord>[])
+          : _loadWork();
+      _notes = _loadNotes();
+    }
+  }
 
   /// The bell's count. Absent in shells with no notifications behind them,
   /// and a failure only leaves the badge off.
@@ -87,13 +133,18 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
   int _refreshes = 0;
 
   Future<void> _refresh() async {
-    final work = _loadWork();
+    final work = widget.independent
+        ? Future.value(const <AcademicRecord>[])
+        : _loadWork();
+    final notes = _loadNotes();
     setState(() {
       _work = work;
+      _notes = notes;
       _refreshes++;
     });
     await Future.wait<void>([
       work.then((_) {}, onError: (_) {}),
+      notes.then((_) {}, onError: (_) {}),
       _loadUnread(),
       if (_classesKey.currentState case final classes?) classes.reload(),
     ]);
@@ -145,133 +196,279 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
               title: name.isEmpty
                   ? l10n.studentTodayMakeTodayYours
                   : l10n.studentTodayMakeTodayYoursName(name),
-              subtitle: l10n.studentTodayYourClassesYourIdeasYour,
+              subtitle: widget.independent
+                  ? l10n.todayIndependentSubtitle
+                  : l10n.studentTodayYourClassesYourIdeasYour,
               icon: Icons.wb_sunny_outlined,
             ),
-            // A class meeting the teacher set up in Google Meet.
-            UpcomingMeetingsSection(refreshToken: _refreshes),
-            SectionHeader(l10n.todayQuickActions),
-            _Shortcut(
-              icon: Icons.assignment_rounded,
-              title: l10n.studentTodayMyWork,
-              detail: l10n.studentTodayWorkShortcutDetail,
-              onTap: widget.onWork,
-            ),
-            _Shortcut(
-              icon: Icons.auto_stories_rounded,
-              color: studafyTeal,
-              title: l10n.studentTodayLessonsShortcut,
-              detail: l10n.studentTodayLessonsShortcutDetail,
-              onTap: widget.onNotebook,
-            ),
-            _Shortcut(
-              icon: Icons.family_restroom_rounded,
-              color: studafySteel,
-              title: l10n.studentTodayMyIdFamily,
-              detail: l10n.studentTodayFamilyShortcutDetail,
-              onTap: () => Navigator.of(context).pushOnce(
-                MaterialPageRoute<void>(
-                  builder: (_) => const StudentFamilyPage(),
-                ),
-              ),
-            ),
-            // A student's first question on opening the app is which classes
-            // they are in - it is how they know the link they pasted worked
-            // at all. The work below answers "what do I have to do", which
-            // reads as empty until a teacher sets some.
-            if (classes != null) ...[
-              SectionHeader(
-                l10n.studentTodayYourClasses,
-                action: widget.onJoinClass == null
-                    ? null
-                    : TextButton.icon(
-                        onPressed: _joinClass,
-                        icon: const Icon(Icons.group_add_rounded, size: 19),
-                        label: Text(l10n.joinClassAction),
-                      ),
-              ),
-              _StudentClasses(
-                key: _classesKey,
-                classes: classes,
-                onOpen: widget.onNotebook,
-              ),
-            ],
-            SectionHeader(
-              l10n.studentTodayWorkSection,
-              action: TextButton(
-                onPressed: widget.onWork,
-                child: Text(l10n.todaySeeAll),
-              ),
-            ),
-            FutureBuilder<List<AcademicRecord>>(
-              future: _work,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done &&
-                    !snapshot.hasData) {
-                  return const _Loading();
-                }
-                if (snapshot.hasError) {
-                  return StudafyEmptyState(
-                    icon: Icons.wifi_off_rounded,
-                    title: l10n.studentTodayYourWorkCouldNotLoad,
-                    actionLabel: l10n.todayRetry,
-                    onAction: _refresh,
-                  );
-                }
-                final records = snapshot.data ?? const <AcademicRecord>[];
-                if (records.isEmpty) {
-                  return _AllClear(
-                    title: l10n.studentTodayALittleBreathingRoom,
-                    text: l10n.studentTodayNewAssignmentsWillAppearHere,
-                  );
-                }
-                return Column(
-                  children: [
-                    for (final record in records.take(4))
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: FeatureCard(
-                          onTap: widget.onWork,
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                            14,
-                            12,
-                            10,
-                            12,
-                          ),
-                          child: Row(
-                            children: [
-                              const IconBadge(
-                                icon: Icons.assignment_rounded,
-                                size: 40,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: UserContentText(
-                                  record.title,
-                                  style: const TextStyle(
-                                    color: studafyInk,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                forwardChevron(context),
-                                color: studafyMuted,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+            ..._studyTools(l10n),
+            if (widget.independent) ..._independent(l10n),
+            if (!widget.independent) ..._inClass(l10n, classes),
           ],
         ),
       ),
     );
   }
+
+  /// The study tools, for every student: the AI Tutor, the Notebook,
+  /// flashcards and quizzes - each a tile that says what it is.
+  List<Widget> _studyTools(AppL10n l10n) {
+    final tiles = <Widget>[
+      if (widget.onOpenTutor case final open?)
+        _ToolTile(
+          icon: Icons.auto_awesome_rounded,
+          color: studafyIndigo,
+          title: l10n.studyAssistantTab,
+          detail: l10n.todayToolTutorDetail,
+          onTap: open,
+        ),
+      if (widget.onOpenNotebook case final open?)
+        _ToolTile(
+          icon: Icons.menu_book_rounded,
+          color: studafyNavy,
+          title: l10n.todayToolNotebook,
+          detail: l10n.todayToolNotebookDetail,
+          onTap: open,
+        ),
+      if (widget.onPractise case final practise?) ...[
+        _ToolTile(
+          icon: Icons.style_rounded,
+          color: studafyTeal,
+          title: l10n.todayToolFlashcards,
+          detail: l10n.todayToolFlashcardsDetail,
+          onTap: () => practise(StudySetKind.flashcards),
+        ),
+        _ToolTile(
+          icon: Icons.quiz_rounded,
+          color: studafySteel,
+          title: l10n.todayToolQuizzes,
+          detail: l10n.todayToolQuizzesDetail,
+          onTap: () => practise(StudySetKind.quiz),
+        ),
+      ],
+    ];
+    if (tiles.isEmpty) return const [];
+    return [
+      SectionHeader(l10n.todayStudySection),
+      LayoutBuilder(
+        builder: (context, constraints) {
+          // Two to a row on a phone, four on a wide screen.
+          final columns = constraints.maxWidth >= 720 ? 4 : 2;
+          const gap = 10.0;
+          final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final tile in tiles) SizedBox(width: width, child: tile),
+            ],
+          );
+        },
+      ),
+    ];
+  }
+
+  /// A student in no class: their latest notes, the family shortcut, and a
+  /// quiet way into a teacher's class.
+  List<Widget> _independent(AppL10n l10n) => [
+    FutureBuilder<List<NotebookEntry>>(
+      future: _notes,
+      builder: (context, snapshot) {
+        final notes = snapshot.data ?? const <NotebookEntry>[];
+        if (notes.isEmpty || widget.study == null) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionHeader(
+              l10n.todayRecentNotes,
+              action: widget.onOpenNotebook == null
+                  ? null
+                  : TextButton(
+                      onPressed: widget.onOpenNotebook,
+                      child: Text(l10n.todaySeeAll),
+                    ),
+            ),
+            for (final note in notes.take(3))
+              _Shortcut(
+                icon: note.fromWhiteboard
+                    ? Icons.document_scanner_rounded
+                    : Icons.edit_note_rounded,
+                title: note.title,
+                detail: noteDateLine(context, note),
+                onTap: () async {
+                  await Navigator.of(context).pushOnce(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          NotePage(study: widget.study!, entry: note),
+                    ),
+                  );
+                  if (mounted) setState(() => _notes = _loadNotes());
+                },
+              ),
+          ],
+        );
+      },
+    ),
+    if (widget.onJoinClass != null) ...[
+      const SizedBox(height: 12),
+      FeatureCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const IconBadge(icon: Icons.group_add_rounded, size: 42),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.todayJoinClassTitle,
+                    style: const TextStyle(
+                      color: studafyInk,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.todayJoinClassBody,
+                    style: const TextStyle(color: studafyMuted, height: 1.4),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _joinClass,
+                    icon: const Icon(Icons.group_add_rounded, size: 19),
+                    label: Text(l10n.joinClassAction),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+    SectionHeader(l10n.todayQuickActions),
+    _Shortcut(
+      icon: Icons.family_restroom_rounded,
+      color: studafySteel,
+      title: l10n.studentTodayMyIdFamily,
+      detail: l10n.studentTodayFamilyShortcutDetail,
+      onTap: () => Navigator.of(context).pushOnce(
+        MaterialPageRoute<void>(builder: (_) => const StudentFamilyPage()),
+      ),
+    ),
+  ];
+
+  List<Widget> _inClass(AppL10n l10n, ClassListInteractor? classes) => [
+    // A class meeting the teacher set up in Google Meet.
+    UpcomingMeetingsSection(refreshToken: _refreshes),
+    SectionHeader(l10n.todayQuickActions),
+    _Shortcut(
+      icon: Icons.assignment_rounded,
+      title: l10n.studentTodayMyWork,
+      detail: l10n.studentTodayWorkShortcutDetail,
+      onTap: widget.onWork,
+    ),
+    _Shortcut(
+      icon: Icons.auto_stories_rounded,
+      color: studafyTeal,
+      title: l10n.studentTodayLessonsShortcut,
+      detail: l10n.studentTodayLessonsShortcutDetail,
+      onTap: widget.onNotebook,
+    ),
+    _Shortcut(
+      icon: Icons.family_restroom_rounded,
+      color: studafySteel,
+      title: l10n.studentTodayMyIdFamily,
+      detail: l10n.studentTodayFamilyShortcutDetail,
+      onTap: () => Navigator.of(context).pushOnce(
+        MaterialPageRoute<void>(builder: (_) => const StudentFamilyPage()),
+      ),
+    ),
+    // A student's first question on opening the app is which classes
+    // they are in - it is how they know the link they pasted worked
+    // at all. The work below answers "what do I have to do", which
+    // reads as empty until a teacher sets some.
+    if (classes != null) ...[
+      SectionHeader(
+        l10n.studentTodayYourClasses,
+        action: widget.onJoinClass == null
+            ? null
+            : TextButton.icon(
+                onPressed: _joinClass,
+                icon: const Icon(Icons.group_add_rounded, size: 19),
+                label: Text(l10n.joinClassAction),
+              ),
+      ),
+      _StudentClasses(
+        key: _classesKey,
+        classes: classes,
+        onOpen: widget.onNotebook,
+      ),
+    ],
+    SectionHeader(
+      l10n.studentTodayWorkSection,
+      action: TextButton(
+        onPressed: widget.onWork,
+        child: Text(l10n.todaySeeAll),
+      ),
+    ),
+    FutureBuilder<List<AcademicRecord>>(
+      future: _work,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done &&
+            !snapshot.hasData) {
+          return const _Loading();
+        }
+        if (snapshot.hasError) {
+          return StudafyEmptyState(
+            icon: Icons.wifi_off_rounded,
+            title: l10n.studentTodayYourWorkCouldNotLoad,
+            actionLabel: l10n.todayRetry,
+            onAction: _refresh,
+          );
+        }
+        final records = snapshot.data ?? const <AcademicRecord>[];
+        if (records.isEmpty) {
+          return _AllClear(
+            title: l10n.studentTodayALittleBreathingRoom,
+            text: l10n.studentTodayNewAssignmentsWillAppearHere,
+          );
+        }
+        return Column(
+          children: [
+            for (final record in records.take(4))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: FeatureCard(
+                  onTap: widget.onWork,
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 10, 12),
+                  child: Row(
+                    children: [
+                      const IconBadge(icon: Icons.assignment_rounded, size: 40),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: UserContentText(
+                          record.title,
+                          style: const TextStyle(
+                            color: studafyInk,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Icon(forwardChevron(context), color: studafyMuted),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    ),
+  ];
 }
 
 /// One labelled shortcut: what it is, what it holds, and where it goes.
@@ -321,6 +518,58 @@ class _Shortcut extends StatelessWidget {
             ),
           ),
           Icon(forwardChevron(context), color: studafyMuted),
+        ],
+      ),
+    ),
+  );
+}
+
+/// One study tool: an icon, its name, and what it is for.
+class _ToolTile extends StatelessWidget {
+  const _ToolTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '$title. $detail',
+    excludeSemantics: true,
+    child: FeatureCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconBadge(icon: icon, color: color, size: 40),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: studafyInk,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            detail,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+          ),
         ],
       ),
     ),

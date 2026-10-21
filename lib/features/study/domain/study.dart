@@ -1,14 +1,16 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/file_upload_repository.dart';
+import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 import 'study_notebook.dart';
 
 /// A student's plan (2026-09-27).
 ///
-/// Lessons and the Notebook are free for everyone. The two paid plans add AI:
-/// Studafy Plus turns a whiteboard photo into notes; Studafy Max adds
-/// quizzes and flashcards made from lessons.
+/// Lessons and typed notes in the Notebook are free for everyone. The two
+/// paid plans add AI: Studafy Plus turns a photo or screenshot into notes;
+/// Studafy Max adds quizzes and flashcards, from lessons or from the
+/// student's own notes.
 enum StudyPlanTier {
   free(null),
   plus('studafy_plus'),
@@ -100,10 +102,10 @@ class StudyPlan {
   /// 'ok', 'consent_required', 'no_class', 'not_student'. Null when not said.
   final String? aiAccess;
 
-  /// A student the tools are here for once they are in a class: the helper
-  /// tab stays, saying to join a class, rather than disappearing. Only when
-  /// the server says the tools are on; with AI off for everyone it stays
-  /// hidden (no dead tab).
+  /// An account the server does not yet know as a student (ADR-0045: a
+  /// student in no class may use the tools). The AI Tutor tab stays, saying
+  /// what to do, rather than disappearing. Only when the server says the
+  /// tools are on; with AI off for everyone it stays hidden (no dead tab).
   bool get helperNeedsClass => aiEnabled == true && aiAccess == 'no_class';
 
   /// Any AI study tool is here for this account. When none is - a server
@@ -148,22 +150,47 @@ class NotebookEntry {
     required this.body,
     required this.fromWhiteboard,
     required this.createdAt,
+    this.updatedAt,
     this.photo,
     this.fromLesson = false,
   });
 
   final String id;
-  final String classroomId;
+
+  /// The class's notebook it is in; null for a note in the student's
+  /// personal notebook, which belongs to no class (ADR-0045).
+  final String? classroomId;
   final String title;
   final String body;
 
-  /// Written by Studafy Plus from a whiteboard photo.
+  /// Written by Studafy Plus from a photo or screenshot.
   final bool fromWhiteboard;
 
   /// Made from one of the class's lessons.
   final bool fromLesson;
   final DateTime createdAt;
+
+  /// When it was last written or edited; null from an older server.
+  final DateTime? updatedAt;
   final StoredAttachment? photo;
+
+  bool get personal => classroomId == null;
+
+  /// When it last changed, for sorting and the page's date line.
+  DateTime get changedAt => updatedAt ?? createdAt;
+
+  NotebookEntry copyWith({String? title, String? body, DateTime? updatedAt}) =>
+      NotebookEntry(
+        id: id,
+        classroomId: classroomId,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        fromWhiteboard: fromWhiteboard,
+        fromLesson: fromLesson,
+        createdAt: createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        photo: photo,
+      );
 }
 
 @immutable
@@ -225,6 +252,9 @@ enum StudyRefusal {
   /// No writing could be read in the photo.
   photoUnreadable,
 
+  /// The photo is not an image the server reads, or is too large.
+  photoRejected,
+
   /// The lesson has no text to study from.
   lessonHasNoText,
 
@@ -233,7 +263,8 @@ enum StudyRefusal {
 
   /// The AI study tools are off for this account: no AI consent (the
   /// student declined the notice, or a parent has not agreed for a child
-  /// account), or the account is not a student in a class (ADR-0043).
+  /// account), or the account is not a student account (ADR-0043,
+  /// ADR-0045).
   aiConsent,
 
   /// Anything else - a network failure, a server fault.
@@ -291,7 +322,29 @@ abstract interface class StudyRepository implements StudyNotebookRepository {
 
   /// Studafy Plus: notes from an uploaded, scanned whiteboard photo.
   Future<NotebookEntry> whiteboardNote(String classroomId, String photoFileId);
+
+  /// Deletes any of the student's own notes, in a class or personal.
   Future<void> deleteNote(String entryId);
+
+  /// The student's personal notebook: notes that belong to no class
+  /// (ADR-0045), most recently changed first. Typed notes are free.
+  Future<List<NotebookEntry>> personalNotebook();
+  Future<NotebookEntry> addPersonalNote({
+    required String title,
+    required String body,
+  });
+
+  /// Studafy Plus: a photo or screenshot into a note in the personal
+  /// notebook. The image is read once and not kept.
+  Future<NotebookEntry> photoNote(InlinePhoto photo, {String? title});
+
+  /// Renames or corrects any of the student's own notes. At least one of
+  /// [title] and [body].
+  Future<NotebookEntry> editNote(String entryId, {String? title, String? body});
+
+  /// Studafy Max: a quiz or flashcards from some of the student's own
+  /// notes. Not kept on the server.
+  Future<StudySet> practiseNotes(StudySetKind kind, List<String> entryIds);
 
   /// Studafy Max: a quiz or flashcards from a lesson.
   Future<StudySet> studySet(String resourceId, StudySetKind kind);

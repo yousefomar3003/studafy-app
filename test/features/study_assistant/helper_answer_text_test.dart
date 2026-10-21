@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:studafy/features/study_assistant/presentation/helper_answer_text.dart';
+import 'package:studafy/core/study_markdown.dart';
 
 import '../../support/localized_app.dart';
 
