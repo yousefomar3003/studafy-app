@@ -1,6 +1,6 @@
 # Delete your Studafy account
 
-**Last updated:** 12 October 2026
+**Last updated:** 21 October 2026
 
 <!--
 Google Play's account deletion URL (docs/store/google-play-data-safety.md,
@@ -50,8 +50,9 @@ one month.
     user" or "Deleted student", and clear your gender;
   - end your memberships, family links and conversations;
   - delete your devices and notification settings, notifications,
-    blocks, data exports, notebooks and study notebooks, AI usage records,
-    and your personal photos (photos for the notebook or the study helper);
+    blocks, data exports, notebooks (your personal notes included) and
+    study notebooks, AI usage records, and your personal photos (photos for
+    the notebook or the AI Tutor);
   - remove your email address from invitations.
 
 ## What is kept

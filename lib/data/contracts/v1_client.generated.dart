@@ -2916,6 +2916,77 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1NotebookPageDto> listMyNotebookEntries() async =>
+      V1NotebookPageDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/notebook', {}, {})),
+      );
+
+  Future<V1NotebookEntryDto> createMyNotebookEntry(
+    V1CreateNotebookEntryRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1NotebookEntryDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/notebook', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1NotebookEntryDto> createMyPhotoNote(
+    V1PhotoNoteRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1NotebookEntryDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/notebook/photo-notes', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1NotebookEntryDto> updateMyNotebookEntry(
+    V1UpdateNotebookEntryRequestDto request, {
+    required String entryId,
+    String? idempotencyKey,
+  }) async => V1NotebookEntryDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/notebook-entries/{entryId}/edit', {
+        'entryId': entryId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1DeleteNotebookEntryResponseDto> deleteMyNotebookEntry(
+    V1DeleteNotebookEntryRequestDto request, {
+    required String entryId,
+    String? idempotencyKey,
+  }) async => V1DeleteNotebookEntryResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/notebook-entries/{entryId}/delete', {
+        'entryId': entryId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1NotesPracticeDto> practiseMyNotes(
+    V1NotesPracticeRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1NotesPracticeDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/notebook/practice', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -8380,6 +8451,21 @@ class V1IdentityUnlinkResponseDto {
   Map<String, Object?> toJson() => {'outcome': outcome};
 }
 
+class V1InlineImageDto {
+  const V1InlineImageDto({required this.mediaType, required this.data});
+
+  factory V1InlineImageDto.fromJson(Map<String, dynamic> json) =>
+      V1InlineImageDto(
+        mediaType: json['mediaType'] as String,
+        data: json['data'] as String,
+      );
+
+  final String mediaType;
+  final String data;
+
+  Map<String, Object?> toJson() => {'mediaType': mediaType, 'data': data};
+}
+
 class V1InsightEvidenceDto {
   const V1InsightEvidenceDto({
     required this.label,
@@ -9991,17 +10077,19 @@ class V1NotebookEntryDto {
     required this.body,
     required this.source,
     required this.createdAt,
+    this.updatedAt,
     required this.photo,
   });
 
   factory V1NotebookEntryDto.fromJson(Map<String, dynamic> json) =>
       V1NotebookEntryDto(
         id: json['id'] as String,
-        classroomId: json['classroomId'] as String,
+        classroomId: json['classroomId'] as String?,
         title: json['title'] as String,
         body: json['body'] as String,
         source: json['source'] as String,
         createdAt: json['createdAt'] as String,
+        updatedAt: json['updatedAt'] as String?,
         photo: json['photo'] == null
             ? null
             : V1FileAttachmentDto.fromJson(
@@ -10010,11 +10098,12 @@ class V1NotebookEntryDto {
       );
 
   final String id;
-  final String classroomId;
+  final String? classroomId;
   final String title;
   final String body;
   final String source;
   final String createdAt;
+  final String? updatedAt;
   final V1FileAttachmentDto? photo;
 
   Map<String, Object?> toJson() => {
@@ -10024,6 +10113,7 @@ class V1NotebookEntryDto {
     'body': body,
     'source': source,
     'createdAt': createdAt,
+    'updatedAt': ?updatedAt,
     'photo': photo?.toJson(),
   };
 }
@@ -10462,6 +10552,60 @@ class V1NotebookUnreadableDto {
   Map<String, Object?> toJson() => {'name': name, 'reason': reason};
 }
 
+class V1NotesPracticeDto {
+  const V1NotesPracticeDto({
+    required this.kind,
+    required this.questions,
+    required this.cards,
+    required this.createdAt,
+  });
+
+  factory V1NotesPracticeDto.fromJson(Map<String, dynamic> json) =>
+      V1NotesPracticeDto(
+        kind: json['kind'] as String,
+        questions: json['questions'] == null
+            ? null
+            : [
+                for (final item in json['questions'] as List<dynamic>)
+                  V1QuizQuestionDto.fromJson(item as Map<String, dynamic>),
+              ],
+        cards: json['cards'] == null
+            ? null
+            : [
+                for (final item in json['cards'] as List<dynamic>)
+                  V1FlashcardDto.fromJson(item as Map<String, dynamic>),
+              ],
+        createdAt: json['createdAt'] as String,
+      );
+
+  final String kind;
+  final List<V1QuizQuestionDto>? questions;
+  final List<V1FlashcardDto>? cards;
+  final String createdAt;
+
+  Map<String, Object?> toJson() => {
+    'kind': kind,
+    'questions': questions,
+    'cards': cards,
+    'createdAt': createdAt,
+  };
+}
+
+class V1NotesPracticeRequestDto {
+  const V1NotesPracticeRequestDto({required this.kind, required this.entryIds});
+
+  factory V1NotesPracticeRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1NotesPracticeRequestDto(
+        kind: json['kind'] as String,
+        entryIds: (json['entryIds'] as List<dynamic>).cast<String>(),
+      );
+
+  final String kind;
+  final List<String> entryIds;
+
+  Map<String, Object?> toJson() => {'kind': kind, 'entryIds': entryIds};
+}
+
 class V1NotificationDto {
   const V1NotificationDto({
     required this.id,
@@ -10608,6 +10752,21 @@ class V1PageQueryDto {
     'cursor': ?cursor,
     'pageSize': pageSize,
   };
+}
+
+class V1PhotoNoteRequestDto {
+  const V1PhotoNoteRequestDto({required this.image, this.title});
+
+  factory V1PhotoNoteRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1PhotoNoteRequestDto(
+        image: V1InlineImageDto.fromJson(json['image'] as Map<String, dynamic>),
+        title: json['title'] as String?,
+      );
+
+  final V1InlineImageDto image;
+  final String? title;
+
+  Map<String, Object?> toJson() => {'image': image.toJson(), 'title': ?title};
 }
 
 class V1ProfileResponseDto {
@@ -12454,6 +12613,7 @@ class V1StudyAssistantAskRequestDto {
     this.language,
     this.requestId,
     this.attachmentFileIds,
+    this.images,
   });
 
   factory V1StudyAssistantAskRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -12474,6 +12634,12 @@ class V1StudyAssistantAskRequestDto {
         attachmentFileIds: json['attachmentFileIds'] == null
             ? null
             : (json['attachmentFileIds'] as List<dynamic>).cast<String>(),
+        images: json['images'] == null
+            ? null
+            : [
+                for (final item in json['images'] as List<dynamic>)
+                  V1InlineImageDto.fromJson(item as Map<String, dynamic>),
+              ],
       );
 
   final String question;
@@ -12483,6 +12649,7 @@ class V1StudyAssistantAskRequestDto {
   final String? language;
   final String? requestId;
   final List<String>? attachmentFileIds;
+  final List<V1InlineImageDto>? images;
 
   Map<String, Object?> toJson() => {
     'question': question,
@@ -12493,6 +12660,7 @@ class V1StudyAssistantAskRequestDto {
     'language': ?language,
     'requestId': ?requestId,
     'attachmentFileIds': ?attachmentFileIds,
+    if (images != null) 'images': [for (final item in images!) item.toJson()],
   };
 }
 
@@ -13674,6 +13842,21 @@ class V1UpdateGradebookItemRequestDto {
     'weight': weight,
     'scheduledAt': scheduledAt,
   };
+}
+
+class V1UpdateNotebookEntryRequestDto {
+  const V1UpdateNotebookEntryRequestDto({this.title, this.body});
+
+  factory V1UpdateNotebookEntryRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1UpdateNotebookEntryRequestDto(
+        title: json['title'] as String?,
+        body: json['body'] as String?,
+      );
+
+  final String? title;
+  final String? body;
+
+  Map<String, Object?> toJson() => {'title': ?title, 'body': ?body};
 }
 
 class V1UpdateNotificationPreferenceRequestDto {

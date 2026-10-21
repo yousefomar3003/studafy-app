@@ -146,16 +146,7 @@ class StudafyApp extends StatelessWidget {
             ),
             studentRoute: (_) => ProfileSetupGate(
               repository: deps.profileSetup,
-              child: StudentShell(
-                academic: deps.academic,
-                classes: deps.classes,
-                studyPlans: deps.studyPlans,
-                study: deps.study,
-                session: deps.session,
-                studyAssistant: deps.studyAssistant,
-                studyChats: deps.studyChats,
-                fileUploads: deps.fileUploads,
-              ),
+              child: StudentShell.withDependencies(deps),
             ),
           };
     // A blocked build has no composition root, so it has no locale controller

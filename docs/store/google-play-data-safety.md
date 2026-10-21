@@ -23,7 +23,7 @@ The form must stay consistent with:
 
 **Decided 2026-10-13** (DL-056):
 - **Ages:** declare the real student ages, under-13s included (school age 5 to 17), plus adults. Families policy applies (item 3).
-- **AI:** off for real students until the Together AI DPA and the DPIA are signed. Leave `AI_API_KEY` unset in production until then (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent (ADR-0043). The DPA and the DPIA are still not signed (item 2).
+- **AI:** off for real students until the Together AI DPA and the DPIA are signed. Leave `AI_API_KEY` unset in production until then (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent (ADR-0043). The DPA and the DPIA are still not signed (item 2). **Changed 2026-10-21 by DL-072 (ADR-0045):** AI is for every student account, in a class or not, still after the AI consent; parent and teacher accounts are still refused. The study helper is now the AI Tutor.
 - **Production database size:** deferred until the pilot's numbers are known.
 
 The items below remain open unless marked.
@@ -36,7 +36,7 @@ draft assumes until you decide.
 2. **AI provider data processing agreement (DPA) and DPIA** (ADR-0037).
    - **What is sent to Together AI:** questions, chat history, class grade, language, lesson text, student photos, and page images of teacher files (`packages/infrastructure/src/studyAssistant.ts`, `packages/domain/src/study/grounding.ts`, `apps/worker/src/processors/materialIndex.ts`).
    - **What is not sent:** names Studafy knows are replaced with `[student]`, `[classmate]`, `[teacher]` or `[parent]` in all text (ADR-0043, `packages/domain/src/study/nameRedaction.ts`); emails, links and long numbers are removed. **Photos and scanned pages are sent as they are.**
-   - **Who can use it:** students in a class who gave the separate AI consent (a parent's, for a managed child), and no one else (ADR-0043, `private.ai_access`).
+   - **Who can use it:** every student account, in a class or not, that gave the separate AI consent (a parent's, for a managed child), and no one else (ADR-0043, changed by DL-072 and ADR-0045; `private.ai_access`).
    - **Assumed:** a service provider under a DPA, and AI chat content not "processed ephemerally", because Together's retention is not confirmed in writing.
    - **State on 2026-10-17:** AI is on from launch (DL-062) and **the DPA is not accepted yet**. Privacy policy 1.5 §6 and §8 say publicly that the agreement is not yet in place. Accept Together AI's DPA before submitting this form, or the "service provider" assumption (and "Shared: No") does not hold for AI data.
 3. **Target audience and Families policy.**
@@ -71,7 +71,7 @@ draft assumes until you decide.
 | Is all of the user data collected by your app encrypted in transit? | **Yes** | See the encryption notes below this table. |
 | Which of the following methods of account creation does your app support? | **Username and password: no. OAuth: yes** (Google, Microsoft, Apple). **Other: yes**, a parent creates a managed child account without an email. | `lib/features/session/data/api_session_repository.dart:138-193`; ADR-0031; `lib/app/account/account_switching.dart` |
 | Delete account URL | `https://legal.studafy.com/delete-account` (item 4.3) | Decision 9 |
-| Do you provide a way for users to request that some or all of their data is deleted, without requiring them to delete their account? | **No** | There is no partial-deletion request flow. People can delete their own notebook notes and highlights in the app, but there is no general "delete my data" request short of deleting the account. |
+| Do you provide a way for users to request that some or all of their data is deleted, without requiring them to delete their account? | **No** | There is no partial-deletion request flow. People can edit and delete their own notebook notes (personal notes included) and highlights in the app, but there is no general "delete my data" request short of deleting the account. |
 
 **Encryption in transit:**
 - **Server:** the API is served only over HTTPS (`fly.api.toml:47` `force_https = true`) and sends HSTS in production (`apps/api/src/platform/middleware.ts:76-80`).
@@ -131,7 +131,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 
 | Data type | Collected | Shared | Ephemeral | Required or optional | Purposes | What and where |
 |---|---|---|---|---|---|---|
-| **Photos** | Yes | No | No | Optional | App functionality | Attachments from the camera or gallery, re-encoded at 2400 px and quality 85 (`lib/core/platform_attachment_source.dart:19-31`). Whiteboard photos for notebooks, and photos sent with an AI question (`lib/core/file_upload_repository.dart`). These go to Supabase Storage, our own malware scanner and, for AI photos, Together AI, which receives them as they are (names in text are replaced; a photo cannot be, ADR-0043). AI photos are deleted from storage 30 days after upload once `RETENTION_SCHEDULE_ENABLED` is on (DL-060); that does not change these answers. **Profile photos stay on the device and are not collected** (`lib/core/profile_photo.dart:10-16`). |
+| **Photos** | Yes | No | No | Optional | App functionality | Attachments from the camera or gallery, re-encoded at 2400 px and quality 85 (`lib/core/platform_attachment_source.dart:19-31`). Whiteboard photos for notebooks, and photos sent with an AI question by a student in a class (`lib/core/file_upload_repository.dart`). These go to Supabase Storage, our own malware scanner and, for AI photos, Together AI, which receives them as they are (names in text are replaced; a photo cannot be, ADR-0043). AI photos are deleted from storage 30 days after upload once `RETENTION_SCHEDULE_ENABLED` is on (DL-060); that does not change these answers. **Processed ephemerally, not stored** (DL-072, ADR-0045): a photo or screenshot a student with no class adds to an AI Tutor question, and any photo or screenshot turned into a personal note. It travels inside the request, is checked and redrawn as a JPEG on the API (`apps/api/src/study/inlineImage.ts`), sent once to Together AI and discarded; it never reaches storage. "Ephemeral" stays **No** because the other photos above are stored. **Profile photos stay on the device and are not collected** (`lib/core/profile_photo.dart:10-16`). |
 | **Videos** | No | | | | | Only JPEG and PNG images are accepted (`lib/core/attachment_policy.dart:32-95`). |
 
 ### Audio files
@@ -165,7 +165,7 @@ No location, contacts, calendar, web browsing, health, financial account, SMS or
 | **Other actions** | No | | | | | |
 
 **Other user-generated content:**
-- **Students:** assignment and exam answers; notebook notes, highlights, bookmarks and sections. AI helper questions and the chat history sent with them, which go to Together AI with emails, links and long numbers redacted (`packages/domain/src/study/studyContent.ts:44`) and the names Studafy knows replaced (ADR-0043). Only students in a class with a current AI consent can send them. The server stores no AI chat; the history is kept on the device (`lib/features/study_assistant/`).
+- **Students:** assignment and exam answers; notebook notes, highlights, bookmarks and sections. **Personal notes** that belong to no class (DL-072): typed notes and notes made by AI from a photo or screenshot, stored on our servers, visible only to the student, editable and deletable in the app, included in the export and deleted with the account (`public.notebook_entries`; `apps/api/src/study/personalNotebookRoutes.ts`). AI Tutor questions and the chat history sent with them, which go to Together AI with emails, links and long numbers redacted (`packages/domain/src/study/studyContent.ts:44`) and the names Studafy knows replaced (ADR-0043). Any student account with a current AI consent can send them, in a class or not (DL-072). The server stores no AI chat; the history is kept on the device (`lib/features/study_assistant/`). Quizzes and flashcards a Studafy Max student makes from their own notes are not stored on the server.
 - **Teachers:** lessons, announcements (which may hold a meeting link), and wellbeing notes (decision 6).
 - **Everyone:** abuse reports and appeals.
 
@@ -210,7 +210,7 @@ comes from, to check the answers against each role.
 
 | Role | Data that comes from this role |
 |---|---|
-| **Student** | Name, email (unless a managed child account), gender (optional), Studafy ID. Class membership. Hand-ins (files, photos, text), exam answers, notebooks, AI questions and photos, messages (if the school allows), voice notes, push token. Grades and attendance are entered about them by teachers. |
+| **Student** | Name, email (unless a managed child account), gender (optional), Studafy ID. Class membership, if any (joining a class is optional, DL-072). Hand-ins (files, photos, text), exam answers, notebooks and personal notes, AI questions and photos, messages (if the school allows), voice notes, push token. Grades and attendance are entered about them by teachers. |
 | **Managed child account** (created by a parent) | Name and language only, entered by the parent; no email (ADR-0031). Otherwise the same as a student. |
 | **Parent or guardian** | Name, email, gender (optional). Guardian links and relationship. Family+ purchases. Messages with teachers. Turnstile check when looking up a student. |
 | **Teacher** | Name, email, gender (optional). Workspace and class details. Lessons and materials (files). Grades, attendance, absences, wellbeing notes about students. Announcements, meetings, messages. |
@@ -244,3 +244,4 @@ See `lib/data/local_cache/`, `lib/core/profile_photo.dart` and
 ## Change history
 
 - 2026-10-11: first draft (item 3.6).
+- 2026-10-21: DL-072 (ADR-0045, privacy policy 1.7). AI for every student account, in a class or not; the AI Tutor name; personal notes (Other user-generated content); photos from students with no class, and photos turned into personal notes, processed ephemerally and not stored. No answer in the form changes: every data type was already declared, and Photos stays "not ephemeral" because other photos are stored.

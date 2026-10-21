@@ -575,13 +575,13 @@ abstract class AppL10n {
   /// In-app summary of docs/legal/privacy-policy.md (version 1.6, consent version 2026-10-21), which governs. Update both together, publish a new consent version and bump termsPolicyVersion. Published 2026-10-17 (DL-068) and 2026-10-21 (DL-071) without review by counsel; the Arabic translation has not been reviewed by a native legal translator.
   ///
   /// In en, this message translates to:
-  /// **'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebook. Messages, voice notes, announcements and meeting links inside the app, and reports you make. Files you upload. Your subscriptions, your notification settings and what you agreed to, including the AI study tools.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nREPORTS\nYou can report or block anyone from inside the app. Studafy reviews reports: a named person at Studafy, reachable at hello@studafy.com, reads what was reported and may remove content or suspend or close accounts. Each new report sends an alert to our private Telegram chat with its reference number, kind and priority - never its content, a name or an account ID. You are told when your report is resolved.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. They are only for students in a class, and only after you agree to them separately; a parent agrees for a child account they manage. They can be turned off at any time. What you give them is sent to Together AI, an AI company in the United States: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo you add (the study helper, whiteboard notes, lesson notes, quizzes and flashcards). Names Studafy knows are replaced with words like [student] first, and your email, school and marks are never sent. Photos are sent as they are, so do not photograph names or faces. A photo you send to the study helper is kept for 30 days; chats are kept only on your device. Our data processing agreement with Together AI is not yet in place. Answers can be wrong, so never hand them in as your own work. AI never marks your work.\n\nFILES\nFiles are stored privately, scanned on our own servers before anyone can download them, and opened only through links that work once and expire within minutes. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max and Family+ are charged by Google Play or the App Store under their own terms, from the payment method on the store account on the phone. A student can subscribe in the app without a parent\'s approval in Studafy; for a child, a parent can approve purchases with Google Family Link or Apple\'s Ask to Buy. We receive only a confirmation of the purchase and never see card details.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Fly.io hosts the app; Axiom keeps its technical logs and Sentry its error reports; Cloudflare stores our encrypted backups in the EU, relays our alerts, runs a bot check and serves our legal pages; GitHub runs the backup job but keeps no copy; Telegram carries our alerts, which hold no content or names; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Together AI runs the AI study tools; Resend sends email and Firebase sends push notifications, which never contain your marks or messages. Each acts only on our instructions. Studafy creates no meetings: a meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nWHERE YOUR DATA IS\nOur main systems and our backups are in the EU. Some providers process data outside the EEA, protected by Standard Contractual Clauses or an adequacy decision; for Together AI that safeguard is not yet in place.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only: nobody can edit them, including us, and they are deleted only when their retention period ends. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nINACTIVE ACCOUNTS\nAn account that is not used for 2 years is deleted. We warn you by email at least 30 days before, and in the app too if you are in a school. If the warning cannot reach you, we do not delete the account.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your study helper chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. In our own records IP addresses are stored only as a one-way hash; the sign-in service (Supabase) keeps the IP address of a sign-in for up to 7 days. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. The export is a JSON file of your own data. It lists your files (name, type, size and date) rather than including them: open them in the app, or write to hello@studafy.com for a copy. It leaves out exam questions and marks your teacher has not released yet, wellbeing notes, and conversations you have left. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.\n\nThe full policy is at legal.studafy.com/privacy. Questions: hello@studafy.com.'**
+  /// **'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebooks, including a personal notebook that belongs to no class and that only you can see. Messages, voice notes, announcements and meeting links inside the app, and reports you make. Files you upload. Your subscriptions, your notification settings and what you agreed to, including the AI study tools.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nREPORTS\nYou can report or block anyone from inside the app. Studafy reviews reports: a named person at Studafy, reachable at hello@studafy.com, reads what was reported and may remove content or suspend or close accounts. Each new report sends an alert to our private Telegram chat with its reference number, kind and priority - never its content, a name or an account ID. You are told when your report is resolved.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. They are for student accounts, whether or not you are in a class, and only after you agree to them separately; a parent agrees for a child account they manage. They can be turned off at any time. What you give them is sent to Together AI, an AI company in the United States: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo or screenshot you add (the AI Tutor, notes from photos, lesson notes, quizzes and flashcards). Names Studafy knows are replaced with words like [student] first, and your email, school and marks are never sent. Photos are sent as they are, so do not photograph names or faces. A photo you send to the AI Tutor from a class is kept for 30 days; if you are in no class it is read once and not kept. Chats are kept only on your device. Our data processing agreement with Together AI is not yet in place. Answers can be wrong, so never hand them in as your own work. AI never marks your work.\n\nFILES\nFiles are stored privately, scanned on our own servers before anyone can download them, and opened only through links that work once and expire within minutes. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max and Family+ are charged by Google Play or the App Store under their own terms, from the payment method on the store account on the phone. A student can subscribe in the app without a parent\'s approval in Studafy; for a child, a parent can approve purchases with Google Family Link or Apple\'s Ask to Buy. We receive only a confirmation of the purchase and never see card details.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Fly.io hosts the app; Axiom keeps its technical logs and Sentry its error reports; Cloudflare stores our encrypted backups in the EU, relays our alerts, runs a bot check and serves our legal pages; GitHub runs the backup job but keeps no copy; Telegram carries our alerts, which hold no content or names; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Together AI runs the AI study tools; Resend sends email and Firebase sends push notifications, which never contain your marks or messages. Each acts only on our instructions. Studafy creates no meetings: a meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nWHERE YOUR DATA IS\nOur main systems and our backups are in the EU. Some providers process data outside the EEA, protected by Standard Contractual Clauses or an adequacy decision; for Together AI that safeguard is not yet in place.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only: nobody can edit them, including us, and they are deleted only when their retention period ends. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nINACTIVE ACCOUNTS\nAn account that is not used for 2 years is deleted. We warn you by email at least 30 days before, and in the app too if you are in a school. If the warning cannot reach you, we do not delete the account.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your AI Tutor chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. In our own records IP addresses are stored only as a one-way hash; the sign-in service (Supabase) keeps the IP address of a sign-in for up to 7 days. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. The export is a JSON file of your own data. It lists your files (name, type, size and date) rather than including them: open them in the app, or write to hello@studafy.com for a copy. It leaves out exam questions and marks your teacher has not released yet, wellbeing notes, and conversations you have left. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.\n\nThe full policy is at legal.studafy.com/privacy. Questions: hello@studafy.com.'**
   String get policyPrivacyBody;
 
   /// In-app summary of docs/legal/terms-of-use.md (version 1.4, consent version 2026-10-21), which governs. See policyPrivacyBody.
   ///
   /// In en, this message translates to:
-  /// **'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. Studafy reviews reports, and may remove content and suspend or close accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share.\n\nSTUDENTS\nHand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional, only for students in a class, and only after the student agrees to them separately; a parent agrees for a child account they manage. Names are replaced before anything is sent, but photos are sent as they are. The tools can be wrong: check what they produce and never hand it in as your own work. AI never marks work. Weekly or monthly allowances apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students, who can subscribe in the app; Family+ is for parents, for up to 4 or up to 8 linked children. Payment is made through Google Play or the App Store with the payment method on that store account. For a child, that account and its payment method should belong to, or be controlled by, a parent or guardian, who is responsible for purchases made with it; Google Family Link and Apple\'s Ask to Buy let a parent approve purchases. Subscriptions renew monthly at the price the store shows until you cancel in your store account, and refunds follow the store\'s rules. We never see card details.\n\nMEETINGS\nStudafy does not host video calls or create meetings. A meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.\n\nThe full terms are at legal.studafy.com/terms. Questions: hello@studafy.com.'**
+  /// **'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. Studafy reviews reports, and may remove content and suspend or close accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share.\n\nSTUDENTS\nJoining a class is optional: you can study on your own and join a class later with your teacher\'s link or code. Hand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional, for student accounts whether or not they are in a class, and only after the student agrees to them separately; a parent agrees for a child account they manage. Names are replaced before anything is sent, but photos are sent as they are. The tools can be wrong: check what they produce and never hand it in as your own work. AI never marks work. Weekly or monthly allowances apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students, who can subscribe in the app; Family+ is for parents, for up to 4 or up to 8 linked children. Payment is made through Google Play or the App Store with the payment method on that store account. For a child, that account and its payment method should belong to, or be controlled by, a parent or guardian, who is responsible for purchases made with it; Google Family Link and Apple\'s Ask to Buy let a parent approve purchases. Subscriptions renew monthly at the price the store shows until you cancel in your store account, and refunds follow the store\'s rules. We never see card details.\n\nMEETINGS\nStudafy does not host video calls or create meetings. A meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.\n\nThe full terms are at legal.studafy.com/terms. Questions: hello@studafy.com.'**
   String get policyTermsBody;
 
   /// No description provided for @deleteTitle.
@@ -2387,7 +2387,7 @@ abstract class AppL10n {
   /// Title of the student's AI study helper tab.
   ///
   /// In en, this message translates to:
-  /// **'Study helper'**
+  /// **'AI Tutor'**
   String get studyAssistantTitle;
 
   /// Explains what the helper does and warns that questions leave the app.
@@ -2423,19 +2423,19 @@ abstract class AppL10n {
   /// Short navigation label for the study helper tab.
   ///
   /// In en, this message translates to:
-  /// **'Helper'**
+  /// **'AI Tutor'**
   String get studyAssistantTab;
 
   /// Helper tab for a student who is not in any class yet, while the AI study tools are on: its title.
   ///
   /// In en, this message translates to:
-  /// **'Join a class to use the study helper'**
+  /// **'Sign in as a student to use the AI Tutor'**
   String get studyHelperNeedsClassTitle;
 
   /// Helper tab for a student who is not in any class yet: what to do.
   ///
   /// In en, this message translates to:
-  /// **'The study helper works with your classes and their lessons. Join your teacher\'s class, then ask it anything here.'**
+  /// **'The AI Tutor is for student accounts. Sign out and sign in again through the Student door, or join a class with your teacher\'s link.'**
   String get studyHelperNeedsClassBody;
 
   /// Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link.
@@ -4205,7 +4205,7 @@ abstract class AppL10n {
   /// No description provided for @studyPlansFeatureNotebook.
   ///
   /// In en, this message translates to:
-  /// **'Your own notebook for each class'**
+  /// **'A notebook of your own, and one for each class'**
   String get studyPlansFeatureNotebook;
 
   /// No description provided for @studyPlansFeatureEverythingInFree.
@@ -4217,7 +4217,7 @@ abstract class AppL10n {
   /// No description provided for @studyPlansFeatureWhiteboard.
   ///
   /// In en, this message translates to:
-  /// **'Snap the whiteboard - get real notebook notes'**
+  /// **'Turn a photo or screenshot into tidy notes'**
   String get studyPlansFeatureWhiteboard;
 
   /// No description provided for @studyPlansFeatureEverythingInPlus.
@@ -4229,13 +4229,13 @@ abstract class AppL10n {
   /// No description provided for @studyPlansFeatureQuizzes.
   ///
   /// In en, this message translates to:
-  /// **'Quizzes made from your lessons'**
+  /// **'Quizzes from your notes and lessons'**
   String get studyPlansFeatureQuizzes;
 
   /// No description provided for @studyPlansFeatureFlashcards.
   ///
   /// In en, this message translates to:
-  /// **'Flashcards made from your lessons'**
+  /// **'Flashcards from your notes and lessons'**
   String get studyPlansFeatureFlashcards;
 
   /// No description provided for @studentTodayMakeTodayYours.
@@ -5860,13 +5860,13 @@ abstract class AppL10n {
   /// No description provided for @studyAssistantOff.
   ///
   /// In en, this message translates to:
-  /// **'The study helper is not switched on yet. Your lessons and notebook work as usual.'**
+  /// **'The AI Tutor is not switched on yet. Your lessons and notebook work as usual.'**
   String get studyAssistantOff;
 
   /// No description provided for @studyAssistantUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'The study helper could not answer just now. Please try again in a moment.'**
+  /// **'The AI Tutor could not answer just now. Please try again in a moment.'**
   String get studyAssistantUnavailable;
 
   /// Account screen row that opens the list of accounts on this device.
@@ -6382,7 +6382,7 @@ abstract class AppL10n {
   /// No description provided for @studyAssistantHelperName.
   ///
   /// In en, this message translates to:
-  /// **'Study helper'**
+  /// **'AI Tutor'**
   String get studyAssistantHelperName;
 
   /// No description provided for @setupTitle.
@@ -6658,25 +6658,25 @@ abstract class AppL10n {
   /// No description provided for @helperAdd.
   ///
   /// In en, this message translates to:
-  /// **'Add material or a photo'**
+  /// **'Add notes, a lesson or a photo'**
   String get helperAdd;
 
   /// No description provided for @helperAddMaterial.
   ///
   /// In en, this message translates to:
-  /// **'Class material'**
+  /// **'My notes and lessons'**
   String get helperAddMaterial;
 
   /// No description provided for @helperAddMaterialDetail.
   ///
   /// In en, this message translates to:
-  /// **'A lesson or one of your notes to answer from'**
+  /// **'A note or a lesson to answer from'**
   String get helperAddMaterialDetail;
 
   /// No description provided for @helperAddPhoto.
   ///
   /// In en, this message translates to:
-  /// **'Photo from library'**
+  /// **'Photo or screenshot'**
   String get helperAddPhoto;
 
   /// No description provided for @helperTakePhoto.
@@ -10030,7 +10030,7 @@ abstract class AppL10n {
   /// No description provided for @helperAskAboutLesson.
   ///
   /// In en, this message translates to:
-  /// **'Ask the AI helper'**
+  /// **'Ask the AI Tutor'**
   String get helperAskAboutLesson;
 
   /// No description provided for @pickerOneFile.
@@ -10090,19 +10090,19 @@ abstract class AppL10n {
   /// No description provided for @readingTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reading for the AI helper'**
+  /// **'Reading for the AI Tutor'**
   String get readingTitle;
 
   /// No description provided for @readingExplained.
   ///
   /// In en, this message translates to:
-  /// **'Files and links are read once so the AI helper can answer from them. Scanned pages and pictures are read too, within the school\'s monthly reading limit.'**
+  /// **'Files and links are read once so the AI Tutor can answer from them. Scanned pages and pictures are read too, within the school\'s monthly reading limit.'**
   String get readingExplained;
 
   /// No description provided for @readingReady.
   ///
   /// In en, this message translates to:
-  /// **'Ready for the AI helper'**
+  /// **'Ready for the AI Tutor'**
   String get readingReady;
 
   /// No description provided for @readingPartly.
@@ -10222,13 +10222,13 @@ abstract class AppL10n {
   /// No description provided for @studyPlansFeatureAskLessons.
   ///
   /// In en, this message translates to:
-  /// **'Ask the AI helper about your lessons and their files'**
+  /// **'Ask the AI Tutor about your notes, lessons and their files'**
   String get studyPlansFeatureAskLessons;
 
   /// No description provided for @studyPlansFeatureFreeTokens.
   ///
   /// In en, this message translates to:
-  /// **'Light AI use - a few questions about your lessons each week'**
+  /// **'Light AI use - a few questions each week'**
   String get studyPlansFeatureFreeTokens;
 
   /// No description provided for @studyPlansFeaturePlusTokens.
@@ -11266,7 +11266,7 @@ abstract class AppL10n {
   /// No description provided for @pickActionHelper.
   ///
   /// In en, this message translates to:
-  /// **'Use selection in AI Helper'**
+  /// **'Use selection in the AI Tutor'**
   String get pickActionHelper;
 
   /// No description provided for @madeFrom.
@@ -12040,7 +12040,7 @@ abstract class AppL10n {
   /// No description provided for @aiConsentNoticeBody.
   ///
   /// In en, this message translates to:
-  /// **'The study helper, lesson notes, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.'**
+  /// **'The AI Tutor, notes from photos and lessons, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo or screenshot you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces. If you are in no class, a photo is read once and not kept.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.'**
   String get aiConsentNoticeBody;
 
   /// No description provided for @aiConsentAgree.
@@ -12082,7 +12082,7 @@ abstract class AppL10n {
   /// No description provided for @aiConsentSwitchOff.
   ///
   /// In en, this message translates to:
-  /// **'Off. Turn on to use the study helper, notes, notebooks, quizzes and flashcards.'**
+  /// **'Off. Turn on to use the AI Tutor, notes, notebooks, quizzes and flashcards.'**
   String get aiConsentSwitchOff;
 
   /// No description provided for @aiConsentChildSwitch.
@@ -12100,7 +12100,7 @@ abstract class AppL10n {
   /// No description provided for @aiConsentWithdrawBody.
   ///
   /// In en, this message translates to:
-  /// **'The study helper, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.'**
+  /// **'The AI Tutor, notes, notebooks, quizzes and flashcards stop until they are turned on again. What was already made stays.'**
   String get aiConsentWithdrawBody;
 
   /// No description provided for @aiConsentWithdrawAction.
@@ -12696,6 +12696,432 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Resolved: {outcome}'**
   String safetyReviewResolvedAs(String outcome);
+
+  /// On the join-a-class step after a student signs up: continue to the app without joining a class.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get onboardingStudentSkip;
+
+  /// Under the join-a-class step: says joining is optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining a class is optional. You can study on your own with the AI Tutor and your Notebook, and join your teacher\'s class at any time.'**
+  String get onboardingStudentOptional;
+
+  /// Section header on the student's Today page above the study tools.
+  ///
+  /// In en, this message translates to:
+  /// **'Study'**
+  String get todayStudySection;
+
+  /// Today hero subtitle for a student in no class.
+  ///
+  /// In en, this message translates to:
+  /// **'Study your way: ask the AI Tutor, keep notes and practise.'**
+  String get todayIndependentSubtitle;
+
+  /// Today study tile: the AI Tutor, its one-line description.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask anything, or send a screenshot'**
+  String get todayToolTutorDetail;
+
+  /// Today study tile and navigation label: the student's notebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Notebook'**
+  String get todayToolNotebook;
+
+  /// Today study tile: the Notebook, its one-line description.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notes, page by page'**
+  String get todayToolNotebookDetail;
+
+  /// Today study tile: flashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards'**
+  String get todayToolFlashcards;
+
+  /// Today study tile: flashcards, one-line description.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn your notes by heart'**
+  String get todayToolFlashcardsDetail;
+
+  /// Today study tile: quizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes'**
+  String get todayToolQuizzes;
+
+  /// Today study tile: quizzes, one-line description.
+  ///
+  /// In en, this message translates to:
+  /// **'Check what you know'**
+  String get todayToolQuizzesDetail;
+
+  /// Today card for a student in no class: title.
+  ///
+  /// In en, this message translates to:
+  /// **'Have a class code?'**
+  String get todayJoinClassTitle;
+
+  /// Today card for a student in no class: body.
+  ///
+  /// In en, this message translates to:
+  /// **'Join your teacher\'s class to see their lessons and work. Your own notes stay yours.'**
+  String get todayJoinClassBody;
+
+  /// Today section header: the student's latest personal notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent notes'**
+  String get todayRecentNotes;
+
+  /// Small badge on a feature that needs Studafy Plus.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus'**
+  String get planBadgePlus;
+
+  /// Small badge on a feature that needs Studafy Max.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get planBadgeMax;
+
+  /// Notebook page subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notes, page by page'**
+  String get nbHomeSubtitle;
+
+  /// The student's personal notebook, which belongs to no class.
+  ///
+  /// In en, this message translates to:
+  /// **'My notebook'**
+  String get nbPersonal;
+
+  /// Under the personal notebook's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes that belong to no class'**
+  String get nbPersonalDetail;
+
+  /// Header above the student's notebooks for each class.
+  ///
+  /// In en, this message translates to:
+  /// **'Class notebooks'**
+  String get nbClassNotebooks;
+
+  /// How many notes a notebook holds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No pages yet} =1{1 page} other{{count} pages}}'**
+  String nbPages(int count);
+
+  /// Button: write a new note.
+  ///
+  /// In en, this message translates to:
+  /// **'New note'**
+  String get nbNewNote;
+
+  /// Button: turn a photo or screenshot into notes (Studafy Plus).
+  ///
+  /// In en, this message translates to:
+  /// **'Notes from a photo'**
+  String get nbFromPhoto;
+
+  /// Under the notes-from-a-photo action.
+  ///
+  /// In en, this message translates to:
+  /// **'A screenshot, slide or page, turned into tidy notes'**
+  String get nbFromPhotoDetail;
+
+  /// Empty notebook: title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notebook is empty'**
+  String get nbEmptyTitle;
+
+  /// Empty notebook: what it is and how to start.
+  ///
+  /// In en, this message translates to:
+  /// **'Write notes as you study, or turn a screenshot into tidy notes with headings and bullet points. What you write here is yours: only you can see it.'**
+  String get nbEmptyBody;
+
+  /// Empty notebook: the main action.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your first note'**
+  String get nbWriteFirst;
+
+  /// Wide screens: the page area before a note is chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a page to read it here.'**
+  String get nbChoosePage;
+
+  /// Edit a note.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get nbEdit;
+
+  /// Rename a note.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get nbRename;
+
+  /// Title of the rename dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename note'**
+  String get nbRenameTitle;
+
+  /// Delete-a-note confirmation: body.
+  ///
+  /// In en, this message translates to:
+  /// **'It is removed from your notebook for good.'**
+  String get noteDeleteBody;
+
+  /// Note editor: title field.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get nbTitleLabel;
+
+  /// Note editor: text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get nbBodyLabel;
+
+  /// Note editor: hint about simple formatting.
+  ///
+  /// In en, this message translates to:
+  /// **'Write here. Start a line with # for a heading or - for a bullet point, and put ** around words to make them bold.'**
+  String get nbBodyHint;
+
+  /// A note was saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get noteSaved;
+
+  /// Saving a note failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your note could not be saved. Check your connection and try again.'**
+  String get noteSaveFailed;
+
+  /// Loading the notebook failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notebook could not load.'**
+  String get noteLoadFailed;
+
+  /// When a note was last changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited {date}'**
+  String nbEdited(String date);
+
+  /// Badge on a note the AI wrote from a photo or screenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'From a photo'**
+  String get nbFromPhotoBadge;
+
+  /// A photo the server or app refused.
+  ///
+  /// In en, this message translates to:
+  /// **'That photo can\'t be used. Choose a JPEG, PNG or WebP image under 4 MB.'**
+  String get nbPhotoRejected;
+
+  /// Notebook card for a free student: title.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos into notes with Studafy Plus'**
+  String get nbPlusTitle;
+
+  /// Notebook card for a free student: what Plus adds.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing notes is free. With Plus, a screenshot, slide or textbook page becomes tidy notes with headings, bullet points and key terms.'**
+  String get nbPlusBody;
+
+  /// Opens the plans.
+  ///
+  /// In en, this message translates to:
+  /// **'See plans'**
+  String get nbSeePlans;
+
+  /// Make a quiz or flashcards from this note (Studafy Max).
+  ///
+  /// In en, this message translates to:
+  /// **'Practise'**
+  String get nbPractise;
+
+  /// After notes were made from a photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your Notebook'**
+  String get nbNoteSavedOpen;
+
+  /// Opens the note just saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get noteOpen;
+
+  /// Title of the practice page.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards & quizzes'**
+  String get practiceTitle;
+
+  /// Subtitle of the practice page.
+  ///
+  /// In en, this message translates to:
+  /// **'Practise from your own notes'**
+  String get practiceSubtitle;
+
+  /// What flashcards are.
+  ///
+  /// In en, this message translates to:
+  /// **'Each card has a question or term on the front and the answer on the back, so you can test yourself.'**
+  String get practiceFlashcardsBody;
+
+  /// What a quiz is.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple-choice questions about your notes, with each answer explained.'**
+  String get practiceQuizBody;
+
+  /// Label on a sample flashcard.
+  ///
+  /// In en, this message translates to:
+  /// **'Example'**
+  String get practiceExample;
+
+  /// Sample flashcard: front.
+  ///
+  /// In en, this message translates to:
+  /// **'What do plants need for photosynthesis?'**
+  String get practiceExampleFront;
+
+  /// Sample flashcard: back.
+  ///
+  /// In en, this message translates to:
+  /// **'Light, water and carbon dioxide.'**
+  String get practiceExampleBack;
+
+  /// Under the sample flashcard.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to turn over'**
+  String get practiceTapToFlip;
+
+  /// Practice page for a student without Max: title.
+  ///
+  /// In en, this message translates to:
+  /// **'Included with Studafy Max'**
+  String get practiceMaxTitle;
+
+  /// Practice page for a student without Max: body.
+  ///
+  /// In en, this message translates to:
+  /// **'Max makes quizzes and flashcards from your notes and your lessons. On your plan you can still write notes and ask the AI Tutor.'**
+  String get practiceMaxBody;
+
+  /// Practice page: header above the notes to choose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose notes to practise from'**
+  String get practiceChooseNotes;
+
+  /// Practice page with no notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a note first, then practise from it.'**
+  String get practiceNoNotes;
+
+  /// Practice page: make a quiz from the chosen notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a quiz'**
+  String get practiceMakeQuiz;
+
+  /// Practice page: make flashcards from the chosen notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Make flashcards'**
+  String get practiceMakeFlashcards;
+
+  /// How many notes are chosen for practice.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Choose at least one note} =1{1 note chosen} other{{count} notes chosen}}'**
+  String practiceChosen(int count);
+
+  /// Practice page footnote for students in a class.
+  ///
+  /// In en, this message translates to:
+  /// **'In a class, every lesson has Quiz and Flashcards buttons too.'**
+  String get practiceFromLessons;
+
+  /// AI Tutor start screen: title.
+  ///
+  /// In en, this message translates to:
+  /// **'What are you studying?'**
+  String get tutorWelcomeTitle;
+
+  /// AI Tutor suggestion chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain a topic simply'**
+  String get tutorSuggestExplain;
+
+  /// Text put in the question box by the suggestion chip; the student finishes it.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain this simply: '**
+  String get tutorSuggestExplainPrompt;
+
+  /// AI Tutor suggestion chip: choose notes to answer from.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer from my notes'**
+  String get tutorSuggestNotes;
+
+  /// AI Tutor suggestion chip and attach option: notes from a photo, saved to the Notebook.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn a screenshot into notes'**
+  String get tutorSuggestPhotoNotes;
+
+  /// Under the screenshot-to-notes option.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your Notebook'**
+  String get tutorPhotoNotesDetail;
+
+  /// Attach option: the camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get tutorTakePhoto;
+
+  /// AI Tutor: the plan and how much AI is left, one line.
+  ///
+  /// In en, this message translates to:
+  /// **'{plan} · {usage}'**
+  String tutorPlanLine(String plan, String usage);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

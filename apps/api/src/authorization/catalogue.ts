@@ -584,12 +584,12 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: false,
     // A question belongs to the student, not to a school, so there is no
     // tenant to require. Who may ask is decided by the AI gate after this
-    // (ADR-0043): a student with an active class enrollment and a current
-    // AI consent, re-checked by the AI ledger in SQL before any token is
-    // held. Parents, teachers and accounts with no class are refused.
+    // (ADR-0043, ADR-0045): a student account, in a class or not, with a
+    // current AI consent, re-checked by the AI ledger in SQL before any
+    // token is held. Parents and teachers are refused.
     tenantRequired: false,
     description:
-      "Ask the study assistant a question: students with an active class enrollment and a current AI consent only, checked in SQL (private.ai_access).",
+      "Ask the AI Tutor a question: student accounts with a current AI consent only, checked in SQL (private.ai_access).",
   },
   "onboarding.teacher_workspace": {
     resource: "teacher_workspace",
@@ -659,6 +659,32 @@ export const PERMISSION_CATALOGUE = {
     tenantRequired: false,
     description: "Read the actor's own study plan and AI allowance.",
   },
+  // ADR-0045: a student's personal notebook, which belongs to no class, and
+  // editing any of their own notes. Self-scoped: each SQL call checks the
+  // caller is a student account and the note is theirs.
+  "my_notebook.read": {
+    resource: "notebook_entry",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Read one's own personal notebook (notes in no class).",
+  },
+  "my_notebook.write": {
+    resource: "notebook_entry",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Add to one's own personal notebook, or edit, rename or delete any of one's own notes.",
+  },
+  "my_notebook.practise": {
+    resource: "notebook_entry",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Make a quiz or flashcards from one's own notes, on Studafy Max: student accounts only.",
+  },
   "notebook.read": resource(
     "classroom",
     "Read one's own notebook for a class one is enrolled in.",
@@ -673,7 +699,7 @@ export const PERMISSION_CATALOGUE = {
   ),
   "study_set.generate": resource(
     "resource",
-    "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max: students in a class only (ADR-0043).",
+    "Generate or read a quiz or flashcards from a lesson one can see, on Studafy Max: students in that lesson's class only (ADR-0043).",
   ),
   // ADR-0037: a lesson's files and links as read for the study helper.
   "lesson_reading.read": resource(

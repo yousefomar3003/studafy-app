@@ -1599,7 +1599,8 @@ export const V1_ROUTE_CATALOGUE = [
   // The study assistant. Appended for the same reason as everything above it.
   //
   // scope "self" and no tenant: a student who has not joined a class yet can
-  // still study, and the endpoint reads nothing that belongs to a school.
+  // still study (ADR-0045), and the endpoint reads nothing that belongs to a
+  // school except the class material the student chose and may read.
   cataloguePost(
     "askStudyAssistant",
     "/v1/study-assistant/ask",
@@ -2194,6 +2195,68 @@ export const V1_ROUTE_CATALOGUE = [
     "V1AiConsentState",
     200,
     params("childId"),
+  ),
+  // A student's personal notebook, which belongs to no class, and editing
+  // any of their own notes (2026-10-21, ADR-0045). Appended. Self-scoped:
+  // each SQL call checks the note is the caller's.
+  catalogueGet(
+    "listMyNotebookEntries",
+    "/v1/me/notebook",
+    "my_notebook.read",
+    StudyPlans.V1NotebookPage,
+    "V1NotebookPage",
+  ),
+  cataloguePost(
+    "createMyNotebookEntry",
+    "/v1/me/notebook",
+    "my_notebook.write",
+    StudyPlans.V1CreateNotebookEntryRequest,
+    "V1CreateNotebookEntryRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    201,
+  ),
+  cataloguePost(
+    "createMyPhotoNote",
+    "/v1/me/notebook/photo-notes",
+    "my_notebook.write",
+    StudyPlans.V1PhotoNoteRequest,
+    "V1PhotoNoteRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    201,
+  ),
+  cataloguePost(
+    "updateMyNotebookEntry",
+    "/v1/me/notebook-entries/{entryId}/edit",
+    "my_notebook.write",
+    StudyPlans.V1UpdateNotebookEntryRequest,
+    "V1UpdateNotebookEntryRequest",
+    StudyPlans.V1NotebookEntry,
+    "V1NotebookEntry",
+    200,
+    params("entryId"),
+  ),
+  cataloguePost(
+    "deleteMyNotebookEntry",
+    "/v1/me/notebook-entries/{entryId}/delete",
+    "my_notebook.write",
+    StudyPlans.V1DeleteNotebookEntryRequest,
+    "V1DeleteNotebookEntryRequest",
+    StudyPlans.V1DeleteNotebookEntryResponse,
+    "V1DeleteNotebookEntryResponse",
+    200,
+    params("entryId"),
+  ),
+  cataloguePost(
+    "practiseMyNotes",
+    "/v1/me/notebook/practice",
+    "my_notebook.practise",
+    StudyPlans.V1NotesPracticeRequest,
+    "V1NotesPracticeRequest",
+    StudyPlans.V1NotesPractice,
+    "V1NotesPractice",
+    201,
   ),
 ] as const satisfies readonly V1RouteContract[];
 

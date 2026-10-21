@@ -5,9 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 /// thing labelled for screen readers, and text with enough contrast.
 ///
 /// Call `tester.ensureSemantics()` before pumping, and dispose the handle.
-Future<void> expectAccessible(WidgetTester tester) async {
+///
+/// [contrast] false skips only the contrast check, for a screen whose
+/// colours are checked in another language: the contrast check samples the
+/// rendered pixels, and the Linux test font draws some Arabic words so thin
+/// that it measures the background instead of the text.
+Future<void> expectAccessible(
+  WidgetTester tester, {
+  bool contrast = true,
+}) async {
   await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
   await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
   await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-  await expectLater(tester, meetsGuideline(textContrastGuideline));
+  if (contrast) {
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+  }
 }

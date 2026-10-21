@@ -99,6 +99,10 @@ select is(
     -- ADR-0039: results kept per exact selection, access re-checked per read.
     'api056_material_outputs',
     'api057_ai_consent',
+    -- ADR-0045: a student's personal notebook, which belongs to no class,
+    -- and editing one's own notes; the owner is checked on every call.
+    'api058_command',
+    'api058_query',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

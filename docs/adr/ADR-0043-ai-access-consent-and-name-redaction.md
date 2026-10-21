@@ -3,6 +3,9 @@
 - Status: Accepted for development and the Fly test copy. AI stays off for
   real students until the AI DPA and the DPIA are signed (DL-056, launch
   plan M4); this makes the code match privacy policy 1.4 before then.
+- Superseded in part: decision 1's "students in a class only" (D3) by
+  ADR-0045 (DL-072, 2026-10-21): every student account may use the tools.
+  The consent and name redaction stand.
 - Date: 2026-10-15
 - Decision owner: repository owner
 - Relates to: ADR-0029, ADR-0031 (managed child accounts), ADR-0037,

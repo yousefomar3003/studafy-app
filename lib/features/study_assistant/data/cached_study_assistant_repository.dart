@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
+import '../../../core/inline_photo.dart';
 import '../../../data/contracts/response_cache.dart';
 import '../domain/study_assistant_repository.dart';
 
@@ -51,13 +52,15 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,
   }) async {
     // Going on without unreadable files is a different answer from the
     // one with them, so it is neither read from nor kept in the cache.
-    final keep = photoFileIds.isEmpty && !skipUnavailable;
+    final keep =
+        photoFileIds.isEmpty && inlinePhotos.isEmpty && !skipUnavailable;
     final maxAgeHere = references.isEmpty
         ? maxAge
         : const Duration(days: 1) < maxAge
@@ -96,6 +99,7 @@ class CachedStudyAssistantRepository implements StudyAssistantRepository {
       history: history,
       references: references,
       photoFileIds: photoFileIds,
+      inlinePhotos: inlinePhotos,
       requestId: requestId,
       language: language,
       skipUnavailable: skipUnavailable,

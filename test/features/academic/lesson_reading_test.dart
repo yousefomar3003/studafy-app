@@ -101,7 +101,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Ready for the AI helper'), findsOne);
+    expect(find.text('Ready for the AI Tutor'), findsOne);
     expect(find.text('Partly read - some pages were not read'), findsOne);
     expect(find.text("Can't be read: it's a video"), findsOne);
     expect(find.text("Can't be read: it couldn't be read"), findsOne);

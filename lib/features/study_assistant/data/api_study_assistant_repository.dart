@@ -1,5 +1,6 @@
 import '../../../core/ai_consent.dart';
 import '../../../core/failures.dart';
+import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
@@ -62,6 +63,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,
@@ -73,6 +75,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
           history: history,
           references: references,
           photoFileIds: photoFileIds,
+          inlinePhotos: inlinePhotos,
           requestId: requestId,
           language: language,
           skipUnavailable: skipUnavailable,
@@ -91,6 +94,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     required List<ChatTurn> history,
     required List<ChatReference> references,
     required List<String> photoFileIds,
+    required List<InlinePhoto> inlinePhotos,
     required String? requestId,
     required String? language,
     required bool skipUnavailable,
@@ -129,6 +133,15 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
                 ],
           skipUnavailable: skipUnavailable ? true : null,
           attachmentFileIds: photoFileIds.isEmpty ? null : photoFileIds,
+          images: inlinePhotos.isEmpty
+              ? null
+              : [
+                  for (final photo in inlinePhotos)
+                    V1InlineImageDto(
+                      mediaType: photo.mediaType,
+                      data: photo.toJson()['data']! as String,
+                    ),
+                ],
           language: language == 'ar' || language == 'en' ? language : null,
           requestId: requestId,
         ),
@@ -175,7 +188,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     if (error.code == 'AI_STUDENTS_ONLY') {
       return const Failure(
         StudyAssistantFailure.consentRequired,
-        'The AI study tools are for students in a class.',
+        'The AI study tools are for student accounts.',
       );
     }
     if (error.code == StudyAssistantFailure.photoNotReady) {
@@ -193,7 +206,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     if (error.code == 'AI_FEATURE_DISABLED') {
       return const Failure(
         StudyAssistantFailure.unavailable,
-        'The study helper is not available.',
+        'The AI Tutor is not available.',
       );
     }
     if (error.code == StudyAssistantFailure.allowanceUsed) {
@@ -213,7 +226,7 @@ class ApiStudyAssistantRepository implements StudyAssistantRepository {
     if (error.status == 404 || error.status == 503) {
       return const Failure(
         StudyAssistantFailure.unavailable,
-        'The study helper is not available.',
+        'The AI Tutor is not available.',
       );
     }
     return null;

@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../core/ai_consent.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 import '../../../data/contracts/v1_client.generated.dart';
 import '../../../data/contracts/v1_http_transport.dart';
@@ -26,6 +27,8 @@ class ApiStudyRepository implements StudyRepository {
       'MATERIAL_PROCESSING' => StudyRefusal.materialProcessing,
       'PHOTO_NOT_READY' => StudyRefusal.photoNotReady,
       'PHOTO_UNREADABLE' => StudyRefusal.photoUnreadable,
+      'PAYLOAD_TOO_LARGE' ||
+      'UNSUPPORTED_MEDIA_TYPE' => StudyRefusal.photoRejected,
       'LESSON_HAS_NO_TEXT' => StudyRefusal.lessonHasNoText,
       'AI_FEATURE_DISABLED' => StudyRefusal.unavailable,
       'AI_STUDENTS_ONLY' => StudyRefusal.aiConsent,
@@ -78,6 +81,10 @@ class ApiStudyRepository implements StudyRepository {
     fromWhiteboard: dto.source == 'whiteboard',
     fromLesson: dto.source == 'lesson',
     createdAt: DateTime.parse(dto.createdAt).toLocal(),
+    updatedAt: switch (dto.updatedAt) {
+      final at? => DateTime.parse(at).toLocal(),
+      null => null,
+    },
     photo: dto.photo == null
         ? null
         : StoredAttachment(
@@ -174,12 +181,74 @@ class ApiStudyRepository implements StudyRepository {
 
   @override
   Future<void> deleteNote(String entryId) => _guard(() async {
-    await _client.deleteNotebookEntry(
+    // Any of the student's own notes, in a class or personal (ADR-0045).
+    await _client.deleteMyNotebookEntry(
       const V1DeleteNotebookEntryRequestDto(),
       entryId: entryId,
       idempotencyKey: _key('delete'),
     );
   });
+
+  @override
+  Future<List<NotebookEntry>> personalNotebook() => _guard(() async {
+    final page = await _client.listMyNotebookEntries();
+    return [for (final item in page.items) _entry(item)];
+  });
+
+  @override
+  Future<NotebookEntry> addPersonalNote({
+    required String title,
+    required String body,
+  }) => _guard(() async {
+    return _entry(
+      await _client.createMyNotebookEntry(
+        V1CreateNotebookEntryRequestDto(title: title, body: body),
+        idempotencyKey: _key('personal-note'),
+      ),
+    );
+  });
+
+  @override
+  Future<NotebookEntry> photoNote(InlinePhoto photo, {String? title}) =>
+      _guard(() async {
+        return _entry(
+          await _client.createMyPhotoNote(
+            V1PhotoNoteRequestDto.fromJson({
+              'image': photo.toJson(),
+              'title': ?title,
+            }),
+            idempotencyKey: _key('photo-note'),
+          ),
+        );
+      });
+
+  @override
+  Future<NotebookEntry> editNote(
+    String entryId, {
+    String? title,
+    String? body,
+  }) => _guard(() async {
+    return _entry(
+      await _client.updateMyNotebookEntry(
+        V1UpdateNotebookEntryRequestDto.fromJson({
+          'title': ?title,
+          'body': ?body,
+        }),
+        entryId: entryId,
+        idempotencyKey: _key('edit'),
+      ),
+    );
+  });
+
+  @override
+  Future<StudySet> practiseNotes(StudySetKind kind, List<String> entryIds) =>
+      _guard(() async {
+        final dto = await _client.practiseMyNotes(
+          V1NotesPracticeRequestDto(kind: kind.name, entryIds: entryIds),
+          idempotencyKey: _key('practice-${kind.name}'),
+        );
+        return _set(kind, dto.questions, dto.cards);
+      });
 
   @override
   Future<StudySet> studySet(String resourceId, StudySetKind kind) =>

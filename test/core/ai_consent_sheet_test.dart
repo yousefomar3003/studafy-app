@@ -135,7 +135,7 @@ void main() {
       isSemantics(
         label:
             'AI study tools\n'
-            'Off. Turn on to use the study helper, notes, notebooks, quizzes '
+            'Off. Turn on to use the AI Tutor, notes, notebooks, quizzes '
             'and flashcards.',
         hasToggledState: true,
         isToggled: false,

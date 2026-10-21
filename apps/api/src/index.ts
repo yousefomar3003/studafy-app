@@ -8,6 +8,7 @@ import { installGracefulShutdown, logListening } from "@studafy/observability";
 import { version as apiVersion } from "../package.json";
 import { buildPlatform } from "./composition/platform";
 import { buildRoutes } from "./composition/routes";
+import { largestBodyBytes } from "./platform/types";
 
 // The API process: build the platform, then the modules on it, then serve.
 const platform = buildPlatform();
@@ -77,7 +78,9 @@ const app = createApp({
 
 const server = Bun.serve({
   port: env.API_PORT,
-  maxRequestBodySize: env.API_MAX_BODY_BYTES,
+  // Bun refuses a larger body before the app sees it, so this is the largest
+  // any route allows; the platform middleware holds each route to its own.
+  maxRequestBodySize: largestBodyBytes(env.API_MAX_BODY_BYTES),
   fetch: app.fetch,
 });
 

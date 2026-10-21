@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 
 /// A student's AI allowance, in tokens (ADR-0037): one allowance for the
@@ -543,13 +544,15 @@ List<ChatReference> referencesOfSelection(MaterialSelection selection) => [
 abstract class StudyAssistantRepository {
   /// [references] are lessons, files, links and notes to answer from;
   /// [photoFileIds] the student's own scanned uploads of purpose
-  /// `assistant_attachment`. [requestId] is the same for a retry of the same
+  /// `assistant_attachment`; [inlinePhotos] are sent with the question by a
+  /// student with no school to upload into (ADR-0045). [requestId] is the same for a retry of the same
   /// question, so it is never charged twice; [language] is the app's.
   Future<StudyAnswer> ask(
     String question, {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,

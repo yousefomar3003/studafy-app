@@ -43,7 +43,7 @@ const CHILD = `${P}16`;
 const STUDENT_ROW = `${P}21`;
 const CLASSMATE_ROW = `${P}22`;
 const CHILD_ROW = `${P}23`;
-const VERSION = "2026-10-15";
+const VERSION = "2026-10-22";
 
 let sql: Sql;
 let app: Hono<AuthorizationEnv>;
@@ -248,9 +248,9 @@ suite("AI access and consent over real SQL (ADR-0043)", () => {
     await sql.end({ timeout: 5 });
   });
 
-  test("parents, teachers and students with no class are refused (D3, D4)", async () => {
+  test("parents and teachers are refused (D4)", async () => {
     asked.length = 0;
-    for (const subject of [TEACHER, PARENT, LONER]) {
+    for (const subject of [TEACHER, PARENT]) {
       expect(await ask(subject)).toEqual({
         status: 403,
         code: "AI_STUDENTS_ONLY",
@@ -262,11 +262,22 @@ suite("AI access and consent over real SQL (ADR-0043)", () => {
       aiAccess: "not_student",
       available: [],
     });
-    const loner = await request("/v1/me/study-plan", LONER);
-    expect(await loner.json()).toMatchObject({
-      aiAccess: "no_class",
-      available: [],
+  });
+
+  test("a student with no class is asked for consent, not refused (ADR-0045)", async () => {
+    asked.length = 0;
+    expect(await ask(LONER)).toEqual({
+      status: 403,
+      code: "AI_CONSENT_REQUIRED",
     });
+    expect(asked).toEqual([]);
+    const loner = await request("/v1/me/study-plan", LONER);
+    const body = await loner.json() as {
+      aiAccess: string;
+      available: string[];
+    };
+    expect(body.aiAccess).toBe("consent_required");
+    expect(body.available).toContain("ask");
   });
 
   test("a parent or teacher cannot consent to tools they cannot use", async () => {

@@ -1,3 +1,4 @@
+import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 import '../domain/study.dart';
 import '../domain/study_notebook.dart';
@@ -44,7 +45,63 @@ class PreviewStudyRepository implements StudyRepository {
     for (final list in _notes.values) {
       list.removeWhere((e) => e.id == entryId);
     }
+    _personal.removeWhere((e) => e.id == entryId);
   }
+
+  /// The personal notebook (ADR-0045), on this device only.
+  final List<NotebookEntry> _personal = [];
+
+  @override
+  Future<List<NotebookEntry>> personalNotebook() async => List.of(_personal);
+
+  @override
+  Future<NotebookEntry> addPersonalNote({
+    required String title,
+    required String body,
+  }) async {
+    final now = DateTime.now();
+    final entry = NotebookEntry(
+      id: 'preview-${now.microsecondsSinceEpoch}',
+      classroomId: null,
+      title: title,
+      body: body,
+      fromWhiteboard: false,
+      createdAt: now,
+      updatedAt: now,
+    );
+    _personal.insert(0, entry);
+    return entry;
+  }
+
+  // Notes from a photo are Studafy Plus; a synthetic build is on free.
+  @override
+  Future<NotebookEntry> photoNote(InlinePhoto photo, {String? title}) =>
+      throw const StudyException(StudyRefusal.planRequired);
+
+  @override
+  Future<NotebookEntry> editNote(
+    String entryId, {
+    String? title,
+    String? body,
+  }) async {
+    final lists = [_personal, ..._notes.values];
+    for (final list in lists) {
+      final at = list.indexWhere((e) => e.id == entryId);
+      if (at < 0) continue;
+      final edited = list[at].copyWith(
+        title: title,
+        body: body,
+        updatedAt: DateTime.now(),
+      );
+      list[at] = edited;
+      return edited;
+    }
+    throw const StudyException(StudyRefusal.failed);
+  }
+
+  @override
+  Future<StudySet> practiseNotes(StudySetKind kind, List<String> entryIds) =>
+      throw const StudyException(StudyRefusal.planRequired);
 
   @override
   Future<StudySet> studySet(String resourceId, StudySetKind kind) =>

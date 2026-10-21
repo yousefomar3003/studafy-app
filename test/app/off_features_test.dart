@@ -6,6 +6,7 @@ import 'package:studafy/app/parent_shell.dart';
 import 'package:studafy/app/studafy_theme.dart';
 import 'package:studafy/app/student_shell.dart';
 import 'package:studafy/app/teacher_shell.dart';
+import 'package:studafy/core/inline_photo.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_design.dart';
 import 'package:studafy/core/studafy_domain.dart';
@@ -381,6 +382,7 @@ class _Helper implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,

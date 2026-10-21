@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/file_upload_repository.dart';
+import 'package:studafy/core/inline_photo.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/data/contracts/response_cache.dart';
 import 'package:studafy/data/local_cache/offline_file_cache.dart';
@@ -38,6 +39,7 @@ class _Helper implements StudyAssistantRepository {
     List<ChatTurn> history = const [],
     List<ChatReference> references = const [],
     List<String> photoFileIds = const [],
+    List<InlinePhoto> inlinePhotos = const [],
     String? requestId,
     String? language,
     bool skipUnavailable = false,

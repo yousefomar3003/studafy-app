@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 /// Port for settings that belong to the device rather than to a session
 /// (MOB-070).
 ///
@@ -39,6 +43,14 @@ abstract final class DeviceSettingKeys {
   /// so a launch with a session still signed in goes straight back to it
   /// instead of asking again. Only the role: never who.
   static const lastRole = 'settings.session.lastRole';
+
+  /// Set once a student has passed the join-a-class step after signing up -
+  /// joined a class or chose "Skip for now" - so it is shown once, not at
+  /// every launch (ADR-0045). Keyed by a one-way hash of the account, so
+  /// nothing here identifies who it was.
+  static String studentClassStepDone(String userId) =>
+      'settings.student.classStep.'
+      '${sha256.convert(utf8.encode(userId)).toString().substring(0, 24)}';
 }
 
 /// In-memory store for tests and synthetic builds.

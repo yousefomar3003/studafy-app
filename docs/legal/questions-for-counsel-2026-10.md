@@ -14,6 +14,12 @@ processors, helper photos, inactive accounts, the export, safety reports),
 with a TODO(legal) comment beside it. Please review that wording; changes
 ship with a new consent version.
 
+**Update 2026-10-21 (DL-072):** the owner published privacy policy 1.7 and
+terms of use 1.5 (consent version `2026-10-22`), again without waiting.
+Students no longer need a class: a student can sign up and use Studafy, the
+AI study tools included, without any school. This changes item 1.5 and adds
+section 9.
+
 Each item says what the app does now, with the file or decision behind it,
 and the question. Items marked **policy** need a change to privacy policy
 1.4 (`docs/legal/privacy-policy.md`, live in English and Arabic); please
@@ -51,6 +57,9 @@ consent?
 1.5 **Who may use AI (policy §5, §6).** Only students enrolled in a class.
 Parents, teachers and accounts without a class are refused (ADR-0043). This
 now matches §6 ("for students"). Confirm.
+*Superseded 2026-10-21 (DL-072, ADR-0045):* every student account may use
+the AI tools, in a class or not, after the AI consent; parents and teachers
+are still refused. See 9.1.
 
 ## 2. Processors and transfers (policy §7.2)
 
@@ -151,3 +160,29 @@ approve each purchase. This was published without your review. Is relying on
 the stores' family controls enough under Irish and EU consumer law (contracts
 with minors) and the stores' rules for apps used by children, and is the
 wording on the parent's responsibility right?
+
+## 9. Students without a school (DL-072, policy 1.7 §5 and §6, terms 1.5 §5 and §8)
+
+9.1 **Minors using Studafy, and its AI tools, outside any school.** Since
+21 October 2026 a student can sign up with Google, Microsoft or Apple and
+use Studafy without joining a class: a personal notebook only they can see,
+and the AI study tools (the AI Tutor, notes from photos, quizzes and
+flashcards), after an AI consent they give themselves. No school is
+involved, Studafy holds no date of birth, and there is no age gate. Only a
+child account a parent creates and manages gets a parent's consent. Policy
+1.6 §5 said "We do not knowingly permit a child to create an account
+outside a school context where their country requires parental consent for
+it"; 1.7 replaces it with "We do not knowingly permit a child to use
+Studafy without a parent's consent where their country requires it", and
+points younger children to a parent-managed account. Please advise:
+- the age of digital consent that applies to these students (GDPR Art. 8;
+  Ireland sets 16; Jordan's PDPL), and whether a student under it may
+  accept the terms and the AI consent alone;
+- whether a parent's consent is needed, for the account, for the AI
+  consent, or both, and how it should be obtained for a student who signed
+  in themselves;
+- whether an age gate, or an age band (DPIA measure M8), is needed before a
+  student without a school can use Studafy or its AI tools;
+- whether the replacement wording in §5 is acceptable, and whether Studafy
+  is the controller for these students and for every student's personal
+  notes (policy §1.1).

@@ -27,6 +27,10 @@ import { createOnboardingRoutes } from "../onboarding/routes";
 import { createStudyAssistantRoutes } from "../study-assistant/routes";
 import { PostgresStudyRepository } from "../study/repository";
 import { createStudyRoutes } from "../study/routes";
+import {
+  createPersonalNotebookRoutes,
+  PostgresPersonalNotebookRepository,
+} from "../study/personalNotebookRoutes";
 import { PostgresAiAccessRepository } from "../study/aiAccess";
 import { createAiConsentRoutes } from "../study/aiConsentRoutes";
 import { createMessagingSwitch } from "../communications/messagingSwitch";
@@ -707,6 +711,23 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // A student's personal notebook, which belongs to no class (ADR-0045),
+  // appended last in the catalogue.
+  const personalNotebook = sql && studyRepository && aiAccess &&
+      idempotencyDependencies
+    ? createPersonalNotebookRoutes(
+      {
+        aiAccess,
+        notebook: new PostgresPersonalNotebookRepository(sql),
+        repository: studyRepository,
+        prices: aiPrices,
+        assistant: aiAssistant,
+        lessonToolsEnabled: env.AI_LESSON_TOOLS_ENABLED,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   // DL-061: with messaging off server-wide, in front of every module.
   const messagingSwitch = env.MESSAGING_ENABLED
     ? undefined
@@ -749,6 +770,7 @@ export function buildRoutes(platform: Platform) {
     studyNotebooks,
     selectionTools,
     aiConsent,
+    personalNotebook,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

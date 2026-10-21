@@ -11,6 +11,7 @@ import '../../../core/attachment_policy.dart';
 import '../../../core/failures.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
+import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
@@ -18,11 +19,11 @@ import '../../../core/result.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
+import '../../../core/study_markdown.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/study_assistant_interactor.dart';
 import '../domain/study_assistant_repository.dart';
-import 'helper_answer_text.dart';
 import 'study_chat_history_page.dart';
 
 /// The student's plan, as the helper shows it. Built by the host, since
@@ -57,12 +58,19 @@ class HelperPlan {
   );
 }
 
-/// The student's study helper, as a chat.
+/// The AI Tutor, as one chat: a title with New chat and History, the
+/// conversation, and the question box with "+" for notes, lessons and
+/// photos. Before the first question it says what it can do and offers a
+/// few ways in; the plan is one line, never a card in the way.
 ///
 /// Each chat is kept on the student's device only ([chats]), for the account
 /// signed in, and deleted when that account signs out of the device. With a
-/// question the helper is sent the last few turns of the same chat, so a
+/// question the Tutor is sent the last few turns of the same chat, so a
 /// follow-up makes sense - never older chats, and nothing about the student.
+///
+/// A student with no school ([schoolId] null) sends a photo with the
+/// question itself, read once and not kept (ADR-0045); a student in a class
+/// uploads it, as before.
 class StudyAssistantPage extends StatefulWidget {
   const StudyAssistantPage({
     super.key,
@@ -83,7 +91,12 @@ class StudyAssistantPage extends StatefulWidget {
     this.onUpgrade,
     this.onBack,
     this.openWith,
+    this.onPhotoToNotes,
   });
+
+  /// A photo or screenshot into notes in the Notebook (Studafy Plus). The
+  /// host runs it, since the Notebook is another feature. Null hides it.
+  final Future<void> Function(BuildContext context)? onPhotoToNotes;
 
   final StudyAssistantInteractor assistant;
   final List<Widget>? actions;
@@ -292,8 +305,15 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
 
   bool get _canAddMaterial =>
       _abilities.classMaterial && widget.pickReferences != null;
+
+  /// No school to upload into: the photo goes with the question.
+  bool get _photosInline => widget.schoolId == null;
+
   bool get _canAddPhoto =>
-      _abilities.photos && widget.uploads != null && widget.schoolId != null;
+      _abilities.photos &&
+      (_photosInline
+          ? widget.attachmentSource != null
+          : widget.uploads != null);
 
   Future<void> _add() async {
     final l10n = AppL10n.of(context);
@@ -328,6 +348,13 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                 title: Text(l10n.helperTakePhoto),
                 onTap: () => Navigator.pop(sheetContext, 'camera'),
               ),
+            if (widget.onPhotoToNotes != null)
+              ListTile(
+                leading: const Icon(Icons.document_scanner_outlined),
+                title: Text(l10n.tutorSuggestPhotoNotes),
+                subtitle: Text(l10n.tutorPhotoNotesDetail),
+                onTap: () => Navigator.pop(sheetContext, 'notes'),
+              ),
           ],
         ),
       ),
@@ -335,6 +362,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     if (choice == null || !mounted) return;
     if (choice == 'material') {
       await _changeMaterial();
+      return;
+    }
+    if (choice == 'notes') {
+      await widget.onPhotoToNotes?.call(context);
       return;
     }
     final source = widget.attachmentSource;
@@ -351,6 +382,12 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         ) !=
         null) {
       setState(() => _error = l10n.helperPhotoFailed);
+      return;
+    }
+    if (_photosInline &&
+        InlinePhoto(mediaType: photo.mediaType, bytes: photo.bytes).problem !=
+            null) {
+      setState(() => _error = l10n.nbPhotoRejected);
       return;
     }
     setState(() => _photo = photo);
@@ -529,7 +566,10 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     if (photo != null) unawaited(_keepThumbnail(at, photo.bytes));
 
     final photoIds = <String>[];
-    if (photo != null) {
+    final inline = <InlinePhoto>[];
+    if (photo != null && _photosInline) {
+      inline.add(InlinePhoto(mediaType: photo.mediaType, bytes: photo.bytes));
+    } else if (photo != null) {
       final id = await _uploadPhoto(photo);
       if (!mounted) return;
       if (id == null) {
@@ -549,6 +589,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         history: earlier,
         references: references,
         photoFileIds: photoIds,
+        inlinePhotos: inline,
         requestId: requestId,
         language: language,
         skipUnavailable: skipUnavailable,
@@ -665,42 +706,32 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
         bottom: false,
         child: Column(
           children: [
+            // One header: the name, and the two things a student looks for
+            // first - starting afresh, and going back to an earlier chat.
             StudafyLargeTitle(
               leading: switch (widget.onBack) {
                 final back? => BackButton(onPressed: back),
                 null => null,
               },
               title: l10n.studyAssistantTitle,
-              subtitle: l10n.helperSubtitle,
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 16, 8),
-            ),
-            // Starting afresh and going back to an earlier chat are the two
-            // things a student looks for first, so both are labelled.
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
-              // Wraps onto a second line with the largest text sizes.
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  StudafyPillButton(
-                    icon: Icons.add_comment_rounded,
-                    label: l10n.studyAssistantNewChat,
-                    prominent: true,
-                    onPressed: _asking || _turns.isEmpty ? null : _newChat,
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 8, 6),
+              actions: [
+                IconButton(
+                  tooltip: l10n.studyAssistantNewChat,
+                  onPressed: _asking || _turns.isEmpty ? null : _newChat,
+                  icon: const Icon(Icons.add_comment_outlined),
+                ),
+                if (widget.chats != null)
+                  IconButton(
+                    tooltip: l10n.studyAssistantHistory,
+                    onPressed: _openHistory,
+                    icon: const Icon(Icons.history_rounded),
                   ),
-                  if (widget.chats != null)
-                    StudafyPillButton(
-                      icon: Icons.history_rounded,
-                      label: l10n.studyAssistantHistory,
-                      onPressed: _openHistory,
-                    ),
-                ],
-              ),
+              ],
             ),
-            // What the chat answers from stays in view whenever it uses
-            // class material, and wherever material can be chosen.
-            if (_canAddMaterial || _references.isNotEmpty) _contextBar(l10n),
+            // What the chat answers from stays in view while it uses notes
+            // or class material; it is chosen with "+".
+            if (_references.isNotEmpty) _contextBar(l10n),
             Expanded(child: _conversation(l10n)),
             _composerBar(l10n),
           ],
@@ -709,24 +740,105 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     );
   }
 
-  /// The plan, in full on the start screen and as one line during a chat,
-  /// so it never stands between the student and the conversation.
-  Widget? _planCard(AppL10n l10n, {required bool compact}) {
+  /// Before the first question: what the Tutor does, a few ways in, and the
+  /// plan in one line.
+  List<Widget> _welcome(AppL10n l10n) {
     final plan = _plan;
-    if (plan == null) return null;
-    final upgrade = _canUpgrade;
-    final allowance = plan.allowance;
-    return PlanSummaryCard(
-      eyebrow: l10n.studyPlansYourPlan,
-      planName: plan.name,
-      detail: allowance == null ? null : _tokensLine(l10n, allowance),
-      progress: allowance?.usedFraction,
-      benefitsTitle: upgrade ? l10n.planAdds(plan.upgradeTo!) : null,
-      benefits: upgrade ? plan.upgradeBenefits : const [],
-      actionLabel: upgrade ? l10n.upgradeButton : null,
-      onAction: upgrade ? _upgrade : null,
-      compact: compact,
-    );
+    return [
+      FeatureCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const IconBadge(
+                  icon: Icons.auto_awesome_rounded,
+                  color: studafyIndigo,
+                  size: 44,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.tutorWelcomeTitle,
+                    style: const TextStyle(
+                      color: studafyInk,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              l10n.studyAssistantIntro,
+              style: const TextStyle(color: studafyInk, height: 1.45),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.lightbulb_outline_rounded, size: 18),
+                  label: Text(l10n.tutorSuggestExplain),
+                  onPressed: () {
+                    _composer.text = l10n.tutorSuggestExplainPrompt;
+                    _composer.selection = TextSelection.collapsed(
+                      offset: _composer.text.length,
+                    );
+                  },
+                ),
+                if (_canAddMaterial)
+                  ActionChip(
+                    avatar: const Icon(Icons.edit_note_rounded, size: 18),
+                    label: Text(l10n.tutorSuggestNotes),
+                    onPressed: _changeMaterial,
+                  ),
+                if (widget.onPhotoToNotes case final toNotes?)
+                  ActionChip(
+                    avatar: const Icon(
+                      Icons.document_scanner_outlined,
+                      size: 18,
+                    ),
+                    label: Text(l10n.tutorSuggestPhotoNotes),
+                    onPressed: () => toNotes(context),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      if (plan != null)
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 10, 0, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(switch (plan.allowance) {
+                  final allowance? => l10n.tutorPlanLine(
+                    plan.name,
+                    _tokensLine(l10n, allowance),
+                  ),
+                  null => plan.name,
+                }, style: const TextStyle(color: studafyMuted, fontSize: 13)),
+              ),
+              if (plan.allowance != null)
+                IconButton(
+                  tooltip: l10n.tokensWhatAreThey,
+                  onPressed: () => showTokenGuide(context),
+                  icon: const Icon(Icons.info_outline_rounded, size: 18),
+                ),
+              if (_canUpgrade)
+                TextButton(
+                  onPressed: _upgrade,
+                  child: Text(l10n.upgradeButton),
+                ),
+            ],
+          ),
+        ),
+      const SizedBox(height: 4),
+    ];
   }
 
   /// "Plenty available · resets 13 Oct": usage as a label, never a count.
@@ -867,36 +979,7 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                 ),
               ),
             ),
-          if (!_off) ?_planCard(l10n, compact: false),
-          if (!_off && _plan?.allowance != null)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                onPressed: () => showTokenGuide(context),
-                icon: const Icon(Icons.info_outline_rounded, size: 18),
-                label: Text(l10n.tokensWhatAreThey),
-              ),
-            ),
-          const SizedBox(height: 12),
-          FeatureCard(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const IconBadge(
-                  icon: Icons.auto_awesome_rounded,
-                  color: studafyTeal,
-                  size: 40,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l10n.studyAssistantIntro,
-                    style: const TextStyle(color: studafyInk, height: 1.45),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          if (!_off) ..._welcome(l10n),
           if (recent.isNotEmpty) ...[
             SectionHeader(
               l10n.helperRecentChats,
@@ -968,7 +1051,11 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
   Widget _composerBar(AppL10n l10n) {
     final plan = _plan;
     final inChat = _turns.isNotEmpty || _asking;
-    final canAdd = _canAddMaterial || widget.uploads != null;
+    final canAdd =
+        _canAddMaterial ||
+        _canAddPhoto ||
+        widget.uploads != null ||
+        widget.onPhotoToNotes != null;
     // The helper has the whole screen, with no tab bar below, so the field
     // keeps clear of the home indicator itself.
     return SafeArea(

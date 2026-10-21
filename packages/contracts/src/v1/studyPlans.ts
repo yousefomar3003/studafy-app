@@ -60,10 +60,11 @@ export const V1StudyPlanSummary = z.strictObject({
   chatMemoryChars: z.number().int().nonnegative().optional(),
   allowance: V1AiAllowance,
   /**
-   * Whether this account may use the AI study tools (ADR-0043). Anything
-   * but "ok" or a consent still to give means `available` is empty: the
-   * tools are for students in a class. Absent from servers older than
-   * 2026-10-15.
+   * Whether this account may use the AI study tools (ADR-0043, ADR-0045).
+   * Anything but "ok" or a consent still to give means `available` is
+   * empty: the tools are for student accounts, in a class or not.
+   * "no_class" now means an account not yet known to be a student. Absent
+   * from servers older than 2026-10-15.
    */
   aiAccess: V1AiAccess.optional(),
   /**
@@ -78,16 +79,23 @@ export const V1StudyPlanSummary = z.strictObject({
 });
 export type V1StudyPlanSummary = z.infer<typeof V1StudyPlanSummary>;
 
-/** One entry in a student's notebook for one class. */
+/**
+ * One entry in a student's notebook: in a class's notebook, or in their
+ * personal notebook, which belongs to no class (2026-10-21, ADR-0045).
+ */
 export const V1NotebookEntry = z.strictObject({
   id: Id,
-  classroomId: Id,
+  /** Null for a personal note. */
+  classroomId: Id.nullable(),
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(20000),
-  /** 'whiteboard' when Studafy Plus wrote it from a photo; 'lesson' when it
-   * was made from one of the class's lessons. */
+  /** 'whiteboard' when Studafy Plus wrote it from a photo or screenshot;
+   * 'lesson' when it was made from one of the class's lessons. */
   source: z.enum(["typed", "whiteboard", "lesson"]),
   createdAt: Timestamp,
+  /** When it was last written or edited. Absent from servers older than
+   * 2026-10-21. */
+  updatedAt: Timestamp.optional(),
   /** The whiteboard photo it came from, when there was one. */
   photo: V1FileAttachment.nullable(),
 });
@@ -135,6 +143,43 @@ export const V1WhiteboardNoteRequest = z.strictObject({
 });
 export type V1WhiteboardNoteRequest = z.infer<typeof V1WhiteboardNoteRequest>;
 
+/** Renaming or correcting one of the student's own notes. */
+export const V1UpdateNotebookEntryRequest = z.strictObject({
+  title: z.string().trim().min(1).max(200).optional(),
+  body: z.string().trim().min(1).max(20000).optional(),
+}).refine((value) => value.title !== undefined || value.body !== undefined, {
+  message: "title or body is required",
+});
+export type V1UpdateNotebookEntryRequest = z.infer<
+  typeof V1UpdateNotebookEntryRequest
+>;
+
+/**
+ * A photo or screenshot sent with the request itself, for a student with no
+ * school to upload into (2026-10-21). Checked, re-encoded, sent to the model
+ * once, and never stored. 4 MB at most once decoded.
+ */
+export const V1InlineImage = z.strictObject({
+  mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  data: z.string().min(16).max(5_400_000).regex(/^[A-Za-z0-9+/]+={0,2}$/),
+});
+export type V1InlineImage = z.infer<typeof V1InlineImage>;
+
+/** Studafy Plus: a photo or screenshot into a note in the personal
+ * notebook. */
+export const V1PhotoNoteRequest = z.strictObject({
+  image: V1InlineImage,
+  title: z.string().trim().min(1).max(200).optional(),
+});
+export type V1PhotoNoteRequest = z.infer<typeof V1PhotoNoteRequest>;
+
+/** Studafy Max: a quiz or flashcards from some of the student's own notes. */
+export const V1NotesPracticeRequest = z.strictObject({
+  kind: z.enum(["quiz", "flashcards"]),
+  entryIds: z.array(Id).min(1).max(20),
+});
+export type V1NotesPracticeRequest = z.infer<typeof V1NotesPracticeRequest>;
+
 export const V1DeleteNotebookEntryRequest = z.strictObject({});
 export type V1DeleteNotebookEntryRequest = z.infer<
   typeof V1DeleteNotebookEntryRequest
@@ -176,6 +221,20 @@ export const V1StudySet = z.strictObject({
   createdAt: Timestamp,
 });
 export type V1StudySet = z.infer<typeof V1StudySet>;
+
+/**
+ * A quiz or flashcards made from the student's own notes. Theirs alone, so
+ * it is not kept on the server: the app holds it while they practise.
+ */
+export const V1NotesPractice = z.strictObject({
+  kind: z.enum(["quiz", "flashcards"]),
+  /** Set when kind is 'quiz'. */
+  questions: z.array(V1QuizQuestion).max(30).nullable(),
+  /** Set when kind is 'flashcards'. */
+  cards: z.array(V1Flashcard).max(30).nullable(),
+  createdAt: Timestamp,
+});
+export type V1NotesPractice = z.infer<typeof V1NotesPractice>;
 
 export const V1GenerateStudySetRequest = z.strictObject({
   kind: z.enum(["quiz", "flashcards"]),
