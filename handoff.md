@@ -1,8 +1,8 @@
 # Handoff: Studafy
 
-Updated: 2026-10-21. **Everything through #132 is merged and on the test
-copy.** The independent-student work (below) is on branch
-`feat/independent-student` and in review; not deployed yet.
+Updated: 2026-10-21. **Everything through #133 is merged and on the test
+copy** (migrations `202610210030` and `202610210040` applied after a backup
+with restore check; test API and worker deployed from `e7b8d32`).
 
 ## Start here (2026-10-21): students without a class (DL-072, ADR-0045)
 
@@ -41,12 +41,20 @@ copy.** The independent-student work (below) is on branch
     a class-link join.
 
 ### Next for Claude
-1. Open the PR, wait for CI to **start and pass**, merge when the owner says.
-2. Deploy order (test copy): backup → dry run → migrations `202610210030`,
-   `202610210040` → test API → worker. The app must ship with them: it calls
-   the new `/v1/me/notebook-entries/{id}/delete` for every note delete.
-3. Owner: `bun run legal:deploy` once the build with consent 2026-10-22 is
-   out; build 101+ for Play internal testing.
+1. **Done 2026-10-21:** PR #133 merged after every check passed. The
+   emulator jobs failed three times on GitHub's side (port in use, corrupt
+   system-image download) and passed on re-run. Then backup, migrations,
+   test API and worker. Checked live: `/readyz` ready; `GET /v1/me/notebook`
+   200 for the reviewer student; AI notice `2026-10-22`, so the reviewer is
+   asked to consent again; the worker started clean. A 3 MB photo-notes
+   request now passes Bun's body limit.
+2. Owner: build 101+ from `main` for Play internal testing (consent
+   2026-10-22 and AI notice 2026-10-22; older builds cannot record the new
+   AI consent). Then `bun run legal:deploy`.
+3. On the phone: sign up a new student, Skip, write a note, screenshot →
+   notes (needs Plus; the reviewer student's grant is paused, see below),
+   AI Tutor with a photo, join the review class later and check the note is
+   still there.
 4. Follow-up PR: the student's own PDF/DOCX/PPTX for the Tutor.
 
 ### Known limits
