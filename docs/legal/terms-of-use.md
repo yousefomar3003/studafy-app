@@ -1,7 +1,7 @@
 # Studafy Terms of Use
 
 **Last updated:** 21 October 2026\
-**Version:** 1.4
+**Version:** 1.5
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -37,6 +37,21 @@ Apple Ask to Buy, with no approval step in Studafy, is enough under Irish
 and EU consumer law and the stores' rules for apps used by children; and
 the wording on the parent's responsibility for purchases.
 
+Version 1.5 (21 October 2026), consent version 2026-10-22 (migration
+202610210040_terms_and_privacy_2026_10_22.sql), with privacy policy 1.7:
+students no longer need a class (DL-072, ADR-0045). Joining a class is
+optional; the AI study tools are for every student account, in a class or
+not, after the AI consent; the study helper is now called the AI Tutor; a
+student has a personal notebook that belongs to no class. §1, §5, §8 and
+§9 changed. Published by the owner's decision without legal review, like
+1.3 and 1.4.
+
+TODO(legal): DL-072. Review §1, §5 and §8: a child can now accept these
+terms and use Studafy, the AI study tools included, without any school or
+class. Whether a child with no school can accept these terms alone, and
+from what age, is the same question as privacy policy §5
+(questions-for-counsel 9.1).
+
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
 -->
@@ -53,8 +68,9 @@ accept both.
 
 Studafy is a school application. Teachers run classes, share lessons, set and
 mark work — including work done on paper — and record attendance. Students
-see and hand in their work and keep their own notes. Parents follow their
-child's progress. Everyone can message the people in their classes.
+see and hand in their work and keep their own notes. A student can also use
+Studafy on their own, without a class. Parents follow their child's
+progress. Everyone can message the people in their classes.
 
 This version of Studafy has three roles: **teacher**, **student** and
 **parent or guardian**. **There is no school administrator.** A class's work,
@@ -126,6 +142,12 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
 
 ## 5. For students
 
+- **Joining a class is optional.** You can use your personal notebook and
+  the AI study tools on your own, and join a class later with a link or
+  code from your teacher.
+- Your personal notebook belongs to no class. Only you can see it, not a
+  teacher and not a parent, and joining a class does not change it. You can
+  edit and rename your notes.
 - Hand in your own work. You can replace your work until the deadline shown,
   which is in your school's time zone. Your earlier hand-ins are kept, and
   your teacher can see them.
@@ -161,13 +183,15 @@ kept by the school after your account is deleted.
 
 ## 8. The AI study tools
 
-The study helper, whiteboard-to-notes, lesson summaries and study notebooks,
-and quizzes and flashcards use an AI provider outside Studafy, Together AI.
-The Privacy Policy says exactly what is sent to it.
+The AI Tutor, notes from photos and lessons (whiteboard-to-notes, notes
+from a photo or screenshot, and lesson summaries), study notebooks, and
+quizzes and flashcards use an AI provider outside Studafy, Together AI. The
+Privacy Policy says exactly what is sent to it.
 
-- These tools are optional. They are only for students who belong to a
-  class, and only after the student agrees to them separately; for a child
-  account a parent manages, the parent agrees. They can be turned off at
+- These tools are optional. They are for every student account, whether or
+  not it belongs to a class, and only after the student agrees to them
+  separately; for a child account a parent manages, the parent agrees.
+  Parent and teacher accounts cannot use them. They can be turned off at
   any time.
 - Names Studafy knows are replaced before anything is sent, but photos are
   sent as they are. Do not photograph names or faces, and do not type other
@@ -200,7 +224,12 @@ The Privacy Policy says exactly what is sent to it.
 
 <!-- TODO(legal): DL-071 (21 October 2026). This section was rewritten when
 the in-app parent approval was removed; see the note at the top. -->
-- Lessons, the notebook, set work, marks and attendance are free.
+- Lessons, the notebook, set work, marks and attendance are free, and so
+  are typed notes in your personal notebook. Notes made by AI from a photo
+  or screenshot need Studafy Plus; quizzes and flashcards made from your own
+  notes need Studafy Max.
+- To restore a subscription, for example on a new phone, use **Restore
+  purchases** in Account → Subscription.
 - If a subscription ends, the features it unlocked stop. Your notes stay
   yours.
 

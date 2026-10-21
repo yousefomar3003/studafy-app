@@ -1,9 +1,63 @@
 # Handoff: Studafy
 
-Updated: 2026-10-21. **Everything through #131 is merged and on the test
-copy** (API, worker, migrations, legal site). No PR is open.
+Updated: 2026-10-21. **Everything through #132 is merged and on the test
+copy.** The independent-student work (below) is on branch
+`feat/independent-student` and in review; not deployed yet.
 
-## Start here (2026-10-21)
+## Start here (2026-10-21): students without a class (DL-072, ADR-0045)
+
+### What was built (branch `feat/independent-student`)
+- **Owner's decisions, when asked:** AI for students with no class (policy
+  1.6 §5 and ADR-0043 D3 superseded); typed notes stay free (photo notes
+  Plus, quizzes/flashcards Max); own photos/screenshots now, own
+  PDF/DOCX/PPTX in a follow-up PR.
+- **Server:** migration `202610210030_independent_students.sql`:
+  - `ai_access` is ok/consent for any `account_kind = 'student'`;
+  - personal notes are `notebook_entries` with no school/class/student;
+  - `api058_query`/`api058_command`.
+- **Routes** (`apps/api/src/study/personalNotebookRoutes.ts`):
+  - `GET/POST /v1/me/notebook`;
+  - `POST /v1/me/notebook/photo-notes` (Plus, inline image);
+  - `POST /v1/me/notebook-entries/{id}/edit|delete` (any own note);
+  - `POST /v1/me/notebook/practice` (Max, not stored).
+- **Ask route:** takes `images` (inline, ≤3, Plus). Inline images are
+  checked and redrawn as JPEG (`apps/api/src/study/inlineImage.ts`), never
+  stored.
+- **Body size:** Bun `maxRequestBodySize` now covers the route overrides.
+  It used to silently cap the ask route at 64 KB.
+- **Policy:** privacy 1.7 / terms 1.5 (EN/AR) and the AI notice, consent
+  version `2026-10-22` (migration `202610210040`). "Study helper" is now
+  "AI Tutor" (المعلّم الذكي) everywhere.
+- **App:**
+  - "Skip for now" on the join step, remembered per account (hashed) on the
+    device.
+  - No-class tabs: Today (study tiles, join card, recent notes), Notebook,
+    AI Tutor.
+  - New Notebook (`notebook_home_page.dart`, `note_page.dart`): ruled pages,
+    Markdown, edit/rename/delete, two panes on wide screens.
+  - Practice page for flashcards and quizzes.
+  - Simpler Tutor page, with a screenshot → notes action.
+  - The plan refreshes on purchase or restore, and the shell refreshes after
+    a class-link join.
+
+### Next for Claude
+1. Open the PR, wait for CI to **start and pass**, merge when the owner says.
+2. Deploy order (test copy): backup → dry run → migrations `202610210030`,
+   `202610210040` → test API → worker. The app must ship with them: it calls
+   the new `/v1/me/notebook-entries/{id}/delete` for every note delete.
+3. Owner: `bun run legal:deploy` once the build with consent 2026-10-22 is
+   out; build 101+ for Play internal testing.
+4. Follow-up PR: the student's own PDF/DOCX/PPTX for the Tutor.
+
+### Known limits
+- A student in two teachers' spaces sees only the first space's classes. This
+  is pre-existing: `listClasses` follows the active membership.
+- A student with a school membership but no active class still uploads Tutor
+  photos (kept 30 days). Only a student with no school sends them inline.
+- Counsel review of policy 1.7 §1.1, §5 and §6 (questions-for-counsel 9.1;
+  DPIA §12.1).
+
+## Earlier (2026-10-21): worker stall fix, session pooler, students buy directly
 
 ### What happened on the evening of 2026-10-20
 - **Play's test notification arrived** (store event `completed`). The path
@@ -98,7 +152,6 @@ copy** (API, worker, migrations, legal site). No PR is open.
    the Apple account and APNs key, Resend, Turnstile, and paid Redis.
 
 ## Earlier (2026-10-20): Play internal testing, billing setup, webhook fix
-
 ### Where things stand
 - **A real Android phone exists now:** the owner's Samsung Galaxy S23
   Ultra (Android 16, adb serial `R5CXC07T6XY`). It has the **Play

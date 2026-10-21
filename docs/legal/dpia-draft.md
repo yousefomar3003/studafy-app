@@ -115,7 +115,7 @@ How data is collected:
 | Messaging and meetings | Staff-to-anyone and guardian-to-own-child messaging, voice notes, announcements; meetings through Google Calendar and Meet | Message bodies, voice notes, read receipts, attendee emails | DL-049; DL-052; `privacy-policy.md` §3.6 |
 | Safety | Reports, blocks, moderation, legal holds | Reports with evidence, block pairs | ADR-0021; DL-042 |
 | Files | Upload, scan, metadata strip, delivery | Documents, photos, voice notes | DL-043; DL-044; `infra/scanner/` |
-| AI study tools | Study helper chat, photo questions, whiteboard-to-notes, lesson notes and study notebooks, quizzes and flashcards; background reading of lesson files | Questions, recent chat turns, photos, lesson passages, class grade level, language | `privacy-policy.md` §6; ADR-0029; ADR-0037; ADR-0038; ADR-0039 |
+| AI study tools | AI Tutor chat (called the study helper before DL-072), photo questions, whiteboard-to-notes, notes from a photo or screenshot in the personal notebook, lesson notes and study notebooks, quizzes and flashcards (also from the student's own notes); background reading of lesson files | Questions, recent chat turns, photos, lesson passages, class grade level, language | `privacy-policy.md` §6; ADR-0029; ADR-0037; ADR-0038; ADR-0039 |
 | Plans and billing | Plus and Max for students, Family+ for parents, through the stores. A student buys their own plan with no approval step in Studafy; a child's store account should be a parent's or parent-controlled, and Family Link or Ask to Buy is where a parent approves (DL-071, which ends DL-048's in-app approval) | Entitlements, store transactions; approval requests made before 21 October 2026, kept read-only | DL-048; DL-071; ADR-0032; ADR-0034 |
 | Notifications | In-app, push (FCM) and email (Resend) with fixed, content-free wording | Push token, email address | DL-053; `privacy-policy.md` §3.6 |
 | Operations | Request logs (Axiom), error reports (Sentry), alerts (Telegram via a Cloudflare Worker), backups (GitHub Actions) | Account UUID, hashed IP, stack traces, encrypted database copies | ADR-0035; `docs/operations/observability-review-2026-10.md`; `docs/deployment/backups.md` |
@@ -384,7 +384,9 @@ From DL-057 (decided 2026-10-14 as proposed defaults for counsel) and
 | Error reports (Sentry) | Up to 90 days |
 | Backups | 30 days |
 | Supabase sign-in IPs | Up to 7 days, and with a session until it ends |
-| AI study helper chats | On the device only, until sign-out |
+| AI Tutor chats | On the device only, until sign-out |
+| Photos from a student with no class, and photos turned into personal notes (DL-072) | Not stored: redrawn on the API, sent once to the provider, discarded |
+| Personal notes (DL-072) | Until the student deletes them or their account |
 | AI notes, quizzes, notebooks | Until the student deletes them or their account, or while the lesson exists |
 | **AI provider's copy of requests** | **UNKNOWN, pending the DPA** |
 
@@ -575,6 +577,43 @@ apply to the in-app text too. `docs/inventory/data-flow-inventory.md` is
 dated 2026-09-10 and predates the AI rebuild; it still says "No AI egress
 exists".
 
+### 12.1 Update 2026-10-21: students without a class (DL-072, ADR-0045)
+
+ADR-0043 closed D3 and D4 by limiting the AI tools to students in a class
+(`private.ai_access` answered `no_class` for any other account), and policy
+1.6 §5 said "The AI study tools are only for students in a class".
+**DL-072 and ADR-0045 supersede that limit** on 2026-10-21, by the owner's
+decision, without legal review:
+
+- The AI tools are for every student account (`private.account_kind` =
+  `student`), in a class or not, after the AI consent. Parents and teachers
+  are still refused (D4 stays fixed). Names are still replaced (D1), and the
+  AI consent is still recorded (D2).
+- A student can sign up and use Studafy with no school and no class. The
+  personal notebook (notes with no school, class or student record) is
+  visible only to the student, exported, and deleted with the account.
+- A photo or screenshot from a student with no class, sent to the AI Tutor,
+  and any photo turned into a personal note, is checked, redrawn as a JPEG
+  on the API, sent once to Together AI and never stored. For those photos
+  D13 and AI3's storage part do not arise.
+- Quizzes and flashcards a Studafy Max student makes from their own notes
+  are not stored on the server.
+
+**D3 is open again, and wider.** Policy 1.7 §5 no longer says children use
+Studafy only through a school. A child can now use Studafy, the AI tools
+included, with no school involved, no age gate and no date of birth, giving
+their own AI consent whatever their age. Risk AI10 ("children with no
+school") is now intended use, not misuse, and its likelihood rises. Q-F and
+measure M8 (an age signal) are more pressing; Studafy is the controller for
+these students and their personal notes (section 5).
+
+<!-- TODO(legal): DL-072, ADR-0045. Counsel to review minors using Studafy
+and its AI tools outside any school: the age of digital consent (Ireland:
+16; and in Jordan), whether a parent's consent is needed for the account and for
+the AI consent, whether an age gate or age band is needed (M8), and whether
+the residual risk for AI processing of these children's data changes the
+Art. 36 question in section 14 (questions-for-counsel 9.1). -->
+
 ---
 
 ## 13. Open questions that block sign-off
@@ -660,3 +699,7 @@ before the AI tools are switched on or soon after launch, as marked.
 ## Change history
 
 - 2026-10-15: first draft (launch plan A5 / work plan 6.2).
+- 2026-10-21: §12.1 added: ADR-0043's limit of AI to students in a class
+  (D3) is superseded by DL-072 and ADR-0045; the study helper is renamed the
+  AI Tutor; personal notes and photos that are not stored added to sections
+  2.2 and 7.

@@ -16,7 +16,7 @@ When one changes, change all of them.
 **Decided 2026-10-13** (DL-056):
 - **Category:** not the Kids category. Education, with an honest age rating (item 1).
 - **Arabic permission prompts:** added in `ios/Runner/ar.lproj/InfoPlist.strings` (item 4).
-- **AI:** off for real students until the DPA and DPIA are signed (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent; the DPA and DPIA are still not signed.
+- **AI:** off for real students until the DPA and DPIA are signed (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent; the DPA and DPIA are still not signed. **Changed 2026-10-21 by DL-072 (ADR-0045):** AI is for every student account, in a class or not, still after the AI consent. The study helper is now the AI Tutor.
 - **Sentry IP storage** (item 3) needs the Sentry dashboard. The CI token cannot change project settings.
 
 1. **Age rating and the Kids category.** Students are children.
@@ -37,7 +37,10 @@ Apple defines "collect" as sending data off the device where it is kept longer t
 Not collected, because it stays on the device:
 - profile photos (`lib/core/profile_photo.dart`);
 - the offline cache (`lib/data/local_cache/`);
-- the local AI chat history (`lib/features/study_assistant/data/file_study_chat_store.dart`).
+- the local AI chat history (`lib/features/study_assistant/data/file_study_chat_store.dart`);
+- quizzes and flashcards a Studafy Max student makes from their own notes, held by the app while they practise (DL-072).
+
+Not collected under Apple's definition, because it is kept no longer than the request: a photo or screenshot that a student with no class adds to an AI Tutor question, or that any student turns into a personal note. It is redrawn on the API, sent once to Together AI and discarded, never stored (DL-072, ADR-0045). Photos or Videos stays ticked because other photos are stored.
 
 ---
 
@@ -59,11 +62,11 @@ These are the boxes to tick, in the form's order. Anything not listed stays unti
 | Sensitive Info | Sensitive Info | No | Gender is not in Apple's sensitive list; it goes under Other Data |
 | Contacts | Contacts | No | The in-app directory comes from the school, not the phone |
 | User Content | Emails or Text Messages | **Yes** | In-app messages |
-| | Photos or Videos | **Yes** | Photo attachments, whiteboard photos, photos sent to the AI helper. No video. |
+| | Photos or Videos | **Yes** | Photo attachments, whiteboard photos, photos a student in a class sends to the AI Tutor (kept 30 days). Photos from a student with no class, and photos turned into personal notes, are not stored (Step 1). No video. |
 | | Audio Data | **Yes** | Voice notes in messages |
 | | Gameplay Content | No | |
 | | Customer Support | No | There is no in-app support channel. Abuse reports are counted under Other User Content. |
-| | Other User Content | **Yes** | Hand-ins, exam answers, documents, notebooks, AI questions, lessons, announcements, wellbeing notes, reports |
+| | Other User Content | **Yes** | Hand-ins, exam answers, documents, notebooks (personal notes included), AI questions, lessons, announcements, wellbeing notes, reports |
 | Browsing History | | No | |
 | Search History | | No | Searches run on the device |
 | Identifiers | User ID | **Yes** | Account ID, Studafy ID |
@@ -173,3 +176,4 @@ There is no `NSUserTrackingUsageDescription`, because there is no tracking and s
 
 ## Change history
 - 2026-10-12: first draft (item 5.5).
+- 2026-10-21: DL-072 (ADR-0045, privacy policy 1.7). AI for every student account; the AI Tutor name; personal notes; photos that are not stored. No box changes.

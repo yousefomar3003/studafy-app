@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
 **Last updated:** 21 October 2026\
-**Version:** 1.6
+**Version:** 1.7
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -50,9 +50,58 @@ see; approval requests recorded before 21 October 2026 are kept as billing
 records. Confirm the wording and that nothing else in the policy needs to
 change for purchases by children.
 
+Version 1.7 (21 October 2026), consent version 2026-10-22 (migration
+202610210040_terms_and_privacy_2026_10_22.sql), with terms of use 1.5 and
+AI notice 2026-10-22: students no longer need a class (DL-072, ADR-0045).
+The AI study tools are for every student account, in a class or not, after
+the AI consent; the study helper is now called the AI Tutor; a student has
+a personal notebook that belongs to no class; photos and screenshots from a
+student in no class are read once and not stored; Studafy Max students can
+practise with quizzes and flashcards made from their own notes, which are
+not stored on our servers. §1, §1.1, §2, §3.3, §3.4, §3.8, §3.10, §5, §6,
+§7.1, §9, §10, §11, §13 and the list of changes. This reverses version
+1.6's "The AI study tools are only for students in a class" (§5) and
+ADR-0043's decision to limit AI to students in a class. Published by the
+owner's decision without legal review, like 1.5 and 1.6.
+
+TODO(legal): DL-072. A child can now sign up and use Studafy, including the
+AI study tools, with no school and no class, so no school stands between
+the child and us. Review §5 (the opening bullets replace "We do not
+knowingly permit a child to create an account outside a school context
+where their country requires parental consent for it"), §1.1 (Studafy as
+controller for students with no class and for personal notes), §6 (who can
+use the tools; photos not stored for students with no class) and §10. The
+age and parental-consent questions in §5 are now more pressing
+(questions-for-counsel 9.1).
+
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 1.7
+
+- A student does not need a class to use Studafy. Joining a class is
+  optional; a student can join one later with a code or link from a
+  teacher (§3.3, §5).
+- The AI study tools are for every student account, in a class or not,
+  after the separate AI consent (a parent's, for a child account the parent
+  manages). Parent and teacher accounts still cannot use them. Names Studafy
+  knows are still replaced before anything is sent, and photos are still
+  sent as they are (§2, §5, §6).
+- The study helper is now called the **AI Tutor** (§6).
+- A student has a **personal notebook** that belongs to no class. Only the
+  student can see it, not a teacher and not a parent. Typed notes are free;
+  notes made by AI from a photo or screenshot need Studafy Plus. A student
+  can now edit and rename their notes. Personal notes are in the data export
+  and are deleted with the account (§3.4, §6, §7.1, §9, §11).
+- A photo or screenshot from a student who belongs to no class, sent to the
+  AI Tutor, and any photo or screenshot turned into a personal note, is
+  **not stored**: it is checked and redrawn on our servers, sent once to the
+  AI provider, and discarded. Photos students in a class send to the AI
+  Tutor are kept for 30 days, as before (§3.8, §6, §10).
+- Studafy Max students can make quizzes and flashcards from their own
+  notes. These are not stored on our servers; the app holds them while the
+  student practises (§3.10, §6, §10).
 
 ### What changed in version 1.6
 
@@ -108,7 +157,9 @@ Studafy is a school application used by teachers, students and parents. It
 lets a teacher run classes, share lessons, set and mark work — including
 work done on paper — record attendance, and communicate with students and
 their guardians. It lets a student see and hand in that work and keep their
-own notes, and it lets a parent follow their child's progress.
+own notes, and it lets a parent follow their child's progress. A student can
+also use Studafy on their own, without a class: their personal notebook and
+the AI study tools need no class.
 
 **Data controller:** Studafy Limited, a company registered in Ireland under
 number 822430, with its registered office at 4/5 The Square, Cahir,
@@ -142,6 +193,9 @@ This distinction matters, and it is not a technicality.
 - **Where an individual teacher signs up on their own** and creates their own
   classes, we act as the **controller** for that account, because there is no
   school instructing us.
+- **Where a student uses Studafy without a class**, and for every student's
+  **personal notebook**, which belongs to no class, we act as the
+  **controller**, for the same reason.
 - **For our own operation of the service** — security, fraud prevention,
   safety reports, billing, backups, keeping the service working — we are
   the controller regardless.
@@ -152,15 +206,19 @@ If you are unsure which applies to you, ask us and we will tell you.
 tools (§6) make Studafy a controller even where a school is controller of
 the class's records (DPIA draft §5). -->
 
+<!-- TODO(legal): DL-072. Confirm that Studafy is the controller for a
+student with no class and for personal notes, including those of a student
+whose class belongs to a school that is itself the controller. -->
+
 ---
 
 ## 2. A short summary
 
 The long version follows, and it governs. This summary is for orientation.
 
-- We collect what the app needs to work: who you are, which class you are in,
-  the lessons and work in it, your marks and attendance, your own notes, and
-  the messages you send inside the app.
+- We collect what the app needs to work: who you are, which class you are in
+  (if any), the lessons and work in it, your marks and attendance, your own
+  notes, and the messages you send inside the app.
 - Teachers' marks stay **private until the teacher publishes them**. A
   published mark that is later corrected keeps a record of the old mark, who
   changed it, when and why, and the family is told when the mark changes.
@@ -174,11 +232,13 @@ The long version follows, and it governs. This summary is for orientation.
 - **Optional AI study tools send content to an AI provider outside the
   app**, Together AI: the question a student types and the recent turns of
   the same chat, and — where a student uses them — a photo they attach, a
-  lesson's text, or their own notes. Only students in a class can use them,
-  and only after agreeing to them separately (for a child account a parent
-  manages, the parent agrees). Names Studafy knows are replaced before
-  anything is sent, and email addresses and marks are never sent; **photos
-  are sent as they are**. See §6 and read it before using those tools.
+  lesson's text, or their own notes. Any student account can use them,
+  whether or not it belongs to a class, but only after agreeing to them
+  separately (for a child account a parent manages, the parent agrees).
+  Parent and teacher accounts cannot use them. Names Studafy knows are
+  replaced before anything is sent, and email addresses and marks are never
+  sent; **photos are sent as they are**. A photo from a student who belongs
+  to no class is not kept. See §6 and read it before using those tools.
 - If someone reports a message or a person, **Studafy reviews the report**
   and may act on it (§3.7).
 - Children's data is treated as sensitive in practice, whatever its formal
@@ -260,6 +320,10 @@ For students we also hold a class roster entry, your enrolment in each class,
 the class code or link you joined with, and an internal student identifier
 used to link a parent to their child.
 
+**A student does not have to join a class.** A student can sign up and use
+Studafy on their own, and join a class later with a code or link from a
+teacher. Until then we hold no school, class or roster entry for them.
+
 ### 3.4 Academic records
 
 This is the substance of the service.
@@ -296,6 +360,13 @@ This is the substance of the service.
   of the board they take, and study notebooks, notes, quizzes and flashcards
   they make with the tools in §6, with their own notes, highlights and
   bookmarks.
+- **A student's personal notebook:** notes that belong to no class — notes
+  the student types, and notes made by AI from a photo or screenshot the
+  student adds (§6). A student can edit and rename any of their own notes.
+
+**Personal notes are visible only to the student.** No teacher and no
+parent can see them, and joining a class later does not change them. They
+are included in the data export (§11) and deleted with the account (§9).
 
 Wellbeing notes and pastoral records can be sensitive. They are visible only
 to the class's teachers, and to a family only where a teacher chooses to
@@ -405,6 +476,11 @@ lesson's file, or takes a file off an assignment, the class no longer sees
 it, but **the file is kept for the school** and the class's teachers can still
 open it. It is not deleted.
 
+**Some photos are not stored.** A photo or screenshot that a student turns
+into a personal note, and one that a student who belongs to no class adds
+to an AI Tutor question, is not uploaded as a file. It is checked on our
+servers, sent once to the AI provider and discarded (§6).
+
 ### 3.9 Billing
 
 Whether you hold a subscription (Studafy Plus, Studafy Max or Family+), when
@@ -437,8 +513,10 @@ child it is for.
 For the tools in §6, how much each account used them (the tool, the plan,
 the amount used, the model and the date), so that the plan's allowance can
 be applied. We store the notes, quizzes, flashcards and study notebooks a
-tool made, not the conversation that produced them. A photo sent with a
-study helper question is kept for 30 days (§6, §10).
+tool made, not the conversation that produced them. Quizzes and flashcards
+a student makes from their own notes are not stored on our servers. A photo
+sent to the AI Tutor by a student in a class is kept for 30 days; one from
+a student who belongs to no class is not kept (§6, §10).
 
 ### 3.11 Consents
 
@@ -500,12 +578,17 @@ providers to." Do not add it before. -->
 ## 5. Children
 
 Studafy is designed for school use and most of its students are children.
+A student can also use it on their own, without a class.
 
-- We do not knowingly permit a child to create an account outside a school
-  context where their country requires parental consent for it.
-- A student's account is normally created by the student, who then joins a
-  class using a code or link their teacher gave them. Belonging to a class is
-  what makes a student's work visible to that class's teachers.
+- A student's account is normally created by the student. **Joining a class
+  is optional:** a student can use their personal notebook and the AI study
+  tools without one, and join a class later using a code or link a teacher
+  gives them. Belonging to a class is what makes a student's work visible to
+  that class's teachers.
+- We do not knowingly permit a child to use Studafy without a parent's
+  consent where their country requires it. Where a child is too young to
+  agree for themselves, a parent should create and manage the child's
+  account (below).
 - **A parent may create and manage an account for their child** who has no
   email or phone. The parent accepts these terms for the child and is
   responsible for how the account is used. The child's work in class is still
@@ -513,8 +596,9 @@ Studafy is designed for school use and most of its students are children.
 - **A parent cannot attach themselves to a child without the child's
   approval**, except to a child account that parent created. The request goes
   to the student, who accepts or declines it.
-- **The AI study tools are only for students in a class**, and need their
-  own consent: a parent gives it for a child account they manage (§6).
+- **The AI study tools are for student accounts, in a class or not**, and
+  need their own consent: a parent gives it for a child account they manage
+  (§6).
 - We do not profile children for advertising, and we show no advertising.
 - Where a school is the controller, questions about a child's records should
   go to the school first.
@@ -533,6 +617,19 @@ their age; only managed child accounts get a parent's
 (questions-for-counsel 1.3). Confirm, or give the age below which a parent
 must consent and whether a linked parent should see or withdraw it. -->
 
+<!-- TODO(legal): DL-072 (21 October 2026). Version 1.6 said children used
+Studafy through a school ("We do not knowingly permit a child to create an
+account outside a school context where their country requires parental
+consent for it"). Students can now sign up and use Studafy, the AI study
+tools included, without joining a class, so a child may use it with no
+school involved at all. With no age gate and no date of birth, the two
+TODOs above are now more pressing. Counsel to advise: the age of digital
+consent that applies to a student with no school (Ireland: 16; and in
+Jordan), when
+a parent's consent is needed for the account and for the AI consent, whether
+an age gate or age band is needed (DPIA M8), and whether the replacement
+wording above is acceptable (questions-for-counsel 9.1). -->
+
 ---
 
 ## 6. The AI study tools
@@ -541,8 +638,9 @@ must consent and whether a linked parent should see or withdraw it. -->
 tools are switched on. All of them are optional, and a student who does not
 use them has nothing sent to the AI provider.
 
-**Who can use them.** Only a student who belongs to a class. Parents,
-teachers and accounts that are not in a class cannot use them.
+**Who can use them.** Every student account, whether or not it belongs to
+a class, including a child account a parent manages. Parent and teacher
+accounts cannot use them.
 
 **A separate consent.** Before a student first uses any of these tools, the
 app shows a short notice about them and asks the student to agree. This is
@@ -557,14 +655,16 @@ asked again.
 
 | Tool | Who can use it | What is sent to the AI provider |
 |---|---|---|
-| **Study helper** (ask a question) | Every student in a class, within their plan's allowance | The question typed, and the most recent turns of the same chat so a follow-up makes sense. Where the student chooses to, the text of the lessons and files they pick from their class, or of their own notes. |
-| **A photo in the study helper** | Studafy Plus and Max | The photo the student attaches, with their question |
+| **AI Tutor** (ask a question) | Every student, within their plan's allowance | The question typed, and the most recent turns of the same chat so a follow-up makes sense. Where the student chooses to, the text of the lessons and files they pick from their class, or of their own notes. |
+| **Photos in the AI Tutor** (up to 3 a question) | Studafy Plus and Max | The photos or screenshots the student adds, with their question |
 | **Whiteboard to notes** | Studafy Plus and Max | The photo of the board the student takes |
+| **Notes from a photo or screenshot**, in the personal notebook | Studafy Plus and Max | The photo or screenshot the student adds |
 | **Lesson summaries and study notebooks** | Studafy Plus and Max | The text of the lessons and files the student picks |
-| **Quizzes and flashcards** | Studafy Max | The text of the lessons and files the student picks |
+| **Quizzes and flashcards** | Studafy Max | The text of the lessons and files the student picks, or of their own notes |
 
 With every request we also send the class's grade level (for example
-"grade 7") and the app's language, so that the answer suits the student.
+"grade 7"), where the student is in a class, and the app's language, so
+that the answer suits the student.
 
 **Reading a teacher's file.** So that these tools can use a lesson's files,
 we extract their text. Where a file is scanned or made of pictures, images of
@@ -580,10 +680,19 @@ as we can, not perfectly: a nickname, a misspelling or a name Studafy does
 not hold can still get through, so do not type other people's personal
 details.
 
-**Photos are sent as they are.** A photo attached to a question, a photo of
-the board and the images of a scanned teacher's file go to the AI provider
-unchanged, so any name or face in them is sent too. Do not photograph names
-or faces.
+**Photos are sent as they are.** A photo or screenshot added to a question
+or turned into notes, a photo of the board and the images of a scanned
+teacher's file go to the AI provider with what they show unchanged, so any
+name or face in them is sent too. Do not photograph names or faces.
+
+**Photos that are not stored.** When a student turns a photo or screenshot
+into a personal note, or a student who belongs to no class adds one to an
+AI Tutor question, we check it on our servers and redraw it as a new
+picture, at most 1,600 pixels on its longest side, which leaves out hidden
+details such as where it was taken. Only that copy is sent to the AI
+provider, once. Then it is discarded: it is never saved as a file, and we
+keep no copy. A photo a student in a class adds to an AI Tutor question,
+and a photo of the board, are uploaded and kept as described below.
 
 **What Studafy does not send:** the student's email, account identifier,
 school or class name, their marks, their attendance, their messages, or
@@ -594,9 +703,12 @@ request.
 produced. Notes and study sets made from a teacher's lesson are shared by the
 students of that class, because they come from the teacher's lesson alone.
 Notes and notebooks a student made belong to that student and are deleted
-when they delete them or their account. **A photo sent with a study helper
-question is kept on our servers for 30 days after it was uploaded, then
-deleted.** **Study helper chats are kept only on the student's device**, and
+when they delete them or their account; notes in the personal notebook are
+seen by nobody else. **Quizzes and flashcards a Studafy Max student makes
+from their own notes are not stored on our servers**: the app holds them
+while the student practises. **A photo a student in a class sends to the
+AI Tutor is kept on our servers for 30 days after it was uploaded, then
+deleted.** The photos described above as not stored are not kept at all. **AI Tutor chats are kept only on the student's device**, and
 are deleted from it when the student signs out; we do not store them. An
 answer is kept on our servers for about a day so that a request that is
 sent twice gets the same answer.
@@ -631,6 +743,13 @@ that the agreement is not yet in place; never claim it is signed until it
 is. Counsel to review this section, the 30 days for helper photos (DL-060),
 and the AI notice (aiConsentNoticeBody, version 2026-10-15). -->
 
+<!-- TODO(legal): DL-072, ADR-0045. The AI notice is now version 2026-10-22:
+it names the AI Tutor and says a photo from a student in no class is read
+once and not kept, so every student is asked again. Counsel to review this
+section's new text on who can use the tools (every student account, in a
+class or not), photos that are not stored, and practice sets that are not
+stored, together with the notice in English and Arabic. -->
+
 ---
 
 ## 7. Who we share data with
@@ -643,7 +762,8 @@ Your work, marks and attendance are visible to your class's teachers, and to
 a parent linked to you once a mark is published. Draft marks are visible to
 the class's teachers only. There is no school administrator in this version
 of the app. Other students cannot see your marks, your submitted work or your
-private messages.
+private messages. Your personal notebook is visible to you only: not to a
+teacher, and not to a parent.
 
 ### 7.2 Our processors
 
@@ -739,9 +859,9 @@ with the real mechanism once the DPA is accepted. -->
   or "Deleted student", and clear the gender;
 - end every membership, guardian link and conversation the account was in;
 - delete its devices and push registrations, notification settings and
-  notifications, blocks, data exports, notebooks and study
-  notebooks, AI usage records, and personal photos (photos for the notebook
-  or the study helper);
+  notifications, blocks, data exports, notebooks (personal notes included)
+  and study notebooks, AI usage records, and personal photos (photos for
+  the notebook or the AI Tutor);
 - remove its email address from invitations;
 - delete, in the same way, every child account the person manages: nobody
   else can sign in to a child account, so it cannot outlive its parent. The
@@ -804,9 +924,12 @@ we may be required to preserve it until that concludes.
 | Rate-limit and cache records | Minutes to hours |
 | Data exports | 7 days after they are ready |
 | Backups | Encrypted, taken daily, kept for 30 days, then deleted |
-| Study helper chats | On the student's device only, until they sign out; not kept by us |
-| Photos sent with a study helper question | 30 days after upload, then deleted |
+| AI Tutor chats | On the student's device only, until they sign out; not kept by us |
+| Photos sent to the AI Tutor by a student in a class | 30 days after upload, then deleted |
+| Photos and screenshots turned into personal notes, and those a student who belongs to no class adds to an AI Tutor question | Not stored: sent once to the AI provider, then discarded |
+| A student's personal notes | Until the student deletes them or their account |
 | Notes, quizzes, flashcards and study notebooks made by the AI tools | Until the student deletes them or their account, or while the lesson they came from exists |
+| Quizzes and flashcards made from a student's own notes | Not stored by us; the app holds them while the student practises |
 | Billing records | 6 years after the end of the tax year they relate to |
 | Files | While attached to something, subject to school policy; in any case deleted 12 months after the class is closed |
 | Inactive accounts | Deleted after 2 years without use. At least 30 days before, we warn the account holder by email, whatever their email settings, and also in the app if they belong to a school. The 30 days count from when the warning reached them. If the warning cannot reach them, we do not delete the account |
@@ -860,7 +983,8 @@ hello@studafy.com.
 **What the export contains.** The export is one file in JSON, a
 machine-readable format, with your own data, including your profile,
 classes and family links, your work and the answers you gave, your marks
-and their history, your attendance and its history, your notebooks, the
+and their history, your attendance and its history, your notebooks
+(including your personal notes), the
 messages you sent and received, the reports you made, your consents, your
 purchases and your AI usage. **It lists your files — each one's name, type, size and date
 — rather than including them.** You can open your files in the app, or write
@@ -876,7 +1000,8 @@ child's account.
 - wellbeing notes, which are the school's safeguarding records: write to
   hello@studafy.com and we will pass your request to the school;
 - messages in conversations you have left;
-- study helper chats, which are kept only on your device.
+- AI Tutor chats, which are kept only on your device;
+- quizzes and flashcards made from your own notes, which we do not store.
 
 <!-- TODO(legal): is each omission above acceptable under the right of
 access (questions-for-counsel 4.1, 4.2; DL-060)? -->
@@ -928,8 +1053,9 @@ is no written incident response procedure yet. Write one. -->
 The mobile app does not use advertising cookies or trackers. It stores on
 your device: your session, your language choice, a cache of the content you
 have opened and of files you have downloaded so the app works when your
-connection is poor, your study helper chats (with a small copy of any photo
-you sent in them), and your profile photo if you add one. **A profile photo
+connection is poor, your AI Tutor chats (with a small copy of any photo you
+sent in them), quizzes and flashcards made from your own notes while you
+practise them, and your profile photo if you add one. **A profile photo
 is never uploaded to our servers**: it stays on the device where you chose
 it, nobody else sees it, and it is deleted when that account signs out. An
 answer you are writing is not saved until you hand it in. Each account's
@@ -992,5 +1118,6 @@ WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
 
 Version 1.5 was published on 17 October 2026 without that review, by the
 owner's decision (DL-068). Items 1 to 8 still stand. Version 1.6 (21 October
-2026, DL-071) was published the same way.
+2026, DL-071) was published the same way, and so was version 1.7 (21
+October 2026, DL-072).
 -->

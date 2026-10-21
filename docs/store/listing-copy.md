@@ -7,7 +7,7 @@ Connect (B12).
 The copy has to agree with:
 - the Google Play Data safety answers (`google-play-data-safety.md`);
 - the App Store privacy labels (`app-store-privacy-labels.md`);
-- the privacy policy (`docs/legal/privacy-policy.md`, version 1.5).
+- the privacy policy (`docs/legal/privacy-policy.md`, version 1.7).
 
 When one of them changes, re-read this file.
 
@@ -44,7 +44,7 @@ record; change any of them by editing this list and the app together.
    Max. The two app strings that said "العائلة+" now say "Family+".
 7. **Screenshots: none that show AI or messages yet.** Google Play (8): 1,
    5, 4, 11, 9, 10, 12, 14. App Store (10): the same, then 13 and 2.
-   `student-1-today` shows the Helper tab and `student-2-notebook`'s screen
+   `student-1-today` shows the Helper tab (now the AI Tutor, DL-072) and `student-2-notebook`'s screen
    links to AI notes, so they stay out until retaken with AI on. Messaging
    launches (DL-063), so 6 and 15 (messages) can be added once they are
    taken: start the API and seed with `--messaging on` (see
@@ -117,8 +117,8 @@ FOR TEACHERS
 • Post announcements to a class, and message students and parents
 
 FOR STUDENTS
-• Join a class with the code from your teacher
-• Read lessons by date and keep your own notebook for each class
+• Join a class with the code from your teacher, or start on your own and join one later
+• Read lessons by date, and keep your own notes for each class or just for yourself
 • Hand in homework as typed answers, photos or documents
 • Take online exams on your phone
 • See your published marks, your teacher's feedback and your attendance
@@ -154,10 +154,10 @@ students" section:
 <!-- field: play.en.ai max=4000 adds-to=play.en.full -->
 ```text
 STUDY HELP
-• Ask the study helper about your lessons and your own notes
-• Studafy Plus: turn a lesson or a photo of the whiteboard into study notes, and keep study notebooks with highlights and bookmarks
-• Studafy Max: quizzes and flashcards made from your lessons
-The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, paid from the Google Play account on the phone. A parent can approve a child's purchases with Google Family Link.
+• Ask the AI Tutor about your lessons and your own notes, in a class or on your own
+• Studafy Plus: add photos to your questions, turn a lesson, a photo of the whiteboard or a screenshot into study notes, and keep study notebooks with highlights and bookmarks
+• Studafy Max: quizzes and flashcards made from your lessons and your own notes
+The AI Tutor uses an AI service, and its answers can be wrong, so check them. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, paid from the Google Play account on the phone. A parent can approve a child's purchases with Google Family Link.
 ```
 
 ### What's new (first internal-testing release)
@@ -206,8 +206,8 @@ The first test release of Studafy. Please try signing in, joining a class with a
 • انشر الإعلانات لصفك، وراسل الطلاب وأولياء الأمور
 
 للطلاب
-• انضم إلى صفك بالرمز الذي يعطيك إياه معلمك
-• اقرأ الدروس حسب التاريخ، واكتب في دفترك الخاص لكل صف
+• انضم إلى صفك بالرمز الذي يعطيك إياه معلمك، أو ابدأ بمفردك وانضم إلى صف لاحقًا
+• اقرأ الدروس حسب التاريخ، واكتب ملاحظاتك في دفترك لكل صف أو لنفسك فقط
 • سلّم واجباتك كتابةً أو بصورة أو بملف
 • أدِّ الاختبارات الإلكترونية من هاتفك
 • اطّلع على درجاتك المنشورة وملاحظات معلمك وسجل حضورك
@@ -243,10 +243,10 @@ The first test release of Studafy. Please try signing in, joining a class with a
 <!-- field: play.ar.ai max=4000 adds-to=play.ar.full -->
 ```text
 المساعدة في المذاكرة
-• اسأل مساعد الدراسة عن دروسك وملاحظاتك
-• Studafy Plus: حوّل الدرس أو صورة السبورة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
-• Studafy Max: اختبارات وبطاقات مراجعة من دروسك
-يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان من حساب Google Play على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر Google Family Link.
+• اسأل المعلّم الذكي عن دروسك وملاحظاتك، في صف أو بمفردك
+• Studafy Plus: أضف صورًا إلى أسئلتك، وحوّل الدرس أو صورة السبورة أو لقطة شاشة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
+• Studafy Max: اختبارات وبطاقات مراجعة من دروسك وملاحظاتك
+يعتمد المعلّم الذكي على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان من حساب Google Play على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر Google Family Link.
 ```
 
 ### What's new (first internal-testing release)
@@ -301,8 +301,8 @@ FOR TEACHERS
 • Post announcements to a class, and message students and parents
 
 FOR STUDENTS
-• Join a class with the code from your teacher
-• Read lessons by date and keep your own notebook for each class
+• Join a class with the code from your teacher, or start on your own and join one later
+• Read lessons by date, and keep your own notes for each class or just for yourself
 • Hand in homework as typed answers, photos or documents
 • Take online exams on your phone
 • See your published marks, your teacher's feedback and your attendance
@@ -339,10 +339,10 @@ students" section:
 <!-- field: ios.en.ai max=4000 adds-to=ios.en.description -->
 ```text
 STUDY HELP
-• Ask the study helper about your lessons and your own notes
-• Studafy Plus: turn a lesson or a photo of the whiteboard into study notes, and keep study notebooks with highlights and bookmarks
-• Studafy Max: quizzes and flashcards made from your lessons
-The study helper uses an AI service, and its answers can be wrong, so check with your teacher. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, billed and renewed like Family+ and paid from the Apple Account on the phone. A parent can approve a child's purchases with Ask to Buy.
+• Ask the AI Tutor about your lessons and your own notes, in a class or on your own
+• Studafy Plus: add photos to your questions, turn a lesson, a photo of the whiteboard or a screenshot into study notes, and keep study notebooks with highlights and bookmarks
+• Studafy Max: quizzes and flashcards made from your lessons and your own notes
+The AI Tutor uses an AI service, and its answers can be wrong, so check them. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, billed and renewed like Family+ and paid from the Apple Account on the phone. A parent can approve a child's purchases with Ask to Buy.
 ```
 
 ### Keywords
@@ -410,8 +410,8 @@ This follows the app's first welcome slide, "يومك الدراسي كله في
 • انشر الإعلانات لصفك، وراسل الطلاب وأولياء الأمور
 
 للطلاب
-• انضم إلى صفك بالرمز الذي يعطيك إياه معلمك
-• اقرأ الدروس حسب التاريخ، واكتب في دفترك الخاص لكل صف
+• انضم إلى صفك بالرمز الذي يعطيك إياه معلمك، أو ابدأ بمفردك وانضم إلى صف لاحقًا
+• اقرأ الدروس حسب التاريخ، واكتب ملاحظاتك في دفترك لكل صف أو لنفسك فقط
 • سلّم واجباتك كتابةً أو بصورة أو بملف
 • أدِّ الاختبارات الإلكترونية من هاتفك
 • اطّلع على درجاتك المنشورة وملاحظات معلمك وسجل حضورك
@@ -448,10 +448,10 @@ This follows the app's first welcome slide, "يومك الدراسي كله في
 <!-- field: ios.ar.ai max=4000 adds-to=ios.ar.description -->
 ```text
 المساعدة في المذاكرة
-• اسأل مساعد الدراسة عن دروسك وملاحظاتك
-• Studafy Plus: حوّل الدرس أو صورة السبورة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
-• Studafy Max: اختبارات وبطاقات مراجعة من دروسك
-يعتمد مساعد الدراسة على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها مع معلمك. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان ويتجددان مثل Family+ من حساب Apple على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر ميزة «اطلب للشراء» (Ask to Buy).
+• اسأل المعلّم الذكي عن دروسك وملاحظاتك، في صف أو بمفردك
+• Studafy Plus: أضف صورًا إلى أسئلتك، وحوّل الدرس أو صورة السبورة أو لقطة شاشة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
+• Studafy Max: اختبارات وبطاقات مراجعة من دروسك وملاحظاتك
+يعتمد المعلّم الذكي على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان ويتجددان مثل Family+ من حساب Apple على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر ميزة «اطلب للشراء» (Ask to Buy).
 ```
 
 ### Keywords
@@ -484,26 +484,26 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 |---|---:|---:|---|---|
 | `play.en.title` | 27 | 30 | characters | yes |
 | `play.en.short` | 79 | 80 | characters | yes |
-| `play.en.full` | 2637 | 4000 | characters | yes |
-| `play.en.full + play.en.ai` | 3218 | 4000 | characters | yes |
+| `play.en.full` | 2697 | 4000 | characters | yes |
+| `play.en.full + play.en.ai` | 3439 | 4000 | characters | yes |
 | `play.en.whatsnew` | 257 | 500 | characters | yes |
 | `play.ar.title` | 26 | 30 | characters | yes |
 | `play.ar.short` | 77 | 80 | characters | yes |
-| `play.ar.full` | 2302 | 4000 | characters | yes |
-| `play.ar.full + play.ar.ai` | 2820 | 4000 | characters | yes |
+| `play.ar.full` | 2354 | 4000 | characters | yes |
+| `play.ar.full + play.ar.ai` | 3021 | 4000 | characters | yes |
 | `play.ar.whatsnew` | 227 | 500 | characters | yes |
 | `ios.en.name` | 27 | 30 | characters | yes |
 | `ios.en.subtitle` | 22 | 30 | characters | yes |
 | `ios.en.promo` | 138 | 170 | characters | yes |
-| `ios.en.description` | 2787 | 4000 | characters | yes |
-| `ios.en.description + ios.en.ai` | 3401 | 4000 | characters | yes |
+| `ios.en.description` | 2847 | 4000 | characters | yes |
+| `ios.en.description + ios.en.ai` | 3611 | 4000 | characters | yes |
 | `ios.en.keywords` | 94 | 100 | UTF-8 bytes | yes |
 | `ios.en.whatsnew` | 257 | 4000 | characters | yes |
 | `ios.ar.name` | 26 | 30 | characters | yes |
 | `ios.ar.subtitle` | 25 | 30 | characters | yes |
 | `ios.ar.promo` | 138 | 170 | characters | yes |
-| `ios.ar.description` | 2433 | 4000 | characters | yes |
-| `ios.ar.description + ios.ar.ai` | 2980 | 4000 | characters | yes |
+| `ios.ar.description` | 2485 | 4000 | characters | yes |
+| `ios.ar.description + ios.ar.ai` | 3180 | 4000 | characters | yes |
 | `ios.ar.keywords` | 100 | 100 | UTF-8 bytes | yes |
 | `ios.ar.whatsnew` | 227 | 4000 | characters | yes |
 <!-- counts:end -->
@@ -537,7 +537,7 @@ are now on at launch (DL-062, DL-063; decisions 1, 2 and 7 above). Since
 PR #86 the app shows nothing the server has switched off, so these pictures
 show what a user sees with both off:
 
-- **No AI:** no Helper tab, no plans, no study tools, no AI buttons in the
+- **No AI:** no Helper tab (now called the AI Tutor), no plans, no study tools, no AI buttons in the
   notebook. The API ran with no AI key, so nothing was sent to a provider.
 - **No messaging:** the API ran with `MESSAGING_ENABLED` off (DL-061) and
   the school's own switch off. The student's and the teacher's last tab is
@@ -661,6 +661,7 @@ administrator may change through the API, and this release has none.
 | Announcements | `create_announcement_page.dart`, `announcements_page.dart` |
 | [messages] Messages, report and block | `lib/features/messaging/`; `safety_sheets.dart`, `blocked_people_page.dart`; DL-049 (no student-to-student messages); on at launch (DL-063) |
 | Lessons by date, own notebook per class (free) | `lib/app/student_lessons_page.dart`; `notebook_view.dart`; `policyTermsBody` |
+| Start on your own, join a class later; personal notes for yourself (typed notes free) | DL-072, ADR-0045; `supabase/migrations/202610210030_independent_students.sql`; `apps/api/src/study/personalNotebookRoutes.ts`; `policyTermsBody` ("Joining a class is optional") |
 | Hand-ins as text, photos or documents | `submit_work_page.dart`; `attachment_policy.dart` |
 | Students see published marks, feedback, attendance | `lib/app/student_shell.dart` (Work tab feeds) |
 | Parent links with Studafy ID; child approves | `family_home_page.dart`, `student_family_page.dart`; `onboardingParentBody` |
@@ -671,4 +672,4 @@ administrator may change through the API, and this release has none.
 | Sign-in providers | `lib/features/session/presentation/login_page.dart`; Apple only on iOS with `APPLE_SIGN_IN_ENABLED` |
 | English and Arabic, right to left, change any time | `lib/core/language_picker.dart`, `locale_controller.dart` |
 | Free: lessons, homework, marks, attendance | `policyTermsBody` ("Lessons, notebooks, work, marks and attendance are free") |
-| AI block: helper, Plus (whiteboard and lesson notes, study notebooks), Max (quizzes, flashcards), bought by the student and paid from the store account (DL-071), what is never sent | `lib/features/study/presentation/study_plan_copy.dart`, `study_plans_page.dart`; `study_notebook_shelf.dart`; policy §2 and §6 |
+| AI block: AI Tutor for every student account, in a class or not (DL-072), Plus (photos in questions, whiteboard, screenshot and lesson notes, study notebooks), Max (quizzes, flashcards, also from the student's own notes), bought by the student and paid from the store account (DL-071), what is never sent | `lib/features/study/presentation/study_plan_copy.dart`, `study_plans_page.dart`; `study_notebook_shelf.dart`; policy §2 and §6 |
