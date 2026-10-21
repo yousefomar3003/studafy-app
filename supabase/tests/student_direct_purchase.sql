@@ -10,7 +10,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(24);
+select plan(27);
 update private.notebook_runtime set environment='synthetic';
 select set_config('studafy.school_id', :'school_id', true);
 
@@ -120,6 +120,22 @@ select is(private.billing_list_purchase_approvals(), '[]'::jsonb,
   'no approvals are listed to a guardian');
 select is(private.billing_decide_purchase_approval(gen_random_uuid(), true)->>'outcome', 'not_found',
   'a decision is refused');
+
+-- 6. A student in no class (ADR-0045) buys too: no student record, no
+-- school, only a student account (202610210050).
+\set loner 'f00d0000-0000-4000-8000-0000000000a9'
+insert into auth.users (id, email, aud, role, email_confirmed_at, created_at,
+  updated_at, instance_id, raw_app_meta_data, raw_user_meta_data)
+values (:'loner', 'sdp.loner@synthetic.studafy.test', 'authenticated',
+  'authenticated', now(), now(), now(),
+  '00000000-0000-0000-0000-000000000000', '{}', '{"full_name":"Lone Buyer"}');
+select is(private.billing_resolve_beneficiary(:'loner', 'studafy_plus', null, false)->>'outcome',
+  'not_eligible', 'an account not yet known as a student cannot buy a student plan');
+update public.profiles set account_kind = 'student' where id = :'loner';
+select is(private.billing_resolve_beneficiary(:'loner', 'studafy_max', null, false)->>'beneficiaryId',
+  :'loner', 'a student account in no class buys Studafy Max for itself');
+select is(private.billing_resolve_beneficiary(:'teacher_user', 'studafy_plus', null, false)->>'outcome',
+  'not_eligible', 'a teacher still cannot buy a student plan');
 
 select * from finish();
 rollback;
