@@ -27,11 +27,17 @@ import {
   learnerLine,
   type LearnerProfile,
   lessonPrompt,
+  markingInstructions,
+  markingPrompt,
+  type MarkingReference,
+  type MarkingStrictness,
+  type MarkingVerdict,
   materialBlock,
   type MaterialPassage,
   NOTEBOOK_PROMPT,
   type NotebookContent,
   parseFlashcards,
+  parseMarkingReply,
   parseNotebook,
   parseQuiz,
   type QuizQuestion,
@@ -39,6 +45,7 @@ import {
   STUDY_PROMPTS,
   type StudySetKind,
   type StudyUsage,
+  TRANSCRIBE_WORK_PROMPT,
   type UnreadableSource,
 } from "@studafy/domain";
 
@@ -57,6 +64,10 @@ export interface StudyAssistantOptions {
    * more room than an answer. */
   studySetOutputTokens?: number;
   notebookTimeoutMs?: number;
+  /** A suggested mark: its output ceiling and time, run in the background
+   * (ADR-0046). */
+  markingOutputTokens?: number;
+  markingTimeoutMs?: number;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 }
@@ -158,7 +169,7 @@ export interface StudyAssistant {
   transcribe(
     image: Uint8Array,
     mediaType: string,
-    kind: "page" | "image",
+    kind: "page" | "image" | "work",
   ): Promise<StudyAssistantReply>;
   /** Notes from a whiteboard photo. Throws "unreadable" for a blank one. */
   whiteboardNotes(
@@ -181,6 +192,16 @@ export interface StudyAssistant {
     passages: MaterialPassage[],
     extras?: { unreadable?: UnreadableSource[]; learner?: LearnerProfile },
   ): Promise<{ content: NotebookContent; usage?: StudyUsage }>;
+  /**
+   * A suggested mark for one answer against the teacher's reference
+   * (ADR-0046). The verdict is checked before it is returned: a reply that
+   * is not a usable mark comes back as "needs review" with no score.
+   */
+  markAnswer(
+    reference: MarkingReference,
+    answer: string,
+    strictness: MarkingStrictness,
+  ): Promise<{ verdict: MarkingVerdict; usage?: StudyUsage }>;
 }
 
 type Message = { role: "system" | "user" | "assistant"; content: Content };
@@ -214,6 +235,8 @@ export function createStudyAssistant(
     notebookOutputTokens = 3_500,
     studySetOutputTokens = 1_400,
     notebookTimeoutMs = 120_000,
+    markingOutputTokens = 900,
+    markingTimeoutMs = 60_000,
     fetchImpl = fetch,
   } = options;
 
@@ -372,13 +395,15 @@ export function createStudyAssistant(
       const { text, usage } = await complete(
         kind === "page"
           ? STUDY_PROMPTS.transcribePage
+          : kind === "work"
+          ? TRANSCRIBE_WORK_PROMPT
           : STUDY_PROMPTS.describeImage,
         [
           {
             type: "text",
-            text: kind === "page"
-              ? "Transcribe this page."
-              : "Read this image.",
+            text: kind === "image"
+              ? "Read this image."
+              : "Transcribe this page.",
           },
           {
             type: "image_url",
@@ -445,6 +470,21 @@ export function createStudyAssistant(
       return { content, ...(usage ? { usage } : {}) };
     },
 
+    async markAnswer(reference, answer, strictness) {
+      // Low temperature: the same answer against the same reference should
+      // get the same suggestion when the teacher asks again.
+      const { text, usage } = await complete(
+        markingInstructions(strictness),
+        markingPrompt(reference, answer),
+        markingOutputTokens,
+        [],
+        0,
+        markingTimeoutMs,
+      );
+      const verdict = parseMarkingReply(text, reference.maximumScore);
+      return { verdict, ...(usage ? { usage } : {}) };
+    },
+
     async studySet(kind, title, lessonText): Promise<StudySetResult> {
       const { text, usage } = await complete(
         STUDY_PROMPTS[kind],
@@ -496,7 +536,7 @@ export function withNameRedaction<A extends Partial<StudyAssistant>>(
     name: redact(s.name),
   });
   const wrapped: Partial<StudyAssistant> = { ...assistant };
-  const { ask, studySet, lessonNotes, notebook } = assistant;
+  const { ask, studySet, lessonNotes, notebook, markAnswer } = assistant;
   if (ask) {
     wrapped.ask = (question, history = [], extras = {}) =>
       ask.call(
@@ -530,6 +570,33 @@ export function withNameRedaction<A extends Partial<StudyAssistant>>(
           ? { unreadable: extras.unreadable.map(source) }
           : {}),
       });
+  }
+  if (markAnswer) {
+    // The teacher's reference can name a student as an example, and the
+    // work almost always carries its writer's name.
+    const optional = (value: string | null) =>
+      value === null ? null : redact(value);
+    wrapped.markAnswer = (reference, answer, strictness) =>
+      markAnswer.call(
+        assistant,
+        {
+          ...reference,
+          prompt: optional(reference.prompt),
+          preferredAnswer: optional(reference.preferredAnswer),
+          markingGuidance: optional(reference.markingGuidance),
+          acceptedMethods: optional(reference.acceptedMethods),
+          partialCredit: optional(reference.partialCredit),
+          keyPoints: reference.keyPoints.map((point) => ({
+            ...point,
+            text: redact(point.text),
+          })),
+          ...(reference.acceptedAnswers
+            ? { acceptedAnswers: reference.acceptedAnswers.map(redact) }
+            : {}),
+        },
+        redact(answer),
+        strictness,
+      );
   }
   // transcribe and whiteboardNotes carry only an image: passed through.
   return wrapped as A;

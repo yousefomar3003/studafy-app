@@ -90,6 +90,10 @@ const assistant: StudyAssistant = {
     calls.push("notebook");
     throw new Error("not used here");
   },
+  markAnswer: async () => {
+    calls.push("markAnswer");
+    throw new Error("not used here");
+  },
   studySet: async (kind) => {
     calls.push(kind);
     const usage = { inputTokens: 280, outputTokens: 600, model: "stub" };

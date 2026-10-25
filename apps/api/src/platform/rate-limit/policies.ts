@@ -406,12 +406,17 @@ export const SINGLE_READ_PATHS: ReadonlySet<string> = new Set([
   "/v1/family/insights",
   // The account's AI consent (ADR-0043).
   "/v1/me/study-tools-consent",
+  // Studafy AI Marking (ADR-0046): the teacher's plan, a student's choice.
+  "/v1/me/marking-plan",
+  "/v1/me/marking-preference",
 ]);
 
 /** Single reads whose path ends in a literal after a parameter. */
 const SINGLE_READ_PATTERNS: readonly RegExp[] = [
   // One managed child's AI consent (ADR-0043).
   /^\/v1\/me\/managed-children\/[^/]+\/study-tools-consent$/,
+  // One assessment's marking references and strictness (ADR-0046).
+  /^\/v1\/assessments\/[^/]+\/marking-references$/,
 ];
 
 /** Matches both the canonical {param} segment and a real uuid value. */

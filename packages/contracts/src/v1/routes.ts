@@ -43,6 +43,7 @@ import * as StudyNotebooks from "./studyNotebooks";
 import * as MaterialSelection from "./materialSelection";
 import * as ManagedAccounts from "./managedAccounts";
 import * as AiConsent from "./aiConsent";
+import * as Marking from "./marking";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -2257,6 +2258,83 @@ export const V1_ROUTE_CATALOGUE = [
     StudyPlans.V1NotesPractice,
     "V1NotesPractice",
     201,
+  ),
+  // AI-suggested marks against the teacher's reference (2026-10-21,
+  // ADR-0046, DL-073). Appended. The class's teachers only, re-checked in
+  // SQL per call; a suggestion never becomes a mark until the teacher saves
+  // one through the marking routes above. The student's opt-out is self.
+  catalogueGet(
+    "getMyMarkingPlan",
+    "/v1/me/marking-plan",
+    "marking_plan.read",
+    Marking.V1MarkingPlan,
+    "V1MarkingPlan",
+  ),
+  catalogueGet(
+    "getMarkingReferences",
+    "/v1/assessments/{assessmentId}/marking-references",
+    "marking_reference.read",
+    Marking.V1MarkingReferences,
+    "V1MarkingReferences",
+    params("assessmentId"),
+  ),
+  cataloguePost(
+    "updateMarkingReferences",
+    "/v1/assessments/{assessmentId}/marking-references",
+    "marking_reference.write",
+    Marking.V1UpdateMarkingReferencesRequest,
+    "V1UpdateMarkingReferencesRequest",
+    Marking.V1UpdateMarkingReferencesResponse,
+    "V1UpdateMarkingReferencesResponse",
+    200,
+    params("assessmentId"),
+  ),
+  catalogueGet(
+    "listMarkingSuggestions",
+    "/v1/assessments/{assessmentId}/marking-suggestions",
+    "marking_suggestion.read",
+    Marking.V1MarkingSuggestionList,
+    "V1MarkingSuggestionList",
+    params("assessmentId"),
+  ),
+  cataloguePost(
+    "requestMarkingSuggestions",
+    "/v1/assessments/{assessmentId}/marking-suggestions",
+    "marking_suggestion.request",
+    Marking.V1RequestMarkingSuggestionsRequest,
+    "V1RequestMarkingSuggestionsRequest",
+    Marking.V1MarkingRun,
+    "V1MarkingRun",
+    201,
+    params("assessmentId"),
+  ),
+  cataloguePost(
+    "dismissMarkingSuggestion",
+    "/v1/marking-suggestions/{suggestionId}/dismiss",
+    "marking_suggestion.dismiss",
+    Marking.V1DismissMarkingSuggestionRequest,
+    "V1DismissMarkingSuggestionRequest",
+    Marking.V1DismissMarkingSuggestionResponse,
+    "V1DismissMarkingSuggestionResponse",
+    200,
+    params("suggestionId"),
+  ),
+  catalogueGet(
+    "getMyMarkingPreference",
+    "/v1/me/marking-preference",
+    "marking_preference.read",
+    Marking.V1MarkingPreference,
+    "V1MarkingPreference",
+  ),
+  cataloguePost(
+    "updateMyMarkingPreference",
+    "/v1/me/marking-preference",
+    "marking_preference.write",
+    Marking.V1UpdateMarkingPreferenceRequest,
+    "V1UpdateMarkingPreferenceRequest",
+    Marking.V1MarkingPreference,
+    "V1MarkingPreference",
+    200,
   ),
 ] as const satisfies readonly V1RouteContract[];
 

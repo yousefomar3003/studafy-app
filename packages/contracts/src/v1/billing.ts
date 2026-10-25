@@ -13,7 +13,9 @@ const Timestamp = z.string().datetime({ offset: true });
  * children) and `family_plus_large` (up to 8) are the parent's Family+
  * plans, held by the parent who pays. `parent_insights` is the per-child
  * Family+ they replace: no longer sold, kept so a subscription bought
- * before still renews.
+ * before still renews. `studafy_ai_marking` is a teacher's own plan for
+ * AI-suggested marks (ADR-0046); it is not `teacher_ai_grading`, which stays
+ * retired.
  */
 export const V1BillingFeatureKey = z.enum([
   "parent_insights",
@@ -24,6 +26,7 @@ export const V1BillingFeatureKey = z.enum([
   "studafy_max",
   "family_plus",
   "family_plus_large",
+  "studafy_ai_marking",
 ]);
 export type V1BillingFeatureKey = z.infer<typeof V1BillingFeatureKey>;
 

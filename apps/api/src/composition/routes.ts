@@ -32,6 +32,10 @@ import {
   PostgresPersonalNotebookRepository,
 } from "../study/personalNotebookRoutes";
 import { PostgresAiAccessRepository } from "../study/aiAccess";
+import {
+  createMarkingRoutes,
+  PostgresMarkingRepository,
+} from "../marking/routes";
 import { createAiConsentRoutes } from "../study/aiConsentRoutes";
 import { createMessagingSwitch } from "../communications/messagingSwitch";
 import { PostgresMaterialRepository } from "../study/material";
@@ -728,6 +732,19 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // AI-suggested marks against the teacher's reference (ADR-0046), appended
+  // last in the catalogue. Suggestions are made by the worker; here they are
+  // asked for, read and dismissed.
+  const marking = sql && idempotencyDependencies
+    ? createMarkingRoutes(
+      {
+        marking: new PostgresMarkingRepository(sql),
+        available: env.MARKING_SUGGESTIONS_ENABLED && aiAssistant !== null,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   // DL-061: with messaging off server-wide, in front of every module.
   const messagingSwitch = env.MESSAGING_ENABLED
     ? undefined
@@ -771,6 +788,7 @@ export function buildRoutes(platform: Platform) {
     selectionTools,
     aiConsent,
     personalNotebook,
+    marking,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

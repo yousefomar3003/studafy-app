@@ -40,6 +40,9 @@ primary_region = "fra"
   AI_MODEL = "Qwen/Qwen3.5-9B"
   # Synthetic lesson material only on the test copy (ADR-0034).
   AI_LESSON_TOOLS_ENABLED = "true"
+  # Studafy AI Marking on the test copy (ADR-0046); production waits for
+  # the store product.
+  MARKING_SUGGESTIONS_ENABLED = "true"
   # Messaging on, as in production (DL-063).
   MESSAGING_ENABLED = "true"
   # Google Play billing in test (work plan 3.9): license testers buy on the

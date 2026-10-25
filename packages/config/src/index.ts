@@ -174,6 +174,13 @@ export const apiEnvSchema = z.object({
    */
   AI_LESSON_TOOLS_ENABLED: disabledSwitchFlag,
   /**
+   * Studafy AI Marking (ADR-0046): a teacher's reference and a student's
+   * written work go to the provider for a suggested mark. Off unless set;
+   * with it on, the API accepts requests and the worker makes suggestions,
+   * each also needing the AI provider above.
+   */
+  MARKING_SUGGESTIONS_ENABLED: disabledSwitchFlag,
+  /**
    * Messaging, server-wide (DL-061, DL-063). Off unless set; production
    * turns it on (DL-063: messaging launches, with one report reviewer) and
    * keeps it as the way to turn messaging off for everyone fast. Off, every
@@ -399,6 +406,13 @@ export const workerEnvSchema = z.object({
   AI_NOTEBOOK_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(16),
   AI_NOTEBOOK_POLL_INTERVAL_MS: z.coerce.number().int().min(250).max(60_000)
     .default(2000),
+  // ADR-0046: suggested marks are made here, off their own queue, whenever
+  // the worker has a database, the provider above and this switch. How many
+  // at once, and how often it looks.
+  MARKING_SUGGESTIONS_ENABLED: disabledSwitchFlag,
+  AI_MARKING_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(4),
+  AI_MARKING_POLL_INTERVAL_MS: z.coerce.number().int().min(500).max(60_000)
+    .default(3000),
   // OPS-061. The outbox drain is producer+consumer over BullMQ: the
   // dispatcher claims notification_outbox rows and enqueues deterministic
   // jobs; the processor expands audiences into deliveries. Off by default;
@@ -1064,6 +1078,7 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
       base_url: env.AI_BASE_URL ?? null,
       model: env.AI_MODEL,
       lesson_tools_enabled: env.AI_LESSON_TOOLS_ENABLED,
+      marking_suggestions_enabled: env.MARKING_SUGGESTIONS_ENABLED,
       context_window_tokens: env.AI_CONTEXT_WINDOW_TOKENS,
       chat_memory_tokens_free: env.AI_CHAT_MEMORY_TOKENS_FREE,
       chat_memory_tokens_paid: env.AI_CHAT_MEMORY_TOKENS_PAID,
@@ -1173,6 +1188,14 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       ),
       concurrency: env.AI_NOTEBOOK_CONCURRENCY,
       pollIntervalMs: env.AI_NOTEBOOK_POLL_INTERVAL_MS,
+    },
+    markingSuggestions: {
+      writing: Boolean(
+        env.DATABASE_URL && env.AI_API_KEY && env.AI_BASE_URL &&
+          env.MARKING_SUGGESTIONS_ENABLED,
+      ),
+      concurrency: env.AI_MARKING_CONCURRENCY,
+      pollIntervalMs: env.AI_MARKING_POLL_INTERVAL_MS,
     },
     file051: {
       scanEnabled: env.FILE051_SCAN_ENABLED,

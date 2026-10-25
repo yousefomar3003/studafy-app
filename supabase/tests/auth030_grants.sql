@@ -103,6 +103,10 @@ select is(
     -- and editing one's own notes; the owner is checked on every call.
     'api058_command',
     'api058_query',
+    -- ADR-0046: marking references and AI-suggested marks; the class's
+    -- teacher is re-checked on every call, and suggestions are drafts.
+    'api059_command',
+    'api059_query',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

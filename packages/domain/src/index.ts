@@ -166,6 +166,21 @@ export {
   wantsWholeMaterial,
 } from "./study/grounding";
 export {
+  hasReference,
+  MARKING_REFERENCE_MAX_CHARS,
+  MARKING_WORK_MAX_CHARS,
+  markingInstructions,
+  type MarkingKeyPoint,
+  markingPrompt,
+  type MarkingReference,
+  type MarkingReviewReason,
+  type MarkingStrictness,
+  type MarkingVerdict,
+  parseMarkingReply,
+  referenceText,
+  TRANSCRIBE_WORK_PROMPT,
+} from "./study/marking";
+export {
   NOTEBOOK_PART_KEYS,
   NOTEBOOK_PROMPT,
   type NotebookCitation,

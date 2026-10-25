@@ -685,6 +685,73 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Make a quiz or flashcards from one's own notes, on Studafy Max: student accounts only.",
   },
+  // ADR-0046: AI-suggested marks against the teacher's reference. Self-
+  // scoped like the personal notebook: each SQL call re-checks that the
+  // caller teaches the assessment's class (private.coursework_teacher), and
+  // the opt-out is a student account's own choice.
+  "marking_plan.read": {
+    resource: "marking_plan",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read one's own Studafy AI Marking plan and this month's allowance.",
+  },
+  "marking_reference.read": {
+    resource: "assessment",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read an assessment's marking references and strictness as a teacher of its class, checked in SQL.",
+  },
+  "marking_reference.write": {
+    resource: "assessment",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Write an assessment's marking references and strictness as a teacher of its class, checked in SQL.",
+  },
+  "marking_suggestion.read": {
+    resource: "assessment",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read suggested marks for an assessment as a teacher of its class: drafts, never marks.",
+  },
+  "marking_suggestion.request": {
+    resource: "assessment",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Ask for suggested marks for an assessment as a teacher of its class on Studafy AI Marking.",
+  },
+  "marking_suggestion.dismiss": {
+    resource: "marking_suggestion",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Dismiss a suggested mark as a teacher of the assessment's class.",
+  },
+  "marking_preference.read": {
+    resource: "marking_preference",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description: "Read one's own choice about AI-suggested marks.",
+  },
+  "marking_preference.write": {
+    resource: "marking_preference",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Opt one's own work out of AI-suggested marks, or back in: student accounts only.",
+  },
   "notebook.read": resource(
     "classroom",
     "Read one's own notebook for a class one is enrolled in.",
