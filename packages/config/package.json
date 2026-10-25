@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@studafy/contracts": "workspace:*",
-    "zod": "4.6.1"
+    "zod": "4.6.6"
   }
 }
