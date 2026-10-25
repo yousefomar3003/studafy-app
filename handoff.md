@@ -1,10 +1,136 @@
 # Handoff: Studafy
 
-Updated: 2026-10-21. **Everything through #132 is merged and on the test
-copy.** The independent-student work (below) is on branch
-`feat/independent-student` and in review; not deployed yet.
+Updated: 2026-10-25. **Everything through #132 is merged and on the test
+copy.** #133 (independent students), #135 and #136 are merged into `main`.
+**#136 is merged but not yet deployed** (migration
+`202610210050_independent_student_purchase.sql`, a student in no class
+buying Plus or Max). The AI Marking work below is on branch
+`feat/ai-marking-suggestions`, not yet in a PR.
 
-## Start here (2026-10-21): students without a class (DL-072, ADR-0045)
+## Start here (2026-10-25): AI-suggested marks, Studafy AI Marking (DL-073, ADR-0046)
+
+### What was built (branch `feat/ai-marking-suggestions`)
+- **Owner's decisions (2026-10-21, DL-073):** AI suggests, the teacher
+  decides; written answers in online assessments and graded hand-ins
+  (text, PDF/DOCX/PPTX, photos and scans); the teacher's decision with a
+  student opt-out (no student consent; counsel to confirm for minors); a
+  paid teacher plan "Studafy AI Marking"; same provider and model as the AI
+  Tutor; the Together AI DPA "in a later version" (accepted risk, like
+  DL-062). Supersedes ADR-0026 **for marking only**.
+- **Server:** migration `202610210060_marking_suggestions.sql`:
+  - private tables `marking_references`, `marking_settings`,
+    `marking_runs`, `marking_suggestions`, `marking_opt_outs`,
+    `marking_usage`, `marking_plan_grants` (every grant revoked);
+  - `api059_query` / `api059_command` (re-check the class's teacher in
+    SQL; audit `marking_<operation>` with counts only, never student work);
+  - worker doors `marking_jobs_claim`, `marking_job_usage`,
+    `marking_job_finish`, `marking_jobs_backlog`, `marking_purge_expired`;
+  - the plan: `studafy_ai_marking` / `studafy_ai_marking_monthly`, listed
+    in `synthetic` and `development` only; 4,000,000 tokens, US$2 and 20
+    pages per hand-in per teacher per month;
+  - retention (suggestions 180 days, ledger 13 months), the export's
+    `aiMarking` section, deletion (`dl073_marking_forget_deleted_profile`).
+- **Suggestions never write a mark.** The teacher saves marks through
+  `markAssessmentAttempt` / `saveGradeDrafts` as before.
+  `allowsAiGrading => false`, the sealed `ai_grading_drafts` /
+  `question_suggestions` and the retired `teacher_ai_grading` are
+  unchanged.
+- **Routes** (`apps/api/src/marking/routes.ts`, contracts
+  `packages/contracts/src/v1/marking.ts`): `GET /v1/me/marking-plan`;
+  `GET/POST /v1/assessments/{id}/marking-references`;
+  `GET/POST /v1/assessments/{id}/marking-suggestions`;
+  `POST /v1/marking-suggestions/{id}/dismiss`;
+  `GET/POST /v1/me/marking-preference` (the student's opt-out).
+- **Prompts and reply checks:** `packages/domain/src/study/marking.ts`
+  (reference and work as delimited data; strictness rules; score within
+  the maximum; "needs review" when unreadable; conflicts reported).
+- **Switch:** `MARKING_SUGGESTIONS_ENABLED` (API and worker), with
+  `AI_MARKING_CONCURRENCY` and `AI_MARKING_POLL_INTERVAL_MS` on the worker.
+  On in `fly.test.api.toml` / `fly.test.worker.toml`; unset (off) in
+  production.
+- **Tests:** `supabase/tests/marking_suggestions.sql` (42, new CI step),
+  `apps/api/test/marking/routes.test.ts`, the catalogue test.
+- **Docs:** ADR-0046; DL-073; privacy policy **1.8** and terms **1.6**
+  (EN/AR, effective 2026-10-25); delete-account pages; DPIA §12.2;
+  questions-for-counsel §10; store data safety, privacy labels and an
+  optional teacher block in the listing (decision 9);
+  `docs/deployment/study-plans.md` (token allowances corrected, the teacher
+  plan and its comp grant), `subscriptions.md`, `production-features.md`.
+
+- **Worker:** `apps/worker/src/processors/markingSuggestions.ts` claims
+  each suggestion with a lease, reads typed work and clean hand-in files
+  (bytes checked against the scan's digest; handwriting transcribed exactly,
+  never corrected), replaces roster names, meters every model call in the
+  teacher's ledger, finishes the suggestion as a draft, and purges expired
+  rows hourly. `StudyAssistant.markAnswer` (same Together AI client and
+  model, temperature 0) and a `"work"` transcription mode.
+- **App:** marking references page and editor (per question kind,
+  strictness, key-point mark sum checked, "Suggest again" for stale
+  suggestions); side-by-side review in `MarkAttemptPage` with "Use
+  suggestion" (pre-fills, never saves) and Dismiss; "Suggest marks" on the
+  marking list and the hand-in grade sheet; the teacher plan page, Account →
+  Subscription with Restore for teachers; the student's opt-out switch in
+  Account. Tests: `test/features/academic/marking_suggestions_test.dart`,
+  `test/app/marking_account_test.dart`.
+- **Consent:** in-app terms, privacy summary and AI notice (EN/AR) updated;
+  `termsPolicyVersion` and `aiConsentVersion` are **`2026-10-25`**
+  (migration `202610250010_terms_and_privacy_2026_10_25.sql`), so everyone
+  is asked again at sign-in and before the next AI use.
+
+### Roll-out (Claude, after the owner's "go" at each step)
+1. Open the PR, wait for CI to **start and pass**, merge when the owner
+   says.
+2. Test copy, in order:
+   1. Back up: `gh workflow run backup.yml`, and wait for the restore check.
+   2. `bunx supabase db push --db-url <hosted, port 5432> --dry-run`, then
+      for real. New: `202610210050` (#136, if not yet applied),
+      `202610210060`, and `202610250010` (consent versions).
+   3. Straight after: `fly deploy --config fly.test.api.toml`, then
+      `fly.test.worker.toml`. Both already set
+      `MARKING_SUGGESTIONS_ENABLED = "true"`; the worker's start-up line
+      should show `markingSuggestions.writing: true`.
+3. **Comp grant for the review teacher** (`teacher@review.studafy.com`), a
+   year, with the SQL in `docs/deployment/study-plans.md` ("Studafy AI
+   Marking without a purchase"). It is a write to the hosted database:
+   the owner runs it, or approves it explicitly.
+4. **Device test** as the review teacher:
+   - write references for a short-answer and an essay question (key points
+     with marks, strictness) and for a hand-in;
+   - ask for suggestions; check they appear beside the answers, that **no
+     mark changes until the teacher saves one**, and that saving uses the
+     normal draft → publish;
+   - a typed hand-in, a PDF, and a photo of handwriting (≤20 pages);
+   - as the student, turn suggested marks off in Account; ask again: that
+     student's work is `skipped` (opted out) and marked by hand;
+   - change a reference: suggestions show as stale, nothing is re-marked;
+     ask again with "all": the old ones are replaced;
+   - a student and a parent cannot see suggestions or references;
+   - the audit rows and worker logs carry counts, never student text.
+5. Owner: `bun run legal:deploy` once the consent-version migration is
+   applied and the app build carrying it is out.
+
+### Owner: to do
+1. **Create `studafy_ai_marking_monthly`** in Play Console first (an
+   auto-renewing monthly base plan), then in App Store Connect (its own
+   subscription group), and **set the price** (not decided yet;
+   `docs/deployment/subscriptions.md`).
+2. `bun run legal:deploy` (step 5 above).
+3. Later, for production: a migration listing `studafy_ai_marking` in
+   `production`, then `MARKING_SUGGESTIONS_ENABLED = "true"` in
+   `fly.api.toml` and `fly.worker.toml`
+   (`docs/deployment/production-features.md`). Then paste the listing's
+   teacher blocks (`docs/store/listing-copy.md`, decision 9).
+4. Accept Together AI's DPA (accepted risk until then; DPIA measure M21),
+   and send counsel questions §10.
+
+### Known limits
+- Photos and scans of handwritten pages go to the provider as they are;
+  names on the page cannot be replaced.
+- Policy 1.8 and terms 1.6 are published without legal review (counsel
+  §10; DPIA §12.2, Q-L).
+- The provider's own retention of requests is unknown until the DPA.
+
+## Earlier (2026-10-21): students without a class (DL-072, ADR-0045)
 
 ### What was built (branch `feat/independent-student`)
 - **Owner's decisions, when asked:** AI for students with no class (policy

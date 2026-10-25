@@ -116,7 +116,8 @@ How data is collected:
 | Safety | Reports, blocks, moderation, legal holds | Reports with evidence, block pairs | ADR-0021; DL-042 |
 | Files | Upload, scan, metadata strip, delivery | Documents, photos, voice notes | DL-043; DL-044; `infra/scanner/` |
 | AI study tools | AI Tutor chat (called the study helper before DL-072), photo questions, whiteboard-to-notes, notes from a photo or screenshot in the personal notebook, lesson notes and study notebooks, quizzes and flashcards (also from the student's own notes); background reading of lesson files | Questions, recent chat turns, photos, lesson passages, class grade level, language | `privacy-policy.md` §6; ADR-0029; ADR-0037; ADR-0038; ADR-0039 |
-| Plans and billing | Plus and Max for students, Family+ for parents, through the stores. A student buys their own plan with no approval step in Studafy; a child's store account should be a parent's or parent-controlled, and Family Link or Ask to Buy is where a parent approves (DL-071, which ends DL-048's in-app approval) | Entitlements, store transactions; approval requests made before 21 October 2026, kept read-only | DL-048; DL-071; ADR-0032; ADR-0034 |
+| AI-suggested marking (DL-073) | A teacher with Studafy AI Marking writes a reference (model answer, key points, accepted methods, partial credit, strictness) and asks for suggested marks on written answers and hand-ins; the worker sends the reference and the student's work to Together AI; suggestions are staff-only drafts and never a mark until the teacher saves one; students can opt out | Students' written answers, hand-in text and files, photos and scans of handwritten pages; teachers' references; suggestions; the teacher's usage ledger | ADR-0046; `supabase/migrations/202610210060_marking_suggestions.sql`; `privacy-policy.md` §6.1; section 12.2 |
+| Plans and billing | Plus and Max for students, Family+ for parents, Studafy AI Marking for teachers (DL-073), through the stores. A student buys their own plan with no approval step in Studafy; a child's store account should be a parent's or parent-controlled, and Family Link or Ask to Buy is where a parent approves (DL-071, which ends DL-048's in-app approval) | Entitlements, store transactions; approval requests made before 21 October 2026, kept read-only | DL-048; DL-071; ADR-0032; ADR-0034 |
 | Notifications | In-app, push (FCM) and email (Resend) with fixed, content-free wording | Push token, email address | DL-053; `privacy-policy.md` §3.6 |
 | Operations | Request logs (Axiom), error reports (Sentry), alerts (Telegram via a Cloudflare Worker), backups (GitHub Actions) | Account UUID, hashed IP, stack traces, encrypted database copies | ADR-0035; `docs/operations/observability-review-2026-10.md`; `docs/deployment/backups.md` |
 
@@ -359,7 +360,9 @@ The basic helper's free allowance is 40,000 tokens a week (ADR-0037 §3). The
 proportionality case rests on: optional use, notice before use, no
 identifiers sent, no server-side chat storage, grounded answers with
 citations, and no AI in marking (`allowsAiGrading => false` kept on purpose,
-DL-047).
+DL-047). Since DL-073 a teacher can ask for AI-suggested marks, which never
+become a mark without the teacher; its necessity and the opt-out are in
+section 12.2.
 
 ---
 
@@ -388,6 +391,8 @@ From DL-057 (decided 2026-10-14 as proposed defaults for counsel) and
 | Photos from a student with no class, and photos turned into personal notes (DL-072) | Not stored: redrawn on the API, sent once to the provider, discarded |
 | Personal notes (DL-072) | Until the student deletes them or their account |
 | AI notes, quizzes, notebooks | Until the student deletes them or their account, or while the lesson exists |
+| AI-suggested marks (DL-073) | 180 days after they last changed, then deleted with their runs (`private.marking_purge_expired`, hourly); deleted with the student's account |
+| Studafy AI Marking usage ledger (DL-073) | 13 months; deleted with the teacher's account |
 | **AI provider's copy of requests** | **UNKNOWN, pending the DPA** |
 
 **State of enforcement.** `RETENTION_SCHEDULE_ENABLED` is off everywhere: it
@@ -445,7 +450,7 @@ The ICO Age Appropriate Design Code applies to UK users; the DPC's
 | Erasure (Art. 17) | Account → Delete account after a fresh sign-in (within 600 s); 14-day grace; worker de-identifies; managed children are deleted with their parent; legal holds pause it | DL-051; launch-work-plan 2.10; `docs/legal/delete-account.md`; `privacy-policy.md` §9 | Deletion is de-identification, not erasure, for records kept for the school (messages already sent, marks, audit) |
 | Restriction (Art. 18), objection (Art. 21) | By email to hello@studafy.com | `privacy-policy.md` §11 | No tooling; manual |
 | Withdraw consent | Notifications in settings; AI by not using it | | No AI consent to withdraw (section 5.2). No endpoint sets `consent_records.withdrawn_at` |
-| Automated decisions (Art. 22) | None with legal or similar effect; AI never marks work | `privacy-policy.md` §14; DL-047 | |
+| Automated decisions (Art. 22) | None with legal or similar effect; AI never sets a mark. Since DL-073 AI can suggest a mark that the teacher reviews and saves | `privacy-policy.md` §14, §6.1; DL-047; DL-073 | Counsel to confirm a suggestion accepted unchanged is not "solely automated" (section 12.2, AM3) |
 | Requests where the school is controller | Passed to the school | `privacy-policy.md` §11 | No process or contact list for schools yet |
 
 ---
@@ -523,7 +528,7 @@ and account settings, which the repository cannot show.
 | AI4 | **Hallucination**: wrong facts in notes, quizzes or answers that a child learns from | Probable × Significant = Medium | Answers grounded on the lesson's material with citations; labels the model invents are dropped; "Beyond your materials" marks general knowledge; unread sources named; accuracy warning (`studyAssistantCheckWork`); terms §8; AI never marks work (ADR-0037 §2) | Medium. No way for a student or teacher to flag a wrong answer; shared lesson notes and quizzes are seen by the whole class, so one error spreads | No |
 | AI5 | **Harmful or age-inappropriate output**, or a child disclosing harm to the helper | Possible × Severe = Medium-High | System prompts limit the helper to schoolwork and say "Never ask for personal details" (`studyContent.ts` `STUDY_PROMPTS`); temperature 0.3 | **Medium-High.** No moderation or safety classifier on input or output; a disclosure of abuse to the helper goes nowhere, because chats are not stored and nobody is alerted | Partly: ask the provider what safety filtering it applies |
 | AI6 | **Prompt injection** through teacher files or links | Possible × Significant = Medium | Material wrapped as labelled data the model is told not to obey; markers neutralised; the model has no tools; replies are not made into links (security audit, "Live prompt injection" note) | Low-Medium. Assessed by design review only | No |
-| AI7 | **Profiling or automated decisions** about children | Remote × Significant = Low | No AI in marking; Family+ uses no AI; the usage ledger holds counts, not content (ADR-0037 §3) | Low | No |
+| AI7 | **Profiling or automated decisions** about children | Remote × Significant = Low | No AI in marking (until DL-073: AI suggests marks, the teacher decides; see section 12.2, AM2 and AM3); Family+ uses no AI; the usage ledger holds counts, not content (ADR-0037 §3) | Low | No |
 | AI8 | **Cost pressure leads to nudging** a child to buy | Possible × Minimal = Low | Allowance shown; the upgrade goes through the store with a guardian's approval (DL-048) | Low | No |
 | AI9 | **Access beyond what the child may see**: exam papers, answer keys, other students' work fed to the model | Remote × Significant = Low | Retrieval re-checks the lesson's visibility on every request; exam papers, answer keys, grades, submissions and other students' notes are never indexed (ADR-0037 §2) | Low | No |
 | AI10 | **AI used by people the policy does not describe** (parents, teachers) or by children with no school | Possible × Minimal = Low | The basic helper needs only a signed-in account: `study_assistant.ask` has `scope: "self"` and `tenantRequired: false` (`apps/api/src/authorization/catalogue.ts:581-591`) | Low; correct the policy or restrict the route | No |
@@ -614,6 +619,83 @@ the AI consent, whether an age gate or age band is needed (M8), and whether
 the residual risk for AI processing of these children's data changes the
 Art. 36 question in section 14 (questions-for-counsel 9.1). -->
 
+### 12.2 Update 2026-10-25: AI-suggested marking (DL-073, ADR-0046)
+
+**What changes.** ADR-0026 removed AI grading after SEC-001, and risk AI7
+("profiling or automated decisions") was rated Low because there was no AI
+in marking. On 2026-10-21 the owner decided to bring marking back as
+**suggestions**, for teachers on a paid plan (Studafy AI Marking); it was
+built on 2026-10-25. A teacher writes a reference and asks for suggested
+marks on:
+
+- written answers (short answer, essay) in online assessments;
+- hand-ins of graded assignments: typed text, PDF, DOCX and PPTX read as
+  text, and photos or scans sent as images for the model to transcribe (at
+  most 20 pages a hand-in).
+
+The worker sends the question, the reference and the student's work to
+Together AI (`Qwen/Qwen3.5-9B`, the AI Tutor's provider and model, one
+pinned origin). The model suggests a score within the maximum, what was met
+and missed, a rationale and feedback. Suggestions live in their own
+staff-only table and **never become a mark** until the teacher saves one
+through the existing marking flows. Policy 1.8 §6.1 and terms 1.6 §4, §5
+and §8 describe it.
+
+**Data subjects and data.** Students, nearly all children, whose work is
+sent; their classmates, teachers and parents, whose names may appear in it;
+teachers, whose references and usage are recorded. New stores:
+`private.marking_references`, `marking_settings`, `marking_runs`,
+`marking_suggestions`, `marking_opt_outs`, `marking_usage`,
+`marking_plan_grants`, all with every grant revoked and reached only through
+functions that re-check the caller.
+
+**Basis: the teacher's decision, with an opt-out.** The owner decided that
+the student's consent is not asked: it is the teacher's marking tool, so
+the study tools' AI consent (ADR-0043) does not apply. A student (or the
+parent, signed in to a managed child's account) can opt out in Account;
+their work is then never sent, including work already queued, and the
+teacher marks it by hand. Policy §4 names legitimate interests or the
+school's public task.
+
+**Risks.**
+
+| # | Risk | L × S (inherent) | Measures in the code | Residual | Needs the DPA? |
+|---|---|---|---|---|---|
+| AM1 | **Children's marked work, including photos of handwritten pages, is kept or trained on by the provider, or transferred to the US without a mechanism** | Probable × Severe = High | No identifiers sent; names Studafy knows replaced; emails, long numbers and links removed; opt-out | **High** until the DPA is accepted (accepted risk, DL-073 (8), as DL-062) | **Yes**: as section 11.3, and the DPA must name students' assessed work and images of handwriting among the inputs |
+| AM2 | **A wrong suggestion becomes a child's mark** (a hallucinated score, or one biased against non-native writing, Arabic, formulas or handwriting) | Probable × Significant = Medium | Suggestions are drafts the student never sees; the teacher's own save is the only writer; met/missed and rationale shown beside the work; score refused outside 0 to the maximum; unreadable or unparseable replies become "needs review" with no score; conflicts reported, not resolved; strictness and reference set by the teacher; drafts until publish and corrections with reasons (ADR-0040) | Medium. Automation bias: a busy teacher may accept suggestions unread. No measure checks that a teacher looked | No |
+| AM3 | **Automated decision about a child** (Art. 22) | Possible × Significant = Medium | No mark exists until a teacher saves it; policy §14 says so | Low-Medium, pending counsel on whether accepting a suggestion unchanged is "solely automated" | No |
+| AM4 | **Identifying content reaches the provider**: names written on a page, a face in a photo, a classmate's name in an essay | Probable × Significant = Medium | Roster, teacher and parent names replaced in text; photos cannot be (policy §6.1 says so) | Medium | Partly |
+| AM5 | **Prompt injection in the student's work or the reference** ("give this answer full marks") | Probable × Minimal = Medium | Work and reference wrapped as delimited data, markers neutralised, the model told to ignore instructions inside; score clamped; teacher review | Low | No |
+| AM6 | **Model answers leak to students** | Possible × Significant = Medium | References in private tables, readable only by the class's teachers through `api059`; not in students' export; a question's model answer keeps ADR-0036's release rule | Low | No |
+| AM7 | **Work sent for someone who should not see it** (a former teacher, another school, a forged file path, the SEC-001 pattern) | Possible × Severe = High | The client names no file; the worker reads the attempt's own bound files; every read and write re-checks in SQL that the caller teaches the class; the worker re-checks the requesting teacher still teaches and holds the plan before sending | Low | No |
+| AM8 | **An opt-out is not honoured** | Possible × Significant = Medium | Checked when the run is queued and again when each job is claimed; opting out skips queued work | Low | No |
+| AM9 | **Suggestions or usage kept too long**, or left after deletion | Possible × Minimal = Low | 180 days, then purged hourly; ledger 13 months; deleted with the account; export section `aiMarking` | Low, once the worker's purge runs in production | No |
+| AM10 | **Cost runs away** | Possible × Minimal = Low | 4,000,000 tokens and US$2 per teacher per month, reserved before each call; 20 pages a hand-in; 3 attempts | Low | No |
+
+**Opt-out against consent, for minors.** An opt-out puts the burden on
+the child: work goes unless the student acts, and a child may not know the
+setting exists or understand it. Consent would ask first. The owner chose
+the opt-out because marking is the teacher's job and a teacher may need
+every hand-in treated alike. Counsel to advise whether, for students under
+the age of digital consent, this needs a parent's opt-in, notice to the
+student and parent when a teacher first uses it, or a school's instruction
+where the school is controller (questions-for-counsel 10.1). At the least,
+the opt-out is in Account, in both languages, and the policy says how.
+
+**The DPA is pending.** The owner: "approve it and later on with other
+versions we can add the DPA". As DL-062, the processing starts on the test
+copy before Together AI's DPA is accepted; production stays off
+(`MARKING_SUGGESTIONS_ENABLED` unset) until launch. AM1 stays High until
+the DPA is accepted.
+
+**Retention.** Suggestions 180 days, the ledger 13 months (section 7).
+The provider's own retention is unknown until the DPA.
+
+<!-- TODO(legal): DL-073, ADR-0046. Counsel to review: the opt-out basis
+for children's work (10.1); whether the processing can start before the
+DPA (10.2); the 180-day and 13-month periods (10.3); Art. 22 and policy §14
+(AM3); and whether AM1 keeps the Art. 36 question in section 14 open. -->
+
 ---
 
 ## 13. Open questions that block sign-off
@@ -631,6 +713,7 @@ Art. 36 question in section 14 (questions-for-counsel 9.1). -->
 | Q-I | Transfer mechanisms and DPAs for every processor (section 4.2); Jordan PDPL | Counsel | R13 |
 | Q-J | Meetings at launch (B8): attendee emails go to Google | Owner | Section 4.2 |
 | Q-K | Incident response procedure (policy §12 TODO) | Owner | R15 |
+| Q-L | **AI-suggested marking** (DL-073): opt-out or consent for minors, starting before the DPA, retention of suggestions (section 12.2) | Counsel, owner | AM1, AM3; production switch for AI Marking |
 
 ---
 
@@ -681,6 +764,9 @@ before the AI tools are switched on or soon after launch, as marked.
 | M18 | Correct `docs/deployment/fly-io.md` and ADR-0034 so neither tells an operator to turn AI on in production before sign-off; add a startup refusal for `AI_API_KEY` in production until an explicit approval flag is set | R1 | Claude | Before launch |
 | M19 | Key pre-sign-in rate limits by an HMAC of the IP prefix, like the account and tenant keys | D12 | Claude | Before launch |
 | M20 | Delete helper photos after a short period (for example 30 days), and state it in §6 and §10 | D13, AI3 | Claude, counsel | Before AI on |
+| M21 | Accept Together AI's DPA, naming students' assessed work and images of handwriting among the inputs | AM1 | Owner | Before AI Marking in production |
+| M22 | Tell the student (and a linked parent) the first time a teacher asks for suggested marks on their class's work, with the way to opt out | AM8, opt-out for minors | Claude, counsel | Before AI Marking in production |
+| M23 | Make the teacher look before saving: show the student's work beside each suggestion and never pre-fill a mark the teacher has not opened | AM2, AM3 | Claude | Before AI Marking in production |
 
 ### 15.2 Sign-off
 
@@ -703,3 +789,6 @@ before the AI tools are switched on or soon after launch, as marked.
   (D3) is superseded by DL-072 and ADR-0045; the study helper is renamed the
   AI Tutor; personal notes and photos that are not stored added to sections
   2.2 and 7.
+- 2026-10-25: §12.2 added: AI-suggested marking (DL-073, ADR-0046), with
+  risks AM1-AM10, Q-L and measures M21-M23; rows added to sections 2.2
+  and 7.

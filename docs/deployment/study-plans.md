@@ -7,9 +7,17 @@ Replaces the retired Student Notebook subscription. Design and rationale are in
 
 | Plan | Price (US storefront) | Store product ID | Adds |
 | ---- | --------------------- | ---------------- | ---- |
-| Studafy Free | free | - | Lessons, the notebook for each class, 10 questions a day |
-| Studafy Plus | US$3.99 / month | `studafy_plus_monthly` | Whiteboard photo → notebook notes; 40 questions a day |
-| Studafy Max | US$5.99 / month | `studafy_max_monthly` | Everything in Plus, quizzes and flashcards; 60 questions a day |
+| Studafy Free | free | - | Lessons, the notebook for each class, typed personal notes, the AI Tutor; **40,000 tokens a week** (renews Monday 00:00 UTC) |
+| Studafy Plus | US$3.99 / month | `studafy_plus_monthly` | Photos in AI Tutor questions, whiteboard and screenshot → notes, lesson summaries and study notebooks; **3,000,000 tokens a month**, cost cap US$0.80 |
+| Studafy Max | US$5.99 / month | `studafy_max_monthly` | Everything in Plus, quizzes and flashcards (also from the student's own notes); **6,000,000 tokens a month**, cost cap US$1.60 |
+
+The allowances replaced the old "10 / 40 / 60 questions a day" on 2026-10-06
+(ADR-0037). The app shows usage as a bar, never as token counts (ADR-0039).
+Monthly allowances renew on the 1st, 00:00 UTC.
+
+Teachers have their own plan, **Studafy AI Marking** (`studafy_ai_marking`,
+product `studafy_ai_marking_monthly`), for AI-suggested marks: see
+[Studafy AI Marking](#studafy-ai-marking-teachers) below.
 
 Store-local prices and currencies come from the store at checkout. The app
 never hard-codes a price.
@@ -24,8 +32,9 @@ require in-app digital content to be sold in-app.
   entitlements in the `notebook_runtime` environment and comp grants in
   `private.study_plan_grants`.
 - **What each plan permits:** `private.ai_plan_limits(plan)`. This holds the
-  monthly AI cap (Plus $0.80, Max $1.60), the questions a day, and the
-  features. Changing any of these is a migration.
+  token allowance (weekly on Free, monthly on Plus and Max), the monthly cost
+  cap (Plus $0.80, Max $1.60) and the features. Changing any of these is a
+  migration.
 - **Spending:** `private.api047_ai_usage` reserves the worst-case cost before
   every AI call, then settles it to the real cost or releases it.
 - **Student purchases (DL-071, 2026-10-20):** a student buys Plus or Max
@@ -137,6 +146,42 @@ plans for a year, with the reason `App store reviewer account`: Studafy Max to
 the teacher, the student and the parent, and Family+ for up to 8 children to
 the parent. A re-run adds nothing while a grant has more than 30 days left.
 See [reviewer-access.md](../store/reviewer-access.md).
+
+## Studafy AI Marking (teachers)
+
+A teacher's own monthly plan for AI-suggested marks (DL-073,
+[ADR-0046](../adr/ADR-0046-ai-suggested-marking.md)). The AI suggests a mark
+for written answers and hand-ins against the teacher's reference; the
+teacher decides, and a suggestion never becomes a mark until the teacher
+saves one. It is not the retired `teacher_ai_grading`.
+
+| | |
+| --- | --- |
+| Feature key | `studafy_ai_marking` |
+| Store product ID | `studafy_ai_marking_monthly`, auto-renewing, 1 month |
+| Price | Set by the owner in the stores (not decided yet) |
+| Who may buy | A teacher with an active teacher membership, for themselves |
+| Allowance | Per teacher per calendar month (UTC): 4,000,000 tokens, a US$2 cost cap, 20 pages per hand-in (`private.marking_limits()`) |
+| Listed | `synthetic` and `development` only. `staging` and `production` have unlisted rows until the owner creates the product in both stores and a migration lists it |
+| Who has it | `private.marking_plan_active(user)`: a verified store entitlement in the runtime's environment, or a live comp grant |
+| Server switch | `MARKING_SUGGESTIONS_ENABLED` on the API and the worker, plus the AI provider. On in the test copy, off in production until launch |
+
+### Studafy AI Marking without a purchase
+
+Comp grants live in `private.marking_plan_grants`, written only by an
+operator with direct database access (app review, pilots). Give the review
+teacher the plan for a year:
+
+```sql
+insert into private.marking_plan_grants (user_id, reason, ends_at)
+select p.id, 'App store reviewer account', now() + interval '1 year'
+from auth.users u join public.profiles p on p.id = u.id
+where u.email = 'teacher@review.studafy.com';
+```
+
+`reason` is 3 to 200 characters and `ends_at` must be after `starts_at`
+(default now). End one early with `update private.marking_plan_grants set
+ends_at = now() where ...`. A grant is deleted with the teacher's account.
 
 ## The AI switch
 

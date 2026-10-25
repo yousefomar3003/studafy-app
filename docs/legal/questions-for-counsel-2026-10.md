@@ -20,6 +20,12 @@ Students no longer need a class: a student can sign up and use Studafy, the
 AI study tools included, without any school. This changes item 1.5 and adds
 section 9.
 
+**Update 2026-10-25 (DL-073):** the owner decided that teachers may ask AI
+for suggested marks (Studafy AI Marking, a paid teacher plan), and privacy
+policy 1.8 and terms of use 1.6 describe it, again without waiting. The AI
+only suggests; the teacher decides; students can opt out. This adds
+section 10 and widens item 1.1.
+
 Each item says what the app does now, with the file or decision behind it,
 and the question. Items marked **policy** need a change to privacy policy
 1.4 (`docs/legal/privacy-policy.md`, live in English and Arabic); please
@@ -33,6 +39,8 @@ give the wording you approve, and it ships with a new consent version.
 have no DPA, no retention or no-training terms, and no transfer basis
 (DPIA draft §11, `docs/legal/dpia-draft.md`). What must the DPA say, and is
 an EU-hosted provider required?
+Since DL-073 Together AI also receives students' assessed work, including
+photos of handwritten pages, when a teacher asks for suggested marks (10.2).
 
 1.2 **Consent for AI (policy §4).** Students now give a separate, versioned
 AI consent before first use, recorded with who, when and the exact notice
@@ -186,3 +194,57 @@ points younger children to a parent-managed account. Please advise:
 - whether the replacement wording in §5 is acceptable, and whether Studafy
   is the controller for these students and for every student's personal
   notes (policy §1.1).
+
+## 10. AI-suggested marks (DL-073, ADR-0046, policy 1.8 §6.1, terms 1.6 §4, §5, §8, §9)
+
+Since 25 October 2026 a teacher with Studafy AI Marking can ask AI to
+suggest marks for written answers in online exams and for hand-ins of
+graded assignments (typed text, PDF, Word, PowerPoint, and photos or scans
+of handwritten pages). The teacher writes a reference (model answer, key
+points, accepted methods, partial-credit rules) and a strictness. The
+question, the reference and the student's work go to Together AI, with the
+names Studafy knows replaced and emails, long numbers and links removed;
+photos and scans go as they are. The model suggests a score, what was met
+and missed, and feedback. Suggestions are visible only to the class's
+teachers and never become a mark until the teacher saves one through the
+normal marking flow. The draft DPIA covers it in §12.2.
+
+10.1 **Opt-out rather than consent, for minors.** The owner decided that
+the student's consent is not asked: it is the teacher's tool for marking,
+and a student (or the parent, for a child account the parent manages) can
+opt out in Account, after which their work is never sent and is marked by
+hand. Policy §4 relies on the school's legitimate interests or public task
+where the school is controller, and otherwise on the teacher's and
+Studafy's legitimate interests. Please advise:
+- whether an opt-out is a sound basis for sending children's assessed work,
+  including photos of their handwriting, to an AI provider, or whether
+  consent (and a parent's, below the age of digital consent) is needed;
+- whether students and linked parents must be told when a teacher first
+  uses it (DPIA measure M22), beyond the policy;
+- where a school is controller, whether the school must instruct it
+  before a teacher on a personal paid plan may use it, and who is the
+  controller of that processing;
+- whether a suggested mark that the teacher reviews and saves, even
+  unchanged, can be a decision "based solely on automated processing"
+  (Art. 22; policy §14).
+
+10.2 **The DPA, and starting before it.** The owner: "approve it and later
+on with other versions we can add the DPA". The feature is on in the test
+copy and off in production until launch, but the decision accepts starting
+before Together AI's DPA is in place, as DL-062 did for the study tools.
+What must the DPA add for this use (students' assessed work and images of
+handwriting among the inputs; no training; retention), and can AI Marking
+go live in production before it is accepted?
+
+10.3 **Retention.** Suggestions are kept 180 days after they last changed,
+then deleted; they are drafts for the teacher, not school records, and are
+not in the student's export (the student's marks are). The teacher's usage
+ledger (tokens, cost, model, date) is kept 13 months for the monthly cap and
+billing questions. A student's opt-out is kept while the account exists.
+Are these periods right, and should suggestions be in the student's export
+under the right of access?
+
+10.4 **Selling to teachers.** Studafy AI Marking is a monthly store
+subscription a teacher buys for themselves (terms §9), possibly for use in
+a school's classes. Anything to add to the terms for a teacher acting for a
+school, or for VAT and invoices the stores do not provide?

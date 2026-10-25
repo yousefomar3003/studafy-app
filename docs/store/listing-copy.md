@@ -7,7 +7,7 @@ Connect (B12).
 The copy has to agree with:
 - the Google Play Data safety answers (`google-play-data-safety.md`);
 - the App Store privacy labels (`app-store-privacy-labels.md`);
-- the privacy policy (`docs/legal/privacy-policy.md`, version 1.7).
+- the privacy policy (`docs/legal/privacy-policy.md`, version 1.8).
 
 When one of them changes, re-read this file.
 
@@ -53,6 +53,14 @@ record; change any of them by editing this list and the app together.
    app at launch shows Messages; retake 1, 9, 10, 12 and 14 the same way
    before submitting.
 8. **Meetings: left out** until a teacher can create one in the app (B8).
+9. **Studafy AI Marking (DL-073): left out until it is on sale.** Paste the
+   `*.marking` blocks after "For teachers" only once
+   `studafy_ai_marking_monthly` exists in the store, a migration lists it in
+   production, `MARKING_SUGGESTIONS_ENABLED` is on in production, and the
+   build that shows it is live. With every optional block pasted the
+   descriptions still fit: the counts below check each block against its
+   field; all three together are about 3,740 (Play English) and 3,910 (App
+   Store English) characters.
 
 ## Rules this copy follows
 
@@ -160,6 +168,16 @@ STUDY HELP
 The AI Tutor uses an AI service, and its answers can be wrong, so check them. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, paid from the Google Play account on the phone. A parent can approve a child's purchases with Google Family Link.
 ```
 
+**Optional teacher block** (decision 9). Once Studafy AI Marking is on
+sale, paste it after the "For teachers" section:
+
+<!-- field: play.en.marking max=4000 adds-to=play.en.full -->
+```text
+FOR TEACHERS: STUDAFY AI MARKING
+• Studafy AI Marking (optional monthly subscription for teachers): AI suggests marks for written answers and hand-ins against your own model answer, and you decide every mark
+Students can turn it off, and names are replaced before work is sent to the AI service.
+```
+
 ### What's new (first internal-testing release)
 
 Play allows 500 characters.
@@ -247,6 +265,16 @@ The first test release of Studafy. Please try signing in, joining a class with a
 • Studafy Plus: أضف صورًا إلى أسئلتك، وحوّل الدرس أو صورة السبورة أو لقطة شاشة إلى ملاحظات للمذاكرة، واحتفظ بدفاتر مذاكرة فيها التظليل والإشارات المرجعية
 • Studafy Max: اختبارات وبطاقات مراجعة من دروسك وملاحظاتك
 يعتمد المعلّم الذكي على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان من حساب Google Play على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر Google Family Link.
+```
+
+**Optional teacher block** (decision 9). Once Studafy AI Marking is on
+sale, paste it after the "للمعلمين" section:
+
+<!-- field: play.ar.marking max=4000 adds-to=play.ar.full -->
+```text
+للمعلمين: Studafy AI Marking
+• Studafy AI Marking (اشتراك شهري اختياري للمعلمين): يقترح الذكاء الاصطناعي درجات للإجابات المكتوبة والتسليمات وفق إجابتك النموذجية، والقرار في كل درجة لك
+يستطيع الطالب إيقافها، وتُستبدل الأسماء قبل إرسال العمل إلى خدمة الذكاء الاصطناعي.
 ```
 
 ### What's new (first internal-testing release)
@@ -343,6 +371,16 @@ STUDY HELP
 • Studafy Plus: add photos to your questions, turn a lesson, a photo of the whiteboard or a screenshot into study notes, and keep study notebooks with highlights and bookmarks
 • Studafy Max: quizzes and flashcards made from your lessons and your own notes
 The AI Tutor uses an AI service, and its answers can be wrong, so check them. Email addresses and marks are never sent to it, names are replaced first, and photos are sent as they are. Studafy Plus and Max are optional monthly subscriptions that a student can buy in the app, billed and renewed like Family+ and paid from the Apple Account on the phone. A parent can approve a child's purchases with Ask to Buy.
+```
+
+**Optional teacher block** (decision 9). Once Studafy AI Marking is on
+sale, paste it after the "For teachers" section:
+
+<!-- field: ios.en.marking max=4000 adds-to=ios.en.description -->
+```text
+FOR TEACHERS: STUDAFY AI MARKING
+• Studafy AI Marking (optional monthly subscription for teachers): AI suggests marks for written answers and hand-ins against your own model answer, and you decide every mark
+Students can turn it off, and names are replaced before work is sent to the AI service.
 ```
 
 ### Keywords
@@ -454,6 +492,16 @@ This follows the app's first welcome slide, "يومك الدراسي كله في
 يعتمد المعلّم الذكي على خدمة ذكاء اصطناعي، وقد تخطئ إجاباته، فتحقّق منها. لا تُرسَل إليه عناوين البريد الإلكتروني ولا الدرجات، وتُستبدل الأسماء أولًا، أما الصور فتُرسَل كما هي. Studafy Plus وStudafy Max اشتراكان شهريان اختياريان يستطيع الطالب شراءهما من داخل التطبيق، ويُدفعان ويتجددان مثل Family+ من حساب Apple على الهاتف. ويمكن لولي الأمر الموافقة على مشتريات طفله عبر ميزة «اطلب للشراء» (Ask to Buy).
 ```
 
+**Optional teacher block** (decision 9). Once Studafy AI Marking is on
+sale, paste it after the "للمعلمين" section:
+
+<!-- field: ios.ar.marking max=4000 adds-to=ios.ar.description -->
+```text
+للمعلمين: Studafy AI Marking
+• Studafy AI Marking (اشتراك شهري اختياري للمعلمين): يقترح الذكاء الاصطناعي درجات للإجابات المكتوبة والتسليمات وفق إجابتك النموذجية، والقرار في كل درجة لك
+يستطيع الطالب إيقافها، وتُستبدل الأسماء قبل إرسال العمل إلى خدمة الذكاء الاصطناعي.
+```
+
 ### Keywords
 
 An Arabic letter is two bytes, so the Arabic list holds fewer words.
@@ -486,17 +534,20 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 | `play.en.short` | 79 | 80 | characters | yes |
 | `play.en.full` | 2697 | 4000 | characters | yes |
 | `play.en.full + play.en.ai` | 3439 | 4000 | characters | yes |
+| `play.en.full + play.en.marking` | 2994 | 4000 | characters | yes |
 | `play.en.whatsnew` | 257 | 500 | characters | yes |
 | `play.ar.title` | 26 | 30 | characters | yes |
 | `play.ar.short` | 77 | 80 | characters | yes |
 | `play.ar.full` | 2354 | 4000 | characters | yes |
 | `play.ar.full + play.ar.ai` | 3021 | 4000 | characters | yes |
+| `play.ar.full + play.ar.marking` | 2622 | 4000 | characters | yes |
 | `play.ar.whatsnew` | 227 | 500 | characters | yes |
 | `ios.en.name` | 27 | 30 | characters | yes |
 | `ios.en.subtitle` | 22 | 30 | characters | yes |
 | `ios.en.promo` | 138 | 170 | characters | yes |
 | `ios.en.description` | 2847 | 4000 | characters | yes |
 | `ios.en.description + ios.en.ai` | 3611 | 4000 | characters | yes |
+| `ios.en.description + ios.en.marking` | 3144 | 4000 | characters | yes |
 | `ios.en.keywords` | 94 | 100 | UTF-8 bytes | yes |
 | `ios.en.whatsnew` | 257 | 4000 | characters | yes |
 | `ios.ar.name` | 26 | 30 | characters | yes |
@@ -504,6 +555,7 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 | `ios.ar.promo` | 138 | 170 | characters | yes |
 | `ios.ar.description` | 2485 | 4000 | characters | yes |
 | `ios.ar.description + ios.ar.ai` | 3180 | 4000 | characters | yes |
+| `ios.ar.description + ios.ar.marking` | 2753 | 4000 | characters | yes |
 | `ios.ar.keywords` | 100 | 100 | UTF-8 bytes | yes |
 | `ios.ar.whatsnew` | 227 | 4000 | characters | yes |
 <!-- counts:end -->
@@ -672,4 +724,5 @@ administrator may change through the API, and this release has none.
 | Sign-in providers | `lib/features/session/presentation/login_page.dart`; Apple only on iOS with `APPLE_SIGN_IN_ENABLED` |
 | English and Arabic, right to left, change any time | `lib/core/language_picker.dart`, `locale_controller.dart` |
 | Free: lessons, homework, marks, attendance | `policyTermsBody` ("Lessons, notebooks, work, marks and attendance are free") |
+| Teacher block: Studafy AI Marking, a monthly teacher subscription; AI suggests marks for written answers and hand-ins against the teacher's model answer; the teacher decides; students can turn it off; names replaced | ADR-0046, DL-073; `supabase/migrations/202610210060_marking_suggestions.sql` (`studafy_ai_marking`, `private.marking_opt_outs`, `private.marking_known_names`); `apps/api/src/marking/routes.ts`; policy §6.1 |
 | AI block: AI Tutor for every student account, in a class or not (DL-072), Plus (photos in questions, whiteboard, screenshot and lesson notes, study notebooks), Max (quizzes, flashcards, also from the student's own notes), bought by the student and paid from the store account (DL-071), what is never sent | `lib/features/study/presentation/study_plan_copy.dart`, `study_plans_page.dart`; `study_notebook_shelf.dart`; policy §2 and §6 |

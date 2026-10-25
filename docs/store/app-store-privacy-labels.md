@@ -16,7 +16,7 @@ When one changes, change all of them.
 **Decided 2026-10-13** (DL-056):
 - **Category:** not the Kids category. Education, with an honest age rating (item 1).
 - **Arabic permission prompts:** added in `ios/Runner/ar.lproj/InfoPlist.strings` (item 4).
-- **AI:** off for real students until the DPA and DPIA are signed (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent; the DPA and DPIA are still not signed. **Changed 2026-10-21 by DL-072 (ADR-0045):** AI is for every student account, in a class or not, still after the AI consent. The study helper is now the AI Tutor.
+- **AI:** off for real students until the DPA and DPIA are signed (item 2). **Superseded 2026-10-16 by DL-062: AI is on from launch**, for students in a class only, after a separate AI consent; the DPA and DPIA are still not signed. **Changed 2026-10-21 by DL-072 (ADR-0045):** AI is for every student account, in a class or not, still after the AI consent. The study helper is now the AI Tutor. **Added 2026-10-25 by DL-073 (ADR-0046):** a teacher with the paid Studafy AI Marking plan can ask for AI-suggested marks, which sends students' written answers and hand-ins to Together AI (unless the student opted out); the teacher decides every mark.
 - **Sentry IP storage** (item 3) needs the Sentry dashboard. The CI token cannot change project settings.
 
 1. **Age rating and the Kids category.** Students are children.
@@ -66,12 +66,12 @@ These are the boxes to tick, in the form's order. Anything not listed stays unti
 | | Audio Data | **Yes** | Voice notes in messages |
 | | Gameplay Content | No | |
 | | Customer Support | No | There is no in-app support channel. Abuse reports are counted under Other User Content. |
-| | Other User Content | **Yes** | Hand-ins, exam answers, documents, notebooks (personal notes included), AI questions, lessons, announcements, wellbeing notes, reports |
+| | Other User Content | **Yes** | Hand-ins, exam answers, documents, notebooks (personal notes included), AI questions, lessons, announcements, wellbeing notes, reports; teachers' reference answers and AI-suggested marks (DL-073) |
 | Browsing History | | No | |
 | Search History | | No | Searches run on the device |
 | Identifiers | User ID | **Yes** | Account ID, Studafy ID |
 | | Device ID | **Yes** | Push token |
-| Purchases | Purchase History | **Yes** | App Store subscriptions |
+| Purchases | Purchase History | **Yes** | App Store subscriptions, including a teacher's Studafy AI Marking (DL-073) |
 | Usage Data | Product Interaction | **Yes** | Server request logs (route, status, account ID), kept 30 days |
 | | Advertising Data | No | |
 | | Other Usage Data | No | |
@@ -177,3 +177,4 @@ There is no `NSUserTrackingUsageDescription`, because there is no tracking and s
 ## Change history
 - 2026-10-12: first draft (item 5.5).
 - 2026-10-21: DL-072 (ADR-0045, privacy policy 1.7). AI for every student account; the AI Tutor name; personal notes; photos that are not stored. No box changes.
+- 2026-10-25: DL-073 (ADR-0046, privacy policy 1.8). AI-suggested marks for teachers: students' work and hand-in files go to Together AI when a teacher asks, unless the student opted out; suggestions are stored 180 days for the class's teachers; Studafy AI Marking is a new subscription. No box changes: Photos or Videos, Other User Content and Purchase History were already ticked for App Functionality, linked, not tracking.

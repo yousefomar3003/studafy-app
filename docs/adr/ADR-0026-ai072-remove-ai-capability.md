@@ -4,6 +4,12 @@
   (grounded study AI, 2026-10-06) and, earlier, by
   [ADR-0029](ADR-0029-study-plans-and-ai-lesson-tools.md), which brings back
   whiteboard notes, quizzes and flashcards behind `AI_LESSON_TOOLS_ENABLED`
+- Superseded in part by [ADR-0046](ADR-0046-ai-suggested-marking.md)
+  (DL-073, 2026-10-21), **for marking only**: teachers may ask AI for
+  suggested marks against their own reference, as staff-only drafts that
+  never become a mark until the teacher saves one. The SEC-001 tripwires
+  below (`allowsAiGrading => false`, the sealed `ai_grading_drafts` and
+  `question_suggestions`, the retired `teacher_ai_grading`) stay.
 - Date: 2026-09-18
 - Decision owner: repository owner (GitHub `@yousefomar3003`), the
   single-owner mapping recorded in `docs/security/sec-001-containment.md`
