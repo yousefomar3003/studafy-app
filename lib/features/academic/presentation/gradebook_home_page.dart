@@ -133,6 +133,7 @@ class _GradebookHomePageState extends State<GradebookHomePage> {
                 assessmentId: item.id,
                 attachments: widget.repository,
                 classroomId: selected.id,
+                handIn: item.markedAssignmentId != null,
               )
             : AssessmentMarkingPage(
                 repository: widget.repository,

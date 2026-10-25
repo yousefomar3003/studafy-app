@@ -38,6 +38,8 @@ class RuntimePolicy {
   //
   // AI grading stays hard-false: ADR-0026 removed it, and nothing here may
   // bring it back as a side effect.
+  // Studafy AI Marking (ADR-0046) does not change this: its suggestions are
+  // drafts a teacher reviews, and only the teacher's own save writes a mark.
   bool get allowsAiGrading => false;
 
   /// Uploads are on everywhere the app runs, production included.

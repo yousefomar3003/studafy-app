@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/navigation.dart';
 import '../../../core/studafy_design.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import '../domain/marking.dart';
 import 'coursework_messages.dart';
 import 'grade_attachments_sheet.dart';
 import 'grade_correction_sheet.dart';
 import 'gradebook_item_dialog.dart';
+import 'marking_references_page.dart';
+import 'marking_review.dart';
+import 'marking_scope.dart';
+import 'marking_suggestions_bar.dart';
 
 /// The grade sheet for one piece of paper work: every student in the class,
 /// marked in one table.
@@ -22,6 +28,7 @@ class PaperGradebookPage extends StatefulWidget {
     required this.assessmentId,
     this.attachments,
     this.classroomId,
+    this.handIn = false,
   });
 
   final PaperGradebookRepository repository;
@@ -33,6 +40,10 @@ class PaperGradebookPage extends StatefulWidget {
 
   /// The class the sheet belongs to; scans are uploaded for it.
   final String? classroomId;
+
+  /// The sheet is the mark for a graded assignment's hand-in, which can
+  /// have suggested marks (ADR-0046). A paper exam has nothing to read.
+  final bool handIn;
 
   @override
   State<PaperGradebookPage> createState() => _PaperGradebookPageState();
@@ -68,6 +79,9 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
   String? _error;
   String? _notice;
 
+  /// Suggested marks for each student's hand-in, where the app has them.
+  MarkingSuggestionsController? _marking;
+
   @override
   void initState() {
     super.initState();
@@ -75,11 +89,58 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final services = MarkingScope.maybeOf(context);
+    if (_marking == null && widget.handIn && services != null) {
+      _marking = MarkingSuggestionsController(services, widget.assessmentId)
+        ..addListener(_markingChanged)
+        ..load();
+    }
+  }
+
+  void _markingChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
     for (final edit in _edits.values) {
       edit.dispose();
     }
+    _marking
+      ?..removeListener(_markingChanged)
+      ..dispose();
     super.dispose();
+  }
+
+  /// Fills in the row from the suggestion, as typing would. Nothing is
+  /// saved until the teacher saves the sheet.
+  void _use(PaperGradebookRow row, MarkingSuggestion suggestion) {
+    final edit = _edits[row.studentId];
+    final score = suggestion.suggestedScore;
+    if (edit == null || score == null) return;
+    final feedback = (suggestion.feedback ?? '').trim();
+    edit
+      ..mark = GradeMark.scored
+      ..score.text = _number(score);
+    if (feedback.isNotEmpty) {
+      edit
+        ..feedback.text = feedback
+        ..showComment = true;
+    }
+    _changed(row.studentId);
+    setState(() => _notice = AppL10n.of(context).markingUsed);
+  }
+
+  Future<void> _openReferences() async {
+    await Navigator.of(context).pushOnce<void>(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            MarkingReferencesPage(assessmentId: widget.assessmentId),
+      ),
+    );
+    await _marking?.load();
   }
 
   Future<void> _load() async {
@@ -412,6 +473,12 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
       appBar: AppBar(
         title: Text(l10n.paperGradesTitle(sheet?.item.title ?? '')),
         actions: [
+          if (_marking != null)
+            IconButton(
+              tooltip: l10n.markingRefsTitle,
+              onPressed: _saving ? null : _openReferences,
+              icon: const Icon(Icons.menu_book_outlined),
+            ),
           if (sheet != null)
             IconButton(
               tooltip: l10n.paperGradesEditItem,
@@ -517,11 +584,32 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
                     child: sheet.rows.isEmpty
                         ? Center(child: Text(l10n.paperGradesEmpty))
                         : ListView.separated(
-                            itemCount: sheet.rows.length,
-                            separatorBuilder: (_, _) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, i) {
-                              final row = sheet.rows[i];
+                            itemCount: sheet.rows.length + 1,
+                            separatorBuilder: (_, i) => i == 0
+                                ? const SizedBox.shrink()
+                                : const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                final marking = _marking;
+                                return marking == null
+                                    ? const SizedBox.shrink()
+                                    : Padding(
+                                        padding:
+                                            const EdgeInsetsDirectional.fromSTEB(
+                                              12,
+                                              8,
+                                              12,
+                                              0,
+                                            ),
+                                        child: MarkingSuggestionsBar(
+                                          controller: marking,
+                                          enabled: !_saving,
+                                        ),
+                                      );
+                              }
+                              final row = sheet.rows[index - 1];
+                              final suggestion = _marking?.suggestions
+                                  .forHandIn(row.studentId);
                               return _SheetRow(
                                 key: ValueKey(row.studentId),
                                 row: row,
@@ -540,6 +628,24 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
                                     row.grade?.state ==
                                         PaperGradeState.published
                                     ? () => _correct(row)
+                                    : null,
+                                suggestion: _editable(row) ? suggestion : null,
+                                onUse: suggestion == null || _saving
+                                    ? null
+                                    : () => _use(row, suggestion),
+                                onDismiss: suggestion == null || _saving
+                                    ? null
+                                    : () => _marking?.dismiss(
+                                        context,
+                                        suggestion,
+                                      ),
+                                onSuggestAgain:
+                                    (_marking?.offered ?? false) && !_saving
+                                    ? () => _marking?.request(
+                                        context,
+                                        all: true,
+                                        studentIds: [row.studentId],
+                                      )
                                     : null,
                               );
                             },
@@ -592,6 +698,10 @@ class _SheetRow extends StatelessWidget {
     required this.onChanged,
     required this.onCorrect,
     this.onFiles,
+    this.suggestion,
+    this.onUse,
+    this.onDismiss,
+    this.onSuggestAgain,
   });
 
   final PaperGradebookRow row;
@@ -605,6 +715,12 @@ class _SheetRow extends StatelessWidget {
   final VoidCallback onChanged;
   final VoidCallback? onCorrect;
   final VoidCallback? onFiles;
+
+  /// A suggested mark for this student's hand-in (ADR-0046).
+  final MarkingSuggestion? suggestion;
+  final VoidCallback? onUse;
+  final VoidCallback? onDismiss;
+  final VoidCallback? onSuggestAgain;
 
   @override
   Widget build(BuildContext context) {
@@ -793,6 +909,17 @@ class _SheetRow extends StatelessWidget {
                 ),
               ),
           ],
+          if (suggestion case final suggestion?)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: MarkingSuggestionPanel(
+                suggestion: suggestion,
+                compact: true,
+                onUse: enabled ? onUse : null,
+                onDismiss: onDismiss,
+                onSuggestAgain: onSuggestAgain,
+              ),
+            ),
           if (refusal case final reason?)
             Padding(
               padding: const EdgeInsets.only(top: 4),

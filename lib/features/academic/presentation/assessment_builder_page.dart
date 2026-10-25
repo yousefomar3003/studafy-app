@@ -13,6 +13,8 @@ import '../../../core/uploads_scope.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
 import 'coursework_messages.dart';
+import 'marking_references_page.dart';
+import 'marking_scope.dart';
 import 'question_editor.dart';
 import 'take_assessment_page.dart';
 
@@ -443,6 +445,26 @@ class _AssessmentBuilderPageState extends State<AssessmentBuilderPage> {
                           _questions.removeAt(index).dispose();
                         }),
                       ),
+                    ),
+                  // Key points and how strictly to compare, for suggested
+                  // marks (ADR-0046) - editable after work is in, too.
+                  if (widget.existing case final existing?
+                      when MarkingScope.maybeOf(context) != null)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.menu_book_outlined),
+                      title: Text(l10n.markingRefsTitle),
+                      subtitle: Text(l10n.markingRefsBuilderHint),
+                      trailing: Icon(forwardChevron(context)),
+                      onTap: _saving
+                          ? null
+                          : () => Navigator.of(context).pushOnce<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => MarkingReferencesPage(
+                                  assessmentId: existing.id,
+                                ),
+                              ),
+                            ),
                     ),
                   if (!_locked && _questions.length < 100)
                     OutlinedButton.icon(

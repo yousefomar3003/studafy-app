@@ -9,9 +9,15 @@ import '../../../core/studafy_formatting.dart';
 import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/academic_repository.dart';
+import '../domain/marking.dart';
 import 'assessment_builder_page.dart';
+import 'assessment_grant_dialog.dart';
 import 'assessment_page.dart';
 import 'coursework_messages.dart';
+import 'marking_references_page.dart';
+import 'marking_review.dart';
+import 'marking_scope.dart';
+import 'marking_suggestions_bar.dart';
 
 /// A teacher's view of an online assessment (ADR-0036): every submission,
 /// where each one's marking stands, and the actions around it - edit, give
@@ -49,10 +55,39 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
   bool _failed = false;
   bool _busy = false;
 
+  /// Suggested marks (ADR-0046), where the app provides them.
+  MarkingSuggestionsController? _marking;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final services = MarkingScope.maybeOf(context);
+    if (_marking == null && services != null) {
+      _marking = MarkingSuggestionsController(services, widget.assessmentId)
+        ..load();
+    }
+  }
+
+  @override
+  void dispose() {
+    _marking?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openReferences() async {
+    await Navigator.of(context).pushOnce<void>(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            MarkingReferencesPage(assessmentId: widget.assessmentId),
+      ),
+    );
+    await _marking?.load();
   }
 
   Future<void> _load() async {
@@ -187,7 +222,7 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
     if (!mounted) return;
     final granted = await showDialog<bool>(
       context: context,
-      builder: (_) => _GrantDialog(
+      builder: (_) => GrantAccessDialog(
         repository: widget.repository,
         assessmentId: widget.assessmentId,
         students: students,
@@ -263,10 +298,12 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
           repository: widget.repository,
           attemptId: attempt.id,
           studentName: attempt.studentName ?? '',
+          assessmentId: widget.assessmentId,
         ),
       ),
     );
     await _load();
+    await _marking?.load();
   }
 
   static String _number(double value) =>
@@ -306,10 +343,16 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
               'edit' => _edit(),
               'grant' => _grant(),
               'release' => _releaseNow(),
+              'references' => _openReferences(),
               _ => _publishGrades(),
             },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'edit', child: Text(l10n.markEditQuestions)),
+              if (_marking != null)
+                PopupMenuItem(
+                  value: 'references',
+                  child: Text(l10n.markingRefsTitle),
+                ),
               PopupMenuItem(value: 'grant', child: Text(l10n.markGrantAccess)),
               PopupMenuItem(
                 value: 'publish',
@@ -380,6 +423,11 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                         ),
                       ),
                     const SizedBox(height: 8),
+                    if (_marking case final marking?)
+                      MarkingSuggestionsBar(
+                        controller: marking,
+                        enabled: !_busy,
+                      ),
                     if (attempts.isEmpty && missing.isEmpty)
                       StudafyEmptyState(
                         icon: Icons.inbox_outlined,
@@ -690,155 +738,6 @@ class MarkingStatusPill extends StatelessWidget {
   }
 }
 
-class _GrantDialog extends StatefulWidget {
-  const _GrantDialog({
-    required this.repository,
-    required this.assessmentId,
-    required this.students,
-    this.closesAt,
-  });
-
-  final OnlineAssessmentRepository repository;
-  final String assessmentId;
-  final List<ClassStudent> students;
-  final DateTime? closesAt;
-
-  @override
-  State<_GrantDialog> createState() => _GrantDialogState();
-}
-
-class _GrantDialogState extends State<_GrantDialog> {
-  String? _student;
-  DateTime? _until;
-  int _extra = 0;
-  bool _saving = false;
-  String? _error;
-
-  Future<void> _pick() async {
-    final now = DateTime.now();
-    final start = widget.closesAt != null && widget.closesAt!.isAfter(now)
-        ? widget.closesAt!
-        : now.add(const Duration(days: 1));
-    final date = await showDatePicker(
-      context: context,
-      initialDate: start,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-    );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(start),
-    );
-    if (!mounted) return;
-    setState(
-      () => _until = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time?.hour ?? 23,
-        time?.minute ?? 59,
-      ),
-    );
-  }
-
-  Future<void> _save() async {
-    final l10n = AppL10n.of(context);
-    final student = _student;
-    if (student == null || (_until == null && _extra == 0)) return;
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      await widget.repository.grantAccess(
-        widget.assessmentId,
-        student,
-        closesAt: _until,
-        extraAttempts: _extra,
-      );
-      if (mounted) Navigator.of(context).pop(true);
-    } on Object {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = l10n.markGrantFailed;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    final until = _until;
-    return AlertDialog(
-      title: Text(l10n.markGrantAccess),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DropdownButtonFormField<String>(
-            initialValue: _student,
-            decoration: InputDecoration(labelText: l10n.markGrantStudent),
-            items: [
-              for (final s in widget.students)
-                DropdownMenuItem(value: s.id, child: Text(s.displayName)),
-            ],
-            onChanged: _saving ? null : (id) => setState(() => _student = id),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.markGrantUntil),
-            subtitle: Text(
-              until == null
-                  ? l10n.builderNotSet
-                  : '${studafyShortDate(context, until)} '
-                        '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(until))}',
-            ),
-            onTap: _saving ? null : _pick,
-          ),
-          Row(
-            children: [
-              Expanded(child: Text(l10n.markGrantExtra)),
-              IconButton(
-                onPressed: _saving || _extra == 0
-                    ? null
-                    : () => setState(() => _extra--),
-                icon: const Icon(Icons.remove_circle_outline_rounded),
-              ),
-              Text('$_extra'),
-              IconButton(
-                onPressed: _saving || _extra >= 20
-                    ? null
-                    : () => setState(() => _extra++),
-                icon: const Icon(Icons.add_circle_outline_rounded),
-              ),
-            ],
-          ),
-          if (_error != null)
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context, false),
-          child: Text(l10n.linksCancel),
-        ),
-        FilledButton(
-          onPressed:
-              _saving || _student == null || (_until == null && _extra == 0)
-              ? null
-              : _save,
-          child: Text(l10n.markGrantGive),
-        ),
-      ],
-    );
-  }
-}
-
 /// Marking one attempt: every answer with the question, its files, the key,
 /// the automatic mark where there is one, and a score and comment the
 /// teacher can set or change.
@@ -853,11 +752,16 @@ class MarkAttemptPage extends StatefulWidget {
     required this.repository,
     required this.attemptId,
     required this.studentName,
+    this.assessmentId,
   });
 
   final OnlineAssessmentRepository repository;
   final String attemptId;
   final String studentName;
+
+  /// The assessment, for its suggested marks (ADR-0046). Without it, or
+  /// without a [MarkingScope], the page marks as it always did.
+  final String? assessmentId;
 
   @override
   State<MarkAttemptPage> createState() => _MarkAttemptPageState();
@@ -885,10 +789,23 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
   /// Questions whose score cannot be saved as typed, with why.
   final Map<String, String> _invalid = {};
 
+  /// Suggested marks for the written answers, where the app provides them.
+  MarkingSuggestionsController? _marking;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final services = MarkingScope.maybeOf(context);
+    final assessmentId = widget.assessmentId;
+    if (_marking == null && services != null && assessmentId != null) {
+      _marking = MarkingSuggestionsController(services, assessmentId)..load();
+    }
   }
 
   @override
@@ -897,7 +814,77 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
       c.dispose();
     }
     _overall.dispose();
+    _marking?.dispose();
     super.dispose();
+  }
+
+  /// Fills in this answer's score and comment from the suggestion. Nothing
+  /// is saved: the teacher checks it, changes it if they want, and saves.
+  void _use(AttemptAnswer answer, MarkingSuggestion suggestion) {
+    final score = suggestion.suggestedScore;
+    if (score == null) return;
+    final id = answer.question.id;
+    final feedback = (suggestion.feedback ?? '').trim();
+    setState(() {
+      _scores[id]?.text = _number(score);
+      if (feedback.isNotEmpty) _comments[id]?.text = feedback;
+      _invalid.remove(id);
+      _error = null;
+      _notice = AppL10n.of(context).markingUsed;
+    });
+  }
+
+  /// The question and answer as marking shows them; for a written answer
+  /// with suggested marks, side by side with the reference and suggestion.
+  Widget _review(AttemptDetail attempt, AttemptAnswer answer) {
+    final marking = _marking;
+    final written =
+        answer.question.kind == QuestionKind.shortAnswer ||
+        answer.question.kind == QuestionKind.essay;
+    final plain = AnswerReview(
+      answer: answer,
+      teacherView: true,
+      showMark: false,
+    );
+    if (marking == null || !written) return plain;
+    return ListenableBuilder(
+      listenable: marking,
+      builder: (context, _) {
+        final id = answer.question.id;
+        final suggestion = marking.suggestions.forAnswer(attempt.id, id);
+        final q = answer.question;
+        return MarkingAnswerReview(
+          answer: answer,
+          // The question's own key and model answer until the references
+          // are read.
+          reference:
+              marking.references?.forQuestion(id) ??
+              MarkingReference(
+                questionId: id,
+                position: q.position,
+                kind: q.kind,
+                maximumScore: q.maximumScore,
+                acceptedAnswers: q.acceptedAnswers,
+                preferredAnswer: q.preferredAnswer,
+                markingGuidance: q.markingGuidance,
+              ),
+          suggestion: suggestion,
+          onUse: _saving || suggestion == null
+              ? null
+              : () => _use(answer, suggestion),
+          onDismiss: suggestion == null || _saving
+              ? null
+              : () => marking.dismiss(context, suggestion),
+          onSuggestAgain: marking.offered && !_saving
+              ? () => marking.request(
+                  context,
+                  all: true,
+                  studentIds: [attempt.studentId],
+                )
+              : null,
+        );
+      },
+    );
   }
 
   static String _number(double value) =>
@@ -1173,11 +1160,7 @@ class _MarkAttemptPageState extends State<MarkAttemptPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              AnswerReview(
-                                answer: answer,
-                                teacherView: true,
-                                showMark: false,
-                              ),
+                              _review(attempt, answer),
                               if (answer.autoScore != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 6),

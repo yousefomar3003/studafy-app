@@ -14,6 +14,8 @@ import '../core/profile_photo.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
+import '../features/academic/presentation/marking_opt_out_switch.dart';
+import '../features/academic/presentation/marking_scope.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/profile_repository.dart';
 import '../features/account/presentation/delete_account_page.dart';
@@ -39,7 +41,13 @@ class SubscriptionEntry {
     this.currentPlan,
     this.usage,
     this.restorePurchases,
+    this.title,
+    this.detail,
   });
+
+  /// The plans row's name and line under it; the study plans' by default.
+  final String? title;
+  final String? detail;
 
   /// Opens the plans. Null where the profile has no plans row (a parent,
   /// whose Family+ lives on its own tab).
@@ -363,6 +371,16 @@ class _AccountHubPageState extends State<AccountHubPage> {
               wrap: (row) =>
                   SettingsGroup(title: l10n.aiConsentTitle, children: [row]),
             ),
+          // Suggested marks (ADR-0046): a student's own choice whether
+          // their work may be sent for one. Students only.
+          if (student && MarkingScope.maybeOf(context)?.preference != null)
+            MarkingOptOutSwitch(
+              preference: MarkingScope.maybeOf(context)!.preference!,
+              wrap: (row) => SettingsGroup(
+                title: l10n.markingOptOutSection,
+                children: [row],
+              ),
+            ),
           SettingsGroup(
             title: l10n.accountSectionPreferences,
             children: [
@@ -672,12 +690,11 @@ class _SubscriptionRowState extends State<_SubscriptionRow> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final detail = widget.entry.detail ?? l10n.accountStudyPlanDetail;
     return SettingsRow(
       icon: Icons.workspace_premium_rounded,
-      title: l10n.accountStudyPlan,
-      subtitle: _plan == null
-          ? l10n.accountStudyPlanDetail
-          : '$_plan · ${l10n.accountStudyPlanDetail}',
+      title: widget.entry.title ?? l10n.accountStudyPlan,
+      subtitle: _plan == null ? detail : '$_plan · $detail',
       onTap: () async {
         await widget.entry.open!(context);
         await _load();

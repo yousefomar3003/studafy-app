@@ -125,6 +125,10 @@ class _ClassGradebookPageState extends State<ClassGradebookPage> {
   static bool _isPaper(AcademicRecord? item) => item?.delivery == 'paper';
 
   Future<void> _openSheet(String assessmentId) async {
+    // The mark for a graded assignment: its hand-ins can be suggested.
+    final handIn = _assessments.any(
+      (item) => item.id == assessmentId && item.markedAssignmentId != null,
+    );
     await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (_) => PaperGradebookPage(
@@ -132,6 +136,7 @@ class _ClassGradebookPageState extends State<ClassGradebookPage> {
           assessmentId: assessmentId,
           attachments: widget.repository,
           classroomId: widget.classroomId,
+          handIn: handIn,
         ),
       ),
     );

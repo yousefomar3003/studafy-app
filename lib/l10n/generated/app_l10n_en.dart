@@ -298,11 +298,11 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get policyPrivacyBody =>
-      'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebooks, including a personal notebook that belongs to no class and that only you can see. Messages, voice notes, announcements and meeting links inside the app, and reports you make. Files you upload. Your subscriptions, your notification settings and what you agreed to, including the AI study tools.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nREPORTS\nYou can report or block anyone from inside the app. Studafy reviews reports: a named person at Studafy, reachable at hello@studafy.com, reads what was reported and may remove content or suspend or close accounts. Each new report sends an alert to our private Telegram chat with its reference number, kind and priority - never its content, a name or an account ID. You are told when your report is resolved.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. They are for student accounts, whether or not you are in a class, and only after you agree to them separately; a parent agrees for a child account they manage. They can be turned off at any time. What you give them is sent to Together AI, an AI company in the United States: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo or screenshot you add (the AI Tutor, notes from photos, lesson notes, quizzes and flashcards). Names Studafy knows are replaced with words like [student] first, and your email, school and marks are never sent. Photos are sent as they are, so do not photograph names or faces. A photo you send to the AI Tutor from a class is kept for 30 days; if you are in no class it is read once and not kept. Chats are kept only on your device. Our data processing agreement with Together AI is not yet in place. Answers can be wrong, so never hand them in as your own work. AI never marks your work.\n\nFILES\nFiles are stored privately, scanned on our own servers before anyone can download them, and opened only through links that work once and expire within minutes. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max and Family+ are charged by Google Play or the App Store under their own terms, from the payment method on the store account on the phone. A student can subscribe in the app without a parent\'s approval in Studafy; for a child, a parent can approve purchases with Google Family Link or Apple\'s Ask to Buy. We receive only a confirmation of the purchase and never see card details.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Fly.io hosts the app; Axiom keeps its technical logs and Sentry its error reports; Cloudflare stores our encrypted backups in the EU, relays our alerts, runs a bot check and serves our legal pages; GitHub runs the backup job but keeps no copy; Telegram carries our alerts, which hold no content or names; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Together AI runs the AI study tools; Resend sends email and Firebase sends push notifications, which never contain your marks or messages. Each acts only on our instructions. Studafy creates no meetings: a meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nWHERE YOUR DATA IS\nOur main systems and our backups are in the EU. Some providers process data outside the EEA, protected by Standard Contractual Clauses or an adequacy decision; for Together AI that safeguard is not yet in place.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only: nobody can edit them, including us, and they are deleted only when their retention period ends. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nINACTIVE ACCOUNTS\nAn account that is not used for 2 years is deleted. We warn you by email at least 30 days before, and in the app too if you are in a school. If the warning cannot reach you, we do not delete the account.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your AI Tutor chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. In our own records IP addresses are stored only as a one-way hash; the sign-in service (Supabase) keeps the IP address of a sign-in for up to 7 days. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. The export is a JSON file of your own data. It lists your files (name, type, size and date) rather than including them: open them in the app, or write to hello@studafy.com for a copy. It leaves out exam questions and marks your teacher has not released yet, wellbeing notes, and conversations you have left. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.\n\nThe full policy is at legal.studafy.com/privacy. Questions: hello@studafy.com.';
+      'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebooks, including a personal notebook that belongs to no class and that only you can see. Messages, voice notes, announcements and meeting links inside the app, and reports you make. Files you upload. Your subscriptions, your notification settings and what you agreed to, including the AI study tools and whether you turned off AI-suggested marks.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nREPORTS\nYou can report or block anyone from inside the app. Studafy reviews reports: a named person at Studafy, reachable at hello@studafy.com, reads what was reported and may remove content or suspend or close accounts. Each new report sends an alert to our private Telegram chat with its reference number, kind and priority - never its content, a name or an account ID. You are told when your report is resolved.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. They are for student accounts, whether or not you are in a class, and only after you agree to them separately; a parent agrees for a child account they manage. They can be turned off at any time. What you give them is sent to Together AI, an AI company in the United States: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo or screenshot you add (the AI Tutor, notes from photos, lesson notes, quizzes and flashcards). Names Studafy knows are replaced with words like [student] first, and your email, school and marks are never sent. Photos are sent as they are, so do not photograph names or faces. A photo you send to the AI Tutor from a class is kept for 30 days; if you are in no class it is read once and not kept. Chats are kept only on your device. Our data processing agreement with Together AI is not yet in place. Answers can be wrong, so never hand them in as your own work. AI never marks your work on its own.\n\nAI-SUGGESTED MARKS\nA teacher with Studafy AI Marking, a paid plan for teachers, can ask AI for a suggested mark on written work - written answers in an online assessment, and work handed in for a graded assignment, including its files - compared with the teacher\'s own reference answers. The work and the teacher\'s reference are sent to Together AI. Names Studafy knows are replaced with words like [student] first. Files are read for the suggestion and are not kept by the AI step. A suggestion is a draft that only the class\'s teachers see: the teacher decides every mark, and AI never marks work on its own. Suggestions are kept for the teacher for up to 180 days. You can turn this off in Account; your work is then never sent, and your teacher marks it by hand.\n\nFILES\nFiles are stored privately, scanned on our own servers before anyone can download them, and opened only through links that work once and expire within minutes. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max, Family+ and Studafy AI Marking are charged by Google Play or the App Store under their own terms, from the payment method on the store account on the phone. A student can subscribe in the app without a parent\'s approval in Studafy; for a child, a parent can approve purchases with Google Family Link or Apple\'s Ask to Buy. We receive only a confirmation of the purchase and never see card details.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Fly.io hosts the app; Axiom keeps its technical logs and Sentry its error reports; Cloudflare stores our encrypted backups in the EU, relays our alerts, runs a bot check and serves our legal pages; GitHub runs the backup job but keeps no copy; Telegram carries our alerts, which hold no content or names; Redis holds short-lived counters; Google, Microsoft and Apple verify sign-in; Together AI runs the AI study tools and suggested marks; Resend sends email and Firebase sends push notifications, which never contain your marks or messages. Each acts only on our instructions. Studafy creates no meetings: a meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nWHERE YOUR DATA IS\nOur main systems and our backups are in the EU. Some providers process data outside the EEA, protected by Standard Contractual Clauses or an adequacy decision; for Together AI that safeguard is not yet in place.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only: nobody can edit them, including us, and they are deleted only when their retention period ends. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nINACTIVE ACCOUNTS\nAn account that is not used for 2 years is deleted. We warn you by email at least 30 days before, and in the app too if you are in a school. If the warning cannot reach you, we do not delete the account.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your AI Tutor chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. In our own records IP addresses are stored only as a one-way hash; the sign-in service (Supabase) keeps the IP address of a sign-in for up to 7 days. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. The export is a JSON file of your own data. It lists your files (name, type, size and date) rather than including them: open them in the app, or write to hello@studafy.com for a copy. It leaves out exam questions and marks your teacher has not released yet, wellbeing notes, and conversations you have left. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.\n\nThe full policy is at legal.studafy.com/privacy. Questions: hello@studafy.com.';
 
   @override
   String get policyTermsBody =>
-      'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. Studafy reviews reports, and may remove content and suspend or close accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share.\n\nSTUDENTS\nJoining a class is optional: you can study on your own and join a class later with your teacher\'s link or code. Hand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional, for student accounts whether or not they are in a class, and only after the student agrees to them separately; a parent agrees for a child account they manage. Names are replaced before anything is sent, but photos are sent as they are. The tools can be wrong: check what they produce and never hand it in as your own work. AI never marks work. Weekly or monthly allowances apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students, who can subscribe in the app; Family+ is for parents, for up to 4 or up to 8 linked children. Payment is made through Google Play or the App Store with the payment method on that store account. For a child, that account and its payment method should belong to, or be controlled by, a parent or guardian, who is responsible for purchases made with it; Google Family Link and Apple\'s Ask to Buy let a parent approve purchases. Subscriptions renew monthly at the price the store shows until you cancel in your store account, and refunds follow the store\'s rules. We never see card details.\n\nMEETINGS\nStudafy does not host video calls or create meetings. A meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.\n\nThe full terms are at legal.studafy.com/terms. Questions: hello@studafy.com.';
+      'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. Studafy reviews reports, and may remove content and suspend or close accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share. With Studafy AI Marking you can ask AI for suggested marks on written work, compared with your own reference answers. A suggestion is only a draft: you decide every mark, and you are responsible for the marks you save.\n\nSTUDENTS\nJoining a class is optional: you can study on your own and join a class later with your teacher\'s link or code. Hand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher. You can turn off AI-suggested marks on your work in Account.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional, for student accounts whether or not they are in a class, and only after the student agrees to them separately; a parent agrees for a child account they manage. Names are replaced before anything is sent, but photos are sent as they are. The tools can be wrong: check what they produce and never hand it in as your own work. AI never marks work on its own: a teacher may ask it for a suggested mark, and the teacher decides. Weekly or monthly allowances apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students, who can subscribe in the app; Family+ is for parents, for up to 4 or up to 8 linked children; Studafy AI Marking is for teachers. Payment is made through Google Play or the App Store with the payment method on that store account. For a child, that account and its payment method should belong to, or be controlled by, a parent or guardian, who is responsible for purchases made with it; Google Family Link and Apple\'s Ask to Buy let a parent approve purchases. Subscriptions renew monthly at the price the store shows until you cancel in your store account, and refunds follow the store\'s rules. We never see card details.\n\nMEETINGS\nStudafy does not host video calls or create meetings. A meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.\n\nThe full terms are at legal.studafy.com/terms. Questions: hello@studafy.com.';
 
   @override
   String get deleteTitle => 'Delete account';
@@ -7047,7 +7047,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get aiConsentNoticeBody =>
-      'The AI Tutor, notes from photos and lessons, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo or screenshot you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces. If you are in no class, a photo is read once and not kept.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device. AI never marks your work.\n\nYou can turn the AI tools off at any time in your account.';
+      'The AI Tutor, notes from photos and lessons, study notebooks, quizzes and flashcards use AI from Together AI, a company outside Studafy. They are optional.\n\nWHAT IS SENT\nWhat you type, the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes or a photo or screenshot you add.\n\nWHAT IS NOT SENT\nYour email, school, marks or account details. Names Studafy knows - yours, your classmates\', your teachers\' and your parents\' - are replaced with words like [student] before anything is sent. A photo is sent as it is, so do not photograph names or faces. If you are in no class, a photo is read once and not kept.\n\nGOOD TO KNOW\nAnswers can be wrong: check them, and never hand them in as your own work. Chats stay on your device.\n\nMARKS\nAI never marks your work on its own. Your teacher may ask AI (Together AI) for a suggested mark on written work, compared with their own reference answers. Names Studafy knows are replaced first, files are read for the suggestion and not kept by the AI step, and suggestions are kept for your teacher for up to 180 days. Your teacher decides every mark. You can turn suggested marks off in your account.\n\nYou can turn the AI tools off at any time in your account.';
 
   @override
   String get aiConsentAgree => 'I agree';
@@ -7684,4 +7684,377 @@ class AppL10nEn extends AppL10n {
   String tutorPlanLine(String plan, String usage) {
     return '$plan · $usage';
   }
+
+  @override
+  String get markingRefsTitle => 'Marking references';
+
+  @override
+  String get markingRefsIntro =>
+      'Write what a good answer contains. Suggested marks are compared with it, and you still decide every mark.';
+
+  @override
+  String get markingRefsNeverRemarks =>
+      'Changing a reference never changes a mark or a suggestion by itself.';
+
+  @override
+  String get markingRefsBuilderHint =>
+      'Key points, other accepted methods and how strictly to compare, for suggested marks.';
+
+  @override
+  String get markingRefsStrictness => 'How strictly to compare';
+
+  @override
+  String get markingStrictLenient => 'Lenient';
+
+  @override
+  String get markingStrictLenientHint =>
+      'Gives credit for the right idea, even in other words or with small slips.';
+
+  @override
+  String get markingStrictBalanced => 'Balanced';
+
+  @override
+  String get markingStrictBalancedHint =>
+      'Gives credit for each key point that is clearly there.';
+
+  @override
+  String get markingStrictStrict => 'Strict';
+
+  @override
+  String get markingStrictStrictHint =>
+      'Gives credit only where the answer matches the reference closely and completely.';
+
+  @override
+  String get markingRefsReferences => 'References';
+
+  @override
+  String markingRefsQuestion(int number, String points) {
+    return 'Question $number · out of $points';
+  }
+
+  @override
+  String markingRefsHandIn(String points) {
+    return 'The hand-in · out of $points';
+  }
+
+  @override
+  String get markingRefsHandInHint =>
+      'One reference for the whole piece of work each student hands in.';
+
+  @override
+  String get markingRefsAutomatic =>
+      'Marked automatically by its key. Nothing to add here.';
+
+  @override
+  String get markingRefsKeyPoints => 'Key points';
+
+  @override
+  String get markingRefsKeyPointsHint =>
+      'What a complete answer must contain, and what each is worth. Up to 20.';
+
+  @override
+  String markingRefsKeyPoint(int number) {
+    return 'Key point $number';
+  }
+
+  @override
+  String get markingRefsKeyPointMarks => 'Marks';
+
+  @override
+  String get markingRefsRemoveKeyPoint => 'Remove key point';
+
+  @override
+  String get markingRefsAddKeyPoint => 'Add key point';
+
+  @override
+  String markingRefsKeyPointsTotal(String total, String max) {
+    return 'Key points add up to $total of $max';
+  }
+
+  @override
+  String markingRefsKeyPointsTooMany(String total, String max) {
+    return 'Key points add up to $total, more than the $max this is worth.';
+  }
+
+  @override
+  String get markingRefsKeyPointEmpty => 'Write the key point, or remove it.';
+
+  @override
+  String get markingRefsKeyPointMarksInvalid =>
+      'Marks must be a number, 0 or more.';
+
+  @override
+  String get markingRefsMethods => 'Other accepted methods';
+
+  @override
+  String get markingRefsMethodsShort => 'Other accepted answers or methods';
+
+  @override
+  String get markingRefsPartial => 'Partial credit';
+
+  @override
+  String get markingRefsPartialHint =>
+      'When part marks are given, for example 1 mark for the method even if the answer is wrong.';
+
+  @override
+  String get markingRefsSave => 'Save references';
+
+  @override
+  String get markingRefsSaved => 'Saved. New suggestions use this reference.';
+
+  @override
+  String get markingRefsUnchanged => 'Nothing changed.';
+
+  @override
+  String get markingRefsSaveFailed =>
+      'Could not save. Check your connection and try again.';
+
+  @override
+  String get markingRefsInvalid =>
+      'Key points must not add up to more than the question is worth.';
+
+  @override
+  String get markingRefsFixFirst =>
+      'Fix the highlighted key points, then save.';
+
+  @override
+  String markingRefsStale(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suggestions were made with an older reference.',
+      one: '1 suggestion was made with an older reference.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markingSuggestAgain => 'Suggest again';
+
+  @override
+  String get markingSuggestTitle => 'Suggested marks';
+
+  @override
+  String get markingSuggestDraftNote =>
+      'Suggestions are drafts. Nothing is saved until you save it.';
+
+  @override
+  String get markingSuggestAction => 'Suggest marks';
+
+  @override
+  String get markingSuggestScopeBody =>
+      'Written work is compared with your reference. Work from students who turned this off is not sent: mark it by hand.';
+
+  @override
+  String get markingSuggestScopeUnmarked => 'Work with no mark yet';
+
+  @override
+  String get markingSuggestScopeAll =>
+      'All work, replacing earlier suggestions';
+
+  @override
+  String get markingSuggestStart => 'Suggest';
+
+  @override
+  String get markingRefresh => 'Refresh suggestions';
+
+  @override
+  String markingRunQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count suggestions are on their way.',
+      one: '1 suggestion is on its way.',
+      zero: 'Nothing new to suggest.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String markingRunOptedOut(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count were not sent because their students turned this off. Mark them by hand.',
+      one: '1 was not sent because the student turned this off. Mark it by hand.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String markingStatusCounts(int ready, int pending) {
+    return 'Ready: $ready · On the way: $pending';
+  }
+
+  @override
+  String get markingNothingToRead => 'There is nothing handed in to read yet.';
+
+  @override
+  String get markingRequestFailed =>
+      'Could not ask for suggestions. Try again.';
+
+  @override
+  String get markingDismissFailed =>
+      'Could not dismiss the suggestion. Try again.';
+
+  @override
+  String get markingReviewReference => 'Your reference';
+
+  @override
+  String get markingReviewNoReference =>
+      'No reference written yet. Add one in Marking references.';
+
+  @override
+  String markingKeyPointWorth(String point, String marks) {
+    return '$point (worth $marks)';
+  }
+
+  @override
+  String get markingReviewSuggestion => 'Suggested mark';
+
+  @override
+  String markingSuggestedScore(String score, String max) {
+    return '$score of $max';
+  }
+
+  @override
+  String get markingNoScore => 'No mark suggested';
+
+  @override
+  String get markingMet => 'Met';
+
+  @override
+  String get markingMissed => 'Missed';
+
+  @override
+  String get markingRationale => 'Why';
+
+  @override
+  String get markingWhy => 'Why this mark';
+
+  @override
+  String get markingFeedbackForStudent => 'Feedback for the student';
+
+  @override
+  String get markingStale => 'Made with an older reference';
+
+  @override
+  String get markingNeedsReview => 'Needs your review';
+
+  @override
+  String get markingConflict => 'Reference conflict';
+
+  @override
+  String get markingReviewAmbiguous => 'The answer is unclear.';
+
+  @override
+  String get markingReviewUnreadable => 'Part of the work could not be read.';
+
+  @override
+  String get markingReviewNoRef => 'There was no reference to compare with.';
+
+  @override
+  String get markingReviewConflict =>
+      'The reference and the question disagree.';
+
+  @override
+  String get markingReviewEmpty => 'The answer is empty.';
+
+  @override
+  String get markingPending => 'A suggestion is on its way.';
+
+  @override
+  String get markingFailedHand =>
+      'No suggestion could be made. Mark this by hand.';
+
+  @override
+  String get markingOptedOutHand =>
+      'This student turned off AI-suggested marks. Mark this by hand.';
+
+  @override
+  String get markingSkippedHand =>
+      'This work could not be read for a suggestion. Mark it by hand.';
+
+  @override
+  String get markingUse => 'Use suggestion';
+
+  @override
+  String get markingUsed =>
+      'Filled in from the suggestion. Check it, then save.';
+
+  @override
+  String get markingDismiss => 'Dismiss';
+
+  @override
+  String get markingPlanYours => 'Your plan';
+
+  @override
+  String get markingPlanNone => 'Not subscribed';
+
+  @override
+  String get markingPlanHeadline =>
+      'Suggested marks for written work, checked by you.';
+
+  @override
+  String get markingPlanWhatYouGet => 'What you get';
+
+  @override
+  String get markingPlanFeatureCompare =>
+      'Written answers and hand-ins compared with your own reference answers.';
+
+  @override
+  String get markingPlanFeatureDetail =>
+      'What each answer met and missed, why, and feedback you can edit.';
+
+  @override
+  String get markingPlanFeatureDecide =>
+      'You decide every mark. Nothing is saved until you save it.';
+
+  @override
+  String get markingPlanFeatureOptOut =>
+      'Students can turn it off; their work is then never sent.';
+
+  @override
+  String get markingPlanFeaturePrivacy =>
+      'Names are replaced before anything is sent to the AI (Together AI).';
+
+  @override
+  String get markingPlanSubscribe => 'Subscribe';
+
+  @override
+  String get markingPlanOnlyInApp =>
+      'Subscribe in the Studafy app on iPhone or Android.';
+
+  @override
+  String get markingPlanUnavailable =>
+      'Suggested marks are not switched on yet. You can still write references.';
+
+  @override
+  String get markingPlanThisMonth => 'This month';
+
+  @override
+  String get markingPlanReached =>
+      'You have used this month\'s suggestions. You can still mark by hand, and more are available when it resets.';
+
+  @override
+  String get markingPlanAccountDetail => 'Suggested marks for written work';
+
+  @override
+  String get markingOptOutSection => 'Marking';
+
+  @override
+  String get markingOptOutSwitch =>
+      'Let my teachers use AI to suggest marks on my work';
+
+  @override
+  String get markingOptOutOn =>
+      'On: your teacher may get a suggested mark for written work and decides the mark themselves. Names are replaced first.';
+
+  @override
+  String get markingOptOutOff =>
+      'Off: your work is never sent to AI. Your teacher marks it by hand.';
+
+  @override
+  String get markingOptOutFailed => 'Could not save your choice. Try again.';
 }
