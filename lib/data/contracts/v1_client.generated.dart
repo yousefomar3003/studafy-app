@@ -2987,6 +2987,93 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1MarkingPlanDto> getMyMarkingPlan() async =>
+      V1MarkingPlanDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/marking-plan', {}, {})),
+      );
+
+  Future<V1MarkingReferencesDto> getMarkingReferences({
+    required String assessmentId,
+  }) async => V1MarkingReferencesDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/assessments/{assessmentId}/marking-references', {
+        'assessmentId': assessmentId,
+      }, {}),
+    ),
+  );
+
+  Future<V1UpdateMarkingReferencesResponseDto> updateMarkingReferences(
+    V1UpdateMarkingReferencesRequestDto request, {
+    required String assessmentId,
+    String? idempotencyKey,
+  }) async => V1UpdateMarkingReferencesResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/assessments/{assessmentId}/marking-references', {
+        'assessmentId': assessmentId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MarkingSuggestionListDto> listMarkingSuggestions({
+    required String assessmentId,
+  }) async => V1MarkingSuggestionListDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/assessments/{assessmentId}/marking-suggestions', {
+        'assessmentId': assessmentId,
+      }, {}),
+    ),
+  );
+
+  Future<V1MarkingRunDto> requestMarkingSuggestions(
+    V1RequestMarkingSuggestionsRequestDto request, {
+    required String assessmentId,
+    String? idempotencyKey,
+  }) async => V1MarkingRunDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/assessments/{assessmentId}/marking-suggestions', {
+        'assessmentId': assessmentId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1DismissMarkingSuggestionResponseDto> dismissMarkingSuggestion(
+    V1DismissMarkingSuggestionRequestDto request, {
+    required String suggestionId,
+    String? idempotencyKey,
+  }) async => V1DismissMarkingSuggestionResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/marking-suggestions/{suggestionId}/dismiss', {
+        'suggestionId': suggestionId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MarkingPreferenceDto> getMyMarkingPreference() async =>
+      V1MarkingPreferenceDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/marking-preference', {}, {})),
+      );
+
+  Future<V1MarkingPreferenceDto> updateMyMarkingPreference(
+    V1UpdateMarkingPreferenceRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1MarkingPreferenceDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/marking-preference', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -7064,6 +7151,35 @@ class V1DeletionRetainedRecordsDto {
   };
 }
 
+class V1DismissMarkingSuggestionRequestDto {
+  const V1DismissMarkingSuggestionRequestDto();
+
+  factory V1DismissMarkingSuggestionRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => const V1DismissMarkingSuggestionRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1DismissMarkingSuggestionResponseDto {
+  const V1DismissMarkingSuggestionResponseDto({
+    required this.id,
+    required this.status,
+  });
+
+  factory V1DismissMarkingSuggestionResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1DismissMarkingSuggestionResponseDto(
+    id: json['id'] as String,
+    status: json['status'] as String,
+  );
+
+  final String id;
+  final String status;
+
+  Map<String, Object?> toJson() => {'id': id, 'status': status};
+}
+
 class V1DownloadIntentRequestDto {
   const V1DownloadIntentRequestDto();
 
@@ -9052,6 +9168,390 @@ class V1MarkNotificationsReadResponseDto {
   final int markedCount;
 
   Map<String, Object?> toJson() => {'markedCount': markedCount};
+}
+
+class V1MarkingKeyPointDto {
+  const V1MarkingKeyPointDto({required this.text, this.marks});
+
+  factory V1MarkingKeyPointDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingKeyPointDto(
+        text: json['text'] as String,
+        marks: json['marks'] as num?,
+      );
+
+  final String text;
+  final num? marks;
+
+  Map<String, Object?> toJson() => {'text': text, 'marks': ?marks};
+}
+
+class V1MarkingPlanDto {
+  const V1MarkingPlanDto({
+    required this.active,
+    required this.teacher,
+    required this.available,
+    required this.allowance,
+  });
+
+  factory V1MarkingPlanDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingPlanDto(
+        active: json['active'] as bool,
+        teacher: json['teacher'] as bool,
+        available: json['available'] as bool,
+        allowance: json['allowance'] as Map<String, dynamic>,
+      );
+
+  final bool active;
+  final bool teacher;
+  final bool available;
+  final Map<String, dynamic> allowance;
+
+  Map<String, Object?> toJson() => {
+    'active': active,
+    'teacher': teacher,
+    'available': available,
+    'allowance': allowance,
+  };
+}
+
+class V1MarkingPreferenceDto {
+  const V1MarkingPreferenceDto({required this.optedOut});
+
+  factory V1MarkingPreferenceDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingPreferenceDto(optedOut: json['optedOut'] as bool);
+
+  final bool optedOut;
+
+  Map<String, Object?> toJson() => {'optedOut': optedOut};
+}
+
+class V1MarkingReferenceDto {
+  const V1MarkingReferenceDto({
+    required this.questionId,
+    required this.position,
+    required this.kind,
+    required this.prompt,
+    required this.maximumScore,
+    required this.options,
+    required this.correctOptionIds,
+    required this.correctChoice,
+    required this.acceptedAnswers,
+    required this.preferredAnswer,
+    required this.markingGuidance,
+    required this.keyPoints,
+    required this.acceptedMethods,
+    required this.partialCredit,
+  });
+
+  factory V1MarkingReferenceDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingReferenceDto(
+        questionId: json['questionId'] as String?,
+        position: json['position'] as int,
+        kind: json['kind'] as String?,
+        prompt: json['prompt'] as String?,
+        maximumScore: json['maximumScore'] as num,
+        options: [
+          for (final item in json['options'] as List<dynamic>)
+            V1QuestionOptionDto.fromJson(item as Map<String, dynamic>),
+        ],
+        correctOptionIds: json['correctOptionIds'] == null
+            ? null
+            : (json['correctOptionIds'] as List<dynamic>).cast<String>(),
+        correctChoice: json['correctChoice'] as bool?,
+        acceptedAnswers: json['acceptedAnswers'] == null
+            ? null
+            : (json['acceptedAnswers'] as List<dynamic>).cast<String>(),
+        preferredAnswer: json['preferredAnswer'] as String?,
+        markingGuidance: json['markingGuidance'] as String?,
+        keyPoints: [
+          for (final item in json['keyPoints'] as List<dynamic>)
+            V1MarkingKeyPointDto.fromJson(item as Map<String, dynamic>),
+        ],
+        acceptedMethods: json['acceptedMethods'] as String?,
+        partialCredit: json['partialCredit'] as String?,
+      );
+
+  final String? questionId;
+  final int position;
+  final String? kind;
+  final String? prompt;
+  final num maximumScore;
+  final List<V1QuestionOptionDto> options;
+  final List<String>? correctOptionIds;
+  final bool? correctChoice;
+  final List<String>? acceptedAnswers;
+  final String? preferredAnswer;
+  final String? markingGuidance;
+  final List<V1MarkingKeyPointDto> keyPoints;
+  final String? acceptedMethods;
+  final String? partialCredit;
+
+  Map<String, Object?> toJson() => {
+    'questionId': questionId,
+    'position': position,
+    'kind': kind,
+    'prompt': prompt,
+    'maximumScore': maximumScore,
+    'options': [for (final item in options) item.toJson()],
+    'correctOptionIds': correctOptionIds,
+    'correctChoice': correctChoice,
+    'acceptedAnswers': acceptedAnswers,
+    'preferredAnswer': preferredAnswer,
+    'markingGuidance': markingGuidance,
+    'keyPoints': [for (final item in keyPoints) item.toJson()],
+    'acceptedMethods': acceptedMethods,
+    'partialCredit': partialCredit,
+  };
+}
+
+class V1MarkingReferenceUpdateDto {
+  const V1MarkingReferenceUpdateDto({
+    this.questionId,
+    this.preferredAnswer,
+    this.markingGuidance,
+    this.keyPoints,
+    this.acceptedMethods,
+    this.partialCredit,
+  });
+
+  factory V1MarkingReferenceUpdateDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingReferenceUpdateDto(
+        questionId: json['questionId'] as String?,
+        preferredAnswer: json['preferredAnswer'] as String?,
+        markingGuidance: json['markingGuidance'] as String?,
+        keyPoints: json['keyPoints'] == null
+            ? null
+            : [
+                for (final item in json['keyPoints'] as List<dynamic>)
+                  V1MarkingKeyPointDto.fromJson(item as Map<String, dynamic>),
+              ],
+        acceptedMethods: json['acceptedMethods'] as String?,
+        partialCredit: json['partialCredit'] as String?,
+      );
+
+  final String? questionId;
+  final String? preferredAnswer;
+  final String? markingGuidance;
+  final List<V1MarkingKeyPointDto>? keyPoints;
+  final String? acceptedMethods;
+  final String? partialCredit;
+
+  Map<String, Object?> toJson() => {
+    'questionId': ?questionId,
+    'preferredAnswer': ?preferredAnswer,
+    'markingGuidance': ?markingGuidance,
+    if (keyPoints != null)
+      'keyPoints': [for (final item in keyPoints!) item.toJson()],
+    'acceptedMethods': ?acceptedMethods,
+    'partialCredit': ?partialCredit,
+  };
+}
+
+class V1MarkingReferencesDto {
+  const V1MarkingReferencesDto({
+    required this.delivery,
+    required this.settings,
+    required this.references,
+  });
+
+  factory V1MarkingReferencesDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingReferencesDto(
+        delivery: json['delivery'] as String,
+        settings: V1MarkingSettingsDto.fromJson(
+          json['settings'] as Map<String, dynamic>,
+        ),
+        references: [
+          for (final item in json['references'] as List<dynamic>)
+            V1MarkingReferenceDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final String delivery;
+  final V1MarkingSettingsDto settings;
+  final List<V1MarkingReferenceDto> references;
+
+  Map<String, Object?> toJson() => {
+    'delivery': delivery,
+    'settings': settings.toJson(),
+    'references': [for (final item in references) item.toJson()],
+  };
+}
+
+class V1MarkingRunDto {
+  const V1MarkingRunDto({
+    required this.runId,
+    required this.referenceVersion,
+    required this.strictness,
+    required this.queued,
+    required this.optedOut,
+    required this.replaced,
+  });
+
+  factory V1MarkingRunDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingRunDto(
+        runId: json['runId'] as String,
+        referenceVersion: json['referenceVersion'] as int,
+        strictness: json['strictness'] as String,
+        queued: json['queued'] as int,
+        optedOut: json['optedOut'] as int,
+        replaced: json['replaced'] as int,
+      );
+
+  final String runId;
+  final int referenceVersion;
+  final String strictness;
+  final int queued;
+  final int optedOut;
+  final int replaced;
+
+  Map<String, Object?> toJson() => {
+    'runId': runId,
+    'referenceVersion': referenceVersion,
+    'strictness': strictness,
+    'queued': queued,
+    'optedOut': optedOut,
+    'replaced': replaced,
+  };
+}
+
+class V1MarkingSettingsDto {
+  const V1MarkingSettingsDto({
+    required this.strictness,
+    required this.referenceVersion,
+  });
+
+  factory V1MarkingSettingsDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingSettingsDto(
+        strictness: json['strictness'] as String,
+        referenceVersion: json['referenceVersion'] as int,
+      );
+
+  final String strictness;
+  final int referenceVersion;
+
+  Map<String, Object?> toJson() => {
+    'strictness': strictness,
+    'referenceVersion': referenceVersion,
+  };
+}
+
+class V1MarkingSuggestionDto {
+  const V1MarkingSuggestionDto({
+    required this.id,
+    required this.studentId,
+    required this.attemptId,
+    required this.questionId,
+    required this.submissionAttemptId,
+    required this.status,
+    required this.maximumScore,
+    required this.suggestedScore,
+    required this.met,
+    required this.missed,
+    required this.rationale,
+    required this.feedback,
+    required this.conflict,
+    required this.reviewReason,
+    required this.reason,
+    required this.referenceVersion,
+    required this.strictness,
+    required this.stale,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory V1MarkingSuggestionDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingSuggestionDto(
+        id: json['id'] as String,
+        studentId: json['studentId'] as String,
+        attemptId: json['attemptId'] as String?,
+        questionId: json['questionId'] as String?,
+        submissionAttemptId: json['submissionAttemptId'] as String?,
+        status: json['status'] as String,
+        maximumScore: json['maximumScore'] as num,
+        suggestedScore: json['suggestedScore'] as num?,
+        met: (json['met'] as List<dynamic>).cast<String>(),
+        missed: (json['missed'] as List<dynamic>).cast<String>(),
+        rationale: json['rationale'] as String?,
+        feedback: json['feedback'] as String?,
+        conflict: json['conflict'] as String?,
+        reviewReason: json['reviewReason'] as String?,
+        reason: json['reason'] as String?,
+        referenceVersion: json['referenceVersion'] as int,
+        strictness: json['strictness'] as String,
+        stale: json['stale'] as bool,
+        createdAt: json['createdAt'] as String,
+        updatedAt: json['updatedAt'] as String,
+      );
+
+  final String id;
+  final String studentId;
+  final String? attemptId;
+  final String? questionId;
+  final String? submissionAttemptId;
+  final String status;
+  final num maximumScore;
+  final num? suggestedScore;
+  final List<String> met;
+  final List<String> missed;
+  final String? rationale;
+  final String? feedback;
+  final String? conflict;
+  final String? reviewReason;
+  final String? reason;
+  final int referenceVersion;
+  final String strictness;
+  final bool stale;
+  final String createdAt;
+  final String updatedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'studentId': studentId,
+    'attemptId': attemptId,
+    'questionId': questionId,
+    'submissionAttemptId': submissionAttemptId,
+    'status': status,
+    'maximumScore': maximumScore,
+    'suggestedScore': suggestedScore,
+    'met': met,
+    'missed': missed,
+    'rationale': rationale,
+    'feedback': feedback,
+    'conflict': conflict,
+    'reviewReason': reviewReason,
+    'reason': reason,
+    'referenceVersion': referenceVersion,
+    'strictness': strictness,
+    'stale': stale,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
+}
+
+class V1MarkingSuggestionListDto {
+  const V1MarkingSuggestionListDto({
+    required this.settings,
+    required this.items,
+  });
+
+  factory V1MarkingSuggestionListDto.fromJson(Map<String, dynamic> json) =>
+      V1MarkingSuggestionListDto(
+        settings: V1MarkingSettingsDto.fromJson(
+          json['settings'] as Map<String, dynamic>,
+        ),
+        items: [
+          for (final item in json['items'] as List<dynamic>)
+            V1MarkingSuggestionDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final V1MarkingSettingsDto settings;
+  final List<V1MarkingSuggestionDto> items;
+
+  Map<String, Object?> toJson() => {
+    'settings': settings.toJson(),
+    'items': [for (final item in items) item.toJson()],
+  };
 }
 
 class V1MaterialRefDto {
@@ -11533,6 +12033,24 @@ class V1RequestGuardianLinkRequestDto {
   };
 }
 
+class V1RequestMarkingSuggestionsRequestDto {
+  const V1RequestMarkingSuggestionsRequestDto({this.scope, this.studentIds});
+
+  factory V1RequestMarkingSuggestionsRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RequestMarkingSuggestionsRequestDto(
+    scope: json['scope'] as String?,
+    studentIds: json['studentIds'] == null
+        ? null
+        : (json['studentIds'] as List<dynamic>).cast<String>(),
+  );
+
+  final String? scope;
+  final List<String>? studentIds;
+
+  Map<String, Object?> toJson() => {'scope': ?scope, 'studentIds': ?studentIds};
+}
+
 class V1RequestMeetingRequestDto {
   const V1RequestMeetingRequestDto({
     required this.title,
@@ -13841,6 +14359,80 @@ class V1UpdateGradebookItemRequestDto {
     'maximumScore': maximumScore,
     'weight': weight,
     'scheduledAt': scheduledAt,
+  };
+}
+
+class V1UpdateMarkingPreferenceRequestDto {
+  const V1UpdateMarkingPreferenceRequestDto({required this.optedOut});
+
+  factory V1UpdateMarkingPreferenceRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1UpdateMarkingPreferenceRequestDto(optedOut: json['optedOut'] as bool);
+
+  final bool optedOut;
+
+  Map<String, Object?> toJson() => {'optedOut': optedOut};
+}
+
+class V1UpdateMarkingReferencesRequestDto {
+  const V1UpdateMarkingReferencesRequestDto({this.strictness, this.references});
+
+  factory V1UpdateMarkingReferencesRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1UpdateMarkingReferencesRequestDto(
+    strictness: json['strictness'] as String?,
+    references: json['references'] == null
+        ? null
+        : [
+            for (final item in json['references'] as List<dynamic>)
+              V1MarkingReferenceUpdateDto.fromJson(
+                item as Map<String, dynamic>,
+              ),
+          ],
+  );
+
+  final String? strictness;
+  final List<V1MarkingReferenceUpdateDto>? references;
+
+  Map<String, Object?> toJson() => {
+    'strictness': ?strictness,
+    if (references != null)
+      'references': [for (final item in references!) item.toJson()],
+  };
+}
+
+class V1UpdateMarkingReferencesResponseDto {
+  const V1UpdateMarkingReferencesResponseDto({
+    required this.settings,
+    required this.references,
+    required this.changed,
+    required this.staleSuggestions,
+  });
+
+  factory V1UpdateMarkingReferencesResponseDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1UpdateMarkingReferencesResponseDto(
+    settings: V1MarkingSettingsDto.fromJson(
+      json['settings'] as Map<String, dynamic>,
+    ),
+    references: [
+      for (final item in json['references'] as List<dynamic>)
+        V1MarkingReferenceDto.fromJson(item as Map<String, dynamic>),
+    ],
+    changed: json['changed'] as bool,
+    staleSuggestions: json['staleSuggestions'] as int,
+  );
+
+  final V1MarkingSettingsDto settings;
+  final List<V1MarkingReferenceDto> references;
+  final bool changed;
+  final int staleSuggestions;
+
+  Map<String, Object?> toJson() => {
+    'settings': settings.toJson(),
+    'references': [for (final item in references) item.toJson()],
+    'changed': changed,
+    'staleSuggestions': staleSuggestions,
   };
 }
 

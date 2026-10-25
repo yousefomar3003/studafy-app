@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
-**Last updated:** 21 October 2026\
-**Version:** 1.7
+**Last updated:** 25 October 2026\
+**Version:** 1.8
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -74,9 +74,47 @@ use the tools; photos not stored for students with no class) and §10. The
 age and parental-consent questions in §5 are now more pressing
 (questions-for-counsel 9.1).
 
+Version 1.8 (25 October 2026), with terms of use 1.6: AI-suggested marks
+for teachers, Studafy AI Marking (DL-073, ADR-0046). A teacher may ask AI
+for a suggested mark on written answers and hand-ins; the teacher decides;
+a student can turn it off in Account; Together AI is the processor;
+suggestions are kept 180 days; names are replaced. This replaces every
+"AI never marks a student's work" statement (§6, §14). §1, §1.1, §2, §3.4,
+§3.9, §3.10, §3.11, §4, §5, §6 (new §6.1), §7.1, §7.2, §8, §9, §10, §11,
+§14 and the list of changes. Published by the owner's decision without
+legal review, like 1.5 to 1.7. It needs a new consent version
+(terms_and_privacy, with termsPolicyVersion and the in-app summaries
+policyTermsBody and policyPrivacyBody); the AI study tools' notice
+(ai_features) does not change, because marking does not rest on it.
+
+TODO(legal): DL-073. Review §6.1 and §4: a student's work, including
+photos and scans of handwritten pages, goes to Together AI when a teacher
+asks for suggested marks, on the basis of the teacher's decision with an
+opt-out rather than the student's consent, and with no DPA in place
+(questions-for-counsel 10.1 to 10.3; DPIA draft §12.2). Confirm the basis
+for minors, the retention periods, and §14 (whether a suggestion a teacher
+accepts unchanged is an automated decision).
+
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 1.8
+
+- **Teachers can ask AI for suggested marks** (Studafy AI Marking, a paid
+  plan for teachers): for written answers in online exams and quizzes, and
+  for hand-ins of marked assignments. The AI only suggests. A suggestion is
+  a draft only the class's teachers see, and it becomes a mark only if the
+  teacher saves a mark themselves (§2, §3.4, §6.1, §14).
+- **A student can turn this off** in Account. Their work is then never
+  sent, and the teacher marks it by hand (§5, §6.1, §11).
+- What is sent to the AI provider, Together AI: the question, the
+  teacher's reference answer and the student's work, with names Studafy
+  knows replaced; photos and scans of pages are sent as they are (§6.1,
+  §7.2, §8).
+- Suggestions are kept for 180 days, then deleted; a teacher's AI Marking
+  usage for 13 months. They are deleted with the account, and the export
+  shows a student's choice and a teacher's usage (§9, §10, §11).
 
 ### What changed in version 1.7
 
@@ -159,7 +197,8 @@ work done on paper — record attendance, and communicate with students and
 their guardians. It lets a student see and hand in that work and keep their
 own notes, and it lets a parent follow their child's progress. A student can
 also use Studafy on their own, without a class: their personal notebook and
-the AI study tools need no class.
+the AI study tools need no class. A teacher can also ask AI for suggested
+marks, which the teacher reviews and decides on (§6.1).
 
 **Data controller:** Studafy Limited, a company registered in Ireland under
 number 822430, with its registered office at 4/5 The Square, Cahir,
@@ -210,6 +249,11 @@ the class's records (DPIA draft §5). -->
 student with no class and for personal notes, including those of a student
 whose class belongs to a school that is itself the controller. -->
 
+<!-- TODO(legal): DL-073. AI-suggested marks (§6.1) are a teacher's own
+paid tool. Where a school is the controller of the class's records, is
+the school's instruction needed before a teacher sends students' work to
+the AI provider, or is Studafy the controller of that processing? -->
+
 ---
 
 ## 2. A short summary
@@ -222,6 +266,10 @@ The long version follows, and it governs. This summary is for orientation.
 - Teachers' marks stay **private until the teacher publishes them**. A
   published mark that is later corrected keeps a record of the old mark, who
   changed it, when and why, and the family is told when the mark changes.
+- **A teacher can ask AI for a suggested mark** on a written answer or a
+  hand-in. The AI never sets a mark: **the teacher decides**. The student's
+  work is sent to Together AI with the names Studafy knows replaced, and
+  **a student can turn this off** in Account (§6.1).
 - We do **not** sell personal data, use it for advertising, or build
   advertising profiles. We show no advertising, and the app contains no
   advertising or analytics software.
@@ -347,6 +395,11 @@ This is the substance of the service.
   graded", and the teacher's comment. **A mark is a draft, visible only to
   the class's teachers, until the teacher publishes it.** A student with no
   mark is shown as not marked, never as zero.
+- **Suggested marks:** where a teacher asks for them (§6.1), the mark the AI
+  suggests for a piece of work, what the answer met and missed against the
+  teacher's reference, the reason and suggested feedback; and the teacher's
+  reference answers, marking points and strictness. Suggestions are visible
+  only to the class's teachers and are not marks.
 - **Changes to marks:** every publication and every correction of a mark,
   with the previous mark and comment, the new ones, who made the change, when,
   and the reason the teacher gave — see §9.
@@ -483,8 +536,9 @@ servers, sent once to the AI provider and discarded (§6).
 
 ### 3.9 Billing
 
-Whether you hold a subscription (Studafy Plus, Studafy Max or Family+), when
-it started, renews and ends, and records of store transactions.
+Whether you hold a subscription (Studafy Plus, Studafy Max, Family+ or, for
+a teacher, Studafy AI Marking), when it started, renews and ends, and
+records of store transactions.
 
 **We never receive your card number, bank details or billing address.**
 Payment is taken by Apple or Google under their own terms and their own
@@ -518,13 +572,18 @@ a student makes from their own notes are not stored on our servers. A photo
 sent to the AI Tutor by a student in a class is kept for 30 days; one from
 a student who belongs to no class is not kept (§6, §10).
 
+For a teacher with Studafy AI Marking, how much it was used (the amount,
+the cost, the model and the date), so that the plan's monthly allowance can
+be applied (§6.1, §10).
+
 ### 3.11 Consents
 
 Which version of these terms and this policy you accepted, and when — and,
 for a child account, that the parent accepted them on the child's behalf.
 Separately, whether the AI study tools were agreed to (§6): who agreed, for
 whom, to which version of the notice, in which language and when, and who
-withdrew that agreement and when.
+withdrew that agreement and when. Whether a student has turned off
+AI-suggested marks (§6.1).
 
 ### 3.12 Operational data
 
@@ -559,6 +618,7 @@ withdrew that agreement and when.
 | Keeping audit records and backups | Legal obligation; legitimate interests in accountability and recovery |
 | Reviewing and acting on safety reports, and alerting our reviewer | Legitimate interests in protecting children; legal obligation where one applies |
 | The AI study tools | Consent, given separately before first use — see §6 |
+| Suggested marks by AI, when a teacher asks for them | Where a school is the controller, the school's legitimate interests or public task in marking work; otherwise the teacher's and our legitimate interests in helping teachers mark. The teacher decides whether to use it, and a student can turn it off at any time — see §6.1 |
 | Complying with the law, and defending legal claims | Legal obligation; legitimate interests |
 
 Where we rely on **legitimate interests**, we have considered whether our
@@ -572,6 +632,11 @@ model.**
 <!-- TODO(legal): once the data processing agreement with the AI provider is
 signed and forbids training on our data, add: "and we do not permit our
 providers to." Do not add it before. -->
+
+<!-- TODO(legal): DL-073. The basis for AI-suggested marks is the teacher's
+decision with an opt-out, not consent (owner's decision). Confirm it is
+sound for children's work, and whether legitimate interests can be relied
+on where Studafy is controller (questions-for-counsel 10.1). -->
 
 ---
 
@@ -599,6 +664,9 @@ A student can also use it on their own, without a class.
 - **The AI study tools are for student accounts, in a class or not**, and
   need their own consent: a parent gives it for a child account they manage
   (§6).
+- **A teacher can ask AI for suggested marks** on a student's work, and
+  the teacher decides the mark. A student, or the parent for a child account
+  they manage, can turn this off in Account (§6.1).
 - We do not profile children for advertising, and we show no advertising.
 - Where a school is the controller, questions about a child's records should
   go to the school first.
@@ -632,11 +700,13 @@ wording above is acceptable (questions-for-counsel 9.1). -->
 
 ---
 
-## 6. The AI study tools
+## 6. The AI study tools, and suggested marks
 
 **Read this section before allowing a student to use them.** The AI study
 tools are switched on. All of them are optional, and a student who does not
-use them has nothing sent to the AI provider.
+use them has nothing sent to the AI provider by them. Separately, a teacher
+can ask AI for suggested marks on a student's work, which a student can turn
+off: see §6.1.
 
 **Who can use them.** Every student account, whether or not it belongs to
 a class, including a child account a parent manages. Parent and teacher
@@ -727,8 +797,8 @@ every month.
 
 **Accuracy:** answers and notes are generated by a language model and **can
 be wrong**. They are study support, not a source of truth, and should never
-be handed in as a student's own work. **AI never marks a student's work** in
-Studafy; marks come only from teachers.
+be handed in as a student's own work. **Marks come only from teachers.** A
+teacher may ask AI for a suggested mark (§6.1), but the teacher decides.
 
 <!-- TODO(legal) - OUTSTANDING: the AI study tools are LIVE for children
 from launch (DL-062, an accepted risk the owner took on 2026-10-16), but as
@@ -750,6 +820,74 @@ section's new text on who can use the tools (every student account, in a
 class or not), photos that are not stored, and practice sets that are not
 stored, together with the notice in English and Arabic. -->
 
+### 6.1 Suggested marks for teachers (Studafy AI Marking)
+
+**What it is.** A teacher who has Studafy AI Marking, a paid plan for
+teachers, can ask AI to suggest marks for:
+
+- written answers (short answers and essays) in an online exam or quiz;
+  questions with a set answer are marked by their answer key, as before;
+- hand-ins of a marked assignment: typed text, PDF, Word and PowerPoint
+  files, and photos or scans of pages.
+
+The teacher first writes a **reference**: a model answer, the points a
+complete answer contains and what each is worth, other answers or methods
+that earn credit, and how part marks are given. The teacher also chooses how
+strictly to mark (lenient, balanced or strict).
+
+**The AI only suggests. The teacher decides.** For each answer or hand-in
+the AI suggests a mark, what the answer met and missed against the
+reference, the reason, and feedback the teacher can edit. A suggestion is a
+draft that **only the class's teachers can see**; students and parents never
+see it. It is **never a mark**: it becomes one only if the teacher saves a
+mark themselves, and then the usual rules apply (a mark is private until
+published, and a correction is recorded, §3.4). When a teacher changes the
+reference, nothing is marked again unless the teacher asks.
+
+**The teacher decides whether to use it; a student can turn it off.** We
+do not ask the student's consent for suggested marks: it is the teacher's
+tool for marking. A student can turn it off at any time in Account, and for
+a child account a parent manages, the parent can turn it off from that
+account. **When it is off, the student's work is never sent** to the AI
+provider, including work already waiting to be read, and the teacher marks
+it by hand.
+
+**What is sent to the AI provider:** the question, the teacher's reference,
+and the student's answer or hand-in: its text, the text of its PDF, Word or
+PowerPoint files, and images of photographed or scanned pages, which the AI
+reads (at most 20 pages for one hand-in). Before anything is sent we
+replace the names Studafy knows — the class's students, its teachers and
+the students' parents — with words such as [student], and remove email
+addresses, long number sequences and web links. **Photos and scans of pages
+are sent as they are**, so a name or a face on the page is sent too. The
+reference and the student's work are sent as material to compare, and the
+AI is told never to follow instructions written in them.
+
+**What is not sent:** the student's email, account identifier, school or
+class name, their other marks, their attendance or their messages. No
+identifier of the student is attached to a request.
+
+**What we keep:** the suggestions, for **180 days**, then they are deleted.
+The files are read to make the suggestion; this step keeps no copy of
+them (the hand-in itself stays with the class's records, §3.4). Nothing a
+student wrote is written to our logs. We record who asked for suggestions,
+changed a reference, dismissed a suggestion or turned suggestions off, and
+when, without the student's work (§9). For a teacher, how much of the
+plan's allowance was used, kept for 13 months (§3.10).
+
+**Our provider** is Together AI, with the same model as the AI study tools
+(see above). Our data processing agreement with Together AI is not yet in
+place (§8).
+
+**Accuracy:** a suggestion can be wrong. The teacher checks each one
+before saving a mark.
+
+<!-- TODO(legal): DL-073, ADR-0046. Published without legal review. Counsel
+to review this section: the basis (teacher's decision with an opt-out, not
+consent) for children's work; work sent to Together AI with no DPA; photos
+and scans of handwritten pages sent unchanged; 180 days for suggestions and
+13 months for the teacher's usage (questions-for-counsel 10.1 to 10.3). -->
+
 ---
 
 ## 7. Who we share data with
@@ -763,7 +901,8 @@ a parent linked to you once a mark is published. Draft marks are visible to
 the class's teachers only. There is no school administrator in this version
 of the app. Other students cannot see your marks, your submitted work or your
 private messages. Your personal notebook is visible to you only: not to a
-teacher, and not to a parent.
+teacher, and not to a parent. Suggested marks (§6.1) are visible to the
+class's teachers only.
 
 ### 7.2 Our processors
 
@@ -783,7 +922,7 @@ own purposes.
 | **Google** (Sign in with Google) | Your identity at sign-in | Global |
 | **Microsoft** (Sign in with Microsoft) | Your identity at sign-in | Global |
 | **Apple** (Sign in with Apple) | Your identity at sign-in | Global |
-| **Together AI** (AI study tools) | What §6 lists | United States; see §8 |
+| **Together AI** (AI study tools and suggested marks) | What §6 and §6.1 list | United States; see §8 |
 | **Resend** (email) | Your email address and the fixed message | See §8 |
 | **Google Firebase Cloud Messaging** (push) | Your device's push token and the fixed notification text | Global |
 | **Apple** and **Google** (subscriptions) | Purchases, as independent controllers under their own policies | Global |
@@ -833,7 +972,8 @@ United States. Our data processing agreement with it, and the transfer
 safeguard that goes with it, are not yet in place; we will update this
 policy when they are. Until then, if you do not want this data to go to
 Together AI, do not turn the AI study tools on, or turn them off in your
-account at any time (§6).
+account at any time (§6). A student can also turn off suggested marks in
+Account, so that a teacher's request never sends their work (§6.1).
 
 <!-- TODO(legal): confirm the mechanism for each provider in §7.2 before
 publishing on the own domain - the AI provider, GitHub, Resend and the
@@ -862,6 +1002,9 @@ with the real mechanism once the DPA is accepted. -->
   notifications, blocks, data exports, notebooks (personal notes included)
   and study notebooks, AI usage records, and personal photos (photos for
   the notebook or the AI Tutor);
+- delete every suggested mark about the student's work and their choice
+  about suggested marks, and, for a teacher, their Studafy AI Marking usage
+  records;
 - remove its email address from invitations;
 - delete, in the same way, every child account the person manages: nobody
   else can sign in to a child account, so it cannot outlive its parent. The
@@ -930,6 +1073,8 @@ we may be required to preserve it until that concludes.
 | A student's personal notes | Until the student deletes them or their account |
 | Notes, quizzes, flashcards and study notebooks made by the AI tools | Until the student deletes them or their account, or while the lesson they came from exists |
 | Quizzes and flashcards made from a student's own notes | Not stored by us; the app holds them while the student practises |
+| Suggested marks (§6.1) | 180 days, then deleted; sooner if the student's account is deleted |
+| Studafy AI Marking usage, for a teacher | 13 months |
 | Billing records | 6 years after the end of the tax year they relate to |
 | Files | While attached to something, subject to school policy; in any case deleted 12 months after the class is closed |
 | Inactive accounts | Deleted after 2 years without use. At least 30 days before, we warn the account holder by email, whatever their email settings, and also in the app if they belong to a school. The 30 days count from when the warning reached them. If the warning cannot reach them, we do not delete the account |
@@ -970,6 +1115,8 @@ applies, you have the right to:
 - **Withdraw consent** at any time, where we relied on consent — for the AI
   study tools, by turning them off in Account. Withdrawing does not affect
   what was lawful before.
+- **Turn off suggested marks**, so that your work is not sent to the AI
+  provider when a teacher asks for them: in Account, at any time (§6.1).
 - **Complain** to your supervisory authority — in Ireland, the Data
   Protection Commission.
 
@@ -986,7 +1133,8 @@ classes and family links, your work and the answers you gave, your marks
 and their history, your attendance and its history, your notebooks
 (including your personal notes), the
 messages you sent and received, the reports you made, your consents, your
-purchases and your AI usage. **It lists your files — each one's name, type, size and date
+purchases, your AI usage, whether you turned off suggested marks and, for a
+teacher, your Studafy AI Marking usage. **It lists your files — each one's name, type, size and date
 — rather than including them.** You can open your files in the app, or write
 to hello@studafy.com for a copy. Messages, files and AI usage hold the newest
 5,000 entries each; write to us for the rest. A parent's export names the
@@ -1001,7 +1149,9 @@ child's account.
   hello@studafy.com and we will pass your request to the school;
 - messages in conversations you have left;
 - AI Tutor chats, which are kept only on your device;
-- quizzes and flashcards made from your own notes, which we do not store.
+- quizzes and flashcards made from your own notes, which we do not store;
+- suggested marks, which are drafts for the teacher; your marks are in the
+  export.
 
 <!-- TODO(legal): is each omission above acceptable under the right of
 access (questions-for-counsel 4.1, 4.2; DL-060)? -->
@@ -1071,9 +1221,15 @@ Cloudflare Turnstile sets what is needed to complete its bot check.
 
 We do not make decisions producing legal or similarly significant effects
 about you by automated means alone. **Marks and attendance are decided by
-teachers.** The AI tools generate study material; they do not mark work, and
-they make no decision about any student. Family+ summarises records; it does
-not score, rank or predict. Safety reports are decided by a person.
+teachers.** The AI study tools generate study material and make no decision
+about any student. A teacher can ask AI for a suggested mark (§6.1), but the
+AI never sets a mark: a mark exists only when the teacher saves it, after
+reviewing the work. Family+ summarises records; it does not score, rank or
+predict. Safety reports are decided by a person.
+
+<!-- TODO(legal): DL-073. Confirm that a suggested mark the teacher reviews
+and saves, even unchanged, is not a decision based solely on automated
+processing under Art. 22 GDPR. -->
 
 ---
 
@@ -1118,6 +1274,6 @@ WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
 
 Version 1.5 was published on 17 October 2026 without that review, by the
 owner's decision (DL-068). Items 1 to 8 still stand. Version 1.6 (21 October
-2026, DL-071) was published the same way, and so was version 1.7 (21
-October 2026, DL-072).
+2026, DL-071) was published the same way, and so were version 1.7 (21
+October 2026, DL-072) and version 1.8 (25 October 2026, DL-073).
 -->

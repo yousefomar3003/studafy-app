@@ -113,6 +113,8 @@ const studafyPlanNames = [
   'Studafy Plus',
   'Studafy Max',
   'Family+',
+  // A teacher's plan (ADR-0046).
+  'Studafy AI Marking',
 ];
 
 /// A plan name ready to sit inside a sentence or beside other text.

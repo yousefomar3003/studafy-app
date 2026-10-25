@@ -45,6 +45,10 @@ import {
   startNotebookGeneration,
 } from "./processors/notebookGeneration";
 import {
+  postgresMarkingQueue,
+  startMarkingSuggestions,
+} from "./processors/markingSuggestions";
+import {
   startFileRetentionSweep,
   startRetentionSchedule,
   undeliverableWarningsAlert,
@@ -146,6 +150,12 @@ if (
 ) {
   activeQueues.push("study-notebooks");
 }
+if (
+  env.DATABASE_URL && env.AI_API_KEY && env.AI_BASE_URL &&
+  env.MARKING_SUGGESTIONS_ENABLED
+) {
+  activeQueues.push("marking-suggestions");
+}
 
 logStartup(logger, {
   environment: env.ENVIRONMENT,
@@ -178,7 +188,7 @@ function database(): Sql {
 
 const fileWorkerSql = env.FILE050_CLEANUP_ENABLED || env.FILE051_SCAN_ENABLED ||
     env.FILE051_RETENTION_ENABLED || env.AI_MATERIAL_INDEX_ENABLED ||
-    env.OPS061_NOTIFICATIONS_ENABLED ||
+    env.OPS061_NOTIFICATIONS_ENABLED || env.MARKING_SUGGESTIONS_ENABLED ||
     billingOn
   ? database()
   : undefined;
@@ -265,6 +275,34 @@ const notebooks = notebookSql && studyModel
     logger,
     concurrency: env.AI_NOTEBOOK_CONCURRENCY,
   }, env.AI_NOTEBOOK_POLL_INTERVAL_MS)
+  : undefined;
+
+// ADR-0046: suggested marks for teachers, off the queue the API fills. Its
+// own switch, not AI_LESSON_TOOLS_ENABLED: it sends a student's work for a
+// teacher who asked, under the teacher's own plan. Hand-in files are read
+// from storage, so it needs that too.
+const markingModel = env.AI_API_KEY && env.AI_BASE_URL &&
+    env.MARKING_SUGGESTIONS_ENABLED
+  ? createStudyAssistant({
+    apiKey: env.AI_API_KEY,
+    baseUrl: env.AI_BASE_URL,
+    model: env.AI_MODEL,
+    maxLongOutputTokens: 1_800,
+    timeoutMs: 60_000,
+  })
+  : null;
+const marking = fileWorkerSql && storage && markingModel
+  ? startMarkingSuggestions({
+    queue: postgresMarkingQueue(fileWorkerSql),
+    storage,
+    assistant: markingModel,
+    prices: {
+      inputUsdPerMTok: env.AI_PRICE_INPUT_USD_PER_MTOK,
+      outputUsdPerMTok: env.AI_PRICE_OUTPUT_USD_PER_MTOK,
+    },
+    logger,
+    concurrency: env.AI_MARKING_CONCURRENCY,
+  }, env.AI_MARKING_POLL_INTERVAL_MS)
   : undefined;
 
 // OPS-061: the transactional outbox drain. The dispatcher polls the
@@ -506,6 +544,7 @@ installGracefulShutdown({
     await retention?.close();
     await materialIndex?.close();
     await notebooks?.close();
+    await marking?.close();
     await cleanup?.close();
     await accountDeletion?.close();
     await dataExport?.close();

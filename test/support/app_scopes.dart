@@ -3,6 +3,7 @@ import 'package:studafy/app/account_scope.dart';
 import 'package:studafy/app/app_dependencies.dart';
 import 'package:studafy/app/session_scope.dart';
 import 'package:studafy/core/uploads_scope.dart';
+import 'package:studafy/features/academic/presentation/marking_scope.dart';
 import 'package:studafy/features/family/presentation/family_scope.dart';
 import 'package:studafy/features/meetings/presentation/meetings_scope.dart';
 import 'package:studafy/features/messaging/presentation/messaging_scope.dart';
@@ -23,7 +24,10 @@ Widget appScopes(AppDependencies deps, Widget child) => SessionScope(
           interactor: deps.notifications,
           child: MessagingScope(
             interactor: deps.messaging,
-            child: FamilyScope(interactor: deps.family, child: child),
+            child: FamilyScope(
+              interactor: deps.family,
+              child: MarkingScope(services: deps.marking, child: child),
+            ),
           ),
         ),
       ),

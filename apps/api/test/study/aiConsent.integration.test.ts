@@ -43,7 +43,7 @@ const CHILD = `${P}16`;
 const STUDENT_ROW = `${P}21`;
 const CLASSMATE_ROW = `${P}22`;
 const CHILD_ROW = `${P}23`;
-const VERSION = "2026-10-22";
+const VERSION = "2026-10-25";
 
 let sql: Sql;
 let app: Hono<AuthorizationEnv>;

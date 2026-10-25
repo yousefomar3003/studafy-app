@@ -35,7 +35,7 @@ begin
     'feature', 'ask', 'estimateMicroUsd', 10, 'estimateTokens', 100)) ->> 'outcome';
 end $$;
 
-create function pg_temp.give(u uuid, version text default '2026-10-22')
+create function pg_temp.give(u uuid, version text default '2026-10-25')
 returns text language sql as $$
   select pg_temp.as_user(u, 'give', jsonb_build_object(
     'version', version, 'locale', 'en')) ->> 'outcome'
@@ -64,8 +64,8 @@ insert into public.enrollments (classroom_id, student_id, active)
 select :'classroom_id', st.id, true from public.students st where st.user_id = :'child';
 
 -- 1. Who may use the AI study tools at all.
-select is(private.ai_consent_version(), '2026-10-22',
-  'the current AI notice is version 2026-10-22');
+select is(private.ai_consent_version(), '2026-10-25',
+  'the current AI notice is version 2026-10-25');
 select is(pg_temp.access(:'teacher_user'), 'not_student', 'a teacher may not');
 select is(pg_temp.access(:'guardian_user'), 'not_student', 'a parent may not');
 select is(pg_temp.access(:'loner'), 'consent_required',
@@ -114,7 +114,7 @@ select is(private.api047_ai_usage('summary', '{}') ->> 'access', 'not_student',
 -- 4. Not through the public consent RPC: it knows nothing about parents.
 select set_config('request.jwt.claim.sub', :'child', true);
 select throws_ok(
-  $$select public.record_policy_consent('ai_features', '2026-10-22', 'en')$$,
+  $$select public.record_policy_consent('ai_features', '2026-10-25', 'en')$$,
   '22023', 'Unsupported consent purpose',
   'the AI consent cannot be recorded through record_policy_consent');
 select set_config('request.jwt.claim.sub', :'student_user', true);
@@ -141,13 +141,13 @@ select is((select array_agg(reason_code order by id)
 select is(pg_temp.give(:'child'), 'guardian_consent_required',
   'a managed child cannot consent for themselves');
 select is(pg_temp.as_user(:'teacher_user', 'child_give', jsonb_build_object(
-  'childId', :'child', 'version', '2026-10-22', 'locale', 'en')) ->> 'outcome',
+  'childId', :'child', 'version', '2026-10-25', 'locale', 'en')) ->> 'outcome',
   'not_found', 'nobody but the managing parent can consent for the child');
 select is(pg_temp.as_user(:'child', 'child_status', jsonb_build_object(
   'childId', :'child')) ->> 'outcome', 'not_found',
   'a managed account manages nobody');
 select is(pg_temp.as_user(:'guardian_user', 'child_give', jsonb_build_object(
-  'childId', :'child', 'version', '2026-10-22', 'locale', 'ar')) ->> 'access',
+  'childId', :'child', 'version', '2026-10-25', 'locale', 'ar')) ->> 'access',
   'ok', 'the managing parent consents for the child');
 select results_eq(
   $$select given_by, given_as, locale from public.consent_records
@@ -195,7 +195,7 @@ select is((private.authz_notebook('study_set.generate', :'lesson') ->> 'allowed'
 select ok(exists (
   select 1 from jsonb_array_elements(
     private.data_export_document(:'student_user') -> 'sections' -> 'consents') c
-  where c ->> 'purpose' = 'ai_features' and c ->> 'policyVersion' = '2026-10-22'),
+  where c ->> 'purpose' = 'ai_features' and c ->> 'policyVersion' = '2026-10-25'),
   'the AI consent is in the student''s data export');
 select set_config('request.jwt.claim.sub', :'student_user', true);
 select is((private.auth_deletion_impact() -> 'deleted_personal_data' ->> 'consents')::int,

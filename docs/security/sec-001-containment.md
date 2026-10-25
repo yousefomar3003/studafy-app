@@ -157,6 +157,10 @@ and the unconditional refusal of production at app start. Still guarded:
 - the filled `config/dart-defines.production.json` is git-ignored, and
   `build-store.sh` refuses it if tracked;
 - AI grading stays removed (`allowsAiGrading` is a hard-false tripwire);
+  since DL-073 (ADR-0046) a teacher may ask for AI-suggested marks, which
+  are staff-only drafts and never become a mark without the teacher, with
+  server-owned files, per-request SQL authorization, redaction, pinned
+  egress, caps and audit;
 - uploads are guarded on the server, not by the app: since 2026-10-17
   (the owner's approval, DL-070) `allowsRemoteFileUploads` is true in
   production too, and every upload goes through FILE-050 upload intents

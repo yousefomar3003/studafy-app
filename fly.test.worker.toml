@@ -53,6 +53,8 @@ primary_region = "fra"
   # key (AI_API_KEY) is a secret; the origin and model are not.
   AI_MATERIAL_INDEX_ENABLED = "true"
   AI_LESSON_TOOLS_ENABLED = "true"
+  # ADR-0046: suggested marks, as on the test API.
+  MARKING_SUGGESTIONS_ENABLED = "true"
   AI_BASE_URL = "https://api.together.xyz"
   AI_MODEL = "Qwen/Qwen3.5-9B"
 

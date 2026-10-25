@@ -10,6 +10,7 @@ import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 
 import '../../core/secure_storage.dart';
+import '../../features/academic/domain/marking.dart';
 import '../../features/family_insights/domain/parent_subscription_repository.dart';
 import '../../features/study/domain/study.dart';
 import '../contracts/v1_client.generated.dart';
@@ -18,7 +19,10 @@ import 'store_offer_details.dart';
 import 'v1_billing_api.dart';
 
 class StoreSubscriptionRepository
-    implements ParentSubscriptionRepository, StudyPlanSubscriptionRepository {
+    implements
+        ParentSubscriptionRepository,
+        StudyPlanSubscriptionRepository,
+        MarkingPlanStore {
   StoreSubscriptionRepository({
     InAppPurchase? store,
     V1BillingApi? billingApi,
@@ -630,6 +634,105 @@ class StoreSubscriptionRepository
             .subscriptionOfferDetails![index]
             .offerIdToken,
         changeSubscriptionParam: replacing,
+      );
+    } else {
+      param = PurchaseParam(
+        productDetails: selected,
+        applicationUserName: accountToken,
+      );
+    }
+    if (!await _store.buyNonConsumable(purchaseParam: param)) {
+      throw StateError('The store did not start the purchase');
+    }
+  }
+
+  /// Studafy AI Marking: a teacher's own monthly plan (ADR-0046).
+  static const _markingFeature = 'studafy_ai_marking';
+
+  @override
+  bool get sellsMarkingPlan => _isRemote && purchaseStore != null;
+
+  Future<V1BillingProduct?> _markingProduct() async => (await _products())
+      .where((product) => product.featureKey == _markingFeature)
+      .firstOrNull;
+
+  @override
+  Future<MarkingPlanOffer> markingOffer() async {
+    if (!sellsMarkingPlan) return const MarkingPlanOffer();
+    await initialize();
+    final V1BillingProduct? product;
+    try {
+      product = await _markingProduct();
+    } catch (_) {
+      return const MarkingPlanOffer();
+    }
+    if (product == null || !await _store.isAvailable()) {
+      return const MarkingPlanOffer();
+    }
+    final response = await _store.queryProductDetails({product.storeProductId});
+    if (response.error != null || response.productDetails.isEmpty) {
+      return const MarkingPlanOffer();
+    }
+    final terms = resolveStoreOfferTerms(response.productDetails.first);
+    return MarkingPlanOffer(
+      storeAvailable: true,
+      price: terms.price,
+      currencyCode: terms.currencyCode,
+      periodLabel: terms.periodNoun,
+      hasTrial: terms.hasTrial,
+      trialLengthLabel: terms.trialLength,
+    );
+  }
+
+  @override
+  Future<void> purchaseMarkingPlan() async {
+    await initialize();
+    if (!_isRemote) throw StateError('Billing is unavailable in preview');
+    final product = await _markingProduct();
+    if (product == null) {
+      throw StateError('Studafy AI Marking is not on sale in this store');
+    }
+    final accountToken = _accountToken;
+    if (accountToken == null) {
+      throw StateError('Billing is unavailable right now');
+    }
+    // Never a second subscription beside the first.
+    final now = DateTime.now();
+    final held = (await _billingApi!.entitlements()).any(
+      (row) =>
+          row.featureKey == _markingFeature &&
+          row.beneficiaryStudentId == null &&
+          row.grantsAccess &&
+          (row.endsAt == null || row.endsAt!.isAfter(now)),
+    );
+    if (held) {
+      throw const PurchaseBlockedException(PurchaseBlock.alreadySubscribed);
+    }
+    if (!await _store.isAvailable()) {
+      throw StateError('Store is unavailable');
+    }
+    final response = await _store.queryProductDetails({product.storeProductId});
+    if (response.error != null) throw StateError(response.error!.message);
+    if (response.productDetails.isEmpty) {
+      throw StateError('Studafy AI Marking is not available in this region');
+    }
+    final selected = response.productDetails.first;
+    final terms = resolveStoreOfferTerms(selected);
+    if (terms.price.trim().isEmpty ||
+        terms.currencyCode.trim().isEmpty ||
+        terms.periodLength.trim().isEmpty) {
+      throw StateError('Subscription terms are unavailable in this store');
+    }
+    final PurchaseParam param;
+    if (selected is GooglePlayProductDetails) {
+      final index = selected.subscriptionIndex!;
+      param = GooglePlayPurchaseParam(
+        productDetails: selected,
+        applicationUserName: accountToken,
+        offerToken: selected
+            .productDetails
+            .subscriptionOfferDetails![index]
+            .offerIdToken,
       );
     } else {
       param = PurchaseParam(

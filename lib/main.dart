@@ -24,6 +24,7 @@ import 'core/runtime_environment.dart';
 import 'core/studafy_design.dart';
 import 'core/studafy_material_localizations.dart';
 import 'core/uploads_scope.dart';
+import 'features/academic/presentation/marking_scope.dart';
 import 'features/family/presentation/family_scope.dart';
 import 'features/meetings/presentation/meetings_scope.dart';
 import 'features/messaging/presentation/messaging_scope.dart';
@@ -212,6 +213,7 @@ class StudafyApp extends StatelessWidget {
               child: content,
             );
           }
+          content = MarkingScope(services: deps.marking, child: content);
           content = ClassJoinLinkListener(
             guard: classJoinLinks,
             classes: deps.classes,

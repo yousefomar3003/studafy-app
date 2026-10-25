@@ -55,6 +55,6 @@
     "postgres": "3.4.9",
     "supabase": "2.117.0",
     "typescript": "7.0.2",
-    "zod": "4.6.1"
+    "zod": "4.6.6"
   }
 }

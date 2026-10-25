@@ -21,8 +21,11 @@ import '../data/local_cache/session_cache_binder.dart';
 import '../data/secure/keychain_secure_store.dart';
 import '../data/settings/preferences_device_settings.dart';
 import '../features/academic/data/api_academic_repository.dart';
+import '../features/academic/data/api_marking_repository.dart';
 import '../features/academic/data/preview_academic_repository.dart';
+import '../features/academic/data/preview_marking_repository.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/domain/marking.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/data/api_data_export_repository.dart';
 import '../features/account/data/api_profile_repository.dart';
@@ -108,6 +111,7 @@ class AppDependencies {
     required this.account,
     required this.academicApi,
     required this.academic,
+    required this.marking,
     required this.schoolOperations,
     required this.notifications,
     required this.cacheBinder,
@@ -169,6 +173,11 @@ class AppDependencies {
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
+
+  /// Studafy AI Marking (ADR-0046): references and suggested marks for
+  /// teachers, the plan they buy, and a student's opt-out. A synthetic build
+  /// keeps references in memory and makes no suggestions.
+  final MarkingServices marking;
   final SchoolOperationsRepository? schoolOperations;
   final NotificationsInteractor notifications;
 
@@ -265,6 +274,10 @@ class AppDependencies {
             telemetry: telemetry,
             taps: notificationTaps,
           );
+    final AcademicRepository academic = remote == null
+        ? PreviewAcademicRepository()
+        : ApiAcademicRepository(remote.api, context: context);
+    final apiMarking = remote == null ? null : ApiMarkingRepository(remote.api);
     final session = SessionInteractor(
       repository: sessionRepository,
       context: context,
@@ -378,9 +391,16 @@ class AppDependencies {
               ),
       ),
       academicApi: remote?.api,
-      academic: remote == null
-          ? PreviewAcademicRepository()
-          : ApiAcademicRepository(remote.api, context: context),
+      academic: academic,
+      marking: apiMarking == null
+          ? MarkingServices(
+              repository: PreviewMarkingRepository(academic: academic),
+            )
+          : MarkingServices(
+              repository: apiMarking,
+              plans: subscriptions,
+              preference: apiMarking,
+            ),
       schoolOperations: remote == null
           ? PreviewSchoolOperationsRepository()
           : ApiSchoolOperationsRepository(remote.api, context: context),

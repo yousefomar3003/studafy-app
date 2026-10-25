@@ -1,7 +1,7 @@
 # Studafy Terms of Use
 
-**Last updated:** 21 October 2026\
-**Version:** 1.5
+**Last updated:** 25 October 2026\
+**Version:** 1.6
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -52,6 +52,20 @@ class. Whether a child with no school can accept these terms alone, and
 from what age, is the same question as privacy policy §5
 (questions-for-counsel 9.1).
 
+Version 1.6 (25 October 2026), with privacy policy 1.8: AI-suggested marks
+for teachers, Studafy AI Marking (DL-073, ADR-0046). A teacher may ask AI
+for suggested marks; the teacher decides and is responsible for the mark;
+a student can turn it off in Account; Studafy AI Marking is a paid monthly
+plan for teachers. §1, §4, §5, §8 and §9 changed; §8's "AI never marks
+work in Studafy" is replaced. Published by the owner's decision without
+legal review, like 1.3 to 1.5. It needs a new consent version with privacy
+policy 1.8 and the in-app summary.
+
+TODO(legal): DL-073. Review §4 (the teacher's responsibility for a mark
+suggested by AI), §5 and §8 (the student's opt-out), and §9 (a paid plan
+for teachers, bought in the store, possibly by a teacher acting for a
+school).
+
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
 -->
@@ -67,7 +81,8 @@ accept both.
 ## 1. What Studafy is
 
 Studafy is a school application. Teachers run classes, share lessons, set and
-mark work — including work done on paper — and record attendance. Students
+mark work — including work done on paper, and with suggested marks from AI
+if they choose — and record attendance. Students
 see and hand in their work and keep their own notes. A student can also use
 Studafy on their own, without a class. Parents follow their child's
 progress. Everyone can message the people in their classes.
@@ -124,6 +139,13 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   record.** Marks you enter are drafts, visible only to your class's
   teachers, until you publish them. Publishing tells the students and their
   linked parents.
+- **Suggested marks.** With Studafy AI Marking (§9) you can ask AI to
+  suggest marks for written answers and hand-ins, against a reference you
+  write. A suggestion is only a suggestion: it becomes a mark only when you
+  save one, and **the mark is yours**. Read the student's work and check
+  each suggestion before you save a mark; it can be wrong. Students who have
+  turned suggested marks off are left for you to mark by hand. Do not put
+  other people's personal details in your reference answers.
 - **Corrections are recorded, not erased.** To change a published mark you
   must give a reason. The previous mark, the new one, who changed it, when
   and why are kept, and the family is told if the mark itself changed. Give
@@ -155,6 +177,9 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   time. Once your teacher has published a mark for a piece of work, you cannot
   replace it unless your teacher lets you.
 - If you think a mark or an attendance record is wrong, ask your teacher.
+- Your teacher may ask AI to suggest a mark for your written work; your
+  teacher decides the mark. If you do not want your work sent to the AI, turn
+  suggested marks off in Account, and your teacher will mark it by hand.
 
 ## 6. For parents and guardians
 
@@ -198,7 +223,9 @@ Privacy Policy says exactly what is sent to it.
   people's personal details.
 - **What they produce can be wrong.** Check it before relying on it, and
   never hand it in as your own work.
-- AI never marks work in Studafy.
+- **AI never decides a mark.** A teacher may ask AI for a suggested mark on
+  a student's written work, which only teachers see; the teacher decides the
+  mark. A student can turn this off in Account (§4, §5; Privacy Policy §6.1).
 - Each plan has an allowance, which renews every week on the free plan and
   every month on the paid plans. We may change the allowances, or pause a
   tool, to keep the service working and affordable.
@@ -208,8 +235,11 @@ Privacy Policy says exactly what is sent to it.
 - **Studafy Plus** and **Studafy Max** are for students, and a student can
   subscribe to either in the app. **Family+** is for parents: one
   subscription for up to 4 linked children, or a larger one for up to 8.
-  Moving to the larger plan upgrades the same subscription. The app shows
-  what each one includes, and the store shows the price where you live.
+  Moving to the larger plan upgrades the same subscription. **Studafy AI
+  Marking** is for teachers: suggested marks for written answers and
+  hand-ins (§4), with a monthly allowance. A teacher subscribes for
+  themselves. The app shows what each one includes, and the store shows the
+  price where you live.
 - **Who pays.** Payment is made through **Google Play** or the **App Store**,
   with the payment method on the store account signed in on the phone.
   Studafy does not ask a parent to approve a purchase in the app.

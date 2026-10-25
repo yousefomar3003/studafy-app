@@ -2,7 +2,8 @@
 
 Studafy Plus (US$3.99/month) and Studafy Max (US$5.99/month) are
 auto-renewing monthly subscriptions sold through Apple In-App Purchase and
-Google Play Billing. What each plan unlocks is in
+Google Play Billing, as are Family+ for parents and, for teachers, Studafy
+AI Marking (DL-073, price set by the owner). What each plan unlocks is in
 [study-plans.md](study-plans.md); the decisions are in
 [ADR-0009](../adr/ADR-0009-billing-and-entitlements.md),
 [ADR-0029](../adr/ADR-0029-study-plans-and-ai-lesson-tools.md) and
@@ -162,6 +163,12 @@ parent.
       out which linked children it covers on every read, earliest linked
       first. The per-child `studafy_parent_insights_monthly` is no longer
       sold; leave it in App Store Connect so existing subscribers renew.
+- [ ] **A third subscription group** (e.g. "Studafy AI Marking") with one
+      auto-renewable subscription, 1-month duration, for teachers:
+      - `studafy_ai_marking_monthly`, price set by the owner.
+
+      The teacher buys it for themselves; nobody else is named. It is in
+      its own group so it never replaces a student's or parent's plan.
 - [ ] Localised display name and description for each (English and
       Arabic), and the review screenshot.
 - [ ] Optional introductory offer: 1-month free trial. The app shows "Start
@@ -188,6 +195,10 @@ parent.
       `studafy_family_plus_8_monthly` (US$4.99, up to 8), the same way. The
       app upgrades 4 to 8 by naming the subscription it replaces, exactly as
       it does Plus to Max.
+- [ ] Also `studafy_ai_marking_monthly` for teachers (DL-073), with an
+      auto-renewing monthly base plan and the price the owner sets. Create it
+      **in Play Console first, then in App Store Connect**, with exactly this
+      ID in both.
 - [ ] In the subscription settings: a **grace period** and **account hold**,
       and **subscription pause** allowed. The app offers Pause first on
       Android.
@@ -268,6 +279,19 @@ Students can buy as soon as the products are listed: student purchases are
 on for every school by default (DL-071, migration
 `202610210010_student_direct_purchase.sql`).
 
+**Studafy AI Marking** is listed separately, by its own migration, once
+`studafy_ai_marking_monthly` exists in both stores and the owner says so
+(DL-073). It is unlisted in `staging` and `production` until then:
+
+```sql
+update public.store_products set storefront_listed = true
+where feature_key = 'studafy_ai_marking' and environment = 'production';
+```
+
+Selling it is not enough on its own: production also needs
+`MARKING_SUGGESTIONS_ENABLED = "true"` on the API and the worker
+([production-features.md](production-features.md)).
+
 ## Testing
 
 ### Automated (runs in CI)
@@ -286,12 +310,14 @@ on for every school by default (DL-071, migration
 | The retired approval routes: the list is empty, a request or a decision is refused with `PURCHASE_APPROVAL_RETIRED` | `apps/api/test/billing/routes.test.ts` |
 | Subscribe goes straight to the store; the payment line; Restore purchases on the profile | `test/features/study/study_screens_test.dart`, `test/data/store_subscription_test.dart`, `test/app/account_hub_test.dart` |
 | Family+ given without a purchase: seats, coverage, the insights gate, the billing read and the guardian links honour a live grant, the larger of grant and store plan wins, an ended grant gives nothing | `supabase/tests/family_plus_grants.sql`, `test/data/store_subscription_test.dart`, `test/features/family_insights/family_plus_test.dart` |
+| Studafy AI Marking: the plan from a store entitlement or a comp grant, only for teachers; requests refused without it (`PLAN_REQUIRED`); the monthly allowance | `supabase/tests/marking_suggestions.sql`, `apps/api/test/marking/routes.test.ts` |
 
 ### Without a purchase
 
-A student's plan or a parent's Family+ can be given without the store, for
-support credit, testing or the store reviewers' accounts: comp grants in
-`private.study_plan_grants` and `private.family_plus_grants`, written only
+A student's plan, a parent's Family+ or a teacher's Studafy AI Marking can
+be given without the store, for support credit, testing or the store
+reviewers' accounts: comp grants in `private.study_plan_grants`,
+`private.family_plus_grants` and `private.marking_plan_grants`, written only
 with direct database access. A granted Family+ works with billing off. See
 [study-plans.md](study-plans.md#testing-a-plan-without-a-purchase).
 
@@ -300,8 +326,8 @@ with direct database access. A granted Family+ works with billing off. See
 Run with a sandbox tester (iOS) and a license tester (Android) against an
 API with `PAY071_ENVIRONMENT=development`:
 
-- [ ] Free student: ask 10 questions → the 11th shows the prompt → Upgrade →
-      Plans shows the store's price.
+- [ ] Free student: use up the week's 40,000-token allowance → the next
+      question shows the prompt → Upgrade → Plans shows the store's price.
 - [ ] Subscribe → store sheet → the plan becomes active, with no parent
       step in Studafy; a *Subscription active* notification arrives; the
       store emails a receipt.
@@ -324,6 +350,10 @@ API with `PAY071_ENVIRONMENT=development`:
 - [ ] Reinstall / new phone, same Studafy account: the plan is there with no
       purchase; Restore purchases (Account → Subscription) works on iOS.
 - [ ] Try buying Plus while on Max: not offered.
+- [ ] Teacher: buy Studafy AI Marking → the marking plan read
+      (`GET /v1/me/marking-plan`) says `active: true`; ask for suggested
+      marks on a test assessment; cancel and check access ends at the
+      period's end. A student or parent cannot buy it (`not_eligible`).
 
 ### Not testable without your accounts
 

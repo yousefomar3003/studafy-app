@@ -53,7 +53,7 @@ export function passageLabel(passage: MaterialPassage): string {
 }
 
 /** Nothing inside material may close or forge the markers around it. */
-function neutralize(text: string): string {
+export function neutralize(text: string): string {
   // deno-lint-ignore no-control-regex -- NUL never belongs in a prompt
   return text.replace(/<<<|>>>/g, "« »").replace(/\u0000/g, "");
 }

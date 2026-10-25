@@ -13,6 +13,7 @@ import '../features/classes/domain/classroom.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
+import 'teacher_marking_subscription.dart';
 
 /// Teacher home for real builds. Everything on it comes from the signed-in
 /// profile and the server: the legacy home was fixed demo content, with a
@@ -293,7 +294,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
               unawaited(_load());
             },
           ),
-          const AccountButton(),
+          AccountButton(subscription: teacherMarkingSubscription(context)),
         ],
       ),
       body: StudafyRefreshIndicator(
