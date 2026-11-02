@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { databaseTls } from "../src/index";
+import { databaseTls, isLocalDatabase } from "../src/index";
 
 describe("database TLS (security audit 2026-10-08)", () => {
   test("a remote host is encrypted by default", () => {
@@ -29,5 +29,31 @@ describe("database TLS (security audit 2026-10-08)", () => {
         "postgresql://u:p@db.example.com/postgres?sslmode=verify-full",
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("isLocalDatabase", () => {
+  test("a database on this machine is local", () => {
+    for (
+      const url of [
+        "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+        "postgresql://postgres:postgres@localhost:5432/postgres",
+      ]
+    ) {
+      expect(isLocalDatabase(url)).toBe(true);
+    }
+  });
+
+  test("the hosted project's database is not, nor is a missing URL", () => {
+    for (
+      const url of [
+        "postgresql://u:p@aws-0-eu-central-1.pooler.supabase.com:6543/postgres",
+        "postgresql://u:p@db.example.supabase.co:5432/postgres",
+        "not a url",
+        undefined,
+      ]
+    ) {
+      expect(isLocalDatabase(url)).toBe(false);
+    }
   });
 });

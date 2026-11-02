@@ -22,7 +22,11 @@ import {
   SupabaseManagedAccountIssuer,
   SupabasePrivateFileStorage,
 } from "@studafy/infrastructure";
-import { checkDatabase, createDatabase } from "@studafy/database";
+import {
+  checkDatabase,
+  createDatabase,
+  isLocalDatabase,
+} from "@studafy/database";
 import {
   createJsonLogger,
   createLogSampler,
@@ -168,7 +172,10 @@ export function buildPlatform() {
       // DATABASE_URL on local Postgres, so it alone needs profiles created on
       // first sight. Staging and production read the issuer's own database,
       // where the signup trigger has already done it.
-      provisionUnknownSubjects: env.ENVIRONMENT === "development",
+      // Only for a local database (AuthContextRepository.provisionIdentity):
+      // the hosted test copy's database is the issuer's own project.
+      provisionUnknownSubjects: env.ENVIRONMENT === "development" &&
+        isLocalDatabase(env.DATABASE_URL),
     }
     : undefined;
   // Commands that hand an account its first membership live in other
