@@ -86,12 +86,16 @@ class FakeAppleVerifier implements AppleTransactionVerifier {
   status: VerifiedAppleTransaction | null = null;
   statusError: Error | null = null;
   verifyNotificationCalls = 0;
+  verifiedPayloads: string[] = [];
 
   async verifyTransaction(): Promise<VerifiedAppleTransaction> {
     throw new Error("not used");
   }
-  async verifyNotification(): Promise<VerifiedAppleNotification> {
+  async verifyNotification(
+    signedPayload: string,
+  ): Promise<VerifiedAppleNotification> {
     this.verifyNotificationCalls += 1;
+    this.verifiedPayloads.push(signedPayload);
     if (!this.notification) throw new Error("no fake notification");
     return this.notification;
   }
@@ -307,6 +311,49 @@ describe("PAY-071 billing-events processor", () => {
       environment: "production",
       noop: true,
     });
+  });
+
+  test("the signed notification the webhook stores is read as it is", async () => {
+    // apps/api/src/billing/webhookRoutes.ts records Apple's signedPayload
+    // itself, not the request body; Apple's TEST notification (2026-11-03)
+    // was dead-lettered because the worker expected the body.
+    const apple = new FakeAppleVerifier();
+    apple.notification = {
+      notificationType: "TEST",
+      subtype: null,
+      notificationUUID: "uuid-test",
+      transaction: null,
+    };
+    const body = await reverify(
+      {
+        platform: "app_store",
+        environment: "development",
+        rawPayload:
+          "eyJhbGciOiJFUzI1NiJ9.eyJub3RpZmljYXRpb25UeXBlIjoiVEVTVCJ9.sig",
+      },
+      { environment: "development", apple: appleEnv(apple), google: null },
+    );
+    expect(body).toEqual({
+      platform: "app_store",
+      environment: "development",
+      noop: true,
+    });
+    expect(apple.verifiedPayloads).toEqual([
+      "eyJhbGciOiJFUzI1NiJ9.eyJub3RpZmljYXRpb25UeXBlIjoiVEVTVCJ9.sig",
+    ]);
+  });
+
+  test("an Apple payload with nothing to verify is refused", async () => {
+    for (
+      const rawPayload of ["", "  ", "{}", '{"signedPayload": 1}', "{oops"]
+    ) {
+      const apple = new FakeAppleVerifier();
+      await expect(reverify(
+        { platform: "app_store", environment: "production", rawPayload },
+        { environment: "production", apple: appleEnv(apple), google: null },
+      )).rejects.toThrow(/payload/);
+      expect(apple.verifyNotificationCalls).toBe(0);
+    }
   });
 
   test("an Apple sandbox transaction can never finish as production", async () => {

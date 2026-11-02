@@ -225,6 +225,35 @@ const REFRESH_NOTIFICATIONS = new Set([
   "OFFER_REDEEMED",
 ]);
 
+/**
+ * The signed notification as the webhook stored it. The API records Apple's
+ * `signedPayload` itself, a compact JWS (apps/api/src/billing/webhookRoutes.ts);
+ * the request body wrapping it (`{"signedPayload": "..."}`) is accepted too.
+ * Anything else cannot be verified, and the verifier is the check either way.
+ */
+function appleSignedPayload(rawPayload: string | null): string {
+  const raw = rawPayload?.trim();
+  if (!raw) {
+    throw new AppleVerificationErrorShim("billing payload is empty");
+  }
+  if (!raw.startsWith("{")) return raw;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new AppleVerificationErrorShim("billing payload is not valid JSON");
+  }
+  const signedPayload = typeof parsed === "object" && parsed !== null
+    ? (parsed as Record<string, unknown>).signedPayload
+    : undefined;
+  if (typeof signedPayload !== "string" || !signedPayload) {
+    throw new AppleVerificationErrorShim(
+      "billing payload missing signedPayload",
+    );
+  }
+  return signedPayload;
+}
+
 async function reverifyApple(
   rawPayload: string | null,
   apple: BillingVerifierDependencies["apple"],
@@ -233,25 +262,9 @@ async function reverifyApple(
   if (!apple) {
     throw new AppleVerificationErrorShim("apple verifier not configured");
   }
-  if (!rawPayload) {
-    throw new AppleVerificationErrorShim("billing payload is empty");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(rawPayload);
-  } catch {
-    throw new AppleVerificationErrorShim("billing payload is not valid JSON");
-  }
-  if (typeof parsed !== "object" || parsed === null) {
-    throw new AppleVerificationErrorShim("billing payload is not an object");
-  }
-  const signedPayload = (parsed as Record<string, unknown>).signedPayload;
-  if (typeof signedPayload !== "string" || !signedPayload) {
-    throw new AppleVerificationErrorShim(
-      "billing payload missing signedPayload",
-    );
-  }
-  const notification = await apple.verifier.verifyNotification(signedPayload);
+  const notification = await apple.verifier.verifyNotification(
+    appleSignedPayload(rawPayload),
+  );
   const transaction = notification.transaction;
   if (!transaction) return null; // no embedded transaction: nothing to derive.
 
