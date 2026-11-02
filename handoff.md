@@ -9,6 +9,31 @@ Play build **102** (`~/Desktop/studafy-light-102.aab`) carries consent
 `2026-10-25`. The owner now has a paid Apple Developer account: iPhone push
 and Sign in with Apple are next (guides 07 and 03 part D).
 
+## Note (2026-11-02): DL-074, child AI on by default; no marking opt-out
+
+- **Owner's decisions (DL-074):** (1) a child account a parent creates
+  starts with the AI study tools on; creating it records the parent's
+  agreement to the AI notice (`ai_features`, `given_as` `guardian`), and
+  the parent turns them off on the child's card. Existing children were
+  backfilled unless the parent had turned the tools off. (2) No opt-out from
+  AI-suggested marks: the switch is gone, existing opt-outs deleted, new ones
+  refused. Amends DL-073 (4), ADR-0043 §2 and ADR-0046 §8 (amendment
+  sections in both ADRs).
+- **Migrations, in order:** `202611020020_terms_and_privacy_2026_11_02.sql`
+  (consent version **`2026-11-02`** for `terms_and_privacy` and
+  `ai_features`), then `202611020030_child_ai_on_and_no_marking_opt_out.sql`
+  (triggers `dl074_managed_child_ai_on` and `dl074_no_marking_opt_out`, the
+  backfill).
+- **Docs:** privacy policy **1.9** and terms of use **1.7** (EN/AR,
+  effective 2026-11-02), delete-account pages, DPIA §12.1/§12.2 (AI11,
+  AM11, Q-M, M24, M25), questions-for-counsel §11 (two TODO(legal): the
+  default-on consent, Art. 4(11)/7 and Planet49; the basis and Art. 21 with
+  no opt-out), store data safety, privacy labels and the listing's teacher
+  block. Published without legal review, accepted risk.
+- **Legal site:** run `bun run legal:deploy` only after the app build
+  carrying consent version `2026-11-02` is out (and the migrations applied),
+  so the pages never describe a version the app has not shown.
+
 ## Start here (2026-10-25): AI-suggested marks, Studafy AI Marking (DL-073, ADR-0046)
 
 ### What was built (PR #137, merged as `cc82d45`)

@@ -151,7 +151,9 @@ select is((select count(*) from public.study_notebooks where owner_id = :'leaver
   'study notebooks are deleted');
 select is((select count(*) from private.ai_usage where user_id = :'leaver'), 0::bigint,
   'the AI usage ledger is deleted');
-select is((select count(*) from public.consent_records where user_id = :'leaver'), 1::bigint,
+-- Two: the terms, and the AI notice the parent agreed to when the managed
+-- account was created (DL-074).
+select is((select count(*) from public.consent_records where user_id = :'leaver'), 2::bigint,
   'consent records are kept, for 6 years after the account (DL-057)');
 select is((select count(*) from public.notifications where user_id = :'leaver'), 0::bigint,
   'notifications are deleted, as the deletion screen promises');

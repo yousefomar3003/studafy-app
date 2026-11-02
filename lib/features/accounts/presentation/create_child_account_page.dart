@@ -127,6 +127,15 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.childAccountConsent),
                   ),
+                  // DL-074: the AI study tools start on for a child account;
+                  // said here, before the parent creates it.
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      l10n.childAccountAiOn,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: _ready ? _submit : null,

@@ -87,7 +87,7 @@ void main() {
 
     testWidgets('says whose sub-account a child account is', (tester) async {
       await open(tester);
-      expect(find.text('Sub-account · managed by Yousef'), findsOne);
+      expect(find.text('Managed by Yousef'), findsOne);
       expect(find.byIcon(Icons.check_circle_rounded), findsOne);
     });
 
@@ -187,7 +187,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Sub-account · managed by Yousef'), findsOne);
+    expect(find.text('Managed by Yousef'), findsOne);
     await tester.tap(find.text('Switch'));
     expect(switched, 1);
   });
@@ -201,6 +201,6 @@ void main() {
         ),
       ),
     );
-    expect(find.text('حساب فرعي · يديره يوسف'), findsOne);
+    expect(find.text('يديره يوسف'), findsOne);
   });
 }

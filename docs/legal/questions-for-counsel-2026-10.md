@@ -26,6 +26,13 @@ policy 1.8 and terms of use 1.6 describe it, again without waiting. The AI
 only suggests; the teacher decides; students can opt out. This adds
 section 10 and widens item 1.1.
 
+**Update 2026-11-02 (DL-074):** the owner made two more decisions and
+published privacy policy 1.9 and terms of use 1.7 (consent version
+`2026-11-02`, for the terms and the AI notice), again without waiting. A
+child account a parent creates now starts with the AI study tools on, and
+students can no longer opt out of AI-suggested marks. This adds section 11
+and changes items 1.2 and 10.1.
+
 Each item says what the app does now, with the file or decision behind it,
 and the question. Items marked **policy** need a change to privacy policy
 1.4 (`docs/legal/privacy-policy.md`, live in English and Arabic); please
@@ -45,7 +52,8 @@ photos of handwritten pages, when a teacher asks for suggested marks (10.2).
 1.2 **Consent for AI (policy §4).** Students now give a separate, versioned
 AI consent before first use, recorded with who, when and the exact notice
 text (ADR-0043, notice version `2026-10-15`). For a managed child account
-the parent consents. Please review the notice text, English and Arabic: key
+the parent consents; since DL-074 that consent is recorded when the parent
+creates the account, unless they turn the tools off (11.1). Please review the notice text, English and Arabic: key
 `aiConsentNoticeBody` in `lib/l10n/app_en.arb` and `app_ar.arb` (its hash is
 pinned in `lib/core/ai_consent.dart`). Any change needs a new version.
 
@@ -209,7 +217,9 @@ and missed, and feedback. Suggestions are visible only to the class's
 teachers and never become a mark until the teacher saves one through the
 normal marking flow. The draft DPIA covers it in §12.2.
 
-10.1 **Opt-out rather than consent, for minors.** The owner decided that
+10.1 **Opt-out rather than consent, for minors.** *(Since DL-074 there is
+no opt-out at all; see 11.2. The question below is kept as asked.)* The
+owner decided that
 the student's consent is not asked: it is the teacher's tool for marking,
 and a student (or the parent, for a child account the parent manages) can
 opt out in Account, after which their work is never sent and is marked by
@@ -240,7 +250,8 @@ go live in production before it is accepted?
 then deleted; they are drafts for the teacher, not school records, and are
 not in the student's export (the student's marks are). The teacher's usage
 ledger (tokens, cost, model, date) is kept 13 months for the monthly cap and
-billing questions. A student's opt-out is kept while the account exists.
+billing questions. A student's opt-out was kept while the account existed;
+since DL-074 there are none (11.2).
 Are these periods right, and should suggestions be in the student's export
 under the right of access?
 
@@ -248,3 +259,55 @@ under the right of access?
 subscription a teacher buys for themselves (terms §9), possibly for use in
 a school's classes. Anything to add to the terms for a teacher acting for a
 school, or for VAT and invoices the stores do not provide?
+
+## 11. AI on for child accounts; no opt-out from suggested marks (DL-074, policy 1.9 §5, §6, §6.1, §11, terms 1.7 §2, §4, §5, §6, §8)
+
+Two owner decisions of 2 November 2026, published as consent version
+`2026-11-02` without legal review (migrations
+`202611020020_terms_and_privacy_2026_11_02.sql` and
+`202611020030_child_ai_on_and_no_marking_opt_out.sql`; ADR-0043 and
+ADR-0046 amendments; DPIA §12.1 and §12.2).
+
+11.1 **AI on by default for a child account a parent creates.** Until now
+a managed child (ADR-0031) had no AI until the parent agreed on the child's
+card. Now, when a parent creates a child account, the AI study tools (AI
+Tutor, notes from photos and lessons, study notebooks, quizzes and
+flashcards) are on from the start: creating the account records the
+parent's agreement to the current AI notice (a `consent_records` row,
+purpose `ai_features`, given by the parent as `guardian`). The create-child
+screen tells the parent the tools are on and that they can turn them off on
+the child's card in their account, at any time. Existing child accounts got
+the same unless the parent had turned the tools off. When a new AI notice
+is published, the parent is asked again. Consent that holds unless the
+parent turns it off is not the clear affirmative act that GDPR Art. 4(11)
+and Art. 7 require, as the CJEU read them in Planet49 (C-673/17); and these
+are the accounts most likely to belong to children under the age of digital
+consent (Art. 8). The owner accepted this as a risk (DL-074), like DL-062
+and DL-068. Please advise:
+- whether a consent recorded this way is valid, and if not, what lawful
+  basis can support a managed child's use of the AI tools (or what the
+  parent must actively do, for example tick an unticked box on the
+  create-child screen; DPIA measure M24);
+- whether the consents recorded for existing child accounts by the backfill
+  can be relied on, or must be asked for again;
+- whether the wording in policy 1.9 §5 and §6, terms 1.7 §2, §6 and §8, and
+  the in-app notice (`aiConsentNoticeBody`, `childAccountAiOn`) is
+  acceptable.
+
+11.2 **No opt-out from AI-suggested marks.** DL-073 gave students a switch,
+"Let my teachers use AI to suggest marks on my work". The owner removed it:
+nobody opts out. The teacher decides whether to ask for suggestions, and
+decides every mark; names are still replaced; suggestions are still drafts
+only teachers see. Existing opt-outs were deleted and the database refuses
+new ones. Policy 1.9 §4 still names the school's legitimate interests or
+public task, or the teacher's and Studafy's legitimate interests, and §11
+still lists the right to object. Please advise:
+- the lawful basis for processing a minor's work, including photos of
+  handwriting, for AI-suggested marks with no objection route in the app;
+- on a legitimate-interests or public-task basis, how the right to object
+  (Art. 21) must be honoured: is an objection sent to hello@studafy.com
+  enough, and must it then exclude that student's work (DPIA measure M25)?
+- whether students and parents must be told when a teacher first uses it
+  (DPIA measure M22), now that they cannot turn it off;
+- whether the wording in policy 1.9 §6.1 and terms 1.7 §4, §5 and §8 is
+  acceptable.

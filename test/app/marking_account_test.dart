@@ -106,42 +106,25 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
-  testWidgets('a student can turn suggested marks off from their account', (
+  testWidgets('nobody has a switch for suggested marks (DL-074)', (
     tester,
   ) async {
     tall(tester);
-    _signIn(StudafyRole.student);
-    final preference = _Preference();
-    await tester.pumpWidget(
-      _app(
-        MarkingServices(repository: preference, preference: preference),
-        const AccountHubPage(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final toggle = find.byKey(const ValueKey('marking-opt-out-switch'));
-    expect(toggle, findsOneWidget);
-    expect(tester.widget<Switch>(toggle).value, isTrue);
-    await tester.tap(
-      find.text('Let my teachers use AI to suggest marks on my work'),
-    );
-    await tester.pumpAndSettle();
-    expect(preference.writes, [true]);
-    expect(tester.widget<Switch>(toggle).value, isFalse);
-  });
-
-  testWidgets('a teacher has no such switch', (tester) async {
-    tall(tester);
-    _signIn(StudafyRole.teacher);
-    final preference = _Preference();
-    await tester.pumpWidget(
-      _app(
-        MarkingServices(repository: preference, preference: preference),
-        const AccountHubPage(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('marking-opt-out-switch')), findsNothing);
+    for (final role in [StudafyRole.student, StudafyRole.teacher]) {
+      _signIn(role);
+      final preference = _Preference();
+      await tester.pumpWidget(
+        _app(
+          MarkingServices(repository: preference, preference: preference),
+          const AccountHubPage(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Let my teachers use AI to suggest marks on my work'),
+        findsNothing,
+      );
+    }
   });
 
   testWidgets('a teacher reaches Studafy AI Marking and Restore purchases '

@@ -178,7 +178,7 @@ sale, paste it after the "For teachers" section:
 ```text
 FOR TEACHERS: STUDAFY AI MARKING
 • Studafy AI Marking (optional monthly subscription for teachers): AI suggests marks for written answers and hand-ins against your own model answer, and you decide every mark
-Students can turn it off, and names are replaced before work is sent to the AI service.
+Names are replaced before work is sent to the AI service, and only teachers see the suggestions.
 ```
 
 ### What's new (first internal-testing release)
@@ -277,7 +277,7 @@ sale, paste it after the "للمعلمين" section:
 ```text
 للمعلمين: Studafy AI Marking
 • Studafy AI Marking (اشتراك شهري اختياري للمعلمين): يقترح الذكاء الاصطناعي درجات للإجابات المكتوبة والتسليمات وفق إجابتك النموذجية، والقرار في كل درجة لك
-يستطيع الطالب إيقافها، وتُستبدل الأسماء قبل إرسال العمل إلى خدمة الذكاء الاصطناعي.
+تُستبدل الأسماء قبل إرسال العمل إلى خدمة الذكاء الاصطناعي، ولا يرى الاقتراحات إلا المعلمون.
 ```
 
 ### What's new (first internal-testing release)
@@ -383,7 +383,7 @@ sale, paste it after the "For teachers" section:
 ```text
 FOR TEACHERS: STUDAFY AI MARKING
 • Studafy AI Marking (optional monthly subscription for teachers): AI suggests marks for written answers and hand-ins against your own model answer, and you decide every mark
-Students can turn it off, and names are replaced before work is sent to the AI service.
+Names are replaced before work is sent to the AI service, and only teachers see the suggestions.
 ```
 
 ### Keywords
@@ -502,7 +502,7 @@ sale, paste it after the "للمعلمين" section:
 ```text
 للمعلمين: Studafy AI Marking
 • Studafy AI Marking (اشتراك شهري اختياري للمعلمين): يقترح الذكاء الاصطناعي درجات للإجابات المكتوبة والتسليمات وفق إجابتك النموذجية، والقرار في كل درجة لك
-يستطيع الطالب إيقافها، وتُستبدل الأسماء قبل إرسال العمل إلى خدمة الذكاء الاصطناعي.
+تُستبدل الأسماء قبل إرسال العمل إلى خدمة الذكاء الاصطناعي، ولا يرى الاقتراحات إلا المعلمون.
 ```
 
 ### Keywords
@@ -537,20 +537,20 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 | `play.en.short` | 79 | 80 | characters | yes |
 | `play.en.full` | 2697 | 4000 | characters | yes |
 | `play.en.full + play.en.ai` | 3439 | 4000 | characters | yes |
-| `play.en.full + play.en.marking` | 2994 | 4000 | characters | yes |
+| `play.en.full + play.en.marking` | 3003 | 4000 | characters | yes |
 | `play.en.whatsnew` | 257 | 500 | characters | yes |
 | `play.ar.title` | 27 | 30 | characters | yes |
 | `play.ar.short` | 77 | 80 | characters | yes |
 | `play.ar.full` | 2354 | 4000 | characters | yes |
 | `play.ar.full + play.ar.ai` | 3021 | 4000 | characters | yes |
-| `play.ar.full + play.ar.marking` | 2622 | 4000 | characters | yes |
+| `play.ar.full + play.ar.marking` | 2631 | 4000 | characters | yes |
 | `play.ar.whatsnew` | 227 | 500 | characters | yes |
 | `ios.en.name` | 30 | 30 | characters | yes |
 | `ios.en.subtitle` | 22 | 30 | characters | yes |
 | `ios.en.promo` | 138 | 170 | characters | yes |
 | `ios.en.description` | 2847 | 4000 | characters | yes |
 | `ios.en.description + ios.en.ai` | 3611 | 4000 | characters | yes |
-| `ios.en.description + ios.en.marking` | 3144 | 4000 | characters | yes |
+| `ios.en.description + ios.en.marking` | 3153 | 4000 | characters | yes |
 | `ios.en.keywords` | 94 | 100 | UTF-8 bytes | yes |
 | `ios.en.whatsnew` | 257 | 4000 | characters | yes |
 | `ios.ar.name` | 27 | 30 | characters | yes |
@@ -558,7 +558,7 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 | `ios.ar.promo` | 138 | 170 | characters | yes |
 | `ios.ar.description` | 2485 | 4000 | characters | yes |
 | `ios.ar.description + ios.ar.ai` | 3180 | 4000 | characters | yes |
-| `ios.ar.description + ios.ar.marking` | 2753 | 4000 | characters | yes |
+| `ios.ar.description + ios.ar.marking` | 2762 | 4000 | characters | yes |
 | `ios.ar.keywords` | 100 | 100 | UTF-8 bytes | yes |
 | `ios.ar.whatsnew` | 227 | 4000 | characters | yes |
 <!-- counts:end -->
@@ -727,5 +727,5 @@ administrator may change through the API, and this release has none.
 | Sign-in providers | `lib/features/session/presentation/login_page.dart`; Apple only on iOS with `APPLE_SIGN_IN_ENABLED` |
 | English and Arabic, right to left, change any time | `lib/core/language_picker.dart`, `locale_controller.dart` |
 | Free: lessons, homework, marks, attendance | `policyTermsBody` ("Lessons, notebooks, work, marks and attendance are free") |
-| Teacher block: Studafy AI Marking, a monthly teacher subscription; AI suggests marks for written answers and hand-ins against the teacher's model answer; the teacher decides; students can turn it off; names replaced | ADR-0046, DL-073; `supabase/migrations/202610210060_marking_suggestions.sql` (`studafy_ai_marking`, `private.marking_opt_outs`, `private.marking_known_names`); `apps/api/src/marking/routes.ts`; policy §6.1 |
+| Teacher block: Studafy AI Marking, a monthly teacher subscription; AI suggests marks for written answers and hand-ins against the teacher's model answer; the teacher decides; no student opt-out (DL-074); names replaced; suggestions seen only by teachers | ADR-0046, DL-073, DL-074; `supabase/migrations/202610210060_marking_suggestions.sql` (`studafy_ai_marking`, `private.marking_known_names`); `supabase/migrations/202611020030_child_ai_on_and_no_marking_opt_out.sql`; `apps/api/src/marking/routes.ts`; policy §6.1 |
 | AI block: AI Tutor for every student account, in a class or not (DL-072), Plus (photos in questions, whiteboard, screenshot and lesson notes, study notebooks), Max (quizzes, flashcards, also from the student's own notes), bought by the student and paid from the store account (DL-071), what is never sent | `lib/features/study/presentation/study_plan_copy.dart`, `study_plans_page.dart`; `study_notebook_shelf.dart`; policy §2 and §6 |

@@ -182,8 +182,11 @@ void main() {
         contains(r'--platform ios --encoded "${DART_DEFINES:-}"'),
       );
       expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = com.studafy.light'));
-      // Signing stays with the owner's local Xcode settings.
-      expect(ios, isNot(contains('DEVELOPMENT_TEAM')));
+      // Signed by the paid Studafy Limited team (2026-11-02), which owns the
+      // push, Sign in with Apple and associated-domain entitlements; never
+      // the free personal team, which could hold none of them.
+      expect(ios, contains('DEVELOPMENT_TEAM = 869AV76RU2;'));
+      expect(ios, isNot(contains('DX87P72856')));
     });
   });
 

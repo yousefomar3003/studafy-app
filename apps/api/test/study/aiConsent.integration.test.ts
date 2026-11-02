@@ -43,7 +43,7 @@ const CHILD = `${P}16`;
 const STUDENT_ROW = `${P}21`;
 const CLASSMATE_ROW = `${P}22`;
 const CHILD_ROW = `${P}23`;
-const VERSION = "2026-10-25";
+const VERSION = "2026-11-02";
 
 let sql: Sql;
 let app: Hono<AuthorizationEnv>;
@@ -359,8 +359,19 @@ suite("AI access and consent over real SQL (ADR-0043)", () => {
     expect(rows[0]?.withdrawn_by).toBe(STUDENT);
   });
 
-  test("a managed child's parent consents for them, from their own account", async () => {
+  test("a managed child starts with the tools on; the parent turns them off and on", async () => {
     asked.length = 0;
+    // On from the start: creating the child recorded the parent's agreement
+    // (DL-074).
+    expect(await ask(CHILD)).toEqual({ status: 200, code: null });
+    const first = await request(
+      `/v1/me/managed-children/${CHILD}/study-tools-consent`,
+      PARENT,
+      { given: false },
+    );
+    expect((await first.json() as { access: string }).access).toBe(
+      "guardian_consent_required",
+    );
     expect(await ask(CHILD)).toEqual({
       status: 403,
       code: "AI_GUARDIAN_CONSENT_REQUIRED",
