@@ -17,8 +17,8 @@ void main() {
     );
   });
 
-  test('the app is called Studafy under its icon (DL-029)', () {
-    expect(manifest, contains('android:label="Studafy"'));
+  test('the app is called Studafy Lite under its icon (2026-11-02)', () {
+    expect(manifest, contains('android:label="Studafy Lite"'));
   });
 
   // iOS opens every io.studafy.app link (CFBundleURLSchemes); Android only
