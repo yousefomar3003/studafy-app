@@ -4,6 +4,7 @@ import 'package:studafy/app/account_hub_page.dart';
 import 'package:studafy/app/account_scope.dart';
 import 'package:studafy/app/teacher_marking_subscription.dart';
 import 'package:studafy/core/account_lifecycle.dart';
+import 'package:studafy/core/ai_usage.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/studafy_formatting.dart';
 import 'package:studafy/features/academic/data/preview_marking_repository.dart';
@@ -201,6 +202,40 @@ void main() {
     expect(find.text('Manage or cancel'), findsNothing);
     expect(find.text('Restore purchases'), findsNothing);
     expect(find.byType(MarkingAllowance), findsOneWidget);
+  });
+
+  testWidgets('a teacher with the plan sees this month\'s AI Marking usage; '
+      'without it, nothing', (tester) async {
+    tall(tester);
+    _signIn(StudafyRole.teacher);
+    for (final active in [true, false]) {
+      final services = MarkingServices(
+        repository: PreviewMarkingRepository(
+          plan: MarkingPlan(
+            active: active,
+            teacher: true,
+            available: true,
+            used: 6_500_000,
+            total: 7_000_000,
+            resetsAt: DateTime.utc(2026, 12),
+          ),
+        ),
+        plans: _Store(),
+      );
+      await tester.pumpWidget(
+        _app(
+          services,
+          Builder(
+            builder: (context) => AccountHubPage(
+              key: ValueKey(active),
+              subscription: teacherMarkingSubscription(context),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AiUsageCard), active ? findsOneWidget : findsNothing);
+    }
   });
 
   testWidgets('no store, no Studafy AI Marking row', (tester) async {

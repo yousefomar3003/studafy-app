@@ -53,6 +53,8 @@ class AiUsageSnapshot {
     required this.resetsAt,
     required this.weekly,
     this.canUpgrade = true,
+    this.showPlans = true,
+    this.reachedDetail,
   });
 
   final String planName;
@@ -63,6 +65,13 @@ class AiUsageSnapshot {
   final DateTime resetsAt;
   final bool weekly;
   final bool canUpgrade;
+
+  /// Whether the card offers the plans (a teacher's has its own row).
+  final bool showPlans;
+
+  /// What reaching the limit means for this plan; the study plans' wording
+  /// when null.
+  final String? reachedDetail;
 
   double get fraction => total <= 0 ? 1 : (used / total).clamp(0, 1).toDouble();
   AiUsageLevel get level => aiUsageLevel(used: used, total: total);
@@ -141,11 +150,11 @@ class AiUsageCard extends StatelessWidget {
           if (level == AiUsageLevel.reached) ...[
             const SizedBox(height: 6),
             Text(
-              l10n.usageReachedDetail,
+              usage.reachedDetail ?? l10n.usageReachedDetail,
               style: const TextStyle(color: studafyInk, fontSize: 13),
             ),
           ],
-          if (onPlans != null) ...[
+          if (onPlans != null && usage.showPlans) ...[
             const SizedBox(height: 12),
             Align(
               alignment: AlignmentDirectional.centerStart,

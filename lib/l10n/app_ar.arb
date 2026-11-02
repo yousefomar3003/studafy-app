@@ -1885,6 +1885,8 @@
   "usageResetsWeekly": "يُعاد ضبطه كل اثنين · التالي في {date}",
   "usageUpgrade": "الترقية ومقارنة الخطط",
   "usageComparePlans": "مقارنة الخطط",
+  "markingUsageTitle": "استخدام ⁦Studafy AI Marking⁩",
+  "markingUsageReached": "تتوقف الدرجات المقترحة حتى يُعاد ضبط الحد. ويمكنك تصحيح كل شيء بنفسك، وتبقى إجاباتك المرجعية والاقتراحات السابقة محفوظة.",
   "usageLoadFailed": "تعذّر تحميل استخدامك. حاول مرة أخرى",
   "usageCostLight": "يستهلك قليلًا",
   "usageCostMedium": "يستهلك قدرًا متوسطًا",

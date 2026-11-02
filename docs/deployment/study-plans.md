@@ -161,7 +161,7 @@ saves one. It is not the retired `teacher_ai_grading`.
 | Store product ID | `studafy_ai_marking_monthly`, auto-renewing, 1 month |
 | Price | Set by the owner in the stores (not decided yet) |
 | Who may buy | A teacher with an active teacher membership, for themselves |
-| Allowance | Per teacher per calendar month (UTC): 4,000,000 tokens, a US$2 cost cap, 20 pages per hand-in (`private.marking_limits()`) |
+| Allowance | Per teacher per calendar month (UTC): 7,000,000 tokens, a US$3 cost cap, 20 pages per hand-in (`private.marking_limits()`; DL-075, was 4,000,000 and US$2) |
 | Listed | `synthetic` and `development` only. `staging` and `production` have unlisted rows until the owner creates the product in both stores and a migration lists it |
 | Who has it | `private.marking_plan_active(user)`: a verified store entitlement in the runtime's environment, or a live comp grant |
 | Server switch | `MARKING_SUGGESTIONS_ENABLED` on the API and the worker, plus the AI provider. On in the test copy, off in production until launch |

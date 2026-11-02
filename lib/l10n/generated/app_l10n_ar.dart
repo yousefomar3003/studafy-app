@@ -6677,6 +6677,13 @@ class AppL10nAr extends AppL10n {
   String get usageComparePlans => 'مقارنة الخطط';
 
   @override
+  String get markingUsageTitle => 'استخدام ⁦Studafy AI Marking⁩';
+
+  @override
+  String get markingUsageReached =>
+      'تتوقف الدرجات المقترحة حتى يُعاد ضبط الحد. ويمكنك تصحيح كل شيء بنفسك، وتبقى إجاباتك المرجعية والاقتراحات السابقة محفوظة.';
+
+  @override
   String get usageLoadFailed => 'تعذّر تحميل استخدامك. حاول مرة أخرى';
 
   @override

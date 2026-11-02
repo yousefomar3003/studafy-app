@@ -38,6 +38,7 @@ class SubscriptionEntry {
     this.open,
     this.currentPlan,
     this.usage,
+    this.usageTitle,
     this.restorePurchases,
     this.title,
     this.detail,
@@ -54,8 +55,12 @@ class SubscriptionEntry {
   /// The current plan's name, shown under the row.
   final Future<String?> Function()? currentPlan;
 
-  /// The plan's AI usage, as the server has it, for the AI usage section.
+  /// The plan's AI usage, as the server has it, for the AI usage section;
+  /// null when there is none to show, and the section is left out.
   final Future<AiUsageSnapshot?> Function()? usage;
+
+  /// The usage section's title; "AI usage" when null.
+  final String? usageTitle;
 
   /// Asks the store again for this account's subscriptions: the student's
   /// plan, or a parent's Family+. Shown as a small link at the bottom of the
@@ -395,10 +400,7 @@ class _AccountHubPageState extends State<AccountHubPage> {
             ],
           ),
           if (subscription?.usage != null)
-            SettingsGroup(
-              title: l10n.usageSectionTitle,
-              children: [_AiUsageSection(entry: subscription!)],
-            ),
+            _AiUsageSection(entry: subscription!),
           if (subscription != null &&
               (subscription.open != null ||
                   subscription.restorePurchases != null))
@@ -595,6 +597,9 @@ class _AiUsageSectionState extends State<_AiUsageSection> {
   AiUsageSnapshot? _usage;
   bool _failed = false;
 
+  /// Loaded, and there is no usage to show (a teacher with no plan).
+  bool _none = false;
+
   @override
   void initState() {
     super.initState();
@@ -607,7 +612,7 @@ class _AiUsageSectionState extends State<_AiUsageSection> {
       if (mounted) {
         setState(() {
           _usage = usage;
-          _failed = usage == null;
+          _none = usage == null;
         });
       }
     } on Object {
@@ -617,9 +622,11 @@ class _AiUsageSectionState extends State<_AiUsageSection> {
 
   @override
   Widget build(BuildContext context) {
+    if (_none) return const SizedBox.shrink();
     final usage = _usage;
+    final Widget body;
     if (usage == null) {
-      return Padding(
+      body = Padding(
         padding: const EdgeInsets.all(16),
         child: _failed
             ? TextButton.icon(
@@ -632,16 +639,21 @@ class _AiUsageSectionState extends State<_AiUsageSection> {
               )
             : const LinearProgressIndicator(),
       );
+    } else {
+      final open = widget.entry.open;
+      body = AiUsageCard(
+        usage: usage,
+        onPlans: open == null
+            ? null
+            : () async {
+                await open(context);
+                await _load();
+              },
+      );
     }
-    final open = widget.entry.open;
-    return AiUsageCard(
-      usage: usage,
-      onPlans: open == null
-          ? null
-          : () async {
-              await open(context);
-              await _load();
-            },
+    return SettingsGroup(
+      title: widget.entry.usageTitle ?? AppL10n.of(context).usageSectionTitle,
+      children: [body],
     );
   }
 }
