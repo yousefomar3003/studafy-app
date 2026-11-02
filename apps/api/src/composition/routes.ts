@@ -1,3 +1,4 @@
+import { isLocalDatabase } from "@studafy/database";
 import { Hono } from "hono";
 import { billingActive } from "@studafy/config";
 import { type AuthorizationEnv } from "../authorization/middleware";
@@ -298,7 +299,12 @@ export function buildRoutes(platform: Platform) {
     ? createManagedAccountRoutes(
       {
         repository: new PostgresManagedAccountRepository(sql, {
-          mirrorIdentities: env.ENVIRONMENT === "development",
+          // Only into a local database: the hosted test copy is
+          // "development" too, but its database is the project that issued
+          // the identity, so copying it in failed and every new child was
+          // refused as "not available" (2026-11-02).
+          mirrorIdentities: env.ENVIRONMENT === "development" &&
+            isLocalDatabase(env.DATABASE_URL),
         }),
         issuer: managedAccountIssuer,
       },

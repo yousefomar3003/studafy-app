@@ -60,6 +60,23 @@ export function databaseTls(
 }
 
 /**
+ * Whether [url] is a database on this machine (the local stack, CI).
+ *
+ * Development signs people in against the hosted Supabase project, and only
+ * a local database misses the identities that project creates; the hosted
+ * test copy also runs as "development" but on the project's own database,
+ * where copying an identity in fails (and must never be needed).
+ */
+export function isLocalDatabase(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    return LOCAL_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Whether [url] goes through Supabase's transaction pooler (port 6543).
  * There a connection is shared between transactions, so a statement
  * prepared on one may be gone on the next: named prepared statements must
