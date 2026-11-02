@@ -17,7 +17,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Studafy</string>
+	<string>Studafy Lite</string>
 	<!-- MOB-070 localization (ADR-0028).
 
 	     iOS reads the app's supported languages from this list, not from
@@ -63,7 +63,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>studafy</string>
+	<string>Studafy Lite</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
