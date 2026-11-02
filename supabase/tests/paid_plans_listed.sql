@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(4);
+select plan(5);
 
 select is((select count(*)::int from public.store_products
     where feature_key in ('studafy_plus', 'studafy_max', 'family_plus', 'family_plus_large')
@@ -19,9 +19,21 @@ select is((select count(*)::int from public.store_products
 select is((select array_agg(distinct store_product_id order by store_product_id)
     from public.store_products
     where environment = 'production' and storefront_listed),
-  array['studafy_family_plus_8_monthly', 'studafy_family_plus_monthly',
+  array['studafy_family_4_monthly', 'studafy_family_8_monthly',
+        'studafy_family_plus_8_monthly', 'studafy_family_plus_monthly',
         'studafy_max_monthly', 'studafy_plus_monthly'],
   'production offers exactly the four launch subscriptions');
+-- Family+ is named differently on each store (202611030030).
+select results_eq(
+  $$select platform::text, feature_key, store_product_id from public.store_products
+    where feature_key in ('family_plus', 'family_plus_large')
+      and environment = 'production'
+    order by platform::text, feature_key$$,
+  $$values ('app_store', 'family_plus', 'studafy_family_4_monthly'),
+           ('app_store', 'family_plus_large', 'studafy_family_8_monthly'),
+           ('play_store', 'family_plus', 'studafy_family_plus_monthly'),
+           ('play_store', 'family_plus_large', 'studafy_family_plus_8_monthly')$$,
+  'Family+ uses its own ids on the App Store and keeps them on Google Play');
 
 select * from finish();
 rollback;
