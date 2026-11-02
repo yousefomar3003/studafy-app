@@ -38,8 +38,11 @@ record; change any of them by editing this list and the app together.
    release-block change (D1), where uploads work.
 4. **The name in Arabic: ستودافاي**, as the app spells it
    (`docs/l10n/arabic-glossary.md`).
-5. **The title: "Studafy: Classes & Homework"** on both stores (27
-   characters; the two words describe the app, which both stores allow).
+5. **The title: "Studafy Lite: Class & Homework"** on both stores (30
+   characters, the most either allows; Arabic "ستودافاي لايت: دروس
+   وواجبات"). The app is **Studafy Lite** (owner, 2026-11-02: "this one is
+   the lite version"); its home-screen name is "Studafy Lite" on iPhone and
+   Android. The package and bundle id stay `com.studafy.light`.
 6. **Family+ in Arabic: "Family+" in Latin letters**, like Studafy Plus and
    Max. The two app strings that said "العائلة+" now say "Family+".
 7. **Screenshots: none that show AI or messages yet.** Google Play (8): 1,
@@ -96,7 +99,7 @@ record; change any of them by editing this list and the app together.
 
 <!-- field: play.en.title max=30 -->
 ```text
-Studafy: Classes & Homework
+Studafy Lite: Class & Homework
 ```
 
 ### Short description
@@ -195,7 +198,7 @@ The first test release of Studafy. Please try signing in, joining a class with a
 
 <!-- field: play.ar.title max=30 -->
 ```text
-ستودافاي: الدروس والواجبات
+ستودافاي لايت: دروس وواجبات
 ```
 
 ### Short description
@@ -292,7 +295,7 @@ sale, paste it after the "للمعلمين" section:
 
 <!-- field: ios.en.name max=30 -->
 ```text
-Studafy: Classes & Homework
+Studafy Lite: Class & Homework
 ```
 
 <!-- field: ios.en.subtitle max=30 -->
@@ -411,7 +414,7 @@ The first test release of Studafy. Please try signing in, joining a class with a
 
 <!-- field: ios.ar.name max=30 -->
 ```text
-ستودافاي: الدروس والواجبات
+ستودافاي لايت: دروس وواجبات
 ```
 
 <!-- field: ios.ar.subtitle max=30 -->
@@ -530,19 +533,19 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 <!-- counts:start -->
 | Field | Count | Limit | Unit | OK |
 |---|---:|---:|---|---|
-| `play.en.title` | 27 | 30 | characters | yes |
+| `play.en.title` | 30 | 30 | characters | yes |
 | `play.en.short` | 79 | 80 | characters | yes |
 | `play.en.full` | 2697 | 4000 | characters | yes |
 | `play.en.full + play.en.ai` | 3439 | 4000 | characters | yes |
 | `play.en.full + play.en.marking` | 2994 | 4000 | characters | yes |
 | `play.en.whatsnew` | 257 | 500 | characters | yes |
-| `play.ar.title` | 26 | 30 | characters | yes |
+| `play.ar.title` | 27 | 30 | characters | yes |
 | `play.ar.short` | 77 | 80 | characters | yes |
 | `play.ar.full` | 2354 | 4000 | characters | yes |
 | `play.ar.full + play.ar.ai` | 3021 | 4000 | characters | yes |
 | `play.ar.full + play.ar.marking` | 2622 | 4000 | characters | yes |
 | `play.ar.whatsnew` | 227 | 500 | characters | yes |
-| `ios.en.name` | 27 | 30 | characters | yes |
+| `ios.en.name` | 30 | 30 | characters | yes |
 | `ios.en.subtitle` | 22 | 30 | characters | yes |
 | `ios.en.promo` | 138 | 170 | characters | yes |
 | `ios.en.description` | 2847 | 4000 | characters | yes |
@@ -550,7 +553,7 @@ diacritics count. Keywords are UTF-8 bytes, as Apple counts them. A row
 | `ios.en.description + ios.en.marking` | 3144 | 4000 | characters | yes |
 | `ios.en.keywords` | 94 | 100 | UTF-8 bytes | yes |
 | `ios.en.whatsnew` | 257 | 4000 | characters | yes |
-| `ios.ar.name` | 26 | 30 | characters | yes |
+| `ios.ar.name` | 27 | 30 | characters | yes |
 | `ios.ar.subtitle` | 25 | 30 | characters | yes |
 | `ios.ar.promo` | 138 | 170 | characters | yes |
 | `ios.ar.description` | 2485 | 4000 | characters | yes |

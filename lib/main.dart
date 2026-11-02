@@ -157,7 +157,7 @@ class StudafyApp extends StatelessWidget {
       listenable: locale ?? Listenable.merge(const []),
       builder: (context, _) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Studafy',
+        title: 'Studafy Lite',
         theme: studafyTheme(),
         supportedLocales: kSupportedLocales,
         // The controller is the single authority: it also decides the code

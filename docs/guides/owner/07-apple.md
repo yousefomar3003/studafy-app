@@ -14,7 +14,7 @@ minutes, after Apple approves the Developer account.
 | What | Value |
 |---|---|
 | Bundle ID | `com.studafy.light` (explicit, not a wildcard) |
-| App name | `Studafy` |
+| App name | `Studafy Lite` (the store title in `docs/store/listing-copy.md` adds ": Class & Homework") |
 | SKU | `studafy-ios` (any unique text; customers never see it) |
 | Capabilities | Associated Domains, Push Notifications, Sign In with Apple |
 | Associated domain in the app | `applinks:app.studafy.com` (`ios/Runner/Runner.entitlements`) |
@@ -49,8 +49,8 @@ signed build fails.
 1. [appstoreconnect.apple.com](https://appstoreconnect.apple.com) →
    **"Apps"** → **"+"** → **"New App"**.
 2. Platforms: **iOS**.
-3. Name: `Studafy`. If Apple says the name is taken, try a variant (for
-   example `Studafy: School & Study`) and tell Claude.
+3. Name: `Studafy Lite: Class & Homework` (from the listing; `Studafy
+   Lite` alone also works). If Apple says the name is taken, tell Claude.
 4. Primary language: English (U.S.). Arabic is added later as a
    localization (guide 10).
 5. Bundle ID: choose **`com.studafy.light`** from the list.

@@ -11,7 +11,7 @@
          and profile photos must not reach Google Drive backups (launch plan
          3.6, docs/store/google-play-data-safety.md). -->
     <application
-        android:label="Studafy"
+        android:label="Studafy Lite"
         android:name="${applicationName}"
         android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/ic_launcher"
