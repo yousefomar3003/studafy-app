@@ -201,7 +201,7 @@ outside the repository (ADR-0042); the keystore itself must be outside it too.
 | App Store Connect record, name reservation | — |
 | TestFlight distribution | Phases 3–10 (a functional, server-backed app) |
 | Play internal testing track | Phases 3–10 |
-| IAP product creation: `studafy_plus_monthly`, `studafy_max_monthly`, `studafy_family_plus_monthly`, `studafy_family_plus_8_monthly` (ADR-0034; one subscription group for the two Family+ tiers) | The accounts above. Plus and Max also need the provider DPA and minors' DPIA before release |
+| IAP product creation: `studafy_plus_monthly`, `studafy_max_monthly`, `studafy_family_plus_monthly`, `studafy_family_plus_8_monthly` on Google Play, `studafy_family_4_monthly`, `studafy_family_8_monthly` on the App Store (ADR-0034, 202611030030; one subscription group for the two Family+ tiers) | The accounts above. Plus and Max also need the provider DPA and minors' DPIA before release |
 | Submission | Every gate in `docs/planning/instructions.md` §20 |
 
 Obtaining the accounts does **not** shorten the engineering path. It removes the

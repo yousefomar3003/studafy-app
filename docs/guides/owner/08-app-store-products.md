@@ -26,8 +26,8 @@ Max (and 4 to 8 children) becomes an upgrade, not a second subscription.
 |---|---|---|---|---|---|
 | Studafy plans | `studafy_max_monthly` | Studafy Max monthly | 1 | US$5.99 | 1 month |
 | Studafy plans | `studafy_plus_monthly` | Studafy Plus monthly | 2 | US$3.99 | 1 month |
-| Family+ | `studafy_family_plus_8_monthly` | Family+ 8 children monthly | 1 | US$4.99 | 1 month |
-| Family+ | `studafy_family_plus_monthly` | Family+ 4 children monthly | 2 | US$2.99 | 1 month |
+| Family+ | `studafy_family_8_monthly` | Family+ 8 children monthly | 1 | US$4.99 | 1 month |
+| Family+ | `studafy_family_4_monthly` | Family+ 4 children monthly | 2 | US$2.99 | 1 month |
 
 **A product ID can never be changed or reused**, even after deletion.
 

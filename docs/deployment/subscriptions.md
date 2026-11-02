@@ -153,10 +153,16 @@ parent.
       upgrade rather than a second subscription.
 - [ ] **A second subscription group** (e.g. "Family+") with two
       auto-renewable subscriptions, 1-month duration, for parents:
-      - `studafy_family_plus_8_monthly`, level 1 (highest), US$4.99 - up to
+      - `studafy_family_8_monthly`, level 1 (highest), US$4.99 - up to
         8 linked children
-      - `studafy_family_plus_monthly`, level 2, US$2.99 - up to 4 linked
+      - `studafy_family_4_monthly`, level 2, US$2.99 - up to 4 linked
         children
+
+      These App Store ids differ from Google Play's
+      (`studafy_family_plus_monthly`, `studafy_family_plus_8_monthly`,
+      below): the catalogue is per store
+      (`202611030030_family_plus_app_store_ids.sql`), and both lead to the
+      same plan.
 
       Same rule: both in **one group**, so 4 to 8 is an upgrade. The plan is
       held by the parent (no child is named at purchase); the server works
