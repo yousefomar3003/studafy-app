@@ -515,13 +515,13 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext c) {
     final l10n = AppL10n.of(c);
     return AuthFrame(
-      header: const StudafyLogo(size: 38, onDark: true),
+      header: const StudafyLogo(size: 38),
       footer: Center(
         child: TextButton.icon(
           onPressed: () => Navigator.pop(c),
           // White on the navy backdrop (16:1); WCAG asks 4.5:1 for text this
           // size (launch plan 7.1).
-          style: TextButton.styleFrom(foregroundColor: Colors.white),
+          style: TextButton.styleFrom(foregroundColor: studafyNavy),
           icon: Icon(backChevron(c)),
           label: Text(l10n.loginChangeRole),
         ),

@@ -38,15 +38,15 @@ const studafyMist = Color(0xFF6EA2B3);
 const studafySky = Color(0xFF7BBDE8);
 const studafyFrost = Color(0xFFBDD8E9);
 
-/// The solid backdrop of the welcome, sign-in and intro screens: the brand
-/// navy.
-const studafyBackdrop = studafyNavy;
-
 /// Studafy Lite (2026-11-02): the launch is the navy wordmark on white, as
 /// the app icon is. The native launch screens (LaunchScreen.storyboard,
 /// android brand_launch) and the first Flutter frames share this white, so
 /// they read as one surface.
 const studafyLaunchBackground = Colors.white;
+
+/// The backdrop of the welcome, intro and sign-in screens: the same white
+/// as the launch, with the navy logo (Studafy Lite; they were navy before).
+const studafyBackdrop = studafyLaunchBackground;
 
 /// Primary actions on the welcome and sign-in screens, and the bubbles of
 /// one's own messages: navy to its lighter step, white text 10:1 or more.

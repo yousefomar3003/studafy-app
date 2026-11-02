@@ -130,14 +130,14 @@ class _RolePageState extends State<RolePage> {
     }
     final l10n = AppL10n.of(c);
     return AuthFrame(
-      header: const StudafyLogo(size: 38, onDark: true),
+      header: const StudafyLogo(size: 38),
       footer: Center(
         child: TextButton.icon(
           onPressed: () => setState(() {
             _showIntro = true;
             _introReopened = true;
           }),
-          style: TextButton.styleFrom(foregroundColor: studafyFrost),
+          style: TextButton.styleFrom(foregroundColor: studafyNavy),
           icon: const Icon(Icons.play_circle_outline_rounded),
           label: Text(l10n.roleWhatIsStudafy),
         ),

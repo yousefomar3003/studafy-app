@@ -3,14 +3,15 @@ import 'package:flutter/services.dart';
 
 import '../../../core/studafy_design.dart';
 
-/// The frame of every screen before the app proper: the navy backdrop, an
-/// optional white logo above, and the content on one white card.
+/// The frame of every screen before the app proper (Studafy Lite,
+/// 2026-11-02): white, with the navy logo above and the content on one
+/// lightly raised card.
 class AuthFrame extends StatelessWidget {
   const AuthFrame({super.key, required this.child, this.header, this.footer});
 
   final Widget child;
 
-  /// Shown on the backdrop above the card - usually the white logo.
+  /// Shown above the card - usually the navy logo.
   final Widget? header;
 
   /// Shown on the backdrop below the card.
@@ -18,8 +19,8 @@ class AuthFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext c) => AnnotatedRegion<SystemUiOverlayStyle>(
-    // Light clock and battery icons over the dark backdrop.
-    value: SystemUiOverlayStyle.light,
+    // Dark clock and battery icons over the white backdrop.
+    value: SystemUiOverlayStyle.dark,
     child: Scaffold(
       backgroundColor: studafyBackdrop,
       body: SafeArea(
@@ -43,13 +44,14 @@ class AuthFrame extends StatelessWidget {
                       24,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7F9FB),
+                      color: studafyCanvas,
                       borderRadius: BorderRadius.circular(36),
+                      border: Border.all(color: studafyHairline),
                       boxShadow: [
                         BoxShadow(
-                          color: studafyAbyss.withValues(alpha: .35),
-                          blurRadius: 40,
-                          offset: const Offset(0, 18),
+                          color: studafyAbyss.withValues(alpha: .08),
+                          blurRadius: 30,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
@@ -66,7 +68,7 @@ class AuthFrame extends StatelessWidget {
   );
 }
 
-/// The one strong action on a navy screen: a navy-to-indigo pill.
+/// The one strong action on these screens: a navy-to-indigo pill.
 ///
 /// Still a [FilledButton], so it keeps the platform's focus, semantics and
 /// disabled behaviour; the gradient is painted underneath it.
