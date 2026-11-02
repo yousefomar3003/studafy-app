@@ -102,7 +102,7 @@ class _IntroSlidesState extends State<IntroSlides> {
     final slides = _slides(l10n);
     final last = _index == slides.length - 1;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: studafyBackdrop,
         body: SafeArea(
@@ -112,12 +112,12 @@ class _IntroSlidesState extends State<IntroSlides> {
                 padding: const EdgeInsetsDirectional.fromSTEB(24, 12, 12, 0),
                 child: Row(
                   children: [
-                    const StudafyLogo(size: 28, onDark: true),
+                    const StudafyLogo(size: 28),
                     const Spacer(),
                     TextButton(
                       onPressed: widget.onDone,
                       style: TextButton.styleFrom(
-                        foregroundColor: studafyFrost,
+                        foregroundColor: studafyMuted,
                       ),
                       child: Text(l10n.introSkip),
                     ),
@@ -147,9 +147,7 @@ class _IntroSlidesState extends State<IntroSlides> {
                               height: 8,
                               width: i == _index ? 26 : 8,
                               decoration: BoxDecoration(
-                                color: i == _index
-                                    ? studafySky
-                                    : studafyFrost.withValues(alpha: .35),
+                                color: i == _index ? studafyNavy : studafyFrost,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -163,8 +161,8 @@ class _IntroSlidesState extends State<IntroSlides> {
                         onPressed: () => _next(slides.length),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(56),
-                          backgroundColor: Colors.white,
-                          foregroundColor: studafyDeep,
+                          backgroundColor: studafyNavy,
+                          foregroundColor: Colors.white,
                           shape: const StadiumBorder(),
                           textStyle: const TextStyle(
                             fontSize: 17,
@@ -215,7 +213,7 @@ class _Slide extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: studafyInk,
                   fontSize: 28,
                   height: 1.2,
                   fontWeight: FontWeight.w800,
@@ -227,7 +225,7 @@ class _Slide extends StatelessWidget {
                 body,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: studafyFrost,
+                  color: studafyMuted,
                   fontSize: 16,
                   height: 1.5,
                 ),
@@ -260,7 +258,7 @@ class _Art extends StatelessWidget {
       height: size * factor,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: studafyFrost.withValues(alpha: alpha),
+        color: studafySky.withValues(alpha: alpha),
       ),
     );
     Widget satellite(IconData icon, AlignmentDirectional at) => Align(
@@ -271,9 +269,10 @@ class _Art extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(size * .07),
+          border: Border.all(color: studafyHairline),
           boxShadow: [
             BoxShadow(
-              color: studafyAbyss.withValues(alpha: .3),
+              color: studafyAbyss.withValues(alpha: .12),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -287,8 +286,8 @@ class _Art extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          ring(1, .08),
-          ring(.74, .12),
+          ring(1, .12),
+          ring(.74, .2),
           Container(
             width: size * .5,
             height: size * .5,

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launch screen before Android 12: the white wordmark centred on the brand
-     navy, at the size the first Flutter frame shows it, so the hand-off does
-     not jump. Android 12 and later show the system splash instead
-     (values-v31/styles.xml), which only takes a centred icon: the S. -->
+<!-- Launch screen before Android 12: the navy wordmark centred on white
+     (Studafy Lite), at the size the first Flutter frame shows it, so the
+     hand-off does not jump. Android 12 and later show the system splash
+     instead (values-v31/styles.xml), which takes one centred icon: the same
+     wordmark, inside its circle. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/brand_navy" />
+    <item android:drawable="@color/brand_launch" />
     <item>
         <bitmap
             android:gravity="center"

@@ -37,18 +37,18 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext c) => AnnotatedRegion<SystemUiOverlayStyle>(
-    value: SystemUiOverlayStyle.light,
+    value: SystemUiOverlayStyle.dark,
     child: Scaffold(
-      backgroundColor: studafyBackdrop,
+      backgroundColor: studafyLaunchBackground,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const StudafyLogo(size: 64, onDark: true),
+            const StudafyLogo(size: 64),
             const SizedBox(height: 18),
             Text(
               AppL10n.of(c).splashTagline,
-              style: const TextStyle(color: studafyFrost, fontSize: 16),
+              style: const TextStyle(color: studafyMuted, fontSize: 16),
             ),
           ],
         ),

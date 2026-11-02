@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 """Regenerates every app icon, launch image and wordmark from the brand masters.
 
+Studafy Lite (2026-11-02, the owner's artwork): the app icon is the navy
+"studafy" wordmark on white, and every launch screen shows the navy
+wordmark on white. Both are built here from logo_navy.png.
+
 The masters live in assets/brand/source/ (traced from the owner's artwork):
 
-  icon_s_1024.png              white "S" on solid navy, 1024 px, no alpha
+  icon_owner.png               the owner's Studafy Lite icon (navy wordmark
+                               on white), cleaned from their file to pure
+                               white and navy, lossless: the app icon
+  icon_s_1024.png              white "S" on solid navy, 1024 px, no alpha;
+                               now only the Android push status-bar icon
   adaptive_foreground_432.png  white "S" on transparent, Android adaptive
                                foreground at xxxhdpi (108 dp, S inside the
                                66 dp safe zone)
@@ -32,6 +40,20 @@ SOURCE = ROOT / "assets" / "brand" / "source"
 # The brand navy. Also lib/core/studafy_design.dart (studafyNavy) and
 # android/app/src/main/res/values/colors.xml.
 NAVY = (0x16, 0x15, 0x51)
+WHITE = (0xFF, 0xFF, 0xFF)
+
+# The wordmark on the square icon, as in the owner's icon artwork
+# (2026-11-02): 92.2% of the width, its centre 51.8% of the way down. Drawn
+# from the vector-traced wordmark, so it stays sharp at every size.
+ICON_WORDMARK_WIDTH = 0.922
+ICON_WORDMARK_CENTRE_Y = 0.518
+
+# Android adaptive icon: 108 dp canvas, masked to as little as a 66 dp
+# circle. A wide, short wordmark fits that circle at 60 dp wide.
+ADAPTIVE_WORDMARK_WIDTH = 60 / 108
+
+# Android 12+ system splash: 288 dp canvas masked to a 192 dp circle.
+SPLASH_WORDMARK_WIDTH = 176 / 288
 
 # The wordmark as StudafyLogo(size: 64) draws it on the launch hand-off
 # (role_page.dart): 64 * 1.15 logical pixels tall. The native launch screens
@@ -87,6 +109,21 @@ def wordmark_at(art: Image.Image, height: float, scale: float) -> Image.Image:
     return resize(art, (round(width * scale), round(height * scale)))
 
 
+def s_mask_white(art: Image.Image) -> Image.Image:
+    """Navy-on-white artwork as an alpha mask of the navy (0..255)."""
+    rgb = np.asarray(art.convert("RGB")).astype(np.float32)
+    navy = np.array(NAVY, dtype=np.float32)
+    coverage = (255 - rgb[..., 1]) / (255 - navy[1])
+    return Image.fromarray(np.clip(coverage * 255 + 0.5, 0, 255).astype(np.uint8))
+
+
+def navy_from_mask(word: Image.Image) -> Image.Image:
+    """The same shape in the brand navy."""
+    out = Image.new("RGBA", word.size, NAVY + (0,))
+    out.putalpha(word.getchannel("A"))
+    return out
+
+
 def white_on_transparent(mask: Image.Image) -> Image.Image:
     out = Image.new("RGBA", mask.size, (255, 255, 255, 0))
     out.putalpha(mask)
@@ -125,11 +162,42 @@ def notification_icon(s_only: Image.Image, scale: float) -> Image.Image:
     return out
 
 
+def centred(word: Image.Image, canvas: int, width_share: float,
+            background=(255, 255, 255, 0), centre_y: float = 0.5) -> Image.Image:
+    """The wordmark [width_share] of a square [canvas] wide, centred
+    across, its middle [centre_y] of the way down."""
+    w = round(canvas * width_share)
+    h = round(w * word.height / word.width)
+    out = Image.new("RGBA", (canvas, canvas), background)
+    top = round(canvas * centre_y - h / 2)
+    out.alpha_composite(resize(word, (w, h)), ((canvas - w) // 2, top))
+    return out
+
+
 def main() -> None:
-    icon = Image.open(SOURCE / "icon_s_1024.png").convert("RGB")
-    assert icon.size == (1024, 1024), "icon_s_1024.png must be 1024x1024"
-    foreground = Image.open(SOURCE / "adaptive_foreground_432.png").convert("RGBA")
+    s_icon = Image.open(SOURCE / "icon_s_1024.png").convert("RGB")
+    assert s_icon.size == (1024, 1024), "icon_s_1024.png must be 1024x1024"
     navy_word = tight(Image.open(SOURCE / "logo_navy.png").convert("RGBA"))
+    # Studafy Lite: the owner's own icon artwork (icon_owner.png, cleaned
+    # from their file to pure white and navy), downscaled - exactly their
+    # icon. Without it, the traced wordmark in the same layout.
+    owner = SOURCE / "icon_owner.png"
+    if owner.exists():
+        art = Image.open(owner).convert("RGB")
+        icon = resize(art, (1024, 1024))
+        # Their wordmark alone, for the Android shapes that need it inside
+        # a safe zone: navy where the artwork is navy, transparent on white.
+        icon_word = tight(white_on_transparent(s_mask_white(art)))
+        icon_word = navy_from_mask(icon_word)
+    else:
+        icon = centred(
+            navy_word, 1024, ICON_WORDMARK_WIDTH, WHITE + (255,),
+            ICON_WORDMARK_CENTRE_Y,
+        ).convert("RGB")
+        icon_word = navy_word
+    save(icon, SOURCE / "icon_lite_1024.png")
+    # Android adaptive foreground at xxxhdpi (108 dp = 432 px).
+    foreground = centred(icon_word, 432, ADAPTIVE_WORDMARK_WIDTH)
     white_word = tight(Image.open(SOURCE / "logo_white.png").convert("RGBA"))
     aspect = navy_word.width / navy_word.height
     print(f"wordmark aspect {aspect:.4f} (studafyWordmarkAspect)")
@@ -157,20 +225,20 @@ def main() -> None:
         px = round(points * int(entry["scale"].rstrip("x")))
         save(resize(icon, (px, px)), ios_icons / entry["filename"])
 
-    # iOS launch screen: the white wordmark, centred on navy by
+    # iOS launch screen: the navy wordmark, centred on white by
     # LaunchScreen.storyboard.
     print("iOS LaunchImage")
     launch = ROOT / "ios" / "Runner" / "Assets.xcassets" / "LaunchImage.imageset"
     for scale, suffix in ((1, ""), (2, "@2x"), (3, "@3x")):
         save(
-            wordmark_at(white_word, LAUNCH_WORDMARK_HEIGHT_PT, scale),
+            wordmark_at(navy_word, LAUNCH_WORDMARK_HEIGHT_PT, scale),
             launch / f"LaunchImage{suffix}.png",
         )
 
     # Android.
     print("Android")
     res = ROOT / "android" / "app" / "src" / "main" / "res"
-    mask = s_mask(icon)
+    mask = s_mask(s_icon)
     s_only = tight(white_on_transparent(mask))
     for density, f in ANDROID_DENSITIES.items():
         mip = res / f"mipmap-{density}"
@@ -183,27 +251,20 @@ def main() -> None:
         save(resize(foreground, (fg, fg)), mip / "ic_launcher_foreground.png")
 
         draw = res / f"drawable-{density}"
-        # Pre-Android-12 launch: the white wordmark (launch_background.xml).
+        # Pre-Android-12 launch: the navy wordmark (launch_background.xml).
         save(
-            wordmark_at(white_word, LAUNCH_WORDMARK_HEIGHT_PT, f),
+            wordmark_at(navy_word, LAUNCH_WORDMARK_HEIGHT_PT, f),
             draw / "launch_wordmark.png",
         )
-        # Android 12+ system splash: a centred icon only (no wordmark), 288 dp
-        # with the S kept well inside the 192 dp circle the system masks to.
-        # Same proportions as the adaptive foreground.
-        canvas = round(288 * f)
-        s_h = round(canvas * 188 / 432)
-        s_w = round(s_h * s_only.width / s_only.height)
-        splash = Image.new("RGBA", (canvas, canvas), (255, 255, 255, 0))
-        splash.alpha_composite(
-            resize(s_only, (s_w, s_h)),
-            ((canvas - s_w) // 2, (canvas - s_h) // 2),
-        )
+        # Android 12+ system splash: a centred icon only, 288 dp, masked to
+        # a 192 dp circle: the navy wordmark kept inside it, on white
+        # (values-v31/styles.xml).
+        splash = centred(icon_word, round(288 * f), SPLASH_WORDMARK_WIDTH)
         save(splash, draw / "splash_icon.png")
         # Push notifications (AndroidManifest.xml, default_notification_icon).
         save(notification_icon(s_only, f), draw / "ic_notification.png")
 
-    # macOS: the S on a navy rounded square inside the standard 1024 grid
+    # macOS: the Lite icon on a rounded square inside the standard 1024 grid
     # (824 px body, 100 px margin), with transparent corners.
     print("macOS AppIcon")
     mac = ROOT / "macos" / "Runner" / "Assets.xcassets" / "AppIcon.appiconset"

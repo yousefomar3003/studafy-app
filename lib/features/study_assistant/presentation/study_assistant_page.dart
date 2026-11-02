@@ -1390,17 +1390,25 @@ class _Bubble extends StatelessWidget {
           : AlignmentDirectional.centerStart,
       child: Semantics(
         label: mine ? l10n.studyAssistantYou : l10n.studyAssistantHelperName,
+        // The student's words in a navy bubble; the AI Tutor's answer as
+        // plain text across the page, with no box around it (owner,
+        // 2026-11-02).
         child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          margin: EdgeInsets.only(bottom: mine ? 8 : 14),
+          padding: mine
+              ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+              : const EdgeInsetsDirectional.fromSTEB(2, 4, 2, 4),
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.sizeOf(context).width * .82,
+            maxWidth: mine
+                ? MediaQuery.sizeOf(context).width * .82
+                : double.infinity,
           ),
-          decoration: BoxDecoration(
-            color: mine ? studafyNavy : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: mine ? null : Border.all(color: studafyHairline),
-          ),
+          decoration: mine
+              ? BoxDecoration(
+                  color: studafyNavy,
+                  borderRadius: BorderRadius.circular(18),
+                )
+              : null,
           // The model's reply is text somebody else produced, so it renders
           // in its own direction rather than the interface's.
           child: Column(
@@ -1526,14 +1534,9 @@ class _Thinking extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Align(
     alignment: AlignmentDirectional.centerStart,
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: studafyHairline),
-      ),
+    // Unboxed, like the answer it is waiting for.
+    child: Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(2, 4, 2, 12),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
