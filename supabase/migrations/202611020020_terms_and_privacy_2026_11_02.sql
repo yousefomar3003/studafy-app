@@ -29,10 +29,10 @@ insert into public.consent_policies (
 values
   ('terms_and_privacy', '2026-11-02', 'en',
     'Studafy Terms of Use and Privacy Policy',
-    'fda85733f0def04d43a0365f3d7c51534e018706a245381cd6d9c1642079ff53', now(), now()),
+    'a8ad7e6bbf4c88ddd2aff308e9a4605eac400baa87466a6748e1274f9aa66f46', now(), now()),
   ('terms_and_privacy', '2026-11-02', 'ar',
     'شروط استخدام ستودافاي وسياسة الخصوصية',
-    '9c4cb958280587f149e26464ec7a490f4095c64378d4bf20fea573e55c63b1f0', now(), now()),
+    '00bdf9b209161a10941df76255b28fe87af8a1df8bd643a992ff1b07666a4080', now(), now()),
   ('ai_features', '2026-11-02', 'en', 'Studafy AI study tools',
     '6733e5f55295f5ecb112fdf277d431e3ddf79a689840552d9890aea1bb16da13', now(), now()),
   ('ai_features', '2026-11-02', 'ar', 'أدوات الدراسة بالذكاء الاصطناعي في ستودافاي',
