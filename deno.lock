@@ -1221,7 +1221,10 @@
         "npm:zod@4.6.6"
       ],
       "overrides": {
-        "jsrsasign": "^11.1.5"
+        "jsrsasign": "^11.1.5",
+        "qs": "^6.16.1",
+        "glob": "^14.0.2",
+        "minimatch": "^11.0.1"
       }
     },
     "members": {
