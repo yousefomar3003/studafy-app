@@ -297,7 +297,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('the app'), findsOne);
-    expect(find.text('Sub-account · managed by Yousef'), findsOne);
+    expect(find.text('Managed by Yousef'), findsOne);
   });
 
   test("signing out deletes the account's chats, and its children's", () async {

@@ -6,7 +6,6 @@ import 'package:studafy/features/academic/data/preview_online_assessments.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
 import 'package:studafy/features/academic/domain/marking.dart';
 import 'package:studafy/features/academic/presentation/assessment_marking_page.dart';
-import 'package:studafy/features/academic/presentation/marking_opt_out_switch.dart';
 import 'package:studafy/features/academic/presentation/marking_plan_page.dart';
 import 'package:studafy/features/academic/presentation/marking_references_page.dart';
 import 'package:studafy/features/academic/presentation/marking_scope.dart';
@@ -16,7 +15,7 @@ import '../../support/accessibility.dart';
 import '../../support/localized_app.dart';
 
 /// Studafy AI Marking on the teacher's screens (ADR-0046). Who may read a
-/// reference or a suggestion, the plan check and a student's opt-out are
+/// reference or a suggestion and the plan check are
 /// the server's (supabase/tests/marking_suggestions.sql and the API's
 /// marking routes); these check what the screens show and send - above all
 /// that a suggestion only ever fills in the teacher's own fields.
@@ -605,39 +604,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(sheet.saves, 1);
     expect(sheet.saved.single.score, 15);
-  });
-
-  group('a student opting out', () {
-    testWidgets('is on by default and the switch tells the server', (
-      tester,
-    ) async {
-      final marking = _Marking();
-      await tester.pumpWidget(
-        localizedApp(
-          home: Scaffold(body: MarkingOptOutSwitch(preference: marking)),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.text('Let my teachers use AI to suggest marks on my work'),
-        findsOneWidget,
-      );
-      final toggle = find.byKey(const ValueKey('marking-opt-out-switch'));
-      expect(tester.widget<Switch>(toggle).value, isTrue);
-      await tester.tap(toggle);
-      await tester.pumpAndSettle();
-      expect(marking.preferences, [true]);
-      expect(tester.widget<Switch>(toggle).value, isFalse);
-      expect(
-        find.text(
-          'Off: your work is never sent to AI. Your teacher marks it by hand.',
-        ),
-        findsOneWidget,
-      );
-      await tester.tap(toggle);
-      await tester.pumpAndSettle();
-      expect(marking.preferences, [true, false]);
-    });
   });
 
   // Launch plan 7.1, in both languages. Contrast is checked in English with

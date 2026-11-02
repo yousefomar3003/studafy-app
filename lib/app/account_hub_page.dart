@@ -14,8 +14,6 @@ import '../core/profile_photo.dart';
 import '../core/studafy_components.dart';
 import '../core/studafy_design.dart';
 import '../core/studafy_domain.dart';
-import '../features/academic/presentation/marking_opt_out_switch.dart';
-import '../features/academic/presentation/marking_scope.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/account/domain/profile_repository.dart';
 import '../features/account/presentation/delete_account_page.dart';
@@ -370,16 +368,6 @@ class _AccountHubPageState extends State<AccountHubPage> {
               repository: AiConsentGate.instance.repository!,
               wrap: (row) =>
                   SettingsGroup(title: l10n.aiConsentTitle, children: [row]),
-            ),
-          // Suggested marks (ADR-0046): a student's own choice whether
-          // their work may be sent for one. Students only.
-          if (student && MarkingScope.maybeOf(context)?.preference != null)
-            MarkingOptOutSwitch(
-              preference: MarkingScope.maybeOf(context)!.preference!,
-              wrap: (row) => SettingsGroup(
-                title: l10n.markingOptOutSection,
-                children: [row],
-              ),
             ),
           SettingsGroup(
             title: l10n.accountSectionPreferences,

@@ -1,7 +1,7 @@
 -- AI-suggested marks against the teacher's reference (202610210060,
 -- ADR-0046): references are the class teacher's, versioned, editable after
 -- students answered; suggestions are drafts only - nothing here writes a
--- mark; the plan gates requests; students may opt out; nobody but the
+-- mark; the plan gates requests; nobody opts out (DL-074); nobody but the
 -- class's teachers reads any of it.
 -- Transactional fixtures: this test leaves existing local users/data intact.
 begin;
@@ -155,14 +155,15 @@ select is(pg_temp.cmd(:'teacher_user', 'setReferences', :'online', jsonb_build_o
 select is(pg_temp.q(:'teacher_user', 'suggestions', :'online')->'items'->0->>'stale',
   'true', 'and it is marked as such, not re-run');
 
--- 6. A student opts out: their work is not sent.
+-- 6. No opt-out (DL-074): a student's old switch is refused, and their
+--    work is suggested on like everyone's.
 update public.profiles set account_kind = 'student' where id = :'student_user';
-select is(pg_temp.cmd(:'student_user', 'setPreference', null, '{"optedOut": true}')->'response'->>'optedOut',
-  'true', 'the student opts out');
+select is(pg_temp.cmd(:'student_user', 'setPreference', null, '{"optedOut": true}')->>'outcome',
+  'invalid', 'a student can no longer opt out');
 select is(pg_temp.cmd(:'teacher_user', 'requestSuggestions', :'online', '{"scope":"all"}')->'response'->>'optedOut',
-  '1', 'a new run skips them');
-select is((select jsonb_array_length(private.marking_jobs_claim('w1', 5))), 0,
-  'and the worker is given nothing of theirs');
+  '0', 'a new run skips nobody');
+select is((select jsonb_array_length(private.marking_jobs_claim('w1', 5))), 1,
+  'and the worker is given their work');
 select is(pg_temp.cmd(:'teacher_user', 'setPreference', null, '{"optedOut": true}')->>'outcome',
   'forbidden', 'a teacher has nothing to opt out');
 
