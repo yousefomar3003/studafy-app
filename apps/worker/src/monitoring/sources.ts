@@ -30,6 +30,8 @@ export function monitorSources(options: {
   fileScanSql?: Sql;
   /** Study notebooks waiting to be written (2026-10-16). */
   notebookSql?: Sql;
+  /** AI-suggested marks waiting to be made (ADR-0046). */
+  markingSql?: Sql;
 }): () => Promise<Omit<MonitorSnapshot, "at">> {
   const stalled = new Map<string, number>();
   for (const { name, worker } of options.queues) {
@@ -94,6 +96,19 @@ export function monitorSources(options: {
         pending: b.pending ?? 0,
         oldestSeconds: b.oldestPendingSeconds ?? 0,
         deadLetters: b.deadLetters ?? 0,
+      });
+    }
+    if (options.markingSql) {
+      const rows = await options.markingSql<
+        { backlog: Record<string, number> }[]
+      >`select private.marking_jobs_backlog() as backlog`;
+      const b = rows[0]?.backlog ?? {};
+      backlogs.push({
+        name: "AI marking",
+        pending: b.pending ?? 0,
+        oldestSeconds: b.oldestSeconds ?? 0,
+        // Failed suggestions: the monitor alerts when they grow.
+        deadLetters: b.failed ?? 0,
       });
     }
     return { queues, backlogs };

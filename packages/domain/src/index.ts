@@ -166,9 +166,11 @@ export {
   wantsWholeMaterial,
 } from "./study/grounding";
 export {
+  answerAsSent,
   hasReference,
   MARKING_REFERENCE_MAX_CHARS,
   MARKING_WORK_MAX_CHARS,
+  type MarkingCheck,
   markingInstructions,
   type MarkingKeyPoint,
   markingPrompt,
@@ -177,6 +179,7 @@ export {
   type MarkingStrictness,
   type MarkingVerdict,
   parseMarkingReply,
+  quoteIsInAnswer,
   referenceText,
   TRANSCRIBE_WORK_PROMPT,
 } from "./study/marking";

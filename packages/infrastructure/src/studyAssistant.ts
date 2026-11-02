@@ -21,6 +21,7 @@
  */
 
 import {
+  answerAsSent,
   type Flashcard,
   GROUNDED_RULES,
   isUnreadableReply,
@@ -481,7 +482,12 @@ export function createStudyAssistant(
         0,
         markingTimeoutMs,
       );
-      const verdict = parseMarkingReply(text, reference.maximumScore);
+      // Checked against the key points and the answer as sent: a score the
+      // quotes do not prove is not kept (2026-11-03).
+      const verdict = parseMarkingReply(text, reference.maximumScore, {
+        keyPoints: reference.keyPoints,
+        answer: answerAsSent(answer),
+      });
       return { verdict, ...(usage ? { usage } : {}) };
     },
 

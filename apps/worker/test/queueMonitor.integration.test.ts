@@ -11,15 +11,17 @@ suite("queue monitor: Postgres backlogs", () => {
   const sql = createDatabase(databaseUrl ?? "postgresql://unused", { max: 1 });
   afterAll(() => closeDatabase(sql));
 
-  test("the outbox and file-scan backlogs read as numbers", async () => {
+  test("the outbox, file-scan and AI-marking backlogs read as numbers", async () => {
     const sample = await monitorSources({
       queues: [],
       outboxSql: sql,
       fileScanSql: sql,
+      markingSql: sql,
     })();
     expect(sample.backlogs.map((b) => b.name)).toEqual([
       "notification outbox",
       "file scan",
+      "AI marking",
     ]);
     for (const backlog of sample.backlogs) {
       expect(backlog.pending).toBeGreaterThanOrEqual(0);

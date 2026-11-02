@@ -514,6 +514,7 @@ const queueMonitor = alertState && alertSender
       outboxSql,
       fileScanSql: env.FILE051_SCAN_ENABLED ? fileWorkerSql : undefined,
       notebookSql,
+      markingSql: marking ? fileWorkerSql : undefined,
     }),
     thresholds: {
       maxDepth: env.QUEUE_ALERT_MAX_DEPTH,
