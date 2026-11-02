@@ -1,7 +1,7 @@
 # Studafy Terms of Use
 
-**Last updated:** 25 October 2026\
-**Version:** 1.6
+**Last updated:** 2 November 2026\
+**Version:** 1.7
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -66,6 +66,21 @@ suggested by AI), §5 and §8 (the student's opt-out), and §9 (a paid plan
 for teachers, bought in the store, possibly by a teacher acting for a
 school).
 
+Version 1.7 (2 November 2026), with privacy policy 1.9, consent version
+2026-11-02 (migration 202611020020_terms_and_privacy_2026_11_02.sql), two
+owner decisions (DL-074): the AI study tools are on from the start for a
+child account a parent creates, and the parent can turn them off on the
+child's card (they were off until the parent agreed, ADR-0043); and
+AI-suggested marks have no student opt-out any more (DL-073 (4) amended).
+§2, §4, §5, §6, §8 and the list of changes. Published by the owner's
+decision without legal review, like 1.3 to 1.6.
+
+TODO(legal): DL-074. Review §2, §6 and §8: AI on by default for a child
+account is not the affirmative consent GDPR Art. 4(11)/7 and Planet49
+expect (questions-for-counsel 11.1); and §4, §5 and §8: no opt-out from
+AI-suggested marks for a minor's work, and the right to object under
+Art. 21 (questions-for-counsel 11.2).
+
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
 -->
@@ -75,6 +90,15 @@ company registered in Ireland under number 822430, about your use of
 Studafy. How we handle personal data is set out in the
 [Privacy Policy](privacy), which forms part of these terms. By signing in you
 accept both.
+
+### What changed in version 1.7
+
+- For a child account a parent creates, the AI study tools are **on from
+  the start**. The parent can turn them off at any time on the child's card
+  in their own account (§2, §6, §8).
+- Suggested marks can no longer be turned off. A teacher may ask AI for a
+  suggested mark on a student's written work, and the teacher still decides
+  every mark (§4, §5, §8).
 
 ---
 
@@ -101,7 +125,8 @@ marks and attendance are managed by that class's own teachers.
   for a child who has no email or phone. By doing so, the parent confirms
   they are the child's parent or legal guardian, accepts these terms and the
   Privacy Policy on the child's behalf, and is responsible for how the
-  account is used.
+  account is used. The AI study tools are on from the start for such an
+  account; the parent can turn them off (§8).
 - A student can subscribe to a study plan in the app (§9).
 - A profile photo you add stays on your device; it is never uploaded.
 - Give accurate information. Do not create an account for someone else
@@ -143,9 +168,10 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   suggest marks for written answers and hand-ins, against a reference you
   write. A suggestion is only a suggestion: it becomes a mark only when you
   save one, and **the mark is yours**. Read the student's work and check
-  each suggestion before you save a mark; it can be wrong. Students who have
-  turned suggested marks off are left for you to mark by hand. Do not put
-  other people's personal details in your reference answers.
+  each suggestion before you save a mark; it can be wrong. Students cannot
+  turn suggested marks off, so it is for you to decide when to ask for
+  them. Do not put other people's personal details in your reference
+  answers.
 - **Corrections are recorded, not erased.** To change a published mark you
   must give a reason. The previous mark, the new one, who changed it, when
   and why are kept, and the family is told if the mark itself changed. Give
@@ -178,13 +204,17 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   replace it unless your teacher lets you.
 - If you think a mark or an attendance record is wrong, ask your teacher.
 - Your teacher may ask AI to suggest a mark for your written work; your
-  teacher decides the mark. If you do not want your work sent to the AI, turn
-  suggested marks off in Account, and your teacher will mark it by hand.
+  teacher decides the mark. Names Studafy knows are replaced before your
+  work is sent, and only your teachers see the suggestion. There is no
+  setting to turn this off.
 
 ## 6. For parents and guardians
 
 - You can link to your child only with your child's approval, unless you
   created your child's account.
+- For a child account you create, the AI study tools are on from the
+  start. You can turn them off at any time on your child's card in your
+  account (§8).
 - A linked parent can see their child's published marks, attendance, set work
   and hand-ins, and class material shared with families, and can download the
   files in them. You can hand work in for a young child who has no device of
@@ -215,7 +245,8 @@ Privacy Policy says exactly what is sent to it.
 
 - These tools are optional. They are for every student account, whether or
   not it belongs to a class, and only after the student agrees to them
-  separately; for a child account a parent manages, the parent agrees.
+  separately; for a child account a parent creates, they are on from the
+  start, and the parent can turn them off.
   Parent and teacher accounts cannot use them. They can be turned off at
   any time.
 - Names Studafy knows are replaced before anything is sent, but photos are
@@ -225,7 +256,8 @@ Privacy Policy says exactly what is sent to it.
   never hand it in as your own work.
 - **AI never decides a mark.** A teacher may ask AI for a suggested mark on
   a student's written work, which only teachers see; the teacher decides the
-  mark. A student can turn this off in Account (§4, §5; Privacy Policy §6.1).
+  mark. There is no setting to turn this off (§4, §5; Privacy Policy
+  §6.1).
 - Each plan has an allowance, which renews every week on the free plan and
   every month on the paid plans. We may change the allowances, or pause a
   tool, to keep the service working and affordable.

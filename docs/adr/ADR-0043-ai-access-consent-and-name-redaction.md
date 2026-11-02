@@ -6,6 +6,10 @@
 - Superseded in part: decision 1's "students in a class only" (D3) by
   ADR-0045 (DL-072, 2026-10-21): every student account may use the tools.
   The consent and name redaction stand.
+- Amended 2026-11-02 (DL-074): a managed child account now **starts with the
+  AI study tools on**. Creating the child records the parent's agreement to
+  the current notice; the parent turns the tools off on the child's card.
+  See "Amendment 2026-11-02 (DL-074)" below.
 - Date: 2026-10-15
 - Decision owner: repository owner
 - Relates to: ADR-0029, ADR-0031 (managed child accounts), ADR-0037,
@@ -101,7 +105,8 @@ A student with no class sees the "join a class" screen, not the tools.
 - **Who gives it.** A student gives their own. For a managed child account
   (ADR-0031), the parent who manages it gives it from their own account,
   through `POST /v1/me/managed-children/{childId}/study-tools-consent`.
-  The child cannot give it, even though the parent is often the one holding
+  *(Since DL-074, creating the child account also records it; see the
+  amendment below.)* The child cannot give it, even though the parent is often the one holding
   the device in the child's session, because the session is the child's.
   Anyone who could give the consent may withdraw it, and a managed child
   may withdraw their own.
@@ -185,7 +190,8 @@ when it is used, like any other material.
   needs to say so (below).
 - Every student is asked once, at their first AI use after this ships. A
   parent of a managed child has to turn the tools on from their own account
-  before the child can use them.
+  before the child can use them. *(Changed by DL-074, 2026-11-02: a managed
+  child starts with the tools on, and the parent turns them off.)*
 - Integration fixtures and the capacity seed record an AI consent for their
   students. Without it the ledger refuses them.
 - Names in a teacher's material are replaced for the student who asks.
@@ -209,3 +215,38 @@ when it is used, like any other material.
   terms-and-privacy consent version.
 - TODO(legal): whether a linked (not managing) parent should also be able
   to see or withdraw a self-signed-in student's AI consent.
+
+## Amendment 2026-11-02 (DL-074): managed children start with the AI tools on
+
+The owner decided that the AI study tools are on from the start for a child
+account a parent creates (ADR-0031). Section 2's rule that a managed child
+had no AI until the parent explicitly agreed is replaced:
+
+- **On creation.** The trigger `dl074_managed_child_ai_on` on
+  `private.managed_accounts` (`private.managed_child_ai_on`, migration
+  `202611020030_child_ai_on_and_no_marking_opt_out.sql`) records a
+  `consent_records` row for the child when the account is created: purpose
+  `ai_features`, the current notice version (`private.ai_consent_version()`)
+  in the parent's language (Arabic or English; English otherwise), `given_by`
+  the parent, `given_as` `guardian`. If no notice is published, nothing is
+  recorded and the child is asked for a parent's consent as before
+  (`guardian_consent_required`).
+- **Existing children** were backfilled the same way, unless their parent
+  had turned the tools off (their latest AI record is withdrawn); a deleted
+  child is skipped.
+- **Turning them off** is unchanged: the parent's switch on the child's card
+  withdraws the consent (`withdrawn_by` the parent), and nothing more is
+  sent.
+- **A new notice version** asks again as before: the child's consent is no
+  longer current, `ai_access` answers `guardian_consent_required`, and the
+  parent agrees on the child's card. The trigger fires only when an account
+  is created, so it never re-agrees on the parent's behalf.
+- **In the app**, the create-child screen tells the parent the tools are on
+  and where to turn them off (`childAccountAiOn`). The notice
+  (`aiConsentNoticeBody`, version `2026-11-02`) and privacy policy 1.9 §6 /
+  terms of use 1.7 §8 say the same.
+- TODO(legal): consent that is on unless the parent turns it off is not the
+  clear affirmative act GDPR Art. 4(11) and Art. 7 and the CJEU's Planet49
+  ruling (C-673/17) expect. Counsel to confirm the lawful basis for a
+  managed child's AI use (questions-for-counsel 11.1; DPIA §12.1). The owner
+  accepted the risk (DL-074), like DL-062 and DL-068.

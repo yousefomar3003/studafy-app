@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
-**Last updated:** 25 October 2026\
-**Version:** 1.8
+**Last updated:** 2 November 2026\
+**Version:** 1.9
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -95,9 +95,59 @@ opt-out rather than the student's consent, and with no DPA in place
 for minors, the retention periods, and §14 (whether a suggestion a teacher
 accepts unchanged is an automated decision).
 
+Version 1.9 (2 November 2026), with terms of use 1.7, consent version
+2026-11-02 for terms_and_privacy and for the AI notice ai_features
+(migration 202611020020_terms_and_privacy_2026_11_02.sql), two owner
+decisions (DL-074):
+(1) the AI study tools are on from the start for a child account a parent
+creates: creating the child records the parent's agreement to the current
+AI notice (given as guardian), and the parent can turn them off at any time
+on the child's card in their own account; existing child accounts got the
+same unless the parent had turned the tools off (migration
+202611020030_child_ai_on_and_no_marking_opt_out.sql, trigger
+dl074_managed_child_ai_on). Until now a child account had no AI until the
+parent agreed (ADR-0043).
+(2) AI-suggested marks (§6.1) have no opt-out: the switch is gone from the
+app, existing opt-outs were deleted and the database refuses a new one
+(trigger dl074_no_marking_opt_out). The teacher decides whether to ask and
+decides every mark; names are still replaced; suggestions are still drafts
+only teachers see. This amends DL-073 (4).
+§2, §3.11, §4, §5, §6, §6.1, §8, §9, §11 and the list of changes. Published
+by the owner's decision without legal review, like 1.5 to 1.8.
+
+TODO(legal): DL-074 (1). Consent that is on unless the parent turns it off
+is not the clear affirmative act that GDPR Art. 4(11) and Art. 7 and the
+CJEU's Planet49 ruling (C-673/17) expect: creating a child account is not,
+by itself, an unambiguous agreement to the AI notice. Counsel to confirm
+the lawful basis for the AI study tools on a child account, or how the
+parent's agreement must be collected (questions-for-counsel 11.1; DPIA
+§12.1). Recorded as the owner's accepted risk, like DL-062 and DL-068.
+
+TODO(legal): DL-074 (2). With no opt-out, the basis for sending a minor's
+work to the AI provider for suggested marks is the teacher's decision
+alone. On a legitimate-interests or public-task basis, the right to object
+(GDPR Art. 21, §11) still applies, and an objection must be assessed even
+though the app offers no switch. Counsel to confirm the basis and how an
+objection is handled (questions-for-counsel 11.2; DPIA §12.2).
+
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 1.9
+
+- **The AI study tools are on from the start for a child account a parent
+  creates.** Creating the account records the parent's agreement to the AI
+  notice, and the create-account screen says so. The parent can turn the
+  tools off at any time on the child's card in their own account. Child
+  accounts created earlier have them on too, unless the parent had turned
+  them off. When the AI notice changes, the parent is asked again (§2, §3.11,
+  §5, §6).
+- **Suggested marks can no longer be turned off.** The teacher decides
+  whether to ask AI for a suggested mark, and still decides every mark.
+  Names Studafy knows are still replaced, and a suggestion is still a draft
+  only the class's teachers see. Choices to turn suggested marks off made
+  before 2 November 2026 have been deleted (§2, §4, §5, §6.1, §8, §9, §11).
 
 ### What changed in version 1.8
 
@@ -106,8 +156,9 @@ together.
   for hand-ins of marked assignments. The AI only suggests. A suggestion is
   a draft only the class's teachers see, and it becomes a mark only if the
   teacher saves a mark themselves (§2, §3.4, §6.1, §14).
-- **A student can turn this off** in Account. Their work is then never
-  sent, and the teacher marks it by hand (§5, §6.1, §11).
+- A student could turn this off in Account. Their work was then never
+  sent, and the teacher marked it by hand (§5, §6.1, §11). Version 1.9
+  removes this choice.
 - What is sent to the AI provider, Together AI: the question, the
   teacher's reference answer and the student's work, with names Studafy
   knows replaced; photos and scans of pages are sent as they are (§6.1,
@@ -268,8 +319,8 @@ The long version follows, and it governs. This summary is for orientation.
   changed it, when and why, and the family is told when the mark changes.
 - **A teacher can ask AI for a suggested mark** on a written answer or a
   hand-in. The AI never sets a mark: **the teacher decides**. The student's
-  work is sent to Together AI with the names Studafy knows replaced, and
-  **a student can turn this off** in Account (§6.1).
+  work is sent to Together AI with the names Studafy knows replaced. There
+  is no setting to turn suggested marks off (§6.1).
 - We do **not** sell personal data, use it for advertising, or build
   advertising profiles. We show no advertising, and the app contains no
   advertising or analytics software.
@@ -282,7 +333,8 @@ The long version follows, and it governs. This summary is for orientation.
   the same chat, and — where a student uses them — a photo they attach, a
   lesson's text, or their own notes. Any student account can use them,
   whether or not it belongs to a class, but only after agreeing to them
-  separately (for a child account a parent manages, the parent agrees).
+  separately. For a child account a parent creates, they are **on from the
+  start**, and the parent can turn them off on the child's card.
   Parent and teacher accounts cannot use them. Names Studafy knows are
   replaced before anything is sent, and email addresses and marks are never
   sent; **photos are sent as they are**. A photo from a student who belongs
@@ -582,8 +634,8 @@ Which version of these terms and this policy you accepted, and when — and,
 for a child account, that the parent accepted them on the child's behalf.
 Separately, whether the AI study tools were agreed to (§6): who agreed, for
 whom, to which version of the notice, in which language and when, and who
-withdrew that agreement and when. Whether a student has turned off
-AI-suggested marks (§6.1).
+withdrew that agreement and when. For a child account a parent creates,
+the record shows that the parent agreed when they created the account.
 
 ### 3.12 Operational data
 
@@ -618,7 +670,7 @@ AI-suggested marks (§6.1).
 | Keeping audit records and backups | Legal obligation; legitimate interests in accountability and recovery |
 | Reviewing and acting on safety reports, and alerting our reviewer | Legitimate interests in protecting children; legal obligation where one applies |
 | The AI study tools | Consent, given separately before first use — see §6 |
-| Suggested marks by AI, when a teacher asks for them | Where a school is the controller, the school's legitimate interests or public task in marking work; otherwise the teacher's and our legitimate interests in helping teachers mark. The teacher decides whether to use it, and a student can turn it off at any time — see §6.1 |
+| Suggested marks by AI, when a teacher asks for them | Where a school is the controller, the school's legitimate interests or public task in marking work; otherwise the teacher's and our legitimate interests in helping teachers mark. The teacher decides whether to use it, and decides every mark; there is no setting to turn it off — see §6.1 |
 | Complying with the law, and defending legal claims | Legal obligation; legitimate interests |
 
 Where we rely on **legitimate interests**, we have considered whether our
@@ -633,10 +685,12 @@ model.**
 signed and forbids training on our data, add: "and we do not permit our
 providers to." Do not add it before. -->
 
-<!-- TODO(legal): DL-073. The basis for AI-suggested marks is the teacher's
-decision with an opt-out, not consent (owner's decision). Confirm it is
-sound for children's work, and whether legitimate interests can be relied
-on where Studafy is controller (questions-for-counsel 10.1). -->
+<!-- TODO(legal): DL-073, amended by DL-074. The basis for AI-suggested
+marks is the teacher's decision, not consent, and since 2 November 2026
+there is no opt-out (owner's decision). Confirm it is sound for children's
+work, whether legitimate interests can be relied on where Studafy is
+controller, and how an objection under Art. 21 is handled with no switch in
+the app (questions-for-counsel 10.1, 11.2). -->
 
 ---
 
@@ -662,11 +716,13 @@ A student can also use it on their own, without a class.
   approval**, except to a child account that parent created. The request goes
   to the student, who accepts or declines it.
 - **The AI study tools are for student accounts, in a class or not**, and
-  need their own consent: a parent gives it for a child account they manage
-  (§6).
+  need their own consent. For a child account a parent creates, they are on
+  from the start: creating the account records the parent's agreement, and
+  the parent can turn them off at any time on the child's card in their own
+  account (§6).
 - **A teacher can ask AI for suggested marks** on a student's work, and
-  the teacher decides the mark. A student, or the parent for a child account
-  they manage, can turn this off in Account (§6.1).
+  the teacher decides the mark. There is no setting to turn this off
+  (§6.1).
 - We do not profile children for advertising, and we show no advertising.
 - Where a school is the controller, questions about a child's records should
   go to the school first.
@@ -681,9 +737,17 @@ parent's consent is needed for students under it outside a school
 
 <!-- TODO(legal): Studafy holds no date of birth and has no age gate (DPIA
 D3). A student who signs in themselves gives their own AI consent, whatever
-their age; only managed child accounts get a parent's
+their age; only managed child accounts get a parent's, recorded since
+2 November 2026 when the parent creates the account (DL-074)
 (questions-for-counsel 1.3). Confirm, or give the age below which a parent
 must consent and whether a linked parent should see or withdraw it. -->
+
+<!-- TODO(legal): DL-074 (2 November 2026). A child account a parent
+creates now has the AI study tools on from the start; the parent's
+agreement is recorded when the account is created, and the parent turns
+them off on the child's card. That is not an affirmative opt-in to the AI
+notice (Art. 4(11), Art. 7, Planet49). Counsel to confirm the basis for a
+child's AI use on this footing (questions-for-counsel 11.1). -->
 
 <!-- TODO(legal): DL-072 (21 October 2026). Version 1.6 said children used
 Studafy through a school ("We do not knowingly permit a child to create an
@@ -705,8 +769,7 @@ wording above is acceptable (questions-for-counsel 9.1). -->
 **Read this section before allowing a student to use them.** The AI study
 tools are switched on. All of them are optional, and a student who does not
 use them has nothing sent to the AI provider by them. Separately, a teacher
-can ask AI for suggested marks on a student's work, which a student can turn
-off: see §6.1.
+can ask AI for suggested marks on a student's work: see §6.1.
 
 **Who can use them.** Every student account, whether or not it belongs to
 a class, including a child account a parent manages. Parent and teacher
@@ -714,14 +777,16 @@ accounts cannot use them.
 
 **A separate consent.** Before a student first uses any of these tools, the
 app shows a short notice about them and asks the student to agree. This is
-separate from accepting these terms. For a child account a parent manages,
-the parent agrees, or declines, from their own account; the child cannot.
-We record who agreed, for whom, to which version of the notice, in which
-language, and when. The tools can be turned off at any time in Account,
-or, for a child account, by the parent from that child's card in the
-parent's own account. That withdraws the consent: nothing more is sent
-after that. When we change the notice, everyone is
-asked again.
+separate from accepting these terms. **For a child account a parent
+creates, the tools are on from the start:** the screen for creating the
+account tells the parent so, and creating it records the parent's
+agreement to the current notice. The child cannot agree or turn them on
+themselves. We record who agreed, for whom, to which version of the notice,
+in which language, and when. The tools can be turned off at any time in
+Account, or, for a child account, by the parent from that child's card in
+the parent's own account. That withdraws the consent: nothing more is sent
+after that. When we change the notice, everyone is asked again, including
+the parent of a child account.
 
 | Tool | Who can use it | What is sent to the AI provider |
 |---|---|---|
@@ -844,13 +909,13 @@ mark themselves, and then the usual rules apply (a mark is private until
 published, and a correction is recorded, §3.4). When a teacher changes the
 reference, nothing is marked again unless the teacher asks.
 
-**The teacher decides whether to use it; a student can turn it off.** We
-do not ask the student's consent for suggested marks: it is the teacher's
-tool for marking. A student can turn it off at any time in Account, and for
-a child account a parent manages, the parent can turn it off from that
-account. **When it is off, the student's work is never sent** to the AI
-provider, including work already waiting to be read, and the teacher marks
-it by hand.
+**The teacher decides whether to use it.** We do not ask the student's
+consent for suggested marks: it is the teacher's tool for marking. **There
+is no setting to turn it off**, for a student or a parent: the teacher
+decides whether to ask for suggestions on a piece of work, and decides
+every mark. Until 2 November 2026 a student could turn suggested marks off
+in Account; those choices have been deleted. Your rights in §11, including
+the right to object, still apply.
 
 **What is sent to the AI provider:** the question, the teacher's reference,
 and the student's answer or hand-in: its text, the text of its PDF, Word or
@@ -871,8 +936,8 @@ identifier of the student is attached to a request.
 The files are read to make the suggestion; this step keeps no copy of
 them (the hand-in itself stays with the class's records, §3.4). Nothing a
 student wrote is written to our logs. We record who asked for suggestions,
-changed a reference, dismissed a suggestion or turned suggestions off, and
-when, without the student's work (§9). For a teacher, how much of the
+changed a reference or dismissed a suggestion, and when, without the
+student's work (§9). For a teacher, how much of the
 plan's allowance was used, kept for 13 months (§3.10).
 
 **Our provider** is Together AI, with the same model as the AI study tools
@@ -882,9 +947,10 @@ place (§8).
 **Accuracy:** a suggestion can be wrong. The teacher checks each one
 before saving a mark.
 
-<!-- TODO(legal): DL-073, ADR-0046. Published without legal review. Counsel
-to review this section: the basis (teacher's decision with an opt-out, not
-consent) for children's work; work sent to Together AI with no DPA; photos
+<!-- TODO(legal): DL-073, ADR-0046, amended by DL-074. Published without
+legal review. Counsel to review this section: the basis (the teacher's
+decision, not consent, and since 2 November 2026 no opt-out) for children's
+work, and the right to object under Art. 21 (questions-for-counsel 11.2); work sent to Together AI with no DPA; photos
 and scans of handwritten pages sent unchanged; 180 days for suggestions and
 13 months for the teacher's usage (questions-for-counsel 10.1 to 10.3). -->
 
@@ -972,8 +1038,9 @@ United States. Our data processing agreement with it, and the transfer
 safeguard that goes with it, are not yet in place; we will update this
 policy when they are. Until then, if you do not want this data to go to
 Together AI, do not turn the AI study tools on, or turn them off in your
-account at any time (§6). A student can also turn off suggested marks in
-Account, so that a teacher's request never sends their work (§6.1).
+account at any time (§6); for a child account a parent creates, they are on
+from the start, and the parent turns them off on the child's card. Suggested marks have no such setting: when a
+teacher asks for them, the student's work is sent to Together AI (§6.1).
 
 <!-- TODO(legal): confirm the mechanism for each provider in §7.2 before
 publishing on the own domain - the AI provider, GitHub, Resend and the
@@ -1002,9 +1069,8 @@ with the real mechanism once the DPA is accepted. -->
   notifications, blocks, data exports, notebooks (personal notes included)
   and study notebooks, AI usage records, and personal photos (photos for
   the notebook or the AI Tutor);
-- delete every suggested mark about the student's work and their choice
-  about suggested marks, and, for a teacher, their Studafy AI Marking usage
-  records;
+- delete every suggested mark about the student's work and, for a
+  teacher, their Studafy AI Marking usage records;
 - remove its email address from invitations;
 - delete, in the same way, every child account the person manages: nobody
   else can sign in to a child account, so it cannot outlive its parent. The
@@ -1115,8 +1181,6 @@ applies, you have the right to:
 - **Withdraw consent** at any time, where we relied on consent — for the AI
   study tools, by turning them off in Account. Withdrawing does not affect
   what was lawful before.
-- **Turn off suggested marks**, so that your work is not sent to the AI
-  provider when a teacher asks for them: in Account, at any time (§6.1).
 - **Complain** to your supervisory authority — in Ireland, the Data
   Protection Commission.
 
@@ -1133,8 +1197,8 @@ classes and family links, your work and the answers you gave, your marks
 and their history, your attendance and its history, your notebooks
 (including your personal notes), the
 messages you sent and received, the reports you made, your consents, your
-purchases, your AI usage, whether you turned off suggested marks and, for a
-teacher, your Studafy AI Marking usage. **It lists your files — each one's name, type, size and date
+purchases, your AI usage and, for a teacher, your Studafy AI Marking
+usage. **It lists your files — each one's name, type, size and date
 — rather than including them.** You can open your files in the app, or write
 to hello@studafy.com for a copy. Messages, files and AI usage hold the newest
 5,000 entries each; write to us for the rest. A parent's export names the
@@ -1275,5 +1339,6 @@ WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
 Version 1.5 was published on 17 October 2026 without that review, by the
 owner's decision (DL-068). Items 1 to 8 still stand. Version 1.6 (21 October
 2026, DL-071) was published the same way, and so were version 1.7 (21
-October 2026, DL-072) and version 1.8 (25 October 2026, DL-073).
+October 2026, DL-072), version 1.8 (25 October 2026, DL-073) and version
+1.9 (2 November 2026, DL-074).
 -->

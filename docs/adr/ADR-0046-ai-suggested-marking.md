@@ -5,9 +5,13 @@
   product exists and the owner says so (DL-073). Takes effect for users with
   privacy policy 1.8 and terms of use 1.6, which the owner publishes without
   legal review.
+- Amended 2026-11-02 (DL-074): **the student opt-out (section 8) is
+  removed.** Nobody opts out; the teacher decides whether to ask and decides
+  every mark. Privacy policy 1.9 and terms of use 1.7. See "Amendment
+  2026-11-02 (DL-074)" below.
 - Date: 2026-10-21 (decision); 2026-10-25 (implementation)
 - Decision owner: repository owner
-- Decision log: DL-073
+- Decision log: DL-073, amended by DL-074
 - Supersedes in part: ADR-0026 (AI-072), **for marking only**. ADR-0026's
   removal of the AI study tools was already superseded by ADR-0029 and
   ADR-0037.
@@ -44,7 +48,8 @@ students. The owner decided (DL-073):
 - **Scope:** written answers in online assessments, and hand-ins of graded
   assignments.
 - **Basis:** the teacher's decision to use it, with a student opt-out, not
-  the student's consent. Counsel to confirm for minors.
+  the student's consent. Counsel to confirm for minors. *(Amended
+  2026-11-02, DL-074: no opt-out.)*
 - **A paid teacher plan, "Studafy AI Marking"**, not the retired
   `teacher_ai_grading`.
 - **The same provider and model as the AI Tutor.**
@@ -175,12 +180,18 @@ The worker makes each suggestion (section 9). For each one:
 | Redaction before egress | Names Studafy knows are replaced before anything is sent: everyone on the class roster (roster names and profile names), the class's teachers, and the students' parents (pending or verified links), with the student whose work it is as "self" (`private.marking_known_names`). Email addresses, long number sequences and links are removed (`redactForProvider`). Photos and scanned pages are sent as images and cannot be redacted (as ADR-0043) |
 | An egress allowlist | One pinned HTTPS origin, `AI_BASE_URL` (`https://api.together.xyz`); the client refuses anything else |
 | Quotas and cost caps | Per teacher per calendar month (UTC): **4,000,000 tokens** and a **US$2** cost cap beneath them, held before each call and settled after (`private.marking_usage`, under an advisory lock per teacher). **20 pages** and 60,000 characters per hand-in. At most 3 attempts per suggestion, with back-off. Past a limit nothing is sent: the suggestion fails with the reason, which the teacher sees |
-| Retained audit | `setReferences`, `requestSuggestions`, `dismissSuggestion` and `setPreference` each write an `audit_events` row (`marking_<operation>`) with the run id, counts, whether a reference changed and the reference version, and the request id. **Never a student's work, a reference or a suggestion's text.** Nothing a student wrote is logged |
+| Retained audit | `setReferences`, `requestSuggestions`, `dismissSuggestion` and `setPreference` (the opt-out, refused since DL-074) each write an `audit_events` row (`marking_<operation>`) with the run id, counts, whether a reference changed and the reference version, and the request id. **Never a student's work, a reference or a suggestion's text.** Nothing a student wrote is logged |
 | Teacher review before a proposal affects a grade | Section 1: a suggestion never becomes a mark; only the teacher's own save does |
 | A signed DPA | **Not yet: accepted risk** (section 11) |
 | A DPIA extended to minors' data | Draft DPIA §12.2 covers AI marking; not signed off |
 
-### 8. Students can opt out
+### 8. Students can opt out (removed 2026-11-02, DL-074)
+
+> **Removed.** Since DL-074 there is no opt-out: no row can be added to
+> `private.marking_opt_outs` (trigger `dl074_no_marking_opt_out`), the rows
+> that existed were deleted, and the app has no switch. The rest of this
+> section is kept as the decision of 2026-10-21. See "Amendment 2026-11-02
+> (DL-074)".
 
 `private.marking_opt_outs` holds students who do not want their work sent.
 It is the student's own choice, from Account (`GET` and
@@ -223,7 +234,8 @@ the suggestion and not kept by this step.
   model, date) is kept **13 months**, for the monthly cap and billing
   questions.
 - **The export** gains an `aiMarking` section: whether the person has opted
-  out, and a teacher's Studafy AI Marking usage (newest 5,000 rows).
+  out (never, since DL-074), and a teacher's Studafy AI Marking usage
+  (newest 5,000 rows).
   Suggestions are not included; the student's marks are in their grades.
 - **Account deletion** removes a student's opt-out and every suggestion
   about their work, and a teacher's usage ledger and comp grants
@@ -263,7 +275,7 @@ until launch.
 | `GET /v1/assessments/{id}/marking-suggestions` | The class's teachers | Live suggestions with `stale` |
 | `POST /v1/assessments/{id}/marking-suggestions` | The class's teachers, with the plan | Queues a run: `queued`, `optedOut`, `replaced`; `403 PLAN_REQUIRED` without the plan |
 | `POST /v1/marking-suggestions/{id}/dismiss` | The class's teachers | |
-| `GET`/`POST /v1/me/marking-preference` | A student | Their own opt-out |
+| `GET`/`POST /v1/me/marking-preference` | A student | Their own opt-out. Since DL-074 nothing is opted out and setting an opt-out is refused by the database; the route stays for older app builds |
 
 Permissions: `marking_plan.read`, `marking_reference.read`,
 `marking_reference.write`, `marking_suggestion.read`,
@@ -279,7 +291,8 @@ Permissions: `marking_plan.read`, `marking_reference.read`,
   Marking is a separate teacher tool, not one of the study tools.
 - **Policies.** Privacy policy 1.8 and terms of use 1.6, English and Arabic,
   effective 25 October 2026: a teacher may ask AI for suggested marks, the
-  teacher decides, a student can turn it off in Account, Together AI is the
+  teacher decides, a student can turn it off in Account (removed in privacy
+  policy 1.9 and terms of use 1.7, DL-074), Together AI is the
   processor, suggestions are kept 180 days, names are replaced. Studafy AI
   Marking is listed in the terms' paid plans. Published by the owner's
   decision without legal review, like 1.5 to 1.7. They need a new consent
@@ -300,13 +313,51 @@ Permissions: `marking_plan.read`, `marking_reference.read`,
 
 ## Open questions for counsel
 
-- TODO(legal): the teacher's decision with a student opt-out, rather than
-  consent, as the basis for sending minors' work to an AI provider; and
-  whether a school that is controller must instruct it (questions-for-counsel
-  10.1).
+- TODO(legal): the teacher's decision, rather than consent, as the basis
+  for sending minors' work to an AI provider, now with no opt-out (DL-074),
+  and how an objection under GDPR Art. 21 is handled; and whether a school
+  that is controller must instruct it (questions-for-counsel 10.1, 11.2).
 - TODO(legal): the Together AI DPA, now covering students' marked work and
   photos of handwritten pages (questions-for-counsel 1.1, 10.2).
 - TODO(legal): 180 days for suggestions and 13 months for the teacher's
   ledger (questions-for-counsel 10.3).
 - TODO(legal): whether a suggested mark that a teacher accepts unchanged is
   an automated decision under GDPR Art. 22 (policy §14).
+
+## Amendment 2026-11-02 (DL-074): no opt-out
+
+The owner removed the student's switch, "Let my teachers use AI to suggest
+marks on my work". **Nobody opts out.** What changed and what did not:
+
+- **The control is the teacher's decision alone.** The teacher decides
+  whether to ask for suggestions on a piece of work, and decides every mark
+  (section 1). The student's AI study-tools consent still does not apply
+  (section 8's last paragraph stands).
+- **Unchanged:** names Studafy knows are replaced and emails, long numbers
+  and links removed before anything is sent (section 7); suggestions are
+  drafts that only the class's teachers see and never become a mark by
+  themselves (sections 1 and 5); the plan, limits, retention and the switch
+  `MARKING_SUGGESTIONS_ENABLED` are as before.
+- **Database** (migration
+  `202611020030_child_ai_on_and_no_marking_opt_out.sql`): every row of
+  `private.marking_opt_outs` was deleted, and the trigger
+  `dl074_no_marking_opt_out` (`private.marking_opt_out_refused`) refuses any
+  insert with SQLSTATE 23514, so an older app's switch fails instead of
+  seeming to work. The table, the `opted_out` skip reason and the queue's
+  checks stay; with no rows, they never skip anything. The export's
+  `aiMarking` section therefore always reports no opt-out.
+- **API:** `GET`/`POST /v1/me/marking-preference` and their permissions stay
+  for older builds; `GET` answers that the student is not opted out, and a
+  `POST` that would opt out fails at the database.
+- **App:** the switch (`marking_opt_out_switch.dart` and its strings) is
+  removed from Account.
+- **Policies:** privacy policy 1.9 (§2, §4, §5, §6.1, §8, §9, §11) and terms
+  of use 1.7 (§4, §5, §8), EN and AR, and the in-app texts, consent version
+  `2026-11-02` for `terms_and_privacy` and `ai_features` (migration
+  `202611020020_terms_and_privacy_2026_11_02.sql`), published without legal
+  review.
+- TODO(legal): the basis for processing a minor's work for AI-suggested
+  marks without an objection route. On a legitimate-interests or
+  public-task basis, the right to object (GDPR Art. 21) may still apply, and
+  an objection made by email would have to be assessed even though the app
+  has no switch (questions-for-counsel 11.2; DPIA §12.2).

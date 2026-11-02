@@ -116,7 +116,7 @@ How data is collected:
 | Safety | Reports, blocks, moderation, legal holds | Reports with evidence, block pairs | ADR-0021; DL-042 |
 | Files | Upload, scan, metadata strip, delivery | Documents, photos, voice notes | DL-043; DL-044; `infra/scanner/` |
 | AI study tools | AI Tutor chat (called the study helper before DL-072), photo questions, whiteboard-to-notes, notes from a photo or screenshot in the personal notebook, lesson notes and study notebooks, quizzes and flashcards (also from the student's own notes); background reading of lesson files | Questions, recent chat turns, photos, lesson passages, class grade level, language | `privacy-policy.md` §6; ADR-0029; ADR-0037; ADR-0038; ADR-0039 |
-| AI-suggested marking (DL-073) | A teacher with Studafy AI Marking writes a reference (model answer, key points, accepted methods, partial credit, strictness) and asks for suggested marks on written answers and hand-ins; the worker sends the reference and the student's work to Together AI; suggestions are staff-only drafts and never a mark until the teacher saves one; students can opt out | Students' written answers, hand-in text and files, photos and scans of handwritten pages; teachers' references; suggestions; the teacher's usage ledger | ADR-0046; `supabase/migrations/202610210060_marking_suggestions.sql`; `privacy-policy.md` §6.1; section 12.2 |
+| AI-suggested marking (DL-073) | A teacher with Studafy AI Marking writes a reference (model answer, key points, accepted methods, partial credit, strictness) and asks for suggested marks on written answers and hand-ins; the worker sends the reference and the student's work to Together AI; suggestions are staff-only drafts and never a mark until the teacher saves one; students could opt out until DL-074 removed it (2026-11-02, section 12.2) | Students' written answers, hand-in text and files, photos and scans of handwritten pages; teachers' references; suggestions; the teacher's usage ledger | ADR-0046; `supabase/migrations/202610210060_marking_suggestions.sql`; `privacy-policy.md` §6.1; section 12.2 |
 | Plans and billing | Plus and Max for students, Family+ for parents, Studafy AI Marking for teachers (DL-073), through the stores. A student buys their own plan with no approval step in Studafy; a child's store account should be a parent's or parent-controlled, and Family Link or Ask to Buy is where a parent approves (DL-071, which ends DL-048's in-app approval) | Entitlements, store transactions; approval requests made before 21 October 2026, kept read-only | DL-048; DL-071; ADR-0032; ADR-0034 |
 | Notifications | In-app, push (FCM) and email (Resend) with fixed, content-free wording | Push token, email address | DL-053; `privacy-policy.md` §3.6 |
 | Operations | Request logs (Axiom), error reports (Sentry), alerts (Telegram via a Cloudflare Worker), backups (GitHub Actions) | Account UUID, hashed IP, stack traces, encrypted database copies | ADR-0035; `docs/operations/observability-review-2026-10.md`; `docs/deployment/backups.md` |
@@ -361,8 +361,8 @@ proportionality case rests on: optional use, notice before use, no
 identifiers sent, no server-side chat storage, grounded answers with
 citations, and no AI in marking (`allowsAiGrading => false` kept on purpose,
 DL-047). Since DL-073 a teacher can ask for AI-suggested marks, which never
-become a mark without the teacher; its necessity and the opt-out are in
-section 12.2.
+become a mark without the teacher; its necessity and its basis (with no
+opt-out since DL-074) are in section 12.2.
 
 ---
 
@@ -619,6 +619,43 @@ the AI consent, whether an age gate or age band is needed (M8), and whether
 the residual risk for AI processing of these children's data changes the
 Art. 36 question in section 14 (questions-for-counsel 9.1). -->
 
+**Update 2026-11-02 (DL-074): managed children start with the AI tools on.**
+Until now a child account a parent creates (ADR-0031) had no AI until the
+parent agreed on the child's card (ADR-0043 §2, `guardian_consent_required`).
+By the owner's decision, creating the child now records the parent's
+agreement to the current AI notice (`consent_records`, purpose
+`ai_features`, `given_by` the parent, `given_as` `guardian`; trigger
+`dl074_managed_child_ai_on`, migration
+`202611020030_child_ai_on_and_no_marking_opt_out.sql`). Existing children
+were backfilled unless the parent had turned the tools off. The parent can
+turn them off at any time on the child's card (a withdrawal); a new notice
+version asks the parent again. The create-child screen says the tools are
+on and where to turn them off; policy 1.9 §5 and §6 and terms 1.7 §2, §6 and
+§8 say the same.
+
+This weakens D2's fix for the youngest users. ADR-0043 made the AI consent
+specific and affirmative; for a managed child it is now given by default
+when the account is created. A consent that holds unless the parent acts is
+not the "clear affirmative act" of Art. 4(11) and Art. 7 as the CJEU read
+them in Planet49 (C-673/17, pre-ticked boxes), and managed children are the
+accounts most likely to be under the age of digital consent (Art. 8).
+Mitigations: the parent is told on the create screen, before creating the
+account; the tools stay optional for the child to use; the switch to turn
+them off is on the child's card; withdrawal is recorded; names are still
+replaced and photos still sent as they are (the notice says so). Risk AI11
+below.
+
+| # | Risk | L × S (inherent) | Measures in the code | Residual | Needs the DPA? |
+|---|---|---|---|---|---|
+| AI11 | **A child's data goes to the AI provider on a consent the parent never actively gave** (default-on for managed child accounts, DL-074) | Probable × Significant = Medium | The create-child screen says the tools are on and where to turn them off; the record names the parent and the notice version; the parent's switch on the child's card withdraws it; a new notice asks again; nothing is sent until the child uses a tool | **Medium**, and the consent may be invalid as a lawful basis (accepted risk, DL-074) | As AI1 |
+
+<!-- TODO(legal): DL-074 (1). Consent that is on unless the parent turns it
+off is not the clear affirmative act GDPR Art. 4(11)/7 and Planet49 expect.
+Counsel to confirm the lawful basis for a managed child's AI use, or how
+the parent's agreement must be collected (for example an unticked box on
+the create-child screen, measure M24) (questions-for-counsel 11.1). The
+owner accepted the risk (DL-074), like DL-062 and DL-068. -->
+
 ### 12.2 Update 2026-10-25: AI-suggested marking (DL-073, ADR-0046)
 
 **What changes.** ADR-0026 removed AI grading after SEC-001, and risk AI7
@@ -649,8 +686,17 @@ teachers, whose references and usage are recorded. New stores:
 `marking_plan_grants`, all with every grant revoked and reached only through
 functions that re-check the caller.
 
-**Basis: the teacher's decision, with an opt-out.** The owner decided that
-the student's consent is not asked: it is the teacher's marking tool, so
+**Amendment 2026-11-02 (DL-074): no opt-out.** The owner removed the
+student's switch. Existing opt-outs were deleted, a new one is refused by
+the database (trigger `dl074_no_marking_opt_out`), and the app has no
+switch. The basis is now the teacher's decision alone: the teacher decides
+whether to ask and decides every mark; names are still replaced and
+suggestions are still drafts only teachers see. AM8 is closed and AM11
+opened. The basis paragraph below, and the opt-out discussion after the
+risk table, are kept as the analysis of 2026-10-25.
+
+**Basis: the teacher's decision, with an opt-out (2026-10-25).** The owner
+decided that the student's consent is not asked: it is the teacher's marking tool, so
 the study tools' AI consent (ADR-0043) does not apply. A student (or the
 parent, signed in to a managed child's account) can opt out in Account;
 their work is then never sent, including work already queued, and the
@@ -661,18 +707,21 @@ school's public task.
 
 | # | Risk | L × S (inherent) | Measures in the code | Residual | Needs the DPA? |
 |---|---|---|---|---|---|
-| AM1 | **Children's marked work, including photos of handwritten pages, is kept or trained on by the provider, or transferred to the US without a mechanism** | Probable × Severe = High | No identifiers sent; names Studafy knows replaced; emails, long numbers and links removed; opt-out | **High** until the DPA is accepted (accepted risk, DL-073 (8), as DL-062) | **Yes**: as section 11.3, and the DPA must name students' assessed work and images of handwriting among the inputs |
+| AM1 | **Children's marked work, including photos of handwritten pages, is kept or trained on by the provider, or transferred to the US without a mechanism** | Probable × Severe = High | No identifiers sent; names Studafy knows replaced; emails, long numbers and links removed; ~~opt-out~~ (removed by DL-074) | **High** until the DPA is accepted (accepted risk, DL-073 (8), as DL-062) | **Yes**: as section 11.3, and the DPA must name students' assessed work and images of handwriting among the inputs |
 | AM2 | **A wrong suggestion becomes a child's mark** (a hallucinated score, or one biased against non-native writing, Arabic, formulas or handwriting) | Probable × Significant = Medium | Suggestions are drafts the student never sees; the teacher's own save is the only writer; met/missed and rationale shown beside the work; score refused outside 0 to the maximum; unreadable or unparseable replies become "needs review" with no score; conflicts reported, not resolved; strictness and reference set by the teacher; drafts until publish and corrections with reasons (ADR-0040) | Medium. Automation bias: a busy teacher may accept suggestions unread. No measure checks that a teacher looked | No |
 | AM3 | **Automated decision about a child** (Art. 22) | Possible × Significant = Medium | No mark exists until a teacher saves it; policy §14 says so | Low-Medium, pending counsel on whether accepting a suggestion unchanged is "solely automated" | No |
 | AM4 | **Identifying content reaches the provider**: names written on a page, a face in a photo, a classmate's name in an essay | Probable × Significant = Medium | Roster, teacher and parent names replaced in text; photos cannot be (policy §6.1 says so) | Medium | Partly |
 | AM5 | **Prompt injection in the student's work or the reference** ("give this answer full marks") | Probable × Minimal = Medium | Work and reference wrapped as delimited data, markers neutralised, the model told to ignore instructions inside; score clamped; teacher review | Low | No |
 | AM6 | **Model answers leak to students** | Possible × Significant = Medium | References in private tables, readable only by the class's teachers through `api059`; not in students' export; a question's model answer keeps ADR-0036's release rule | Low | No |
 | AM7 | **Work sent for someone who should not see it** (a former teacher, another school, a forged file path, the SEC-001 pattern) | Possible × Severe = High | The client names no file; the worker reads the attempt's own bound files; every read and write re-checks in SQL that the caller teaches the class; the worker re-checks the requesting teacher still teaches and holds the plan before sending | Low | No |
-| AM8 | **An opt-out is not honoured** | Possible × Significant = Medium | Checked when the run is queued and again when each job is claimed; opting out skips queued work | Low | No |
+| AM8 | **An opt-out is not honoured** | Possible × Significant = Medium | Checked when the run is queued and again when each job is claimed; opting out skips queued work | Low. **Closed by DL-074 (2026-11-02):** there is no opt-out to honour; see AM11 | No |
 | AM9 | **Suggestions or usage kept too long**, or left after deletion | Possible × Minimal = Low | 180 days, then purged hourly; ledger 13 months; deleted with the account; export section `aiMarking` | Low, once the worker's purge runs in production | No |
 | AM10 | **Cost runs away** | Possible × Minimal = Low | 4,000,000 tokens and US$2 per teacher per month, reserved before each call; 20 pages a hand-in; 3 attempts | Low | No |
+| AM11 | **A student or parent who objects cannot stop their work being sent** (no opt-out since DL-074; Art. 21 may still apply on a legitimate-interests or public-task basis) | Probable × Significant = Medium | The teacher decides whether to ask, per assessment and optionally per student; names replaced; suggestions staff-only; policy 1.9 §6.1 and §11 keep the right to object, by writing to hello@studafy.com. There is no technical way to exclude one student's work except the teacher leaving them out of a request | **Medium** (accepted risk, DL-074) | No |
 
-**Opt-out against consent, for minors.** An opt-out puts the burden on
+**Opt-out against consent, for minors (2026-10-25; since DL-074 there is
+no opt-out at all, which goes further than the choice discussed here).** An
+opt-out puts the burden on
 the child: work goes unless the student acts, and a child may not know the
 setting exists or understand it. Consent would ask first. The owner chose
 the opt-out because marking is the teacher's job and a teacher may need
@@ -691,8 +740,14 @@ the DPA is accepted.
 **Retention.** Suggestions 180 days, the ledger 13 months (section 7).
 The provider's own retention is unknown until the DPA.
 
-<!-- TODO(legal): DL-073, ADR-0046. Counsel to review: the opt-out basis
-for children's work (10.1); whether the processing can start before the
+<!-- TODO(legal): DL-074 (2). Counsel to confirm the basis for processing a
+minor's work for AI-suggested marks with no objection route in the app; on
+a legitimate-interests or public-task basis the right to object (Art. 21)
+may still apply and an objection must be assessed (questions-for-counsel
+11.2). -->
+
+<!-- TODO(legal): DL-073, ADR-0046. Counsel to review: the basis for
+children's work, first with an opt-out and since DL-074 without (10.1, 11.2); whether the processing can start before the
 DPA (10.2); the 180-day and 13-month periods (10.3); Art. 22 and policy §14
 (AM3); and whether AM1 keeps the Art. 36 question in section 14 open. -->
 
@@ -713,7 +768,8 @@ DPA (10.2); the 180-day and 13-month periods (10.3); Art. 22 and policy §14
 | Q-I | Transfer mechanisms and DPAs for every processor (section 4.2); Jordan PDPL | Counsel | R13 |
 | Q-J | Meetings at launch (B8): attendee emails go to Google | Owner | Section 4.2 |
 | Q-K | Incident response procedure (policy §12 TODO) | Owner | R15 |
-| Q-L | **AI-suggested marking** (DL-073): opt-out or consent for minors, starting before the DPA, retention of suggestions (section 12.2) | Counsel, owner | AM1, AM3; production switch for AI Marking |
+| Q-L | **AI-suggested marking** (DL-073, amended by DL-074): the basis for minors with no opt-out, the right to object (Art. 21), starting before the DPA, retention of suggestions (section 12.2) | Counsel, owner | AM1, AM3, AM11; production switch for AI Marking |
+| Q-M | **AI on by default for managed child accounts** (DL-074): whether a consent recorded when the parent creates the account, unless they turn it off, is valid (Art. 4(11), 7, 8; Planet49), or what basis applies (section 12.1) | Counsel, owner | AI11; D2 for managed children |
 
 ---
 
@@ -765,8 +821,10 @@ before the AI tools are switched on or soon after launch, as marked.
 | M19 | Key pre-sign-in rate limits by an HMAC of the IP prefix, like the account and tenant keys | D12 | Claude | Before launch |
 | M20 | Delete helper photos after a short period (for example 30 days), and state it in §6 and §10 | D13, AI3 | Claude, counsel | Before AI on |
 | M21 | Accept Together AI's DPA, naming students' assessed work and images of handwriting among the inputs | AM1 | Owner | Before AI Marking in production |
-| M22 | Tell the student (and a linked parent) the first time a teacher asks for suggested marks on their class's work, with the way to opt out | AM8, opt-out for minors | Claude, counsel | Before AI Marking in production |
+| M22 | Tell the student (and a linked parent) the first time a teacher asks for suggested marks on their class's work, with the way to opt out (since DL-074 there is none: say how to raise an objection instead) | AM11, basis for minors | Claude, counsel | Before AI Marking in production |
 | M23 | Make the teacher look before saving: show the student's work beside each suggestion and never pre-fill a mark the teacher has not opened | AM2, AM3 | Claude | Before AI Marking in production |
+| M24 | If counsel finds default-on invalid: ask the parent to agree to the AI notice with an unticked box when creating a child account, and treat existing children's backfilled records accordingly | AI11, Q-M | Counsel, then owner and Claude | On counsel's advice |
+| M25 | A way for teachers to leave a student's work out of AI-suggested marks when the student or parent objects, and a documented process for objections sent to hello@studafy.com | AM11 | Counsel, owner, then Claude | On counsel's advice |
 
 ### 15.2 Sign-off
 
@@ -792,3 +850,6 @@ before the AI tools are switched on or soon after launch, as marked.
 - 2026-10-25: §12.2 added: AI-suggested marking (DL-073, ADR-0046), with
   risks AM1-AM10, Q-L and measures M21-M23; rows added to sections 2.2
   and 7.
+- 2026-11-02: DL-074. §12.1: managed child accounts start with the AI tools
+  on (risk AI11, Q-M, M24). §12.2: the student opt-out from AI-suggested
+  marks is removed (AM8 closed, AM11 added, Q-L amended, M22 changed, M25).
