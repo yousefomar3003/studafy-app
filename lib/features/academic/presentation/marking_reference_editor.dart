@@ -147,6 +147,21 @@ class MarkingReferenceCard extends StatefulWidget {
   State<MarkingReferenceCard> createState() => _MarkingReferenceCardState();
 }
 
+/// A field's length only once it is close to the limit: a counter under
+/// every box ("0/5000") is noise the teacher does not need (2026-11-03).
+Widget? _quietCounter(
+  BuildContext context, {
+  required int currentLength,
+  required bool isFocused,
+  required int? maxLength,
+}) {
+  if (maxLength == null || currentLength < maxLength * .8) return null;
+  return Text(
+    '$currentLength/$maxLength',
+    style: Theme.of(context).textTheme.bodySmall,
+  );
+}
+
 class _MarkingReferenceCardState extends State<MarkingReferenceCard> {
   void _changed([VoidCallback? change]) {
     setState(change ?? () {});
@@ -166,6 +181,7 @@ class _MarkingReferenceCardState extends State<MarkingReferenceCard> {
       minLines: 1,
       maxLines: 6,
       maxLength: maxLength,
+      buildCounter: _quietCounter,
       decoration: InputDecoration(
         labelText: label,
         helperText: helper,
@@ -261,6 +277,7 @@ class _MarkingReferenceCardState extends State<MarkingReferenceCard> {
                     minLines: 1,
                     maxLines: 3,
                     maxLength: 500,
+                    buildCounter: _quietCounter,
                     decoration: InputDecoration(
                       labelText: l10n.markingRefsKeyPoint(index + 1),
                       border: const OutlineInputBorder(),

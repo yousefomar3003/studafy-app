@@ -10,7 +10,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(44);
+select plan(46);
 update private.notebook_runtime set environment='synthetic';
 select set_config('studafy.request_id', 'marking-test', true);
 
@@ -186,6 +186,17 @@ select is(pg_temp.cmd(:'student_user', 'setPreference', null, '{"optedOut": fals
   'false', 'the student opts back in');
 select is(pg_temp.cmd(:'teacher_user', 'requestSuggestions', :'paper', '{}')->'response'->>'queued',
   '1', 'a hand-in is queued against the assignment''s reference');
+-- Handed in again: only the latest attempt's suggestion is listed.
+insert into public.submission_attempts (school_id, submission_id, operation_id,
+  answer_text, submitted_at)
+values (:'school_id', :'submission', gen_random_uuid(), 'My better lab report.', now());
+update public.submissions set current_attempt_id = (
+  select id from public.submission_attempts where submission_id = :'submission'
+  order by submitted_at desc, id desc limit 1) where id = :'submission';
+select is(pg_temp.cmd(:'teacher_user', 'requestSuggestions', :'paper', '{"scope":"all"}')->'response'->>'queued',
+  '1', 'the new hand-in is queued');
+select is(jsonb_array_length(pg_temp.q(:'teacher_user', 'suggestions', :'paper')->'items'),
+  1, 'and only its suggestion is listed, not the replaced one''s');
 
 -- 8. Billing: a teacher buys it for themselves; a student cannot.
 select is(private.billing_resolve_beneficiary(:'teacher_user', 'studafy_ai_marking', null, false)->>'beneficiaryId',

@@ -361,3 +361,28 @@ marks on my work". **Nobody opts out.** What changed and what did not:
   public-task basis, the right to object (GDPR Art. 21) may still apply, and
   an objection made by email would have to be assessed even though the app
   has no switch (questions-for-counsel 11.2; DPIA §12.2).
+
+## Addendum 2026-11-03: a score must be proved from the answer
+
+An accuracy check against the real model (`scripts/ai/marking-eval.ts`,
+21 answers in English and Arabic with the marks a teacher would give) found
+that an Arabic answer instructing the marker to give full marks got them.
+Since then:
+
+- The model quotes, word for word, where the answer shows each key point it
+  counts (`evidence`). Where every key point carries marks, the server keeps
+  a score only up to what the quotes actually found in the answer prove
+  (`quoteIsInAnswer`: parts joined by "...", one-letter copying slips
+  allowed); above that there is no score and the teacher reviews it.
+- An answer whose words address the marker (EN/AR patterns) is always
+  flagged for review.
+- Result with `Qwen/Qwen3.5-9B`, each answer marked twice: 88% inside the
+  teacher's range, every suggestion within 1 mark, no instruction obeyed.
+  Re-run the check after any change to the prompt or the model:
+  `bun --env-file=.env.hosted scripts/ai/marking-eval.ts --repeat 2`.
+- Hand-ins were checked end to end on the test copy: a photo of a
+  handwritten page (4/4, all key points) and a typed PDF (2/4, the two
+  missing points named).
+- The suggestions list shows a hand-in's suggestion only for the student's
+  latest attempt, and the AI-marking queue is in the worker's queue alerts
+  (`202611030010_marking_readiness.sql`).
