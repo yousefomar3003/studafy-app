@@ -6680,6 +6680,13 @@ class AppL10nEn extends AppL10n {
   String get usageComparePlans => 'Compare plans';
 
   @override
+  String get markingUsageTitle => 'AI Marking usage';
+
+  @override
+  String get markingUsageReached =>
+      'Suggested marks stop until it resets. You can still mark everything yourself, and your references and earlier suggestions are kept.';
+
+  @override
   String get usageLoadFailed => 'Your AI usage could not be loaded. Try again';
 
   @override

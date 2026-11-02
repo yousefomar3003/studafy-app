@@ -53,7 +53,7 @@ and Sign in with Apple are next (guides 07 and 03 part D).
   - worker doors `marking_jobs_claim`, `marking_job_usage`,
     `marking_job_finish`, `marking_jobs_backlog`, `marking_purge_expired`;
   - the plan: `studafy_ai_marking` / `studafy_ai_marking_monthly`, listed
-    in `synthetic` and `development` only; 4,000,000 tokens, US$2 and 20
+    in `synthetic` and `development` only; 7,000,000 tokens, US$3 and 20
     pages per hand-in per teacher per month;
   - retention (suggestions 180 days, ledger 13 months), the export's
     `aiMarking` section, deletion (`dl073_marking_forget_deleted_profile`).
@@ -139,7 +139,7 @@ and Sign in with Apple are next (guides 07 and 03 part D).
 ### Owner: to do
 1. **Create `studafy_ai_marking_monthly`** in Play Console first (an
    auto-renewing monthly base plan), then in App Store Connect (its own
-   subscription group), and **set the price** (not decided yet;
+   subscription group), and **set the price: US$7.99 a month** (DL-075;
    `docs/deployment/subscriptions.md`).
 2. `bun run legal:deploy` (step 5 above).
 3. Later, for production: a migration listing `studafy_ai_marking` in

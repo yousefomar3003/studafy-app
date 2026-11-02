@@ -10,7 +10,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(46);
+select plan(47);
 update private.notebook_runtime set environment='synthetic';
 select set_config('studafy.request_id', 'marking-test', true);
 
@@ -104,6 +104,8 @@ select is(pg_temp.q(:'teacher_user', 'plan', null)->>'granted', 'false',
 insert into private.marking_plan_grants(user_id, reason, ends_at)
   values (:'teacher_user', 'pgTAP marking', now() + interval '1 day');
 select is(pg_temp.q(:'teacher_user', 'plan', null)->>'active', 'true', 'the grant is the plan');
+select is(pg_temp.q(:'teacher_user', 'plan', null)->'allowance'->>'total', '7000000',
+  'the plan allows 7,000,000 tokens a month (DL-075)');
 select is(pg_temp.q(:'teacher_user', 'plan', null)->>'granted', 'true',
   'and it says Studafy gave it: nothing to manage in a store');
 select is(pg_temp.cmd(:'teacher_user', 'requestSuggestions', :'online', '{}')->'response'->>'queued',
@@ -123,7 +125,7 @@ select is((select jobs->0->>'answerText' from claimed),
 select ok((select exists (select 1 from jsonb_array_elements(jobs->0->'names') n
     where n->>'kind' = 'self') from claimed), 'and the names to keep out');
 select is(private.marking_job_usage('w1', (select (jobs->0->>'id')::uuid from claimed),
-    1, 'reserve', '{"estimateTokens": 5000000}')->>'outcome',
+    1, 'reserve', '{"estimateTokens": 8000000}')->>'outcome',
   'allowance_exhausted', 'a call past the month''s allowance is refused');
 select is(private.marking_job_usage('w1', (select (jobs->0->>'id')::uuid from claimed),
     1, 'reserve', '{"estimateTokens": 3000, "estimateMicroUsd": 500}')->>'outcome',

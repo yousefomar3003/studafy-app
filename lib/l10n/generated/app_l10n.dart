@@ -11419,6 +11419,18 @@ abstract class AppL10n {
   /// **'Compare plans'**
   String get usageComparePlans;
 
+  /// Account: the teacher's AI Marking usage section title.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Marking usage'**
+  String get markingUsageTitle;
+
+  /// Account: a teacher's AI Marking allowance is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested marks stop until it resets. You can still mark everything yourself, and your references and earlier suggestions are kept.'**
+  String get markingUsageReached;
+
   /// No description provided for @usageLoadFailed.
   ///
   /// In en, this message translates to:

@@ -3,7 +3,7 @@
 Studafy Plus (US$3.99/month) and Studafy Max (US$5.99/month) are
 auto-renewing monthly subscriptions sold through Apple In-App Purchase and
 Google Play Billing, as are Family+ for parents and, for teachers, Studafy
-AI Marking (DL-073, price set by the owner). What each plan unlocks is in
+AI Marking (DL-073; US$7.99 a month, DL-075). What each plan unlocks is in
 [study-plans.md](study-plans.md); the decisions are in
 [ADR-0009](../adr/ADR-0009-billing-and-entitlements.md),
 [ADR-0029](../adr/ADR-0029-study-plans-and-ai-lesson-tools.md) and
@@ -165,7 +165,7 @@ parent.
       sold; leave it in App Store Connect so existing subscribers renew.
 - [ ] **A third subscription group** (e.g. "Studafy AI Marking") with one
       auto-renewable subscription, 1-month duration, for teachers:
-      - `studafy_ai_marking_monthly`, price set by the owner.
+      - `studafy_ai_marking_monthly`, **US$7.99** a month (DL-075).
 
       The teacher buys it for themselves; nobody else is named. It is in
       its own group so it never replaces a student's or parent's plan.
@@ -196,7 +196,7 @@ parent.
       app upgrades 4 to 8 by naming the subscription it replaces, exactly as
       it does Plus to Max.
 - [ ] Also `studafy_ai_marking_monthly` for teachers (DL-073), with an
-      auto-renewing monthly base plan and the price the owner sets. Create it
+      auto-renewing monthly base plan at **US$7.99** (DL-075). Create it
       **in Play Console first, then in App Store Connect**, with exactly this
       ID in both.
 - [ ] In the subscription settings: a **grace period** and **account hold**,
