@@ -176,6 +176,9 @@ export type V1DismissMarkingSuggestionResponse = z.infer<
 /** The caller's Studafy AI Marking plan and this month's allowance. */
 export const V1MarkingPlan = z.strictObject({
   active: z.boolean(),
+  /** Given by Studafy with no store subscription: nothing to manage,
+   * cancel or restore in a store. */
+  granted: z.boolean(),
   teacher: z.boolean(),
   /** The server can make suggestions at all (an AI provider, switched on). */
   available: z.boolean(),

@@ -43,6 +43,7 @@ class ApiMarkingRepository
     final allowance = dto.allowance;
     return MarkingPlan(
       active: dto.active,
+      granted: dto.granted,
       teacher: dto.teacher,
       available: dto.available,
       used: (allowance['used'] as num?)?.toInt() ?? 0,

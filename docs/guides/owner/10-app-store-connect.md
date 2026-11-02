@@ -28,10 +28,10 @@ parts B to D). Time: part A 30 minutes; parts B to D 1 to 2 hours.
 2. Drag the `.ipa` from Claude into Transporter → **"Deliver"**.
 3. Wait 10 to 30 minutes. App Store Connect → Studafy → **"TestFlight"**.
    The build appears, first as "Processing".
-4. If it says **"Missing Compliance"** → **"Manage"** → the app uses only
-   standard encryption (HTTPS) → choose **"None of the algorithms mentioned
-   above"** → **"Save"**. (The app's `Info.plist` does not answer this yet,
-   so Apple asks for each build.)
+4. Export compliance is answered in the app (`ITSAppUsesNonExemptEncryption`
+   is `false` in `Info.plist`: only standard HTTPS), so Apple should not ask.
+   If it still says **"Missing Compliance"** → **"Manage"** → **"None of the
+   algorithms mentioned above"** → **"Save"**.
 5. **"Internal Testing"** → **"+"** → group name `Studafy team` → add
    testers. Internal testers must be users in your App Store Connect team.
 6. Add the build to the group.

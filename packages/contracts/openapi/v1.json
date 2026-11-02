@@ -35148,6 +35148,9 @@
           "active": {
             "type": "boolean"
           },
+          "granted": {
+            "type": "boolean"
+          },
           "teacher": {
             "type": "boolean"
           },
@@ -35183,6 +35186,7 @@
         },
         "required": [
           "active",
+          "granted",
           "teacher",
           "available",
           "allowance"

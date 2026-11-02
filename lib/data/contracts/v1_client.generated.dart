@@ -9188,6 +9188,7 @@ class V1MarkingKeyPointDto {
 class V1MarkingPlanDto {
   const V1MarkingPlanDto({
     required this.active,
+    required this.granted,
     required this.teacher,
     required this.available,
     required this.allowance,
@@ -9196,18 +9197,21 @@ class V1MarkingPlanDto {
   factory V1MarkingPlanDto.fromJson(Map<String, dynamic> json) =>
       V1MarkingPlanDto(
         active: json['active'] as bool,
+        granted: json['granted'] as bool,
         teacher: json['teacher'] as bool,
         available: json['available'] as bool,
         allowance: json['allowance'] as Map<String, dynamic>,
       );
 
   final bool active;
+  final bool granted;
   final bool teacher;
   final bool available;
   final Map<String, dynamic> allowance;
 
   Map<String, Object?> toJson() => {
     'active': active,
+    'granted': granted,
     'teacher': teacher,
     'available': available,
     'allowance': allowance,
