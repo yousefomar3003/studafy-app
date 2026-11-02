@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Regenerates every app icon, launch image and wordmark from the brand masters.
 
+Studafy Lite (2026-11-02, the owner's artwork): the app icon is the navy
+"studafy" wordmark on white, and every launch screen shows the navy
+wordmark on white. Both are built here from logo_navy.png.
+
 The masters live in assets/brand/source/ (traced from the owner's artwork):
 
-  icon_s_1024.png              white "S" on solid navy, 1024 px, no alpha
+  icon_s_1024.png              white "S" on solid navy, 1024 px, no alpha;
+                               now only the Android push status-bar icon
   adaptive_foreground_432.png  white "S" on transparent, Android adaptive
                                foreground at xxxhdpi (108 dp, S inside the
                                66 dp safe zone)
@@ -32,6 +37,19 @@ SOURCE = ROOT / "assets" / "brand" / "source"
 # The brand navy. Also lib/core/studafy_design.dart (studafyNavy) and
 # android/app/src/main/res/values/colors.xml.
 NAVY = (0x16, 0x15, 0x51)
+WHITE = (0xFF, 0xFF, 0xFF)
+
+# The wordmark's width on the square icon (the owner's artwork leaves a
+# little more margin than the edge of the square, so the rounded corners
+# never touch it).
+ICON_WORDMARK_WIDTH = 0.80
+
+# Android adaptive icon: 108 dp canvas, masked to as little as a 66 dp
+# circle. A wide, short wordmark fits that circle at 60 dp wide.
+ADAPTIVE_WORDMARK_WIDTH = 60 / 108
+
+# Android 12+ system splash: 288 dp canvas masked to a 192 dp circle.
+SPLASH_WORDMARK_WIDTH = 176 / 288
 
 # The wordmark as StudafyLogo(size: 64) draws it on the launch hand-off
 # (role_page.dart): 64 * 1.15 logical pixels tall. The native launch screens
@@ -125,11 +143,25 @@ def notification_icon(s_only: Image.Image, scale: float) -> Image.Image:
     return out
 
 
+def centred(word: Image.Image, canvas: int, width_share: float,
+            background=(255, 255, 255, 0)) -> Image.Image:
+    """The wordmark [width_share] of a square [canvas] wide, centred."""
+    w = round(canvas * width_share)
+    h = round(w * word.height / word.width)
+    out = Image.new("RGBA", (canvas, canvas), background)
+    out.alpha_composite(resize(word, (w, h)), ((canvas - w) // 2, (canvas - h) // 2))
+    return out
+
+
 def main() -> None:
-    icon = Image.open(SOURCE / "icon_s_1024.png").convert("RGB")
-    assert icon.size == (1024, 1024), "icon_s_1024.png must be 1024x1024"
-    foreground = Image.open(SOURCE / "adaptive_foreground_432.png").convert("RGBA")
+    s_icon = Image.open(SOURCE / "icon_s_1024.png").convert("RGB")
+    assert s_icon.size == (1024, 1024), "icon_s_1024.png must be 1024x1024"
     navy_word = tight(Image.open(SOURCE / "logo_navy.png").convert("RGBA"))
+    # Studafy Lite: the navy wordmark on white, opaque.
+    icon = centred(navy_word, 1024, ICON_WORDMARK_WIDTH, WHITE + (255,)).convert("RGB")
+    save(icon, SOURCE / "icon_lite_1024.png")
+    # Android adaptive foreground at xxxhdpi (108 dp = 432 px).
+    foreground = centred(navy_word, 432, ADAPTIVE_WORDMARK_WIDTH)
     white_word = tight(Image.open(SOURCE / "logo_white.png").convert("RGBA"))
     aspect = navy_word.width / navy_word.height
     print(f"wordmark aspect {aspect:.4f} (studafyWordmarkAspect)")
@@ -157,20 +189,20 @@ def main() -> None:
         px = round(points * int(entry["scale"].rstrip("x")))
         save(resize(icon, (px, px)), ios_icons / entry["filename"])
 
-    # iOS launch screen: the white wordmark, centred on navy by
+    # iOS launch screen: the navy wordmark, centred on white by
     # LaunchScreen.storyboard.
     print("iOS LaunchImage")
     launch = ROOT / "ios" / "Runner" / "Assets.xcassets" / "LaunchImage.imageset"
     for scale, suffix in ((1, ""), (2, "@2x"), (3, "@3x")):
         save(
-            wordmark_at(white_word, LAUNCH_WORDMARK_HEIGHT_PT, scale),
+            wordmark_at(navy_word, LAUNCH_WORDMARK_HEIGHT_PT, scale),
             launch / f"LaunchImage{suffix}.png",
         )
 
     # Android.
     print("Android")
     res = ROOT / "android" / "app" / "src" / "main" / "res"
-    mask = s_mask(icon)
+    mask = s_mask(s_icon)
     s_only = tight(white_on_transparent(mask))
     for density, f in ANDROID_DENSITIES.items():
         mip = res / f"mipmap-{density}"
@@ -183,27 +215,20 @@ def main() -> None:
         save(resize(foreground, (fg, fg)), mip / "ic_launcher_foreground.png")
 
         draw = res / f"drawable-{density}"
-        # Pre-Android-12 launch: the white wordmark (launch_background.xml).
+        # Pre-Android-12 launch: the navy wordmark (launch_background.xml).
         save(
-            wordmark_at(white_word, LAUNCH_WORDMARK_HEIGHT_PT, f),
+            wordmark_at(navy_word, LAUNCH_WORDMARK_HEIGHT_PT, f),
             draw / "launch_wordmark.png",
         )
-        # Android 12+ system splash: a centred icon only (no wordmark), 288 dp
-        # with the S kept well inside the 192 dp circle the system masks to.
-        # Same proportions as the adaptive foreground.
-        canvas = round(288 * f)
-        s_h = round(canvas * 188 / 432)
-        s_w = round(s_h * s_only.width / s_only.height)
-        splash = Image.new("RGBA", (canvas, canvas), (255, 255, 255, 0))
-        splash.alpha_composite(
-            resize(s_only, (s_w, s_h)),
-            ((canvas - s_w) // 2, (canvas - s_h) // 2),
-        )
+        # Android 12+ system splash: a centred icon only, 288 dp, masked to
+        # a 192 dp circle: the navy wordmark kept inside it, on white
+        # (values-v31/styles.xml).
+        splash = centred(navy_word, round(288 * f), SPLASH_WORDMARK_WIDTH)
         save(splash, draw / "splash_icon.png")
         # Push notifications (AndroidManifest.xml, default_notification_icon).
         save(notification_icon(s_only, f), draw / "ic_notification.png")
 
-    # macOS: the S on a navy rounded square inside the standard 1024 grid
+    # macOS: the Lite icon on a rounded square inside the standard 1024 grid
     # (824 px body, 100 px margin), with transparent corners.
     print("macOS AppIcon")
     mac = ROOT / "macos" / "Runner" / "Assets.xcassets" / "AppIcon.appiconset"

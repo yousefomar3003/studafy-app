@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/device_settings.dart';
 import '../../../core/navigation.dart';
@@ -112,9 +113,12 @@ class _RolePageState extends State<RolePage> {
     if (showIntro == null) {
       // The splash's mark stays up while the device settings are read and a
       // signed-in session is resumed, so launch reads as one screen.
-      return const Scaffold(
-        backgroundColor: studafyBackdrop,
-        body: Center(child: StudafyLogo(size: 64, onDark: true)),
+      return const AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.dark,
+        child: Scaffold(
+          backgroundColor: studafyLaunchBackground,
+          body: Center(child: StudafyLogo(size: 64)),
+        ),
       );
     }
     if (showIntro) {

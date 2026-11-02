@@ -5,9 +5,8 @@ import 'package:flutter/material.dart';
 // for actions and selection, and the steel blue carries secondary text. The
 // names predate the palette and are kept so nothing else changes.
 
-/// The brand navy (#161551): the colour of the S icon, the wordmark and
-/// every launch screen. Also android/.../values/colors.xml and the iOS
-/// LaunchScreen.storyboard.
+/// The brand navy (#161551): the colour of the wordmark, on the app icon
+/// and every launch screen. Also android/.../values/colors.xml.
 const studafyNavy = Color(0xFF161551);
 const studafyCyan = Color(0xFF4E8EA2);
 const studafyInk = Color(0xFF0E0D3A);
@@ -39,10 +38,15 @@ const studafyMist = Color(0xFF6EA2B3);
 const studafySky = Color(0xFF7BBDE8);
 const studafyFrost = Color(0xFFBDD8E9);
 
-/// The solid backdrop of the launch, welcome, sign-in and intro screens:
-/// the brand navy, so the native launch screen, the white wordmark and the
-/// first Flutter frames read as one surface.
+/// The solid backdrop of the welcome, sign-in and intro screens: the brand
+/// navy.
 const studafyBackdrop = studafyNavy;
+
+/// Studafy Lite (2026-11-02): the launch is the navy wordmark on white, as
+/// the app icon is. The native launch screens (LaunchScreen.storyboard,
+/// android brand_launch) and the first Flutter frames share this white, so
+/// they read as one surface.
+const studafyLaunchBackground = Colors.white;
 
 /// Primary actions on the welcome and sign-in screens, and the bubbles of
 /// one's own messages: navy to its lighter step, white text 10:1 or more.
