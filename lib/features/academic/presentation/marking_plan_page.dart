@@ -133,7 +133,9 @@ class _MarkingPlanPageState extends State<MarkingPlanPage> {
     final store = _store;
     final offer = _offer;
     final active = plan?.active ?? false;
-    final sells = store != null && store.sellsMarkingPlan;
+    // A plan Studafy gave has no store subscription behind it (as Family+).
+    final granted = active && (plan?.granted ?? false);
+    final sells = store != null && store.sellsMarkingPlan && !granted;
     final links = _validUrl(_terms) && _validUrl(_privacy);
     final canBuy = sells && (offer?.canPurchase ?? false) && links && !_busy;
     return Scaffold(
@@ -145,7 +147,11 @@ class _MarkingPlanPageState extends State<MarkingPlanPage> {
             PlanSummaryCard(
               eyebrow: l10n.markingPlanYours,
               planName: active ? markingPlanName : l10n.markingPlanNone,
-              detail: active ? null : l10n.markingPlanHeadline,
+              detail: granted
+                  ? l10n.familyPlusGranted
+                  : active
+                  ? null
+                  : l10n.markingPlanHeadline,
             ),
             if (plan != null && active)
               Padding(
@@ -256,7 +262,8 @@ class _MarkingPlanPageState extends State<MarkingPlanPage> {
               ),
             ],
             const SizedBox(height: 8),
-            Text(l10n.familyPlusDisclosure, style: theme.textTheme.bodySmall),
+            if (!granted)
+              Text(l10n.familyPlusDisclosure, style: theme.textTheme.bodySmall),
             Wrap(
               children: [
                 TextButton(

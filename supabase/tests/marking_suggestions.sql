@@ -10,7 +10,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(42);
+select plan(44);
 update private.notebook_runtime set environment='synthetic';
 select set_config('studafy.request_id', 'marking-test', true);
 
@@ -99,9 +99,13 @@ select is(pg_temp.q(:'guardian_user', 'suggestions', :'online')->>'outcome',
 -- 2. Asking for suggestions: the plan, then only written answers.
 select is(pg_temp.cmd(:'teacher_user', 'requestSuggestions', :'online', '{}')->>'outcome',
   'plan_required', 'without Studafy AI Marking nothing is asked');
+select is(pg_temp.q(:'teacher_user', 'plan', null)->>'granted', 'false',
+  'no plan is not a grant');
 insert into private.marking_plan_grants(user_id, reason, ends_at)
   values (:'teacher_user', 'pgTAP marking', now() + interval '1 day');
 select is(pg_temp.q(:'teacher_user', 'plan', null)->>'active', 'true', 'the grant is the plan');
+select is(pg_temp.q(:'teacher_user', 'plan', null)->>'granted', 'true',
+  'and it says Studafy gave it: nothing to manage in a store');
 select is(pg_temp.cmd(:'teacher_user', 'requestSuggestions', :'online', '{}')->'response'->>'queued',
   '1', 'one suggestion is queued: the essay, not the choice question its key marks');
 select is((select reference_version from private.marking_runs where assessment_id = :'online'),

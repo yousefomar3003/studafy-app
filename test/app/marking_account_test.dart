@@ -191,6 +191,35 @@ void main() {
     expect(store.purchases, 0);
   });
 
+  testWidgets('a plan Studafy gave says so, with nothing to manage in a '
+      'store', (tester) async {
+    tall(tester);
+    _signIn(StudafyRole.teacher);
+    final store = _Store();
+    final services = MarkingServices(
+      repository: PreviewMarkingRepository(
+        plan: MarkingPlan(
+          active: true,
+          granted: true,
+          teacher: true,
+          available: true,
+          used: 0,
+          total: 100,
+          resetsAt: DateTime.utc(2026, 11),
+        ),
+      ),
+      plans: store,
+    );
+    await tester.pumpWidget(
+      _app(services, MarkingPlanPage(services: services)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Given by Studafy, nothing to pay'), findsOneWidget);
+    expect(find.text('Manage or cancel'), findsNothing);
+    expect(find.text('Restore purchases'), findsNothing);
+    expect(find.byType(MarkingAllowance), findsOneWidget);
+  });
+
   testWidgets('no store, no Studafy AI Marking row', (tester) async {
     tall(tester);
     _signIn(StudafyRole.teacher);

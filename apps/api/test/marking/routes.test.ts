@@ -103,6 +103,7 @@ function app(options: {
     plan: {
       outcome: "ok",
       active: true,
+      granted: false,
       teacher: true,
       allowance: {
         total: 4_000_000,

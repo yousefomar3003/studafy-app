@@ -1,15 +1,17 @@
 # Handoff: Studafy
 
-Updated: 2026-10-25. **Everything through #132 is merged and on the test
-copy.** #133 (independent students), #135 and #136 are merged into `main`.
-**#136 is merged but not yet deployed** (migration
-`202610210050_independent_student_purchase.sql`, a student in no class
-buying Plus or Max). The AI Marking work below is on branch
-`feat/ai-marking-suggestions`, not yet in a PR.
+Updated: 2026-11-02. **Everything through #137 is merged and on the test
+copy** (deployed 2026-10-25: backup, then `202610210050`, `202610210060`
+and `202610250010`, the API and the worker). Studafy AI Marking was checked
+end to end there with the real model and on the Android emulator; the
+review teacher (`teacher@review.studafy.com`) has a one-year comp grant.
+Play build **102** (`~/Desktop/studafy-light-102.aab`) carries consent
+`2026-10-25`. The owner now has a paid Apple Developer account: iPhone push
+and Sign in with Apple are next (guides 07 and 03 part D).
 
 ## Start here (2026-10-25): AI-suggested marks, Studafy AI Marking (DL-073, ADR-0046)
 
-### What was built (branch `feat/ai-marking-suggestions`)
+### What was built (PR #137, merged as `cc82d45`)
 - **Owner's decisions (2026-10-21, DL-073):** AI suggests, the teacher
   decides; written answers in online assessments and graded hand-ins
   (text, PDF/DOCX/PPTX, photos and scans); the teacher's decision with a

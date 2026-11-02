@@ -330,6 +330,7 @@ class MarkingRun {
 class MarkingPlan {
   const MarkingPlan({
     required this.active,
+    this.granted = false,
     required this.teacher,
     required this.available,
     required this.used,
@@ -338,6 +339,10 @@ class MarkingPlan {
   });
 
   final bool active;
+
+  /// Given by Studafy with no store subscription: nothing to manage,
+  /// cancel or restore in a store.
+  final bool granted;
   final bool teacher;
 
   /// The server can make suggestions at all. When it cannot, nothing
