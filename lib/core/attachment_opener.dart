@@ -133,15 +133,20 @@ String sharedFileName(String displayName, String? mediaType) {
       'pptx',
     AttachmentPolicy.xlsx => 'xlsx',
     AttachmentPolicy.csv => 'csv',
+    AttachmentPolicy.doc => 'doc',
+    AttachmentPolicy.xls => 'xls',
+    AttachmentPolicy.ppt => 'ppt',
     _ => null,
   };
   return extension == null ? name : '$name.$extension';
 }
 
-/// The icon a stored file is shown with: a picture, a spreadsheet (Excel or
-/// CSV), or any other document.
+/// The icon a stored file is shown with: a picture, a spreadsheet (Excel,
+/// old or new, or CSV), or any other document.
 IconData attachmentTypeIcon(String? mediaType) => switch (mediaType) {
-  AttachmentPolicy.xlsx || AttachmentPolicy.csv => Icons.table_chart_outlined,
+  AttachmentPolicy.xlsx ||
+  AttachmentPolicy.xls ||
+  AttachmentPolicy.csv => Icons.table_chart_outlined,
   final type? when type.startsWith('image/') => Icons.image_outlined,
   _ => Icons.description_outlined,
 };

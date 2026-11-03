@@ -29,7 +29,9 @@ class AttachmentPolicy {
   /// embedded objects and remote templates. Excel and CSV only where a
   /// teacher files material (DL-077): the scan refuses macro-enabled
   /// workbooks and links to other files, and accepts a CSV only as plain
-  /// UTF-8 text. Old binary .doc, .ppt and .xls are never accepted.
+  /// UTF-8 text. Old binary .doc, .xls and .ppt are accepted on the same
+  /// teacher material (DL-078): the scan refuses macros and encrypted files,
+  /// and the server reads them through a newer-format copy.
   final Set<String> allowedMediaTypes;
 
   static const _image = {'image/jpeg', 'image/png'};
@@ -41,8 +43,12 @@ class AttachmentPolicy {
   static const xlsx =
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   static const csv = 'text/csv';
+  static const doc = 'application/msword';
+  static const xls = 'application/vnd.ms-excel';
+  static const ppt = 'application/vnd.ms-powerpoint';
   static const _office = {docx, pptx};
   static const _spreadsheet = {xlsx, csv};
+  static const _legacyOffice = {doc, xls, ppt};
 
   static const profileImage = AttachmentPolicy(
     purpose: FilePurpose.profileImage,
@@ -52,12 +58,24 @@ class AttachmentPolicy {
   static const lessonResource = AttachmentPolicy(
     purpose: FilePurpose.lessonResource,
     maximumSizeBytes: 25 * 1024 * 1024,
-    allowedMediaTypes: {..._document, ..._office, ..._spreadsheet, ..._image},
+    allowedMediaTypes: {
+      ..._document,
+      ..._office,
+      ..._spreadsheet,
+      ..._legacyOffice,
+      ..._image,
+    },
   );
   static const assignmentMaterial = AttachmentPolicy(
     purpose: FilePurpose.assignmentMaterial,
     maximumSizeBytes: 10 * 1024 * 1024,
-    allowedMediaTypes: {..._document, ..._office, ..._spreadsheet, ..._image},
+    allowedMediaTypes: {
+      ..._document,
+      ..._office,
+      ..._spreadsheet,
+      ..._legacyOffice,
+      ..._image,
+    },
   );
   static const assignmentSubmission = AttachmentPolicy(
     purpose: FilePurpose.assignmentSubmission,
@@ -132,6 +150,9 @@ class AttachmentPolicy {
         pptx => const ['pptx'],
         xlsx => const ['xlsx'],
         csv => const ['csv'],
+        doc => const ['doc'],
+        xls => const ['xls'],
+        ppt => const ['ppt'],
         _ => const <String>[],
       },
   }.toList();
