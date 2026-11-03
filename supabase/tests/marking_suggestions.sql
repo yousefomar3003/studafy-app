@@ -214,7 +214,7 @@ select ok(private.data_export_document(:'teacher_user')->'sections'->'aiMarking'
   'the export keeps every earlier section and adds the teacher''s usage');
 select is((select count(*)::int from public.store_products
     where feature_key = 'studafy_ai_marking' and environment in ('staging', 'production')
-      and storefront_listed), 0, 'not listed for sale in staging or production yet');
+      and storefront_listed), 4, 'listed for sale in staging and production on both stores (DL-079)');
 update private.marking_suggestions set status = 'ready', updated_at = now() - interval '181 days'
   where assessment_id = :'paper';
 select ok((private.marking_purge_expired()->>'suggestions')::int >= 1,

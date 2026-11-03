@@ -47,6 +47,7 @@ const VALUES: Record<string, string> = {
   TURNSTILE_SECRET: "0x4AAAAAAAsyntheticTurnstileSecret",
   SENTRY_DSN: "https://publicsynthetic@o0.ingest.de.sentry.io/42",
   SCANNER_API_KEY: "scanner-synthetic-00000000000000000000000000000000",
+  CONVERTER_API_KEY: "converter-synthetic-000000000000000000000000000000",
   TELEGRAM_BOT_TOKEN: "000000000:synthetic-telegram-token-xyz",
   TELEGRAM_CHAT_ID: "-1000000000042",
   AI_API_KEY: "ai-synthetic-key-000000",
@@ -156,6 +157,7 @@ function schemaKeys(schema: unknown): Set<string> {
 describe("per-app secret lists", () => {
   test("pinned: the names each production app is given", () => {
     expect(REQUIRED_SECRETS.scanner).toEqual(["SCANNER_API_KEY"]);
+    expect(REQUIRED_SECRETS.converter).toEqual(["CONVERTER_API_KEY"]);
     expect(REQUIRED_SECRETS.worker).toEqual([
       "DATABASE_URL",
       "DATABASE_CA_CERT",
@@ -163,6 +165,7 @@ describe("per-app secret lists", () => {
       "SUPABASE_URL",
       "SUPABASE_SERVICE_ROLE_KEY",
       "MALWARE_SCANNER_API_KEY",
+      "CONVERTER_API_KEY",
       "SENTRY_DSN",
       "TELEGRAM_BOT_TOKEN",
       "TELEGRAM_CHAT_ID",
@@ -209,8 +212,12 @@ describe("per-app secret lists", () => {
         expect(fly[app][name]).toBeUndefined();
       }
     }
-    // The scanner's URL is configuration; only its key is a secret.
+    // The scanner's and converter's URLs are configuration; only their keys
+    // are secrets.
     expect(fly.worker["MALWARE_SCANNER_URL"]).toBeDefined();
+    expect(fly.worker["CONVERTER_URL"]).toBe(
+      "http://studafy-converter.internal:8080",
+    );
     // DL-062: AI is on in both, so both need the key.
     expect(fly.api["AI_LESSON_TOOLS_ENABLED"]).toBe("true");
     expect(fly.worker["AI_LESSON_TOOLS_ENABLED"]).toBe("true");
@@ -220,6 +227,7 @@ describe("per-app secret lists", () => {
     const plan = planSecrets(parseSecrets(fileText(VALUES)), await envs());
     expect(plan.problems).toEqual([]);
     expect([...plan.perApp.scanner.keys()]).toEqual(["SCANNER_API_KEY"]);
+    expect([...plan.perApp.converter.keys()]).toEqual(["CONVERTER_API_KEY"]);
     expect([...plan.perApp.worker.keys()].sort()).toEqual(
       [...REQUIRED_SECRETS.worker].sort(),
     );
@@ -234,6 +242,15 @@ describe("per-app secret lists", () => {
     expect(plan.perApp.worker.get("MALWARE_SCANNER_API_KEY")).toBe(
       VALUES.SCANNER_API_KEY,
     );
+    // One CONVERTER_API_KEY line reaches both ends of the converter.
+    expect(plan.perApp.converter.get("CONVERTER_API_KEY")).toBe(
+      VALUES.CONVERTER_API_KEY,
+    );
+    expect(plan.perApp.worker.get("CONVERTER_API_KEY")).toBe(
+      VALUES.CONVERTER_API_KEY,
+    );
+    expect(plan.perApp.api.has("CONVERTER_API_KEY")).toBe(false);
+    expect(plan.warnings.join("\n")).not.toContain("Not imported");
     expect(plan.perApp.api.has("SCANNER_API_KEY")).toBe(false);
     expect(plan.perApp.worker.has("TURNSTILE_SECRET")).toBe(false);
   });
@@ -288,6 +305,21 @@ describe("per-app secret lists", () => {
     );
     expect(play.problems).toEqual([]);
     expect(play.warnings.join("\n")).not.toContain("Billing");
+    // App Store: production verifies with Apple's Production environment.
+    const sandbox = planSecrets(
+      parseSecrets(fileText({ ...VALUES, APPLE_ENVIRONMENT: "Sandbox" })),
+      flyEnvs,
+    );
+    expect(sandbox.warnings.join("\n")).toContain(
+      'APPLE_ENVIRONMENT is not "Production"',
+    );
+    const production = planSecrets(
+      parseSecrets(fileText({ ...VALUES, APPLE_ENVIRONMENT: "Production" })),
+      flyEnvs,
+    );
+    expect(production.warnings.join("\n")).not.toContain(
+      "APPLE_ENVIRONMENT is not",
+    );
     expect(play.perApp.api.has("GOOGLE_PACKAGE_NAME")).toBe(true);
     expect(play.perApp.worker.has("GOOGLE_PACKAGE_NAME")).toBe(true);
   });
@@ -319,6 +351,36 @@ describe("refusals", () => {
     );
     expect(out).toContain("Nothing was run.");
     expectNoValue(out);
+  });
+
+  test("without CONVERTER_API_KEY both the converter and the worker are refused", async () => {
+    const plan = planSecrets(
+      parseSecrets(fileText(without("CONVERTER_API_KEY"))),
+      await envs(),
+    );
+    const problems = plan.problems.join("\n");
+    expect(problems).toContain(
+      "studafy-converter is missing: CONVERTER_API_KEY",
+    );
+    expect(problems).toContain("studafy-worker is missing: CONVERTER_API_KEY");
+  });
+
+  test("a different or short converter key is refused, without its value", async () => {
+    const differs = planSecrets(
+      parseSecrets(fileText({
+        ...VALUES,
+        WORKER__CONVERTER_API_KEY: "another-converter-key-0000000000000000000",
+      })),
+      await envs(),
+    ).problems.join("\n");
+    expect(differs).toContain("WORKER__CONVERTER_API_KEY differs");
+    expect(differs).not.toContain("another-converter-key");
+    const short = planSecrets(
+      parseSecrets(fileText({ ...VALUES, CONVERTER_API_KEY: "too-short" })),
+      await envs(),
+    ).problems.join("\n");
+    expect(short).toContain("CONVERTER_API_KEY must be at least 32 characters");
+    expect(short).not.toContain("too-short");
   });
 
   test("--execute without --secrets refuses before anything runs", async () => {
@@ -447,25 +509,44 @@ describe("dry run (the default)", () => {
       expect({ text, found: index >= 0 }).toEqual({ text, found: true });
       return index;
     };
-    // Scanner, then the test copy stops, then the worker, then the API.
+    // Scanner and converter, then the test copy stops, then the worker, then
+    // the API.
     const order = [
+      "fly apps create studafy-converter --org personal",
       "fly deploy --config fly.scanner.toml --app studafy-scanner --remote-only",
+      "fly ips list --app studafy-scanner --json",
+      "fly deploy --config fly.converter.toml --app studafy-converter --remote-only --ha=false",
+      "fly ips list --app studafy-converter --json",
+      "fly checks list --app studafy-converter --json",
       "fly scale count 0 --app studafy-worker-test --yes",
       "fly scale count 0 --app studafy-api-test --yes",
       "fly scale count 0 --app studafy-scanner-test --yes",
+      "fly scale count 0 --app studafy-converter-test --yes",
       "scripts/production/clean-test-data.ts",
       "fly deploy --config fly.worker.toml --app studafy-worker --remote-only",
       "fly deploy --config fly.api.toml --app studafy-api --remote-only",
       "https://studafy-api.fly.dev/readyz",
       "fly certs add api.studafy.com --app studafy-api",
-      "CNAME api -> studafy-api.fly.dev, Proxied",
+      "Vercel -> Domains -> studafy.com -> DNS records",
+      "_acme-challenge CNAME",
+      "fly certs check api.studafy.com --app studafy-api",
+      "https://api.studafy.com/readyz returns 200",
       'UPTIME_URL = "https://api.studafy.com/readyz"',
     ].map(at);
+    // DL-079: DNS is on Vercel; there is no Cloudflare proxy to set up.
+    expect(out).not.toContain("Proxied");
+    expect(out).not.toContain("Full (strict)");
+    expect(out).not.toContain('ORIGIN_REQUIRE_CLOUDFLARE = "true"');
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(out).toContain(
       "fly secrets import --app studafy-scanner --stage < [1 values",
     );
     expect(out).toContain("SCANNER_API_KEY]");
+    expect(out).toContain(
+      "fly secrets import --app studafy-converter --stage < [1 values",
+    );
+    expect(out).toContain("CONVERTER_API_KEY]");
+    expect(out).not.toContain("Not imported");
     expect(out).toMatch(
       /fly secrets import --app studafy-api --stage < \[13 values from .*never shown: DATABASE_URL, DATABASE_CA_CERT/,
     );
@@ -502,6 +583,9 @@ describe("execute (against a fake fly)", () => {
     const lines = runner.calls.map((call) => call.argv.join(" "));
     expect(lines).toContain("fly apps create studafy-scanner --org personal");
     expect(lines).toContain("fly apps create studafy-worker --org personal");
+    expect(lines).toContain(
+      "fly apps create studafy-converter --org personal",
+    );
     expect(lines).not.toContain("fly apps create studafy-api --org personal");
     for (const app of DEPLOY_ORDER) {
       const call = runner.calls.find((c) =>
@@ -519,9 +603,18 @@ describe("execute (against a fake fly)", () => {
       .map((line) => line.split(" ")[3]);
     expect(deploys).toEqual([
       "fly.scanner.toml",
+      "fly.converter.toml",
       "fly.worker.toml",
       "fly.api.toml",
     ]);
+    expect(lines).toContain(
+      "fly deploy --config fly.converter.toml --app studafy-converter --remote-only --ha=false",
+    );
+    expect(lines).toContain("fly ips list --app studafy-converter --json");
+    expect(lines).toContain("fly checks list --app studafy-converter --json");
+    expect(lines).toContain(
+      "fly scale count 0 --app studafy-converter-test --yes",
+    );
     const stopWorker = lines.indexOf(
       "fly scale count 0 --app studafy-worker-test --yes",
     );
@@ -529,6 +622,9 @@ describe("execute (against a fake fly)", () => {
       lines.indexOf(
         "fly deploy --config fly.scanner.toml --app studafy-scanner --remote-only",
       ),
+    );
+    expect(stopWorker).toBeGreaterThan(
+      lines.indexOf("fly checks list --app studafy-converter --json"),
     );
     expect(stopWorker).toBeLessThan(
       lines.indexOf(
@@ -586,6 +682,35 @@ describe("execute (against a fake fly)", () => {
     );
     expect(code).toBe(1);
     expect(io.lines.join("\n")).toContain("public IP address");
+    expect(runner.calls.some((c) => c.argv.includes("scale"))).toBe(false);
+  });
+
+  test("a public converter address stops the cutover before the test copy stops", async () => {
+    const runner = new FakeRunner();
+    const original = runner.run.bind(runner);
+    runner.run = (argv, options) =>
+      argv.join(" ") === "fly ips list --app studafy-converter --json"
+        ? Promise.resolve({
+          code: 0,
+          stdout: JSON.stringify([{ Address: "2a09:8280::2" }]),
+          stderr: "",
+        })
+        : original(argv, options);
+    const io = recordingIo(true);
+    const code = await runCutover(
+      {
+        execute: true,
+        yes: true,
+        org: "personal",
+        secretsPath: secretsFile(VALUES),
+      },
+      { runner, io, flyEnvs: await envs() },
+    );
+    expect(code).toBe(1);
+    expect(io.lines.join("\n")).toContain(
+      "studafy-converter has a public IP address",
+    );
+    expect(io.lines.join("\n")).toContain("--from deploy-converter");
     expect(runner.calls.some((c) => c.argv.includes("scale"))).toBe(false);
   });
 });

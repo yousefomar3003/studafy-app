@@ -3,7 +3,8 @@
 Every feature of the app and server, its state in production, what turns it
 on, and how to check it after the production deploy
 (`docs/deployment/production-cutover.md`). Production means `api.studafy.com`
-(`fly.api.toml`, `fly.worker.toml`, `fly.scanner.toml`) on the Frankfurt
+(`fly.api.toml`, `fly.worker.toml`, `fly.scanner.toml`,
+`fly.converter.toml`) on the Frankfurt
 Supabase project (DL-064), and store builds made under the production defines
 contract (`lib/core/production_contract.dart`, ADR-0044).
 
@@ -29,18 +30,19 @@ States:
 |---|---|---|---|
 | Sign-in: email, Google, Microsoft | On | Supabase Auth providers on the production project (C7); `SUPABASE_URL` and the publishable key in the build | Sign in with each on a production build; `/v1/me` returns the profile |
 | Sign in with Apple (iOS) | On when the Apple keys are set | `APPLE_SIGN_IN_ENABLED=true` (required for iOS by the contract) plus the Apple provider on the Supabase project (Apple Developer account, C13). Without the provider the button shows "Something went wrong", never a crash; Android never shows it | Tap "Sign in with Apple" on an iPhone build and reach the home screen |
-| Bot check (Turnstile) | Required key | `TURNSTILE_ENABLED = "true"`, `TURNSTILE_HOSTNAMES = "api.studafy.com"` (`fly.api.toml`) and the secrets `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` (C9). **The API refuses to start without them**; the build contract requires `TURNSTILE_ENABLED=true` | `https://api.studafy.com/auth/bot-check` loads the widget; linking a child completes the check |
+| Bot check (Turnstile) | Required key | `TURNSTILE_ENABLED = "true"`, `TURNSTILE_HOSTNAMES = "api.studafy.com"` (`fly.api.toml`) and the secrets `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET` (C9), from the real widget whose Hostname management lists `studafy.com` (covering `api.studafy.com`). **The API refuses to start without them**; the build contract requires `TURNSTILE_ENABLED=true` | `https://api.studafy.com/auth/bot-check` loads the widget; linking a child completes the check |
 | Classes, joining by code or link, schools, staff, enrolment, invitations | On | `API041_CLASSES_ENABLED`, `API042_*` (on by default; not set in the Fly files) | A teacher creates a class; a student joins with its code |
 | Lessons, assignments, hand-ins, grades, attendance, wellbeing notes | On | `API041_CONTENT/ASSIGNMENTS/GRADES/ATTENDANCE/WELLBEING_ENABLED` (on by default) | Publish a lesson and an assignment; a student hands in; release a grade |
 | Online exams and the question builder | On | `API041_ASSESSMENTS_ENABLED` (on by default) | Create an online exam with an image question; a student takes it; release answers |
 | Announcements | On | `API042_ANNOUNCEMENTS_ENABLED` (on by default) | A teacher posts one; a parent and a student see it |
 | Messaging | On (DL-063) | `MESSAGING_ENABLED = "true"` (`fly.api.toml`), and each school's own switch (on for new schools) | A parent messages a teacher; report and block work |
 | In-app notifications | On | `OPS061_NOTIFICATIONS_ENABLED = "true"` (`fly.worker.toml`) | A grade release appears in the student's inbox within a minute |
-| **File uploads and downloads** (attachments, hand-in files, question images, voice notes, notebook and helper photos) | **On (DL-070)** | App: `allowsRemoteFileUploads` is true in production. API: `FILE050_NEW_INTENTS_ENABLED`, `FILE051_PUBLISH_ENABLED`, `FILE051_DELIVERY_ENABLED` = `"true"`, `FILE051_DELIVERY_PUBLIC_BASE_URL = "https://api.studafy.com"`. Worker: `FILE051_SCAN_ENABLED`, `FILE050_CLEANUP_ENABLED`, `FILE051_RETENTION_ENABLED` = `"true"`, `MALWARE_SCANNER_URL` = the private `studafy-scanner`. Secrets: `SCANNER_API_KEY` (= the worker's `MALWARE_SCANNER_API_KEY`), `FILE051_DELIVERY_SIGNING_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Kill switch: set the API's `FILE050_NEW_INTENTS_ENABLED` to `"false"` and redeploy | Cutover step 9: an EICAR test file is refused and a clean PDF passes. Then attach a photo to an assignment and open it as a student |
+| **File uploads and downloads** (attachments, hand-in files, question images, voice notes, notebook and helper photos) | **On (DL-070)** | App: `allowsRemoteFileUploads` is true in production. API: `FILE050_NEW_INTENTS_ENABLED`, `FILE051_PUBLISH_ENABLED`, `FILE051_DELIVERY_ENABLED` = `"true"`, `FILE051_DELIVERY_PUBLIC_BASE_URL = "https://api.studafy.com"`. Worker: `FILE051_SCAN_ENABLED`, `FILE050_CLEANUP_ENABLED`, `FILE051_RETENTION_ENABLED` = `"true"`, `MALWARE_SCANNER_URL` = the private `studafy-scanner`. Secrets: `SCANNER_API_KEY` (= the worker's `MALWARE_SCANNER_API_KEY`), `FILE051_DELIVERY_SIGNING_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Kill switch: set the API's `FILE050_NEW_INTENTS_ENABLED` to `"false"` and redeploy | Cutover step 9b: an EICAR test file is refused and a clean PDF passes. Then attach a photo to an assignment and open it as a student |
+| In-app PDF previews of Word, Excel, PowerPoint and CSV files; old .doc/.xls/.ppt read by the AI (DL-078) | **On (DL-079)** | The private `studafy-converter` (`fly.converter.toml`, deployed by the cutover script before the worker). Worker: `CONVERTER_URL = "http://studafy-converter.internal:8080"` (`fly.worker.toml`). Secret: `CONVERTER_API_KEY`, one value for the converter and the worker (required by the cutover script). Without the converter nothing breaks: renditions are `skipped`, a preview answers `409 PREVIEW_UNAVAILABLE` | The worker's start-up line shows `file051.documentConverterConfigured: true`; a .docx on a lesson opens as a PDF preview (cutover step 9b) |
 | AI study tools: helper, lesson reading, notebooks, quizzes, flashcards, whiteboard notes | On (DL-062) | `AI_LESSON_TOOLS_ENABLED`, `AI_MATERIAL_INDEX_ENABLED` = `"true"`, `AI_BASE_URL`, `AI_MODEL`; secret `AI_API_KEY` (required by the cutover script). Each student consents first (ADR-0043). Without the key the API starts and tells the app the tools are off (`available: []`, `aiEnabled: false`), so they are hidden | `/v1/me/study-plan` for a student in a class lists the tools and `aiEnabled: true`; ask the helper a question |
 | Student Helper tab (five tabs: Today, Lessons, Work, Helper, Messages) | On (DL-070) | Shown whenever AI is on server-wide (`aiEnabled`). A student in no class sees "Join a class to use the study helper"; the server still refuses them the tools. Hidden only when AI is off for everyone | A student in a class sees five tabs; one who has left every class sees the Helper tab's join message |
 | Free plan allowance (40k tokens a week) | On | Database (`private.study_plan`); needs no billing | A free student's helper shows the weekly allowance |
-| Paid plans: Studafy Plus and Max, Family+ (buying, restoring); Studafy AI Marking once listed (DL-073) | On when the store keys are set (DL-070) | `PAY071_BILLING_ENABLED = "true"`, `PAY071_ENVIRONMENT = "production"` (both Fly files), `PAY071_RECONCILIATION_ENABLED = "true"` (worker). Runs once one store's set is complete: App Store `APPLE_BUNDLE_ID`, `APPLE_ENVIRONMENT`, `APPLE_ISSUER_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_ROOT_CERTIFICATES_BASE64` (C15); Play `GOOGLE_PACKAGE_NAME`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PUBSUB_AUDIENCE` (C6). Until then no billing route is mounted, and the plan pages say payments are not set up; the worker logs `billing_waiting_for_store_keys` | The worker's start-up line shows `pay071.billingActive: true`; buy Plus in the store's sandbox, then restore on a second device |
+| Paid plans: Studafy Plus and Max, Family+ (buying, restoring); Studafy AI Marking for teachers (DL-073, listed from launch by DL-079) | On when the store keys are set (DL-070) | `PAY071_BILLING_ENABLED = "true"`, `PAY071_ENVIRONMENT = "production"` (both Fly files), `PAY071_RECONCILIATION_ENABLED = "true"` (worker). Runs once one store's set is complete: App Store `APPLE_BUNDLE_ID`, `APPLE_ENVIRONMENT`, `APPLE_ISSUER_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_ROOT_CERTIFICATES_BASE64` (C15); Play `GOOGLE_PACKAGE_NAME`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PUBSUB_AUDIENCE` (C6). Until then no billing route is mounted, and the plan pages say payments are not set up; the worker logs `billing_waiting_for_store_keys` | The worker's start-up line shows `pay071.billingActive: true`; buy Plus in the store's sandbox, then restore on a second device |
 | Family+ insights for a parent | On | Database entitlement (a purchase, once billing runs, or a grant) | A parent with Family+ opens a child's insights |
 | Guardian links and managed child accounts, account switching | On | `API042_FAMILY_ENABLED` (on by default) | A parent creates a child account and switches to it |
 | Push notifications | On when the Firebase keys are set | Worker: `NOTIFICATION_CHANNELS_ENABLED = "true"` (already set) plus the secrets `FCM_PROJECT_ID` and `FCM_SERVICE_ACCOUNT_JSON` (C3). App: the `FIREBASE_*` defines in `config/dart-defines.production.json` turn push on by themselves (or the native files plus `PUSH_ENABLED=true`). Without them the app skips push; in-app notifications are unaffected. No push deliveries pile up meanwhile | `scripts/send-test-notification.ts` against an account signed in on a phone (`docs/deployment/push-notifications.md`) |
@@ -53,8 +55,8 @@ States:
 | Meeting creation through Google Workspace | Off by decision DL-065 | `MEETINGS_PROCESSOR_ENABLED` stays unset (pinned). The app has no create-meeting control | Not applicable |
 | Retention purge (DL-057) | Off by decision (launch plan D3) | `RETENTION_SCHEDULE_ENABLED = "false"` until the store release with consent version 2026-10-14 is live; then the owner's "go" and a one-word change | Not applicable |
 | AI grading (marks set by AI) | Removed (ADR-0026) | `allowsAiGrading` is a hard-false tripwire and stays false: AI never sets a mark | Not applicable |
-| AI-suggested marks for teachers (Studafy AI Marking) | **Off until launch** (DL-073) | `MARKING_SUGGESTIONS_ENABLED` on the API and the worker (unset in `fly.api.toml` and `fly.worker.toml`; on in the test copy), plus the AI provider (`AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`). Off, teachers can still write references, and asking for suggestions answers `409 AI_FEATURE_DISABLED`. Before turning it on: `studafy_ai_marking_monthly` created in both stores and listed by a migration ([subscriptions.md](subscriptions.md) step 6), and the owner's "go" | `GET /v1/me/marking-plan` says `available: true`; a teacher with the plan asks for suggestions on a test assessment and sees them, and no mark changes until the teacher saves one |
-| Cloudflare-only origin | Off until the proxy is live (C8) | `ORIGIN_REQUIRE_CLOUDFLARE = "true"` after `api.studafy.com` is proxied (cutover step 10) | `studafy-api.fly.dev` is refused, `api.studafy.com` answers |
+| AI-suggested marks for teachers (Studafy AI Marking) | **On (DL-079)**; sold once a store's billing keys are set | `MARKING_SUGGESTIONS_ENABLED = "true"` in `fly.api.toml` and `fly.worker.toml` (as on the test copy; pinned by `scripts/fly-config.test.ts`), plus the AI provider (`AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`). `studafy_ai_marking_monthly` (US$7.99, DL-075) is listed on both stores in staging and production by `202611030070_list_ai_marking_for_launch.sql`; it must exist in Play Console and App Store Connect ([subscriptions.md](subscriptions.md)). Kill switch: set it to `"false"` in both and redeploy; asking for suggestions then answers `409 AI_FEATURE_DISABLED` and teachers can still write references. The teacher always decides the mark | `GET /v1/me/marking-plan` says `available: true`; a teacher with the plan asks for suggestions on a test assessment and sees them, and no mark changes until the teacher saves one |
+| Cloudflare-only origin | Off: there is no Cloudflare proxy (DL-079) | `api.studafy.com` is a plain DNS record on Vercel pointing at Fly, so `ORIGIN_REQUIRE_CLOUDFLARE` stays `"false"` (on, it would refuse every request) and `CLIENT_IP_SOURCE = "fly"`, both pinned | Not applicable |
 | Rate limits, database housekeeping, file cleanup | On | `RATE_LIMIT_ENABLED` (on by default) with `RATE_LIMIT_HMAC_SIGNING_KEY`; `DB_HOUSEKEEPING_ENABLED` | Repeated failed sign-ins are slowed down |
 | Crash reports | On (server); on when the DSN is set (app) | Secrets `SENTRY_DSN` (API, worker). App: the `SENTRY_DSN` define, empty means off | Sentry "Send Test Notification"; a test crash from a build with the DSN |
 
@@ -64,8 +66,8 @@ feature depends on it.
 
 ## After the deploy
 
-Run these on production after cutover step 8, with a production build from
-`scripts/release/build-store.sh`:
+Run these on production after cutover step 9, with a production build from
+`scripts/release/build-store.sh` (cutover step 13):
 
 1. `fly logs --app studafy-worker`: the start-up line lists the queues.
    `channel_delivery_configured` shows which of email and push have keys.
@@ -73,10 +75,13 @@ Run these on production after cutover step 8, with a production build from
    set.
 2. `fly logs --app studafy-api`: the start-up line's `pay071.billingActive`
    says whether billing routes are mounted.
-3. Uploads: cutover step 9 (EICAR refused, clean PDF passes), then a photo on
-   an assignment opened by a student.
+3. Uploads: cutover step 9b (EICAR refused, clean PDF passes, a .docx opens
+   as a PDF preview), then a photo on an assignment opened by a student.
 4. AI: a student in a class asks the helper a question; a student in no class
-   sees the Helper tab's join message.
+   sees the Helper tab's join message. AI Marking: `GET /v1/me/marking-plan`
+   for a teacher says `available: true`; with the plan (a sandbox purchase
+   or a grant), suggestions appear on a test assessment and no mark changes
+   until the teacher saves one.
 5. Messaging, notifications, export and deletion: the checks in the table.
 6. For each key set later (Firebase, Resend, App Store, Play): import the
    secret (`fly secrets import --app <app> --stage`), redeploy that app, and

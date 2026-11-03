@@ -1,21 +1,21 @@
 // The two files that let the app claim https://app.studafy.com/auth/callback
 // (AUTH-030, docs/release/auth030-site-association.md): Apple's
 // apple-app-site-association (Universal Links) and Android's assetlinks.json
-// (App Links). The legal-site Worker serves them under /.well-known/ on every
-// host it answers, which includes app.studafy.com (wrangler.toml).
+// (App Links). The legal site serves them under /.well-known/ on every host it
+// answers, which includes app.studafy.com: the Vercel project studafy-legal
+// (`bun run legal:deploy:vercel`), and the Cloudflare copy (wrangler.toml).
 //
-// Both identifiers below are PLACEHOLDERS until the accounts exist. While they
-// are, the files are well-formed but name no real app, so neither platform
-// verifies the domain and sign-in keeps using the custom-scheme fallback
-// (io.studafy.app://login-callback). Replace them, run `bun test ops/legal-site`
-// and `bun run legal:deploy`:
-//   - APPLE_TEAM_ID: Apple Developer → Membership details → Team ID
-//     (10 characters, e.g. A1B2C3D4E5), once Apple approves the organisation.
+// APPLE_TEAM_ID is real (DL-079): Studafy Limited's team, which signs the iOS
+// app (DEVELOPMENT_TEAM in ios/Runner.xcodeproj). ANDROID_SHA256 is still a
+// PLACEHOLDER: while it is, assetlinks.json is well-formed but names no real
+// certificate, so Android does not verify the domain and sign-in there keeps
+// the custom-scheme fallback (io.studafy.app://login-callback). Replace it,
+// run `bun test ops/legal-site` and `bun run legal:deploy:vercel`:
 //   - ANDROID_SHA256: Play Console → Setup → App integrity → App signing key
 //     certificate → SHA-256 (the Play App Signing key, not the upload key).
 
-/** Placeholder: replace with the Apple Developer Team ID. */
-export const APPLE_TEAM_ID = "PENDING_APPLE_TEAM_ID";
+/** Apple Developer Team ID of Studafy Limited (Membership details). */
+export const APPLE_TEAM_ID = "869AV76RU2";
 
 /** Placeholder: replace with the Play App Signing certificate SHA-256. */
 export const ANDROID_SHA256 = "PENDING_PLAY_APP_SIGNING_SHA256";

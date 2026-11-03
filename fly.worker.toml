@@ -36,6 +36,11 @@ primary_region = "fra"
   # private network, so plain HTTP never leaves the organisation. Its key,
   # MALWARE_SCANNER_API_KEY, is a secret (the scanner's SCANNER_API_KEY).
   MALWARE_SCANNER_URL = "http://studafy-scanner.internal:8080/scan"
+  # DL-078, DL-079: PDF previews and the OOXML copies of old .doc/.xls/.ppt
+  # files come from the private studafy-converter app (fly.converter.toml),
+  # over Fly's private network like the scanner. Its key, CONVERTER_API_KEY,
+  # is a secret (the converter's own CONVERTER_API_KEY, the same value).
+  CONVERTER_URL = "http://studafy-converter.internal:8080"
   # Removes the bytes of files whose retention has ended. No file purpose
   # sets a retention period yet, so today this removes only the personal
   # files (profile image, notebook photo, AI-helper photo) of deleted
@@ -81,6 +86,10 @@ primary_region = "fra"
   AI_LESSON_TOOLS_ENABLED = "true"
   AI_BASE_URL = "https://api.together.xyz"
   AI_MODEL = "Qwen/Qwen3.5-9B"
+  # DL-079: Studafy AI Marking (ADR-0046, DL-073) is sold from launch, so
+  # suggested marks are made here, as on the test copy. The teacher always
+  # decides the mark; the AI never sets one.
+  MARKING_SUGGESTIONS_ENABLED = "true"
 
 # The worker serves no HTTP. It runs continuously: one machine, never
 # stopped for being idle, since queued work arrives without traffic.
