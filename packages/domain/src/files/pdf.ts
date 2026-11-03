@@ -112,7 +112,10 @@ export async function parsePdf(
         ? scanned.replace(/\/OpenAction\s*\[/g, "[")
         : scanned,
     );
-  const danger = scanDanger(text);
+  // Searched with the data of picture and font streams blanked out: a JPEG
+  // photo stored as-is holds `/JS` and similar patterns by chance (a Word
+  // file's photos failed as pdf_active_content_JS_body, 2026-11-03).
+  const danger = scanDanger(maskBinaryPayloads(text));
   if (danger) {
     return {
       ok: false,
@@ -205,6 +208,33 @@ function scanDangerIn(
     at = text.indexOf("/JS", at + 3);
   }
   return null;
+}
+
+/**
+ * The file's text with the data of every picture or font stream (as
+ * `isBinaryPayload` judges them) replaced by spaces, up to that stream's
+ * first `endstream`. Dictionaries, every other stream and anything after
+ * an early `endstream` are left as they are, so they are still searched.
+ */
+function maskBinaryPayloads(text: string): string {
+  const parts: string[] = [];
+  let kept = 0;
+  let cursor = 5;
+  for (;;) {
+    const streamAt = nextStreamKeyword(text, cursor);
+    if (streamAt === null) break;
+    const dataStart = skipEol(text, streamAt + 6);
+    if (dataStart === null) break;
+    const end = text.indexOf("endstream", dataStart);
+    const stop = end === -1 ? text.length : end;
+    if (isBinaryPayload(text, streamAt)) {
+      parts.push(text.slice(kept, dataStart), " ".repeat(stop - dataStart));
+      kept = stop;
+    }
+    cursor = end === -1 ? text.length : end + 9;
+  }
+  parts.push(text.slice(kept));
+  return parts.join("");
 }
 
 /**
