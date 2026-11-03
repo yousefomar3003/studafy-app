@@ -162,6 +162,9 @@ async function outputRefusal(
     // destination; nothing else an upload may not have is let through.
     const parsed = await parsePdf(bytes, { allowOpenActionDestination: true });
     if (parsed.ok) return null;
+    if (parsed.pattern) {
+      return `pdf_${parsed.reason}_${parsed.pattern}_${parsed.location}`;
+    }
     return parsed.detail
       ? `pdf_${parsed.reason}_${parsed.detail}`
       : `pdf_${parsed.reason}`;

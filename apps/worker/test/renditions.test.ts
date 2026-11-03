@@ -263,10 +263,10 @@ describe("rendition worker", () => {
       // The broken rule is logged by name; nothing from the file is.
       const refused = lines.find((l) => l.event === "rendition_output_refused");
       rules.push(refused?.fields["rule"]);
-      expect(JSON.stringify(refused)).not.toContain("JavaScript");
+      expect(JSON.stringify(refused)).not.toContain("(x)");
     }
     expect(rules).toEqual([
-      "pdf_active_content",
+      "pdf_active_content_JavaScript_body",
       "type_mismatch",
       expect.stringMatching(/^analysis_/),
       "type_mismatch",
