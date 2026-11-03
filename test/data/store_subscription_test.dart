@@ -171,6 +171,42 @@ V1EntitlementRow held(
 );
 
 void main() {
+  group('purchase idempotency key', () {
+    // StoreKit 2 signs a transaction afresh on every delivery; the server
+    // refuses one key with two payloads (IDEMPOTENCY_KEY_REUSED, 2026-11-03).
+    final keyFormat = RegExp(r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$');
+
+    test('the same signed payload gets the same key', () {
+      expect(
+        purchaseIdempotencyKey('2000000123456789', 'jws.a.b'),
+        purchaseIdempotencyKey('2000000123456789', 'jws.a.b'),
+      );
+    });
+
+    test('a re-signed delivery of one purchase gets a new key', () {
+      expect(
+        purchaseIdempotencyKey('2000000123456789', 'jws.a.b'),
+        isNot(purchaseIdempotencyKey('2000000123456789', 'jws.a.c')),
+      );
+    });
+
+    test('keys stay within the server key format', () {
+      for (final id in [
+        '2000000123456789',
+        'GPA.3333-4444-5555-66666',
+        'studafy_plus_monthly',
+        'x' * 300,
+        'odd id/with spaces',
+      ]) {
+        expect(
+          purchaseIdempotencyKey(id, 'payload'),
+          matches(keyFormat),
+          reason: id,
+        );
+      }
+    });
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   late Store store;
   late Billing billing;

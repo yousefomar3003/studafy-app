@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart'
@@ -799,9 +801,16 @@ class StoreSubscriptionRepository
       if (product == null) return;
       // Deterministic idempotency key: a replayed stream event collapses onto
       // the server's completed idempotency reservation instead of submitting
-      // the same store receipt twice.
-      final idempotencyKey =
-          'pay071:${purchase.purchaseID ?? product.storeProductId}';
+      // the same store receipt twice. It names the exact signed payload, not
+      // only the purchase: StoreKit 2 signs a transaction afresh each time it
+      // is delivered, and one key sent with a different payload is refused
+      // (IDEMPOTENCY_KEY_REUSED), which left a paid purchase unfinished on the
+      // first TestFlight purchase (2026-11-03). A second delivery is therefore
+      // a new request, and the server records the same transaction only once.
+      final idempotencyKey = purchaseIdempotencyKey(
+        purchase.purchaseID ?? product.storeProductId,
+        verificationPayload,
+      );
       if (restored) {
         await _billingApi!.restorePurchase(
           platform: product.platform,
@@ -835,6 +844,17 @@ class StoreSubscriptionRepository
       listener();
     }
   }
+}
+
+/// The idempotency key for submitting one signed store payload: the purchase
+/// it belongs to and the payload's own digest, within the server's key
+/// format (16-128 of `[A-Za-z0-9._:-]`).
+@visibleForTesting
+String purchaseIdempotencyKey(String purchase, String verificationPayload) {
+  final digest = sha256.convert(utf8.encode(verificationPayload)).toString();
+  final id = purchase.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+  final short = id.length > 64 ? id.substring(0, 64) : id;
+  return 'pay071:$short:${digest.substring(0, 32)}';
 }
 
 const _planFeatures = {
