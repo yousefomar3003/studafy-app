@@ -2996,6 +2996,18 @@ abstract class AppL10n {
   /// **'Only PDF and photos can be attached.'**
   String get attachmentOnlyPdfAndPhotosCan;
 
+  /// Shown when a picked file's type is not accepted where Word and PowerPoint are (students' hand-ins).
+  ///
+  /// In en, this message translates to:
+  /// **'Only PDF, Word and PowerPoint files and photos can be attached.'**
+  String get attachmentOnlyOfficeAndPhotosCan;
+
+  /// Shown when a picked file's type is not accepted on a teacher's lesson or assignment material.
+  ///
+  /// In en, this message translates to:
+  /// **'Only PDF, Word, PowerPoint, Excel and CSV files and photos can be attached.'**
+  String get attachmentOnlyMaterialFilesCan;
+
   /// No description provided for @attachmentThatFileIsLargerThan.
   ///
   /// In en, this message translates to:

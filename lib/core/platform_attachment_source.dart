@@ -83,6 +83,8 @@ String _mediaTypeFor(String name, {String fallback = 'application/pdf'}) {
     'jpg' || 'jpeg' => 'image/jpeg',
     'docx' => AttachmentPolicy.docx,
     'pptx' => AttachmentPolicy.pptx,
+    'xlsx' => AttachmentPolicy.xlsx,
+    'csv' => AttachmentPolicy.csv,
     _ => fallback,
   };
 }

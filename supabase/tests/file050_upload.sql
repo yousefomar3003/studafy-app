@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(39);
+select plan(42);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set other_school_id '22222222-2222-4222-8222-222222222222'
@@ -179,6 +179,27 @@ select ok(
   (select 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' = any(allowed_media_types)
    from public.file_purpose_policies where purpose = 'assignment_submission'),
   'students may hand in Word files');
+-- DL-077: Excel and CSV on teacher material only, and read by the AI.
+select is(
+  (select count(*)
+   from public.file_purpose_policies p
+   cross join unnest(array[
+     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+     'text/csv']) as t(media_type)
+   where p.purpose in ('lesson_resource', 'assignment_material')
+     and t.media_type = any(p.allowed_media_types)),
+  4::bigint,
+  'lessons and assignment material take Excel and CSV files');
+select ok(
+  (select not ('text/csv' = any(allowed_media_types))
+     and not ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' = any(allowed_media_types))
+   from public.file_purpose_policies where purpose = 'assignment_submission'),
+  'hand-ins do not take Excel or CSV files');
+select ok(
+  private.ai_material_readable_type('text/csv')
+    and private.ai_material_readable_type(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+  'the material index reads Excel and CSV lesson files');
 -- This suite lowers the limit for its own concurrency checks above, so the
 -- column default is what a school gets.
 select is(

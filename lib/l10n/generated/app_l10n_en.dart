@@ -1757,6 +1757,14 @@ class AppL10nEn extends AppL10n {
       'Only PDF and photos can be attached.';
 
   @override
+  String get attachmentOnlyOfficeAndPhotosCan =>
+      'Only PDF, Word and PowerPoint files and photos can be attached.';
+
+  @override
+  String get attachmentOnlyMaterialFilesCan =>
+      'Only PDF, Word, PowerPoint, Excel and CSV files and photos can be attached.';
+
+  @override
   String attachmentThatFileIsLargerThan(Object maximumSizeBytes) {
     return 'That file is larger than $maximumSizeBytes MB.';
   }

@@ -15,7 +15,7 @@ import type { MaterialSection } from "./chunks";
 
 const utf8 = new TextDecoder("utf-8");
 
-function decodeXml(text: string): string {
+export function decodeXml(text: string): string {
   return text
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -39,13 +39,13 @@ export class UnreadableDocumentError extends Error {
   }
 }
 
-function openZip(bytes: Uint8Array): Map<string, ZipEntry> {
+export function openZip(bytes: Uint8Array): Map<string, ZipEntry> {
   const directory = readZipDirectory(bytes);
   if (!directory.ok) throw new UnreadableDocumentError();
   return new Map(directory.entries.map((entry) => [entry.name, entry]));
 }
 
-function part(
+export function part(
   bytes: Uint8Array,
   entries: Map<string, ZipEntry>,
   name: string,
@@ -191,7 +191,7 @@ function slideText(xml: string): { title: string | null; text: string } {
   return { title, text: lines.join("\n\n") };
 }
 
-function relationships(
+export function relationships(
   xml: string | null,
 ): Map<string, { type: string; target: string }> {
   const out = new Map<string, { type: string; target: string }>();
@@ -204,7 +204,9 @@ function relationships(
   return out;
 }
 
-function resolve(base: string, target: string): string {
+export function resolve(base: string, target: string): string {
+  // An absolute target ("/xl/worksheets/sheet1.xml") is from the root.
+  if (target.startsWith("/")) return target.slice(1);
   const parts = base.split("/").slice(0, -1);
   for (const piece of target.split("/")) {
     if (piece === "..") parts.pop();

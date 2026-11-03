@@ -483,6 +483,8 @@
   "attachmentThatFileCouldNotBe": "تعذّر رفع هذا الملف.",
   "attachmentThatFileIsEmpty": "هذا الملف فارغ.",
   "attachmentOnlyPdfAndPhotosCan": "يمكن إرفاق ملفات PDF والصور فقط.",
+  "attachmentOnlyOfficeAndPhotosCan": "يمكن إرفاق ملفات PDF وWord وPowerPoint والصور فقط.",
+  "attachmentOnlyMaterialFilesCan": "يمكن إرفاق ملفات PDF وWord وPowerPoint وExcel وCSV والصور فقط.",
   "attachmentThatFileIsLargerThan": "حجم الملف أكبر من {maximumSizeBytes} ميغابايت.",
   "attachmentAttachFile": "إرفاق ملف",
   "attachmentPhoto": "صورة",

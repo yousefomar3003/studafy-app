@@ -21,8 +21,8 @@ import 'uploads_scope.dart';
 /// which on iOS previews a PDF and offers to keep it in Files - the app has
 /// no document viewer of its own, and a half-working one is worse than the
 /// platform's. Android's share sheet only sends a file on, so there it opens
-/// in an app that views its type (a PDF reader, Docs, Slides) first, and
-/// falls back to the share sheet when the phone has none.
+/// in an app that views its type (a PDF reader, Docs, Slides, Sheets) first,
+/// and falls back to the share sheet when the phone has none.
 ///
 /// Nothing is written to a place the app keeps: the bytes are fetched on a
 /// single-use grant and handed straight on (on Android through the cache
@@ -110,10 +110,20 @@ String sharedFileName(String displayName, String? mediaType) {
       'docx',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation' =>
       'pptx',
+    AttachmentPolicy.xlsx => 'xlsx',
+    AttachmentPolicy.csv => 'csv',
     _ => null,
   };
   return extension == null ? name : '$name.$extension';
 }
+
+/// The icon a stored file is shown with: a picture, a spreadsheet (Excel or
+/// CSV), or any other document.
+IconData attachmentTypeIcon(String? mediaType) => switch (mediaType) {
+  AttachmentPolicy.xlsx || AttachmentPolicy.csv => Icons.table_chart_outlined,
+  final type? when type.startsWith('image/') => Icons.image_outlined,
+  _ => Icons.description_outlined,
+};
 
 /// The files attached to something already stored, each one tappable.
 ///
@@ -212,9 +222,7 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
                           ? Icons.gpp_bad_outlined
                           : !item.isReady
                           ? Icons.hourglass_empty_rounded
-                          : (item.mediaType ?? '').startsWith('image/')
-                          ? Icons.image_outlined
-                          : Icons.description_outlined,
+                          : attachmentTypeIcon(item.mediaType),
                       size: widget.dense ? 16 : 20,
                       color: color,
                     ),

@@ -6,7 +6,7 @@
  * walk of their format; the transformation stage then produces the bytes
  * that will actually be stored — a deterministic metadata-strip rewrite for
  * images, metadata boxes neutralised in place for voice notes, no change for
- * PDFs (CDR is deliberately deferred; see ADR-0023).
+ * PDFs, Office files and CSV (CDR is deliberately deferred; see ADR-0023).
  */
 import { imageExceedsPixelCap } from "./dimensions";
 import { containsEicarSignature } from "./eicar";
@@ -15,7 +15,14 @@ import { parsePng, pngAncillaryPayloads, stripPngMetadata } from "./png";
 import { parseWebp, stripWebpMetadata, webpMetadataPayloads } from "./webp";
 import { parsePdf } from "./pdf";
 import { mp4MetadataPayloads, neutralizeMp4Metadata, parseMp4 } from "./mp4";
-import { DOCX_MEDIA_TYPE, parseOoxml, PPTX_MEDIA_TYPE } from "./ooxml";
+import {
+  DOCX_MEDIA_TYPE,
+  type OoxmlKind,
+  parseOoxml,
+  PPTX_MEDIA_TYPE,
+  XLSX_MEDIA_TYPE,
+} from "./ooxml";
+import { CSV_MEDIA_TYPE, parseCsvText } from "./csv";
 
 export type ScanVerdict =
   | "clean"
@@ -48,6 +55,8 @@ export type SafeMediaType =
   | "application/pdf"
   | typeof DOCX_MEDIA_TYPE
   | typeof PPTX_MEDIA_TYPE
+  | typeof XLSX_MEDIA_TYPE
+  | typeof CSV_MEDIA_TYPE
   | "audio/mp4"
   | "image/jpeg"
   | "image/png"
@@ -126,19 +135,29 @@ export async function analyzeBytes(
       }
       return { verdict: "clean" };
     }
-    // Word and PowerPoint (ADR-0037): a bounded ZIP walk that refuses
-    // macros, embedded objects and remote templates. Stored unchanged.
+    // Word, PowerPoint (ADR-0037) and Excel (DL-077): a bounded ZIP walk
+    // that refuses macros, embedded objects, remote templates and a
+    // workbook's external links. Stored unchanged.
     case DOCX_MEDIA_TYPE:
-    case PPTX_MEDIA_TYPE: {
-      const parsed = parseOoxml(
-        bytes,
-        mediaType === DOCX_MEDIA_TYPE ? "docx" : "pptx",
-      );
+    case PPTX_MEDIA_TYPE:
+    case XLSX_MEDIA_TYPE: {
+      const kind: OoxmlKind = mediaType === DOCX_MEDIA_TYPE
+        ? "docx"
+        : mediaType === PPTX_MEDIA_TYPE
+        ? "pptx"
+        : "xlsx";
+      const parsed = parseOoxml(bytes, kind);
       if (!parsed.ok) {
         return parsed.reason === "external_reference"
           ? { verdict: "policy_rejected", errorCode: "external_reference" }
           : mapPdfFailure(parsed.reason);
       }
+      return { verdict: "clean" };
+    }
+    // CSV (DL-077): UTF-8 text only, never executed. Stored unchanged.
+    case CSV_MEDIA_TYPE: {
+      const parsed = parseCsvText(bytes);
+      if (!parsed.ok) return mapParseFailure(parsed.reason);
       return { verdict: "clean" };
     }
     case "audio/mp4": {

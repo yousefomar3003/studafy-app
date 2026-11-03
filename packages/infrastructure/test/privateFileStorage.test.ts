@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { buildXlsx } from "@studafy/test-support";
 import {
   detectMediaType,
   normalizeDisplayName,
@@ -23,5 +24,25 @@ describe("FILE-050 storage policy", () => {
       .toBeNull();
     expect(detectMediaType(new Uint8Array([0x50, 0x4b, 0x03, 0x04])))
       .toBeNull();
+  });
+
+  test("detects a workbook by its parts and a CSV only as plain text (DL-077)", () => {
+    const encode = (text: string) => new TextEncoder().encode(text);
+    expect(detectMediaType(buildXlsx([{ name: "S", rows: [["a"]] }])))
+      .toBe(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+    expect(detectMediaType(encode("Name,Score\nلينا,18\n"))).toBe("text/csv");
+    // Binary bytes, a NUL, or a web page are never detected as CSV, so a
+    // file declared as text/csv with such bytes is a type mismatch.
+    expect(detectMediaType(new Uint8Array([0x00, 0x01, 0x02, 0xff])))
+      .toBeNull();
+    expect(detectMediaType(encode("a,b\n\u0000\n"))).toBeNull();
+    expect(detectMediaType(encode("<html><script></script></html>")))
+      .toBeNull();
+    // A PDF is still a PDF, however textual its bytes.
+    expect(detectMediaType(encode("%PDF-1.7\n1 0 obj\n"))).toBe(
+      "application/pdf",
+    );
   });
 });

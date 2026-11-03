@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/core/attachment_opener.dart';
@@ -99,5 +100,18 @@ void main() {
       (call) async => throw PlatformException(code: 'boom'),
     );
     expect(await open('Worksheet.pdf'), isFalse);
+  });
+
+  test('Excel and CSV are saved with their extension and a table icon', () {
+    const xlsx =
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    expect(sharedFileName('Marks', xlsx), 'Marks.xlsx');
+    expect(sharedFileName('Marks', 'text/csv'), 'Marks.csv');
+    expect(sharedFileName('Marks.xlsx', xlsx), 'Marks.xlsx');
+    expect(attachmentTypeIcon(xlsx), Icons.table_chart_outlined);
+    expect(attachmentTypeIcon('text/csv'), Icons.table_chart_outlined);
+    expect(attachmentTypeIcon('image/png'), Icons.image_outlined);
+    expect(attachmentTypeIcon('application/pdf'), Icons.description_outlined);
+    expect(attachmentTypeIcon(null), Icons.description_outlined);
   });
 }

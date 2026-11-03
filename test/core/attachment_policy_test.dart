@@ -49,6 +49,36 @@ void main() {
       }
     });
 
+    test('Excel and CSV on teacher material only (DL-077)', () {
+      const spreadsheets = [AttachmentPolicy.xlsx, AttachmentPolicy.csv];
+      const never = [
+        'application/vnd.ms-excel',
+        'application/vnd.ms-excel.sheet.macroEnabled.12',
+      ];
+      for (final purpose in FilePurpose.values) {
+        final policy = AttachmentPolicy.of(purpose);
+        final teacherMaterial =
+            purpose == FilePurpose.lessonResource ||
+            purpose == FilePurpose.assignmentMaterial;
+        for (final type in spreadsheets) {
+          expect(
+            policy.allowedMediaTypes.contains(type),
+            teacherMaterial,
+            reason: '${purpose.wireValue} and $type',
+          );
+        }
+        for (final type in never) {
+          expect(policy.allowedMediaTypes, isNot(contains(type)));
+        }
+        expect(
+          policy.pickerExtensions.contains('xlsx'),
+          teacherMaterial,
+          reason: '${purpose.wireValue} offers .xlsx',
+        );
+        expect(policy.pickerExtensions.contains('csv'), teacherMaterial);
+      }
+    });
+
     test(
       'refuses the wrong media type, the empty file and the oversized one',
       () {
