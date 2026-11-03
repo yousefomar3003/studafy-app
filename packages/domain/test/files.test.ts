@@ -819,3 +819,77 @@ describe("pictures and fonts are not searched for actions (2026-11-03)", () => {
     });
   });
 });
+
+describe("raw picture data in the file is not searched for actions (2026-11-03)", () => {
+  // JPEG bytes stored as-is (DCTDecode) that contain `/JS ` by chance.
+  const jpegish = new Uint8Array([
+    0xff,
+    0xd8,
+    0xff,
+    0xe0,
+    0x2f,
+    0x4a,
+    0x53,
+    0x20,
+    0x91,
+    0x2f,
+    0x4a,
+    0x53,
+    0x01,
+    0xff,
+    0xd9,
+  ]);
+  const pdfWithRaw = (dictionary: string, data: Uint8Array, after = "") =>
+    concat([
+      asciiBytes(
+        `%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n2 0 obj\n<< ${dictionary} /Length ${data.length} /Filter /DCTDecode >>\nstream\n`,
+      ),
+      data,
+      asciiBytes(
+        `\nendstream\nendobj\n${after}trailer\n<< /Size 3 >>\nstartxref\n0\n%%EOF\n`,
+      ),
+    ]);
+
+  test("a JPEG photo containing /JS is not active content", async () => {
+    const photo = pdfWithRaw(
+      "/Type /XObject /Subtype /Image /Width 1 /Height 1",
+      jpegish,
+    );
+    expect((await parsePdf(photo)).ok).toBe(true);
+    expect((await analyzeBytes(photo, "application/pdf")).verdict).toBe(
+      "clean",
+    );
+  });
+
+  test("the same bytes in a stream that is not a picture are refused", async () => {
+    expect(await parsePdf(pdfWithRaw("/Type /XObject", jpegish))).toEqual({
+      ok: false,
+      reason: "active_content",
+      pattern: "JS",
+      location: "body",
+    });
+  });
+
+  test("an action after a picture's data is still found", async () => {
+    const tricked = pdfWithRaw(
+      "/Subtype /Image",
+      jpegish,
+      "3 0 obj\n<< /S /JavaScript /JS (x) >>\nendobj\n",
+    );
+    expect(await parsePdf(tricked)).toMatchObject({
+      ok: false,
+      reason: "active_content",
+      location: "body",
+    });
+  });
+
+  test("an early endstream inside picture data ends the blanking there", async () => {
+    const early = concat([
+      jpegish,
+      asciiBytes("\nendstream\n<< /S /Launch /F (x) >>\n"),
+    ]);
+    expect(await parsePdf(pdfWithRaw("/Subtype /Image", early))).toMatchObject(
+      { ok: false, reason: "active_content", pattern: "Launch" },
+    );
+  });
+});
