@@ -893,3 +893,43 @@ describe("raw picture data in the file is not searched for actions (2026-11-03)"
     );
   });
 });
+
+describe("compressed bytes are not searched as text (2026-11-03)", () => {
+  // Page text whose deflate output happens to contain `/JS ` although the
+  // text itself does not - what an Arabic book's preview tripped.
+  const pageText = "   Baao a ) oc) cok kT  aemk2km aoT ) me";
+  const compressed = new Uint8Array(
+    deflateSync(new TextEncoder().encode(pageText)),
+  );
+
+  test("the case is real: the compressed bytes contain /JS", () => {
+    expect(new TextDecoder("latin1").decode(compressed)).toContain("/JS");
+    expect(pageText).not.toContain("/JS");
+  });
+
+  test("a content stream like that is not active content", async () => {
+    const pdf = buildPdf("", [compressed]);
+    expect((await parsePdf(pdf)).ok).toBe(true);
+    expect((await analyzeBytes(pdf, "application/pdf")).verdict).toBe("clean");
+  });
+
+  test("its decompressed content is still searched", async () => {
+    const hidden = new Uint8Array(
+      deflateSync(new TextEncoder().encode("<< /S /Launch /F (x) >>")),
+    );
+    expect(await parsePdf(buildPdf("", [hidden]))).toEqual({
+      ok: false,
+      reason: "active_content",
+      pattern: "Launch",
+      location: "stream",
+    });
+  });
+
+  test("a stream that claims compression but will not decompress is refused", async () => {
+    const fake = new TextEncoder().encode("not zlib /JS (x)");
+    expect(await parsePdf(buildPdf("", [fake]))).toMatchObject({
+      ok: false,
+      reason: "malformed",
+    });
+  });
+});

@@ -112,10 +112,12 @@ export async function parsePdf(
         ? scanned.replace(/\/OpenAction\s*\[/g, "[")
         : scanned,
     );
-  // Searched with the data of picture and font streams blanked out: a JPEG
-  // photo stored as-is holds `/JS` and similar patterns by chance (a Word
-  // file's photos failed as pdf_active_content_JS_body, 2026-11-03).
-  const danger = scanDanger(maskBinaryPayloads(text));
+  // Searched with stream data blanked out where it is not readable text
+  // here: compressed data (its decompressed form is searched below, and a
+  // stream that will not decompress is refused) and picture or font data.
+  // Both hold `/JS` and similar patterns by chance; an Arabic book's page
+  // text, compressed, failed as pdf_active_content_JS_body (2026-11-03).
+  const danger = scanDanger(maskOpaqueStreamData(text));
   if (danger) {
     return {
       ok: false,
@@ -211,12 +213,13 @@ function scanDangerIn(
 }
 
 /**
- * The file's text with the data of every picture or font stream (as
- * `isBinaryPayload` judges them) replaced by spaces, up to that stream's
- * first `endstream`. Dictionaries, every other stream and anything after
- * an early `endstream` are left as they are, so they are still searched.
+ * The file's text with the data of every compressed (FlateDecode) stream
+ * and every picture or font stream (as `isBinaryPayload` judges them)
+ * replaced by spaces, up to that stream's first `endstream`. Dictionaries,
+ * uncompressed streams of other kinds and anything after an early
+ * `endstream` are left as they are, so they are still searched.
  */
-function maskBinaryPayloads(text: string): string {
+function maskOpaqueStreamData(text: string): string {
   const parts: string[] = [];
   let kept = 0;
   let cursor = 5;
@@ -227,7 +230,7 @@ function maskBinaryPayloads(text: string): string {
     if (dataStart === null) break;
     const end = text.indexOf("endstream", dataStart);
     const stop = end === -1 ? text.length : end;
-    if (isBinaryPayload(text, streamAt)) {
+    if (declaresFlate(text, streamAt) || isBinaryPayload(text, streamAt)) {
       parts.push(text.slice(kept, dataStart), " ".repeat(stop - dataStart));
       kept = stop;
     }
