@@ -180,9 +180,11 @@ parent.
 - [ ] Optional introductory offer: 1-month free trial. The app shows "Start
       a free month" only when StoreKit says the account is eligible.
 - [ ] **Billing Grace Period**: on. The server now keeps access through it.
-- [ ] **App Store Server Notifications**: Version 2. Production URL
-      `https://<api-host>/webhooks/apple`; Sandbox URL the same (or your
-      staging API).
+- [ ] **App Store Server Notifications**: Version 2. Production Server URL
+      `https://api.studafy.com/webhooks/apple` (launch-day cutover step 12);
+      Sandbox Server URL the test copy's
+      `https://studafy-api-test.fly.dev/webhooks/apple`. Production's
+      `APPLE_ENVIRONMENT` is `Production`.
 - [ ] **Users and Access → Integrations → In-App Purchase**: generate a key.
       Note the Key ID and the Issuer ID, and download the `.p8` (it can be
       downloaded only once).
@@ -214,6 +216,11 @@ parent.
       Pub/Sub Publisher role, then send a test notification.
 - [ ] Pub/Sub **push subscription** on the topic to
       `https://<api-host>/webhooks/google`, with **authentication enabled**.
+      The test copy has `play-billing-to-test-api`; production gets its own
+      on topic `play-billing` to `https://api.studafy.com/webhooks/google`,
+      push account `studafy-pubsub-push@studafy-lite.iam.gserviceaccount.com`,
+      audience `https://api.studafy.com/webhooks/google`
+      ([production-cutover.md](production-cutover.md) step 12).
       Use a service account whose email becomes
       `GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL`, and set the audience to exactly
       that URL (`GOOGLE_PUBSUB_AUDIENCE`). The API's startup log reports
@@ -260,9 +267,12 @@ flutter build ipa \
   --dart-define=STUDAFY_PRIVACY_URL=https://legal.studafy.com/privacy
 ```
 
-These are the temporary pages from `ops/legal-site` (launch plan 4.3; see
-[legal-site.md](legal-site.md)). Change both when the pages move to our own
-domain.
+These are the pages from `ops/legal-site` on our own domain (launch plan
+4.3; see [legal-site.md](legal-site.md)). A store build carries them through
+`config/dart-defines.production.json`, made from
+`config/dart-defines.production.example.json` and built with
+`scripts/release/build-store.sh` ([production-cutover.md](production-cutover.md)
+step 13).
 
 `STUDAFY_ANDROID_PACKAGE` defaults to `com.studafy.light`; set it only if the
 Android application id changes. The app's billing environment follows its
@@ -285,18 +295,25 @@ Students can buy as soon as the products are listed: student purchases are
 on for every school by default (DL-071, migration
 `202610210010_student_direct_purchase.sql`).
 
-**Studafy AI Marking** is listed separately, by its own migration, once
-`studafy_ai_marking_monthly` exists in both stores and the owner says so
-(DL-073). It is unlisted in `staging` and `production` until then:
+**Studafy AI Marking** is listed from launch (DL-079): the migration
+`202611030070_list_ai_marking_for_launch.sql` sets `storefront_listed` for
+`studafy_ai_marking` in `staging` and `production` on both stores, and
+`MARKING_SUGGESTIONS_ENABLED = "true"` is set on the API and the worker in
+`fly.api.toml` and `fly.worker.toml`
+([production-features.md](production-features.md)). Create
+`studafy_ai_marking_monthly` in Play Console and App Store Connect (steps 2
+and 3) before the release: until a store returns the product, the app does
+not offer it.
 
-```sql
-update public.store_products set storefront_listed = true
-where feature_key = 'studafy_ai_marking' and environment = 'production';
-```
+Production then lists exactly (`supabase/tests/paid_plans_listed.sql`):
 
-Selling it is not enough on its own: production also needs
-`MARKING_SUGGESTIONS_ENABLED = "true"` on the API and the worker
-([production-features.md](production-features.md)).
+| Plan | App Store | Google Play |
+|---|---|---|
+| Studafy Plus | `studafy_plus_monthly` | `studafy_plus_monthly` |
+| Studafy Max | `studafy_max_monthly` | `studafy_max_monthly` |
+| Family+ (4 children) | `studafy_family_4_monthly` | `studafy_family_plus_monthly` |
+| Family+ (8 children) | `studafy_family_8_monthly` | `studafy_family_plus_8_monthly` |
+| Studafy AI Marking | `studafy_ai_marking_monthly` | `studafy_ai_marking_monthly` |
 
 ## Testing
 

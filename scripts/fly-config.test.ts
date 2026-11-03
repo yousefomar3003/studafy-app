@@ -85,6 +85,7 @@ const PRODUCTION = {
   api: { file: "fly.api.toml", app: "studafy-api" },
   worker: { file: "fly.worker.toml", app: "studafy-worker" },
   scanner: { file: "fly.scanner.toml", app: "studafy-scanner" },
+  converter: { file: "fly.converter.toml", app: "studafy-converter" },
 } as const;
 
 describe("Fly configs pass production validation", () => {
@@ -100,7 +101,12 @@ describe("Fly configs pass production validation", () => {
     // DL-063: messaging launches, with one report reviewer.
     expect(env.MESSAGING_ENABLED).toBe(true);
     // Security audit 2026-10-08: never X-Forwarded-For in production.
-    expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
+    // DL-079: no Cloudflare proxy in front (DNS on Vercel), so Fly's own
+    // header.
+    expect(env.CLIENT_IP_SOURCE).toBe("fly");
+    expect(env.ORIGIN_REQUIRE_CLOUDFLARE).toBe(false);
+    // DL-079: Studafy AI Marking is sold from launch (ADR-0046).
+    expect(env.MARKING_SUGGESTIONS_ENABLED).toBe(true);
     // Launch plan 2.2: AI calls need longer than the 10 s default.
     expect(env.API_REQUEST_TIMEOUT_MS).toBe(20_000);
     expect(env.RATE_LIMIT_ENABLED).toBe(true);
@@ -134,6 +140,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.DATA_EXPORT_EXECUTOR_ENABLED).toBe(true);
     // DL-062: AI on from launch; notebooks are written by the worker.
     expect(env.AI_LESSON_TOOLS_ENABLED).toBe(true);
+    // DL-079: suggested marks are made here from launch (ADR-0046).
+    expect(env.MARKING_SUGGESTIONS_ENABLED).toBe(true);
     // DPIA D7: a filed safety report always reaches a reviewer.
     expect(env.REPORT_ALERTS_ENABLED).toBe(true);
     // DL-070: abandoned uploads are cleaned; email and push are on and run
@@ -153,9 +161,14 @@ describe("Fly configs pass production validation", () => {
       EMAIL_FROM_ADDRESS: "Studafy <hello@studafy.com>",
       FCM_PROJECT_ID: "studafy-synthetic",
       FCM_SERVICE_ACCOUNT_JSON: '{"type":"service_account"}',
+      // DL-079: the converter's key, the same value as the converter app's.
+      CONVERTER_API_KEY: "synthetic-converter-key-000000000000000",
     });
     expect(() => enforceWorkerFailClosed(withKeys)).not.toThrow();
     expect(billingActive(withKeys)).toBe(true);
+    expect(withKeys.CONVERTER_URL).toBe(
+      "http://studafy-converter.internal:8080",
+    );
   });
 
   test("the production worker refuses report alerts without Telegram", async () => {
@@ -281,6 +294,8 @@ describe("Fly configs pass production validation", () => {
     ).not.toThrow();
     // Play billing in test: sandbox purchases by license testers (3.9).
     expect(api.PAY071_BILLING_ENABLED).toBe("true");
+    // ADR-0046: AI Marking on the test copy, as in production (DL-079).
+    expect(api.MARKING_SUGGESTIONS_ENABLED).toBe("true");
     expect(api.PAY071_ENVIRONMENT).toBe("development");
     expect(api.GOOGLE_PUBSUB_AUDIENCE).toBe(
       "https://studafy-api-test.fly.dev/webhooks/google",
@@ -291,6 +306,7 @@ describe("Fly configs pass production validation", () => {
     expect(worker.PAY071_RECONCILIATION_ENABLED).toBe("true");
     // Push and email are tried on the test copy before production (DL-070).
     expect(worker.NOTIFICATION_CHANNELS_ENABLED).toBe("true");
+    expect(worker.MARKING_SUGGESTIONS_ENABLED).toBe("true");
     expect(() =>
       enforceWorkerFailClosed(
         parseEnv(workerEnvSchema, { ...worker, ...secrets }),
@@ -358,6 +374,7 @@ describe("Fly configs pass production validation", () => {
         "fly.test.api.toml",
         "fly.test.worker.toml",
         "fly.scanner.test.toml",
+        "fly.converter.toml",
         "fly.converter.test.toml",
       ]),
     );
@@ -409,11 +426,15 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(config.http_service?.checks).toContainEqual(
       expect.objectContaining({ method: "GET", path: "/healthz" }),
     );
-    expect(env.CLIENT_IP_SOURCE).toBe("cloudflare");
+    // DL-079: api.studafy.com is a plain Vercel DNS record pointing at Fly,
+    // with no Cloudflare proxy, so client addresses come from Fly's
+    // Fly-Client-IP and the Cloudflare-only origin stays off (on, it would
+    // refuse every request).
+    expect(env.CLIENT_IP_SOURCE).toBe("fly");
     expect(env.API_REQUEST_TIMEOUT_MS).toBe("20000");
-    // Launch plan C8 / 4.2: switched on only once api.studafy.com is
-    // proxied by Cloudflare; on before that, every request is refused.
     expect(env.ORIGIN_REQUIRE_CLOUDFLARE).toBe("false");
+    // DL-079: Studafy AI Marking is on from launch.
+    expect(env.MARKING_SUGGESTIONS_ENABLED).toBe("true");
     // Real Turnstile keys (C9) are checked against the API's own host,
     // where the widget page (/auth/bot-check) is served - the same host the
     // delivery links use.
@@ -454,6 +475,8 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(env.PAY071_BILLING_ENABLED).toBe("true");
     expect(env.PAY071_ENVIRONMENT).toBe("production");
     expect(env.PAY071_RECONCILIATION_ENABLED).toBe("true");
+    // DL-079: suggested marks are made by the worker from launch.
+    expect(env.MARKING_SUGGESTIONS_ENABLED).toBe("true");
     // Launch plan D3: off until the store release carrying consent version
     // 2026-10-14 is live. Turning it on changes this line, with the owner's
     // "go".
@@ -475,6 +498,20 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(url.hostname).toBe(`${scanner.app}.internal`);
     expect(url.port).toBe(String(scanner.env?.PORT));
     expect(url.pathname).toBe("/scan");
+  });
+
+  test("the worker converts documents through the private production converter (DL-079)", async () => {
+    const worker = await flyEnv(PRODUCTION.worker.file);
+    const converter = await flyConfig(PRODUCTION.converter.file);
+    expect(worker.CONVERTER_URL).toBe(
+      "http://studafy-converter.internal:8080",
+    );
+    const url = new URL(worker.CONVERTER_URL ?? "");
+    // Fly's private network: <app>.internal, never a public address.
+    expect(url.hostname).toBe(`${converter.app}.internal`);
+    expect(url.port).toBe(String(converter.env?.PORT));
+    // The key is a secret (CONVERTER_API_KEY), never configuration.
+    expect(worker.CONVERTER_API_KEY).toBeUndefined();
   });
 
   test("the scanner is private: no public service, no http_service", async () => {
@@ -504,23 +541,42 @@ describe("production Fly apps (launch plan A6, C11)", () => {
   });
 
   test("the document converter is private, restarts itself and is health-checked (DL-078)", async () => {
-    const file = "fly.converter.test.toml";
-    const config = await flyConfig(file);
-    expect(config.app).toBe("studafy-converter-test");
-    expect(config.http_service).toBeUndefined();
-    expect(config.services).toBeUndefined();
-    expect(await Bun.file(file).text()).not.toMatch(
-      /^\s*\[\[?(services|http_service)\b/m,
+    for (
+      const [file, app] of [
+        [PRODUCTION.converter.file, "studafy-converter"],
+        ["fly.converter.test.toml", "studafy-converter-test"],
+      ] as const
+    ) {
+      const config = await flyConfig(file);
+      expect(config.app).toBe(app);
+      expect(config.primary_region).toBe("fra");
+      expect(config.http_service).toBeUndefined();
+      expect(config.services).toBeUndefined();
+      expect(await Bun.file(file).text()).not.toMatch(
+        /^\s*\[\[?(services|http_service)\b/m,
+      );
+      expect(config.build?.dockerfile).toBe("infra/converter/Dockerfile");
+      expect(config.restart).toContainEqual({ policy: "always" });
+      expect(config.checks?.healthz).toMatchObject({
+        type: "http",
+        port: Number(config.env?.PORT),
+        path: "/healthz",
+      });
+      // Its key is a secret; nothing key-like is written here.
+      expect(Object.keys(config.env ?? {})).not.toContain(
+        "CONVERTER_API_KEY",
+      );
+    }
+  });
+
+  test("the production converter is the test converter under its own name", async () => {
+    const { app, ...production } = await flyConfig(PRODUCTION.converter.file);
+    const { app: testApp, ...testCopy } = await flyConfig(
+      "fly.converter.test.toml",
     );
-    expect(config.build?.dockerfile).toBe("infra/converter/Dockerfile");
-    expect(config.restart).toContainEqual({ policy: "always" });
-    expect(config.checks?.healthz).toMatchObject({
-      type: "http",
-      port: Number(config.env?.PORT),
-      path: "/healthz",
-    });
-    // Its key is a secret; nothing key-like is written here.
-    expect(Object.keys(config.env ?? {})).not.toContain("CONVERTER_API_KEY");
+    expect(app).toBe("studafy-converter");
+    expect(testApp).toBe("studafy-converter-test");
+    expect(production).toEqual(testCopy);
   });
 
   test("the production scanner is the test scanner under its own name", async () => {

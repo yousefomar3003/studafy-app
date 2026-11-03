@@ -8,7 +8,9 @@
 # app gets no public IP. studafy-worker-test reaches it at
 #   http://studafy-converter-test.internal:8080
 # with CONVERTER_URL and CONVERTER_API_KEY; the same key is CONVERTER_API_KEY
-# here. Its only secret is that key. No production app yet.
+# here. Its only secret is that key. Production has its own converter app,
+# with the same configuration and its own key: fly.converter.toml
+# (studafy-converter).
 #   fly deploy -c fly.converter.test.toml --ha=false
 app = "studafy-converter-test"
 primary_region = "fra"

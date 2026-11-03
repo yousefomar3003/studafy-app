@@ -15,13 +15,14 @@ primary_region = "fra"
 [env]
   ENVIRONMENT = "production"
   API_PORT = "8080"
-  # Client addresses: CF-Connecting-IP only from Cloudflare's ranges, else
-  # Fly-Client-IP (security audit 2026-10-08).
-  CLIENT_IP_SOURCE = "cloudflare"
+  # Client addresses: Fly-Client-IP, which Fly's proxy sets and a caller
+  # cannot write (security audit 2026-10-08). DL-079: api.studafy.com is a
+  # plain DNS record on Vercel pointing at Fly, with no Cloudflare proxy in
+  # front, so Cloudflare's header is never the client's.
+  CLIENT_IP_SOURCE = "fly"
   # Refuses every request but /healthz that did not come through Cloudflare.
-  # Off until api.studafy.com is proxied by Cloudflare (launch plan C8, 4.2);
-  # then "true", so studafy-api.fly.dev cannot be used to step around
-  # Cloudflare. On before that, the API would refuse all traffic.
+  # Stays off (DL-079): there is no Cloudflare proxy in front of the API, so
+  # on it would refuse all traffic.
   ORIGIN_REQUIRE_CLOUDFLARE = "false"
   # AI answers from class material, quizzes (6-9 s) and notebooks (8-14 s)
   # need more than the 10 s default, as on the test copy (launch plan 2.2).
@@ -55,6 +56,10 @@ primary_region = "fra"
   AI_LESSON_TOOLS_ENABLED = "true"
   AI_BASE_URL = "https://api.together.xyz"
   AI_MODEL = "Qwen/Qwen3.5-9B"
+  # DL-079: Studafy AI Marking (ADR-0046, DL-073) is sold from launch:
+  # teachers with the plan ask for suggested marks, and the teacher always
+  # decides the mark. Off, asking answers 409 AI_FEATURE_DISABLED.
+  MARKING_SUGGESTIONS_ENABLED = "true"
   # DL-063: messaging launches (superseding DL-061's launch block), with the
   # owner as the one report reviewer (docs/security/safe043-operator-runbook.md).
   # The switch stays so messaging can be turned off for everyone fast:

@@ -116,12 +116,19 @@ are marked `skipped`, downloads work, a preview answers 409
 `PREVIEW_UNAVAILABLE`, and old .doc/.xls/.ppt lesson files are reported
 unreadable to the AI until a converter is set. Rotate the key as the
 scanner's: stage it on both, deploy the converter, then `fly secrets deploy
--a studafy-worker-test`. Production has no converter app yet.
+-a studafy-worker-test`.
+
+Production has its own converter app, `studafy-converter`
+(`fly.converter.toml`, DL-079), with the same configuration and its own
+key; the worker reaches it at `http://studafy-converter.internal:8080`,
+which is `CONVERTER_URL` in `fly.worker.toml` (configuration, not a secret,
+like the scanner's URL). The cutover script creates and deploys it.
 
 ## Production deploy checklist (launch plan A6, C11)
 
-The production configs are ready: `fly.api.toml`, `fly.worker.toml` and
-`fly.scanner.toml`. `scripts/fly-config.test.ts` pins every rule below in CI,
+The production configs are ready: `fly.api.toml`, `fly.worker.toml`,
+`fly.scanner.toml` and `fly.converter.toml`. `scripts/fly-config.test.ts`
+pins every rule below in CI,
 so a config that breaks one fails there, not on deploy. Nothing here has been
 run. Each numbered step is one approval: Claude shows the exact commands, the
 owner says "go", Claude runs them and shows the result.
@@ -135,13 +142,14 @@ test copy and removing the test schools from the shared database (DL-064).
 
 | Rule | Where |
 |---|---|
-| `ENVIRONMENT = "production"`, app names, region `fra` | all three |
-| `CLIENT_IP_SOURCE = "cloudflare"`, `API_REQUEST_TIMEOUT_MS = "20000"`, Turnstile on for `api.studafy.com`, `/healthz` routing check | `fly.api.toml` |
-| `ORIGIN_REQUIRE_CLOUDFLARE = "false"` until step 6 | `fly.api.toml` |
+| `ENVIRONMENT = "production"` (API, worker), app names, region `fra` | all four |
+| `CLIENT_IP_SOURCE = "fly"` (no Cloudflare proxy in front, DL-079), `API_REQUEST_TIMEOUT_MS = "20000"`, Turnstile on for `api.studafy.com`, `/healthz` routing check | `fly.api.toml` |
+| `ORIGIN_REQUIRE_CLOUDFLARE = "false"`, and it stays so: there is no Cloudflare proxy to require (DL-079) | `fly.api.toml` |
+| `MARKING_SUGGESTIONS_ENABLED = "true"`: Studafy AI Marking from launch (DL-079) | `fly.api.toml`, `fly.worker.toml` |
 | Deletion and export executors, notifications, scanning on; backlog alerts on | `fly.worker.toml` |
 | `RETENTION_SCHEDULE_ENABLED = "false"` until launch plan D3 | `fly.worker.toml` |
-| `MALWARE_SCANNER_URL = "http://studafy-scanner.internal:8080/scan"` (configuration, not a secret: plain HTTP on Fly's private network) | `fly.worker.toml` |
-| No `[http_service]` or `[[services]]`, so no public IP; `/healthz` machine check; restart always | `fly.scanner.toml` |
+| `MALWARE_SCANNER_URL = "http://studafy-scanner.internal:8080/scan"` and `CONVERTER_URL = "http://studafy-converter.internal:8080"` (configuration, not secrets: plain HTTP on Fly's private network) | `fly.worker.toml` |
+| No `[http_service]` or `[[services]]`, so no public IP; `/healthz` machine check; restart always | `fly.scanner.toml`, `fly.converter.toml` |
 
 What only the running process can check, and so the secrets must get right:
 the database login is a runtime role, never `postgres` (ADR-0041); Redis is
@@ -153,8 +161,9 @@ start otherwise, so check before step 3 that the chosen Redis allows
 
 **Before step 1 (owner):** the production Supabase project with every
 migration applied and the runtime role passwords set (B2, C7; "Database
-roles" below); a TLS Redis for production; DNS for `api.studafy.com` (B3,
-C8); real Turnstile keys for `api.studafy.com` (C9); the Sentry DSN for
+roles" below); a TLS Redis for production; access to studafy.com's DNS on
+Vercel for the `api` record (B3); real Turnstile keys whose widget covers
+`api.studafy.com` (C9); the Sentry DSN for
 `studafy-backend`; the Telegram bot token and chat id (the alert relay's can
 be reused). Each secrets file is written outside the repository and deleted
 after import; values never go in chat.
@@ -164,7 +173,8 @@ after import; values never go in chat.
 | App | Required before its deploy | Optional: the feature starts when these are set (switches already on, DL-070) |
 |---|---|---|
 | `studafy-scanner` | `SCANNER_API_KEY` (`openssl rand -hex 32`, at least 32 characters) | — |
-| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `AI_API_KEY` | email: `RESEND_API_KEY` + `EMAIL_FROM_ADDRESS` (C5); push: `FCM_PROJECT_ID` + `FCM_SERVICE_ACCOUNT_JSON` (C3); billing: the full `APPLE_*` set and/or the full `GOOGLE_*` set (C6, C15). Not set: `GOOGLE_CALENDAR_*`, since `MEETINGS_PROCESSOR_ENABLED` stays off (B8, DL-065) |
+| `studafy-converter` | `CONVERTER_API_KEY` (`openssl rand -hex 32`, at least 32 characters) | — |
+| `studafy-worker` | `DATABASE_URL` (as `studafy_worker_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MALWARE_SCANNER_API_KEY` (the scanner's `SCANNER_API_KEY`), `CONVERTER_API_KEY` (the converter's, the same value), `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `AI_API_KEY` | email: `RESEND_API_KEY` + `EMAIL_FROM_ADDRESS` (C5); push: `FCM_PROJECT_ID` + `FCM_SERVICE_ACCOUNT_JSON` (C3); billing: the full `APPLE_*` set and/or the full `GOOGLE_*` set (C6, C15). Not set: `GOOGLE_CALENDAR_*`, since `MEETINGS_PROCESSOR_ENABLED` stays off (B8, DL-065) |
 | `studafy-api` | `DATABASE_URL` (as `studafy_api_runtime.<ref>`), `DATABASE_CA_CERT`, `REDIS_URL` (`rediss://`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_CURSOR_SIGNING_KEY`, `RATE_LIMIT_HMAC_SIGNING_KEY`, `CLASS_JOIN_CODE_KEY`, `FILE051_DELIVERY_SIGNING_KEY` (four different `openssl rand -hex 32` keys), `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `SENTRY_DSN`, `AI_API_KEY` | billing: the full `APPLE_*` set and/or the full `GOOGLE_*` set (C6, C15); `PAY071_BILLING_ENABLED` and `PAY071_ENVIRONMENT` are in `fly.api.toml` |
 
 `AI_API_KEY` is required in both: the AI study tools are on from launch
@@ -175,7 +185,8 @@ production API or worker refuses to start without it, or with a
 `DATABASE_URL` that sets `sslmode` itself (go-live audit, 2026-10-16).
 `scripts/production/cutover.test.ts` pins these lists.
 
-Never set `MALWARE_SCANNER_URL` as a secret: it is in `fly.worker.toml`.
+Never set `MALWARE_SCANNER_URL` or `CONVERTER_URL` as a secret: they are in
+`fly.worker.toml`.
 
 **Order, and what the owner approves at each step:**
 
@@ -187,27 +198,39 @@ Never set `MALWARE_SCANNER_URL` as a secret: it is in `fly.worker.toml`.
    copy, deploy without `--ha=false`: for an app with no services Fly then
    adds a stopped standby machine, started only if the first one's host
    fails.
+
+   **Then the converter (DL-079).** Approve: `fly apps create
+   studafy-converter`, its `CONVERTER_API_KEY`, and `fly deploy --config
+   fly.converter.toml --ha=false` (one machine, as on the test copy).
+   Check: `fly ips list -a studafy-converter` shows no address; `fly checks
+   list -a studafy-converter` is passing once the self-test has run.
 2. **Create the worker.** Approve: `fly apps create studafy-worker`, then
    `fly secrets import --config fly.worker.toml < ~/studafy-worker.secrets`
    and `fly deploy --config fly.worker.toml`. Check the start-up log: no
    `database_privileged_role`, no `redis_plaintext_remote`, a
    `queue_redis_posture` line and `worker_ready`.
-3. **Prove the scanner (4.4).** Approve: an EICAR test file and a clean PDF
-   uploaded through production. Done when the EICAR file is refused and the
-   PDF passes.
+3. **Prove the scanner (4.4) and the converter.** Approve: an EICAR test
+   file and a clean PDF uploaded through production, then a small .docx on
+   a lesson. Done when the EICAR file is refused, the PDF passes and the
+   .docx opens as a PDF preview.
 4. **Deploy the API.** `studafy-api` already exists (suspended since
    2026-10-03; it held no secrets on 2026-10-15), so it is not created
    again. Approve: `fly secrets import --config fly.api.toml <
    ~/studafy-api.secrets`, `fly deploy --config fly.api.toml`, then `fly
    scale count 4 --config fly.api.toml` if wanted. Check: start-up log as in
    step 2; `curl https://studafy-api.fly.dev/readyz` returns 200.
-5. **Domain (C8).** Approve: `fly certs add api.studafy.com --config
-   fly.api.toml`, the DNS record, and the Cloudflare proxy with its WAF and
-   rate rules. Check: `https://api.studafy.com/readyz` returns 200.
-6. **Lock the origin (C8).** A reviewed PR sets `ORIGIN_REQUIRE_CLOUDFLARE =
-   "true"` in `fly.api.toml` and in `scripts/fly-config.test.ts`; approve the
-   merge and the redeploy. Check: a direct `studafy-api.fly.dev` request is
-   refused, `api.studafy.com` still answers.
+5. **Domain.** studafy.com's DNS is on Vercel (DL-079). Approve: `fly certs
+   add api.studafy.com --config fly.api.toml`, then in Vercel → Domains →
+   `studafy.com` → DNS records the records it prints (`A`/`AAAA` for `api`
+   to Fly's addresses, or `CNAME api → studafy-api.fly.dev`, plus the
+   `_acme-challenge` CNAME), and `fly certs check api.studafy.com --config
+   fly.api.toml` until issued. Check: `https://api.studafy.com/readyz`
+   returns 200.
+6. **No origin lock.** The earlier plan put Cloudflare's proxy in front and
+   then set `ORIGIN_REQUIRE_CLOUDFLARE = "true"`. There is no Cloudflare
+   proxy (the record is plain DNS on Vercel), so that step no longer
+   applies: the switch stays `"false"` (on, it would refuse every request)
+   and `scripts/fly-config.test.ts` pins it.
 7. **Alerts (4.7).** Approve: the relay's uptime check pointed at
    `https://api.studafy.com/readyz`; a test alert from the deployed worker
    (`fly ssh console --config fly.worker.toml -C "bun
@@ -249,7 +272,7 @@ Update the privacy policy's Supabase row (§7.2) to Frankfurt.
 | Sentry | Developer (free) | **EU data region**. Two projects: `studafy-backend` (Bun) and `studafy-app` (Flutter) |
 | Axiom | Free | **EU region** if offered. A dataset named `studafy-production`, and an API token that can only ingest into it |
 | Telegram | Free | A bot from @BotFather, and the group or chat that receives alerts |
-| Cloudflare | Free | Workers, for the alert relay |
+| Cloudflare | Free | Workers, for the alert relay; Turnstile; R2 for backups. Not DNS: studafy.com's DNS is on Vercel (DL-079) |
 | Redis | Free tier to start; **paid for production** | Production refuses a Redis URL without TLS (`rediss://`) and a password. Check that your Redis Cloud database has TLS on, or use Upstash in `eu-central-1`, which has TLS on its free tier. The production worker also refuses a Redis that may evict queue keys or does not persist them: on Redis Cloud set **Data persistence: Append-only file (AOF) every 1 sec** and **Data eviction policy: noeviction** (not available on the free plan, which has no persistence). See `docs/security/ops061-operator-runbook.md` §3 |
 
 Sign each provider's data processing agreement (privacy policy, Appendix A).
@@ -406,13 +429,12 @@ Before the API runs more than one machine, do one of:
 A Fly rolling deploy replaces each machine in place, and the old process
 closes its pool on shutdown, so a deploy does not double a role's count.
 
-**Domain.** `fly certs add api.studafy.com --config fly.api.toml`, then point
-the DNS record at Fly as it instructs. If the record is proxied through
-Cloudflare, client addresses come from Cloudflare's header, but only for
-connections Fly saw arrive from Cloudflare's ranges (`CLIENT_IP_SOURCE`,
-ADR-0041); anything else keys on `Fly-Client-IP`. Once proxied, set
-`ORIGIN_REQUIRE_CLOUDFLARE = "true"` so `studafy-api.fly.dev` cannot be used
-to step around Cloudflare's rules.
+**Domain.** `fly certs add api.studafy.com --config fly.api.toml`, then add
+the records it prints in Vercel → Domains → `studafy.com` → DNS records
+(studafy.com's nameservers are Vercel's since 2026-11-03, DL-079). The
+record is plain DNS, not proxied, so client addresses come from Fly's own
+`Fly-Client-IP` (`CLIENT_IP_SOURCE = "fly"`, ADR-0041), which a caller
+cannot write, and `ORIGIN_REQUIRE_CLOUDFLARE` stays `"false"`.
 
 `scripts/fly-config.test.ts` checks in CI that the API and worker configs
 pass the same production validation the processes run at start-up, that the

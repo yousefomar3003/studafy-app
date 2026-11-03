@@ -191,6 +191,21 @@ describe("app-link association files (app.studafy.com)", () => {
     ]);
   });
 
+  test("the Apple association names Studafy Limited's team and the app (DL-079)", () => {
+    expect(APPLE_TEAM_ID).toBe("869AV76RU2");
+    // The same team signs the iOS app.
+    expect(source("ios/Runner.xcodeproj/project.pbxproj")).toContain(
+      `DEVELOPMENT_TEAM = ${APPLE_TEAM_ID};`,
+    );
+    expect(
+      JSON.parse(read(".well-known/apple-app-site-association")).applinks
+        .details[0].appIDs,
+    ).toEqual(["869AV76RU2.com.studafy.light"]);
+    // Android waits for the Play App Signing certificate.
+    expect(ANDROID_SHA256.startsWith("PENDING")).toBe(true);
+    expect(appLinksPending()).toBe(true);
+  });
+
   test("identifiers are real values or clearly marked placeholders", () => {
     expect(APPLE_TEAM_ID).toMatch(/^(PENDING_[A-Z_]+|[A-Z0-9]{10})$/);
     expect(ANDROID_SHA256).toMatch(

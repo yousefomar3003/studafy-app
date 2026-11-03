@@ -167,7 +167,10 @@ Everything in (b) that is not Android-specific, plus the following.
   - the reviewer accounts (`docs/store/reviewer-access.md`), re-provisioned
     on production.
 - **Universal Links:** `APPLE_TEAM_ID` in `ops/legal-site/src/app-links.ts`
-  is still `PENDING_APPLE_TEAM_ID`.
+  is `869AV76RU2` since DL-079; deploy the legal site
+  (`bun run legal:deploy:vercel`). Android's `ANDROID_SHA256` is still a
+  placeholder until the Play App Signing certificate is copied from Play
+  Console.
 
 **Hands-on check.** The flows on the iPhone with a release build, in
 English and Arabic (2.9).

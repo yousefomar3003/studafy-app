@@ -6,21 +6,21 @@ claimed by whoever controls it. Until the two files below carry real values,
 the custom scheme `io.studafy.app://login-callback` remains the working
 fallback and the HTTPS intent filter/entitlement are inert.
 
-The callback domain is `app.studafy.com` (DL-067). Since 2026-10-16 both files
-are live there, served by the legal-site Worker
-(`docs/deployment/legal-site.md`) and generated from
-`ops/legal-site/src/app-links.ts`, with **placeholders** for the two values
-below (`PENDING_APPLE_TEAM_ID`, `PENDING_PLAY_APP_SIGNING_SHA256`). A
-placeholder names no real app, so neither platform verifies the domain yet.
-When a value is known: set it in `app-links.ts`, run
-`bun test ops/legal-site`, then `bun run legal:deploy`.
+The callback domain is `app.studafy.com` (DL-067). Both files are live
+there, served by the legal site (`docs/deployment/legal-site.md`; the
+Vercel project `studafy-legal` since 2026-11-03) and generated from
+`ops/legal-site/src/app-links.ts`. Since DL-079 the Apple file names the
+real team, `869AV76RU2` (Studafy Limited), with `com.studafy.light`. The
+Android file still has the **placeholder**
+`PENDING_PLAY_APP_SIGNING_SHA256`, which names no real certificate, so
+Android does not verify the domain yet. When the value is known: set it in
+`app-links.ts`, run `bun test ops/legal-site`, then
+`bun run legal:deploy:vercel`.
 
-Both files are blocked on work outside engineering:
-
-| File | Blocked on |
+| File | State |
 |---|---|
-| `apple-app-site-association` | D1 — Apple Developer organisation account, for the Team ID |
-| `assetlinks.json` | D2 — Play App Signing, for the release certificate fingerprint |
+| `apple-app-site-association` | Real Team ID `869AV76RU2` (DL-079); live after the next `legal:deploy:vercel` |
+| `assetlinks.json` | Blocked on D2 — Play App Signing, for the release certificate fingerprint (Play Console → Setup → App integrity → App signing key certificate → SHA-256) |
 
 Both must be served from the root of the callback host, `app.studafy.com`.
 

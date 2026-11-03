@@ -15,24 +15,28 @@
  *   preflight        fly is installed and signed in; which apps exist; every
  *                    required secret is in the file and passes the same
  *                    production checks the API and worker run at start-up
- *   create-apps      studafy-scanner, studafy-worker (and studafy-api) if missing
+ *   create-apps      studafy-scanner, studafy-converter, studafy-worker (and
+ *                    studafy-api) if missing
  *   import-secrets   `fly secrets import --stage`, each app only its own names
  *   deploy-scanner   private, health-checked (ClamAV loads in up to 5 minutes)
+ *   deploy-converter private, health-checked (LibreOffice's self-test)
  *   stop-test-apps   `fly scale count 0` for studafy-worker-test, -api-test,
- *                    -scanner-test: two workers on one database would both
- *                    drain the same queues
+ *                    -scanner-test, -converter-test: two workers on one
+ *                    database would both drain the same queues
  *   clean-test-data  checkpoint: scripts/production/clean-test-data.ts
  *   deploy-worker    then waits for `worker_ready` in its log
  *   deploy-api       then waits for https://studafy-api.fly.dev/readyz = 200
- *   dns              printed only: api.studafy.com on Cloudflare, Fly cert
+ *   dns              printed only: api.studafy.com in Vercel DNS, Fly cert
  *   alerts           printed only: the uptime check to api.studafy.com
  *
  * The secrets file (format: secretsFile.ts) holds every app's names once.
  * DATABASE_URL differs per app (each app's own runtime role), so it is
  * written API__DATABASE_URL and WORKER__DATABASE_URL. The scanner's
  * SCANNER_API_KEY is also imported into the worker as
- * MALWARE_SCANNER_API_KEY, so the two can never differ. Values are never
- * printed, passed on a command line, or written anywhere but `fly`'s stdin.
+ * MALWARE_SCANNER_API_KEY, and the converter's CONVERTER_API_KEY into the
+ * worker under the same name, so the two ends of each can never differ.
+ * Values are never printed, passed on a command line, or written anywhere
+ * but `fly`'s stdin.
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -57,7 +61,7 @@ import {
 
 const REPOSITORY_ROOT = resolve(import.meta.dir, "..", "..");
 
-export type AppKey = "scanner" | "worker" | "api";
+export type AppKey = "scanner" | "converter" | "worker" | "api";
 
 export const APPS: Record<
   AppKey,
@@ -67,6 +71,11 @@ export const APPS: Record<
     app: "studafy-scanner",
     config: "fly.scanner.toml",
     testApp: "studafy-scanner-test",
+  },
+  converter: {
+    app: "studafy-converter",
+    config: "fly.converter.toml",
+    testApp: "studafy-converter-test",
   },
   worker: {
     app: "studafy-worker",
@@ -80,13 +89,19 @@ export const APPS: Record<
   },
 };
 
-/** Deploy order: the worker needs the scanner, the API needs the worker. */
-export const DEPLOY_ORDER: AppKey[] = ["scanner", "worker", "api"];
+/**
+ * Deploy order: the worker needs the scanner and the converter, the API
+ * needs the worker.
+ */
+export const DEPLOY_ORDER: AppKey[] = ["scanner", "converter", "worker", "api"];
+/** The private services that are deployed before the test copy stops. */
+const PRIVATE_SERVICES = ["scanner", "converter"] as const;
 /** The test worker stops first: it drains the same queues. */
 export const TEST_APPS_STOP_ORDER = [
   "studafy-worker-test",
   "studafy-api-test",
   "studafy-scanner-test",
+  "studafy-converter-test",
 ] as const;
 
 /**
@@ -96,6 +111,7 @@ export const TEST_APPS_STOP_ORDER = [
  */
 export const REQUIRED_SECRETS: Record<AppKey, readonly string[]> = {
   scanner: ["SCANNER_API_KEY"],
+  converter: ["CONVERTER_API_KEY"],
   worker: [
     "DATABASE_URL",
     "DATABASE_CA_CERT",
@@ -103,6 +119,7 @@ export const REQUIRED_SECRETS: Record<AppKey, readonly string[]> = {
     "SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
     "MALWARE_SCANNER_API_KEY",
+    "CONVERTER_API_KEY",
     "SENTRY_DSN",
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_CHAT_ID",
@@ -151,6 +168,7 @@ const BILLING = [
  */
 export const OPTIONAL_SECRETS: Record<AppKey, readonly string[]> = {
   scanner: [],
+  converter: [],
   worker: [
     // Email and push (DL-053), with NOTIFICATION_CHANNELS_ENABLED.
     "RESEND_API_KEY",
@@ -186,7 +204,10 @@ const PREFIX: Record<AppKey, string> = {
   api: "API__",
   worker: "WORKER__",
   scanner: "SCANNER__",
+  converter: "CONVERTER__",
 };
+/** Shared keys: one line in the file, given to both ends. */
+const SHARED_KEY_MIN_LENGTH = 32;
 
 export interface SecretPlan {
   /** Each app's secrets, by the name the app reads. */
@@ -208,6 +229,7 @@ export async function readFlyEnvs(
     }).env) ?? {};
   return {
     scanner: await read(APPS.scanner.config),
+    converter: await read(APPS.converter.config),
     worker: await read(APPS.worker.config),
     api: await read(APPS.api.config),
   };
@@ -224,6 +246,10 @@ function lookup(
   if (app === "worker" && name === "MALWARE_SCANNER_API_KEY") {
     return secrets.get("SCANNER__SCANNER_API_KEY") ??
       secrets.get("SCANNER_API_KEY");
+  }
+  if (app === "worker" && name === "CONVERTER_API_KEY") {
+    return secrets.get("CONVERTER__CONVERTER_API_KEY") ??
+      secrets.get("CONVERTER_API_KEY");
   }
   return secrets.get(name);
 }
@@ -245,6 +271,7 @@ export function planSecrets(secrets: Secrets, flyEnvs: FlyEnvs): SecretPlan {
   const warnings: string[] = [];
   const perApp = {
     scanner: new Map<string, string>(),
+    converter: new Map<string, string>(),
     worker: new Map<string, string>(),
     api: new Map<string, string>(),
   } satisfies Record<AppKey, Map<string, string>>;
@@ -295,8 +322,24 @@ export function planSecrets(secrets: Secrets, flyEnvs: FlyEnvs): SecretPlan {
       "MALWARE_SCANNER_API_KEY differs from SCANNER_API_KEY; remove it (the worker gets SCANNER_API_KEY)",
     );
   }
-  if (scannerKey !== undefined && scannerKey.length < 32) {
+  if (scannerKey !== undefined && scannerKey.length < SHARED_KEY_MIN_LENGTH) {
     problems.push("SCANNER_API_KEY must be at least 32 characters");
+  }
+  const converterKey = perApp.converter.get("CONVERTER_API_KEY");
+  const workerConverterKey = perApp.worker.get("CONVERTER_API_KEY");
+  if (
+    converterKey && workerConverterKey && converterKey !== workerConverterKey
+  ) {
+    problems.push(
+      "WORKER__CONVERTER_API_KEY differs from the converter's CONVERTER_API_KEY; remove it (the worker gets CONVERTER_API_KEY)",
+    );
+  }
+  if (
+    converterKey !== undefined && converterKey.length < SHARED_KEY_MIN_LENGTH
+  ) {
+    problems.push(
+      "CONVERTER_API_KEY must be at least 32 characters (the converter refuses to start otherwise)",
+    );
   }
 
   for (const app of ["api", "worker"] as const) {
@@ -351,6 +394,12 @@ export function planSecrets(secrets: Secrets, flyEnvs: FlyEnvs): SecretPlan {
       ...named,
       PAY071_BILLING_ENABLED: true,
     });
+    const apple = perApp.api.get("APPLE_ENVIRONMENT");
+    if (apple !== undefined && apple !== "Production") {
+      warnings.push(
+        'APPLE_ENVIRONMENT is not "Production": production verifies App Store purchases and notifications with Apple\'s Production environment (the test copy uses "Sandbox")',
+      );
+    }
     if (!stores.apple && !stores.google) {
       warnings.push(
         "Billing stays off: neither store's set is complete (App Store: APPLE_BUNDLE_ID, APPLE_ENVIRONMENT, APPLE_ISSUER_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, APPLE_ROOT_CERTIFICATES_BASE64; Play: GOOGLE_PACKAGE_NAME, GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL, GOOGLE_PUBSUB_AUDIENCE)",
@@ -368,6 +417,7 @@ export function planSecrets(secrets: Secrets, flyEnvs: FlyEnvs): SecretPlan {
     }
   }
   known.add("SCANNER_API_KEY");
+  known.add("CONVERTER_API_KEY");
   const ignored = [...secrets.keys()].filter((name) =>
     !known.has(name) && name !== "DATABASE_URL"
   );
@@ -503,6 +553,7 @@ export const STEP_IDS = [
   "create-apps",
   "import-secrets",
   "deploy-scanner",
+  "deploy-converter",
   "stop-test-apps",
   "clean-test-data",
   "deploy-worker",
@@ -563,6 +614,10 @@ const deployArgv = (app: AppKey) => [
   "--app",
   APPS[app].app,
   "--remote-only",
+  // One converter machine, as on the test copy (fly.converter.toml): while
+  // it is away renditions wait and are retried. The scanner keeps Fly's
+  // stopped standby machine.
+  ...(app === "converter" ? ["--ha=false"] : []),
 ];
 
 async function must(
@@ -642,6 +697,60 @@ async function machineStates(context: Context, app: string) {
   return collect(parseJson(status.stdout), "state");
 }
 
+/**
+ * A private service (scanner, converter): deployed, refused if it has a
+ * public address, then health-checked by its machine check, since nothing
+ * outside the organisation can reach it to ask.
+ */
+function privateServiceStep(
+  key: (typeof PRIVATE_SERVICES)[number],
+  id: StepId,
+  title: string,
+  what: string,
+): Step {
+  const app = APPS[key].app;
+  return {
+    id,
+    title,
+    describe: () => [
+      deployArgv(key).join(" "),
+      `fly ips list --app ${app} --json   (must be empty: no public address)`,
+      `fly checks list --app ${app} --json   (until every check is passing; up to 6 minutes)`,
+    ],
+    async run(context) {
+      await must(context, deployArgv(key));
+      const ips = await must(context, [
+        "fly",
+        "ips",
+        "list",
+        "--app",
+        app,
+        "--json",
+      ], { capture: true });
+      const addresses = collect(parseJson(ips.stdout), "address");
+      if (addresses.length > 0) {
+        throw new CutoverError(
+          `${app} has a public IP address; release it (fly ips release) before going on`,
+        );
+      }
+      await poll(context, what, 6 * 60_000, 15_000, async () => {
+        const checks = await must(context, [
+          "fly",
+          "checks",
+          "list",
+          "--app",
+          app,
+          "--json",
+        ], { capture: true });
+        const statuses = collect(parseJson(checks.stdout), "status");
+        context.io.log(`  checks: ${statuses.join(", ") || "none yet"}`);
+        return statuses.length > 0 &&
+          statuses.every((status) => status === "passing");
+      });
+    },
+  };
+}
+
 export const STEPS: readonly Step[] = [
   {
     id: "preflight",
@@ -649,7 +758,9 @@ export const STEPS: readonly Step[] = [
     describe: (context) => [
       "fly version",
       "fly auth whoami",
-      "fly apps list --json   (which of studafy-scanner, studafy-worker, studafy-api exist)",
+      `fly apps list --json   (which of ${
+        DEPLOY_ORDER.map((app) => APPS[app].app).join(", ")
+      } exist)`,
       context.options.secretsPath
         ? `check ${context.options.secretsPath}: every required name present, per-app roles, production start-up checks`
         : "check the --secrets file (none given: --execute refuses)",
@@ -751,52 +862,18 @@ export const STEPS: readonly Step[] = [
       }
     },
   },
-  {
-    id: "deploy-scanner",
-    title: "Deploy the private malware scanner and wait for its health check",
-    describe: () => [
-      deployArgv("scanner").join(" "),
-      "fly ips list --app studafy-scanner --json   (must be empty: no public address)",
-      "fly checks list --app studafy-scanner --json   (until every check is passing; up to 6 minutes)",
-    ],
-    async run(context) {
-      await must(context, deployArgv("scanner"));
-      const ips = await must(context, [
-        "fly",
-        "ips",
-        "list",
-        "--app",
-        APPS.scanner.app,
-        "--json",
-      ], { capture: true });
-      const addresses = collect(parseJson(ips.stdout), "address");
-      if (addresses.length > 0) {
-        throw new CutoverError(
-          "studafy-scanner has a public IP address; release it (fly ips release) before going on",
-        );
-      }
-      await poll(
-        context,
-        "the scanner's /healthz check",
-        6 * 60_000,
-        15_000,
-        async () => {
-          const checks = await must(context, [
-            "fly",
-            "checks",
-            "list",
-            "--app",
-            APPS.scanner.app,
-            "--json",
-          ], { capture: true });
-          const statuses = collect(parseJson(checks.stdout), "status");
-          context.io.log(`  checks: ${statuses.join(", ") || "none yet"}`);
-          return statuses.length > 0 &&
-            statuses.every((status) => status === "passing");
-        },
-      );
-    },
-  },
+  privateServiceStep(
+    "scanner",
+    "deploy-scanner",
+    "Deploy the private malware scanner and wait for its health check",
+    "the scanner's /healthz check",
+  ),
+  privateServiceStep(
+    "converter",
+    "deploy-converter",
+    "Deploy the private document converter and wait for its health check",
+    "the converter's /healthz check (LibreOffice's self-test)",
+  ),
   {
     id: "stop-test-apps",
     title: "Stop the test copy (two workers must never share the database)",
@@ -925,16 +1002,15 @@ export const STEPS: readonly Step[] = [
   },
   {
     id: "dns",
-    title: "Domain: api.studafy.com (owner, or a later step; not run here)",
+    title:
+      "Domain: api.studafy.com in Vercel DNS (owner, or a later step; not run here)",
     describe: () => [
-      "fly certs add api.studafy.com --app studafy-api",
-      "If api.studafy.com still has the old Cloudflare Tunnel route to the Mac (docs/deployment/studafy-domain.md), remove that route and its record first",
-      "Cloudflare DNS, zone studafy.com: CNAME api -> studafy-api.fly.dev, Proxied (orange cloud)",
-      "Cloudflare DNS: the _acme-challenge CNAME that `fly certs add` prints, DNS only (grey cloud), so Fly can issue the certificate behind the proxy",
-      "Cloudflare SSL/TLS mode: Full (strict)",
+      "fly certs add api.studafy.com --app studafy-api   (prints the DNS records Fly needs)",
+      "If an old api record is still there (the Cloudflare Tunnel to the Mac, docs/deployment/studafy-domain.md), remove it first",
+      "Vercel -> Domains -> studafy.com -> DNS records (studafy.com's nameservers are ns1/ns2.vercel-dns.com): add the records it printed - A and AAAA for api to Fly's addresses, or CNAME api -> studafy-api.fly.dev - plus the _acme-challenge CNAME",
       "fly certs check api.studafy.com --app studafy-api   (until the certificate is issued)",
       `Check: GET ${PRODUCTION_URL} returns 200`,
-      'Then a reviewed PR sets ORIGIN_REQUIRE_CLOUDFLARE = "true" in fly.api.toml (and scripts/fly-config.test.ts) and redeploys the API',
+      'No Cloudflare proxy is in front of the API: ORIGIN_REQUIRE_CLOUDFLARE stays "false" and CLIENT_IP_SOURCE is "fly" (fly.api.toml, DL-079)',
     ],
   },
   {
@@ -1040,7 +1116,7 @@ export async function runCutover(
   io.log("");
   io.log(
     options.execute
-      ? "Cutover steps done. Remaining: dns and alerts above, then the checks in docs/deployment/production-cutover.md."
+      ? "Cutover steps done. Remaining: dns and alerts above, then the store notifications, store builds and checks in docs/deployment/production-cutover.md."
       : "Dry run complete. Run again with --execute to act.",
   );
   return 0;

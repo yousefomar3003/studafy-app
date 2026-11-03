@@ -55,7 +55,7 @@ afterwards (`docs/deployment/fly-io.md`).
 | `MALWARE_SCANNER_API_KEY` (+ `MALWARE_SCANNER_URL`) | File scanning by the self-hosted ClamAV scanner (below) | The key is the scanner's `SCANNER_API_KEY`. The URL is reachable only over Fly's private network: test `http://studafy-scanner-test.internal:8080/scan` (a secret there); production `http://studafy-scanner.internal:8080/scan`, set in `fly.worker.toml`, not a secret. A production worker refuses to start without both |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (+ `QUEUE_ALERTS_ENABLED=true`) | Background-work alerts (launch plan 4.7, PR #38) | The alert relay's bot can be reused. Off on the test copy until set; `fly.worker.toml` turns them on, so the production worker needs both |
 | `AI_API_KEY` | Reading scanned teacher files (with `AI_MATERIAL_INDEX_ENABLED`) and writing study notebooks | Same provider as the API; required in production (DL-062) |
-| `CONVERTER_API_KEY` (+ `CONVERTER_URL`) | PDF previews and the OOXML copy of old .doc/.xls/.ppt files, made by the self-hosted document converter (DL-078, below) | The same value as the converter's `CONVERTER_API_KEY`. Test URL `http://studafy-converter-test.internal:8080`, private network only. Optional: without both, renditions are skipped |
+| `CONVERTER_API_KEY` (+ `CONVERTER_URL`) | PDF previews and the OOXML copy of old .doc/.xls/.ppt files, made by the self-hosted document converter (DL-078, below) | The same value as the converter's `CONVERTER_API_KEY`. Private network only: test `http://studafy-converter-test.internal:8080` (a secret there); production `http://studafy-converter.internal:8080`, set in `fly.worker.toml`, not a secret (DL-079). The production cutover requires the key. Without both, renditions are skipped |
 
 ### Document converter (`fly.converter.test.toml`)
 
@@ -123,7 +123,9 @@ format `fly secrets import` reads. Each app receives only its own names
 (pinned by `scripts/production/cutover.test.ts`). `DATABASE_URL` is written
 twice, as `API__DATABASE_URL` and `WORKER__DATABASE_URL`, because each app
 logs in as its own runtime role; the scanner's `SCANNER_API_KEY` is also
-imported into the worker as `MALWARE_SCANNER_API_KEY`. The same file can hold
+imported into the worker as `MALWARE_SCANNER_API_KEY`, and the converter's
+`CONVERTER_API_KEY` into the worker under the same name (one line in the
+file for each). The same file can hold
 `ADMIN_DATABASE_URL` (a `postgres` session connection) for
 `scripts/production/clean-test-data.ts`; the cutover does not import it into
 any app. Neither script prints a value. Order and inputs:
