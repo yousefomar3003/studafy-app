@@ -146,15 +146,28 @@ const OOXML_TO: Readonly<Record<string, ConvertTo>> = {
 
 const PDF = "application/pdf";
 
-/** True when converted bytes pass the upload rules for their own type. */
-async function safeOutput(bytes: Uint8Array, mediaType: string) {
-  if (detectMediaType(bytes) !== mediaType) return false;
+/**
+ * Null when converted bytes pass the upload rules for their own type, or
+ * the rule they broke: a short code, never anything read from the file, so
+ * a refused preview can be diagnosed from the log (2026-11-03: the first
+ * live previews were refused without saying why).
+ */
+async function outputRefusal(
+  bytes: Uint8Array,
+  mediaType: string,
+): Promise<string | null> {
+  if (detectMediaType(bytes) !== mediaType) return "type_mismatch";
   if (mediaType === PDF) {
     // LibreOffice opens every PDF at page one with an /OpenAction
     // destination; nothing else an upload may not have is let through.
-    return (await parsePdf(bytes, { allowOpenActionDestination: true })).ok;
+    const parsed = await parsePdf(bytes, { allowOpenActionDestination: true });
+    if (parsed.ok) return null;
+    return parsed.detail
+      ? `pdf_${parsed.reason}_${parsed.detail}`
+      : `pdf_${parsed.reason}`;
   }
-  return (await analyzeBytes(bytes, mediaType)).verdict === "clean";
+  const analysis = await analyzeBytes(bytes, mediaType);
+  return analysis.verdict === "clean" ? null : `analysis_${analysis.verdict}`;
 }
 
 export interface RenditionDeps {
@@ -218,7 +231,13 @@ export function createRenditionProcessor(deps: RenditionDeps) {
         await finish(job, { outcome: "failed", code: converted.code });
         return;
       }
-      if (!(await safeOutput(converted.bytes, job.mediaType))) {
+      const refusal = await outputRefusal(converted.bytes, job.mediaType);
+      if (refusal) {
+        deps.logger.warn("rendition_output_refused", {
+          rendition_id: job.renditionId,
+          kind: job.kind,
+          rule: refusal,
+        });
         await finish(job, { outcome: "failed", code: "unsafe_output" });
         return;
       }

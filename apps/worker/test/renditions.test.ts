@@ -245,7 +245,9 @@ describe("rendition worker", () => {
         mediaType: PPTX_MEDIA_TYPE,
       }, buildDocx([{ paragraph: "x" }])],
     ];
+    const rules: unknown[] = [];
     for (const [overrides, bytes] of outputs) {
+      lines.length = 0;
       const queue = new FakeQueue([await job(overrides)]);
       const storage = new FakeStorage();
       await processor(
@@ -258,7 +260,17 @@ describe("rendition worker", () => {
         outcome: "failed",
         code: "unsafe_output",
       });
+      // The broken rule is logged by name; nothing from the file is.
+      const refused = lines.find((l) => l.event === "rendition_output_refused");
+      rules.push(refused?.fields["rule"]);
+      expect(JSON.stringify(refused)).not.toContain("JavaScript");
     }
+    expect(rules).toEqual([
+      "pdf_active_content",
+      "type_mismatch",
+      expect.stringMatching(/^analysis_/),
+      "type_mismatch",
+    ]);
     // The real thing passes.
     const queue = new FakeQueue([
       await job({
