@@ -6581,9 +6581,10 @@ class V1CreateStudyNotebookRequestDto {
         sourceIds: (json['sourceIds'] as List<dynamic>).cast<String>(),
         references: json['references'] == null
             ? null
-            : V1MaterialRefsDto.fromJson(
-                json['references'] as Map<String, dynamic>,
-              ),
+            : [
+                for (final item in json['references'] as List<dynamic>)
+                  V1MaterialRefDto.fromJson(item as Map<String, dynamic>),
+              ],
         skipUnavailable: json['skipUnavailable'] as bool?,
         title: json['title'] as String?,
         language: json['language'] as String?,
@@ -6591,7 +6592,7 @@ class V1CreateStudyNotebookRequestDto {
 
   final String resourceId;
   final List<String> sourceIds;
-  final V1MaterialRefsDto? references;
+  final List<V1MaterialRefDto>? references;
   final bool? skipUnavailable;
   final String? title;
   final String? language;
@@ -6599,7 +6600,8 @@ class V1CreateStudyNotebookRequestDto {
   Map<String, Object?> toJson() => {
     'resourceId': resourceId,
     'sourceIds': sourceIds,
-    if (references != null) 'references': references!.toJson(),
+    if (references != null)
+      'references': [for (final item in references!) item.toJson()],
     'skipUnavailable': ?skipUnavailable,
     'title': ?title,
     'language': ?language,
@@ -9577,15 +9579,6 @@ class V1MaterialRefDto {
     'id': id,
     'lessonId': ?lessonId,
   };
-}
-
-class V1MaterialRefsDto {
-  const V1MaterialRefsDto();
-
-  factory V1MaterialRefsDto.fromJson(Map<String, dynamic> json) =>
-      const V1MaterialRefsDto();
-
-  Map<String, Object?> toJson() => const <String, Object?>{};
 }
 
 class V1MaterialScopeDto {
@@ -12948,19 +12941,20 @@ class V1SelectionStudySetRequestDto {
   factory V1SelectionStudySetRequestDto.fromJson(Map<String, dynamic> json) =>
       V1SelectionStudySetRequestDto(
         kind: json['kind'] as String,
-        references: V1MaterialRefsDto.fromJson(
-          json['references'] as Map<String, dynamic>,
-        ),
+        references: [
+          for (final item in json['references'] as List<dynamic>)
+            V1MaterialRefDto.fromJson(item as Map<String, dynamic>),
+        ],
         skipUnavailable: json['skipUnavailable'] as bool?,
       );
 
   final String kind;
-  final V1MaterialRefsDto references;
+  final List<V1MaterialRefDto> references;
   final bool? skipUnavailable;
 
   Map<String, Object?> toJson() => {
     'kind': kind,
-    'references': references.toJson(),
+    'references': [for (final item in references) item.toJson()],
     'skipUnavailable': ?skipUnavailable,
   };
 }
@@ -13838,19 +13832,20 @@ class V1SummariseMaterialRequestDto {
 
   factory V1SummariseMaterialRequestDto.fromJson(Map<String, dynamic> json) =>
       V1SummariseMaterialRequestDto(
-        references: V1MaterialRefsDto.fromJson(
-          json['references'] as Map<String, dynamic>,
-        ),
+        references: [
+          for (final item in json['references'] as List<dynamic>)
+            V1MaterialRefDto.fromJson(item as Map<String, dynamic>),
+        ],
         skipUnavailable: json['skipUnavailable'] as bool?,
         language: json['language'] as String?,
       );
 
-  final V1MaterialRefsDto references;
+  final List<V1MaterialRefDto> references;
   final bool? skipUnavailable;
   final String? language;
 
   Map<String, Object?> toJson() => {
-    'references': references.toJson(),
+    'references': [for (final item in references) item.toJson()],
     'skipUnavailable': ?skipUnavailable,
     'language': ?language,
   };

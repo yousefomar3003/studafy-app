@@ -74,6 +74,28 @@ function isEnumComponent(name: string): boolean {
     target.properties === undefined;
 }
 
+/**
+ * True when a named component schema is a bare list (a Zod `z.array()`
+ * registered at the top level, e.g. V1MaterialRefs). It has no properties,
+ * so rendered as a DTO it became an empty class that read every list as
+ * `{}`: a request naming material could not be built at all (2026-11-03).
+ * A reference to one is read as the list it names.
+ */
+function isArrayComponent(name: string): boolean {
+  const target = spec.components.schemas[name];
+  return target !== undefined && target.type === "array" &&
+    target.properties === undefined;
+}
+
+/** A reference to a list component, replaced by the list itself. */
+function inlineArrays(schema: Schema): Schema {
+  if (schema.anyOf) return { ...schema, anyOf: schema.anyOf.map(inlineArrays) };
+  const name = schema.$ref?.split("/").at(-1);
+  return name && isArrayComponent(name)
+    ? spec.components.schemas[name]!
+    : schema;
+}
+
 function isNullable(schema: Schema): boolean {
   return (Array.isArray(schema.type) && schema.type.includes("null")) ||
     (schema.anyOf?.some((entry) => entry.type === "null") ?? false);
@@ -84,6 +106,7 @@ function effectiveSchema(schema: Schema): Schema {
 }
 
 function dartType(schema: Schema): string {
+  schema = inlineArrays(schema);
   const reference = referencedName(schema);
   const effective = effectiveSchema(schema);
   let base: string;
@@ -135,6 +158,7 @@ function parseExpression(
   wireName: string,
   required: boolean,
 ): string {
+  schema = inlineArrays(schema);
   const reference = referencedName(schema);
   if (reference && !isEnumComponent(reference)) {
     const parsed =
@@ -174,6 +198,7 @@ function parseExpression(
  * can use a Dart null-aware element instead of `if (x != null) 'k': x!`,
  * which the use_null_aware_elements lint rejects in generated code. */
 function isBareValue(schema: Schema): boolean {
+  schema = inlineArrays(schema);
   const reference = referencedName(schema);
   if (reference && !isEnumComponent(reference)) return false;
   const effective = effectiveSchema(schema);
@@ -192,6 +217,7 @@ function serializeExpression(
   propertyName: string,
   knownNonNull: boolean,
 ): string {
+  schema = inlineArrays(schema);
   const reference = referencedName(schema);
   if (reference && !isEnumComponent(reference)) {
     return knownNonNull
@@ -341,7 +367,7 @@ function renderOperation(
 }
 
 const models = Object.entries(spec.components.schemas)
-  .filter(([name]) => !isEnumComponent(name))
+  .filter(([name]) => !isEnumComponent(name) && !isArrayComponent(name))
   .map(([name, schema]) => renderModel(name, schema))
   .join("\n\n");
 const operations = Object.entries(spec.paths)
