@@ -86,8 +86,13 @@ const _coreAllowlist = <String>[
   'core/attachment_field.dart',
   'core/platform_attachment_source.dart',
   'core/uploads_scope.dart',
-  // Opening what was attached is the other half of the same concern.
+  // Opening what was attached is the other half of the same concern: a
+  // PDF (or a server-made PDF preview) opens in the app's own viewer.
   'core/attachment_opener.dart',
+  'core/document_viewer.dart',
+  // Every photo picked becomes a JPEG or PNG before it is uploaded or sent
+  // to the AI, and the screens that pick one say so when it cannot.
+  'core/photo_normaliser.dart',
   // Voice notes: recorded and played in messages, and a voice note picked up
   // anywhere an attachment is shown. The port and its platform adapter, like
   // the attachment picker above.

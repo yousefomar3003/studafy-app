@@ -8,6 +8,7 @@ import 'attachment_policy.dart';
 import 'feedback.dart';
 import 'file_upload_repository.dart';
 import 'idempotency.dart';
+import 'photo_normaliser.dart';
 import 'studafy_design.dart';
 
 /// What the person chose, before anything has been sent.
@@ -271,6 +272,10 @@ class AttachmentFieldState extends State<AttachmentField> {
     final PickedAttachment? source;
     try {
       source = await widget.source(kind, _policy);
+    } on PhotoConversionFailed {
+      // A HEIC or other photo this phone cannot turn into a JPEG.
+      if (mounted) _say(AppL10n.of(context).photoConvertFailed);
+      return;
     } on Object {
       // The picker could not hand the file over (image_picker's
       // "no_valid_image_uri", a photo still in the cloud, ...).

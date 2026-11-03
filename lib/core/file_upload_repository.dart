@@ -105,6 +105,9 @@ class DownloadedFile {
   final Uint8List bytes;
 
   bool get isImage => mediaType.startsWith('image/');
+
+  /// Shown in the app's own viewer rather than handed to another app.
+  bool get isPdf => mediaType == 'application/pdf';
 }
 
 /// The server this app talks to has file uploads or delivery switched off.

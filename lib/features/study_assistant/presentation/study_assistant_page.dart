@@ -16,6 +16,7 @@ import '../../../core/inline_photo.dart';
 import '../../../core/material_selection.dart';
 import '../../../core/material_unavailable_dialog.dart';
 import '../../../core/navigation.dart';
+import '../../../core/photo_normaliser.dart';
 import '../../../core/result.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
@@ -371,10 +372,16 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
     }
     final source = widget.attachmentSource;
     if (source == null) return;
-    final chosen = await source(
-      choice == 'camera' ? AttachmentKind.camera : AttachmentKind.photo,
-      AttachmentPolicy.assistantAttachment,
-    );
+    final PickedAttachment? chosen;
+    try {
+      chosen = await source(
+        choice == 'camera' ? AttachmentKind.camera : AttachmentKind.photo,
+        AttachmentPolicy.assistantAttachment,
+      );
+    } on PhotoConversionFailed {
+      if (mounted) setState(() => _error = l10n.photoConvertFailed);
+      return;
+    }
     if (chosen == null || !mounted) return;
     final photo = chosen.localized(l10n);
     if (AttachmentPolicy.assistantAttachment.refuse(

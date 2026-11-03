@@ -2282,5 +2282,13 @@
   "aiReportSend": "إرسال",
   "aiReportSent": "شكرًا - سنراجعه.",
   "aiReportFailed": "لم يُرسل بلاغك. تحقق من اتصالك وحاول مرة أخرى.",
-  "aiReportRetry": "حاول مرة أخرى"
+  "aiReportRetry": "حاول مرة أخرى",
+  "viewerShareOrOpen": "مشاركة أو فتح في تطبيق آخر",
+  "viewerOpenElsewhere": "فتح في تطبيق آخر",
+  "viewerCouldNotShow": "تعذّر عرض هذا الملف",
+  "viewerCouldNotShowHint": "لا يزال بإمكانك فتحه في تطبيق آخر.",
+  "viewerLoading": "جارٍ فتح الملف",
+  "viewerPageIndicator": "{current} من {total}",
+  "viewerPageOf": "الصفحة {current} من {total}",
+  "photoConvertFailed": "تعذّر تجهيز هذه الصورة للإرسال. جرّب صورة أخرى، أو التقط لقطة شاشة لها وأرسلها."
 }

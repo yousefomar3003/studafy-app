@@ -13806,6 +13806,54 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Try again'**
   String get aiReportRetry;
+
+  /// Document viewer: tooltip of the app bar action that shares the file or opens it in another app.
+  ///
+  /// In en, this message translates to:
+  /// **'Share or open in another app'**
+  String get viewerShareOrOpen;
+
+  /// Document viewer: button under the error, sends the file to another app.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in another app'**
+  String get viewerOpenElsewhere;
+
+  /// Document viewer: title of the error shown when a PDF cannot be drawn.
+  ///
+  /// In en, this message translates to:
+  /// **'This file could not be shown'**
+  String get viewerCouldNotShow;
+
+  /// Document viewer: line under the error title.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still open it in another app.'**
+  String get viewerCouldNotShowHint;
+
+  /// Document viewer: spoken label of the spinner while a PDF opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the file'**
+  String get viewerLoading;
+
+  /// Document viewer: the page shown and the number of pages, on a small label at the bottom ("3 / 12").
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {total}'**
+  String viewerPageIndicator(int current, int total);
+
+  /// Document viewer: what a screen reader says for the page label.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {current} of {total}'**
+  String viewerPageOf(int current, int total);
+
+  /// A photo (for example HEIC) the phone could not turn into a JPEG before upload.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo could not be prepared for sending. Try another one, or take a screenshot of it and send that.'**
+  String get photoConvertFailed;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
