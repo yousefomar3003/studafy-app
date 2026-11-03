@@ -138,6 +138,7 @@ Added in this slice, on top of the API-040 catalogue:
 | `FILE_PUBLISH_DISABLED` | 503 | publication is switched off (FILE-051) |
 | `DELIVERY_GRANT_INVALID` | 404 | the delivery link is expired, already used, forged, or belongs to another account (FILE-051) |
 | `STORAGE_UNAVAILABLE` | 503 | private storage could not be reached |
+| `PREVIEW_UNAVAILABLE` | 409 | `variant: "preview"` was asked for and the file has no ready PDF preview (DL-078); the original is still downloadable |
 
 The three `422` mismatch outcomes are *deterministic* results of inspecting
 the bytes, so they are persisted as idempotency completions: a retry with the
@@ -372,6 +373,26 @@ Who may request a link:
 - the student who submitted an attempt;
 - the assigned lead or co-teacher, or a school admin, for assignment and
   grading material.
+
+#### In-app previews — `{"variant": "preview"}` (DL-078)
+
+The request body may name a `variant`: `original` (the default, also when
+the body is `{}`) or `preview`, a PDF to show inside the app. Authorization,
+cleanliness and the link's shape are checked first, exactly as for the
+original, so someone refused the original is refused the preview the same
+way (`404`). Then:
+
+- a PDF is its own preview: the answer is the original's;
+- a Word, Excel, PowerPoint (OOXML or 97-2003) or CSV file whose PDF
+  preview the document converter has made: the answer names
+  `mediaType: "application/pdf"` and the file's own name with `.pdf`;
+- anything else - not made yet, could not be made, no converter, or a type
+  with no preview (a picture, a voice note) - is `409 PREVIEW_UNAVAILABLE`,
+  and no link. The original can still be downloaded.
+
+The grant records its variant, so a preview link only ever serves the
+preview, re-checked as ready when it is spent and served with the same
+digest check, headers and single use as an original.
 
 ### Delivery — `GET /delivery/v1/files/{fileId}/content?token=…`
 

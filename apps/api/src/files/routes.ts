@@ -1,6 +1,7 @@
 import { type Context, Hono } from "hono";
 import {
   V1CreateUploadIntentRequest,
+  V1DownloadIntentRequest,
   V1PublishFileRequest,
   v1Route,
 } from "@studafy/contracts";
@@ -244,6 +245,11 @@ export function createFileRoutes(
       }
       const reservation = c.get("idempotencyReservation");
       if (!reservation) return problem(c, "FORBIDDEN", 403);
+      // DL-078: `preview` asks for the in-app PDF; the database decides
+      // whether there is one, under the same authorization as the original.
+      const variant =
+        V1DownloadIntentRequest.parse(validatedBody(c) ?? {}).variant ??
+          "original";
 
       // The link is minted before the transaction and disclosed only after
       // the grant (nonce hash, recipient, expiry) has committed with the
@@ -268,6 +274,7 @@ export function createFileRoutes(
           nonceHash: await hashDeliveryNonce(nonce),
           downloadUrl: deliveryUrl(delivery.publicBaseUrl, id, token),
           expiresAt: new Date((nowSeconds + ttlSeconds) * 1000).toISOString(),
+          variant,
         },
         reservation,
       );
@@ -442,6 +449,8 @@ const FILE_OUTCOMES: OutcomeTable = {
   file_not_clean: ["FILE_NOT_CLEAN", 409],
   delivery_disabled: ["FILE_DELIVERY_DISABLED", 409],
   grant_invalid: ["DELIVERY_GRANT_INVALID", 404],
+  // DL-078: no in-app PDF for this file (yet); the original still works.
+  preview_unavailable: ["PREVIEW_UNAVAILABLE", 409],
 };
 
 function mapOutcome(

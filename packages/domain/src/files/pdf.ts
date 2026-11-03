@@ -75,7 +75,21 @@ const DANGER_PATTERNS: DangerPattern[] = [
   { needle: "/OpenAction", reason: "active_content" },
 ];
 
-export async function parsePdf(bytes: Uint8Array): Promise<PdfParseResult> {
+export interface PdfParseOptions {
+  /**
+   * DL-078, for PDFs our own converter wrote only (never for uploads):
+   * LibreOffice opens every PDF it exports at its first page with
+   * `/OpenAction [page /XYZ ...]`, a destination array, not an action that
+   * runs anything. Only that exact shape is let through; an `/OpenAction`
+   * dictionary (`<<`, or a reference to one) is still refused.
+   */
+  allowOpenActionDestination?: boolean;
+}
+
+export async function parsePdf(
+  bytes: Uint8Array,
+  options: PdfParseOptions = {},
+): Promise<PdfParseResult> {
   const text = asciiOf(bytes);
   if (!text.startsWith("%PDF-")) {
     return { ok: false, reason: "malformed", detail: "no_header" };
@@ -84,6 +98,12 @@ export async function parsePdf(bytes: Uint8Array): Promise<PdfParseResult> {
   if (!text.includes("%%EOF") || !text.includes("startxref")) {
     return { ok: false, reason: "malformed", detail: "no_trailer" };
   }
+  const scanDanger = (scanned: string) =>
+    scanDangerIn(
+      options.allowOpenActionDestination
+        ? scanned.replace(/\/OpenAction\s*\[/g, "[")
+        : scanned,
+    );
   const danger = scanDanger(text);
   if (danger) return { ok: false, reason: danger };
   if (containsEicarSignature(bytes)) return { ok: false, reason: "malicious" };
@@ -132,7 +152,7 @@ export async function parsePdf(bytes: Uint8Array): Promise<PdfParseResult> {
   return { ok: true, streamCount, inflatedBytes };
 }
 
-function scanDanger(
+function scanDangerIn(
   text: string,
 ): DangerPattern["reason"] | "active_content" | null {
   for (const pattern of DANGER_PATTERNS) {

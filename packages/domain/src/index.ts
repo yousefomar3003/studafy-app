@@ -49,6 +49,7 @@ export {
   parsePdf,
   PDF_STREAM_INFLATE_CAP_BYTES,
   PDF_TOTAL_INFLATE_CAP_BYTES,
+  type PdfParseOptions,
   type PdfParseResult,
   type PdfRejectReason,
 } from "./files/pdf";
@@ -77,6 +78,23 @@ export {
   type ZipDirectory,
   type ZipEntry,
 } from "./files/ooxml";
+export {
+  CFB_MEDIA_TYPES,
+  type CfbDirectory,
+  type CfbEntry,
+  type CfbKind,
+  cfbKindOf,
+  type CfbParseResult,
+  type CfbRejectReason,
+  detectCfbMediaType,
+  DOC_MEDIA_TYPE,
+  isLegacyOfficeType,
+  LEGACY_OFFICE_OOXML,
+  parseCfb,
+  PPT_MEDIA_TYPE,
+  readCfbDirectory,
+  XLS_MEDIA_TYPE,
+} from "./files/cfb";
 export {
   CSV_MEDIA_TYPE,
   type CsvParseResult,

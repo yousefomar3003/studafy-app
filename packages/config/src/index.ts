@@ -477,6 +477,13 @@ export const workerEnvSchema = z.object({
   // scan without it, because structural validation is not signature-grade.
   MALWARE_SCANNER_URL: url.optional(),
   MALWARE_SCANNER_API_KEY: z.string().min(20).optional(),
+  // DL-078: the document converter (infra/converter), LibreOffice on the
+  // private network only. It makes in-app PDF previews of Office files and
+  // CSV, and the .docx/.xlsx/.pptx copy of an old .doc/.xls/.ppt that the
+  // AI reads. Without both, those copies are marked skipped: downloads and
+  // everything else work, previews answer PREVIEW_UNAVAILABLE.
+  CONVERTER_URL: url.optional(),
+  CONVERTER_API_KEY: z.string().min(32).optional(),
   // Launch plan 4.7: background-work alerts to Telegram. Off by default; on,
   // it needs the bot token and chat id. Each check compares one number with
   // its threshold; one incident sends one message, a reminder after the
@@ -1202,6 +1209,9 @@ export function describeWorkerEnv(env: WorkerEnv): Record<string, unknown> {
       retentionEnabled: env.FILE051_RETENTION_ENABLED,
       malwareScannerConfigured: Boolean(
         env.MALWARE_SCANNER_URL && env.MALWARE_SCANNER_API_KEY,
+      ),
+      documentConverterConfigured: Boolean(
+        env.CONVERTER_URL && env.CONVERTER_API_KEY,
       ),
     },
     notificationChannels: {

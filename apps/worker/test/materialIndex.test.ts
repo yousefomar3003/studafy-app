@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createCanvas } from "@napi-rs/canvas";
-import { DOCX_MEDIA_TYPE } from "@studafy/domain";
+import {
+  DOC_MEDIA_TYPE,
+  DOCX_MEDIA_TYPE,
+  XLS_MEDIA_TYPE,
+  XLSX_MEDIA_TYPE,
+} from "@studafy/domain";
 import { type PrivateFileStorage, sha256Hex } from "@studafy/infrastructure";
 import { buildDocx, buildPdf } from "@studafy/test-support";
 import {
@@ -120,6 +125,99 @@ describe("material index worker", () => {
       logger,
     });
     await processor.runOnce();
+    expect(queue.finished[0]).toEqual({
+      outcome: "retry",
+      reason: "stored_object_mismatch",
+    });
+  });
+
+  test("an old .doc is read from its converted copy, not its own bytes (DL-078)", async () => {
+    const copy = buildDocx([{ paragraph: "Read from the copy." }]);
+    const opened: string[] = [];
+    const legacy = await job(new Uint8Array([0xd0, 0xcf]), DOC_MEDIA_TYPE);
+    legacy.rendition = {
+      status: "ready",
+      bucket: "private-school-files",
+      objectKey: "renditions/v1/copy",
+      sha256: await sha256Hex(copy),
+      mediaType: DOCX_MEDIA_TYPE,
+    };
+    const queue = new FakeQueue([legacy]);
+    const processor = createMaterialIndexProcessor({
+      queue,
+      storage: {
+        openObject: (_: string, key: string) => {
+          opened.push(key);
+          return Promise.resolve({ bytes: copy, sizeBytes: copy.length });
+        },
+      } as unknown as PrivateFileStorage,
+      assistant: null,
+      limits,
+      prices,
+      logger,
+    });
+    await processor.runOnce();
+    expect(opened).toEqual(["renditions/v1/copy"]);
+    expect(queue.finished[0]).toMatchObject({
+      outcome: "ready",
+      extractor: "docx-v1-from-doc",
+      chunks: [{ body: "Read from the copy." }],
+    });
+  });
+
+  test("an old file waits for its copy, and without one is unreadable", async () => {
+    const results: Record<string, unknown>[] = [];
+    for (
+      const status of ["queued", "processing", "failed", "skipped"] as const
+    ) {
+      const legacy = await job(new Uint8Array([0xd0]), XLS_MEDIA_TYPE);
+      legacy.rendition = {
+        status,
+        bucket: "private-school-files",
+        objectKey: "renditions/v1/copy",
+        sha256: null,
+        mediaType: XLSX_MEDIA_TYPE,
+      };
+      const queue = new FakeQueue([legacy]);
+      await createMaterialIndexProcessor({
+        queue,
+        storage: {
+          openObject: () => Promise.reject(new Error("not read")),
+        } as unknown as PrivateFileStorage,
+        assistant: null,
+        limits,
+        prices,
+        logger,
+      }).runOnce();
+      results.push(queue.finished[0]!);
+    }
+    expect(results.map((r) => [r["outcome"], r["reason"]])).toEqual([
+      ["retry", "processing"],
+      ["retry", "processing"],
+      ["unsupported", "unreadable_file"],
+      ["unsupported", "unreadable_file"],
+    ]);
+  });
+
+  test("a converted copy that does not match its digest is not read", async () => {
+    const copy = buildDocx([{ paragraph: "x" }]);
+    const legacy = await job(new Uint8Array([0xd0]), DOC_MEDIA_TYPE);
+    legacy.rendition = {
+      status: "ready",
+      bucket: "private-school-files",
+      objectKey: "renditions/v1/copy",
+      sha256: "0".repeat(64),
+      mediaType: DOCX_MEDIA_TYPE,
+    };
+    const queue = new FakeQueue([legacy]);
+    await createMaterialIndexProcessor({
+      queue,
+      storage: storageOf(copy),
+      assistant: null,
+      limits,
+      prices,
+      logger,
+    }).runOnce();
     expect(queue.finished[0]).toEqual({
       outcome: "retry",
       reason: "stored_object_mismatch",

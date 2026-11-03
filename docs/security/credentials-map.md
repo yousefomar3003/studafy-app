@@ -55,6 +55,16 @@ afterwards (`docs/deployment/fly-io.md`).
 | `MALWARE_SCANNER_API_KEY` (+ `MALWARE_SCANNER_URL`) | File scanning by the self-hosted ClamAV scanner (below) | The key is the scanner's `SCANNER_API_KEY`. The URL is reachable only over Fly's private network: test `http://studafy-scanner-test.internal:8080/scan` (a secret there); production `http://studafy-scanner.internal:8080/scan`, set in `fly.worker.toml`, not a secret. A production worker refuses to start without both |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (+ `QUEUE_ALERTS_ENABLED=true`) | Background-work alerts (launch plan 4.7, PR #38) | The alert relay's bot can be reused. Off on the test copy until set; `fly.worker.toml` turns them on, so the production worker needs both |
 | `AI_API_KEY` | Reading scanned teacher files (with `AI_MATERIAL_INDEX_ENABLED`) and writing study notebooks | Same provider as the API; required in production (DL-062) |
+| `CONVERTER_API_KEY` (+ `CONVERTER_URL`) | PDF previews and the OOXML copy of old .doc/.xls/.ppt files, made by the self-hosted document converter (DL-078, below) | The same value as the converter's `CONVERTER_API_KEY`. Test URL `http://studafy-converter-test.internal:8080`, private network only. Optional: without both, renditions are skipped |
+
+### Document converter (`fly.converter.test.toml`)
+
+Self-hosted LibreOffice (`infra/converter/`, DL-078): `studafy-converter-test`
+runs on Fly's private network only and has no IP address.
+
+| Secret | What | Notes |
+|---|---|---|
+| `CONVERTER_API_KEY` | The bearer key `POST /convert` requires | `openssl rand -hex 32`, at least 32 characters or the converter refuses to start. The same value is the worker's `CONVERTER_API_KEY`; rotate both together as the scanner's |
 
 ### Malware scanner (`fly.scanner.test.toml` / `fly.scanner.toml`)
 

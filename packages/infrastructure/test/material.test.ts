@@ -9,8 +9,11 @@ import {
 } from "@studafy/test-support";
 import {
   CSV_MEDIA_TYPE,
+  DOC_MEDIA_TYPE,
   DOCX_MEDIA_TYPE,
+  PPT_MEDIA_TYPE,
   PPTX_MEDIA_TYPE,
+  XLS_MEDIA_TYPE,
   XLSX_MEDIA_TYPE,
 } from "@studafy/domain";
 import {
@@ -134,6 +137,83 @@ describe("Word and PowerPoint", () => {
       deps().deps,
     );
     expect(result).toMatchObject({ outcome: "unsupported", reason: "no_text" });
+  });
+});
+
+describe("old binary Office files (DL-078)", () => {
+  test("a .doc, .xls or .ppt is read from its converted copy", async () => {
+    const cases = [
+      {
+        mediaType: DOC_MEDIA_TYPE,
+        converted: {
+          mediaType: DOCX_MEDIA_TYPE,
+          bytes: buildDocx([{ paragraph: "Plants need light." }]),
+        },
+        extractor: "docx-v1-from-doc",
+        text: "Plants need light.",
+      },
+      {
+        mediaType: XLS_MEDIA_TYPE,
+        converted: {
+          mediaType: XLSX_MEDIA_TYPE,
+          bytes: buildXlsx([{ name: "Marks", rows: [["Lina", "18"]] }]),
+        },
+        extractor: "xlsx-v1-from-xls",
+        text: "Lina | 18",
+      },
+      {
+        mediaType: PPT_MEDIA_TYPE,
+        converted: {
+          mediaType: PPTX_MEDIA_TYPE,
+          bytes: buildPptx([{ title: "Cells", lines: ["Made of cells."] }]),
+        },
+        extractor: "pptx-v1-from-ppt",
+        text: "Made of cells.",
+      },
+    ];
+    for (const c of cases) {
+      const result = await readMaterial(
+        {
+          kind: "file",
+          mediaType: c.mediaType,
+          // The original's bytes are never parsed here.
+          bytes: new Uint8Array([0xd0, 0xcf]),
+          converted: c.converted,
+        },
+        deps().deps,
+      );
+      expect(result.outcome).toBe("ready");
+      expect(result.extractor).toBe(c.extractor);
+      expect(result.detail["converted"]).toBe(true);
+      expect(result.chunks.map((chunk) => chunk.body).join("\n")).toContain(
+        c.text,
+      );
+    }
+  });
+
+  test("without a converted copy of the right type it is unreadable", async () => {
+    for (
+      const converted of [
+        null,
+        undefined,
+        { mediaType: XLSX_MEDIA_TYPE, bytes: buildXlsx([]) },
+      ]
+    ) {
+      const result = await readMaterial(
+        {
+          kind: "file",
+          mediaType: DOC_MEDIA_TYPE,
+          bytes: new Uint8Array(),
+          converted,
+        },
+        deps().deps,
+      );
+      expect(result).toMatchObject({
+        outcome: "unsupported",
+        reason: "unreadable_file",
+        extractor: "doc-v1",
+      });
+    }
   });
 });
 

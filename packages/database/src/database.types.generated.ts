@@ -2398,6 +2398,7 @@ export type Database = {
           request_id: string | null;
           school_id: string;
           state: string;
+          variant: string;
         };
         Insert: {
           consumed_at?: string | null;
@@ -2410,6 +2411,7 @@ export type Database = {
           request_id?: string | null;
           school_id: string;
           state?: string;
+          variant?: string;
         };
         Update: {
           consumed_at?: string | null;
@@ -2422,6 +2424,7 @@ export type Database = {
           request_id?: string | null;
           school_id?: string;
           state?: string;
+          variant?: string;
         };
         Relationships: [
           {

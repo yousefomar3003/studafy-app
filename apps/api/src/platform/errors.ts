@@ -159,6 +159,11 @@ const DEFINITIONS: Record<
     title: "Storage unavailable",
     detail: "Private file storage is temporarily unavailable.",
   },
+  PREVIEW_UNAVAILABLE: {
+    title: "Preview unavailable",
+    detail:
+      "This file has no in-app preview yet. It can still be downloaded as it was uploaded.",
+  },
   RECEIPT_INVALID: {
     title: "Purchase could not be verified",
     detail: "The store could not verify this purchase.",

@@ -358,6 +358,7 @@ describe("Fly configs pass production validation", () => {
         "fly.test.api.toml",
         "fly.test.worker.toml",
         "fly.scanner.test.toml",
+        "fly.converter.test.toml",
       ]),
     );
     for (const file of files) {
@@ -500,6 +501,26 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(config.vm).toContainEqual(
       expect.objectContaining({ memory: "2gb" }),
     );
+  });
+
+  test("the document converter is private, restarts itself and is health-checked (DL-078)", async () => {
+    const file = "fly.converter.test.toml";
+    const config = await flyConfig(file);
+    expect(config.app).toBe("studafy-converter-test");
+    expect(config.http_service).toBeUndefined();
+    expect(config.services).toBeUndefined();
+    expect(await Bun.file(file).text()).not.toMatch(
+      /^\s*\[\[?(services|http_service)\b/m,
+    );
+    expect(config.build?.dockerfile).toBe("infra/converter/Dockerfile");
+    expect(config.restart).toContainEqual({ policy: "always" });
+    expect(config.checks?.healthz).toMatchObject({
+      type: "http",
+      port: Number(config.env?.PORT),
+      path: "/healthz",
+    });
+    // Its key is a secret; nothing key-like is written here.
+    expect(Object.keys(config.env ?? {})).not.toContain("CONVERTER_API_KEY");
   });
 
   test("the production scanner is the test scanner under its own name", async () => {

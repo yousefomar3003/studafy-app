@@ -7195,12 +7195,14 @@ class V1DismissMarkingSuggestionResponseDto {
 }
 
 class V1DownloadIntentRequestDto {
-  const V1DownloadIntentRequestDto();
+  const V1DownloadIntentRequestDto({this.variant});
 
   factory V1DownloadIntentRequestDto.fromJson(Map<String, dynamic> json) =>
-      const V1DownloadIntentRequestDto();
+      V1DownloadIntentRequestDto(variant: json['variant'] as String?);
 
-  Map<String, Object?> toJson() => const <String, Object?>{};
+  final String? variant;
+
+  Map<String, Object?> toJson() => {'variant': ?variant};
 }
 
 class V1DownloadIntentResponseDto {

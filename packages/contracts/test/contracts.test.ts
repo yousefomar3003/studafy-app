@@ -119,6 +119,7 @@ describe("problem details contract", () => {
       "PHOTO_NOT_READY",
       "PHOTO_UNREADABLE",
       "PLAN_REQUIRED",
+      "PREVIEW_UNAVAILABLE",
       "PRODUCT_NOT_FOUND",
       "PURCHASE_APPROVAL_RETIRED",
       "RATE_LIMITED",

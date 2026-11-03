@@ -81,12 +81,22 @@ export {
   normalizeDisplayName,
   type ObservedObject,
   type PrivateFileStorage,
+  type RenditionStorage,
   sha256Hex,
   SIGNED_UPLOAD_TTL_SECONDS,
   StorageUnavailableError,
   SupabasePrivateFileStorage,
   type UploadCapability,
 } from "./privateFileStorage";
+export {
+  type ConversionResult,
+  ConverterUnavailableError,
+  type ConvertFrom,
+  type ConvertTo,
+  type DocumentConverter,
+  type DocumentConverterConfig,
+  HttpDocumentConverter,
+} from "./documentConverter";
 export {
   ExternalMalwareScannerClient,
   type ExternalScannerConfig,

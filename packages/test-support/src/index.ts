@@ -62,6 +62,23 @@ export {
   type XlsxSheet,
   type ZipPart,
 } from "./officeFixtures";
+export {
+  biffBoundSheet,
+  biffRecord,
+  buildCfb,
+  buildCfbDetailed,
+  buildDoc,
+  buildPpt,
+  buildXls,
+  type CfbLayout,
+  type CfbNode,
+  cfbSectorOffset,
+  type LegacyOfficeOptions,
+  pptRecord,
+  setCfbFatEntry,
+  wordDocumentStream,
+  workbookStream,
+} from "./cfbFixtures";
 export { buildPdf, type PdfPage } from "./pdfFixtures";
 export {
   DEFAULT_STACK,

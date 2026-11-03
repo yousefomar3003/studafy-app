@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { buildXlsx } from "@studafy/test-support";
+import {
+  buildCfb,
+  buildDoc,
+  buildPpt,
+  buildXls,
+  buildXlsx,
+} from "@studafy/test-support";
 import {
   detectMediaType,
   normalizeDisplayName,
@@ -44,5 +50,20 @@ describe("FILE-050 storage policy", () => {
     expect(detectMediaType(encode("%PDF-1.7\n1 0 obj\n"))).toBe(
       "application/pdf",
     );
+  });
+
+  test("detects old binary Office files by their main stream (DL-078)", () => {
+    expect(detectMediaType(buildDoc())).toBe("application/msword");
+    expect(detectMediaType(buildXls())).toBe("application/vnd.ms-excel");
+    expect(detectMediaType(buildPpt())).toBe("application/vnd.ms-powerpoint");
+    // A compound file that is none of them (an .msg, say) is no type, and
+    // neither is a bare signature.
+    expect(detectMediaType(buildCfb([{ path: ["__substg1.0"], data: "x" }])))
+      .toBeNull();
+    expect(
+      detectMediaType(
+        new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]),
+      ),
+    ).toBeNull();
   });
 });
