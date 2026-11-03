@@ -3500,7 +3500,15 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get childAccountAiOn =>
-      'The AI study tools (AI Tutor, notes, quizzes) are on for this account. You can turn them off at any time on the child\'s card in your account.';
+      'Questions they ask and material they choose go to Together AI, an AI company outside Studafy, to make answers, notes and quizzes. Names are replaced first. You can change this any time on the child\'s card in your account.';
+
+  @override
+  String get childAccountAiAgree =>
+      'Turn on the AI study tools for them (AI Tutor, notes, quizzes and flashcards)';
+
+  @override
+  String get childAccountAiNotOff =>
+      'The AI study tools could not be turned off just now. Turn them off on the child\'s card in your account.';
 
   @override
   String childAccountCreated(String name) {

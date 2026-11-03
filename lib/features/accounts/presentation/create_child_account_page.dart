@@ -8,11 +8,17 @@ import '../domain/device_account.dart';
 ///
 /// The parent accepts the terms for the child here, explicitly: the box has
 /// to be ticked, and the server records it against the published policy.
+///
+/// The AI study tools have a box of their own, unticked, which names the
+/// AI company (App Store 5.1.2(i): explicit permission before personal data
+/// goes to a third-party AI; 2026-11-03). The server turns the tools on for
+/// a new child (DL-074); left unticked, they are turned off at once.
 class CreateChildAccountPage extends StatefulWidget {
   const CreateChildAccountPage({
     super.key,
     required this.create,
     required this.onSwitch,
+    this.turnAiOff,
   });
 
   /// Creates the account; throws [ManagedChildException] when refused.
@@ -21,6 +27,10 @@ class CreateChildAccountPage extends StatefulWidget {
   /// Switches to the new account. The page is closed first.
   final void Function(ManagedChild child) onSwitch;
 
+  /// Turns the AI study tools off for a child just created, when the parent
+  /// did not agree to them. Null where there is no AI consent service.
+  final Future<void> Function(String childId)? turnAiOff;
+
   @override
   State<CreateChildAccountPage> createState() => _CreateChildAccountPageState();
 }
@@ -28,6 +38,8 @@ class CreateChildAccountPage extends StatefulWidget {
 class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
   final _name = TextEditingController();
   bool _consent = false;
+  bool _ai = false;
+  bool _aiNotOff = false;
   bool _busy = false;
   String? _error;
   ManagedChild? _created;
@@ -49,7 +61,22 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
     });
     try {
       final child = await widget.create(_name.text.trim());
-      if (mounted) setState(() => _created = child);
+      var aiNotOff = false;
+      if (!_ai && widget.turnAiOff != null) {
+        try {
+          await widget.turnAiOff!(child.childId);
+        } on Object {
+          // The account exists; the parent is told to turn it off on the
+          // child's card instead.
+          aiNotOff = true;
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _created = child;
+          _aiNotOff = aiNotOff;
+        });
+      }
     } on ManagedChildException catch (error) {
       if (mounted) {
         setState(
@@ -92,6 +119,14 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(l10n.childAccountNextStep, textAlign: TextAlign.center),
+                  if (_aiNotOff) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.childAccountAiNotOff,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () {
@@ -127,14 +162,17 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.childAccountConsent),
                   ),
-                  // DL-074: the AI study tools start on for a child account;
-                  // said here, before the parent creates it.
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      l10n.childAccountAiOn,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                  // The AI study tools: their own box, unticked, naming the
+                  // AI company; optional, so the account never depends on it.
+                  CheckboxListTile(
+                    value: _ai,
+                    onChanged: _busy
+                        ? null
+                        : (value) => setState(() => _ai = value ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.childAccountAiAgree),
+                    subtitle: Text(l10n.childAccountAiOn),
                   ),
                   const SizedBox(height: 12),
                   FilledButton(

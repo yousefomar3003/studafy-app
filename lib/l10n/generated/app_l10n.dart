@@ -5983,11 +5983,23 @@ abstract class AppL10n {
   /// **'Create account'**
   String get childAccountCreate;
 
-  /// Create child: AI tools start on (DL-074).
+  /// Create child: what the AI box means, naming the AI company (App Store 5.1.2(i)).
   ///
   /// In en, this message translates to:
-  /// **'The AI study tools (AI Tutor, notes, quizzes) are on for this account. You can turn them off at any time on the child\'s card in your account.'**
+  /// **'Questions they ask and material they choose go to Together AI, an AI company outside Studafy, to make answers, notes and quizzes. Names are replaced first. You can change this any time on the child\'s card in your account.'**
   String get childAccountAiOn;
+
+  /// Create child: the optional, unticked box that turns the AI study tools on for the child.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on the AI study tools for them (AI Tutor, notes, quizzes and flashcards)'**
+  String get childAccountAiAgree;
+
+  /// Create child: shown when the AI box was left unticked but turning the tools off failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI study tools could not be turned off just now. Turn them off on the child\'s card in your account.'**
+  String get childAccountAiNotOff;
 
   ///
   ///
