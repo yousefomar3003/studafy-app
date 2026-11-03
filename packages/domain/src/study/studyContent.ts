@@ -223,7 +223,15 @@ export function parseQuiz(reply: string): QuizQuestion[] {
 /** The well-formed cards in a flashcards reply. */
 export function parseFlashcards(reply: string): Flashcard[] {
   const list = (parseJsonReply(reply) as { cards?: unknown } | null)?.cards;
-  if (!Array.isArray(list)) return [];
+  const parsed = Array.isArray(list) ? usableCards(list) : [];
+  // The model sometimes writes one card without its opening brace (seen on
+  // the test copy, 2026-11-03: 2 cards kept of 12, so the set failed). Each
+  // complete front/back pair is still recovered on its own.
+  const salvaged = usableCards(cardPairs(reply));
+  return salvaged.length > parsed.length ? salvaged : parsed;
+}
+
+function usableCards(list: unknown[]): Flashcard[] {
   const out: Flashcard[] = [];
   const seen = new Set<string>();
   for (const item of list.slice(0, 30)) {
@@ -240,6 +248,27 @@ export function parseFlashcards(reply: string): Flashcard[] {
     }
     seen.add(normal);
     out.push({ front, back });
+  }
+  return out;
+}
+
+/** Every `"front": "...", "back": "..."` pair in a reply, in order. */
+function cardPairs(reply: string): { front: unknown; back: unknown }[] {
+  const string = String.raw`"((?:[^"\\]|\\.)*)"`;
+  const pair = new RegExp(
+    String.raw`"front"\s*:\s*${string}\s*,\s*"back"\s*:\s*${string}`,
+    "g",
+  );
+  const out: { front: unknown; back: unknown }[] = [];
+  for (const match of reply.matchAll(pair)) {
+    try {
+      out.push({
+        front: JSON.parse(`"${match[1]}"`),
+        back: JSON.parse(`"${match[2]}"`),
+      });
+    } catch {
+      // A string that is not valid JSON is not a card.
+    }
   }
   return out;
 }

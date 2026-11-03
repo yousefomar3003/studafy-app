@@ -32,6 +32,37 @@ describe("study content policy", () => {
     expect(parseFlashcards("{not json")).toEqual([]);
   });
 
+  test("a card missing its opening brace does not lose the rest", () => {
+    // The model's own reply on the test copy (2026-11-03): only the first
+    // two cards parsed as JSON, and the set failed for too few cards.
+    const reply = `{
+  "cards": [
+    { "front": "What process do plants use to make their own food?", "back": "Photosynthesis" },
+    { "front": "Where does photosynthesis take place?", "back": "Chloroplasts" },
+      "front": "Which pigment absorbs light energy?", "back": "Chlorophyll"
+    },
+    { "front": "How does carbon dioxide enter the plant?", "back": "Through the stomata" },
+    { "front": "What are the products?", "back": "Glucose and \\"oxygen\\"" }
+  ]
+}`;
+    const cards = parseFlashcards(reply);
+    expect(cards.map((c) => c.front)).toEqual([
+      "What process do plants use to make their own food?",
+      "Where does photosynthesis take place?",
+      "Which pigment absorbs light energy?",
+      "How does carbon dioxide enter the plant?",
+      "What are the products?",
+    ]);
+    expect(cards[4]!.back).toBe('Glucose and "oxygen"');
+  });
+
+  test("recovered cards keep the same rules: both sides, no repeats", () => {
+    const reply =
+      '{"cards":[{"front":"A","back":"B"},"front":"A","back":"C"},' +
+      '"front":"Same","back":"same"},"front":"D","back":""}';
+    expect(parseFlashcards(reply)).toEqual([{ front: "A", back: "B" }]);
+  });
+
   test("flashcards need both sides", () => {
     const cards = parseFlashcards(JSON.stringify({
       cards: [{ front: "Chlorophyll", back: "The green pigment" }, {

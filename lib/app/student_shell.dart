@@ -265,18 +265,18 @@ class _StudentShellState extends State<StudentShell>
     return false;
   }
 
-  /// What the study tools open. Null in the preview shell, with no study
-  /// service behind it.
+  /// What the study tools open; null in the preview shell (no study service).
   StudentStudyActions? get _actions => switch (widget.study) {
     final study? => StudentStudyActions(
       study: study,
       studyPlans: widget.studyPlans,
+      classes: widget.classes,
+      academic: widget.academic,
     ),
     null => null,
   };
 
-  /// The Subscription row on the student's profile. The plans are the AI
-  /// study tools, so it is there only when they are.
+  /// The profile's Subscription row: the plans are the AI tools, so only then.
   SubscriptionEntry? get _subscription =>
       _aiOn ? _actions?.subscription() : null;
 
