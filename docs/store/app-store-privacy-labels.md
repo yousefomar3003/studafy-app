@@ -66,7 +66,7 @@ These are the boxes to tick, in the form's order. Anything not listed stays unti
 | | Audio Data | **Yes** | Voice notes in messages |
 | | Gameplay Content | No | |
 | | Customer Support | No | There is no in-app support channel. Abuse reports are counted under Other User Content. |
-| | Other User Content | **Yes** | Hand-ins, exam answers, documents, notebooks (personal notes included), AI questions, lessons, announcements, wellbeing notes, reports; teachers' reference answers and AI-suggested marks (DL-073) |
+| | Other User Content | **Yes** | Hand-ins, exam answers, documents, notebooks (personal notes included), AI questions, lessons, announcements, wellbeing notes, reports (including reports of AI answers, DL-076); teachers' reference answers and AI-suggested marks (DL-073) |
 | Browsing History | | No | |
 | Search History | | No | Searches run on the device |
 | Identifiers | User ID | **Yes** | Account ID, Studafy ID |

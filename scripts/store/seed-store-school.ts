@@ -114,7 +114,7 @@ async function recordConsent(token: string, locale: Locale): Promise<void> {
     },
     body: JSON.stringify({
       requested_purpose: "terms_and_privacy",
-      requested_version: "2026-11-02",
+      requested_version: "2026-11-03",
       requested_locale: locale,
     }),
   });

@@ -33,6 +33,18 @@ child account a parent creates now starts with the AI study tools on, and
 students can no longer opt out of AI-suggested marks. This adds section 11
 and changes items 1.2 and 10.1.
 
+**Update 2026-11-03 (DL-081):** the owner published privacy policy 2.0 and
+terms of use 1.8 (consent version `2026-11-03`, for the terms and the AI
+notice), again without waiting. For item 11.1: the create-child screen now
+has a separate, unticked box for the AI study tools that names Together AI
+(the "tick an unticked box" option below, DPIA measure M24); left unticked,
+the app withdraws the agreement the server records when the child is
+created. Please say whether that is enough, or whether the server must
+record the agreement only when the box is ticked. Policy 2.0 also describes
+reports of AI answers (kept 180 days, with the reported text), Excel, CSV
+and older Office files with PDF previews made on our own servers, and
+Vercel and Upstash as processors.
+
 Each item says what the app does now, with the file or decision behind it,
 and the question. Items marked **policy** need a change to privacy policy
 1.4 (`docs/legal/privacy-policy.md`, live in English and Arabic); please

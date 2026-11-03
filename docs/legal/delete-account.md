@@ -1,6 +1,6 @@
 # Delete your Studafy account
 
-**Last updated:** 2 November 2026
+**Last updated:** 3 November 2026
 
 <!--
 Google Play's account deletion URL (docs/store/google-play-data-safety.md,
@@ -55,6 +55,7 @@ one month.
     the notebook or the AI Tutor);
   - delete every suggested mark about your work and, for a teacher, your
     Studafy AI Marking usage;
+  - delete the reports you made about AI answers;
   - remove your email address from invitations.
 
 ## What is kept
