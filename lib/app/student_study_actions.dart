@@ -12,6 +12,7 @@ import '../features/study/presentation/notebook_home_page.dart';
 import '../features/study/presentation/practice_page.dart';
 import '../features/study/presentation/study_plan_copy.dart';
 import '../features/study/presentation/study_plans_page.dart';
+import '../features/study/presentation/study_set_pages.dart';
 import '../features/study/presentation/upgrade_prompt.dart';
 import '../features/study_assistant/domain/study_assistant_repository.dart';
 import '../features/study_assistant/presentation/study_assistant_page.dart';
@@ -26,9 +27,18 @@ import 'material_picker.dart';
 /// The shell lays out tabs; this connects the study feature to the rest of
 /// the app, since only lib/app may reach across features.
 class StudentStudyActions {
-  const StudentStudyActions({required this.study, this.studyPlans});
+  const StudentStudyActions({
+    required this.study,
+    this.studyPlans,
+    this.classes,
+    this.academic,
+  });
 
   final StudyRepository study;
+
+  /// The student's classes and their lessons, for choosing class material.
+  final ClassListInteractor? classes;
+  final AcademicRepository? academic;
 
   /// Buying Studafy Plus / Max. Null without billing.
   final StudyPlanSubscriptionRepository? studyPlans;
@@ -70,11 +80,46 @@ class StudentStudyActions {
     ),
   );
 
+  /// Flashcards or a quiz from Today. A student in a class chooses the
+  /// class, its lessons and their files, as on the Lessons tab (owner,
+  /// 2026-11-03); a student in no class practises from their own notes.
   Future<void> openPractice(
     BuildContext context,
     StudySetKind kind, {
     required bool inClass,
   }) async {
+    final classes = this.classes;
+    final academic = this.academic;
+    if (inClass && classes != null && academic != null) {
+      StudyPlan? plan;
+      try {
+        plan = await study.plan();
+      } on Object {
+        // The server is the authority on the plan; a tap still asks it.
+        plan = null;
+      }
+      if (!context.mounted) return;
+      await openStudySetFromSelection(
+        context,
+        study: study,
+        pick: (context, request) => pickMaterials(
+          context,
+          request,
+          classes: classes,
+          academic: academic,
+          study: study,
+        ),
+        kind: kind,
+        request: MaterialPickRequest(
+          action: kind == StudySetKind.quiz
+              ? MaterialAction.quiz
+              : MaterialAction.flashcards,
+        ),
+        plan: plan,
+        onOpenPlans: () => openPlans(context),
+      );
+      return;
+    }
     await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
         builder: (context) => PracticePage(
