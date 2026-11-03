@@ -72,9 +72,8 @@ no production work is needed. Left:
 Not needed for internal testing:
 - push (C3; the app builds without `google-services.json`);
 - billing (off on the test copy);
-- the App Links SHA-256 in `ops/legal-site/src/app-links.ts`, still
-  `PENDING_PLAY_APP_SIGNING_SHA256`. Join links then open through the
-  `io.studafy.app` scheme instead of verified App Links. Fill it after C1.
+- the App Links SHA-256 in `ops/legal-site/src/app-links.ts`: filled in
+  2026-11-04 with the Play App Signing certificate.
 
 ### (b) Google Play production
 
@@ -168,9 +167,8 @@ Everything in (b) that is not Android-specific, plus the following.
     on production.
 - **Universal Links:** `APPLE_TEAM_ID` in `ops/legal-site/src/app-links.ts`
   is `869AV76RU2` since DL-079; deploy the legal site
-  (`bun run legal:deploy:vercel`). Android's `ANDROID_SHA256` is still a
-  placeholder until the Play App Signing certificate is copied from Play
-  Console.
+  (`bun run legal:deploy:vercel`). Android's `ANDROID_SHA256` is the Play
+  App Signing certificate since 2026-11-04.
 
 **Hands-on check.** The flows on the iPhone with a release build, in
 English and Arabic (2.9).

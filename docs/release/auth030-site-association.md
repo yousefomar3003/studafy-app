@@ -10,11 +10,10 @@ The callback domain is `app.studafy.com` (DL-067). Both files are live
 there, served by the legal site (`docs/deployment/legal-site.md`; the
 Vercel project `studafy-legal` since 2026-11-03) and generated from
 `ops/legal-site/src/app-links.ts`. Since DL-079 the Apple file names the
-real team, `869AV76RU2` (Studafy Limited), with `com.studafy.light`. The
-Android file still has the **placeholder**
-`PENDING_PLAY_APP_SIGNING_SHA256`, which names no real certificate, so
-Android does not verify the domain yet. When the value is known: set it in
-`app-links.ts`, run `bun test ops/legal-site`, then
+real team, `869AV76RU2` (Studafy Limited), with `com.studafy.light`. Since
+2026-11-04 the Android file names the Play App Signing certificate
+(`11:36:E6:…:F3:E8`), so Android verifies the domain. If Play's signing key
+ever changes: set it in `app-links.ts`, run `bun test ops/legal-site`, then
 `bun run legal:deploy:vercel`.
 
 | File | State |

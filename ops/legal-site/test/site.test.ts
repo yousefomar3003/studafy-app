@@ -201,9 +201,14 @@ describe("app-link association files (app.studafy.com)", () => {
       JSON.parse(read(".well-known/apple-app-site-association")).applinks
         .details[0].appIDs,
     ).toEqual(["869AV76RU2.com.studafy.light"]);
-    // Android waits for the Play App Signing certificate.
-    expect(ANDROID_SHA256.startsWith("PENDING")).toBe(true);
-    expect(appLinksPending()).toBe(true);
+    // Android names the Play App Signing certificate (owner, 2026-11-04).
+    expect(
+      JSON.parse(read(".well-known/assetlinks.json"))[0].target
+        .sha256_cert_fingerprints,
+    ).toEqual([
+      "11:36:E6:97:2A:3B:A8:91:A3:8E:71:E6:1D:1C:1D:F0:82:D2:F5:AC:0C:20:E2:70:A4:DF:59:1F:3E:FE:F3:E8",
+    ]);
+    expect(appLinksPending()).toBe(false);
   });
 
   test("identifiers are real values or clearly marked placeholders", () => {
