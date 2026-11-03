@@ -146,8 +146,16 @@ void main() {
       );
       expect(policy.pickerExtensions, containsAll(['docx', 'pptx']));
     }
+    // Old binary Word files: on teacher material (DL-078), never on hand-ins.
     expect(
       AttachmentPolicy.lessonResource.refuse(
+        mediaType: 'application/msword',
+        sizeBytes: 100,
+      ),
+      isNull,
+    );
+    expect(
+      AttachmentPolicy.assignmentSubmission.refuse(
         mediaType: 'application/msword',
         sizeBytes: 100,
       ),
@@ -177,8 +185,16 @@ void main() {
       ),
       AttachmentRefusal.mediaType,
     );
+    // Old binary Excel: on lessons (DL-078), still never on hand-ins.
     expect(
       AttachmentPolicy.lessonResource.refuse(
+        mediaType: 'application/vnd.ms-excel',
+        sizeBytes: 100,
+      ),
+      isNull,
+    );
+    expect(
+      AttachmentPolicy.assignmentSubmission.refuse(
         mediaType: 'application/vnd.ms-excel',
         sizeBytes: 100,
       ),

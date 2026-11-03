@@ -22,10 +22,10 @@ void main() {
     test('Word and PowerPoint on teacher material and on hand-ins', () {
       // ADR-0037: the scan reads their ZIP structure and refuses macros,
       // embedded objects and remote templates. Students hand in what their
-      // teachers attach (2026-10-11). Old binary .doc files and plain ZIPs
-      // are never offered anywhere.
+      // teachers attach (2026-10-11). Plain ZIPs are never offered anywhere;
+      // old binary Office files only on teacher material (DL-078).
       const modern = [AttachmentPolicy.docx, AttachmentPolicy.pptx];
-      const never = ['application/msword', 'application/zip'];
+      const never = ['application/zip'];
       for (final purpose in FilePurpose.values) {
         final policy = AttachmentPolicy.of(purpose);
         final teacherMaterial =
@@ -51,10 +51,7 @@ void main() {
 
     test('Excel and CSV on teacher material only (DL-077)', () {
       const spreadsheets = [AttachmentPolicy.xlsx, AttachmentPolicy.csv];
-      const never = [
-        'application/vnd.ms-excel',
-        'application/vnd.ms-excel.sheet.macroEnabled.12',
-      ];
+      const never = ['application/vnd.ms-excel.sheet.macroEnabled.12'];
       for (final purpose in FilePurpose.values) {
         final policy = AttachmentPolicy.of(purpose);
         final teacherMaterial =
@@ -76,6 +73,35 @@ void main() {
           reason: '${purpose.wireValue} offers .xlsx',
         );
         expect(policy.pickerExtensions.contains('csv'), teacherMaterial);
+      }
+    });
+
+    test('old .doc, .xls and .ppt on teacher material only (DL-078)', () {
+      // The server accepts them for lessons and assignment material, scans
+      // them for macros and reads them through a newer-format copy; hand-ins
+      // and everything else never offer them.
+      const legacy = {
+        AttachmentPolicy.doc: 'doc',
+        AttachmentPolicy.xls: 'xls',
+        AttachmentPolicy.ppt: 'ppt',
+      };
+      for (final purpose in FilePurpose.values) {
+        final policy = AttachmentPolicy.of(purpose);
+        final teacherMaterial =
+            purpose == FilePurpose.lessonResource ||
+            purpose == FilePurpose.assignmentMaterial;
+        legacy.forEach((type, extension) {
+          expect(
+            policy.allowedMediaTypes.contains(type),
+            teacherMaterial,
+            reason: '${purpose.wireValue} and $type',
+          );
+          expect(
+            policy.pickerExtensions.contains(extension),
+            teacherMaterial,
+            reason: '${purpose.wireValue} offers .$extension',
+          );
+        });
       }
     });
 
@@ -123,6 +149,9 @@ void main() {
         AttachmentPolicy.pptx: 'pptx',
         AttachmentPolicy.xlsx: 'xlsx',
         AttachmentPolicy.csv: 'csv',
+        AttachmentPolicy.doc: 'doc',
+        AttachmentPolicy.xls: 'xls',
+        AttachmentPolicy.ppt: 'ppt',
       };
       for (final purpose in FilePurpose.values) {
         final policy = AttachmentPolicy.of(purpose);
