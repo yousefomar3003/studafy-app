@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/ai_consent.dart';
+import '../core/ai_output_report.dart';
 import '../core/device_settings.dart';
 import '../core/file_upload_repository.dart';
 import '../core/locale_controller.dart';
@@ -73,6 +74,7 @@ import '../features/session/data/api_session_repository.dart';
 import '../features/session/data/demo_session_repository.dart';
 import '../features/session/domain/session_repository.dart';
 import '../features/study/data/api_ai_consent_repository.dart';
+import '../features/study/data/api_ai_output_report_repository.dart';
 import '../features/study/data/api_study_repository.dart';
 import '../features/study/data/preview_study_repository.dart';
 import '../features/study/domain/study.dart';
@@ -107,6 +109,7 @@ class AppDependencies {
     this.familyPlus,
     required this.study,
     this.aiConsent,
+    required this.aiOutputReports,
     this.safetyReview,
     required this.account,
     required this.academicApi,
@@ -166,6 +169,9 @@ class AppDependencies {
 
   /// The AI consent (ADR-0043). Null without a backend.
   final AiConsentRepository? aiConsent;
+
+  /// Reporting an AI answer (DL-076), from every AI surface.
+  final AiOutputReporter aiOutputReports;
 
   /// The platform operator's safety-report review (DL-063). Null without a
   /// backend; offered only to an account the server marks as an operator.
@@ -362,6 +368,9 @@ class AppDependencies {
           ? PreviewStudyRepository()
           : ApiStudyRepository(remote.api),
       aiConsent: remote == null ? null : ApiAiConsentRepository(remote.api),
+      aiOutputReports: remote == null
+          ? const PreviewAiOutputReportRepository()
+          : ApiAiOutputReportRepository(remote.api),
       safetyReview: remote == null
           ? null
           : SafetyReviewInteractor(

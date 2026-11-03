@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../../../core/ai_output_report.dart';
 import '../../../core/ai_tokens.dart';
 import '../../../core/ai_usage.dart';
 import '../../../core/attachment_field.dart';
@@ -1503,6 +1504,24 @@ class _Bubble extends StatelessWidget {
                     ),
                   ),
               ],
+              // DL-076: an AI answer can be reported; the student's own
+              // words cannot.
+              if (!mine && canReportAiOutput(context, turn.text))
+                TextButton.icon(
+                  onPressed: () => reportAiOutput(
+                    context,
+                    feature: AiOutputFeature.tutor,
+                    excerpt: turn.text,
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: studafyMuted,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    textStyle: const TextStyle(fontSize: 12),
+                  ),
+                  icon: const Icon(Icons.outlined_flag_rounded, size: 16),
+                  label: Text(l10n.aiReportAction),
+                ),
             ],
           ),
         ),

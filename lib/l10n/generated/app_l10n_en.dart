@@ -8050,4 +8050,48 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get markingPlanAccountDetail => 'Suggested marks for written work';
+
+  @override
+  String get aiReportAction => 'Report';
+
+  @override
+  String get aiReportTooltip => 'Report this AI answer';
+
+  @override
+  String get aiReportTitle => 'Report this AI answer';
+
+  @override
+  String get aiReportIntro =>
+      'Tell us what is wrong with it. Studafy reviews every report, and the report includes the text the AI wrote.';
+
+  @override
+  String get aiReportReason => 'What is the problem?';
+
+  @override
+  String get aiReportReasonOffensive => 'Offensive or inappropriate';
+
+  @override
+  String get aiReportReasonHarmful => 'Harmful or unsafe';
+
+  @override
+  String get aiReportReasonWrong => 'Wrong or misleading';
+
+  @override
+  String get aiReportReasonOther => 'Something else';
+
+  @override
+  String get aiReportDetails => 'Tell us more (optional)';
+
+  @override
+  String get aiReportSend => 'Send';
+
+  @override
+  String get aiReportSent => 'Thanks - we will review it.';
+
+  @override
+  String get aiReportFailed =>
+      'Your report was not sent. Check your connection and try again.';
+
+  @override
+  String get aiReportRetry => 'Try again';
 }

@@ -752,6 +752,15 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Opt one's own work out of AI-suggested marks, or back in: student accounts only.",
   },
+  // DL-076: reporting an AI answer is the person's own, school or not.
+  "output_report.create": {
+    resource: "output_report",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Report an AI answer one was shown, as oneself, with or without a school.",
+  },
   "notebook.read": resource(
     "classroom",
     "Read one's own notebook for a class one is enrolled in.",

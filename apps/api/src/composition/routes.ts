@@ -37,6 +37,10 @@ import {
   createMarkingRoutes,
   PostgresMarkingRepository,
 } from "../marking/routes";
+import {
+  createOutputReportRoutes,
+  PostgresOutputReportRepository,
+} from "../output-reports/routes";
 import { createAiConsentRoutes } from "../study/aiConsentRoutes";
 import { createMessagingSwitch } from "../communications/messagingSwitch";
 import { PostgresMaterialRepository } from "../study/material";
@@ -751,6 +755,15 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // Reporting an AI answer (DL-076), appended last in the catalogue. Not
+  // behind the AI switch: an answer already shown can always be reported.
+  const outputReports = sql && idempotencyDependencies
+    ? createOutputReportRoutes(
+      { reports: new PostgresOutputReportRepository(sql) },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   // DL-061: with messaging off server-wide, in front of every module.
   const messagingSwitch = env.MESSAGING_ENABLED
     ? undefined
@@ -795,6 +808,7 @@ export function buildRoutes(platform: Platform) {
     aiConsent,
     personalNotebook,
     marking,
+    outputReports,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

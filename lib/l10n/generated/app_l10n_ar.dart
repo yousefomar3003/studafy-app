@@ -8057,4 +8057,47 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get markingPlanAccountDetail => 'درجات مقترحة للعمل المكتوب';
+
+  @override
+  String get aiReportAction => 'إبلاغ';
+
+  @override
+  String get aiReportTooltip => 'الإبلاغ عن إجابة الذكاء الاصطناعي هذه';
+
+  @override
+  String get aiReportTitle => 'الإبلاغ عن إجابة الذكاء الاصطناعي هذه';
+
+  @override
+  String get aiReportIntro =>
+      'أخبرنا بما فيها من خطأ. يراجع ستودافاي كل بلاغ، ويتضمن البلاغ النص الذي كتبه الذكاء الاصطناعي.';
+
+  @override
+  String get aiReportReason => 'ما المشكلة؟';
+
+  @override
+  String get aiReportReasonOffensive => 'مسيء أو غير لائق';
+
+  @override
+  String get aiReportReasonHarmful => 'ضار أو غير آمن';
+
+  @override
+  String get aiReportReasonWrong => 'خاطئ أو مضلل';
+
+  @override
+  String get aiReportReasonOther => 'شيء آخر';
+
+  @override
+  String get aiReportDetails => 'أخبرنا بالمزيد (اختياري)';
+
+  @override
+  String get aiReportSend => 'إرسال';
+
+  @override
+  String get aiReportSent => 'شكرًا - سنراجعه.';
+
+  @override
+  String get aiReportFailed => 'لم يُرسل بلاغك. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get aiReportRetry => 'حاول مرة أخرى';
 }

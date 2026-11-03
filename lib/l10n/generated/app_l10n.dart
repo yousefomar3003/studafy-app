@@ -13698,6 +13698,90 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Suggested marks for written work'**
   String get markingPlanAccountDetail;
+
+  /// AI Tutor: the small action under an AI answer that opens the report sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get aiReportAction;
+
+  /// Tooltip of the flag button on AI notes, notebooks, quizzes and flashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this AI answer'**
+  String get aiReportTooltip;
+
+  /// AI report sheet: title.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this AI answer'**
+  String get aiReportTitle;
+
+  /// AI report sheet: what happens to a report.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what is wrong with it. Studafy reviews every report, and the report includes the text the AI wrote.'**
+  String get aiReportIntro;
+
+  /// AI report sheet: heading over the reasons.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the problem?'**
+  String get aiReportReason;
+
+  /// AI report reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Offensive or inappropriate'**
+  String get aiReportReasonOffensive;
+
+  /// AI report reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmful or unsafe'**
+  String get aiReportReasonHarmful;
+
+  /// AI report reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong or misleading'**
+  String get aiReportReasonWrong;
+
+  /// AI report reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get aiReportReasonOther;
+
+  /// AI report sheet: the optional details field.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us more (optional)'**
+  String get aiReportDetails;
+
+  /// AI report sheet: send button.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get aiReportSend;
+
+  /// Snackbar after an AI report was sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks - we will review it.'**
+  String get aiReportSent;
+
+  /// Snackbar when an AI report could not be sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Your report was not sent. Check your connection and try again.'**
+  String get aiReportFailed;
+
+  /// Snackbar action: send the same AI report again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get aiReportRetry;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

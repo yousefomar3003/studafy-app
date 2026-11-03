@@ -31,6 +31,7 @@ import { createSelectionRoutes } from "../../src/study/selectionRoutes";
 import { createAiConsentRoutes } from "../../src/study/aiConsentRoutes";
 import { createPersonalNotebookRoutes } from "../../src/study/personalNotebookRoutes";
 import { createMarkingRoutes } from "../../src/marking/routes";
+import { createOutputReportRoutes } from "../../src/output-reports/routes";
 import { createNotebookRoutes } from "../../src/study/notebookRoutes";
 import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
 import { createFamilyInsightsRoutes } from "../../src/family-insights/routes";
@@ -649,6 +650,14 @@ function routeTable() {
         },
         available: false,
       },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createOutputReportRoutes(
+      { reports: { file: async () => ({ outcome: "invalid" as const }) } },
       authorization,
       idempotency,
     ),

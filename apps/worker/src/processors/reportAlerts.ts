@@ -17,12 +17,30 @@ import { errorFields } from "../platform/jobGuards";
  * the school id. Never the report's text, a name or an account id: the chat
  * is a third party, and the reviewer reads the report through the audited
  * review script under a moderation grant.
+ *
+ * Each pass then does the same for reported AI answers (DL-076,
+ * private.ai_output_alerts_*), whose message carries the report id, the
+ * feature and the reason only.
  */
 export interface ReportAlertRow {
   report_id: string;
   kind: string;
   priority: string;
   school_hash: string;
+  reported_at: Date | string;
+  attempts: number;
+}
+
+/**
+ * DL-076: an AI answer someone reported (private.ai_output_reports). The
+ * same chat hears about it; the message carries the report id, the feature
+ * and the reason. Never the AI output, the reporter's words, a name or an
+ * account id.
+ */
+export interface AiOutputAlertRow {
+  report_id: string;
+  feature: string;
+  reason: string;
   reported_at: Date | string;
   attempts: number;
 }
@@ -54,6 +72,21 @@ export function reportAlertText(
   ].join("\n");
 }
 
+/** The whole message for a reported AI answer. */
+export function aiOutputAlertText(
+  row: AiOutputAlertRow,
+  environment: string,
+): string {
+  return [
+    `AI OUTPUT REPORT Studafy ${environment}: an AI answer was reported.`,
+    `Report: ${row.report_id}`,
+    `AI output: ${row.feature}, reason: ${row.reason}`,
+    `Filed: ${iso(row.reported_at)}`,
+    ...(row.attempts > 1 ? [`(delivery attempt ${row.attempts})`] : []),
+    "Review it in private.ai_output_reports (DL-076).",
+  ].join("\n");
+}
+
 export function startReportAlerts(options: {
   sql: Sql;
   sender: AlertSender;
@@ -75,7 +108,7 @@ export function startReportAlerts(options: {
   let closed = false;
   let running: Promise<number> | null = null;
 
-  const runOnce = async (): Promise<number> => {
+  const runSafetyReports = async (): Promise<number> => {
     const rows = await sql<ReportAlertRow[]>`
       select report_id, kind, priority, school_hash, reported_at, attempts
       from private.report_alerts_claim(${batchSize}, ${leaseSeconds})
@@ -118,6 +151,62 @@ export function startReportAlerts(options: {
       });
     }
     return sent;
+  };
+
+  const runAiOutputReports = async (): Promise<number> => {
+    const rows = await sql<AiOutputAlertRow[]>`
+      select report_id, feature, reason, reported_at, attempts
+      from private.ai_output_alerts_claim(${batchSize}, ${leaseSeconds})
+    `;
+    let sent = 0;
+    for (const row of rows) {
+      if (closed) break;
+      try {
+        await sender.send(aiOutputAlertText(row, environment));
+        await sql`
+          select private.ai_output_alerts_finish(${row.report_id}::uuid, true, null)
+        `;
+        sent += 1;
+        logger.info("ai_output_alert_sent", {
+          report_id: row.report_id,
+          feature: row.feature,
+          attempts: row.attempts,
+        });
+      } catch (error) {
+        const code = error instanceof AlertSendError
+          ? error.code
+          : "SEND_FAILED";
+        await sql`
+          select private.ai_output_alerts_finish(${row.report_id}::uuid, false, ${code})
+        `.catch(() => undefined);
+        logger.error("ai_output_alert_send_failed", {
+          report_id: row.report_id,
+          attempts: row.attempts,
+          error_code: code,
+        });
+      }
+    }
+    if (rows.length > 0 && sent < rows.length) {
+      const [backlog] = await sql<{ backlog: Record<string, number> }[]>`
+        select private.ai_output_alerts_backlog() as backlog
+      `;
+      logger.warn("ai_output_alert_backlog", {
+        unsent: backlog?.backlog.unsent ?? null,
+        oldest_seconds: backlog?.backlog.oldestSeconds ?? null,
+      });
+    }
+    return sent;
+  };
+
+  // Safety reports first; a failing AI-output pass never holds them up.
+  const runOnce = async (): Promise<number> => {
+    const safety = await runSafetyReports();
+    if (closed) return safety;
+    const aiOutput = await runAiOutputReports().catch((error) => {
+      logger.error("ai_output_alert_poll_failed", { ...errorFields(error) });
+      return 0;
+    });
+    return safety + aiOutput;
   };
 
   const tick = () => {

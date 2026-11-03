@@ -3074,6 +3074,18 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1ReportAiOutputResponseDto> reportAiOutput(
+    V1ReportAiOutputRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1ReportAiOutputResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/output-reports', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -11955,6 +11967,53 @@ class V1ReportDto {
     'version': version,
     'events': events,
   };
+}
+
+class V1ReportAiOutputRequestDto {
+  const V1ReportAiOutputRequestDto({
+    required this.feature,
+    required this.reason,
+    this.details,
+    required this.excerpt,
+  });
+
+  factory V1ReportAiOutputRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ReportAiOutputRequestDto(
+        feature: json['feature'] as String,
+        reason: json['reason'] as String,
+        details: json['details'] as String?,
+        excerpt: json['excerpt'] as String,
+      );
+
+  final String feature;
+  final String reason;
+  final String? details;
+  final String excerpt;
+
+  Map<String, Object?> toJson() => {
+    'feature': feature,
+    'reason': reason,
+    'details': ?details,
+    'excerpt': excerpt,
+  };
+}
+
+class V1ReportAiOutputResponseDto {
+  const V1ReportAiOutputResponseDto({
+    required this.id,
+    required this.createdAt,
+  });
+
+  factory V1ReportAiOutputResponseDto.fromJson(Map<String, dynamic> json) =>
+      V1ReportAiOutputResponseDto(
+        id: json['id'] as String,
+        createdAt: json['createdAt'] as String,
+      );
+
+  final String id;
+  final String createdAt;
+
+  Map<String, Object?> toJson() => {'id': id, 'createdAt': createdAt};
 }
 
 class V1ReportLifecycleRequestDto {

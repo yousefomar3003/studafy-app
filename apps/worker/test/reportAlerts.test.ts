@@ -4,6 +4,8 @@ import { type AlertSender, AlertSendError } from "@studafy/infrastructure";
 import { createJsonLogger } from "@studafy/observability";
 import { LogCollector } from "@studafy/test-support";
 import {
+  type AiOutputAlertRow,
+  aiOutputAlertText,
   type ReportAlertRow,
   reportAlertText,
   startReportAlerts,
@@ -18,11 +20,38 @@ const row = (id: string, attempts = 1): ReportAlertRow => ({
   attempts,
 });
 
-/** Answers the three SQL calls the processor makes, and records them. */
-function fakeSql(claims: ReportAlertRow[][]) {
+const aiRow = (id: string, attempts = 1): AiOutputAlertRow => ({
+  report_id: id,
+  feature: "tutor",
+  reason: "offensive",
+  reported_at: new Date("2026-11-03T09:30:00Z"),
+  attempts,
+});
+
+/** Answers the SQL calls the processor makes, and records them. */
+function fakeSql(
+  claims: ReportAlertRow[][],
+  aiClaims: AiOutputAlertRow[][] | Error = [],
+) {
   const finished: { id: string; sent: boolean; error: string | null }[] = [];
+  const aiFinished: { id: string; sent: boolean; error: string | null }[] = [];
   const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
     const text = strings.join("?");
+    if (text.includes("ai_output_alerts_claim")) {
+      if (aiClaims instanceof Error) return Promise.reject(aiClaims);
+      return Promise.resolve(aiClaims.shift() ?? []);
+    }
+    if (text.includes("ai_output_alerts_finish")) {
+      aiFinished.push({
+        id: String(values[0]),
+        sent: text.includes("true"),
+        error: text.includes("true") ? null : String(values[1]),
+      });
+      return Promise.resolve([{ ai_output_alerts_finish: true }]);
+    }
+    if (text.includes("ai_output_alerts_backlog")) {
+      return Promise.resolve([{ backlog: { unsent: 1, oldestSeconds: 7 } }]);
+    }
     if (text.includes("report_alerts_claim")) {
       return Promise.resolve(claims.shift() ?? []);
     }
@@ -39,7 +68,7 @@ function fakeSql(claims: ReportAlertRow[][]) {
     }
     return Promise.reject(new Error(`unexpected SQL: ${text}`));
   }) as unknown as Sql;
-  return { sql, finished };
+  return { sql, finished, aiFinished };
 }
 
 function sender(fail: (text: string) => boolean = () => false) {
@@ -115,4 +144,83 @@ test("a failed send is recorded with its code and the backlog is logged", async 
   expect(log).toContain("report_alert_send_failed");
   expect(log).toContain("TELEGRAM_REFUSED_502");
   expect(log).toContain("report_alert_backlog");
+});
+
+test("a reported AI answer's message carries id, feature and reason only", () => {
+  const text = aiOutputAlertText(aiRow("ai-1"), "production");
+  expect(text).toContain("AI OUTPUT REPORT Studafy production");
+  expect(text).toContain("Report: ai-1");
+  expect(text).toContain("AI output: tutor, reason: offensive");
+  expect(text).toContain("Filed: 2026-11-03 09:30 UTC");
+  expect(text).not.toContain("attempt");
+  expect(aiOutputAlertText(aiRow("ai-1", 2), "production")).toContain(
+    "(delivery attempt 2)",
+  );
+});
+
+test("reported AI answers are sent after the safety reports, once each", async () => {
+  const { sql, finished, aiFinished } = fakeSql(
+    [[], [row("r-1")]],
+    [[], [aiRow("ai-1")]],
+  );
+  const telegram = sender();
+  const runtime = startReportAlerts({
+    sql,
+    sender: telegram.value,
+    logger: createJsonLogger("worker", "test", "error"),
+    environment: "production",
+    intervalMs: 60_000,
+  });
+  await Bun.sleep(0);
+  expect(await runtime.runOnce()).toBe(2);
+  await runtime.close();
+  expect(telegram.sent.map((text) => text.split("\n")[0])).toEqual([
+    "SAFETY REPORT Studafy production: a new report needs review.",
+    "AI OUTPUT REPORT Studafy production: an AI answer was reported.",
+  ]);
+  expect(finished).toEqual([{ id: "r-1", sent: true, error: null }]);
+  expect(aiFinished).toEqual([{ id: "ai-1", sent: true, error: null }]);
+});
+
+test("a failed AI-output send is recorded with its code", async () => {
+  const { sql, aiFinished } = fakeSql([[], []], [[], [aiRow("ai-1")]]);
+  const telegram = sender(() => true);
+  const collector = new LogCollector();
+  const runtime = startReportAlerts({
+    sql,
+    sender: telegram.value,
+    logger: createJsonLogger("worker", "test", "debug", collector.sink),
+    environment: "production",
+    intervalMs: 60_000,
+  });
+  await Bun.sleep(0);
+  expect(await runtime.runOnce()).toBe(0);
+  await runtime.close();
+  expect(aiFinished).toEqual([
+    { id: "ai-1", sent: false, error: "TELEGRAM_REFUSED_502" },
+  ]);
+  expect(collector.events()).toContain("ai_output_alert_send_failed");
+  expect(collector.events()).toContain("ai_output_alert_backlog");
+});
+
+test("a failing AI-output pass is logged and never stops the safety reports", async () => {
+  const { sql, finished } = fakeSql(
+    [[], [row("r-1")]],
+    new Error("relation missing"),
+  );
+  const telegram = sender();
+  const collector = new LogCollector();
+  const runtime = startReportAlerts({
+    sql,
+    sender: telegram.value,
+    logger: createJsonLogger("worker", "test", "debug", collector.sink),
+    environment: "production",
+    intervalMs: 60_000,
+  });
+  await Bun.sleep(0);
+  expect(await runtime.runOnce()).toBe(1);
+  await runtime.close();
+  expect(finished).toEqual([{ id: "r-1", sent: true, error: null }]);
+  expect(collector.events()).toContain("ai_output_alert_poll_failed");
+  expect(collector.lines.join("\n")).not.toContain("relation missing");
 });
