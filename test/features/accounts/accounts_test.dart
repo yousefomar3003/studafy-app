@@ -118,12 +118,75 @@ void main() {
     Widget page({
       required Future<ManagedChild> Function(String) create,
       void Function(ManagedChild)? onSwitch,
+      Future<void> Function(String)? turnAiOff,
     }) => localizedApp(
       home: CreateChildAccountPage(
         create: create,
         onSwitch: onSwitch ?? (_) {},
+        turnAiOff: turnAiOff,
       ),
     );
+
+    final terms = find.textContaining('legal guardian');
+    final ai = find.textContaining('Turn on the AI study tools');
+
+    Future<ManagedChild> sara(String name) async => ManagedChild(
+      childId: 'c',
+      displayName: name,
+      createdAt: DateTime(2026, 9, 28),
+    );
+
+    testWidgets('the AI tools are a separate, unticked choice naming the '
+        'AI company, and left unticked they are turned off', (tester) async {
+      final turnedOff = <String>[];
+      await tester.pumpWidget(
+        page(create: sara, turnAiOff: (id) async => turnedOff.add(id)),
+      );
+      expect(find.textContaining('Together AI'), findsOne);
+      final boxes = tester.widgetList<CheckboxListTile>(
+        find.byType(CheckboxListTile),
+      );
+      expect(boxes.map((b) => b.value), [false, false]);
+
+      await tester.enterText(find.byType(TextField), 'Sara');
+      await tester.tap(terms);
+      await tester.pump();
+      await tester.tap(find.text('Create account'));
+      await tester.pumpAndSettle();
+
+      expect(turnedOff, ['c']);
+      expect(find.text("Sara's account is ready."), findsOne);
+    });
+
+    testWidgets('ticked, the AI tools stay on', (tester) async {
+      final turnedOff = <String>[];
+      await tester.pumpWidget(
+        page(create: sara, turnAiOff: (id) async => turnedOff.add(id)),
+      );
+      await tester.enterText(find.byType(TextField), 'Sara');
+      await tester.tap(terms);
+      await tester.tap(ai);
+      await tester.pump();
+      await tester.tap(find.text('Create account'));
+      await tester.pumpAndSettle();
+
+      expect(turnedOff, isEmpty);
+    });
+
+    testWidgets('if the tools cannot be turned off, the parent is told where '
+        'to do it', (tester) async {
+      await tester.pumpWidget(
+        page(create: sara, turnAiOff: (_) async => throw StateError('down')),
+      );
+      await tester.enterText(find.byType(TextField), 'Sara');
+      await tester.tap(terms);
+      await tester.pump();
+      await tester.tap(find.text('Create account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Sara's account is ready."), findsOne);
+      expect(find.textContaining('could not be turned off'), findsOne);
+    });
 
     testWidgets('needs a name and the parent accepting the terms for them', (
       tester,
@@ -147,7 +210,7 @@ void main() {
       await tester.pump();
       expect(names, isEmpty);
 
-      await tester.tap(find.byType(Checkbox));
+      await tester.tap(terms);
       await tester.pump();
       await tester.tap(find.text('Create account'));
       await tester.pumpAndSettle();
@@ -166,7 +229,7 @@ void main() {
         ),
       );
       await tester.enterText(find.byType(TextField), 'Sara');
-      await tester.tap(find.byType(Checkbox));
+      await tester.tap(find.textContaining('legal guardian'));
       await tester.pump();
       await tester.tap(find.text('Create account'));
       await tester.pumpAndSettle();

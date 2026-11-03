@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/ai_consent.dart';
 import '../../core/app_routes.dart';
 import '../../core/device_settings.dart';
 import '../../core/feedback.dart';
@@ -117,10 +118,16 @@ Future<void> openCreateChildAccount(
   DeviceAccountSwitcher switcher,
 ) async {
   final locale = Localizations.localeOf(context).languageCode;
+  final aiConsent = AiConsentGate.instance.repository;
   await Navigator.of(context).pushOnce(
     MaterialPageRoute<void>(
       builder: (_) => CreateChildAccountPage(
         create: (name) => switcher.createChild(name, locale: locale),
+        turnAiOff: aiConsent == null
+            ? null
+            : (childId) async {
+                await aiConsent.withdraw(childId: childId);
+              },
         onSwitch: (child) {
           final account = switcher.accounts
               .where((a) => a.userId == child.childId)
