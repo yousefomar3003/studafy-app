@@ -7,6 +7,7 @@ import '../../../core/attachment_policy.dart';
 import '../../../core/feedback.dart';
 import '../../../core/inline_photo.dart';
 import '../../../core/navigation.dart';
+import '../../../core/photo_normaliser.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/user_content_text.dart';
@@ -710,7 +711,13 @@ Future<NotebookEntry?> notesFromPhoto(
     await upgrade(UpgradeReason.feature, plan);
     return null;
   }
-  final picked = await pickPhoto(kind, AttachmentPolicy.assistantAttachment);
+  final PickedAttachment? picked;
+  try {
+    picked = await pickPhoto(kind, AttachmentPolicy.assistantAttachment);
+  } on PhotoConversionFailed {
+    messenger.showMessage(l10n.photoConvertFailed);
+    return null;
+  }
   if (picked == null || !context.mounted) return null;
   final photo = InlinePhoto.fromBytes(picked.bytes, named: picked.mediaType);
   if (photo.problem != null) {

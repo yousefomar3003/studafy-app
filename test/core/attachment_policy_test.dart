@@ -113,13 +113,46 @@ void main() {
     });
 
     test('picker extensions never drift from the media types', () {
+      const primary = {
+        'application/pdf': 'pdf',
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp',
+        'audio/mp4': 'm4a',
+        AttachmentPolicy.docx: 'docx',
+        AttachmentPolicy.pptx: 'pptx',
+        AttachmentPolicy.xlsx: 'xlsx',
+        AttachmentPolicy.csv: 'csv',
+      };
       for (final purpose in FilePurpose.values) {
         final policy = AttachmentPolicy.of(purpose);
+        for (final type in policy.allowedMediaTypes) {
+          expect(
+            policy.pickerExtensions,
+            contains(primary[type]),
+            reason: '${purpose.wireValue} has no extension for $type',
+          );
+        }
         expect(
+          policy.pickerExtensions.toSet().length,
           policy.pickerExtensions.length,
-          policy.allowedMediaTypes.length,
-          reason: '${purpose.wireValue} has a type with no extension mapping',
+          reason: '${purpose.wireValue} lists an extension twice',
         );
+      }
+    });
+
+    test('where photos go, HEIC, HEIF and WebP are offered too', () {
+      // They become a JPEG on the device before upload.
+      for (final purpose in FilePurpose.values) {
+        final policy = AttachmentPolicy.of(purpose);
+        final photos = policy.allowedMediaTypes.contains('image/jpeg');
+        for (final extension in const ['jpeg', 'heic', 'heif', 'webp']) {
+          expect(
+            policy.pickerExtensions.contains(extension),
+            photos,
+            reason: '${purpose.wireValue} and .$extension',
+          );
+        }
       }
     });
   });

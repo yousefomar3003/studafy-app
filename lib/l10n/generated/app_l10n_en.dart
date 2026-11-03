@@ -8110,4 +8110,33 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get aiReportRetry => 'Try again';
+
+  @override
+  String get viewerShareOrOpen => 'Share or open in another app';
+
+  @override
+  String get viewerOpenElsewhere => 'Open in another app';
+
+  @override
+  String get viewerCouldNotShow => 'This file could not be shown';
+
+  @override
+  String get viewerCouldNotShowHint => 'You can still open it in another app.';
+
+  @override
+  String get viewerLoading => 'Opening the file';
+
+  @override
+  String viewerPageIndicator(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String viewerPageOf(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get photoConvertFailed =>
+      'This photo could not be prepared for sending. Try another one, or take a screenshot of it and send that.';
 }

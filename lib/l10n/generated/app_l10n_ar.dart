@@ -8116,4 +8116,33 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get aiReportRetry => 'حاول مرة أخرى';
+
+  @override
+  String get viewerShareOrOpen => 'مشاركة أو فتح في تطبيق آخر';
+
+  @override
+  String get viewerOpenElsewhere => 'فتح في تطبيق آخر';
+
+  @override
+  String get viewerCouldNotShow => 'تعذّر عرض هذا الملف';
+
+  @override
+  String get viewerCouldNotShowHint => 'لا يزال بإمكانك فتحه في تطبيق آخر.';
+
+  @override
+  String get viewerLoading => 'جارٍ فتح الملف';
+
+  @override
+  String viewerPageIndicator(int current, int total) {
+    return '$current من $total';
+  }
+
+  @override
+  String viewerPageOf(int current, int total) {
+    return 'الصفحة $current من $total';
+  }
+
+  @override
+  String get photoConvertFailed =>
+      'تعذّر تجهيز هذه الصورة للإرسال. جرّب صورة أخرى، أو التقط لقطة شاشة لها وأرسلها.';
 }

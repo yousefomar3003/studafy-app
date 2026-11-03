@@ -67,6 +67,14 @@ dependencies:
   # publisher); images are never fetched and links go through
   # confirmAndOpenLink - see helper_answer_text.dart.
   flutter_markdown_plus: ^1.0.12
+  # PDFs open inside the app (document_viewer.dart). MIT, drawn with
+  # PDFium (BSD-3-Clause) on iOS and Android alike; needs iOS 15, which the
+  # app already targets. Swift Package Manager on iOS, no CocoaPods.
+  pdfrx: ^2.11.0
+  # Every photo becomes a JPEG on the device before upload
+  # (photo_normaliser.dart): HEIC, HEIF, WebP and the rest are decoded by the
+  # platform itself. MIT; Swift Package Manager on iOS.
+  flutter_image_compress: ^2.5.1
 
 # path_provider_foundation 2.6.0 calls into iOS through package:objective_c,
 # which in debug builds checks every native object by listing all of the

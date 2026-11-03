@@ -115,21 +115,30 @@ class AttachmentPolicy {
 
   /// The extensions to hand a file picker, derived from the media types so
   /// the two can never disagree.
-  List<String> get pickerExtensions => [
+  ///
+  /// Where photos are accepted, the picker also offers the photo formats a
+  /// phone saves that the server does not store - HEIC, HEIF and WebP: the
+  /// app turns those into a JPEG before anything is sent
+  /// (photo_normaliser.dart).
+  List<String> get pickerExtensions => {
     for (final type in allowedMediaTypes)
-      switch (type) {
-        'application/pdf' => 'pdf',
-        'image/jpeg' => 'jpg',
-        'image/png' => 'png',
-        'image/webp' => 'webp',
-        'audio/mp4' => 'm4a',
-        docx => 'docx',
-        pptx => 'pptx',
-        xlsx => 'xlsx',
-        csv => 'csv',
-        _ => '',
+      ...switch (type) {
+        'application/pdf' => const ['pdf'],
+        'image/jpeg' => const ['jpg', 'jpeg', ...convertedPhotoExtensions],
+        'image/png' => const ['png'],
+        'image/webp' => const ['webp'],
+        'audio/mp4' => const ['m4a'],
+        docx => const ['docx'],
+        pptx => const ['pptx'],
+        xlsx => const ['xlsx'],
+        csv => const ['csv'],
+        _ => const <String>[],
       },
-  ]..removeWhere((value) => value.isEmpty);
+  }.toList();
+
+  /// Photo formats offered by the picker and converted to JPEG on the device
+  /// before upload.
+  static const convertedPhotoExtensions = ['heic', 'heif', 'webp'];
 
   AttachmentRefusal? refuse({
     required String mediaType,

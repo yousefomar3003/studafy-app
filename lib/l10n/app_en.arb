@@ -4009,5 +4009,33 @@
   "aiReportFailed": "Your report was not sent. Check your connection and try again.",
   "@aiReportFailed": {"description": "Snackbar when an AI report could not be sent."},
   "aiReportRetry": "Try again",
-  "@aiReportRetry": {"description": "Snackbar action: send the same AI report again."}
+  "@aiReportRetry": {"description": "Snackbar action: send the same AI report again."},
+  "viewerShareOrOpen": "Share or open in another app",
+  "@viewerShareOrOpen": {"description": "Document viewer: tooltip of the app bar action that shares the file or opens it in another app."},
+  "viewerOpenElsewhere": "Open in another app",
+  "@viewerOpenElsewhere": {"description": "Document viewer: button under the error, sends the file to another app."},
+  "viewerCouldNotShow": "This file could not be shown",
+  "@viewerCouldNotShow": {"description": "Document viewer: title of the error shown when a PDF cannot be drawn."},
+  "viewerCouldNotShowHint": "You can still open it in another app.",
+  "@viewerCouldNotShowHint": {"description": "Document viewer: line under the error title."},
+  "viewerLoading": "Opening the file",
+  "@viewerLoading": {"description": "Document viewer: spoken label of the spinner while a PDF opens."},
+  "viewerPageIndicator": "{current} / {total}",
+  "@viewerPageIndicator": {
+    "description": "Document viewer: the page shown and the number of pages, on a small label at the bottom (\"3 / 12\").",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "viewerPageOf": "Page {current} of {total}",
+  "@viewerPageOf": {
+    "description": "Document viewer: what a screen reader says for the page label.",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "photoConvertFailed": "This photo could not be prepared for sending. Try another one, or take a screenshot of it and send that.",
+  "@photoConvertFailed": {"description": "A photo (for example HEIC) the phone could not turn into a JPEG before upload."}
 }

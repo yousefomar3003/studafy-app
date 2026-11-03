@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../l10n/generated/app_l10n.dart';
 import 'attachment_policy.dart';
+import 'document_viewer.dart';
 import 'failures.dart';
 import 'feedback.dart';
 import 'file_upload_repository.dart';
@@ -17,16 +18,18 @@ import 'uploads_scope.dart';
 
 /// Shows [file] to the person who tapped it.
 ///
-/// A photo opens in the app. Anything else goes to the system share sheet,
-/// which on iOS previews a PDF and offers to keep it in Files - the app has
-/// no document viewer of its own, and a half-working one is worse than the
-/// platform's. Android's share sheet only sends a file on, so there it opens
-/// in an app that views its type (a PDF reader, Docs, Slides, Sheets) first,
-/// and falls back to the share sheet when the phone has none.
+/// A photo opens in the app, and so does a PDF (2026-11-03): full screen,
+/// with pinch to zoom, the page number, and "Share or open in another app"
+/// for whoever wants it in Files, Books or a PDF reader
+/// (document_viewer.dart). Anything else - Word, PowerPoint, Excel, CSV -
+/// goes on with [shareDownloadedFile]: to the system share sheet, which on
+/// iOS previews it and offers to keep it in Files, and on Android first to
+/// an app that views its type (Docs, Slides, Sheets).
 ///
 /// Nothing is written to a place the app keeps: the bytes are fetched on a
-/// single-use grant and handed straight on (on Android through the cache
-/// folder, which the system may clear and the next opened file replaces).
+/// single-use grant and shown from memory or handed straight on (on Android
+/// through the cache folder, which the system may clear and the next opened
+/// file replaces).
 typedef AttachmentPresenter = Future<void> Function(
   BuildContext context,
   DownloadedFile file,
@@ -34,8 +37,9 @@ typedef AttachmentPresenter = Future<void> Function(
 
 Future<void> presentDownloadedFile(
   BuildContext context,
-  DownloadedFile file,
-) async {
+  DownloadedFile file, {
+  PdfRendererBuilder pdfRenderer = pdfiumRenderer,
+}) async {
   if (file.isImage) {
     await Navigator.of(context).pushOnce<void>(
       MaterialPageRoute<void>(
@@ -50,6 +54,22 @@ Future<void> presentDownloadedFile(
     );
     return;
   }
+  if (file.isPdf) {
+    await presentPdfDocument(
+      context,
+      title: file.displayName,
+      bytes: file.bytes,
+      onShare: () => shareDownloadedFile(file),
+      renderer: pdfRenderer,
+    );
+    return;
+  }
+  await shareDownloadedFile(file);
+}
+
+/// Hands [file] to another app: on Android one that views its type, when
+/// the phone has one; otherwise, and always on iOS, the system share sheet.
+Future<void> shareDownloadedFile(DownloadedFile file) async {
   final name = sharedFileName(file.displayName, file.mediaType);
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     if (await openWithAndroidViewer(file, name)) return;
