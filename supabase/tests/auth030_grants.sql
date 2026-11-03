@@ -54,6 +54,9 @@ select is(
    where n.nspname = 'private'
      and has_function_privilege('studafy_api_runtime', p.oid, 'execute')),
   array[
+    -- DL-076: reporting an AI answer, as the caller, who must be an active
+    -- account; it stores the report and completes the idempotency record.
+    'ai_output_report_file',
     'api041_command',
     'api041_query',
     'api042_command',

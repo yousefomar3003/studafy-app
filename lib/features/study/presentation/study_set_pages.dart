@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/ai_output_report.dart';
 import '../../../core/feedback.dart';
 import '../../../core/material_selection.dart';
 import '../../../core/material_unavailable_dialog.dart';
@@ -525,7 +526,15 @@ class _QuizPageState extends State<QuizPage> {
     final count = widget.questions.length;
     final all = _answers.length == count;
     return Scaffold(
-      appBar: AppBar(title: UserContentText(widget.title)),
+      appBar: AppBar(
+        title: UserContentText(widget.title),
+        actions: [
+          AiOutputReportButton(
+            feature: AiOutputFeature.quiz,
+            excerpt: () => quizText(widget.questions),
+          ),
+        ],
+      ),
       body: ListView(
         controller: _scroll,
         padding: const EdgeInsets.all(16),
@@ -848,7 +857,17 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
     final theme = Theme.of(context);
     final count = _deck.length;
     return Scaffold(
-      appBar: AppBar(title: UserContentText(widget.title)),
+      appBar: AppBar(
+        title: UserContentText(widget.title),
+        actions: [
+          // The card on screen, or the whole deck once it is done.
+          AiOutputReportButton(
+            feature: AiOutputFeature.flashcards,
+            excerpt: () =>
+                flashcardsText(_done ? widget.cards : [_deck[_index]]),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -1089,3 +1108,20 @@ class MadeFromLine extends StatelessWidget {
     ),
   );
 }
+
+/// A quiz as plain text, for a report of it (DL-076): each question, its
+/// choices, the answer and the explanation the AI wrote.
+String quizText(List<QuizQuestion> questions) => [
+  for (final (i, q) in questions.indexed)
+    [
+      '${i + 1}. ${q.question}',
+      for (final option in q.options) '- $option',
+      if (q.answerIndex >= 0 && q.answerIndex < q.options.length)
+        '= ${q.options[q.answerIndex]}',
+      if (q.explanation.trim().isNotEmpty) q.explanation,
+    ].join('\n'),
+].join('\n\n');
+
+/// Flashcards as plain text, for a report of them (DL-076).
+String flashcardsText(List<Flashcard> cards) =>
+    [for (final card in cards) '${card.front}\n${card.back}'].join('\n\n');

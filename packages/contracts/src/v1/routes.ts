@@ -44,6 +44,7 @@ import * as MaterialSelection from "./materialSelection";
 import * as ManagedAccounts from "./managedAccounts";
 import * as AiConsent from "./aiConsent";
 import * as Marking from "./marking";
+import * as OutputReports from "./outputReports";
 
 export interface V1RouteContract {
   method: "get" | "post";
@@ -2335,6 +2336,19 @@ export const V1_ROUTE_CATALOGUE = [
     Marking.V1MarkingPreference,
     "V1MarkingPreference",
     200,
+  ),
+  // Reporting an AI answer (DL-076, store policy). Appended. Any signed-in
+  // account files one for itself, school or not; the path avoids the word
+  // the AI-072 route check forbids.
+  cataloguePost(
+    "reportAiOutput",
+    "/v1/me/output-reports",
+    "output_report.create",
+    OutputReports.V1ReportAiOutputRequest,
+    "V1ReportAiOutputRequest",
+    OutputReports.V1ReportAiOutputResponse,
+    "V1ReportAiOutputResponse",
+    201,
   ),
 ] as const satisfies readonly V1RouteContract[];
 

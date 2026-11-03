@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/ai_output_report.dart';
 import '../../../core/feedback.dart';
 import '../../../core/navigation.dart';
 import '../../../core/studafy_design.dart';
@@ -122,6 +123,16 @@ class _NotePageState extends State<NotePage> {
     }
   }
 
+  /// Written by the AI from a photo or a lesson (DL-076): it can be
+  /// reported. A note the student typed cannot.
+  bool get _aiWritten => _entry.fromWhiteboard || _entry.fromLesson;
+
+  void _report() => reportAiOutput(
+    context,
+    feature: AiOutputFeature.notes,
+    excerpt: '${_entry.title}\n\n${_entry.body}',
+  );
+
   List<Widget> _actions(AppL10n l10n) => [
     IconButton(
       tooltip: l10n.nbEdit,
@@ -132,6 +143,7 @@ class _NotePageState extends State<NotePage> {
       onSelected: (value) => switch (value) {
         'rename' => _rename(),
         'practise' => widget.onPractise?.call(_entry),
+        'report' => _report(),
         _ => _delete(),
       },
       itemBuilder: (_) => [
@@ -148,6 +160,14 @@ class _NotePageState extends State<NotePage> {
             child: ListTile(
               leading: const Icon(Icons.style_outlined),
               title: Text(l10n.nbPractise),
+            ),
+          ),
+        if (_aiWritten && canReportAiOutput(context, _entry.body))
+          PopupMenuItem(
+            value: 'report',
+            child: ListTile(
+              leading: const Icon(Icons.outlined_flag_rounded),
+              title: Text(l10n.aiReportTooltip),
             ),
           ),
         PopupMenuItem(

@@ -17,6 +17,7 @@ import 'app/session_scope.dart';
 import 'app/studafy_theme.dart';
 import 'app/student_shell.dart';
 import 'app/teacher_shell.dart';
+import 'core/ai_output_report.dart';
 import 'core/app_routes.dart';
 import 'core/crash_reports.dart';
 import 'core/locale_controller.dart';
@@ -242,7 +243,11 @@ class StudafyApp extends StatelessWidget {
                         interactor: deps.messaging,
                         child: FamilyScope(
                           interactor: deps.family,
-                          child: content,
+                          // DL-076: every AI answer can be reported.
+                          child: AiOutputReportScope(
+                            reporter: deps.aiOutputReports,
+                            child: content,
+                          ),
                         ),
                       ),
                     ),

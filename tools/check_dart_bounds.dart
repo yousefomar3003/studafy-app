@@ -105,6 +105,9 @@ const _coreAllowlist = <String>[
   // The AI consent (ADR-0043): its notice, version and the one prompt the
   // study and helper slices show before a first AI use.
   'core/ai_consent.dart',
+  // Reporting an AI answer (DL-076): one port, sheet and Report action for
+  // the AI Tutor, notes, notebooks, quizzes and flashcards.
+  'core/ai_output_report.dart',
   'core/coursework_models.dart',
   'core/coursework_attachments.dart',
   'core/voice_note.dart',

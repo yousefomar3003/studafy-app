@@ -122,3 +122,4 @@ export * from "./materialSelection";
 export * from "./managedAccounts";
 export * from "./aiConsent";
 export * from "./marking";
+export * from "./outputReports";

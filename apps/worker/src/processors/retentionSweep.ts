@@ -162,6 +162,13 @@ const RETENTION_STEPS = [
       sql<{ counts: Record<string, number> }[]>`
     select private.retention_expire_helper_photos(5000) as counts`,
   },
+  // Reported AI answers, 180 days after they were filed (DL-076).
+  {
+    name: "ai_output_reports",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.ai_output_reports_purge(5000) as counts`,
+  },
 ] as const;
 
 /**

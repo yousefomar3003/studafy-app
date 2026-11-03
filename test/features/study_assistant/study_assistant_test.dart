@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:studafy/core/ai_output_report.dart';
 import 'package:studafy/core/attachment_field.dart';
 import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/file_upload_repository.dart';
@@ -762,6 +763,52 @@ void main() {
       expect(await store.chats(), isEmpty);
     });
   });
+
+  testWidgets('an answer can be reported; the student\'s question cannot', (
+    tester,
+  ) async {
+    // DL-076: the store policies ask for a way to flag an AI answer.
+    final reports = _Reports();
+    await tester.pumpWidget(
+      localizedApp(
+        scopes: (child) => AiOutputReportScope(reporter: reports, child: child),
+        home: StudyAssistantPage(
+          assistant: StudyAssistantInteractor(
+            repository: _Recording(),
+            telemetry: const NoopTelemetry(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Report'), findsNothing);
+
+    await ask(tester, 'What is photosynthesis?');
+    expect(find.text('Report'), findsOne);
+
+    await tester.tap(find.text('Report'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Offensive or inappropriate'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Send'));
+    await tester.pumpAndSettle();
+
+    final report = reports.sent.single;
+    expect(report.feature, AiOutputFeature.tutor);
+    expect(report.reason, AiOutputReportReason.offensive);
+    expect(report.excerpt, 'Answer 1');
+    expect(find.text('Thanks - we will review it.'), findsOne);
+  });
+}
+
+class _Reports implements AiOutputReporter {
+  final List<AiOutputReport> sent = [];
+
+  @override
+  Future<void> report(
+    AiOutputReport report, {
+    required String idempotencyKey,
+  }) async => sent.add(report);
 }
 
 class _Recording implements StudyAssistantRepository {

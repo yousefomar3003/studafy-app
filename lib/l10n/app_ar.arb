@@ -2266,5 +2266,19 @@
   "markingPlanUnavailable": "الدرجات المقترحة غير مفعّلة بعد. ما زال بإمكانك كتابة المراجع.",
   "markingPlanThisMonth": "هذا الشهر",
   "markingPlanReached": "استخدمت اقتراحات هذا الشهر. ما زال بإمكانك التصحيح يدويًا، وتتوفر اقتراحات جديدة عند التجديد.",
-  "markingPlanAccountDetail": "درجات مقترحة للعمل المكتوب"
+  "markingPlanAccountDetail": "درجات مقترحة للعمل المكتوب",
+  "aiReportAction": "إبلاغ",
+  "aiReportTooltip": "الإبلاغ عن إجابة الذكاء الاصطناعي هذه",
+  "aiReportTitle": "الإبلاغ عن إجابة الذكاء الاصطناعي هذه",
+  "aiReportIntro": "أخبرنا بما فيها من خطأ. يراجع ستودافاي كل بلاغ، ويتضمن البلاغ النص الذي كتبه الذكاء الاصطناعي.",
+  "aiReportReason": "ما المشكلة؟",
+  "aiReportReasonOffensive": "مسيء أو غير لائق",
+  "aiReportReasonHarmful": "ضار أو غير آمن",
+  "aiReportReasonWrong": "خاطئ أو مضلل",
+  "aiReportReasonOther": "شيء آخر",
+  "aiReportDetails": "أخبرنا بالمزيد (اختياري)",
+  "aiReportSend": "إرسال",
+  "aiReportSent": "شكرًا - سنراجعه.",
+  "aiReportFailed": "لم يُرسل بلاغك. تحقق من اتصالك وحاول مرة أخرى.",
+  "aiReportRetry": "حاول مرة أخرى"
 }

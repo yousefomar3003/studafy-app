@@ -200,6 +200,19 @@ class NotebookContent {
   final List<NotebookItem> facts;
   final List<NotebookItem> mistakes;
   final List<String> summary;
+
+  /// Everything the AI wrote, as plain text in reading order: what a report
+  /// of the notebook carries (DL-076).
+  String get plainText => [
+    ?overview,
+    ...objectives,
+    for (final t in keyTerms) '${t.term}: ${t.definition}',
+    for (final s in sections) ...[s.heading, ...s.paragraphs, ...s.points],
+    for (final e in examples) ...[e.title, ...e.steps],
+    for (final f in facts) f.text,
+    for (final m in mistakes) m.text,
+    ...summary,
+  ].where((line) => line.trim().isNotEmpty).join('\n');
 }
 
 /// A note the student wrote against a part of the notebook.

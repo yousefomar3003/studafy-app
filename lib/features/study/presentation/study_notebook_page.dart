@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/ai_output_report.dart';
 import '../../../core/ai_tokens.dart';
 import '../../../core/feedback.dart';
 import '../../../core/material_selection.dart';
@@ -1592,12 +1593,23 @@ class _StudyNotebookPageState extends State<StudyNotebookPage> {
             onSelected: (choice) => switch (choice) {
               'settings' => _openSettings(),
               'update' => _update(),
+              'report' => reportAiOutput(
+                context,
+                feature: AiOutputFeature.notebook,
+                excerpt: notebook.content?.plainText ?? '',
+              ),
               _ => _delete(),
             },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'settings', child: Text(l10n.nbSettings)),
               if (notebook.summary.status != NotebookStatus.creating)
                 PopupMenuItem(value: 'update', child: Text(l10n.nbUpdate)),
+              // DL-076: what the AI wrote can be reported.
+              if (canReportAiOutput(context, notebook.content?.plainText ?? ''))
+                PopupMenuItem(
+                  value: 'report',
+                  child: Text(l10n.aiReportTooltip),
+                ),
               PopupMenuItem(value: 'delete', child: Text(l10n.nbDeleteTitle)),
             ],
           ),
