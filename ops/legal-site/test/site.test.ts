@@ -127,6 +127,30 @@ describe("the built site", () => {
     expect(read("_redirects")).toContain("/ /privacy 302");
     expect(read("404.html")).toContain("Page not found");
   });
+
+  test("the Vercel copy has the same headers and redirects", () => {
+    const vercel = JSON.parse(read("vercel.json"));
+    expect(vercel.cleanUrls).toBe(true);
+    expect(vercel.redirects).toContainEqual({
+      source: "/",
+      destination: "/privacy",
+      permanent: false,
+    });
+    const all =
+      vercel.headers.find((h: { source: string }) => h.source === "/(.*)")
+        .headers;
+    expect(all).toContainEqual({
+      key: "Content-Security-Policy",
+      value:
+        "default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    });
+    expect(all.map((h: { key: string }) => h.key)).toContain(
+      "Strict-Transport-Security",
+    );
+    expect(JSON.stringify(vercel.headers)).toContain(
+      "/.well-known/apple-app-site-association",
+    );
+  });
 });
 
 describe("app-link association files (app.studafy.com)", () => {

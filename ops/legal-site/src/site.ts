@@ -4,7 +4,14 @@
 // (app-links.ts). Every link is path-absolute or relative, so a host is only
 // a route in wrangler.toml.
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { appleAppSiteAssociation, assetLinks } from "./app-links.ts";
 import { escapeHtml, render } from "./markdown.ts";
@@ -159,6 +166,39 @@ const REDIRECTS = `/ /privacy 302
 /ar/ /ar/privacy 302
 `;
 
+/**
+ * The same headers and redirects for Vercel (2026-11-03). studafy.com's DNS
+ * is managed by Vercel, where the website lives, so legal.studafy.com and
+ * app.studafy.com can be served from a Vercel project without moving the
+ * zone; `_headers` and `_redirects` stay for the Cloudflare copy
+ * (workers.dev). Pages are published as .html and answer without it.
+ */
+const SECURITY_HEADERS = HEADERS.split("\n\n")[0]!
+  .split("\n")
+  .slice(1)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
+    const colon = line.indexOf(":");
+    return { key: line.slice(0, colon), value: line.slice(colon + 1).trim() };
+  });
+
+export const VERCEL_CONFIG = {
+  cleanUrls: true,
+  trailingSlash: false,
+  redirects: [
+    { source: "/", destination: "/privacy", permanent: false },
+    { source: "/ar", destination: "/ar/privacy", permanent: false },
+  ],
+  headers: [
+    { source: "/(.*)", headers: SECURITY_HEADERS },
+    {
+      source: "/.well-known/apple-app-site-association",
+      headers: [{ key: "Content-Type", value: "application/json" }],
+    },
+  ],
+};
+
 export interface BuildOptions {
   /** docs/legal: English at the root, Arabic in ar/. */
   sourceDir: string;
@@ -169,7 +209,15 @@ export interface BuildOptions {
 
 /** Writes every page and returns the published paths. */
 export function build(options: BuildOptions): string[] {
-  rmSync(options.outDir, { recursive: true, force: true });
+  // Emptied, except Vercel's link to its project (.vercel), so a deploy
+  // never asks again which project this is.
+  if (existsSync(options.outDir)) {
+    for (const entry of readdirSync(options.outDir)) {
+      if (entry !== ".vercel") {
+        rmSync(join(options.outDir, entry), { recursive: true, force: true });
+      }
+    }
+  }
   const written: string[] = [];
   const write = (relative: string, content: string) => {
     const path = join(options.outDir, relative);
@@ -198,5 +246,6 @@ export function build(options: BuildOptions): string[] {
   write(".well-known/assetlinks.json", assetLinks());
   write("_headers", HEADERS);
   write("_redirects", REDIRECTS);
+  write("vercel.json", `${JSON.stringify(VERCEL_CONFIG, null, 2)}\n`);
   return written;
 }

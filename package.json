@@ -35,6 +35,7 @@
     "scale:http": "bun scripts/scale/http-load.ts",
     "legal:build": "bun ops/legal-site/build.ts",
     "legal:deploy": "bun ops/legal-site/build.ts && npx --yes wrangler@4 deploy --config ops/legal-site/wrangler.toml",
+    "legal:deploy:vercel": "bun ops/legal-site/build.ts && cd ops/legal-site/public && npx --yes vercel@latest deploy --prod",
     "test:auth:lifecycle": "bun apps/api/scripts/verify-auth-lifecycle.ts",
     "test": "bun test apps packages",
     "typecheck": "bun run --filter='@studafy/*' typecheck",
