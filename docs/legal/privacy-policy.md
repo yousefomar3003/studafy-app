@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
-**Last updated:** 2 November 2026\
-**Version:** 1.9
+**Last updated:** 3 November 2026\
+**Version:** 2.0
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -130,9 +130,76 @@ alone. On a legitimate-interests or public-task basis, the right to object
 though the app offers no switch. Counsel to confirm the basis and how an
 objection is handled (questions-for-counsel 11.2; DPIA §12.2).
 
+Version 2.0 (3 November 2026), with terms of use 1.8, consent version
+2026-11-03 for terms_and_privacy and for the AI notice ai_features
+(migration 202611040020_terms_and_privacy_2026_11_03.sql; DL-081). It
+makes the policy match the product again:
+(1) Hosting: Vercel hosts the website and these pages (DL-079); Cloudflare
+no longer holds the domain, serves legal.studafy.com or sits in front of
+the API (it keeps the workers.dev fallback copy of these pages)
+(ORIGIN_REQUIRE_CLOUDFLARE stays "false", CLIENT_IP_SOURCE "fly"), and keeps
+R2 backups, Turnstile and the alert relay. Redis in production is Upstash,
+eu-central-1 (Frankfurt), named in §7.2.
+(2) Files: teachers can attach Excel (.xlsx), CSV and Word, Excel and
+PowerPoint 97-2003 files (DL-077, DL-078). Our own isolated document
+converter, in Frankfurt, makes a PDF preview of Word, Excel, PowerPoint and
+CSV files, and a .docx/.xlsx/.pptx copy of older files for the AI study
+tools (private.file_renditions); the copies go when the file goes. Hidden
+sheets, rows and columns are not read. Photos in other formats, or too
+large, are turned into a JPEG on the phone without their hidden details
+(lib/core/photo_normaliser.dart).
+(3) Reporting an AI answer (DL-076, migration 202611030040): the reported
+text (first 4,000 characters), the reason and the details, linked to the
+account; kept 180 days; deleted with the account; in the export; a
+Telegram alert with only the reference, the feature and the reason.
+(4) Child accounts (PR #151, migration 202611040030_child_ai_affirmative.sql):
+the AI study tools are off for a new child account unless the parent turns
+them on. The create-child screen has a separate, unticked box that names
+Together AI; only if the parent ticks it does the app give the parent's
+consent for the child (given_as 'guardian'), and the parent can also turn
+them on later, or off at any time, on the child's card. The DL-074 trigger
+dl074_managed_child_ai_on, which recorded the agreement automatically, is
+dropped; existing consent records are untouched. This replaces 1.9's "on
+from the start".
+§2, §3.7, §3.8, §3.11, §4, §5, §6, §7.2, §8, §9, §10, §11, §12 and the
+list of changes. Published by the owner's decision without legal
+review, like 1.5 to 1.9.
+
+TODO(legal): DL-081 (3). Reports of AI answers hold the reported AI text
+and the reporter's own words, linked to their account, for 180 days. Confirm
+the period and the basis (legitimate interests in keeping the AI tools safe;
+the stores' AI-generated content rules).
+
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 2.0
+
+- **The AI study tools are off for a child account unless the parent
+  turns them on.** A parent can turn them on when creating the account, with
+  a separate box that starts unticked and names our AI provider, Together
+  AI, or later on the child's card in their own account, and can turn them
+  off at any time. This replaces version 1.9's "on from the start" (§2,
+  §3.11, §5, §6, §8).
+- **Reporting an AI answer.** You can report an answer from the AI Tutor,
+  AI notes, a study notebook, a quiz or flashcards from inside the app. We
+  keep what you reported, your reason and any details you add, for 180 days
+  (§2, §3.7, §6, §9, §10, §11).
+- **More kinds of files, and previews.** Teachers can attach Excel and CSV
+  files, and older Word, Excel and PowerPoint files. On our own servers we
+  make a PDF preview of documents so they open inside the app, and a copy of
+  older files in the newer format so the AI study tools can read them. These
+  copies are deleted with the file (§3.8, §6, §10, §12).
+- **Photos are converted on the phone.** A photo in another format, such as
+  an iPhone's HEIC, or one that is too large, becomes a JPEG on the phone,
+  without its hidden details, before it is uploaded (§3.8, §12).
+- **Where things run.** Vercel now hosts our website and these pages, at
+  legal.studafy.com. Cloudflare is not in front of our servers and keeps
+  only an older copy of these pages at their first address; it still
+  stores our encrypted backups in the EU, runs the bot check and relays our
+  alerts. Our short-lived counters and background jobs
+  are held by Upstash in Frankfurt (§7.2, §8).
 
 ### What changed in version 1.9
 
@@ -333,14 +400,16 @@ The long version follows, and it governs. This summary is for orientation.
   the same chat, and — where a student uses them — a photo they attach, a
   lesson's text, or their own notes. Any student account can use them,
   whether or not it belongs to a class, but only after agreeing to them
-  separately. For a child account a parent creates, they are **on from the
-  start**, and the parent can turn them off on the child's card.
+  separately. For a child account a parent creates, they are **off unless
+  the parent turns them on**, when creating the account or later on the
+  child's card, and the parent can turn them off at any time.
   Parent and teacher accounts cannot use them. Names Studafy knows are
   replaced before anything is sent, and email addresses and marks are never
   sent; **photos are sent as they are**. A photo from a student who belongs
   to no class is not kept. See §6 and read it before using those tools.
 - If someone reports a message or a person, **Studafy reviews the report**
-  and may act on it (§3.7).
+  and may act on it (§3.7). You can also report an AI answer, and Studafy
+  reviews that too (§6).
 - Children's data is treated as sensitive in practice, whatever its formal
   classification.
 - You can ask for a copy of your data, or for your account to be deleted,
@@ -562,6 +631,11 @@ kind (message, conversation or person), its priority, the time, and a coded
 (hashed) reference to the school — never the reported content, a name or an
 account identifier. The reviewer reads the report itself in the app.
 
+**Reports of AI answers.** You can also report an answer from the AI study
+tools (§6). Those reports are kept apart from the reports above, and work
+the same way whether or not you are in a class: see "Reporting an AI
+answer" in §6.
+
 <!-- TODO(legal): for now one person reviews every report, with no second
 person checking a grant or a decision (DL-063, DL-066; single-reviewer
 mode). Confirm the response times we should commit to publicly, and whether
@@ -570,11 +644,28 @@ resolved (questions-for-counsel 5.1). -->
 
 ### 3.8 Files
 
-Files you upload — documents (PDF, Word and PowerPoint), photos and voice
-notes — what they are attached to, their size and type, scan results, and
-time-limited grants permitting a specific person to download a specific
-file. Every uploaded file is checked for malware, on our own servers, before
-anyone can download it (§7.2).
+Files you upload — documents (PDF, Word and PowerPoint; for a teacher's
+lessons and set work also Excel and CSV, and older Word, Excel and
+PowerPoint files), photos and voice notes — what they are attached to,
+their size and type, scan results, and time-limited grants permitting a
+specific person to download a specific file. Every uploaded file is checked
+for malware, on our own servers, before anyone can download it (§7.2).
+
+**Previews and copies we make.** So that a Word, Excel, PowerPoint or CSV
+file can be opened inside the app, we make a PDF preview of it. For an
+older Word, Excel or PowerPoint file (.doc, .xls or .ppt) we also make a
+copy in the newer format (.docx, .xlsx or .pptx), so that the AI study
+tools can read it (§6). Both are made on our own servers in Frankfurt, by a
+separate converter that is kept apart from the rest of our systems; no
+outside provider receives the file. The preview and the copy are stored
+privately like the file itself, are kept only as long as the file, and are
+deleted with it.
+
+**Photos are converted on the phone.** A photo in another format, such as
+the HEIC photos an iPhone takes, or one that is too large, is turned into a
+JPEG on your phone before it is uploaded, and the JPEG carries none of the
+photo's hidden details, such as where it was taken. Our servers also remove
+hidden details from every photo they store (§12).
 
 **When a teacher replaces or removes a file.** If a teacher replaces a
 lesson's file, or takes a file off an assignment, the class no longer sees
@@ -635,7 +726,8 @@ for a child account, that the parent accepted them on the child's behalf.
 Separately, whether the AI study tools were agreed to (§6): who agreed, for
 whom, to which version of the notice, in which language and when, and who
 withdrew that agreement and when. For a child account a parent creates,
-the record shows that the parent agreed when they created the account.
+the record shows that the parent gave the agreement for the child, if they
+did, and when.
 
 ### 3.12 Operational data
 
@@ -670,6 +762,7 @@ the record shows that the parent agreed when they created the account.
 | Keeping audit records and backups | Legal obligation; legitimate interests in accountability and recovery |
 | Reviewing and acting on safety reports, and alerting our reviewer | Legitimate interests in protecting children; legal obligation where one applies |
 | The AI study tools | Consent, given separately before first use — see §6 |
+| Keeping and reviewing reports of AI answers, and alerting our reviewer | Legitimate interests in keeping the AI study tools safe and accurate, particularly for children — see §6 |
 | Suggested marks by AI, when a teacher asks for them | Where a school is the controller, the school's legitimate interests or public task in marking work; otherwise the teacher's and our legitimate interests in helping teachers mark. The teacher decides whether to use it, and decides every mark; there is no setting to turn it off — see §6.1 |
 | Complying with the law, and defending legal claims | Legal obligation; legitimate interests |
 
@@ -716,10 +809,10 @@ A student can also use it on their own, without a class.
   approval**, except to a child account that parent created. The request goes
   to the student, who accepts or declines it.
 - **The AI study tools are for student accounts, in a class or not**, and
-  need their own consent. For a child account a parent creates, they are on
-  from the start: creating the account records the parent's agreement, and
-  the parent can turn them off at any time on the child's card in their own
-  account (§6).
+  need their own consent. For a child account a parent creates, they are off
+  unless the parent turns them on, when creating the account or later on
+  the child's card in their own account, and the parent can turn them off
+  at any time (§6).
 - **A teacher can ask AI for suggested marks** on a student's work, and
   the teacher decides the mark. There is no setting to turn this off
   (§6.1).
@@ -778,10 +871,12 @@ accounts cannot use them.
 **A separate consent.** Before a student first uses any of these tools, the
 app shows a short notice about them and asks the student to agree. This is
 separate from accepting these terms. **For a child account a parent
-creates, the tools are on from the start:** the screen for creating the
-account tells the parent so, and creating it records the parent's
-agreement to the current notice. The child cannot agree or turn them on
-themselves. We record who agreed, for whom, to which version of the notice,
+creates, the tools are off unless the parent turns them on.** The parent
+can do so when creating the account, with a separate box, unticked, which
+names Together AI and says what is sent to it, or later on the child's
+card in their own account. Turning them on records the parent's agreement
+to the current notice, for the child. Until then nothing is sent. The child
+cannot agree or turn them on themselves. We record who agreed, for whom, to which version of the notice,
 in which language, and when. The tools can be turned off at any time in
 Account, or, for a child account, by the parent from that child's card in
 the parent's own account. That withdraws the consent: nothing more is sent
@@ -803,7 +898,11 @@ that the answer suits the student.
 
 **Reading a teacher's file.** So that these tools can use a lesson's files,
 we extract their text. Where a file is scanned or made of pictures, images of
-its pages are sent to the AI provider to read the text from them.
+its pages are sent to the AI provider to read the text from them. In a
+spreadsheet (Excel or CSV), we read the values in its cells, sheet by sheet;
+sheets, rows and columns the teacher has hidden are not read, and nothing
+in the file is run. An older Word, Excel or PowerPoint file is read from the
+newer-format copy we make of it on our own servers (§3.8).
 
 **Before anything is sent**, we replace the names Studafy knows — the
 student's own, their classmates', their teachers' and their parents' — with
@@ -847,6 +946,17 @@ deleted.** The photos described above as not stored are not kept at all. **AI Tu
 are deleted from it when the student signs out; we do not store them. An
 answer is kept on our servers for about a day so that a request that is
 sent twice gets the same answer.
+
+**Reporting an AI answer.** You can report an answer from the AI Tutor,
+notes or a summary the AI made, a study notebook, a quiz or flashcards, from
+inside the app, for example because it is offensive, harmful or wrong. We
+keep the AI's text you reported (up to 4,000 characters), the reason you
+chose and any details you write, linked to your account, so that Studafy
+can review it. Reports are kept for **180 days**, then deleted; they are
+deleted sooner if your account is deleted, and they are in your data export
+(§11). Each report sends an alert to our private Telegram chat with only
+its reference number, which tool it came from and the reason — never the
+text, your details or who made the report.
 
 **Our provider:** Together Computer, Inc. (Together AI), a company in the
 United States, using the model `Qwen/Qwen3.5-9B`. Its processing may take
@@ -981,10 +1091,11 @@ own purposes.
 | **Fly.io** (application hosting) | Requests passing through our servers while they are handled | Frankfurt, Germany |
 | **Axiom** (operational logs) | Technical logs: request times, outcomes and error codes, with account identifiers and hashed network addresses. Most successful requests are not kept; logs are deleted after 30 days | Frankfurt, Germany |
 | **Sentry** (error reports) | What broke and where in our code, with the device model and versions. No names, emails, message content or photos | Germany |
-| **Cloudflare** (backup storage, alerts, bot check, network, these pages) | Our encrypted daily backups, which Cloudflare cannot read, in its R2 storage; the relay that forwards our operations alerts; the Turnstile bot check when a parent looks up a student; requests to our API and to these pages as they pass through its network | Backups: EU (Cloudflare's EU jurisdiction). Otherwise global |
-| **Telegram** (alerts) | Alerts to our own private chat: for a safety report, its reference number, kind, priority and a hashed reference to the school; for operations, what failed and counts. Never message content, names or account identifiers | Global |
+| **Cloudflare** (backup storage, alerts, bot check) | Our encrypted daily backups, which Cloudflare cannot read, in its R2 storage; the relay that forwards our operations alerts; the Turnstile bot check when a parent looks up a student; requests to the older address of these pages, studafy-legal.studafy.workers.dev, kept so that links already handed out still work | Backups: EU (Cloudflare's EU jurisdiction). Otherwise global |
+| **Vercel** (our website and these pages) | Requests to our website (studafy.com) and to the pages with this policy and our terms (legal.studafy.com and app.studafy.com), such as your IP address and browser details, as Vercel serves them. The app's requests to our servers do not pass through Vercel | Global; see §8 |
+| **Telegram** (alerts) | Alerts to our own private chat: for a safety report, its reference number, kind, priority and a hashed reference to the school; for a report of an AI answer, its reference number, which tool it came from and the reason; for operations, what failed and counts. Never message content, the reported text, names or account identifiers | Global |
 | **GitHub** (Microsoft) (backup job) | Runs our daily backup job: the backup is made and encrypted on a temporary GitHub machine and sent to Cloudflare. GitHub keeps no copy of it | See §8 |
-| **Redis** (rate limits, short-lived caches, background jobs) | Counters and cache entries keyed by hashed identifiers (including hashed IP addresses), background job references, and, for up to 30 seconds, a copy of your session details (name, language and roles) | See §8 |
+| **Upstash** (Redis: rate limits, short-lived caches, background jobs) | Counters and cache entries keyed by hashed identifiers (including hashed IP addresses), background job references, and, for up to 30 seconds, a copy of your session details (name, language and roles) | Frankfurt, Germany |
 | **Google** (Sign in with Google) | Your identity at sign-in | Global |
 | **Microsoft** (Sign in with Microsoft) | Your identity at sign-in | Global |
 | **Apple** (Sign in with Apple) | Your identity at sign-in | Global |
@@ -995,16 +1106,22 @@ own purposes.
 
 Uploaded files are checked for malware by a scanner we run ourselves, on our
 own infrastructure in the EU (Frankfurt). Files are not sent to any outside
-scanning provider.
+scanning provider. The previews and newer-format copies of documents
+(§3.8) are made the same way, by a converter we run ourselves in Frankfurt.
 
 <!-- TODO(legal): the role of Telegram (a recipient of alerts that carry no
 content, names or account ids: processor, or not personal data at all?) and
 Cloudflare's terms for R2, Workers and Turnstile (DPIA §4.2, D10). If the
 optional second backup copy in AWS (EU regions only, .github/workflows/
 backup.yml) is ever switched on, add Amazon Web Services to this table.
-Requests to the API pass through Cloudflare once api.studafy.com is
-proxied (launch plan C8, ORIGIN_REQUIRE_CLOUDFLARE in fly.api.toml); the
-row already says so. -->
+Version 2.0: Cloudflare no longer proxies api.studafy.com or serves these
+pages (DL-079: studafy.com's DNS is on Vercel, ORIGIN_REQUIRE_CLOUDFLARE
+"false"); if the API is ever put behind a proxy again, add it here first.
+The legal site's fallback copy on Cloudflare
+(studafy-legal.studafy.workers.dev, docs/deployment/legal-site.md) still
+answers, so the Cloudflare row names it; drop that clause if the Worker is
+removed. Vercel's terms and DPA, and Upstash's, to be checked
+like the others (DPIA §4.2). -->
 
 ### 7.3 Others
 
@@ -1023,9 +1140,9 @@ Google provides the call under its own terms and privacy policy.
 
 ## 8. International transfers
 
-Our main systems — the database, file storage, application servers, logs,
-error reports and backups — are in the EU (Germany, and Cloudflare's EU
-storage for backups). Some providers in §7.2 may process data outside the
+Our main systems — the database, file storage, application servers, the
+short-lived counters and background jobs, logs, error reports and backups
+— are in the EU (Germany, and Cloudflare's EU storage for backups). Some providers in §7.2 may process data outside the
 EEA, and outside Jordan.
 
 Where data leaves the EEA we rely on the European Commission's **Standard
@@ -1038,8 +1155,10 @@ United States. Our data processing agreement with it, and the transfer
 safeguard that goes with it, are not yet in place; we will update this
 policy when they are. Until then, if you do not want this data to go to
 Together AI, do not turn the AI study tools on, or turn them off in your
-account at any time (§6); for a child account a parent creates, they are on
-from the start, and the parent turns them off on the child's card. Suggested marks have no such setting: when a
+account at any time (§6); for a child account a parent creates, they stay off
+unless the parent turns them on, and the parent can turn them off on the
+child's card.
+Suggested marks have no such setting: when a
 teacher asks for them, the student's work is sent to Together AI (§6.1).
 
 <!-- TODO(legal): confirm the mechanism for each provider in §7.2 before
@@ -1050,7 +1169,9 @@ DPF certification is a transfer without a legal basis. -->
 <!-- TODO(legal): version 1.5 note. The scanner is now self-hosted (no
 transfer), and GitHub only runs the backup job (it keeps no copy). Add
 Cloudflare (R2 EU jurisdiction, Workers, Turnstile) and Telegram to the
-check. Together AI has no DPA and no transfer mechanism yet: the paragraph
+check. Version 2.0: add Vercel (a US company; the website and these pages,
+served from its global network) and Upstash (Redis in eu-central-1,
+Frankfurt; confirm from where Upstash itself may access it). Together AI has no DPA and no transfer mechanism yet: the paragraph
 above says so publicly, as the owner decided (DL-062, DL-068). Replace it
 with the real mechanism once the DPA is accepted. -->
 
@@ -1071,6 +1192,7 @@ with the real mechanism once the DPA is accepted. -->
   the notebook or the AI Tutor);
 - delete every suggested mark about the student's work and, for a
   teacher, their Studafy AI Marking usage records;
+- delete the reports of AI answers the account made (§6);
 - remove its email address from invitations;
 - delete, in the same way, every child account the person manages: nobody
   else can sign in to a child account, so it cannot outlive its parent. The
@@ -1140,9 +1262,11 @@ we may be required to preserve it until that concludes.
 | Notes, quizzes, flashcards and study notebooks made by the AI tools | Until the student deletes them or their account, or while the lesson they came from exists |
 | Quizzes and flashcards made from a student's own notes | Not stored by us; the app holds them while the student practises |
 | Suggested marks (§6.1) | 180 days, then deleted; sooner if the student's account is deleted |
+| Reports of AI answers (§6) | 180 days, then deleted; sooner if the account that made them is deleted |
 | Studafy AI Marking usage, for a teacher | 13 months |
 | Billing records | 6 years after the end of the tax year they relate to |
 | Files | While attached to something, subject to school policy; in any case deleted 12 months after the class is closed |
+| PDF previews and newer-format copies of documents (§3.8) | As long as the file they were made from; deleted with it |
 | Inactive accounts | Deleted after 2 years without use. At least 30 days before, we warn the account holder by email, whatever their email settings, and also in the app if they belong to a school. The 30 days count from when the warning reached them. If the warning cannot reach them, we do not delete the account |
 | Sign-in IP addresses held by Supabase | Up to 7 days in its security logs, and with an active session until it ends |
 | Error reports (Sentry) | Up to 90 days |
@@ -1196,9 +1320,9 @@ machine-readable format, with your own data, including your profile,
 classes and family links, your work and the answers you gave, your marks
 and their history, your attendance and its history, your notebooks
 (including your personal notes), the
-messages you sent and received, the reports you made, your consents, your
-purchases, your AI usage and, for a teacher, your Studafy AI Marking
-usage. **It lists your files — each one's name, type, size and date
+messages you sent and received, the reports you made (including reports
+of AI answers, with the text you reported), your consents, your purchases,
+your AI usage and, for a teacher, your Studafy AI Marking usage. **It lists your files — each one's name, type, size and date
 — rather than including them.** You can open your files in the app, or write
 to hello@studafy.com for a copy. Messages, files and AI usage hold the newest
 5,000 entries each; write to us for the rest. A parent's export names the
@@ -1244,7 +1368,12 @@ and tell you we have done so, because it is the school's decision to make.
   single-use grants that expire within minutes.
 - Uploaded files are scanned on our own servers before they can be
   downloaded, and photos and voice notes are rewritten to remove hidden
-  metadata.
+  metadata. A photo the phone converts to a JPEG leaves it without that
+  metadata already.
+- Previews and newer-format copies of documents are made by a separate
+  converter on our own servers, with no public address, which runs nothing
+  inside the documents (macros are off), and each copy is checked like an
+  upload before it is stored.
 - Passwords, tokens, keys and other secrets are stripped from logs
   automatically before they are written.
 - IP addresses are hashed with a keyed function rather than stored in our
@@ -1339,6 +1468,6 @@ WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
 Version 1.5 was published on 17 October 2026 without that review, by the
 owner's decision (DL-068). Items 1 to 8 still stand. Version 1.6 (21 October
 2026, DL-071) was published the same way, and so were version 1.7 (21
-October 2026, DL-072), version 1.8 (25 October 2026, DL-073) and version
-1.9 (2 November 2026, DL-074).
+October 2026, DL-072), version 1.8 (25 October 2026, DL-073), version
+1.9 (2 November 2026, DL-074) and version 2.0 (3 November 2026, DL-081).
 -->

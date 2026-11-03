@@ -243,7 +243,7 @@ checked from the repository. No DPA is recorded as signed for any provider
 |---|---|---|---|---|---|
 | Supabase | Processor | Substantially all data | Frankfurt (eu-central-1) | None needed if EU-only; sub-processors UNKNOWN | TODO |
 | Fly.io | Processor | Data in transit through API and worker; scanner | Frankfurt (`fra`) | Fly.io is a US company: SCCs or DPF to confirm | TODO |
-| Redis provider (Redis Cloud today; Upstash proposed) | Processor | Counters keyed by HMAC digests or, before sign-in, by raw IP address; a 30-second session cache with display names; job references. The test copy's Redis is plaintext `redis://` over the internet; production refuses it (security audit, "Still open") | Frankfurt per owner notes; UNKNOWN in repo | TODO | TODO |
+| Redis provider (Upstash in production, eu-central-1 Frankfurt, per the owner 2026-11-03; named in privacy policy 2.0 §7.2) | Processor | Counters keyed by HMAC digests or, before sign-in, by raw IP address; a 30-second session cache with display names; job references. The test copy's Redis is plaintext `redis://` over the internet; production refuses it (security audit, "Still open") | Frankfurt per owner notes; UNKNOWN in repo | TODO | TODO |
 | Axiom | Processor | Technical logs with account UUID and IP hash | EU region (`fly.log-shipper.toml`) | US company: TODO | TODO |
 | Sentry | Processor | Error reports, scrubbed | EU (Germany) | US company: TODO | TODO |
 | **Together AI** (Together Computer, Inc.) | Processor if a DPA is signed | AI inputs (section 11) | **UNKNOWN; likely US** | **None in place** | **Not signed** (launch-work-plan 6.1) |

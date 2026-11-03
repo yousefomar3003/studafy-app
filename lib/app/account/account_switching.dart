@@ -123,10 +123,10 @@ Future<void> openCreateChildAccount(
     MaterialPageRoute<void>(
       builder: (_) => CreateChildAccountPage(
         create: (name) => switcher.createChild(name, locale: locale),
-        turnAiOff: aiConsent == null
+        turnAiOn: aiConsent == null
             ? null
             : (childId) async {
-                await aiConsent.withdraw(childId: childId);
+                await aiConsent.give(locale: locale, childId: childId);
               },
         onSwitch: (child) {
           final account = switcher.accounts

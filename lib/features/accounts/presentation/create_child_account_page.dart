@@ -11,14 +11,16 @@ import '../domain/device_account.dart';
 ///
 /// The AI study tools have a box of their own, unticked, which names the
 /// AI company (App Store 5.1.2(i): explicit permission before personal data
-/// goes to a third-party AI; 2026-11-03). The server turns the tools on for
-/// a new child (DL-074); left unticked, they are turned off at once.
+/// goes to a third-party AI; 2026-11-03). Creating a child records no AI
+/// consent (DL-081): only when the parent ticks the box does the app give it
+/// for the child, as their guardian, once the account exists. Left unticked,
+/// the tools stay off until the parent turns them on on the child's card.
 class CreateChildAccountPage extends StatefulWidget {
   const CreateChildAccountPage({
     super.key,
     required this.create,
     required this.onSwitch,
-    this.turnAiOff,
+    this.turnAiOn,
   });
 
   /// Creates the account; throws [ManagedChildException] when refused.
@@ -27,9 +29,10 @@ class CreateChildAccountPage extends StatefulWidget {
   /// Switches to the new account. The page is closed first.
   final void Function(ManagedChild child) onSwitch;
 
-  /// Turns the AI study tools off for a child just created, when the parent
-  /// did not agree to them. Null where there is no AI consent service.
-  final Future<void> Function(String childId)? turnAiOff;
+  /// Turns the AI study tools on for a child just created, when the parent
+  /// ticked the box: the parent's consent, given for the child. Null where
+  /// there is no AI consent service.
+  final Future<void> Function(String childId)? turnAiOn;
 
   @override
   State<CreateChildAccountPage> createState() => _CreateChildAccountPageState();
@@ -39,7 +42,7 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
   final _name = TextEditingController();
   bool _consent = false;
   bool _ai = false;
-  bool _aiNotOff = false;
+  bool _aiNotOn = false;
   bool _busy = false;
   String? _error;
   ManagedChild? _created;
@@ -61,20 +64,20 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
     });
     try {
       final child = await widget.create(_name.text.trim());
-      var aiNotOff = false;
-      if (!_ai && widget.turnAiOff != null) {
+      var aiNotOn = false;
+      if (_ai && widget.turnAiOn != null) {
         try {
-          await widget.turnAiOff!(child.childId);
+          await widget.turnAiOn!(child.childId);
         } on Object {
-          // The account exists; the parent is told to turn it off on the
-          // child's card instead.
-          aiNotOff = true;
+          // The account exists and the tools stay off; the parent is told to
+          // turn them on on the child's card instead.
+          aiNotOn = true;
         }
       }
       if (mounted) {
         setState(() {
           _created = child;
-          _aiNotOff = aiNotOff;
+          _aiNotOn = aiNotOn;
         });
       }
     } on ManagedChildException catch (error) {
@@ -119,10 +122,10 @@ class _CreateChildAccountPageState extends State<CreateChildAccountPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(l10n.childAccountNextStep, textAlign: TextAlign.center),
-                  if (_aiNotOff) ...[
+                  if (_aiNotOn) ...[
                     const SizedBox(height: 8),
                     Text(
-                      l10n.childAccountAiNotOff,
+                      l10n.childAccountAiNotOn,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
