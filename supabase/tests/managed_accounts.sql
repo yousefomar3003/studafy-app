@@ -53,6 +53,9 @@ select is(pg_temp.register(:'guardian_user', :'child'), 'ok',
 select is((select count(*) from public.consent_records
   where user_id = :'child' and purpose = 'terms_and_privacy'), 1::bigint,
   'the parent''s acceptance of the terms is recorded on the child');
+select is((select count(*) from public.consent_records
+  where user_id = :'child' and purpose = 'ai_features'), 0::bigint,
+  'and no AI consent: the tools stay off until the parent turns them on (DL-081)');
 select is((select action from public.audit_events
   where entity_id = :'child' order by id limit 1), 'managed_account_created',
   'creating a child account is audited');

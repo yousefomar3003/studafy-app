@@ -35,12 +35,16 @@ and changes items 1.2 and 10.1.
 
 **Update 2026-11-03 (DL-081):** the owner published privacy policy 2.0 and
 terms of use 1.8 (consent version `2026-11-03`, for the terms and the AI
-notice), again without waiting. For item 11.1: the create-child screen now
-has a separate, unticked box for the AI study tools that names Together AI
-(the "tick an unticked box" option below, DPIA measure M24); left unticked,
-the app withdraws the agreement the server records when the child is
-created. Please say whether that is enough, or whether the server must
-record the agreement only when the box is ticked. Policy 2.0 also describes
+notice), again without waiting. For item 11.1: the owner replaced the
+on-by-default of DL-074 with affirmative consent. Creating a child account
+no longer records an AI consent (migration
+`202611040030_child_ai_affirmative.sql`); the create-child screen has a
+separate, unticked box for the AI study tools that names Together AI (the
+"tick an unticked box" option below, DPIA measure M24), and only a tick, or
+turning them on later on the child's card, records the parent's agreement.
+Consents recorded for existing children under DL-074 were not changed, but
+the new AI notice version asks every parent again. Please confirm this
+answers 11.1. Policy 2.0 also describes
 reports of AI answers (kept 180 days, with the reported text), Excel, CSV
 and older Office files with PDF previews made on our own servers, and
 Vercel and Upstash as processors.

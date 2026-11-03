@@ -359,19 +359,10 @@ suite("AI access and consent over real SQL (ADR-0043)", () => {
     expect(rows[0]?.withdrawn_by).toBe(STUDENT);
   });
 
-  test("a managed child starts with the tools on; the parent turns them off and on", async () => {
+  test("a managed child starts with the tools off; only the parent turns them on", async () => {
     asked.length = 0;
-    // On from the start: creating the child recorded the parent's agreement
-    // (DL-074).
-    expect(await ask(CHILD)).toEqual({ status: 200, code: null });
-    const first = await request(
-      `/v1/me/managed-children/${CHILD}/study-tools-consent`,
-      PARENT,
-      { given: false },
-    );
-    expect((await first.json() as { access: string }).access).toBe(
-      "guardian_consent_required",
-    );
+    // Off until the parent agrees: creating the child records no AI consent
+    // (DL-081, replacing DL-074's on-by-default).
     expect(await ask(CHILD)).toEqual({
       status: 403,
       code: "AI_GUARDIAN_CONSENT_REQUIRED",

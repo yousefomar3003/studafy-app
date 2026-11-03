@@ -152,24 +152,18 @@ large, are turned into a JPEG on the phone without their hidden details
 text (first 4,000 characters), the reason and the details, linked to the
 account; kept 180 days; deleted with the account; in the export; a
 Telegram alert with only the reference, the feature and the reason.
-(4) Child accounts (PR #151): the AI study tools are a separate, unticked
-box on the create-child screen that names Together AI. The server still
-records the parent's agreement when the child is created (DL-074 trigger
-dl074_managed_child_ai_on); left unticked, the app withdraws it at once,
-and if that fails tells the parent to turn the tools off on the child's
-card. This replaces 1.9's "on from the start".
+(4) Child accounts (PR #151, migration 202611040030_child_ai_affirmative.sql):
+the AI study tools are off for a new child account unless the parent turns
+them on. The create-child screen has a separate, unticked box that names
+Together AI; only if the parent ticks it does the app give the parent's
+consent for the child (given_as 'guardian'), and the parent can also turn
+them on later, or off at any time, on the child's card. The DL-074 trigger
+dl074_managed_child_ai_on, which recorded the agreement automatically, is
+dropped; existing consent records are untouched. This replaces 1.9's "on
+from the start".
 §2, §3.7, §3.8, §3.11, §4, §5, §6, §7.2, §8, §9, §10, §11, §12 and the
 list of changes. Published by the owner's decision without legal
 review, like 1.5 to 1.9.
-
-TODO(legal): DL-081 (4). The parent's choice is now an unticked box (DPIA
-measure M24, questions-for-counsel 11.1), but the record still starts as an
-agreement made by the server and is withdrawn by the app a moment later
-when the box is left unticked. If the withdrawal fails, or the parent uses
-an app older than this change (which shows no box), the tools stay on until
-the parent turns them off on the child's card. Counsel to confirm whether
-this is a valid affirmative consent, or whether the server must record the
-agreement only when the box is ticked.
 
 TODO(legal): DL-081 (3). Reports of AI answers hold the reported AI text
 and the reporter's own words, linked to their account, for 180 days. Confirm
@@ -182,12 +176,12 @@ together.
 
 ### What changed in version 2.0
 
-- **Choosing the AI study tools for a child account.** When a parent
-  creates a child account, the AI study tools are a separate choice, a box
-  that starts unticked and names our AI provider, Together AI. If the parent
-  does not tick it, the tools are off for the child. The parent can change
-  this at any time on the child's card in their own account. This replaces
-  version 1.9's "on from the start" (§2, §3.11, §5, §6, §8).
+- **The AI study tools are off for a child account unless the parent
+  turns them on.** A parent can turn them on when creating the account, with
+  a separate box that starts unticked and names our AI provider, Together
+  AI, or later on the child's card in their own account, and can turn them
+  off at any time. This replaces version 1.9's "on from the start" (§2,
+  §3.11, §5, §6, §8).
 - **Reporting an AI answer.** You can report an answer from the AI Tutor,
   AI notes, a study notebook, a quiz or flashcards from inside the app. We
   keep what you reported, your reason and any details you add, for 180 days
@@ -406,8 +400,9 @@ The long version follows, and it governs. This summary is for orientation.
   the same chat, and — where a student uses them — a photo they attach, a
   lesson's text, or their own notes. Any student account can use them,
   whether or not it belongs to a class, but only after agreeing to them
-  separately. For a child account a parent creates, **the parent chooses**
-  whether to turn them on, and can change this on the child's card.
+  separately. For a child account a parent creates, they are **off unless
+  the parent turns them on**, when creating the account or later on the
+  child's card, and the parent can turn them off at any time.
   Parent and teacher accounts cannot use them. Names Studafy knows are
   replaced before anything is sent, and email addresses and marks are never
   sent; **photos are sent as they are**. A photo from a student who belongs
@@ -731,9 +726,8 @@ for a child account, that the parent accepted them on the child's behalf.
 Separately, whether the AI study tools were agreed to (§6): who agreed, for
 whom, to which version of the notice, in which language and when, and who
 withdrew that agreement and when. For a child account a parent creates,
-the record shows the agreement recorded when the parent created the
-account and, if the parent left the box for the AI study tools unticked,
-that it was withdrawn straight away; and any change the parent made later.
+the record shows that the parent gave the agreement for the child, if they
+did, and when.
 
 ### 3.12 Operational data
 
@@ -815,11 +809,10 @@ A student can also use it on their own, without a class.
   approval**, except to a child account that parent created. The request goes
   to the student, who accepts or declines it.
 - **The AI study tools are for student accounts, in a class or not**, and
-  need their own consent. For a child account a parent creates, the parent
-  chooses: the screen for creating the account has a separate box for them,
-  unticked, that names our AI provider. If the parent does not tick it, the
-  tools are off for the child. The parent can change this at any time on
-  the child's card in their own account (§6).
+  need their own consent. For a child account a parent creates, they are off
+  unless the parent turns them on, when creating the account or later on
+  the child's card in their own account, and the parent can turn them off
+  at any time (§6).
 - **A teacher can ask AI for suggested marks** on a student's work, and
   the teacher decides the mark. There is no setting to turn this off
   (§6.1).
@@ -878,14 +871,12 @@ accounts cannot use them.
 **A separate consent.** Before a student first uses any of these tools, the
 app shows a short notice about them and asks the student to agree. This is
 separate from accepting these terms. **For a child account a parent
-creates, the parent chooses.** The screen for creating the account has a
-separate box for the AI study tools, unticked, which names Together AI and
-says what is sent to it. If the parent ticks it, the tools are on for the
-child, under the parent's agreement to the current notice. If the parent
-does not tick it, the tools are turned off as soon as the account is
-created, and nothing is sent; if the app cannot do that at that moment, it
-tells the parent to turn them off on the child's card. The child cannot
-agree or turn them on themselves. We record who agreed, for whom, to which version of the notice,
+creates, the tools are off unless the parent turns them on.** The parent
+can do so when creating the account, with a separate box, unticked, which
+names Together AI and says what is sent to it, or later on the child's
+card in their own account. Turning them on records the parent's agreement
+to the current notice, for the child. Until then nothing is sent. The child
+cannot agree or turn them on themselves. We record who agreed, for whom, to which version of the notice,
 in which language, and when. The tools can be turned off at any time in
 Account, or, for a child account, by the parent from that child's card in
 the parent's own account. That withdraws the consent: nothing more is sent
@@ -1164,8 +1155,9 @@ United States. Our data processing agreement with it, and the transfer
 safeguard that goes with it, are not yet in place; we will update this
 policy when they are. Until then, if you do not want this data to go to
 Together AI, do not turn the AI study tools on, or turn them off in your
-account at any time (§6); for a child account a parent creates, the parent
-leaves the box for them unticked, or turns them off on the child's card.
+account at any time (§6); for a child account a parent creates, they stay off
+unless the parent turns them on, and the parent can turn them off on the
+child's card.
 Suggested marks have no such setting: when a
 teacher asks for them, the student's work is sent to Together AI (§6.1).
 

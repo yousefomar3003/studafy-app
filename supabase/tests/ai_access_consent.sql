@@ -72,8 +72,11 @@ select is(pg_temp.access(:'loner'), 'consent_required',
   'a student with no class may too, once they consent (ADR-0045)');
 select is(pg_temp.access(:'student_user'), 'consent_required',
   'a student in a class may, once they consent');
-select is(pg_temp.access(:'child'), 'ok',
-  'a managed child may from the start: creating it records the parent''s agreement (DL-074)');
+select is(pg_temp.access(:'child'), 'guardian_consent_required',
+  'a new managed child has no AI until the parent turns it on (DL-081)');
+select is((select count(*) from public.consent_records
+  where user_id = :'child' and purpose = 'ai_features'), 0::bigint,
+  'creating a managed child records no AI consent (DL-081)');
 
 -- 2. Nothing is held, so nothing reaches the provider, without both.
 select is(pg_temp.reserve(:'teacher_user'), 'not_student',

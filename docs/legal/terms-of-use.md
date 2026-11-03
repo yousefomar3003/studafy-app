@@ -83,17 +83,14 @@ Art. 21 (questions-for-counsel 11.2).
 
 Version 1.8 (3 November 2026), with privacy policy 2.0, consent version
 2026-11-03 (migration 202611040020_terms_and_privacy_2026_11_03.sql;
-DL-081): for a child account a parent creates, the AI study tools are a
-separate, unticked box on the create-child screen that names Together AI
-(PR #151); left unticked, the tools are off for the child. This replaces
-1.7's "on from the start". §2, §6, §8 and the list of changes; nothing
+DL-081): for a child account a parent creates, the AI study tools are off
+unless the parent turns them on, with a separate, unticked box on the
+create-child screen that names Together AI (PR #151) or later on the
+child's card; creating the account no longer records an AI consent
+(migration 202611040030_child_ai_affirmative.sql). This replaces 1.7's "on
+from the start". §2, §6, §8 and the list of changes; nothing
 else. Published by the owner's decision without legal review, like 1.3 to
 1.7.
-
-TODO(legal): DL-081. Review §2, §6 and §8 with privacy policy 2.0 §6: the
-server still records the parent's agreement when the child is created and
-the app withdraws it at once if the box is left unticked
-(questions-for-counsel 11.1).
 
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
@@ -107,11 +104,10 @@ accept both.
 
 ### What changed in version 1.8
 
-- For a child account a parent creates, **the parent chooses** whether to
-  turn the AI study tools on, with a separate box that starts unticked. If
-  the parent does not tick it, the tools are off for the child. The parent
-  can change this at any time on the child's card in their own account
-  (§2, §6, §8).
+- For a child account a parent creates, the AI study tools are **off
+  unless the parent turns them on**, when creating the account or later on
+  the child's card in their own account. The parent can turn them off at
+  any time (§2, §6, §8).
 
 ### What changed in version 1.7
 
@@ -147,8 +143,9 @@ marks and attendance are managed by that class's own teachers.
   for a child who has no email or phone. By doing so, the parent confirms
   they are the child's parent or legal guardian, accepts these terms and the
   Privacy Policy on the child's behalf, and is responsible for how the
-  account is used. The parent also chooses whether to turn the AI study
-  tools on for such an account, and can change this at any time (§8).
+  account is used. The AI study tools are off for such an account unless
+  the parent turns them on, and the parent can turn them off at any time
+  (§8).
 - A student can subscribe to a study plan in the app (§9).
 - A profile photo you add stays on your device; it is never uploaded.
 - Give accurate information. Do not create an account for someone else
@@ -234,10 +231,9 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
 
 - You can link to your child only with your child's approval, unless you
   created your child's account.
-- For a child account you create, you choose whether to turn the AI study
-  tools on: they stay off unless you tick the box for them when you create
-  the account. You can change this at any time on your child's card in your
-  account (§8).
+- For a child account you create, the AI study tools are off unless you
+  turn them on, when you create the account or later on your child's card
+  in your account. You can turn them off at any time (§8).
 - A linked parent can see their child's published marks, attendance, set work
   and hand-ins, and class material shared with families, and can download the
   files in them. You can hand work in for a young child who has no device of
@@ -268,8 +264,8 @@ Privacy Policy says exactly what is sent to it.
 
 - These tools are optional. They are for every student account, whether or
   not it belongs to a class, and only after the student agrees to them
-  separately; for a child account a parent creates, the parent chooses
-  whether to turn them on, and can change this at any time.
+  separately; for a child account a parent creates, they are off unless
+  the parent turns them on, and the parent can turn them off at any time.
   Parent and teacher accounts cannot use them. They can be turned off at
   any time.
 - Names Studafy knows are replaced before anything is sent, but photos are

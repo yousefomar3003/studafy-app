@@ -6,10 +6,12 @@
 -- (docs/legal/questions-for-counsel-2026-10.md). The policy is brought back
 -- in line with the product:
 --
---   * a parent creating a child account chooses the AI study tools with a
---     separate, unticked box that names Together AI (PR #151); left
---     unticked, they are off for the child. This replaces "on from the
---     start" (DL-074) in the in-app terms, privacy summary and AI notice;
+--   * for a child account a parent creates, the AI study tools are off
+--     unless the parent turns them on: a separate, unticked box that names
+--     Together AI (PR #151), or later on the child's card. Creating the
+--     account no longer records an AI consent (202611040030). This replaces
+--     "on from the start" (DL-074) in the in-app terms, privacy summary and
+--     AI notice;
 --   * reporting an AI answer (DL-076, 202611030040): what is kept, for how
 --     long, and what the alert carries;
 --   * Excel, CSV and Word/Excel/PowerPoint 97-2003 files, with PDF previews
@@ -28,11 +30,7 @@
 -- versions (test/l10n/policy_consent_version_test.dart and
 -- ai_consent_version_test.dart check that they agree). Every earlier version
 -- stays published.
---
--- A new child account still gets the parent's agreement to the current AI
--- notice from the trigger dl074_managed_child_ai_on (202611020030), now to
--- this version; the app withdraws it at once when the parent leaves the AI
--- box unticked. TODO(legal): DL-081 (questions-for-counsel 11.1).
+
 
 insert into public.consent_policies (
   purpose, policy_version, locale, title, content_hash,
@@ -41,12 +39,12 @@ insert into public.consent_policies (
 values
   ('terms_and_privacy', '2026-11-03', 'en',
     'Studafy Terms of Use and Privacy Policy',
-    '21d3e8e15a5d80bc04d306ee7986d0644e37fb5a5d1cc6bee227668198f83e46', now(), now()),
+    '386f424e7c4bf7dcf914a0fcfb87ad05c699817d12ab946963af0b36b79fe066', now(), now()),
   ('terms_and_privacy', '2026-11-03', 'ar',
     'شروط استخدام ستودافاي وسياسة الخصوصية',
-    '20288024e4baec8da76afdf388e0ba263fac03977fdfe3fa64e8e28b20e6115e', now(), now()),
+    '743ee34cc2a7bbaf3830b54b7a3da36b0cf4aeba25bc2aacb036a6fd3a7d883e', now(), now()),
   ('ai_features', '2026-11-03', 'en', 'Studafy AI study tools',
-    '2f35e0bdba79e52f6bb300a9a056fee2ec9532cc5f827466d60fbdddce7ccb93', now(), now()),
+    '37f54c8de3e929e2ef15eb44d55fe60a370a85c7c0b491133a3bffed0cf9b4f2', now(), now()),
   ('ai_features', '2026-11-03', 'ar', 'أدوات الدراسة بالذكاء الاصطناعي في ستودافاي',
-    '807335814bd33b8c8a93cc9fa38ca52a8f34f4509e4f1adfc4963f0ef93d70b7', now(), now())
+    '9c574e03bb9877172f2118bdeec46f5dd4f019c2d8bed262fa37588991d23787', now(), now())
 on conflict (purpose, policy_version, locale) do nothing;
