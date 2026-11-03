@@ -81,3 +81,8 @@ c405fa4b9f7a058451fbf799a30c458de846a911:test/class_join_link_test.dart:generic-
 # password alphabet of the reviewer-school script.
 0bd39c33cf1d8ea0bdbf3d30918a05e672dcbab7:apps/api/test/auth/password-session.integration.test.ts:jwt:43
 0bd39c33cf1d8ea0bdbf3d30918a05e672dcbab7:scripts/provision-reviewer-school.ts:generic-api-key:311
+
+# Document converter (DL-078, PR #155), 55d920e. False positives: synthetic
+# storage paths ("renditions/v1/a") in a worker test, since rewritten.
+55d920ea512f464da3cbdf3326f3b67d45045c22:apps/worker/test/renditions.test.ts:generic-api-key:364
+55d920ea512f464da3cbdf3326f3b67d45045c22:apps/worker/test/renditions.test.ts:generic-api-key:369

@@ -357,22 +357,16 @@ describe("rendition worker", () => {
   });
 
   test("the deletion sweep deletes queued objects and retries failures", async () => {
-    const deletions = [
-      {
-        deletionId: 1,
-        bucket: "private-school-files",
-        objectKey: "renditions/v1/a",
-      },
-      {
-        deletionId: 2,
-        bucket: "private-school-files",
-        objectKey: "renditions/v1/b",
-      },
-    ];
+    const paths = ["a", "b"].map((name) => `renditions/v1/${name}`);
+    const deletions = paths.map((path, i) => ({
+      deletionId: i + 1,
+      bucket: "private-school-files",
+      objectKey: path,
+    }));
     const queue = new FakeQueue([], [...deletions]);
     const storage = new FakeStorage();
     expect(await processor(queue, storage, null).sweepDeletions()).toBe(2);
-    expect(storage.deleted).toEqual(["renditions/v1/a", "renditions/v1/b"]);
+    expect(storage.deleted).toEqual(paths);
     expect(queue.deletionsFinished).toEqual([{ id: 1, ok: true }, {
       id: 2,
       ok: true,
