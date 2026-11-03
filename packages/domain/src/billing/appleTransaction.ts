@@ -171,8 +171,10 @@ export function appleRenewalStatus(
 
 /**
  * Bundle id and environment must both match exactly, or the transaction is
- * rejected outright - a sandbox receipt must never grant production access,
- * and a transaction for a different app must never be trusted at all.
+ * rejected outright - a transaction for a different app must never be
+ * trusted at all, and data is only trusted for the environment of the
+ * verifier that checked it. (A production server checks Apple Sandbox data
+ * with its own Sandbox verifier and records it as a test purchase, DL-080.)
  */
 export function isAppleTransactionTrusted(input: {
   bundleId: string;
@@ -182,4 +184,20 @@ export function isAppleTransactionTrusted(input: {
 }): boolean {
   return input.bundleId === input.expectedBundleId &&
     input.environment === input.expectedEnvironment;
+}
+
+/**
+ * DL-080: whether a server takes a purchase made in a store's test
+ * environment (Apple Sandbox, a Google Play license tester) or a real one.
+ * App Review, TestFlight and license testers always buy in the test
+ * environment, even with the production build against the production
+ * server, so production takes both and records the test ones as test
+ * purchases. Every other server takes test purchases only: a real purchase
+ * never lands on a development, staging or synthetic ledger.
+ */
+export function isStorePurchaseEnvironmentAccepted(
+  serverEnvironment: string,
+  testPurchase: boolean,
+): boolean {
+  return serverEnvironment === "production" || testPurchase;
 }

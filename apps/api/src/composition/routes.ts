@@ -86,8 +86,8 @@ import { PostgresSafetyRepository } from "../safety/repository";
 import { createFileRoutes } from "../files/routes";
 import { PostgresFileRepository } from "../files/repository";
 import {
+  createAppleVerifiers,
   createStudyAssistant,
-  RealAppleTransactionVerifier,
   RealGooglePurchaseVerifier,
 } from "@studafy/infrastructure";
 import { createManagedAccountRoutes } from "../managed-accounts/routes";
@@ -577,12 +577,13 @@ export function buildRoutes(platform: Platform) {
   // with credentials simply answers SERVICE_UNAVAILABLE for that platform's
   // submit/restore/webhook path, rather than the whole module refusing to
   // mount. Root certificates are never embedded in this codebase - only
-  // decoded from the operator-supplied base64 env value.
+  // decoded from the operator-supplied base64 env value. A production server
+  // also gets a Sandbox verifier for App Review and TestFlight (DL-080).
   const appleConfig = env.APPLE_BUNDLE_ID && env.APPLE_ENVIRONMENT &&
       env.APPLE_ISSUER_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY &&
       env.APPLE_ROOT_CERTIFICATES_BASE64
     ? {
-      verifier: new RealAppleTransactionVerifier({
+      ...createAppleVerifiers({
         rootCertificates: env.APPLE_ROOT_CERTIFICATES_BASE64.split(",")
           .map((value) => Buffer.from(value.trim(), "base64")),
         bundleId: env.APPLE_BUNDLE_ID,
@@ -593,7 +594,7 @@ export function buildRoutes(platform: Platform) {
           keyId: env.APPLE_KEY_ID,
           issuerId: env.APPLE_ISSUER_ID,
         },
-      }),
+      }, env.PAY071_ENVIRONMENT ?? "development"),
       bundleId: env.APPLE_BUNDLE_ID,
       platformEnvironment: env.APPLE_ENVIRONMENT,
     }
@@ -637,7 +638,12 @@ export function buildRoutes(platform: Platform) {
     ? createBillingWebhookRoutes({
       repository: billingRepository,
       environment: env.PAY071_ENVIRONMENT,
-      apple: appleConfig ? { verifier: appleConfig.verifier } : null,
+      apple: appleConfig
+        ? {
+          verifier: appleConfig.verifier,
+          sandboxVerifier: appleConfig.sandboxVerifier,
+        }
+        : null,
       google: googleConfig ? { verifier: googleConfig.verifier } : null,
       logger,
     })

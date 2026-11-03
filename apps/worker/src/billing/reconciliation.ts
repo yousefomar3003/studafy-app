@@ -23,6 +23,7 @@ import {
   mapGoogleSubscriptionStateToTransactionState,
   resolveAppleSubscriptionState,
 } from "@studafy/domain";
+import { chooseAppleVerifier } from "@studafy/infrastructure";
 import { normalizedErrorCode } from "../platform/jobGuards";
 import { startGuardedPoll } from "../platform/poller";
 import {
@@ -58,6 +59,15 @@ export function startBillingReconciliation(
     for (const candidate of candidates) {
       try {
         const outcome = await reconcileCandidate(candidate);
+        if (outcome === "store_environment_mismatch") {
+          // DL-080: the store answered for the other environment than the
+          // row's; the ledger left the row as it was.
+          logger.warn("billing_reconcile_environment_mismatch", {
+            transaction_Id: candidate.transactionId,
+            platform: candidate.platform,
+            error_code: "STORE_ENVIRONMENT_MISMATCH",
+          });
+        }
         if (outcome === "ignored" && !onFinalIgnore(candidate)) {
           logger.warn("billing_reconcile_ignored", {
             transaction_Id: candidate.transactionId,
@@ -86,9 +96,15 @@ export function startBillingReconciliation(
   ): Promise<string> {
     if (candidate.platform === "app_store") {
       if (!verifiers.apple) throw new Error("apple verifier not configured");
+      // A test purchase on a production server is re-read from Apple's
+      // Sandbox API, a real one from Production (DL-080).
+      const chosen = chooseAppleVerifier(
+        verifiers.apple,
+        candidate.sandbox === true ? "Sandbox" : "Production",
+      );
       let signedStatus;
       try {
-        signedStatus = await verifiers.apple.verifier.getSubscriptionStatus(
+        signedStatus = await chosen.verifier.getSubscriptionStatus(
           candidate.originalTransactionId,
         );
       } catch (error) {
@@ -101,7 +117,9 @@ export function startBillingReconciliation(
           bundleId: signedStatus.bundleId,
           expectedBundleId: verifiers.apple.bundleId,
           environment: signedStatus.environment,
-          expectedEnvironment: verifiers.apple.platformEnvironment,
+          expectedEnvironment: chosen.sandbox
+            ? "Sandbox"
+            : verifiers.apple.platformEnvironment,
         })
       ) {
         throw new Error("apple transaction fails bundle/environment trust");
@@ -129,6 +147,7 @@ export function startBillingReconciliation(
           signedStatus.autoRenewing,
         ),
         acknowledged: false,
+        sandbox: signedStatus.environment === "Sandbox",
       });
     }
 
@@ -182,6 +201,7 @@ export function startBillingReconciliation(
           verified.autoRenewEnabled,
         ),
         acknowledged,
+        sandbox: verified.testPurchase === true,
       });
     }
 

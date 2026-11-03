@@ -135,6 +135,7 @@ export {
   type AppleNotificationType,
   appleRenewalStatus,
   isAppleTransactionTrusted,
+  isStorePurchaseEnvironmentAccepted,
   mapAppleNotificationToTransactionState,
   mapAppleTransactionTypeToState,
   type RenewalStatus,

@@ -9,10 +9,13 @@
  * payload from `private.billing_event_payload` (scoped to a `processing`
  * event), re-verifies authoritative state against the official provider API,
  * and only then calls `billing_finish_event`. Neither the webhook payload
- * nor the BullMQ job body is ever trusted for state or identity; a sandbox
- * event can never move a production ledger row because every normalized
- * body is scoped by the event's own `environment` and the verifier's
- * bundle/package + Apple environment trust checks. The one exception is a
+ * nor the BullMQ job body is ever trusted for state or identity; every
+ * normalized body is scoped by the event's own `environment` and the
+ * verifier's bundle/package + Apple environment trust checks. A production
+ * server also takes store test purchases (App Review, TestFlight, license
+ * testers): the body says so (`sandbox`), and the ledger never lets a test
+ * event move a real purchase's lineage or the reverse (DL-080). The one
+ * exception is a
  * Google voided purchase, which no store API can confirm per token: it is
  * matched to the ledger by its purchase token and can only end access
  * (`voidedPurchaseBody`).
@@ -42,9 +45,10 @@ import {
   type RenewalStatus,
   resolveAppleSubscriptionState,
 } from "@studafy/domain";
-import type {
-  AppleTransactionVerifier,
-  GooglePurchaseVerifier,
+import {
+  type AppleTransactionVerifier,
+  chooseAppleVerifierFor,
+  type GooglePurchaseVerifier,
 } from "@studafy/infrastructure";
 import type { Logger } from "@studafy/observability";
 import { type Processor, UnrecoverableError } from "bullmq";
@@ -60,6 +64,9 @@ export interface BillingVerifierDependencies {
   environment: string;
   apple: {
     verifier: AppleTransactionVerifier;
+    /** Production only: verifies Apple Sandbox data, the test purchases a
+     * production server records (DL-080). */
+    sandboxVerifier?: AppleTransactionVerifier | null;
     bundleId: string;
     platformEnvironment: "Sandbox" | "Production";
   } | null;
@@ -82,6 +89,10 @@ interface FinishBody {
   state?: string;
   renewalStatus?: RenewalStatus | null;
   acknowledged?: boolean;
+  /** The store's test environment (Apple Sandbox, a Google license
+   * tester). The ledger refuses an event whose flag differs from the
+   * lineage it names (DL-080). */
+  sandbox?: boolean;
   noop?: boolean;
   /** Google voided the purchase (refund, chargeback or revocation): the
    * ledger looks the transaction up by `transactionId` (the purchase token)
@@ -262,9 +273,16 @@ async function reverifyApple(
   if (!apple) {
     throw new AppleVerificationErrorShim("apple verifier not configured");
   }
-  const notification = await apple.verifier.verifyNotification(
-    appleSignedPayload(rawPayload),
-  );
+  // A production server verifies a Sandbox notification (App Review,
+  // TestFlight) with its Sandbox verifier, and Apple's status lookup for it
+  // goes to the Sandbox API too (DL-080). The verifier checks the
+  // environment the notification names is its own.
+  const signedPayload = appleSignedPayload(rawPayload);
+  const chosen = chooseAppleVerifierFor(apple, signedPayload);
+  const expectedEnvironment = chosen.sandbox
+    ? "Sandbox"
+    : apple.platformEnvironment;
+  const notification = await chosen.verifier.verifyNotification(signedPayload);
   const transaction = notification.transaction;
   if (!transaction) return null; // no embedded transaction: nothing to derive.
 
@@ -273,11 +291,12 @@ async function reverifyApple(
       bundleId: transaction.bundleId,
       expectedBundleId: apple.bundleId,
       environment: transaction.environment,
-      expectedEnvironment: apple.platformEnvironment,
+      expectedEnvironment,
     })
   ) {
-    // A sandbox receipt must never move a production ledger row (and an
-    // event for another app never moves ours).
+    // Data is trusted only for the environment of the verifier that
+    // checked it (and an event for another app never moves our ledger).
+    // The ledger also refuses a test event on a real lineage (DL-080).
     throw new AppleVerificationErrorShim(
       "notification fails bundle/environment trust",
     );
@@ -301,7 +320,7 @@ async function reverifyApple(
   // a transient Apple outage does not dead-letter the event.
   let authoritative = transaction;
   try {
-    const status = await apple.verifier.getSubscriptionStatus(
+    const status = await chosen.verifier.getSubscriptionStatus(
       transaction.originalTransactionId,
     );
     if (
@@ -310,7 +329,7 @@ async function reverifyApple(
         bundleId: status.bundleId,
         expectedBundleId: apple.bundleId,
         environment: status.environment,
-        expectedEnvironment: apple.platformEnvironment,
+        expectedEnvironment,
       })
     ) {
       authoritative = status;
@@ -350,6 +369,7 @@ async function reverifyApple(
       authoritative.autoRenewing ?? transaction.autoRenewing,
     ),
     acknowledged: false,
+    sandbox: authoritative.environment === "Sandbox",
   };
 }
 
@@ -439,6 +459,7 @@ async function reverifyGoogle(
       verified.autoRenewEnabled,
     ),
     acknowledged,
+    sandbox: verified.testPurchase === true,
   };
 }
 

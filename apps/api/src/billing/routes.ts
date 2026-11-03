@@ -10,12 +10,14 @@ import {
   googleRenewalStatus,
   isAppleTransactionTrusted,
   isGooglePackageNameTrusted,
+  isStorePurchaseEnvironmentAccepted,
   mapGoogleSubscriptionStateToTransactionState,
   resolveAppleSubscriptionState,
 } from "@studafy/domain";
 import {
   type AppleTransactionVerifier,
   AppleVerificationError,
+  chooseAppleVerifierFor,
   type GooglePurchaseVerifier,
   GoogleVerificationError,
   sha256Hex,
@@ -38,6 +40,10 @@ export interface BillingRoutesDependencies {
   environment: string;
   apple: {
     verifier: AppleTransactionVerifier;
+    /** Production only: Apple Sandbox purchases (App Review, TestFlight,
+     * sandbox testers) are verified with it and recorded as test
+     * purchases (DL-080). */
+    sandboxVerifier?: AppleTransactionVerifier | null;
     bundleId: string;
     platformEnvironment: "Sandbox" | "Production";
   } | null;
@@ -269,10 +275,17 @@ async function verifyAndNormalize(
 
   if (body.platform === "app_store") {
     if (!deps.apple) throw new VerifierUnavailableError();
-    const receipt = await deps.apple.verifier.verifyTransaction(
+    // The signed transaction names its environment; the verifier for that
+    // environment checks it in full, and the status lookup goes to the same
+    // environment's App Store Server API (DL-080).
+    const chosen = chooseAppleVerifierFor(deps.apple, body.verificationPayload);
+    const expectedEnvironment = chosen.sandbox
+      ? "Sandbox"
+      : deps.apple.platformEnvironment;
+    const receipt = await chosen.verifier.verifyTransaction(
       body.verificationPayload,
     );
-    const decoded = await deps.apple.verifier.getSubscriptionStatus(
+    const decoded = await chosen.verifier.getSubscriptionStatus(
       receipt.originalTransactionId,
     );
     if (
@@ -280,8 +293,11 @@ async function verifyAndNormalize(
       decoded.originalTransactionId !== receipt.originalTransactionId ||
       decoded.appAccountToken !== subject ||
       receipt.appAccountToken !== subject ||
-      (decoded.environment === "Production") !==
-        (deps.environment === "production")
+      receipt.environment !== decoded.environment ||
+      !isStorePurchaseEnvironmentAccepted(
+        deps.environment,
+        decoded.environment === "Sandbox",
+      )
     ) {
       throw new AppleVerificationError(
         "subscription ownership or environment mismatch",
@@ -292,7 +308,7 @@ async function verifyAndNormalize(
         bundleId: decoded.bundleId,
         expectedBundleId: deps.apple.bundleId,
         environment: decoded.environment,
-        expectedEnvironment: deps.apple.platformEnvironment,
+        expectedEnvironment,
       }) || decoded.productId !== body.storeProductId
     ) {
       throw new AppleVerificationError(
@@ -325,6 +341,7 @@ async function verifyAndNormalize(
         decoded.subscriptionStatus,
         decoded.autoRenewing,
       ),
+      sandbox: decoded.environment === "Sandbox",
     };
   }
 
@@ -340,7 +357,10 @@ async function verifyAndNormalize(
     ) ||
     verified.productId !== body.storeProductId ||
     verified.obfuscatedExternalAccountId !== subject ||
-    verified.testPurchase !== (deps.environment !== "production")
+    !isStorePurchaseEnvironmentAccepted(
+      deps.environment,
+      verified.testPurchase === true,
+    )
   ) {
     throw new GoogleVerificationError("package name or product mismatch");
   }
@@ -362,6 +382,7 @@ async function verifyAndNormalize(
       verified.subscriptionState,
       verified.autoRenewEnabled,
     ),
+    sandbox: verified.testPurchase === true,
   };
 }
 
@@ -375,6 +396,9 @@ const BILLING_OUTCOMES: OutcomeTable = {
   guardian_link_required: ["GUARDIAN_LINK_REQUIRED", 422],
   student_purchase_disabled: ["STUDENT_PURCHASE_DISABLED", 422],
   owned_by_other_account: ["ENTITLEMENT_OWNED_BY_OTHER_ACCOUNT", 403],
+  // A test purchase can never join a real purchase's lineage, or the
+  // reverse (DL-080): the receipt is refused like any other mismatch.
+  store_environment_mismatch: ["RECEIPT_INVALID", 422],
 };
 
 function mapBillingOutcome(

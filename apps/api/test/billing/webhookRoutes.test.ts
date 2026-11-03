@@ -3,7 +3,14 @@ import {
   APP_STORE_NOTIFICATIONS_PATH,
   PLAY_BILLING_PUSH_PATH,
 } from "@studafy/config";
-import type { GooglePurchaseVerifier } from "@studafy/infrastructure";
+import {
+  type AppleTransactionVerifier,
+  AppleVerificationError,
+  type AppleVerifierSet,
+  type GooglePurchaseVerifier,
+  peekAppleSignedEnvironment,
+  type VerifiedAppleNotification,
+} from "@studafy/infrastructure";
 import { createJsonLogger } from "@studafy/observability";
 import { createBillingWebhookRoutes } from "../../src/billing/webhookRoutes";
 import type { BillingRepository } from "../../src/billing/repository";
@@ -11,7 +18,10 @@ import { flowFor } from "../../src/platform/rate-limit/policies";
 
 type Recorded = [string, string, string | null, string, string];
 
-function routes(google: GooglePurchaseVerifier | null) {
+function routes(
+  google: GooglePurchaseVerifier | null,
+  apple: AppleVerifierSet | null = null,
+) {
   const recorded: Recorded[] = [];
   const repository = {
     async recordEvent(...args: Recorded) {
@@ -22,7 +32,7 @@ function routes(google: GooglePurchaseVerifier | null) {
   const app = createBillingWebhookRoutes({
     repository,
     environment: "production",
-    apple: null,
+    apple,
     google: google ? { verifier: google } : null,
     logger: createJsonLogger("api", "test", "error", () => {}),
   });
@@ -85,6 +95,63 @@ describe("store webhook routes", () => {
     });
     expect(response.status).toBe(403);
     expect(recorded).toHaveLength(0);
+  });
+
+  test("DL-080: a Sandbox notification is verified by the Sandbox verifier in production", async () => {
+    // Apple sends App Review and TestFlight notifications to the Sandbox
+    // Server URL, which points at production after launch.
+    const verified: string[] = [];
+    const fake = (environment: "Sandbox" | "Production") =>
+      ({
+        verifyTransaction: () => Promise.reject(new Error("not used")),
+        getSubscriptionStatus: () => Promise.reject(new Error("not used")),
+        verifyNotification: (signed: string) => {
+          verified.push(environment);
+          if (peekAppleSignedEnvironment(signed) !== environment) {
+            return Promise.reject(new AppleVerificationError("environment"));
+          }
+          return Promise.resolve(
+            {
+              notificationType: "TEST",
+              subtype: null,
+              notificationUUID: `uuid-${environment}`,
+              transaction: null,
+            } satisfies VerifiedAppleNotification,
+          );
+        },
+      }) as AppleTransactionVerifier;
+    const { app, recorded } = routes(null, {
+      verifier: fake("Production"),
+      sandboxVerifier: fake("Sandbox"),
+    });
+    const notification = (environment: string) =>
+      `${Buffer.from('{"alg":"ES256"}').toString("base64url")}.${
+        Buffer.from(JSON.stringify({ data: { environment } })).toString(
+          "base64url",
+        )
+      }.signature`;
+    for (const environment of ["Sandbox", "Production"]) {
+      const response = await app.request(APP_STORE_NOTIFICATIONS_PATH, {
+        method: "POST",
+        body: JSON.stringify({ signedPayload: notification(environment) }),
+      });
+      expect(response.status).toBe(200);
+    }
+    expect(verified).toEqual(["Sandbox", "Production"]);
+    // Both are recorded for the server's own environment; the worker
+    // re-verifies each with the matching verifier.
+    expect(recorded.map((row) => [row[0], row[1], row[2]])).toEqual([
+      ["app_store", "production", "uuid-Sandbox"],
+      ["app_store", "production", "uuid-Production"],
+    ]);
+
+    // Unreadable data goes to the Production verifier, which refuses it.
+    const refused = await app.request(APP_STORE_NOTIFICATIONS_PATH, {
+      method: "POST",
+      body: JSON.stringify({ signedPayload: "signed.payload" }),
+    });
+    expect(refused.status).toBe(422);
+    expect(verified.at(-1)).toBe("Production");
   });
 
   test("both store paths are mounted and rate-limited as store webhooks", async () => {

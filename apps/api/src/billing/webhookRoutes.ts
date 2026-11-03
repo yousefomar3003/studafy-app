@@ -4,7 +4,8 @@ import {
   PLAY_BILLING_PUSH_PATH,
 } from "@studafy/config";
 import {
-  type AppleTransactionVerifier,
+  type AppleVerifierSet,
+  chooseAppleVerifierFor,
   type GooglePurchaseVerifier,
   sha256Hex,
 } from "@studafy/infrastructure";
@@ -30,7 +31,10 @@ import type { BillingRepository } from "./repository";
 export interface BillingWebhookDependencies {
   repository: BillingRepository;
   environment: string;
-  apple: { verifier: AppleTransactionVerifier } | null;
+  /** `sandboxVerifier` on a production server only: Apple sends Sandbox
+   * notifications (App Review, TestFlight) to the Sandbox Server URL, which
+   * points here too once the app is live (DL-080). */
+  apple: AppleVerifierSet | null;
   google: { verifier: GooglePurchaseVerifier } | null;
   logger: Logger;
 }
@@ -54,9 +58,10 @@ export function createBillingWebhookRoutes(
     }
     let notificationUUID: string | null = null;
     try {
-      const notification = await deps.apple.verifier.verifyNotification(
+      const notification = await chooseAppleVerifierFor(
+        deps.apple,
         body.signedPayload,
-      );
+      ).verifier.verifyNotification(body.signedPayload);
       notificationUUID = notification.notificationUUID || null;
     } catch {
       // An unverifiable notification is never recorded or acted on. Apple

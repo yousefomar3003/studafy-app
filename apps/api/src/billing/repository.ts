@@ -33,6 +33,11 @@ export interface NormalizedTransaction {
   effectiveUntil: string | null;
   /** What happens at the end of the period; display only, never access. */
   renewalStatus: RenewalStatus | null;
+  /** Bought in the store's test environment (Apple Sandbox, a Google
+   * license tester). Stored as `store_transactions.sandbox`; it grants
+   * access like any purchase, but never joins a real purchase's lineage
+   * (DL-080). */
+  sandbox: boolean;
   beneficiaryStudentId?: string | null;
 }
 

@@ -3,11 +3,11 @@ import type { Sql } from "@studafy/database";
 import {
   closeQueue,
   closeWorker,
+  createAppleVerifiers,
   createQueue,
   createWorker,
   type Queue,
   type QueueOptions,
-  RealAppleTransactionVerifier,
   RealGooglePurchaseVerifier,
   type Worker,
 } from "@studafy/infrastructure";
@@ -66,7 +66,9 @@ export function billingVerifiersFromEnv(
       env.APPLE_ISSUER_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY &&
       env.APPLE_ROOT_CERTIFICATES_BASE64
     ? {
-      verifier: new RealAppleTransactionVerifier({
+      // A production worker also holds a Sandbox verifier, for the test
+      // purchases production records (DL-080).
+      ...createAppleVerifiers({
         rootCertificates: env.APPLE_ROOT_CERTIFICATES_BASE64.split(",")
           .map((value) => Buffer.from(value.trim(), "base64")),
         bundleId: env.APPLE_BUNDLE_ID,
@@ -77,7 +79,7 @@ export function billingVerifiersFromEnv(
           keyId: env.APPLE_KEY_ID,
           issuerId: env.APPLE_ISSUER_ID,
         },
-      }),
+      }, env.PAY071_ENVIRONMENT ?? "development"),
       bundleId: env.APPLE_BUNDLE_ID,
       platformEnvironment: env.APPLE_ENVIRONMENT,
     }
