@@ -178,7 +178,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(uploads.commands, isEmpty);
-    expect(find.textContaining('Only PDF and photos'), findsOneWidget);
+    // A hand-in takes Word and PowerPoint too, and says so.
+    expect(
+      find.text(
+        'Only PDF, Word and PowerPoint files and photos can be attached.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a picker that cannot hand the file over says so', (

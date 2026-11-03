@@ -1,5 +1,5 @@
 /**
- * Word and PowerPoint files built in code for tests (ADR-0037). No binary
+ * Word, PowerPoint and Excel files built in code for tests (ADR-0037). No binary
  * fixtures: each ZIP is assembled here, deflated or stored, byte for byte.
  */
 import { deflateRawSync } from "node:zlib";
@@ -51,7 +51,9 @@ export function buildZip(parts: ZipPart[]): Uint8Array {
     push(locals, raw.length, 4);
     push(locals, name.length, 2);
     push(locals, 0, 2);
-    locals.push(...name, ...body);
+    // One by one: a large part would overflow the stack as spread arguments.
+    for (const byte of name) locals.push(byte);
+    for (const byte of body) locals.push(byte);
 
     push(central, 0x02014b50, 4);
     push(central, 20, 2);
@@ -211,4 +213,156 @@ export function buildPptx(
   });
   parts.push(...(options.extraParts ?? []));
   return buildZip(parts);
+}
+
+/** One cell of a test workbook. */
+export type XlsxCell =
+  | string
+  | number
+  | boolean
+  | null
+  /** A formula with the value Excel saved with it. */
+  | { formula: string; cached: string | number }
+  /** A string written inline rather than in the shared table. */
+  | { inline: string }
+  /** A date, as Excel stores it: a serial number in a date style. */
+  | { date: number };
+
+export interface XlsxSheet {
+  name: string;
+  rows: XlsxCell[][];
+  state?: "hidden" | "veryHidden";
+  /** 1-based rows hidden in Excel. */
+  hiddenRows?: number[];
+  /** 1-based columns hidden in Excel. */
+  hiddenColumns?: number[];
+}
+
+export interface XlsxOptions extends OfficeOptions {
+  /** Replaces the workbook's main content type (a template, a macro file). */
+  mainContentType?: string;
+}
+
+const columnName = (index: number) => {
+  let name = "";
+  for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) {
+    name = String.fromCharCode(65 + ((n - 1) % 26)) + name;
+  }
+  return name;
+};
+
+/**
+ * A .xlsx with shared strings, numbers, booleans, formulas with cached
+ * values, inline strings, dates, and hidden sheets, rows and columns.
+ */
+export function buildXlsx(
+  sheets: XlsxSheet[],
+  options: XlsxOptions = {},
+): Uint8Array {
+  const shared: string[] = [];
+  const sharedIndex = (text: string) => {
+    const at = shared.indexOf(text);
+    if (at >= 0) return at;
+    shared.push(text);
+    return shared.length - 1;
+  };
+  const cellXml = (cell: XlsxCell, ref: string): string => {
+    if (cell === null) return "";
+    if (typeof cell === "string") {
+      return `<c r="${ref}" t="s"><v>${sharedIndex(cell)}</v></c>`;
+    }
+    if (typeof cell === "number") return `<c r="${ref}"><v>${cell}</v></c>`;
+    if (typeof cell === "boolean") {
+      return `<c r="${ref}" t="b"><v>${cell ? 1 : 0}</v></c>`;
+    }
+    if ("inline" in cell) {
+      return `<c r="${ref}" t="inlineStr"><is><t>${
+        escape(cell.inline)
+      }</t></is></c>`;
+    }
+    if ("date" in cell) return `<c r="${ref}" s="1"><v>${cell.date}</v></c>`;
+    return typeof cell.cached === "number"
+      ? `<c r="${ref}"><f>${escape(cell.formula)}</f><v>${cell.cached}</v></c>`
+      : `<c r="${ref}" t="str"><f>${escape(cell.formula)}</f><v>${
+        escape(cell.cached)
+      }</v></c>`;
+  };
+  // Built before the shared-string table, which the cells fill.
+  const sheetParts: ZipPart[] = sheets.map((sheet, index) => {
+    const cols = (sheet.hiddenColumns ?? []).map((c) =>
+      `<col min="${c}" max="${c}" width="9" hidden="1"/>`
+    ).join("");
+    const rows = sheet.rows.map((row, r) =>
+      `<row r="${r + 1}"${
+        sheet.hiddenRows?.includes(r + 1) ? ' hidden="1"' : ""
+      }>${
+        row.map((cell, c) => cellXml(cell, `${columnName(c)}${r + 1}`)).join(
+          "",
+        )
+      }</row>`
+    ).join("");
+    return {
+      name: `xl/worksheets/sheet${index + 1}.xml`,
+      data:
+        `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${
+          cols ? `<cols>${cols}</cols>` : ""
+        }<sheetData>${rows}</sheetData></worksheet>`,
+    };
+  });
+  const main = options.mainContentType ??
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
+  return buildZip([
+    {
+      name: "[Content_Types].xml",
+      data:
+        `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Override PartName="/xl/workbook.xml" ContentType="${main}"/>${
+          options.extraContentTypes ?? ""
+        }</Types>`,
+    },
+    {
+      name: "_rels/.rels",
+      data:
+        `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+    },
+    {
+      name: "xl/workbook.xml",
+      data:
+        `<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${
+          sheets.map((sheet, index) =>
+            `<sheet name="${escape(sheet.name)}" sheetId="${index + 1}"${
+              sheet.state ? ` state="${sheet.state}"` : ""
+            } r:id="rId${index + 1}"/>`
+          ).join("")
+        }</sheets></workbook>`,
+    },
+    {
+      name: "xl/_rels/workbook.xml.rels",
+      data: options.documentRels ??
+        `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${
+          sheets.map((_, index) =>
+            `<Relationship Id="rId${
+              index + 1
+            }" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${
+              index + 1
+            }.xml"/>`
+          ).join("")
+        }</Relationships>`,
+    },
+    {
+      name: "xl/styles.xml",
+      data:
+        `<?xml version="1.0" encoding="UTF-8"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/></cellXfs></styleSheet>`,
+    },
+    ...sheetParts,
+    {
+      name: "xl/sharedStrings.xml",
+      data:
+        `<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${shared.length}" uniqueCount="${shared.length}">${
+          shared.map((text) =>
+            `<si><t xml:space="preserve">${escape(text)}</t></si>`
+          ).join("")
+        }</sst>`,
+    },
+    ...(options.extraParts ?? []),
+  ]);
 }

@@ -580,9 +580,7 @@ class AttachmentsEditorState extends State<AttachmentsEditor> {
           _ExistingRow(
             icon: file.isRemoved
                 ? Icons.gpp_bad_outlined
-                : (file.mediaType ?? '').startsWith('image/')
-                ? Icons.image_outlined
-                : Icons.description_outlined,
+                : attachmentTypeIcon(file.mediaType),
             label: file.displayName,
             // The scan removed it after it was attached: it says so, and
             // can be taken off like any other.

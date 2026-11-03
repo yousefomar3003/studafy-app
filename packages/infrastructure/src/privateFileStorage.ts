@@ -1,5 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { detectOoxmlMediaType, MP4_AUDIO_BRANDS } from "@studafy/domain";
+import {
+  CSV_MEDIA_TYPE,
+  detectOoxmlMediaType,
+  MP4_AUDIO_BRANDS,
+  parseCsvText,
+} from "@studafy/domain";
 
 export const FILE_BUCKET = "private-school-files";
 // 30 minutes: ample for a 25 MB file on a slow phone connection, and an
@@ -196,11 +201,15 @@ export function detectMediaType(bytes: Uint8Array): string | null {
     bytes.length >= 12 && ascii(bytes, 4, 8) === "ftyp" &&
     MP4_AUDIO_BRANDS.has(ascii(bytes, 8, 12))
   ) return "audio/mp4";
-  // Word or PowerPoint: a ZIP whose part names say which (ADR-0037). Any
-  // other ZIP is not an accepted type.
+  // Word, PowerPoint or Excel: a ZIP whose part names say which (ADR-0037,
+  // DL-077). Any other ZIP is not an accepted type.
   if (startsWith(bytes, [0x50, 0x4b, 0x03, 0x04])) {
     return detectOoxmlMediaType(bytes);
   }
+  // No signature matched. CSV has none: only UTF-8 text with no control
+  // bytes is detected as CSV (DL-077), so binary bytes declared as text/csv
+  // are a type mismatch and never reach the scan as CSV.
+  if (parseCsvText(bytes).ok) return CSV_MEDIA_TYPE;
   return null;
 }
 

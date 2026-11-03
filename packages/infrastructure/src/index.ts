@@ -168,6 +168,12 @@ export {
   UnreadableDocumentError,
 } from "./material/office";
 export {
+  extractCsv,
+  extractXlsx,
+  SPREADSHEET_LIMITS,
+  type TableExtraction,
+} from "./material/spreadsheet";
+export {
   extractPdf,
   type PageReader,
   type PdfExtraction,

@@ -5,7 +5,12 @@
  * teacher is shown. Throws only for a passing failure - the model or the
  * network was unavailable - which the worker retries.
  */
-import { DOCX_MEDIA_TYPE, PPTX_MEDIA_TYPE } from "@studafy/domain";
+import {
+  CSV_MEDIA_TYPE,
+  DOCX_MEDIA_TYPE,
+  PPTX_MEDIA_TYPE,
+  XLSX_MEDIA_TYPE,
+} from "@studafy/domain";
 import {
   chunkSections,
   type MaterialChunk,
@@ -16,6 +21,7 @@ import { prepareImage } from "./image";
 import { fetchPublicLink, type LinkFetch } from "./link";
 import { extractDocx, extractPptx, UnreadableDocumentError } from "./office";
 import { extractPdf, type PageReader, type ProcessingUsage } from "./pdf";
+import { extractCsv, extractXlsx } from "./spreadsheet";
 
 export interface MaterialLimits {
   ocrPagesPerFile: number;
@@ -186,6 +192,36 @@ export async function readMaterial(
           chunks: [],
           detail: {},
           extractor: "office-v1",
+          usage: [],
+        };
+      }
+    }
+    // Excel and CSV (DL-077): rows as text, under the spreadsheet caps.
+    case XLSX_MEDIA_TYPE:
+    case CSV_MEDIA_TYPE: {
+      const xlsx = mediaType === XLSX_MEDIA_TYPE;
+      const extractor = xlsx ? "xlsx-v1" : "csv-v1";
+      try {
+        const table = xlsx
+          ? extractXlsx(bytes, deps.limits.charsPerDocument)
+          : extractCsv(bytes, deps.limits.charsPerDocument);
+        return finish(
+          table.sections,
+          extractor,
+          deps.limits,
+          { ...(xlsx ? { sheets: table.sheets } : {}), rows: table.rows },
+          [],
+          "no_text",
+          table.truncated ? "partly_read" : null,
+        );
+      } catch (error) {
+        if (!(error instanceof UnreadableDocumentError)) throw error;
+        return {
+          outcome: "unsupported",
+          reason: "unreadable_file",
+          chunks: [],
+          detail: {},
+          extractor,
           usage: [],
         };
       }

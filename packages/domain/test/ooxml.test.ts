@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { buildDocx, buildPptx, buildZip } from "@studafy/test-support";
+import {
+  buildDocx,
+  buildPptx,
+  buildXlsx,
+  buildZip,
+} from "@studafy/test-support";
 import {
   analyzeBytes,
   detectOoxmlMediaType,
@@ -7,6 +12,7 @@ import {
   EICAR_SIGNATURE,
   parseOoxml,
   PPTX_MEDIA_TYPE,
+  XLSX_MEDIA_TYPE,
 } from "../src";
 
 /**
@@ -151,6 +157,150 @@ describe("Office documents", () => {
     expect(parseOoxml(traversal, "docx")).toEqual({
       ok: false,
       reason: "malformed",
+    });
+  });
+});
+
+/**
+ * Excel workbooks (DL-077): the same bounded walk, plus what only a
+ * workbook carries - Excel 4.0 macro sheets, links to other workbooks, data
+ * connections - and only the plain workbook content type.
+ */
+describe("Excel workbooks", () => {
+  const sheet = { name: "Marks", rows: [["Name", "Score"], ["Lina", 18]] };
+  const xlsx = (options: Parameters<typeof buildXlsx>[1] = {}) =>
+    buildXlsx([sheet], options);
+
+  test("a plain workbook is detected and clean", async () => {
+    expect(detectOoxmlMediaType(xlsx())).toBe(XLSX_MEDIA_TYPE);
+    expect(await analyzeBytes(xlsx(), XLSX_MEDIA_TYPE)).toEqual({
+      verdict: "clean",
+    });
+  });
+
+  test("a workbook declared as Word, or Word declared as a workbook, is refused", async () => {
+    expect((await analyzeBytes(xlsx(), DOCX_MEDIA_TYPE)).verdict).toBe(
+      "malformed",
+    );
+    const docx = buildDocx([{ paragraph: "x" }]);
+    expect((await analyzeBytes(docx, XLSX_MEDIA_TYPE)).verdict).toBe(
+      "malformed",
+    );
+  });
+
+  test("a macro-enabled workbook is refused, by content type and by part", async () => {
+    expect(
+      await analyzeBytes(
+        xlsx({
+          mainContentType:
+            "application/vnd.ms-excel.sheet.macroEnabled.main+xml",
+        }),
+        XLSX_MEDIA_TYPE,
+      ),
+    ).toEqual({ verdict: "policy_rejected", errorCode: "active_content" });
+    expect(
+      parseOoxml(
+        xlsx({ extraParts: [{ name: "xl/vbaProject.bin", data: "macro" }] }),
+        "xlsx",
+      ),
+    ).toEqual({ ok: false, reason: "active_content" });
+  });
+
+  test("Excel 4.0 macro sheets and dialog sheets are refused", () => {
+    for (
+      const name of [
+        "xl/macrosheets/sheet1.xml",
+        "xl/intlMacrosheets/sheet1.xml",
+        "xl/dialogsheets/sheet1.xml",
+      ]
+    ) {
+      expect(
+        parseOoxml(xlsx({ extraParts: [{ name, data: "<x/>" }] }), "xlsx"),
+      ).toEqual({ ok: false, reason: "active_content" });
+    }
+    expect(
+      parseOoxml(
+        xlsx({
+          extraContentTypes:
+            '<Override PartName="/xl/foo.xml" ContentType="application/vnd.ms-excel.macrosheet+xml"/>',
+        }),
+        "xlsx",
+      ),
+    ).toEqual({ ok: false, reason: "active_content" });
+  });
+
+  test("a template or a workbook with no main content type is not a plain workbook", () => {
+    expect(
+      parseOoxml(
+        xlsx({
+          mainContentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml",
+        }),
+        "xlsx",
+      ),
+    ).toEqual({ ok: false, reason: "malformed" });
+  });
+
+  test("links to other workbooks, data connections and web queries are refused", () => {
+    for (
+      const name of [
+        "xl/externalLinks/externalLink1.xml",
+        "xl/connections.xml",
+        "xl/queryTables/queryTable1.xml",
+      ]
+    ) {
+      expect(
+        parseOoxml(xlsx({ extraParts: [{ name, data: "<x/>" }] }), "xlsx"),
+      ).toEqual({ ok: false, reason: "external_reference" });
+    }
+    const remote =
+      `<Relationships><Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath" Target="https://evil.example/book.xlsx" TargetMode="External"/></Relationships>`;
+    expect(
+      parseOoxml(
+        xlsx({
+          extraParts: [{
+            name: "xl/externalLinks/_rels/externalLink1.xml.rels",
+            data: remote,
+          }],
+        }),
+        "xlsx",
+      ),
+    ).toEqual({ ok: false, reason: "external_reference" });
+  });
+
+  test("embedded objects are refused", () => {
+    expect(
+      parseOoxml(
+        xlsx({
+          extraParts: [{ name: "xl/embeddings/oleObject1.bin", data: "ole" }],
+        }),
+        "xlsx",
+      ),
+    ).toEqual({ ok: false, reason: "embedded" });
+  });
+
+  test("a sheet that inflates far past its size is a bomb", async () => {
+    const bomb = xlsx({
+      extraParts: [{
+        name: "xl/worksheets/sheet9.xml",
+        data: "<row/>".repeat(1_000_000),
+      }],
+    });
+    expect(parseOoxml(bomb, "xlsx")).toEqual({
+      ok: false,
+      reason: "decompression_limit",
+    });
+    expect(await analyzeBytes(bomb, XLSX_MEDIA_TYPE)).toEqual({
+      verdict: "policy_rejected",
+      errorCode: "decompression_limit",
+    });
+  });
+
+  test("the EICAR test file in a cell is malicious", async () => {
+    const infected = buildXlsx([{ name: "x", rows: [[EICAR_SIGNATURE]] }]);
+    expect(await analyzeBytes(infected, XLSX_MEDIA_TYPE)).toEqual({
+      verdict: "malicious",
+      errorCode: "malware_detected",
     });
   });
 });

@@ -1,7 +1,8 @@
 /**
- * Bounded Word / PowerPoint (OOXML) structural guard (ADR-0037).
+ * Bounded Word / PowerPoint / Excel (OOXML) structural guard (ADR-0037,
+ * DL-077).
  *
- * A .docx or .pptx is a ZIP of XML parts. Like the PDF guard this is a
+ * A .docx, .pptx or .xlsx is a ZIP of XML parts. Like the PDF guard this is a
  * security gate, not a renderer, and its limits are stated rather than
  * hidden:
  *  - the ZIP must start at offset zero and end exactly where its end record
@@ -11,14 +12,19 @@
  *    methods other than stored/deflate are refused;
  *  - declared sizes are capped in total and by ratio, and every part is
  *    inflated under its declared size, so a bomb is refused before it grows;
- *  - macros (`vbaProject.bin`, macro-enabled content types), ActiveX and
- *    embedded OLE objects are refused outright;
+ *  - macros (`vbaProject.bin`, macro-enabled content types, Excel 4.0 macro
+ *    and dialog sheets), ActiveX and embedded OLE objects are refused
+ *    outright;
  *  - relationships that fetch something remote when the file is opened
  *    (attached templates, frames, OLE links, sub-documents) are refused;
- *    ordinary hyperlinks are kept;
+ *    ordinary hyperlinks are kept. A workbook's links to other workbooks,
+ *    its data connections and its web queries are refused too;
+ *  - a workbook must declare the plain workbook content type (not a
+ *    template, not macro-enabled);
  *  - every inflated part is scanned for the EICAR test signature.
  *
- * Older binary .doc / .ppt files are not ZIPs and are not accepted at all.
+ * Older binary .doc / .ppt / .xls files are not ZIPs and are not accepted at
+ * all.
  */
 import { inflateRawSync } from "node:zlib";
 import { containsEicarSignature } from "./eicar";
@@ -27,6 +33,8 @@ export const DOCX_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 export const PPTX_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+export const XLSX_MEDIA_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /** Most parts one document may have. A real lesson file has a few hundred. */
 const MAX_ENTRIES = 5_000;
@@ -37,7 +45,7 @@ const MAX_ENTRY_BYTES = 100 * 1024 * 1024;
 /** Deflate rarely beats ~20:1 on XML; 200:1 is a bomb. */
 const MAX_RATIO = 200;
 
-export type OoxmlKind = "docx" | "pptx";
+export type OoxmlKind = "docx" | "pptx" | "xlsx";
 
 export type OoxmlRejectReason =
   | "malformed"
@@ -220,28 +228,42 @@ export function readZipEntry(
 export function ooxmlKindOf(entries: ZipEntry[]): OoxmlKind | null {
   const names = new Set(entries.map((entry) => entry.name));
   if (!names.has("[Content_Types].xml")) return null;
-  const word = names.has("word/document.xml");
-  const slides = names.has("ppt/presentation.xml");
-  if (word === slides) return null;
-  return word ? "docx" : "pptx";
+  const kinds: OoxmlKind[] = [];
+  if (names.has("word/document.xml")) kinds.push("docx");
+  if (names.has("ppt/presentation.xml")) kinds.push("pptx");
+  if (names.has("xl/workbook.xml")) kinds.push("xlsx");
+  return kinds.length === 1 ? kinds[0]! : null;
 }
+
+/** The media type each Office format is stored and served as. */
+export const OOXML_MEDIA_TYPES: Record<OoxmlKind, string> = {
+  docx: DOCX_MEDIA_TYPE,
+  pptx: PPTX_MEDIA_TYPE,
+  xlsx: XLSX_MEDIA_TYPE,
+};
 
 /** Cheap type detection for uploads: the directory only, nothing inflated. */
 export function detectOoxmlMediaType(bytes: Uint8Array): string | null {
   const directory = readZipDirectory(bytes);
   if (!directory.ok) return null;
   const kind = ooxmlKindOf(directory.entries);
-  return kind === "docx"
-    ? DOCX_MEDIA_TYPE
-    : kind === "pptx"
-    ? PPTX_MEDIA_TYPE
-    : null;
+  return kind === null ? null : OOXML_MEDIA_TYPES[kind];
 }
 
-const ACTIVE_PART = /(^|\/)(vbaProject\.bin|vbaData\.xml)$|(^|\/)activeX\//i;
+// Excel 4.0 macro sheets (XLM) and dialog sheets run code too, without a
+// vbaProject part.
+const ACTIVE_PART =
+  /(^|\/)(vbaProject\.bin|vbaData\.xml)$|(^|\/)(activeX|macrosheets|intlMacrosheets|dialogsheets)\//i;
 const EMBEDDED_PART = /(^|\/)embeddings\/|oleObject/i;
 const MACRO_CONTENT_TYPE =
-  /macroEnabled|vnd\.ms-office\.vbaProject|vnd\.ms-office\.activeX/i;
+  /macroEnabled|vnd\.ms-office\.vbaProject|vnd\.ms-office\.activeX|macrosheet|dialogsheet/i;
+// A workbook's links to other workbooks, its data connections (databases,
+// web queries) and its query tables fetch from elsewhere when refreshed.
+const REMOTE_PART = /^xl\/(externalLinks\/|connections\.xml$|queryTables\/)/i;
+// The one main part a plain .xlsx declares. Templates (.xltx) and
+// macro-enabled workbooks (.xlsm) declare another.
+const XLSX_MAIN_CONTENT_TYPE =
+  /ContentType=["']application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet\.main\+xml["']/;
 // Relationship types that make the reader fetch or run something remote when
 // the file is opened. A hyperlink only goes anywhere when it is tapped.
 const REMOTE_RELATIONSHIP =
@@ -265,8 +287,12 @@ export function parseOoxml(
     if (EMBEDDED_PART.test(entry.name)) {
       return { ok: false, reason: "embedded" };
     }
+    if (kind === "xlsx" && REMOTE_PART.test(entry.name)) {
+      return { ok: false, reason: "external_reference" };
+    }
   }
   let inflated = 0;
+  let workbookDeclared = false;
   for (const entry of directory.entries) {
     if (entry.name.endsWith("/")) continue;
     const part = readZipEntry(bytes, entry);
@@ -277,14 +303,19 @@ export function parseOoxml(
     }
     if (containsEicarSignature(part)) return { ok: false, reason: "malicious" };
     if (entry.name === "[Content_Types].xml") {
-      if (MACRO_CONTENT_TYPE.test(latin.decode(part))) {
+      const types = latin.decode(part);
+      if (MACRO_CONTENT_TYPE.test(types)) {
         return { ok: false, reason: "active_content" };
       }
+      workbookDeclared = XLSX_MAIN_CONTENT_TYPE.test(types);
     } else if (entry.name.endsWith(".rels")) {
       if (REMOTE_RELATIONSHIP.test(latin.decode(part))) {
         return { ok: false, reason: "external_reference" };
       }
     }
+  }
+  if (kind === "xlsx" && !workbookDeclared) {
+    return { ok: false, reason: "malformed" };
   }
   return { ok: true, kind, entryCount: directory.entries.length };
 }

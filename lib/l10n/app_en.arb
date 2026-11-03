@@ -1158,6 +1158,14 @@
   "attachmentThatFileCouldNotBe": "That file could not be uploaded.",
   "attachmentThatFileIsEmpty": "That file is empty.",
   "attachmentOnlyPdfAndPhotosCan": "Only PDF and photos can be attached.",
+  "attachmentOnlyOfficeAndPhotosCan": "Only PDF, Word and PowerPoint files and photos can be attached.",
+  "@attachmentOnlyOfficeAndPhotosCan": {
+    "description": "Shown when a picked file's type is not accepted where Word and PowerPoint are (students' hand-ins)."
+  },
+  "attachmentOnlyMaterialFilesCan": "Only PDF, Word, PowerPoint, Excel and CSV files and photos can be attached.",
+  "@attachmentOnlyMaterialFilesCan": {
+    "description": "Shown when a picked file's type is not accepted on a teacher's lesson or assignment material."
+  },
   "attachmentThatFileIsLargerThan": "That file is larger than {maximumSizeBytes} MB.",
   "@attachmentThatFileIsLargerThan": {
     "placeholders": {

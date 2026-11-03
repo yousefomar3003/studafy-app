@@ -1791,6 +1791,14 @@ class AppL10nAr extends AppL10n {
       'يمكن إرفاق ملفات PDF والصور فقط.';
 
   @override
+  String get attachmentOnlyOfficeAndPhotosCan =>
+      'يمكن إرفاق ملفات PDF وWord وPowerPoint والصور فقط.';
+
+  @override
+  String get attachmentOnlyMaterialFilesCan =>
+      'يمكن إرفاق ملفات PDF وWord وPowerPoint وExcel وCSV والصور فقط.';
+
+  @override
   String attachmentThatFileIsLargerThan(Object maximumSizeBytes) {
     return 'حجم الملف أكبر من $maximumSizeBytes ميغابايت.';
   }

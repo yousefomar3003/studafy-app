@@ -24,9 +24,12 @@ class AttachmentPolicy {
   /// Media types the server will accept for this purpose, lowercased.
   ///
   /// Deliberately not a superset of what phones can produce. Word and
-  /// PowerPoint are accepted only where a teacher files material (ADR-0037):
-  /// the scan reads their ZIP structure and refuses macros, embedded objects
-  /// and remote templates. Old binary .doc and .ppt are never accepted.
+  /// PowerPoint are accepted only where a teacher files material (ADR-0037)
+  /// and on hand-ins: the scan reads their ZIP structure and refuses macros,
+  /// embedded objects and remote templates. Excel and CSV only where a
+  /// teacher files material (DL-077): the scan refuses macro-enabled
+  /// workbooks and links to other files, and accepts a CSV only as plain
+  /// UTF-8 text. Old binary .doc, .ppt and .xls are never accepted.
   final Set<String> allowedMediaTypes;
 
   static const _image = {'image/jpeg', 'image/png'};
@@ -35,7 +38,11 @@ class AttachmentPolicy {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   static const pptx =
       'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  static const xlsx =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  static const csv = 'text/csv';
   static const _office = {docx, pptx};
+  static const _spreadsheet = {xlsx, csv};
 
   static const profileImage = AttachmentPolicy(
     purpose: FilePurpose.profileImage,
@@ -45,12 +52,12 @@ class AttachmentPolicy {
   static const lessonResource = AttachmentPolicy(
     purpose: FilePurpose.lessonResource,
     maximumSizeBytes: 25 * 1024 * 1024,
-    allowedMediaTypes: {..._document, ..._office, ..._image},
+    allowedMediaTypes: {..._document, ..._office, ..._spreadsheet, ..._image},
   );
   static const assignmentMaterial = AttachmentPolicy(
     purpose: FilePurpose.assignmentMaterial,
     maximumSizeBytes: 10 * 1024 * 1024,
-    allowedMediaTypes: {..._document, ..._office, ..._image},
+    allowedMediaTypes: {..._document, ..._office, ..._spreadsheet, ..._image},
   );
   static const assignmentSubmission = AttachmentPolicy(
     purpose: FilePurpose.assignmentSubmission,
@@ -118,6 +125,8 @@ class AttachmentPolicy {
         'audio/mp4' => 'm4a',
         docx => 'docx',
         pptx => 'pptx',
+        xlsx => 'xlsx',
+        csv => 'csv',
         _ => '',
       },
   ]..removeWhere((value) => value.isEmpty);

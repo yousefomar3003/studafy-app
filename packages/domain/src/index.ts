@@ -63,6 +63,7 @@ export {
 export {
   detectOoxmlMediaType,
   DOCX_MEDIA_TYPE,
+  OOXML_MEDIA_TYPES,
   OOXML_TOTAL_INFLATE_CAP_BYTES,
   type OoxmlKind,
   ooxmlKindOf,
@@ -72,9 +73,17 @@ export {
   PPTX_MEDIA_TYPE,
   readZipDirectory,
   readZipEntry,
+  XLSX_MEDIA_TYPE,
   type ZipDirectory,
   type ZipEntry,
 } from "./files/ooxml";
+export {
+  CSV_MEDIA_TYPE,
+  type CsvParseResult,
+  type CsvRejectReason,
+  csvText,
+  parseCsvText,
+} from "./files/csv";
 export {
   analyzeBytes,
   type AnalyzeResult,

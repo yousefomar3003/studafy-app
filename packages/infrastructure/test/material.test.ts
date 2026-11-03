@@ -1,13 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import { createCanvas } from "@napi-rs/canvas";
-import { buildDocx, buildPdf, buildPptx } from "@studafy/test-support";
-import { DOCX_MEDIA_TYPE, PPTX_MEDIA_TYPE } from "@studafy/domain";
+import {
+  buildDocx,
+  buildPdf,
+  buildPptx,
+  buildXlsx,
+  buildZip,
+} from "@studafy/test-support";
+import {
+  CSV_MEDIA_TYPE,
+  DOCX_MEDIA_TYPE,
+  PPTX_MEDIA_TYPE,
+  XLSX_MEDIA_TYPE,
+} from "@studafy/domain";
 import {
   chunkSections,
+  extractCsv,
+  extractXlsx,
   fetchPublicLink,
   isBlockedAddress,
   type MaterialReadDeps,
   readMaterial,
+  SPREADSHEET_LIMITS,
 } from "../src";
 
 /**
@@ -120,6 +134,212 @@ describe("Word and PowerPoint", () => {
       deps().deps,
     );
     expect(result).toMatchObject({ outcome: "unsupported", reason: "no_text" });
+  });
+});
+
+describe("Excel and CSV", () => {
+  const encode = (text: string) => new TextEncoder().encode(text);
+
+  test("a workbook is read sheet by sheet: strings, numbers, booleans, formulas, dates", async () => {
+    const book = buildXlsx([
+      {
+        name: "Marks",
+        rows: [
+          ["Name", "Score", "Passed", "Out of 20"],
+          ["Lina", 18, true, { formula: "B2/20", cached: 0.9 }],
+          [],
+          ["Omar", 0.1 + 0.2, false, {
+            formula: 'IF(B4>10,"yes","no")',
+            cached: "no",
+          }],
+        ],
+      },
+      {
+        name: "Dates",
+        rows: [[{ inline: "Exam" }, { date: 46329 }]],
+      },
+    ]);
+    const result = await readMaterial(
+      { kind: "file", mediaType: XLSX_MEDIA_TYPE, bytes: book },
+      deps().deps,
+    );
+    expect(result.outcome).toBe("ready");
+    expect(result.reason).toBeNull();
+    expect(result.extractor).toBe("xlsx-v1");
+    expect(result.chunks.map((c) => [c.heading, c.body])).toEqual([
+      [
+        "Marks",
+        "Name | Score | Passed | Out of 20\nLina | 18 | TRUE | 0.9\nOmar | 0.3 | FALSE | no",
+      ],
+      ["Dates", "Exam | 2026-11-03"],
+    ]);
+    expect(result.detail).toMatchObject({ sheets: 2, rows: 4 });
+  });
+
+  test("hidden sheets, rows and columns are not read", async () => {
+    const book = buildXlsx([
+      {
+        name: "Questions",
+        rows: [["Q", "Answer", "Topic"], ["Two and two", "4", "Sums"], [
+          "Three threes",
+          "9",
+          "Times",
+        ]],
+        hiddenColumns: [2],
+        hiddenRows: [3],
+      },
+      { name: "Key", rows: [["Secret answers"]], state: "hidden" },
+      { name: "Key2", rows: [["More secrets"]], state: "veryHidden" },
+    ]);
+    const result = await readMaterial(
+      { kind: "file", mediaType: XLSX_MEDIA_TYPE, bytes: book },
+      deps().deps,
+    );
+    expect(result.chunks.map((c) => [c.heading, c.body])).toEqual([
+      ["Questions", "Q | Topic\nTwo and two | Sums"],
+    ]);
+  });
+
+  test("a long sheet is split into passages that each repeat the header row", async () => {
+    const rows = [["Element", "Symbol", "Number"]];
+    for (let n = 1; n <= 120; n++) rows.push([`Element ${n}`, `E${n}`, `${n}`]);
+    const result = await readMaterial(
+      {
+        kind: "file",
+        mediaType: XLSX_MEDIA_TYPE,
+        bytes: buildXlsx([{ name: "Table", rows }]),
+      },
+      deps().deps,
+    );
+    expect(result.chunks.length).toBeGreaterThan(2);
+    for (const chunk of result.chunks) {
+      expect(chunk.heading).toBe("Table");
+      expect(chunk.body.startsWith("Element | Symbol | Number\n")).toBe(true);
+    }
+    const body = result.chunks.map((c) => c.body).join("\n");
+    expect(body).toContain("Element 120 | E120 | 120");
+    expect(result.reason).toBeNull();
+  });
+
+  test("past the caps the rest is left out and the file is partly read", async () => {
+    const rows = Array.from(
+      { length: SPREADSHEET_LIMITS.rows + 50 },
+      (_, n) => [`r${n}`],
+    );
+    const capped = await readMaterial(
+      {
+        kind: "file",
+        mediaType: XLSX_MEDIA_TYPE,
+        bytes: buildXlsx([{ name: "Long", rows }]),
+      },
+      deps().deps,
+    );
+    expect(capped.outcome).toBe("ready");
+    expect(capped.reason).toBe("partly_read");
+    expect(capped.detail["rows"]).toBe(SPREADSHEET_LIMITS.rows);
+
+    // The per-file character cap stops the reading too.
+    const small = await readMaterial(
+      {
+        kind: "file",
+        mediaType: CSV_MEDIA_TYPE,
+        bytes: encode("a,b\nc,d\ne,f\ng,h\n"),
+      },
+      deps({ limits: { ...limits, charsPerDocument: 12 } }).deps,
+    );
+    expect(small.reason).toBe("partly_read");
+    expect(small.chunks.map((c) => c.body)).toEqual(["a | b\nc | d"]);
+
+    // Too many columns.
+    const wide = extractCsv(
+      encode(Array.from({ length: 150 }, (_, i) => `c${i}`).join(",")),
+    );
+    expect(wide.truncated).toBe(true);
+    expect(wide.sections[0]!.text.split(" | ")).toHaveLength(
+      SPREADSHEET_LIMITS.columns,
+    );
+  });
+
+  test("a CSV keeps quoted separators, doubled quotes and line breaks in a cell", async () => {
+    const file = encode(
+      '﻿Term,Meaning\r\n"cell, plant","the ""unit"" of life\nin plants"\r\n\r\nATP,energy\n',
+    );
+    const result = await readMaterial(
+      { kind: "file", mediaType: CSV_MEDIA_TYPE, bytes: file },
+      deps().deps,
+    );
+    expect(result.outcome).toBe("ready");
+    expect(result.extractor).toBe("csv-v1");
+    expect(result.chunks.map((c) => [c.heading, c.body])).toEqual([
+      [
+        null,
+        'Term | Meaning\ncell, plant | the "unit" of life in plants\nATP | energy',
+      ],
+    ]);
+    expect(result.detail["rows"]).toBe(3);
+  });
+
+  test("a semicolon or tab separated file is read by its own separator", () => {
+    expect(extractCsv(encode("Name;Score\nLina;18,5\n")).sections[0]!.text)
+      .toBe("Name | Score\nLina | 18,5");
+    expect(extractCsv(encode("Name\tScore\nLina\t18\n")).sections[0]!.text)
+      .toBe("Name | Score\nLina | 18");
+  });
+
+  test("a sheet of unclosed rows and cells is read in one pass", () => {
+    const sheet =
+      `<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>kept</t></is></c></row>${
+        "<row><c><v>1".repeat(200_000)
+      }</sheetData></worksheet>`;
+    const book = buildZip([
+      {
+        name: "[Content_Types].xml",
+        data:
+          '<Types><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/></Types>',
+      },
+      {
+        name: "xl/workbook.xml",
+        data:
+          '<workbook><sheets><sheet name="S" r:id="rId1"/></sheets></workbook>',
+      },
+      {
+        name: "xl/_rels/workbook.xml.rels",
+        data:
+          '<Relationships><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
+      },
+      // Stored, so the size ratio does not refuse it first.
+      { name: "xl/worksheets/sheet1.xml", data: sheet, stored: true },
+    ]);
+    const started = performance.now();
+    const read = extractXlsx(book);
+    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(read.sections.map((s) => s.text)).toEqual(["kept"]);
+  });
+
+  test("an empty table is unsupported; bytes that are not one are unreadable", async () => {
+    expect(
+      await readMaterial(
+        { kind: "file", mediaType: CSV_MEDIA_TYPE, bytes: encode(",,\n,,\n") },
+        deps().deps,
+      ),
+    ).toMatchObject({ outcome: "unsupported", reason: "no_text" });
+    const notZip = encode("%PDF-1.7 not a workbook");
+    expect(
+      await readMaterial(
+        { kind: "file", mediaType: XLSX_MEDIA_TYPE, bytes: notZip },
+        deps().deps,
+      ),
+    ).toMatchObject({ outcome: "unsupported", reason: "unreadable_file" });
+    expect(
+      await readMaterial(
+        {
+          kind: "file",
+          mediaType: CSV_MEDIA_TYPE,
+          bytes: new Uint8Array([0x00, 0xff]),
+        },
+        deps().deps,
+      ),
+    ).toMatchObject({ outcome: "unsupported", reason: "unreadable_file" });
   });
 });
 

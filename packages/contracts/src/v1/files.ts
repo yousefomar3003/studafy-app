@@ -59,6 +59,9 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     // Word and PowerPoint, on lessons and assignments (ADR-0037).
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    // Excel and CSV, on lessons and assignments (DL-077).
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
   ]),
   sha256: Sha256,
   classroomId: Id.optional(),

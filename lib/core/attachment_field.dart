@@ -471,13 +471,24 @@ class AttachmentFieldState extends State<AttachmentField> {
 
   String _refusalText(AttachmentRefusal refusal) => switch (refusal) {
     AttachmentRefusal.empty => AppL10n.of(context).attachmentThatFileIsEmpty,
-    AttachmentRefusal.mediaType => AppL10n.of(
-      context,
-    ).attachmentOnlyPdfAndPhotosCan,
+    AttachmentRefusal.mediaType => _typesText(AppL10n.of(context)),
     AttachmentRefusal.tooLarge => AppL10n.of(
       context,
     ).attachmentThatFileIsLargerThan(_megabytes(_policy.maximumSizeBytes)),
   };
+
+  /// Names what this field does take: spreadsheets on teacher material,
+  /// Word and PowerPoint on hand-ins, otherwise PDF and photos.
+  String _typesText(AppL10n l10n) {
+    final types = _policy.allowedMediaTypes;
+    if (types.contains(AttachmentPolicy.xlsx)) {
+      return l10n.attachmentOnlyMaterialFilesCan;
+    }
+    if (types.contains(AttachmentPolicy.docx)) {
+      return l10n.attachmentOnlyOfficeAndPhotosCan;
+    }
+    return l10n.attachmentOnlyPdfAndPhotosCan;
+  }
 
   static String _megabytes(int bytes) =>
       (bytes / (1024 * 1024)).round().toString();

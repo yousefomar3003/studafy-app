@@ -154,4 +154,35 @@ void main() {
       AttachmentRefusal.mediaType,
     );
   });
+
+  test('Excel and CSV go on lessons and work, not on hand-ins', () {
+    for (final policy in [
+      AttachmentPolicy.lessonResource,
+      AttachmentPolicy.assignmentMaterial,
+    ]) {
+      expect(
+        policy.refuse(mediaType: AttachmentPolicy.xlsx, sizeBytes: 100),
+        isNull,
+      );
+      expect(
+        policy.refuse(mediaType: AttachmentPolicy.csv, sizeBytes: 100),
+        isNull,
+      );
+      expect(policy.pickerExtensions, containsAll(['xlsx', 'csv']));
+    }
+    expect(
+      AttachmentPolicy.assignmentSubmission.refuse(
+        mediaType: AttachmentPolicy.csv,
+        sizeBytes: 100,
+      ),
+      AttachmentRefusal.mediaType,
+    );
+    expect(
+      AttachmentPolicy.lessonResource.refuse(
+        mediaType: 'application/vnd.ms-excel',
+        sizeBytes: 100,
+      ),
+      AttachmentRefusal.mediaType,
+    );
+  });
 }

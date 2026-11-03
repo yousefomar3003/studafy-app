@@ -53,9 +53,13 @@ export { type FixtureIds, integrationSuite, removeFixtures } from "./database";
 export {
   buildDocx,
   buildPptx,
+  buildXlsx,
   buildZip,
   type DocxBlock,
   type OfficeOptions,
+  type XlsxCell,
+  type XlsxOptions,
+  type XlsxSheet,
   type ZipPart,
 } from "./officeFixtures";
 export { buildPdf, type PdfPage } from "./pdfFixtures";
