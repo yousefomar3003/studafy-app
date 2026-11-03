@@ -750,3 +750,72 @@ describe("delivery tokens", () => {
       .toThrow();
   });
 });
+
+describe("pictures and fonts are not searched for actions (2026-11-03)", () => {
+  // Pixel data that happens to contain `/JS` followed by a space: what a
+  // LibreOffice preview of a Word file with photos tripped.
+  const pixels = new Uint8Array(
+    deflateSync(new TextEncoder().encode("\x00\x07/JS \x99\x10\x80/JS\x01")),
+  );
+  const pdfWithStream = (dictionary: string, data: Uint8Array) =>
+    concat([
+      asciiBytes(
+        `%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n2 0 obj\n<< ${dictionary} /Length ${data.length} /Filter /FlateDecode >>\nstream\n`,
+      ),
+      data,
+      asciiBytes(
+        "\nendstream\nendobj\ntrailer\n<< /Size 3 >>\nstartxref\n0\n%%EOF\n",
+      ),
+    ]);
+
+  test("an image whose pixels contain /JS is not active content", async () => {
+    const image = pdfWithStream(
+      "/Type /XObject /Subtype /Image /Width 2 /Height 2",
+      pixels,
+    );
+    expect((await parsePdf(image)).ok).toBe(true);
+    expect((await analyzeBytes(image, "application/pdf")).verdict).toBe(
+      "clean",
+    );
+  });
+
+  test("so is an embedded font program", async () => {
+    for (const dictionary of ["/Length1 900", "/Subtype /OpenType"]) {
+      expect((await parsePdf(pdfWithStream(dictionary, pixels))).ok).toBe(
+        true,
+      );
+    }
+  });
+
+  test("the same bytes anywhere else are still refused, and say where", async () => {
+    expect(await parsePdf(pdfWithStream("/Type /XObject", pixels))).toEqual({
+      ok: false,
+      reason: "active_content",
+      pattern: "JS",
+      location: "stream",
+    });
+  });
+
+  test("an object stream claiming to be an image is still searched", async () => {
+    const hidden = new Uint8Array(
+      deflateSync(new TextEncoder().encode("<< /S /JavaScript /JS (x) >>")),
+    );
+    const result = await parsePdf(
+      pdfWithStream("/Type /ObjStm /Subtype /Image /N 1 /First 0", hidden),
+    );
+    expect(result).toMatchObject({ ok: false, reason: "active_content" });
+  });
+
+  test("an action in the document's own text names its pattern", async () => {
+    expect(
+      await parsePdf(
+        buildPdf("4 0 obj\n<< /S /Launch /F (x.exe) >>\nendobj\n"),
+      ),
+    ).toEqual({
+      ok: false,
+      reason: "active_content",
+      pattern: "Launch",
+      location: "body",
+    });
+  });
+});

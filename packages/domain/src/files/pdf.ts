@@ -57,7 +57,15 @@ export type PdfMalformedDetail =
 
 export type PdfParseResult =
   | { ok: true; streamCount: number; inflatedBytes: number }
-  | { ok: false; reason: PdfRejectReason; detail?: PdfMalformedDetail };
+  | {
+    ok: false;
+    reason: PdfRejectReason;
+    detail?: PdfMalformedDetail;
+    /** For a refused pattern: which one, and whether it was in the file's
+     * own text or inside a compressed stream (never any content). */
+    pattern?: string;
+    location?: "body" | "stream";
+  };
 
 interface DangerPattern {
   needle: string;
@@ -105,7 +113,14 @@ export async function parsePdf(
         : scanned,
     );
   const danger = scanDanger(text);
-  if (danger) return { ok: false, reason: danger };
+  if (danger) {
+    return {
+      ok: false,
+      reason: danger.reason,
+      pattern: danger.pattern,
+      location: "body",
+    };
+  }
   if (containsEicarSignature(bytes)) return { ok: false, reason: "malicious" };
 
   let streamCount = 0;
@@ -134,8 +149,22 @@ export async function parsePdf(
       if (inflatedText.includes("%PDF-")) {
         return { ok: false, reason: "embedded" };
       }
-      const inflatedDanger = scanDanger(inflatedText);
-      if (inflatedDanger) return { ok: false, reason: inflatedDanger };
+      // A picture's pixels or a font program are data a viewer never reads
+      // as PDF objects, and megabytes of them contain short patterns such
+      // as `/JS` by chance: a Word file's photos made LibreOffice previews
+      // fail as active content (2026-11-03). Only those are not searched
+      // for actions; every other check above and below still applies.
+      if (!isBinaryPayload(text, streamAt)) {
+        const inflatedDanger = scanDanger(inflatedText);
+        if (inflatedDanger) {
+          return {
+            ok: false,
+            reason: inflatedDanger.reason,
+            pattern: inflatedDanger.pattern,
+            location: "stream",
+          };
+        }
+      }
       if (containsEicarSignature(inflated)) {
         return { ok: false, reason: "malicious" };
       }
@@ -154,9 +183,13 @@ export async function parsePdf(
 
 function scanDangerIn(
   text: string,
-): DangerPattern["reason"] | "active_content" | null {
+):
+  | { reason: DangerPattern["reason"] | "active_content"; pattern: string }
+  | null {
   for (const pattern of DANGER_PATTERNS) {
-    if (text.includes(pattern.needle)) return pattern.reason;
+    if (text.includes(pattern.needle)) {
+      return { reason: pattern.reason, pattern: pattern.needle.slice(1) };
+    }
   }
   // `/JS` needs a delimiter check so words like `/JSON`-shaped content do
   // not trip it, while the real PDF action `/JS (` does.
@@ -168,10 +201,24 @@ function scanDangerIn(
         !(following >= 0x61 && following <= 0x7a) && // a-z
         !(following >= 0x30 && following <= 0x39) && // 0-9
         following !== 0x23 && following !== 0x2f; // # /
-    if (delimited) return "active_content" as const;
+    if (delimited) return { reason: "active_content", pattern: "JS" };
     at = text.indexOf("/JS", at + 3);
   }
   return null;
+}
+
+/**
+ * Whether the stream at `streamAt` holds only a picture or a font program,
+ * judged by its own dictionary. An object stream never counts, even one
+ * that also claims to be an image, and neither does a stream whose
+ * dictionary cannot be read: both are searched as before.
+ */
+function isBinaryPayload(text: string, streamAt: number): boolean {
+  const own = streamDictionary(text, streamAt);
+  if (own === null || /\/Type\s*\/ObjStm\b/.test(own)) return false;
+  return /\/Subtype\s*\/Image\b/.test(own) ||
+    /\/Length[123]\s/.test(own) ||
+    /\/Subtype\s*\/(?:Type1C|CIDFontType0C|OpenType)\b/.test(own);
 }
 
 /**
