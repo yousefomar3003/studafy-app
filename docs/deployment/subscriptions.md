@@ -114,9 +114,31 @@ parent.
   Google Pub/Sub OIDC token (signature, audience, service account). Both
   have their own fail-closed IP rate limit. Unverifiable events are never
   recorded.
-- Sandbox and production cannot mix: `PAY071_ENVIRONMENT` must match the
-  app's billing environment, and Apple/Google environment and test-purchase
-  flags are checked on every transaction.
+- `PAY071_ENVIRONMENT` must match the app's billing environment, and the
+  Apple environment and Google test-purchase flag are checked on every
+  transaction. Development, staging and synthetic servers take only store
+  test purchases (Apple Sandbox, Google license testers), never a real one.
+- **Production takes test purchases too, as test purchases (DL-080).** App
+  Review, TestFlight testers, sandbox testers and Google Play license
+  testers always buy in the store's test environment, even with the
+  production build against `api.studafy.com`; refusing them would fail App
+  Review. Following Apple's guidance (verify in production; if the data is
+  from the Sandbox, verify it against the Sandbox), a production server
+  holds a second Apple verifier and App Store Server API client for the
+  Sandbox, built from the same key, issuer, bundle id, app id and root
+  certificates. The signed data's own environment chooses the verifier, and
+  that verifier checks it in full (signature chain, bundle id, its
+  environment; the app id where Apple includes it); the account token,
+  product and package checks are unchanged. Such a purchase is stored with
+  `store_transactions.sandbox = true` and grants the plan in production
+  like any other (`environment` stays `production`, so every plan check is
+  unchanged). A test purchase never joins a real purchase's lineage or the
+  reverse: submit and restore answer `RECEIPT_INVALID`, a store event is
+  dead-lettered with `STORE_ENVIRONMENT_MISMATCH`, and the reconciliation
+  sweep, which re-reads an Apple test purchase from the Sandbox API, leaves
+  the row alone. **Anything that counts revenue or subscribers must leave
+  out rows with `sandbox = true`** (nothing in the codebase reports either
+  today).
 - Idempotency: events are deduplicated in `store_events`; ledger writes run
   under advisory locks; client calls need an idempotency key.
 - Financial records (`store_transactions`, `store_events`, `entitlements`)
@@ -180,11 +202,15 @@ parent.
 - [ ] Optional introductory offer: 1-month free trial. The app shows "Start
       a free month" only when StoreKit says the account is eligible.
 - [ ] **Billing Grace Period**: on. The server now keeps access through it.
-- [ ] **App Store Server Notifications**: Version 2. Production Server URL
-      `https://api.studafy.com/webhooks/apple` (launch-day cutover step 12);
-      Sandbox Server URL the test copy's
-      `https://studafy-api-test.fly.dev/webhooks/apple`. Production's
-      `APPLE_ENVIRONMENT` is `Production`.
+- [ ] **App Store Server Notifications**: Version 2. Until the launch-day
+      cutover, the Sandbox Server URL is the test copy's
+      `https://studafy-api-test.fly.dev/webhooks/apple`. At cutover step 12
+      set **both** the Production Server URL **and** the Sandbox Server URL
+      to `https://api.studafy.com/webhooks/apple`: Apple sends App Review's
+      and TestFlight's notifications to the Sandbox URL, and production
+      records those purchases as test purchases (DL-080). Production's
+      `APPLE_ENVIRONMENT` is `Production`; the Sandbox verifier comes with
+      it, nothing else to set.
 - [ ] **Users and Access → Integrations → In-App Purchase**: generate a key.
       Note the Key ID and the Issuer ID, and download the `.p8` (it can be
       downloaded only once).
@@ -231,6 +257,8 @@ parent.
       *Manage orders and subscriptions*, then create a JSON key
       (`GOOGLE_SERVICE_ACCOUNT_JSON`).
 - [ ] **License testers** (Setup → License testing) for test purchases.
+      Their purchases work against production too, recorded as test
+      purchases (DL-080).
 - [ ] Upload a signed build to a testing track: Play Billing works only for
       an app installed from Play.
 

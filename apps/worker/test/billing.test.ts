@@ -99,7 +99,9 @@ class FakeAppleVerifier implements AppleTransactionVerifier {
     if (!this.notification) throw new Error("no fake notification");
     return this.notification;
   }
+  statusCalls = 0;
   async getSubscriptionStatus() {
+    this.statusCalls += 1;
     if (this.statusError) throw this.statusError;
     return this.status;
   }
@@ -1242,5 +1244,257 @@ describe("Google Play voided purchases", () => {
     // revocation is billing_finish_event (supabase/tests/voided_purchases.sql).
     expect(finished[1]).toEqual(finished[0]);
     expect(again).toEqual({ ok: true });
+  });
+});
+
+// DL-080: production takes App Review, TestFlight and license-tester
+// purchases, recorded as test purchases. Each is re-verified with the
+// verifier for its own environment, and the body says which it was so the
+// ledger never moves a real lineage with a test event or the reverse.
+describe("test purchases in production (DL-080)", () => {
+  /** A compact JWS notification naming an Apple environment. */
+  function signedNotification(environment: string): string {
+    const encode = (value: unknown) =>
+      Buffer.from(JSON.stringify(value)).toString("base64url");
+    return `${encode({ alg: "ES256" })}.${
+      encode({ notificationType: "DID_RENEW", data: { environment } })
+    }.signature`;
+  }
+  function verifiers() {
+    const production = new FakeAppleVerifier();
+    const sandbox = new FakeAppleVerifier();
+    const fakes = [[production, "Production"], [sandbox, "Sandbox"]] as const;
+    for (const [fake, env] of fakes) {
+      fake.notification = {
+        notificationType: "DID_RENEW",
+        subtype: null,
+        notificationUUID: `uuid-${env}`,
+        transaction: verifiedApple({
+          environment: env,
+          originalTransactionId: `${env}-orig`,
+          transactionId: `${env}-txn`,
+        }),
+      };
+      fake.status = verifiedApple({
+        environment: env,
+        originalTransactionId: `${env}-orig`,
+        transactionId: `${env}-txn-renewed`,
+      });
+    }
+    const deps: BillingVerifierDependencies = {
+      environment: "production",
+      apple: appleEnv(production, { sandboxVerifier: sandbox }),
+      google: null,
+    };
+    return { production, sandbox, deps };
+  }
+
+  test("a Sandbox notification is verified and re-read in the Sandbox", async () => {
+    const { production, sandbox, deps } = verifiers();
+    const body = await reverify({
+      platform: "app_store",
+      environment: "production",
+      rawPayload: signedNotification("Sandbox"),
+    }, deps);
+    expect(sandbox.verifyNotificationCalls).toBe(1);
+    expect(sandbox.statusCalls).toBe(1);
+    expect(production.verifyNotificationCalls).toBe(0);
+    expect(production.statusCalls).toBe(0);
+    expect(body).toMatchObject({
+      platform: "app_store",
+      environment: "production",
+      originalTransactionId: "Sandbox-orig",
+      transactionId: "Sandbox-txn-renewed",
+      state: "active",
+      sandbox: true,
+    });
+  });
+
+  test("a Production notification stays with the Production verifier", async () => {
+    const { production, sandbox, deps } = verifiers();
+    const body = await reverify({
+      platform: "app_store",
+      environment: "production",
+      rawPayload: JSON.stringify({
+        signedPayload: signedNotification("Production"),
+      }),
+    }, deps);
+    expect(production.verifyNotificationCalls).toBe(1);
+    expect(production.statusCalls).toBe(1);
+    expect(sandbox.verifyNotificationCalls).toBe(0);
+    expect(body).toMatchObject({
+      originalTransactionId: "Production-orig",
+      sandbox: false,
+    });
+  });
+
+  test("the Sandbox verifier never vouches for Production data", async () => {
+    const { sandbox, deps } = verifiers();
+    sandbox.notification!.transaction = verifiedApple({
+      environment: "Production",
+    });
+    await expect(reverify({
+      platform: "app_store",
+      environment: "production",
+      rawPayload: signedNotification("Sandbox"),
+    }, deps)).rejects.toThrow(/trust/i);
+  });
+
+  test("a Sandbox status answer for a Production event is not used", async () => {
+    const { production, deps } = verifiers();
+    production.status = verifiedApple({ environment: "Sandbox" });
+    const body = await reverify({
+      platform: "app_store",
+      environment: "production",
+      rawPayload: signedNotification("Production"),
+    }, deps);
+    // Falls back to the embedded, Production-verified transaction.
+    expect(body).toMatchObject({
+      transactionId: "Production-txn",
+      sandbox: false,
+    });
+  });
+
+  test("development keeps its one Sandbox verifier", async () => {
+    const own = new FakeAppleVerifier();
+    own.notification = {
+      notificationType: "DID_RENEW",
+      subtype: null,
+      notificationUUID: "uuid-dev",
+      transaction: verifiedApple({ environment: "Sandbox" }),
+    };
+    const development: BillingVerifierDependencies = {
+      environment: "development",
+      apple: appleEnv(own, { platformEnvironment: "Sandbox" }),
+      google: null,
+    };
+    const body = await reverify({
+      platform: "app_store",
+      environment: "development",
+      rawPayload: signedNotification("Sandbox"),
+    }, development);
+    expect(own.verifyNotificationCalls).toBe(1);
+    expect(body).toMatchObject({ environment: "development", sandbox: true });
+
+    // A Production transaction is never trusted there.
+    own.notification.transaction = verifiedApple({ environment: "Production" });
+    await expect(reverify({
+      platform: "app_store",
+      environment: "development",
+      rawPayload: signedNotification("Production"),
+    }, development)).rejects.toThrow(/trust/i);
+  });
+
+  test("a license tester's Google notification is marked as a test purchase", async () => {
+    const google = new FakeGoogleVerifier();
+    const deps: BillingVerifierDependencies = {
+      environment: "production",
+      apple: null,
+      google: googleEnv(google),
+    };
+    google.purchase = verifiedGoogle({ testPurchase: true });
+    expect(
+      await reverify({
+        platform: "play_store",
+        environment: "production",
+        rawPayload: googleRtDn,
+      }, deps),
+    ).toMatchObject({ platform: "play_store", sandbox: true });
+
+    google.purchase = verifiedGoogle({ testPurchase: false });
+    expect(
+      await reverify({
+        platform: "play_store",
+        environment: "production",
+        rawPayload: googleRtDn,
+      }, deps),
+    ).toMatchObject({ sandbox: false });
+  });
+
+  function reconcileCandidate(
+    overrides: Partial<ReconciliationCandidate> = {},
+  ): ReconciliationCandidate {
+    return {
+      transactionId: "22222222-2222-4222-8222-222222222222",
+      platform: "app_store",
+      environment: "production",
+      storeTransactionId: "Sandbox-txn",
+      originalTransactionId: "Sandbox-orig",
+      state: "active",
+      acknowledgedAt: null,
+      purchasedAt: new Date().toISOString(),
+      ...overrides,
+    };
+  }
+
+  test("reconciliation re-reads a test purchase from the Sandbox API", async () => {
+    const { production, sandbox, deps } = verifiers();
+    const dispatch = new FakeDispatch();
+    dispatch.scan = [reconcileCandidate({ sandbox: true })];
+    const sweep = startBillingReconciliation(
+      dispatch,
+      deps,
+      testLogger().logger,
+    );
+    await sweep.runOnce();
+    await sweep.close();
+    expect(sandbox.statusCalls).toBe(1);
+    expect(production.statusCalls).toBe(0);
+    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({
+      originalTransactionId: "Sandbox-orig",
+      sandbox: true,
+    });
+  });
+
+  test("reconciliation re-reads a real purchase from the Production API", async () => {
+    const { production, sandbox, deps } = verifiers();
+    const dispatch = new FakeDispatch();
+    dispatch.scan = [
+      reconcileCandidate({
+        sandbox: false,
+        storeTransactionId: "Production-txn",
+        originalTransactionId: "Production-orig",
+      }),
+    ];
+    const sweep = startBillingReconciliation(
+      dispatch,
+      deps,
+      testLogger().logger,
+    );
+    await sweep.runOnce();
+    await sweep.close();
+    expect(production.statusCalls).toBe(1);
+    expect(sandbox.statusCalls).toBe(0);
+    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({
+      originalTransactionId: "Production-orig",
+      sandbox: false,
+    });
+  });
+
+  test("reconciliation tells the ledger whether a Google purchase is a test one", async () => {
+    const google = new FakeGoogleVerifier();
+    google.purchase = verifiedGoogle({
+      testPurchase: true,
+      acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+    });
+    const dispatch = new FakeDispatch();
+    dispatch.scan = [
+      reconcileCandidate({
+        platform: "play_store",
+        storeTransactionId: "gpa.token-1",
+        sandbox: true,
+      }),
+    ];
+    const sweep = startBillingReconciliation(
+      dispatch,
+      { environment: "production", apple: null, google: googleEnv(google) },
+      testLogger().logger,
+    );
+    await sweep.runOnce();
+    await sweep.close();
+    expect(dispatch.reconcileOutcomes[0]![1]).toMatchObject({
+      platform: "play_store",
+      sandbox: true,
+    });
   });
 });

@@ -242,16 +242,19 @@ step 10 answers). Billing runs only with a store's complete key set in the
 secrets file, and its server notifications must reach production:
 
 1. **App Store.** App Store Connect → the app → **App Information** → **App
-   Store Server Notifications** → **Production Server URL**:
-   `https://api.studafy.com/webhooks/apple`, **Version 2**. The Sandbox
-   Server URL may keep pointing at the test copy. The App Store secrets in
-   the file use `APPLE_ENVIRONMENT=Production` (the test copy's are
-   `Sandbox`): the API and worker verify Apple's signed data for that one
-   environment, and the dry run warns about any other value. Open question
-   for the owner: App Review buys in Apple's sandbox with the production
-   build, and the verifier has no sandbox fallback today
-   (`packages/infrastructure/src/billing/appleVerifier.ts`), so a
-   reviewer's purchase would be refused (DL-079).
+   Store Server Notifications** → **Production Server URL** **and**
+   **Sandbox Server URL**: both `https://api.studafy.com/webhooks/apple`,
+   **Version 2**. App Review, TestFlight and sandbox testers buy in Apple's
+   Sandbox with the production build, and Apple sends their notifications
+   to the Sandbox URL; production takes those purchases and records them as
+   test purchases (DL-080), so its Sandbox URL must be production too, not
+   the test copy (which this cutover stops). The App Store secrets in the
+   file use `APPLE_ENVIRONMENT=Production` (the test copy's are `Sandbox`),
+   and the dry run warns about any other value: with it, the production API
+   and worker hold a Production verifier and a Sandbox one, and the signed
+   data's own environment chooses which checks it
+   (`packages/infrastructure/src/billing/appleVerifier.ts`). Google Play
+   license testers' purchases are taken the same way, as test purchases.
 2. **Google Play.** Google Cloud project `studafy-lite` → **Pub/Sub** →
    **Subscriptions** → **Create subscription**, mirroring the test copy's
    `play-billing-to-test-api`:
@@ -347,8 +350,8 @@ themselves: restore them from step 0b's backup if they are needed
 **After DNS (steps 10-12).** Revert DNS: remove the `api` records (or point
 them back where they were) in Vercel → Domains → `studafy.com` → DNS
 records, set the relay's `UPTIME_URL` back to the test copy, and point the
-App Store's Production Server URL and the Pub/Sub push subscription away
-from production (or delete it). Then as above. Store builds already
+App Store's Production and Sandbox Server URLs and the Pub/Sub push
+subscription away from production (or delete it). Then as above. Store builds already
 released keep calling `api.studafy.com`, so roll back before step 13's
 builds reach users.
 

@@ -1,6 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
-import { createBillingRoutes } from "../../src/billing/routes";
+import {
+  type BillingRoutesDependencies,
+  createBillingRoutes,
+} from "../../src/billing/routes";
+import {
+  type AppleTransactionVerifier,
+  AppleVerificationError,
+  peekAppleSignedEnvironment,
+  type VerifiedAppleNotification,
+  type VerifiedAppleTransaction,
+} from "@studafy/infrastructure";
 import type {
   BillingRepository,
   BillingReservation,
@@ -14,7 +24,14 @@ import { createJsonLogger } from "@studafy/observability";
 
 const subject = "aaaaaaaa-0000-4000-8000-000000000001";
 const approvalId = "cccccccc-0000-4000-8000-000000000003";
-function harness() {
+function harness(
+  options: {
+    environment?: string;
+    apple?: BillingRoutesDependencies["apple"];
+    outcome?: string;
+  } = {},
+) {
+  const environment = options.environment ?? "production";
   const idem = new FakeIdempotencyRepository();
   const seen: NormalizedTransaction[] = [];
   let testPurchase = false;
@@ -28,6 +45,7 @@ function harness() {
     restored = false,
   ) {
     seen.push(body);
+    if (options.outcome) return { outcome: options.outcome };
     const response = {
       featureKey: body.productFeatureKey,
       derivation: "granted",
@@ -78,8 +96,8 @@ function harness() {
     createBillingRoutes(
       {
         repository,
-        environment: "production",
-        apple: null,
+        environment,
+        apple: options.apple ?? null,
         google: {
           packageName: "io.studafy.app",
           verifier: {
@@ -163,11 +181,37 @@ describe("billing trust boundary", () => {
       ).toBe(422);
       expect(h.verifierCalls()).toBe(0);
     });
-    test(`${path}: test receipts cannot grant production access`, async () => {
+    test(`${path}: a license tester's purchase is recorded as a test purchase`, async () => {
+      // DL-080: Play license testers (and Play's own review) always make
+      // test purchases, also against production.
       const h = harness();
       h.setTest(true);
-      expect((await send(h, path, body)).status).toBe(422);
-      expect(h.seen).toHaveLength(0);
+      expect((await send(h, path, body)).status).toBe(200);
+      expect(h.seen[0]).toMatchObject({
+        environment: "production",
+        sandbox: true,
+      });
+    });
+    test(`${path}: a real purchase is recorded as a real one`, async () => {
+      const h = harness();
+      expect((await send(h, path, body)).status).toBe(200);
+      expect(h.seen[0]?.sandbox).toBe(false);
+    });
+    test(`${path}: development still takes test purchases only`, async () => {
+      const real = harness({ environment: "development" });
+      expect(
+        (await send(real, path, { ...body, environment: "development" }))
+          .status,
+      ).toBe(422);
+      expect(real.seen).toHaveLength(0);
+
+      const tester = harness({ environment: "development" });
+      tester.setTest(true);
+      expect(
+        (await send(tester, path, { ...body, environment: "development" }))
+          .status,
+      ).toBe(200);
+      expect(tester.seen[0]?.sandbox).toBe(true);
     });
     test(`${path}: missing or foreign account binding is refused`, async () => {
       for (const account of [null, "bbbbbbbb-0000-4000-8000-000000000002"]) {
@@ -203,6 +247,200 @@ describe("billing trust boundary", () => {
         .purchaseAccountToken,
     ).toBe(subject);
   });
+});
+
+/** A compact JWS naming an Apple environment, as the app sends it. */
+function signedTransaction(environment: string): string {
+  const encode = (value: unknown) =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+  return `${encode({ alg: "ES256" })}.${
+    encode({ environment, bundleId: "com.studafy.light" })
+  }.signature`;
+}
+
+/**
+ * Stands in for Apple's SignedDataVerifier for one environment: like the
+ * library, it refuses signed data that names another environment.
+ */
+class FakeAppleVerifier implements AppleTransactionVerifier {
+  calls: string[] = [];
+  constructor(
+    readonly environment: "Sandbox" | "Production",
+    readonly overrides: Partial<VerifiedAppleTransaction> = {},
+  ) {}
+  transaction(): VerifiedAppleTransaction {
+    return {
+      appAccountToken: subject,
+      bundleId: "com.studafy.light",
+      environment: this.environment,
+      originalTransactionId: `${this.environment}-original`,
+      transactionId: `${this.environment}-transaction`,
+      productId: "studafy_plus_monthly",
+      purchaseDate: Date.now() - 1000,
+      expiresDate: Date.now() + 86400000,
+      revocationReason: null,
+      subscriptionStatus: 1,
+      autoRenewing: true,
+      ...this.overrides,
+    };
+  }
+  async verifyTransaction(signed: string) {
+    this.calls.push("verifyTransaction");
+    if (peekAppleSignedEnvironment(signed) !== this.environment) {
+      throw new AppleVerificationError("environment mismatch");
+    }
+    return this.transaction();
+  }
+  async getSubscriptionStatus() {
+    this.calls.push("getSubscriptionStatus");
+    return this.transaction();
+  }
+  verifyNotification(): Promise<VerifiedAppleNotification> {
+    throw new Error("not used");
+  }
+}
+
+describe("DL-080: App Review, TestFlight and sandbox testers", () => {
+  const appleBody = (environment: string, server = "production") => ({
+    platform: "app_store",
+    environment: server,
+    productFeatureKey: "studafy_plus",
+    storeProductId: "studafy_plus_monthly",
+    verificationPayload: signedTransaction(environment),
+  });
+  function productionApple(
+    sandboxOverrides: Partial<VerifiedAppleTransaction> = {},
+  ) {
+    const production = new FakeAppleVerifier("Production");
+    const sandbox = new FakeAppleVerifier("Sandbox", sandboxOverrides);
+    return {
+      production,
+      sandbox,
+      apple: {
+        verifier: production,
+        sandboxVerifier: sandbox,
+        bundleId: "com.studafy.light",
+        platformEnvironment: "Production" as const,
+      },
+    };
+  }
+
+  for (const path of ["/v1/billing/purchases", "/v1/billing/restore"]) {
+    test(`${path}: production takes an Apple Sandbox purchase as a test purchase`, async () => {
+      const { production, sandbox, apple } = productionApple();
+      const h = harness({ apple });
+      const res = await send(h, path, appleBody("Sandbox"));
+      expect(res.status).toBe(200);
+      // Verified, and its status read, in the Sandbox only.
+      expect(sandbox.calls).toEqual([
+        "verifyTransaction",
+        "getSubscriptionStatus",
+      ]);
+      expect(production.calls).toEqual([]);
+      expect(h.seen[0]).toMatchObject({
+        platform: "app_store",
+        environment: "production",
+        originalTransactionId: "Sandbox-original",
+        state: "active",
+        sandbox: true,
+      });
+    });
+
+    test(`${path}: production takes a real App Store purchase as a real one`, async () => {
+      const { production, sandbox, apple } = productionApple();
+      const h = harness({ apple });
+      const res = await send(h, path, appleBody("Production"));
+      expect(res.status).toBe(200);
+      expect(production.calls).toEqual([
+        "verifyTransaction",
+        "getSubscriptionStatus",
+      ]);
+      expect(sandbox.calls).toEqual([]);
+      expect(h.seen[0]).toMatchObject({
+        environment: "production",
+        sandbox: false,
+      });
+    });
+
+    test(`${path}: a Sandbox purchase for another app or account is still refused`, async () => {
+      for (
+        const overrides of [
+          { bundleId: "com.evil.app" },
+          { appAccountToken: "bbbbbbbb-0000-4000-8000-000000000002" },
+          { appAccountToken: null },
+          { productId: "studafy_max_monthly" },
+          // The Sandbox verifier only ever trusts Sandbox data.
+          { environment: "Production" as const },
+        ]
+      ) {
+        const { apple } = productionApple(overrides);
+        const h = harness({ apple });
+        expect((await send(h, path, appleBody("Sandbox"))).status).toBe(422);
+        expect(h.seen).toHaveLength(0);
+      }
+    });
+
+    test(`${path}: unreadable signed data goes to the Production verifier and is refused`, async () => {
+      const { production, sandbox, apple } = productionApple();
+      const h = harness({ apple });
+      const res = await send(h, path, {
+        ...appleBody("Sandbox"),
+        verificationPayload: "signed.payload",
+      });
+      expect(res.status).toBe(422);
+      expect(production.calls).toEqual(["verifyTransaction"]);
+      expect(sandbox.calls).toEqual([]);
+    });
+
+    test(`${path}: a test purchase on a real lineage is refused`, async () => {
+      const { apple } = productionApple();
+      const h = harness({ apple, outcome: "store_environment_mismatch" });
+      const res = await send(h, path, appleBody("Sandbox"));
+      expect(res.status).toBe(422);
+      expect(((await res.json()) as { code: string }).code).toBe(
+        "RECEIPT_INVALID",
+      );
+    });
+
+    test(`${path}: development still refuses a real App Store purchase`, async () => {
+      const own = new FakeAppleVerifier("Sandbox");
+      const apple = {
+        verifier: own,
+        bundleId: "com.studafy.light",
+        platformEnvironment: "Sandbox" as const,
+      };
+      const real = harness({ environment: "development", apple });
+      expect(
+        (await send(real, path, appleBody("Production", "development")))
+          .status,
+      ).toBe(422);
+      expect(real.seen).toHaveLength(0);
+
+      // Even with Production Apple keys by mistake: still refused.
+      const misconfigured = harness({
+        environment: "development",
+        apple: {
+          ...apple,
+          verifier: new FakeAppleVerifier("Production"),
+          platformEnvironment: "Production",
+        },
+      });
+      expect(
+        (await send(
+          misconfigured,
+          path,
+          appleBody("Production", "development"),
+        )).status,
+      ).toBe(422);
+
+      const tester = harness({ environment: "development", apple });
+      expect(
+        (await send(tester, path, appleBody("Sandbox", "development")))
+          .status,
+      ).toBe(200);
+      expect(tester.seen[0]?.sandbox).toBe(true);
+    });
+  }
 });
 
 // DL-071: students buy their own plans; the approval routes stay only so an

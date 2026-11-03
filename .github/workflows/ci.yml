@@ -402,6 +402,14 @@ jobs:
           bunx supabase test db --local
           supabase/tests/voided_purchases.sql
 
+      # DL-080: production takes App Review, TestFlight and license-tester
+      # purchases as test purchases; they grant the plan but never share a
+      # lineage with a real purchase. Transactional.
+      - name: Verify test purchases in production
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/test_purchases_in_production.sql
+
       - name: Verify managed child accounts
         run: >-
           bunx supabase test db --local

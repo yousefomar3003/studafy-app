@@ -42,6 +42,9 @@ export interface ReconciliationCandidate {
   state: string;
   acknowledgedAt: string | null;
   purchasedAt: string;
+  /** A store test purchase (`store_transactions.sandbox`, DL-080): an
+   * Apple one is re-read from the Sandbox App Store Server API. */
+  sandbox?: boolean;
 }
 
 export interface BillingDispatchPort {

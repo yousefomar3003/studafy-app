@@ -5325,6 +5325,7 @@ export type Database = {
           purchaser_id: string;
           reconciled_at: string | null;
           renewal_status: string | null;
+          sandbox: boolean;
           signed_data_hash: string;
           state: Database["public"]["Enums"]["store_transaction_state"];
           transaction_id: string;
@@ -5346,6 +5347,7 @@ export type Database = {
           purchaser_id: string;
           reconciled_at?: string | null;
           renewal_status?: string | null;
+          sandbox?: boolean;
           signed_data_hash: string;
           state: Database["public"]["Enums"]["store_transaction_state"];
           transaction_id: string;
@@ -5367,6 +5369,7 @@ export type Database = {
           purchaser_id?: string;
           reconciled_at?: string | null;
           renewal_status?: string | null;
+          sandbox?: boolean;
           signed_data_hash?: string;
           state?: Database["public"]["Enums"]["store_transaction_state"];
           transaction_id?: string;
