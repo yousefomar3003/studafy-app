@@ -5,20 +5,19 @@
 // answers, which includes app.studafy.com: the Vercel project studafy-legal
 // (`bun run legal:deploy:vercel`), and the Cloudflare copy (wrangler.toml).
 //
-// APPLE_TEAM_ID is real (DL-079): Studafy Limited's team, which signs the iOS
-// app (DEVELOPMENT_TEAM in ios/Runner.xcodeproj). ANDROID_SHA256 is still a
-// PLACEHOLDER: while it is, assetlinks.json is well-formed but names no real
-// certificate, so Android does not verify the domain and sign-in there keeps
-// the custom-scheme fallback (io.studafy.app://login-callback). Replace it,
-// run `bun test ops/legal-site` and `bun run legal:deploy:vercel`:
-//   - ANDROID_SHA256: Play Console → Setup → App integrity → App signing key
-//     certificate → SHA-256 (the Play App Signing key, not the upload key).
+// Both are real. APPLE_TEAM_ID (DL-079): Studafy Limited's team, which signs
+// the iOS app (DEVELOPMENT_TEAM in ios/Runner.xcodeproj). ANDROID_SHA256
+// (owner, 2026-11-04): Play Console → Test and release → App integrity →
+// App signing key certificate → SHA-256 - the key Google signs the store
+// build with, not the upload key. If Play's signing key ever changes, replace
+// it, run `bun test ops/legal-site` and `bun run legal:deploy:vercel`.
 
 /** Apple Developer Team ID of Studafy Limited (Membership details). */
 export const APPLE_TEAM_ID = "869AV76RU2";
 
-/** Placeholder: replace with the Play App Signing certificate SHA-256. */
-export const ANDROID_SHA256 = "PENDING_PLAY_APP_SIGNING_SHA256";
+/** Play App Signing certificate SHA-256 of com.studafy.light. */
+export const ANDROID_SHA256 =
+  "11:36:E6:97:2A:3B:A8:91:A3:8E:71:E6:1D:1C:1D:F0:82:D2:F5:AC:0C:20:E2:70:A4:DF:59:1F:3E:FE:F3:E8";
 
 /** iOS bundle identifier and Android package name (ADR-0015, DL-058). */
 export const APP_ID = "com.studafy.light";
