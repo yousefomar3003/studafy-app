@@ -7,7 +7,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(22);
+select plan(23);
 
 \set child 'f00d0000-0000-4000-8000-0000000000c1'
 \set old_child 'f00d0000-0000-4000-8000-0000000000c2'
