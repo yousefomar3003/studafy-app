@@ -23,6 +23,7 @@ of the Mac-hosted API:
 | `studafy-api-test` | `fly.test.api.toml` | https://studafy-api-test.fly.dev |
 | `studafy-worker-test` | `fly.test.worker.toml` | (no HTTP) |
 | `studafy-scanner-test` | `fly.scanner.test.toml` | `http://studafy-scanner-test.internal:8080` (private) |
+| `studafy-converter-test` | `fly.converter.test.toml` | `http://studafy-converter-test.internal:8080` (private) |
 
 It uses the same Frankfurt Supabase project, Redis, Sentry and Cloudflare
 test keys as `.env.hosted`. Secrets were piped from `.env.hosted` with
@@ -62,6 +63,60 @@ Redeploy the scanner with `fly deploy -c fly.scanner.test.toml --ha=false`.
 Production has its own scanner app, `studafy-scanner` (`fly.scanner.toml`),
 with the same configuration and its own key; the test scanner is never
 shared with production. See the checklist below.
+
+### Document converter (DL-078)
+
+`studafy-converter-test` is LibreOffice, headless (`infra/converter/`),
+behind a small Python server that speaks the `HttpDocumentConverter`
+contract (`packages/infrastructure/src/documentConverter.ts`). The worker
+sends a file the scan already cleared to
+`POST /convert?from=<doc|docx|xls|xlsx|csv|ppt|pptx>&to=<pdf|docx|xlsx|pptx>`
+with a bearer key and stores what comes back: the in-app PDF preview of
+every Word, Excel, PowerPoint and CSV file, and the .docx/.xlsx/.pptx copy
+of an old .doc/.xls/.ppt that the AI reads. A refusal is a 422 with a short
+code (the rendition is marked failed); anything else is retried. `GET
+/healthz` answers 200 once a startup self-test has converted a CSV to a PDF.
+
+It is **private** like the scanner: `fly.converter.test.toml` has no
+`[http_service]` or `[[services]]`, so it has no public IP. The worker
+reaches it at `http://studafy-converter-test.internal:8080`. One conversion
+runs at a time, in a fresh temporary directory and LibreOffice profile
+(deleted afterwards), as the unprivileged `converter` user, with macros off,
+links never updated, workbooks never recalculated, and the whole process
+group killed after 90 seconds; input and output are capped at 25 MB. The
+entrypoint also blocks that user's new outbound connections where the
+machine's kernel allows it (`egress_blocked` in the log;
+`egress_block_unavailable` means the other layers hold alone).
+
+One key, generated with `openssl rand -hex 32` (at least 32 characters, or
+the server refuses to start), lives in two places:
+
+| App | Secret |
+|---|---|
+| `studafy-converter-test` | `CONVERTER_API_KEY` |
+| `studafy-worker-test` | `CONVERTER_API_KEY` (the same value), with `CONVERTER_URL=http://studafy-converter-test.internal:8080` |
+
+First deploy (operator; nothing here is run by CI):
+
+1. `fly apps create studafy-converter-test`
+2. `fly secrets set CONVERTER_API_KEY=<key> -a studafy-converter-test --stage`
+3. `fly deploy -c fly.converter.test.toml --ha=false`, then check: `fly ips
+   list -a studafy-converter-test` shows no address, and `fly checks list -a
+   studafy-converter-test` is passing (the self-test takes up to a minute).
+4. `fly secrets set CONVERTER_URL=http://studafy-converter-test.internal:8080
+   CONVERTER_API_KEY=<key> -a studafy-worker-test` (this restarts the
+   worker). Its startup log's `file051.documentConverterConfigured` is
+   `true`; renditions skipped while there was no converter are queued again
+   (`renditions_requeued`), and `rendition_backlog` lines count what waits.
+   The migration `202611030060_document_conversions.sql` must be applied
+   first; it queues every document already stored.
+
+Without `CONVERTER_URL` and `CONVERTER_API_KEY` nothing breaks: renditions
+are marked `skipped`, downloads work, a preview answers 409
+`PREVIEW_UNAVAILABLE`, and old .doc/.xls/.ppt lesson files are reported
+unreadable to the AI until a converter is set. Rotate the key as the
+scanner's: stage it on both, deploy the converter, then `fly secrets deploy
+-a studafy-worker-test`. Production has no converter app yet.
 
 ## Production deploy checklist (launch plan A6, C11)
 

@@ -438,6 +438,15 @@ jobs:
           bunx supabase test db --local
           supabase/tests/ai_output_reports.sql
 
+      # DL-078: .doc/.xls/.ppt uploads, renditions queued when a file is
+      # cleared and dropped with it, the converter worker's claim and
+      # finish, the material index waiting for a .doc's OOXML copy, and PDF
+      # previews under the original's authorization. Transactional.
+      - name: Verify old Office files and in-app previews
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/document_conversions.sql
+
       - name: Verify first-sign-in profile setup
         run: >-
           bunx supabase test db --local
@@ -743,6 +752,11 @@ jobs:
         run: bun test apps packages scripts ops
         env:
           REDIS_URL: redis://127.0.0.1:6379
+
+      # DL-078: the document converter's HTTP front, with LibreOffice
+      # replaced by a stand-in (auth, limits, timeouts, profile settings).
+      - name: Test the document converter server
+        run: python3 -m unittest discover -s infra/converter -p 'test_*.py'
 
       - name: Build API and worker bundles
         run: bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build

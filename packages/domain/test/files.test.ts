@@ -9,6 +9,7 @@ import {
   hashDeliveryNonce,
   isDedupeEligible,
   parseJpeg,
+  parsePdf,
   parsePng,
   parseWebp,
   signDeliveryToken,
@@ -328,6 +329,32 @@ describe("pdf", () => {
     const transform = transformBytes(pdf, "application/pdf");
     expect(transform.bytes).toBeNull();
     expect(transform.transformPolicyVersion).toBeNull();
+  });
+
+  test("a converter's open-at-page destination passes only when asked (DL-078)", async () => {
+    const destination = buildPdf(
+      "<< /OpenAction [3 0 R /XYZ null null 0] >>\n",
+    );
+    // An upload never gets the exception.
+    expect(await analyzeBytes(destination, "application/pdf")).toEqual({
+      verdict: "policy_rejected",
+      errorCode: "active_content",
+    });
+    expect(
+      (await parsePdf(destination, { allowOpenActionDestination: true })).ok,
+    ).toBe(true);
+    // An action dictionary, or a reference to one, is still refused.
+    for (
+      const body of [
+        "<< /OpenAction << /S /GoTo /D [3 0 R /Fit] >> >>\n",
+        "<< /OpenAction 9 0 R >>\n",
+        "<< /OpenAction [3 0 R /Fit] /Names << /JavaScript 4 0 R >> >>\n",
+      ]
+    ) {
+      expect(
+        await parsePdf(buildPdf(body), { allowOpenActionDestination: true }),
+      ).toMatchObject({ ok: false, reason: "active_content" });
+    }
   });
 
   test("rejects active content, encryption and embedded files", async () => {

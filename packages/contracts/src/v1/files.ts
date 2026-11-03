@@ -62,6 +62,11 @@ export const V1CreateUploadIntentRequest = z.strictObject({
     // Excel and CSV, on lessons and assignments (DL-077).
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/csv",
+    // Word, Excel and PowerPoint 97-2003, on lessons and assignments
+    // (DL-078). Read by the AI and previewed through a converted copy.
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
   ]),
   sha256: Sha256,
   classroomId: Id.optional(),
@@ -201,7 +206,16 @@ export type V1CompleteUploadResponse = z.infer<
   typeof V1CompleteUploadResponse
 >;
 
-export const V1DownloadIntentRequest = z.strictObject({});
+/**
+ * `variant` (DL-078): `original` (the default) is the file as uploaded.
+ * `preview` is a PDF to show inside the app: a PDF itself, or the PDF the
+ * document converter made of an Office file or CSV - otherwise 409
+ * `PREVIEW_UNAVAILABLE` (not made yet, could not be made, or a type that has
+ * no preview, such as a picture). The same authorization as the original.
+ */
+export const V1DownloadIntentRequest = z.strictObject({
+  variant: z.enum(["original", "preview"]).optional(),
+});
 export type V1DownloadIntentRequest = z.infer<
   typeof V1DownloadIntentRequest
 >;

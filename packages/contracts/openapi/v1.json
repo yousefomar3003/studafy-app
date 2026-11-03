@@ -27373,6 +27373,7 @@
               "FILE_PUBLISH_DISABLED",
               "DELIVERY_GRANT_INVALID",
               "STORAGE_UNAVAILABLE",
+              "PREVIEW_UNAVAILABLE",
               "RECEIPT_INVALID",
               "BENEFICIARY_LINK_INVALID",
               "PARENTAL_GATE_REQUIRED",
@@ -32046,7 +32047,10 @@
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
               "application/vnd.openxmlformats-officedocument.presentationml.presentation",
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              "text/csv"
+              "text/csv",
+              "application/msword",
+              "application/vnd.ms-excel",
+              "application/vnd.ms-powerpoint"
             ]
           },
           "sha256": {
@@ -32592,7 +32596,15 @@
       },
       "V1DownloadIntentRequest": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "variant": {
+            "type": "string",
+            "enum": [
+              "original",
+              "preview"
+            ]
+          }
+        },
         "additionalProperties": false
       },
       "V1DownloadIntentResponse": {

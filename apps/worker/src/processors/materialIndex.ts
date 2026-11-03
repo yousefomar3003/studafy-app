@@ -1,5 +1,6 @@
 import type { Sql } from "@studafy/database";
 import type { Logger } from "@studafy/observability";
+import { isLegacyOfficeType } from "@studafy/domain";
 import {
   type MaterialLimits,
   type MaterialReadDeps,
@@ -34,6 +35,18 @@ export interface MaterialJob {
     storedSha256: string | null;
     mediaType: string | null;
     rootClean: boolean;
+  } | null;
+  /**
+   * DL-078: an old .doc/.xls/.ppt is read from its OOXML copy, made by the
+   * document converter. The claim leaves a file alone while that copy is
+   * queued or being made; null when the file has none.
+   */
+  rendition?: {
+    status: "queued" | "processing" | "ready" | "failed" | "skipped";
+    bucket: string;
+    objectKey: string;
+    sha256: string | null;
+    mediaType: string;
   } | null;
   url: string | null;
   /** private.ai_material_limits(): the one place the limits are set. */
@@ -135,22 +148,61 @@ export function createMaterialIndexProcessor(deps: MaterialIndexDeps) {
           });
           return;
         }
-        const { bytes } = await deps.storage.openObject(
-          file.bucket,
-          file.objectKey,
-        );
-        // Only the exact bytes the scan cleared are ever read or sent.
-        if (await sha256Hex(bytes) !== file.storedSha256) {
-          await deps.queue.finish(workerId, job.docId, {
-            outcome: "retry",
-            reason: "stored_object_mismatch",
-          });
-          return;
+        if (isLegacyOfficeType(file.mediaType)) {
+          const copy = job.rendition;
+          if (copy?.status === "queued" || copy?.status === "processing") {
+            // Still being converted: read it once the copy is settled.
+            await deps.queue.finish(workerId, job.docId, {
+              outcome: "retry",
+              reason: "processing",
+            });
+            return;
+          }
+          let converted: { mediaType: string; bytes: Uint8Array } | null = null;
+          if (copy?.status === "ready") {
+            const { bytes } = await deps.storage.openObject(
+              copy.bucket,
+              copy.objectKey,
+            );
+            // Only the exact copy the converter's worker stored is read.
+            if (await sha256Hex(bytes) !== copy.sha256) {
+              await deps.queue.finish(workerId, job.docId, {
+                outcome: "retry",
+                reason: "stored_object_mismatch",
+              });
+              return;
+            }
+            converted = { mediaType: copy.mediaType, bytes };
+          }
+          // No copy (failed, skipped, none): unreadable, until a copy is
+          // made and the reading is queued again.
+          result = await readMaterial(
+            {
+              kind: "file",
+              mediaType: file.mediaType,
+              bytes: new Uint8Array(),
+              converted,
+            },
+            readDeps,
+          );
+        } else {
+          const { bytes } = await deps.storage.openObject(
+            file.bucket,
+            file.objectKey,
+          );
+          // Only the exact bytes the scan cleared are ever read or sent.
+          if (await sha256Hex(bytes) !== file.storedSha256) {
+            await deps.queue.finish(workerId, job.docId, {
+              outcome: "retry",
+              reason: "stored_object_mismatch",
+            });
+            return;
+          }
+          result = await readMaterial(
+            { kind: "file", mediaType: file.mediaType, bytes },
+            readDeps,
+          );
         }
-        result = await readMaterial(
-          { kind: "file", mediaType: file.mediaType, bytes },
-          readDeps,
-        );
       } else {
         result = await readMaterial(
           { kind: "link", url: job.url ?? "" },

@@ -220,6 +220,7 @@ Phone app ──HTTPS──> Fly API (fra) ──TLS──> Supabase Postgres, A
                          └──HTTPS──> Together AI  (questions, photos, lesson passages)
 
 Fly worker (fra) ──> ClamAV scanner (Fly private network, fra)
+                 ──> Document converter (Fly private network, fra; DL-078)
                  ──> Together AI (scanned pages of teacher files)
                  ──> FCM / Resend / Google Calendar (when switched on)
 Logs ──> Fly log shipper ──> Axiom (EU)        Errors ──> Sentry (EU)
@@ -256,6 +257,7 @@ checked from the repository. No DPA is recorded as signed for any provider
 | Google Calendar and Meet | Processor (when meetings are on, B8) | Meeting title, times, attendee emails | Global | Workspace terms needed (DL-052) | TODO |
 | Apple and Google stores | Independent controllers | Purchases | Global | — | — |
 | ClamAV scanner | Run by Studafy (no third party) | Uploaded files | Fly `fra`, private network only (`fly.scanner.test.toml`) | — | — |
+| Document converter (LibreOffice, DL-078) | Run by Studafy (no third party) | Teachers' Office files and CSV, after the scan; it keeps nothing. The PDF preview and the OOXML copy of an old .doc/.xls/.ppt it makes are stored in the same private bucket and deleted with the file | Fly `fra`, private network only (`fly.converter.test.toml`) | — | — |
 
 <!-- TODO(legal): confirm the role and the transfer mechanism (SCCs, DPF,
 adequacy) for each row, sign each DPA, and record a transfer impact

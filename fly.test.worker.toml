@@ -53,6 +53,11 @@ primary_region = "fra"
   # key (AI_API_KEY) is a secret; the origin and model are not.
   AI_MATERIAL_INDEX_ENABLED = "true"
   AI_LESSON_TOOLS_ENABLED = "true"
+  # DL-078: PDF previews and the OOXML copies of old .doc/.xls/.ppt files
+  # come from studafy-converter-test (fly.converter.test.toml). Its address
+  # and key are secrets here: CONVERTER_URL
+  # (http://studafy-converter-test.internal:8080) and CONVERTER_API_KEY.
+  # Without them renditions are skipped and nothing else changes.
   # ADR-0046: suggested marks, as on the test API.
   MARKING_SUGGESTIONS_ENABLED = "true"
   AI_BASE_URL = "https://api.together.xyz"

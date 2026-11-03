@@ -16,6 +16,14 @@ const scanWorker = join(
   "processors",
   "fileScan.ts",
 );
+const renditionWorker = join(
+  root,
+  "apps",
+  "worker",
+  "src",
+  "processors",
+  "renditions.ts",
+);
 const allowedStorageAdapter = join(
   root,
   "packages",
@@ -54,6 +62,12 @@ for (const base of roots) {
         `${
           relative(root, file)
         } overwrites stored bytes outside the scan worker`,
+      );
+    }
+    // DL-078: derived files are written by the rendition worker alone.
+    if (/\.writeRendition\s*\(/.test(source) && file !== renditionWorker) {
+      violations.push(
+        `${relative(root, file)} writes a rendition outside its worker`,
       );
     }
     if (/quarantine\/v1\//.test(source)) {

@@ -66,6 +66,8 @@ export interface DownloadGrantInternal {
   nonceHash: string;
   downloadUrl: string;
   expiresAt: string;
+  /** DL-078: the file as uploaded, or its in-app PDF preview. */
+  variant?: "original" | "preview";
 }
 
 export interface EffectiveObject {

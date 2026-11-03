@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   CSV_MEDIA_TYPE,
+  detectCfbMediaType,
   detectOoxmlMediaType,
   MP4_AUDIO_BRANDS,
   parseCsvText,
@@ -58,7 +59,24 @@ export interface PrivateFileStorage {
   ): Promise<void>;
 }
 
-export class SupabasePrivateFileStorage implements PrivateFileStorage {
+/**
+ * Derived files (DL-078): a PDF preview, or the OOXML copy of an old binary
+ * Office file. Written only under `renditions/v1/`, so the rendition worker
+ * can never overwrite an uploaded original; the database names the key.
+ */
+export interface RenditionStorage {
+  openObject: PrivateFileStorage["openObject"];
+  delete: PrivateFileStorage["delete"];
+  writeRendition(
+    bucket: string,
+    objectKey: string,
+    bytes: Uint8Array,
+    contentType: string,
+  ): Promise<void>;
+}
+
+export class SupabasePrivateFileStorage
+  implements PrivateFileStorage, RenditionStorage {
   readonly #client: SupabaseClient;
 
   constructor(supabaseUrl: string, serviceRoleKey: string) {
@@ -163,6 +181,24 @@ export class SupabasePrivateFileStorage implements PrivateFileStorage {
     );
     if (error) throw new StorageUnavailableError();
   }
+
+  async writeRendition(
+    bucket: string,
+    objectKey: string,
+    bytes: Uint8Array,
+    contentType: string,
+  ): Promise<void> {
+    if (!RENDITION_KEY.test(objectKey)) throw new StorageUnavailableError();
+    assertInternalLocation(bucket, objectKey);
+    if (bytes.byteLength > MAX_FILE_BYTES) throw new StorageUnavailableError();
+    // A retried conversion writes the same key again.
+    const { error } = await this.#client.storage.from(bucket).upload(
+      objectKey,
+      bytes,
+      { upsert: true, contentType },
+    );
+    if (error) throw new StorageUnavailableError();
+  }
 }
 
 export class StorageUnavailableError extends Error {
@@ -206,6 +242,11 @@ export function detectMediaType(bytes: Uint8Array): string | null {
   if (startsWith(bytes, [0x50, 0x4b, 0x03, 0x04])) {
     return detectOoxmlMediaType(bytes);
   }
+  // Old binary Word, Excel or PowerPoint: a compound file whose main stream
+  // says which (DL-078). Any other compound file is not an accepted type.
+  if (startsWith(bytes, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])) {
+    return detectCfbMediaType(bytes);
+  }
   // No signature matched. CSV has none: only UTF-8 text with no control
   // bytes is detected as CSV (DL-077), so binary bytes declared as text/csv
   // are a type mismatch and never reach the scan as CSV.
@@ -224,10 +265,13 @@ export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
+// Uploaded originals, and the derived files the database names (DL-078).
+const UPLOAD_KEY = /^quarantine\/v1\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{22,64}$/;
+const RENDITION_KEY = /^renditions\/v1\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{22,64}$/;
 function assertInternalLocation(bucket: string, objectKey: string): void {
   if (
     bucket !== FILE_BUCKET ||
-    !/^quarantine\/v1\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{22,64}$/.test(objectKey)
+    !(UPLOAD_KEY.test(objectKey) || RENDITION_KEY.test(objectKey))
   ) {
     throw new StorageUnavailableError();
   }

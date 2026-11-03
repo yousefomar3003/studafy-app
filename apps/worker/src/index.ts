@@ -28,6 +28,7 @@ import {
   FcmPushSender,
   FileSecurityScanner,
   GoogleCalendarConferenceProvider,
+  HttpDocumentConverter,
   isPlaintextRemoteRedis,
   releaseId,
   ResendEmailSender,
@@ -35,6 +36,10 @@ import {
   TelegramAlertSender,
 } from "@studafy/infrastructure";
 import { startFileCleanup } from "./processors/fileCleanup";
+import {
+  postgresRenditionQueue,
+  startRenditions,
+} from "./processors/renditions";
 import { startFileScan } from "./processors/fileScan";
 import {
   postgresMaterialQueue,
@@ -222,6 +227,28 @@ const scan = fileWorkerSql && storage && env.FILE051_SCAN_ENABLED
   : undefined;
 const retention = fileWorkerSql && storage && env.FILE051_RETENTION_ENABLED
   ? startFileRetentionSweep(fileWorkerSql, storage, logger)
+  : undefined;
+
+// DL-078: in-app PDF previews, and the OOXML copy of old .doc/.xls/.ppt
+// files the material index reads, made by the private document converter.
+// Runs with the file pipeline; without CONVERTER_URL and CONVERTER_API_KEY
+// every rendition is marked skipped (previews answer PREVIEW_UNAVAILABLE),
+// and the objects of deleted files' renditions are still swept.
+const renditions = fileWorkerSql && storage &&
+    (env.FILE051_SCAN_ENABLED || env.FILE051_RETENTION_ENABLED)
+  ? startRenditions({
+    queue: postgresRenditionQueue(fileWorkerSql),
+    storage,
+    converter: env.CONVERTER_URL && env.CONVERTER_API_KEY
+      ? new HttpDocumentConverter({
+        url: env.CONVERTER_URL,
+        apiKey: env.CONVERTER_API_KEY,
+      })
+      : null,
+    logger,
+    // The converter converts one file at a time.
+    concurrency: 1,
+  }, 5_000)
   : undefined;
 
 // ADR-0037: lesson files and links read for the study helper, and
@@ -543,6 +570,7 @@ installGracefulShutdown({
     await billing?.close();
     await scan?.close();
     await retention?.close();
+    await renditions?.close();
     await materialIndex?.close();
     await notebooks?.close();
     await marking?.close();

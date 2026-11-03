@@ -1,0 +1,46 @@
+# Studafy document converter - TEST copy on Fly.io (DL-078): LibreOffice,
+# headless, behind infra/converter/server.py, which speaks the
+# HttpDocumentConverter contract. It makes in-app PDF previews of Office
+# files and CSV, and the .docx/.xlsx/.pptx copy of an old .doc/.xls/.ppt
+# that the AI reads.
+#
+# Private only: there is no [http_service] or [[services]] section, so the
+# app gets no public IP. studafy-worker-test reaches it at
+#   http://studafy-converter-test.internal:8080
+# with CONVERTER_URL and CONVERTER_API_KEY; the same key is CONVERTER_API_KEY
+# here. Its only secret is that key. No production app yet.
+#   fly deploy -c fly.converter.test.toml --ha=false
+app = "studafy-converter-test"
+primary_region = "fra"
+
+[build]
+  dockerfile = "infra/converter/Dockerfile"
+
+[env]
+  PORT = "8080"
+  # 25 MB in and out: the upload ceiling.
+  MAX_BYTES = "26214400"
+  MAX_OUTPUT_BYTES = "26214400"
+  # One conversion is killed, with everything it started, after this long.
+  TIMEOUT_SECONDS = "90"
+
+# LibreOffice with a large deck or workbook open needs the memory.
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "2gb"
+
+[[restart]]
+  policy = "always"
+
+# A machine check, not a service check: there is no public service. The
+# grace period covers LibreOffice's first start and the self-test.
+[checks]
+  [checks.healthz]
+    type = "http"
+    port = 8080
+    method = "get"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "2m"

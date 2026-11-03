@@ -7,8 +7,12 @@
  */
 import {
   CSV_MEDIA_TYPE,
+  DOC_MEDIA_TYPE,
   DOCX_MEDIA_TYPE,
+  isLegacyOfficeType,
+  LEGACY_OFFICE_OOXML,
   PPTX_MEDIA_TYPE,
+  XLS_MEDIA_TYPE,
   XLSX_MEDIA_TYPE,
 } from "@studafy/domain";
 import {
@@ -31,7 +35,16 @@ export interface MaterialLimits {
 }
 
 export type MaterialSource =
-  | { kind: "file"; mediaType: string; bytes: Uint8Array }
+  | {
+    kind: "file";
+    mediaType: string;
+    bytes: Uint8Array;
+    /**
+     * An old binary .doc/.xls/.ppt is read from its OOXML copy (DL-078),
+     * made by the document converter; null when there is none.
+     */
+    converted?: { mediaType: string; bytes: Uint8Array } | null;
+  }
   | { kind: "link"; url: string };
 
 export interface UsageRecord extends ProcessingUsage {
@@ -156,6 +169,38 @@ export async function readMaterial(
 ): Promise<MaterialResult> {
   if (source.kind === "link") return await readLink(source.url, deps);
   const { mediaType, bytes } = source;
+  // Word 97-2003, Excel 97-2003 and PowerPoint 97-2003 (DL-078): read with
+  // the Word, Excel and PowerPoint readers, from the converter's copy.
+  if (isLegacyOfficeType(mediaType)) {
+    const legacy = mediaType === DOC_MEDIA_TYPE
+      ? "doc"
+      : mediaType === XLS_MEDIA_TYPE
+      ? "xls"
+      : "ppt";
+    const extractor = `${legacy}-v1`;
+    const converted = source.converted;
+    if (
+      !converted || converted.mediaType !== LEGACY_OFFICE_OOXML[mediaType]
+    ) {
+      return {
+        outcome: "unsupported",
+        reason: "unreadable_file",
+        chunks: [],
+        detail: {},
+        extractor,
+        usage: [],
+      };
+    }
+    const read = await readMaterial(
+      { kind: "file", mediaType: converted.mediaType, bytes: converted.bytes },
+      deps,
+    );
+    return {
+      ...read,
+      extractor: `${read.extractor}-from-${legacy}`,
+      detail: { ...read.detail, converted: true },
+    };
+  }
   switch (mediaType) {
     case "application/pdf":
       return await readPdf(bytes, deps, "pdf-v1", "ocr");

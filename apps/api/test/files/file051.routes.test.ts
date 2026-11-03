@@ -210,11 +210,15 @@ async function harness(options: HarnessOptions = {}) {
     issued,
     revoke: () => state.allowed = false,
     advance: (seconds: number) => nowMs += seconds * 1000,
-    intent: (key = "file051-download-key-0001", fileId = FILE) =>
+    intent: (
+      key = "file051-download-key-0001",
+      fileId = FILE,
+      body: unknown = {},
+    ) =>
       app.request(`/v1/files/${fileId}/download-intent`, {
         method: "POST",
         headers: { "content-type": "application/json", "idempotency-key": key },
-        body: "{}",
+        body: JSON.stringify(body),
       }),
     publish: (body: unknown, key = "file051-publish-key-0001") =>
       app.request(`/v1/files/${FILE}/publish`, {
@@ -321,6 +325,77 @@ describe("FILE-051 download intent", () => {
       expect(response.status).not.toBe(200);
       expect(JSON.stringify(await response.json())).not.toContain("token=");
     }
+  });
+});
+
+describe("in-app previews (DL-078)", () => {
+  test("the variant reaches the grant; original is the default", async () => {
+    const h = await harness();
+    expect((await h.intent("preview-key-default-0001")).status).toBe(200);
+    expect(
+      (await h.intent("preview-key-original-001", FILE, {
+        variant: "original",
+      })).status,
+    ).toBe(200);
+    expect(
+      (await h.intent("preview-key-preview-0001", FILE, {
+        variant: "preview",
+      })).status,
+    ).toBe(200);
+    expect(h.issued.map((grant) => grant.variant)).toEqual([
+      "original",
+      "original",
+      "preview",
+    ]);
+  });
+
+  test("no preview yet is 409 PREVIEW_UNAVAILABLE, with no link", async () => {
+    const h = await harness({ grantOutcome: "preview_unavailable" });
+    const response = await h.intent("preview-key-missing-001", FILE, {
+      variant: "preview",
+    });
+    expect(response.status).toBe(409);
+    const body = await response.json() as { code: string };
+    expect(body.code).toBe("PREVIEW_UNAVAILABLE");
+    expect(JSON.stringify(body)).not.toContain("token=");
+  });
+
+  test("an unknown variant or field is refused before the database", async () => {
+    const h = await harness();
+    for (
+      const body of [{ variant: "thumbnail" }, { variant: "preview", page: 2 }]
+    ) {
+      const response = await h.intent(
+        `preview-key-bad-${JSON.stringify(body).length}-01`,
+        FILE,
+        body,
+      );
+      expect(response.status).toBe(400);
+    }
+    expect(h.events).toEqual([]);
+  });
+
+  test("a preview is refused exactly as the original is", async () => {
+    const h = await harness({ allowed: false });
+    const original = await h.intent("preview-key-denied-0001");
+    const preview = await h.intent("preview-key-denied-0002", FILE, {
+      variant: "preview",
+    });
+    expect(preview.status).toBe(original.status);
+    expect(preview.status).toBe(404);
+    expect(h.events).toEqual([]);
+  });
+
+  test("a preview link streams the PDF the grant names, once", async () => {
+    const h = await harness();
+    const response = await h.intent("preview-key-stream-0001", FILE, {
+      variant: "preview",
+    });
+    const { downloadUrl } = await response.json() as { downloadUrl: string };
+    const delivered = await h.get(downloadUrl);
+    expect(delivered.status).toBe(200);
+    expect(delivered.headers.get("content-type")).toBe("application/pdf");
+    expect((await h.get(downloadUrl)).status).toBe(404);
   });
 });
 

@@ -6,7 +6,8 @@
  * walk of their format; the transformation stage then produces the bytes
  * that will actually be stored — a deterministic metadata-strip rewrite for
  * images, metadata boxes neutralised in place for voice notes, no change for
- * PDFs, Office files and CSV (CDR is deliberately deferred; see ADR-0023).
+ * PDFs, Office files (OOXML and the older binary formats) and CSV (CDR is
+ * deliberately deferred; see ADR-0023).
  */
 import { imageExceedsPixelCap } from "./dimensions";
 import { containsEicarSignature } from "./eicar";
@@ -23,6 +24,13 @@ import {
   XLSX_MEDIA_TYPE,
 } from "./ooxml";
 import { CSV_MEDIA_TYPE, parseCsvText } from "./csv";
+import {
+  type CfbKind,
+  DOC_MEDIA_TYPE,
+  parseCfb,
+  PPT_MEDIA_TYPE,
+  XLS_MEDIA_TYPE,
+} from "./cfb";
 
 export type ScanVerdict =
   | "clean"
@@ -57,6 +65,9 @@ export type SafeMediaType =
   | typeof PPTX_MEDIA_TYPE
   | typeof XLSX_MEDIA_TYPE
   | typeof CSV_MEDIA_TYPE
+  | typeof DOC_MEDIA_TYPE
+  | typeof XLS_MEDIA_TYPE
+  | typeof PPT_MEDIA_TYPE
   | "audio/mp4"
   | "image/jpeg"
   | "image/png"
@@ -147,6 +158,26 @@ export async function analyzeBytes(
         ? "pptx"
         : "xlsx";
       const parsed = parseOoxml(bytes, kind);
+      if (!parsed.ok) {
+        return parsed.reason === "external_reference"
+          ? { verdict: "policy_rejected", errorCode: "external_reference" }
+          : mapPdfFailure(parsed.reason);
+      }
+      return { verdict: "clean" };
+    }
+    // Word .doc, Excel .xls and PowerPoint .ppt (DL-078): a bounded walk
+    // of the compound file that refuses macros, embedded objects, links to
+    // other files and passwords, mirroring the OOXML rules. Stored
+    // unchanged; never opened here.
+    case DOC_MEDIA_TYPE:
+    case XLS_MEDIA_TYPE:
+    case PPT_MEDIA_TYPE: {
+      const kind: CfbKind = mediaType === DOC_MEDIA_TYPE
+        ? "doc"
+        : mediaType === XLS_MEDIA_TYPE
+        ? "xls"
+        : "ppt";
+      const parsed = parseCfb(bytes, kind);
       if (!parsed.ok) {
         return parsed.reason === "external_reference"
           ? { verdict: "policy_rejected", errorCode: "external_reference" }

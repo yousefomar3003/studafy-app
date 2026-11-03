@@ -68,6 +68,7 @@ uploads work is decided on the server by the switches below.
 | `FILE051_SCAN_ENABLED` | `false` | Worker. Requires the database and storage settings; production also requires the external scanner |
 | `FILE051_RETENTION_ENABLED` | `false` | Worker retention sweep. No retention durations are configured yet (§29) |
 | `MALWARE_SCANNER_URL` / `MALWARE_SCANNER_API_KEY` | unset | The one scanner origin, and its **secret key** (platform secret manager only). Production's URL is the private `http://studafy-scanner.internal:8080/scan`, set in `fly.worker.toml` |
+| `CONVERTER_URL` / `CONVERTER_API_KEY` | unset | Worker only (DL-078): the private document converter's origin and its **secret key**. Unset, PDF previews and the OOXML copies of old .doc/.xls/.ppt files are marked skipped and nothing else changes. Test: `http://studafy-converter-test.internal:8080` |
 
 The worker connects as `studafy_worker_runtime`. That role stays `nologin`
 until a deployment provisions it; the verification scripts give it a
